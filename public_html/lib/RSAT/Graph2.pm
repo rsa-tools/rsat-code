@@ -38,10 +38,9 @@ $supported_layouts = join(",",@supported_layouts);
 
 =head1 DESCRIPTION
 
-Implementation of basic graph functions. This class allows (among other things) to create
-directed graphs and export them in different formats.
-Graph class. 
-
+Implementation of basic graph functions. This class allows (among
+other things) to create directed graphs and export them in different
+formats.  Graph class.
 
 =head1 METHODS
 
@@ -2739,8 +2738,8 @@ sub layout_spring_embedding {
 #  &RSAT::message::Debug(join("\n",sort(keys(%arcs_name_id)))) if ($main::verbose >= 10);
 
 
-  ## Sylvain : je ré-indexe les arcs par source et cible, il faudrait
-  ## vérifier si ce n'est pas redondant.
+  ## Sylvain : je re-indexe les arcs par source et cible, il faudrait
+  ## verifier si ce n'est pas redondant.
 
   ## Index all arc sources and targets
   my $max_weight = $arcs[0][2];
@@ -2749,14 +2748,16 @@ sub layout_spring_embedding {
   $min_weight = 999999999 unless (&RSAT::util::IsReal($min_weight));
   my @arc_weight = ();
   for my $i (0..$#arcs) {
-      my $source = $arcs[$i][0];
-      my $target = $arcs[$i][1];
-      my $label  = $arcs[$i][2];
-      if (&RSAT::util::IsReal($label)) {
-	  $max_weight = &RSAT::stats::max($label, $max_weight);
-	  $min_weight = &RSAT::stats::min($label, $min_weight);
-      }
+    my $source = $arcs[$i][0];
+    my $target = $arcs[$i][1];
+    my $label  = $arcs[$i][2];
+    if (&RSAT::util::IsReal($label)) {
+      $max_weight = &RSAT::stats::max($label, $max_weight);
+      $min_weight = &RSAT::stats::min($label, $min_weight);
       $weight{$source}{$target} = $label;
+    } else {
+      $weight{$source}{$target} = 1;
+    }
 
 #    &RSAT::message::Debug("", "arc", $i, $source, $target, $label) if ($main::verbose >= 10);
   }
