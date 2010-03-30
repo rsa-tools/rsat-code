@@ -510,6 +510,6 @@ int main(int argc, char *argv[])
     }
 
     //DEBUG("END info-gibbs");
-
+    VERBOSE1("end info-gibbs version %d\n", VERSION);
     return 0;
 }
