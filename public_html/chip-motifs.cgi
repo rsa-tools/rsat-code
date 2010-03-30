@@ -101,7 +101,7 @@ $parameters .= " -outdir $output_path";
 $parameters .= " -prefix $output_prefix";
 
 ### verbosity
-$parameters .= " -v 5";
+$parameters .= " -v 1";
 
 ############################################ display or send result
 $index_file = $output_directory."/".$output_prefix."synthesis.html";
@@ -109,6 +109,9 @@ $index_file = $output_directory."/".$output_prefix."synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "chip-seq-analysis", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 #&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
+# $debug = "$command $parameters 2> $TMP/log.txt";
+# print $debug;
+# `$debug`;
 
 ############################################ result page footer
 print $query->end_html;
