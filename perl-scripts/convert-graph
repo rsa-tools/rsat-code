@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.51 2010/03/27 13:01:11 jvanheld Exp $
+# $Id: convert-graph,v 1.52 2010/03/30 07:57:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -489,7 +489,8 @@ Target column. Column containing the target nodes. (default 2)
 
 =item B<-wcol>
 
-Weight column. Column containing the weight nodes. (no default)
+Weight column. Column containing the node weights. (no default)
+Node weights are converted to labels.
 
 =cut
 	} elsif ($arg eq "-wcol") {

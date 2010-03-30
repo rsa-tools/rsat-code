@@ -3705,9 +3705,9 @@ return 1;
 
 =item B<c_topology($arc_id)>
 
-# Calculates the closeness and the betweenness of all nodes.
-# It first runs a C program ($RSAT/bin/floydwarshall) to calculate 
-# the shortest path between all nodes in a network
+Calculate the closeness and the betweenness of all nodes.  It first
+runs a C program ($RSAT/bin/floydwarshall) to calculate the shortest
+path between all nodes in a network.
 
 =cut
 sub c_topology {
