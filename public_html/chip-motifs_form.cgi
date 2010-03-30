@@ -394,7 +394,7 @@ print '
 
 ##########################################
 sub Panel2 {
-	
+
 print '	<p/>';
 	&MultiSequenceChoice("Peak sequences",1);
 
