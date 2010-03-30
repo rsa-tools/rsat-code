@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.33 2010/03/29 17:41:43 jvanheld Exp $
+# $Id: chip-motifs,v 1.34 2010/03/30 16:40:56 defrance Exp $
 #
 ############################################################
 
@@ -92,7 +92,7 @@ package main;
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -438,7 +438,7 @@ sub PurgeOneSeq {
   $cmd .= " -from ".$main::param{seq_format};
   $cmd .= " -to fasta";
   $cmd .= " -mask non-dna";
-  $cmd .= "| purge-sequence -dna";
+  $cmd .= "| $SCRIPTS/purge-sequence -dna";
   $cmd .= " -ml ".$main::param{purge_match_length};
   $cmd .= " -mis ".$main::param{purge_mismatches};
   $cmd .= " -o ".$main::outfile{"purged_".$seq_type};
