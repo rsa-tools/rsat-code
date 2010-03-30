@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.10 2010/03/30 07:30:55 jvanheld Exp $
+# $Id: graph-topology,v 1.11 2010/03/30 07:32:20 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -17,7 +17,7 @@ graph-topology
 
 =head1 DESCRIPTION
 
-Calculate the node degree, the closeness and the betweeness of each
+Calculate the node degree, the closeness and the betweenness of each
 node and specifies if this node is a seed or a target node.
 
 =head1 AUTHORS
@@ -94,7 +94,7 @@ package main;
     local %return_fields = ();
     local %supported_return_fields =(
       'degree'=>1,
-      'betweeness'=>1,
+      'betweenness'=>1,
       'closeness'=>1,
       'all'=>1
     );
@@ -129,16 +129,16 @@ package main;
     ## Read input graph
     &RSAT::message::TimeWarn("Reading input graph") if ($main::verbose >= 2);
     $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
-    my %betweeness_table = ();
+    my %betweenness_table = ();
     my %closeness_table = ();
 
 
     ################################################################
-    ## Compute closeness and betweeness
-    if ($return_fields{'closeness'} || $return_fields{'betweeness'}) {
+    ## Compute closeness and betweenness
+    if ($return_fields{'closeness'} || $return_fields{'betweenness'}) {
       &RSAT::message::TimeWarn("Computing graph topoogy") if ($main::verbose >= 2);
-      my ($betweenessRef, $closenessRef) = $graph->c_topology($directed);
-      %betweeness_table = %{$betweenessRef};
+      my ($betweennessRef, $closenessRef) = $graph->c_topology($directed);
+      %betweenness_table = %{$betweennessRef};
       %closeness_table = %{$closenessRef};
     }
 
@@ -210,7 +210,7 @@ package main;
     if ($return_fields{'closeness'}) {
       push @fields_to_export, "closnes";
     } 
-    if ($return_fields{'betweeness'}) {
+    if ($return_fields{'betweenness'}) {
       push @fields_to_export, "btwnes";
     }
     my %field_descr = ();
@@ -220,7 +220,7 @@ package main;
     $field_descr{degree} = "total degree (number of incoming + outgoing arcs)";
     $field_descr{ktype} = "connectivity type. Orphan (degree=0), source (in_deg=0), target (out_deg=0) or intermediate.";
     $field_descr{closnes} = "Closeness (mean shortest distance of nodes to a given nodes)";
-    $field_descr{btwnes} = "Betweeness (proportion of shortest path that pass through a node)";
+    $field_descr{btwnes} = "Betweenness (proportion of shortest path that pass through a node)";
 
 
     if ($main::verbose >= 1) {
@@ -289,14 +289,14 @@ package main;
 	}
       }
 
-      if ($return_fields{'betweeness'}) {
-	if ((defined($betweeness_table{$node})) && (&IsReal($betweeness_table{$node}))) {
-	  push @values, sprintf("%.2g", $betweeness_table{$node});
+      if ($return_fields{'betweenness'}) {
+	if ((defined($betweenness_table{$node})) && (&IsReal($betweenness_table{$node}))) {
+	  push @values, sprintf("%.2g", $betweenness_table{$node});
 	} else {
 	  push @values, "NA";
 	}
-#        my $betweeness = $betweeness_table{$node} || "NA";
-#        push @values, sprintf("%.2f", $betweeness);
+#        my $betweenness = $betweenness_table{$node} || "NA";
+#        push @values, sprintf("%.2f", $betweenness);
       }
       print $out (join "\t", @values);
       print $out "\n";
@@ -465,7 +465,7 @@ graph file.
 =item B<-directed>
 
 Specifies whether the graph is directed or not (i.e. edge A-B
-corresponds to edge B-A). In this case, the betweeness and the
+corresponds to edge B-A). In this case, the betweenness and the
 closeness calculation will be rather different. By default the graph
 is not directed.
 
@@ -478,9 +478,9 @@ is not directed.
 
 =item B<-return return_type>
 
-Fields to return as columns in the output table. 
+Fields to return as columns in the output table.
 
-Supported return fields : I<degree>, I<closeness>, I<betweeness>,
+Supported return fields : I<degree>, I<closeness>, I<betweenness>,
 I<all>.
 
 The option may be used multiple time. To return all implemented
