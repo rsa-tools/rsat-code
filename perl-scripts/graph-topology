@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.9 2010/03/30 07:27:45 jvanheld Exp $
+# $Id: graph-topology,v 1.10 2010/03/30 07:30:55 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -282,16 +282,16 @@ package main;
       }
 
       if ($return_fields{'closeness'}) {
-	if ((defined($closeness_table{$node}) && (&IsReal($closeness_table{$node}))) {
-	  push @values, sprintf("%.3f", $closeness_table{$node}));
+	if ((defined($closeness_table{$node})) && (&IsReal($closeness_table{$node}))) {
+	  push @values, sprintf("%.3f", $closeness_table{$node});
 	} else {
 	  push @values, "NA";
 	}
       }
 
       if ($return_fields{'betweeness'}) {
-	if ((defined($betweeness_table{$node}) && (&IsReal($betweeness_table{$node}))) {
-	  push @values, sprintf("%.2g", $betweeness_table{$node}));
+	if ((defined($betweeness_table{$node})) && (&IsReal($betweeness_table{$node}))) {
+	  push @values, sprintf("%.2g", $betweeness_table{$node});
 	} else {
 	  push @values, "NA";
 	}
