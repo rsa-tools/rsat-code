@@ -92,7 +92,7 @@
   ## TEMPORARY: since the layout option requires a 0 or 1 value on the Web
   ## services, I only give support for the Spring embedding
   if ($layout == "spring" && $out_format == "gml") {
-    echo ("<pre>Layout: $layout</pre>");
+//    echo ("<pre>Layout: $layout</pre>");
     $layout = 1;
   }
 
@@ -169,7 +169,7 @@
       $response =  $echoed->response;
 //       print_r ($response);
       $command = $response->command;
-//       echo "$command";
+      echo("<p><b>Convert-graph command:</b> $command</p>\n");
       $server = $response->server;
       $client = $response->client;
       $server = rtrim ($server);
@@ -177,10 +177,22 @@
       $temp_file = end($temp_file);
       $resultURL = $WWW_RSA."/tmp/".$temp_file;
       hourglass("off");
-      # Display the results
-      echo "The results is available at the following URL ";
-      echo "<a href = '$resultURL'>$resultURL</a>"; 
-      echo "<hr>\n";
+
+
+    ## DISPLAY THE RESULT
+    echo "<p><table class=\"resultlink\">\n";
+    echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
+    echo "<tr><th>$out_format</th><td><a href='$resultURL'>$resultURL</a></td></tr>\n"; 
+    echo "</table></p>\n";
+    echo"<hr>\n";
+
+//       # Display the results
+//       echo "The results is available at the following URL ";
+//       echo "<a href = '$resultURL'>$resultURL</a>"; 
+//       echo "<hr>\n";
+
+
+      ## Send result to next step
       echo "
     <TABLE CLASS = 'nextstep'>
       <TR>
