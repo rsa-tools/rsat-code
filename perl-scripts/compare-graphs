@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.51 2010/03/29 17:40:15 jvanheld Exp $
+# $Id: compare-graphs,v 1.52 2010/03/30 07:22:36 jvanheld Exp $
 #
 ############################################################
 
@@ -164,7 +164,7 @@ package main;
     $supported_outweight = join (",", keys %supported_outweight);
 
     # Defaut undefined value
-    $null_value = "<NULL>";
+    $null_value = "<NA>";
 
     ################################################################
     ## Read argument values
@@ -375,7 +375,7 @@ sub ReadArguments {
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
     while (scalar(@arguments) >= 1) {
       $arg = shift (@arguments);
-	## Verbosity
+
 =pod
 
 =head1 OPTIONS
@@ -394,7 +394,7 @@ Level of verbosity (detail in the warning messages during execution)
 		$main::verbose = 1;
 	    }
 
-	    ## Help message
+
 =pod
 
 =item B<-h>
@@ -405,7 +405,7 @@ Display full help message
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
 
-	    ## List of options
+
 =pod
 
 =item B<-help>
@@ -416,7 +416,6 @@ Same as -h
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
-	    ## Input file 1
 =pod
 
 =item B<-Q query_graph_input_file>
@@ -427,7 +426,6 @@ Query graph file
 	} elsif ($arg eq "-R") {
 	    $main::infile{graph_R} = shift(@arguments);
 
-	    	    ## Input file 2
 =pod
 
 =item B<-R reference_graph_input_file>
@@ -437,8 +435,7 @@ Reference graph file
 =cut
 	} elsif ($arg eq "-Q") {
 	    $main::infile{graph_Q} = shift(@arguments);
-	
-	    	    ## Directed option
+
 =pod
 
 =item B<-directed>
@@ -447,11 +444,9 @@ Indicates whether the graphs must be considered as directed, i.e., an arc
 from node A to node B is different from an arc from B to A.
 
 =cut
-	    	    
 	} elsif ($arg eq "-directed") {
 	    $directed = 1;
-	    
-	    	    ## Self-loops
+
 =pod
 
 =item B<-selfloops>
@@ -468,8 +463,7 @@ intersection.
 =cut
 	} elsif ($arg eq "-self") {
 	    $self = 1;
-	    
-	    	    ## arc_id
+
 =pod
 
 =item B<-arc_id>
@@ -477,11 +471,9 @@ intersection.
 Adds a unique id for each arc when using the tab-delimited output. 
 
 =cut
-	    	    
 	} elsif ($arg eq "-arc_id") {
 	    $arc_id_option = 1;
 
-	    ## Output file
 =pod
 
 =item	B<-o outputfile>
@@ -493,8 +485,6 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
 
-	    	    
-	    ### Input format  
 =pod
 
 =item B<-in_format_R input_format>
@@ -520,12 +510,18 @@ Input format of query graph. Supported: tab,gml. Default tab
 		unless ($supported_input_format{$input_format_Q});		
 
 
-	    ### return  
 =pod
 
 =item B<-return return_type>
 
-return type : I<intersection>, I<union>, I<difference>, I<R.and.Q>, I<Q.and.R>, I<Q.or.R>, I<Q.not.R>, I<R.not.Q>, I<Q.and.R+Q>, I<Q.and.R+R>, I<R.and.Q+Q>, I<R.and.Q+R>, I<intersection+Q>, I<intersection+R>
+Output field(s). This option can be used iteratively to specify
+multiple output fields. Multiple fields can also be specified
+separated by commas.
+
+Supported return fields : I<intersection>, I<union>, I<difference>,
+I<R.and.Q>, I<Q.and.R>, I<Q.or.R>, I<Q.not.R>, I<R.not.Q>,
+I<Q.and.R+Q>, I<Q.and.R+R>, I<R.and.Q+Q>, I<R.and.Q+R>,
+I<intersection+Q>, I<intersection+R>
 
 I<intersection>, I<R.and.Q> and I<Q.and.R> are synonyms.
 
@@ -535,15 +531,17 @@ I<difference> corresponds to I<R.not.Q>
 
 If the union is requested, each arc is labelled to indicate whether it
 belongs to the intersection (R.and.Q), to Q only (Q.not.R) or to R
-only (R.not.Q). 
+only (R.not.Q).
 
-I<intersection+R> and I<Q.and.R+R> or I<R.and.Q+R> corresponds only to the arcs of the 
-reference graph. However, each arc is labelled and colored differently to indicate
-wether it belongs to the intersection or to the reference graph only. 
+I<intersection+R> and I<Q.and.R+R> or I<R.and.Q+R> corresponds only to
+the arcs of the reference graph. However, each arc is labelled and
+colored differently to indicate wether it belongs to the intersection
+or to the reference graph only.
 
-Inversely, I<intersection+Q> and I<Q.and.R+Q> or I<R.and.Q+Q>  corresponds only to the arcs of the 
-query graph. However, each arc is labelled and colored differently to indicate
-wether it belongs to the intersection or to the query graph only. 
+Inversely, I<intersection+Q> and I<Q.and.R+Q> or I<R.and.Q+Q>
+corresponds only to the arcs of the query graph. However, each arc is
+labelled and colored differently to indicate wether it belongs to the
+intersection or to the query graph only.
 
 =cut
 	} elsif ($arg eq "-return") {
@@ -551,7 +549,6 @@ wether it belongs to the intersection or to the query graph only.
 	    &RSAT::error::FatalError("$return_format\tInvalid return format. Supported: $supported_return_formats")
 		unless ($supported_return_format{$return_format});
 
-	    ## Outweight option
 =pod
 
 =item B<-outweight>
@@ -585,8 +582,7 @@ Supported : Q, R, sum, mean, mean.g, min, max, Q::R
 	    $outweight = shift(@arguments);
 	    &RSAT::error::FatalError("$outweight\tInvalid outweight option. Supported: $supported_outweight")
 		unless ($supported_outweight{$outweight});
-		
-	    ### Output format  
+
 =pod
 
 =item B<-out_format format>
@@ -599,7 +595,6 @@ Output format. Supported: tab, dot, gml
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
 		unless ($supported_output_format{$output_format});
 
-	    ### NULL Value
 =pod
 
 =item B<-null value>
@@ -609,13 +604,13 @@ Value to display in cases of undefined label values. Defaut : <NULL>
 =cut 
 	} elsif ($arg eq "-null") {
 	    $null_value = shift(@arguments);
-		
-	    ## Source column
+
 =pod
 
 =item B<-scol_R>
 
-Source column of reference graph for tab-delimited input, default = 1. Column containing the source nodes. 
+Source column of reference graph for tab-delimited input, default =
+1. Column containing the source nodes.
 
 =cut
 	} elsif ($arg eq "-scol_R") {
@@ -623,10 +618,13 @@ Source column of reference graph for tab-delimited input, default = 1. Column co
 	    unless (&IsNatural($source_col_R) && ($source_col_R > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_col_R, "Invalid value for the source column. Must be a strictly positive natural number"));
 	    }
-	    
+
+=pod
+
 =item B<-scol_Q>
 
-Source column of query graph for tab-delimited input, default = 1. Column containing the source nodes. 
+Source column of query graph for tab-delimited input, default =
+1. Column containing the source nodes.
 
 =cut
 	} elsif ($arg eq "-scol_Q") {
@@ -634,13 +632,13 @@ Source column of query graph for tab-delimited input, default = 1. Column contai
 	    unless (&IsNatural($source_col_Q) && ($source_col_Q > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_col_Q, "Invalid value for the source column. Must be a strictly positive natural number"));
 	    }
-	    
-	    ## Target column
+
 =pod
 
 =item B<-tcol_R>
 
-Target column of reference graph for tab-delimited input, default = 2. Column containing the target nodes. 
+Target column of reference graph for tab-delimited input, default =
+2. Column containing the target nodes.
 
 =cut
 	} elsif ($arg eq "-tcol_R") {
@@ -648,12 +646,13 @@ Target column of reference graph for tab-delimited input, default = 2. Column co
 	    unless (&IsNatural($target_col_R) && ($target_col_R > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_col_R, "Invalid value for the target column. Must be a strictly positive natural number"));
 	    }
-	    ## Target column
+
 =pod
 
 =item B<-tcol_Q>
 
-Target column of query graph for tab-delimited input, default = 2. Column containing the target nodes. 
+Target column of query graph for tab-delimited input, default =
+2. Column containing the target nodes.
 
 =cut
 	} elsif ($arg eq "-tcol_Q") {
@@ -662,12 +661,12 @@ Target column of query graph for tab-delimited input, default = 2. Column contai
 		&RSAT::error::FatalError(join("\t", $target_col_Q, "Invalid value for the target column. Must be a strictly positive natural number"));
 	    }
 
-	    ## Weight column
 =pod
 
 =item B<-wcol_R>
 
-Weight column of reference graph for tab-delimited input. Column containing the weight nodes. 
+Weight column of reference graph for tab-delimited input. Column
+containing the weight nodes.
 
 =cut
 	} elsif ($arg eq "-wcol_R") {
@@ -675,11 +674,13 @@ Weight column of reference graph for tab-delimited input. Column containing the 
 	    unless (&IsNatural($weight_col_R) && ($weight_col_R > 0)) {
 		&RSAT::error::FatalError(join("\t", $weight_col_R, "Invalid value for the weight column. Must be a strictly positive natural number"));
 	    }
+
 =pod
 
 =item B<-wcol_Q>
 
-Weight column of query graph for tab-delimited input. Column containing the weight nodes. 
+Weight column of query graph for tab-delimited input. Column
+containing the weight nodes.
 
 =cut
 	} elsif ($arg eq "-wcol_Q") {
@@ -687,14 +688,17 @@ Weight column of query graph for tab-delimited input. Column containing the weig
 	    unless (&IsNatural($weight_col_Q) && ($weight_col_Q > 0)) {
 		&RSAT::error::FatalError(join("\t", $weight_col_Q, "Invalid value for the weight column. Must be a strictly positive natural number"));
 	    }
+
 =pod
 
 =item B<-col edge_type #RGBcode>
 
-When computing the union of two graphs. This option allows to specify the colors of the edges belonging to the
-intersection, query graph and reference graph.
+When computing the union of two graphs. This option allows to specify
+the colors of the edges belonging to the intersection, query graph and
+reference graph.
 
-By default, the edges belonging to the intersection are green, the query only edges are red and the reference only edges are violet.
+By default, the edges belonging to the intersection are green, the
+query only edges are red and the reference only edges are violet.
 
 Example -col R '#9370DB' -col Q '#ff6a6a' -col QR '#00ff00'
 
@@ -707,14 +711,12 @@ Example -col R '#9370DB' -col Q '#ff6a6a' -col QR '#00ff00'
 	    # Check if col is a valid color
 	    &RSAT::error::FatalError(join("\t", $col, "Not a valid color in RGB code.")) if ($col !~ /\#([0-9A-Fa-f]{3,6})\b/);
 	    $arc_colors{$edge_type} = $col;
-	    
-	    
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
 	}
     }
-
 
 =pod
 
