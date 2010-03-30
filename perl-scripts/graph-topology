@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.7 2010/03/29 17:39:04 jvanheld Exp $
+# $Id: graph-topology,v 1.8 2010/03/30 07:22:55 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -17,7 +17,8 @@ graph-topology
 
 =head1 DESCRIPTION
 
-Calculate the node degree, the closeness and the betweenness of each node and specifies if this node is a seed or a target node.
+Calculate the node degree, the closeness and the betweenness of each
+node and specifies if this node is a seed or a target node.
 
 =head1 AUTHORS
 
@@ -88,7 +89,7 @@ package main;
 	gml=>1
     );
     $supported_input_formats = join (",", keys %supported_input_format);    
-    
+
     ## Supported return options
     local %return_fields = ();
     local %supported_return_fields =(
@@ -98,13 +99,9 @@ package main;
       'all'=>1
     );
     $supported_return_fields_list = join (",", keys %supported_return_fields);
-    
-    
-    
+
     %main::infile = ();
     %main::outfile = ();
-    
-    
 
     $main::verbose = 0;
 #    $main::in = STDIN;
@@ -144,7 +141,6 @@ package main;
       %betweeness_table = %{$betweennessRef};
       %closeness_table = %{$closenessRef};
     }
-
 
     ################################################################
     ## Build the list of seed nodes
@@ -287,12 +283,12 @@ package main;
 
       if ($return_fields{'closeness'}) {
         my $closeness = $closeness_table{$node} || "NA";
-        push @values, $closeness
+        push @values, sprintf("%.2f", $closeness);
       }
 
       if ($return_fields{'betweenness'}) {
         my $betweenness = $betweeness_table{$node} || "NA";
-        push @values, $betweenness;
+        push @values, sprintf("%.2f", $betweenness);
       }
       print $out (join "\t", @values);
       print $out "\n";
@@ -460,8 +456,10 @@ graph file.
 
 =item B<-directed>
 
-Specifies whether the graph is directed or not (i.e. edge A-B corresponds to edge B-A). In this case, the betweenness and the closeness 
-calculation will be rather different. By default the graph is not directed.
+Specifies whether the graph is directed or not (i.e. edge A-B
+corresponds to edge B-A). In this case, the betweenness and the
+closeness calculation will be rather different. By default the graph
+is not directed.
 
 =cut
 	} elsif ($arg eq "-directed") {
@@ -472,9 +470,13 @@ calculation will be rather different. By default the graph is not directed.
 
 =item B<-return return_type>
 
-return type : I<degree>, I<closeness>, I<betweenness>
+Fields to return as columns in the output table. 
 
-The option may be used multiple time. To return all implemented statistics, you can use -return all.
+Supported return fields : I<degree>, I<closeness>, I<betweenness>,
+I<all>.
+
+The option may be used multiple time. To return all implemented
+statistics, type -return all.
 
 =cut
 	} elsif ($arg eq "-return") {
