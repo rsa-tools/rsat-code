@@ -119,12 +119,23 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
-    # Execute the command
-    $echoed = $client->graph_get_clusters($parameters);
+    # Execute the command and catch the errors
+    try {
+      $echoed = $client->graph_get_clusters($parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n\t",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+      exit(1);
+    }  
+
 
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
+    echo ("<p><b>Command :</b> $command</p>");
     $client = $response->client;
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
