@@ -110,13 +110,14 @@
 
     $cg_response = $cg_echoed->response;
     $cg_command = $cg_response->command;
+    echocommand($cg_command, "graph formatting");
     $cg_server = $cg_response->server;
     $cg_client = $cg_response->client;
     $cg_server = rtrim ($cg_server);
     $cg_temp_file = explode('/',$cg_server);
     $cg_temp_file = end($cg_temp_file);
     $cg_resultURL = $WWW_RSA."/tmp/".$cg_temp_file;    
-    
+
     $rnsc_graph = $cg_server.".rnsc";
     $rnsc_nodes = $cg_server."_node_names.rnsc";
     
@@ -152,6 +153,7 @@
     }  
     $rnsc_response = $rnsc_echoed->response;
     $rnsc_command = $rnsc_response->command;
+    echocommand($rnsc_command, "rnsc");
     $rnsc_server = $rnsc_response->server;
     $rnsc_client = $rnsc_response->client;
     $rnsc_server = rtrim ($rnsc_server);
@@ -159,7 +161,6 @@
     $rnsc_temp_file = end($rnsc_temp_file);
     $rnsc_resultURL = $WWW_RSA."/tmp/".$rnsc_temp_file;
 
-    echo ("<p><b>RNSC command:</b> $rnsc_command</p>");
 
     # Convert-classes 
     ## Load the parameters of the program in to an array
@@ -178,6 +179,7 @@
 
     $cc_response = $cc_echoed->response;
     $cc_command = $cc_response->command;
+    echocommand($cc_command, "cluster formatting");
     $cc_server = $cc_response->server;
     $cc_client = $cc_response->client;
     $cc_server = rtrim ($cc_server);
@@ -200,6 +202,7 @@
     $ct_echoed = $client->contingency_table($ct_parameters);
     $ct_response = $ct_echoed->response;
     $ct_command = $ct_response->command;
+    echocommand($ct_command, "cluster sizes");
     $ct_server = $ct_response->server;
     $ct_client = $ct_response->client;
     $ct_server = rtrim ($ct_server);
@@ -220,6 +223,7 @@
     $cf_echoed = $client->classfreq($cf_parameters);
     $cf_response = $cf_echoed->response;
     $cf_command = $cf_response->command;
+    echocommand($cf_command, "cluster size distribution");
     $cf_server = $cf_response->server;
     $cf_client = $cf_response->client;
     $cf_server = rtrim ($cf_server);
@@ -244,6 +248,7 @@
     $xy_echoed = $client->xygraph($xy_parameters);
     $xy_response = $xy_echoed->response;
     $xy_command = $xy_response->command;
+    echocommand($xy_command, "cluster size distribution graph");
     $xy_server = $xy_response->server;
     $xy_client = $xy_response->client;
     $xy_server = rtrim ($xy_server);
