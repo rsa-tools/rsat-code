@@ -198,7 +198,6 @@
         "col2" => 1,
         )
       );
-    echo"<pre>";
     $ct_echoed = $client->contingency_table($ct_parameters);
     $ct_response = $ct_echoed->response;
     $ct_command = $ct_response->command;
@@ -209,7 +208,6 @@
     $ct_temp_file = explode('/',$ct_server);
     $ct_temp_file = end($ct_temp_file);
     $ct_resultURL = $WWW_RSA."/tmp/".$ct_temp_file;
-    echo "</pre>";
     # classfreq 
     $cf_inputfile =  storeFile($ct_server);
 //     $cf_echoed = $client->contingency_table($cf_parameters);
