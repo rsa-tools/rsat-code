@@ -108,6 +108,16 @@ Function trim_text($text) {
 
 <?php
 /**
+ * Echo a command by suppress the full path to rsa-tools.
+ */
+Function echocommand($command, $name) {
+  $clean_command = preg_replace('/(\')*\S+rsa\-tools\//', '\\1\$RSAT', $command);
+  echo ("<p><b>$name:</b> $clean_command</p>");
+}
+?>
+
+<?php
+/**
  * Read a property file $props and return a hash
  */
 Function load_props($props) {
