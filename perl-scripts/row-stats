@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: row-stats,v 1.6 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: row-stats,v 1.7 2010/04/01 07:37:27 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:37:27 jvanheld>
 #
@@ -23,6 +23,7 @@ local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
 local $number_format = "%g";
+local $sort = 0;
 
 &ReadArguments;
 
@@ -32,21 +33,69 @@ local $number_format = "%g";
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
-&PrintRowHeader();
 
 ##### read input #####
 ($in, $input_dir) = &OpenInputFile($infile{input});
 $line_nb = 0;
 while (<$in>) {
     $line_nb++;
-    next if (/^;/);
-    next unless (/\S/);
-    chomp;
-    @fields = split "\t";
-    &PrintRowStats(@fields);
+    next unless (/\S/); ## Skip empty lines
+
+    ## Report comment lines
+    if (/^;/) {
+      print $out $_;
+      next;
+    }
+    chomp(); ## remove the carriage return
+
+    ## Treat header line
+    if (/^#/) {
+	$header_line = join ("\t",
+			     $_,
+			     "min",
+			     "max",
+			     "sum",
+			     "avg"
+	    );
+	$header_line .= "\n";
+	unless ($sort) {
+	    print $out $header_line;
+	}
+	next;
+    }
+
+    ## Treat other lines
+#    &RSAT::message::Debug($line_nb, $_) if ($main::verbose >= 10);
+    my $to_print = $_;
+    my @values = split "\t";
+    my $min = sprintf "${number_format}", &checked_min(@values);
+    my $max = sprintf "${number_format}", &checked_max(@values);
+    my $sum = sprintf "${number_format}", &checked_sum(@values);
+    my $avg = sprintf "${number_format}", &checked_avg(@values);
+    $to_print .= "\t";
+    $to_print .= join ("\t", $min, $max, $sum, $avg);
+    $to_print .= "\n";
+
+    if ($sort) {
+      ## Index line for printing after sorting
+      $to_print{$line_nb} = $to_print;
+      $sum{$line_nb} = $sum;
+    } else {
+      ## Print immediately to free memory
+      print $out $to_print;
+    }
 }
 
 close $in if ($infile{input});
+
+## Print sorted values
+if ($sort) {
+    print $out $header_line;
+  my @sorted = sort { $sum{$b} <=> $sum{$a} } keys (%sum);
+  foreach my $line_nb (@sorted) {
+    print $out $to_print{$line_nb};
+  }
+}
 
 #### verbose ####
 &Verbose if ($verbose);
@@ -68,30 +117,9 @@ if ($verbose) {
 ###### close output file ######
 close $out if ($outfile{output});
 
-
 exit(0);
 
-sub PrintRowHeader {
-    print $out join ("\t", 
-		     ";ID",
-		     "min",
-		     "max",
-		     "sum",
-		     "avg"
-		     );
-    print $out "\n";
 
-}
-
-sub PrintRowStats {
-    my ($id, @values) = @_;
-    print $out $id;
-    printf $out "\t${number_format}", &checked_min(@values);
-    printf $out "\t${number_format}", &checked_max(@values);
-    printf $out "\t${number_format}", &checked_sum(@values);
-    printf $out "\t${number_format}", &checked_avg(@values);
-    print $out "\n";
-}
 
 
 ########################## subroutine definition ############################
@@ -129,6 +157,7 @@ OPTIONS
 	-nf	number format
 		Any format specification that is compliant with the
 		perl printf function is supported (e.g. '%7.4f')
+	-sort	sort lines by decreasing value of the row sum
 
 INPUT FORMAT
 
@@ -164,46 +193,51 @@ row-stats options
 -o	output file
 -v	verbose
 -nf	number format (e.g. '%7.4f')
+-sort	sort lines by decreasing value of the row sum
 End_short_help
   close HELP;
   exit;
 }
 
 
+################################################################
+## Read arguments
+##
 sub ReadArguments {
-#### read arguments ####
-    foreach my $a (0..$#ARGV) {
-	### verbose ###
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
-	    
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
-	    
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
-	    
-	    ### input file ###
-	} elsif ($ARGV[$a] eq "-i") {
-	    $infile{input} = $ARGV[$a+1];
-	    
-	    ### output file ###
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outfile{output} = $ARGV[$a+1];
-	    
-	    ### input file ###
-	} elsif ($ARGV[$a] eq "-nf") {
-	    $number_format = $ARGV[$a+1];
-	    
-	    
-	}
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
+
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
+
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+
+      ### number format
+    } elsif ($ARGV[$a] eq "-nf") {
+      $number_format = $ARGV[$a+1];
+
+      ### sort
+    } elsif ($ARGV[$a] eq "-sort") {
+      $sort = 1;
     }
+  }
 }
 
 sub Verbose {

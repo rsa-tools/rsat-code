@@ -427,7 +427,8 @@ sub to_gml {
 	$gml .= "\t\t"."label\t\"".$arc_label."\"\n" if ($arc_label);
 	$gml .= "\t\t"."graphics\n";
 	$gml .= "\t\t"."[\n";
-	$gml .= "\t\t\t"."width\t2\n";
+	my $width = 2;
+	$gml .= "\t\t\t"."width\t".$width."\n";
 	$gml .= "\t\t\t"."type\t\"line\"\n";
 	$gml .= "\t\t\t"."fill\t\"".$arc_color."\"\n";
 	$gml .= "\t\t]\n";
