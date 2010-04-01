@@ -1857,7 +1857,6 @@ sub load_from_gml {
         my $node_id =  "NA#";
         my $node_label = "NA#";
 	my $node_color = $self::default_node_color;
-#        my $node_color  = "#66CCFF";
         my $node_xpos = "NA#";
         my $node_ypos = "NA#";
 
@@ -1889,10 +1888,6 @@ sub load_from_gml {
 	# NODE COLOR
         if ($node =~ /outline\s+\"([^\"]*)\"/) {
 	  $node_color = $1;
-#        if ($node =~ /outline/) {
-#          my @color_cp = split /.*outline /, $node;
-#          $node_color = $color_cp[1];
-#          $node_color = substr($node_color,1, index($node_color, "\" "));
           $node_color =~ s/\"//;
         }
 
@@ -2098,7 +2093,7 @@ sub load_from_array {
     my ($mean, $sd, $min, $max);
     my $nodecpt = 0;
     my $arccpt = 0;
-    
+
     # if $main::edge_colors (color gradient) or $main::edge_width is defined in convert-graph
     # then, extract the third column of the array of edges 
     # that contains the weight and 
@@ -2110,8 +2105,7 @@ sub load_from_array {
       $main::edge_width = 0;
       &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
     }
-    
-    
+
     if ($main::edge_colors || $main::edge_width) {
       $edge_weight_colors = $main::edge_colors;
       my $real = $self->get_weights();
@@ -2124,12 +2118,7 @@ sub load_from_array {
       $min = $main::min_value if (defined $main::min_value && $main::min_value <= $min);
       $max = $main::max_value if (defined $main::max_value && $main::max_value >= $max);      
     }
-    
-
-    
-    
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
-    
 
     ## Load the graph
     for ($l = 0; $l < scalar(@array); $l++){
@@ -2386,7 +2375,6 @@ sub to_dot {
 		   "\"]",
 		   "\n");
     }
-    
     for (my $i = 0; $i < scalar(@arcs); $i++) {
       my $source = $arcs[$i][0];
       my $target = $arcs[$i][1];
@@ -2395,13 +2383,12 @@ sub to_dot {
       if ($label eq $source."_".$target) {
         $label = "";
       }
-      my $edge_width= 2;
+      my $edge_width= $edge_attribute{width} || 2;
       if ($edge_width_calc) {
         $edge_width = ((($label-$min)/($max+1-$min))*6.5)+0.5;
       }
       $dot .=  join ("", "\"", $source, "\" -- \"", $target, "\" [label=\"\", weight=\"$label\", color=\"$color\"]", "\n");
     }
-    
     $dot .= "}\n";
 
     return $dot;
@@ -3232,7 +3219,12 @@ sub to_gml {
       $min = $min_value if (defined $min_value && $min_value <= $min);
       $max = $max_value if (defined $max_value && $max_value >= $max);
 #       print "MIN $min_value $min\n";
-    } 
+    }
+
+    my %node_attribute = $self->get_attribute('node_attribute');
+    my %edge_attribute = $self->get_attribute('edge_attribute');
+#    &RSAT::message::Debug("node_attribute", join (";", keys(%node_attribute))) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("edge_attribute", join (";", keys(%edge_attribute))) if ($main::verbose >= 0);
 
     ## Graph description
     my $graph_label = $self->get_attribute("label") || "graph";
@@ -3252,6 +3244,7 @@ sub to_gml {
 	my $x = $nodes_id_xpos{$id} || $id*10;
 	my $y = $nodes_id_ypos{$id} || $id*10;
 	my $box_color = $nodes_color{$id} || "#0000EE"; ## color for the box around the node
+	my $box_fill_color = "#EEEEEE"; ## color for the box around the node
 	$gml .= "\t"."node\n";
 	$gml .= "\t"."[\n";
 	$gml .= "\t\t"."id	".$id."\n";
@@ -3263,8 +3256,8 @@ sub to_gml {
 	$gml .= "\t\t\t"."w	".$w."\n";
 	$gml .= "\t\t\t"."h	".$h."\n";
 #	$gml .= "\t\t\t"."width	1.00000\n";
-	$gml .= "\t\t\t"."fill	\"\#ffffff\"\n";
 	$gml .= "\t\t\t"."outline	\"".$box_color."\"\n";
+	$gml .= "\t\t\t"."fill	\"".$box_fill_color."\"\n";
 	$gml .= "\t\t\t"."type	\"rectangle\"\n";
 	$gml .= "\t\t"."]\n";
 	$gml .= "\t"."]\n";
@@ -3280,7 +3273,7 @@ sub to_gml {
       my $source_id = $nodes_name_id{$source_name};
       my $target_id = $nodes_name_id{$target_name};
       $edge_label =~ s/^\s*// if (defined ($edge_label));
-      my $edge_width= 2;
+      my $edge_width= $edge_attribute{width} || 2;
       if ($edge_width_calc) {
         $edge_width = ((($edge_label-$min)/($max+1-$min))*6.5)+0.5;
       }
@@ -3291,9 +3284,13 @@ sub to_gml {
       $gml .= "\t\t"."label\t\"".$edge_label."\"\n" if (defined($edge_label));
       $gml .= "\t\t"."graphics\n";
       $gml .= "\t\t"."[\n";
-      $gml .= "\t\t\t"."width\t$edge_width\n";
+      $gml .= "\t\t\t"."width\t".$edge_width."\n";
       $gml .= "\t\t\t"."type\t\"line\"\n";
       $gml .= "\t\t\t"."fill\t\"".$edge_color."\"\n";
+      foreach my $key (sort(keys(%edge_attribute))) {
+	my $value = $edge_attribute{$key};
+	$gml .= "\t\t\t".$key."\t".$value."\n";
+      }
       $gml .= "\t\t]\n";
       $gml .= "\t]\n";
     }
