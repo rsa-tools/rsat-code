@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.52 2010/03/30 07:57:23 jvanheld Exp $
+# $Id: convert-graph,v 1.53 2010/04/01 07:37:27 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -17,9 +17,9 @@ convert-graph
 
 =head1 DESCRIPTION
 
-Convert graphs between different formats. 
+Convert graphs between different formats.
 
-In the current state, the only supported input format are 
+In the current state, the only supported input format are
 tab-delimited file, gml file. Various output format are already supported (dot,
 gml, tab, adjacency table).
 
@@ -38,7 +38,7 @@ Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 Graph utilities
 
 =head1 USAGE
-    
+
 convert-graph [-i inputfile] [-o outputfile] [-from tab|gml|adj_matrix] [-to format tab|dot|gml|adj_matrix|rnsc]  [-arc_id] [-v #]
 
 =head1 FORMATS
@@ -91,7 +91,7 @@ the output of the NeAT PathFinder algorithm. More than one pathway can be encode
 =head2 rnsc
 
 rnsc is a graph format format used by Andrew King's Restricted Neighbourhood Search Cluster Algorithm (RNSC) algorithm.
-        
+
 The RNSC input format is an adjacency list in which each edge appears
 only once.  The vertices are labelled with the integers 0, 1, ..., n-1.
 
@@ -99,8 +99,8 @@ The list of neighbours for vertex v appears as
 
 	v n_1 n_2 ... n_x -1
 
-	
-This file can then be submitted to the RNSC program. 
+
+This file can then be submitted to the RNSC program.
 In NeAT, however as the nodes present labels in the graph we are working with, the output file will be accompagnied by a two column tab delimited file specifying a label for each node id. For this reason, you must only submit the prefix of both output files.
 
 More information are available in King et al (2004).
@@ -136,13 +136,13 @@ package main;
     $main::verbose = 0;
 #    $main::in = STDIN;
     $main::out  = STDOUT;
-    
+
     ## directed
     $directed = 1;
-    
+
     ## layout
     $layout = "";
-    
+
     ## arc_id_option
     $arc_id_option = 0;
 
@@ -183,8 +183,8 @@ package main;
 			       adj_matrix=>1,
 			       rnsc=>1,
 			       tab_numeric=>1);
-			      
-			       
+
+
     $supported_output_formats = join (",", keys %supported_output_format);
 
     ## Color gradients
@@ -195,20 +195,23 @@ package main;
 			       red=>1,
 			       grey=>1,
 			       fire=>1);
-			      
-			       
-    $supported_edge_colors = join (",", keys %supported_edge_colors);    
-    
+
+
+    $supported_edge_colors = join (",", keys %supported_edge_colors);
+
+    %node_attribute = ();
+    %edge_attribute = ();
+
     &ReadArguments();
-    
+
 
     ################################################################
     #### check argument values
-    
+
 
     if (($output_format eq "rnsc" || $output_format eq "tab_numeric") && $main::outfile{output} eq "") {
       &RSAT::error::FatalError("You must specify an output file name without extension with output format rnsc");
-    }    
+    }
 
     if ($layout && $output_format ne 'gml') {
       &RSAT::message::Warning("Computation of node position with format", $output_format, "is useless");
@@ -222,7 +225,7 @@ package main;
     if (!($edge_colors || $edge_width) && ($min_value || $max_value)) {
       &RSAT::error::FatalError("Min value and max value are only useful when computing the edge width or the edge color (-ewidth or -ecolors options)");
     }
-    
+
     if ($path_col != 1 && $input_format ne "path") {
       &RSAT::error::FatalError("Option -pathcol must be used with the path input format");
     }
@@ -234,7 +237,6 @@ package main;
 
     ################################################################
     ##### read input
-
     $graph->graph_from_text($input_format,
 			    $main::infile{input},
 			    $source_col,
@@ -264,8 +266,7 @@ package main;
         &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
       }
     }
-    
-    
+
     ## Calculate the minimum and maximum values of the weight on the edges
     my ($mean, $sd, $min, $max);
     if ($edge_width) {
@@ -279,7 +280,17 @@ package main;
         $edge_width = 0;
       }
     }
-    
+
+    ################################################################
+    ## Specify attributes for all the nodes
+    if (scalar(keys(%node_attribute))) {
+	$graph->set_hash_attribute('node_attribute', %node_attribute);
+    }
+    if (scalar(keys(%edge_attribute))) {
+	$graph->set_hash_attribute('edge_attribute', %edge_attribute);
+	my %edge_attribute2 = $graph->get_attribute('edge_attribute');
+    }
+
     ################################################################
     ###### print output
     ### open output streams
@@ -294,16 +305,16 @@ package main;
     #### print verbose
     &Verbose() if ($main::verbose);
     my $output_graph = $graph->to_text($output_format, $arc_id_option, $directed, $edge_width, $min_value, $max_value);
-    
+
     if ($output_format ne "rnsc" && $output_format ne "tab_numeric") {
       print $out $output_graph;
     } elsif ($output_format eq "rnsc" || $output_format eq "tab_numeric") {
-      # RNSC and tab numeric output is composed of two files 
+      # RNSC and tab numeric output is composed of two files
       # a graph file (output.suffix)
       # a node names file (output_nodes_names.suffix)
       my $suffix = "tab";
       $suffix = "rnsc" if ($output_format eq "rnsc");
-      
+
       my @split = split "#####NODES_NAME#####", $output_graph;
       my $output_graph_file = $main::outfile{output}.".".$suffix;
       my $output_graph_node_names_file = $main::outfile{output}."_node_names.".$suffix;
@@ -334,7 +345,7 @@ package main;
 
 
 ################################################################
-#### display full help message 
+#### display full help message
 sub PrintHelp {
     system "pod2text -c $0";
     exit()
@@ -347,19 +358,19 @@ sub PrintOptions {
 }
 
 ################################################################
-#### Read arguments 
+#### Read arguments
 sub ReadArguments {
 #    foreach my $a (0..$#ARGV) {
     my $arg = "";
-    
+
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    
+
 
     while ($arg = shift (@arguments)) {
 
 	## Verbosity
 =pod
-	    
+
 
 =head1 OPTIONS
 
@@ -376,7 +387,7 @@ Level of verbosity (detail in the warning messages during execution)
 	    } else {
 		$main::verbose = 1;
 	    }
-	    
+
 	    ## Help message
 =pod
 
@@ -387,7 +398,7 @@ Display full help message
 =cut
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ## List of options
 =pod
 
@@ -399,7 +410,7 @@ Same as -h
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
-	    
+
 =pod
 	    ## Input file
 
@@ -411,23 +422,23 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
-	    
+
 	    ## Output file
 =pod
 
 =item	B<-o outputfile>
 
 If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe. 
+allows to use the command within a pipe.
 
-For output format rnsc, you must not give the 
+For output format rnsc, you must not give the
 extension of the resulting graph as it will consist of two files (radical.rns and radical_rnsc_labels.tab).
 
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
-	    
-	    ### Input format  
+
+	    ### Input format
 =pod
 
 =item B<-from input_format>
@@ -441,7 +452,7 @@ Input format. Supported: tab, gml, adj_matrix, path
 		unless ($supported_input_format{$input_format});
 
 
-	    ### Output format  
+	    ### Output format
 
 =item B<-to output_format>
 
@@ -449,7 +460,7 @@ Output format. Supported: tab, dot, gml, adj_matrix, rnsc, tab_numeric
 
 For rnsc and tab_numeric output (see above), you must submit an output prefix as two output files are returned.
 
-=cut 
+=cut
 	} elsif ($arg eq "-to") {
 	    $output_format = shift(@arguments);
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
@@ -514,10 +525,11 @@ Edge color column. Column containing the color of the edges (RGB). (no default)
 
 =item B<-sccol>
 
-Source node color colum. Column containing the color of the node (RGB). (no default)
+Source node color colum. Column containing the color of the node
+(RGB). (no default)
 
-A node can only have one color. If in the file, the color of the node changes, only the first defined color 
-will be taken into account.
+A node can only have one color. If in the file, the color of the node
+changes, only the first defined color will be taken into account.
 
 =cut
 	} elsif ($arg eq "-sccol") {
@@ -531,10 +543,11 @@ will be taken into account.
 
 =item B<-tccol>
 
-Target node color colum. Column containing the color of the node (RGB). (no default)
+Target node color colum. Column containing the color of the node
+(RGB). (no default)
 
-A node can only have one color. If in the file, the color of the node changes, only the first defined color 
-will be taken into account.
+A node can only have one color. If in the file, the color of the node
+changes, only the first defined color will be taken into account.
 
 =cut
 	} elsif ($arg eq "-tccol") {
@@ -542,54 +555,55 @@ will be taken into account.
 	    unless (&IsNatural($target_color_col) && ($target_color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
-	    
+
 =pod
 
 =item B<-source_xpos_col>
 
 Column containing the X position of the source node (no default)
 
-A node can only have X position. If in the file, the position of the node changes, only the first defined
-will be taken into account.
+A node can only have X position. If in the file, the position of the
+node changes, only the first defined will be taken into account.
 
 =cut
 	} elsif ($arg eq "-source_xpos_col") {
 	    $source_xpos_col = shift (@arguments);
 	    unless (&IsNatural($source_xpos_col) && ($source_xpos_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_xpos_col, "Invalid value for the source X position column. Must be a strictly positive natural number"));
-	    }	    
-	    
+	    }
+
 =pod
 
 =item B<-target_xpos_col>
 
 Column containing the X position of the target node (no default)
 
-A node can only have X position. If in the file, the position of the node changes, only the first defined
-will be taken into account.
+A node can only have X position. If in the file, the position of the
+node changes, only the first defined will be taken into account.
 
 =cut
 	} elsif ($arg eq "-target_xpos_col") {
 	    $target_xpos_col = shift (@arguments);
 	    unless (&IsNatural($target_xpos_col) && ($target_xpos_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_xpos_col, "Invalid value for the target X position column. Must be a strictly positive natural number"));
-	    }	    	    
-	    
-	    
+	    }
+
+=pod
+
 =item B<-source_ypos_col>
 
 Column containing the Y position of the source node (no default)
 
-A node can only have Y position. If in the file, the position of the node changes, only the first defined
-will be taken into account.
+A node can only have Y position. If in the file, the position of the
+node changes, only the first defined will be taken into account.
 
 =cut
 	} elsif ($arg eq "-source_ypos_col") {
 	    $source_ypos_col = shift (@arguments);
 	    unless (&IsNatural($source_ypos_col) && ($source_ypos_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_ypos_col, "Invalid value for the source Y position column. Must be a strictly positive natural number"));
-	    }	    
-	    
+	    }
+
 =pod
 
 =item B<-target_ypos_col>
@@ -604,22 +618,47 @@ node changes, only the first defined will be taken into account.
 	    $target_ypos_col = shift (@arguments);
 	    unless (&IsNatural($target_ypos_col) && ($target_ypos_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_ypos_col, "Invalid value for the target Y position column. Must be a strictly positive natural number"));
-	    }	    	    
-	    
+	    }
+
 =pod
+
+=item B<-node_attr key value>
+
+Specify the value of an attribute for all the nodes.
+
+=cut
+   } elsif ($arg eq "-node_attr") {
+    my $key = shift(@arguments);
+    my $value = shift(@arguments);
+    $main::node_attribute{$key} = ${value};
+
+=pod
+
+=item B<-edge_attr key value>
+
+Specify the value of an attribute for all the edges.
+
+=cut
+   } elsif ($arg eq "-edge_attr") {
+    my $key = shift(@arguments);
+    my $value = shift(@arguments);
+    $main::edge_attribute{$key} = ${value};
 
 =item B<-pathcol>
 
-Pathway column. Column containing the pathways (default = 1).  By
-default, the pathway column is seven as it is the case for the output
-of the PathFinder program.
+Pathway column (specific for trating output files of the PathFinder
+program).
+
+Column containing the pathways (default = 1).  By default, the pathway
+column is seven as it is the case for the output of the PathFinder
+program.
 
 =cut
 	} elsif ($arg eq "-pathcol") {
 	    $path_col = shift (@arguments);
 	    unless (&IsNatural($path_col) && ($path_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $path_col, "Invalid value for the path column. Must be a strictly positive natural number"));
-	    }	
+	    }
 
 =item B<-undirected>
 
@@ -725,7 +764,7 @@ the minimal value of the heatmap will be used as minimal value.
 	    unless (&RSAT::util::IsReal($min_value)) {
 		&RSAT::error::FatalError(join("\t", $min_value, "Invalid value for the minimal value. Must be a real number."));
 	    }
-	    
+
 =item B<-max #>
 
 Maximal value for computing the color gradient and the edge width. By default, this value is the maximal value of the input file. If the specified value is smaller than the maximal value of the graph, then the maximal value of the graph will be used as maximal value.
@@ -750,7 +789,7 @@ With this option, each pathway of the pathway file will be considered separately
 	} elsif ($arg eq "-distinct_path") {
 	    $distinct_path = 1;
 
-	    
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
