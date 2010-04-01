@@ -163,25 +163,25 @@ if ($verbose) {
   print $out "#[min\t";
   print $out "max[\t";
   print $out "center\t";
-  print $out "freq\t";
-  print $out "cum\t";
-  print $out "inv_cum\t";
-  print $out "rel_frq\t";
-  print $out "rel_cum\t";
-  print $out "rel_ic\n";
+  print $out "n\t";
+  print $out "n_cum\t";
+  print $out "n_dcum\t";
+  print $out "f\t";
+  print $out "f_cum\t";
+  print $out "f_dcum\n";
 }
 $cum = 0;
 $rel_cum = 0;
-$next_inv_cum = $count;
-$inv_cum = $count;
+$next_dcum = $count;
+$dcum = $count;
 
 $inv_rel_cum = 1;
 $next_inv_rel_cum = 1;
 foreach $c (0.. $#ListOfClasses) {
     ### calculate relative and cumulated frequencies
     $cum += $ListOfFrequencies[$c];
-    $inv_cum = $next_inv_cum;
-    $next_inv_cum -= $ListOfFrequencies[$c];
+    $dcum = $next_dcum;
+    $next_dcum -= $ListOfFrequencies[$c];
     if ($count > 0) {
 	$rel = $ListOfFrequencies[$c]/$count;
 	$rel_cum += $rel;
@@ -205,7 +205,7 @@ foreach $c (0.. $#ListOfClasses) {
 	$out_line .= sprintf "\t%g",  $ListOfClasses[$c] + $class_interval/2;
 	$out_line .= sprintf "\t$ListOfFrequencies[$c]";
 	$out_line .= sprintf "\t$cum";
-	$out_line .= sprintf "\t$inv_cum";
+	$out_line .= sprintf "\t$dcum";
 	if ($count > 0) {
 	  if ($count > 1e+5) {
 	    $format = "\t%.2g";
@@ -226,10 +226,12 @@ foreach $c (0.. $#ListOfClasses) {
 
 ##### print statistics #####
 if ($verbose) {
-  print $out ";Statistics:\n";
-  print $out ";-----------\n";
-  print $out ";Input file:\t$inputfile\n" unless ($inputfile eq "");
-  print $out ";count: $count\n";
+  print $out "; Statistics:\n";
+  print $out "; -----------\n";
+  print $out "; input file\t$inputfile\n" unless ($inputfile eq "");
+  print $out "; class interval\t$class_interval\n";
+  print $out "; classes\t",  $#ListOfClasses + 1, "\n";
+  print $out "; count\t$count\n";
   if ($count > 0) {
     $avg = $sum/$count;
     if ($max > $min) {
@@ -240,27 +242,18 @@ if ($verbose) {
     } else {
       $std  = 0;
     }
-    if (avg > 1) {
-      printf $out ";sum:	%.3f\n", $sum;
-      printf $out ";avg:	%.3f\n", $avg;
-      printf $out ";var:	%.3f\n", $var;
-      printf $out ";std:	%.3f\n", $std;
-    } else {
-      printf $out ";sum:	%f\n", $sum;
-      printf $out ";avg:	%f\n", $avg;
-      printf $out ";var:	%f\n", $var;
-      printf $out ";std:	%f\n", $std;
-    }
+    printf $out "; sum\t%g\n", $sum;
+    printf $out "; avg\t%.3g\n", $avg;
+    printf $out "; var\t%.3g\n", $var;
+    printf $out "; std\t%.3g\n", $std;
   }
-  print $out ";Min :          $min\n";
-  print $out ";Max :          $max\n";
-  printf $out ";Range :       %f\n",$max - $min;
-  print $out ";Class interval:   $class_interval\n";
-  print $out ";# of classes:  ",  $#ListOfClasses + 1, "\n";
+  print $out "; min\t$min\n";
+  print $out "; max\t$max\n";
+  printf $out "; range\t%g\n",$max - $min;
 
   $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-  print $out ";Job started $start_time";
-  print $out ";Job done    $done_time";
+  print $out "; Job started $start_time";
+  print $out "; Job done    $done_time";
 }
 
 
@@ -343,7 +336,7 @@ OUTPUT
 
 	Cumulative frequencies are inclusive, i.e. :
 	cum	   is the count of (x <= upperlimit)
-	inv_cum	   is the count of (x >= lowerlimit)
+	dcum	   is the count of (x >= lowerlimit)
 
 OPTIONS
 
@@ -442,4 +435,13 @@ sub PrintOptions {
 sub Verbose {
     print $main::out "; classfreq ";
     &PrintArguments($main::out);
+  printf $out ";\t%-20s\t%s\n", "min", "minimum of class interval (inclusive)";
+  printf $out ";\t%-20s\t%s\n", "max", "maximum of class interval (exclusive)";
+  printf $out ";\t%-20s\t%s\n", "center", "center of class interval";
+  printf $out ";\t%-20s\t%s\n", "n", "occurrences";
+  printf $out ";\t%-20s\t%s\n", "n_cum", "cumulative occurrences (inclusive)";
+  printf $out ";\t%-20s\t%s\n", "n_dcum", "decreasing cumulative occurrences (inclusive)";
+  printf $out ";\t%-20s\t%s\n", "f", "frequencies";
+  printf $out ";\t%-20s\t%s\n", "f_cum", "cumulative frequencies (inclusive)";
+  printf $out ";\t%-20s\t%s\n", "f_dcum", "decreasing cumulative frequencies (inclusive)";
 }
