@@ -8,7 +8,8 @@ require "RSA.stat.lib";
 
 #### Parameters
 $line_width = 0;
-$out_format = "wc";
+$out_dir = ".";
+$seq_format = "fasta";
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $number_format = "%-7g";
 $NULL="<NULL>";
@@ -54,26 +55,29 @@ $organism->LoadFeatures($annotation_table);
 
 &PrintVerbose() if ($verbose);
 
+## Check output directory
+&RSAT::util::CheckOutDir($out_dir);
+
 ### open all output files
 if ($return{stats}) {
-    open STATS, ">${organism_name}_stats.tab";
+    open STATS, ">${out_dir}/${organism_name}_stats.tab";
 }
 if ($return{seq}) {
-    open NC_SEQ, ">${organism_name}_intergenic_segments.$out_format" if ($return{'ncs'});
-    open DIVERGENT_NC_SEQ, ">${organism_name}_intergenic_segments_divergent.$out_format" if ($return{'div'});
-    open CONVERGENT_NC_SEQ, ">${organism_name}_intergenic_segments_convergent.$out_format" if ($return{'conv'});
-    open TANDEM_NC_SEQ, ">${organism_name}_intergenic_segments_tandem.$out_format" if ($return{'tandem'});
-    open C_SEQ, ">${organism_name}_gene_segments.$out_format" if ($return{'cs'});
-    open GENE_SEQ, ">${organism_name}_gene_sequences.$out_format" if ($return{'gene'});
+    open NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments.$seq_format" if ($return{'ncs'});
+    open DIVERGENT_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_divergent.$seq_format" if ($return{'div'});
+    open CONVERGENT_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_convergent.$seq_format" if ($return{'conv'});
+    open TANDEM_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_tandem.$seq_format" if ($return{'tandem'});
+    open C_SEQ, ">${out_dir}/${organism_name}_gene_segments.$seq_format" if ($return{'cs'});
+    open GENE_SEQ, ">${out_dir}/${organism_name}_gene_sequences.$seq_format" if ($return{'gene'});
 }
 
 
 
 my @pos_field_header = qw(segm_type_nb contig left right length);
 if ($return{pos}) {
-    open C_POSITIONS, ">${organism_name}_gene_segments.pos";
+    open C_POSITIONS, ">${out_dir}/${organism_name}_gene_segments.pos";
     print C_POSITIONS ";", join("\t", @pos_field_header, "feat_nb", "features"),  "\n";
-    open NC_POSITIONS, ">${organism_name}_intergenic_segments.pos";
+    open NC_POSITIONS, ">${out_dir}/${organism_name}_intergenic_segments.pos";
     print NC_POSITIONS "; ", join ("\t", @pos_field_header,"L_feat", "R_feat","L_strand", "R_strand"), "\n";
 }
 
@@ -133,7 +137,7 @@ foreach my $ctg (sort keys %contig) {
 	    if ($gene->get_attribute("strand") eq "R") {
 		$current_seq = &ReverseComplement($current_seq);
 	    }
-	    &PrintNextSequence(GENE_SEQ, $out_format,$line_width,$current_seq,$seq_id);
+	    &PrintNextSequence(GENE_SEQ, $seq_format,$line_width,$current_seq,$seq_id);
 	}
     }
     
@@ -183,7 +187,7 @@ foreach my $ctg (sort keys %contig) {
 	if ($return{seq}) {
 	    $seq_id = join ("_", @pos_fields);
 	    $current_seq = $sequence->get_sequence($nc_start,$nc_end);
-	    &PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) if ($return{'ncs'});
+	    &PrintNextSequence(NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id) if ($return{'ncs'});
 	    
 	    if ($nc_left_gene eq $NULL) {
 		## TO BE TREATED ##
@@ -193,13 +197,13 @@ foreach my $ctg (sort keys %contig) {
 					    "nc_right_gene_ID", $nc_right_gene_ID,
 					   )) if ($main::verbose >= 1);
 	    } elsif ($nc_left_gene->get_attribute('strand') eq $nc_right_gene->get_attribute('strand')) {
-		&PrintNextSequence(TANDEM_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) 
+		&PrintNextSequence(TANDEM_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id) 
 		    if ($return{'tandem'});
 	    } elsif (($nc_left_gene->get_attribute('strand') eq "R") && ($nc_right_gene->get_attribute('strand') eq "D")) {
-		&PrintNextSequence(DIVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  
+		&PrintNextSequence(DIVERGENT_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id)  
 		    if ($return{'div'});
 	    } elsif (($nc_left_gene->get_attribute('strand') eq "D") && ($nc_right_gene->get_attribute('strand') eq "R")) {
-		&PrintNextSequence(CONVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'conv'});
+		&PrintNextSequence(CONVERGENT_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id)  if ($return{'conv'});
 	    }
 	}
 	
@@ -252,7 +256,7 @@ foreach my $ctg (sort keys %contig) {
 	if (($return{'cs'}) && ($return{seq})) {
 	    $seq_id = join("_", @pos_fields);
 	    $current_seq = $sequence->get_sequence($gene_segment_left,$gene_segment_right);
-	    &PrintNextSequence(C_SEQ, $out_format,$line_width,$current_seq,$seq_id);	    
+	    &PrintNextSequence(C_SEQ, $seq_format,$line_width,$current_seq,$seq_id);	    
 	}
     	$gene_nb++;
 
@@ -281,7 +285,7 @@ foreach my $ctg (sort keys %contig) {
 	    if (($return{'ncs'}) && ($return{seq})) {
 		$seq_id = join ("_", @pos_fields);
 		$current_seq = $sequence->get_sequence($nc_start,$nc_end);
-		&PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id);
+		&PrintNextSequence(NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id);
 	    }
 	}
     } until $end_reached;
@@ -415,7 +419,9 @@ OPTIONS
 			Contrarily to cs, gene returns every gene sequence
 			from the start to the stop codon, and in the
 			gene strand 
-		
+	-seq_format format
+		Sequence format. For a list of supported output format, type 
+			 convert-seq -help
 
 OUTPUT
 	gene sequence coordinates are stored in a file named 
@@ -442,11 +448,22 @@ sub ReadArguments {
 	    } else {
 		$verbose = 1;
 	    }
-	} elsif ($ARGV[$a] eq "-org") {
-	    $organism_name = $ARGV[$a+1];
+
 	} elsif (($ARGV[$a] eq "-help") || 
 		 ($ARGV[$a] eq "-h")) {
 	    &PrintHelp();
+
+	    ## Organism name
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name = $ARGV[$a+1];
+
+	    ## Output directory
+	} elsif ($ARGV[$a] eq "-outdir") {
+	    $out_dir = $ARGV[$a+1];
+
+	    ## Sequence format
+	} elsif ($ARGV[$a] eq "-seq_format") {
+	    $seq_format = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] eq "-return") {
 	    chomp($ARGV[$a+1]);
