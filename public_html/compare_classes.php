@@ -459,7 +459,7 @@
           <input type='hidden' name='scol' value='2'>
           <input type='hidden' name='tcol' value='3'>
           <input type='hidden' name='wcol' value='$sig_column'>
-          <input type='submit' value='Convert tab to another format'>
+          <input type='submit' value='Convert table to graph'>
         </form>
       </td>");
 
@@ -480,8 +480,7 @@
       </td>");
 
       ## Send to graph-topology
-      echo ("
-      <td>
+      echo ("<td>
         <form method='post' action='graph_topology_form.php'>
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
@@ -489,13 +488,12 @@
           <input type='hidden' name='scol' value='2'>
           <input type='hidden' name='tcol' value='3'>
           <input type='hidden' name='wcol' value='$sig_column'>
-          <input type='submit' value='Nodes topology statistics'>
+          <input type='submit' value='Node topology statistics'>
         </form>
       </td>");
 
       ## Send to graph-neighbours
-      echo ("
-      <td>
+      echo ("<td>
         <form method='post' action='graph_neighbours_form.php'>
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
@@ -507,7 +505,7 @@
         </form>
       </td> ");
 
-      ## New row
+      ## New table row
       echo("</tr><tr>");
 
       ## Send to MCL
@@ -523,9 +521,22 @@
         </form>
       </td>");
 
+      ## Send to RNSC
+      echo ("<td>
+        <form method='post' action='rnsc_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='RNSC Graph clustering'>
+        </form>
+      </td>");
+
+
       ## Send to alter-graph
-      echo ("
-      <td>
+      echo ("<td>
         <form method='post' action='alter_graph_form.php'>
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
@@ -537,9 +548,11 @@
         </form>
       </td>");
 
+      ## New table row
+      echo ("</tr><tr>");
+
       ## Send to path finder
-      echo ("
-      <td>
+      echo ("<td>
         <form method='post' action='pathfinder_form.php'>
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
@@ -552,10 +565,7 @@
       </td>");
 
       ## Send to visant
-      echo ("
-      </tr>
-      <tr>
-        <td>
+      echo("<td>
           <form method='post' action='visant.php'>
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='visant_graph_file' value='$server'>
