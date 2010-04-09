@@ -110,7 +110,7 @@
 
     $cg_response = $cg_echoed->response;
     $cg_command = $cg_response->command;
-    echocommand($cg_command, "graph formatting");
+    echocommand($cg_command, "graph conversion");
     $cg_server = $cg_response->server;
     $cg_client = $cg_response->client;
     $cg_server = rtrim ($cg_server);
