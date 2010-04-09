@@ -88,6 +88,7 @@
 
     $cg_response = $cg_echoed->response;
     $cg_command = $cg_response->command;
+    echocommand($cg_command, "graph conversion");
 //     echo ("$cg_command");
     $cg_server = $cg_response->server;
     $cg_client = $cg_response->client;
@@ -119,14 +120,14 @@
     }  
     $mcl_response = $mcl_echoed->response;
     $mcl_command = $mcl_response->command;
-    echo ("<p><b>MCL :</b> $mcl_command</p>");
+    echocommand($mcl_command, "MCL command");
+#    echo ("<p><b>MCL :</b> $mcl_command</p>");
     $mcl_server = $mcl_response->server;
     $mcl_client = $mcl_response->client;
     $mcl_server = rtrim ($mcl_server);
     $mcl_temp_file = explode('/',$mcl_server);
     $mcl_temp_file = end($mcl_temp_file);
     $mcl_resultURL = $WWW_RSA."/tmp/".$mcl_temp_file;
-
 
     # Convert-classes 
     ## Load the parameters of the program in to an array
@@ -143,7 +144,8 @@
 
     $cc_response = $cc_echoed->response;
     $cc_command = $cc_response->command;
-    echo ("<p><b>convert-clusters :</b> $cc_command</p>");
+    echocommand($cc_command, "Cluster conversion");
+#    echo ("<p><b>convert-clusters :</b> $cc_command</p>");
     $cc_server = $cc_response->server;
     $cc_client = $cc_response->client;
     $cc_server = rtrim ($cc_server);
@@ -162,18 +164,17 @@
         "col2" => 1,
         )
       );
-    echo"<pre>";
     $ct_echoed = $client->contingency_table($ct_parameters);
     $ct_response = $ct_echoed->response;
     $ct_command = $ct_response->command;
-    echo ("<p><b>Contingency table:</b> $ct_command</p>");
+    echocommand($ct_command, "Contingency table");
+#    echo ("<p><b>Contingency table:</b> $ct_command</p>");
     $ct_server = $ct_response->server;
     $ct_client = $ct_response->client;
     $ct_server = rtrim ($ct_server);
     $ct_temp_file = explode('/',$ct_server);
     $ct_temp_file = end($ct_temp_file);
     $ct_resultURL = $WWW_RSA."/tmp/".$ct_temp_file;
-    echo "</pre>";
 
     ## classfreq 
     $cf_inputfile =  storeFile($ct_server);
@@ -188,14 +189,14 @@
     $cf_echoed = $client->classfreq($cf_parameters);
     $cf_response = $cf_echoed->response;
     $cf_command = $cf_response->command;
-    echo ("<p><b>Class frequencies :</b> $cf_command</p>");
+    echocommand($cf_command, "Class frequencies");
+#    echo ("<p><b>Class frequencies :</b> $cf_command</p>");
     $cf_server = $cf_response->server;
     $cf_client = $cf_response->client;
     $cf_server = rtrim ($cf_server);
     $cf_temp_file = explode('/',$cf_server);
     $cf_temp_file = end($cf_temp_file);
     $cf_resultURL = $WWW_RSA."/tmp/".$cf_temp_file;    
-
 
     ## Cluser size distribution
     $xy_inputfile =  storeFile($cf_server);
@@ -215,7 +216,8 @@
     $xy_echoed = $client->xygraph($xy_parameters);
     $xy_response = $xy_echoed->response;
     $xy_command = $xy_response->command;
-    echo ("<p><b>Distrib graph :</b> $xy_command</p>");
+    echocommand($xy_command, "Cluster size distrib. plot");
+#    echo ("<p><b>Distrib graph :</b> $xy_command</p>");
     $xy_server = $xy_response->server;
     $xy_client = $xy_response->client;
     $xy_server = rtrim ($xy_server);
@@ -229,7 +231,11 @@
     ## DISPLAY THE RESULT
     echo "<table class=\"resultlink\">\n";
     echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
-    echo "<tr><th>Clusters (tab)</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
+    echo "<tr><th>Input graph (tab format)</th><td><a href = '$cg_resultURL'>$cg_resultURL</a></td></tr>\n"; 
+    echo "<tr><th>Clusters (MCL format)</th><td><a href = '$mcl_resultURL'>$mcl_resultURL</a></td></tr>\n"; 
+    echo "<tr><th>Clusters (tab format)</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
+    //echo "<tr><th>Cluster-member table (tab)</th><td><a href = '$ct_resultURL'>$ct_resultURL</a></td></tr>\n"; 
+    echo "<tr><th>Cluster size distribution (tab)</th><td><a href='$cf_resultURL'>$cf_resultURL</a></td></tr>\n"; 
     echo "<tr><th>Cluster size distribution (png)</th><td><a href='$xy_resultURL'>$xy_resultURL</a></td></tr>\n"; 
     echo "</table>\n";
     echo"<hr>\n";
