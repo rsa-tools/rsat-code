@@ -49,38 +49,34 @@ foreach $a (0..$#ARGV) {
 ##### open input file #####
 ($in, $input_dir) = &OpenInputFile($inputfile);
 $out = &OpenOutputFile($outputfile);
-
-#die "HELLO", $inputfile, $in;
-
 $count = 0;
 $sum = 0;
 $sumofsquares = 0;
-@ListOfNumbers = ();
+## @ListOfNumbers = ();
 while($current_line = <$in>) {
-    next if ($current_line =~ /^;/); ### skip comment lines 
-    chomp $current_line;
-    if (scalar(@cols) >= 1) {
-      @current_linecp = split("\t", $current_line);
-      $current_line = $current_linecp[($cols[0])-1];
-      for ($i = 1; $i < scalar(@cols); $i++) {
-        $current_line .= "\t".$current_linecp[($cols[$i])-1];
-      }
+  next if ($current_line =~ /^;/); ### skip comment lines 
+  chomp $current_line;
+  if (scalar(@cols) >= 1) {
+    @current_linecp = split("\t", $current_line);
+    $current_line = $current_linecp[($cols[0])-1];
+    for ($i = 1; $i < scalar(@cols); $i++) {
+      $current_line .= "\t".$current_linecp[($cols[$i])-1];
     }
-    while($current_line =~ /(\S+)(.*)/) {
-	$word = $1;
-	$current_line = $2;
-
-	if ((IsReal($word)) 
-	    && (($usermin eq "") || ($word >= $usermin))	
-	    && (($usermax eq "") || ($word <= $usermax))
-	    ) {
-	    $freq{$word}++;
-#	    push(@ListOfNumbers, $word);
-	    $count++;
-	    $sum += $word;
-	    $sumofsquares += $word*$word;
-	}
+  }
+  while($current_line =~ /(\S+)(.*)/) {
+    $word = $1;
+    $current_line = $2;
+    if ((IsReal($word))
+	&& (($usermin eq "") || ($word >= $usermin))
+	&& (($usermax eq "") || ($word <= $usermax))
+       ) {
+      $freq{$word}++;
+      ##	    push(@ListOfNumbers, $word); ## I suppress this because it is unefficient to store all values for large lists of numbers
+      $count++;
+      $sum += $word;
+      $sumofsquares += $word*$word;
     }
+  }
 }
 close($in);
 
@@ -233,9 +229,9 @@ if ($verbose) {
   print $out "; classes\t",  $#ListOfClasses + 1, "\n";
   print $out "; count\t$count\n";
   if ($count > 0) {
-    $avg = $sum/$count;
+    $mean = $sum/$count;
     if ($max > $min) {
-      $var = $sumofsquares/$count - $avg*$avg;
+      $var = $sumofsquares/$count - $mean*$mean;
       ## This is required to avoid errors due to numerical imprecision
       $var = &max($var, 0);
       $std = sqrt($var);
@@ -243,7 +239,8 @@ if ($verbose) {
       $std  = 0;
     }
     printf $out "; sum\t%g\n", $sum;
-    printf $out "; avg\t%.3g\n", $avg;
+    printf $out "; mean\t%.3g\n", $mean;
+##    printf $out "; median\t%.3g\n", &RSAT::stats::median(@ListOfNumbers); ## The median requires to store and sort all values -> I don't return it for the sake of efficiency
     printf $out "; var\t%.3g\n", $var;
     printf $out "; std\t%.3g\n", $std;
   }
@@ -369,23 +366,23 @@ OPTIONS
 
 	-from #	inferior limit for the classes to display
 		values lower than this limit are however taken into account
-		in the calculation of statistics (avg, variance, ...) and of 
+		in the calculation of statistics (mean, variance, ...) and of 
 		class frequencies (In contrast with the -min option).
 
 	-to #	superior limit for the classes to display
 		values higher than this limit are however taken into account
-		in the calculation of statistics (avg, variance, ...) and of 
+		in the calculation of statistics (mean, variance, ...) and of 
 		class frequencies (In contrast with the -max option).
 
 	-v	verbose.
 		Return some statistics over the data : 
-		- total # of elements, 
-		- avg of the data 
-		- std, 
-		- min, 
-		- max, 
-		If -min or -max options are used, the statistics only take 
-		into account the numbers falling into this range. 
+		- total # of elements,
+		- mean value
+		- standard deviation (std)
+		- mininum
+		- maximum
+		If -min or -max options are used, the statistics only take
+		into account the numbers falling into this range.
 
 	-thr # threshold
 	        Only display classes with absolute frequency higher
