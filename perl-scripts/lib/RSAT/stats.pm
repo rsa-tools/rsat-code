@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 
-################################################################
+##############################################################
 ###
 ### Statistics
 ###
-################################################################
+##############################################################
 
 package RSAT::stats;
 
@@ -79,12 +79,7 @@ sub summary {
 	$stats{mean} = $stats{sum}/$n;
 
 	## Calculate the median
-	my @sorted_values = sort {$a <=> $b} @values;
-	if ($n%2==0) {
-	    $stats{median} = ($sorted_values[$n/2-1] + $sorted_values[$n/2])/2;	
-	} else {
-	    $stats{median} = $sorted_values[($n-1)/2];
-	}
+	$stats{median} = &median(@values);
 
 	## Calculate standard deviation
 	my $ssq = 0;
@@ -106,10 +101,10 @@ sub summary {
 }
 
 
-################################################################
-#### returns the sum of a list of numeric values
-#### usage:
-#### $sum = &RSAT::stats::sum(@value_list);
+##############################################################
+## Return the sum of a list of numeric values
+## usage:
+## $sum = &RSAT::stats::sum(@value_list);
 sub sum {
     my (@values) = @_;
     my $sum = 0;
@@ -120,10 +115,10 @@ sub sum {
 }
 
 
-################################################################
-#### returns the mean of a list of numeric values
-#### usage:
-#### my $mean = &RSAT::stats::mean(@value_list);
+##############################################################
+## Return the mean of a list of numeric values
+## usage:
+## my $mean = &RSAT::stats::mean(@value_list);
 sub mean {
     my (@values) = @_;
     my $mean = 0;
@@ -138,18 +133,29 @@ sub mean {
 }
 
 
-#### returns the maximum of a list of numeric values
-#### usage:
-#### $max_value = &RSAT::stats::max(@value_list);
+##############################################################
+## Return the median of a list of numerical values
+sub median {
+  my @sorted_values = sort {$a <=> $b} @_;
+  if ($n%2==0) {
+    $stats{median} = ($sorted_values[$n/2-1] + $sorted_values[$n/2])/2;	
+  } else {
+    $stats{median} = $sorted_values[($n-1)/2];
+  }
+}
+
+## Return the maximum of a list of numeric values
+## usage:
+## $max_value = &RSAT::stats::max(@value_list);
 sub max {
     my @sorted_values = sort {$a <=> $b} @_;
     return $sorted_values[$#sorted_values];
 }
 
 
-#### returns the minimum of a list of numeric values
-#### usage:
-#### $min_value = &RSAT::stats::min(@value_list);
+## Return the minimum of a list of numeric values
+## usage:
+## $min_value = &RSAT::stats::min(@value_list);
 sub min {
     my @sorted_values = sort {
 	$a <=> $b
@@ -157,9 +163,9 @@ sub min {
     return $sorted_values[0];
 }
 
-#### returns the minimum of a list of numeric values
-#### usage:
-#### $min_value = &RSAT::stats::min(@value_list);
+## Return the minimum of a list of numeric values
+## usage:
+## $min_value = &RSAT::stats::min(@value_list);
 sub checked_min {
     my @sorted_values = sort {
 	$a <=> $b
@@ -172,9 +178,9 @@ sub checked_min {
     return $sorted_values[$c];
 }
 
-#### returns the minimum of a list of numeric values
-#### usage:
-#### $min_value = &RSAT::stats::min(@value_list);
+## Return the minimum of a list of numeric values
+## usage:
+## $min_value = &RSAT::stats::min(@value_list);
 sub checked_max {
     my @sorted_values = sort {
 	$b <=> $a
@@ -187,8 +193,8 @@ sub checked_max {
     return $sorted_values[$c];
 }
 
-#### returns the sum of a list of numbers
-#### ignore non-numeric values
+## Return the sum of a list of numbers
+## ignore non-numeric values
 sub checked_sum {
     my @values = @_;
     my $sum = 0;
@@ -198,8 +204,8 @@ sub checked_sum {
     return $sum;
 }
 
-#### returns the sum of a list of numbers
-#### ignore non-numeric values
+## Return the sum of a list of numbers
+## ignore non-numeric values
 sub checked_avg {
     my @values = @_;
     my $sum = 0;
@@ -217,7 +223,7 @@ sub checked_avg {
     }
 }
 
-################################################################
+##############################################################
 ### Usage:
 ###     &RSAT::stats::binomial($proba,$trials,$successes)
 ###
@@ -257,10 +263,10 @@ sub binomial {
 }
 
 
-################################################################
-#### converts a natural logarithm (x) into e^x.
-#### This is performed by generating the output string, in order to
-#### cirumvent a problem with very low values (<< e-70).
+##############################################################
+## converts a natural logarithm (x) into e^x.
+## This is performed by generating the output string, in order to
+## cirumvent a problem with very low values (<< e-70).
 sub LogToEng {
     my ($log) = @_;
     my $base = 10;
@@ -276,7 +282,7 @@ sub LogToEng {
 
 }
 
-################################################################
+##############################################################
 ### usage:
 ###     &RSAT::stats::sum_of_binomials($proba,$trials,$from,$to)
 ### Calculates the sum of binomial probabilities between two values.
@@ -389,7 +395,7 @@ sub binomial_boe {
 }
 
 
-################################################################
+##############################################################
 ### usage: &binomial_approx($proba,$trials,$successes)
 ### this is the entropy approximation for the sum of binomials
 ### note that the approximation is only valid for s/r > p 
@@ -409,8 +415,8 @@ sub binomial_approx {
 }
 
 
-################################################################
-#### Negative binomial distribution
+##############################################################
+## Negative binomial distribution
 ##
 ## usage:
 ##    negbin($successes,$p, $k)
@@ -444,7 +450,7 @@ sub binomial_approx {
 ##	    P(X=s+1) = --------*P(X=s)
 ##	                q(x+1)
 
-################################################################
+##############################################################
 ## Calculate negbin with mean and variance as parameters
 sub negbin2 {
     my ($x, $mean, $variance, $series) = @_;
@@ -468,7 +474,7 @@ sub negbin2 {
     
 }
 
-################################################################
+##############################################################
 ## Calculate negbin with p and k as parameters
 sub negbin {
     my ($x,$p, $k, $series) = @_;
@@ -512,7 +518,7 @@ sub negbin {
     }
 }
 
-################################################################
+##############################################################
 ## Calculate negbin with mean and variance as parameters
 sub sum_of_negbin2 {
     my ($mean, $variance, $from, $to) = @_;
@@ -536,7 +542,7 @@ sub sum_of_negbin2 {
     return ($p, $k, $sum_of_negbin);
     
 }
-################################################################
+##############################################################
 ## sum_of_negbin($lambda, $from, $to)
 ## Calculates the Negbin probability for a given interval of values
 sub sum_of_negbin {
@@ -580,8 +586,8 @@ sub sum_of_negbin {
 }
 
 
-################################################################
-#### Poisson distribution
+##############################################################
+## Poisson distribution
 ##
 ## usage poisson($successes,$expected)
 ## note: on our sun station, this algorithm works only for m < 746
@@ -630,7 +636,7 @@ sub poisson {
     }
 }
 
-################################################################
+##############################################################
 ## sum_of_poisson($lambda, $from, $to)
 ## Calculates the Poisson probability for a given interval of values
 sub sum_of_poisson {
@@ -675,7 +681,7 @@ sub sum_of_poisson {
 }
 
 
-################################################################
+##############################################################
 ### Hypergeometric formula.
 ###
 ### Usage:
@@ -939,19 +945,19 @@ sub hypergeometric {
 }
 
 
-################################################################
-#### sum_of_hypergeometrics($m, $n, $k, $from, $to)
-####
-#### REMARK: I checked this routine by comparing results with R, and
-#### there is a difference with some test cases, e.g. : 
-####
-#### sum_of_hypergeometrics(44,60,44,43,44) = 4.71230301093258e-12
-#### in R:
-####     > sum(dhyper(43:44,44,16,44))
-####     [1] 4.712303e-12 (this is OK)
-#### but 
-####     > phyper(42,44,16,44,lower.tail=F)
-####     [1] 4.738072e-12 (this seems not OK)
+##############################################################
+## sum_of_hypergeometrics($m, $n, $k, $from, $to)
+##
+## REMARK: I checked this routine by comparing results with R, and
+## there is a difference with some test cases, e.g. : 
+##
+## sum_of_hypergeometrics(44,60,44,43,44) = 4.71230301093258e-12
+## in R:
+##     > sum(dhyper(43:44,44,16,44))
+##     [1] 4.712303e-12 (this is OK)
+## but 
+##     > phyper(42,44,16,44,lower.tail=F)
+##     [1] 4.738072e-12 (this seems not OK)
 sub sum_of_hypergeometrics {
     my ($m, $n, $k, $from, $to) = @_;
 
@@ -976,7 +982,7 @@ sub sum_of_hypergeometrics {
 }
 
 
-################################################################
+##############################################################
 ### usage: &factorial($n)
 sub factorial {
     my $n = $_[0];
@@ -992,32 +998,32 @@ sub factorial {
     return $fact_n;
 }
 
-################################################################
-#### calculates the probability according to Fisher's exact test
-#### Usage
-#### =====
-#### $proba = &FisherExactTest($row_nb, $col_nb, @values);
-####
-#### where
-####	$row_nb is the number of rows
-####	$col_nb is th number of columns
-####	@values is the list of values
-#### all values must be natural numbers (0,1,2, ...)
-#### the number of values must equal the product of col_nb by row_nb
-####
-#### the first step is to calculate the marginal sums:
-#### ni+ = sum of all values from the ith row
-#### n+j = sum of all values from the jth column
-#### N = sum of all values from the table
-####
-#### The probability is then calculated by:
-####
-####         PROD(ni+!)PROD(n+j!)
-#### proba = --------------------
-####          N!PROD(PROD(nij!))
-####
-#### the input data are reported together with all marginal sums
-#### by setting a global variable called $report_data to 1 
+##############################################################
+## calculates the probability according to Fisher's exact test
+## Usage
+## =====
+## $proba = &FisherExactTest($row_nb, $col_nb, @values);
+##
+## where
+##	$row_nb is the number of rows
+##	$col_nb is th number of columns
+##	@values is the list of values
+## all values must be natural numbers (0,1,2, ...)
+## the number of values must equal the product of col_nb by row_nb
+##
+## the first step is to calculate the marginal sums:
+## ni+ = sum of all values from the ith row
+## n+j = sum of all values from the jth column
+## N = sum of all values from the table
+##
+## The probability is then calculated by:
+##
+##         PROD(ni+!)PROD(n+j!)
+## proba = --------------------
+##          N!PROD(PROD(nij!))
+##
+## the input data are reported together with all marginal sums
+## by setting a global variable called $report_data to 1 
 sub FisherExactTest {
     my ($row_nb, $col_nb, @values) = @_;
     my $N;
@@ -1123,62 +1129,62 @@ sub FisherExactTest {
 } ### end FisherExactTest
 
 
-################################################################
-#### calculates Pearson chi-square statistics for a table of numbers
-#### Usage
-#### =====
-#### $chi_square = &ChiSquare($test,$row_nb, $col_nb, @values);
-####
-#### where
-####	$test	indicates the kind of hypothesis to test:
-####		- independence
-####		- homogeneity
-####		- good fit
-####	$row_nb is the number of rows
-####	$col_nb is th number of columns
-####	@values is the list of values
-#### all values must be real numbers
-#### the number of values must equal the product of col_nb by row_nb
-####
-#### Good fit test
-#### =============
-#### In this case, there must be exactly two rows:
-#### - the first row contains the observed frequencies.
-#### - the second row contains the expected frequencies.
-####
-#### The chi-square value is calculated by:
-####
-####              (obs_j - exp_j)^2
-#### ChiSq = SUM  ----------------
-####          j      (exp_j)
-####
-#### where j is the index for columns.
-####
-#### Independence or homogeneity test:
-#### =================================
-#### the first step is to calculate the marginal sums:
-#### ni. = sum of all values from the ith row
-#### n.j = sum of all values from the jth column
-#### N = sum of all values from the table
-#### 
-#### The chi-square value is then calculated by:
-####
-####                   (nij - n.j*ni./N)^2
-#### ChiSq = SUM (SUM -----------------)
-####          j    i     (n.j*ni./N)
-####
-####
-#### the input data are reported together with all marginal sums
-#### by setting a global variable called $report_data to 1 
-####
-#### Applicability
-#### =============
-#### One condition of applicability for the chi-square test is that each 
-#### class should contain a "sufficient" number of expected observations. 
-#### One commonly takes 5 as the minimal number of expected observations per class.
-#### When the condition of acceptability is not met, our ChiSquare function
-#### returns the calculated value surrounded by parenthesis, in order to 
-#### warn the user that the chi2 value is not valid.
+##############################################################
+## calculates Pearson chi-square statistics for a table of numbers
+## Usage
+## =====
+## $chi_square = &ChiSquare($test,$row_nb, $col_nb, @values);
+##
+## where
+##	$test	indicates the kind of hypothesis to test:
+##		- independence
+##		- homogeneity
+##		- good fit
+##	$row_nb is the number of rows
+##	$col_nb is th number of columns
+##	@values is the list of values
+## all values must be real numbers
+## the number of values must equal the product of col_nb by row_nb
+##
+## Good fit test
+## =============
+## In this case, there must be exactly two rows:
+## - the first row contains the observed frequencies.
+## - the second row contains the expected frequencies.
+##
+## The chi-square value is calculated by:
+##
+##              (obs_j - exp_j)^2
+## ChiSq = SUM  ----------------
+##          j      (exp_j)
+##
+## where j is the index for columns.
+##
+## Independence or homogeneity test:
+## =================================
+## the first step is to calculate the marginal sums:
+## ni. = sum of all values from the ith row
+## n.j = sum of all values from the jth column
+## N = sum of all values from the table
+## 
+## The chi-square value is then calculated by:
+##
+##                   (nij - n.j*ni./N)^2
+## ChiSq = SUM (SUM -----------------)
+##          j    i     (n.j*ni./N)
+##
+##
+## the input data are reported together with all marginal sums
+## by setting a global variable called $report_data to 1 
+##
+## Applicability
+## =============
+## One condition of applicability for the chi-square test is that each 
+## class should contain a "sufficient" number of expected observations. 
+## One commonly takes 5 as the minimal number of expected observations per class.
+## When the condition of acceptability is not met, our ChiSquare function
+## returns the calculated value surrounded by parenthesis, in order to 
+## warn the user that the chi2 value is not valid.
 sub ChiSquare {
     my($test, $row_nb, $col_nb, @values) = @_;
     my $N;
@@ -1446,36 +1452,36 @@ sub ChiSquare {
 } ### end ChiSquare
 
 
-################################################################
-#### calculates log-likelihood statistics for a table of numbers
-#### Usage
-#### =====
-#### $log_likelihood = &LogLikelihood($row_nb, $col_nb, @values);
-####
-#### where
-####	$row_nb is the number of rows
-####	$col_nb is th number of columns
-####	@values is the list of values
-#### all values must be real numbers
-#### the number of values must equal the product of col_nb by row_nb
-####
-#### the first step is to calculate the marginal sums:
-#### ni+ = sum of all values from the ith row
-#### n+j = sum of all values from the jth column
-#### N = sum of all values from the table
-#### 
-#### The log-likelihood value is then calculated by:
-####
-####                   
-#### LogLikelihood = N*log(N) + SUM SUM nij*log(nij)
-####                             i   j                    
-####
-####                          - SUM ni+*log(ni+) - SUM n+j*log(n+j)
-####                             i                  j
-####
-####
-#### the input data are reported together with all marginal sums
-#### by setting a global variable called $report_data to 1 
+##############################################################
+## calculates log-likelihood statistics for a table of numbers
+## Usage
+## =====
+## $log_likelihood = &LogLikelihood($row_nb, $col_nb, @values);
+##
+## where
+##	$row_nb is the number of rows
+##	$col_nb is th number of columns
+##	@values is the list of values
+## all values must be real numbers
+## the number of values must equal the product of col_nb by row_nb
+##
+## the first step is to calculate the marginal sums:
+## ni+ = sum of all values from the ith row
+## n+j = sum of all values from the jth column
+## N = sum of all values from the table
+## 
+## The log-likelihood value is then calculated by:
+##
+##                   
+## LogLikelihood = N*log(N) + SUM SUM nij*log(nij)
+##                             i   j                    
+##
+##                          - SUM ni+*log(ni+) - SUM n+j*log(n+j)
+##                             i                  j
+##
+##
+## the input data are reported together with all marginal sums
+## by setting a global variable called $report_data to 1 
 sub LogLikelihood {
     my ($row_nb, $col_nb, @values) = @_;
     my $N;
