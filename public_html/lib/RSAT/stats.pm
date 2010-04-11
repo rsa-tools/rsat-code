@@ -136,12 +136,18 @@ sub mean {
 ##############################################################
 ## Return the median of a list of numerical values
 sub median {
-  my @sorted_values = sort {$a <=> $b} @_;
-  if ($n%2==0) {
-    $stats{median} = ($sorted_values[$n/2-1] + $sorted_values[$n/2])/2;	
-  } else {
-    $stats{median} = $sorted_values[($n-1)/2];
+  my $n = scalar(@_);
+  &RSAT::message::Debug("&RSAT::stats::median()", $n." values") if ($main::verbose >= 0);
+  my $median = "NA";
+  if ($n >= 1) {
+    my @sorted_values = sort {$a <=> $b} @_;
+    if ($n % 2 == 0) {
+      $median = ($sorted_values[$n/2-1] + $sorted_values[$n/2])/2;
+    } else {
+      $median = $sorted_values[($n-1)/2];
+    }
   }
+  return $median;
 }
 
 ## Return the maximum of a list of numeric values
