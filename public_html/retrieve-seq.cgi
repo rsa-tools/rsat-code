@@ -83,10 +83,10 @@ if ($query->param('sequence_type')) {
     $parameters .= " -type ".$seq_type;
 }
 
-### output format ###
+## Output sequence format
 $out_format = lc($query->param('format'));
 if ($accepted_output_seq{$out_format}) {
-    $parameters .= " -format $out_format";
+  $parameters .= " -format $out_format";
 }
 
 ### sequence label
