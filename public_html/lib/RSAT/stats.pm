@@ -137,7 +137,7 @@ sub mean {
 ## Return the median of a list of numerical values
 sub median {
   my $n = scalar(@_);
-  &RSAT::message::Debug("&RSAT::stats::median()", $n." values") if ($main::verbose >= 0);
+#  &RSAT::message::Debug("&RSAT::stats::median()", $n." values") if ($main::verbose >= 10);
   my $median = "NA";
   if ($n >= 1) {
     my @sorted_values = sort {$a <=> $b} @_;
