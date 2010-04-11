@@ -76,7 +76,7 @@ if ($query->param("output") =~ /display/i) {
 #    while (<RESULT>) {
 #	print;
 #    }
-    &PrintHtmlTable(RESULT, $result_file, true);
+    &PrintHtmlTable(RESULT, $result_file, 1);
 #    print '</pre>';
     close(RESULT);
 

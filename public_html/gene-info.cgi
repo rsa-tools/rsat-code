@@ -81,7 +81,7 @@ if ($query->param('output') eq "display") {
     open RESULT, "$command $parameters |";
 
     print '<H2>Result</H2>';
-    &PrintHtmlTable(RESULT, $result_file, true);
+    &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
 
     &PipingForm();
