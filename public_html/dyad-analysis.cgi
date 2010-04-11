@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.37 2010/03/09 07:23:00 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.38 2010/04/11 07:25:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -204,7 +204,7 @@ if ($query->param('output') eq "display") {
 
   ### Print result on the web page
   print '<H4>Result</H4>';
-  &PrintHtmlTable(RESULT, $result_file, true);
+  &PrintHtmlTable(RESULT, $result_file, 1);
   close(RESULT);
   push @result_files, ('dyads', $result_file);
 

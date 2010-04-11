@@ -267,7 +267,7 @@ if ($query->param('output') =~ /display/i) {
     
     ### Print result on the web page
     print '<H2>Result</H2>';
-    &PrintHtmlTable(RESULT, $result_file, true);
+    &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
     
 #    &PipingForm();
