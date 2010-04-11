@@ -355,8 +355,8 @@
     $cc_temp_file = explode('/',$cc_server);
     $cc_temp_file = end($cc_temp_file);
     $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;
-
-    echo ("<p><b>Command:</b> $cc_command</p>");
+    echocommand ("$cc_command", "Class conversion");
+    $URL['tab'] = $cc_resultURL;
 
     ## Text-to-html
     $cc_file = storeFile($cc_server);
@@ -369,9 +369,9 @@
     );
     
     $tth_echoed = $client->text_to_html($tth_parameters);
-
     $tth_response =  $tth_echoed->response;
     $tth_command = $tth_response->command;
+    echocommand ("$tth_command", "Text to html");
     $tth_server = $tth_response->server;
     $tth_client = $tth_response->client;
 #    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
@@ -379,16 +379,13 @@
     $tth_temp_file = explode('/',$tth_server);
     $tth_temp_file = end($tth_temp_file);
     $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
+    $URL['HTML'] = $tth_resultURL;
+
     
     hourglass("off");
 
     ## DISPLAY THE RESULT
-    echo "<table class=\"resultlink\">\n";
-    echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
-    echo "<tr><th>HTML</th><td><a href = '$tth_resultURL'>$tth_resultURL</a></td></tr>\n"; 
-    echo "<tr><th>Text</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
-    echo "</table>\n";
-    echo"<hr>\n";
+    print_url_table($URL);
 
     ## PRESENT BUTTONS TO SEND RESULT TO OTHER TOOLS
     if ($output_format == 'matrix') {
