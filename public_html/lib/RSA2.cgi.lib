@@ -1943,8 +1943,10 @@ sub display_matrices_web {
 ## &PrintResultURL(tab=>result_file.tab,html=>result_file.html, ...);
 sub PrintURLTable {
   my (@files) = @_;
+  print "<h2>Result file(s)</h2>";
   print "<table class=\"resultlink\">\n";
-  print "<tr><td colspan='3'><h2>Result file(s)</h2> </td></tr>";
+  print "<tr><th>Content</th>";
+  print "<th>URL</th></tr>";
   while (my $type = shift @files) {
     my $file = shift @files;
     $file = &ShortFileName($file);

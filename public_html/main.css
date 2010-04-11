@@ -386,26 +386,24 @@ table.nextstep th {
 
 /* LINK TABLE ON RESULTS PAGES */
 table.resultlink {
-	margin-left:5px;
-	width : 90%;
-	color: #2D282E;
+/* 	margin: 10px 20px 20px; */
+	color: #333333;
+	border-left: 1px solid #cbcbb4;
+	border-top: 1px solid #cbcbb4;
+	border-spacing: 0px;
+}
+
+table.resultlink td,table.resultlink th {
+	font-size: 70%;
+	border-right: 1px solid #cbcbb4;
+	border-bottom: 1px solid #cbcbb4;
+	padding: 2px 10px;
 	background-color: #D6EEFA;
 }
 
-
-table.resultlink td {
-	font-size: 70%;
-	padding-left:5px;
-	padding-right:3px;
-	text-align :left;
-}
-
 table.resultlink th {
-	font-size: 70%;
-	font-weight: bold;
-	padding-left:5px;
-	padding-right:3px;
-	text-align :left;
+	background-color: #0D73A7;
+	color: #D6EEFA;
 }
 
 
