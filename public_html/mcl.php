@@ -95,7 +95,7 @@
     $cg_server = rtrim ($cg_server);
     $cg_temp_file = explode('/',$cg_server);
     $cg_temp_file = end($cg_temp_file);
-    $cg_resultURL = $WWW_RSA."/tmp/".$cg_temp_file;    
+    $URL['Input graph (tab format)'] = $WWW_RSA."/tmp/".$cg_temp_file;    
     
     ## MCL
     ## Load the parameters of the program in to an array
@@ -127,9 +127,11 @@
     $mcl_server = rtrim ($mcl_server);
     $mcl_temp_file = explode('/',$mcl_server);
     $mcl_temp_file = end($mcl_temp_file);
-    $mcl_resultURL = $WWW_RSA."/tmp/".$mcl_temp_file;
+    $URL['Clusters (MCL format)'] = $WWW_RSA."/tmp/".$mcl_temp_file;
 
-    # Convert-classes 
+    ################################################################
+    # Run convert-classes to convert MCL-formatted into tab-formated clusters.
+
     ## Load the parameters of the program in to an array
     $input_classes = storeFile($mcl_server);    
     $cc_parameters = array( 
@@ -151,10 +153,12 @@
     $cc_server = rtrim ($cc_server);
     $cc_temp_file = explode('/',$cc_server);
     $cc_temp_file = end($cc_temp_file);
-    $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;    
+    $URL['Clusters (tab format)'] = $WWW_RSA."/tmp/".$cc_temp_file;    
     
     
-    ## contingency-table
+    ################################################################
+    ## Run contingency-table to obtain a class/member table
+
     ## Load the parameters of the program into an array
     $cc_input_file = storeFile($cc_server);
     $ct_parameters = array(
@@ -168,15 +172,16 @@
     $ct_response = $ct_echoed->response;
     $ct_command = $ct_response->command;
     echocommand($ct_command, "Contingency table");
-#    echo ("<p><b>Contingency table:</b> $ct_command</p>");
     $ct_server = $ct_response->server;
     $ct_client = $ct_response->client;
     $ct_server = rtrim ($ct_server);
     $ct_temp_file = explode('/',$ct_server);
     $ct_temp_file = end($ct_temp_file);
-    $ct_resultURL = $WWW_RSA."/tmp/".$ct_temp_file;
+    // The class/member table is probably not interesting for the users
+    //    $URL['Class/member table'] = $WWW_RSA."/tmp/".$ct_temp_file;
 
-    ## classfreq 
+    ################################################################
+    ## Run classfreq to compute the cluster size distribution 
     $cf_inputfile =  storeFile($ct_server);
 //     $cf_echoed = $client->contingency_table($cf_parameters);
     $cf_parameters = array(
@@ -196,9 +201,10 @@
     $cf_server = rtrim ($cf_server);
     $cf_temp_file = explode('/',$cf_server);
     $cf_temp_file = end($cf_temp_file);
-    $cf_resultURL = $WWW_RSA."/tmp/".$cf_temp_file;    
+    $URL['Cluster size distrib'] = $WWW_RSA."/tmp/".$cf_temp_file;    
 
-    ## Cluser size distribution
+    ################################################################
+    ## Run XYgraph to display cluster size distribution
     $xy_inputfile =  storeFile($cf_server);
     $xy_parameters = array( 
        "request" => array(
@@ -224,21 +230,16 @@
     $xy_temp_file = explode('/',$xy_server);
     $xy_temp_file = end($xy_temp_file);
     $xy_resultURL = $WWW_RSA."/tmp/".$xy_temp_file;
-    hourglass("off");
-    echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL''></a><br>");
+    $URL['Cluster size distrib graph'] = $xy_resultURL;
+
+    ## Display the cluster size distribution graph
+      hourglass("off");
+#    echo ("<a href = '",$URL['Cluster size distrib graph'],"'><img align = 'center' src='",$URL['Cluster size distrib graph'],"'></a><br>");
+    echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL'></a><br>");
     echo "<br><hr>\n";
 
     ## DISPLAY THE RESULT
-    echo "<table class=\"resultlink\">\n";
-    echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
-    echo "<tr><th>Input graph (tab format)</th><td><a href = '$cg_resultURL'>$cg_resultURL</a></td></tr>\n"; 
-    echo "<tr><th>Clusters (MCL format)</th><td><a href = '$mcl_resultURL'>$mcl_resultURL</a></td></tr>\n"; 
-    echo "<tr><th>Clusters (tab format)</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
-    //echo "<tr><th>Cluster-member table (tab)</th><td><a href = '$ct_resultURL'>$ct_resultURL</a></td></tr>\n"; 
-    echo "<tr><th>Cluster size distribution (tab)</th><td><a href='$cf_resultURL'>$cf_resultURL</a></td></tr>\n"; 
-    echo "<tr><th>Cluster size distribution (png)</th><td><a href='$xy_resultURL'>$xy_resultURL</a></td></tr>\n"; 
-    echo "</table>\n";
-    echo"<hr>\n";
+      print_url_table($URL);
      
     echo "
   <TABLE CLASS = 'nextstep'>

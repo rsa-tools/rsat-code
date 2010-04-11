@@ -175,22 +175,12 @@
       $server = rtrim ($server);
       $temp_file = explode('/',$server);
       $temp_file = end($temp_file);
-      $resultURL = $WWW_RSA."/tmp/".$temp_file;
+      $URL['result'] = $WWW_RSA."/tmp/".$temp_file;
       hourglass("off");
 
 
     ## DISPLAY THE RESULT
-    echo "<p><table class=\"resultlink\">\n";
-    echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
-    echo "<tr><th>$out_format</th><td><a href='$resultURL'>$resultURL</a></td></tr>\n"; 
-    echo "</table></p>\n";
-    echo"<hr>\n";
-
-//       # Display the results
-//       echo "The results is available at the following URL ";
-//       echo "<a href = '$resultURL'>$resultURL</a>"; 
-//       echo "<hr>\n";
-
+    print_url_table($URL);
 
       ## Send result to next step
       echo "

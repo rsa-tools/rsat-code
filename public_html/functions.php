@@ -116,6 +116,23 @@ Function echocommand($command, $name) {
 }
 ?>
 
+
+
+<?php
+/**
+ * Print a table with URLs to the result files
+ */
+Function print_url_table($URL) {
+    echo "<table class=\"resultlink\">\n";
+    echo "<tr><th colspan='2'>Result file(s)</th></tr>\n";
+    foreach ($URL as $key => $value) {
+      echo "<tr><td>",$key,"</td><td><a href = '",$value,"'>",$value,"</a></td></tr>\n"; 
+    }
+    echo "</table>\n";
+    echo"<hr>\n";
+}
+?>
+
 <?php
 /**
  * Read a property file $props and return a hash
