@@ -19,6 +19,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $tmp_file_name = sprintf "infer-operon.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -94,6 +95,7 @@ if ($query->param('genes') eq "all") {
 } elsif ($query->param('uploaded_file')) {
     $upload_file = $query->param('uploaded_file');
     $gene_list_file = "${TMP}/${tmp_file_name}.genes";
+    push (@result_files, 'input genes', $gene_list_file);
     if ($upload_file =~ /\.gz$/) {
 	$gene_list_file .= ".gz";
     }
@@ -134,8 +136,11 @@ if ($query->param('output') eq "display") {
     print '<H2>Result</H2>';
 
     open RESULT, "$command $parameters |";
-    &PrintHtmlTable(RESULT, $result_file, true);
+    &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
+
+    push (@result_files, 'operons', $result_file);
+    &PrintURLTable(@result_files);
 
     &PipingForm();
 
