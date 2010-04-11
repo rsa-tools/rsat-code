@@ -157,7 +157,7 @@ if ($query->param("output") =~ /display/i) {
   
     ### Print the result on Web page
     print "<H4>Result</H4>";
-    &PrintHtmlTable(RESULT, $result_file, true);
+    &PrintHtmlTable(RESULT, $result_file, 1);
     close RESULT;
     &PipingForm if ($query->param('match_positions'));
     print "<HR SIZE = 3>";
