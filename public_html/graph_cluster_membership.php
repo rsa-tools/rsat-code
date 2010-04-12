@@ -20,7 +20,6 @@
   $cmd_file = getTempFileName('commands_graph-cluster-membership');
   $cmd_handle = fopen($cmd_file, 'a');
 
-
   # Error status
   $error = 0;
   # Get parameters
