@@ -131,7 +131,8 @@ Function trim_text($text) {
  * Echo a command by suppress the full path to rsa-tools.
  */
 Function store_command($command, $name, $cmd_handle) {
-  $clean_command = preg_replace('/(\')*\S+rsa\-tools\//', '\\1\$RSAT', $command);
+  $clean_command = preg_replace('/(\')*\S+rsa\-tools/', '\\1\$RSAT', $command);
+  $clean_command = preg_replace('/\/+/', '/', $clean_command);
   //  echo ("<p><b>$name:</b> $clean_command</p>");
   fwrite($cmd_handle, "# ".$name."\n");
   fwrite($cmd_handle, $clean_command."\n\n");
