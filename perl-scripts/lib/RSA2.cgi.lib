@@ -1258,13 +1258,13 @@ sub PipingFormForSequence {
     </td>
 
     <td align=center>
-	<FORM METHOD="POST" ACTION="ORM_form.cgi">
+	<FORM METHOD="POST" ACTION="local-word-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	$oligo_background_model
-	<INPUT type="submit" value="ORM">
+	<INPUT type="submit" value="local-word-analysis">
 	</FORM>
 	<b><font color=red>New !</font></b>
 	Windows of word over-representation
