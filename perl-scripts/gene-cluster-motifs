@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.275 2010/02/25 12:20:52 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.276 2010/04/12 12:50:17 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.275 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.276 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -629,8 +629,6 @@ package main;
 
 #### set the file names as a function of parameters
 sub SetFileNames {
-
-
   ## Options for dyad-analysis
   $dyad_spacing = $min_sp."-".$max_sp;
   $dyad_options = "-v";
@@ -669,7 +667,7 @@ sub SetFileNames {
     ## sequences. If the background model file does not exist, compute
     ## it from background sequences.
     &define_bg_model_files() unless (defined($bg_model_file{"dyads"}));
-    &compute_bg_dyads() unless (-e $bg_model_file{dyads});
+#    &compute_bg_dyads() unless (-e $bg_model_file{dyads});
     $dyad_options .= " -expfreq ".$bg_model_file{"dyads"};
 
   } elsif ($exp_freq_file{dyads}) {
@@ -1697,6 +1695,12 @@ sub DyadAnalysis {
   $dir = "${family_name}/dyads_${family_name}";
   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
+
+  if ($bg_seq_file) {
+    &compute_bg_dyads() unless (-e $bg_model_file{dyads});
+  }
+
+  ## build the dyad-analysis command
   $command = "dyad-analysis";
   $command .= " -return occ,proba,rank,zscore,ratio";
   $command .= " -i ".$family{$family_name}->{input_seq_file};
@@ -1704,7 +1708,6 @@ sub DyadAnalysis {
   $command .= " -o ".$family{$family_name}->{dyad_file};
   $command .= " ".$dyad_options;
   $command .= " -org ".$organism_name if ($org_fam);
-
   if ($mask) {
     $command .= " -mask ".$mask;
   }
