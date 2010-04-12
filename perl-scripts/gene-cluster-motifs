@@ -4,13 +4,13 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.276 2010/04/12 12:50:17 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.277 2010/04/12 13:10:35 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
 ############################################################
 BEGIN {
-  if ($0 =~ /([^(\/)]+)$/) {
+    if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
     }
     require "RSA.lib";
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.276 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.277 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -76,7 +76,9 @@ package main;
 
   ## Supported tasks
   @supported_tasks = qw (upstream
+  		         sequences
 			 upstream_ensembl
+  		         sequences_ensembl
 			 purge
 
 			 compute_bg
@@ -436,7 +438,7 @@ package main;
 
   ## List of sequence files
   if ($sequence_file_list) {
-    $task{upstream} = 0; 
+    $task{sequences} = 0; 
     &ReadSequenceList();
 
   } else {
@@ -716,19 +718,22 @@ sub SetFileNames {
 
     ## Prefix for files
     $family{$family_name}->{file_prefix} = $family_name;
-    if ($size_names) { ## Old naming system, maintained only for backward compatibility
-      $family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
-    } else {
-      $family{$family_name}->{file_prefix} .= "_from".$from."_to".$to unless ($sequence_file_list);
-    }
-    $family{$family_name}->{file_prefix} .= "_".$feature_types;
-    $family{$family_name}->{file_prefix} .= $noorf_string;
-    unless ($size_names) {	## only for backward compatibility
-      $family{$family_name}->{file_prefix} .= '-rm' if ($repeat_masked);
-    }
-    if ($taxon) {
-      $family{$family_name}->{file_prefix} .= "_".$taxon; 
-      $family{$family_name}->{ortho_file} = $family_name."/".$family_name."_".$feature_types."_orthologs_".$taxon.".fam";
+
+    unless ($all_seq_file) {
+	if ($size_names) { ## Old naming system, maintained only for backward compatibility
+	    $family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
+	} else {
+	    $family{$family_name}->{file_prefix} .= "_from".$from."_to".$to unless ($sequence_file_list);
+	}
+	$family{$family_name}->{file_prefix} .= "_".$feature_types;
+	$family{$family_name}->{file_prefix} .= $noorf_string;
+	unless ($size_names) {	## only for backward compatibility
+	    $family{$family_name}->{file_prefix} .= '-rm' if ($repeat_masked);
+	}
+	if ($taxon) {
+	    $family{$family_name}->{file_prefix} .= "_".$taxon; 
+	    $family{$family_name}->{ortho_file} = $family_name."/".$family_name."_".$feature_types."_orthologs_".$taxon.".fam";
+	}
     }
 
     ## Sequence files	unless ($sequence_file_list) {
@@ -1235,7 +1240,7 @@ sub StoreSequences  {
 
 ################################################################
 #### retrieve upstream sequences
-sub RetrieveUpstreamSequences {
+sub RetrieveSequences {
   &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 2);
   my $command;
   if ($taxon) {
@@ -1268,7 +1273,7 @@ sub RetrieveUpstreamSequences {
   }
 }
 
-sub RetrieveUpstreamSequencesEnsEMBL {
+sub RetrieveSequencesEnsEMBL {
   &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 2);
   $organism_name =~ s/_EnsEMBL//;
   my $command;
@@ -2864,6 +2869,17 @@ sub CheckParameters {
   }
   $feature_types = join ",", keys (%accepted_feature_types);
 
+  ## For backward compatibility
+  if ($task{upstream}) {
+      &RSAT::message::Warning("Option -task upstream is obsolete, please use -task sequences");
+      $task{sequences} = 1;
+  }
+  if ($task{upstream_ensembl}) {
+      &RSAT::message::Warning("Option -task upstream_ensembl is obsolete, please use -task sequences_ensembl");
+      $task{sequences_ensembl} = 1;
+  }
+  
+
   #### check selected tasks
   unless (defined(%task)) {
     &RSAT::error::FatalError("You should select at least one task.");
@@ -3087,7 +3103,7 @@ sub AnalyzeFamilies {
   }
 
   ## Read all sequences from an input file and create the family-specific sequence files
-  if (($task{upstream}) && ($all_seq_file)) {
+  if (($task{sequences}) && ($all_seq_file)) {
     &ReadAllSequences();
   }
 
@@ -3121,16 +3137,16 @@ sub AnalyzeFamilies {
       if ($verbose >= 1);
 
     ### retrieve upstream sequences of the family
-    if ($task{upstream}) {
+    if ($task{sequences}) {
       if ($all_seq_file) {
 	&StoreSequences();
       } else {
-	&RetrieveUpstreamSequences();
+	&RetrieveSequences();
       }
     }
 
     ### retrieve upstream sequences of the family
-    &RetrieveUpstreamSequencesEnsEMBL() if ($task{upstream_ensembl});
+    &RetrieveSequencesEnsEMBL() if ($task{upstream_ensembl});
 
     ### purge upstream sequences of the family
     &PurgeSequences() if ($task{purge});
