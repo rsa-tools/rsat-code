@@ -29,8 +29,9 @@
 
 <?php
   // NeAT INFO
-  Function info($info) {
-    echo "<h4>Info: </h4><blockquote class='information'>$info </blockquote><br>";
+Function info($info) {
+  echo "<h2>Info</h2><class='information'><font color='#00BB00'>$info</font></class><br>";
+  //    echo "<h2>Info</h2><blockquote class='information'><font color='#00BB00'>$info</font></blockquote><br>";
   }
 ?>
 
