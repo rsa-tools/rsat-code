@@ -14,6 +14,11 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
+
+  # File to store the commands
+   $cmd_file = getTempFileName('commands_mcl');
+   $cmd_handle = fopen($cmd_file, 'a');
+
   title('MCL - results');
   # Error status
   $error = 0;
@@ -88,14 +93,10 @@
 
     $cg_response = $cg_echoed->response;
     $cg_command = $cg_response->command;
-    echocommand($cg_command, "graph conversion");
-//     echo ("$cg_command");
+    store_command($cg_command, "graph conversion", $cmd_handle);
     $cg_server = $cg_response->server;
     $cg_client = $cg_response->client;
-    $cg_server = rtrim ($cg_server);
-    $cg_temp_file = explode('/',$cg_server);
-    $cg_temp_file = end($cg_temp_file);
-    $URL['Input graph (tab format)'] = $WWW_RSA."/tmp/".$cg_temp_file;    
+    $URL['Input graph (tab format)'] = rsat_path_to_url($cg_server);
     
     ## MCL
     ## Load the parameters of the program in to an array
@@ -120,14 +121,10 @@
     }  
     $mcl_response = $mcl_echoed->response;
     $mcl_command = $mcl_response->command;
-    echocommand($mcl_command, "MCL command");
-#    echo ("<p><b>MCL :</b> $mcl_command</p>");
+    store_command($mcl_command, "MCL command", $cmd_handle);
     $mcl_server = $mcl_response->server;
     $mcl_client = $mcl_response->client;
-    $mcl_server = rtrim ($mcl_server);
-    $mcl_temp_file = explode('/',$mcl_server);
-    $mcl_temp_file = end($mcl_temp_file);
-    $URL['Clusters (MCL format)'] = $WWW_RSA."/tmp/".$mcl_temp_file;
+    $URL['Clusters (MCL format)'] = rsat_path_to_url($mcl_server);
 
     ################################################################
     # Run convert-classes to convert MCL-formatted into tab-formated clusters.
@@ -146,14 +143,10 @@
 
     $cc_response = $cc_echoed->response;
     $cc_command = $cc_response->command;
-    echocommand($cc_command, "Cluster conversion");
-#    echo ("<p><b>convert-clusters :</b> $cc_command</p>");
+    store_command($cc_command, "Cluster conversion", $cmd_handle);
     $cc_server = $cc_response->server;
     $cc_client = $cc_response->client;
-    $cc_server = rtrim ($cc_server);
-    $cc_temp_file = explode('/',$cc_server);
-    $cc_temp_file = end($cc_temp_file);
-    $URL['Clusters (tab format)'] = $WWW_RSA."/tmp/".$cc_temp_file;    
+    $URL['Clusters (tab format)'] = rsat_path_to_url($cc_server);
     
     
     ################################################################
@@ -171,14 +164,11 @@
     $ct_echoed = $client->contingency_table($ct_parameters);
     $ct_response = $ct_echoed->response;
     $ct_command = $ct_response->command;
-    echocommand($ct_command, "Contingency table");
+    store_command($ct_command, "Contingency table", $cmd_handle);
     $ct_server = $ct_response->server;
     $ct_client = $ct_response->client;
-    $ct_server = rtrim ($ct_server);
-    $ct_temp_file = explode('/',$ct_server);
-    $ct_temp_file = end($ct_temp_file);
     // The class/member table is probably not interesting for the users
-    //    $URL['Class/member table'] = $WWW_RSA."/tmp/".$ct_temp_file;
+    //    $URL['Class/member table'] = rsat_path_to_url($ct_server);
 
     ################################################################
     ## Run classfreq to compute the cluster size distribution 
@@ -194,14 +184,10 @@
     $cf_echoed = $client->classfreq($cf_parameters);
     $cf_response = $cf_echoed->response;
     $cf_command = $cf_response->command;
-    echocommand($cf_command, "Class frequencies");
-#    echo ("<p><b>Class frequencies :</b> $cf_command</p>");
+    store_command($cf_command, "Class frequencies", $cmd_handle);
     $cf_server = $cf_response->server;
     $cf_client = $cf_response->client;
-    $cf_server = rtrim ($cf_server);
-    $cf_temp_file = explode('/',$cf_server);
-    $cf_temp_file = end($cf_temp_file);
-    $URL['Cluster size distrib'] = $WWW_RSA."/tmp/".$cf_temp_file;    
+    $URL['Cluster size distrib'] = rsat_path_to_url($cf_server);
 
     ################################################################
     ## Run XYgraph to display cluster size distribution
@@ -222,24 +208,23 @@
     $xy_echoed = $client->xygraph($xy_parameters);
     $xy_response = $xy_echoed->response;
     $xy_command = $xy_response->command;
-    echocommand($xy_command, "Cluster size distrib. plot");
-#    echo ("<p><b>Distrib graph :</b> $xy_command</p>");
+    store_command($xy_command, "Cluster size distrib. plot", $cmd_handle);
     $xy_server = $xy_response->server;
     $xy_client = $xy_response->client;
-    $xy_server = rtrim ($xy_server);
-    $xy_temp_file = explode('/',$xy_server);
-    $xy_temp_file = end($xy_temp_file);
-    $xy_resultURL = $WWW_RSA."/tmp/".$xy_temp_file;
+    $xy_resultURL = rsat_path_to_url($xy_server);
     $URL['Cluster size distrib graph'] = $xy_resultURL;
 
+    ## Close command handle
+    fclose($cmd_handle);
+    $URL['Server commands'] = rsat_path_to_url($cmd_file);
+
     ## Display the cluster size distribution graph
-      hourglass("off");
-#    echo ("<a href = '",$URL['Cluster size distrib graph'],"'><img align = 'center' src='",$URL['Cluster size distrib graph'],"'></a><br>");
+    hourglass("off");
     echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL'></a><br>");
     echo "<br><hr>\n";
 
     ## DISPLAY THE RESULT
-      print_url_table($URL);
+    print_url_table($URL);
      
     echo "
   <TABLE CLASS = 'nextstep'>
