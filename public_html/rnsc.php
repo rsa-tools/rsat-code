@@ -15,6 +15,11 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
+
+  # File to store the commands
+  $cmd_file = getTempFileName('commands_rnsc');
+  $cmd_handle = fopen($cmd_file, 'a');
+
   title('RNSC - results');
   # Error status
   $error = 0;
@@ -107,17 +112,14 @@
       $soap_error = 1;
       exit(1);
     }  
-
     $cg_response = $cg_echoed->response;
     $cg_command = $cg_response->command;
-    echocommand($cg_command, "graph conversion");
+    store_command($cg_command, "graph conversion",$cmd_handle);
     $cg_server = $cg_response->server;
     $cg_client = $cg_response->client;
     $cg_server = rtrim ($cg_server);
     $cg_temp_file = explode('/',$cg_server);
     $cg_temp_file = end($cg_temp_file);
-    $cg_resultURL = $WWW_RSA."/tmp/".$cg_temp_file;    
-
     $rnsc_graph = $cg_server.".rnsc";
     $rnsc_nodes = $cg_server."_node_names.rnsc";
     
@@ -153,13 +155,14 @@
     }  
     $rnsc_response = $rnsc_echoed->response;
     $rnsc_command = $rnsc_response->command;
-    echocommand($rnsc_command, "rnsc");
+    store_command($rnsc_command, "rnsc",$cmd_handle);
     $rnsc_server = $rnsc_response->server;
     $rnsc_client = $rnsc_response->client;
-    $rnsc_server = rtrim ($rnsc_server);
-    $rnsc_temp_file = explode('/',$rnsc_server);
-    $rnsc_temp_file = end($rnsc_temp_file);
-    $rnsc_resultURL = $WWW_RSA."/tmp/".$rnsc_temp_file;
+//     $rnsc_server = rtrim ($rnsc_server);
+//     $rnsc_temp_file = explode('/',$rnsc_server);
+//     $rnsc_temp_file = end($rnsc_temp_file);
+    //    $URL['Clusters (RNSC format) old'] = $WWW_RSA."/tmp/".$rnsc_temp_file;
+    $URL['Clusters (RNSC format)'] = rsat_path_to_url($rnsc_server);
 
 
     # Convert-classes 
@@ -179,14 +182,13 @@
 
     $cc_response = $cc_echoed->response;
     $cc_command = $cc_response->command;
-    echocommand($cc_command, "cluster formatting");
+    store_command($cc_command, "cluster formatting",$cmd_handle);
     $cc_server = $cc_response->server;
     $cc_client = $cc_response->client;
-    $cc_server = rtrim ($cc_server);
-    $cc_temp_file = explode('/',$cc_server);
-    $cc_temp_file = end($cc_temp_file);
-    $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;    
-    
+    //     $cc_server = rtrim ($cc_server);
+    //     $cc_temp_file = explode('/',$cc_server);
+    //     $cc_temp_file = end($cc_temp_file);
+    $URL['Clusters (tab format)'] = rsat_path_to_url($cc_temp_file);
     
     # contingency-table
     ## Load the parameters of the program into an array
@@ -201,14 +203,15 @@
     $ct_echoed = $client->contingency_table($ct_parameters);
     $ct_response = $ct_echoed->response;
     $ct_command = $ct_response->command;
-    echocommand($ct_command, "cluster sizes");
+    store_command($ct_command, "cluster sizes",$cmd_handle);
     $ct_server = $ct_response->server;
     $ct_client = $ct_response->client;
-    $ct_server = rtrim ($ct_server);
-    $ct_temp_file = explode('/',$ct_server);
-    $ct_temp_file = end($ct_temp_file);
-    $ct_resultURL = $WWW_RSA."/tmp/".$ct_temp_file;
-    # classfreq 
+    //     $ct_server = rtrim ($ct_server);
+    //     $ct_temp_file = explode('/',$ct_server);
+    //     $ct_temp_file = end($ct_temp_file);
+    $URL['CLass/members table'] = rsat_path_to_url($ct_server);
+
+   # Compute cluster size distribution with classfreq
     $cf_inputfile =  storeFile($ct_server);
 //     $cf_echoed = $client->contingency_table($cf_parameters);
     $cf_parameters = array(
@@ -221,13 +224,13 @@
     $cf_echoed = $client->classfreq($cf_parameters);
     $cf_response = $cf_echoed->response;
     $cf_command = $cf_response->command;
-    echocommand($cf_command, "cluster size distribution");
+    store_command($cf_command, "cluster size distribution",$cmd_handle);
     $cf_server = $cf_response->server;
     $cf_client = $cf_response->client;
-    $cf_server = rtrim ($cf_server);
-    $cf_temp_file = explode('/',$cf_server);
-    $cf_temp_file = end($cf_temp_file);
-    $cf_resultURL = $WWW_RSA."/tmp/".$cf_temp_file;    
+//     $cf_server = rtrim ($cf_server);
+//     $cf_temp_file = explode('/',$cf_server);
+//     $cf_temp_file = end($cf_temp_file);
+    $URL['Cluster size distrib'] = rsat_path_to_url($cf_server);
     # XYgraph
     $xy_inputfile =  storeFile($cf_server);
     $xy_parameters = array( 
@@ -246,33 +249,30 @@
     $xy_echoed = $client->xygraph($xy_parameters);
     $xy_response = $xy_echoed->response;
     $xy_command = $xy_response->command;
-    echocommand($xy_command, "cluster size distribution graph");
+    store_command($xy_command, "cluster size distribution graph",$cmd_handle);
     $xy_server = $xy_response->server;
     $xy_client = $xy_response->client;
-    $xy_server = rtrim ($xy_server);
-    $xy_temp_file = explode('/',$xy_server);
-    $xy_temp_file = end($xy_temp_file);
-    $xy_resultURL = $WWW_RSA."/tmp/".$xy_temp_file;
+//     $xy_server = rtrim ($xy_server);
+//     $xy_temp_file = explode('/',$xy_server);
+//     $xy_temp_file = end($xy_temp_file);
+    $xy_resultURL = rsat_path_to_url($xy_server);
+    $URL['Cluster size distrib graph'] = $xy_resultURL;
     
-    echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL' width ='50%'></a><br>");
+    echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL'></a><br>");
     echo "<br><hr>\n";
     
     # Input file
     $input_graph_file = writeTempFile("rnsc_input", $graph);
     hourglass("off");
 
-    ## DISPLAY THE RESULT
-    echo "<table class=\"resultlink\">\n";
-    echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
-    echo "<tr><th>Clusters (tab)</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
-    echo "<tr><th>Cluster size distribution (png)</th><td><a href='$xy_resultURL'>$xy_resultURL</a></td></tr>\n"; 
-    echo "</table>\n";
-    echo"<hr>\n";
+    ## Close command handle
+    fclose($cmd_handle);
+//     $cmd_basename = explode('/',$cmd_file);
+//     $cmd_basename = end($cmd_basename);
+    $URL['Server commands'] = rsat_path_to_url($cmd_file);    
 
-//     # Display the results
-//     echo "The results is available at the following URL ";
-//     echo "<a href = '$cc_resultURL'>$cc_resultURL</a>"; 
-//     echo "<hr>\n";
+    ## DISPLAY THE RESULT
+    print_url_table($URL);
      
     echo "
   <TABLE CLASS = 'nextstep'>
