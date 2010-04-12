@@ -133,6 +133,7 @@ Function trim_text($text) {
 Function store_command($command, $name, $cmd_handle) {
   $clean_command = preg_replace('/(\')*\S+rsa\-tools/', '\\1\$RSAT', $command);
   $clean_command = preg_replace('/\/+/', '/', $clean_command);
+  $clean_command = preg_replace('/\'(\S+)\'/', '\\1', $clean_command);
   //  echo ("<p><b>$name:</b> $clean_command</p>");
   fwrite($cmd_handle, "# ".$name."\n");
   fwrite($cmd_handle, $clean_command."\n\n");
