@@ -188,7 +188,7 @@
     //     $cc_server = rtrim ($cc_server);
     //     $cc_temp_file = explode('/',$cc_server);
     //     $cc_temp_file = end($cc_temp_file);
-    $URL['Clusters (tab format)'] = rsat_path_to_url($cc_temp_file);
+    $URL['Clusters (tab format)'] = rsat_path_to_url($cc_server);
     
     # contingency-table
     ## Load the parameters of the program into an array
