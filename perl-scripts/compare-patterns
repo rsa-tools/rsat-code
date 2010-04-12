@@ -54,6 +54,9 @@ local $NULL="NA";
 			      max_w1
 			      max_w2
 			      max_w
+			      diff_w1
+			      diff_w2
+			      diff_w
 			      rel_w1
 			      rel_w2
 			      rel_w
@@ -83,6 +86,7 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 			      offset
 			      strand
 			      max_w
+			      diff_w
 			      rel_w
 			      top_s
 			      );
@@ -112,6 +116,9 @@ my %field_format = (match=>"%d",
 		    max_w=>"%.2f",
 		    max_w1=>"%.2f",
 		    max_w2=>"%.2f",
+		    diff_w=>"%.2f",
+		    diff_w1=>"%.2f",
+		    diff_w2=>"%.2f",
 		    rel_w=>"%.4f",
 		    rel_w1=>"%.4f",
 		    rel_w2=>"%.4f",
@@ -131,6 +138,7 @@ my %field_format = (match=>"%d",
 			      offset
 			      strand
 			      max_w
+			      diff_w
 			      rel_w1
 			      rel_w2
 			      rel_w
@@ -165,6 +173,8 @@ foreach my $field (@temp_return_fields) {
 	push @return_fields, "id1", "id2";
     } elsif ($field eq "max_w") {
 	push @return_fields, "max_w", "max_w1", "max_w2";
+    } elsif ($field eq "diff_w") {
+	push @return_fields, "diff_w", "diff_w1", "diff_w2";
     } elsif ($field eq "rel_w") {
 	push @return_fields, "rel_w", "rel_w1", "rel_w2";
     } elsif ($field eq "top_s") {
@@ -360,12 +370,17 @@ sub OneMatch {
     }
 
     ################################################################
-    ## Calculate maximum possible matching weights
-    ## This takes into account the sequence lengths and their level of
-    ## degeneracy
+    ## Calculate maximum possible matching weights.  This takes into
+    ## account the sequence lengths and their level of degeneracy.
     ($one_match->{max_w1}, $one_match->{top_s1}) = &MaxMatchingWeight($one_match->{seq1}); ## Maximal weight for a match against seq1
     ($one_match->{max_w2}, $one_match->{top_s2}) = &MaxMatchingWeight($one_match->{seq2}); ## Maximal weight for a match against seq2
     $one_match->{max_w} = &min($one_match->{max_w1}, $one_match->{max_w2}); ## Maximal weight for a match between seq1 and seq2
+
+    ################################################################
+    ## Calculate weight differences
+    $one_match->{diff_w1} = $one_match->{max_w1} - $weight;
+    $one_match->{diff_w2} = $one_match->{max_w2} - $weight;
+    $one_match->{diff_w} = $one_match->{max_w} - $weight;
 
     ################################################################
     ## Calculate relative weights
@@ -374,13 +389,13 @@ sub OneMatch {
     } else {
 	$one_match->{rel_w1} = "NA";
     }
-    
+
     if ($one_match->{max_w2} > 0) {
 	$one_match->{rel_w2} = $weight/$one_match->{max_w2};
     } else {
 	$one_match->{rel_w2} = "NA";
     }
-    
+
     if ($one_match->{max_w} > 0) {
 	$one_match->{rel_w} = $weight/$one_match->{max_w};
     } else {
@@ -394,7 +409,7 @@ sub OneMatch {
 ## Print one match
 sub PrintOneMatch {
     my ($one_match) = @_;
-    
+
     my @result = ();
 
     my $seq1 = $one_match->{pattern1}->get_attribute("sequence");
@@ -409,7 +424,7 @@ sub PrintOneMatch {
 	push @result, sprintf $field_format{$field}, $value;
 #	&RSAT::message::Debug($seq1, $seq2, $field, $value) if ($main::verbose >= 0); 
    }
-    
+
     ## Check thresholds on this field
     foreach my $field (keys(%lth)) {
 	my $value = $one_match->{$field};
@@ -424,7 +439,7 @@ sub PrintOneMatch {
 	    $filtered_out->{$seq1}->{$seq2} = 1;
 	}
     }
-    
+
     ## Print the result for this comparison
     unless ((scalar(@return_fields) < 1) ||
 	    ($filtered_out->{$seq1}->{$seq2})) {
@@ -730,6 +745,13 @@ RETURN FIELDS
 		max_w maximal weight between pattern 1 and pattern2
 		      max_w = min(max_w1, max_w1)
 
+	weight differences
+		Difference between match weight and maximal possible weight.
+		diff_w1 = max_w1 - weight
+		diff_w2 = max_w2 - weight
+		diff_w = max_w - weight
+
+
 	relative weight
 		The relative weight is the ratio between matching weight and
 		maximal weight.
@@ -820,29 +842,29 @@ sub ReadArguments {
 	    } else {
 		$verbose = 1;
 	    }
-	    
+
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
-	    
+
 	    ### input file  
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
-	    
+
 	    ### output file  
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
-	    
+
 	    ### first sequence  
 	} elsif ($ARGV[$a] eq "-seq1") {
 #	    push @pattern1, $ARGV[$a+1];
 	    push @pattern1, new RSAT::pattern(sequence=>$ARGV[$a+1],
 					     id=>$ARGV[$a+1]);
-	    
+
 	    ### second sequence  
 	} elsif ($ARGV[$a] eq "-seq2") {
 #	    push @pattern2, $ARGV[$a+1];
@@ -860,15 +882,15 @@ sub ReadArguments {
 	    ### return fields
 	} elsif ($ARGV[$a] eq "-return") {
 	    push @return_fields, split ",", $ARGV[$a+1];
-	    
+
 	    ### table fields
 	} elsif ($ARGV[$a] eq "-table") {
 	    push @table_fields, split ",", $ARGV[$a+1];
-	    
+
 	    ### null string
 	} elsif ($ARGV[$a] eq "-null") {
 	    $NULL = $ARGV[$a+1];
-	    
+
             #### threshold values
         } elsif ($ARGV[$a] eq "-lth") {
             my $field = $ARGV[$a+1];
@@ -886,11 +908,10 @@ sub ReadArguments {
 	    ### slide sequences 
 	} elsif ($ARGV[$a] eq "-slide") {
 	    $slide = 1;
-	    
+
 	    ### strands
 	} elsif ($ARGV[$a] eq "-2str") {
 	    $both_strands = 1;
-	    
 	}
     }
 }
@@ -928,8 +949,8 @@ sub PrintFieldDescriptions {
     my %field_descriptions = ();
     $field_description{id1} = "Identifier of a sequence of the first set";
     $field_description{id2} = "Identifier of a sequence of the second set";
-    $field_description{seq1} = "First sequence of a comparison";
-    $field_description{seq2} = "Second sequence of a comparison";
+    $field_description{seq1} = "First sequence";
+    $field_description{seq2} = "Second sequence";
     $field_description{len1} = "length of the first sequence";
     $field_description{len2} = "Length of the second sequence";
     $field_description{tlen} = "Total length of the alignment (taking into account the offset)";
@@ -946,10 +967,13 @@ sub PrintFieldDescriptions {
     $field_description{strand} = "Strand (D: direct, R: reverse)";
     $field_description{max_w1} = "Maximal weight for a match with seq1";
     $field_description{max_w2} = "Maximal weight for a match with seq2";
-    $field_description{max_w} = "Maximal weight for a match with either seq1 or seq2. max_w = max(max_w1, max_w2)";
-    $field_description{rel_w} = "Weight of a match, relative to match_w";
-    $field_description{rel_w1} = "Weight of the match, relative to match_w1";
-    $field_description{rel_w2} = "Weight of the match, relative to match_w2";
+    $field_description{max_w} = "Maximal weight for a match between seq1 and seq2. max_w = min(max_w1, max_w2)";
+    $field_description{diff_w1} = "Weight difference relative to max_w1. diff_w1 = max_w1 - weight";
+    $field_description{diff_w2} = "Weight difference relative to max_w2. diff_w2 = max_w2 - weight";
+    $field_description{diff_w} = "Weight difference relative to max_w. diff_w = max_w - weight";
+    $field_description{rel_w1} = "Weight of the match, relative to max_w1. rel_w1 = weight/max_w1";
+    $field_description{rel_w2} = "Weight of the match, relative to max_w1. rel_w2 = weight/max_w2";
+    $field_description{rel_w} = "Weight of the match, relative to max_w1. rel_w = weight/max_w";
     $field_description{top_s1} = "";
     $field_description{top_s2} = "";
     print $out ";\n";
