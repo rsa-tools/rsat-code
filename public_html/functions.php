@@ -36,8 +36,8 @@ Function info($info) {
 ?>
 
 <?php
-  // NeAT INFO
-  // This function add an hypertext link
+  // NeAT INFO LINK
+  // This function adds an hypertext link
   Function info_link($info, $link_url) {
     echo "<H4>Info: </H4><blockquote class = 'info'><a href = '$link_url'>$info </a></blockquote></a><br>";
   }
@@ -45,24 +45,41 @@ Function info($info) {
 
 
 <?php
-    Function uploadFile($file) {
-    $repertoireDestination = "tmp/";
-    $nomDestination = $_FILES[$file]["name"];
-    $now = date("Ymd_His");
-    $nomDestination = $nomDestination.$now;
+  Function uploadFile($file) {
+//     $tmpDir = "tmp/";
+//     $tmpFile = $_FILES[$file]["name"];
+//     $now = date("Ymd_His");
+//     $tmpFile = $tmpFile.$now;
+//     $tmpFileName = $tmpDir.$tmpFile;
+   $tmpFileName = getTempFileName('upload');
 
-    if (is_uploaded_file($_FILES[$file]['tmp_name'])) {
-        if (rename($_FILES[$file]['tmp_name'], $repertoireDestination.$nomDestination)) {
-//             echo "File ".$_FILES[$file]['tmp_name']." was moved to  $repertoireDestination/$nomDestination <br>";
-        } else {
-            echo "Could not move $_FILES[$file]['tmp_name']"." check that $repertoireDestination exists<br>";
-        }
+  if (is_uploaded_file($_FILES[$file]['tmp_name'])) {
+    if (rename($_FILES[$file]['tmp_name'], $tmpFileName)) {
+      //             echo "File ".$_FILES[$file]['tmp_name']." was moved to  $tmpDir/$tmpFile <br>";
     } else {
-       echo "File ".$_FILES[$file]['tmp_name']." could not be uploaded<br>";
+      echo "Could not move $_FILES[$file]['tmp_name']"." check that $tmpDir exists<br>";
     }
-    return $repertoireDestination.$nomDestination;
+  } else {
+    echo "File ".$_FILES[$file]['tmp_name']." could not be uploaded<br>";
+  }
+  return $tmpFileName;
   }
 ?>
+
+
+<?php
+Function getTempFileName($prefix) {
+    $tmpDir = "tmp/";
+    $tmpFile = $_FILES[$file]["name"];
+    $tmpFile = $tmpFile.$prefix;
+    $now = date("Ymd_His");
+    $tmpFile = $tmpFile.'_'.$now;
+#    $unique = mktemp('XXXXX');
+    return $tmpDir.$tmpFile;
+  }
+?>
+
+
 
 <?php
     Function storeFile($file) {
@@ -107,13 +124,17 @@ Function trim_text($text) {
 }
 ?>
 
+
+
 <?php
 /**
  * Echo a command by suppress the full path to rsa-tools.
  */
-Function echocommand($command, $name) {
+Function store_command($command, $name, $cmd_handle) {
   $clean_command = preg_replace('/(\')*\S+rsa\-tools\//', '\\1\$RSAT', $command);
-  echo ("<p><b>$name:</b> $clean_command</p>");
+  //  echo ("<p><b>$name:</b> $clean_command</p>");
+  fwrite($cmd_handle, "; ".$name."\n");
+  fwrite($cmd_handle, $clean_command."\n\n");
 }
 ?>
 
@@ -245,7 +266,8 @@ Function spaces_to_tab($string, $num) {
 # http://rsat.ulb.ac.be/rsat/tmp/brol.truc
 Function rsat_path_to_url ($file_name) {
     global $WWW_RSA;
-    $temp_file = explode('/',$file_name);
+    $temp_file = rtrim($file_name);
+    $temp_file = explode('/',$temp_file);
     $temp_file = end($temp_file);
     $resultURL = $WWW_RSA."/tmp/".$temp_file;
     return $resultURL;
