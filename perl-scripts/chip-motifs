@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.34 2010/03/30 16:40:56 defrance Exp $
+# $Id: chip-motifs,v 1.35 2010/04/13 05:58:19 jvanheld Exp $
 #
 ############################################################
 
@@ -92,7 +92,7 @@ package main;
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -883,30 +883,6 @@ sub Synthesis {
     &SynthesisPatternDisco($pattern_type);
   }
 
-#   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-#     for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
-#       ## Convert negative markov orders relative to the oligo length
-#       $markov += $len if ($markov < 0);
-# 	## oligo-analysis
-#       my $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
-#       &SynthesisPatternDisco($pattern_type);
-#     }
-#   }
-#   &SynthesisPatternDisco("dyads");
-#   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-#     &SynthesisPatternDisco('positions_'.$len.'nt');
-#   }
-#   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-#     for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
-#       ## Convert negative markov orders relative to the oligo length
-#       $markov += $len if ($markov < 0);
-#       ## oligo-analysis
-#       my $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
-#       &SynthesisPatternDisco($pattern_type);
-#     }
-#   }
-
-
   ## Word comparison
   &SynthesisWordCompa();
 
@@ -1067,29 +1043,89 @@ sub SynthesisRefMotif {
 ## Where pattern type can be oligos, dyads, local_words, oligo-diff
 sub SynthesisPatternDisco {
   my ($pattern_type) = @_;
-  my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
+
+  ## Synthesize results of pattern assembly (assembly consensus + sig scores)
+  ($asmb) = &OpenInputFile($main::outfile{$pattern_type.'_asmb'});
+  my $pattern_nb = 0;
+  my $asmb_or_isol = "";
+  my %pattern_info = ();
+  while (<$asmb>) {
+    next if /^#/; ## Skip header line
+    next unless /\S/; ## Skip empty lines
+    if (/assembly\s+\#\s+(\d+)/i) {
+      ## Assembly number
+      $pattern_nb = $1;
+      $asmb_or_isol = "asmb";
+      next;
+    } elsif (/Isolated patterns/) {
+      ## Isolated patterns at the end of the assembly file
+      $asmb_or_isol = "isol";
+      next;
+    }
+    next if /^;/; ## Skip comments
+    if ($asmb_or_isol eq "isol") {
+      $pattern_nb++;
+    } elsif (!/consensus/) {
+      next;
+    }
+    my ($word, $rc_word, $score) = split "\t";
+    $pattern_info[$pattern_nb]->{type} = $asmb_or_isol;
+    $pattern_info[$pattern_nb]->{word} = $word;
+    $pattern_info[$pattern_nb]->{rc_word} = $rc_word;
+    $pattern_info[$pattern_nb]->{score} = $score;
+  }
+  close $asmb;
+
+  my $pattern_table;
+
+  ## Synthesize matrix logos
+  my $pattern_table = "<table cellpadding='0' cellspacing='0' align='center' border='0'>";
   foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
-    $logo_table .= "<tr>\n";
+    $pattern_table .= "<tr>\n";
     my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
     my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
+    my $start_format="";
+    my $end_format="";
+    if ($pattern_info[$logo_nb]->{score}>10) {
+      $start_format .= "<b>";
+      $end_format .= "</b>";
+      if ($pattern_info[$logo_nb]->{score}>300) {
+	$start_format .= "<font color='red'>";
+	$end_format = "</font>".$end_format;
+      }
+    }
     &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
     if (-e $logo_file) {
       my $img = &RelativePath($logo_file);
-      $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+      $pattern_table .= "<td align='right'>";
+      $pattern_table .= $start_format;
+      $pattern_table .= "$asmb_or_isol";
+      $pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
+      $pattern_table .= "&nbsp;"x5;
+      $pattern_table .= $pattern_info[$logo_nb]->{word};
+      $pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
+      $pattern_table .= $start_format;
+      $pattern_table .= "</td>\n";
     } elsif ($main::verbose >= 1) {
       &RSAT::message::Warning("Cannot find logo", $logo_file);
     }
     if (-e $logo_file_rc) {
       my $img = &RelativePath($logo_file_rc);
-      $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+      $pattern_table .= "<td align='left'>";
+      $pattern_table .= $start_format;
+      $pattern_table .= $pattern_info[$logo_nb]->{rc_word};
+      $pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
+      $pattern_table .= "</td>\n";
     } elsif ($main::verbose >= 1) {
       &RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc);
     }
-    $logo_table .= "</tr>\n";
+#    $pattern_table .= "<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>";
+    $pattern_table .= "</tr>\n";
   }
-  $logo_table .= "</table>\n";
+  $pattern_table .= "</table>\n";
+
   &SyntheticTableAddRow($pattern_type,
-			$logo_table,
+			$pattern_table,
 			$pattern_type,$main::outfile{$pattern_type},
 			"assembly",$main::outfile{$pattern_type.'_asmb'},
 			"sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
