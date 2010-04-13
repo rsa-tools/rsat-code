@@ -287,7 +287,7 @@ sub PrintAssemblyHeader {
     $l = $seed_length -1;
     printf $out ";%${l}s", "alignt"; 
     printf $out "\t%${seed_length}s","rev_cpl" if ($strand_insensitive);
-    if (&IsReal($score_column)) {
+    if (&IsNatural($score_column)) {
 	print $out "\tscore";
     } else {
 	print $out "\tinfo";
@@ -319,7 +319,7 @@ sub PrintAssembly {
 	&PrintAssemblyHeader();
     }
     foreach $word (sort {($position{$a} <=> $position{$b}) || ($score{$b} <=> $score{$a})} keys %position) {
-	$assembly_score = &max($assembly_score, $score{$word}) if (&IsReal($score_column));
+	$assembly_score = &max($assembly_score, $score{$word}) if (&IsNatural($score_column));
 	$position = $position{$word} - $min_pos;
 	
 	for $p (0..$position-1) {
@@ -352,7 +352,7 @@ sub PrintAssembly {
     
     print $out "$seed";
     printf $out "\t%s", lc(&ReverseComplement($seed)) if ($strand_insensitive);
-    print $out "\t$assembly_score" if (&IsReal($score_column));
+    print $out "\t$assembly_score" if (&IsNatural($score_column));
     print $out "\tbest consensus\n";
 }
 
@@ -591,7 +591,7 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] eq "-toppat") && (&IsNatural($ARGV[$a+1]))) {
 	    $top_pattern_nb = $ARGV[$a+1];
 	    $max_pattern_nb = 0;
-	    
+
 	    ### score column
 	} elsif ($ARGV[$a] eq "-sc") {
 	    $score_column = $ARGV[$a+1];
@@ -599,7 +599,7 @@ sub ReadArguments {
 		print "Error: the score column must be a strictly positive integer\n";
 		exit;
 	    }
-	    
+
 	    ### substitutions
 	} elsif ($ARGV[$a] =~ /-subs/) {
 	    $max_subst = $ARGV[$a+1];
