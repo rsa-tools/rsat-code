@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.277 2010/04/12 13:10:35 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.278 2010/04/13 05:57:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.277 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.278 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -5558,16 +5558,7 @@ sub ReadAssemblyFile {
       $pattern->force_attribute("type", $type);
       $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
       $max_score{$pattern_type}{$family_name} = &max($max_score{$pattern_type}{$family_name}, $score{$pattern});
-#      &RSAT::message::Debug("Pattern\t", $_,
-#			    "\n", join("\t", $family_name, 
-#				       $pattern->get_attribute('sequence'),
-#				       $pattern->get_attribute('rc'),
-#				       $pattern->get_attribute('score'),
-#				       $pattern->get_attribute('type'),
-#				       $score{$pattern},
-#				       $max_score{$family_name},
-#				      )) if ($verbose >= 10);
-			  }
+    }
   }
   close $pattern_handle;
   return ($error, @assembled_patterns);
