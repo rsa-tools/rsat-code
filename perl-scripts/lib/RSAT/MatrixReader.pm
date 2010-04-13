@@ -42,6 +42,7 @@ formats.
 			   'motifsampler'=>1,
 			   'tab'=>1,
 			   'transfac'=>1,
+			   'stamp'=>1,
 			   'uniprobe'=>1,
 			  );
 $supported_input_formats = join ",", keys %supported_input_formats;
@@ -75,34 +76,37 @@ cluster-buster).
 =cut
 sub readFromFile {
     my ($file, $format, %args) = @_;
+    $format = lc($format);
 
     my @matrices = ();
 
-    if ((lc($format) eq "consensus") || ($format =~ /^wc/i)) {
+    if (($format eq "consensus") || ($format =~ /^wc/i)) {
 	@matrices = _readFromConsensusFile($file);
-    } elsif (lc($format) eq "transfac") {
+    } elsif ($format eq "transfac") {
 	@matrices = _readFromTRANSFACFile($file);
-    } elsif (lc($format) eq "infogibbs") {
+    } elsif ($format eq "stamp") {
+	@matrices = _readFromSTAMPFile($file);
+    } elsif ($format eq "infogibbs") {
 	@matrices = _readFromInfoGibbsFile($file);
-    } elsif (lc($format) eq "assembly") {
+    } elsif ($format eq "assembly") {
 	@matrices = _readFromAssemblyFile($file);
-    } elsif (lc($format) eq "gibbs") {
+    } elsif ($format eq "gibbs") {
 	@matrices = _readFromGibbsFile($file);
-    } elsif (lc($format) eq "alignace") {
+    } elsif ($format eq "alignace") {
 	@matrices = _readFromAlignACEFile($file);
-    } elsif (lc($format) eq "tab") {
+    } elsif ($format eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
-    } elsif (lc($format) eq "cluster-buster") {
+    } elsif ($format eq "cluster-buster") {
 	@matrices = _readFromClusterBusterFile($file, %args);
-    } elsif (lc($format) eq "jaspar") {
+    } elsif ($format eq "jaspar") {
 	@matrices = _readFromJasparFile($file, %args);
-    } elsif (lc($format) eq "uniprobe") {
+    } elsif ($format eq "uniprobe") {
 	@matrices = _readFromUniprobeFile($file, %args);
-    } elsif (lc($format) eq "motifsampler") {
+    } elsif ($format eq "motifsampler") {
 	@matrices = _readFromMotifSamplerFile($file);
-    } elsif (lc($format) eq "meme") {
+    } elsif ($format eq "meme") {
 	@matrices = _readFromMEMEFile($file);
-    } elsif (lc($format) eq "feature") {
+    } elsif ($format eq "feature") {
 	@matrices = _readFromFeatureFile($file);
     } else {
 	&main::FatalError("&RSAT::matrix::readFromFile", "Invalid format for reading matrix\t$format");
@@ -256,6 +260,7 @@ sub readMatrixFileList {
 
 
 ################################################################
+
 =pod
 
 =item _readFromTRANSFACFile($file)
@@ -438,6 +443,151 @@ sub _readFromTRANSFACFile {
 }
 
 
+################################################################
+
+=pod
+
+=item _readFromSTAMPFile($file)
+
+Read a matrix from a STAMP file. This method is called by the method
+C<readFromFile($file, "STAMP")>.
+
+=cut
+sub _readFromSTAMPFile {
+  my ($file) = @_;
+  &RSAT::message::Info ("Reading matrix from STAMP file", $file) if ($main::verbose >= 3);
+
+  ## open input stream
+  my $in = STDIN;
+  if ($file) {
+    open INPUT, $file;
+    $in = INPUT;
+  }
+  my $current_matrix_nb = 0;
+  my @matrices = ();
+  my $matrix = "";
+  my $command = "";
+  my $ncol = 0;
+  my $comment_nb = 0;
+  my @pre_matrix_comments = ();
+
+  my %prior = ();
+  my $l = 0;
+  while (<$in>) {
+    $l++;
+    next if (/^;/);
+    s/\r//;
+    chomp();
+    my $version = "";
+
+    ## Empty row is the matrix separator
+    unless (/\S/) {
+      @pre_matrix_comments = ();
+      $matrix = "";
+#      &RSAT::message::Debug("End of matrix", $current_matrix_nb, $matrix) if ($main::verbose >= 10);
+      next;
+    }
+
+    ## in STAMP, the XX is used to put comments (contrary to TRANSFAC where it is a field separator)
+    if (/^XX/) {
+      if (/^XX\s+(\S+.+)/) {
+#	&RSAT::message::Debug("STAMP comment", $current_matrix_nb, $matrix) if ($main::verbose >= 10);
+	if ($matrix) { ## Ignore the XX preceding the DE field, since the matrix is not yet created
+	  $comment_nb++;
+	  $matrix->set_parameter("STAMP_comment_".$comment_nb, $1);
+	} else {
+	  push @pre_matrix_comments, $1;
+	}
+      }
+
+      ## Start a new matrix (one STAMP file contains several matrices)
+    } elsif (/^DE\s+(.+)/) {
+      ## STAMP uses the description field as accession number
+      my $accession = $1;
+      $comment_nb = 0;
+      &RSAT::message::Info("STAMP accession", $accession) if ($main::verbose >= 3);
+      $current_matrix_nb++;
+      $matrix = new RSAT::matrix();
+      $matrix->set_parameter("program", "STAMP");
+      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+      push @matrices, $matrix;
+      if ($accession) {
+	$matrix->set_parameter("accession", $accession);
+	$matrix->set_parameter("AC", $accession);
+      }
+      $matrix->set_parameter("version", $version);
+      $ncol = 0;
+      while (my $comment = shift(@pre_matrix_comments)) {
+	$comment_nb++;
+	$matrix->set_parameter("STAMP_comment_".$comment_nb, $comment);
+      }
+
+      ## STAMP has no header to specify the alphabet. Columns are supposed to contain A,C,G,T respectively.
+      my @alphabet = qw(A C G T);
+      $matrix->setAlphabet_lc(@alphabet);
+      &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 3);
+
+      ## Equiprobable alphabet
+      ## Check that prior has been specified
+      unless ($matrix->get_attribute("prior_specified")) {
+	foreach my $letter (@alphabet) {
+	  $prior{lc($letter)} = 1/scalar(@alphabet) 
+	    unless (defined($prior{$letter}));;
+	}
+	$matrix->setPrior(%prior);
+      }
+
+      ## Other matrix parameters
+    } elsif ($matrix) {
+      ## Sites used to build the matrix
+      if (/^BS\s+/) {
+	my $bs = $'; #'
+	my ($site_sequence, $site_id) = split(/\s*;\s*/, $bs);
+	#      my $site_sequence = $1;
+	#      my $site_id = $2;
+	if ($site_sequence) {
+	  $matrix->push_attribute("sequences", $site_sequence);
+	  if ($site_id) {
+	    $matrix->push_attribute("site_ids", $site_id);
+	  }
+	}
+	&RSAT::message::Info("TRANSFAC site", $site_id, $site_sequence) if ($main::verbose >= 3);
+#      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 10);
+
+      ## Count column of the matrix file (row in TRANSFAC format)
+      } elsif (/^(\d+)\s+/) {
+	my $values = $'; #'
+	$values = &RSAT::util::trim($values);
+	my @fields = split /\s+/, $values;
+	my $consensus_residue= "";
+	if ($fields[$#fields] =~ /[A-Z]/i) {
+	  $consensus_residue = pop @fields;
+	  $transfac_consensus .= $consensus_residue;
+	}
+	&RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 5);
+	$matrix->addColumn(@fields);
+	$ncol++;
+	$matrix->force_attribute("ncol", $ncol);
+
+	## Rows containing other fields
+      } elsif (/^(\S\S)\s+(.*)/) {
+	my $field = $1;
+	my $value = $2;
+	&RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 3);
+
+
+      } else {
+	&RSAT::message::Warning("Skipped invalid row", $_);
+      }
+    }
+  }
+  close $in if ($file);
+
+  return @matrices;
+
+}
+
+
 
 ################################################################
 =pod
@@ -590,7 +740,7 @@ sub _readFromInfoGibbsFile {
 	$id = $id_prefix."_".$current_matrix_nb;
 	$matrix->set_attribute("AC", $id);
 	$matrix->set_attribute("id", $id);
-	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 0);
+	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 4);
 	next;
       }
 
@@ -784,7 +934,7 @@ sub _readFromOldInfoGibbsFile {
 	$ncol++;
 	$matrix->force_attribute("ncol", $ncol);
 #	&RSAT::message::Debug("line ".$l, "adding column", $ncol, "counts", join (":", @fields))
-#	  if ($main::verbose >= 0);
+#	  if ($main::verbose >= 10);
 
 	## Sites used to build the matrix
       } elsif (/^BS\s+/)  {
@@ -1016,18 +1166,18 @@ sub _readFromGibbsFile {
 
       if (/^gibbs /) {
 	$gibbs_command = $_;
-#	&RSAT::message::Debug("line ".$l, "gibbs command", $gibbs_command) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("line ".$l, "gibbs command", $gibbs_command) if ($main::verbose >= 10);
 
       } elsif (/seed: (\S+)/) {
 	$seed = $1;
-#	&RSAT::message::Debug("line ".$l, "seed", $seed) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("line ".$l, "seed", $seed) if ($main::verbose >= 10);
 
       } elsif (/^\s*(\d+)\-(\d+)\s+(\d+)\s+([a-z]*)\s+([A-Z]+)\s+([a-z]+)\s+(\d+)\s*(\S*)/) {
 
 	if ($in_matrix) {
-#	  &RSAT::message::Debug("line ".$l, "Parsing one matrix row") if ($main::verbose >= 0);
+#	  &RSAT::message::Debug("line ".$l, "Parsing one matrix row") if ($main::verbose >= 10);
 	} else {
-#	  &RSAT::message::Debug("line ".$l, "Starting to read a matrix") if ($main::verbose >= 0);
+#	  &RSAT::message::Debug("line ".$l, "Starting to read a matrix") if ($main::verbose >= 10);
 	  $matrix = new RSAT::matrix();
 	  $matrix->set_parameter("program", "gibbs");
 	  $matrix->set_parameter("command", $gibbs_command);
@@ -1224,7 +1374,7 @@ sub _readFromConsensusFile {
 
 
 #	&RSAT::message::Debug("&_readFromConsensusFile", $residue, "alphabet", join(":", $matrix->getAlphabet()), join ", ", @fields)
-#	  if ($main::verbose >= 0);
+#	  if ($main::verbose >= 10);
 
 	## Sites used to build the matrix
       } elsif (/(\d+)\|(\d+)\s*\:\s*(-){0,1}(\d+)\/(\d+)\s+(\S+)/) {
