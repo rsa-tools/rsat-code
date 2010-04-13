@@ -385,7 +385,7 @@ class Extractor:
             try:
                 r[8] = -log10(r[7]) #sig
             except:
-                r[8] = 999
+                r[8] = float("inf")
 
             r[12] = len(R)
 
