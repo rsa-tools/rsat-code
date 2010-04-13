@@ -226,6 +226,7 @@ the program consensus (Hertz), but not by other programs.
 %supported_output_format = ('patser'=>1,
 #			    "motifsampler"=>1,
 			    "transfac"=>1,
+			    "stamp"=>1,
 			    "tab"=>1,
 			    "consensus"=>1,
 			    "cluster-buster" =>1,
@@ -239,6 +240,7 @@ the program consensus (Hertz), but not by other programs.
 		      "patser"=>"//",
 		      #"transfac"=>"");
 		      "transfac"=>"//" ,
+		      "stamp"=>"\n" ,
 		      "infogibbs"=>"//");
 
 
@@ -613,6 +615,8 @@ sub toString {
 #      return $self->to_Motifsampler(%args);
     } elsif ($output_format eq "transfac") {
       return $self->to_TRANSFAC(%args);
+    } elsif ($output_format eq "stamp") {
+      return $self->to_STAMP(%args);
      } elsif ($output_format eq "cluster-buster") {
       return $self->to_cb(%args);
     } elsif ($output_format eq "consensus") {
@@ -705,6 +709,80 @@ sub to_TRANSFAC {
     ## End of record
     $to_print .=  $matrix_terminator{$output_format}."\n";
 
+}
+
+################################################################
+
+=pod
+
+=item to_STAMP();
+
+Converts the matrix into a string in STAMP format.
+STAMP is a dialect of the TRANSFAC format, with important differences:
+- the fields ID and AC are absent, and the matrix ID comes in the field DE
+- the header row (PO) is not supported
+- the positions start at 0 instead of 1
+- there is no matrix delimiter (the double slash)
+
+=cut
+sub to_STAMP {
+    my ($self, %args) = @_;
+    my $to_print = "";
+
+    my $output_format = $args{format};
+    $output_format = lc($output_format);
+
+    ## Accession number
+    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("name");
+    if ($accession) {
+      $to_print .= "XX	AC ".$accession."\n";
+    }
+
+    ## Identifier
+    my $id = $self->get_attribute("identifier");
+    unless ($id) {
+	$id = $self->get_attribute("id");
+    }
+    if ($id) {
+      $to_print .= "XX	ID ".$id."\n";
+    }
+
+    ## Description
+    ##
+    ## Note: The program STAMP uses the field DESC to store the matrix
+    ## identifier/accession. We take the field AC (if detined) else
+    ## the ID, else de DESC. FInally, if none of those fields is
+    ## defined, we use the matrix consenssu as description.
+    my $desc;
+    if ($accession) {
+      $desc = $accession;
+    } elsif ($id)  {
+      $desc = $id;
+    } else {
+      $desc = $self->get_attribute("description");
+      unless ($desc) {
+	$self->calcConsensus();
+	$desc = $self->get_attribute("consensus.IUPAC");
+      }
+    }
+    $to_print .= "DE  ".$desc."\n";
+
+    ## count matrix
+    my @matrix = $self->getMatrix();
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    for my $c (1..$ncol) {
+      $to_print .= sprintf "%-4d",$c-1;
+      for my $r (1..$nrow) {
+	my $occ = $matrix[$c-1][$r-1];
+	$to_print .= sprintf "%6d",$occ;
+      }
+      $to_print .= "\n";
+    }
+    $to_print .= "XX\n";
+
+    ## End of record
+    $to_print .=  $matrix_terminator{$output_format}."\n";
 }
 
 
