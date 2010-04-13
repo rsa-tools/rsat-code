@@ -32,7 +32,9 @@ $out = &OpenOutputFile($outputfile);
 			  pattern_score=>$pattern_score,
 			  pattern_id=>$pattern_id,
 			  pattern_seq=>$pattern_seq,
-			  expand=>1);
+			  expand=>1,
+			  inf_scores=>1, ## Accept infinite score values (e.g. from position-analysis)
+			 );
 &IndexScores(@patterns);
 
 #### verbose ####
@@ -675,6 +677,11 @@ sub AssemblePatterns {
 	%to_align = %score;
 	delete $to_align{$first_seed};
 	@to_align =  sort {$score{$b} <=> $score{$a}} keys %to_align;
+
+	## DEBUG
+#	foreach my $pattern (@to_align) {
+#	  warn join ("\t", $pattern, $score{$pattern}), "\n";
+#	}
 
 	#### try to align each input word to the current assembly
 	my $assembly_size = 1;
