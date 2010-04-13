@@ -385,7 +385,7 @@ class Extractor:
             try:
                 r[8] = -log10(r[7]) #sig
             except:
-                r[8] = 10000
+                r[8] = 999
 
             r[12] = len(R)
 
@@ -520,9 +520,7 @@ def score(l, alpha, mu):
 
     return regions
 
-
-                          
-                                      
+                                     
 ##############################################################################
 #                                                                            #
 #                                 SELECT
@@ -815,8 +813,4 @@ class Bg(dict):
                 break
 
         return smooth(mu_tab, 200)
-
-
-
-
 
