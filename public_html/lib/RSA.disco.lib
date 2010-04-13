@@ -343,4 +343,6 @@ sub ReadAcceptedPatterns {
   }
 }
 
+
+
 return 1;
