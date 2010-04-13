@@ -1691,40 +1691,41 @@ sub ReadPatterns {
     my $pattern_id = $args{pattern_id};
     my $pattern_score = $args{pattern_score};
     my $pattern_seq = $args{pattern_seq};
-    
-    warn "; Reading patterns from file $pattern_file\n"
-	if ($verbose >= 2);
-    
+
+    &RSAT::messsage::Info("Reading patterns from file $pattern_file") if ($verbose >= 2);
+
     #### single pattern specified on the command line
     if ($pattern_seq) {
-	if ($pattern_id) {
-	    $pattern_id = $pattern_id;
-	} else {
-	    $pattern_id = $pattern_seq;
-	}
-	push @patterns, new RSAT::pattern(id=>$pattern_id,
-					  sequence=>$pattern_seq,
-					  score=>$pattern_score);
+      if ($pattern_id) {
+	$pattern_id = $pattern_id;
+      } else {
+	$pattern_id = $pattern_seq;
+      }
+      push @patterns, new RSAT::pattern(id=>$pattern_id,
+					sequence=>$pattern_seq,
+					score=>$pattern_score);
     } else {
-	### read patterns from a file or from standard input
-	my ($pattern_stream) = &OpenInputFile($pattern_file);
-	while (my $line = <$pattern_stream>) {
-	    chomp($line);
-	    next if ($line =~ /^#/);
-	    next unless ($line =~ /\S/);
-	    if ($line =~ /^;/) {
-		#### for piping with oligo-analysis and dyad-analysis
-		#### take occ_sig as the score column
-		if (!(defined($score_column)) &&
-		    (($line =~ /^;\s+(\d+)\s+occ_sig\s+/) || ## for oligo-analysis, dyad-analysis, orm.py
-		     ($line =~ /^;\s+Output score column\s+(\d+)/) ||
-		     ($line =~ /^;\s+(\d+)\s+chi2\s+/) ## for position-analysis
-		    )
-		   ) {
-		    $score_column = $1;
-		}
-		next;
-	    }
+      ### read patterns from a file or from standard input
+      my ($pattern_stream) = &OpenInputFile($pattern_file);
+      while (my $line = <$pattern_stream>) {
+	chomp($line);
+	next if ($line =~ /^#/);
+	next unless ($line =~ /\S/);
+	if ($line =~ /^;/) {
+	  #### for piping with oligo-analysis and dyad-analysis
+	  #### take occ_sig as the score column
+	  if (!(defined($score_column)) &&
+	      (
+	       ($line =~ /^;\s+(\d+)\s+occ_sig\s+/) || ## for oligo-analysis, dyad-analysis, orm.py
+	       ($line =~ /^;\s+(\d+)\s+sig\s+/) || ## for position-analysis if chi2 sig has been computed
+#	       ($line =~ /^;\s+(\d+)\s+chi2\s+/) || ## for position-analysis if chi2 sig has not been computed
+	       ($line =~ /^;\s+Output score column\s+(\d+)/)
+	      )
+	     ) {
+	    $score_column = $1;
+	  }
+	  next;
+	}
 	    $line = &trim($line); ### remove leading and trailing spaces
 	    my @fields = split /\s+/, $line;
 	    next unless ($fields[0] =~ /\S/);
