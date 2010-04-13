@@ -254,9 +254,11 @@ print $query->end_form;
 print $query->start_multipart_form(-action=>"position-analysis_form.cgi");
 ### $demo_seq_file = "$ENV{RSAT}/public_html/data/demo_files/all_yeast_downstream_200bp.fasta.gz";
 $demo_seq_file = "$ENV{RSAT}/public_html/demo_files/Mycoplasma_genitalium_upstream_-30_+29.fasta.gz";
+$demo_seq = `gunzip -c $demo_seq_file`;
 
 print "<TD><B>";
-print $query->hidden(-name=>'sequence_file',-default=>$demo_seq_file);
+#print $query->hidden(-name=>'sequence_file',-default=>$demo_seq_file);
+print $query->hidden(-name=>'sequence',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_format',-default=>'fasta');
 print $query->hidden(-name=>'output',-default=>'display');
 print $query->hidden(-name=>'oligo_length',-default=>3);
