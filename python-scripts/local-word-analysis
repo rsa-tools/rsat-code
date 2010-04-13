@@ -27,16 +27,16 @@ ARGUMENTS
                               if not specified, the standard input is used
         -o #, --output=#      output results to #
                               if not specified, the standard output is used
-    COUTING OPTIONS
+    COUNTING OPTIONS
         -l #, --length=#      set oligomer length to # (REQUIRED ARGUMENT)
                               when the option dyad is used # represents the length of one monad
                               EXAMPLE: --length=7    
         --dyad                count dyads instead of oligomers                              
         --spacing=A:B         when using dyads set the spacing between A to B
                               EXAMPLE: --length=3 --dyad --spacing=1:20
-        -s #, --strand=#      search in foward strand + or in both strands +- (default)
+        -s #, --strand=#      search in forward strand + or in both strands +- (default)
                               EXAMPLE: --strand=+
-        -p, --overlap         allow overlapping oligomer occurences
+        -p, --overlap         allow overlapping oligomer occurrences
                               EXAMPLE: --overlap
         --window=#            count oligomers in fixed window of length #
                               EXAMPLE: --window=20 (window of length 20)
@@ -44,8 +44,8 @@ ARGUMENTS
                               EXAMPLE: --windowgroup=20 (use a window of length 20, 40, 60, ...)
         --all                 do not use windows
         --heuristic=#         count oligomers in variable size windows
-                              set the heutistic for extracting windows. 
-                              Supported heutistics: all, slices (default), score
+                              set the heuristic for extracting windows. 
+                              Supported heuristics: all, slices (default), score
                               EXAMPLE: --heuristic=all
         --slices=#            in the case of variable size windows extracted with 
                               the slices heuristic: use # slices (10 by default)
@@ -96,7 +96,7 @@ ARGUMENTS
                               order (+) or inverse (-)
                               EXAMPLE: --sort=+label
                               Supported parameters:seq,identifier,obs_freq,exp_f
-                              req,occ,exp_occ,occ_P,occ_E,occ_sig,start,end,widt
+                              req,occ,exp_occ,occ_P,occ_E,occ_sig,start,end,width
                               h,n_win,n_pos,w_rank,rank
 
 
