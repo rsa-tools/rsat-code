@@ -695,6 +695,7 @@ sub GetMatrix {
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
+
   my %supported_input_format = (
 			     'alignace'=> 1,
 			     'assembly'=>1,
@@ -707,11 +708,14 @@ sub GetMatrix {
 			     'jaspar'=>1,
 			     'meme'=>1,
 			     'motifsampler'=>1,
+			     'stamp'=>1,
 			     'tab'=>1,
 			     'transfac'=>1,
 			     'uniprobe'=>1,
 			  );
 ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
+## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
+## I SHOULD CHECK LATER
 ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format; 
   my @supported_input_formats = sort(keys( %supported_input_format));
 #  my $supported_input_formats = join ",", @supported_input_formats;
