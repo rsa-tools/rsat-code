@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.39 2010/03/22 16:15:29 jvanheld Exp $
+# $Id: compare-matrices,v 1.40 2010/04/14 04:58:15 jvanheld Exp $
 #
 ############################################################
 
@@ -252,6 +252,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
+require "RSA.disco.lib";
 use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::stats;
@@ -265,7 +266,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -626,7 +627,7 @@ package main;
       ## Slide matrix2 along matrix1
       foreach my $offset ($offset_min..$offset_max) {
 	$compa++;
-	next unless (&CheckThresholds("offset", $offset));
+	next unless (&CheckThresholdValue("offset", $offset));
 
 	## Compute aligned matrix positions
 	my $end1 = &RSAT::stats::min($ncol1, $ncol2+$offset);
@@ -634,7 +635,7 @@ package main;
 	my $w = $end1-$start1+1;
 	my $total_len = $ncol1 + $ncol2 - $w;
 	my $Wr = $w / $total_len;
-	next unless (&CheckThresholds("w", $w));
+	next unless (&CheckThresholdValue("w", $w));
 	my $start2 = &RSAT::stats::max(1, 1- $offset);
 	my $end2 = &RSAT::stats::min($start2+$w-1, $ncol2);
 
@@ -721,9 +722,9 @@ package main;
 	## Compute Euclidian distance
 	if ($calc_field{dEucl}) {
 	  $dEucl = sqrt($SSD);
-	  next unless (&CheckThresholds("dEucl", $dEucl)); $dEucl{$offset} = $dEucl;
+	  next unless (&CheckThresholdValue("dEucl", $dEucl)); $dEucl{$offset} = $dEucl;
 	  $NdEucl = $dEucl/$w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
-	  next unless (&CheckThresholds("NdEucl", $NdEucl)); $NdEucl{$offset} = $NdEucl;
+	  next unless (&CheckThresholdValue("NdEucl", $NdEucl)); $NdEucl{$offset} = $NdEucl;
 	}
 
 	## Compute Sandelin-Wasserman similarity
@@ -740,7 +741,7 @@ package main;
 	  unless ($dKL eq "Inf") {
 	    $dKL /= 2;
 	    $dKL /= $w if ($w > 0); ## Relativize KL distance with respect to the number of aligned columns
-	    next unless (&CheckThresholds("dKL", $dKL)); $dKL{$offset} = $dKL;
+	    next unless (&CheckThresholdValue("dKL", $dKL)); $dKL{$offset} = $dKL;
 	    $dKL = sprintf("%.5f", $dKL);
 	  }
 	}
@@ -772,9 +773,9 @@ package main;
 	  # 				"Ncor=".$Ncor,
 	  # 			       ) if ($main::verbose >= 10);
 	}
-	next unless (&CheckThresholds("cov", $cov));
-	next unless (&CheckThresholds("cor", $cor));
-	next unless (&CheckThresholds("Ncor", $Ncor));
+	next unless (&CheckThresholdValue("cov", $cov));
+	next unless (&CheckThresholdValue("cor", $cor));
+	next unless (&CheckThresholdValue("Ncor", $Ncor));
 
 	## Index values for sorting
 	$cov{$offset} = $cov;
@@ -1332,14 +1333,13 @@ sub Verbose {
 			     $matrix->get_attribute("nsites"),
 			     $matrix->get_attribute("consensus.IUPAC")),  "\n";
     }
-
-    print $main::out "; Thresholds\n";
+    printf $out &PrintThresholdValues();
 }
 
 
 ################################################################
 #### check threshold on some parameter
-sub CheckThresholds {
+sub CheckThresholdValue {
   my ($key, $value) = @_;
   $key = lc($key); ## Ensure case-insensitivity
 
@@ -1442,17 +1442,13 @@ Cluster similar matrices and return one representative matrix for each
 cluster. This option is very convenient for generating non-redundant
 collections of motifs.
 
-=item I<-format table>
+=item I<-table field>
 
 Export a table with one row per matrix of the file 1, one column per
 matrix of file 2, and where each cell indicates the value of the
 selected field.
 
 =back
-
-=item I<Threshold list>
-
-Add list of thresholds in the initial verbosity.
 
 =back
 
