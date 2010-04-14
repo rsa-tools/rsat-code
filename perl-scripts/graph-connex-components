@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: graph-connex-components,v 1.1 2010/04/14 10:18:40 jvanheld Exp $
+# $Id: graph-connex-components,v 1.2 2010/04/14 17:07:09 jvanheld Exp $
 #
 ############################################################
 
@@ -62,34 +62,53 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $main::verbose = 0;
+
+  %main::infile = ();
+  %main::outfile = ();
+
   $main::in = STDIN;
   $main::out = STDOUT;
-  $main::verbose = 1;
 
-  if ($#ARGV != 0) {
-    print << "FIN";
-========================================================
-AllCoCo
-----------
-finds all connected component from a file of
-(tab delimited) links, and writes the links of the CC
-in LargestCC.out.
-Use: ./AllCoCo <file of links>   
-Out: <size of largest component> + file LargestCC.out
+#   if ($#ARGV != 0) {
+#     print << "FIN";
+# ========================================================
+# AllCoCo
+# ----------
+# finds all connected component from a file of
+# (tab delimited) links, and writes the links of the CC
+# in LargestCC.out.
+# Use: ./AllCoCo <file of links>   
+# Out: <size of largest component> + file LargestCC.out
 
-Author: Carl Herrmann
-Last modified: 14/04/2010
-========================================================
-FIN
-    exit;
-  }	
+# Author: Carl Herrmann
+# Last modified: 14/04/2010
+# ========================================================
+# FIN
+#     exit;
+#   }
 
 
-  ## Open the input file
-  $file=$ARGV[0];
-  ($main::in) = &OpenInputFile($file);
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Print column header
+  print $out join("\t", "#element", "component"), "\n" if ($main::verbose >= 1);
+
+  ################################################################
+    ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
 
   @vertices=();
   while ($line=<$in>) {
@@ -121,7 +140,6 @@ FIN
 
   ################################################################
   ## Open output stream
-  $main::out = &OpenOutputFile($output_file);
   my $component_nb = 0;
   do
     {
@@ -160,9 +178,7 @@ FIN
 
       ## Print the component
       $component_nb++;
-      if ($main::verbose >= 1) {
-	print $out "; Component nb ".$component_nb, "\t", scalar(@component)." nodes", "\n";
-      }
+      $size[$component_nb] = scalar(@component);
       foreach $node (@component) {
 	$inCoCo{$node}=1;
 	print $out join ("\t", $node, "comp_".$component_nb), "\n";
@@ -195,6 +211,21 @@ FIN
     }
       while ($#vertices > 0);
 
+
+  ## Report component sizes
+  if ($main::verbose >= 1) {
+    print $out "; Component sizes\n";
+    for my $c (1..$#size) {
+      print $out ";\tcomp_".$c, "\t", $size[$c]." nodes", "\n";
+    }
+  }
+
+    ################################################################
+    ## Close output stream
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+
   exit(0);
 }
 
@@ -220,3 +251,136 @@ sub substract {
   return @aux;
 
 }
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; graph-connex-components ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
