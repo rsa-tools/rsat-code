@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.40 2010/04/14 04:58:15 jvanheld Exp $
+# $Id: compare-matrices,v 1.41 2010/04/14 07:16:40 jvanheld Exp $
 #
 ############################################################
 
@@ -266,7 +266,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.41 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -1445,8 +1445,8 @@ collections of motifs.
 =item I<-table field>
 
 Export a table with one row per matrix of the file 1, one column per
-matrix of file 2, and where each cell indicates the value of the
-selected field.
+matrix of file 2, where each cell indicates the value of the selected
+field for the corresponding pair of matrices.
 
 =back
 
