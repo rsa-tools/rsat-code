@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.20 2010/03/24 09:37:57 morgane Exp $
+# $Id: random-genome-fragments,v 1.21 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -312,7 +312,7 @@ package main;
 			$feature->set_attribute("end",$rand_end);
 			$feature->set_attribute("seq_name",$rand_contig_name);	
 			$feature->set_attribute("strand",$rand_strand);
-			
+
 			print $main::out $feature->to_text($main::out_format, $main::null);
    		}
 	}
@@ -321,27 +321,24 @@ package main;
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
 	if ($main::organism_ens){
-    	print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
-    }
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
-    
-    ################################################################
-	## clean
-	if (scalar(@main::files2remove)>0) {
-		foreach my $file (@main::files2remove){
-			system("rm -f $file");
-		}
+	  print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
 	}
-     
+    }
+
+    ################################################################
+    ## clean
+    if (scalar(@main::files2remove)>0) {
+      foreach my $file (@main::files2remove){
+	system("rm -f $file");
+      }
+    }
+
     ################################################################
     ## Close output stream
+    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $main::out if ($main::outfile{output});
-    
-    
+
     exit(0);
 }
 

@@ -248,9 +248,7 @@ if ($verbose) {
   print $out "; max\t$max\n";
   printf $out "; range\t%g\n",$max - $min;
 
-  $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-  print $out "; Job started $start_time";
-  print $out "; Job done    $done_time";
+  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 }
 
 

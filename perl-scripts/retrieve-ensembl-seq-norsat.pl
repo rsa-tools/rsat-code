@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq-norsat.pl,v 1.2 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: retrieve-ensembl-seq-norsat.pl,v 1.3 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -266,14 +266,7 @@ package main;
     }
 }
 
-  ################################################################
-  ###### finish verbose
-#    if ($verbose >= 1) {
-#	my $done_time = &AlphaDate();
-#	print "; Job started $start_time\n";
-#	print "; Job done    $done_time\n";
-#    }
-	       
+
   ################################################################
   ###### Close output stream
   close $fh if ($output_file);

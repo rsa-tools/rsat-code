@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.278 2010/04/13 05:57:19 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.279 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.278 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.279 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -610,12 +610,7 @@ package main;
     }
   }
 
-  #### report execution time 
-  if ($verbose >= 1) {
-    $done_date = `date`;
-    print ";Job started\t$start_date";
-    print ";Job done\t", `date`;
-  }
+  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
   exit(0);
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.87 2010/03/25 00:05:14 amedina Exp $
+# $Id: matrix-quality,v 1.88 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -558,18 +558,12 @@ package main;
       &list_one_file("Log file", $outfile{log});
       print $main::index "</table>";
 
-      ## Close the file
+      ## Close the index file
       print $main::index "</body></html>\n";
       close $main::index;
     }
 
-    ################################################################
-    ###### finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
+    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
     ################################################################
     ###### close output stream

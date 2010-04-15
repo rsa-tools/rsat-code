@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.103 2010/03/19 07:07:44 jvanheld Exp $
+# $Id: convert-matrix,v 1.104 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -400,14 +400,8 @@ foreach my $matrix (@matrices) {
 }
 
 
-## closing verbose
-if ($verbose) {
-  my $done_time = &AlphaDate();
-  print $out "; Job started $start_time\n";
-  print $out "; Job done    $done_time\n";
-}
-
 ##### close output file
+print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

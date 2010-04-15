@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.57 2009/11/14 07:53:16 jvanheld Exp $
+# $Id: dna-pattern,v 1.58 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -327,9 +327,9 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
 &MatchingStatistics() if ($return_fields{stats});
 
-#### elapsed time
+## time
 if ($verbose) {
-    $done_date = &AlphaDate;
+    $done_date = &AlphaDate();
     print $out "; Job started\t$start_date\n";
     print $out "; Job done   \t$done_date\n";
 }

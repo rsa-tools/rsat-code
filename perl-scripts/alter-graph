@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: alter-graph,v 1.5 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: alter-graph,v 1.6 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -61,7 +61,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -87,10 +87,9 @@ package main;
 			       dot=>1,
 			       gml=>1,
 			       tab=>1
-			       
     );
     $supported_output_formats = join (",", keys %supported_output_format);
-    
+
     ## Parameters
     $add_edges = 0; 	# Number of edges to add
     $add_nodes = 0; 	# Number of nodes to add
@@ -361,10 +360,11 @@ package main;
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
+      if ($output_format eq 'tab') {
+	print $main::out &RSAT::util::ReportExecutionTime($start_time);
+      } else {
+	warn &RSAT::util::ReportExecutionTime($start_time);
+      }
 
 
     ################################################################

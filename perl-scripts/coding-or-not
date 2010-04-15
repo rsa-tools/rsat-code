@@ -360,11 +360,6 @@ close C_SEQ  if (($return{'cs'}) && ($return{seq}));
 close C_POSITIONS if ($return{pos});;
 close GENE_SEQ if (($return{'gene'}) && ($return{seq}));
 
-## Report execution time
-$done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
-print "; Job started $start_time" if ($verbose);
-print "; Job done    $done_time" if ($verbose);
-
 
 exit(0);
 

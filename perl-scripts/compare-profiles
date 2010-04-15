@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.21 2010/03/19 08:07:57 jvanheld Exp $
+# $Id: compare-profiles,v 1.22 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -993,16 +993,8 @@ for my $r1 (1..$nrow) {
 
 
 ################################################################
-###### finish verbose
-if ($verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-
-################################################################
 ###### close output stream
+print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

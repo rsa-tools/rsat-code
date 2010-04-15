@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: random-seq-select,v 1.5 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: random-seq-select,v 1.6 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -182,8 +182,7 @@ package main;
 		push @random_ids, splice(@remaining_ids, $selected, 1);
 	    }
 	}
-	
-	
+
 	################################################################
 	###### print output
 	foreach my $seq_id (@random_ids) {
@@ -191,14 +190,7 @@ package main;
 	}
     }
 
-    ################################################################
-    ###### finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print "; Job started $start_time\n";
-	print "; Job done    $done_time\n";
-    }
-
+    print &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     exit(0);
 }
 

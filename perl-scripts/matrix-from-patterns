@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.30 2010/03/26 03:50:33 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.31 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -104,7 +104,6 @@ BEGIN {
     }
 }
 require "RSA.lib";
-
 
 
 ################################################################
@@ -231,13 +230,7 @@ package main;
       &InfoGibbs();
     }
 
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $log "; Job started $start_time\n";
-	print $log "; Job done    $done_time\n";
-    }
+    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
     ################################################################
     ## Close output stream

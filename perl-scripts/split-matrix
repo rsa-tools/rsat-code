@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: split-matrix,v 1.4 2010/01/06 19:27:12 amedina Exp $
+# $Id: split-matrix,v 1.5 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -91,7 +91,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $decimals = 1;
@@ -325,26 +325,14 @@ package main;
 
     ################################################################
     ## Print output
-        
-    
     ## Export the matrix in tab-delimited format
     &ExportMatrix($matrix);
-    
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
-    
-    
-    ################################################################
-    ## Close output stream 
 
+    ################################################################
+    ## Close output stream
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $main::out if ($main::outfile{output});
 
-    
     exit();
 }
 

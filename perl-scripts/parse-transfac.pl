@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.11 2010/02/07 06:35:46 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.12 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -296,12 +296,7 @@ package main;
 
 
     ### report execution time
-    if ($main::verbose >= 1) {
-	$done_time = &RSAT::util::AlphaDate();
-	warn ";\n";
-	warn "; job started $start_time";
-	warn "; job done    $done_time\n";
-    }
+    warn &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
     close ERR;
 

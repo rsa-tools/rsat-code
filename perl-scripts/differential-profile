@@ -563,9 +563,7 @@ if ($verbose) {
     print $out "\n";
     print $out ";\n";
 
-    $done_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
-    print $out ";Job started $start_time";
-    print $out ";Job done    $done_time";
+    print $main::out &RSAT::util::ReportExecutionTime($start_time);
 }
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.33 2010/03/05 15:05:12 jvanheld Exp $
+# $Id: footprint-scan,v 1.34 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -633,18 +633,9 @@ crer_pval
   ## Print verbose
   &Verbose() if ($main::verbose);
 
-
-  ################################################################
-  ## Finish verbose
-  if ($main::verbose >= 1) {
-      my $done_time = &AlphaDate();
-      print $main::out "; Job started $start_time\n";
-      print $main::out "; Job done    $done_time\n";
-  }
-
-
   ################################################################
   ## Close output stream
+  print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
   close $main::out if ($main::outfile{output});
 
 
