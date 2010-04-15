@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.55 2010/03/29 20:59:36 jvanheld Exp $
+# $Id: compare-classes,v 1.56 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -401,16 +401,7 @@ if (($multi_cor eq "nc") || ($multi_cor eq "nt")) {
 &CompareClasses();
 &PrintResult();
 
-################################################################
-## Finish verbose
-if ($verbose) {
-    my $done_time = &AlphaDate;
-    if ($return_fields{proba}) {
-      printf $out "; %-29s\t%d\n", "Significance tests actually performed (nt)", $nb_tests;
-    }
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
+print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
 ################################################################
 ###### close output stream

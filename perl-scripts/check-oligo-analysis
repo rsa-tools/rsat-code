@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.10 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.11 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -121,15 +121,8 @@ if ($task{theory}) {
 }
 
 ################################################################
-###### finish verbose
-if ($verbose) {
-    my $done_time = &AlphaDate;
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-################################################################
 ###### close output stream
+print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

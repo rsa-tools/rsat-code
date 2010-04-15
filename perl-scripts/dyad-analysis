@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.65 2010/03/09 07:22:51 jvanheld Exp $
+# $Id: dyad-analysis,v 1.66 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -222,17 +222,11 @@ eval {
     ## Print the result
     &PrintResult();
 
-    ## Report execution time
-    if ($verbose) {
-	$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-	print $out ";Job started $start_time";
-	print $out ";Job done    $done_time";
-    }
-
+    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
     ###### close input stream
     close $in if ($infile{input});
-   
+
     ###### close output stream
     close $out if ($outputfile);
 

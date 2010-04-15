@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.19 2010/03/28 01:29:37 jvanheld Exp $
+# $Id: display-graph,v 1.20 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -379,13 +379,7 @@ package main;
       close $output_fhandle;
     }
 
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-      my $done_time = &AlphaDate();
-      print STDOUT "; Job started $start_time\n";
-      print STDOUT "; Job done    $done_time\n";
-    }
+    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
     exit(0);
 }

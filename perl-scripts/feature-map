@@ -183,13 +183,7 @@ close $out if ($outputfile);
 
 &PrintHTMLmap() if ($HTML_map);
 
-
-#### last comments ####
-if ($verbose) {
-  $done_time = `date`;
-  print ";Job started $start_time";
-  print ";Job done    $done_time";
-}
+warn &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
 exit(0);
 

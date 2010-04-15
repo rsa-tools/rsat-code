@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: reverse-complement,v 1.6 2010/03/07 20:39:58 jvanheld Exp $
+# $Id: reverse-complement,v 1.7 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -145,25 +145,9 @@ package main;
     &Verbose() if ($main::verbose);
 
     ################################################################
-    ## Execute the command
-
-    ################################################################
-    ## Print output
-
-
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $out "; Job started $start_time\n";
-	print $out "; Job done    $done_time\n";
-    }
-
-
-    ################################################################
     ## Close output stream
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $out if ($outfile{output});
-
 
     exit(0);
 }

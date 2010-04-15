@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.10 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: binomial-series,v 1.11 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:46:41 jvanheld>
 #
@@ -14,7 +14,7 @@ require "RSA.lib";
 
 
 #### initialise parameters ####
-my $start_time = &AlphaDate;
+my $start_time = &AlphaDate();
 
 &ReadArguments();
 
@@ -100,13 +100,7 @@ for ($s = $min_successes; $s <= $max_successes; $s += $step) {
     print $out "\n";
 }
 
-###### verbose ######
-if ($verbose) {
-  my $done_time = &AlphaDate;
-  print $out "; Job started $start_time\n";
-  print $out "; Job done    $done_time\n";
-}
-
+print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
 exit(0);
 

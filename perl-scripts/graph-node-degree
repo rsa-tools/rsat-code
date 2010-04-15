@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.12 2010/03/29 17:39:47 jvanheld Exp $
+# $Id: graph-node-degree,v 1.13 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -247,13 +247,7 @@ package main;
     }
 
 
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
+    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
     ################################################################
     ## Close output stream

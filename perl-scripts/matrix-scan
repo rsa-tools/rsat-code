@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.155 2010/03/05 04:48:37 jvanheld Exp $
+# $Id: matrix-scan,v 1.156 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1960,13 +1960,9 @@ package main;
       printf $main::out "; \t%-15s\t%s\n", "TOTAL",$sum_binom_tests;
     }
 
-    my $done_time = &AlphaDate();
-    print $main::out "; Job started $start_time\n";
-    print $main::out "; Job done    $done_time\n";
-  }
-
   ################################################################
   ###### close output stream
+  print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
   close $main::out if ($main::outfile{output});
 
   exit(0);

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: merge-results,v 1.6 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: merge-results,v 1.7 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:15:10 jvanheld>
 #
@@ -80,21 +80,14 @@ for $c (0..$#commands) {
 print $out "</table>\n";
 
 
-###### verbose ######
-if ($verbose) {
-    my $done_time = &AlphaDate;
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-
-#### html end ####
+## html end
 print $out ("</pre>\n",
 	    "</html>\n",
 	    "</body>\n");
 
 
 ###### close output file ######
+print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

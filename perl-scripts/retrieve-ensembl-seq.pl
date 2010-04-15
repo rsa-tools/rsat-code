@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.72 2010/03/24 18:27:09 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.73 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -421,13 +421,8 @@ package main;
     }
 }
 
-  ################################################################
-  ###### finish verbose
-    if ($verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print "; Job started $start_time\n";
-	print "; Job done    $done_time\n";
-    }
+  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+
   ################################################################
   ###### Close output stream
   close $fh if ($output_file);
