@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.52 2010/03/30 07:22:36 jvanheld Exp $
+# $Id: compare-graphs,v 1.53 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -331,16 +331,17 @@ package main;
     ## Print output
     print $main::out $return_graph->to_text($output_format, $arc_id_option);
 
+
+
     ################################################################
-    ## Finish verbose
+    ## Report execution time
+    ## Put it in output file only if it is a tab-delimted format.
     if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
 	my $this_out = $main::out;
 	if ($output_format ne 'tab') {
           $this_out = "STDERR";
         }
-	print $this_out "; Job started $start_time\n";
-	print $this_out "; Job done    $done_time\n";
+	print $this_out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     }
 
     ################################################################

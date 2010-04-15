@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.21 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.22 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -554,14 +554,8 @@ package main;
     }
     close STATS;
 
-    ###### verbose ######
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $out "; Job started $start_time\n";
-	print $out "; Job done    $done_time\n";
-    }
-
     ###### close output file ######
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $out if ($out_file{output});
     close ERR;
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.22 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: convert-background-model,v 1.23 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -266,15 +266,8 @@ package main;
     print $out $bg_model->to_string($output_format, decimals=>$decimals);
 
     ################################################################
-    ## finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
-
-    ################################################################
     ###### close output stream
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $main::out if ($main::outfile{output});
 
     exit(0);

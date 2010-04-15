@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.16 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: matrix-distrib,v 1.17 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -329,18 +329,9 @@ package main;
   }
   }
 
-
-
-  ################################################################
-  ## finish verbose
-  if ($main::verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $main::out "; Job started $start_time\n";
-    print $main::out "; Job done    $done_time\n";
-  }
-
   ################################################################
   ###### close output stream
+  print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
   close $main::out if ($main::outfile{output});
 
   exit(0);

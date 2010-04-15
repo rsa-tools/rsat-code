@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.57 2009/11/29 16:46:51 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.58 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -315,17 +315,11 @@ package main;
     ## Export protein sequences
     &ExportProteinSequences($CDSs,$org);
 
-    ###### verbose ######
-    if ($verbose) {
-	my $done_time = &AlphaDate();
-	print $out "; Job started $start_time\n";
-	print $out "; Job done    $done_time\n";
-    }
-
     ### Report the output directory
     &RSAT::message::Info(join("\t", "Output directory", $dir{output}));
 
     ###### close output file ######
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $out if ($outfile{output});
 
     exit(0);

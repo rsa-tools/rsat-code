@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.11 2009/11/05 03:49:11 jvanheld Exp $
+# $Id: seq-proba,v 1.12 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -201,15 +201,8 @@ package main;
     close $main::in if ($main::infile{input});
 
     ################################################################
-    ###### finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
-
-    ################################################################
     ###### close output stream
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $main::out if ($main::outfile{output});
 
     exit(0);

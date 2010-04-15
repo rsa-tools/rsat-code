@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-chip,v 1.4 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: convert-chip,v 1.5 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-09-03 10:23:23 jvanheld>
 #
@@ -46,23 +46,8 @@ close $in if ($infile{input});
 &Verbose if ($verbose);
 
 ################################################################
-###### execute the command
-
-################################################################
-###### print output
-
-
-################################################################
-###### finish verbose
-if ($verbose) {
-    my $done_time = &AlphaDate;
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-
-################################################################
 ###### close output stream
+print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

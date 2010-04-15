@@ -186,18 +186,11 @@ while (<$in>) {
 }
 
 
-###### verbose ######
-if ($verbose) {
-  $done_time = `date`;
-  print $out ";Job started $start_time";
-  print $out ";Job done    $done_time";
-}
-
-
 ###### close input file ######
 close $in unless ($inputfile eq "");
 
 ###### close output file ######
+print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 close $out unless ($outputfile eq "");
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.35 2010/03/05 15:04:48 jvanheld Exp $
+# $Id: footprint-discovery,v 1.36 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -183,7 +183,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -482,15 +482,8 @@ sub RunFootprintDisco {
   }
 
   ################################################################
-  ## Finish verbose
-  if ($verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-  }
-
-  ################################################################
   ## Close output streams
+  print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
 
