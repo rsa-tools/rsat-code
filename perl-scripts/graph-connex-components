@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: graph-connex-components,v 1.2 2010/04/14 17:07:09 jvanheld Exp $
+# $Id: graph-connex-components,v 1.3 2010/04/15 14:08:12 carl Exp $
 #
 ############################################################
 
@@ -62,7 +62,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $main::verbose = 0;
 
   %main::infile = ();
@@ -119,6 +119,20 @@ package main;
     @line=split(/\t/,$line);
     push(@{$neighbors{$line[0]}},$line[1]);
     push(@{$neighbors{$line[1]}},$line[0]);
+
+    $k{$line[0]}++;
+    $k{$line[1]}++;
+
+    if ($main::wcol) {	
+	$weighted_k{$line[0]}+=$line[$main::wcol-1];
+	$weighted_k{$line[1]}+=$line[$main::wcol-1];
+    }
+    else {
+	$weighted_k{$line[0]}++;
+	$weighted_k{$line[1]}++;
+    }
+
+
     if (!$already{$line[0]}) {
       push(@vertices,$line[0]);
     }
@@ -181,7 +195,7 @@ package main;
       $size[$component_nb] = scalar(@component);
       foreach $node (@component) {
 	$inCoCo{$node}=1;
-	print $out join ("\t", $node, "comp_".$component_nb), "\n";
+	print $out join ("\t", $node, "comp_".$component_nb,$k{$node},$weighted_k{$node}), "\n";
       }
 #      print $out "-----------\n";
 
@@ -230,6 +244,11 @@ package main;
 }
 
 ################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
 ## Compute the difference between two arrays
 sub substract {
 
@@ -253,9 +272,6 @@ sub substract {
 }
 
 
-################################################################
-################### SUBROUTINE DEFINITION ######################
-################################################################
 
 
 ################################################################
@@ -322,8 +338,19 @@ Same as -h
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
-	    ## Input file
 
+
+=pod
+
+=item B<-wcol column number containing weights>
+
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $main::wcol = shift(@arguments);
+	}
+
+	    ## Input file
 =pod
 
 =item B<-i inputfile>
@@ -332,7 +359,7 @@ If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
 
 =cut
-	} elsif ($arg eq "-i") {
+	elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
 
 	    ## Output file
