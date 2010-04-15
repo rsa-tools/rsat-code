@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cliques,v 1.4 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: graph-cliques,v 1.5 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -42,9 +42,11 @@ formats. Default format for the input graph: tab.
 
 =head1 OUTPUT FORMAT
 
-A tab-delimited text file with 3 columns. The first column
-indicates the elements of the clique, the second column the id of the clique and the third the size of the clique.
+A tab-delimited text file with 3 columns. 
 
+ 1) elements of the clique
+ 2) ID of the clique
+ 3) size of the clique
 
 =cut
 
@@ -67,7 +69,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
     %main::infile = ();
     %main::outfile = ();
@@ -78,13 +80,13 @@ package main;
     ## Input formats
     local $input_format = "tab";
     %supported_input_format =(
-	tab=>1,
-	gml=>1
-    );
+			      tab=>1,
+			      gml=>1
+			     );
     $supported_input_formats = join (",", keys %supported_input_format);
     local $source_col = 1;
     local $target_col = 2;
-    
+
     # Size of the cliques
     local $min_size = 3;
 
@@ -118,7 +120,7 @@ package main;
     my %empty = ();
     our %neighbours = ();
     our $clique_nb = 1;
-    print $out join("\t", "#element" ,"cluster", "size")."\n";
+    print $out join("\t", "#element" ,"clique", "size")."\n";
     &cliques(\%empty, \%nodes_id_name, \%nodes_id_name);
     
 
@@ -234,7 +236,7 @@ sub print_clique {
   my $size = scalar (keys %combination);
   if ($size >= $min_size) {
     foreach my $elem (keys %combination) {
-      print $main::out join "\t", $nodes_id_name{$elem}, "clique_".$clique_nb, $size;
+      print $main::out join "\t", $nodes_id_name{$elem}, "clq_".$clique_nb, $size;
       print $main::out "\n";
     }
     $clique_nb++;

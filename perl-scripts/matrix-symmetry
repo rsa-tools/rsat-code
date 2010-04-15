@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.14 2010/01/13 17:38:26 amedina Exp $
+# $Id: matrix-symmetry,v 1.15 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -155,7 +155,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
     local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     $seqlogo_path = &trim($seqlogo_path);
@@ -529,38 +529,26 @@ package main;
 	    ###############################################################
 	    ## Creat logo
 	    ## Generate logo
-	    
 	    if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir)) {
-		
+
 		my $logo_file=$logo_dir.$matrix->get_attribute("name")."_logo";
 		#	$logo_file =~ s/\.\w+$//;
 		$matrix->set_attribute("logo_file" => $logo_file);
 		$matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
-		
+
 		print STDOUT "\n";
 	    }
-	    
 
 
 	    ################################################################
 	    ## Detect Symmetry methods
-	    
+
 	    ##  Comparisons
 	    &ComputeNormalizedCorrelation($matrix)  if ($symmetry_method eq "Ncor");
-	    
+
 	    ## Split Matrix, detected sites similarities
 	    &SplitMethod($matrix)  if ($symmetry_method eq "split");
-	    
-	    
 	}
-    }
-    
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
     }
 
     ################################################################
@@ -572,12 +560,11 @@ package main;
 				    "</html>");
 	close $main::html_out;
     }
-    
     system ("rm -fr $temp_dir") if ($main::temp_dir);
-    
+
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $main::out if ($main::outfile{output});
-    
-    
+
     exit(0);
 }
 

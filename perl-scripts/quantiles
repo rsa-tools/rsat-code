@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: quantiles,v 1.4 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: quantiles,v 1.5 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2007-10-27 01:06:25 jvanheld>
 #
@@ -62,7 +62,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
     %main::infile = ();
     %main::outfile = ();
@@ -269,22 +269,14 @@ package main;
       	&doit($cmd);
 	}
 
-	################################################################
-	###### finish verbose
-	if ($verbose) {
-	    my $done_time = &AlphaDate;
-	    print $out "; Job started $start_time\n";
-	    print $out "; Job done    $done_time\n";
-	}
+    ################################################################
+    ###### close output stream
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    close $out if ($outfile{output});
 
 
-	################################################################
-	###### close output stream
-	close $out if ($outfile{output});
-
-
-	exit(0);
-
+    exit(0);
+    
 
 ################################################################
 ################### subroutine definition ######################

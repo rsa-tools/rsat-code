@@ -24,8 +24,8 @@ This method class rassembles various utilities for RSAT.
 =cut
 
 
-
 ################################################################
+
 =pod
 
 =item IsNatural
@@ -43,8 +43,8 @@ sub IsNatural {
     }
 }
 
-
 ################################################################
+
 =pod
 
 =item IsInteger
@@ -63,6 +63,7 @@ sub IsInteger {
 }
 
 ################################################################
+
 =pod
 
 =item IsReal
@@ -85,8 +86,8 @@ sub IsReal {
     }
 }
 
-
 ################################################################
+
 =pod
 
 =item round
@@ -108,8 +109,8 @@ sub round {
     }
 }
 
-
 ################################################################
+
 =pod
 
 =item trim
@@ -130,8 +131,8 @@ sub trim {
 
 
 
-
 ################################################################
+
 =pod
 
 =item AlphaDate
@@ -153,6 +154,30 @@ sub AlphaDate {
 
 
 ################################################################
+
+=pod
+
+=item B<ReportTime()>
+
+Report execution time.
+
+Usage:
+  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+
+=cut
+sub ReportExecutionTime {
+  my ($start_time) = @_;
+  my $time_report = "";
+  my $done_time = &AlphaDate();
+  $time_report .= "; Job started\t$start_time\n";
+  $time_report .=  "; Job done\t$done_time\n";
+  my $elapsed = times();
+  $time_report .=  "; Seconds\t".$elapsed."\n";
+  return($time_report);
+}
+
+################################################################
+
 =pod
 
 =item SplitFileName
@@ -174,8 +199,8 @@ sub SplitFileName {
     return ($dir, $short_file_name);
 }
 
-
 ################################################################
+
 =pod
 
 =item ShortFileName
@@ -192,8 +217,8 @@ sub ShortFileName {
     return $short_file_name;
 }
 
-
 ################################################################
+
 =pod
 
 =item ExtractPath
@@ -214,6 +239,7 @@ sub ExtractPath {
 }
 
 ################################################################
+
 =pod
 
 =item CheckOutDir()
@@ -258,8 +284,8 @@ sub CheckOutDir {
     }
 }
 
-
 ################################################################
+
 =pod
 
 =item OpenInputFile
@@ -312,6 +338,7 @@ sub OpenInputFile {
 }
 
 ################################################################
+
 =pod
 
 =item OpenOutputFile
@@ -347,8 +374,8 @@ sub OpenOutputFile {
 }
 
 
-
 ################################################################
+
 =pod
 
 =item ConvertStrand
@@ -379,7 +406,6 @@ sub ConvertStrand {
 ###  It converts a score value into a color (in RGB) according to 5 different
 ###  color gradients
 ### -blue, red, green, grey and fire (from yellow to red)
-
 
 sub getBgColorFromOneScore{
     my($score,$min,$max,$log,$gradient)=@_;
@@ -463,7 +489,6 @@ sub hex2rgb {
   return ($r,$g,$b);
 }
 
-
 ################################################################
 ## Return a unique name for a temporary file in the $TMP directory
 ## Usage:
@@ -512,7 +537,6 @@ sub doit {
     my $job_log = $wd."/".$job.".log";
 
 
-
     ################################################################
     ## Check that the cluster parameters are well defined before
     ## trying to send jobs to a PC cluster
@@ -531,7 +555,6 @@ sub doit {
     if (defined($ENV{QSUB_OPTIONS})) {
       $qsub_options = $ENV{QSUB_OPTIONS};
     }
-
 
     ## Cluster queue
     unless ($ENV{CLUSTER_QUEUE}) {
@@ -594,6 +617,7 @@ sub doit {
 }
 
 ################################################################
+
 =pod
 
 =item PrintArguments()
@@ -617,10 +641,7 @@ sub PrintArguments {
   return $argument_string;
 }
 
-
 return 1;
 
-
 __END__
-
 

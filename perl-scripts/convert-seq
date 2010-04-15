@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.32 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: convert-seq,v 1.33 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -210,9 +210,8 @@ if ($inputfile ne "") {
 }
 
 ###### close output file ######
-if ($outputfile ne "") {
-    close $out;
-}
+print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+close $out if ($outputfile);
 
 
 exit(0);

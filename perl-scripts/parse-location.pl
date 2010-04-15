@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-location.pl,v 1.8 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: parse-location.pl,v 1.9 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 14:06:08 jvanheld>
 #
@@ -70,21 +70,8 @@ close $in if ($infile{input});
 #### verbose ####
 &Verbose if ($verbose);
 
-###### execute the command #########
-
-
-###### print output ######
-
-
-###### verbose ######
-if ($verbose) {
-    my $done_time = &AlphaDate;
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-
 ###### close output file ######
+print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

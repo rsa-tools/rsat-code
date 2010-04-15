@@ -222,13 +222,8 @@ package main;
       }
     }
   }
-  ################################################################
-  ###### finish verbose
-  if ($main::verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $main::out "; Job started $start_time\n";
-    print $main::out "; Job done    $done_time\n";
-  }
+
+  print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 }
 
 ################################################################

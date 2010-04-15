@@ -242,15 +242,7 @@ for $seq1 (1..$sequence_number) {
 }
 
 
-### processing time ###
-if ($verbose) {
-  $done_date = `date`;
-  print "\n";
-  print "Job started $start_date";
-  print "Job done    $done_date\n\n";
-}
-
-
+print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 close $out;
 
 

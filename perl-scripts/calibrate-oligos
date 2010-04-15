@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.8 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: calibrate-oligos,v 1.9 2010/04/15 13:08:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -479,9 +479,7 @@ sub Verbose {
 ################################################################
 ###### finish verbose
 sub CloseVerbose {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
+    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
     close $out;
 }
 

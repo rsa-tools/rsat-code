@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.35 2010/04/13 05:58:19 jvanheld Exp $
+# $Id: chip-motifs,v 1.36 2010/04/15 13:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -92,7 +92,7 @@ package main;
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -199,14 +199,7 @@ package main;
     &TimeWarn("Log file", $main::outfile{log});
   }
 
-  ################################################################
-  ## Finish verbose
-  if ($main::verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $main::out "; Job started $start_time\n";
-    print $main::out "; Job done    $done_time\n";
-  }
-
+  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
   ################################################################
   ## Close output stream
@@ -788,8 +781,8 @@ sub MotifVersusMotifs {
   $cmd .= " -sort Ncor";
   $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $cmd .= " -lth w 4"; ## Min number of aligned columns
-  $cmd .= " -lth cor 0.75"; ## Min normalized correlation
-  $cmd .= " -lth Ncor 0.6"; ## Min normalized correlation
+  $cmd .= " -lth cor 0.85"; ## Min normalized correlation
+  $cmd .= " -lth Ncor 0.7"; ## Min normalized correlation
   $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
   &one_command($cmd, 1);
