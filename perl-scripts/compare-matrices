@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.41 2010/04/14 07:16:40 jvanheld Exp $
+# $Id: compare-matrices,v 1.42 2010/04/15 13:08:22 jvanheld Exp $
 #
 ############################################################
 
@@ -266,7 +266,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.41 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -297,6 +297,8 @@ package main;
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "rank",
+				    "alignment",
+				    "shifted_matrices",
 				);
   local %supported_return_field = ();
   foreach my $field (@supported_return_fields) {
@@ -577,7 +579,7 @@ package main;
     my $nrow1 = $matrix1->get_attribute("nrow");
     my @crude_freq1 = $matrix1->getCrudeFrequencies();
     my @corrected_freq1 = $matrix1->getFrequencies();
-    my $matrix1_id = $matrix1 ->get_attribute("id");
+    my $matrix1_id = $matrix1->get_attribute("id") || $matrix1->get_attribute("identifier") || "<NA>";
     my $matrix1_name = $matrix1 ->get_attribute("name");
     my $m2 = 0;
 
@@ -588,7 +590,7 @@ package main;
 			       "file2", $m2."/".scalar(@matrices2),
 			      )
 	if ($main::verbose >= 4);
-      my $matrix2_id = $matrix2-> get_attribute("id");
+      my $matrix2_id = $matrix2->get_attribute("id") || $matrix2->get_attribute("identifier") || "<NA>";
       my $matrix2_name = $matrix2-> get_attribute("name");
 
       ## Skip identical matrices if the option -distinct is active
@@ -708,14 +710,6 @@ package main;
 		&RSAT::message::Warning("The Kullback-Leibler distance is infinite ") if ($main::verbose >= 3);
 	      }
 	    }
-
-	    #	    &RSAT::message::Debug("offset=".$offset, "pos=".$pos, "row=".$r, "f1=".$f1, "f2=".$f2,
-	    #				  "sum_f1=".$sum_f1,
-	    #				  "dKL=", $dKL,
-	    #				  "dEucl=", $dEucl,
-	    #				 )
-	    #		  if ($main::verbose >= 10);
-
 	  }
 	}
 
@@ -786,9 +780,7 @@ package main;
 	my @out_fields = ();
 	push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
 	if ($return_field{matrix_id}) {
-	  my $id1 = $matrix1->get_attribute("id") || $matrix1->get_attribute("identifier") || "<NA>";
-	  my $id2 = $matrix2->get_attribute("id") || $matrix2->get_attribute("identifier") || "<NA>";
-	  push (@out_fields, $id1, $id2);
+	  push (@out_fields, $matrix1_id, $matrix2_id);
 	}
 	if ($return_field{matrix_ac}) {
 	  my $ac1 = $matrix1->get_attribute("accession") || "<NA>";
@@ -815,6 +807,7 @@ package main;
 	push (@out_fields,$consensus1,$consensus2) if ($return_field{consensus});
 	push @output_offset, $offset;
 	$out_line{$offset} =  join("\t", @out_fields);
+
       }
 
       next if (scalar(@output_offset) == 0);
@@ -870,18 +863,30 @@ package main;
 	print $out  $out_line{$offset};
 	print $out "\t", $rank{$offset} if ($return_field{rank});
 	print $out "\n";
+
+	if ($return_field{alignment}) {
+	  my ($aligned_matrix, $shifted_matrix1, $shifted_matrix2,) = &AlignMatrices($matrix1, $matrix2, $offset, stat=>"sum");
+	  print $out join ("\t", ";pos", "|", 1..$aligned_matrix->ncol()), "\n";
+	  if ($return_field{shifted_matrices}) {
+	    print $out join ("\t", "; Matrix 1", $matrix1_id, $matrix1->ncol(), $matrix1->get_attribute("consensus.IUPAC")), "\n",
+	      $matrix1->toString(format=>'tab');
+	    print $out join ("\t", "; Matrix 2", $matrix2_id, $matrix2->ncol(), $matrix2->get_attribute("consensus.IUPAC")), "\n",
+	      $matrix2->toString(format=>'tab');
+	    print $out join ("\t", "; Shifted matrix 1", "shift1=".$shifted_matrix1->get_attribute("shift"), $matrix1_id, $matrix1->ncol(), $shifted_matrix1->get_attribute("consensus.IUPAC")), "\n",
+	      $shifted_matrix1->toString(format=>'tab');
+	    print $out join ("\t", "; Shifted matrix 2", "shift2=".$shifted_matrix2->get_attribute("shift"), $matrix2_id, $matrix2->ncol(), $shifted_matrix2->get_attribute("consensus.IUPAC")), "\n",
+	      $shifted_matrix2->toString(format=>'tab');
+	  }
+	  print $out join("\t", "; Alignment ", $matrix1_id." + ".$matrix2_id, "offset=$offset", $aligned_matrix->get_attribute("consensus.IUPAC")), "\n",
+	    $aligned_matrix->toString(format=>'tab');
+	}
       }
     }
   }
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
 
-  ################################################################
-  ## Finish verbose
-  if ($main::verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $main::out "; Job started $start_time\n";
-    print $main::out "; Job done    $done_time\n";
-  }
+
+  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
 
   ################################################################
@@ -1172,8 +1177,6 @@ matrix_name. Maintained for backward compatibility.
 List of fields to return (only valid for the formats "profiles" and
 "matches").
 
-Supported fields:
-
 =cut
     } elsif ($arg eq "-return") {
       my $fields_to_return = shift(@arguments);
@@ -1361,10 +1364,153 @@ sub CheckThresholdValue {
     &RSAT::message::Debug("Passed upper threshold", $key, $value, "uth=".$uth{$key}) if ($main::verbose >= 5);
   }
 
-
   return(1);
 }
 
+
+################################################################
+## Align two matrices
+##
+## The offset should be provided. The program computes the sum or the
+## mean count for each row (residue) and each column (aligned
+## position).
+##
+## Usage:
+##   my $aligned_matrix = &AlignMatrices($matrix1, $matrix2, $offset, %args);
+##
+## The method can also return the shifted original matrices, which are
+## convenient for drawing aligned logos.
+##   my ($aligned_matrix, $shifted_matrix1, $shifted_matrix2) =
+##          &AlignMatrices($matrix1, $matrix2, $offset, %args);
+##
+## Arguments:
+##   stat=> mean|sum   compute the mean or the sum of the counts, respectively.
+sub AlignMatrices {
+  my ($matrix1, $matrix2, $offset, %args) = @_;
+
+  my $stat = $args{stat} || "sum";
+
+  my $id1 = $matrix1->get_attribute("identifier");
+  my $id2 = $matrix2->get_attribute("identifier");
+
+  my @counts1 = $matrix1->getMatrix();
+  my @counts2 = $matrix2->getMatrix();
+  my @alphabet = $matrix1->getAlphabet();
+
+  my $ncol1 = $matrix1->get_attribute("ncol");
+  my $ncol2 = $matrix2->get_attribute("ncol");
+  my $nrow = $matrix1->get_attribute("nrow");
+
+  ## Compute aligned matrix positions
+  my $end1 = &RSAT::stats::min($ncol1, $ncol2+$offset);
+  my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$ncol2+1);
+  my $w = $end1-$start1+1;
+  my $ncol = $ncol1 + $ncol2 - $w;
+  my $start2 = &RSAT::stats::max(1, 1- $offset);
+  my $end2 = &RSAT::stats::min($start2+$w-1, $ncol2);
+
+  ## Create the shifted matrix 1.  This matrix is not necessary for
+  ## computing the alignmed matrix, but convenient for visualization
+  ## (aligned matrices, aligned logos).
+  my $shifted_matrix1 = new RSAT::matrix();
+  $shifted_matrix1->force_attribute("ncol", $ncol);
+  $shifted_matrix1->setAlphabet_lc(@alphabet);
+  $shifted_matrix1->set_attribute("nrow", scalar(@alphabet));
+  my @shifted_counts1 = ();
+
+  ## Create the shifted matrix 2.  This matrix is not necessary for
+  ## computing the alignmed matrix, but convenient for visualization
+  ## (aligned matrices, aligned logos).
+  my $shifted_matrix2 = new RSAT::matrix();
+  $shifted_matrix2->force_attribute("ncol", $ncol);
+  $shifted_matrix2->setAlphabet_lc(@alphabet);
+  $shifted_matrix2->set_attribute("nrow", scalar(@alphabet));
+  my @shifted_counts2 = ();
+
+  ## Create the alignment matrix
+  my $aligned_matrix = new RSAT::matrix();
+  $aligned_matrix->force_attribute("ncol", $ncol);
+  $aligned_matrix->setAlphabet_lc(@alphabet);
+  $aligned_matrix->set_attribute("nrow", scalar(@alphabet));
+  my @ali_counts = ();
+
+  ## Compute the cell values of the aligned matrix
+  my $count1;
+  my $count2;
+  my $shift1 = 0;
+  my $shift2 = 0;
+  if ($offset >= 0) {
+    $shift1 = 0;
+    $shift2 = $offset;
+  } else {
+    $shift1 = -$offset;
+    $shift2 = 0;
+  }
+  $shifted_matrix1->set_parameter("shift",$shift1);
+  $shifted_matrix2->set_parameter("shift",$shift2);
+  for my $c (1..$ncol) {
+    for my $r (1..$nrow) {
+      $c1 = $c - $shift1;
+      $c2 = $c - $shift2;
+
+      ## Counts in the first matrix
+      if (($c1 < 1) || ($c1 > $ncol1)) {
+	$count1 = 0;
+      } else {
+	$count1 = $counts1[$c1-1][$r-1] || 0;
+      }
+      $shifted_counts1[$c-1][$r-1] = $count1;
+
+      ## Counts in the second matrix
+      if (($c2 < 1) || ($c2 > $ncol2)) {
+	$count2 = 0;
+      } else {
+	$count2 = $counts2[$c2-1][$r-1] || 0;
+      }
+      $shifted_counts2[$c-1][$r-1] = $count2;
+
+      my $sum = $count1 + $count2;
+      my $count;
+      if ($stat eq "sum") {
+	$count = $sum;
+      } elsif ($stat eq "mean") {
+	$count = $sum/2;
+      } else {
+	&RSAT::error::FatalError("&AlignMatrices", "Invalid value for the stat argment. Supported: mean|sum.");
+      }
+      $ali_counts[$c-1][$r-1] = $count;
+
+#       &RSAT::message::Debug("alignment", 
+# 			    $id1,
+# 			    $id2,
+# 			    "offset=".$offset, 
+# 			    "r=".$r,
+# 			    "c=".$c."/".$ncol,
+# 			    "c1=".$c1."/".$ncol1,
+# 			    "c2=".$c2."/".$ncol1,
+# 			    "count1=".$shifted_counts1[$c][$r],
+# 			    "count2=".$shifted_counts2[$c][$r],
+# 			    "sum=".$sum,
+# 			    "count=".$count,
+# 			   ) if ($main::verbose >= 10);
+
+    }
+#    die "HELLO" if ($c > 3);
+  }
+
+  ## Set the counts of the shifted matrix 1
+  $shifted_matrix1->setMatrix($nrow, $ncol, @shifted_counts1);
+  $shifted_matrix1->calcConsensus();
+
+  ## Set the counts of the shifted matrix 2
+  $shifted_matrix2->setMatrix($nrow, $ncol, @shifted_counts2);
+  $shifted_matrix2->calcConsensus();
+
+  ## Set the counts of the aligned matrix
+  $aligned_matrix->setMatrix ($nrow, $ncol, @ali_counts);
+  $aligned_matrix->calcConsensus();
+  return($aligned_matrix, $shifted_matrix1, $shifted_matrix2);
+}
 
 __END__
 
@@ -1416,20 +1562,14 @@ scanning.
 
 =back
 
-=item B<-return fields>
-
-Select the fields to be returned.
-
 =item B<-pseudo>
 
 Pseudo-counts to be added to all matrices.
 
 
-
 =item B<-out_format table | consensus | alignments>
 
-=format
-
+=over
 
 =item I<-format alignment>
 
