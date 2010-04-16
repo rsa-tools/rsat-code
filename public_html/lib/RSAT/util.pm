@@ -169,10 +169,17 @@ sub ReportExecutionTime {
   my ($start_time) = @_;
   my $time_report = "";
   my $done_time = &AlphaDate();
+  my $elapsed = times();
+
+  ## Report the execution time string only if verbosity >= 1.
   $time_report .= "; Job started\t$start_time\n";
   $time_report .=  "; Job done\t$done_time\n";
-  my $elapsed = times();
   $time_report .=  "; Seconds\t".$elapsed."\n";
+
+  ## If specified in the server configuration, report task + execution
+  ## time in log file.
+  &RSAT::server::UpdateExecTimeLogFile($start_time, $done_time, $elapsed);# if $ENV{exec_time};
+
   return($time_report);
 }
 
