@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.42 2010/04/15 13:08:22 jvanheld Exp $
+# $Id: compare-matrices,v 1.43 2010/04/16 07:43:46 jvanheld Exp $
 #
 ############################################################
 
@@ -266,7 +266,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -297,8 +297,7 @@ package main;
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "rank",
-				    "alignment",
-				    "shifted_matrices",
+				    "shifted_matrices", ## Shifted matrices used to build the alignments. This requires the optiojn -out_matrices.
 				);
   local %supported_return_field = ();
   foreach my $field (@supported_return_fields) {
@@ -394,6 +393,11 @@ package main;
     &RSAT::error::FatalError("You must define two input format(s) (option -format, or options -format1 and -format2)");
   }
 
+  if ($return_field{shifted_matrices}) {
+    &RSAT::error::FatalError("The option -return shifted_matrices requires to specify an output matrix file (option -out_matrices).")
+      unless ($main::outfile{out_matrices});
+  }
+
   ################################################################
   ## Treat dependencies between fields to compute
 
@@ -423,6 +427,9 @@ package main;
   ################################################################
   ## Open output stream
   $main::out = &OpenOutputFile($main::outfile{output});
+  if ($main::outfile{out_matrices}) {
+    $main::out_matrices = &OpenOutputFile($main::outfile{out_matrices});
+  }
 
   ################################################################
   ## Read input
@@ -864,20 +871,22 @@ package main;
 	print $out "\t", $rank{$offset} if ($return_field{rank});
 	print $out "\n";
 
-	if ($return_field{alignment}) {
-	  my ($aligned_matrix, $shifted_matrix1, $shifted_matrix2,) = &AlignMatrices($matrix1, $matrix2, $offset, stat=>"sum");
+	if ($main::outfile{out_matrices}) {
+
+	  my ($aligned_matrix, $shifted_matrix1, $shifted_matrix2,) = &AlignMatrices($matrix1, $matrix2, $offset, stat=>"mean");
+
 	  print $out join ("\t", ";pos", "|", 1..$aligned_matrix->ncol()), "\n";
 	  if ($return_field{shifted_matrices}) {
-	    print $out join ("\t", "; Matrix 1", $matrix1_id, $matrix1->ncol(), $matrix1->get_attribute("consensus.IUPAC")), "\n",
+	    print $out_matrices join ("\t", "; Matrix 1", $matrix1_id, $matrix1->ncol(), $matrix1->get_attribute("consensus.IUPAC")), "\n",
 	      $matrix1->toString(format=>'tab');
-	    print $out join ("\t", "; Matrix 2", $matrix2_id, $matrix2->ncol(), $matrix2->get_attribute("consensus.IUPAC")), "\n",
+	    print $out_matrices join ("\t", "; Matrix 2", $matrix2_id, $matrix2->ncol(), $matrix2->get_attribute("consensus.IUPAC")), "\n",
 	      $matrix2->toString(format=>'tab');
-	    print $out join ("\t", "; Shifted matrix 1", "shift1=".$shifted_matrix1->get_attribute("shift"), $matrix1_id, $matrix1->ncol(), $shifted_matrix1->get_attribute("consensus.IUPAC")), "\n",
+	    print $out_matrices join ("\t", "; Shifted matrix 1", "shift1=".$shifted_matrix1->get_attribute("shift"), $matrix1_id, $matrix1->ncol(), $shifted_matrix1->get_attribute("consensus.IUPAC")), "\n",
 	      $shifted_matrix1->toString(format=>'tab');
-	    print $out join ("\t", "; Shifted matrix 2", "shift2=".$shifted_matrix2->get_attribute("shift"), $matrix2_id, $matrix2->ncol(), $shifted_matrix2->get_attribute("consensus.IUPAC")), "\n",
+	    print $out_matrices join ("\t", "; Shifted matrix 2", "shift2=".$shifted_matrix2->get_attribute("shift"), $matrix2_id, $matrix2->ncol(), $shifted_matrix2->get_attribute("consensus.IUPAC")), "\n",
 	      $shifted_matrix2->toString(format=>'tab');
 	  }
-	  print $out join("\t", "; Alignment ", $matrix1_id." + ".$matrix2_id, "offset=$offset", $aligned_matrix->get_attribute("consensus.IUPAC")), "\n",
+	  print $out_matrices join("\t", "; Alignment ", $matrix1_id." + ".$matrix2_id, "offset=$offset", $aligned_matrix->get_attribute("consensus.IUPAC")), "\n",
 	    $aligned_matrix->toString(format=>'tab');
 	}
       }
@@ -886,12 +895,13 @@ package main;
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
 
 
-  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
 
   ################################################################
   ## Close output stream
+  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
   close $main::out if ($main::outfile{output});
+  close $main::out_matrices if ($main::outfile{out_matrices});
 
   exit(0);
 }
@@ -1055,6 +1065,19 @@ allows to use the command within a pipe.
 =cut
     } elsif ($arg eq "-o") {
       $main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item	B<-out_matrices out_matrix_file>
+
+File containing the output matrices:
+- shifted matrices used to build the alignments;
+- matrices resulting from pairwise alignments;
+- consensus matrices resulting from multiple alignments.
+
+=cut
+    } elsif ($arg eq "-out_matrices") {
+      $main::outfile{out_matrices} = shift(@arguments);
 
 =pod
 
