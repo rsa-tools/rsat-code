@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.36 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: chip-motifs,v 1.37 2010/04/16 08:14:46 jvanheld Exp $
 #
 ############################################################
 
@@ -92,7 +92,7 @@ package main;
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -412,6 +412,10 @@ sub SetOutFileNames {
   ## Synthesis of the discovered motifs + comparison with reference motif and annotated motifs
   $main::outfile{motifs_discovered} = &OutFileName(".tf", "motifs_discovered");
   $main::outfile{motifs_disco_compa} = &OutFileName(".tab", "motifs_disco_compa");
+  $main::outfile{motifs_disco_compa_clusters_mcl} = &OutFileName(".mcl", "motifs_disco_compa_clusters");
+  $main::outfile{motifs_disco_compa_clusters_tab} = &OutFileName(".tab", "motifs_disco_compa_clusters");
+  $main::outfile{motifs_disco_compa_clusters_graph} = &OutFileName(".tab", "motifs_disco_compa_clusters_graph");
+  $main::outfile{motifs_disco_compa_cluster_intra_degree} = &OutFileName(".tab", "motifs_disco_compa_cluster_intra_degree");
   $main::outfile{motifs_disco_compa_gml} = &OutFileName(".gml", "motifs_disco_compa");
   #    $main::outfile{motifs_disco_compa_dot} = &OutFileName(".dot", "motifs_disco_compa");
   $main::outfile{motifs_disco_compa_png} = &OutFileName(".png", "motifs_disco_compa");
@@ -770,7 +774,7 @@ sub MotifVersusMotifs {
     $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
     $cmd .= " >> ".$main::outfile{motifs_discovered};
   }
-  &one_command($cmd, 1);
+#  &one_command($cmd, 1);
 
   ## Comparison between discovered matrices, and with the reference motif
   $cmd = $SCRIPTS."/compare-matrices -v 1";
@@ -785,6 +789,33 @@ sub MotifVersusMotifs {
   $cmd .= " -lth Ncor 0.7"; ## Min normalized correlation
   $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
+#  &one_command($cmd, 1);
+
+  ## Use MCL to partition the motif graph into clusters
+  my $mcl_dir = $ENV{mcl_dir};
+  unless ($mcl_dir) {
+    &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
+  }
+  $cmd = "grep -v '^;' ".$main::outfile{motifs_disco_compa}.">".$main::outfile{motifs_disco_compa}.".mcl";
+  $cmd .= "; ".$mcl_dir."/mcl ".$main::outfile{motifs_disco_compa}.".mcl";
+  $cmd .= " -I 1.8 --abc -V all ";
+  $cmd .= " -o ".$main::outfile{motifs_disco_compa_clusters_mcl};
+  $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{motifs_disco_compa_clusters_mcl};
+  $cmd .= " -from mcl -to tab ";
+  $cmd .= " -o ".$main::outfile{motifs_disco_compa_clusters_tab};
+  &one_command($cmd, 1);
+
+  ## Split the motif graph into clusters as defined by MCL, and
+  ## compute the intra-cluster degree (k) and weighted degree (wk) of
+  ## each node
+  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{motifs_disco_compa};
+  $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol 4 -return clusters ";
+  $cmd .= " -clusters ".$main::outfile{motifs_disco_compa_clusters_tab};
+  $cmd .= " -out_format tab -o ".$main::outfile{motifs_disco_compa_clusters_graph};
+  $cmd .= " ; ".$SCRIPTS."/graph-connex-components -v 1";
+  $cmd .= " -i ".$main::outfile{motifs_disco_compa_clusters_graph};
+  $cmd .= " -wcol 3";
+  $cmd .= " -o ".$main::outfile{motifs_disco_compa_cluster_intra_degree};
   &one_command($cmd, 1);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
@@ -793,7 +824,7 @@ sub MotifVersusMotifs {
   $cmd .= " -layout spring";
   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa_gml};
-  &one_command($cmd, 1);
+#  &one_command($cmd, 1);
 
   ## Generate a figure of the motif comparison graph
   $cmd = $SCRIPTS."/display-graph -v 2";
@@ -801,7 +832,7 @@ sub MotifVersusMotifs {
   $cmd .= " -ewidth";
   $cmd .= " -layout none";
   $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
-  &one_command($cmd, 1);
+#  &one_command($cmd, 1);
 
 #   ## Generate a DOT graph with the matrix comparison result (can be opened with graphviz)
 #   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{motifs_disco_compa};
@@ -1068,8 +1099,6 @@ sub SynthesisPatternDisco {
     $pattern_info[$pattern_nb]->{score} = $score;
   }
   close $asmb;
-
-  my $pattern_table;
 
   ## Synthesize matrix logos
   my $pattern_table = "<table cellpadding='0' cellspacing='0' align='center' border='0'>";
