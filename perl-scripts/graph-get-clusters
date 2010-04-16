@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.26 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: graph-get-clusters,v 1.27 2010/04/16 08:42:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -137,364 +137,368 @@ package main;
 			    '#827839', ## Khaki4
 			    '#0066FF', ## Peacock
 			    '#00FF66'  ## Emerald
+			   );
+
+
+  ################################################################
+  ## Initialise parameters
+  my $start_time = &AlphaDate();
+
+  ################################################################
+  ## Initialize the input graph
+  $graph = new RSAT::Graph2();
+  $graph->set_attribute("label", "input graph");
+
+  ## Columns of the tab-delimited graph file
+  local $source_col = 1;
+  local $target_col = 2;
+  local $weight_col = 0;
+  local $color_col = 0;
+
+
+
+  ################################################################
+  ## Initialize the output graph (cluster graph)
+  my $cluster_graph = new RSAT::Graph2();
+  $cluster_graph->set_attribute("label", "cluster_graph");
+  my @cluster_graph_array = ();
+  my $cluster_graph_array_cpt = 0;
+    
+  ## Input formats
+  local $input_format = "tab";
+  %supported_input_format =(
+			    tab=>1,
+			    gml=>1
+			   );
+  $supported_input_formats = join (",", keys %supported_input_format);
+  local $source_col = 1;
+  local $target_col = 2;
+  local $weight_col = 0;
+  ## Output formats
+  %supported_output_format =(
+			     dot=>1,
+			     gml=>1,
+			     tab=>1
+
 			    );
+  $supported_output_formats = join (",", keys %supported_output_format);
+  local $output_format = "gml";
 
 
-    ################################################################
-    ## Initialise parameters
-    my $start_time = &AlphaDate();
+  %main::infile = ();
+  %main::outfile = ();
+  $main::verbose = 0;
+  $main::out = STDOUT;
+  $distinct = 0;
+  $induced = 0;
+  my %duplicated_nodes;
+  my @arcs_clusters;
+  local $return_type = "clusters";
+  %supported_return_format = ("table"=>1,
+			      "graph"=>1,
+			      "clusters"=>1);
+  $supported_return_formats = join (",", keys %supported_return_format);
 
-    ################################################################
-    ## Initialize the input graph
-    $graph = new RSAT::Graph2();
-    $graph->set_attribute("label", "input graph");
-
-    ## Columns of the tab-delimited graph file
-    local $source_col = 1;
-    local $target_col = 2;
-    local $weight_col = 0;
-    local $color_col = 0;
-
-
-
-    ################################################################
-    ## Initialize the output graph (cluster graph)
-    my $cluster_graph = new RSAT::Graph2();
-    $cluster_graph->set_attribute("label", "cluster_graph");
-    my @cluster_graph_array = ();
-    my $cluster_graph_array_cpt = 0;
+  ## Count the sum of the intra cluster edges or count their number
+  local $weights = 0;
     
-    ## Input formats
-    local $input_format = "tab";
-    %supported_input_format =(
-	tab=>1,
-	gml=>1
-    );
-    $supported_input_formats = join (",", keys %supported_input_format);
-    local $source_col = 1;
-    local $target_col = 2;
-    local $weight_col = 0;
-    ## Output formats
-    %supported_output_format =(
-			       dot=>1,
-			       gml=>1,
-			       tab=>1
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
 
-    );
-    $supported_output_formats = join (",", keys %supported_output_format);
-    local $output_format = "gml";
+  ################################################################
+  ## Check argument values
+  @cluster_colors = ();
+  if ($output_format eq "dot") {
+    @cluster_colors = @cluster_colors_dot;
+  } else {
+    @cluster_colors = @cluster_colors_gml;
+  }
+  if ($induced && $return_type ne 'clusters') {
+    &RSAT::error::FatalError("\t","Option -induced cannot be used with -return ",$return_type);
+  }
+  if ($distinct && $return_type ne 'clusters') {
+    &RSAT::error::FatalError("\t","Option -distinct cannot be used with -return ",$return_type);
+  }
+  if (!$main::infile{clusters}) {
+    &RSAT::error::FatalError("\t","You must submit a cluster file with option -clusters");
+  }
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
 
+  ################################################################
+  ## Read input graph
+  $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col,0, 0,$color_col, 1);
+  $graph->load_classes($main::infile{clusters}, $induced);
 
-    %main::infile = ();
-    %main::outfile = ();
-    $main::verbose = 0;
-    $main::out = STDOUT;
-    $distinct = 0;
-    $induced = 0;
-    my %duplicated_nodes;
-    my @arcs_clusters;
-    local $return_type = "clusters";
-    %supported_return_format = ("table"=>1,
-    				"graph"=>1,
-    				"clusters"=>1);
-    $supported_return_formats = join (",", keys %supported_return_format);
+  ################################################################
+  ## Extract the intra-cluster subgraphs
+  if ($return_type eq 'clusters') {
 
-    ## Count the sum of the intra cluster edges or count their number
-    local $weights = 0;
-    
-    ################################################################
-    ## Read argument values
-    &ReadArguments();
+    ## Read and add the class specification to each node
+    &RSAT::message::TimeWarn("Load classes") if ($main::verbose >= 2);
 
-    ################################################################
-    ## Check argument values
-    @cluster_colors = ();
-    if ($output_format eq "dot") {
-      @cluster_colors = @cluster_colors_dot;
-    } else {
-      @cluster_colors = @cluster_colors_gml;
-    }
-    if ($induced && $return_type ne 'clusters') {
-      &RSAT::error::FatalError("\t","Option -induced cannot be used with -return ",$return_type);
-    }
-    if ($distinct && $return_type ne 'clusters') {
-      &RSAT::error::FatalError("\t","Option -distinct cannot be used with -return ",$return_type);
-    }
-    if (!$main::infile{clusters}) {
-      &RSAT::error::FatalError("\t","You must submit a cluster file with option -clusters");
-    }
-    ################################################################
-    ## Open output stream
-    $main::out = &OpenOutputFile($main::outfile{output});
+    ## Identification of cluster nodes
+    &RSAT::message::TimeWarn("Identifying cluster nodes in the graph") if ($main::verbose >= 2);
+    my @cluster_list = $graph->get_attribute("cluster_list");
+    $cluster_nb = scalar @cluster_list;
+    my @arcs = $graph->get_attribute("arcs");
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %remaining_nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %nodes_id_name = $graph->get_attribute("nodes_id_name");
+    my %nodes_color = $graph->get_attribute("nodes_color");
+    my @nodes_clusters = $graph->get_attribute("nodes_clusters");
+    my %edge_cluster = ();
+    my %cluster_color = ();
+    my $arc_nb = scalar(@arcs);
 
-    ################################################################
-    ## Read input graph
-    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col,0, 0,$color_col, 1);
-    $graph->load_classes($main::infile{clusters}, $induced);
+    for (my $i = 0; $i < scalar(@arcs); $i++) {
+      if (($main::verbose >= 3) && ($i%1000==0)) {
+	&RSAT::message::psWarn("Treated", $i."/".$arc_nb, "arcs");
+      }
+      my $source_node = $arcs[$i][0];
+      my $target_node = $arcs[$i][1];
+      my $source_node_id = $nodes_name_id{$source_node};
+      my $target_node_id = $nodes_name_id{$target_node};
+      my @source_clusters = $graph->get_node_id_clusters($source_node_id, @nodes_clusters);
+      my @target_clusters = $graph->get_node_id_clusters($target_node_id, @nodes_clusters);
+      delete $remaining_nodes_name_id{$source_node};
+      delete $remaining_nodes_name_id{$target_node};
+      #         print "@nodes_clusters";
 
-    
-    ################################################################
-    ## Extract the intra-cluster subgraphs
-    
-    if ($return_type eq 'clusters') {
-      ## Read and add the class specification to each node
-      &RSAT::message::TimeWarn("Load classes") if ($main::verbose >= 2);
-      ## Identification of cluster nodes
-      &RSAT::message::TimeWarn("Identifying cluster nodes in the graph") if ($main::verbose >= 2);
-      my @cluster_list = $graph->get_attribute("cluster_list");
-      $cluster_nb = scalar @cluster_list;
-      my @arcs = $graph->get_attribute("arcs");
-      my %nodes_name_id = $graph->get_attribute("nodes_name_id");
-      my %remaining_nodes_name_id = $graph->get_attribute("nodes_name_id");
-      my %nodes_id_name = $graph->get_attribute("nodes_id_name");
-      my %nodes_color = $graph->get_attribute("nodes_color");
-      my @nodes_clusters = $graph->get_attribute("nodes_clusters");
-      my %edge_cluster = ();
-      my %cluster_color = ();
-      my $arc_nb = scalar(@arcs);
-      for (my $i = 0; $i < scalar(@arcs); $i++) {
-        if (($main::verbose >= 3) && ($i%1000==0)) {
-	  &RSAT::message::psWarn("Treated", $i."/".$arc_nb, "arcs");
-        }
-        my $source_node = $arcs[$i][0];
-        my $target_node = $arcs[$i][1];
-        my $source_node_id = $nodes_name_id{$source_node};
-        my $target_node_id = $nodes_name_id{$target_node};
-        my @source_clusters = $graph->get_node_id_clusters($source_node_id, @nodes_clusters);
-        my @target_clusters = $graph->get_node_id_clusters($target_node_id, @nodes_clusters);
-        delete $remaining_nodes_name_id{$source_node};
-        delete $remaining_nodes_name_id{$target_node};
-#         print "@nodes_clusters";
-        foreach my $scluster (@source_clusters) {
-          foreach my $tcluster (@target_clusters) {
-            if ($scluster eq $tcluster) {
-              if ($weight_col <= 0) {
-	        $label =  join("_", $source_node, $target_node, $scluster);
+      foreach my $scluster (@source_clusters) {
+
+	foreach my $tcluster (@target_clusters) {
+	  if ($scluster eq $tcluster) {
+	    if ($weight_col <= 0) {
+	      $label =  join("_", $source_node, $target_node, $scluster);
+	    } else {
+	      $label = $arcs[$i][2];
+	    }
+	    my $scolor = $nodes_color{$source_node_id};
+	    my $tcolor = $nodes_color{$target_node_id};
+	    $arc_color = $arcs[$i][3];
+	    if (!$induced && !$color_col) {
+	      $arc_color = $cluster_color{$scluster};
+	      if (!defined($arc_color)) {
+		$arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
+		$cluster_color{$scluster} = $arc_color;
+	      }
+	    }
+	    if ($distinct) {
+	      my $arc_key = $source_node."_arc_".$target_node;
+	      my $edge_other_cluster = $edge_cluster{$arc_key};
+	      if (defined($edge_other_cluster) && $edge_other_cluster ne $scluster) {
+		if (!defined($duplicated_nodes{$source_node})) {
+		  $duplicated_nodes{$source_node} = 2;
+		} 
+		$source_node = $source_node."_".$duplicated_nodes{$source_node};
+		$duplicated_nodes{$source_node}++;
+		if (!defined($duplicated_nodes{$target_node})) {
+		  $duplicated_nodes{$target_node} = 2;
+		}
+		$target_node = $target_node."_".$duplicated_nodes{$target_node};
+		$duplicated_nodes{$target_node}++;
 	      } else {
-	        $label = $arcs[$i][2];
+		$edge_cluster{$arc_key} = $scluster;
 	      }
-	      my $scolor = $nodes_color{$source_node_id};
-	      my $tcolor = $nodes_color{$target_node_id};
-	      $arc_color = $arcs[$i][3];
-	      if (!$induced && !$color_col) {
-	        $arc_color = $cluster_color{$scluster};
-	        if (!defined($arc_color)) {
-	          $arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
-	          $cluster_color{$scluster} = $arc_color;
-	        }
+	    }
+	    $cluster_graph_array[$cluster_graph_array_cpt][0] = $source_node;
+	    $cluster_graph_array[$cluster_graph_array_cpt][1] = $target_node;
+	    $cluster_graph_array[$cluster_graph_array_cpt][2] = $label;
+	    $cluster_graph_array[$cluster_graph_array_cpt][3] = $scolor;
+	    $cluster_graph_array[$cluster_graph_array_cpt][4] = $tcolor;
+	    $cluster_graph_array[$cluster_graph_array_cpt][5] = $arc_color;
+	    push @{$arcs_clusters[$cluster_graph_array_cpt]}, $scluster;
+	    $cluster_graph_array_cpt++;
+	  }
+	}
+      }
+    }
+    $cluster_graph->load_from_array(@cluster_graph_array);
+    ## If there are selected orphan nodes, add it to the induced graph
+    if ($induced) {
+      foreach my $node (keys %remaining_nodes_name_id) {
+	my @clusters = $graph->get_nodes_clusters($node);
+	if ((scalar @clusters) > 0) {
+	  $cluster_graph->create_node($node);
+	}
+      }
+    }
+    $cluster_graph->set_array_attribute("arcs_attribute", @arcs_clusters);
+    &Verbose() if ($main::verbose);
+    ## Print the output graph
+    print $out $cluster_graph->to_text($output_format);
+  } else {
+    ## Count the number of intra-cluster edge by looking for each arc
+    ## if the target node is located in the same cluster than 
+    ## the source node
+    ## The results are stored in a two dimensional array. Rows represent
+    ## the nodes and edges represent the clusters.
+    ## Indices of the two-dimensional array;
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %nodes_id_name = $graph->get_attribute("nodes_id_name");
+    my %nodes_color = $graph->get_attribute("nodes_color");
+    my @cluster_list = $graph->get_attribute("cluster_list");
+    my %clusters_name_id = ();
+    my %clusters_edge_nb = ();
+    my @arcs_attribute = ();
+    my %cluster_color = ();
+    my $intra_cpt = 0;
+    my $extra_cpt = 0;
+    for (my $i = 0; $i < scalar(@cluster_list); $i++) {
+      $cluster_name_id{$cluster_list[$i]} = $i;
+    }
+    my @arcs = $graph->get_attribute("arcs");
+    my @result = ();
+    my $arc_nb = scalar(@arcs);
+    &RSAT::message::TimeWarn("Comparing graph with clusters") if ($main::verbose >= 2);
+    for (my $i = 0; $i < @arcs; $i++) {
+      if (($main::verbose >= 2) && ($i%1000==0)) {
+	&RSAT::message::psWarn("Treated", $i."/".$arc_nb, "arcs");
+      }
+      my $source_node = $arcs[$i][0];
+      my $target_node = $arcs[$i][1];
+      my @source_clusters = $graph->get_nodes_clusters($source_node);
+      my @target_clusters = $graph->get_nodes_clusters($target_node);
+      my $add_value = 1;
+      if ($weights) {
+	$add_value = $arcs[$i][2];
+	$add_value /= 2;
+      }
+      my $source_nb_clusters = scalar(@source_clusters);
+      my $target_nb_clusters = scalar(@target_clusters);
+      my $common_clusters = 0;
+      my %sclusters = ();
+      my %tclusters = ();
+      my %stclusters = ();
+      my $intra_cluster = "inter_cluster";
+      my $arc_color = "#C0C0C0"; 
+      $arc_color = $arcs[$i][3] if ($color_col);
+      foreach my $scluster (@source_clusters) {
+	$sclusters{$scluster}++;
+	foreach my $tcluster (@target_clusters) {
+	  $tclusters{$tcluster}++;
+	  if ($scluster eq $tcluster) {
+	    my $source_node_index = $nodes_name_id{$source_node};
+	    my $target_node_index = $nodes_name_id{$target_node};
+	    my $cluster_index = $cluster_name_id{$tcluster};
+	    $result[$source_node_index][$cluster_index] += $add_value;
+	    $result[$target_node_index][$cluster_index] += $add_value;
+	    $clusters_edge_nb{$tcluster} += 1;
+	    $common_clusters++;
+	    $stclusters{$tcluster}++;
+	    $intra_cluster = "intra_cluster";
+	    if (!$color_col) {
+	      $arc_color = $cluster_color{$scluster};
+	      if (!defined($arc_color)) {
+		$arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
+		$cluster_color{$scluster} = $arc_color;
 	      }
-	      if ($distinct) {
-	        my $arc_key = $source_node."_arc_".$target_node;
-	        my $edge_other_cluster = $edge_cluster{$arc_key};
-	        if (defined($edge_other_cluster) && $edge_other_cluster ne $scluster) {
-	          if (!defined($duplicated_nodes{$source_node})) {
-	            $duplicated_nodes{$source_node} = 2;
-	          } 
-	          $source_node = $source_node."_".$duplicated_nodes{$source_node};
-	          $duplicated_nodes{$source_node}++;
-  	          if (!defined($duplicated_nodes{$target_node})) {
-	            $duplicated_nodes{$target_node} = 2;
-	          }
-	          $target_node = $target_node."_".$duplicated_nodes{$target_node};
-	          $duplicated_nodes{$target_node}++;
-	        } else {
-	          $edge_cluster{$arc_key} = $scluster;
-	        }
-	      }
-              $cluster_graph_array[$cluster_graph_array_cpt][0] = $source_node;
-              $cluster_graph_array[$cluster_graph_array_cpt][1] = $target_node;
-              $cluster_graph_array[$cluster_graph_array_cpt][2] = $label;
-              $cluster_graph_array[$cluster_graph_array_cpt][3] = $scolor;
-              $cluster_graph_array[$cluster_graph_array_cpt][4] = $tcolor;
-              $cluster_graph_array[$cluster_graph_array_cpt][5] = $arc_color;
-              push @{$arcs_clusters[$cluster_graph_array_cpt]}, $scluster;
-              $cluster_graph_array_cpt++;
-            }
-          }
-        }
+	    }
+	  }
+	}
       }
-      $cluster_graph->load_from_array(@cluster_graph_array);
-      ## If there are selected orphan nodes, add it to the induced graph
-      if ($induced) {
-        foreach my $node (keys %remaining_nodes_name_id) {
-          my @clusters = $graph->get_nodes_clusters($node);
-          if ((scalar @clusters) > 0) {
-            $cluster_graph->create_node($node);
-          }
-        }
-      }
-      $cluster_graph->set_array_attribute("arcs_attribute", @arcs_clusters);
-      &Verbose() if ($main::verbose);
-      ## Print the output graph
-      print $out $cluster_graph->to_text($output_format);
-    } else {
-      ## Count the number of intra-cluster edge by looking for each arc
-      ## if the target node is located in the same cluster than 
-      ## the source node
-      ## The results are stored in a two dimensional array. Rows represent
-      ## the nodes and edges represent the clusters.
-      ## Indices of the two-dimensional array;
-      my %nodes_name_id = $graph->get_attribute("nodes_name_id");
-      my %nodes_id_name = $graph->get_attribute("nodes_id_name");
-      my %nodes_color = $graph->get_attribute("nodes_color");
-      my @cluster_list = $graph->get_attribute("cluster_list");
-      my %clusters_name_id = ();
-      my %clusters_edge_nb = ();
-      my @arcs_attribute = ();
-      my %cluster_color = ();
-      my $intra_cpt = 0;
-      my $extra_cpt = 0;
-      for (my $i = 0; $i < scalar(@cluster_list); $i++) {
-       $cluster_name_id{$cluster_list[$i]} = $i;
-      }
-      my @arcs = $graph->get_attribute("arcs");
-      my @result = ();
-      my $arc_nb = scalar(@arcs);
-      &RSAT::message::TimeWarn("Comparing graph with clusters") if ($main::verbose >= 2);
-      for (my $i = 0; $i < @arcs; $i++) {
-        if (($main::verbose >= 2) && ($i%1000==0)) {
-  	  &RSAT::message::psWarn("Treated", $i."/".$arc_nb, "arcs");
-        }
-        my $source_node = $arcs[$i][0];
-        my $target_node = $arcs[$i][1];
-        my @source_clusters = $graph->get_nodes_clusters($source_node);
-        my @target_clusters = $graph->get_nodes_clusters($target_node);
-        my $add_value = 1;
-        if ($weights) {
-          $add_value = $arcs[$i][2];
-          $add_value /= 2;
-        }
-        my $source_nb_clusters = scalar(@source_clusters);
-        my $target_nb_clusters = scalar(@target_clusters);
-        my $common_clusters = 0;
-        my %sclusters = ();
-        my %tclusters = ();
-        my %stclusters = ();
-        my $intra_cluster = "inter_cluster";
-        my $arc_color = "#C0C0C0"; 
-        $arc_color = $arcs[$i][3] if ($color_col);
-        foreach my $scluster (@source_clusters) {
-          $sclusters{$scluster}++;
-          foreach my $tcluster (@target_clusters) {
-            $tclusters{$tcluster}++;
-            if ($scluster eq $tcluster) {
-              my $source_node_index = $nodes_name_id{$source_node};
-              my $target_node_index = $nodes_name_id{$target_node};
-              my $cluster_index = $cluster_name_id{$tcluster};
-              $result[$source_node_index][$cluster_index] += $add_value;
-              $result[$target_node_index][$cluster_index] += $add_value;
-              $clusters_edge_nb{$tcluster} += 1;
-              $common_clusters++;
-              $stclusters{$tcluster}++;
-              $intra_cluster = "intra_cluster";
-              if (!$color_col) {
-	        $arc_color = $cluster_color{$scluster};
-	        if (!defined($arc_color)) {
-	          $arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
-	          $cluster_color{$scluster} = $arc_color;
-	        }
-	      }
-            }
-          }
-        }
-        # FILL THE ANNOTATED NETWORK
-        my $index;
-        if ($intra_cluster eq 'intra_cluster') {
-          $index = (scalar(@arcs)-1) - $intra_cpt;
-          $intra_cpt++;
-        } else {
-          $index = $extra_cpt;
-          $extra_cpt++;
-        }
-        if (!defined($index)) {
-          print $source_node."\t".$target_node."\n";
-        }
-        $cluster_graph_array[$index][0] = $source_node;
-        $cluster_graph_array[$index][1] = $target_node;
-        $cluster_graph_array[$index][2] = $arcs[$i][2];
-        $cluster_graph_array[$index][3] = $node_colors{$source_node};
-        $cluster_graph_array[$index][4] = $node_colors{$target_node};
-        $cluster_graph_array[$index][5] = $arc_color;
-        my %s_not_tclusters = &set_difference(\%sclusters,\%stclusters);
-        my %not_s_tclusters = &set_difference(\%tclusters,\%stclusters);
-        $arcs_attribute[$index][0] = $intra_cluster;
-        $arcs_attribute[$index][1] = $source_nb_clusters; 
-        $arcs_attribute[$index][2] = $target_nb_clusters; 
-        $arcs_attribute[$index][3] = $common_clusters;
-        $arcs_attribute[$index][4] = ($source_nb_clusters-$common_clusters);
-        $arcs_attribute[$index][5] = ($target_nb_clusters-$common_clusters);
-        $arcs_attribute[$index][6] = join(";",keys(%sclusters));
-        $arcs_attribute[$index][7] = join(";",keys(%tclusters));
-        $arcs_attribute[$index][8] = join(";",keys(%stclusters));
-        $arcs_attribute[$index][9] = join(";",keys(%s_not_tclusters));
-        $arcs_attribute[$index][10] = join(";",keys(%not_s_tclusters));
-      }
-      
-      my @arcs_attribute_header = ("type","#s","#t","#st","#s!t","#!st","cl_s","cl_t","cl_st","cl_s!t","cl_!st");
-      $cluster_graph->load_from_array(@cluster_graph_array);
-      $cluster_graph->set_array_attribute("arcs_attribute",@arcs_attribute);
-      $cluster_graph->set_array_attribute("arcs_attribute_header", @arcs_attribute_header);
-     
-      if ($return_type eq "table") {
-      ## Print cluster names
-        foreach my $cluster (@cluster_list) {
-          print $out "\t$cluster";
-        }
-        print $out "\tsum";
-        ## Print node name and the number of intra-edge cluster
-        for (my $i = 0; $i < scalar(@result); $i++) {
-          print $out "\n";
-          print $out "$nodes_id_name{$i}";
-          my $sum = 0;
-          for (my $j = 0; $j < scalar(@cluster_list); $j++) {
-            my $cluster = $cluster_list[$j];
-            my $clusterIndex = $cluster_name_id{$cluster};
-            my $val = 0;
-            if (defined($result[$i][$j])) {
-              $val = $result[$i][$j];
-            }
-            $sum += $val;
-            print $out "\t$val";
-          }
-          print $out "\t$sum";
-        }
-        print $out "\n";
-        print $out "#Arcs";
-        foreach my $cluster (@cluster_list) {
-          my $val = ($clusters_edge_nb{$cluster});
-          if (!defined($val)) {
-            $val = 0;
-          }
-          print $out "\t$val";
-        }
-        print $out "\n";
+
+      # FILL THE ANNOTATED NETWORK
+      my $index;
+      if ($intra_cluster eq 'intra_cluster') {
+	$index = (scalar(@arcs)-1) - $intra_cpt;
+	$intra_cpt++;
       } else {
-        if ($main::verbose >= 1 && $output_format eq "tab") {
-          print $out join("\t",  ";","1","source","source node"), "\n";
-          print $out join("\t",  ";","2","target","target node"), "\n";
-          print $out join("\t",  ";","3","label","arc label"), "\n";
-          print $out join("\t",  ";","4","color","arc color"), "\n";
-          print $out join("\t",  ";","5","type","arc type"), "\n";
-          print $out join("\t",  ";","6","#s","number of clusters where source node is present"), "\n";
-          print $out join("\t",  ";","7","#t","number of clusters where target node is present"), "\n";
-          print $out join("\t",  ";","8","#st","number of clusters where both source node and target node are present"), "\n";
-          print $out join("\t",  ";","9","#s!t","number of clusters where only source node is present"), "\n";
-          print $out join("\t",  ";","10","#!st","number of clusters where only target node is present"), "\n";
-          print $out join("\t",  ";","11","cl_s","clusters where source node is present"), "\n";
-          print $out join("\t",  ";","12","cl_t","clusters where target node is present"), "\n";
-          print $out join("\t",  ";","13","cl_st","clusters where both source node and target node are present"), "\n";
-          print $out join("\t",  ";","14","cl_s!t","clusters where only source node is present"), "\n";
-          print $out join("\t",  ";","15","cl_!st","clusters where only target node is present"), "\n";
-        }
-        print $out $cluster_graph->to_text($output_format);
+	$index = $extra_cpt;
+	$extra_cpt++;
       }
+      if (!defined($index)) {
+	print $source_node."\t".$target_node."\n";
+      }
+      $cluster_graph_array[$index][0] = $source_node;
+      $cluster_graph_array[$index][1] = $target_node;
+      $cluster_graph_array[$index][2] = $arcs[$i][2];
+      $cluster_graph_array[$index][3] = $node_colors{$source_node};
+      $cluster_graph_array[$index][4] = $node_colors{$target_node};
+      $cluster_graph_array[$index][5] = $arc_color;
+      my %s_not_tclusters = &set_difference(\%sclusters,\%stclusters);
+      my %not_s_tclusters = &set_difference(\%tclusters,\%stclusters);
+      $arcs_attribute[$index][0] = $intra_cluster;
+      $arcs_attribute[$index][1] = $source_nb_clusters; 
+      $arcs_attribute[$index][2] = $target_nb_clusters; 
+      $arcs_attribute[$index][3] = $common_clusters;
+      $arcs_attribute[$index][4] = ($source_nb_clusters-$common_clusters);
+      $arcs_attribute[$index][5] = ($target_nb_clusters-$common_clusters);
+      $arcs_attribute[$index][6] = join(";",keys(%sclusters));
+      $arcs_attribute[$index][7] = join(";",keys(%tclusters));
+      $arcs_attribute[$index][8] = join(";",keys(%stclusters));
+      $arcs_attribute[$index][9] = join(";",keys(%s_not_tclusters));
+      $arcs_attribute[$index][10] = join(";",keys(%not_s_tclusters));
+    }
+      
+    my @arcs_attribute_header = ("type","#s","#t","#st","#s!t","#!st","cl_s","cl_t","cl_st","cl_s!t","cl_!st");
+    $cluster_graph->load_from_array(@cluster_graph_array);
+    $cluster_graph->set_array_attribute("arcs_attribute",@arcs_attribute);
+    $cluster_graph->set_array_attribute("arcs_attribute_header", @arcs_attribute_header);
+     
+    if ($return_type eq "table") {
+      ## Print cluster names
+      foreach my $cluster (@cluster_list) {
+	print $out "\t$cluster";
+      }
+      print $out "\tsum";
+      ## Print node name and the number of intra-edge cluster
+      for (my $i = 0; $i < scalar(@result); $i++) {
+	print $out "\n";
+	print $out "$nodes_id_name{$i}";
+	my $sum = 0;
+	for (my $j = 0; $j < scalar(@cluster_list); $j++) {
+	  my $cluster = $cluster_list[$j];
+	  my $clusterIndex = $cluster_name_id{$cluster};
+	  my $val = 0;
+	  if (defined($result[$i][$j])) {
+	    $val = $result[$i][$j];
+	  }
+	  $sum += $val;
+	  print $out "\t$val";
+	}
+	print $out "\t$sum";
+      }
+      print $out "\n";
+      print $out "#Arcs";
+      foreach my $cluster (@cluster_list) {
+	my $val = ($clusters_edge_nb{$cluster});
+	if (!defined($val)) {
+	  $val = 0;
+	}
+	print $out "\t$val";
+      }
+      print $out "\n";
+    } else {
+      if ($main::verbose >= 1 && $output_format eq "tab") {
+	print $out join("\t",  ";","1","source","source node"), "\n";
+	print $out join("\t",  ";","2","target","target node"), "\n";
+	print $out join("\t",  ";","3","label","arc label"), "\n";
+	print $out join("\t",  ";","4","color","arc color"), "\n";
+	print $out join("\t",  ";","5","type","arc type"), "\n";
+	print $out join("\t",  ";","6","#s","number of clusters where source node is present"), "\n";
+	print $out join("\t",  ";","7","#t","number of clusters where target node is present"), "\n";
+	print $out join("\t",  ";","8","#st","number of clusters where both source node and target node are present"), "\n";
+	print $out join("\t",  ";","9","#s!t","number of clusters where only source node is present"), "\n";
+	print $out join("\t",  ";","10","#!st","number of clusters where only target node is present"), "\n";
+	print $out join("\t",  ";","11","cl_s","clusters where source node is present"), "\n";
+	print $out join("\t",  ";","12","cl_t","clusters where target node is present"), "\n";
+	print $out join("\t",  ";","13","cl_st","clusters where both source node and target node are present"), "\n";
+	print $out join("\t",  ";","14","cl_s!t","clusters where only source node is present"), "\n";
+	print $out join("\t",  ";","15","cl_!st","clusters where only target node is present"), "\n";
+      }
+      print $out $cluster_graph->to_text($output_format);
+    }
+  }
 
-
-    ################################################################
-    ## Close output stream
-    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
-    close $main::out if ($main::outfile{output});
-    exit(0);
+  ################################################################
+  ## Close output stream
+  print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+  close $main::out if ($main::outfile{output});
+  exit(0);
 }
 
 ################################################################
