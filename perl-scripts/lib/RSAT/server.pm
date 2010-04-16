@@ -40,12 +40,12 @@ sub UpdateLogFile {
     $script_name = &RSAT::util::ShortFileName($0);
   }
 
-  &RSAT::error::FatalError("&RSAT::server::UpdateLogFile()",
+  &RSAT::message::Debug("&RSAT::server::UpdateLogFile()",
 			   "<p>script=".$script_name,
 			   "<p>message=".$message,
 			   "<p>log=".$log_file,
 			   "<p>Args=", join (", ", @_),
-			 ) if ($main::verbose >= 3);
+			 ) if ($main::verbose >= 5);
 
   if (open LOG, ">>".$log_file) {
     #flock(LOG,2);
@@ -63,6 +63,49 @@ sub UpdateLogFile {
     close LOG;
   }
   chmod 0777, $log_file;
+}
+
+
+################################################################
+## Append the execition time of a the current script in a specific log file
+## Usage:
+##     &UpdateExecTimeLogFile($start_time, $done_time, $elapsed);
+sub UpdateExecTimeLogFile {
+  my ($start_time, $done_time, $elapsed) = @_;
+
+  my $script_name = &RSAT::util::ShortFileName($0);
+  my $command = join (" ", $script_name, @ARGV);
+
+  &RSAT::message::TimeWarn("Updating execution time log file", $main::exec_time_log_file)
+    if ($main::verbose >= 0);
+
+  ## Write header of the exec time log file if required
+  unless (-e $main::exec_time_log_file) {
+    open LOG, ">".$main::exec_time_log_file;
+    print LOG join ("\t",
+		    "#start_date.time",
+		    "done_date.time  ",
+		    "seconds",
+		    "hostnae",
+		    "username",
+		    "username",
+		    "script_name",
+		    "command",
+		   ), "\n";
+    close LOG;
+  }
+
+  open LOG, ">>".$main::exec_time_log_file;
+  print LOG join ("\t",
+		  $start_time,
+		  $done_time,
+		  $elapsed,
+		  getlogin(),
+		  $script_name,
+		  $command,
+		 ), "\n";
+  close LOG;
+  chmod 0777, $main::exec_time_log_file;
 }
 
 
@@ -244,6 +287,7 @@ sub InitRSAT {
   $main::counter_file = "$LOGS/count-file";
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
   $main::log_file = join("", $LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
+  $main::exec_time_log_file = join("", $LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::date = &RSAT::util::AlphaDate();
 }
 
