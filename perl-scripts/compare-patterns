@@ -67,9 +67,6 @@ foreach my $field (@supported_threshold_fields) {
 $supported_threshold_fields = join (",", @supported_threshold_fields);
 
 
-## Starting time 
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-
 ## Return fields
 @supported_return_fields = qw(
 			      match
@@ -291,9 +288,10 @@ foreach my $field (@table_fields) {
 			 sprintf ("%-${max_seq1_len}s", $seq1), 
 			 @result), "\n";
     }
-    
-    
-    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
 
 }
 

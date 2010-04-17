@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: alter-graph,v 1.6 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: alter-graph,v 1.7 2010/04/17 03:04:31 jvanheld Exp $
 #
 ############################################################
 
@@ -61,7 +61,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -361,7 +361,8 @@ package main;
     ## Finish verbose
     if ($main::verbose >= 1) {
       if ($output_format eq 'tab') {
-	print $main::out &RSAT::util::ReportExecutionTime($start_time);
+	my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+	print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
       } else {
 	warn &RSAT::util::ReportExecutionTime($start_time);
       }

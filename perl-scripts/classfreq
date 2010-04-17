@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 $threshold = 0;
 
 
@@ -248,7 +248,9 @@ if ($verbose) {
   print $out "; max\t$max\n";
   printf $out "; range\t%g\n",$max - $min;
 
-  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
 }
 
 

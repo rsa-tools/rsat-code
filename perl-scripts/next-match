@@ -64,7 +64,7 @@ End_short_help
 }
 
 #### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 
 
 #### read arguments ####
@@ -78,6 +78,11 @@ $offset = $ARGV[3];
 
 
 print "$match_pos\t$match_seq\n";
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
 exit(0);
 

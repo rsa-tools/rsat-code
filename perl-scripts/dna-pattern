@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.58 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: dna-pattern,v 1.59 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -17,7 +17,7 @@ require RSAT::pattern;
 require RSAT::match;
 &InitMatchScores();
 
-$start_date = &AlphaDate();
+$start_time = &AlphaDate();
 
 #### init variables ####
 @matches = (); ## Empty match list before analyzing the next sequence
@@ -327,16 +327,12 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
 &MatchingStatistics() if ($return_fields{stats});
 
-## time
-if ($verbose) {
-    $done_date = &AlphaDate();
-    print $out "; Job started\t$start_date\n";
-    print $out "; Job done   \t$done_date\n";
-}
 
-if ($outputfile) {
-    close ($out);
-}
+################################################################
+## Close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
 
 
 ################################################################

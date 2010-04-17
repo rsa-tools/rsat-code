@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.12 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.13 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -295,16 +295,13 @@ package main;
     &ExportClasses($out_file{transfac}, $out_format, @classes) if $export{obj};
 
 
-    ### report execution time
-    warn &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    ################################################################
+    ### Report execution time
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
     close ERR;
-
-
-#    &deliver("transfac_parsed") if ($deliver);
-
 #    &CompressParsedData();
-    
     warn "; Result saved in directory $dir{output}\n" if ($main::verbose >= 1);
 
     exit(0);

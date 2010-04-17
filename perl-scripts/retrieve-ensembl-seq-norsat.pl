@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq-norsat.pl,v 1.3 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: retrieve-ensembl-seq-norsat.pl,v 1.4 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -32,7 +32,7 @@ package main;
 
   ################################################################
   #### initialise parameters
-#  my $start_time = &AlphaDate();
+  my $start_time = &AlphaDate();
 
   local $verbose = 0;
   local $feattype = "mrna";    # other values: Gene, Intron, Exon, CDS and UTR
@@ -268,7 +268,12 @@ package main;
 
 
   ################################################################
-  ###### Close output stream
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ################################################################
+  ## Close output stream
   close $fh if ($output_file);
 
   exit(0);

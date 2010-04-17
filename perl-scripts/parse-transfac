@@ -221,7 +221,7 @@ if ($config_site eq "bigre") {
 $inputfile = "$TF_folder/site.dat";
 
 ##### variable initialisation #####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 
 $LastField = -1;
 $RecordNb = 0;
@@ -453,9 +453,8 @@ while (<DATA>) {
 close(DATA);
 close(RES);
 
-if ($verbose) {
-    print $out ";$RecordNb records searched, $ExportNb records found.\n";
-    $done_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
-    print $out ";Job started $start_time";
-    print $out ";Job done    $done_time";
-}
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified

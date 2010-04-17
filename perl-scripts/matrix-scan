@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.156 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: matrix-scan,v 1.157 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1960,9 +1960,13 @@ package main;
       printf $main::out "; \t%-15s\t%s\n", "TOTAL",$sum_binom_tests;
     }
 
+  }
+
+
   ################################################################
-  ###### close output stream
-  print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $main::out if ($main::outfile{output});
 
   exit(0);

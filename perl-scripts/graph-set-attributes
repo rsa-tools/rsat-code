@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-set-attributes,v 1.3 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: graph-set-attributes,v 1.4 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -173,7 +173,8 @@ package main;
 
     ################################################################
     ## Close output stream
-    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
     close $main::out if ($main::outfile{output});
 
     exit(0);

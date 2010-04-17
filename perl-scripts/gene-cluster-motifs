@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.279 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.280 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.279 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.280 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -610,8 +610,8 @@ package main;
     }
   }
 
-  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
-
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   exit(0);
 
 }

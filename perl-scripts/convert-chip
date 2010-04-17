@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-chip,v 1.5 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: convert-chip,v 1.6 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-09-03 10:23:23 jvanheld>
 #
@@ -47,7 +47,8 @@ close $in if ($infile{input});
 
 ################################################################
 ###### close output stream
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

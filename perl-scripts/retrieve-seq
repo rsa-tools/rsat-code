@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.79 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: retrieve-seq,v 1.80 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -518,16 +518,16 @@ foreach our $query (@queries) {
 print $out (join "\n", @warnings), "\n" 
     unless $no_warn;
 
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $out;
+
 if ($output_features) {
-    print $out_ft_handle (join "\n", @ft_warnings), "\n" 
-	unless $no_warn;
-    close $out_ft_handle;
+  print $out_ft_handle (join "\n", @ft_warnings), "\n" 
+    unless $no_warn;
+  close $out_ft_handle;
 }
-
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
-&RSAT::message::TimeWarn("retrieve-seq done") if ($main::verbose >= 2);
-
 
 
 exit(0);

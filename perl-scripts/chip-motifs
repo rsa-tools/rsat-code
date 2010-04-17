@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.37 2010/04/16 08:14:46 jvanheld Exp $
+# $Id: chip-motifs,v 1.38 2010/04/17 03:04:31 jvanheld Exp $
 #
 ############################################################
 
@@ -92,7 +92,7 @@ package main;
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -199,10 +199,10 @@ package main;
     &TimeWarn("Log file", $main::outfile{log});
   }
 
-  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
-
   ################################################################
   ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $main::out if ($main::outfile{output});
   exit(0);
 }

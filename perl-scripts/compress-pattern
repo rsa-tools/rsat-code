@@ -7,7 +7,7 @@ require "RSA.lib";
 &ReadArguments;
 
 #### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 
 
 #### read arguments ####
@@ -16,6 +16,12 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
 $compressed =  &compress_pattern($to_compress,@letters_to_compress);
 print "$to_compress\t$compressed\n";
+
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
 exit(0);
 

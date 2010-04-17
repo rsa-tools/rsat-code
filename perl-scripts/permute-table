@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: permute-table,v 1.4 2006/11/30 06:50:48 jvanheld Exp $
+# $Id: permute-table,v 1.5 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -201,9 +201,12 @@ for my $r (0..$#row_len) {
     print $out (join $sep, @next), "\n";
 }
 
+
 ################################################################
-###### close output stream
-close $out if ($outfile{output});
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
 
 exit(0);
 

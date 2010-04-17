@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.39 2010/04/16 13:18:25 jvanheld Exp $
+# $Id: template,v 1.40 2010/04/17 03:04:32 jvanheld Exp $
 #
 ############################################################
 
@@ -61,7 +61,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -101,11 +101,10 @@ package main;
     ## Insert here output printing
 
     ################################################################
-    ## Close output stream
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This needs to be exectuted by all scripts
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
     print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     close $main::out if ($main::outfile{output});
-
 
     exit(0);
 }

@@ -203,6 +203,11 @@ of TFBS located on the target region. These positions are relative to the target
 
 =cut
 
+
+################################################################
+## Initialize parameters
+my $start_time = &AlphaDate();
+
 my $help;
 my $xmlInputFile;
 my $get_pos;
@@ -221,6 +226,7 @@ my %supported_tasks = (
 my $supported_tasks = join (",", sort(keys( %supported_tasks)));
 my %tasks2run = ();
 
+
 ###############################################
 GetOptions(
 	"help"          => \$help,
@@ -231,10 +237,9 @@ GetOptions(
 	"task:s" 	=> \$tasks,
 	"add_flanks:s"	=> \$add_length
 	);
-	
+
 ###############################################
 ## Process arguments and options
-
 printHelp() if $help;
 
 ## tasks
@@ -405,7 +410,10 @@ if  (($tasks2run{target_region})||($tasks2run{tfbs_fasta})) {
   my $target_regions = $feat->target_regions($entries) if  ($tasks2run{target_region});
 }
 
-print LOG &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print LOG if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close LOG;
 
 ###############################################

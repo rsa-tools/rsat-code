@@ -88,7 +88,7 @@ End_short_help
   exit;
 }
 
-$start_time = `date`;
+$start_time = &AlphaDate();
 
 #### initialise parameters ####
 $strand = "DR";
@@ -174,20 +174,11 @@ for $residue (1..length($line_struct)+1) {
     }
 }
 
-
-###### verbose ######
-			  if ($verbose) {
-  $done_time = `date`;
-  print $out ";Job started $start_time";
-  print $out ";Job done    $done_time";
-}
-
-
-###### close input file ######
-close $in unless ($inputfile eq "");
-
-###### close output file ######
-close $out unless ($outputfile eq "");
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
 
 
 exit(0);
