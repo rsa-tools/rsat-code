@@ -77,7 +77,7 @@ sub UpdateExecTimeLogFile {
   my $command = join (" ", $script_name, @ARGV);
 
   &RSAT::message::TimeWarn("Updating execution time log file", $main::exec_time_log_file)
-    if ($main::verbose >= 0);
+    if ($main::verbose >= 3);
 
   ## Write header of the exec time log file if required
   unless (-e $main::exec_time_log_file) {
