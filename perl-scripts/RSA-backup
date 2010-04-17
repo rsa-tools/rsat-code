@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 #### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 
 $alpha_date = &AlphaDate;
 
@@ -26,11 +26,12 @@ for $folder ("perl-scripts","public_html") {
     system $command;
 }
 
-$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-if ($verbose >= 1) {
-    print ";Job started $start_time";
-    print ";Job done    $done_time";
-}
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
 
 exit(0);
 

@@ -11,6 +11,7 @@ require RSAT::OrganismManager;
 
 
 ## Initialize parameters
+my $start_time = &AlphaDate();
 
 ## Main RSAT server for the option -server
 ## WSDL  Web services
@@ -134,7 +135,12 @@ if (($out_format eq "tree")||($out_format eq "html_tree")) {
    print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $taxon, @return_fields); ## Export the table with header and absolute paths
 }
 
-close $out if ($outfile{output});
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
 
 exit(0);
 

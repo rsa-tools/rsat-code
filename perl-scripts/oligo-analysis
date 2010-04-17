@@ -1,13 +1,8 @@
 #!/usr/bin/perl
 
-## CVS: -bg input replaced by -bg bernoulli; the default $background_model is now bernoulli
-## BUG: with the options -two_tail and -2str, a lot of patterns have 0  occurrences (I suspect these are the reverse complements after grouping).
-## BUG: with Markov order 0, exp freq of mononucleotides are set to 0. should be the observed frequency
-## TO DO: option -table freq
-
 ############################################################
 #
-# $Id: oligo-analysis,v 1.140 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: oligo-analysis,v 1.141 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -24,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.140 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.141 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -327,7 +322,8 @@ if ($return{'table'}) {
 
 
 ## Close output stream
-print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out if ($outputfile);
 
 exit(0);

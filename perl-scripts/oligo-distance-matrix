@@ -242,7 +242,8 @@ for $seq1 (1..$sequence_number) {
 }
 
 
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); 
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out;
 
 

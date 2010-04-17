@@ -9,7 +9,7 @@ require "RSA.lib";
 use GD;
 use RSAT::PostscriptWrapper;
 
-$start_time = `date`;
+$start_time = &AlphaDate();
 
 ##################################################################
 ##################### DEFAULT PARAMETERS #########################
@@ -183,7 +183,11 @@ close $out if ($outputfile);
 
 &PrintHTMLmap() if ($HTML_map);
 
-warn &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
 
 exit(0);
 

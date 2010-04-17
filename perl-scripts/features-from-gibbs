@@ -75,7 +75,7 @@ End_short_help
   exit;
 }
 
-$start_time = `date`;
+$start_time = &AlphaDate();
 
 #### initialise parameters ####
 
@@ -190,7 +190,8 @@ while (<$in>) {
 close $in unless ($inputfile eq "");
 
 ###### close output file ######
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out unless ($outputfile eq "");
 
 

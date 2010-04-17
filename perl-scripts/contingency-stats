@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.10 2008/07/09 23:38:52 jvanheld Exp $
+# $Id: contingency-stats,v 1.11 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -445,17 +445,11 @@ package main;
       print $out $sep->toString(decimals=>$decimals, corner=>"Sep");
     }
 
-    ################################################################
-    ###### finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
 
- 
     ################################################################
-    ###### close output stream
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     close $main::out if ($main::outfile{output});
 
 

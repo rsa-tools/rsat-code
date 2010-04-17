@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: random-seq-select,v 1.6 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: random-seq-select,v 1.7 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -190,7 +190,11 @@ package main;
 	}
     }
 
-    print &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    ################################################################
+    ## Report execution time
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
     exit(0);
 }
 

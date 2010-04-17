@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.73 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.74 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -421,10 +421,12 @@ package main;
     }
 }
 
-  print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+
 
   ################################################################
   ###### Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $fh $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $fh if ($output_file);
 
   close $table_handle if ($homologs_table);

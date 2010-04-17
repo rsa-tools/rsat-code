@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.58 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.59 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -319,7 +319,8 @@ package main;
     &RSAT::message::Info(join("\t", "Output directory", $dir{output}));
 
     ###### close output file ######
-    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
     close $out if ($outfile{output});
 
     exit(0);

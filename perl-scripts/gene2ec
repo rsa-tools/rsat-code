@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 ### initialization
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 $rev = 0;
 
 #### default parameters
@@ -122,16 +122,10 @@ while (<$in>) {
 close $in unless ($inputfile eq "");
 
 ################################################################
-#### verbose
-if ($verbose) {
-    $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-    print $out ";Job started $start_time";
-    print $out ";Job done    $done_time";
-}
-
-
-###### close output file ######
-close $out unless ($outputfile eq "");
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
 
 
 exit(0);
