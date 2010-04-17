@@ -117,7 +117,7 @@ End_short_help
 }
 
 #### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 $distance_estimator = "chi";
 
 #### read arguments ####
@@ -262,24 +262,15 @@ if (defined %score) {
 &PrintMichael if ($return{'michael'});
 &PrintOC if ($return{'OC'});
 
-###### verbose ######
-if ($verbose) {
-	$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-	print $out ";Job started $start_time";
-	print $out ";Job done    $done_time";
-}
-if ($hyperverbose) {
-    $time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-    chomp($time);
-    print "done\t$time\n";
-}
-
-
 ###### close input file ######
 close $in unless ($inputfile eq "");
 
-###### close output file ######
-close $out unless ($outputfile eq "");
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
 
 
 exit(0);
@@ -289,7 +280,7 @@ exit(0);
 sub DrawAllGraphs {
 ### generate XYgraphs
 	if ($hyperverbose) {
-		$time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+		$time = &AlphaDate();
 		chomp($time);
 		print "generating XY graphs\t$time\n";
 	}
@@ -374,7 +365,7 @@ sub DrawGraph {
 ### print the matrix  ####
 sub PrintMatrix {
 	if ($hyperverbose) {
-		$time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+		$time = &AlphaDate();
 		chomp($time);
 		print "printing matrix\t$time\n";
 	}
@@ -401,7 +392,7 @@ sub PrintMatrix {
 #### output by pairs of elements
 sub PrintPairs {
   if ($hyperverbose) {
-    $time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    $time = &AlphaDate();
     chomp($time);
     print "printing pairs\t$time\n";
   }
@@ -446,7 +437,7 @@ sub PrintPairs {
 #### output in michael schroeder's format
 sub PrintMichael {
 	if ($hyperverbose) {
-		$time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+		$time = &AlphaDate();
 		chomp($time);
 		print "printing in Michael Schroeder's format\t$time\n";
 	}
@@ -469,7 +460,7 @@ sub PrintMichael {
 #### output in OC format (http://barton.ebi.ac.uk/manuals/oc/)
 sub PrintOC {
 	if ($hyperverbose) {
-		$time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+		$time = &AlphaDate();
 		chomp($time);
 		print "printing in OC format\t$time\n";
 	}
@@ -496,7 +487,7 @@ sub PrintOC {
 #### print clusters ####
 sub PrintClusters {	
   if ($hyperverbose) {
-    $time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    $time = &AlphaDate();
     chomp($time);
     print "printing clusters\t$time\n";
   }
@@ -523,7 +514,7 @@ sub PrintClusters {
 sub ReadData {
   ###### read the data #########
   if ($hyperverbose) {
-    $time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    $time = &AlphaDate();
     chomp($time);
     print "reading data\t$time\n";
   }
@@ -627,7 +618,7 @@ sub CorrelCoeff {
 sub CalcDistances {
 ### calculate distances ###
   if ($hyperverbose) {
-    $time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    $time = &AlphaDate();
     chomp($time);
     print "calculating distances\t$time\n";
   }
@@ -635,7 +626,7 @@ sub CalcDistances {
     if ($hyperverbose) {
       $count1++;
       $count3 += $count2;
-      $time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+      $time = &AlphaDate();
       chomp($time);
       print "\t$count1\t$count2\t$count3\t$id1\t$time\n";
       $count2 = 0;

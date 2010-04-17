@@ -28,10 +28,9 @@ use Getopt::Long qw(:config bundling);
 use Pod::Text;
 use File::Basename;
 
-
 ################################################################
-#### variable initialization
-#&RSAT::util::LoadConfig();
+## Initialise parameters
+my $start_time = &AlphaDate();
 
 #### package variables
 $verbose = 0;
@@ -224,7 +223,11 @@ if ($selectaxons){
   }
 }
 
-&RSAT::message::TimeWarn("Job done.");
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
 exit(0);
 
 

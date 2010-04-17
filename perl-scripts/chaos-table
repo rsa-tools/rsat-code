@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chaos-table,v 1.2 2008/10/20 13:52:06 morgane Exp $
+# $Id: chaos-table,v 1.3 2010/04/17 03:04:31 jvanheld Exp $
 #
 # Time-stamp: <2008-10-17 17:41:48 morgane>
 #
@@ -121,107 +121,100 @@ use RSAT::Chaos;
 package main;
 {
 
-    ################################################################
-    ## Initialise parameters
-    my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-#    $program_version = "0.00";
+  ################################################################
+  ## Initialise parameters
+  my $start_time = &AlphaDate();
+  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
 
-	## MarkovModel
-	local $bg_model = new RSAT::MarkovModel();
-	$bg_format = "oligo-analysis";
-  	%supported_bg_format = $bg_model->get_supported_input_formats();
+  ## MarkovModel
+  local $bg_model = new RSAT::MarkovModel();
+  $bg_format = "oligo-analysis";
+  %supported_bg_format = $bg_model->get_supported_input_formats();
   	
-  	## Chaos Table
-  	local $chaos_table = new RSAT::Chaos();
+  ## Chaos Table
+  local $chaos_table = new RSAT::Chaos();
     
-    %main::infile = ();
-    %main::outfile = ();
+  %main::infile = ();
+  %main::outfile = ();
 
-    $main::verbose = 0;
-    #$main::in = STDIN;
-    $main::out = STDOUT;
+  $main::verbose = 0;
+  #$main::in = STDIN;
+  $main::out = STDOUT;
     
-    %oligo_freq =();
+  %oligo_freq =();
     
-    local %supported_return_fields = (
-			      freq=>1,	## frequency of each word
-			      word=>1,	## the word
-			      );
-	$supported_return_fields = join (",", sort(keys( %supported_return_fields)));
-  	$return_value = "freq";		## Default is freq
+  local %supported_return_fields = (
+				    freq=>1, ## frequency of each word
+				    word=>1, ## the word
+				   );
+  $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+  $return_value = "freq";	## Default is freq
 
-    ################################################################
-    ## Read argument values
-    &ReadArguments();
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
 
-    ################################################################
-    ## Check argument values
+  ################################################################
+  ## Check argument values
     
-    ## Background format
-  	unless ($bg_format) {
-    	&RSAT::error::FatalError("You should define the background format (option -bg_format)");
-  	}
+  ## Background format
+  unless ($bg_format) {
+    &RSAT::error::FatalError("You should define the background format (option -bg_format)");
+  }
 
-    ################################################################
-    ## Open output stream
-    $main::out = &OpenOutputFile($main::outfile{output});
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
 
-    ################################################################
-    ## Read input
-	$bg_model->load_from_file($main::infile{input}, $bg_format);
+  ################################################################
+  ## Read input
+  $bg_model->load_from_file($main::infile{input}, $bg_format);
 	
-	## get the frequencies of the nucleotides
-	%oligo_pref_suf = $bg_model->get_attribute("oligo_freq");
+  ## get the frequencies of the nucleotides
+  %oligo_pref_suf = $bg_model->get_attribute("oligo_freq");
 	
-	my @prefixes = $bg_model->get_prefixes();
-  	my @suffixes = $bg_model->get_suffixes();
-  	foreach my $prefix (@prefixes) {
-    	foreach my $suffix (@suffixes) {
-    		my $pattern = $prefix.$suffix;
-    		if ($oligo_pref_suf{$prefix}->{$suffix}){
-      			$oligo_freq{$pattern} = $oligo_pref_suf{$prefix}->{$suffix};
-    		}
-    	}
-  	}
-	
-	$w_length = ($bg_model->get_attribute("order")) + 1;
-
-    ################################################################
-    ## Print verbose
-    &Verbose() if ($main::verbose);
-
-    ################################################################
-    ## Execute the command
-    
-   	$chaos_table->init_mapping_table();
-   	$chaos_table->init_chaos_table($w_length);
-   	my @chaos = $chaos_table->get_chaos_table($return_value,\%oligo_freq);
-	
-    ################################################################
-    ## Print output
-	for (my $x = 0; $x < (2**$w_length); $x++) {
-		for (my $y = 0; $y < (2**$w_length); $y++) {
-			print $main::out $chaos[$x][$y]."\t";
-			}
-		print $main::out "\n";
-	}
-
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
+  my @prefixes = $bg_model->get_prefixes();
+  my @suffixes = $bg_model->get_suffixes();
+  foreach my $prefix (@prefixes) {
+    foreach my $suffix (@suffixes) {
+      my $pattern = $prefix.$suffix;
+      if ($oligo_pref_suf{$prefix}->{$suffix}) {
+	$oligo_freq{$pattern} = $oligo_pref_suf{$prefix}->{$suffix};
+      }
     }
+  }
+	
+  $w_length = ($bg_model->get_attribute("order")) + 1;
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Execute the command
+    
+  $chaos_table->init_mapping_table();
+  $chaos_table->init_chaos_table($w_length);
+  my @chaos = $chaos_table->get_chaos_table($return_value,\%oligo_freq);
+
+  ################################################################
+  ## Print output
+  for (my $x = 0; $x < (2**$w_length); $x++) {
+    for (my $y = 0; $y < (2**$w_length); $y++) {
+      print $main::out $chaos[$x][$y]."\t";
+    }
+    print $main::out "\n";
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
+  close $main::out if ($main::outfile{output});
 
 
-    ################################################################
-    ## Close output stream
-    close $main::out if ($main::outfile{output});
-
-
-    exit(0);
+  exit(0);
 }
 
 ################################################################

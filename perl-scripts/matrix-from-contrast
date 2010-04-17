@@ -77,7 +77,7 @@ End_short_help
   exit;
 }
 
-$start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = $date = &AlphaDate();
 
 #### initialise parameters ####
 
@@ -157,7 +157,8 @@ foreach $id1 (@id_list) {
 close $in unless ($inputfile eq "");
 
 ###### close output file ######
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out unless ($outputfile eq "");
 
 

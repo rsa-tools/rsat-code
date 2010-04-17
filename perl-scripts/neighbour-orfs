@@ -17,7 +17,7 @@ require "RSA.lib";
 
 
 ### initialization
-$start_time = `date`;
+$start_time = &AlphaDate();
 $in_format = "orf";
 $out_format = "lr";
 
@@ -363,18 +363,14 @@ for $query (0..$#contig) {
         print $out $strand{$right_neighbour}, "\t";
         print $out "$right_distance\t$right_len\n";
     }
-} 
-
-###### verbose ######
-if ($verbose) {
-  $done_time = `date`;
-  print $out ";Job started $start_time";
-  print $out ";Job done    $done_time";
 }
 
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
 
 
-close $out unless ($outputfile eq "");
 exit(0);
 
 

@@ -92,7 +92,7 @@ End_short_help
   exit(0);
 }
 
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 
 #### initialise parameters ####
 
@@ -170,7 +170,8 @@ print $out $log_likelihood, "\n";
 close $in unless ($inputfile eq "");
 
 ###### close output file ######
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); 
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out if ($outputfile);
 
 

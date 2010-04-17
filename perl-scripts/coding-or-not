@@ -10,7 +10,7 @@ require "RSA.stat.lib";
 $line_width = 0;
 $out_dir = ".";
 $seq_format = "fasta";
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 $number_format = "%-7g";
 $NULL="<NULL>";
 
@@ -346,8 +346,6 @@ if ($return{stats}) {
 		      "intergenic", sprintf("%.3f",$nc_fraction), @nc_stats,
 		      $supported_organism{$organism_name}->{'taxonomy'},
 		     ), "\n";
-
-    
 }
 
 ## Close output files
@@ -360,6 +358,11 @@ close C_SEQ  if (($return{'cs'}) && ($return{seq}));
 close C_POSITIONS if ($return{pos});;
 close GENE_SEQ if (($return{'gene'}) && ($return{seq}));
 
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
 exit(0);
 

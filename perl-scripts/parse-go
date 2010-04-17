@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-go,v 1.6 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: parse-go,v 1.7 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -285,7 +285,8 @@ package main;
     ###### print output
     $go_terms->dump_tables();
 
-    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
 
     ################################################################
     ###### close output stream

@@ -165,18 +165,10 @@ foreach my $gene (@{$slice->get_all_Genes()}) {
 #print $SEQ $sequence;
 #close $SEQ if ($outfile{sequence});
 
-
 ################################################################
-###### finish verbose
-if ($verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $log "; Job started $start_time\n";
-    print $log "; Job done    $done_time\n";
-}
-
-
-################################################################
-###### close output stream
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $log if ($outfile{log});
 close ERR if ($outfile{err});
 close $FT_TABLE if ($outfile{feature});

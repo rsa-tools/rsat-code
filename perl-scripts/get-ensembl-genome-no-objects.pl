@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.16 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.17 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -747,6 +747,9 @@ package main;
 	&RSAT::message::psWarn("AFTER COLLECTING INFO FOR SLICE: ".$s."/".$slices_number) if ($main::verbose >= 0);
       }
 
+    ## Report execution time and close log file
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     print $log &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
     ################################################################
@@ -785,10 +788,11 @@ package main;
 	    close $CODING_EXON if ($outfile{coding_exon});
 	}
     }
+
     ################################################################
     ## Report the output directory
-    warn "; Results stored in directory\t", $dir{output}, "\n" if ($main::verbose >= 1);
     
+    warn "; Results stored in directory\t", $dir{output}, "\n" if ($main::verbose >= 1);
     exit(0);
 }
 ################################################################

@@ -40,7 +40,12 @@ require RSAT::Graph2;
 require RSAT::auc;
 use Getopt::Long qw(:config bundling);
 use Pod::Text;
- 
+
+
+################################################################
+## Initialize parameters
+my $start_time = &AlphaDate();
+
 #### package variables
 $verbose = 0;
 
@@ -209,9 +214,13 @@ if ($output){
     my $header = &getHeader(\%param2return,$score_format);
     $header = $description."\n".$header if ($main::verbose>=1);
     &write_file($output,$header,@datas);
-}    
+}
 
-&RSAT::message::Warning("Job done.");
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
 exit(0);
 
 ################################################################

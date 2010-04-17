@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-location.pl,v 1.9 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: parse-location.pl,v 1.10 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 14:06:08 jvanheld>
 #
@@ -71,7 +71,8 @@ close $in if ($infile{input});
 &Verbose if ($verbose);
 
 ###### close output file ######
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

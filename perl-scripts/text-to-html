@@ -8,7 +8,7 @@ require "RSA2.cgi.lib";
 
 
 #### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();
 $out_format = 'html';
 
 %supported_output_format = (html=>1,
@@ -57,7 +57,8 @@ if ($out_format eq 'html') {
 close $in unless ($infile{input} eq "");
 
 ###### close output file ######
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out unless ($outfile{output} eq "");
 
 

@@ -7,7 +7,7 @@ require "RSA.lib";
 
 
 #### initialise parameters ####
-my $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+my $start_time = &AlphaDate();
 local $inputfile = "";
 local $outputfile = "";
 local $verbose = 0;
@@ -46,22 +46,12 @@ if ($verbose) {
   &PrintArguments;
 }
 
-###### execute the command #########
 
-
-###### print output ######
-
-
-###### verbose ######
-if ($verbose) {
-  my $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-  print $out ";Job started $start_time";
-  print $out ";Job done    $done_time";
-}
-
-
-###### close output file ######
-close $out if ($outputfile);
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
 
 
 exit(0);

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.11 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: binomial-series,v 1.12 2010/04/17 03:04:31 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:46:41 jvanheld>
 #
@@ -100,7 +100,8 @@ for ($s = $min_successes; $s <= $max_successes; $s += $step) {
     print $out "\n";
 }
 
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 
 exit(0);
 
