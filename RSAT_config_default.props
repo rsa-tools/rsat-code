@@ -11,8 +11,7 @@ rsat_echo=0
 
 ## Report exectution time of each task in a log file
 ## This log file is found in $RSAT/logs/[rsat_site]_[DATE]_exec_times.tab
-exec_time=1
-
+exec_time=0
 
 ## name of the site (which will appear in the log file)
 rsat_site=your_site_name
