@@ -87,7 +87,7 @@ End_short_help
   exit;
 }
 
-$start_time = `date`;
+$start_time = &AlphaDate();
 
 #### initialise parameters ####
 
@@ -216,13 +216,11 @@ if ($verbose) {
   }
 }
 
-###### verbose ######
-if ($verbose) {
-  $done_time = `date`;
-  print STDERR ";Job started $start_time";
-  print STDERR ";Job done    $done_time";
-}
 
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
 exit(0);
 

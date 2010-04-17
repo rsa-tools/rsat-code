@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: add-orf-id,v 1.7 2005/10/09 13:21:01 jvanheld Exp $
+# $Id: add-orf-id,v 1.8 2010/04/17 03:04:31 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:15:40 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 #require "RSA.classes";
 
-$start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = $date = &AlphaDate();
 
 #### initialise parameters ####
 
@@ -68,14 +68,11 @@ while (my $line = <$in>) {
 }
 
 
-if ($verbose) {
-    $done_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
-    print $out ";Job started $start_time";
-    print $out ";Job done    $done_time";
-}
-
-###### close output file ######
-close $out unless ($outputfile eq "");
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
 
 
 exit(0);

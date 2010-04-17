@@ -5,6 +5,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
+## Start time
+local $start_time = &AlphaDate();
+
 #### initialise parameters ####
 $out_format = "fasta";
 $seq_nb = 1;
@@ -210,7 +213,8 @@ for $r (1..$seq_nb) {
 }
 
 ###### close output file ######
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out if ($outputfile);
 
 

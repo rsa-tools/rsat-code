@@ -64,7 +64,7 @@ End_of_help
   exit;
 }
 
-$start_time = `date`;
+$start_time = &AlphaDate();
 
 #### initialise parameters ####
 
@@ -162,23 +162,18 @@ foreach $p (@keys) {
     print $out "$p\t$mis{$p}\tsubst{$p}\t$ins{$p}\tdel{$p}\n";  
 }
 
-#### verbose ####
-if ($verbose) {
-  $done_time = `date`;
-  print $out ";Job started $start_time";
-  print $out ";Job done    $done_time";
-}
-
 
 ###### close input file ######
 if ($inputfile ne "") {
   close $in;
 }
 
-###### close output file ######
-if ($outputfile ne "") {
-  close $out;
-}
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
 
 
 exit(0);

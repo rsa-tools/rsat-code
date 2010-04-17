@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: quantiles,v 1.5 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: quantiles,v 1.6 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2007-10-27 01:06:25 jvanheld>
 #
@@ -62,7 +62,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
     %main::infile = ();
     %main::outfile = ();
@@ -271,7 +271,8 @@ package main;
 
     ################################################################
     ###### close output stream
-    print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
     close $out if ($outfile{output});
 
 

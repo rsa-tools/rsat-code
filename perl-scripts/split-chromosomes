@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: split-chromosomes,v 1.7 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: split-chromosomes,v 1.8 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:56:24 jvanheld>
 #
@@ -67,7 +67,10 @@ if (defined($chrom)) {
 }
 close $in if ($infile{input});
 
-warn &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
 ###### close output file ######
 #close $list if ($outfile{output});

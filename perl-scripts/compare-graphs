@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.53 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: compare-graphs,v 1.54 2010/04/17 03:04:31 jvanheld Exp $
 #
 ############################################################
 
@@ -341,7 +341,8 @@ package main;
 	if ($output_format ne 'tab') {
           $this_out = "STDERR";
         }
-	print $this_out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+	my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+	print $this_out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     }
 
     ################################################################

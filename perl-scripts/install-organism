@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.92 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: install-organism,v 1.93 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -68,7 +68,7 @@ $taxonomy = $null;
 $start_time = &AlphaDate();
 
 ### installation date
-local $install_date = $force_date ||`date '+%Y/%m/%d %H:%M:%S'`;
+local $install_date = $force_date || &AlphaDate();
 chomp $install_date;
 
 ## Store the starting directory
@@ -203,7 +203,8 @@ chdir($dir{main});
 &RSAT::message::Info(join("\t", "working dir",  `pwd`)) if ($main::verbose >= 2);
 system "touch $dir{install}";
 
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 exit(0);
 
 

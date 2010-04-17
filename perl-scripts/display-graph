@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.20 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: display-graph,v 1.21 2010/04/17 03:04:32 jvanheld Exp $
 #
 ############################################################
 
@@ -379,7 +379,8 @@ package main;
       close $output_fhandle;
     }
 
-    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
     exit(0);
 }

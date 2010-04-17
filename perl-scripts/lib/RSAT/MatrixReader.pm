@@ -48,6 +48,7 @@ formats.
 $supported_input_formats = join ",", keys %supported_input_formats;
 
 ################################################################
+
 =pod
 
 =item readFromFile($file, $format)

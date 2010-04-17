@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-only-objects.pl,v 1.8 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: get-ensembl-genome-only-objects.pl,v 1.9 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1155,20 +1155,12 @@ package main;
 	chdir($dir{output});
 	&PrintStats($outfile{stats}, @classes);
     }
-    
 
 
     ################################################################
-    ###### finish verbose
-    if ($verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $log "; Job started $start_time\n";
-	print $log "; Job done    $done_time\n";
-    }
-
-
-    ################################################################
-    ###### Close output stream
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     close $log if ($outfile{log});
     close ERR if ($outfile{err});
     close CTG if ($outfile{contigs});

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.54 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: convert-graph,v 1.55 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -324,10 +324,11 @@ package main;
       print $main::out_names $split[1];
     }
 
-    print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
 
     ################################################################
-    ###### close output stream
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     close $main::out if ($main::outfile{output});
 
     exit(0);

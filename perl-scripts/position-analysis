@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.48 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: position-analysis,v 1.49 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -37,7 +37,7 @@ $supported_origins = join ",", @supported_origins;
 $offset = 0;
 
 #### initialize other variables
-$start_time = &RSAT::util::AlphaDate();
+$start_time = &AlphaDate();
 $sequence_number = 0;
 
 $max_seq_length = 0;
@@ -174,7 +174,7 @@ if ($return{'graph'}) {
     }
 
 
-    $date = `date +%H:%M:%S`;
+    $date = &AlphaDate();
     chomp $date;
     print ";$date\tgenerating the graphs ... \n" if ($main::verbose >= 2);
 
@@ -271,8 +271,10 @@ if ($return{'graph'}) {
 
 
 
-print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
-
+################################################################
+## Close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $out;
 
 exit(0);
@@ -329,7 +331,7 @@ sub SumStrands {
 ################################################################
 #### read patterns from a file
 sub LocalReadPatterns {
-    $date = `date '+%H:%M:%S'`;
+    $date = &AlphaDate()`;
     chomp $date;
     warn ";$date\treading pattern file ...\n" if ($main::verbose >= 1);
     open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";

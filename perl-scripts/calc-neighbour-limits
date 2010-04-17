@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: calc-neighbour-limits,v 1.10 2010/04/15 13:08:54 jvanheld Exp $
+# $Id: calc-neighbour-limits,v 1.11 2010/04/17 03:04:31 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:15:37 jvanheld>
 #
@@ -85,7 +85,8 @@ foreach my $ctg (sort keys %contig) {
 }
 
 ###### close output file ######
-print $main::out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
 close $out if ($outfile{output});
 
 

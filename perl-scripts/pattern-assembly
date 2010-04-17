@@ -8,7 +8,7 @@ require "RSA.seq.lib";
 ## TO DO: use the matching weight rather than the number of matches as criterion
 
 #### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate();;
 $max_flanking = 1;
 $max_subst = 0;
 $max_asmb_size = 50;
@@ -89,10 +89,9 @@ if (($max_pattern_nb > 0) &&
     &AssemblePatterns(@to_assemble);
 }
 
-print $out &RSAT::util::ReportExecutionTime($start_time) if ($main::verbose >= 1);
-
-
 ###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $out unless ($outputfile eq "");
 
 

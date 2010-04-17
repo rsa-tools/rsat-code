@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.20 2007/12/07 08:35:44 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.21 2010/04/17 03:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -239,17 +239,12 @@ foreach $db_organism (@db_organisms) {
     }
 }
 
+
 ################################################################
-###### finish verbose
-if ($verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-
-
-close $out if ($outfile{output});
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
 
 exit(0);
 
