@@ -6,11 +6,20 @@
 ## [your_path_to_rsat] by the FULL path of the directry containing the
 ## folder rsa-tools.
 
-## Echo level of the web server (default 0, set to 1 or 2 for debugging)
+## Echo level of the web server (default 0, set to 1 or 2 for debugging).
+## This option should usually be left to 0, because it exposes all
+## parameters of the Web forms, which can be confising for the users.
 rsat_echo=0
 
-## Report exectution time of each task in a log file
-## This log file is found in $RSAT/logs/[rsat_site]_[DATE]_exec_times.tab
+## Set the option exec_time to 1 if you want to report execution time
+## of each task in a monthly log file.
+##
+## Log file name:
+##      $RSAT/logs/exec_time_log_[SITE]_[YEAR]_[MONTH].txt
+##
+## This report file is useful for detecting time-consuming tasks on
+## the server.  All RSAT Perl scripts are monitored, whether they are
+## run on the Web site or on the command-line.
 exec_time=0
 
 ## name of the site (which will appear in the log file)
