@@ -32,6 +32,10 @@ $default{oligo-analysis}="checked";
 $default{dyad-analysis}="checked";
 $default{'local-word-analysis'}="checked";
 
+## tab default variable
+$default{tab1} =" tabbertabdefault";
+$default{tab2} ="";
+
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -54,6 +58,8 @@ print "<p><font color=red><b>Warning, this is still a prototype version</b></fon
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
+
+
 ## demo description
 print $default{demo_descr1};
 print $default{demo_descr2};
@@ -66,7 +72,7 @@ print '
 
 <div class="tabber">
 
-     <div class="tabbertab">
+     <div class="tabbertab'.$default{tab1}.'">
 	  <h2>Single dataset</h2>
 '; 
 
@@ -77,7 +83,7 @@ print '
 #start of second panel
 print '</div>
 
-<div class="tabbertab">
+<div class="tabbertab'.$default{tab2}.' style="display:none">
 	  <h2>Two datasets (test + control)</h2>';
 ## here is the content of the second panel
 	 &Panel2();
@@ -240,6 +246,8 @@ print $query->start_multipart_form(-action=>"chip-seq-analysis_form.cgi");
 $demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr2',-default=>$descr2);
+print $query->hidden(-name=>'tab1',-default=>"");
+print $query->hidden(-name=>'tab2',-default=>" tabbertabdefault");
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
 print $query->hidden(-name=>'sequence2',-default=>$demo_seq);
@@ -249,8 +257,8 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.chip-seq-analysis.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='help.chip-seq-analysis.html'>[MANUAL]</A></B></TD>\n";
+print "<TD><B><A HREF='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
