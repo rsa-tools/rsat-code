@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.49 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: position-analysis,v 1.50 2010/04/19 03:42:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -331,22 +331,22 @@ sub SumStrands {
 ################################################################
 #### read patterns from a file
 sub LocalReadPatterns {
-    $date = &AlphaDate()`;
-    chomp $date;
-    warn ";$date\treading pattern file ...\n" if ($main::verbose >= 1);
-    open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";
-    while (<PATTERNS>) {
-	next if (/^;/);
-	next unless (\S);
-	chomp;
-	@fields = split, "\t";
-	$pattern = lc($fields[0]);
-	warn ";\t$pattern\n" if ($main::verbose >= 2);
-	$selected_pattern{$pattern} = 1;
-	$score{$pattern} = $fields[$score_column-1] if ($score_column > 0);
-    }
-    close PATTERNS;
-    @selected_patterns = keys %selected_pattern;
+  $date = &AlphaDate();
+  chomp $date;
+  warn ";$date\treading pattern file ...\n" if ($main::verbose >= 1);
+  open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";
+  while (<PATTERNS>) {
+    next if (/^;/);
+    next unless (\S);
+    chomp;
+    @fields = split, "\t";
+    $pattern = lc($fields[0]);
+    warn ";\t$pattern\n" if ($main::verbose >= 2);
+    $selected_pattern{$pattern} = 1;
+    $score{$pattern} = $fields[$score_column-1] if ($score_column > 0);
+  }
+  close PATTERNS;
+  @selected_patterns = keys %selected_pattern;
 }
 
 
