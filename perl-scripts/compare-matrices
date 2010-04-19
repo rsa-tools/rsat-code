@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.44 2010/04/17 03:04:31 jvanheld Exp $
+# $Id: compare-matrices,v 1.45 2010/04/19 03:42:50 jvanheld Exp $
 #
 ############################################################
 
@@ -266,7 +266,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -506,6 +506,8 @@ package main;
 
   ################################################################
   ## Print verbose
+  local $matrix_nb_1 = scalar(@matrices1);
+  local $matrix_nb_2 = scalar(@matrices2);
   &Verbose() if ($main::verbose);
 
   ################################################################
@@ -877,10 +879,10 @@ package main;
 
 	  print $out join ("\t", ";pos", "|", 1..$aligned_matrix->ncol()), "\n";
 	  if ($return_field{shifted_matrices}) {
-	    print $out_matrices join ("\t", "; Matrix 1", $matrix1_id, $matrix1->ncol(), $matrix1->get_attribute("consensus.IUPAC")), "\n",
-	      $matrix1->toString(format=>'tab');
-	    print $out_matrices join ("\t", "; Matrix 2", $matrix2_id, $matrix2->ncol(), $matrix2->get_attribute("consensus.IUPAC")), "\n",
-	      $matrix2->toString(format=>'tab');
+#	    print $out_matrices join ("\t", "; Matrix 1", $matrix1_id, $matrix1->ncol(), $matrix1->get_attribute("consensus.IUPAC")), "\n",
+#	      $matrix1->toString(format=>'tab');
+#	    print $out_matrices join ("\t", "; Matrix 2", $matrix2_id, $matrix2->ncol(), $matrix2->get_attribute("consensus.IUPAC")), "\n",
+#	      $matrix2->toString(format=>'tab');
 	    print $out_matrices join ("\t", "; Shifted matrix 1", "shift1=".$shifted_matrix1->get_attribute("shift"), $matrix1_id, $matrix1->ncol(), $shifted_matrix1->get_attribute("consensus.IUPAC")), "\n",
 	      $shifted_matrix1->toString(format=>'tab');
 	    print $out_matrices join ("\t", "; Shifted matrix 2", "shift2=".$shifted_matrix2->get_attribute("shift"), $matrix2_id, $matrix2->ncol(), $shifted_matrix2->get_attribute("consensus.IUPAC")), "\n",
@@ -1339,7 +1341,9 @@ sub Verbose {
     }
 
     print $main::out "; Matrices\n";
-    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
+    print $main::out join ("\t", ";", "file1", $matrix_nb_1." matrices", $main::infile{file1}),"\n";
+    print $main::out join ("\t", ";", "file2", $matrix_nb_2." matrices", $main::infile{file2}),"\n";
+#    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
 
     ## Matrices in the first file
     my $m1 = 0;
