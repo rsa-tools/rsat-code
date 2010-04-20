@@ -78,24 +78,27 @@
   </select><br><br>");
   if (!$pipe) {
     if ($demo) {
-      demo("This demonstration graph consists in the set of clusters extracted by the <a href = 'http://micans.org/mcl/' target = '_blank'>MCL clustering algorithm</a> from a subset of the <a href = 'http://string.embl.de/' target = '_blank'>String database</a>(database evidence channel) with inflation 1.8. It consists in 9991 interactions between 1231 proteins. Each edge color corresponds to a different MCL computed cluster. As the graph is weighted the width of the edges will be proportional to the weight.");
+      demo("This demonstration graph consists in the set of clusters extracted by the <a href = 'http://micans.org/mcl/' target = '_blank'>MCL clustering algorithm</a> from a subset of the <a href = 'http://string.embl.de/' target = '_blank'>STRING database</a> (database evidence channel) with inflation 1.8. It consists in 9991 interactions between 1231 proteins. Each edge color corresponds to a different cluster returned by the MCL algorithm. As the graph is weighted the width of the edges will be proportional to the weight.");
     }
-    echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
-    <br>Upload graph from file : <br>
-    <input type='file' name='graph_file' size='45' /><br>
-    <br><a href = 'help.display_graph.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>
-    <table>
-    <tr><td><B><a href = 'help.display_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#wcol'>Weight or label </a></B></td><td><input type = 'text' name='w_col' value = '$demo_wcol' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#eccol'>Edge color</a></B></td><td><input type = 'text' name='ec_col' value = '$demo_eccol' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#sccol'>Source node color</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#sccol'>Target node color</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
-    </table>");
+
+    echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>");
+    echo("<br>Upload graph from file : <br>");
+    echo("<input type='file' name='graph_file' size='45' /><br>");
+    echo("<br><a href = 'help.display_graph.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>");
+    echo("<table>");
+    echo("<tr><td><B><a href = 'help.display_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>");
+    echo("<tr><td><B><a href = 'help.display_graph.html#tcol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>");
+    echo("<tr><td><B><a href = 'help.display_graph.html#wcol'>Weight or label </a></B></td><td><input type = 'text' name='w_col' value = '$demo_wcol' size = 1></input></td></tr>");
+    echo("<tr><td><B><a href = 'help.display_graph.html#eccol'>Edge color</a></B></td><td><input type = 'text' name='ec_col' value = '$demo_eccol' size = 1></input></td></tr>");
+    echo("<tr><td><B><a href = 'help.display_graph.html#sccol'>Source node color</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>");
+    echo("<tr><td><B><a href = 'help.display_graph.html#tccol'>Target node color</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>");
+    echo("</table>");
+
   } else {
     info_link("Graph uploaded from the previous treatment", rsat_path_to_url($graph_file));
     echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
   }
+
   if ($graph_format == 'tab') {
     echo "<input type='hidden' NAME='s_col' VALUE='$scol'/>\n";
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
@@ -108,11 +111,11 @@
 
   echo ("<B><a href = 'help.convert_graph.html#layout'>Layout</a></B>
     <select name='layout'>
-      <option selected value='none'> No layout
-      <option value='spring'>Spring embedding
+      <option value='none'> No layout
+      <option selected value='spring'>Spring embedding
       <option value='random'> Random
     </select> (only valid for GML output) <br> "
-  );
+      );
 
 /*  echo ("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input formats except GML)</a></B><br>");*/
