@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: alter-graph,v 1.7 2010/04/17 03:04:31 jvanheld Exp $
+# $Id: alter-graph,v 1.8 2010/04/20 13:09:24 jvanheld Exp $
 #
 ############################################################
 
@@ -61,7 +61,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -366,7 +366,7 @@ package main;
       } else {
 	warn &RSAT::util::ReportExecutionTime($start_time);
       }
-
+    }
 
     ################################################################
     ## Close output stream
