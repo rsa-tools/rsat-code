@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.45 2010/04/19 03:42:50 jvanheld Exp $
+# $Id: compare-matrices,v 1.46 2010/04/20 13:37:25 jvanheld Exp $
 #
 ############################################################
 
@@ -257,6 +257,7 @@ use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::stats;
 use Data::Dumper;
+use RSAT::MatrixAlignment;
 
 ################################################################
 ## Main package
@@ -266,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -354,6 +355,8 @@ package main;
   local $strands = "DR";
   local $distinct = 0;
   local $triangle = 0;
+
+  local $align_stat = "mean";
 
   ################################################################
   ## Read argument values
@@ -875,20 +878,26 @@ package main;
 
 	if ($main::outfile{out_matrices}) {
 
-	  my ($aligned_matrix, $shifted_matrix1, $shifted_matrix2,) = &AlignMatrices($matrix1, $matrix2, $offset, stat=>"mean");
+	  my ($aligned_matrix, $shifted_matrix1, $shifted_matrix2,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, stat=>$align_stat);
+	  my $aligned_matrix_id = $aligned_matrix->get_attribute("id");
 
-	  print $out join ("\t", ";pos", "|", 1..$aligned_matrix->ncol()), "\n";
+	  print $out_matrices join ("\t", "; Pairwise matrix alignment", $matrix1_id, $matrix2_id), "\n";
+	  print $out_matrices join ("\t", ";pos", "|", 1..$aligned_matrix->ncol()), "\n";
 	  if ($return_field{shifted_matrices}) {
-#	    print $out_matrices join ("\t", "; Matrix 1", $matrix1_id, $matrix1->ncol(), $matrix1->get_attribute("consensus.IUPAC")), "\n",
-#	      $matrix1->toString(format=>'tab');
-#	    print $out_matrices join ("\t", "; Matrix 2", $matrix2_id, $matrix2->ncol(), $matrix2->get_attribute("consensus.IUPAC")), "\n",
-#	      $matrix2->toString(format=>'tab');
-	    print $out_matrices join ("\t", "; Shifted matrix 1", "shift1=".$shifted_matrix1->get_attribute("shift"), $matrix1_id, $matrix1->ncol(), $shifted_matrix1->get_attribute("consensus.IUPAC")), "\n",
+	    print $out_matrices join ("\t", "; ".$matrix1_id,
+				      "shift1=".$shifted_matrix1->get_attribute("shift"), 
+				      "col=".$matrix1->ncol(), 
+				      $shifted_matrix1->get_attribute("consensus.IUPAC")), "\n",
 	      $shifted_matrix1->toString(format=>'tab');
-	    print $out_matrices join ("\t", "; Shifted matrix 2", "shift2=".$shifted_matrix2->get_attribute("shift"), $matrix2_id, $matrix2->ncol(), $shifted_matrix2->get_attribute("consensus.IUPAC")), "\n",
+	    print $out_matrices join ("\t", "; ".$matrix2_id,
+				      "shift2=".$shifted_matrix2->get_attribute("shift"), 
+				      "col=".$matrix2->ncol(), $shifted_matrix2->get_attribute("consensus.IUPAC")), "\n",
 	      $shifted_matrix2->toString(format=>'tab');
 	  }
-	  print $out_matrices join("\t", "; Alignment ", $matrix1_id." + ".$matrix2_id, "offset=$offset", $aligned_matrix->get_attribute("consensus.IUPAC")), "\n",
+	  print $out_matrices join("\t", "; ".$aligned_matrix_id,
+				   "offset=$offset",
+				   "col=".$aligned_matrix->ncol(),
+				   $aligned_matrix->get_attribute("consensus.IUPAC")), "\n",
 	    $aligned_matrix->toString(format=>'tab');
 	}
       }
