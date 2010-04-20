@@ -73,7 +73,7 @@ sub UpdateLogFile {
 sub UpdateExecTimeLogFile {
   my ($start_time, $done_time, $elapsed) = @_;
 
-  my $script_name = &RSAT::util::ShortFileName($0);
+  my $script_name = &RSAT::util::ShortFileName($0) || 'undefined';
   my $command = join (" ", $script_name, @ARGV);
 
   ## Assign value to uninitialized values
@@ -86,6 +86,7 @@ sub UpdateExecTimeLogFile {
   unless ($start_time) {
     $elapsed = "Unspecified";
   }
+  my $login = getlogin || getpwuid($<) || "Kilroy";
 
   &RSAT::message::TimeWarn("Updating execution time log file", $main::exec_time_log_file)
     if ($main::verbose >= 3);
@@ -111,7 +112,7 @@ sub UpdateExecTimeLogFile {
 		  $start_time,
 		  $done_time,
 		  $elapsed,
-		  getlogin(),
+		  $login,
 		  $script_name,
 		  $command,
 		 ), "\n";
