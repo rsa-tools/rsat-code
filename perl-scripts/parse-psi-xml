@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-psi-xml,v 1.7 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: parse-psi-xml,v 1.8 2010/04/20 21:18:26 rsat Exp $
 #
 ############################################################
 
@@ -19,7 +19,9 @@ $program_version
 
 =head1 DESCRIPTION
 
-Parser of psi-xml files. For specifications, see www.psidev.info. Transforms the XML file into a graph tab delimited file
+Parse a psi-xml file and export it into a tab-delimited graph file.
+
+For specifications of the psi-xml format, see http://www.psidev.info
 
 =head1 AUTHORS
 
@@ -57,7 +59,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
