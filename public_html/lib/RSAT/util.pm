@@ -169,7 +169,7 @@ sub ReportExecutionTime {
   my ($start_time) = @_;
   my $time_report = "";
   my $done_time = &AlphaDate();
-  my $elapsed = times();
+  my $elapsed = times;
 
   ## Report the execution time string only if verbosity >= 1.
   $time_report .= "; Job started\t$start_time\n";
