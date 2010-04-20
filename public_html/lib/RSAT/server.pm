@@ -76,6 +76,17 @@ sub UpdateExecTimeLogFile {
   my $script_name = &RSAT::util::ShortFileName($0);
   my $command = join (" ", $script_name, @ARGV);
 
+  ## Assign value to uninitialized values
+  unless ($start_time) {
+    $start_time = "Unspecified";
+  }
+  unless ($done_time) {
+    $done_time = "Unspecified";
+  }
+  unless ($start_time) {
+    $elapsed = "Unspecified";
+  }
+
   &RSAT::message::TimeWarn("Updating execution time log file", $main::exec_time_log_file)
     if ($main::verbose >= 3);
 
