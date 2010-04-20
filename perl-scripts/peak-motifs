@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.40 2010/04/19 11:04:41 jvanheld Exp $
+# $Id: peak-motifs,v 1.41 2010/04/20 21:15:51 jvanheld Exp $
 #
 ############################################################
 
@@ -98,14 +98,14 @@ package main;
 
   ################################################################
   ## Initialize parameters
+  my $start_time = &AlphaDate();
 
   ## Check that the RSAT paths of the programs required for the script are specified
   $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.41 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -188,6 +188,7 @@ package main;
       &SequenceLengths($infile{$seq_type.'_seq'}, $seq_type) if ($task{seqlen});
       &CompositionProfiles($infile{$seq_type.'_seq'}, $seq_type) if ($task{profiles});
     }
+
 
   if ($main::infile{ctrl_seq}) {
     &OligoDiff() if ($task{oligo_diff});
@@ -817,11 +818,11 @@ sub ClusterMotifs {
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
 #  $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motif_transfac};
   $cmd .= " -DR -distinct -triangle";
-  $cmd .= " -sort Ncor";
+  $cmd .= " -sort cor";
   $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $cmd .= " -lth w 4"; ## Min number of aligned columns
   $cmd .= " -lth cor 0.85"; ## Min normalized correlation
-  $cmd .= " -lth Ncor 0.7"; ## Min normalized correlation
+#  $cmd .= " -lth Ncor 0.7"; ## Min normalized correlation
   $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
   &one_command($cmd, 1);
@@ -1853,7 +1854,7 @@ sub CheckArguments {
   if ($task{motif_compa}) {
    $task{merge_motifs} = 1;
    $task{cluster_motifs} = 1;
-   $task{motifs_vs_db} = 1;
+   $task{motifs_vs_db} = 1 if (scalar(@motif_databases) > 0);
   }
 
   ## Check that motif DB has been defined if required
@@ -1868,6 +1869,7 @@ sub CheckArguments {
     %task = %supported_task;
     delete($task{all});
     delete($task{clean_seq});
+    delete($task{motifs_vs_db}) unless (scalar(@motif_databases) > 0);
   }
   foreach my $task (@supported_tasks) {
    push (@tasks, $task) if $task{$task};
@@ -1965,12 +1967,11 @@ factor binding sites and cis-regulatory modules. Nat Protoc 3,
 
 =over
 
-=item I<-max_markov>
+=item B<partial synthesis>
 
-=item I<-min_markov>
-
-Maximal and minimal values for the Markov order of the background
-model used by I<oligo-analysis> and I<local-word-analysis>.
+For the Web server: generate temporary synthetic table showing the
+results already obtained so far, and finishing by a message "Partial
+results, please don't forget to reload the file later".
 
 =item B<motif_cluster>
 
