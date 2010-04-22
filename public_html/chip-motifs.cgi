@@ -44,6 +44,13 @@ $query = new CGI;
 ### read parameters
 $parameters = "";
 
+### title
+if ($query->param('title')){
+	my $title = $query->param('title');
+	$title =~ s/\s+/_/g;
+	$parameters .= " -title $title ";
+}
+
 ### peak sequences file
 ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, "$output_path/$output_prefix" . "peak_seq", 1);
 
@@ -86,12 +93,16 @@ push(@tasks, "positions");
 push(@tasks, "word_compa");
 push(@tasks, "motif_compa");
 
+## motif databases
+$parameters .= " -motif_db JASPAR transfac $ENV{RSAT}/data/motif_databases/JASPAR/jaspar_matrices.tf ";
+
+
 ### add -task
 $parameters .= " -task " . join(",", @tasks);
 
 ### task specific parameters
 if (&IsNatural($query->param('markov_order'))) {
-  $param .= " -markov ".$query->param('markov_order');
+  #$param .= " -markov ".$query->param('markov_order');
 }
 
 ### output directory
@@ -103,9 +114,14 @@ $parameters .= " -prefix $output_prefix";
 ### verbosity
 $parameters .= " -v 1";
 
+### other default parmaters (to integrate above later)
+$parameters .= " -2str -noov -minol 5 -maxol 8 -max_markov -2 -min_markov -3 -img_format png ";
+		
+
+
+
 ############################################ display or send result
 $index_file = $output_directory."/".$output_prefix."synthesis.html";
-#$index_file = $output_directory."/".$output_prefix."index.html";
 my $mail_title = join (" ", "[RSAT]", "chip-seq-analysis", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 #&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);

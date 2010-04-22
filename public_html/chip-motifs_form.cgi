@@ -31,6 +31,8 @@ $default{oligo_length7}="checked";
 $default{oligo-analysis}="checked";
 $default{dyad-analysis}="checked";
 $default{'local-word-analysis'}="checked";
+$default{compare_motif_db}="checked";
+$default{title}="title for this dataset";
 
 ## tab default variable
 $default{tab1} =" tabbertabdefault";
@@ -111,12 +113,13 @@ print "<fieldset>
 <legend><b><a href='help.chip-seq-analysis.html#tasks'>Compare motifs </a></b></legend>";
 
 #
-### tom-tom
+### compare motifs
 #
-print $query->checkbox(-name=>'tom-tom',
-		       -checked=>$default{tom-tom},
+print $query->checkbox(-name=>'compare_motif_db',
+		       -checked=>$default{compare_motif_db},
 		       -label=>'');  
-print "&nbsp;<b>Compare discovered motifs with known motifs from databases</b> <a href='http://meme.nbcr.net/meme4_3_0/tomtom-intro.html'>[tom-tom from the MEME Suite]</a> <a href='http://genomebiology.com/2007/8/2/R24'> Gupta et al (2008) </a>\n";
+print "&nbsp;<b>Compare discovered motifs with known motifs from databases</b> <a href=''>[compare-matrices ? ]\n";
+
 print "<br/> ";
 
 print "</fieldset><p/>";
@@ -232,6 +235,7 @@ print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
+print $query->hidden(-name=>'title',-default=>'Oct4_Chen2008');
 print $query->submit(-label=>"DEMO 1");
 print "</B></TD>\n";
 print $query->end_form;
@@ -273,11 +277,18 @@ exit(0);
 
 sub Panel1 {
 
-print "<b><font style='font-size:80%'><a href=''> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b><p/> ";
+print "<B>Title</B>\n";
+print $query->textfield(-name=>'title',
+			-default=>$default{title},
+			-size=>15);
+
+print "<p/>\n";
 
 &MultiSequenceChoice("Peak sequences",1);
 
 print '
+<b><font style="font-size:80%"><a href=""> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b><p/> 
+
 </br>
 <div>
 
