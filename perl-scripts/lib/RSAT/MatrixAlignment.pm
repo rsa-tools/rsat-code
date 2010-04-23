@@ -50,10 +50,20 @@ sub AlignMatrices {
   my ($matrix1, $matrix2, $offset, %args) = @_;
   my $stat = $args{stat} || "sum";
 
-  my $id1 = $matrix1->get_attribute("identifier") || $matrix1->get_attribute("id");
-  my $id2 = $matrix2->get_attribute("identifier") || $matrix2->get_attribute("id");
+  my $desc1 = $id1 = $matrix1->get_attribute("id");
+  my $desc2 = $id2 = $matrix2->get_attribute("id");
 
-  &RSAT::message::TimeWarn("Aligning matrices", $id1, $id2, "offset=".$offset) if ($main::verbose >= 2);
+  my $name1 = $matrix1->get_attribute("name");
+  if (($name1) && ($name1 ne $id1)) {
+    $desc1 .= " (".$name1.")";
+  }
+  my $name2 = $matrix2->get_attribute("name");
+  if (($name2) && ($name2 ne $id2)) {
+    $desc2 .= " (".$name2.")";
+  }
+
+  &RSAT::message::TimeWarn("Aligning matrices", $desc1, $desc2, "offset=".$offset)
+    if ($main::verbose >= 2);
 
   my @counts1 = $matrix1->getMatrix();
   my @counts2 = $matrix2->getMatrix();
@@ -110,7 +120,11 @@ sub AlignMatrices {
     $shift2 = 0;
   }
   $shifted_matrix1->set_parameter("shift",$shift1);
+  $shifted_matrix1->force_attribute("id", $id1."_shift".$shift1);
+  $shifted_matrix1->force_attribute("identifier", $id1."_shift".$shift1);
   $shifted_matrix2->set_parameter("shift",$shift2);
+  $shifted_matrix2->force_attribute("id", $id2."_shift".$shift2);
+  $shifted_matrix2->force_attribute("identifier", $id2."_shift".$shift2);
   for my $c (1..$ncol) {
     for my $r (1..$nrow) {
       $c1 = $c - $shift1;
