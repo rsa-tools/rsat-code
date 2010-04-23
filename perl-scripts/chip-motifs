@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.41 2010/04/20 21:15:51 jvanheld Exp $
+# $Id: chip-motifs,v 1.42 2010/04/23 08:55:53 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.41 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -142,10 +142,13 @@ package main;
 
 			 ref_motif
 			 word_compa
+
 			 motif_compa
 			 merge_motifs
 			 cluster_motifs
+                         motifs_vs_ref
                          motifs_vs_db
+
 			 synthesis
 			 clean_seq
 			);
@@ -208,6 +211,8 @@ package main;
   &MergeMotifs() if ($task{merge_motifs});
 
   &ClusterMotifs() if ($task{cluster_motifs});
+
+  &MotifsVersusReference() if ($task{motifs_vs_ref});
 
   &MotifsVersusDatabase() if ($task{motifs_vs_db});
 
@@ -293,7 +298,10 @@ sub DefaultParameters {
   ## matrix-from-patterns
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
 
-
+  ## Matrix comparisons
+  $main::param{matrix_compa_min_cor} = 0.85;
+  $main::param{matrix_compa_min_w} = 4;
+  $main::param{matrix_compa_min_Ncor} = 0.7;
 }
 
 
@@ -306,8 +314,6 @@ sub OutFileName {
     $out_file_name .= $extension;
     return($out_file_name);
 }
-
-
 
 ################################################################
 ## Set output file names
@@ -440,17 +446,25 @@ sub SetOutFileNames {
   $main::outfile{motifs_disco_compa_cluster_intra_degree} = &OutFileName(".tab", "motifs_disco_compa_cluster_intra_degree");
   #    $main::outfile{motifs_disco_ref} = &OutFileName(".tf", "motifs_disco_ref");
 
-  ## Database of transcription factor binding motifs
+  ## Comparison betweeen discovered motifs and reference motif
+  if (defined($main::infile{ref_motif})) {
+    $main::outfile{"motifs_vs_ref"} = &OutFileName(".tab", "motifs_vs_ref");
+    $main::outfile{"motifs_vs_ref_gml"} = &OutFileName(".gml", "motifs_vs_ref");
+    $main::outfile{"motifs_vs_ref_png"} = &OutFileName(".png", "motifs_vs_ref");
+    $main::outfile{"motifs_vs_ref_matrices"} = &OutFileName(".tab", "motifs_vs_ref_matrices");
+    $main::outfile{"motifs_vs_ref_matrices_html"} = &OutFileName(".html", "motifs_vs_ref_matrices");
+  }
+
+  ## Comparison between discovered motifs and database(s)
   if (scalar(@motif_databases) > 0) {
     foreach my $db_name (@motif_databases) {
       $main::outfile{"motifs_vs_db_".$db_name} = &OutFileName(".tab", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name."_gml"} = &OutFileName(".gml", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name."_png"} = &OutFileName(".png", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name."_matrices"} = &OutFileName(".tab", "motifs_vs_db_".$db_name."_matrices");
+      $main::outfile{"motifs_vs_db_".$db_name."_matrices_html"} = &OutFileName(".html", "motifs_vs_db_".$db_name."_matrices");
     }
   }
-
-
 
 }
 
@@ -776,6 +790,8 @@ sub WordsVersusWords {
   $cmd .= " -o ".$main::outfile{word_compa_heatmap};
 
   &one_command($cmd, 1);
+
+  &RSAT::message::TimeWarn("Word comparison table", $main::outfile{word_compa}) if ($main::verbose >= 2);
 }
 
 
@@ -783,16 +799,15 @@ sub WordsVersusWords {
 ## Merge all discoverd motifs in a single file
 sub MergeMotifs {
 
-  ## Initialize the motif file with the reference motif if provided,
-  ## otherwise as an empty file
-  my $cmd = "";
-  if (defined($main::infile{ref_motif})) {
-    $cmd = "cp -f";
-    $cmd .= " ".$main::outfile{ref_motif_transfac};
-    $cmd .= " ".$main::outfile{motifs_discovered};
-  } else {
-    $cmd = "rm -f ".$main::outfile{motifs_discovered};
-  }
+  ## Remove previous versions of the merged motif file
+  my $cmd = "rm -f ".$main::outfile{motifs_discovered};
+
+  ## Initialize the motif file with the reference motif if provided
+#  if (defined($main::infile{ref_motif})) {
+#    $cmd = "; cp -f";
+#    $cmd .= " ".$main::outfile{ref_motif_transfac};
+#    $cmd .= " ".$main::outfile{motifs_discovered};
+#  }
 
   ## Concatenate all discovered motifs (matrices) in a single file.
   ## Use TRANSFAC format because if allows to associate a name to each
@@ -804,6 +819,8 @@ sub MergeMotifs {
     $cmd .= " >> ".$main::outfile{motifs_discovered};
   }
   &one_command($cmd, 1);
+
+  &RSAT::message::TimeWarn("Merged discovered motifs", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -820,9 +837,9 @@ sub ClusterMotifs {
   $cmd .= " -DR -distinct -triangle";
   $cmd .= " -sort cor";
   $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
-  $cmd .= " -lth w 4"; ## Min number of aligned columns
-  $cmd .= " -lth cor 0.85"; ## Min normalized correlation
-#  $cmd .= " -lth Ncor 0.7"; ## Min normalized correlation
+  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
+  $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
+  $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
   $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
   &one_command($cmd, 1);
@@ -863,11 +880,52 @@ sub ClusterMotifs {
   &one_command($cmd, 1);
 
   ## Generate a figure of the motif comparison graph
-  $cmd = $SCRIPTS."/display-graph -v 2";
+  $cmd = $SCRIPTS."/display-graph";
   $cmd .= " -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
   $cmd .= " -ewidth";
   $cmd .= " -layout none";
   $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
+  &one_command($cmd, 1);
+
+}
+
+
+################################################################
+## Compare discovered motifs to the referencemotif 
+sub MotifsVersusReference {
+  &RSAT::message::TimeWarn("Comparing discovered motifs with reference motif") if ($main::verbose >= 1);
+
+  ## Comparison between discovered matrices, and with the reference motif
+  $cmd = $SCRIPTS."/compare-matrices -v 2";
+  $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motif_transfac};;
+  $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
+  $cmd .= " -DR";
+  $cmd .= " -sort cor";
+  $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
+  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
+  $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
+  $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
+  $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus,shifted_matrices";
+  $cmd .= " -o ".$main::outfile{"motifs_vs_ref"};
+  $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_ref_matrices"};
+  &one_command($cmd, 1);
+
+  &RSAT::message::TimeWarn("Dicovered versus reference motif", $main::outfile{motifs_vs_ref}) if ($main::verbose >= 2);
+
+  ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
+  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{"motifs_vs_ref"};
+  $cmd .= " -ewidth -ecolors fire";
+  $cmd .= " -layout spring";
+  $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
+  $cmd .= " -o ".$main::outfile{"motifs_vs_ref_gml"};
+  &one_command($cmd, 1);
+
+  ## Generate a figure of the motif comparison graph
+  $cmd = $SCRIPTS."/display-graph";
+  $cmd .= " -in_format gml -i ".$main::outfile{"motifs_vs_ref_gml"};
+  $cmd .= " -ewidth";
+  $cmd .= " -layout none";
+  $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_ref_png"};
   &one_command($cmd, 1);
 
 }
@@ -884,15 +942,17 @@ sub MotifsVersusDatabase {
     $cmd .= " -format2 ".$main::motif_db_format{$db_name};
     $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
     $cmd .= " -DR";
-    $cmd .= " -sort Ncor";
+    $cmd .= " -sort cor";
     $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
-    $cmd .= " -lth w 4"; ## Min number of aligned columns
-    $cmd .= " -lth cor 0.85"; ## Min normalized correlation
-    $cmd .= " -lth Ncor 0.7"; ## Min normalized correlation
+    $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
+    $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
+    $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
     $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus,shifted_matrices";
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_db_".$db_name."_matrices"};
     &one_command($cmd, 1);
+
+    &RSAT::message::TimeWarn("Dicovered versus DB", $main::outfile{motifs_vs_db}) if ($main::verbose >= 2);
 
     ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
     $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{"motifs_vs_db_".$db_name};
@@ -903,7 +963,7 @@ sub MotifsVersusDatabase {
     &one_command($cmd, 1);
 
     ## Generate a figure of the motif comparison graph
-    $cmd = $SCRIPTS."/display-graph -v 2";
+    $cmd = $SCRIPTS."/display-graph";
     $cmd .= " -in_format gml -i ".$main::outfile{"motifs_vs_db_".$db_name."_gml"};
     $cmd .= " -ewidth";
     $cmd .= " -layout none";
@@ -983,6 +1043,9 @@ sub Synthesis {
 
   ## Motif comparison
   &SynthesisMotifCompa();
+
+  ## Comparison between discovered motifs and reference motif
+  &SynthesisMotifsVersusReference();
 
   ## Comparison between discovered motifs and database(s)
   &SynthesisMotifsVersusDatabase();
@@ -1256,6 +1319,22 @@ sub SynthesisMotifCompa {
 }
 
 ################################################################
+## Synthesis of comparisons betwween discovered motifs and reference motif
+sub SynthesisMotifsVersusReference {
+  &SyntheticTableAddHeaderRow("Discovered motifs versus reference motif");
+  my $img = &RelativePath($main::outfile{"motifs_vs_ref_png"});
+  &SyntheticTableAddRow("Motifs versus reference motif",
+			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
+			"Reference motif",$main::infile{ref_motif},
+			"table",$main::outfile{"motifs_vs_ref"},
+			"alignments", $main::outfile{"motifs_vs_ref_matrices"},
+			"aligned logos", $main::outfile{"motifs_vs_ref_matrices_html"},
+			"gml",$main::outfile{"motifs_vs_ref_gml"},
+			"png",$main::outfile{"motifs_vs_ref_png"},
+		       );
+}
+
+################################################################
 ## Synthesis of comparisons betwween discovered motifs and motif databases
 sub SynthesisMotifsVersusDatabase {
   &SyntheticTableAddHeaderRow("Discovered motifs versus transcription factor databases");
@@ -1266,6 +1345,7 @@ sub SynthesisMotifsVersusDatabase {
 			  $db_name." DB",$main::infile{"motif_db_".$db_name},
 			  "table",$main::outfile{"motifs_vs_db_".$db_name},
 			  "alignments", $main::outfile{"motifs_vs_db_".$db_name."_matrices"},
+			  "aligned logos", $main::outfile{"motifs_vs_db_".$db_name."_matrices_html"},
 			  "gml",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
 			  "png",$main::outfile{"motifs_vs_db_".$db_name."_png"},
 			 );
@@ -1854,14 +1934,22 @@ sub CheckArguments {
   if ($task{motif_compa}) {
    $task{merge_motifs} = 1;
    $task{cluster_motifs} = 1;
+   $task{motifs_vs_ref} = 1 if (defined($main::infile{ref_motif}));
    $task{motifs_vs_db} = 1 if (scalar(@motif_databases) > 0);
   }
 
-  ## Check that motif DB has been defined if required
-  if ($task{motifs_vs_db}) {
-    &RSAT::error::FatalError("The task motifs_vs_db requires to specify at least one file containing database motifs (option -motif_db).")
+  ## Check that reference motif has been specified if required
+  if ($task{motifs_vs_ref}) {
+    &RSAT::error::FatalError("The task motifs_vs_dref requires to specify a file containing the reference motif (option -ref_motif).")
       unless (scalar(@motif_databases) > 0)
   }
+
+  ## Check that motif DB has been specified if required
+  if ($task{motifs_vs_db}) {
+    &RSAT::error::FatalError("The task motifs_vs_db requires to specify at least one file containing database motifs (option -motif_db).")
+      unless (defined($main::infile{ref_motif}));
+  }
+
 
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
