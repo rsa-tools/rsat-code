@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.42 2010/04/23 08:55:53 jvanheld Exp $
+# $Id: peak-motifs,v 1.43 2010/04/23 10:13:19 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -301,7 +301,7 @@ sub DefaultParameters {
   ## Matrix comparisons
   $main::param{matrix_compa_min_cor} = 0.85;
   $main::param{matrix_compa_min_w} = 4;
-  $main::param{matrix_compa_min_Ncor} = 0.7;
+  $main::param{matrix_compa_min_Ncor} = 0.5;
 }
 
 
