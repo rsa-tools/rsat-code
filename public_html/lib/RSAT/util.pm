@@ -99,14 +99,15 @@ Usage : my $i = &RSAT::util::round($r);
 =cut
 sub round {
     my ($my_real) = @_;
-    my $my_int;
-    if (abs(($my_real - int($my_real))) < 0.5) {
-	return int($my_real);
-    } elsif ($my_real < 0) {
-	return int($my_real) - 1;
-    } else {
-	return int($my_real) + 1;
-    }
+    my $my_int = sprintf "%.0f", $my_real;
+#     if (abs(($my_real - int($my_real))) < 0.5) {
+# 	return int($my_real);
+#     } elsif ($my_real < 0) {
+# 	return int($my_real) - 1;
+#     } else {
+# 	return int($my_real) + 1;
+#     }
+    return($my_int);
 }
 
 ################################################################
@@ -201,7 +202,8 @@ sub SplitFileName {
     if ($full_file_name =~ /[^(\/)]+$/) {
       $dir = $`;
       $short_file_name = $&;
-      #	$dir =~ s|/$||; #### suppress the trailing /
+      $dir =~ s|/+|/|g; #### suppress multiple /
+      $dir =~ s|/$||; #### suppress the trailing /
     }
     return ($dir, $short_file_name);
 }
@@ -244,6 +246,51 @@ sub ExtractPath {
     }
     return $l_path;
 }
+
+
+=pod
+
+=item RelativePath
+
+Return a relative path between a referring file (e.g. a HTML report
+summarizing the results and images returned by a program) and a
+referred file (e.g. an image that has to be displayed in the HTML
+file).
+
+Usage:
+  my ($link, $shared_path) = &RSAT::util::RelativePath($referring_file, $referred_file);
+
+=cut
+
+sub RelativePath {
+  my ($referring_file, $referred_file) = @_;
+
+  my ($referring_dir, $referring_basename) = &RSAT::util::SplitFileName($referring_file);
+  my @referring_path = split "/", $referring_dir;
+
+  my ($referred_dir, $referred_basename) = &RSAT::util::SplitFileName($referred_file);
+  my @referred_path = split "/", $referred_dir;
+
+  my @shared_path = ();
+  while ((scalar(@referring_path) > 0) && (scalar(@referring_path) > 0)) {
+    last if ($referring_path[0] ne $referred_path[0]);
+    my $shared_folder = shift(@referring_path);
+    shift(@referred_path);
+    push @shared_path, $shared_folder;
+  }
+
+  my $shared_path = join "/", @shared_path;
+  my $up_levels = scalar(@referring_path);
+  my $link = "../" x $up_levels;
+  $link .= join ("/", @referred_path, $referred_basename);
+
+  if (wantarray) {
+    return ($link, $shared_path);
+  } else {
+    return ($link);
+  }
+}
+
 
 ################################################################
 
@@ -503,7 +550,7 @@ sub hex2rgb {
 sub make_temp_file {
   my ($tmp_dir, $tmp_prefix) = @_;
   $tmp_dir = $main::TMP unless ($tmp_dir);
-  $tmp_prefix = 'temp_' unless ($tmp_dir);
+  $tmp_prefix = 'tmp' unless ($tmp_prefix);
   my $temp_file = `mktemp ${tmp_dir}/${tmp_prefix}.XXXXXX`;
   chomp($temp_file);
   system("chmod a+r $temp_file");
