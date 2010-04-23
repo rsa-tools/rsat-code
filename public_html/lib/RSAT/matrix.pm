@@ -12,6 +12,7 @@ use RSAT::stats;
 use RSAT::MarkovModel;
 use RSAT::SeqUtil;
 use Data::Dumper;
+use POSIX qw(ceil floor);
 
 @ISA = qw( RSAT::GenericObject RSAT::table);
 
@@ -225,6 +226,7 @@ the program consensus (Hertz), but not by other programs.
 ## output formats
 %supported_output_format = ('patser'=>1,
 #			    "motifsampler"=>1,
+			    "jaspar"=>1,
 			    "transfac"=>1,
 			    "stamp"=>1,
 			    "tab"=>1,
@@ -371,16 +373,16 @@ sub getPrior() {
 	    my $alphabet_size = scalar(@alphabet);
 	    foreach my $letter (@alphabet) {
 		$prior{$letter} = 1/$alphabet_size;
-		&RSAT::message::Debug("RSAT::matrix::setPrior", $letter, $prior{$letter}) if ($main::verbose >= 10);
+#		&RSAT::message::Debug("RSAT::matrix::setPrior", $letter, $prior{$letter}) if ($main::verbose >= 10);
 	    }
 	    $self->setPrior(%prior);
 	}
     }
-    if ($main::verbose >= 10) {
-	foreach my $letter (sort keys %prior) {
-	    &RSAT::message::Debug("getPrior", $letter, $prior{$letter});
-	}
-    }
+#    if ($main::verbose >= 10) {
+#	foreach my $letter (sort keys %prior) {
+#	    &RSAT::message::Debug("getPrior", $letter, $prior{$letter});
+#	}
+#    }
     return %prior;
 }
 
@@ -409,13 +411,13 @@ sub setPrior {
     $self->force_attribute("weight_specified", 0);
 
     ## Report the new prior
-    if ($main::verbose >= 10) {
-	%check = $self->getPrior();
-	&RSAT::message::Info (join("\t", "&RSAT::matrix::setPrior", join(" ", %prior))) if ($main::verbose >= 4);
-	foreach my $letter (sort keys %check) {
-	    warn join("\t", "; setPrior", $letter, $prior{$letter}), "\n";
-	}
-    }
+#    if ($main::verbose >= 10) {
+#	%check = $self->getPrior();
+#	&RSAT::message::Info (join("\t", "&RSAT::matrix::setPrior", join(" ", %prior))) if ($main::verbose >= 4);
+#	foreach my $letter (sort keys %check) {
+#	    warn join("\t", "; setPrior", $letter, $prior{$letter}), "\n";
+#	}
+#    }
 }
 
 
@@ -438,7 +440,7 @@ sub setInfoLogBase {
 			       "Must be a strictly real number >= 1");
     }
     $info_log_denominator = log($info_log_base);
-    $self->set_parameter("info.log.base", $info_log_base);
+    $self->force_attribute("info.log.base", $info_log_base);
     &RSAT::message::Info("Info log base", $self->get_attribute("info.log.base")) if ($main::verbose >= 5);
 }
 
@@ -595,7 +597,7 @@ Examples:
 
 =item format
 
-Output matrix format. Supported output formats: tab, patser, consensus, TRANSFAC.
+Output matrix format.
 
 =item all other arguments
 
@@ -611,6 +613,8 @@ sub toString {
     $output_format = lc($output_format);
     if (($output_format eq "patser") || ($output_format eq "tab")) {
       return $self->to_patser(%args);
+    } elsif ($output_format eq "jaspar") {
+      return $self->to_jaspar(%args);
 #    } elsif (lc($output_format) eq "motifsampler") {
 #      return $self->to_Motifsampler(%args);
     } elsif ($output_format eq "transfac") {
@@ -791,7 +795,7 @@ sub to_STAMP {
 
 =pod
 
-=item to_consensus(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
+=item to_consensus(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_char)
 
 Return a string description of the matrix in the same format as Jerry
 Hertz program consensus. This includes the matrix (as the one used as
@@ -869,7 +873,7 @@ sub to_consensus {
 
 =pod
 
-=item to_patser(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
+=item to_patser(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_char)
 
 Return a string description of the matrix in the same format as Jerry
 Hertz programs. Additional parameters are also exported as comments,
@@ -879,14 +883,9 @@ Supported parameters:
 
 =over
 
-=item comment_string
+=item comment_char
 
 A character or string to print before each row of the matrix.
-
-
-=item format
-
-Output matrix format
 
 =back
 
@@ -999,8 +998,8 @@ sub to_patser {
       ## Print the matrix
       for $a (0..$#alphabet) {
 	my @row = &RSAT::matrix::get_row($a+1, $ncol, @matrix);
-	if (defined($args{comment_string})) {
-	  $to_print .= $args{comment_string};
+	if (defined($args{comment_char})) {
+	  $to_print .= $args{comment_char};
 	}
 	$to_print .= $self->_printMatrixRow($alphabet[$a], @row);
       }
@@ -1031,11 +1030,76 @@ sub to_patser {
     return $to_print;
 }
 
+
 ################################################################
 
 =pod
 
-=item to_cb(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
+=item to_jaspar()
+
+Export a matrix in JASPAR format. 
+
+
+This is space-delimited format with one row per residue, one column
+per position. Each matrix is preceded by a fasta-like header line
+providing the ID of the matrix plus optional comments.
+
+
+Example:
+
+ >MA0001.1 AGL3
+ A  [ 0  3 79 40 66 48 65 11 65  0 ]
+ C  [94 75  4  3  1  2  5  2  3  3 ]
+ G  [ 1  0  3  4  1  0  5  3 28 88 ]
+ T  [ 2 19 11 50 29 47 22 81  1  6 ]
+
+=back
+
+=cut
+sub to_jaspar {
+  my ($self, %args) = @_;
+
+  ## Print the header line
+  my $to_print = ">";
+  my $id = $self->get_attribute("id") || $self->get_attribute("identifier");
+  $to_print .= $id;
+  my $name = $self->get_attribute("name");
+  if ($name) {
+    $to_print .= " ".$name;
+  }
+  $to_print .= "\n";
+
+  ## Print the matrix
+  my @matrix = $self->getMatrix();
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  my @alphabet = $self->getAlphabet();
+  my $max_count = 0;
+  for my $c (1..$ncol) { 
+    $max_count = &RSAT::stats::max($max_count, @{$matrix[$c-1]});
+  }
+  my $digits = ceil(log($max_count)/log(10));
+  for my $r (1..$nrow) {
+    $to_print .= uc($alphabet[$r-1]);
+    $to_print .= "  [";
+    for my $c (1..$ncol) {
+      my $value = $matrix[$c-1][$r-1];
+      if (&RSAT::util::IsNatural($value)) {
+	$to_print .= sprintf "%".$digits."s ", $value;
+      } else {
+	$to_print .= $value." ";
+      }
+    }
+    $to_print .= "]\n";
+  }
+  return $to_print;
+}
+
+################################################################
+
+=pod
+
+=item to_cb(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_char)
 
 Return a string description of the matrix in the same format as Cluster-Buster or TRAP (Vingron's lab). 
 Additional parameters are also exported as comments,when the verbosity is > 0.
@@ -1044,7 +1108,7 @@ Supported parameters:
 
 =over
 
-=item comment_string
+=item comment_char
 
 A character or string to print before each row of the matrix.
 
@@ -1471,12 +1535,12 @@ sub calcFrequencies {
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
-	    &RSAT::message::Debug($letter, $prior{$letter}) if ($main::verbose >= 10);
+#	    &RSAT::message::Debug($letter, $prior{$letter}) if ($main::verbose >= 10);
 	}
     }
 
-    &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "residue priors", join(" ", %prior)) 
-      if ($main::verbose >= 10);
+#    &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "residue priors", join(" ", %prior)) 
+#      if ($main::verbose >= 10);
 
     ## pseudo-count
     my $pseudo = $self->get_attribute("pseudo") || 0;
@@ -1568,7 +1632,7 @@ sub calcProbabilities {
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
-	    warn join "\t", "|", $letter, $prior{$letter}, "\n" if ($main::verbose >= 10);
+#	    warn join "\t", "|", $letter, $prior{$letter}, "\n" if ($main::verbose >= 10);
 	}
     }
 
@@ -1591,7 +1655,7 @@ sub calcProbabilities {
 	    my $occ = $matrix[$c][$r];
 	    $col_sum += $occ;
 	    $frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
-	    warn join "\t", "freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum, "\n" if ($main::verbose >= 10);
+#	    warn join "\t", "freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum, "\n" if ($main::verbose >= 10);
 	}
 	for my $r (0..($nrow-1)) {
 	    if ($col_sum eq 0) {
@@ -2691,7 +2755,7 @@ sub calcTheorScoreDistribBernoulli {
 			   "Bernoulli model",
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",
-			  ) if ($main::verbose >= 2);
+			  ) if ($main::verbose >= 3);
 
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
@@ -2923,15 +2987,15 @@ sub calcTheorScoreDistribMarkov {
 			   "Background Markov Model order:".$order,
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",
-			  ) if ($main::verbose >= 2);
+			  ) if ($main::verbose >= 3);
 
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
   my @alphabet = $self->getAlphabet();
 
   my %alphabetNb =();
-  foreach my $i (0..$#alphabet){
-  	$alphabetNb{$alphabet[$i]} = $i;
+  foreach my $i (0..$#alphabet) {
+    $alphabetNb{$alphabet[$i]} = $i;
   }
 
   ################################################################
@@ -2943,7 +3007,7 @@ sub calcTheorScoreDistribMarkov {
   my @prefixes = $bg_model->get_prefixes();
   my $prefix_nb = scalar(@prefixes);
   &RSAT::message::TimeWarn("Computing weight probabilities for all prefixes")
-      if ($main::verbose >= 3);
+    if ($main::verbose >= 3);
   foreach my $initial_prefix (@prefixes) {
     $p++;
     &RSAT::message::Debug("Computing weight probabilities for prefix", $initial_prefix, $p."/".$prefix_nb) 
@@ -2956,7 +3020,7 @@ sub calcTheorScoreDistribMarkov {
       my $letter = substr($initial_prefix, $c,1);
       my $r = $alphabetNb{$letter};
       $prefix_freq_M *= $scores[$c][$r];
-      &RSAT::message::Debug("prefix:",$initial_prefix,"c",$c,"letter",$letter,"nb",$r,"score",$scores[$c][$r]) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("prefix:",$initial_prefix,"c",$c,"letter",$letter,"nb",$r,"score",$scores[$c][$r]) if ($main::verbose >= 10);
     }
 
     ## get frequency of the prefix, under bg model
@@ -2964,7 +3028,7 @@ sub calcTheorScoreDistribMarkov {
 
     ## score
     my $score_init;
-    if (($prefix_freq_M == 0) || ($prefix_freq_B == 0)){
+    if (($prefix_freq_M == 0) || ($prefix_freq_B == 0)) {
       $score_init = 0;
     } else {
       $score_init = log($prefix_freq_M/$prefix_freq_B)/$info_log_denominator; # Beware here, log is ln !!!
@@ -2979,8 +3043,8 @@ sub calcTheorScoreDistribMarkov {
     } else {
       $distrib_proba{$score_init}->{$initial_prefix} = $prefix_freq_B;
     }
-    &RSAT::message::Debug($initial_prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
-			  "\tproba\t = $prefix_freq_B\n") if ($main::verbose >= 10);
+#    &RSAT::message::Debug($initial_prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
+#			  "\tproba\t = $prefix_freq_B\n") if ($main::verbose >= 10);
   }
 
   ################################################################
@@ -2996,7 +3060,7 @@ sub calcTheorScoreDistribMarkov {
 
     ## iterate on all possible prefixes
     foreach my $prefix (@curr_prefix) {
-      &RSAT::message::Debug("col",$c,"prefix",$prefix) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("col",$c,"prefix",$prefix) if ($main::verbose >= 10);
       foreach my $suffix (@alphabet) {
 
 	## get frequency of the suffix, under matrix model
@@ -3011,8 +3075,7 @@ sub calcTheorScoreDistribMarkov {
 	## discretisation of the scores
 	$curr_score = sprintf($score_format_calc, $curr_score);
 
-	&RSAT::message::Debug("$prefix->$suffix","curr_score = log( $suffix_freq_M / $suffix_transition_B ) = $curr_score") 
-	  if ($main::verbose >= 10);
+#	&RSAT::message::Debug("$prefix->$suffix","curr_score = log( $suffix_freq_M / $suffix_transition_B ) = $curr_score") if ($main::verbose >= 10);
 	foreach my $prev_score (@previous_scores) {
 
 	  if ($distrib_proba{$prev_score}->{$prefix}) {
@@ -3035,43 +3098,41 @@ sub calcTheorScoreDistribMarkov {
 	    } else {
 	      $current_distrib_proba{$sum_score}->{$prefix_tag} = $curr_proba;
 	    }
-	    &RSAT::message::Debug("\tprefix", $prefix,"prev_score",$prev_score ,"sum_score", $sum_score ,
-				  "proba",$curr_proba) if ($main::verbose >= 10);
+#	    &RSAT::message::Debug("\tprefix", $prefix,"prev_score",$prev_score ,"sum_score", $sum_score ,
+#				  "proba",$curr_proba) if ($main::verbose >= 10);
 	  }
 	}
       }
     }
 
-	%distrib_proba = ();
-	%distrib_proba = %current_distrib_proba;
-	}
-	
+    %distrib_proba = ();
+    %distrib_proba = %current_distrib_proba;
+  }
 
+  ## finalisation phase
+  my %score_proba =();
+  $proba_sum = 0;
+  foreach my $score (keys (%distrib_proba)) {
+    foreach my $prefix (keys(%{$distrib_proba{$score}})) {
+      if ($score_proba{$score}) {
+	$score_proba{$score} += $distrib_proba{$score}->{$prefix};
+      } else {
+	$score_proba{$score} = $distrib_proba{$score}->{$prefix};
+      }			
+      $proba_sum += $distrib_proba{$score}->{$prefix};
+    }
+  }
 
-## finalisation phase
-my %score_proba =();
- $proba_sum = 0;
-foreach my $score (keys (%distrib_proba)) {
-	foreach my $prefix (keys(%{$distrib_proba{$score}})) {
-		if ($score_proba{$score}){
-				$score_proba{$score} += $distrib_proba{$score}->{$prefix};
-			} else {
-				$score_proba{$score} = $distrib_proba{$score}->{$prefix};
-			}			
-			$proba_sum += $distrib_proba{$score}->{$prefix};
-	}
-}
+#  &RSAT::message::Debug("proba sum", $proba_sum) if ($main::verbose >= 10);
 
-&RSAT::message::Debug("proba sum", $proba_sum) if ($main::verbose >= 10);
-
-# round the scores to the user-chosen decimals
-my %score_proba_decimals;
-for my $score (keys %score_proba) {
-	my $score_decimals = sprintf($score_format,$score);
-	$score_decimals =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
-	$score_proba_decimals{$score_decimals} += $score_proba{$score};
-	}
-%score_proba = %score_proba_decimals;
+  # round the scores to the user-chosen decimals
+  my %score_proba_decimals;
+  for my $score (keys %score_proba) {
+    my $score_decimals = sprintf($score_format,$score);
+    $score_decimals =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
+    $score_proba_decimals{$score_decimals} += $score_proba{$score};
+  }
+  %score_proba = %score_proba_decimals;
 
   ## Calculate the sorted list of score values
   my $score_proba_cum = 0;
@@ -3080,19 +3141,18 @@ for my $score (keys %score_proba) {
   my @sorted_scores_inv;
   if ($score_type eq "weights") {
     ## take all possible weights between the min and max values
-#     my $min_score = &RSAT::stats::min(keys(%score_proba));
-#     my $max_score = &RSAT::stats::max(keys(%score_proba));
-#   #####  my ($Wmin, $Wmax) = $self->weight_range();
-#     ## Round the min and max scores
-#     $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
-#     $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
-#     my $distrib_min = &RSAT::stats::min($Wmin, $min_score);
-#     my $distrib_max = &RSAT::stats::max($Wmax, $max_score);
+    #     my $min_score = &RSAT::stats::min(keys(%score_proba));
+    #     my $max_score = &RSAT::stats::max(keys(%score_proba));
+    #   #####  my ($Wmin, $Wmax) = $self->weight_range();
+    #     ## Round the min and max scores
+    #     $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
+    #     $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
+    #     my $distrib_min = &RSAT::stats::min($Wmin, $min_score);
+    #     my $distrib_max = &RSAT::stats::max($Wmax, $max_score);
 
-	  my $distrib_min = &RSAT::stats::min(keys(%score_proba));
-	  my $distrib_max = &RSAT::stats::max(keys(%score_proba));
-	  
-	   &RSAT::message::Debug("theor distrib min",$distrib_min,"theor distrib max",$distrib_max) if ($main::verbose >= 10);
+    my $distrib_min = &RSAT::stats::min(keys(%score_proba));
+    my $distrib_max = &RSAT::stats::max(keys(%score_proba));
+#    &RSAT::message::Debug("theor distrib min",$distrib_min,"theor distrib max",$distrib_max) if ($main::verbose >= 10);
 
     my $break_amplif=(10**$decimals);
     my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
@@ -3101,7 +3161,7 @@ for my $score (keys %score_proba) {
       my $score = sprintf($score_format, $break/$break_amplif);
       push @sorted_scores, $score;
       unshift @sorted_scores_inv, $score;
-      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break, $score) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break, $score) if ($main::verbose >= 10);
     }
   } else {
     @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
@@ -3113,15 +3173,14 @@ for my $score (keys %score_proba) {
   my $distrib_max = $sorted_scores[$#sorted_scores];
   my @sorted_all_scores = ();
   for (my $score = $distrib_min; $score <= $distrib_max; $score+=1/(10**$decimals)) {
-		$score = sprintf($score_format, $score);
-		push(@sorted_all_scores,$score) ;
-		if (!defined($score_proba{$score})) {
-		  $score_proba{$score}="NA";
-	  }
-	}
-	@sorted_scores =  @sorted_all_scores;
-	@sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
-  
+    $score = sprintf($score_format, $score);
+    push(@sorted_all_scores,$score) ;
+    if (!defined($score_proba{$score})) {
+      $score_proba{$score}="NA";
+    }
+  }
+  @sorted_scores =  @sorted_all_scores;
+  @sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
 
   ## Compute the cumulative distribution
   foreach my $score (@sorted_scores) {
@@ -3154,7 +3213,7 @@ for my $score (keys %score_proba) {
     $proba = $score_inv_cum_proba{$score};
     $inv_cum_proba = $score_inv_cum_proba{$score};
   } until (($proba > 0) || ($s >= $#sorted_scores_inv));
-  if ($s < 5){
+  if ($s < 5) {
     for my $i (0..($s-1)) {
       my $score = $sorted_scores_inv[$i];
       $score_proba{$score} = $proba;
@@ -3172,8 +3231,6 @@ for my $score (keys %score_proba) {
   $self->set_hash_attribute($score_type."_inv_cum_proba", %score_inv_cum_proba);
   $self->force_attribute($score_type."_inv_cum_proba_specified", 1);
 }
-
-
 
 
 ################################################################
@@ -3237,12 +3294,34 @@ Usage:
 =cut
 sub makeLogo{
   my ($self,$logo_file,$logo_formats,$logo_dir, $logo_options, $rev_compl) = @_;
-  my (@logo_formats) = @{$logo_formats};
-  &RSAT::message::Debug("makeLogo", $logo_dir, $pseudo_seq_file, $seq_number, "pseudo sequences", $rev_compl) 
-    if ($main::verbose >= 5);
-  my ($pseudo_seq_file,$seq_number) = $self->fake_seq_from_matrix($logo_dir, $rev_compl);
+  my $id = $self->get_attribute("id");
   my $ncol = $self->ncol();
-  my $x_axis_legend = $seq_number." sites";
+
+  &RSAT::util::CheckOutDir($logo_dir) if ($logo_dir);
+
+  ## Make sure there is at least one logo format
+  my (@logo_formats) = @{$logo_formats};
+  if (scalar(@logo_formats) == 0) {
+    push @logo_formats, "png";
+  }
+
+  ## Create a file with fake sequences having the same residue composition as the matrix
+  my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($logo_dir, $rev_compl);
+
+  &RSAT::message::Debug("makeLogo", $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file)
+    if ($main::verbose >= 5);
+
+  ## Legend on the X axis indicates matrix ID, name and number of sites
+  my $logo_info = $id;
+  if (my $name = $self->get_attribute("name")) {
+    $logo_info .= "  ".$name unless ($name eq $id);
+  }
+  if ($rev_compl) {
+    $logo_info .= "  RC";
+  }
+  $logo_info .= "  ".$seq_number." sites";
+
+  ## Run seqlogo to generate the logo(s)
   foreach my $logo_format (@logo_formats){
     my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
@@ -3252,22 +3331,26 @@ sub makeLogo{
 			      "Please install seqlogo in the recommended location.");
       return;
     }
+
     my $logo_cmd = $seqlogo_path;
-    $logo_cmd.= " -f ".$pseudo_seq_file;
+    $logo_cmd.= " -f ".$fake_seq_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
-    $logo_cmd .= " -x '$x_axis_legend'";
+    $logo_cmd .= " -x '".$logo_info."'";
     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
 #    $logo_cmd .= " -e -M";
     $logo_cmd .= " ".$logo_options;
     $logo_cmd .= " -o ". $logo_file;
-    #	$logo_cmd .= " -t ".$self->get_attribute("name");
+#    $logo_cmd .= " -t '".$logo_title."'";
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
     &RSAT::util::doit($logo_cmd);
-    &RSAT::message::Info("Seq logo exported to file", $logo_file.".".$logo_format) if ($main::verbose >= 2);
+    unlink ($fake_seq_file); ## Remove the fake sequences, not necessary anymore
+    &RSAT::message::Info("Seq logo exported to file", $logo_file.".".$logo_format) if ($main::verbose >= 3);
+
+    push @logo_files, $logo_file.".".$logo_format;
   }
-#  unlink $pseudo_seq_file;
+  return(@logo_files);
 }
 
 ################################################################
@@ -3283,6 +3366,9 @@ sub makeLogo{
 sub fake_seq_from_matrix {
   my ($self,$seq_dir, $rev_compl) = @_;
   &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "dir=".$seq_dir, "rev_compl=".$rev_compl) if ($main::verbose >= 5);
+
+  my $null_residue = "n"; ##  to fill up sequences for matrices having columns with different number of residues
+
   my $nb_col = $self->ncol();
   my $nb_row = $self->nrow();
   @matrix = @{$self->{table}};
@@ -3302,16 +3388,19 @@ sub fake_seq_from_matrix {
   ################################################################
   ## Create a vector of sequences representing the letters per column
   my @letters_at_column = ();
-  my $null_residue = ".";
   for my $c (0..$nb_col-1) {
     my $i=0;
+    my $null_residue_nb = $max_col_sum; ## counter for the null residues in the current column
     foreach my $letter ($self->getAlphabet()) {
       ##    foreach my $letter ("A","C","G","T") {
-      $letters_at_column[$c] .= $letter x $matrix[$c][$i];
+      my $counts = &RSAT::util::round($matrix[$c][$i]); ## round the number in order to support matrices with decimal values
+      $null_residue_nb -= $counts;
+      $letters_at_column[$c] .= $letter x $counts;
+#      &RSAT::message::Debug("&fake_seq_from_matrix()", $letter, "col=".$c, "row=".$i, $counts) if ($main::verbose >= 10);
       $i++;
     }
-    $letters_at_column[$c] .= $null_residue x $null_residues[$c];
-#    &RSAT::message::Debug("&fake_seq_from_matrix()", "Column-letters", $letters_at_column[$c]) if ($main::verbose >= 4);
+    $letters_at_column[$c] .= $null_residue x $null_residue_nb;
+#    &RSAT::message::Debug("&fake_seq_from_matrix()", "Column-letters", $letters_at_column[$c]) if ($main::verbose >= 10);
   }
 
 
@@ -3325,19 +3414,24 @@ sub fake_seq_from_matrix {
   for my $residue (0..$seq_number-1) {
     my $fake_seq;
     for my $array (@intermediate) {
-      $fake_seq .=$array->[$residue];
+      $fake_seq .= $array->[$residue];
     }
     $fake_seq = &RSAT::SeqUtil::ReverseComplement($fake_seq) if ($rev_compl);
     &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "Fake sequence", $col_seq) if ($main::verbose >= 6);
     push @seqs, $fake_seq;
   }
-  &RSAT::message::Debug("Pseudo sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
+  &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
 
-  ## create a temporary sequence file which will be deleted after logo creation 
-  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("name"));
+  ## create a temporary sequence file which will be deleted after logo creation
+  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
-  &RSAT::message::Debug("Pseudo sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 5);
+#  my $current_id = 0;
+#  foreach my $current_seq (@seqs) {
+#      $current_id++;
+#      &main::PrintNextSequence($seq_handle, "fasta", 0, $current_seq, $current_id);
+#  }
+#  &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 0);
   return ($tmp_seq_file,$seq_number);
 }
 
@@ -3423,16 +3517,17 @@ sub link_button_TOMTOM {
 
 =pod
 
-=item to_infogibbs(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
+=item to_infogibbs(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_char)
 
-Return a string description of the matrix in the same format as Matthieu De France programs. Additional parameters are also exported as comments,
-when the verbosity is > 0.
+Return a string description of the matrix in the same format as
+Matthieu De France programs. Additional parameters are also exported
+as comments, when the verbosity is > 0.
 
 Supported parameters:
 
 =over
 
-=item comment_string
+=item comment_char
 
 A character or string to print before each row of the matrix.
 
@@ -3504,11 +3599,9 @@ sub to_infogibbs{
     $to_print .="; log likelihood ratio           ".  $llr   ."\n";
     $to_print .="; information content            ". $ic   ."\n";
 
-
-    
-    &RSAT::message::Debug("RSAT::matrix::infogibbs", $motif_ID , "++") if ($main::verbose >= 10);
+#    &RSAT::message::Debug("RSAT::matrix::infogibbs", $motif_ID , "++") if ($main::verbose >= 10);
   #  <STDIN>;
-    
+
     ## Separator between row names (residues) and matrix content
     my $pipe =  "|";
     if (defined($args{pipe})) {
@@ -3555,17 +3648,15 @@ sub to_infogibbs{
     my @matrix = ();
     
     @matrix = @{$self->{table}};
-    
-    
+
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
-    
-    
+
     ## Print the matrix
     for $a (0..$#alphabet) {
 	my @row = &RSAT::matrix::get_row($a+1, $ncol, @matrix);
-	if (defined($args{comment_string})) {
-	    $to_print .= $args{comment_string};
+	if (defined($args{comment_char})) {
+	    $to_print .= $args{comment_char};
 	}
 	$to_print .= $self->_printMatrixRow(uc( $alphabet[$a]), @row) ;
     }
