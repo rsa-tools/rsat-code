@@ -549,10 +549,27 @@ sub hex2rgb {
 ##  my $temp_file_name = &RSAT::util::make_temp_file();
 sub make_temp_file {
   my ($tmp_dir, $tmp_prefix) = @_;
-  $tmp_dir = $main::TMP unless ($tmp_dir);
-  $tmp_prefix = 'tmp' unless ($tmp_prefix);
-  my $temp_file = `mktemp ${tmp_dir}/${tmp_prefix}.XXXXXX`;
+
+  ## Check $tmp_dir and $tmp_prefix
+  if ($tmp_prefix) {
+    ($prefix_dir, $tmp_prefix) = &SplitFileName($tmp_prefix);
+    if (($tmp_dir) && ($prefix_dir)) {
+      $tmp_dir = $tmp_dir."/".$prefix_dir;
+    } elsif ($prefix_dir) {
+      $tmp_dir = $prefix_dir;
+    }
+  } else {
+    $tmp_prefix = 'tmp';
+    $tmp_dir = $main::TMP unless ($tmp_dir);
+  }
+  &CheckOutDir($tmp_dir);
+
+  ## request the temporary file to the system
+  my $mktmp_cmd = "mktemp ".$tmp_dir."/".$tmp_prefix.".XXXXXX";
+  my $temp_file = `$mktmp_cmd`;
   chomp($temp_file);
+
+  ## Ensure that everyone can read the temporary file
   system("chmod a+r $temp_file");
   return ($temp_file);
 }
