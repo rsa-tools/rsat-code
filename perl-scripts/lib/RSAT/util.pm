@@ -560,8 +560,8 @@ sub make_temp_file {
     }
   } else {
     $tmp_prefix = 'tmp';
-    $tmp_dir = $main::TMP unless ($tmp_dir);
   }
+  $tmp_dir = $main::TMP unless ($tmp_dir);
   &CheckOutDir($tmp_dir);
 
   ## request the temporary file to the system
