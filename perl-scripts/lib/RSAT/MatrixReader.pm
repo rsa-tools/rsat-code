@@ -318,6 +318,9 @@ sub _readFromTRANSFACFile {
       if ($accession) {
 	$matrix->set_parameter("accession", $accession);
 	$matrix->set_parameter("AC", $accession);
+	## TRANSFAC Accession number corresponds to our matrix ID
+	## TRANSFAC ID corresponds to our matrix name
+	$matrix->set_parameter("id", $accession);
       }
       $matrix->set_parameter("version", $version);
       $ncol = 0;
@@ -379,21 +382,22 @@ sub _readFromTRANSFACFile {
 
 	## Matrix identifier
       } elsif (/^ID\s+/) {
-	$matrix->set_parameter("identifier", $'); #'
+	## TRANSFAC identifier corresponds to our matrix name
+	## Our ID is in the TRANSFAC field AC (accession)
+	$matrix->set_parameter("name", $'); #'
 
 	## Automatically set matrix name
-	if ($matrix->get_attribute("accession") eq $matrix->get_attribute("identifier")) {
-	  $matrix->force_attribute("name", $matrix->get_attribute("accession"));
-	}  else {
-	  $matrix->force_attribute("name", join("_",
-						$matrix->get_attribute("accession"),
-						$matrix->get_attribute("identifier"),
-					       ));
-	}
-	&RSAT::message::Info("TRANSFAC identifier", 
-			     $matrix->get_attribute("accession"),
-			     $matrix->get_attribute("identifier"),
-			     $matrix->get_attribute("name")
+#	if ($matrix->get_attribute("accession") eq $matrix->get_attribute("identifier")) {
+#	  $matrix->force_attribute("name", $matrix->get_attribute("accession"));
+#	}  else {
+#	  $matrix->force_attribute("name", join("_",
+#						$matrix->get_attribute("accession"),
+#						$matrix->get_attribute("identifier"),
+#					       ));
+#	}
+	&RSAT::message::Info("TRANSFAC",
+			     "AC -> id", $matrix->get_attribute("id"),
+			     "ID -> name", $matrix->get_attribute("name")
 			    ) if ($main::verbose >= 3);
 
 	## Bound factor
@@ -883,6 +887,7 @@ sub _readFromOldInfoGibbsFile {
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
       $matrix->set_parameter("accession", "IG.".$accession);
+      $matrix->set_parameter("id", $accession);
       $matrix->set_parameter("program", "InfoGibbs");
       $matrix->set_parameter("version", $version);
       $matrix->set_parameter("command", $command);
@@ -969,7 +974,8 @@ sub _readFromOldInfoGibbsFile {
 	next;
 
       } elsif (/^ID\s+/) {
-	$matrix->set_parameter("identifier", $'); #'
+	$matrix->force_attribute("name", $'); #'
+	$matrix->force_attribute("id", $'); #'
 
       } elsif (/^BF\s+/) {
 	$matrix->set_parameter("binding_factor", $'); #'
@@ -1811,21 +1817,15 @@ sub _readFromJasparFile {
 	  $name = &RSAT::util::trim($postmatch);
 	  $name =~ s/\s+/_/g;
 	}
-#	&RSAT::message::Debug("_readFromJasparFile", $id, $name) if ($main::verbose >= 3);
+	&RSAT::message::Debug("_readFromJasparFile", $id, $name) if ($main::verbose >= 3);
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("program", "jaspar");
 	$ncol = 0;
 
-	## TF name comes in principle as the second word of the matrix header
-	$matrix->force_attribute("id", $name);
 	## For TRANSFAC, the accession number is the real identifier, whereas the identifier is a sort of name
-	$matrix->set_attribute("AC", $id);
-	$matrix->set_attribute("accession", $id);
-	if ($id eq $name) {
-	  $matrix->set_attribute("name", $id);
-	} else {
-	  $matrix->set_attribute("name", $id."_".$name);
-	}
+	$matrix->set_attribute("id", $id);
+	$matrix->set_attribute("name", $name);
+	$matrix->set_attribute("accession", $id); ## For TRANSFAC
 	$matrix->set_attribute("description", join("", $id, " ", $name, "; from JASPAR"));
 	push @matrices, $matrix;
 	$current_matrix_nb++;
@@ -2085,7 +2085,7 @@ sub _readFromMotifSamplerFile {
     next unless /\S/;		## Skip empty lines
     next if /^#*$/;		## Skip empty lines
     if (/^#id:\s*(.*)/i) {
-      
+
       ## The ID row also contains the matrix parameters
       my $motif_desc = $1;
       chomp($motif_desc);
@@ -2172,6 +2172,7 @@ sub _readFromMotifSamplerMatrixFile {
     while (<$in>) {
       next unless /\S/; ## Skip empty lines
       next if /^#*$/; ## Skip empty lines
+
       if(/^#ID\s*=\s*(\S+)/) {
 	my $id = $1;
 	$matrix = new RSAT::matrix();
