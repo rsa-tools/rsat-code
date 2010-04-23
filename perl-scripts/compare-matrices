@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.46 2010/04/20 13:37:25 jvanheld Exp $
+# $Id: compare-matrices,v 1.47 2010/04/23 08:55:37 jvanheld Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -432,6 +432,23 @@ package main;
   $main::out = &OpenOutputFile($main::outfile{output});
   if ($main::outfile{out_matrices}) {
     $main::out_matrices = &OpenOutputFile($main::outfile{out_matrices});
+
+    ## Open the file for the HTML index of aligned matrices
+    $main::outfile{out_matrices_html} = $main::outfile{out_matrices};
+    $main::outfile{out_matrices_html} =~ s/\.tab$//;
+    $main::outfile{out_matrices_html} .= ".html";
+    $main::out_matrices_html = &OpenOutputFile($main::outfile{out_matrices_html});
+    print $main::out_matrices_html "<html>\n";
+    my $title = &RSAT::util::ShortFileName($main::outfile{out_matrices});
+    $title =~ s/\.tab//;
+    print $main::out_matrices_html "<head><title>".$title."</title></head>\n";
+    print $main::out_matrices_html "<body>\n";
+    print $main::out_matrices_html "<h1>".$title."</h1>\n";
+
+    ## Define directory for the logos
+    $main::outfile{logo_dir} = $main::outfile{out_matrices};
+    $main::outfile{logo_dir} =~ s/\.tab$//;
+    $main::outfile{logo_dir} .= "_logos";
   }
 
   ################################################################
@@ -591,9 +608,13 @@ package main;
     my $nrow1 = $matrix1->get_attribute("nrow");
     my @crude_freq1 = $matrix1->getCrudeFrequencies();
     my @corrected_freq1 = $matrix1->getFrequencies();
-    my $matrix1_id = $matrix1->get_attribute("id") || $matrix1->get_attribute("identifier") || "<NA>";
-    my $matrix1_name = $matrix1 ->get_attribute("name");
+    my $id1 = $matrix1->get_attribute("id") || "<NA>";
+    my $name1 = $matrix1 ->get_attribute("name");
     my $m2 = 0;
+    my $desc1 = $id1;
+    if (($name1) && ($name1 ne $id1)) {
+      $desc1 .= " ".$name1;
+    }
 
     foreach my $matrix2 (@matrices2) {
       $m2++;
@@ -602,12 +623,16 @@ package main;
 			       "file2", $m2."/".scalar(@matrices2),
 			      )
 	if ($main::verbose >= 4);
-      my $matrix2_id = $matrix2->get_attribute("id") || $matrix2->get_attribute("identifier") || "<NA>";
-      my $matrix2_name = $matrix2-> get_attribute("name");
+      my $id2 = $matrix2->get_attribute("id") || "<NA>";
+      my $name2 = $matrix2-> get_attribute("name");
+      my $desc2 = $id2;
+      if (($name2) && ($name2 ne $id2)) {
+	$desc2 .= " ".$name2;
+      }
 
       ## Skip identical matrices if the option -distinct is active
-      next if (($main::distinct) && ($matrix1_name eq $matrix2_name));
-      next if (($main::triangle) && ($matrix1_name gt $matrix2_name));
+      next if (($main::distinct) && ($id1 eq $id2));
+      next if (($main::triangle) && ($id1 gt $id2));
 
       my $ncol2 = $matrix2->get_attribute("ncol");
       my $nrow2 = $matrix2->get_attribute("nrow");
@@ -792,7 +817,7 @@ package main;
 	my @out_fields = ();
 	push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
 	if ($return_field{matrix_id}) {
-	  push (@out_fields, $matrix1_id, $matrix2_id);
+	  push (@out_fields, $id1, $id2);
 	}
 	if ($return_field{matrix_ac}) {
 	  my $ac1 = $matrix1->get_attribute("accession") || "<NA>";
@@ -875,30 +900,86 @@ package main;
 	print $out  $out_line{$offset};
 	print $out "\t", $rank{$offset} if ($return_field{rank});
 	print $out "\n";
-
 	if ($main::outfile{out_matrices}) {
+	  my ($aligned_matrix, $matrix1_shifted, $matrix2_shifted,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, stat=>$align_stat);
+	  my $id_align = $aligned_matrix->get_attribute("id") || "alignment";
 
-	  my ($aligned_matrix, $shifted_matrix1, $shifted_matrix2,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, stat=>$align_stat);
-	  my $aligned_matrix_id = $aligned_matrix->get_attribute("id");
-
-	  print $out_matrices join ("\t", "; Pairwise matrix alignment", $matrix1_id, $matrix2_id), "\n";
+	  ## Print a header for the alignment in the tab-delimited file
+	  my $header_row = join ("\t", "Pairwise matrix alignment", $id1, "versus", $id2);
+	  print $out_matrices "\n; ", $header_row."\n";
 	  print $out_matrices join ("\t", ";pos", "|", 1..$aligned_matrix->ncol()), "\n";
+
+	  ## Open a table in the HTML file
+	  print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
+	  print $out_matrices_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
+
 	  if ($return_field{shifted_matrices}) {
-	    print $out_matrices join ("\t", "; ".$matrix1_id,
-				      "shift1=".$shifted_matrix1->get_attribute("shift"), 
-				      "col=".$matrix1->ncol(), 
-				      $shifted_matrix1->get_attribute("consensus.IUPAC")), "\n",
-	      $shifted_matrix1->toString(format=>'tab');
-	    print $out_matrices join ("\t", "; ".$matrix2_id,
-				      "shift2=".$shifted_matrix2->get_attribute("shift"), 
-				      "col=".$matrix2->ncol(), $shifted_matrix2->get_attribute("consensus.IUPAC")), "\n",
-	      $shifted_matrix2->toString(format=>'tab');
+
+	    ## Generate a string to display the first matrix in text output file
+	    my $matrix1_string = join("\t", "; ".$desc1,
+				      "shift1=".$matrix1_shifted->get_attribute("shift"),
+				      "col=".$matrix1->ncol(),
+				      $matrix1_shifted->get_attribute("consensus.IUPAC"));
+	    $matrix1_string .= "\n";
+	    $matrix1_string .= $matrix1_shifted->toString(format=>'tab');
+	    print $out_matrices $matrix1_string;
+
+	    ## Generate a sequence logo for the HTML output file
+	    my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
+	    $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+	    my $logo1_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo1_file.".png");
+	    $matrix1_string =~ s|//\n||mg;
+	    print $out_matrices_html "<tr>\n";
+	    print $out_matrices_html "<td>".$desc1."</td>\n";
+	    print $out_matrices_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
+	    print $out_matrices_html "<td><pre>".$matrix1_string."</pre></td>\n";
+	    print $out_matrices_html "</tr>\n";
+
+
+	    ## Generate a string to display the first matrix in text output file
+	    my $matrix2_string = join("\t", "; ".$desc2,
+				      "shift2=".$matrix2_shifted->get_attribute("shift"),
+				      "col=".$matrix2->ncol(),
+				      $matrix2_shifted->get_attribute("consensus.IUPAC"));
+	    $matrix2_string .= "\n";
+	    $matrix2_string .= $matrix2_shifted->toString(format=>'tab');
+	    print $out_matrices $matrix2_string;
+
+	    ## Generate a sequence logo for the HTML output file
+	    my $logo2_file = $main::outfile{logo_dir}."/".$matrix2_shifted->get_attribute("id");
+	    $matrix2_shifted->makeLogo($logo2_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+	    my $logo2_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo2_file.".png");
+	    $matrix2_string =~ s|//\n||mg;
+	    print $out_matrices_html "<tr>\n";
+	    print $out_matrices_html "<td>".$desc2."</td>\n";
+	    print $out_matrices_html "<td><a href='".$logo2_link."'><img border=0 src='".$logo2_link."'></a></td>\n";
+	    print $out_matrices_html "<td><pre>".$matrix2_string."</pre></td>\n";
+	    print $out_matrices_html "</tr>\n";
 	  }
-	  print $out_matrices join("\t", "; ".$aligned_matrix_id,
-				   "offset=$offset",
-				   "col=".$aligned_matrix->ncol(),
-				   $aligned_matrix->get_attribute("consensus.IUPAC")), "\n",
-	    $aligned_matrix->toString(format=>'tab');
+
+	  ## Generate a string for the alignment file
+	  my $aligned_matrix_string = join("\t", "; ".$id_align,
+					   "offset=$offset",
+					   "col=".$aligned_matrix->ncol(),
+					   $aligned_matrix->get_attribute("consensus.IUPAC"));
+	  $aligned_matrix_string .= "\n";
+	  $aligned_matrix_string .= $aligned_matrix->toString(format=>'tab');
+	  print $out_matrices $aligned_matrix_string;
+
+	  ## Generate a sequence logo for the aligned matrix
+	  my $logo_file = $main::outfile{logo_dir}."/".$id_align;
+	  $aligned_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+	  my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
+	  $aligned_matrix_string =~ s|//\n||mg;
+	  print $out_matrices_html "<tr>";
+	  print $out_matrices_html "<td>Alignment</td>";
+	  print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+	  print $out_matrices_html "<td><pre>".$aligned_matrix_string."</pre></td>";
+	  print $out_matrices_html "</tr>\n";
+
+	  ## Close the alignment table
+	  print $out_matrices_html "</table>\n";
+
 	}
       }
     }
@@ -906,15 +987,17 @@ package main;
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
 
 
-
-
   ################################################################
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $main::out if ($main::outfile{output});
-  close $main::out_matrices if ($main::outfile{out_matrices});
-
+  if ($main::outfile{out_matrices}) {
+    close $main::out_matrices;
+    print $out_matrices_html "</body>";
+    print $out_matrices_html "</html>";
+    close $main::out_matrices_html;
+  }
   exit(0);
 }
 
