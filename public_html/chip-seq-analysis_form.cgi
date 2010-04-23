@@ -352,7 +352,7 @@ print "<br/>";
 print $query->checkbox(-name=>'local-word-analysis',
 		       -checked=>$default{'local-word-analysis'},
 		       -label=>'');  
-print "&nbsp;<b>Discover words with positional biais</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
+print "&nbsp;<b>Discover words with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
 print "<br/>";
 
 ### local-word-analysis oligo size
