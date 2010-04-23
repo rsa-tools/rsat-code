@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.105 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: convert-matrix,v 1.106 2010/04/23 08:55:05 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -274,15 +274,15 @@ foreach my $matrix (@matrices) {
     $m++;
     $matrix->reverse_complement() if ($rc);
 
-    $matrix->set_parameter("pseudo", $pseudo_weight);
-    $matrix->set_attribute("equi_pseudo", $equi_pseudo);
+    $matrix->force_attribute("pseudo", $pseudo_weight);
+    $matrix->force_attribute("equi_pseudo", $equi_pseudo);
     $matrix->force_attribute("decimals", $decimals);
     $matrix->force_attribute("max_profile", $max_profile);
     $matrix->force_attribute("sep", $sep);
     $matrix->force_attribute("header", $return_fields{header});
     $matrix->force_attribute("margins", $return_fields{margins});
     $matrix->setInfoLogBase($info_log_base);
-    $matrix->set_parameter("bg_markov_order", 0);
+    $matrix->force_attribute("bg_markov_order", 0);
     if ($infile{prior}) {
 	$matrix->setPrior(%prior);
     }
