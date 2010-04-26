@@ -261,19 +261,19 @@ sub OpenContigs {
 	    if ($args{rm}) {
 		my $masked_seq_file = $seq_file;
 		$masked_seq_file =~ s/\.raw/_repeat_masked.raw/;
-		if (-e $seq_dir.$masked_seq_file) {
+		if (-e $seq_dir."/".$masked_seq_file) {
 		    $seq_file = $masked_seq_file;
 
 		    &RSAT::message::Warning(join("\t",
 						 "Using masked repeat version of contig",
 						 $contig_id,
-						 $seq_dir.$seq_file,
+						 $seq_dir."/".$seq_file,
 						 )) if ($main::verbose >= 2);
 		} else {
 		    &RSAT::message::Warning(join("\t",
 						 "There is no masked repeat version of contig",
 						 $contig_id,
-						 "missing file", $seq_dir.$masked_seq_file,
+						 "missing file", $seq_dir."/".$masked_seq_file,
 						 ));
 		}
 	    }
@@ -281,7 +281,7 @@ sub OpenContigs {
 	    &RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular: $circular") )
 		if ($main::verbose >= 3);
 
-	    $contig_seq{$contig_id} = new RSAT::SequenceOnDisk(filename=>  $seq_dir.$seq_file,
+	    $contig_seq{$contig_id} = new RSAT::SequenceOnDisk(filename=>  $seq_dir."/".$seq_file,
 							       id=>        $contig_id,
 							       circular=>  $circular,
 							       organism=>  $organism_name);
