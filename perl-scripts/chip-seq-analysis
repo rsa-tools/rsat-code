@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.43 2010/04/23 10:13:19 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.44 2010/04/26 23:24:41 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -212,9 +212,11 @@ package main;
 
   &ClusterMotifs() if ($task{cluster_motifs});
 
-  &MotifsVersusReference() if ($task{motifs_vs_ref});
+  &MotifsVersusReference() if ((defined($main::infile{ref_motif}))
+			       && ($task{motifs_vs_ref}));
 
-  &MotifsVersusDatabase() if ($task{motifs_vs_db});
+  &MotifsVersusDatabase() if ((scalar(@motif_databases) > 0)
+			      && ($task{motifs_vs_db}));
 
   &Synthesis() if ($task{synthesis});
 
@@ -268,7 +270,7 @@ sub DefaultParameters {
   $main::param{purge_mismatches} = 0; push(@main::param_list, "purge_mismatches");
 
   ## residue profiles (position-analysis)
-  $main::param{profiles_ci} = 10; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_strand} = "-2str"; push(@main::param_list, "profiles_strand");
   @main::profiles_oligo_lengths = (1,2);
@@ -300,8 +302,8 @@ sub DefaultParameters {
 
   ## Matrix comparisons
   $main::param{matrix_compa_min_cor} = 0.85;
-  $main::param{matrix_compa_min_w} = 4;
-  $main::param{matrix_compa_min_Ncor} = 0.5;
+  $main::param{matrix_compa_min_w} = 5;
+  $main::param{matrix_compa_min_Ncor} = 0.4;
 }
 
 
@@ -390,6 +392,7 @@ sub SetOutFileNames {
 						     "mkv".$markov);
 	push @pattern_types, $pattern_type;
       }
+
       ## position-analysis
       $pattern_type = 'positions_'.$len.'nt';
       $main::outfile{$pattern_type} = &OutFileName(".tab", "positions".$main::param{strand}.$main::param{noov},
@@ -495,8 +498,9 @@ sub SequenceLengths {
   $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen'};
   $cmd .= " ; cut -f 2 ".$main::outfile{$seq_type.'_seqlen'};
-  $cmd .= " | ".$SCRIPTS."/classfreq -v 1 -ci 10 -o ".$main::outfile{$seq_type.'_seqlen_distrib'};
-  $cmd .= " ; ".$SCRIPTS."/XYgraph -lines -legend";
+  $cmd .= " | ".$SCRIPTS."/classfreq -v 1 -ci ".$main::param{profiles_ci};
+  $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib'};
+  $cmd .= " ; ".$SCRIPTS."/XYgraph -lines -pointsize 0 -legend";
   $cmd .= " -format ".$main::param{img_format};
   my $title = "Sequence lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
@@ -537,7 +541,7 @@ sub CompositionProfiles {
     my $col_nb = 4**$ol + 1;
     $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_".$seq_type."_profiles"}.' | sort | '.$SCRIPTS.'/transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
-    $cmd .= " -lines -legend -header";
+    $cmd .= " -lines -pointsize 0 -legend -header";
     if (-e $color_file) {
       $cmd .= " -colors ".$color_file;
     } else {
@@ -670,7 +674,7 @@ sub PositionAnalysis {
     $cmd .= " ".$main::param{noov};
     $cmd .= " -seqtype dna";
     $cmd .= " -l ".$len;
-    $cmd .= " -ci ".$main::param{profiles_ci};
+    $cmd .= " -ci ".$main::param{positions_ci};
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
@@ -757,25 +761,29 @@ sub WordsVersusWords {
   my $file_nb = 0;
   foreach my $pattern_type (@pattern_types) {
     my $pattern_file = $main::outfile{$pattern_type};
-    my $sig_col;
-    $file_nb++;
-    $cmd .= " -i ".$pattern_file;
-    if ($pattern_type =~ /oligos_/) {
-      $sig_col = 8;
-    } elsif ($pattern_type =~ /oligo_diff/) {
-      $sig_col = 11;
-    } elsif ($pattern_type =~ /dyads/) {
-      $sig_col = 8;
-    } elsif ($pattern_type =~ /local_words/) {
-      $sig_col = 9;
-    } elsif ($pattern_type =~ /positions/) {
-      $sig_col = 9;
+    if (-e $pattern_file) {
+      my $sig_col;
+      $file_nb++;
+      $cmd .= " -i ".$pattern_file;
+      if ($pattern_type =~ /oligos_/) {
+	$sig_col = 8;
+      } elsif ($pattern_type =~ /oligo_diff/) {
+	$sig_col = 11;
+      } elsif ($pattern_type =~ /dyads/) {
+	$sig_col = 8;
+      } elsif ($pattern_type =~ /local_words/) {
+	$sig_col = 9;
+      } elsif ($pattern_type =~ /positions/) {
+	$sig_col = 9;
+      } else {
+	&RSAT::message::Warning("Unknown score column for pattern type", $pattern_type);
+	next;
+      }
+      $cmd .= " -sc".$file_nb." ".$sig_col;
+      #    &RSAT::message::Debug($file_nb, $pattern_type, $sig_col, "\n", $pattern_file) if ($main::verbose >= 5);
     } else {
-      &RSAT::message::Warning("Unknown score column for pattern type", $pattern_type);
-      next;
+      &RSAT::message::Warning("Missing pattern file", $pattern_type, $pattern_file);
     }
-    $cmd .= " -sc".$file_nb." ".$sig_col;
-#    &RSAT::message::Debug($file_nb, $pattern_type, $sig_col, "\n", $pattern_file) if ($main::verbose >= 5);
   }
   $cmd .= " -ic 2 -lc";
   $cmd .= " -null .";
@@ -813,10 +821,15 @@ sub MergeMotifs {
   ## Use TRANSFAC format because if allows to associate a name to each
   ## matrix.
   foreach my $pattern_type (@pattern_types) {
-    $cmd .= " ; ".$SCRIPTS."/convert-matrix -from tab -to transfac -return counts,parameters";
-    $cmd .= " -prefix $pattern_type";
-    $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
-    $cmd .= " >> ".$main::outfile{motifs_discovered};
+    my $matrix_file = $main::outfile{$pattern_type.'_pssm_counts'};
+    if (-e $matrix_file) {
+      $cmd .= " ; ".$SCRIPTS."/convert-matrix -from tab -to transfac -return counts,parameters";
+      $cmd .= " -prefix $pattern_type";
+      $cmd .= " -i ".$matrix_file;
+      $cmd .= " >> ".$main::outfile{motifs_discovered};
+    } else {
+      &RSAT::message::Warning("Missing matrix file", $pattern_type, $matrix_file);
+    }
   }
   &one_command($cmd, 1);
 
@@ -905,7 +918,7 @@ sub MotifsVersusReference {
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus,shifted_matrices";
+  $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus,aligned_matrices";
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref"};
   $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_ref_matrices"};
   &one_command($cmd, 1);
@@ -947,7 +960,7 @@ sub MotifsVersusDatabase {
     $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
     $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
     $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-    $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus,shifted_matrices";
+    $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus,aligned_matrices";
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_db_".$db_name."_matrices"};
     &one_command($cmd, 1);
@@ -988,6 +1001,7 @@ sub MatrixFromPatterns {
   $cmd .= " -logo";
 #  $cmd .= " -links";
   $cmd .= " -o ".$pssm_file;
+#  &RSAT::message::Warning("Temporarily inactivated\n", $cmd);
   &one_command($cmd, 1);
 }
 
@@ -1045,10 +1059,10 @@ sub Synthesis {
   &SynthesisMotifCompa();
 
   ## Comparison between discovered motifs and reference motif
-  &SynthesisMotifsVersusReference();
+  &SynthesisMotifsVersusReference() if (defined($main::infile{ref_motif}));
 
   ## Comparison between discovered motifs and database(s)
-  &SynthesisMotifsVersusDatabase();
+  &SynthesisMotifsVersusDatabase() if (scalar(@motif_databases) > 0);
 
   ## Log file
   &SyntheticTableAddHeaderRow("Log file");
@@ -1126,15 +1140,17 @@ sub SynthesisSequenceComposition {
     &SyntheticTableAddHeaderRow("Sequence composition (".$seq_type." sequences)");
 
     ## Get number of peaks from sequence length distribution
-    my $peak_nb = `grep ';count:' $main::outfile{$seq_type."_seqlen_distrib"}`;
+    my $peak_nb = `grep '; count' $main::outfile{$seq_type."_seqlen_distrib"}`;
     chomp($peak_nb);
-    $peak_nb =~ s/.*count:\s*//;
+    $peak_nb =~ s/.*count\s*//;
 
     ## Get total sequence size from sequence length distribution
-    my $seq_size = `grep ';sum:' $main::outfile{$seq_type."_seqlen_distrib"}`;
+    my $seq_size = `grep '; sum' $main::outfile{$seq_type."_seqlen_distrib"}`;
     chomp($seq_size);
-    $seq_size =~ s/.*sum:\s*//;
+    $seq_size =~ s/.*sum\s*//;
     $seq_size = round($seq_size/1000);
+
+    &RSAT::message::Debug("Nb of peaks=".$peak_nb, "sequence size=".$seq_size) if ($main::verbose >= 0);
 
     ## Sequence lengths
     my $img = &RelativePath($main::outfile{$seq_type."_seqlen_distrib_graph"});
@@ -1206,92 +1222,104 @@ sub SynthesisRefMotif {
 sub SynthesisPatternDisco {
   my ($pattern_type) = @_;
 
-  ## Synthesize results of pattern assembly (assembly consensus + sig scores)
-  ($asmb) = &OpenInputFile($main::outfile{$pattern_type.'_asmb'});
-  my $pattern_nb = 0;
-  my $asmb_or_isol = "";
-  my %pattern_info = ();
-  while (<$asmb>) {
-    next if /^#/; ## Skip header line
-    next unless /\S/; ## Skip empty lines
-    if (/assembly\s+\#\s+(\d+)/i) {
-      ## Assembly number
-      $pattern_nb = $1;
-      $asmb_or_isol = "asmb";
-      next;
-    } elsif (/Isolated patterns/) {
-      ## Isolated patterns at the end of the assembly file
-      $asmb_or_isol = "isol";
-      next;
-    }
-    next if /^;/; ## Skip comments
-    if ($asmb_or_isol eq "isol") {
-      $pattern_nb++;
-    } elsif (!/consensus/) {
-      next;
-    }
-    my ($word, $rc_word, $score) = split "\t";
-    $pattern_info[$pattern_nb]->{type} = $asmb_or_isol;
-    $pattern_info[$pattern_nb]->{word} = $word;
-    $pattern_info[$pattern_nb]->{rc_word} = $rc_word;
-    $pattern_info[$pattern_nb]->{score} = $score;
-  }
-  close $asmb;
+  if (-e $main::outfile{$pattern_type.'_asmb'}) {
 
-  ## Synthesize matrix logos
-  my $pattern_table = "<table cellpadding='0' cellspacing='0' align='center' border='0'>";
-  foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
-    $pattern_table .= "<tr>\n";
-    my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
-    my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
-    my $start_format="";
-    my $end_format="";
-    if ($pattern_info[$logo_nb]->{score}>10) {
-      $start_format .= "<b>";
-      $end_format .= "</b>";
-      if ($pattern_info[$logo_nb]->{score}>300) {
-	$start_format .= "<font color='red'>";
-	$end_format = "</font>".$end_format;
+    ## Synthesize results of pattern assembly (assembly consensus + sig scores)
+    ($asmb) = &OpenInputFile($main::outfile{$pattern_type.'_asmb'});
+    my $pattern_nb = 0;
+    my $asmb_or_isol = "";
+    my %pattern_info = ();
+    while (<$asmb>) {
+      next if /^#/;		## Skip header line
+      next unless /\S/;		## Skip empty lines
+      if (/assembly\s+\#\s+(\d+)/i) {
+	## Assembly number
+	$pattern_nb = $1;
+	$asmb_or_isol = "asmb";
+	next;
+      } elsif (/Isolated patterns/) {
+	## Isolated patterns at the end of the assembly file
+	$asmb_or_isol = "isol";
+	next;
       }
+      next if /^;/;		## Skip comments
+      if ($asmb_or_isol eq "isol") {
+	$pattern_nb++;
+      } elsif (!/consensus/) {
+	next;
+      }
+      my ($word, $rc_word, $score) = split "\t";
+      $pattern_info[$pattern_nb]->{type} = $asmb_or_isol;
+      $pattern_info[$pattern_nb]->{word} = $word;
+      $pattern_info[$pattern_nb]->{rc_word} = $rc_word;
+      $pattern_info[$pattern_nb]->{score} = $score;
     }
-    &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
-    if (-e $logo_file) {
-      my $img = &RelativePath($logo_file);
-      $pattern_table .= "<td align='right'>";
-      $pattern_table .= $start_format;
-      $pattern_table .= "$asmb_or_isol";
-      $pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
-      $pattern_table .= "&nbsp;"x5;
-      $pattern_table .= $pattern_info[$logo_nb]->{word};
-      $pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
-      $pattern_table .= $start_format;
-      $pattern_table .= "</td>\n";
-    } elsif ($main::verbose >= 1) {
-      &RSAT::message::Warning("Cannot find logo", $logo_file);
-    }
-    if (-e $logo_file_rc) {
-      my $img = &RelativePath($logo_file_rc);
-      $pattern_table .= "<td align='left'>";
-      $pattern_table .= $start_format;
-      $pattern_table .= $pattern_info[$logo_nb]->{rc_word};
-      $pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
-      $pattern_table .= "</td>\n";
-    } elsif ($main::verbose >= 1) {
-      &RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc);
-    }
-#    $pattern_table .= "<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>";
-    $pattern_table .= "</tr>\n";
-  }
-  $pattern_table .= "</table>\n";
+    close $asmb;
 
-  &SyntheticTableAddRow($pattern_type,
-			$pattern_table,
-			$pattern_type,$main::outfile{$pattern_type},
-			"assembly",$main::outfile{$pattern_type.'_asmb'},
-			"sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-			"info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
-			"count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
-		       );
+    ## Synthesize matrix logos
+    my $pattern_table = "<table cellpadding='0' cellspacing='0' align='center' border='0'>";
+    foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
+      $pattern_table .= "<tr>\n";
+      my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
+      my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
+      my $start_format="";
+      my $end_format="";
+      if ($pattern_info[$logo_nb]->{score}>10) {
+	$start_format .= "<b>";
+	$end_format .= "</b>";
+	if ($pattern_info[$logo_nb]->{score}>300) {
+	  $start_format .= "<font color='red'>";
+	  $end_format = "</font>".$end_format;
+	}
+      }
+      &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
+      if (-e $logo_file) {
+	my $img = &RelativePath($logo_file);
+	$pattern_table .= "<td align='right'>";
+	$pattern_table .= $start_format;
+	$pattern_table .= "$asmb_or_isol";
+	$pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
+	$pattern_table .= "&nbsp;"x5;
+	$pattern_table .= $pattern_info[$logo_nb]->{word};
+	$pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
+	$pattern_table .= $start_format;
+	$pattern_table .= "</td>\n";
+      } elsif ($main::verbose >= 1) {
+	&RSAT::message::Warning("Cannot find logo", $logo_file);
+      }
+      if (-e $logo_file_rc) {
+	my $img = &RelativePath($logo_file_rc);
+	$pattern_table .= "<td align='left'>";
+	$pattern_table .= $start_format;
+	$pattern_table .= $pattern_info[$logo_nb]->{rc_word};
+	$pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
+	$pattern_table .= "</td>\n";
+      } elsif ($main::verbose >= 1) {
+	&RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc);
+      }
+      #    $pattern_table .= "<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>";
+      $pattern_table .= "</tr>\n";
+    }
+    $pattern_table .= "</table>\n";
+
+    &SyntheticTableAddRow($pattern_type,
+			  $pattern_table,
+			  $pattern_type,$main::outfile{$pattern_type},
+			  "assembly",$main::outfile{$pattern_type.'_asmb'},
+			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
+			  "info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
+			  "count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
+			 );
+  } else {
+    &SyntheticTableAddRow($pattern_type,
+			  "<font color='red'red>Missing files</font>",
+			  $pattern_type,$main::outfile{$pattern_type},
+			  "assembly",$main::outfile{$pattern_type.'_asmb'},
+			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
+			  "info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
+			  "count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
+			 );
+  }
 }
 
 ################################################################
@@ -1941,13 +1969,13 @@ sub CheckArguments {
   ## Check that reference motif has been specified if required
   if ($task{motifs_vs_ref}) {
     &RSAT::error::FatalError("The task motifs_vs_dref requires to specify a file containing the reference motif (option -ref_motif).")
-      unless (scalar(@motif_databases) > 0)
+      unless (defined($main::infile{ref_motif}));
   }
 
   ## Check that motif DB has been specified if required
   if ($task{motifs_vs_db}) {
     &RSAT::error::FatalError("The task motifs_vs_db requires to specify at least one file containing database motifs (option -motif_db).")
-      unless (defined($main::infile{ref_motif}));
+      unless (scalar(@motif_databases) > 0)
   }
 
 
