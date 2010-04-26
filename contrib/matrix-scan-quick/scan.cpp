@@ -57,9 +57,26 @@ int word_is_valid(seq_t *seq, int start, int l)
 //     return 1;
 // }
 
-int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, double threshold, int rc, pvalues_t *pvalues)
+
+
+void set_buffer(char *buffer, char *seq, int i, int l)
 {
+    static char BASES[4] = {'A', 'C', 'G', 'T'};
+    buffer[l] = '\0';
+    int k;
+    for (k = 0; k < l; k++)
+    {
+        buffer[k] = BASES[(int) seq[i + k]];
+    }
+}
+
+int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, double threshold, int rc, pvalues_t *pvalues, int origin)
+{
+    char buffer[256];
     int l = matrix.J;
+    ASSERT(l < 256, "invalid matrix size");
+    int a = 0;
+    int b = 0;
     seq_t *seqrc = NULL;
     if (rc)
         seqrc = new_seq_rc(seq);
@@ -81,14 +98,24 @@ int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t 
 
         double Pval = score2pvalue(pvalues, W);
 
+        // position
+        if (origin == -1) // start
+            a = i + 1;
+        else if (origin == 0) // center
+            a = i - seq->size / 2;
+        else // end
+            a = i - seq->size;
+        b = a + l - 1;
+
         if (values != NULL)
         {
             values_add(values, W);
         }
         else
         {
-            const char *seqstr = "?";
-            fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\t%G\t%G\t%G\n", s, "site", "matrix", 'D', i + 1, i + l, seqstr, W, 0.0, 0.0, Pval);
+            //const char *seqstr = "?";
+            set_buffer(buffer, seq->data, i, l);
+            fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\t%G\t%G\t%G\n", s, "site", "matrix", 'D', a, b, buffer, W, 0.0, 0.0, Pval);
         }
 
         if (!rc)
@@ -111,8 +138,9 @@ int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t 
         }
         else
         {
-            const char *seqrcstr = "?";
-            fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\t%G\t%G\t%G\n", s, "site", "matrix", 'R', i + 1, i + l, seqrcstr, Wrc, 0.0, 0.0, Pval_rc);
+            //const char *seqrcstr = "?";
+            set_buffer(buffer, seqrc->data, seq->size - i - l, l);
+            fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\t%G\t%G\t%G\n", s, "site", "matrix", 'R', a, b, buffer, Wrc, 0.0, 0.0, Pval_rc);
         }
     }
     
