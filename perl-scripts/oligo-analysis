@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.141 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: oligo-analysis,v 1.142 2010/04/26 15:44:58 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.141 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.142 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -161,6 +161,7 @@ if ($method eq "Markov chain") {
     }
 }
 
+
 ### check input format
 &CheckInputSeqFormat($in_format);
 
@@ -173,8 +174,13 @@ if ($background_model eq "equi") {
 } elsif ($background_model eq "Markov") {
     $method = "Markov chain";
 
+} elsif ($background_model eq "file") {
+    ## Read expected frequencies from a file
+    &ReadExpectedFrequencies($infile{exp_freq}, $sum_rc, $rescale_freq);
+
 } elsif (($background_model) &&
-    ($background_model ne "bernoulli")) {
+	 ($background_model ne "bernoulli")) {
+
 
     ### localize oligo non-coding frequency file
     $method = "Frequency file";
@@ -183,7 +189,10 @@ if ($background_model eq "equi") {
     } else {
 	$str="-1str";
     }
-    $infile{exp_freq} = &ExpectedFreqFile($org_or_taxon, $oligo_length, $background_model,
+
+    $infile{exp_freq} = &ExpectedFreqFile($org_or_taxon, 
+					  $oligo_length, 
+					  $background_model,
 					  type=>"oligo",
 					  noov=>$noov, str=>$str, taxon=>$taxon);
 
@@ -212,7 +221,6 @@ if ($background_model eq "equi") {
     close $alpha;
 }
 
-
 ################################################################
 ## Normalize alphabet (sum must be 1)
 if (($alphabet) && ($background_model ne "bernoulli")) {
@@ -228,13 +236,6 @@ if (($alphabet) && ($background_model ne "bernoulli")) {
 	    $residue_proba{$r} /= $proba_sum;
 	}
     }
-}
-
-################################################################
-#### Read expected frequencies from a file
-if (($method eq "Frequency file") &&
-    ($return{'exp_freq'})) {    #### expected frequencies ####
-    &ReadExpectedFrequencies($infile{exp_freq}, $sum_rc, $rescale_freq);
 }
 
 
@@ -1935,6 +1936,7 @@ sub ReadArguments {
 	    #### expected frequency file
 	} elsif ($ARGV[$a] eq "-expfreq") {
 	    $method = "Frequency file";
+	    $background_model = "file";
 	    $infile{exp_freq} = $ARGV[$a+1];
 
 	    #### calibration file, occ and var for N sequences
@@ -2338,6 +2340,11 @@ ARGUMENTS
 			 model).
 
 	-org	organism
+	        Organism used to estimate background frequencies.
+
+	        The list of supported organisms can be obtained with the
+	        command I<supported-organisms>.
+
 	-taxon	taxon
 		Organism or taxon that used as reference for the
 		estimation of a background model based on a genome
