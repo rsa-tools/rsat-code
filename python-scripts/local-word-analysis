@@ -123,7 +123,7 @@ STATISTICS
 
 '''        
 
-VERSION = '20100317'
+VERSION = '20100426'
 USAGE = '''local-word-analysis -l OLIGOMER_LENGTH [-i inputfile]
                 [-o outputfile] 
                 [--max parameter #][--min parameter #]
@@ -365,6 +365,8 @@ def main(args, options):
               }
     params.update(thresholds)
 
+
+    start_time = time.localtime()
     ##
     #
     # Run
@@ -421,6 +423,10 @@ def main(args, options):
     output.write(ormlib.format_output(r, COLUMN_HEADER, COLUMN_HEADER_CHAR, FORMAT_ROW))
     output.write('\n')
 
+    end_time = time.localtime()
+    if options.verbosity >= 1:
+        output.write('; Job started %s\n' % time.strftime("%Y_%m_%d.%H%M%S", start_time))
+        output.write('; Job done    %s\n' % time.strftime("%Y_%m_%d.%H%M%S", end_time))
 
 if __name__ == '__main__':
     try:
