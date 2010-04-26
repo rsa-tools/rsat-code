@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.55 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: convert-graph,v 1.56 2010/04/26 22:02:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -235,6 +235,7 @@ package main;
     my $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "graph");
 
+
     ################################################################
     ##### read input
     $graph->graph_from_text($input_format,
@@ -252,6 +253,7 @@ package main;
 			    $distinct_path,
 			    $directed,
 			    $path_col);
+
 
     ## Calculate the layout
     $graph->layout($layout) if ($layout);
@@ -273,11 +275,17 @@ package main;
       my $real = $graph->get_attribute("real");
       if ($real eq "null") {
          ($mean, $sd, $min, $max) = $graph->weight_properties();
-         ## If one weight at least is not a real number, the weights cannot be computed
       }
-      if (!$real) {
+
+      unless ($real) {
+	## If there is not at least one real number, the weights cannot be computed
         (&RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n")) if ($main::verbose >= 5);
         $edge_width = 0;
+      }
+
+      ## If all weights are equal, the min is arbitrarily set to 0
+      if ($edge_min == $edge_max) {
+	$edge_min = 0;
       }
     }
 
