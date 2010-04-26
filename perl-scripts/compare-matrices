@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.47 2010/04/23 08:55:37 jvanheld Exp $
+# $Id: compare-matrices,v 1.48 2010/04/26 23:29:02 jvanheld Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -298,7 +298,7 @@ package main;
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "rank",
-				    "shifted_matrices", ## Shifted matrices used to build the alignments. This requires the optiojn -out_matrices.
+				    "aligned_matrices", ## Shifted matrices resulting from the alignments. This requires the option -out_matrices.
 				);
   local %supported_return_field = ();
   foreach my $field (@supported_return_fields) {
@@ -356,7 +356,7 @@ package main;
   local $distinct = 0;
   local $triangle = 0;
 
-  local $align_stat = "mean";
+  local $merging_stat = "mean";
 
   ################################################################
   ## Read argument values
@@ -396,8 +396,8 @@ package main;
     &RSAT::error::FatalError("You must define two input format(s) (option -format, or options -format1 and -format2)");
   }
 
-  if ($return_field{shifted_matrices}) {
-    &RSAT::error::FatalError("The option -return shifted_matrices requires to specify an output matrix file (option -out_matrices).")
+  if ($return_field{aligned_matrices}) {
+    &RSAT::error::FatalError("The option -return aligned_matrices requires to specify an output matrix file (option -out_matrices).")
       unless ($main::outfile{out_matrices});
   }
 
@@ -901,19 +901,19 @@ package main;
 	print $out "\t", $rank{$offset} if ($return_field{rank});
 	print $out "\n";
 	if ($main::outfile{out_matrices}) {
-	  my ($aligned_matrix, $matrix1_shifted, $matrix2_shifted,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, stat=>$align_stat);
-	  my $id_align = $aligned_matrix->get_attribute("id") || "alignment";
+	  my ($merged_matrix, $matrix1_shifted, $matrix2_shifted,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, stat=>$merging_stat);
+	  my $id_align = $merged_matrix->get_attribute("id") || "alignment";
 
 	  ## Print a header for the alignment in the tab-delimited file
 	  my $header_row = join ("\t", "Pairwise matrix alignment", $id1, "versus", $id2);
 	  print $out_matrices "\n; ", $header_row."\n";
-	  print $out_matrices join ("\t", ";pos", "|", 1..$aligned_matrix->ncol()), "\n";
+	  print $out_matrices join ("\t", ";pos", "|", 1..$merged_matrix->ncol()), "\n";
 
 	  ## Open a table in the HTML file
 	  print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
 	  print $out_matrices_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
 
-	  if ($return_field{shifted_matrices}) {
+	  if ($return_field{aligned_matrices}) {
 
 	    ## Generate a string to display the first matrix in text output file
 	    my $matrix1_string = join("\t", "; ".$desc1,
@@ -957,25 +957,28 @@ package main;
 	    print $out_matrices_html "</tr>\n";
 	  }
 
-	  ## Generate a string for the alignment file
-	  my $aligned_matrix_string = join("\t", "; ".$id_align,
-					   "offset=$offset",
-					   "col=".$aligned_matrix->ncol(),
-					   $aligned_matrix->get_attribute("consensus.IUPAC"));
-	  $aligned_matrix_string .= "\n";
-	  $aligned_matrix_string .= $aligned_matrix->toString(format=>'tab');
-	  print $out_matrices $aligned_matrix_string;
+	  if ($return_field{merged_matrices}) {
 
-	  ## Generate a sequence logo for the aligned matrix
-	  my $logo_file = $main::outfile{logo_dir}."/".$id_align;
-	  $aligned_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", 0);
-	  my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
-	  $aligned_matrix_string =~ s|//\n||mg;
-	  print $out_matrices_html "<tr>";
-	  print $out_matrices_html "<td>Alignment</td>";
-	  print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
-	  print $out_matrices_html "<td><pre>".$aligned_matrix_string."</pre></td>";
-	  print $out_matrices_html "</tr>\n";
+	    ## Generate a string for the alignment file
+	    my $merged_matrix_string = join("\t", "; ".$id_align,
+					    "offset=$offset",
+					    "col=".$merged_matrix->ncol(),
+					    $merged_matrix->get_attribute("consensus.IUPAC"));
+	    $merged_matrix_string .= "\n";
+	    $merged_matrix_string .= $merged_matrix->toString(format=>'tab');
+	    print $out_matrices $merged_matrix_string;
+
+	    ## Generate a sequence logo for the merged matrix
+	    my $logo_file = $main::outfile{logo_dir}."/".$id_align;
+	    $merged_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+	    my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
+	    $merged_matrix_string =~ s|//\n||mg;
+	    print $out_matrices_html "<tr>";
+	    print $out_matrices_html "<td>Alignment</td>";
+	    print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+	    print $out_matrices_html "<td><pre>".$merged_matrix_string."</pre></td>";
+	    print $out_matrices_html "</tr>\n";
+	  }
 
 	  ## Close the alignment table
 	  print $out_matrices_html "</table>\n";
