@@ -1,30 +1,5 @@
 #include "scan.h"
 
-// int scan(vector<string> raw_sequences, Sequences &sequences, Array &matrix, Markov &bg, bool rc)
-// {
-//     double threshold = 0.0;
-//     int s = 0;
-//     int l = matrix.J;
-// 
-//     printf("#seq_id\tft_type\tft_name\tstrand\tstart\tend\tsequence\tweight\n");
-// 
-//     for (s = 0; s < sequences.size(); s++)
-//     {
-//         int maxpos = sequences[s].size() - l;
-//         int i;
-//         for (i = 0; i <= maxpos; i++)
-//         {
-//             double W = matrix.logP(&sequences[s][i]) - bg.logP(&sequences[s][i], l);
-//             if (W > threshold)
-//             {
-//                 const char *seq = raw_sequences[s].substr(i, l).c_str();
-//                 printf("%d\t%s\t%s\t%c\t%d\t%d\t%s\t%.3f\n", s + 1, "site", "matrix", 'D', i + 1, i + l, seq, W);
-//             }
-//         }
-//     }
-//     return 1;
-// }
-
 static inline
 int word_is_valid(seq_t *seq, int start, int l)
 {
@@ -37,28 +12,7 @@ int word_is_valid(seq_t *seq, int start, int l)
     return 1;
 }
 
-// int scan_seq_distrib(seq_t *seq, Array &matrix, Markov &bg, values_t *values)
-// {
-//     double threshold = -1000.0;
-//     int l = matrix.J;
-// 
-//     int maxpos = seq->size - l;
-//     int i;
-//     for (i = 0; i <= maxpos; i++)
-//     {
-//         if (!word_is_valid(seq, i, l))
-//             continue;
-//         double W = matrix.logP(&seq->data[i]) - bg.logP(&seq->data[i], l);
-//         // if (W >= threshold)
-//         //     values_add(values, W);
-//         // if (W > 0)
-//         fprintf(fout, "W=%.3f\n", W);
-//     }
-//     return 1;
-// }
-
-
-
+static
 void set_buffer(char *buffer, char *seq, int i, int l)
 {
     static char BASES[4] = {'A', 'C', 'G', 'T'};
