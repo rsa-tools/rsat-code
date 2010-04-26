@@ -3344,7 +3344,7 @@ sub makeLogo{
 #    $logo_cmd .= " -t '".$logo_title."'";
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
-    &RSAT::util::doit($logo_cmd);
+    &RSAT::util::doit($logo_cmd,0,1, 0,0);
     unlink ($fake_seq_file); ## Remove the fake sequences, not necessary anymore
     &RSAT::message::Info("Seq logo exported to file", $logo_file.".".$logo_format) if ($main::verbose >= 3);
 
