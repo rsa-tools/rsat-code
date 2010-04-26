@@ -581,6 +581,9 @@ sub make_temp_file {
 sub doit {
   my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix) = @_;
   my $wd = `pwd`;
+  unless(defined($verbose)) {
+    $verbose = $main::verbose;
+  }
   chomp $wd;
 
   if ($batch) {
@@ -601,7 +604,7 @@ sub doit {
     print JOB "; hostname >> ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
     print JOB " )", "\n";
     close JOB;
-    &RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($verbose >= 2);
 
     my $job_name = $job;
     $job_name =~ s/\//_/g;
@@ -619,7 +622,7 @@ sub doit {
       $qsub_manager=$ENV{QSUB_MANAGER};
     } else {
       $ENV{QSUB_MANAGER} = "sge";
-      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($main::verbose >= 1);
+      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($verbose >= 1);
     }
 
     my $qsub_options="";
@@ -665,9 +668,9 @@ sub doit {
 
   } else {
     ## Verbose
-    if (($dry) || ($main::verbose >= 2)) {
+    if (($dry) || ($verbose >= 2)) {
       warn "\n";
-      &RSAT::message::TimeWarn("Working dir", $wd) if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 3);
       &RSAT::message::TimeWarn($command);
     }
 
