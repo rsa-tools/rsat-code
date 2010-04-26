@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.106 2010/04/23 08:55:05 jvanheld Exp $
+# $Id: convert-matrix,v 1.107 2010/04/26 06:10:08 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -147,6 +147,11 @@ unless (scalar(@matrix_files >= 1)) {
 }
 
 &RSAT::message::Info(scalar(@matrix_files), "input matrix files") if ($main::verbose >= 2);
+
+## Check output parameters
+if (($split_out_files) && !($outfile{output})) {
+  &RSAT::error::FatalError("The option -split requires to specify an output file (option -o)");
+}
 
 ## Check return type(s)
 local %return_fields = ();
@@ -327,12 +332,14 @@ foreach my $matrix (@matrices) {
     }
 }
 
+################################################################
 ## Sort the matrices if requested
 if ($sort_key) {
   @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
 }
 
-#### export the matrices
+################################################################
+## Print the matrices
 $m = 0;
 foreach my $matrix (@matrices) {
   $m++;
@@ -340,16 +347,27 @@ foreach my $matrix (@matrices) {
   &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
     if ($main::verbose >= 3);
 
-  if ($m > 1) {
-    my $fields = join ('', keys (%return_fields));
-    # unless ($fields eq "logo") {
-    #print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
-    #}
+  my $current_out;
+  if ($split_out_files) {
+    my $output_prefix = $outfile{output};
+    $output_prefix =~ '|\.tab$ ||';
+    $output_prefix =~ '|\.txt$ ||';
+    $outfile{'matrix_'.$m} = $output_prefix.$m.".".$output_format;
+    $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
+    print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}), "\n";
+
+  } else {
+    $current_out = $out;
   }
+#   if ($m > 1) {
+#     my $fields = join ('', keys (%return_fields));
+#     # unless ($fields eq "logo") {
+#     #print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+#     #}
+#   }
+
   if ($return_fields{header}) {
-#  if ($main::verbose >= 1) {
-#  if ($self-get_attribute("header")) {
-    print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
+    print $current_out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
   }
 
 
@@ -366,7 +384,7 @@ foreach my $matrix (@matrices) {
     for my $i (1..$perm) {
 
       # if ($i > 1) {
-      #print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+      #print $current_out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
       #}
 
       ## Permute the matrix
@@ -381,21 +399,24 @@ foreach my $matrix (@matrices) {
 
       ## print result
       if ($main::verbose >= 1) {
-	print $out "; ID\t$ID_perm\n" if ($verbose >=1);
-	print $out "; AC\t$AC_perm\n" if ($verbose >=1);
-	print $out "; permutation $i/$perm\n";
+	print $current_out "; ID\t$ID_perm\n" if ($verbose >=1);
+	print $current_out "; AC\t$AC_perm\n" if ($verbose >=1);
+	print $current_out "; permutation $i/$perm\n";
       }
 
-#       print $out $matrix->toString(sep=>"\t",
+#       print $current_out $matrix->toString(sep=>"\t",
 # 				   type=>"counts",
 # 				   format=>$output_format,
 # 				   #				   format=>"tab",
 # 				   pipe=>"" ## We suppress the pipe for permute-table
 # 				  );
-      &ExportMatrix($matrix, $m);
+      &ExportMatrix($matrix, $m, $current_out);
     }
   } else {
-    &ExportMatrix($matrix, $m);
+    &ExportMatrix($matrix, $m, $current_out);
+  }
+  if ($split_out_files) {
+    close ($current_out);
   }
 }
 
@@ -1063,7 +1084,7 @@ sub ReadArguments {
 					  "Invalid input format.",
 					  "Supported: ", $main::bg_format))
 		unless ($main::supported_bg_format{$main::bg_format});  
-	    
+
 	    ##bg_pseudo
 	} elsif ($ARGV[$a] eq "-bg_pseudo") {
 	    $main::bg_pseudo = $ARGV[$a+1];
@@ -1074,6 +1095,10 @@ sub ReadArguments {
 	    ### output file 
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
+
+	    ## Split a multi-matrix file into separate output files
+	} elsif ($ARGV[$a] eq "-split") {
+	    $split_out_files = 1;
 
 	    ### return type(s)
 	} elsif ($ARGV[$a] eq "-return") {
@@ -1273,7 +1298,7 @@ sub SetMatrixName {
 ################################################################
 ## Export one matrix
 sub ExportMatrix {
-    my ($matrix, $m) = @_;
+    my ($matrix, $m, $out_handle) = @_;
     #  $matrix->readFromFile($infile{input}, $input_format);
     if ($infile{prior}) {
 	$matrix->setPrior(%prior);
@@ -1295,7 +1320,7 @@ sub ExportMatrix {
 
     ## Print the counts matrix
     if ($return_fields{counts}) {
-	print $out $matrix->toString(sep=>"\t",
+	print $out_handle $matrix->toString(sep=>"\t",
 				     type=>"counts",
 				     format=>$output_format,
 				);
@@ -1304,7 +1329,7 @@ sub ExportMatrix {
   ## Calculate frequency matrix
   if ($return_fields{frequencies}) {
     $matrix->calcFrequencies();
-    print $out $matrix->toString(col_width=>($decimals+4), 
+    print $out_handle $matrix->toString(col_width=>($decimals+4), 
 				 decimals=>$decimals, 
 				 type=>"frequencies",
 				 format=>$output_format);
@@ -1313,7 +1338,7 @@ sub ExportMatrix {
   ## Calculate weight matrix
   if ($return_fields{weights}) {
     $matrix->calcWeights();
-    print $out $matrix->toString(col_width=>($decimals+4), 
+    print $out_handle $matrix->toString(col_width=>($decimals+4), 
 				 decimals=>$decimals, 
 				 type=>"weights",
 				 format=>$output_format);
@@ -1321,7 +1346,7 @@ sub ExportMatrix {
 
   ## Print the profile matrix
   if ($return_fields{profile}) {
-    print $out $matrix->toString(sep=>"\t",
+    print $out_handle $matrix->toString(sep=>"\t",
 				 type=>"profile",
 				 format=>$output_format,
 				);
@@ -1330,7 +1355,7 @@ sub ExportMatrix {
   ## Calculate information content matrix
   if ($return_fields{info}) {
     $matrix->calcInformation();
-    print $out $matrix->toString(col_width=>($decimals+4), 
+    print $out_handle $matrix->toString(col_width=>($decimals+4), 
 				 decimals=>$decimals, 
 				 type=>"information",
 				 format=>$output_format);
@@ -1339,27 +1364,27 @@ sub ExportMatrix {
 
   ## Return sites
   if ($return_fields{sites}) {
-    print $out "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
+    print $out_handle "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
     my $s = 0;
     my @site_ids = $matrix->get_attribute("site_ids");
     foreach my $site_seq ($matrix->get_attribute("sequences")) {
       $s++;
       my $site_id =  $site_ids[$s-1] || $s;
-      &PrintNextSequence($out, $site_format, 0, $site_seq, $site_id);
-      #      print $out $s, "\t\\", $site_seq, "\\\n";
+      &PrintNextSequence($out_handle, $site_format, 0, $site_seq, $site_id);
+      #      print $out_handle $s, "\t\\", $site_seq, "\\\n";
     }
   }
 
   ## Calculate consensus
   if ($return_fields{consensus}) {
     $matrix->calcConsensus();
-    print $out $matrix->toString(type=>'consensus');
+    print $out_handle $matrix->toString(type=>'consensus');
   }
 
   ## Return parameters
   if ($return_fields{parameters}) {
     $matrix->calcConsensus();
-    print $out $matrix->toString(type=>"parameters") if (($output_format eq "tab") || ($output_format eq "infogibbs"));
+    print $out_handle $matrix->toString(type=>"parameters") if (($output_format eq "tab") || ($output_format eq "infogibbs"));
   }
 
   ## Return parameters
@@ -1368,7 +1393,7 @@ sub ExportMatrix {
       my $logo_file = $matrix->get_attribute("logo_file");
       foreach my $rc_suffix ("", "_rc") {
 	foreach my $logo_format (@logo_formats) {
-	  print $out  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
+	  print $out_handle  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
 	}
       }
     }
@@ -1380,7 +1405,7 @@ sub ExportMatrix {
   ## when convert-matrix is used to convert multiple matrices, a
   ## separate HTML button has to be dispplayed aftr each matrix
   if ($return_fields{links}) {
-    print $out $matrix->link_button_TOMTOM();
+    print $out_handle $matrix->link_button_TOMTOM();
   }
 
 
@@ -1395,7 +1420,7 @@ sub ExportMatrix {
     ## Print the description of column contents
     my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "log_P", "sig");
     if ($main::verbose >= 1) {
-      print $out ";\n; Theoretical distribution of weight probabilities\n";
+      print $out_handle ";\n; Theoretical distribution of weight probabilities\n";
       my %descr = ();
       $descr{"weight"} = "log-likelihood score: w=P(S|M)/P(S|B)";
       $descr{"proba"} = "probability density function: P(W=w)";
@@ -1407,12 +1432,12 @@ sub ExportMatrix {
       $c =0;
       foreach my $col (@columns) {
 	$c++;
-	print $out sprintf(";\t%d\t%-12s\t%s", $c, $col, $descr{$col}), "\n";
+	print $out_handle sprintf(";\t%d\t%-12s\t%s", $c, $col, $descr{$col}), "\n";
       }
     }
 
     ## Print header
-    print $out "#", join ("\t", @columns), "\n";
+    print $out_handle "#", join ("\t", @columns), "\n";
 
     ## Print the score distribution
     my $log10 = log(10);
@@ -1447,7 +1472,7 @@ sub ExportMatrix {
 	  $sig = "Inf";
 	}
       }
-      print $out join("\t", $weight, 
+      print $out_handle join("\t", $weight, 
 		      $weight_proba,
 		      $weight_proba_cum,
 		      $weight_proba_inv_cum,
