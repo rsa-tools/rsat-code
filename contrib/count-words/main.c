@@ -6,10 +6,11 @@
 //  
 // 
 
+#include <time.h>
 #include "utils.h"
 #include "count.h"
 
-int VERSION = 20100316;
+int VERSION = 20100426;
 
 // ===========================================================================
 // =                            usage & help
@@ -165,6 +166,12 @@ int main(int argc, char *argv[])
         }
     }
 
+    // monitor start & end time
+    time_t rawtime;
+    time(&rawtime);
+    struct tm * start_time;
+    start_time = localtime(&rawtime);
+
     FILE *input_fp = stdin;
     FILE *output_fp = stdout;
     if (input_filename) 
@@ -199,6 +206,18 @@ int main(int argc, char *argv[])
         fclose(input_fp);
     if (output_filename)
         fclose(output_fp);
-        
+
+    // time info
+    char time_buffer[256];
+    time(&rawtime);
+    struct tm * end_time;
+    end_time = localtime(&rawtime);
+    if (VERBOSITY >= 1)
+    {
+        strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", start_time);
+        printf("; Job started %s\n", time_buffer);
+        strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", end_time);
+        printf("; Job done    %s\n", time_buffer);
+    }        
     return 0;
 }
