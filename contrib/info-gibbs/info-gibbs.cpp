@@ -28,7 +28,7 @@ using namespace std;
 #include "sampler.h"
 #include "scan.h"
 
-int VERSION = 20100308;
+int VERSION = 20100426;
 char *COMMAND_LINE;
 
 /*
@@ -425,6 +425,12 @@ int main(int argc, char *argv[])
         }
     }
 
+    // monitor start & end time
+    time_t rawtime;
+    time(&rawtime);
+    struct tm * start_time;
+    start_time = localtime(&rawtime);
+
     VERBOSE1("running info-gibbs version %d\n", VERSION);
 
     // read the sequences
@@ -510,6 +516,19 @@ int main(int argc, char *argv[])
     }
 
     //DEBUG("END info-gibbs");
-    VERBOSE1("end info-gibbs version %d\n", VERSION);
+    //VERBOSE1("end info-gibbs version %d\n", VERSION);
+    
+    // time info
+    char time_buffer[256];
+    time(&rawtime);
+    struct tm * end_time;
+    end_time = localtime(&rawtime);
+    if (VERBOSITY >= 1)
+    {
+        strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", start_time);
+        printf("; Job started %s\n", time_buffer);
+        strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", end_time);
+        printf("; Job done    %s\n", time_buffer);
+    }
     return 0;
 }
