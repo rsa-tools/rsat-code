@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.50 2010/04/19 03:42:15 jvanheld Exp $
+# $Id: position-analysis,v 1.51 2010/04/26 23:24:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -296,7 +296,7 @@ sub SumStrands {
     $pattern{$oligo_seq}->{occ} = $occurrences_2strands{$oligo_seq};
   }
   undef %pattern_2strands;
-  
+
   ################################################################
   ## Sum position profiles
   for my $class ($min_class..$max_class) {
@@ -306,14 +306,14 @@ sub SumStrands {
 	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class};
       } else {
 	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class} + $class_freq{$rc_oligo_seq}{$class};
-      }	  
+      }
     }
     foreach my $oligo_seq (sort keys %pattern) {
       $class_freq{$oligo_seq}{$class} = $m_pos_bothstrands{$oligo_seq}{$class};
       undef $m_pos_bothstrands{$oligo_seq}{$class};
-    }   
+    }
   }
-  
+
   #### if requested, group results by pairs of reverse complements ####
   if ($group_rc) {
     &RSAT::message::TimeWarn("Grouping patterns by pairs of reverse complements") if ($main::verbose >= 2);
