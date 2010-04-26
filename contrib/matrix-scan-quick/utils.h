@@ -83,10 +83,4 @@ extern char* COMMAND_LINE;
     }                                 \
 }
 
-// TRACE
-#define NEW_TRACE(trace, i)   {if (VERBOSITY >= 3) {char name[256]; sprintf(name, "%d.ic", i);trace = fopen(name, "w");}}
-#define CLOSE_TRACE(tace)     {if (VERBOSITY >= 3) {fclose(trace);}}
-#define TRACE(i, ...)         {if (VERBOSITY >= 3) {fprintf(trace, __VA_ARGS__);}}
-
-
 #endif

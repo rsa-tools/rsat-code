@@ -14,6 +14,7 @@ using namespace std;
 #include <string>
 #include <cstring>
 
+#include <time.h>
 #include <string.h>
 
 #include "utils.h"
@@ -25,7 +26,7 @@ using namespace std;
 #include "dist.h"
 #include "pval.h"
 
-int VERSION = 200912;
+int VERSION = 20100426;
 char *COMMAND_LINE;
 
 /*
@@ -109,6 +110,9 @@ void help()
 "    -decimals #           precision parameter for the -return distrib option\n"
 "\n"
 "    -pseudo #             pseudo-count for the matrix (1.0 by default)\n"
+"    -origin [start|end|center]\n"
+"                           Specify the origin for the calculation of positions.\n"
+"                           (see matrix-scan manual for details)\n"
 "\n"
    );
 }
@@ -132,6 +136,7 @@ int main(int argc, char *argv[])
     double precision = 0.1;
     double theshold = -1000.0;
     double pseudo = 1.0;
+    int    origin = -1;
     FILE *fout;
     pvalues_t *pvalues = NULL;
 
@@ -173,6 +178,19 @@ int main(int argc, char *argv[])
         {
             ASSERT(argc > i + 1, "-i requires a filename");
             seqfile = argv[++i];
+        } 
+        else if (strcmp(argv[i], "-origin") == 0) 
+        {
+            ASSERT(argc > i + 1, "-origin requires a value");
+            char *value = argv[++i];
+            if (strcmp(value, "center") == 0)
+                origin = 0;
+            else if (strcmp(value, "start") == 0)
+                origin = -1;
+            else if (strcmp(value, "end") == 0)
+                origin = 1;
+            else
+                ERROR("invalid value for option -origin");
         } 
         else if (strcmp(argv[i], "-o") == 0) 
         {
@@ -236,6 +254,12 @@ int main(int argc, char *argv[])
         usage();
         return 0;
     }
+
+    // monitor start & end time
+    time_t rawtime;
+    time(&rawtime);
+    struct tm * start_time;
+    start_time = localtime(&rawtime);
 
     // output
     if (outfile == NULL)
@@ -301,7 +325,7 @@ int main(int argc, char *argv[])
         if (seq == NULL)
             break;
 
-        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues);
+        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin);
         free_seq(seq);
     }
     
@@ -311,5 +335,17 @@ int main(int argc, char *argv[])
     if (distribfile)
         free_pvalues(pvalues);
 
+    // time info
+    char time_buffer[256];
+    time(&rawtime);
+    struct tm * end_time;
+    end_time = localtime(&rawtime);
+    if (VERBOSITY >= 1)
+    {
+        strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", start_time);
+        printf("; Job started %s\n", time_buffer);
+        strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", end_time);
+        printf("; Job done    %s\n", time_buffer);
+    }
     return 0;
 }
