@@ -1417,6 +1417,7 @@ sub read_from_table {
       undef $target_ypos_col;
     }
 
+
     ## Load the graph
     $cpt = 0;
     my $line_nb = 0;

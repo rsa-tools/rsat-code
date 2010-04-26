@@ -454,19 +454,23 @@ sub ConvertStrand {
 }
 
 ################################################################
-### get Background Color from a score value
-###  this subroutine was created by Rekin's and adapted to the RSA-tools
-###  by Sylvain
-###  It converts a score value into a color (in RGB) according to 5 different
-###  color gradients
-### -blue, red, green, grey and fire (from yellow to red)
-
-sub getBgColorFromOneScore{
+##  get Background Color from a score value.  this subroutine was
+##  created by Rekin's and adapted to the RSA-tools by Sylvain.  It
+##  converts a score value into a color (in RGB) according to 5
+##  different color gradients: -blue, red, green, grey and fire (from
+##  yellow to red)
+sub getBgColorFromOneScore {
     my($score,$min,$max,$log,$gradient)=@_;
     my $rval=0;
     my $gval=0;
     my $bval=0;
     my $new_score = "";
+
+    ## Avoid illegal divisions by 0 when $min == $ax (this can happen if all the edges have the same weight)
+    unless ($max > $min) {
+      $min = 0;
+    }
+
     if ($log) {
       $new_score = (log ($score-$min+1))/(log($max-$min+1)); # + pseudo weight (1) to avoid log(0)
     } else {
