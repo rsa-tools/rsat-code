@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.107 2010/04/26 06:10:08 jvanheld Exp $
+# $Id: convert-matrix,v 1.108 2010/04/26 18:29:05 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1048,11 +1048,11 @@ sub ReadArguments {
 	    ### input file 
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
-	    
+
 	    ### list of input file 
 	} elsif ($ARGV[$a] eq "-mlist") {
 	    $infile{matrix_list} = $ARGV[$a+1];;
-	    
+
 	    ### Maximal number of matrices to return
 	} elsif ($ARGV[$a] eq "-top") {
 	    $top_matrices = $ARGV[$a+1];
