@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.280 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.281 2010/04/26 15:45:24 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.280 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.281 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -2942,6 +2942,11 @@ sub CheckParameters {
     $strands = "-2str";
   }
 
+  ## Strands for the background model
+  $bg_strands = $strands; 
+#  $bg_strands = '-1str';
+
+
   ## Threshold on occurrence significance
   unless ((defined($lth{occ_sig})) || ($lth{occ_sig} eq $null)) {
     $lth{occ_sig} = 0;
@@ -2969,11 +2974,11 @@ sub define_bg_model_files {
 
   ## Name of model files for oligo-analysis
   for my $oligo_len ($min_oligo_len..$max_oligo_len) {
-    $bg_model_file{"oligos_".$oligo_len."nt"} = $dir{bg_models}."/bg_oligos_".$oligo_len."nt".${strands}.${noov}.".tab";
+    $bg_model_file{"oligos_".$oligo_len."nt"} = $dir{bg_models}."/bg_oligos_".$oligo_len."nt".$bg_strands.$noov.".tab";
   }
 
   ## Name of model files for dyad-analysis
-  $bg_model_file{"dyads"} = $dir{bg_models}."/bg_dyads_".$monad_length."nt".$strands.$noov.".tab";
+  $bg_model_file{"dyads"} = $dir{bg_models}."/bg_dyads_".$monad_length."nt".$bg_strands.$noov.".tab";
 
   ## Name of model file for MEME
   $bg_model_file{"meme"} = $dir{bg_models}."/bg_meme_mkv".$markov_order.".txt";
@@ -2999,16 +3004,17 @@ sub compute_bg_oligos {
   ## directory, but the bg model files must be defined relative to the
   ## output directory.
   chdir($dir{main}); 
+
   for my $oligo_len ($min_oligo_len..$max_oligo_len) {
     my $bg_model_file =  $bg_model_file{"oligos_".$oligo_len."nt"};
     &RSAT::message::TimeWarn("\tComputing background model for oligos", $oligo_len."nt", $bg_model_file) if ($main::verbose >= 1);
     my $cmd = "";
     if ($bg_seq_file =~ /.gz$/) {
-      $cmd .= "gunzip -c ".$bg_seq_file;
+      $cmd .= "gunzip -c ".$bg_seq_file. "| count-words -v 1";
     } else {
-      $cmd .= "cat ".$bg_seq_file;
+      $cmd .= "count-words -v 1 -i ".$bg_seq_file;
     }
-    $cmd .= " | count-words -v 1 -nogrouprc $strands $noov ";
+    $cmd .= " -nogrouprc $bg_strands $noov ";
     $cmd .= " -l ".$oligo_len;
     $cmd .= " -o ".$dir{output}."/".$bg_model_file;
     &doit($cmd, $dry_run, $die_on_error, $verbose);
