@@ -300,7 +300,7 @@ sub _readFromTRANSFACFile {
     ## Read the command line
     if (/^VV\s+/) {
       $version = $';		# '
-      &RSAT::message::Warning("TRANSFAC file version", $version);
+      &RSAT::message::Warning("TRANSFAC file version", $version) if ($main::verbose >= 3);
 
       ## empty field separator
     } elsif (/^XX/) {
@@ -954,7 +954,7 @@ sub _readFromOldInfoGibbsFile {
 	    $matrix->push_attribute("site_ids", $site_id);
 	  }
 	}
-#	&RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 10);
 
 	## Information content computed by InfoGibbs
       } elsif (/^IC\s+/) {
@@ -1979,7 +1979,7 @@ the matrix (or matrices).
 =cut
 sub _readFromFeatureFile {
   my ($file) = @_;
-  &RSAT::message::Info("Reading matrix from consensus file\t", $file) if ($main::verbose >= 3);
+  &RSAT::message::Info("Reading matrix from feature file\t", $file) if ($main::verbose >= 3);
 
   ## open input stream
   #    ($in, $dir) = &main::OpenInputFile($file);
@@ -1994,6 +1994,7 @@ sub _readFromFeatureFile {
   my $current_matrix_nb = 0;
   my $matrix;
   my $l = 0;
+
   while (my $line = <$in>) {
     $l++;
     next if ($line =~ /^;/);
@@ -2002,6 +2003,8 @@ sub _readFromFeatureFile {
     next unless ($line =~ /\S/);
     $line =~ s/\r//;
     chomp($line);
+
+    ## Instantiate an object to store feature information
     my $feature = new RSAT::feature();
     $feature->parse_from_row($line, "ft");
     my $matrix_name = $feature->get_attribute("feature_name");
@@ -2013,7 +2016,7 @@ sub _readFromFeatureFile {
 			$feature->get_attribute("start"),
 			$feature->get_attribute("end"),
 		       );
-    &RSAT::message::Debug("&RSAT::MatrixReader", $matrix_name,"feature parsed", $l, $site_sequence, $site_id) if ($main::verbose >= 5);
+#    &RSAT::message::Debug("&RSAT::MatrixReader", $matrix_name,"feature parsed", $l, $site_sequence, $site_id) if ($main::verbose >= 5);
     if (defined($matrices{$matrix_name})) {
       $matrix = $matrices{$matrix_name};
     } else {
