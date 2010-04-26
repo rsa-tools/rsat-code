@@ -28,9 +28,6 @@ void free_seq(seq_t *seq);
 // create a new reverse complement of seq
 seq_t *new_seq_rc(seq_t *seq);
 
-// append a char (A, C, G, T, N) to the given seq 
-//void seq_append_c(seq_t *seq, char c);
-
 static inline
 void seq_append_c(seq_t *seq, char c)
 {

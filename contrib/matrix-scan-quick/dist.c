@@ -23,9 +23,7 @@ void free_values(values_t *values)
 
 void values_add(values_t *values, double value)
 {
-    //DEBUG("value=%G max=%G", value, values->max);
     ASSERT(value > values->min && value < values->max, "score out of range");
-    //value = MAX(MIN(value, values->max), values->min);
     int i = (int) ((value - values->min) / values->e);
     ASSERT(i >= 0 && i < values->size, "score out of table range");
     values->data[i] += 1;
