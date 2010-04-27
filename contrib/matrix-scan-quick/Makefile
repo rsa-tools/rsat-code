@@ -1,4 +1,4 @@
-CC      = g++-4.2 
+CC      = g++ 
 CCFLAGS = -O3 -Wall
 SRC     = $(wildcard *.cpp) 
 CSRC    = $(wildcard *.c)
