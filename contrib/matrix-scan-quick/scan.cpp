@@ -24,7 +24,8 @@ void set_buffer(char *buffer, char *seq, int i, int l)
     }
 }
 
-int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, double threshold, int rc, pvalues_t *pvalues, int origin)
+int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, 
+            double threshold, int rc, pvalues_t *pvalues, int origin, char *matrix_name)
 {
     char buffer[256];
     int l = matrix.J;
@@ -47,29 +48,29 @@ int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t 
         else
             W = matrix.logP(&seq->data[i]) - bg.logP(&seq->data[i], l);
 
-        if (W < threshold)
-            continue;
-
-        double Pval = score2pvalue(pvalues, W);
-
-        // position
-        if (origin == -1) // start
-            a = i + 1;
-        else if (origin == 0) // center
-            a = i - seq->size / 2;
-        else // end
-            a = i - seq->size;
-        b = a + l - 1;
-
-        if (values != NULL)
+        if (W >= threshold)
         {
-            values_add(values, W);
-        }
-        else
-        {
-            //const char *seqstr = "?";
-            set_buffer(buffer, seq->data, i, l);
-            fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\t%G\t%G\t%G\n", s, "site", "matrix", 'D', a, b, buffer, W, 0.0, 0.0, Pval);
+            double Pval = score2pvalue(pvalues, W);
+
+            // position
+            if (origin == -1) // start
+                a = i + 1;
+            else if (origin == 0) // center
+                a = i - seq->size / 2;
+            else // end
+                a = i - seq->size;
+            b = a + l - 1;
+
+            if (values != NULL)
+            {
+                values_add(values, W);
+            }
+            else
+            {
+                //const char *seqstr = "?";
+                set_buffer(buffer, seq->data, i, l);
+                fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\t%G\t%G\t%G\n", s, "site", matrix_name, 'D', a, b, buffer, W, 0.0, 0.0, Pval);
+            }
         }
 
         if (!rc)
@@ -81,20 +82,21 @@ int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t 
         else
             Wrc = matrix.logP(&seqrc->data[maxpos - i]) - bg.logP(&seqrc->data[maxpos - i], l);
 
-        if (Wrc < threshold)
-            continue;
-
-        double Pval_rc = score2pvalue(pvalues, Wrc);
-
-        if (values != NULL)
+        if (Wrc >= threshold)
         {
-            values_add(values, Wrc);
-        }
-        else
-        {
-            //const char *seqrcstr = "?";
-            set_buffer(buffer, seqrc->data, seq->size - i - l, l);
-            fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\t%G\t%G\t%G\n", s, "site", "matrix", 'R', a, b, buffer, Wrc, 0.0, 0.0, Pval_rc);
+
+            double Pval_rc = score2pvalue(pvalues, Wrc);
+
+            if (values != NULL)
+            {
+                values_add(values, Wrc);
+            }
+            else
+            {
+                //const char *seqrcstr = "?";
+                set_buffer(buffer, seqrc->data, seq->size - i - l, l);
+                fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\t%G\t%G\t%G\n", s, "site", matrix_name, 'R', a, b, buffer, Wrc, 0.0, 0.0, Pval_rc);
+            }
         }
     }
     

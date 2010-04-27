@@ -26,7 +26,7 @@ using namespace std;
 #include "dist.h"
 #include "pval.h"
 
-int VERSION = 20100426;
+int VERSION = 20100427;
 char *COMMAND_LINE;
 
 /*
@@ -101,6 +101,8 @@ void help()
 "\n"
 "    -t #                  only capture site with a score >= #.\n"
 "\n"
+"    -name #               set the matrix name to #.\n"
+"\n"
 "    -return distrib       output the weight score distribution.\n"
 "\n"
 "    -return sites         output the list of sites (default).\n"
@@ -133,6 +135,7 @@ int main(int argc, char *argv[])
     char *distribfile = NULL;
     int distrib = 0;
     int rc = TRUE;
+    char *matrix_name = "matrix";
     double precision = 0.1;
     double theshold = -1000.0;
     double pseudo = 1.0;
@@ -140,14 +143,14 @@ int main(int argc, char *argv[])
     FILE *fout;
     pvalues_t *pvalues = NULL;
 
-    // // construct command line string
-    // string cmdline = "";
-    // for (int i = 0; i < argc; i++)
-    // {
-    //     cmdline += argv[i];
-    //     cmdline += " ";
-    //     COMMAND_LINE = (char *) strdup(cmdline.c_str());
-    // }
+    // construct command line string
+    string cmdline = "";
+    for (int i = 0; i < argc; i++)
+    {
+        cmdline += argv[i];
+        cmdline += " ";
+        COMMAND_LINE = (char *) strdup(cmdline.c_str());
+    }
 
     int i;
     for (i = 1; i < argc; i++) 
@@ -173,6 +176,11 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[i], "-2str") == 0) 
         {
             rc = TRUE;
+        } 
+        else if (strcmp(argv[i], "-name") == 0) 
+        {
+            ASSERT(argc > i + 1, "-name requires a value");
+            matrix_name = argv[++i];
         } 
         else if (strcmp(argv[i], "-i") == 0) 
         {
@@ -269,6 +277,9 @@ int main(int argc, char *argv[])
     
     ASSERT(fout != NULL, "invalid output");
 
+   if (VERBOSITY >= 1)
+        fprintf(stdout, "; %s\n", COMMAND_LINE);
+
     // set bg model
     Markov markov;
     if (bgfile != NULL)
@@ -325,7 +336,7 @@ int main(int argc, char *argv[])
         if (seq == NULL)
             break;
 
-        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin);
+        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, matrix_name);
         free_seq(seq);
     }
     
