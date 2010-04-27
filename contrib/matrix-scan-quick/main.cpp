@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
     char *distribfile = NULL;
     int distrib = 0;
     int rc = TRUE;
-    char *matrix_name = "matrix";
+    char *matrix_name = (char *) "matrix";
     double precision = 0.1;
     double theshold = -1000.0;
     double pseudo = 1.0;
