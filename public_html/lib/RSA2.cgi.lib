@@ -1764,8 +1764,8 @@ sub MatrixFromPatterns_run {
   print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
   system "$pssm_command";
   push @result_files, ('significance matrices', $sig_matrix_file);
-  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
-  push @result_files, ('count matrices', $pssm_file);
+#  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
+  push @result_files, ('matrices', $pssm_file);
 
 #   print "<H2>Significance matrices (intermediate result)</H2>\n";
 #   open SIG, $TMP."/".$sig_matrix_file;
@@ -1788,17 +1788,6 @@ sub MatrixFromPatterns_run {
 #   close(GIBBS);
 
   my ($out_matrix_file) = &display_matrices_web($TMP."/".$pssm_file, "tab", 1);
-
-#   print "<H2>Final matrices</H2>\n";
-#   open PSSM, $TMP."/".$pssm_file;
-#   print "<PRE>\n";
-#   while (<PSSM>) {
-#     s|$ENV{RSAT}/||g;
-#     print;
-#   }
-#   print "</PRE>\n";
-#   close(PSSM);
-
 }
 
 sub OligoDyadPipingForm {
@@ -1931,7 +1920,7 @@ sub display_matrices_web {
   }
 
   ### Print result on the web page
-  print '<h4>Final matrices</h4>';
+  print '<h4>Matrices</h4>';
   print "<pre>";
 #  print `cat $out_matrix_file`; 
   my ($res) = &OpenInputFile($out_matrix_file);
