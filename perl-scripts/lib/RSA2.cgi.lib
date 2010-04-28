@@ -1700,10 +1700,11 @@ sub PrintDyadReturnFields {
 ## (shared by dyad-analysis and oligo-analysis Web interfaces)
 sub MatrixFromPatterns_defaults {
   $default{to_matrix} = '1';
-  $default{gibbs_msps} = '1';
-  $default{gibbs_iter} = '3';
-  $default{gibbs_flanks} = '2';
-  $default{gibbs_final} = '';
+  $default{flanks} = '2';
+  $default{min_weight} = '7.5';
+#  $default{gibbs_msps} = '1';
+#  $default{gibbs_iter} = '3';
+#  $default{gibbs_final} = '';
 }
 
 ################################################################
@@ -1714,23 +1715,30 @@ sub MatrixFromPatterns_print_form {
 			 -checked=>$default{to_matrix},
 			 -label=>'');
   print "&nbsp;Convert assembled patterns to matrices.";
-  print "&nbsp;"x4, "Mean sites per sequence";
-  print $query->textfield(-name=>'gibbs_msps',
-			  -default=>$default{gibbs_msps},
+
+#   ## Mean sites per sequences (only valid with -collect_method info-gibbs)
+#   print "&nbsp;"x4, "Mean sites per sequence";
+#   print $query->textfield(-name=>'gibbs_msps',
+# 			  -default=>$default{gibbs_msps},
+# 			  -size=>3);
+
+#   ## Gibbs iterations (only valid with -collect_method info-gibbs)
+#   print "&nbsp;"x4, "Iterations";
+#   print $query->textfield(-name=>'gibbs_iter',
+# 			  -default=>$default{gibbs_iter},
+# 			  -size=>3);
+
+  ## Minimal weight score
+  print "&nbsp;"x4, "Min site weight score";
+  print $query->textfield(-name=>'min_weight',
+			  -default=>$default{min_weight},
 			  -size=>3);
-  print "&nbsp;"x4, "Iterations";
-  print $query->textfield(-name=>'gibbs_iter',
-			  -default=>$default{gibbs_iter},
-			  -size=>3);
+
+  ## Flanking residues
   print "&nbsp;"x4, "Flanking residues";
-  print $query->textfield(-name=>'gibbs_flanks',
-			  -default=>$default{gibbs_flanks},
+  print $query->textfield(-name=>'flanks',
+			  -default=>$default{flanks},
 			  -size=>2);
-  # print  "&nbsp;"x4, $query->checkbox(-name=>'gibbs_final',
-  # 		       -checked=>$default{to_matrix},
-  # 		       -label=>'');
-  # print "&nbsp;Run final cycle.";
-  # print "<BR>";
 }
 
 ################################################################
@@ -1745,9 +1753,10 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -seq ".$sequence_file;
   $pssm_command .= " -format $sequence_format";
   $pssm_command .= " -asmb ".$assembly_file;
-  $pssm_command .= " -gibbs_msps ".$query->param('gibbs_msps');
-  $pssm_command .= " -gibbs_iter ".$query->param('gibbs_iter');
-  $pssm_command .= " -gibbs_flanks ".$query->param('gibbs_flanks');
+#  $pssm_command .= " -gibbs_msps ".$query->param('gibbs_msps');
+#  $pssm_command .= " -gibbs_iter ".$query->param('gibbs_iter');
+  $pssm_command .= " -min_weight ".$query->param('min_weight');
+  $pssm_command .= " -flanks ".$query->param('flanks');
   #	  $pssm_command .= " -gibbs_final" if ($query->param('gibbs_final'));
   $pssm_command .= " -uth Pval 0.00025";
   $pssm_command .= " -bginput -markov 0";
