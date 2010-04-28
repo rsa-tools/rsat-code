@@ -31,6 +31,151 @@ foreach my $thr (@supported_thresholds) {
     $supported_threshold{$thr} = 1;
 }
 
+## Return field not supported by the quick counting mode
+%quick_forbidden_field = ('mseq'=>1,
+			  'overlap'=>1,
+			  'pos'=>1,
+			  'distrib'=>1,
+			  'table'=>1,
+    );
+$quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
+
+################################################################
+## Use count-words (developed by Matthieu Defrance) to count oligos
+## 100 times faster than with the Perl script
+sub QuickCountOligos {
+  &RSAT::error::FatalError("The option -quick requires to specify an input file")
+    unless ($infile{input});
+
+  ## Check that the output fields requested with the option -return are supported by count-words
+  foreach my $field (@output_fields) {
+    &RSAT::error::FatalError("The option -quick only is incompatible with the output field", $field)
+      if $quick_forbidden_field{lc($field)};
+  }
+
+  my $cmd = $BIN."/count-words -v ".$verbose;
+  $cmd .= " -i ".$infile{input}; ## Input file
+  $cmd .= " -l ".$oligo_length; ## Oligonucleotide length
+  $cmd .= " ".$noov if ($noov eq '-noov'); ## overlapping mode
+
+  $cmd .= " ".$strands; ## Strands
+  if ($strands eq "-2str") {
+    $quick_rc_counted = 1;
+  }
+
+  ################################################################
+  ## Avoid grouping RC in this counting mode, because this will be
+  ## done afterwards by oligo-analysis and dyad-analysis. Grouping
+  ## them here would make problems for the computation of frequencies,
+  ## proba, etc.
+  ##
+  #if ($group_rc) { $cmd .= " -grouprc"; } else {
+    $cmd .= " -nogrouprc";
+#  }
+
+  ## Reverse complement grouping is done afterwards
+
+  ## dyad-specific options
+  if ($pattern_type eq "dyads") {
+    ## dyad-analysis options incompatible with quick mode
+    if (($dyad_type eq "dr") ||
+	($dyad_type eq "ir") ||
+	($dyad_type eq "rep")
+       ) {
+      &RSAT::error::FatalError("The option -quick only is incompatible with the selection of specific dyad types.")
+    }
+    $cmd .= " -sp ".$min_spacing."-".$max_spacing;
+  }
+
+
+  &RSAT::message::TimeWarn("Quick count", $cmd) if ($main::verbose >= 0);
+
+
+  open QUICK, "$cmd |";
+  my $l=0;
+  while (<QUICK>) {
+      $l++;
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header line
+      next unless (/\S/); ## Skip empty lines
+      chomp();
+      my ($pattern_seq,$id,$freq,$occ,$overlaps) = split ("\t");
+#       &RSAT::message::Debug($l, $pattern_seq, $id, 
+# 			    "freq=".$freq, 
+# 			    "occ=".$occ,
+# 			    "ovlp=".$overlaps,
+# 	  ) if ($main::verbose >= 5);
+
+#      &RSAT::message::Debug("&QuickCountOligos()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
+
+      ## Decompose dyads into monads (required by dyad-analysis for various computations)
+      if ($pattern_type eq "dyads") {
+	if ($pattern_seq =~ /(\w+)n\{(\d+)\}(\w+)/) {
+	  my $monad1 = $1;
+	  my $spacing = $2;
+	  my $monad2 = $3;
+	  $sum_oligo_count += $occ;
+	  $oligo{$monad1}->{occ} += $occ;
+	  $oligo{$monad1}->{monad1_occ} += $occ;
+	  $oligo{$monad2}->{monad2_occ} += $occ;
+
+	  ## Approx estimation of forbidden occurrences
+	  $pattern_len = 2*$oligo_length + $spacing;
+
+	  &RSAT::message::Debug("Dyad decomposition", $pattern_seq, $monad1, $spacing, $monad2, $occ, $oligo{$monad1}->{occ}) if ($main::verbose >= 0);
+	} else {
+	  &RSAT::error::FatalError("Invalid dyad", $pattern_seq);
+	}
+      } else {
+	$pattern_len = $oligo_length;
+      }
+
+
+
+      ## Approximative estimation of the forbidden occurrences.  An
+      ## accurate number can only be provided during the scanning, but
+      ## count-words does not report forbidden positions.  The
+      ## approximate estimation is better than nothing, because we
+      ## need the number of accepted pattern positions to compute the
+      ## binomial proba.
+      my $forbocc;
+      if ($noov eq "-noov") {
+	$forbocc = ($pattern_len -1)*$occ;
+      }
+
+      ## Store the statistics in the pattern-indexed hash table
+      my $to_sum = 1;
+      $patterns{$pattern_seq}->{obs_freq} = $freq;
+      $patterns{$pattern_seq}->{occ} = $occ;
+      $patterns{$pattern_seq}->{overlaps} = $overlaps;
+      $patterns{$pattern_seq}->{forbocc} = $forbocc;
+      if ($strands eq "-2str") {
+	  my $rc = &SmartRC($pattern_seq);
+	  $patterns{$rc}->{freq} = $freq;
+	  $patterns{$rc}->{occ} = $occ;
+	  $patterns{$rc}->{overlaps} = $overlaps;
+	  $patterns{$rc}->{forbocc} = $forbocc;
+	  if ($rc lt $pattern_seq) {
+	    $to_sum = 0;
+	  }
+      }
+
+      ## update the sum of occurrences
+      if ($to_sum) {
+	$sum_noov += $occ;
+	$sum_overlaps += $overlaps;
+	$sum_occurrences += $occ + $overlaps;
+      }
+
+      ## Derive residue occurrences from pattern occurrences (approx)
+      for my $i  (1..$oligo_length) {
+	  my $letter =lc(substr($pattern_seq,$i-1,1));
+	  $residue_occ{$letter} += $occ/$oligo_length;
+      }
+  }
+  close QUICK;
+}
+
 ################################################################
 ## Print threshold values for verbosity
 sub PrintThresholdValues {
