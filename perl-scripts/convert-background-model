@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.24 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: convert-background-model,v 1.25 2010/04/28 06:28:16 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -56,14 +56,25 @@ formats are supported only for input or for output.
 =head2 oligos (input/output)
 
 Oligonucleotide frequency table, as exported by the RSAT program
-I<oligo-analysis>. The simplest format is a two-column file with the
-oligonucleotide in the first column, and the frequency in the second
-one.
+I<oligo-analysis>. 
 
 An oligo file containing k-mers frequencies corresponds to a Markov
 model of order I<m=k-1>. Frequencies are converted to transition
 probabilities by calculating the relative frequencies of all oligomers
 of size k having the same prefix (first m letters).
+
+The oligo frequency table have one row per oligonucleotide. Columns
+indicate respectively:
+
+ 1. oligo sequence
+ 2. oligo ID (single ID for single strand models, ID|RC for two-strands models)
+ 3. frequency (probablity to find the oligo at a giben sequence position)
+ 4. occurrences (total number of occurrences in the training set)
+
+Additional columns are ignored.
+
+Oligo frequency files are generated using either I<count-words> or
+I<oligo-analysis -return occ,freq>.
 
 
 =head2 dyads (input)
@@ -74,6 +85,8 @@ frequencies are converted into transition probabilities as for the
 format "oligos".
 
 =head2 MotifSampler (input/output)
+
+Also called I<inclusive> or I<ms>.
 
 This format can be used by the various programs of the software suite
 INCLUSive developed by Gert Thijs
@@ -163,7 +176,7 @@ package main;
     $output_format = "transitions";
     %supported_output_format = $bg_model->get_supported_output_formats();
     $supported_output_formats = join (",", keys %supported_output_format);
-    
+
     #### background models
     %supported_bg = $bg_model->get_supported_bg();
     $supported_bg = join (",", keys %supported_bg);
@@ -478,7 +491,10 @@ allows to use the command within a pipe.
 
 =item B<-from input_format>
 
-Input format. Supported: oligo-analysis, MotifSampler, meme,dyads.
+Input format.
+
+Supported: motifsampler,ms,oligo-analysis,meme,oligos,dyads (see
+description below).
 
 =cut
 	} elsif ($arg eq "-from") {
@@ -494,7 +510,10 @@ Input format. Supported: oligo-analysis, MotifSampler, meme,dyads.
 
 =item B<-to output_format>
 
-Output format. Supported: transitions (default), tables, oligo-analysis, patser, MotifSampler.
+Output format.
+
+Supported: transitions, tab, oligo-analysis, oligos, meme,
+motifsampler, ms, inclusive, patser, tables.
 
 =cut
 	} elsif ($arg eq "-to") {
@@ -503,8 +522,6 @@ Output format. Supported: transitions (default), tables, oligo-analysis, patser,
 					  "Invalid output format.",
 					  "Supported: ", $main::supported_output_formats))
 		unless ($main::supported_output_format{$main::output_format});
-		
-
 
 	    ## Pseudo-frequency 
 =pod

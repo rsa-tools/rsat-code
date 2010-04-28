@@ -19,7 +19,8 @@ use Data::Dumper;
 %supported_input_formats = ("oligo-analysis"=>1, 
 			    "oligos"=>1, ## Abbreviation for oligo-analysis
 			    "dyads"=>1, ## Abbreviation for dyad-analysis
-			    "motifsampler"=>1, 
+			    "motifsampler"=>1, ## Same as inclusive
+			    "inclusive"=>1, ## Same as motifsampler
 			    "ms"=>1, ## Abbreviation for MotifSampler
 			    "meme"=>1,
 			   );
@@ -30,7 +31,8 @@ use Data::Dumper;
 			     "oligo-analysis"=>1,
 			     "oligos"=>1, ## Abbreviation for oligo-analysis
 			     "meme"=>1,
-			     "motifsampler"=>1,
+			     "motifsampler"=>1, ## Same as inclusive
+			     "inclusive"=>1, ## Same as motifsampler
 			     "ms"=>1, ## Abbreviation for MotifSampler
 			    );
 @supported_input_formats = sort keys %supported_input_formats;
@@ -152,6 +154,7 @@ sub load_from_file {
   $format =~ s/oligo-analysis/oligos/;
   $format =~ s/dyad-analysis/dyads/;
   $format =~ s/^ms$/motifsampler/;
+  $format =~ s/^inclusive$/motifsampler/;
 
   $self->force_attribute("strand", "undef");
 
@@ -1362,6 +1365,7 @@ sub to_string {
 
     $format =~ s/oligo-analysis/oligos/;
     $format =~ s/^ms$/motifsampler/;
+    $format =~ s/^inclusive$/motifsampler/;
 
     if ($format eq ("tab")) {
       &RSAT::message::Warning("Output format tab is deprecated, please use format transitions instead.");
