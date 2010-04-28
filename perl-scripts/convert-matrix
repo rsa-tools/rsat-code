@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.108 2010/04/26 18:29:05 jvanheld Exp $
+# $Id: convert-matrix,v 1.109 2010/04/28 06:18:30 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -51,6 +51,8 @@ local $bg_model = new RSAT::MarkovModel();
 
 local $sort_key = "";
 local $sort_order = "";
+
+local $flanks = 0;
 
 ## Return type(s)
 @return_fields = ();
@@ -277,6 +279,22 @@ if (scalar(@matrix_files >= 1)) {
 my $m = 0;
 foreach my $matrix (@matrices) {
     $m++;
+
+    ## Add flanks
+    if ($flanks) {
+      my @empty_col = ();
+      my $empty_value = 0;
+      my $nrow = $matrix->nrow();
+      for my $r (1..$nrow) {
+	push @empty_col, $empty_value;
+      }
+      for my $i (1..$flanks) {
+	$matrix->add_column("right",@empty_col);
+	$matrix->add_column("left",@empty_col);
+      }
+    }
+
+    ## Compute reverse complement
     $matrix->reverse_complement() if ($rc);
 
     $matrix->force_attribute("pseudo", $pseudo_weight);
@@ -1169,7 +1187,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-decimals") {
 	    $decimals = $ARGV[$a+1];
 	    unless (&IsNatural($decimals)) {
-		&RSAT::error::FatalError("Invalid decimals $decimals. Must be a natural value");
+		&RSAT::error::FatalError("Invalid decimals $decimals. Must be a Natural number.");
 	    }
 
 	    ### prefix
@@ -1187,19 +1205,24 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-perm") {
 	    $perm = $ARGV[$a+1];
 	    unless (&IsNatural($perm)) {
-		&RSAT::error::FatalError("Invalid permutation number $perm. Must be a natural value");
+		&RSAT::error::FatalError("Invalid permutation number $perm. Must be a Natural number.");
 	    }
 
 	    ### max_profile
 	} elsif ($ARGV[$a] eq "-max_profile") {
 	    $max_profile = $ARGV[$a+1];
 	    unless (&IsNatural($max_profile)) {
-		&RSAT::error::FatalError("Invalid max_profile $max_profile. Must be a natural value");
+		&RSAT::error::FatalError("Invalid max_profile $max_profile. Must be a Natural number.");
+	    }
+
+	    ### flanks
+	} elsif ($ARGV[$a] eq "-flanks") {
+	    $flanks = $ARGV[$a+1];
+	    unless (&IsNatural($flanks)) {
+		&RSAT::error::FatalError($flanks, "Invalid value for the option -flanks. Must be a Natural number.");
 	    }
 
 	    ## Compute reverse complement
-
-	    ## Equiprobable distribution of the pseudo-weight
 	} elsif ($ARGV[$a] eq "-rc") {
 	    $rc = 1;
 
