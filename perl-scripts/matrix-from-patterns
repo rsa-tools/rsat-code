@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.32 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.33 2010/04/28 06:33:21 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -132,22 +132,28 @@ package main;
     ## Collect method
     local $collect_method = "info-gibbs";
     local %supported_collect_method = ("info-gibbs"=>1,
-				       "matrix-scan"=>1);
+				       "matrix-scan"=>1,
+				       "matrix-scan-quick"=>1
+				      );
     local $supported_collect_methods = join(",", keys(%supported_collect_method));
 
     ## Parameters for info-gibbs
     local $gibbs_iter = 1; ## Number of iterations
     local $gibbs_final = 0; ## Run the final cycle. For some reason, the final cycle takes too much time with large sequence files, I temporarily inactivate it.
     local $gibbs_msps = 1; ## Mean number of sites per sequence
-    local $gibbs_flanks = 0;
+    local $flanks = 0;
 
     ## Parameters for convert-matrix
+    local $seq_format = "fasta";
+    local $scan_parameters = "";
 
     ## Parameters for matrix-scan
-    local $seq_format = "fasta";
     local %uth;
     $uth{Pval} = 1e-4;
-    local $scan_parameters = "";
+
+    ## Parameters for matrix-scan-quick
+    local %lth;
+    $lth{weight} = "7";
 
     ## Parameters for the &doit() command
     $dry = 0;
@@ -184,9 +190,10 @@ package main;
       $outfile{assembly} = $outfile{output}.".asmb";
     }
     $outfile{sig_matrices} = $outfile{output}."_sig_matrices.txt";
+    $outfile{sig_matrices_split} = $outfile{output}."_sig_matrices_split";
     $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
-    $outfile{gibbs_matrices} = $outfile{output}."_gibbs_matrices.txt";
     $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
+    $outfile{gibbs_matrices} = $outfile{output}."_gibbs_matrices.txt";
 
     ################################################################
     ## Open output stream
@@ -226,6 +233,8 @@ package main;
 
     if ($collect_method eq "matrix-scan") {
       &ScanForSites();
+    } elsif ($collect_method eq "matrix-scan-quick") {
+      &QuickScanForSites();
     } else {
       &InfoGibbs();
     }
@@ -460,6 +469,13 @@ method, but presents some drawbacks. Firstly, the original
 implementation of matrix-scan is quite low (2009 version). Secondly,
 some matrices may fail to return any site below the P-value
 threshold. We therefore recommend to use the info-gibbs option.
+=item I<matrix-scan> (slow, obsolete)
+
+=item I<matrix-scan-quick> (in construction)
+
+Same principle as I<matrix-scan>. The program I<matrix-scan-quick> is
+100 times faster, but does not compute the P-values. For the time
+being, an arbitrary threshold is imposed on the weight score (w >= 7).
 
 =back
 
@@ -512,17 +528,17 @@ Number of iterations for info-gibbs.
 
 =pod
 
-=item B<-gibbs_flanks>
+=item B<-flanks>
 
 Number of flanking residues to be added on each side of the
-significance matrix for I<info-gibbs>.
+significance matrix.
 
 =cut
 
-	  } elsif ($arg eq "-gibbs_flanks") {
-	    $gibbs_flanks = shift(@arguments);
-	    &RSAT::error::FatalError($gibbs_flanks, "is not a valid value for flanks. Should be a Natural number.")
-	      unless (&IsNatural($gibbs_flanks));
+	  } elsif ($arg eq "-flanks") {
+	    $flanks = shift(@arguments);
+	    &RSAT::error::FatalError($flanks, "is not a valid value for flanks. Should be a Natural number.")
+	      unless (&IsNatural($flanks));
 
 	    ## Gibbs mean sites per sequence
 
@@ -610,62 +626,116 @@ sub Verbose {
     }
 }
 
+
+################################################################
+## Scan sequences to collect sites
+sub QuickScanForSites {
+  &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan-quick)") if ($main::verbose >= 2);
+
+  my $cmd = "convert-matrix -from tab -to tab -split ";
+  $cmd .= " -flanks ".$flanks;
+  $cmd .= " -i ".$outfile{sig_matrices};
+  $cmd .= " -o ".$outfile{sig_matrices_split};
+  $cmd .= "; rm -f ".$outfile{'count_matrices'};
+  &RSAT::message::Debug("Splitting sig matrix file", $outfile{sig_matrices_split}) if ($main::verbose >= 3);
+  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ## Specific parameters for matrix-scan
+  my $quick_scan_parameters = " -t 7";
+  $quick_scan_parameters .= " -return sites";
+
+  ## Parse the parameters passed as arguments to define the background model
+  if ($scan_parameters =~ /-bgfile\s+(\S+)/) {
+    $quick_scan_parameters .= " -bgfile ".$1;
+  } elsif ($scan_parameters =~ /-markov\s+(\d+)/) {
+    &RSAT::error::FatalError("matrix-scan-quick does not accept the option -markov. Please provide a background file with the option -bgfile");
+  }
+
+  for my $m (1..$max_asmb_nb) {
+    my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
+    my $site_file = $outfile{'sig_sites_'.$m} = $outfile{output}."_sig_sites_".$m.".ft";
+    my $count_matrix  = $outfile{'count_matrices'.$m} = $outfile{output}."_count_matrices_".$m.".txt";
+    my $id = "matrix_".$m;
+    &RSAT::message::Debug("\n\tScanning sequences (quick) with sig matrix", $m, $matrix_file) if ($main::verbose >= 3);
+    if (-e $matrix_file) {
+      $matrix_scan_cmd = $ENV{RSAT}."/bin/matrix-scan-quick";
+      my $scan_cmd = $matrix_scan_cmd." -v 1";
+      $scan_cmd .= " -i ".$infile{sequence};
+      $scan_cmd .= " -m ".$matrix_file;
+      $scan_cmd .= " ".$strands; ## BEWARE: THE OPTION -2str SEEMS TO BE IGNORED (27 Apr 2010)
+      $scan_cmd .= $quick_scan_parameters;
+      $scan_cmd .= " > ".$site_file;
+      print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
+      &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+      ## Convert the sites to a single matrix (matrix-scan-quick accepts a single matrix as input)
+      &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
+      my $convert2_cmd = "${SCRIPTS}/convert-matrix -v 1";
+      $convert2_cmd .= " -i ".$site_file;
+      $convert2_cmd .= " -attr id ".$id;
+      $convert2_cmd .= " -from feature -to tab"; ## Converted to transfac format because this preserves the ID
+      $convert2_cmd .= " -return counts,parameters";
+      #    $convert2_cmd .= " -sort desc information.per.column";
+      $convert2_cmd .= " -return sites" if ($return_fields{sites});
+##      $convert2_cmd .= " -return links" if ($return_fields{links});
+      if ($return_fields{logo}) {
+	$convert2_cmd .= " -return logo -logo_format png,pdf "; ## BUG HERE ????? (Apr 27, 2010)
+      }
+      $convert2_cmd .= " -o ".$count_matrix;
+      $convert2_cmd .= "; cat ".$count_matrix." >> ".$outfile{'count_matrices'};
+      print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
+      &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+  }
+
+}
+
+
 ################################################################
 ## Scan sequences to collect sites
 sub ScanForSites {
-    &RSAT::message::TimeWarn("Collecting sites with significance matrices") if ($main::verbose >= 2);
-    my $matrix_scan_cmd;
-    my $quick = 0;
-    if ($quick) {
-      ## NOT YET FUNCTIONAL BECAUSE MATRIX-SCAN-QUICK DOES NOT READ MULTI-MATRIX FILES
-      $matrix_scan_cmd = `which matrix-scan-quick`;
-      chomp($matrix_scan_cmd);
+  &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan)") if ($main::verbose >= 2);
+  my $matrix_scan_cmd = ${SCRIPTS}."/matrix-scan";
+  ## matrix-scan parameters
+  ## The upper threshold on Pval MUST be defined (if not, all
+  ## sites can be taken, resulting in a meaningless matrix)
+  unless ($scan_parameters =~ /-uth Pval/) {
+    $scan_parameters = " -uth Pval ".$uth{Pval}." ".$scan_parameters;
+  }
+  $scan_parameters .= " -seq_format ".$seq_format;
+  $scan_parameters .= " -n skip";
+  $scan_parameters .= " -matrix_format tab";
+  $scan_parameters .= " -return sites,pval";
 
-    } else {
-      $matrix_scan_cmd = ${SCRIPTS}."/matrix-scan";
-      ## matrix-scan parameters
-      ## The upper threshold on Pval MUST be defined (if not, all
-      ## sites can be taken, resulting in a meaningless matrix)
-      unless ($scan_parameters =~ /-uth Pval/) {
-	$scan_parameters = " -uth Pval ".$uth{Pval}." ".$scan_parameters;
-      }
-    }
+  my $scan_cmd = $matrix_scan_cmd." -v 1";
+  $scan_cmd .= " -i ".$infile{sequence};
+  $scan_cmd .= " -m ".$outfile{sig_matrices};
+  $scan_cmd .= " ".$strands;
+  $scan_cmd .= $scan_parameters;
+  $scan_cmd .= " -o ".$outfile{sig_sites};
+  print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
+  &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &sites_to_matrix($outfile{sig_sites}, $outfile{count_matrices});
+}
 
-
-    my $scan_cmd = $matrix_scan_cmd." -v 1";
-    $scan_cmd .= " -i ".$infile{sequence};
-    $scan_cmd .= " -m ".$outfile{sig_matrices};
-    $scan_cmd .= " ".$strands;
-    if ($quick) {
-      $scan_cmd .= " -return sites";
-      $scan_cmd .= " -t 7";
-    } else {
-      $scan_cmd .= " -seq_format ".$seq_format;
-      $scan_cmd .= " -n skip";
-      $scan_cmd .= " -matrix_format tab";
-      $scan_cmd .= " -return sites,pval";
-      $scan_cmd .= " ".$scan_parameters;
-    }
-    $scan_cmd .= " -o ".$outfile{sig_sites};
-    print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
-
-    ################################################################
-    ## Convert the collected sites to count matrices
-    &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
-    my $convert2_cmd = "; ${SCRIPTS}/convert-matrix -v 1";
-    $convert2_cmd .= " -i ".$outfile{sig_sites};
-    $convert2_cmd .= " -from feature -to tab";
-    $convert2_cmd .= " -return counts,parameters";
-#    $convert2_cmd .= " -sort desc information.per.column";
-    $convert2_cmd .= " -return sites" if ($return_fields{sites});
-    $convert2_cmd .= " -return links" if ($return_fields{links});
-    $convert2_cmd .= " -o ".$outfile{count_matrices};
-    if ($return_fields{logo}) {
-      $convert2_cmd .= " -return logo -logo_format png,pdf ";
-      ## Return reverse complementary logo
-    }
-    print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
-    &doit($scan_cmd.$convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+################################################################
+## Convert the collected sites to count matrices
+sub sites_to_matrix {
+  my ($site_file, $count_matrix) = @_;
+  &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
+  my $convert2_cmd = "${SCRIPTS}/convert-matrix -v 1";
+  $convert2_cmd .= " -i ".$site_file;
+  $convert2_cmd .= " -from feature -to tab";
+  $convert2_cmd .= " -return counts,parameters";
+  #    $convert2_cmd .= " -sort desc information.per.column";
+  $convert2_cmd .= " -return sites" if ($return_fields{sites});
+  $convert2_cmd .= " -return links" if ($return_fields{links});
+  if ($return_fields{logo}) {
+    $convert2_cmd .= " -return logo -logo_format png,pdf ";
+  }
+  $convert2_cmd .= " -o ".$count_matrix;
+  print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
+  &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
 
 ################################################################
@@ -690,7 +760,7 @@ sub InfoGibbs {
       $gibbs_cmd .= " --strand=+";
     }
     $gibbs_cmd .= " --iter=".$gibbs_iter;
-    $gibbs_cmd .= " --flanks=".$gibbs_flanks;
+    $gibbs_cmd .= " --flanks=".$flanks;
     $gibbs_cmd .= " --nrun=".1;
     $gibbs_cmd .= " --finalcycle" if ($gibbs_final);
     $gibbs_cmd .= " > ".$outfile{gibbs_matrices};
