@@ -22,9 +22,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 @result_files = ();
 
 #### TEMPORARY
-$oligo_analysis_command = "$SCRIPTS/oligo-analysis";
-$convert_seq_command = "$SCRIPTS/convert-seq";
-$purge_sequence_command = "$SCRIPTS/purge-sequence";
+$oligo_analysis_command = $SCRIPTS."/oligo-analysis";
+$convert_seq_command = $SCRIPTS."/convert-seq";
+$purge_sequence_command = $SCRIPTS."/purge-sequence";
 $tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
 
 ### Read the CGI query
@@ -93,7 +93,10 @@ if ($query->param('noov')) {
 } 
 
 ### verbose
-$parameters .= " -v";
+$parameters .= " -v 1 ";
+
+### quick count mode
+$parameters .= " -quick_if_possible ";
 
 #### sequence type
 $parameters .= " -seqtype ".$query->param("sequence_type");
@@ -225,7 +228,7 @@ if ($query->param('output') =~ /display/i) {
       ## Pattern-assembly
       $assembly_file = "$TMP/$tmp_file_name.asmb";
       $top_patterns = 50;
-      $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -top ".$top_patterns;
+      $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1 -top ".$top_patterns;
       if ($query->param('strand') =~ /single/) {
 	$pattern_assembly_command .= " -1str";
       } else {

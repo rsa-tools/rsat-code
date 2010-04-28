@@ -41,18 +41,70 @@ foreach my $thr (@supported_thresholds) {
 $quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
 
 ################################################################
-## Use count-words (developed by Matthieu Defrance) to count oligos
-## 100 times faster than with the Perl script
-sub QuickCountOligos {
-  &RSAT::error::FatalError("The option -quick requires to specify an input file")
-    unless ($infile{input});
+## Check if the options are compatible with quick count mode
+sub CheckQuickCount {
+  unless ($infile{input}) {
+    &RSAT::message::Warning("Quick count mode requires to specify an input file")
+      if (($main::verbose >= 1) || ($quick_count));
+    return(0);
+  }
 
   ## Check that the output fields requested with the option -return are supported by count-words
   foreach my $field (@output_fields) {
-    &RSAT::error::FatalError("The option -quick only is incompatible with the output field", $field)
-      if $quick_forbidden_field{lc($field)};
+    if ($quick_forbidden_field{$field}) {
+      &RSAT::message::Warning("Quick count mode is incompatible with the output field", $field)
+	if (($main::verbose >= 2) || ($quick_count));
+      return(0);
+    }
   }
 
+  ## Occurrence table
+  if ($return{table}) {
+    &RSAT::message::Warning("Quick count mode is incompatible with the occurrence table format.")
+      if (($main::verbose >= 2) || ($quick_count));
+    return(0);
+  }
+
+  ## Sequecne type
+  unless (lc($seq_type) eq "dna") {
+    &RSAT::message::Warning("Quick count mode is only compatible with DNA sequences.")
+      if (($main::verbose >= 2) || ($quick_count));
+    return(0);
+  }
+
+  ## Occurrence table
+  if ($return{distrib}) {
+    &RSAT::message::Warning("Quick count mode is incompatible with the pattern count distribution output.")
+      if (($main::verbose >= 2) || ($quick_count));
+    return(0);
+  }
+
+  ## dyad-specific options
+  if ($pattern_type eq "dyads") {
+    ## dyad-analysis options incompatible with quick mode
+    if (($dyad_type eq "dr") ||
+	($dyad_type eq "ir") ||
+	($dyad_type eq "rep")
+       ) {
+      &RSAT::message::Warning("Quick count mode is incompatible with the selection of specific dyad types.")
+            if (($main::verbose >= 1) || ($quick_count));
+    }
+  }
+
+  ## If all checks are OK, return 1
+  return(1);
+}
+
+################################################################
+## Use count-words (developed by Matthieu Defrance) to count oligos
+## 100 times faster than with the Perl script
+sub CountWords {
+  unless (&CheckQuickCount) {
+    &RSAT::error::FatalError("Selected options are incompatible with quick count mode");
+  }
+
+  ################################################################
+  ## Generate the count-words command
   my $cmd = $BIN."/count-words -v ".$verbose;
   $cmd .= " -i ".$infile{input}; ## Input file
   $cmd .= " -l ".$oligo_length; ## Oligonucleotide length
@@ -74,24 +126,13 @@ sub QuickCountOligos {
     $cmd .= " -nogrouprc";
 #  }
 
-  ## Reverse complement grouping is done afterwards
-
-  ## dyad-specific options
+  ## Dyad spacing
   if ($pattern_type eq "dyads") {
-    ## dyad-analysis options incompatible with quick mode
-    if (($dyad_type eq "dr") ||
-	($dyad_type eq "ir") ||
-	($dyad_type eq "rep")
-       ) {
-      &RSAT::error::FatalError("The option -quick only is incompatible with the selection of specific dyad types.")
-    }
     $cmd .= " -sp ".$min_spacing."-".$max_spacing;
   }
 
-
+  ## Run count-words and parse the result
   &RSAT::message::TimeWarn("Quick count", $cmd) if ($main::verbose >= 0);
-
-
   open QUICK, "$cmd |";
   my $l=0;
   while (<QUICK>) {
@@ -107,7 +148,7 @@ sub QuickCountOligos {
 # 			    "ovlp=".$overlaps,
 # 	  ) if ($main::verbose >= 5);
 
-#      &RSAT::message::Debug("&QuickCountOligos()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
+#      &RSAT::message::Debug("&CountWords()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
 
       ## Decompose dyads into monads (required by dyad-analysis for various computations)
       if ($pattern_type eq "dyads") {
@@ -130,8 +171,6 @@ sub QuickCountOligos {
       } else {
 	$pattern_len = $oligo_length;
       }
-
-
 
       ## Approximative estimation of the forbidden occurrences.  An
       ## accurate number can only be provided during the scanning, but
