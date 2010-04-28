@@ -3333,11 +3333,11 @@ Return the logo from the matrix
 
 Usage:
 
-  $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, $rev_compl);
+  my @logo_files = $matrix->makeLogo($logo_basename,\@logo_formats,$logo_dir, $logo_opt, $rev_compl);
 
 =cut
 sub makeLogo{
-  my ($self,$logo_file,$logo_formats,$logo_dir, $logo_options, $rev_compl) = @_;
+  my ($self,$logo_basename,$logo_formats,$logo_dir, $logo_options, $rev_compl) = @_;
   my $id = $self->get_attribute("id");
   my $ncol = $self->ncol();
 
@@ -3384,15 +3384,19 @@ sub makeLogo{
     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
 #    $logo_cmd .= " -e -M";
     $logo_cmd .= " ".$logo_options;
-    $logo_cmd .= " -o ". $logo_file;
+    $logo_cmd .= " -o ". $logo_basename;
 #    $logo_cmd .= " -t '".$logo_title."'";
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
     &RSAT::util::doit($logo_cmd,0,1, 0,0);
-    unlink ($fake_seq_file); ## Remove the fake sequences, not necessary anymore
-    &RSAT::message::Info("Seq logo exported to file", $logo_file.".".$logo_format) if ($main::verbose >= 3);
+    &RSAT::message::Info("Seq logo exported to file", $logo_basename.".".$logo_format) if ($main::verbose >= 3);
+    my $logo_file = $logo_basename.".".$logo_format;
+    push @logo_files, $logo_file;
 
-    push @logo_files, $logo_file.".".$logo_format;
+    &RSAT::message::Debug($self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 5);
+    ## Remove the fake sequences, not necessary anymore
+    &RSAT::server::DelayedRemoval($fake_seq_file);
+#    unlink ($fake_seq_file); ## The file removal  makes a problem that I don't understand
   }
   return(@logo_files);
 }
