@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.35 2010/04/28 11:53:03 rsat Exp $
+# $Id: matrix-from-patterns,v 1.36 2010/04/28 21:23:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -212,7 +212,7 @@ package main;
     ## result)
     if ($infile{patterns}) {
       &RSAT::message::TimeWarn("Assembling the patterns") if ($main::verbose >= 2);
-      my $assembly_cmd = "${SCRIPTS}/pattern-assembly -v 1 -i ".$infile{patterns};
+      my $assembly_cmd = $SCRIPTS."/pattern-assembly -v 1 -i ".$infile{patterns};
       $assembly_cmd .= " ".$strands;
       $assembly_cmd .= " -maxfl ".$asmb_maxfl;
       $assembly_cmd .= " -subst ".$asmb_subst;
@@ -227,7 +227,7 @@ package main;
     ################################################################
     ## Convert assembled patterns into matrices
     &RSAT::message::TimeWarn("Converting assemblies to significance matrices") if ($main::verbose >= 2);
-    my $convert_cmd = "${SCRIPTS}/convert-matrix -v 1 -i ".$outfile{assembly};
+    my $convert_cmd = $SCRIPTS."/convert-matrix -v 1 -i ".$outfile{assembly};
     $convert_cmd .= " -from assembly";
     $convert_cmd .= " -return counts";
     $convert_cmd .= " -flanks ".$flanks;
@@ -648,7 +648,7 @@ sub Verbose {
 sub QuickScanForSites {
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan-quick)") if ($main::verbose >= 2);
 
-  my $cmd = "convert-matrix -from tab -to tab -split ";
+  my $cmd = $SCRIPTS."/convert-matrix -from tab -to tab -split ";
   $cmd .= " -i ".$outfile{sig_matrices};
   $cmd .= " -o ".$outfile{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
@@ -679,7 +679,7 @@ sub QuickScanForSites {
     my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
     &RSAT::message::Debug("\n\tScanning sequences (quick) with sig matrix", $m, $matrix_file) if ($main::verbose >= 3);
     if (-e $matrix_file) {
-      $matrix_scan_cmd = $ENV{RSAT}."/bin/matrix-scan-quick";
+      $matrix_scan_cmd = $BIN."/matrix-scan-quick";
       my $scan_cmd = $matrix_scan_cmd." -v 1";
       $scan_cmd .= " -i ".$infile{sequence};
       $scan_cmd .= " -m ".$matrix_file;
@@ -700,7 +700,7 @@ sub QuickScanForSites {
 ## Scan sequences to collect sites
 sub ScanForSites {
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan)") if ($main::verbose >= 2);
-  my $matrix_scan_cmd = ${SCRIPTS}."/matrix-scan";
+  my $matrix_scan_cmd = $SCRIPTS."/matrix-scan";
   ## matrix-scan parameters
   ## The upper threshold on Pval MUST be defined (if not, all
   ## sites can be taken, resulting in a meaningless matrix)
@@ -728,7 +728,7 @@ sub ScanForSites {
 sub sites_to_matrix {
   my ($site_file, $count_matrix) = @_;
   &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
-  my $convert2_cmd = "${SCRIPTS}/convert-matrix -v 1";
+  my $convert2_cmd = $SCRIPTS."/convert-matrix -v 1";
   $convert2_cmd .= " -i ".$site_file;
   $convert2_cmd .= " -from feature -to tab";
   $convert2_cmd .= " -return counts";
@@ -748,7 +748,7 @@ sub sites_to_matrix {
 ## Run infogibbs to convert the significance matrices into count matrices
 sub InfoGibbs {
     &RSAT::message::TimeWarn("Running info-gibbs with significance matrices as seeds") if ($main::verbose >= 2);
-    my $gibbs_cmd = $ENV{RSAT}."/bin/info-gibbs";
+    my $gibbs_cmd = $BIN."/info-gibbs";
     unless (-e $gibbs_cmd) {
       $gibbs_cmd = `which info-gibbs`;
       chomp($gibbs_cmd);
@@ -776,7 +776,7 @@ sub InfoGibbs {
     ################################################################
     ## Convert matrix from info-gibbs and generate logos if required
     &RSAT::message::TimeWarn("Converting matrices") if ($main::verbose >= 2);
-    my $convert2_cmd = "${SCRIPTS}/convert-matrix -v 1";
+    my $convert2_cmd = $SCRIPTS."/convert-matrix -v 1";
     $convert2_cmd .= " -i ".$outfile{gibbs_matrices};
     $convert2_cmd .= " -from tab -to tab";
 #    $convert2_cmd .= " -from info-gibbs -to tab";
