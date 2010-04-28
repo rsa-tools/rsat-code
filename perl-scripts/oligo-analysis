@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.142 2010/04/26 15:44:58 rsat Exp $
+# $Id: oligo-analysis,v 1.143 2010/04/28 16:40:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,10 +19,11 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.142 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.143 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
+local $quick_count = 0;
 
 #### background models
 %supported_bg = ('upstream'=>1,
@@ -53,7 +54,17 @@ $background_model = "bernoulli";  ## Default background model
 			    'overlap'=>1,
 			    'remark'=>1,
 			    );
-$supported_return_fields = join ",", sort keys %supported_return_fields;
+$supported_return_fields = join(",", sort(keys(%supported_return_fields)));
+
+## Return field not supported by the quick mode
+%quick_forbidden_field = ('mseq'=>1,
+			  'overlap'=>1,
+			  'pos'=>1,
+			  'distrib'=>1,
+			  'table'=>1,
+    );
+$quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
+
 
 $palindroms_only = 0;
 $in_format = "fasta";
@@ -72,7 +83,7 @@ $nb_possible_pos = 0;
 $sum_occurrences = 0;
 $sum_overlaps = 0;
 $sum_noov = 0;
-$nb_possible_oligo = 0;
+$nb_possible_oligos = 0;
 $nb_tested_patterns = 0;
 $sum_seq_length = 0;
 
@@ -103,7 +114,7 @@ $infile{accepted_patterns} = "";
 ## Sequence type
 
 
-## Special cases where we need to ccount patterns with zero occurrences
+## Special cases where we need to count patterns with zero occurrences
 if (($tail eq "left") ||
     ($tail eq "two")) {
     $zeroocc = 1;
@@ -293,7 +304,6 @@ if ($return{'table'}) {
     }
 
 
-
     ## Check somte thresholds before calculating other scores
     &CheckThresholds("exp_freq") if ($return{'exp_freq'}); ## Check thresholds on expected frequencies
     &CheckThresholds("occ") if ($return{occ}); ## Check thresholds on occurrences
@@ -307,9 +317,8 @@ if ($return{'table'}) {
     &CalcZscore() if ($return{'zscore'});
     &CalcLikelihood() if ($return{'like'});
     &CalcRatio() if ($return{'ratio'});
-#    &GroupRC() if ($group_rc); #### remove the duplicate pattern (only retain the first by alphabetical order)
     &CalcProba() if ($return{'proba'}) ;
-#    &GroupRC() if ($group_rc); #### remove the duplicate pattern (only retain the first by alphabetical order)
+
 
     if ($sum_rc) {
 	if ($group_rc) {
@@ -333,6 +342,63 @@ exit(0);
 ########################################################################################
 ################################### SUBROUTINE DEFINITION ##############################
 ########################################################################################
+
+
+################################################################
+## Use count-words (developed by Matthieu Defrance) to count oligos
+## 100 times faster than with the Perl script
+sub QuickCountOligos {
+  &RSAT::message::FatalError("The option -quick requires to specify an input file") 
+    unless ($inputfile);
+
+  ## Check that the output fields requested with the option -return are supported by count-words
+  foreach my $field (@output_fields) {
+    &RSAT::error::FatalError("The option -quick only ")
+      if $quick_forbidden_field{lc($field)};
+  }
+
+  my $cmd = $BIN."/count-words -v ".$verbose;
+  $cmd .= " -i ".$inputfile; ## Input file
+  $cmd .= " -l ".$oligo_length; ## Oligonucleotide length
+  $cmd .= " ".$str; ## Strands
+  $cmd .= " ".$noov if ($noov eq '-noov'); ## overlapping mode
+
+  &RSAT::message::TimeWarn("Starting quick count", $cmd) if ($main::verbose >= 0);
+
+  open QUICK, "$cmd |";
+  my $l=0;
+  while (<QUICK>) {
+      $l++;
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header line
+      next unless (/\S/); ## Skip empty lines
+      chomp();
+      my ($pattern_seq,$id,$freq,$occ,$overlaps) = split ("\t");
+#       &RSAT::message::Debug($l, $pattern_seq, $id, 
+# 			    "freq=".$freq, 
+# 			    "occ=".$occ,
+# 			    "ovlp=".$overlaps,
+# 	  ) if ($main::verbose >= 5);
+      $patterns{$pattern_seq}->{freq} = $freq;
+      $patterns{$pattern_seq}->{occ} = $occ;
+      $patterns{$pattern_seq}->{overlaps} = $overlaps;
+      if ($str eq "-2str") {
+	  my $rc = &SmartRC($pattern_seq);
+	  $patterns{$rc}->{freq} = $freq;
+	  $patterns{$rc}->{occ} = $occ;
+	  $patterns{$rc}->{overlaps} = $overlaps;
+      }
+
+      ## Derive residue occurrences from pattern occurrences (approx)
+      for my $i  (1..$oligo_length) {
+	  my $letter =lc(substr($pattern_seq,$i-1,1));
+	  $residue_occ{$letter} += $occ/$oligo_length;
+      }
+  }
+  close QUICK;
+}
+
+
 
 ################################################################
 #### Read input sequences and count oligomers
@@ -358,195 +424,204 @@ sub CountOligos {
     }
 
     #### print verbose now for the tables
-
     if ($return{'table'}) {
       &Verbose() if ($verbose >= 1);
     }
   }
 
-  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
-	 (($current_seq) || ($current_id))) {
-
-    ### remove tabs and blank spaces ###
-    $current_seq = &FoldSequence($current_seq,0);
-
-    ### statistics about sequences ###
-    $sequence_number++;
-    $id_list[$sequence_number] = $current_id;
-    $seq_length[$sequence_number] = length($current_seq);
-    $sum_seq_length += $seq_length[$sequence_number];
-
-    &RSAT::message::TimeWarn($sequence_number,  $seq_length[$sequence_number], $sum_seq_length, $current_id)
-      if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
 
 
-    if ($seq_length[$sequence_number] < $oligo_length) {
-      next;
-    } else {
-      $nb_possible_pos += $seq_length[$sequence_number] + 1 - $oligo_length;
-    }
-    $last_pos = $seq_length[$sequence_number] - $oligo_length; ### note: the first position has index 0
+  if ($quick_count) {
+      &QuickCountOligos();
+  } else {
+      
+      while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
+	     (($current_seq) || ($current_id))) {
 
-    ### calculate alphabet from input sequence ####
-    &RSAT::message::TimeWarn("$current_id\tcalculating alphabet") if ($verbose >= 4);
-    for $pos (0..$seq_length[$sequence_number]-1) {
-      $letter = lc(substr($current_seq,$pos,1));
-      $residue_occ{$letter}++;
-    }
-    #    }
+	  ### remove tabs and blank spaces ###
+	  $current_seq = &FoldSequence($current_seq,0);
 
-    #### for Markov chains, count trailing oligomers of length shorter than $oligo_length ####
-    if ($method eq "Markov chain") {
-      for $w (1..$oligo_length - 1) {
-	$subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
-	$sub_word[$w]{$subseq}->{occ}++;
-      }
-    }
+	  ### statistics about sequences ###
+	  $sequence_number++;
+	  $id_list[$sequence_number] = $current_id;
+	  $seq_length[$sequence_number] = length($current_seq);
+	  $sum_seq_length += $seq_length[$sequence_number];
 
-    #### Count oligomers ####
-    $offset = 0;
-    my $current_pos = $last_pos;
-    my $chunk=100000;
-
-    #### The sequence is read from the end to the start, in order to progressively release memory
-    while ($current_pos >=0) {
-      if ($verbose >= 3 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
-	$current_length = length($current_seq);
-	&RSAT::message::TimeWarn("$current_id\tremain to read: $current_pos");
-      }
-
-      ### Occurrences
-      $pattern_seq = lc(substr($current_seq,$current_pos,$oligo_length));
-      chop $current_seq;	### eat the tail to release memory
+	  &RSAT::message::TimeWarn($sequence_number,  $seq_length[$sequence_number], $sum_seq_length, $current_id)
+	      if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
 
 
-      #### prevent overlapping matches
-      if ($noov eq "-noov") {
-	if ((&IsNatural($last_pos{$pattern_seq})) &&
-	    ($last_pos{$pattern_seq} - $current_pos < $min_overlap_dist)) {
-	  $patterns{$pattern_seq}->{overlaps}++;
-	  $current_pos--;
-	  next;
-	}
-	if ($sum_rc) {
-	  $rc = &SmartRC($pattern_seq);
-	  if ((&IsNatural($last_pos{$rc})) &&
-	      ($last_pos{$rc} - $current_pos < $min_overlap_dist)) {
-	    $patterns{$rc}->{overlaps}++;
-	    $current_pos--;
-	    next;
+	  if ($seq_length[$sequence_number] < $oligo_length) {
+	      next;
+	  } else {
+	      $nb_possible_pos += $seq_length[$sequence_number] + 1 - $oligo_length;
 	  }
-	}
+	  $last_pos = $seq_length[$sequence_number] - $oligo_length; ### note: the first position has index 0
 
-	#### substract the forbidden positions from the nb of possible positions
-	$forbidden_pos = &min($min_overlap_dist-1,
-			      $last_pos - $current_pos);
-	$patterns{$pattern_seq}->{forbocc} += $forbidden_pos;
-	$patterns{$rc}->{forbocc} += $forbidden_pos if ($sum_rc);
-	#  		&RSAT::message::Debug("forbidden pos",
-	# 				      $pattern_seq,
-	# 				      $forbidden_pos, $last_pos, $current_pos,
-	# 				      $patterns{$pattern_seq}->{occ},
-	# 				      $patterns{$pattern_seq}->{overlaps},
-	# 				      $patterns{$pattern_seq}->{forbocc},
-	# 				      $rc,
-	# 				      $patterns{$rc}->{occ},
-	# 				      $patterns{$rc}->{overlaps},
-	# 				      $patterns{$rc}->{forbocc},
-	# 				     ) if ($main::verbose >= 10);
-      }
-      $patterns{$pattern_seq}->{occ}++;
-      $last_pos{$pattern_seq} = $current_pos;
-      if ($return{'pos'}) {
-	push(@{$match_pos{$pattern_seq}[$sequence_number]}, $current_pos+1);
-      }
-
-      ### matching sequences (only count first occurrence per sequence)
-      if ($return{'mseq'}) {
-	if (($sum_rc==0) || ($current_mseq{&SmartRC($pattern_seq)} < 1)) {
-	  $current_mseq{$pattern_seq} = 1;
-	}
-      }
-
-      ## Step to the previous position in the sequence
-      $current_pos--;
-    }
-
-    #### Update the counts of matching sequences (first occurrences)
-    if ($return{'mseq'}) {
-      foreach $pattern_seq (keys %current_mseq) {
-	$patterns{$pattern_seq}->{mseq} += 1;
-	if ($sum_rc) {
-	  $rc = &SmartRC($pattern_seq);
-	  unless ($rc eq $pattern_seq) { ### palindroms
-	    $patterns{$rc}->{mseq} += 1;
+	  ### calculate alphabet from input sequence ####
+	  &RSAT::message::TimeWarn("$current_id\tcalculating alphabet") if ($verbose >= 4);
+	  for $pos (0..$seq_length[$sequence_number]-1) {
+	      $letter = lc(substr($current_seq,$pos,1));
+	      $residue_occ{$letter}++;
 	  }
-	}
+
+	  #### for Markov chains, count trailing oligomers of length shorter than $oligo_length ####
+	  if ($method eq "Markov chain") {
+	      for $w (1..$oligo_length - 1) {
+		  $subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
+		  $sub_word[$w]{$subseq}->{occ}++;
+	      }
+	  }
+
+	  #### Count oligomers ####
+	  $offset = 0;
+	  my $current_pos = $last_pos;
+	  my $chunk=100000;
+
+	  #### The sequence is read from the end to the start, in order to progressively release memory
+	  while ($current_pos >=0) {
+	      if ($verbose >= 3 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
+		  $current_length = length($current_seq);
+		  &RSAT::message::TimeWarn("$current_id\tremain to read: $current_pos");
+	      }
+
+	      ### Occurrences
+	      $pattern_seq = lc(substr($current_seq,$current_pos,$oligo_length));
+	      chop $current_seq;	### eat the tail to release memory
+
+
+	      #### prevent overlapping matches
+	      if ($noov eq "-noov") {
+		  if ((&IsNatural($last_pos{$pattern_seq})) &&
+		      ($last_pos{$pattern_seq} - $current_pos < $min_overlap_dist)) {
+		      $patterns{$pattern_seq}->{overlaps}++;
+		      $current_pos--;
+		      next;
+		  }
+		  if ($sum_rc) {
+		      $rc = &SmartRC($pattern_seq);
+		      if ((&IsNatural($last_pos{$rc})) &&
+			  ($last_pos{$rc} - $current_pos < $min_overlap_dist)) {
+			  $patterns{$rc}->{overlaps}++;
+			  $current_pos--;
+			  next;
+		      }
+		  }
+
+		  #### substract the forbidden positions from the nb of possible positions
+		  $forbidden_pos = &min($min_overlap_dist-1,
+					$last_pos - $current_pos);
+		  $patterns{$pattern_seq}->{forbocc} += $forbidden_pos;
+		  $patterns{$rc}->{forbocc} += $forbidden_pos if ($sum_rc);
+		  #  		&RSAT::message::Debug("forbidden pos",
+		  # 				      $pattern_seq,
+		  # 				      $forbidden_pos, $last_pos, $current_pos,
+		  # 				      $patterns{$pattern_seq}->{occ},
+		  # 				      $patterns{$pattern_seq}->{overlaps},
+		  # 				      $patterns{$pattern_seq}->{forbocc},
+		  # 				      $rc,
+		  # 				      $patterns{$rc}->{occ},
+		  # 				      $patterns{$rc}->{overlaps},
+		  # 				      $patterns{$rc}->{forbocc},
+		  # 				     ) if ($main::verbose >= 10);
+	      }
+	      $patterns{$pattern_seq}->{occ}++;
+	      $last_pos{$pattern_seq} = $current_pos;
+	      if ($return{'pos'}) {
+		  push(@{$match_pos{$pattern_seq}[$sequence_number]}, $current_pos+1);
+	      }
+	      
+	      ### matching sequences (only count first occurrence per sequence)
+	      if ($return{'mseq'}) {
+		  if (($sum_rc==0) || ($current_mseq{&SmartRC($pattern_seq)} < 1)) {
+		      $current_mseq{$pattern_seq} = 1;
+		  }
+	      }
+
+	      ## Step to the previous position in the sequence
+	      $current_pos--;
+	  }
+
+	  #### Update the counts of matching sequences (first occurrences)
+	  if ($return{'mseq'}) {
+	      foreach $pattern_seq (keys %current_mseq) {
+		  $patterns{$pattern_seq}->{mseq} += 1;
+		  if ($sum_rc) {
+		      $rc = &SmartRC($pattern_seq);
+		      unless ($rc eq $pattern_seq) { ### palindroms
+			  $patterns{$rc}->{mseq} += 1;
+		      }
+		  }
+	      }
+	      undef %current_mseq;
+	  }
+
+	  undef %last_pos;
+
+	  ################################################################
+	  #### Specific treatment for occurrence table
+	  if ($return{'table'}) {
+	      ## Make sure that all patterns are considered
+	      foreach my $pattern_seq (@possible_oligos) {
+		  ## Assign 0 values
+		  unless ($patterns{$pattern_seq}->{occ}) {
+		      $patterns{$pattern_seq}->{occ} = 0;
+		  }
+	      }
+
+	      ## Sum the reverse complements for the current sequence
+	      &SumReverseComplements() if ($sum_rc);
+
+	      ## select patterns to be printed (depend on whether RC have been grouped)
+	      @output_patterns = sort keys %patterns;
+
+	      ## Print table header before the first pattern counts
+	      unless ($header_printed) {
+		  print $out "; Number of output patterns\t", scalar(@output_patterns), "\n"
+		      if ($main::verbose >= 1);
+		  &PrintTableHeader(@output_patterns);
+		  $header_printed = 1;
+	      }
+
+	      ## Print pattern counts for the current sequence
+	      print $out $current_id;
+	      foreach my $pattern_seq (@output_patterns) {
+		  if (($seq_type eq "DNA") && ($pattern_seq !~ /^[acgt\|]+$/i)) {
+		      &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq));
+		      next;
+		  } elsif ((lc($seq_type) eq "protein")
+			   && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
+		      &RSAT::message::Warning(join("\t",
+						   "Skipping pattern with invalid characters for protein sequence",
+						   $pattern_seq));
+		      next;
+		  }
+		  print $out "\t", $patterns{$pattern_seq}->{occ};
+	      }
+	      print $out "\n";
+	      undef(%patterns);
+
+	      ################################################################
+	      #### Specific treatment for occurrence distribution
+	  } elsif ($return{'distrib'}) {
+	      foreach my $pattern_seq (@possible_oligos) {
+		  ## Check if no occurrences were found
+		  unless ($patterns{$pattern_seq}->{occ}) {
+		      $patterns{$pattern_seq}->{occ} = 0;
+		  }
+		  ## Increment the occurrence counter
+		  $distrib{$pattern_seq}{$patterns{$pattern_seq}->{occ}}++;
+	      }
+	      undef(%patterns);
+	  }
       }
-      undef %current_mseq;
-    }
-
-    undef %last_pos;
-
-    ################################################################
-    #### Specific treatment for occurrence table
-    if ($return{'table'}) {
-      ## Make sure that all patterns are considered
-      foreach my $pattern_seq (@possible_oligos) {
-	## Assign 0 values
-	unless ($patterns{$pattern_seq}->{occ}) {
-	  $patterns{$pattern_seq}->{occ} = 0;
-	}
+      undef $current_seq;		### release the memory occupied
+      close $in;
+      ## check that the input file contained at least one readable sequence
+      if ($sequence_number < 1) {
+	  &RSAT::error::FatalError("The input contained no readable sequence. The file might be empty or be wronlgy formatted.");
       }
-
-      ## Sum the reverse complements for the current sequence
-      &SumReverseComplements() if ($sum_rc);
-
-      ## select patterns to be printed (depend on whether RC have been grouped)
-      @output_patterns = sort keys %patterns;
-
-      ## Print table header before the first pattern counts
-      unless ($header_printed) {
-	print $out "; Number of output patterns\t", scalar(@output_patterns), "\n"
-	  if ($main::verbose >= 1);
-	&PrintTableHeader(@output_patterns);
-	$header_printed = 1;
-      }
-
-      ## Print patern counts for the current sequence
-      print $out $current_id;
-      foreach my $pattern_seq (@output_patterns) {
-	if (($seq_type eq "DNA") && ($pattern_seq !~ /^[acgt\|]+$/i)) {
-	  &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq));
-	  next;
-	} elsif ((lc($seq_type) eq "protein")
-		 && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
-	  &RSAT::message::Warning(join("\t",
-				       "Skipping pattern with invalid characters for protein sequence",
-				       $pattern_seq));
-	  next;
-	}
-	print $out "\t", $patterns{$pattern_seq}->{occ};
-      }
-      print $out "\n";
-      undef(%patterns);
-
-      ################################################################
-      #### Specific treatmeent for occurrence distribution
-    } elsif ($return{'distrib'}) {
-      foreach my $pattern_seq (@possible_oligos) {
-	## Check if no occurrences were found
-	unless ($patterns{$pattern_seq}->{occ}) {
-	  $patterns{$pattern_seq}->{occ} = 0;
-	}
-	## Increment the occurrence counter
-	$distrib{$pattern_seq}{$patterns{$pattern_seq}->{occ}}++;
-      }
-      undef(%patterns);
-    }
   }
-  undef $current_seq;		### release the memory occupied
-  close $in;
 
   #### filter out undefined residues for DNA or protein sequences
   if (($seq_type eq "DNA") || ($seq_type eq "protein")) {
@@ -574,10 +649,6 @@ sub CountOligos {
 	delete $residue_occ{$letter};
       }
     }
-  }
-
-  if ($sequence_number < 1) {
-    &RSAT::error::FatalError("The input contained no readable sequence. The file might be empty or be wronlgy formatted.");
   }
 
   #    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 10);
@@ -637,9 +708,6 @@ sub SumReverseComplements {
 	    $overlaps_2strands{$rc_pattern_seq} = $overlaps_2strands{$pattern_seq} =
 		$patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern_seq}->{overlaps};
 	}
-#	warn join( "\t", "HELLO", $pattern_seq, $rc_pattern_seq,
-#			   $occ_2strands{$pattern_seq} ,  $occ_2strands{$rc_pattern_seq},
-#			   ), "\n" if ($main::verbose >= 10);
     }
     foreach my $pattern_seq (keys %occ_2strands) {
 	$patterns{$pattern_seq}->{occ} = $occ_2strands{$pattern_seq};
@@ -909,11 +977,11 @@ sub Degenerate {
 sub NbPossibleOligo {
   @alphabet = &alphabet();
   $alphabet_size = scalar(@alphabet);
-  $nb_possible_oligo = $alphabet_size**$oligo_length;
+  $nb_possible_oligos = $alphabet_size**$oligo_length;
 
   if ($seq_type eq "DNA") {
     if ($one_var_position) {
-      $nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);
+      $nb_possible_oligos = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);
     }
     if ($sum_rc) {
       if ($oligo_length%2 == 0) {
@@ -922,9 +990,10 @@ sub NbPossibleOligo {
       } else {
 	$nb_possible_palindroms = 0;
       }
-      $nb_possible_oligo -= ($nb_possible_oligo - $nb_possible_palindroms)/2;
+      $nb_possible_oligos -= ($nb_possible_oligos - $nb_possible_palindroms)/2;
     }
   }
+  &RSAT::message::Info("nb_possible_oligos", $nb_possible_oligos) if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -1067,7 +1136,7 @@ sub CalcExpected {
 
   #### Correct expected frequencies with pseudo weight
   if ($pseudo_weight > 0) {
-    $pseudo_frequency = $pseudo_weight/$nb_possible_oligo;
+    $pseudo_frequency = $pseudo_weight/$nb_possible_oligos;
     foreach $pattern_seq (keys %patterns) {
       $patterns{$pattern_seq}->{exp_freq} *= 1 - $pseudo_weight;
       $patterns{$pattern_seq}->{exp_freq} += $pseudo_frequency;
@@ -1213,16 +1282,18 @@ sub CalcLikelihood {
 ################################################################
 #### Calculate probabilities
 sub CalcProba {
+  &RSAT::message::TimeWarn("Computing probabilities") if ($main::verbose >= 2);
+
     #### converts threshold on occurence significance index into a
     #### threshold on occurrence probability
 #    if (defined($lth{occ_sig})) {
-#	$uth{occ_P} = exp(-$lth{occ_sig}*log(10))/$nb_possible_oligo;
+#	$uth{occ_P} = exp(-$lth{occ_sig}*log(10))/$nb_possible_oligos;
 #    }
 
     #### converts threshold on mseq significance index into a
     #### threshold on mseq probability
     if (defined($mseq_significance_threshold)) {
-	$proba_mseq_threshold = exp(-$mseq_significance_threshold*log(10))/$nb_possible_oligo;
+	$proba_mseq_threshold = exp(-$mseq_significance_threshold*log(10))/$nb_possible_oligos;
     }
 
     ### calculate oligo probabilities
@@ -1274,9 +1345,9 @@ sub CalcProba {
 	    }
 	} else {
 	    $patterns{$pattern_seq}->{occ_P} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
-								   $sum_occurrences,
-								   $occ_from,
-								   $occ_to);
+								 $sum_occurrences,
+								 $occ_from,
+								 $occ_to);
 #	    &RSAT::message::Debug($pattern_seq,
 #				  $patterns{$pattern_seq}->{exp_freq},
 #				  $patterns{$pattern_seq}->{forbocc},
@@ -1311,8 +1382,8 @@ sub CalcProba {
 	    }
 
 	    ### Significance index for number of matching sequences
-	    if ($nb_possible_oligo > 0) {
-		$patterns{$pattern_seq}->{ms_E} = $nb_possible_oligo*$patterns{$pattern_seq}->{ms_pro};
+	    if ($nb_possible_oligos > 0) {
+		$patterns{$pattern_seq}->{ms_E} = $nb_possible_oligos*$patterns{$pattern_seq}->{ms_pro};
 		if ($patterns{$pattern_seq}->{ms_pro} > 0) {
 		    $patterns{$pattern_seq}->{ms_sig} = -log($patterns{$pattern_seq}->{ms_E})/log(10);
 		} else {
@@ -1566,7 +1637,7 @@ sub Verbose {
 		printf $out "; %-29s\t%s\n", "total non overlapping occ", $sum_noov;
 	    }
 	    printf $out "; %-29s\t%s\n", "alphabet size", $alphabet_size;
-	    printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligo;
+	    printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligos;
 	    printf $out "; %-29s\t%d\n", "oligomers tested for significance", $main::nb_tested_patterns;
 	    printf $out &PrintThresholdValues();
 
@@ -1889,9 +1960,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-1str") {
 	    $sum_rc = 0;
 	    $group_rc = 0;
+	    $str  = "-1str";
 
 	} elsif ($ARGV[$a] eq "-2str") {
 	    $sum_rc = 1;
+	    $str  = "-2str";
 
 	    #### reverse complement grouping or not
 	} elsif ($ARGV[$a] eq "-grouprc") {
@@ -2209,6 +2282,12 @@ sub ReadArguments {
 	    ## Also count patterns not observed
 	} elsif ($ARGV[$a] eq "-zeroocc") {
 	    $zeroocc = 1;
+
+	    ################################################################
+	    ## Delegate word counting to the C program count-words
+	    ## (developed by Matthieu Defrance)
+	} elsif ($ARGV[$a] eq "-quick") {
+	    $quick_count = 1;
 
 	}
 
@@ -2529,6 +2608,14 @@ ARGUMENTS
 		patterns absent from the sequence. This is the
 		function of this option.
 
+	-quick
+		Quick count mode: delegate the counting of word
+		occurrences to count-words, a program written in C by
+		Matthieu Defrance.
+
+		This option is incompatible with the following output
+  	        fields: $quick_forbidden_fields
+  
     THRESHOLDS
 	-lth param value
 		Lower threshold on some parameter. All patterns with a
@@ -2972,6 +3059,7 @@ oligo-analysis options
 -under		detect under-represented instead of over-represented words
 -two_tails      detect under-represented and over-represented words
 -zeroocc	return also patterns with zero occurrences
+-quick		quick count mode (delegate counting to count-words)	
 -pal		only return reverse palindroms
 End_of_help
     close HELP;
@@ -3081,11 +3169,13 @@ sub CalibrateSetFromSingleSequence {
 sub alphabet {
   if ($zeroocc) {
     if ($seq_type eq "DNA") {
-      return @dna_alphabet;
+      @alphabet = @dna_alphabet;
     } elsif ($seq_type eq "protein") {
-      return  @protein_alphabet;
+      @alphabet =  @protein_alphabet;
     }
   } else {
-    return keys %residue_occ;
+    @alphabet = sort(keys(%residue_occ));
   }
+  &RSAT::message::Info("Alphabet", join(',', @alphabet)) if ($main::verbose >= 2);
+  return(@alphabet);
 }
