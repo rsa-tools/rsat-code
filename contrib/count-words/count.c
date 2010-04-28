@@ -342,12 +342,12 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
                 {
                     char middle = oligo_buffer[oligo_length / 2];
                     oligo_buffer[oligo_length / 2] = '\0';
-                    fprintf(output_fp, "%s{%d}", oligo_buffer, spacing);
+                    fprintf(output_fp, "%sn{%d}", oligo_buffer, spacing);
                     oligo_buffer[oligo_length / 2] = middle;
                     fprintf(output_fp, "%s\t", &oligo_buffer[oligo_length / 2]);
 
                     oligo_buffer[oligo_length / 2] = '\0';
-                    fprintf(output_fp, "%s{%d}", oligo_buffer, spacing);
+                    fprintf(output_fp, "%sn{%d}", oligo_buffer, spacing);
                     oligo_buffer[oligo_length / 2] = middle;
                     fprintf(output_fp, "%s|", &oligo_buffer[oligo_length / 2]);
 
