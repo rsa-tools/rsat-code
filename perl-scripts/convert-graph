@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.56 2010/04/26 22:02:47 jvanheld Exp $
+# $Id: convert-graph,v 1.57 2010/04/28 06:32:14 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -275,6 +275,18 @@ package main;
       my $real = $graph->get_attribute("real");
       if ($real eq "null") {
          ($mean, $sd, $min, $max) = $graph->weight_properties();
+
+	 ## If all weights are equal, the min is arbitrarily set to 0
+	 if ($min == $max) {
+	   if ($max > 0) {
+	     $min = 0;
+	   } elsif ($min < 0) {
+	     $max = 0;
+	   } else {
+	     $min = -0.5;
+	     $max = 0.5;
+	   }
+	 }
       }
 
       unless ($real) {
@@ -283,10 +295,6 @@ package main;
         $edge_width = 0;
       }
 
-      ## If all weights are equal, the min is arbitrarily set to 0
-      if ($edge_min == $edge_max) {
-	$edge_min = 0;
-      }
     }
 
     ################################################################
