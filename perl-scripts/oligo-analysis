@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.145 2010/04/28 20:38:02 jvanheld Exp $
+# $Id: oligo-analysis,v 1.146 2010/04/28 22:25:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.145 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.146 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -64,6 +64,7 @@ $in_format = "fasta";
 
 ## Counting mode
 local $quick_count = 0;
+local $quick_count_if_possible = 0;
 local $zeroocc = 0;
 local $noov = "-noov";
 local $noov="-ovlp";
@@ -153,21 +154,21 @@ if ($noov eq "-noov") {
 
 ### Markov order
 if ($method eq "Markov chain") {
-    if ($Markov_order < 0){
-	if ($oligo_length == 1) {
-	    $Markov_order = 0;
-	} else {
-	    $Markov_order = $oligo_length + $Markov_order;
-	}
+  if ($Markov_order < 0){
+    if ($oligo_length == 1) {
+      $Markov_order = 0;
+    } else {
+      $Markov_order = $oligo_length + $Markov_order;
     }
+  }
 
 
-    if (($Markov_order > $oligo_length -2) &&
-	($Markov_order > 0)){
-	&RSAT::error::FatalError("Markov order ($Markov_order) cannot be higher than word length - 2 ($oligo_length -2)");
-    } elsif ($Markov_order < 0) {
-	&RSAT::error::FatalError("invalid Markov order $Markov_order");
-    }
+  if (($Markov_order > $oligo_length -2) &&
+      ($Markov_order > 0)){
+    &RSAT::error::FatalError("Markov order ($Markov_order) cannot be higher than word length - 2 ($oligo_length -2)");
+  } elsif ($Markov_order < 0) {
+    &RSAT::error::FatalError("invalid Markov order $Markov_order");
+  }
 }
 
 
@@ -247,7 +248,15 @@ if (($alphabet) && ($background_model ne "bernoulli")) {
     }
 }
 
-
+################################################################
+## Check if quick counting mode is possible
+if ($quick_count_if_possible) {
+  if (&CheckQuickCount()) {
+    $quick_count = 1;
+  } else {
+    $quick_count = 0;
+  }
+}
 
 ################################################################
 #### Read calibration from a file
@@ -373,10 +382,8 @@ sub CountOligos {
     }
   }
 
-
-
   if ($quick_count) {
-      &QuickCountOligos();
+      &CountWords();
   } else {
 
       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
@@ -531,13 +538,15 @@ sub CountOligos {
 	      print $out $current_id;
 	      foreach my $pattern_seq (@output_patterns) {
 		  if (($seq_type eq "DNA") && ($pattern_seq !~ /^[acgt\|]+$/i)) {
-		      &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq));
+		      &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq))
+			unless (($verbose == 0) || ($return{table}));
 		      next;
 		  } elsif ((lc($seq_type) eq "protein")
 			   && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
 		      &RSAT::message::Warning(join("\t",
 						   "Skipping pattern with invalid characters for protein sequence",
-						   $pattern_seq));
+						   $pattern_seq))
+			unless (($verbose == 0) || ($return{table}));
 		      next;
 		  }
 		  print $out "\t", $patterns{$pattern_seq}->{occ};
@@ -1499,6 +1508,11 @@ sub Verbose {
 	&PrintArguments($out);
 	printf $out "; %s\n", "Citation: van Helden et al. (1998). J Mol Biol 281(5), 827-42. ";
 	printf $main::out "; %-29s\t%s\n", "Program version", $program_version;
+	if ($quick_count) {
+	  printf $main::out "; %-29s\n", "Quick counting mode";
+	} else {
+	  printf $main::out "; %-29s\n", "Slow counting mode";
+	}
 	if ($return{proba}) {
 	    if ($tail eq "two") {
 		printf $out "; %s\n", "Detection of under-represented and over-represented words (two-tail test)";
@@ -2232,6 +2246,9 @@ sub ReadArguments {
 	    ## (developed by Matthieu Defrance)
 	} elsif ($ARGV[$a] eq "-quick") {
 	    $quick_count = 1;
+	    ## Same as -quick, but first check if the quick mode is compatible with selected options, and use the slow mode otherwise
+	} elsif ($ARGV[$a] eq "-quick_if_possible") {
+	    $quick_count_if_possible = 1;
 
 	}
 
