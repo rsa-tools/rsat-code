@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.109 2010/04/28 06:18:30 jvanheld Exp $
+# $Id: convert-matrix,v 1.110 2010/04/28 16:43:52 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -500,13 +500,15 @@ OPTIONS
 		This allows to place the command within a pipe.
 
 	-mlist matrix_list
-		Indicate a file containing a list of matrices to be used 
-		for scanning the region. This facilitates the scanning of 
-		a sequence with a library of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC). 
+		Indicate a file containing a list of matrices to be
+		used for scanning the region. This facilitates the
+		scanning of a sequence with a library of matrices
+		(e.g. all the matrices from RegulonDB, or TRANSFAC).
 
-		Format: the matrix list file is a text file. The first word of each
-		row is suppose to indicate a file name. Any further information on the
-		same row is ignored.
+		Format: the matrix list file is a text file. The first
+		word of each row is suppose to indicate a file
+		name. Any further information on the same row is
+		ignored.
 
 	-o outputfile
 		if not specified, the standard output is used.
@@ -772,6 +774,14 @@ INPUT/OUTPUT FORMATS
     TRANSFAC (input/output)
         Format used in the TRANSFAC database;
         (http://www.gene-regulation.com/pub/databases.html)
+
+    STAMP (input/output)
+	Converts the matrix into a string in STAMP format.
+	STAMP is a dialect of the TRANSFAC format, with important differences:
+	- the fields ID and AC are absent, and the matrix ID comes in the field DE
+	- the header row (PO) is not supported
+	- the positions start at 0 instead of 1
+	- there is no matrix delimiter (the double slash)
 
     infogibbs (input/output)
         Output file from infogibbs.
