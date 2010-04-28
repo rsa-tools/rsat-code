@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.281 2010/04/26 15:45:24 rsat Exp $
+# $Id: multiple-family-analysis,v 1.282 2010/04/28 12:09:01 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.281 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.282 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1749,7 +1749,7 @@ sub MatrixFromPatterns {
   $command .= " -asmb ".$assembly_file;
   $command .= " -bginput -markov 0 ";
   $command .= " -max_asmb_nb ".$nmotifs;
-  $command .= " -gibbs_flanks 2";
+  $command .= " -flanks 2";
   $command .= " -o ".$pssm_file;
 
   my $pssm_dir = `dirname $pssm_file`;
