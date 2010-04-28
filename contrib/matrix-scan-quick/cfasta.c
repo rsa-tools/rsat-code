@@ -39,18 +39,23 @@ char fasta_reader_getc(fasta_reader_t *reader)
 
 seq_t *fasta_reader_next(fasta_reader_t *reader)
 {
-    // read header & forget
+    seq_t *seq = new_seq(1000);
+
+    // read header
     char c;
+    int i = 0;
     do 
     {
         c = fasta_reader_getc(reader);
+        if (i < 1024 && c!= EOF && c != '\n')
+            seq->name[i++] = c;
     } while (c != EOF && c != '\n');
-
+    seq->name[i] = '\0';
+    
     if (c == EOF)
         return NULL;
 
     // read sequence
-    seq_t *seq = new_seq(1000);
     do 
     {
         c = fasta_reader_getc(reader);
