@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
     fasta_reader_t *reader = new_fasta_reader(fp);
 
     if (!distrib)
-        fprintf(fout, "#seq_id\tft_type\tft_name\tstrand\tstart\tend\tsequence\tweight\tproba_M\t\tproba_B\tPval\n");
+        fprintf(fout, "#seq_id\tft_type\tft_name\tstrand\tstart\tend\tsequence\tweight\tproba_M\tproba_B\tPval\n");
     
     // scan all sequences
     int s = 1;
