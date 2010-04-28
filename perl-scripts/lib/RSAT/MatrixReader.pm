@@ -2007,7 +2007,8 @@ sub _readFromFeatureFile {
     ## Instantiate an object to store feature information
     my $feature = new RSAT::feature();
     $feature->parse_from_row($line, "ft");
-    my $matrix_name = $feature->get_attribute("feature_name");
+    my $matrix_name = $feature->get_attribute("feature_name") || "matrix_".$current_matrix_nb;
+    my $matrix_id = $feature->get_attribute("feature_name") || "matrix_".$current_matrix_nb;
     my $site_sequence = $feature->get_attribute("description");
     my $site_id = join ("_", 
 			$feature->get_attribute("seq_name"),
@@ -2026,6 +2027,7 @@ sub _readFromFeatureFile {
       $matrix->set_parameter("program", "feature");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       $matrix->set_attribute("name", $matrix_name);
+      $matrix->set_attribute("id", $matrix_id);
       $matrix->set_attribute("ncol", length($site_sequence));
 #      $matrix->set_parameter("sites", $3);
 #      $matrix->setPrior(%residue_frequencies);
