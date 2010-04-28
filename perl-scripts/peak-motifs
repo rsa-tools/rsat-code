@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.45 2010/04/28 06:34:30 jvanheld Exp $
+# $Id: peak-motifs,v 1.46 2010/04/28 10:20:26 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -621,7 +621,7 @@ sub OligoAnalysis {
       $cmd .= " -markov ".$markov;
       $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
-#      &one_command($cmd, 1);
+      &one_command($cmd, 1);
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
     }
   }
@@ -1018,11 +1018,11 @@ sub MatrixFromPatterns {
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
 #  $cmd .= " -bginput -markov 1 ";
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
-#  $cmd .= " -gibbs_flanks 2";
+  $cmd .= " -flanks 2";
 #  $cmd .= " -gibbs_iter 2";
 #  $cmd .= " -gibbs_msps 0.5";
   $cmd .= " -collect_method matrix-scan-quick";
-#  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
+  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
 #  $cmd .= " -links";
   $cmd .= " -o ".$pssm_file;
 #  &RSAT::message::Warning("Temporarily inactivated\n", $cmd);
