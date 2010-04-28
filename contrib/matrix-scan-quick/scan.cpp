@@ -87,6 +87,15 @@ int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t 
 
             double Pval_rc = score2pvalue(pvalues, Wrc);
 
+            // position
+            if (origin == -1) // start
+                a = i + 1;
+            else if (origin == 0) // center
+                a = i - seq->size / 2;
+            else // end
+                a = i - seq->size;
+            b = a + l - 1;
+
             if (values != NULL)
             {
                 values_add(values, Wrc);
