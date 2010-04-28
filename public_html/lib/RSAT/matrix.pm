@@ -3367,15 +3367,17 @@ sub makeLogo{
 
   ## Run seqlogo to generate the logo(s)
   foreach my $logo_format (@logo_formats){
-    my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
+    my $seqlogo_path = $ENV{seqlogo} || $BIN."/seqlogo";
+    &RSAT::message::Warning("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
       &RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path", 
-			      $seqlogo_path, 
+			      $seqlogo_path,
 			      "Please install seqlogo in the recommended location.");
       return;
     }
 
+    ## Prepare the seqlogo command
     my $logo_cmd = $seqlogo_path;
     $logo_cmd.= " -f ".$fake_seq_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
@@ -3388,12 +3390,13 @@ sub makeLogo{
 #    $logo_cmd .= " -t '".$logo_title."'";
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
+
+    ## Run seqlogo
     &RSAT::util::doit($logo_cmd,0,1, 0,0);
-    &RSAT::message::Info("Seq logo exported to file", $logo_basename.".".$logo_format) if ($main::verbose >= 3);
+
     my $logo_file = $logo_basename.".".$logo_format;
     push @logo_files, $logo_file;
-
-    &RSAT::message::Debug($self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 5);
+    &RSAT::message::Info("matrix", $self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 3);
     ## Remove the fake sequences, not necessary anymore
     &RSAT::server::DelayedRemoval($fake_seq_file);
 #    unlink ($fake_seq_file); ## The file removal  makes a problem that I don't understand
@@ -3590,14 +3593,10 @@ Output matrix format
 sub to_infogibbs{
     my ($self, %args) = @_;
     my $to_print = "";
-    
     my $output_format = $args{format};
     $output_format = lc($output_format);
-    
     $to_print .="; info-gibbs ". "\n"  ;
-  
 
-    
     my @site_sequences = $self->get_attribute("sequences");
 
     my $command =  $self->get_attribute("command") || "no original command available";
@@ -3620,8 +3619,6 @@ sub to_infogibbs{
 
     $self->calcInformation();
     my $ic  = $self->get_attribute("ic")|| $self->get_attribute("total.information")  || "NA"; 
- 
-    
     $to_print .="; ".$command ."\n";
     $to_print .="; "."title"."\n";
     $to_print .="; started at                     ". $date;
@@ -3638,7 +3635,6 @@ sub to_infogibbs{
       $string_aux .= $letter.":".$prior."|";
     }
     $to_print .="; prior                          ".    $string_aux. "\n";
-    
     $to_print .="; motifs fo find                 ". "1"    ."\n";
     $to_print .="; "."\n";
     $to_print .="; motif                          ".  $motif_ID  ."\n";
