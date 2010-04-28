@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.46 2010/04/28 10:20:26 jvanheld Exp $
+# $Id: peak-motifs,v 1.47 2010/04/28 16:44:17 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -608,6 +608,7 @@ sub OligoAnalysis {
       my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
       &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 1);
       my $cmd = $SCRIPTS."/oligo-analysis -v 1";
+      $cmd .= " -quick";
       $cmd .= " -i ".$main::outfile{"purged_test"};
       $cmd .= " -format fasta";
       $cmd .= " -sort -lth ratio ".$main::param{min_ratio};
@@ -1022,7 +1023,7 @@ sub MatrixFromPatterns {
 #  $cmd .= " -gibbs_iter 2";
 #  $cmd .= " -gibbs_msps 0.5";
   $cmd .= " -collect_method matrix-scan-quick";
-  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
+#  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
 #  $cmd .= " -links";
   $cmd .= " -o ".$pssm_file;
 #  &RSAT::message::Warning("Temporarily inactivated\n", $cmd);
