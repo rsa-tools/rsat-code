@@ -6,12 +6,14 @@ seq_t *new_seq(int size)
     seq->size = 0;
     seq->msize = size;
     seq->data = (char *) malloc(sizeof(char) * seq->msize);
+    seq->name = (char *) malloc(sizeof(char) * 1024);
     return seq;
 }
 
 void free_seq(seq_t *seq)
 {
     free(seq->data);
+    free(seq->name);
     free(seq);
 }
 
