@@ -16,6 +16,7 @@ typedef struct
     char *data;
     int size;
     int msize;
+    char *name; // limited to 1024 chars
 } seq_t;
 
 
@@ -62,7 +63,6 @@ void seq_append_c(seq_t *seq, char c)
         case 'N':
             seq->data[seq->size++] = -1;
             break;
-
     }
 }
 
