@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.33 2010/04/28 06:33:21 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.34 2010/04/28 10:18:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -130,7 +130,8 @@ package main;
     local $asmb_maxpat = 100;
 
     ## Collect method
-    local $collect_method = "info-gibbs";
+#    local $collect_method = "info-gibbs";
+    local $collect_method = "matrix-scan-quick";
     local %supported_collect_method = ("info-gibbs"=>1,
 				       "matrix-scan"=>1,
 				       "matrix-scan-quick"=>1
@@ -141,6 +142,8 @@ package main;
     local $gibbs_iter = 1; ## Number of iterations
     local $gibbs_final = 0; ## Run the final cycle. For some reason, the final cycle takes too much time with large sequence files, I temporarily inactivate it.
     local $gibbs_msps = 1; ## Mean number of sites per sequence
+
+    ## Extension of matrix size on both sides
     local $flanks = 0;
 
     ## Parameters for convert-matrix
@@ -153,7 +156,7 @@ package main;
 
     ## Parameters for matrix-scan-quick
     local %lth;
-    $lth{weight} = "7";
+    $lth{weight} = 7;
 
     ## Parameters for the &doit() command
     $dry = 0;
@@ -193,6 +196,7 @@ package main;
     $outfile{sig_matrices_split} = $outfile{output}."_sig_matrices_split";
     $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
     $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
+    $outfile{logo_basename} = $outfile{output}."_count_matrices_logo";
     $outfile{gibbs_matrices} = $outfile{output}."_gibbs_matrices.txt";
 
     ################################################################
@@ -226,6 +230,7 @@ package main;
     my $convert_cmd = "${SCRIPTS}/convert-matrix -v 1 -i ".$outfile{assembly};
     $convert_cmd .= " -from assembly";
     $convert_cmd .= " -return counts";
+    $convert_cmd .= " -flanks ".$flanks;
     $convert_cmd .= " -top ".$max_asmb_nb;
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
@@ -524,14 +529,13 @@ Number of iterations for info-gibbs.
 	    &RSAT::error::FatalError($gibbs_iter, "is not a valid value for iterations. Should be a Natural number.")
 	      unless (&IsNatural($gibbs_iter));
 
-	    ## Gibbs mean sites per sequence
 
 =pod
 
 =item B<-flanks>
 
 Number of flanking residues to be added on each side of the
-significance matrix.
+significance matrix in order to extend the motif size.
 
 =cut
 
@@ -540,7 +544,19 @@ significance matrix.
 	    &RSAT::error::FatalError($flanks, "is not a valid value for flanks. Should be a Natural number.")
 	      unless (&IsNatural($flanks));
 
-	    ## Gibbs mean sites per sequence
+
+=pod
+
+=item B<-min_weight>
+
+Minimal weight
+
+=cut
+
+	  } elsif ($arg eq "-min_weight") {
+	    $main::lth{weight} = shift(@arguments);
+	    &RSAT::error::FatalError($main::lth{weight}, "is not a valid value for the option -min_weight. Should be a Real number.")
+	      unless (&IsReal($main::lth{weight}));
 
 =pod
 
@@ -633,7 +649,6 @@ sub QuickScanForSites {
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan-quick)") if ($main::verbose >= 2);
 
   my $cmd = "convert-matrix -from tab -to tab -split ";
-  $cmd .= " -flanks ".$flanks;
   $cmd .= " -i ".$outfile{sig_matrices};
   $cmd .= " -o ".$outfile{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
@@ -641,53 +656,43 @@ sub QuickScanForSites {
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
   ## Specific parameters for matrix-scan
-  my $quick_scan_parameters = " -t 7";
+  my $quick_scan_parameters = " -t ".$lth{weight};
   $quick_scan_parameters .= " -return sites";
 
   ## Parse the parameters passed as arguments to define the background model
   if ($scan_parameters =~ /-bgfile\s+(\S+)/) {
     $quick_scan_parameters .= " -bgfile ".$1;
   } elsif ($scan_parameters =~ /-markov\s+(\d+)/) {
-    &RSAT::error::FatalError("matrix-scan-quick does not accept the option -markov. Please provide a background file with the option -bgfile");
+    my $markov_order = $1;
+    if ($markov_order != 0) {
+      &RSAT::error::FatalError("matrix-scan-quick does not accept the option -markov. Please provide a background file with the option -bgfile");
+    }
   }
 
+  ## Delete previous versions of the sig_sites before appending
+  ## new scanning results for each matrix
+  unlink($outfile{'sig_sites'});
+
+  ## Append the sites for each matrix in a feature file
   for my $m (1..$max_asmb_nb) {
+    my $matrix_name = "matrix_".$m;
     my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
-    my $site_file = $outfile{'sig_sites_'.$m} = $outfile{output}."_sig_sites_".$m.".ft";
-    my $count_matrix  = $outfile{'count_matrices'.$m} = $outfile{output}."_count_matrices_".$m.".txt";
-    my $id = "matrix_".$m;
     &RSAT::message::Debug("\n\tScanning sequences (quick) with sig matrix", $m, $matrix_file) if ($main::verbose >= 3);
     if (-e $matrix_file) {
       $matrix_scan_cmd = $ENV{RSAT}."/bin/matrix-scan-quick";
       my $scan_cmd = $matrix_scan_cmd." -v 1";
       $scan_cmd .= " -i ".$infile{sequence};
       $scan_cmd .= " -m ".$matrix_file;
-      $scan_cmd .= " ".$strands; ## BEWARE: THE OPTION -2str SEEMS TO BE IGNORED (27 Apr 2010)
+      $scan_cmd .= " -name ".$matrix_name;
+      $scan_cmd .= " ".$strands;
       $scan_cmd .= $quick_scan_parameters;
-      $scan_cmd .= " > ".$site_file;
+      $scan_cmd .= " >> ".$outfile{'sig_sites'};
       print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
       &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-      ## Convert the sites to a single matrix (matrix-scan-quick accepts a single matrix as input)
-      &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
-      my $convert2_cmd = "${SCRIPTS}/convert-matrix -v 1";
-      $convert2_cmd .= " -i ".$site_file;
-      $convert2_cmd .= " -attr id ".$id;
-      $convert2_cmd .= " -from feature -to tab"; ## Converted to transfac format because this preserves the ID
-      $convert2_cmd .= " -return counts,parameters";
-      #    $convert2_cmd .= " -sort desc information.per.column";
-      $convert2_cmd .= " -return sites" if ($return_fields{sites});
-##      $convert2_cmd .= " -return links" if ($return_fields{links});
-      if ($return_fields{logo}) {
-	$convert2_cmd .= " -return logo -logo_format png,pdf "; ## BUG HERE ????? (Apr 27, 2010)
-      }
-      $convert2_cmd .= " -o ".$count_matrix;
-      $convert2_cmd .= "; cat ".$count_matrix." >> ".$outfile{'count_matrices'};
-      print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
-      &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     }
   }
-
+  ## Extract count matrices from the sites collected with the sig matrices
+  &sites_to_matrix($outfile{sig_sites}, $outfile{count_matrices});
 }
 
 
@@ -732,6 +737,7 @@ sub sites_to_matrix {
   $convert2_cmd .= " -return links" if ($return_fields{links});
   if ($return_fields{logo}) {
     $convert2_cmd .= " -return logo -logo_format png,pdf ";
+    $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
   }
   $convert2_cmd .= " -o ".$count_matrix;
   print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
@@ -776,12 +782,11 @@ sub InfoGibbs {
 #    $convert2_cmd .= " -from info-gibbs -to tab";
     $convert2_cmd .= " -return counts,parameters";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
+    $convert2_cmd .= " -return links" if ($return_fields{links});
     if ($return_fields{logo}) {
       $convert2_cmd .= " -return logo";
-#      $convert2_cmd .= " -logo_opt '-e' "; ## Error bar
-#      $convert2_cmd .= " -logo_opt '-M' "; ## Small sample correction
+      $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
     }
-    $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
     &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
