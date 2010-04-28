@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.34 2010/04/28 10:18:08 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.35 2010/04/28 11:53:03 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -731,7 +731,7 @@ sub sites_to_matrix {
   my $convert2_cmd = "${SCRIPTS}/convert-matrix -v 1";
   $convert2_cmd .= " -i ".$site_file;
   $convert2_cmd .= " -from feature -to tab";
-  $convert2_cmd .= " -return counts,parameters";
+  $convert2_cmd .= " -return counts";
   #    $convert2_cmd .= " -sort desc information.per.column";
   $convert2_cmd .= " -return sites" if ($return_fields{sites});
   $convert2_cmd .= " -return links" if ($return_fields{links});
@@ -780,7 +780,7 @@ sub InfoGibbs {
     $convert2_cmd .= " -i ".$outfile{gibbs_matrices};
     $convert2_cmd .= " -from tab -to tab";
 #    $convert2_cmd .= " -from info-gibbs -to tab";
-    $convert2_cmd .= " -return counts,parameters";
+    $convert2_cmd .= " -return counts";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
     $convert2_cmd .= " -return links" if ($return_fields{links});
     if ($return_fields{logo}) {
