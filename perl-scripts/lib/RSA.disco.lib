@@ -59,6 +59,7 @@ sub QuickCountOligos {
   $cmd .= " ".$noov if ($noov eq '-noov'); ## overlapping mode
 
   $cmd .= " ".$strands; ## Strands
+  $quick_sums_counted = 1;
   if ($strands eq "-2str") {
     $quick_rc_counted = 1;
   }
