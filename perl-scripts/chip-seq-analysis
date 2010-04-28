@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.47 2010/04/28 16:44:17 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.48 2010/04/28 22:26:34 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1023,6 +1023,7 @@ sub MatrixFromPatterns {
 #  $cmd .= " -gibbs_iter 2";
 #  $cmd .= " -gibbs_msps 0.5";
   $cmd .= " -collect_method matrix-scan-quick";
+#  $cmd .= " -collect_method info-gibbs";
 #  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
 #  $cmd .= " -links";
   $cmd .= " -o ".$pssm_file;
