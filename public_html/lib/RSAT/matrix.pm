@@ -511,19 +511,19 @@ Add a new row to the matrix
 =cut
 sub addRow {
     my ($self,@new_row) = @_;
-    
+
     ## Update number of rows
     my $nrow = $self->nrow()+1;
 	$self->force_attribute("nrow", $nrow);
     warn ("Matrix: updating number of rows\t", $self->nrow(), "\n") if ($main::verbose >= 5);
-    
+
     ## update number of colmuns
     my $row_size = scalar(@new_row);
     if ($row_size >= $self->ncol()) {
 	warn ("Matrix: updating number of columns\t", $row_size, "\n") if ($main::verbose >= 5);
 	$self->force_attribute("ncol", scalar(@new_row));
     }
-    
+
     ## update matrix content
     for my $c (0..$#new_row) {
 	${$self->{table}}[$c][$nrow-1] = $new_row[$c];
@@ -2113,6 +2113,50 @@ sub get_column {
     return @col;
 }
 
+
+=pod
+
+=item add_column
+
+Add a column either on the left or the right side of the matrix.
+
+Usage: $matrix->add_column($side, @col_values)
+
+=cut
+
+sub add_column {
+  my ($self, $side, @col_values) = @_;
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+#  &RSAT::message::Debug("&RSAT::matrix::add_column()", $side, join(",", @col_values)) if ($main::verbose >= 5);
+  if (scalar(@col_values) != $nrow) {
+    &RSAT::message::FatalError("&RSAT::matrix:::add_column()", 
+			       "invalid number of values",
+			       scalar(@col_values));
+  }
+
+  ## Add a column on the right side
+  if ($side eq "right") {
+    my $new_col = $ncol + 1;
+    @{$self->{table}}[$new_col-1] = \@col_values;
+  } elsif ($side eq "left") {
+    my $new_col = $ncol + 1;
+    ## Shift all columns one position rightward
+    for my $i (1..$ncol) {
+      for my $r (1..$nrow) {
+	$self->{table}[$ncol - $i +1][$r-1] = $self->{table}[$ncol - $i][$r-1];
+      }
+    }
+    @{$self->{table}}[0] = \@col_values;
+  } else {
+    &RSAT::error::FatalError("&RSAT::matrix:::add_column()",
+			     $side, "invalid side (supported: right|left)");
+  }
+
+  $self->force_attribute("ncol", $ncol+1);
+
+}
+
 ################################################################
 
 =pod
@@ -2468,7 +2512,7 @@ sub proba_range {
     }
 
     my ($nrow, $ncol) = $self->size();
-    my @frequencies = $self->getFrequencies();    
+    my @frequencies = $self->getFrequencies();
 
     foreach my $c (0..($ncol-1)) {
 	my $col_min = 1;
@@ -3308,7 +3352,7 @@ sub makeLogo{
   ## Create a file with fake sequences having the same residue composition as the matrix
   my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($logo_dir, $rev_compl);
 
-  &RSAT::message::Debug("makeLogo", $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file)
+  &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file)
     if ($main::verbose >= 5);
 
   ## Legend on the X axis indicates matrix ID, name and number of sites
@@ -3431,7 +3475,7 @@ sub fake_seq_from_matrix {
 #      $current_id++;
 #      &main::PrintNextSequence($seq_handle, "fasta", 0, $current_seq, $current_id);
 #  }
-#  &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 0);
+#  &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 5);
   return ($tmp_seq_file,$seq_number);
 }
 
