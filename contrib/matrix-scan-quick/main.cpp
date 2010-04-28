@@ -26,7 +26,7 @@ using namespace std;
 #include "dist.h"
 #include "pval.h"
 
-int VERSION = 20100427;
+int VERSION = 20100428;
 char *COMMAND_LINE;
 
 /*
