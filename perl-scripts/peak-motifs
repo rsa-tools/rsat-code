@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.44 2010/04/26 23:24:41 jvanheld Exp $
+# $Id: peak-motifs,v 1.45 2010/04/28 06:34:30 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -348,6 +348,7 @@ sub SetOutFileNames {
       ## oligo frequencies in the sequence set
       $main::outfile{$ol."nt_".$seq_type."_freq"} = &OutFileName(".tab", $seq_type."_freq"."-1str".$main::param{noov},$ol."nt");
       $main::outfile{$ol."nt_".$seq_type."_transit"} = &OutFileName(".tab", $seq_type."_transitions"."-1str".$main::param{noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_inclusive"} = &OutFileName(".txt", $seq_type."_inclusive"."-1str".$main::param{noov},$ol."nt");
       $main::outfile{$ol."nt_".$seq_type."_heatmap"} = &OutFileName(".".$main::param{img_format}, $seq_type."_heatmap"."-1str".$main::param{noov},$ol."nt");
 
       ## HTML index to the individual oligonucleotide profiles
@@ -363,6 +364,19 @@ sub SetOutFileNames {
       $main::outfile{$ol."nt_".$seq_type."_profiles_graph"} .= ".".$main::param{img_format};
     }
   }
+
+
+  ################################################################
+  ## Background model for matrix scanning
+  $main::param{scan_markov_order} = 1;
+  my $bg_ol = $main::param{scan_markov_order}+1;
+  $main::param{scan_bg_file} = $main::outfile{$bg_ol."nt_test_inclusive"};
+  &RSAT::message::Debug("bg model", 
+			"order=".$main::param{scan_markov_order},
+			"bg_ol=".$bg_ol,
+			"key=".$bg_ol."nt_test_inclusive",
+			"file=".$main::param{scan_bg_file}
+		       );
 
   ################################################################
   ## Pattern discovery results
@@ -565,6 +579,13 @@ sub CompositionProfiles {
     $cmd .= " -1str";
     $cmd .= " ".$main::param{noov};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_freq"};
+
+    ## Convert background model in INCLUSIVE format for matrix-scan-quick
+    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+    $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
+    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_inclusive"};
+
+    ## Convert background model to transition table and draw the heatmap of transition probabilities
     $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transit"};
@@ -572,6 +593,7 @@ sub CompositionProfiles {
     $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
     &one_command($cmd, 1);
+
   }
 }
 
@@ -599,7 +621,7 @@ sub OligoAnalysis {
       $cmd .= " -markov ".$markov;
       $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
-      &one_command($cmd, 1);
+#      &one_command($cmd, 1);
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
     }
   }
@@ -993,12 +1015,14 @@ sub MatrixFromPatterns {
   my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
   $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -pl ".$pattern_file;
-  $cmd .= " -bginput -markov 1 ";
+  $cmd .= " -bgfile ".$main::param{scan_bg_file};
+#  $cmd .= " -bginput -markov 1 ";
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
-  $cmd .= " -gibbs_flanks 2";
-  $cmd .= " -gibbs_iter 2";
-  $cmd .= " -gibbs_msps 0.5";
-  $cmd .= " -logo";
+#  $cmd .= " -gibbs_flanks 2";
+#  $cmd .= " -gibbs_iter 2";
+#  $cmd .= " -gibbs_msps 0.5";
+  $cmd .= " -collect_method matrix-scan-quick";
+#  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
 #  $cmd .= " -links";
   $cmd .= " -o ".$pssm_file;
 #  &RSAT::message::Warning("Temporarily inactivated\n", $cmd);
@@ -1174,6 +1198,7 @@ sub SynthesisSequenceComposition {
 			    $table,
 			    $ol."nt freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
 			    $ol."nt transitions",$main::outfile{$ol."nt_".$seq_type."_transit"},
+			    "inclusive bg model",$main::outfile{$ol."nt_".$seq_type."_inclusive"},
 			    "profile table",$main::outfile{$ol."nt_".$seq_type."_profiles"},
 			    "individual profiles",$main::outfile{$ol."nt_".$seq_type."_profiles_index"},
 			   );
