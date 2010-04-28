@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.22 2010/04/26 22:02:47 jvanheld Exp $
+# $Id: display-graph,v 1.23 2010/04/28 06:32:19 jvanheld Exp $
 #
 ############################################################
 
@@ -170,8 +170,17 @@ package main;
       }
 
       ## If all weights are equal, the min is arbitrarily set to 0
+
+      ## If all weights are equal, the min is arbitrarily set to 0
       if ($edge_min == $edge_max) {
-	$edge_min = 0;
+	if ($edge_max > 0) {
+	  $edge_min = 0;
+	} elsif ($edge_min < 0) {
+	  $edge_max = 0;
+	} else {
+	  $edge_min = -0.5;
+	  $edge_max = 0.5;
+	}
       }
 
     }
