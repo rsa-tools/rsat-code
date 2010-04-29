@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.48 2010/04/28 22:26:34 jvanheld Exp $
+# $Id: peak-motifs,v 1.49 2010/04/29 06:51:35 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.49 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -148,6 +148,8 @@ package main;
 			 cluster_motifs
                          motifs_vs_ref
                          motifs_vs_db
+
+			 scan
 
 			 synthesis
 			 clean_seq
@@ -217,6 +219,8 @@ package main;
 
   &MotifsVersusDatabase() if ((scalar(@motif_databases) > 0)
 			      && ($task{motifs_vs_db}));
+
+  &ScanSequences() if ($task{scan});
 
   &Synthesis() if ($task{synthesis});
 
@@ -304,6 +308,12 @@ sub DefaultParameters {
   $main::param{matrix_compa_min_cor} = 0.85;
   $main::param{matrix_compa_min_w} = 5;
   $main::param{matrix_compa_min_Ncor} = 0.4;
+
+
+  ## matrix-scan-quick
+  $main::param{scan_min_score} = 7.5;
+  $main::param{scan_strands} = "-2str";
+
 }
 
 
@@ -432,9 +442,14 @@ sub SetOutFileNames {
     $main::outfile{$pattern_type.'_pssm_sig'} = $main::outfile{$pattern_type.'_pssm'}."_sig_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_counts'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.txt";
+    $main::outfile{$pattern_type.'_pssm_sites'} = $main::outfile{$pattern_type.'_pssm'}."_sites.tab";
+    $main::outfile{$pattern_type.'_pssm_site_distrib'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib.tab";
+    $main::outfile{$pattern_type.'_pssm_site_distrib_graph'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib.png";
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
-      $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices_m".$logo_nb."_logo.".$main::param{img_format};
-      $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices_m".$logo_nb."_logo_rc.".$main::param{img_format};
+      $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb} =
+	$main::outfile{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb.".".$main::param{img_format};
+      $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb} =
+	$main::outfile{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb."_rc.".$main::param{img_format};
     }
   }
 
@@ -1017,20 +1032,58 @@ sub MatrixFromPatterns {
   $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -pl ".$pattern_file;
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
-#  $cmd .= " -bginput -markov 1 ";
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
   $cmd .= " -flanks 2";
-#  $cmd .= " -gibbs_iter 2";
-#  $cmd .= " -gibbs_msps 0.5";
   $cmd .= " -collect_method matrix-scan-quick";
 #  $cmd .= " -collect_method info-gibbs";
-#  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
+#  $cmd .= " -gibbs_iter 2";
+#  $cmd .= " -gibbs_msps 0.5";
+  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
 #  $cmd .= " -links";
   $cmd .= " -o ".$pssm_file;
 #  &RSAT::message::Warning("Temporarily inactivated\n", $cmd);
   &one_command($cmd, 1);
 }
 
+
+################################################################
+## Scan peak sequences with the discovered motif
+sub ScanSequences {
+  my ($pattern_type, $pssm_file, $type) = @_;
+  $main::param{scan_min_score} = 7.5;
+  &RSAT::message::TimeWarn("Scanning sequences", $type) if ($main::verbose >= 1);
+#  foreach my $seq_type (@seq_types) {
+    foreach my $pattern_type (@pattern_types) {
+      my $cmd = $BIN."/matrix-scan-quick -v 1";
+      $cmd .= " -i ".$infile{test_seq};
+      $cmd .= " -m ".$main::outfile{$pattern_type.'_pssm_counts'};
+      $cmd .= " -bgfile ".$main::param{scan_bg_file};
+      $cmd .= " ".$main::param{scan_strands};
+      $cmd .= " -origin center -return sites";
+      $cmd .= " -t ".$main::param{scan_min_score};
+      $cmd .= " >".$main::outfile{$pattern_type.'_pssm_sites'};
+      &one_command($cmd, 1);
+
+      ## Compute the positional distribution of sites
+      $cmd = "awk '{print \(\$6\+\$5\)/2}'";
+      $cmd .= " ".$main::outfile{$pattern_type.'_pssm_sites'};
+      $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
+      $cmd .= " -ci ".$main::param{profiles_ci};
+      $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_site_distrib'};
+      &one_command($cmd, 1);
+
+      ## Draw the graph of predicted site positions
+      $cmd = 'XYgraph';
+      $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_site_distrib'};
+      $cmd .= " -lines -xcol 3 -ycol 4";
+      $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
+      $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak center'";
+      $cmd .= " -title1 'Predicted sites : $pattern_type'";
+      $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_site_distrib_graph'};
+      &one_command($cmd, 1);
+    }
+#  }
+}
 
 
 ################################################################
@@ -1184,7 +1237,7 @@ sub SynthesisSequenceComposition {
 			  "<a  href='".$img."'><img height=150 src='".$img."'></a>",
 			  "lengths",$main::outfile{$seq_type."_seqlen"},
 			  "distrib",$main::outfile{$seq_type."_seqlen_distrib"},
-			  "plot",$main::outfile{$seq_type."_seqlen_distrib_graph"},
+			  "graph",$main::outfile{$seq_type."_seqlen_distrib_graph"},
 			 );
 
 
@@ -1334,8 +1387,11 @@ sub SynthesisPatternDisco {
 			  $pattern_type,$main::outfile{$pattern_type},
 			  "assembly",$main::outfile{$pattern_type.'_asmb'},
 			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-			  "info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
-			  "count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
+##			  "info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
+			  "matrices",$main::outfile{$pattern_type.'_pssm_counts'},
+			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
+			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
+			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
 			 );
   } else {
     &SyntheticTableAddRow($pattern_type,
@@ -1343,8 +1399,11 @@ sub SynthesisPatternDisco {
 			  $pattern_type,$main::outfile{$pattern_type},
 			  "assembly",$main::outfile{$pattern_type.'_asmb'},
 			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-			  "info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
-			  "count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
+##			  "info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
+			  "matrices",$main::outfile{$pattern_type.'_pssm_counts'},
+			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
+			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
+			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
 			 );
   }
 }
@@ -1506,24 +1565,9 @@ and rely on a poor number of sites, but the reference motif may
 nevertheless be informative, because it is based on several
 independent studies.
 
-The reference motif is used for two purposes in I<chip-seq-analysis>.
-
-=over
-
-=item Comparison with discovered motifs
-
 Each discovered motif can be compared to the reference motif, in order
-to evaluate its likelihood to correspond to the factor of interest.
-
-=item Seed for supervised motif improvement
-
-The reference motif can serve as seed for collecting all the sites in
-the peak sequence set, and building a more robust motif based on
-several hundreds or thousands of sites. The supervised motif
-improvement is performed with I<info-gibbs> (using the option
-B<--seedmatrix>).
-
-=back
+to evaluate its correspondence with the binding motif of the factor of
+interest.
 
 =cut
     } elsif ($arg eq "-ref_motif") {
