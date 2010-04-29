@@ -1,0 +1,81 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% PATHWAY EXTRACTION TOOLS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Pathway extraction tools}
+
+\section{Using pathway extraction tools}
+
+\subsection{Listing tools and getting help}
+You can list available tools by typing:
+
+\begin{verbatim}
+java graphtools.util.ListTools
+\end{verbatim}
+
+All tools provide a \option{-h} option to display help.
+
+\subsection{Abbreviating tool names}
+The command line tool names may be simplified by setting aliases.
+For example, in the bash shell:
+\begin{verbatim}
+alias Pathfinder="java graphtools.algorithms.Pathfinder"
+\end{verbatim}
+allows to type:
+\begin{verbatim}
+Pathfinder -h
+\end{verbatim}
+instead of:
+\begin{verbatim}
+java graphtools.algorithms.Pathfinder -h
+\end{verbatim}
+
+\subsection{Increasing JVM memory}
+For large graphs, you may need to increase the memory allocated to the java virtual machine.
+You can do so by specifying the \option{-Xmx} option.
+Example:
+\begin{verbatim}
+java -Xmx800m graphtools.algorithms.Pathfinder -h
+\end{verbatim}
+
+\section{Build metabolic networks}
+
+\subsection{Build KEGG generic metabolic networks} 
+
+To build the directed reaction network, type:
+
+\begin{verbatim}
+java -Xmx800m graphtools.parser.KeggLigandDataManager -m
+\end{verbatim}
+
+The execution of this command takes quite long, because it fetches the reaction
+and compound files from KEGG's FTP repository at \ftp{ftp.genome.jp}. 
+To get these files, the \program{KeggLigandDataManager} requires
+\program{wget} to be installed and in your path. \program{wget} is 
+freely available from \url{http://www.gnu.org/software/wget/}.
+
+Alternatively, you may first download the reaction and compound files yourself
+from the KEGG ftp server. Type in your browser (or in your favourite ftp
+client): \url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/compound/compound}
+and save the compound file into \RSAT\file{/data/KEGG/KEGG_LIGAND}. Do the same
+for the reaction file at
+\url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/reaction/reaction}. 
+Then you can run the command above to generate the reaction network.
+
+To construct the undirected RPAIR network, type:
+
+\begin{verbatim}
+java -Xmx800m graphtools.parser.KeggLigandDataManager -s -u
+\end{verbatim}
+
+For the reaction-specific undirected RPAIR network, type:
+
+\begin{verbatim}
+java graphtools.parser.KeggLigandDataManager -t -u
+\end{verbatim}
+
+\subsection{Build KEGG organism-specific metabolic networks}
+
+The MetabolicGraphProvider tool allows you to merge KEGG KGML files into
+a metabolic network specific to a set of organisms. 
+
+ 
