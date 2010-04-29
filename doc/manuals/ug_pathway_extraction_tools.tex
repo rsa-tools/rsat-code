@@ -37,45 +37,148 @@ Example:
 java -Xmx800m graphtools.algorithms.Pathfinder -h
 \end{verbatim}
 
-\section{Build metabolic networks}
+\section{Building metabolic networks}
 
-\subsection{Build KEGG generic metabolic networks} 
+\subsection{Building KEGG generic metabolic networks} 
 
+\minisec{Reaction network}
 To build the directed reaction network, type:
 
 \begin{verbatim}
 java -Xmx800m graphtools.parser.KeggLigandDataManager -m
 \end{verbatim}
 
+The network is stored in the current directory.
+
 The execution of this command takes quite long, because it fetches the reaction
-and compound files from KEGG's FTP repository at \ftp{ftp.genome.jp}. 
+and compound files from KEGG's FTP repository at \url{ftp.genome.jp}. 
 To get these files, the \program{KeggLigandDataManager} requires
 \program{wget} to be installed and in your path. \program{wget} is 
 freely available from \url{http://www.gnu.org/software/wget/}.
 
 Alternatively, you may first download the reaction and compound files yourself
 from the KEGG ftp server. Type in your browser (or in your favourite ftp
-client): \url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/compound/compound}
-and save the compound file into \RSAT\file{/data/KEGG/KEGG_LIGAND}. Do the same
-for the reaction file at
-\url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/reaction/reaction}. 
+client):\\
+\url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/compound/compound}\\
+and save the compound file into \RSAT\file{/data/KEGG/KEGG\_LIGAND}. Do the same
+for the reaction file at\\
+\url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/reaction/reaction}.\\ 
 Then you can run the command above to generate the reaction network.
 
+\minisec{RPAIR network}
 To construct the undirected RPAIR network, type:
 
 \begin{verbatim}
 java -Xmx800m graphtools.parser.KeggLigandDataManager -s -u
 \end{verbatim}
 
+Creating the RPAIR network will also create the \file{rpairs.tab} file, which
+can be placed in the KEGG directory for later use by typing
+
+\begin{lstlisting}
+cp $RSAT/data/KEGG/KEGG_LIGAND/rpairs.tab $RSAT/data/KEGG/rpairs.tab
+\end{lstlisting}
+
+An older version of this file is also available from the \neat web server
+in the data/KEGG directory.
+
+\minisec{Reaction-specific RPAIR network}
 For the reaction-specific undirected RPAIR network, type:
 
 \begin{verbatim}
-java graphtools.parser.KeggLigandDataManager -t -u
+java -Xmx800m graphtools.parser.KeggLigandDataManager -t -u
 \end{verbatim}
 
-\subsection{Build KEGG organism-specific metabolic networks}
+\subsection{Building KEGG organism-specific metabolic networks}
 
 The MetabolicGraphProvider tool allows you to merge KEGG KGML files into
 a metabolic network specific to a set of organisms. 
 
+\minisec{Prerequisites}
+You may first create the list of available KEGG organisms:
+
+\begin{verbatim}
+java -Xmx800m graphtools.parser.MetabolicGraphProvider -O
+\end{verbatim}
+
+This command will create the file \file{Kegg\_organisms\_list.txt} in the
+current directory. Since this file is needed by the
+\program{MetabolicGraphProvider}, you may copy it to its default location:
+
+\begin{lstlisting}
+cp Kegg_organisms_list.txt $RSAT/data/KEGG/Kegg_organisms_list.txt
+\end{lstlisting}
+
+Alternatively, you may obtain an older version of this file from the \neat web
+server in the data/KEGG directory. 
+
+\minisec{Creating an organism-specific reaction network for E. coli}
+
+The command below builds the \org{E. coli}-specific metabolic reaction network
+from its KGML files:
+
+\begin{verbatim}
+java -Xmx800m graphtools.util.MetabolicGraphProvider -i eco -o ecoNetwork.tab
+\end{verbatim}
+
+The KGML files are automatically obtained from the current KEGG database
+(which may take very long). Alternatively, they can be downloaded manually from
+\url{http://www.genome.jp/kegg/xml/}.
+If downloaded manually, all organism-specific KGML files have to be placed in a
+folder named with the organism's KEGG abbreviation (e.g.\textit{eco}
+for \org{E. coli}). The folder should be located in the \RSAT\file{data/KEGG}
+directory.
  
+We can also merge the KGML files of several organisms into one network and apply
+some filtering.
+
+\begin{verbatim}
+java -Xmx800m graphtools.util.MetabolicGraphProvider -i ecv/eco -o
+eco_ecv_Network.tab -c C00001/C000002/C00003/C00004/C00005/C00006/C00007/C00008
+\end{verbatim}
+
+This command (in one line) will construct a merged metabolic network from two
+\org{E. coli} strains (\org{Escherichia coli K-12 MG1655} and \org{Escherichia
+coli O1 (APEC)}) 
+and in addition filter out some highly connected compounds (water, ATP, NAD+, NADH, NADPH, NADP+, oxygen and ADP).
+
+\subsection{Building metabolic networks from biopax files}
+
+TODO
+
+\section{Linking genes to reactions}
+
+The main application of pathway extraction is to interpret a set of
+associated enzyme-coding genes. An association can for example be co-expression
+in a microarray, co-regulation in an operon or regulon or co-occurrence in a
+phylogenetic profile.
+
+In this section, we will see how to link enzyme-coding genes to their reactions.
+This is not a straightforward task, as an N:N relationship exists between genes,
+EC numbers, reactions and reactant pairs.
+
+\subsection{Prerequisites}
+In order to link genes to reactions, the metabolic database needs to be
+installed. The installation of this database is described in chapter
+``Metabolic Pathfinder and Pathway extraction" in the \neat web server install
+guide, which is available from the \neat web server download section. 
+
+\subsection{Linking genes of the isoleucine-valine operon to reactions}
+
+The isoleucine-valine operon consists of the following genes:
+
+\begin{lstlisting}
+ilvL ilvG_1 ilvG_2 ilvM ilvE ilvD ilvA
+\end{lstlisting}
+
+These genes can be linked to KEGG reactant pairs using the current KEGG
+database and the custom metabolic database with the command below (in one line):
+
+\begin{verbatim}
+java graphtools.util.SeedConverter -i ilvL/ilvG_1/ilvG_2/ilvM/ilvE/ilvD/ilvA 
+-I string -O eco -o ilv_operon_seeds.txt -r
+\end{verbatim}
+
+Option \option{-r} flags that genes should be mapped to (main) reactant pairs,
+\option{-O} specifies the source organism of the genes, \option{-i} lists the
+genes and \option{-I} specifies the input format.
