@@ -17,7 +17,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/convert-matrix";
+$command = $SCRIPTS."/convert-matrix";
 $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
 $ENV{rsat_echo} = 1;
@@ -220,7 +220,7 @@ exit(0);
 
 ### prepare data for piping
 sub PipingForm {
-  local $command = "$ENV{RSAT}/perl-scripts/convert-matrix -i $result_file -from tab -to tab -top 1 -return counts";
+  local $command = $SCRIPTS."/convert-matrix -i $result_file -from tab -to tab -top 1 -return counts";
   local $matrix_content = `$command`;
   $matrix_content =~ s|//\n||gm;
   $matrix_content =~ s|;.*\n||gm;
