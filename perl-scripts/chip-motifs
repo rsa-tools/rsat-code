@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.49 2010/04/29 06:51:35 jvanheld Exp $
+# $Id: chip-motifs,v 1.50 2010/04/29 07:38:37 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.49 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.50 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -442,6 +442,7 @@ sub SetOutFileNames {
     $main::outfile{$pattern_type.'_pssm_sig'} = $main::outfile{$pattern_type.'_pssm'}."_sig_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_counts'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.txt";
+    $main::outfile{$pattern_type.'_pssm_tf'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.tf";
     $main::outfile{$pattern_type.'_pssm_sites'} = $main::outfile{$pattern_type.'_pssm'}."_sites.tab";
     $main::outfile{$pattern_type.'_pssm_site_distrib'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib.tab";
     $main::outfile{$pattern_type.'_pssm_site_distrib_graph'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib.png";
@@ -855,16 +856,18 @@ sub MergeMotifs {
 #    $cmd .= " ".$main::outfile{motifs_discovered};
 #  }
 
+  ################################################################
   ## Concatenate all discovered motifs (matrices) in a single file.
   ## Use TRANSFAC format because if allows to associate a name to each
   ## matrix.
   foreach my $pattern_type (@pattern_types) {
-    my $matrix_file = $main::outfile{$pattern_type.'_pssm_counts'};
+    my $matrix_file = $main::outfile{$pattern_type.'_pssm_tf'};
     if (-e $matrix_file) {
-      $cmd .= " ; ".$SCRIPTS."/convert-matrix -from tab -to transfac -return counts,parameters";
-      $cmd .= " -prefix $pattern_type";
-      $cmd .= " -i ".$matrix_file;
-      $cmd .= " >> ".$main::outfile{motifs_discovered};
+#      $cmd .= " ; ".$SCRIPTS."/convert-matrix -from tab -to transfac -return counts,consensus";
+#      $cmd .= " -prefix $pattern_type";
+#      $cmd .= " -i ".$matrix_file;
+#      $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_tf'};
+      $cmd .= " cat ".$matrix_file." >> ".$main::outfile{motifs_discovered};
     } else {
       &RSAT::message::Warning("Missing matrix file", $pattern_type, $matrix_file);
     }
@@ -1024,34 +1027,33 @@ sub MotifsVersusDatabase {
 }
 
 ################################################################
-## Convert a list of patterns into PSSMs
+## Convert Word assemblies into PSSMs
 sub MatrixFromPatterns {
-  my ($pattern_file, $pssm_file, $type) = @_;
-  &RSAT::message::TimeWarn("\tMatrix from patterns", $type) if ($verbose >= 1);
+  my ($pattern_file, $pssm_file, $pattern_type) = @_;
+
+  &RSAT::message::TimeWarn("\tMatrix from patterns", $pattern_type) if ($verbose >= 1);
   my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
   $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -pl ".$pattern_file;
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
+  $cmd .= " -prefix ".$pattern_type;
   $cmd .= " -flanks 2";
   $cmd .= " -collect_method matrix-scan-quick";
-#  $cmd .= " -collect_method info-gibbs";
-#  $cmd .= " -gibbs_iter 2";
-#  $cmd .= " -gibbs_msps 0.5";
-  $cmd .= " -logo"; ## TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG
-#  $cmd .= " -links";
+  $cmd .= " -logo";
   $cmd .= " -o ".$pssm_file;
-#  &RSAT::message::Warning("Temporarily inactivated\n", $cmd);
   &one_command($cmd, 1);
 }
 
 
 ################################################################
 ## Scan peak sequences with the discovered motif
+##
+## BEWARE: THIS IS NOT YET WORKING, BECAUSE matrix-scan-quick ONLY
+## USES THE FIRST MATRIX OF EACH FILE.
 sub ScanSequences {
-  my ($pattern_type, $pssm_file, $type) = @_;
   $main::param{scan_min_score} = 7.5;
-  &RSAT::message::TimeWarn("Scanning sequences", $type) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 1);
 #  foreach my $seq_type (@seq_types) {
     foreach my $pattern_type (@pattern_types) {
       my $cmd = $BIN."/matrix-scan-quick -v 1";
@@ -1387,8 +1389,8 @@ sub SynthesisPatternDisco {
 			  $pattern_type,$main::outfile{$pattern_type},
 			  "assembly",$main::outfile{$pattern_type.'_asmb'},
 			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-##			  "info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
-			  "matrices",$main::outfile{$pattern_type.'_pssm_counts'},
+			  "matrices (tab)",$main::outfile{$pattern_type.'_pssm_counts'},
+			  "matrices (tf)",$main::outfile{$pattern_type.'_pssm_tf'},
 			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
 			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
 			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
@@ -1399,7 +1401,6 @@ sub SynthesisPatternDisco {
 			  $pattern_type,$main::outfile{$pattern_type},
 			  "assembly",$main::outfile{$pattern_type.'_asmb'},
 			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-##			  "info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
 			  "matrices",$main::outfile{$pattern_type.'_pssm_counts'},
 			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
 			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
