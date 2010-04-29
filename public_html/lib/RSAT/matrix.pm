@@ -3391,8 +3391,13 @@ sub makeLogo{
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
 
-    ## Run seqlogo
-    &RSAT::util::doit($logo_cmd,0,1, 0,0);
+    ## Run seqlogo with specific parameters for the &doit() procedure
+    my $logo_dry = 0;
+    my $logo_die = 0;
+    my $logo_verbose = 0;
+    my $logo_batch = 0;
+    my $logo_job_prefix = "";
+    &RSAT::util::doit($logo_cmd,$logo_dry,$logo_die,$logo_verbose,$logo_prefix);
 
     my $logo_file = $logo_basename.".".$logo_format;
     push @logo_files, $logo_file;
