@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.146 2010/04/28 22:25:43 jvanheld Exp $
+# $Id: oligo-analysis,v 1.147 2010/04/29 06:46:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.146 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.147 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -251,11 +251,7 @@ if (($alphabet) && ($background_model ne "bernoulli")) {
 ################################################################
 ## Check if quick counting mode is possible
 if ($quick_count_if_possible) {
-  if (&CheckQuickCount()) {
-    $quick_count = 1;
-  } else {
-    $quick_count = 0;
-  }
+    $quick_count = &CheckQuickCount();
 }
 
 ################################################################
@@ -2577,6 +2573,15 @@ ARGUMENTS
 		This option is incompatible with the following output
   	        fields: $quick_forbidden_fields
 
+		It is also incompatible with the output types
+		   -table
+		   -distrib
+
+	-quick_if_possible
+		Evaluate if the quick mode is compatible with the
+		selected output parameters, and, if so, run in this
+		mode.
+
     THRESHOLDS
 	-lth param value
 		Lower threshold on some parameter. All patterns with a
@@ -2972,40 +2977,47 @@ sub PrintOptions {
   print HELP <<End_of_help;
 oligo-analysis options
 ----------------------
--h              display complete help message
--help           display this list of options
--i              input file
+-h			display complete help message
+-help           	display this list of options
+-i              	input file
 -mask upper|lower	mask upper- or lowercases, respectively
--format         input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
--seqtype       	sequence type (dna|prot|other)
--o              output file
--v \#            verbose level
--l              oligomer length
--a a:t \# c:g \#  alphabet utilization
--a yeast        use yeast genomic alphabet
--a input        use alphabet from input sequence (deprecated, use -bg input instead)
--expfreq        file with expected frequency table
--calibN		file with calibration table based on random gene sets (N genes per set)
--calib1		file with calibration table based on single sequence analysis
--ncf		(deprecated, use '-bg intergenic' instead)
--bg		background model (supported: $supported_bg)
--org		organism (-org and -taxon are mutually exclusive)
--taxon		taxon (-org and -taxon are mutually exclusive)
--markov	\#	calculate expected frequencies according to
-		Markov chains of order \#
--lexicon	exp word frequencies calculaed on the basis of word segments
--pseudo	\#	pseudo-weight (\# between 0 and 1)
--return		fields to return, among:
-			$supported_return_fields
--table		return a table sequences (rows)/oligo occurrences (cols)
--distrib	return occurrence distributions (one row per pattern)
--noov		no overlapping
--1str		inactivate summation of occ on both strands
--2str		sum occurences on both strands (default)
--grouprc        group reverse complement pairs (default)
--nogrouprc      do not group reverse complement pairs
--lth param \#	lower threshold on parameter. Supported: $supported_thresholds
--uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
+-format         	input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
+-seqtype       		sequence type (dna|prot|other)
+-o              	output file
+-v \#            	verbose level
+-l              	oligomer length
+-a a:t \# c:g \#  	alphabet utilization
+-expfreq        	file with expected frequency table
+-calibN			file with calibration table based on random gene sets (N genes per set)
+-calib1			file with calibration table based on single sequence analysis
+-ncf			(deprecated, use '-bg intergenic' instead)
+-bg			background model (supported: $supported_bg)
+-org			organism (-org and -taxon are mutually exclusive)
+-taxon			taxon (-org and -taxon are mutually exclusive)
+-markov	\#		estimate expected freq as a Markov chains of order \#
+-lexicon		exp word frequencies calculaed on the basis of word segments
+-pseudo	\#		pseudo-weight (\# between 0 and 1)
+-return			fields to return. Supported: $supported_return_fields
+-table			return a table sequences (rows)/oligo occurrences (cols)
+-distrib		return occurrence distributions (one row per pattern)
+-noov			no overlapping
+-1str			inactivate summation of occ on both strands
+-2str			sum occurences on both strands (default)
+-grouprc        	group reverse complement pairs (default)
+-nogrouprc      	do not group reverse complement pairs
+-lth param \#		lower threshold on parameter. Supported: $supported_thresholds
+-uth param \#		upwer threshold on parameter. Supported: $supported_thresholds
+-oneN           	one undefined position
+-onedeg         	one degenerate position
+-sort			sort oligomers by overrepresentation
+-under			detect under-represented instead of over-represented words
+-two_tails      	detect under-represented and over-represented words
+-zeroocc		return also patterns with zero occurrences
+-quick			quick count mode (delegate counting to count-words)
+-quick_if_possible    evaluate whether oligos should be counted in quick or slow mode
+-pal		      only return reverse palindroms
+
+Deprecated options:
 -tho            threshold on occurence number (obsolete)
 -thpo           threshold on occurence probability (obsolete)
 -thratio	threshold on observed/expected occurrence ratio (obsolete)
@@ -3014,14 +3026,7 @@ oligo-analysis options
 -thmsf		threshold on frequency of matching sequences  (obsolete)
 -thpms          threshold on matching sequence proba (obsolete)
 -thmssig        threshold on matching sequence significance index (obsolete)
--oneN           one undefined position
--onedeg         one degenerate position
--sort		sort oligomers by overrepresentation
--under		detect under-represented instead of over-represented words
--two_tails      detect under-represented and over-represented words
--zeroocc	return also patterns with zero occurrences
--quick		quick count mode (delegate counting to count-words)
--pal		only return reverse palindroms
+-a input       	use alphabet from input sequence (deprecated, use -bg input instead)
 End_of_help
     close HELP;
     exit(0);

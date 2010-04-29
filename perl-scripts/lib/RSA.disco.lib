@@ -42,6 +42,10 @@ $quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
 
 ################################################################
 ## Check if the options are compatible with quick count mode
+##
+## Usage:
+##  my $quick_count = &CheckQuickCount();
+##
 sub CheckQuickCount {
   unless ($infile{input}) {
     &RSAT::message::Warning("Quick count mode requires to specify an input file")
