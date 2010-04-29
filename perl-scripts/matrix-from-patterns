@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.36 2010/04/28 21:23:45 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.37 2010/04/29 07:38:37 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -75,7 +75,7 @@ jvhelden@ulb.ac.be
 
 matrix-from-patterns -seq sequence_filfe \
    [-pl pattern_file|-asmb assembly_file] \
-   [-o output_prefix] [-v #]
+   [-o output_basename] [-v #]
 
 =head1 INPUT FORMAT
 
@@ -118,6 +118,7 @@ package main;
     my $start_time = &AlphaDate();
     local %infile = ();
     local %outfile = ();
+    local $matrix_prefix = "";
 
     local $verbose = 0;
     local $strands = "-2str";
@@ -196,6 +197,7 @@ package main;
     $outfile{sig_matrices_split} = $outfile{output}."_sig_matrices_split";
     $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
     $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
+    $outfile{count_matrices_tf} = $outfile{output}."_count_matrices.tf"; ## Count matrices in transfac format
     $outfile{logo_basename} = $outfile{output}."_count_matrices_logo";
     $outfile{gibbs_matrices} = $outfile{output}."_gibbs_matrices.txt";
 
@@ -244,6 +246,20 @@ package main;
       &InfoGibbs();
     }
 
+    ################################################################
+    ## Convert matrices to TRANSFAC format
+    my $tab2tf_cmd = $SCRIPTS."/convert-matrix -v 1 ";
+    $tab2tf_cmd .= " -i ".$outfile{count_matrices};
+    $tab2tf_cmd .= " -from tab -to transfac -return counts,consensus";
+#    if ($return_fields{logo}) {
+#      $convert2_cmd .= " -return logo";
+#      $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
+#    }
+#    $convert2_cmd .= " -return links" if ($return_fields{links});
+    $tab2tf_cmd .= " -prefix ".$matrix_prefix if ($matrix_prefix);
+    $tab2tf_cmd .= " -o ".$outfile{count_matrices_tf};
+    print $log "; convert matrices from tab to transfac format\n", $tab2tf_cmd, "\n";
+    &doit($tab2tf_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
     ################################################################
     ## Close output stream
@@ -421,19 +437,26 @@ Strands
 	} elsif ($arg eq "-2str") {
 	    $strands = "-2str";
 
-	    ## Output file
 =pod
 
-=item	B<-o output_prefix>
+=item	B<-o output_basename>
 
 The program exports several files, whose name is specified by the
-output prefix, followed by an extension.
+output basename, followed by an extension.
 
 =cut
 	} elsif ($arg eq "-o") {
 	    $outfile{output} = shift(@arguments);
 
-	    ## Return sites
+=pod
+
+=item B<-prefix matrix_prefix>
+
+=cut
+	} elsif ($arg eq "-prefix") {
+	  $main::matrix_prefix = shift(@arguments);
+
+
 =pod
 
 =item	B<-sites>
@@ -734,11 +757,11 @@ sub sites_to_matrix {
   $convert2_cmd .= " -return counts";
   #    $convert2_cmd .= " -sort desc information.per.column";
   $convert2_cmd .= " -return sites" if ($return_fields{sites});
-  $convert2_cmd .= " -return links" if ($return_fields{links});
   if ($return_fields{logo}) {
     $convert2_cmd .= " -return logo -logo_format png,pdf ";
     $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
   }
+  $convert2_cmd .= " -return links" if ($return_fields{links});
   $convert2_cmd .= " -o ".$count_matrix;
   print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
   &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -782,11 +805,11 @@ sub InfoGibbs {
 #    $convert2_cmd .= " -from info-gibbs -to tab";
     $convert2_cmd .= " -return counts";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
-    $convert2_cmd .= " -return links" if ($return_fields{links});
     if ($return_fields{logo}) {
       $convert2_cmd .= " -return logo";
       $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
     }
+    $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
     &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
