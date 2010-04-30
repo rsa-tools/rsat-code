@@ -39,7 +39,8 @@ java -Xmx800m graphtools.algorithms.Pathfinder -h
 
 \section{Obtaining metabolic networks}
 
-\subsection{Downloading metabolic networks from the NeAT web server}
+\subsection{Downloading MetaCyc and KEGG generic metabolic networks from the
+NeAT web server}\label{Download}
 
 Metabolic networks can be downloaded from the NeAT web server.
 Go to the menu entry ``Path finding and pathway extraction'', open the
@@ -152,7 +153,122 @@ and in addition filter out some highly connected compounds (water, ATP, NAD+, NA
 
 \subsection{Building metabolic networks from biopax files}
 
-TODO
+Several metabolic databases store their data in biopax format
+(\url{http://www.biopax.org/}), e.g. BioCyc and Reactome. You can create
+a metabolic network from a biopax file using the
+\program{GDLConverter}.
+
+For instance, you may download the lysine biosynthesis I pathway from
+\url{http://metacyc.org/} in biopax format and save it into a file named
+\file{lysine\_pwy1.xml}. You can then obtain a tab-delimited metabolic network
+from this file using the command below (in one line). Note that the metabolic
+network preserves the reaction directions indicated in the biopax file, that is irreversible reactions are
+kept.
+
+\begin{verbatim}
+java graphtools.util.GDLConverter -i lysine_pwy1.xml 
+-o lysine.txt -O tab -I biopax -b -d
+\end{verbatim}
+
+Option \option{-O} indicates the output format (tab-delimited), \option{-I}
+specifies the input format (biopax in this case), \option{-b} flags that
+attributes required for the metabolic format should be set and \option{-d} tells
+the program to construct a directed network.
+
+The \program{GDLConverter} may be applied in general to interconvert pathways
+in different formats.
+
+\section{Finding k-shortest paths}
+
+Pathways may be extracted from metabolic networks by enumerating the
+\textit{k}-shortest paths between a set of source compounds/reactions and a
+set of target compounds/reactions.
+
+In metabolic networks, some compounds such as ATP or NADPH are involved in a
+large number of reactions, thus acting as shortcuts. In order to deal with this
+problem, compounds are penalized with a weight equal to their number of
+connections (i.e. their degree). 
+
+For example, assume you have generated (\ref{RPAIR}) or downloaded
+(\ref{Download}) a KEGG RPAIR network stored in the file 
+\file{KEGG\_RPAIR\_undirected.txt}. Given this network, we can list the 
+three highest-ranked lightest paths between
+aspartate (KEGG identifier: C00049) and lysine (KEGG identifier: C00047) with
+the command below (in one line):
+
+\begin{verbatim}
+java -Xmx800m graphtools.algorithms.Pathfinder -g KEGG_RPAIR_undirected.txt 
+-s C00049 -t C00047 -y con -b -r 3 -f tab
+\end{verbatim}
+
+where option \option{-s} specifies the source node (more than one can be given),
+\option{-t} the target node (as for the source, more than one target can be
+specified),\option{-f} indicates the format of the input network
+(tab-delimited), \option{-r} indicates the rank, option{-y} gives the weight policy to be applied
+(con sets the weight of compounds to their degree and the weight of reactions
+to one) and \option{-b} flags that the input network is metabolic.
+
+This command will yield the following output (with KEGG RPAIR version 49.0):
+
+\begin{lstlisting}
+INFO: Pathfinder took 5014 ms to perform its task.
+; Experiment exp_0
+; Pathfinding results
+; Date=Fri Apr 30 16:34:27 CEST 2010
+; ===============================
+; INPUT
+; Source=[C00049]
+; Target=[C00047]
+; Graph=KEGG_RPAIR_undirected.txt
+; Directed=false
+; Metabolic=true
+; RPAIR graph=true
+; CONFIGURATION
+; Algorithm=rea
+; Weight Policy=con
+; Maximal weight=2147483647
+; Exclusion attribute=ExclusionAttribute
+; Rank=3
+; REA timeout in minutes=5
+; EXPLANATION OF COLUMNS
+; Start node=given start node identifier
+; End node=given end node identifier
+; Path=path index
+; Rank=rank of path (paths having same weight have 
+the same rank, though their step number might differ)
+; Weight=weight of path (sum of edge weights)
+; Steps=number of nodes in path
+; Path=sequence of nodes from start to end node that forms the path
+; ===============================
+#start  end     path    rank    weight  steps   path
+C00049  C00047  1       1       122.0   15      C00049->RP00932->C03082
+->RP02107->C00441->RP02109->C03340->RP00740->C03972->RP03970->C03871
+->RP02474->C00680->RP00907->C00047
+C00049  C00047  2       2       126.0   15      C00049->RP00932->C03082
+->RP02107->C00441->RP02109->C03340->RP00740->C03972->RP11205->C00666
+->RP02449->C00680->RP00907->C00047
+C00049  C00047  3       3       134.0   11      C00049->RP00116->C00152
+->RP06538->C00151->RP01393->C00405->RP07206->C00739->RP00911->C00047
+C00049  C00047  4       4       143.0   13      C00049->RP03035->C04540
+->RP01395->C00152->RP06538->C00151->RP01393->C00405->RP07206->C00739
+->RP00911->C00047
+\end{lstlisting}
+
+The format of the output can be changed to output the path list as a network.
+This network can then be visualized using the \program{PathwayDisplayer} as
+explained in section \ref{Visualize}.
+
+To output the path list as a network in gml format, run the following command
+(in one line):
+
+\begin{verbatim}
+ java -Xmx800m graphtools.algorithms.Pathfinder -g KEGG_RPAIR_undirected.txt 
+ -s C00049 -t C00047 -y con -b -r 3 -f tab -T pathsUnion -O gml 
+ -o asp_lys_paths.gml
+\end{verbatim}
+
+The file \file{asp\_lys\_paths.gml} created in the current directory contains
+the network in gml format.
 
 \section{Linking genes to reactions}
 
@@ -284,7 +400,7 @@ KEGG genes using the current KEGG database, {-b} indicates that the pathway is a
 pathway, {-I} specifies the input format of the pathway to be annotated
 (tab-delimited) and {-F} indicates the location of the seed node file.
 
-\subsection{Visualizing the predicted pathway}
+\subsection{Visualizing the predicted pathway}\label{Visualize}
 
 The visualization of a pathway requires \program{graphviz} to be installed,
 which is available here \url{http://www.graphviz.org/}.
@@ -299,3 +415,4 @@ java graphtools.util.PathwayDisplayer -i ilv_predicted_pathway_annotated.tab
 Option \option{-p} tells \program{PathwayDisplayer} to generate the image with
 \program{graphviz}, \option{-I} indicates the input format of the pathway to be
 displayed (tab-delimited).
+
