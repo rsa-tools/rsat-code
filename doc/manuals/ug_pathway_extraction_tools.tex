@@ -60,7 +60,7 @@ java -Xmx800m graphtools.parser.KeggLigandDataManager -m
 The network is stored in the current directory.
 
 The execution of this command takes quite long, because it fetches the reaction
-and compound files from KEGG's FTP repository at \url{ftp.genome.jp}. 
+and compound files from KEGG's ftp repository at \url{ftp.genome.jp}. 
 To get these files, the \program{KeggLigandDataManager} requires
 \program{wget} to be installed and in your path. \program{wget} is 
 freely available from \url{http://www.gnu.org/software/wget/}.
@@ -69,8 +69,8 @@ Alternatively, you may first download the reaction and compound files yourself
 from the KEGG ftp server. Type in your browser (or in your favourite ftp
 client):\\
 \url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/compound/compound}\\
-and save the compound file into \RSAT\file{/data/KEGG/KEGG\_LIGAND}. Do the same
-for the reaction file at\\
+and save the compound file into \file{\$RSAT/data/KEGG/KEGG\_LIGAND}. Do
+the same for the reaction file at\\
 \url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/reaction/reaction}.\\ 
 Then you can run the command above to generate the reaction network.
 
@@ -82,7 +82,7 @@ java -Xmx800m graphtools.parser.KeggLigandDataManager -s -u
 \end{verbatim}
 
 Creating the RPAIR network will also create the \file{rpairs.tab} file, which
-can be placed in the KEGG directory for later use by typing
+can be placed in the KEGG directory for later use by typing:
 
 \begin{lstlisting}
 cp $RSAT/data/KEGG/KEGG_LIGAND/rpairs.tab $RSAT/data/KEGG/rpairs.tab
@@ -135,21 +135,22 @@ The KGML files are automatically obtained from the current KEGG database
 \url{http://www.genome.jp/kegg/xml/}.
 If downloaded manually, all organism-specific KGML files have to be placed in a
 folder named with the organism's KEGG abbreviation (e.g.\textit{eco}
-for \org{E. coli}). The folder should be located in the \RSAT\file{data/KEGG}
+for \org{E. coli}). The folder should be located in the \file{\$RSAT/data/KEGG}
 directory.
  
 We can also merge the KGML files of several organisms into one network and apply
-some filtering.
+some filtering as follows (in one line):
 
 \begin{verbatim}
 java -Xmx800m graphtools.util.MetabolicGraphProvider -i ecv/eco -o
 eco_ecv_Network.tab -c C00001/C000002/C00003/C00004/C00005/C00006/C00007/C00008
 \end{verbatim}
 
-This command (in one line) will construct a merged metabolic network from two
+This command will construct a merged metabolic network from two
 \org{E. coli} strains (\org{Escherichia coli K-12 MG1655} and \org{Escherichia
 coli O1 (APEC)}) 
-and in addition filter out some highly connected compounds (water, ATP, NAD+, NADH, NADPH, NADP+, oxygen and ADP).
+and in addition filter out some highly connected compounds 
+(water, ATP, NAD+, NADH, NADPH, NADP+, oxygen and ADP).
 
 \subsection{Building metabolic networks from biopax files}
 
@@ -175,7 +176,7 @@ specifies the input format (biopax in this case), \option{-b} flags that
 attributes required for the metabolic format should be set and \option{-d} tells
 the program to construct a directed network.
 
-The \program{GDLConverter} may be applied in general to interconvert pathways
+The \program{GDLConverter} may be applied in general to interconvert networks
 in different formats.
 
 \section{Finding k-shortest paths}
@@ -185,9 +186,10 @@ Pathways may be extracted from metabolic networks by enumerating the
 set of target compounds/reactions.
 
 In metabolic networks, some compounds such as ATP or NADPH are involved in a
-large number of reactions, thus acting as shortcuts. In order to deal with this
-problem, compounds are penalized with a weight equal to their number of
-connections (i.e. their degree). 
+large number of reactions, thus acting as shortcuts for the path finding
+algorithm. However, paths crossing these highly connected compounds are not
+biochemical relevant. In order to prevent the path finding algorithm to traverse
+these compounds, the metabolic network should be weighted.
 
 For example, assume you have generated (\ref{RPAIR}) or downloaded
 (\ref{Download}) a KEGG RPAIR network stored in the file 
