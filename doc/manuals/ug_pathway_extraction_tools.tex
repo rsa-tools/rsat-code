@@ -37,7 +37,15 @@ Example:
 java -Xmx800m graphtools.algorithms.Pathfinder -h
 \end{verbatim}
 
-\section{Building metabolic networks}
+\section{Obtaining metabolic networks}
+
+\subsection{Downloading metabolic networks from the NeAT web server}
+
+Metabolic networks can be downloaded from the NeAT web server.
+Go to the menu entry ``Path finding and pathway extraction'', open the
+``Pathway extraction'' page and click on ``More networks can be downloaded
+here.'' This will open a table with tab-delimited generic MetaCyc and KEGG
+networks.
 
 \subsection{Building KEGG generic metabolic networks} 
 
@@ -65,7 +73,7 @@ for the reaction file at\\
 \url{ftp://anonymous@ftp.genome.jp/pub/kegg/ligand/reaction/reaction}.\\ 
 Then you can run the command above to generate the reaction network.
 
-\minisec{RPAIR network}
+\minisec{RPAIR network}\label{RPAIR}
 To construct the undirected RPAIR network, type:
 
 \begin{verbatim}
@@ -157,22 +165,27 @@ In this section, we will see how to link enzyme-coding genes to their reactions.
 This is not a straightforward task, as an N:N relationship exists between genes,
 EC numbers, reactions and reactant pairs.
 
-\subsection{Prerequisites}
+\subsection{Prerequisites}\label{metabolicdb}
 In order to link genes to reactions, the metabolic database needs to be
 installed. The installation of this database is described in chapter
 ``Metabolic Pathfinder and Pathway extraction" in the \neat web server install
 guide, which is available from the \neat web server download section. 
 
-\subsection{Linking genes of the isoleucine-valine operon to reactions}
+\subsection{Linking genes of the isoleucine-valine operon to
+reactions}\label{ilv_operon}
 
-The isoleucine-valine operon consists of the following genes:
+The isoleucine-valine operon (RegulonDB identifier: ilvLG\_1G\_2MEDA) in
+\org{Escherichia coli} is known to contain enzymes of
+the isoleucine and valine biosynthesis pathway. 
+
+It consists of the following genes:
 
 \begin{lstlisting}
 ilvL ilvG_1 ilvG_2 ilvM ilvE ilvD ilvA
 \end{lstlisting}
 
-These genes can be linked to KEGG reactant pairs using the current KEGG
-database and the custom metabolic database with the command below (in one line):
+These genes can be linked to KEGG reactant pairs using the command below (in one
+line):
 
 \begin{verbatim}
 java graphtools.util.SeedConverter -i ilvL/ilvG_1/ilvG_2/ilvM/ilvE/ilvD/ilvA 
@@ -183,15 +196,106 @@ Option \option{-r} flags that genes should be mapped to (main) reactant pairs,
 \option{-O} specifies the source organism of the genes, \option{-i} lists the
 genes and \option{-I} specifies the input format.
 
-\section{Metabolic pathway extraction}
+\section{Predicting metabolic pathways}
 
 Given a set of seeds (compounds or reactions/reactant pairs) and a metabolic
-network, the task of this tool is to extract a metabolic pathway that connects
-these seeds in the metabolic network. The tool is quite generic and can be
-applied on any network and seed node set. However, it has been tailored to
+network, the task of the pathway extraction tool is to extract a metabolic
+pathway that connects these seeds in the metabolic network. The tool is quite generic and can be
+applied to any network and seed node set. However, it has been tailored to
 metabolic pathway prediction.
 
+\subsection{Predicting a metabolic pathway for the isoleucine-valine operon}
 
+Assume you have generated the seed input file from section \ref{ilv_operon} and
+the KEGG RPAIR graph as described in section \ref{RPAIR}. The KEGG RPAIR graph
+is assumed to be stored in a tab-delimited file named
+\file{KEGG\_RPAIR\_undirected.txt}. Then we can predict the pathway for the
+genes in the isoleucine-valine operon with the following command (in one line):
 
+\begin{verbatim}
+java -Xmx800m graphtools.algorithms.Pathwayinference -g
+KEGG_RPAIR_undirected.txt -i ilv_operon_seeds.txt -b -f tab  
+-y con -E Result -a takahashihybrid -U -o ilv_predicted_pathway.tab
+\end{verbatim}
 
- 
+where option \option{-b} specifies that the network is a metabolic
+network, \option{-f} indicates the input network format (tab-delimited),
+\option{-a} specifies the algorithm to be used and \option{-y} indicates the
+weight policy to be applied (con stands for connectivity, which means that
+compound nodes receive a weight corresponding to their degree). 
+Option \option{-E} is used to indicate the name of the folder where results are
+stored. This is especially useful when several predictions are carried out in a
+row, because the output file in this case reports the merged pathway. In the
+example above, the result folder serves to store the properties of
+the predicted pathway (obtained with option \option{-U}).
+
+A variant of the pathway extraction exploits the fact that we work with the
+KEGG RPAIR graph, which allows us to link adjacent main reactant pairs (i.e.
+reactant pairs sharing a compound). This is done in a preprocessing step
+(option \option{-P}):
+
+\begin{verbatim}
+java -Xmx800m graphtools.algorithms.Pathwayinference -g
+KEGG_RPAIR_undirected.txt -i ilv_operon_seeds.txt -b -f tab -y con -P 
+-a takahashihybrid -o ilv_predicted_pathway_preprocessed.tab
+\end{verbatim}
+
+\subsection{Mapping reference pathways onto the predicted pathway}
+
+The predicted metabolic pathway can be mapped to reference pathways stored in
+the metabolic database. This can be done as follows:
+
+\begin{verbatim}
+java graphtools.util.MetabolicPathwayProvider -i ilv_predicted_pathway.tab 
+-I tab -D KEGG -o ilv_predicted_pathway_mapped.tab
+\end{verbatim}
+
+where option \option{-D} indicates that reference pathways should be taken from
+KEGG and \option{-I} indicates the input format of the pathway. In the output
+pathway, nodes mapping to reference pathways are annotated with
+a color and the name of the corresponding reference pathway. 
+The program  also outputs the color-code of mapping reference pathways:
+
+\begin{lstlisting}
+INFO: Legend
+BurlyWood: Valine,_leucine_and_isoleucine_biosynthesis
+orange: no match to any reference pathway
+\end{lstlisting}
+
+\subsection{Annotating the predicted pathway}
+
+The nodes of a predicted metabolic pathway can be labeled with names
+(compounds), EC numbers (reactions) and genes (reactions). 
+The requires the metabolic database to be installed (see
+\ref{metabolicdb}).
+
+The command below annotates the metabolic pathway named
+\file{ilv\_predicted\_pathway.tab} and colors its seed
+nodes (stored in the seed node file \file{ilv\_operon\_seeds.txt} ) in blue:
+
+\begin{verbatim}
+java graphtools.util.GraphAnnotator -i ilv_predicted_pathway.tab -I tab 
+-o ilv_predicted_pathway_annotated.tab -O tab -k -b 
+-F ilv_operon_seeds.txt
+\end{verbatim}
+
+Option \option{-k} tells \program{GraphAnnotator} to associate EC numbers to
+KEGG genes using the current KEGG database, {-b} indicates that the pathway is a metabolic
+pathway, {-I} specifies the input format of the pathway to be annotated
+(tab-delimited) and {-F} indicates the location of the seed node file.
+
+\subsection{Visualizing the predicted pathway}
+
+The visualization of a pathway requires \program{graphviz} to be installed,
+which is available here \url{http://www.graphviz.org/}.
+
+With \program{graphviz} installed, the pathway can be visualized as follows:
+
+\begin{verbatim}
+java graphtools.util.PathwayDisplayer -i ilv_predicted_pathway_annotated.tab 
+-I tab -p
+\end{verbatim}
+
+Option \option{-p} tells \program{PathwayDisplayer} to generate the image with
+\program{graphviz}, \option{-I} indicates the input format of the pathway to be
+displayed (tab-delimited).
