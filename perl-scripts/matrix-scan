@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.157 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: matrix-scan,v 1.158 2010/05/02 16:01:23 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -311,6 +311,11 @@ package main;
   ## By default, I use a single "recyclable"  feature object to avoid creating one object per match when this is not required
   local $match = new RSAT::feature();
   local $create_sites = 0;
+  
+  ## delegate calculation to matrix-scan-quick
+  local $quick_scan = 0;
+  local $quick_count_if_possible = 0;
+  local $bg_quick_file = ""; # calculates only once the bgmodel
 
   %main::infile = ();
   %main::outfile = ();
@@ -450,6 +455,27 @@ package main;
   local %return_fields = ();		## Fields to return
   local %calc_fields = ();		## Fields to calculate
   
+  
+  ## Return field not supported by the quick scan mode
+	local %quick_forbidden_field = (
+			 'sites'=>1,
+			 'pval'=>1,
+			 'rank'=>1,
+			  'normw'=>1,
+			  'limits'=>1,
+			  'seq_scores'=>1,
+			  'p_score'=>1,
+			  'bg_residues'=>1,
+			  'weight_limits'=>1,
+			  'crer'=>1,
+			  'occ_proba'=>1,
+			  'matrix'=>1,
+			  'freq_matrix'=>1,
+			  'weight_matrix'=>1,
+			  'bg_model'=>1,
+    );
+	$quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
+  
   local %sequence_scores = ();
   local %matches_per_seq = ();
 
@@ -470,7 +496,7 @@ package main;
   &RSAT::error::FatalError("You must specify the method for background estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
 
   &RSAT::error::FatalError("Options -consensus_name, -id_as_name aned -ac_as_name are mutually exclusive")
-	if ($consensus_name + $id_as_name + $ac_as_name > 1);
+	if ($consensus_name + $id_as_name + $ac_as_name > 1);	
 
   #################################################################
   ## Batch option
@@ -547,6 +573,12 @@ package main;
     &RSAT::message::Info("Read matrix threshold list from file", $infile{matrix_thresholds}) if ($main::verbose >= 2);
   }
   %matrices_mth = %matrix_thr;
+  
+################################################################
+## Check if quick counting mode is possible
+if ($quick_count_if_possible) {
+	$quick_scan = &CheckQuickScan();
+}
   
   #########################################
 
@@ -671,21 +703,7 @@ package main;
   }
 
   if ($return_fields{distrib}) {
-    ## The C command matrix-scan-quick is MUCH faster than
-    ## matrix-scan. If it is supported on this machine, use it !
-    $quick_cmd = `which matrix-scan-quick`;
-    chomp($quick_cmd);
- ##    $quick_cmd = 0; ## Uncomment this for debugging and time comparison
-    if ($quick_cmd) {
-      ## In addition, we want to check if the command actually works
-      `matrix-scan-quick -h`;
-      if ($?) {
-	&RSAT::message::Warning("matrix-scan-quick is installed but not working. Will use the slower version instead.");
-	$quick_cmd = 0;
-      }
-    }
-
-    unless ($quick_cmd) {
+    unless ($quick_scan) {
       $calc_fields{sites} = 1; # if matrix-scan-quick is not supported, calculate sites (slower)
     }
   }
@@ -1617,108 +1635,9 @@ package main;
     %cum_sum =();
 
     ## use matrix-scan-quick to calculate the observed distrib:
-    if ($quick_cmd) {
+    if ($quick_scan) {
       foreach my $matrix (@matrices) {
-	my $matrix_name = $matrix->get_attribute("name");
-	my $matrix_format = $matrix->get_attribute("program");
-	my $matrix_quick_file = $matrix->get_attribute("file");
-
-	## matrix format should be tab
-	if (($matrix_format ne "tab")||($matrix_format ne "infogibbs")) {
-	  my $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
-	  $matrix_quick_file =  $TMP."/".$tmp_file_name.".tab";
-	  my $convert_matrix_cmd = 
-	    "convert-matrix -from ".$matrix_format." -to tab ".
-	      " -i ".$matrix->get_attribute("file")." -o ".$matrix_quick_file.
-		" -p ".$pseudo_counts." -bg_pseudo ".$bg_pseudo." -decimals ".$decimals; 
-	  &RSAT::message::Info("Converting matrix to tab format: $convert_matrix_cmd\n") if ($main::verbose >= 5);
-	  `$convert_matrix_cmd`;
-	}
-
-	## MORGANE: should save the bg-input into a file, otherwise matrix-scan-quick takes an equiprobable bg by default !!!
-	## background format should be Inclusive (=motifsampler)
-	if (defined($main::infile{bg})) {
-	  if ($bg_in_format ne "motifsampler"){
-	    my $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
-	    $bg_quick_file =  $TMP."/".$tmp_file_name.".ms";
-	    my $convert_bg_cmd = 
-	      "convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$bg_quick_file." -bg_pseudo ".$bg_pseudo; 
-	    &RSAT::message::Info("Converting background to motifsampler format: $convert_bg_cmd\n") if ($main::verbose >= 5);
-	    `$convert_bg_cmd`;
-	  }
-	}
-
-	################################################################
-	##prepare matrix-scan-quick cmd
-
-	## TEMPORARY COMMENT: JACQUES MODIFIED THE FOLLOWING LINES
-	## - fix a problem with markov order, which was not transmitted to matrix-scan-quick
-	## - we should use the location of matrix-scan-quick has been obtained from the command `which`
-
-#	my $quick_cmd = "";
-#	$quick_cmd = "matrix-scan-quick";
-	$quick_cmd .= " -i ".$main::infile{input};
-    	$quick_cmd .= " -decimals ".$decimals;
-    	$quick_cmd .= " -m ".$matrix_quick_file;
-	if (defined($main::infile{bg})) {
-	  $quick_cmd .= " -bgfile ".$bg_quick_file;
-	} elsif ($main::markov > -1) {
-	  ## matrix-scan-quick does not compute Markov models from the
-	  ## input set -> we have to create a Markov model in a
-	  ## temporary file
-	  my $tmp_bg_model = &RSAT::util::make_temp_file("", "bg_model_");
-	  $tmp_bg_model .= "_MotifSampler.txt";
-	  my $oligo_len = $main::markov+1;
-	  my $count_words_cmd = $ENV{RSAT}."/bin/count-words";
-	  &RSAT::error::FatalError("Cannot execute command ".$count_words_cmd, "required for computing Markov model")
-	    unless (-x $count_words_cmd);
-	  my $bg_cmd = $count_words_cmd;
-	  $bg_cmd .= " -i ".$main::infile{input};
-	  $bg_cmd .= " -1str -l ".$oligo_len;
-	  $bg_cmd .= " | convert-background-model -from oligos -to MotifSampler";
-	  $bg_cmd .= " -o ".$tmp_bg_model;
-	  &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_model) if ($main::verbose >= 3);
-	  &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
-	  &RSAT::server::DelayedRemoval($tmp_bg_model);
-
-	  ## Use temporary background model file
-	  $quick_cmd .= " -bgfile ".$tmp_bg_model;
-	}
-    	$quick_cmd .= " -return distrib";
-    	if ($main::both_strands) {
-	  $quick_cmd .= " -2str";
-	} else {
-	  $quick_cmd .= " -1str";
-	}
-
-    	##run matrix-scan-quick cmd
-    	&RSAT::message::Info("Using matrix-scan-quick: $quick_cmd\n") if ($main::verbose >= 0);
-    	my $quick_distrib = `$quick_cmd`;
-	##parse matrix-scan-quick result
-	## columns are:
-	## score	occ	co	cco	ccdf
-    	my $line ="";
-    	$quick_distrib =~ s/^#.*\n//;
-    	while ($quick_distrib =~ /(.*\n)/) {
-	  $line = $1;
-	  chomp($line);
-	  my @field = split(/\t/,$line);
-	  ## matrix-scan-quick returns all possible score values
-	  ## filter out the scores for which occ == 0	  
-	  unless ($field[1] == 0) {
-	  	my $score = sprintf ("%.${decimals}f",$field[0]);
-	  	&RSAT::message::Info("$score:$field[1]:$field[2]:$field[3]:$field[4]:") if ($main::verbose >= 5);
-	  	$score_distrib->{$matrix_name}->{$score}->{occ}=$field[1];
-	  	$score_distrib->{$matrix_name}->{$score}->{occ_cum}=$field[2];
-	  	$score_distrib->{$matrix_name}->{$score}->{inv_cum} = $field[3];
-	  	$score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
-	  }
-	  $quick_distrib =~ s/$line\n//;
-    	}
-    	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-    	$cum_sum{$matrix_name}=$score_distrib->{$matrix_name}->{$sorted_scores[0]}->{inv_cum};
-    	$matrix->{matches} = $cum_sum{$matrix_name};
-    	$matrix->{scored} = $matrix->{matches};
+		&QuickScan($matrix,"distrib");
       }
     } else {
       ################################################################
@@ -2925,6 +2844,20 @@ This option is convenient to distinguish separate CRERs, but it can be heavy for
 
 =pod
 
+=item B<-quick>
+
+Delegates scanning to the C program matrix-scan-quick (developed by Matthieu Defrance)
+Evaluate if the quick mode is compatible with the selected output parameters, otherwise, run in the slower mode.
+
+Incompatible with - CRER scanning
+				  - window background model
+
+=cut      
+	} elsif ($arg eq "-quick") {
+	    $main::quick_count_if_possible = 1;
+
+=pod
+
 =item B<-recursive>
 
 Run matrix-scan separately for each sequence.
@@ -2961,6 +2894,12 @@ sub Verbose {
   ## Report the command line
   print $main::out "; matrix-scan ";
   &PrintArguments($main::out);
+
+  if ($quick_scan) {
+	  printf $main::out "; %-29s\n", "Quick counting mode";
+	} else {
+	  printf $main::out "; %-29s\n", "Slow counting mode";
+	}
 
   ## Input files
   if (defined(%main::infile)) {
@@ -3056,6 +2995,170 @@ sub Verbose {
       }
     }
   }
+}
+
+
+################################################################
+### Check if the options are compatible with quick scan mode
+##
+## Usage:
+##  my $quick_scan = &CheckQuickScan();
+
+sub CheckQuickScan { 
+	## check that a sequence has been provided
+	unless ($main::infile{input}) {
+    	&RSAT::message::Warning("Quick scan mode requires to specify an input file") if (($main::verbose >= 1) || ($quick_scan));
+    	return(0);
+  	}
+
+  	## Check that the output fields requested with the option -return are compatible with matrix-scan-quick
+	foreach my $field (keys %return_fields) {
+    	if ($quick_forbidden_field{$field}) {
+      		&RSAT::message::Warning("Quick scan mode is incompatible with the output field", $field) if (($main::verbose >= 2) || ($quick_scan));
+      		return(0);
+    	}
+  	}
+  	## incompatible with bgwindow
+  	if ($bg_method eq "window") {
+    	&RSAT::message::Warning("Quick scan mode is incompatible with the window background.") if (($main::verbose >= 2) || ($quick_scan));
+    	return(0);
+  	}
+  	
+  	## check the matrix-scan-quick executable is present and actually works
+  	my $quick_cmd_test = `which matrix-scan-quick`;
+  	if ($quick_cmd_test) {
+  		## In addition, we want to check if the command actually works
+      	`matrix-scan-quick -h`;
+      	if ($?) {
+			&RSAT::message::Warning("matrix-scan-quick is installed but not working. Will use the slower version instead.");
+			return(0);
+      	}
+  	} else {
+  		&RSAT::message::Warning("matrix-scan-quick is not installed. Will use the slower version instead.");
+		return(0);
+  	}
+  	
+	## If all checks are OK, return 1
+  	return(1);
+}
+
+################################################################
+## Use matrix-scan-quick (developed by Matthieu Defrance) to scan the sequences
+sub QuickScan {
+  	my $matrix = shift;
+  	my $scan_mode = shift;
+  	
+  	################################
+  	## Matrix
+	my $matrix_name = $matrix->get_attribute("name");
+	my $matrix_format = $matrix->get_attribute("program");
+	my $matrix_quick_file = $matrix->get_attribute("file");
+	
+	## matrix format should be tab
+	if (($matrix_format ne "tab")||($matrix_format ne "infogibbs")) {
+	  my $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
+	  my $tmp_matrix_file =  $TMP."/".$tmp_file_name.".tab";
+	  my $convert_matrix_cmd = 
+	    "convert-matrix -from ".$matrix_format." -to tab ".
+	      " -i ".$matrix->get_attribute("file")." -o ".$tmp_matrix_file." -p 0  -decimals ".$decimals; ##pseudocounts not added here
+	  &RSAT::message::Debug("Converting matrix to tab format",$convert_matrix_cmd) if ($main::verbose >= 3);
+	  &doit($convert_matrix_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
+	  &RSAT::server::DelayedRemoval($tmp_matrix_file);
+	  $matrix_quick_file = $tmp_matrix_file;
+	}
+	
+	################################
+  	## Background
+  	if ($main::bg_quick_file eq ''){
+  		## background format should be Inclusive (=motifsampler)
+		if (defined($main::infile{bg})) {
+	  		if ($bg_in_format ne "motifsampler"){
+		    	my $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
+		    	my $tmp_bg_file =  $TMP."/".$tmp_file_name.".ms";
+		    	my $convert_bg_cmd = 
+		      	"convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$tmp_bg_file." -bg_pseudo ".$bg_model->get_attribute("bg_pseudo"); 
+		    	&RSAT::message::Debug("Converting background to motifsampler format:", $convert_bg_cmd) if ($main::verbose >= 3);
+		  		&doit($convert_bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
+		  		&RSAT::server::DelayedRemoval($tmp_bg_file);
+		  		$bg_quick_file = $tmp_bg_file;
+	  		} else {
+	  			$bg_quick_file = $main::infile{bg};
+	  		}
+		} elsif ($main::markov > -1){
+		  ## matrix-scan-quick does not compute Markov models from the
+		  ## input set -> we have to create a Markov model in a
+		  ## temporary file
+		  my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_");
+		  $tmp_bg_file .= "_MotifSampler.txt";
+		  my $oligo_len = $main::markov+1;
+		  my $count_words_cmd = $ENV{RSAT}."/bin/count-words";
+		  &RSAT::error::FatalError("Cannot execute command ".$count_words_cmd, "required for computing Markov model")
+		    unless (-x $count_words_cmd);
+		  my $bg_cmd = $count_words_cmd;
+		  $bg_cmd .= " -i ".$main::infile{input};
+		  $bg_cmd .= " -1str -l ".$oligo_len;
+		  $bg_cmd .= " | convert-background-model -from oligos -to MotifSampler";
+		  $bg_cmd .= " -o ".$tmp_bg_file;
+		  $bg_cmd .= " -bg_pseudo ".$bg_model->get_attribute("bg_pseudo");
+		  &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 3);
+		  &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
+		  &RSAT::server::DelayedRemoval($tmp_bg_file);
+		  $bg_quick_file = $tmp_bg_file;	
+		}
+  	}
+	
+	################################################################
+	## prepare matrix-scan-quick cmd
+	## do NOT pass the pseudocount
+  	my $quick_cmd = $BIN."/matrix-scan-quick";
+  	$quick_cmd .= " -i ".$main::infile{input};
+    $quick_cmd .= " -decimals ".$decimals;
+    $quick_cmd .= " -m ".$matrix_quick_file;
+    $quick_cmd .= " -pseudo ".$pseudo_counts; ## pseudocounts are added here
+    $quick_cmd .= " -name ".$matrix_name;
+  	$quick_cmd .= " -bgfile ".$bg_quick_file;
+  	if ($main::both_strands) {
+	  $quick_cmd .= " -2str";
+	} else {
+	  $quick_cmd .= " -1str";
+	}
+	
+	## Run matrix-scan-quick and parse the result
+	## Different for each scan mode
+	if ($scan_mode eq "distrib"){
+		$quick_cmd .= " -return distrib";
+		
+		&RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 1);
+  		open QUICK, "$quick_cmd |";
+  		## columns are:
+		## score	occ	co	cco	ccdf
+  		my $l=0;
+  		while (<QUICK>) {
+  			$l++;
+			next if (/^;/); ## Skip comment lines
+			next if (/^#/); ## Skip header line
+			next unless (/\S/); ## Skip empty lines
+ 			chomp();
+			my ($score,$occ,$occ_cum,$inv_cum,$ccdf) = split ("\t");
+#       &RSAT::message::Debug($l, $score, 
+# 			    "occ=".$occ,
+# 			    "occ_sum=".$occ_sum,
+# 			    "inv_cum=".$inv_cum,
+# 			    "ccdf=".$ccdf
+# 	  ) if ($main::verbose >= 0);
+			## filter out the scores for which occ == 0	  
+			next if ($occ == 0);
+			$score = sprintf ("%.${decimals}f",$score);
+	  		$score_distrib->{$matrix_name}->{$score}->{occ}=$occ;
+	  		$score_distrib->{$matrix_name}->{$score}->{occ_cum}=$occ_cum;
+	  		$score_distrib->{$matrix_name}->{$score}->{inv_cum} = $inv_cum;
+	  		$score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
+    	}
+    	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+    	$cum_sum{$matrix_name}=$score_distrib->{$matrix_name}->{$sorted_scores[0]}->{inv_cum};
+    	$matrix->{matches} = $cum_sum{$matrix_name};
+    	$matrix->{scored} = $matrix->{matches};
+	}	
 }
 
 
