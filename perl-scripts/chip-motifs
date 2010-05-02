@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.50 2010/04/29 07:38:37 jvanheld Exp $
+# $Id: chip-motifs,v 1.51 2010/05/02 17:05:13 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.50 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.51 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -143,11 +143,11 @@ package main;
 			 ref_motif
 			 word_compa
 
-			 motif_compa
 			 merge_motifs
 			 cluster_motifs
                          motifs_vs_ref
                          motifs_vs_db
+			 motif_compa
 
 			 scan
 
@@ -189,10 +189,10 @@ package main;
   &Verbose() if ($main::verbose);
 
   foreach my $seq_type (@seq_types) {
-      &PurgeOneSeq($infile{$seq_type.'_seq'}, $seq_type) if ($task{purge});
-      &SequenceLengths($infile{$seq_type.'_seq'}, $seq_type) if ($task{seqlen});
-      &CompositionProfiles($infile{$seq_type.'_seq'}, $seq_type) if ($task{profiles});
-    }
+    &PurgeOneSeq($infile{$seq_type.'_seq'}, $seq_type) if ($task{purge});
+    &SequenceLengths($infile{$seq_type.'_seq'}, $seq_type) if ($task{seqlen});
+    &CompositionProfiles($infile{$seq_type.'_seq'}, $seq_type) if ($task{profiles});
+  }
 
 
   if ($main::infile{ctrl_seq}) {
@@ -233,7 +233,7 @@ package main;
   ################################################################
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
   close $main::out if ($main::outfile{output});
   exit(0);
 }
@@ -246,14 +246,14 @@ package main;
 ################################################################
 ## Display full help message 
 sub PrintHelp {
-    system "pod2text -c $0";
-    exit()
+  system "pod2text -c $0";
+  exit()
 }
 
 ################################################################
 ## Display short help message
 sub PrintOptions {
-    &PrintHelp();
+  &PrintHelp();
 }
 
 
@@ -320,11 +320,11 @@ sub DefaultParameters {
 ################################################################
 ## Define one output file name by concatenating arguments
 sub OutFileName {
-    my ($extension, @name_elements) = @_;
-    my $out_file_name = $dir{output}."/".$main::param{prefix};
-    $out_file_name .= join ("_", @name_elements);
-    $out_file_name .= $extension;
-    return($out_file_name);
+  my ($extension, @name_elements) = @_;
+  my $out_file_name = $dir{output}."/".$main::param{prefix};
+  $out_file_name .= join ("_", @name_elements);
+  $out_file_name .= $extension;
+  return($out_file_name);
 }
 
 ################################################################
@@ -333,27 +333,27 @@ sub SetOutFileNames {
   ## Purged sequences
   foreach my $seq_type (@seq_types) {
     $main::outfile{"purged_".$seq_type} = &OutFileName(".fasta", 
-						 $seq_type,
-						 "purged",
-						 "ml".$main::param{purge_match_length},
-						 "mis".$main::param{purge_mismatches});
+						       $seq_type,
+						       "purged",
+						       "ml".$main::param{purge_match_length},
+						       "mis".$main::param{purge_mismatches});
 
 
     ## Sequence lengths
     $main::outfile{$seq_type."_seqlen"} = &OutFileName(".tab", $seq_type."_seqlen");
     $main::outfile{$seq_type."_seqlen_distrib"} = &OutFileName(".tab", $seq_type."_seqlen_distrib");
     $main::outfile{$seq_type."_seqlen_distrib_graph"} = &OutFileName(".".$param{img_format}, $seq_type."_seqlen_distrib");
-#    if ($infile{ctrl_seq}) {
-#	$main::outfile{"ctrl_seqlen"} = &OutFileName(".tab", "ctrl_seqlen");
-#	$main::outfile{"ctrl_seqlen_distrib"} = &OutFileName(".tab", "ctrl_seqlen_distrib");
-#	$main::outfile{"ctrl_seqlen_distrib_graph"} = &OutFileName($param{img_format}, "ctrl_seqlen_distrib");
-#    }
+    #    if ($infile{ctrl_seq}) {
+    #	$main::outfile{"ctrl_seqlen"} = &OutFileName(".tab", "ctrl_seqlen");
+    #	$main::outfile{"ctrl_seqlen_distrib"} = &OutFileName(".tab", "ctrl_seqlen_distrib");
+    #	$main::outfile{"ctrl_seqlen_distrib_graph"} = &OutFileName($param{img_format}, "ctrl_seqlen_distrib");
+    #    }
 
     ## Compositional Profiles
     for my $ol (@profiles_oligo_lengths) {
       ## Profiles of oligo frequencies as a function of the position
       $main::outfile{$ol."nt_".$seq_type."_profiles"} = &OutFileName(".tab", $seq_type."_profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
-						       "ci".$main::param{profiles_ci});
+								     "ci".$main::param{profiles_ci});
 
       ## oligo frequencies in the sequence set
       $main::outfile{$ol."nt_".$seq_type."_freq"} = &OutFileName(".tab", $seq_type."_freq"."-1str".$main::param{noov},$ol."nt");
@@ -554,7 +554,7 @@ sub CompositionProfiles {
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
     $cmd .= " -return chi,sig,distrib,graphs,rank";
-#    $cmd .= " -max_graphs ".$main::param{profiles_max_graphs};
+    #    $cmd .= " -max_graphs ".$main::param{profiles_max_graphs};
     $cmd .= " ".$main::param{profiles_strand};
     $cmd .= " ".$main::param{noov};
     $cmd .= " -seqtype dna";
@@ -577,7 +577,7 @@ sub CompositionProfiles {
     } else {
       &RSAT::message::Warning("Cannot find residue color specification file", $color_file);
     }
-#    $cmd .= " -symbols "; ## THIS OPTION IS NOT WORKING ANYMORE : THE LEGEND DISPLAYS SYMBOLS BUT NOT THE GRAPH. THIS HAS TO BE FIXED
+    #    $cmd .= " -symbols "; ## THIS OPTION IS NOT WORKING ANYMORE : THE LEGEND DISPLAYS SYMBOLS BUT NOT THE GRAPH. THIS HAS TO BE FIXED
     my $title = $ol."nt composition profiles : ";
     $title .= "; ".$seq_type." sequence";
     $title .= "; ".$main::param{title} if ($main::param{title});
@@ -658,13 +658,13 @@ sub OligoDiff {
     $cmd .= " ".$main::param{strand};
     $cmd .= " ".$main::param{noov};
     $cmd .= " -side test";
-#    $cmd .= " -sort";
+    #    $cmd .= " -sort";
     $cmd .= " -lth ratio ".$main::param{min_ratio};
     $cmd .= " -lth occ_sig ".$main::param{min_sig};
     $cmd .= " -uth rank ".$main::param{patterns_max_rank};
-#    $cmd .= " -return occ,proba,rank";
-#    $cmd .= " -seqtype dna";
-#    $cmd .= " -pseudo 0.01";
+    #    $cmd .= " -return occ,proba,rank";
+    #    $cmd .= " -seqtype dna";
+    #    $cmd .= " -pseudo 0.01";
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1);
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
@@ -862,12 +862,19 @@ sub MergeMotifs {
   ## matrix.
   foreach my $pattern_type (@pattern_types) {
     my $matrix_file = $main::outfile{$pattern_type.'_pssm_tf'};
+
+    unless (-e $matrix_file) {
+      ## TEMPORARY: ensure conversion for data sets of previous versions
+      my $convert_cmd = " ; ".$SCRIPTS."/convert-matrix";
+      $convert_cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
+      $convert_cmd .= " -from tab -to transfac -return counts,consensus";
+      $convert_cmd .= " -prefix $pattern_type";
+      $convert_cmd .= " -o ".$matrix_file; 
+      &one_command($convert_cmd, 1);
+   }
+
     if (-e $matrix_file) {
-#      $cmd .= " ; ".$SCRIPTS."/convert-matrix -from tab -to transfac -return counts,consensus";
-#      $cmd .= " -prefix $pattern_type";
-#      $cmd .= " -i ".$matrix_file;
-#      $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_tf'};
-      $cmd .= " cat ".$matrix_file." >> ".$main::outfile{motifs_discovered};
+      $cmd .= "; cat ".$matrix_file." >> ".$main::outfile{motifs_discovered};
     } else {
       &RSAT::message::Warning("Missing matrix file", $pattern_type, $matrix_file);
     }
@@ -884,7 +891,7 @@ sub MergeMotifs {
 sub ClusterMotifs {
 
   ## Comparison between discovered matrices, and with the reference motif
-  $cmd = $SCRIPTS."/compare-matrices -v 1";
+  my $cmd = $SCRIPTS."/compare-matrices -v 1";
   $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};;
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
 #  $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motif_transfac};
@@ -950,7 +957,7 @@ sub MotifsVersusReference {
   &RSAT::message::TimeWarn("Comparing discovered motifs with reference motif") if ($main::verbose >= 1);
 
   ## Comparison between discovered matrices, and with the reference motif
-  $cmd = $SCRIPTS."/compare-matrices -v 2";
+  my $cmd = $SCRIPTS."/compare-matrices -v 2";
   $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motif_transfac};;
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
   $cmd .= " -DR";
@@ -991,8 +998,8 @@ sub MotifsVersusDatabase {
     &RSAT::message::TimeWarn("Comparing discovered motifs with database", $db_name) if ($main::verbose >= 1);
 
     ## Comparison between discovered matrices, and with the reference motif
-    $cmd = $SCRIPTS."/compare-matrices -v 2";
-    $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};;
+    my $cmd = $SCRIPTS."/compare-matrices -v 2";
+    $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};
     $cmd .= " -format2 ".$main::motif_db_format{$db_name};
     $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
     $cmd .= " -DR";
