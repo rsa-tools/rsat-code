@@ -830,7 +830,7 @@ sub GetBackgroundModel {
   unless ($params{title_choose}) {
     print ("<INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
   }
-  print ("<b>Genome subset</b> &nbsp; ", 
+  print ("<b>Genome subset</b> &nbsp; ",
 	 $query->popup_menu(-name=>'background',
 			    -Values=>["upstream-noorf","upstream","intergenic"],
 			    -default=>$default{background}));
