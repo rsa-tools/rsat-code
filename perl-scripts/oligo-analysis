@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.147 2010/04/29 06:46:28 jvanheld Exp $
+# $Id: oligo-analysis,v 1.148 2010/05/03 20:38:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.147 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.148 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -178,6 +178,8 @@ if ($method eq "Markov chain") {
 ### Pre-defined frequency tables
 ### for background frequency calibration
 
+&RSAT::message::Debug("Background model", $background_model, $method) if ($main::verbose >= 2);
+
 if ($background_model eq "equi") {
     $method = "Equiprobable residues";
 
@@ -205,6 +207,8 @@ if ($background_model eq "equi") {
 					  $background_model,
 					  type=>"oligo",
 					  noov=>$noov, str=>$strands, taxon=>$taxon);
+    &ReadExpectedFrequencies($infile{exp_freq}, $sum_rc, $rescale_freq);
+
 
     #### read alphabet from a file
 } elsif ($infile{alphabet}) {
