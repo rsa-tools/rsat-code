@@ -89,6 +89,7 @@ print "Reference: <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/97
 print "</center>";
 print "<hr>";
 
+
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 print $query->start_multipart_form(-action=>"oligo-analysis.cgi");
@@ -364,6 +365,7 @@ ATCAACCCATAGCAACTCATAAA
 ";
 print "<TD><B>";
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
+print $query->hidden(-name=>'freq_estimate', -default=>'background');
 print $query->hidden(-name=>'background',-default=>"upstream-noorf");
 print $query->hidden(-name=>'bg_level',-default=>"organism");
 print $query->hidden(-name=>'gibbs_msps',-default=>"2");
