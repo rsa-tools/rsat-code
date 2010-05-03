@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.51 2010/05/02 17:05:13 jvanheld Exp $
+# $Id: peak-motifs,v 1.52 2010/05/03 21:05:00 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.51 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.52 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -151,6 +151,7 @@ package main;
 
 			 scan
 
+			 timelog
 			 synthesis
 			 clean_seq
 			);
@@ -221,6 +222,8 @@ package main;
 			      && ($task{motifs_vs_db}));
 
   &ScanSequences() if ($task{scan});
+
+  &TimeLog() if ($task{timelog});
 
   &Synthesis() if ($task{synthesis});
 
@@ -438,6 +441,7 @@ sub SetOutFileNames {
     $main::outfile{$pattern_type.'_pssm'} = $main::outfile{$pattern_type};
     $main::outfile{$pattern_type.'_pssm'} =~ s/\.tab$//;
     $main::outfile{$pattern_type.'_pssm'} .= "_pssm";
+    $main::outfile{$pattern_type.'_2pssm'} = $main::outfile{$pattern_type.'_pssm'}."_log.txt";
     $main::outfile{$pattern_type.'_asmb'} = $main::outfile{$pattern_type.'_pssm'}.".asmb";
     $main::outfile{$pattern_type.'_pssm_sig'} = $main::outfile{$pattern_type.'_pssm'}."_sig_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
@@ -1096,6 +1100,62 @@ sub ScanSequences {
 
 
 ################################################################
+## Generate a file summarizing the time spent in the different tasks
+sub TimeLog {
+  my $timelog = &OpenOutputFile($main::outfile{timelog});
+
+  my $prefix = "NA";
+  if (defined($main::param{prefix})) {
+    $prefix = $main::param{prefix};
+    $prefix =~ s/_$//;
+  }
+
+  print $timelog join("\t", "#start_time       ", "done_time        ", "elapsed", "seconds", "pattern_type", "prefix", "file"), "\n";
+
+  foreach my $pattern_type (@pattern_types) {
+    foreach my $key ($pattern_type, $pattern_type."_2pssm") {
+      my $file = $main::outfile{$key};
+      my $start = "NA";
+      my $done = "NA";
+      my $elapsed = "NA";
+      my $seconds = "NA";
+      if (-e $file) {
+	my ($in) = &OpenInputFile($file);
+	while (<$in>) {
+	  if (/^;\s*Job started\s+(\S+)/i) {
+	    $start = $1;
+	  } elsif (/^;\s*Job done\s+(\S+)/i) {
+	    $done = $1;
+	} elsif (/^;\s*Seconds\s+(\S+)/i) {
+	  $seconds = $1;
+	}
+	}
+	close $in;
+      }
+      if ($start =~ /(\d{4})_(\d{2})_(\d{2}).(\d{2})(\d{2})(\d{2})/) {
+	my ($start_year, $start_month, $start_day, $start_hour, $start_min, $start_sec) = 
+	  ($1, $2, $3, $4, $5, $6);
+	if ($done =~ /(\d{4})_(\d{2})_(\d{2}).(\d{2})(\d{2})(\d{2})/) {
+	  my ($done_year, $done_month, $done_day, $done_hour, $done_min, $done_sec) = 
+	    ($1, $2, $3, $4, $5, $6);
+	  if ($done_month > $start_month) {
+	    $done_day = $start_day +1; ## Quick and tricky treatment of
+	    ## month-overlapping tasks
+	  }
+	  $elapsed = ($done_sec - $start_sec)
+	    + ($done_min - $start_min)*60
+	      + ($done_hour - $start_hour)*3600
+		+ ($done_day - $start_day)*86400;
+	}
+      }
+      print $timelog join("\t", $start, $done, $elapsed, $seconds, $key, $prefix, $file), "\n";
+    }
+  }
+  close $timelog;
+  &RSAT::message::TimeWarn("Time log file", $main::outfile{timelog}) if ($main::verbose >= 1);
+}
+
+################################################################
 ## Generate a synthetic table summarizing the main results with links
 ## to the iriginal result files.
 sub Synthesis {
@@ -1153,10 +1213,14 @@ sub Synthesis {
   &SynthesisMotifsVersusDatabase() if (scalar(@motif_databases) > 0);
 
   ## Log file
-  &SyntheticTableAddHeaderRow("Log file");
-  &SyntheticTableAddRow("Log file",
+  &SyntheticTableAddHeaderRow("Log files");
+  &SyntheticTableAddRow("Parameters and files",
 			"",
  			"txt"=>$main::outfile{"log"},
+ 		       );
+  &SyntheticTableAddRow("Time log",
+			"",
+ 			"txt"=>$main::outfile{"timelog"},
  		       );
 
 
@@ -1314,7 +1378,7 @@ sub SynthesisPatternDisco {
   if (-e $main::outfile{$pattern_type.'_asmb'}) {
 
     ## Synthesize results of pattern assembly (assembly consensus + sig scores)
-    ($asmb) = &OpenInputFile($main::outfile{$pattern_type.'_asmb'});
+    my ($asmb) = &OpenInputFile($main::outfile{$pattern_type.'_asmb'});
     my $pattern_nb = 0;
     my $asmb_or_isol = "";
     my %pattern_info = ();
@@ -1823,6 +1887,10 @@ Compare each discovered motif to a database of known motifs
 
 =back
 
+=item I<timelog>
+
+Generate a log file summarizing the time spent in the different tasks.
+
 =item I<synthesis>
 
 Generate the HTML file providing a synthesis of the results and
@@ -2030,8 +2098,9 @@ sub CheckArguments {
     &FatalError("You must define the output directory (option -outdir)");
   }
 
-  ## Log file 
+  ## Log files
   $main::outfile{log} = &OutFileName(".txt", "log");
+  $main::outfile{timelog} = &OutFileName(".txt", "timelog");
 
   ## Synthesis file 
   $main::outfile{synthesis} = &OutFileName(".html", "synthesis");
