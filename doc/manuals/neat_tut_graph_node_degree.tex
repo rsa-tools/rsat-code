@@ -76,40 +76,51 @@ This is the file \file{uetz\_2001.tab}.
 \item The first step consist in applying \program{graph-topology} on the two-hybrid dataset. To this, go into the
 directory where you downloaded the file \file{uetz\_2001.tab} and use this command. 
 	
-	{\color{Blue} \begin{footnotesize} 
-		\begin{verbatim}
-	graph-topology -v 1 -i uetz_2001.tab -return degree -all -o uetz_2001_degrees.tab
-		\end{verbatim} \end{footnotesize}
-	}		
-The file \file{uetz\_2001\_degrees.tab} is created and contains the degree of each node of the Uetz \textit{et al} data set.
+\begin{lstlisting}
+graph-topology -v 1 -i uetz_2001.tab -return degree -all \
+   -o uetz_2001_degrees.tab
+\end{lstlisting}The file \file{uetz\_2001\_degrees.tab} is created and contains the degree of each node of the Uetz \textit{et al} data set.
 
-\item In the second step, we will study the degree distribution of the nodes. To this, we use the program \program{classfreq} from the RSAT suite that compute the distribution of a set of number. As the graph we are working with is undirected, we will only compute this degree distribution for the global degree of the nodes which is the second column of the file \file{uetz\_2001\_degrees.tab} obtained in the previous step.
+\item In the second step, we will study the degree distribution of the
+  nodes. To this, we use the program \program{classfreq} from the RSAT
+  suite that compute the distribution of a set of number. As the graph
+  we are working with is undirected, we will only compute this degree
+  distribution for the global degree of the nodes which is the second
+  column of the file \file{uetz\_2001\_degrees.tab} obtained in the
+  previous step.
 	
-	{\color{Blue} \begin{footnotesize} 
-		\begin{verbatim}
-	classfreq -i uetz_2001_degrees.tab -v 1 -col 2 -ci 1 -o uetz_2001_degrees_freq.tab
-		\end{verbatim} \end{footnotesize}
-	}		
+\begin{lstlisting}
+classfreq -i uetz_2001_degrees.tab -v 1 -col 2 -ci 1 \
+   -o uetz_2001_degrees_freq.tab
+\end{lstlisting}
 
-\item Finally, we will display the distribution graph in the PNG format in order to visualize the degree distribution and determine if it has a scale free behaviour. The program XYgraph from RSA-tools will be used for this purpose. Note that we could use other tools like \program{Microsoft Excel} or \program{R}. The results will be stored in the file \file{uetz\_2001\_degrees\_freq.png} that you can open with any visualization tool.
+\item Finally, we will display the distribution graph in the PNG
+  format in order to visualize the degree distribution and determine
+  if it has a scale free behaviour. The program XYgraph from RSA-tools
+  will be used for this purpose. Note that we could use other tools
+  like \program{Microsoft Excel} or \program{R}. The results will be
+  stored in the file \file{uetz\_2001\_degrees\_freq.png} that you can
+  open with any visualization tool.
 
-	{\color{Blue} \begin{footnotesize} 
-		\begin{verbatim}
-		XYgraph -i uetz_2001_degrees_freq.tab \
-		-title 'Global node degree distribution for Uetz et al (2001) interaction graph' \
-		-xcol 2 -ycol 4,6 -xleg1 Degree -lines \
-		-yleg1 'Number of nodes' -legend -header -format png \
-		-o uetz_2001_degrees_freq.png
-		\end{verbatim} 
-\end{footnotesize}
-	}
+\begin{lstlisting}
+XYgraph -i uetz_2001_degrees_freq.tab \
+   -title 'Global node degree distribution (interaction graph: Uetz 2001)' \
+   -xcol 2 -ycol 4,6 -xleg1 Degree -lines \
+   -yleg1 'Number of nodes' -legend -header -format png \
+   -o uetz_2001_degrees_freq.png
+\end{lstlisting}
+
 \end{enumerate}
 
 \subsection{Interpretation of the results}
 
 \subsubsection{graph-topology result file}
-Open the resulting file produced by \program{graph-topology}. 
-According to the requested level of verbosity (\option{-v \#} option), the file begins with some lines starting with the '\#' or ';' symbols that contains some information about the graph and the description of the columns.
+
+Open the resulting file produced by \program{graph-topology}.
+According to the requested level of verbosity (\option{-v \#} option),
+the file begins with some lines starting with the '\#' or ';' symbols
+that contains some information about the graph and the description of
+the columns.
 
 The results consists in a two columns data set.
 \begin{enumerate}
@@ -117,34 +128,43 @@ The results consists in a two columns data set.
  \item Global degree
 \end{enumerate}
 
-Note that if you used the '-directed' option, the resulting file contains 3 more columns specifying the in-degree, the out-degree and whether the node is only a source node or a target node.
+Note that if you used the '-directed' option, the resulting file
+contains 3 more columns specifying the in-degree, the out-degree and
+whether the node is only a source node or a target node.
 
 \subsubsection{Node degree distribution}
-Let us first have a look at the node degree distribution data file produced by the \program{classfreq} program (raw data). 
-This file is a tab-delimited file containing 9 columns. Each line consists in a value interval. In our case,
-the value is the degree of the nodes. 
+
+Let us first have a look at the node degree distribution data file
+produced by the \program{classfreq} program (raw data).  This file is
+a tab-delimited file containing 9 columns. Each line consists in a
+value interval. In our case, the value is the degree of the nodes.
 
 \begin{enumerate}
  \item Minimal value of the interval
  \item Maximal value of the interval
  \item Central value of the interval
- \item Frequency : Number of elements in this class interval (number of nodes having a degree comprised betwee the minimal and the maximal values.
+ \item Frequency : Number of elements in this class interval (number
+   of nodes having a degree comprised betwee the minimal and the
+   maximal values.
  \item Cumulative frequency.
  \item Inverse cumulative frequency
- \item Relative frequency : number of elements in this class over the total number of elements
+ \item Relative frequency : number of elements in this class over the
+   total number of elements
  \item Relative cumulative frequency
  \item Inverse relative cumulative frequency
 \end{enumerate}
 
-The first result line contains the distribution results for
-the nodes having only one neighbour (i.e. degree comprised between 1 and 2), from it
-we can see that 577 over 926, i.e., 62\%  of the nodes have a degree of one. 
-Moreover, about 90\% of the nodes have a degree lower than 4. This is indicative of the scale-free
-nature of the interaction network.
+The first result line contains the distribution results for the nodes
+having only one neighbour (i.e. degree comprised between 1 and 2),
+from it we can see that 577 over 926, i.e., 62\% of the nodes have a
+degree of one.  Moreover, about 90\% of the nodes have a degree lower
+than 4. This is indicative of the scale-free nature of the interaction
+network.
 
-The figure best illustrates the scale-freeness of the graph. 
-When looking at the graphical representation of this distribution, we can see two curves.
-The blue curve represents the absolute frequency and the green curve the inverse cumulative 
-frequency. 
-The exponential decrease of both curves shows that there are a lot more nodes poorly 
-connected than highly connected (hubs). The Uetz graph thus presents a scale free behaviour.
+The figure best illustrates the scale-freeness of the graph.  When
+looking at the graphical representation of this distribution, we can
+see two curves.  The blue curve represents the absolute frequency and
+the green curve the inverse cumulative frequency.  The exponential
+decrease of both curves shows that there are a lot more nodes poorly
+connected than highly connected (hubs). The Uetz graph thus presents a
+scale free behaviour.
