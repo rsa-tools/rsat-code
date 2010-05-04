@@ -14,6 +14,9 @@
 require ('functions.php');
 # log file update thanks to Sylvain
 UpdateLogFile("neat","","");
+# File to store the commands
+$cmd_file = getTempFileName('commands_keggnetworkprovider');
+$cmd_handle = fopen($cmd_file, 'a');
 # Sylvain's upload function modified to accept upload location
 Function uploadFileToGivenLocation($file, $location) {
     $nomDestination = $_FILES[$file]["name"];
@@ -189,11 +192,27 @@ if($reactionattribs){
     	}
 
     	if($error == 0){
-        	 # Display the results
-    		echo("<align='left'>The result is available as text file at the following URL:<br><br>
-    		<a href='$html_location$server'>$html_location$server</a><br><br>
-    		The result has been generated with command:<br>
-			$command</align><br><br>");
+        	 # Display the results (old way)
+    		#echo("<align='left'>The result is available as text file at the following URL:<br><br>
+    		#<a href='$html_location$server'>$html_location$server</a><br><br>
+    		#The result has been generated with command:<br>
+			#$command</align><br><br>");
+			
+			# compact result display
+			$resultURL = $html_location$server;
+			$URL['tab'] = $resultURL;
+			
+			# no html format for kegg network provider
+			
+			# store command in a file
+            store_command("$command", "KEGG network generation", $cmd_handle);
+            # Close command handle
+            fclose($cmd_handle);
+            $URL['Server commands'] = rsat_path_to_url($cmd_file);
+			
+			 ## DISPLAY THE RESULT
+             print_url_table($URL);
+			
     	# next step panel only available for graphs in gml or tab-delimited format
     	if(strcmp($out_format,'tab') == 0 || strcmp($out_format,'gml') == 0){
         	# location of result file
