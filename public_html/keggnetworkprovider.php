@@ -4,8 +4,8 @@
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
    <style type="text/css">
     <!--
-    div.hourglass{position: absolute; top: 80px; left: 500px }
-    div.hide{position: absolute; top: 80px; left: 500px }
+    div.hourglass{position: absolute; top: 50px; left: 500px }
+    div.hide{position: absolute; top: 50px; left: 500px }
    -->
 </style>
 </head>
