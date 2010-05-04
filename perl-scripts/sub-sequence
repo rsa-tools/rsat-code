@@ -191,7 +191,7 @@ sub OneFragment {
     &RSAT::message::Debug("Fragment", $current_id, 
 			  "cfrom=".$current_from, "cto=".$current_to, 
 			  "sfrom=".$sequence_from, "sto=".$sequence_to, 
-			  "strand=".$current_strand, $out_format) if ($main::verbose >= 0);
+			  "strand=".$current_strand, $out_format) if ($main::verbose >= 3);
 
     &PrintNextSequence($out, $out_format, $line_width, $sub_seq, $current_id, @comments);
     @comments = ();
