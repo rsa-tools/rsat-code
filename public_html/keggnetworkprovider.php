@@ -199,7 +199,7 @@ if($reactionattribs){
 			#$command</align><br><br>");
 			
 			# compact result display
-			$resultURL = $html_location$server;
+			$resultURL = rsat_path_to_url($server);
 			$URL['tab'] = $resultURL;
 			
 			# no html format for kegg network provider
