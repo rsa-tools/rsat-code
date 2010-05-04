@@ -4,8 +4,8 @@
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
    <style type="text/css">
     <!--
-    div.hourglass{position: absolute; top: 50px; left: 500px }
-    div.hide{position: absolute; top: 50px; left: 500px }
+    div.hourglass{position: absolute; top: 80px; left: 500px }
+    div.hide{position: absolute; top: 80px; left: 500px }
    -->
 </style>
 </head>
@@ -154,6 +154,8 @@ if($reactionattribs){
     );
 
     if($email == ""){
+        ## announce the results
+        echo("<br><br><br><br>")
     	info("Results will appear below");
     	echo"<hr>\n";
     	echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
