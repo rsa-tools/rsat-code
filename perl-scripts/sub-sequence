@@ -9,6 +9,7 @@ require "RSA.lib";
 
 
 #### initialise parameters ####
+$origin = "start";
 $start_time = &AlphaDate();
 $line_width = 0;
 $in_format = "fasta";
@@ -81,14 +82,14 @@ if ($main::verbose >= 1) {
 
 
 ################################################################
-###### execute the command #########
+## Extract the sequence fragment
 while ((($current_seq, $seq_id) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
        (($current_seq ne "") || ($seq_id ne ""))) {
     $current_seq =~ s/\s//g;
-    $seq_length = length($current_seq);
-
-    &RSAT::message::TimeWarn(join("\t", "Read sequence", $seq_id, $seq_length)) if ($main::verbose >= 2);
-
+    local $seq_len = length($current_seq);
+    
+    &RSAT::message::TimeWarn(join("\t", "Read sequence", $seq_id, $seq_len)) if ($main::verbose >= 2);
+    
     if ($fragment_file) {
 	my $frag_list = $fragments_per_seq{$seq_id};
 	my @fragments = @$frag_list;
@@ -103,7 +104,6 @@ while ((($current_seq, $seq_id) = &ReadNextSequence($in, $in_format, $input_dir,
     } else {
 	&OneFragment($from, $to, $strand, $seq_id);
     }
-
 }
 
 ###### close input file ######
@@ -123,36 +123,76 @@ exit(0);
 
 sub OneFragment {
     my ($current_from, $current_to, $current_strand, $current_id) = @_;
+
+    ## Swap from and to if required
     if ($current_from > $current_to) {
 	my $tmp = $current_from;
 	$current_from = $current_to;
 	$current_to = $tmp;
     }
-    if ($current_from < 0) {
-	$sequence_from = length($current_seq) + $current_from + 1;
-    } else {
-	$sequence_from = $current_from;
-    }
-    if ($current_to < 0) {
-	$sequence_to = length($current_seq) + $current_to + 1;
-    } else {
-	$sequence_to = $current_to;
-    }
-    $sequence_from = &max($sequence_from, 1);
-    $sequence_from = &min($sequence_from, $seq_length);
-    $sequence_to = &max($sequence_to, 1);
-    $sequence_to = &min($sequence_to, $seq_length);
-    $current_length = $sequence_to - $sequence_from + 1;
 
-    push @comments, join(" ", "sub-sequence from", $sequence_from, "to", $sequence_to);
+    ## Compute the origin
+    my $ref_pos = 0;
+    if ($origin eq "center") {
+	$ref_pos = &round(($seq_len+1)/2);
+    } elsif ($origin eq "end") {
+	$ref_pos = $seq_len + 1;
+    }
+
+    ## Compute the from and end position for the current sequence
+    if ($current_from eq $null) {
+	$sequence_from eq 1;
+    } else {
+	$sequence_from = $ref_pos + $current_from;
+    }
+
+    if ($current_to eq $null) {
+	$sequence_to eq $seq_len;
+    } else {
+	$sequence_to = $ref_pos + $current_to;
+    }
+
+#    if ($current_from < 0) {
+#	$sequence_from = $seq_len + $current_from + 1;
+#    } else {
+#	$sequence_from = $current_from;
+#    }
+
+#     if ($current_to < 0) {
+# 	$sequence_to = $seq_len + $current_to + 1;
+#     } else {
+# 	$sequence_to = $current_to;
+#     }
+
+#    $sequence_from = &min($sequence_from, $seq_len);
+#    $sequence_to = &max($sequence_to, 1);
+
+
+    my $sub_seq = "";
+    my $current_length = 0;
+    if (($sequence_from <= $seq_len) && ($sequence_to >= 1)){
+	## Check that the limits fall within the sequence
+	$sequence_from = &max($sequence_from, 1);
+	$sequence_to = &min($sequence_to, $seq_len);
+	$current_length = $sequence_to - $sequence_from + 1;
+	$sub_seq = substr($current_seq, $sequence_from -1, $current_length);
+#    } else {
+#	$sequence_from = $null;
+#	$sequence_to = $null;
+    }
+    push @comments, join(" ", "sub-sequence from", $sequence_from, "to", $sequence_to, "seq_len=".$seq_len, "subseq_len=".$current_length);
     if ($limits) {
 	$current_id .= "_".$current_from."_".$current_to;
     }
-    $sub_seq = substr($current_seq, $sequence_from -1, $current_length);
+
     if ($current_strand eq "R") {
 	$sub_seq = &ReverseComplement($sub_seq);
     }
-    &RSAT::message::Debug("Fragment", $current_id, $seq_id, $current_from, $current_to, $sequence_from, $sequence_to, $current_strand, $out_format) if ($main::verbose >= 3);
+    &RSAT::message::Debug("Fragment", $current_id, 
+			  "cfrom=".$current_from, "cto=".$current_to, 
+			  "sfrom=".$sequence_from, "sto=".$sequence_to, 
+			  "strand=".$current_strand, $out_format) if ($main::verbose >= 0);
+
     &PrintNextSequence($out, $out_format, $line_width, $sub_seq, $current_id, @comments);
     @comments = ();
 }
@@ -215,6 +255,21 @@ OPTIONS
 		frag2	chr2L	346419	350309	R
 		frag3	chr2R	350781	354418	D
 
+	-origin start | center | end
+		Reference for calculating positions.
+
+		The value should be chosen according to the sequence
+		type. For instance:
+
+		-origin start for downstream sequences
+
+		-origin end for promoter sequences
+
+		-origin center can be useful for ChIP-seq peaks, which
+			can have variable lengths, but are supposed to
+			be more or less centred on the TF binding
+			qsites.
+
 	-from #	starting position
 		if not specified, the subsequence starts at 1st position.
 
@@ -275,6 +330,7 @@ sub-sequence options
 -o		output file
 -v		verbose
 -frag		fragment_file
+-origin start | center | end	Reference for calculating positions.
 -from #		start position
 -to #		end position
 -iformat	input format. Default is fasta
@@ -320,6 +376,10 @@ sub ReadArguments {
 	    ## Fragment file
 	} elsif ($ARGV[$a] eq "-frag") {
 	    $fragment_file = $ARGV[$a+1];
+
+	    ### origin for positions
+	} elsif ($ARGV[$a] eq "-origin") {
+	    $origin = $ARGV[$a+1];
 
 	    ## starting position
 	} elsif ($ARGV[$a] eq "-from") {
