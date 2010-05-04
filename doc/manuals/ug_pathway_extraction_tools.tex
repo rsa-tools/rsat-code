@@ -8,34 +8,41 @@
 \subsection{Listing tools and getting help}
 You can list available tools by typing:
 
-\begin{verbatim}
+\begin{lstlisting}
 java graphtools.util.ListTools
-\end{verbatim}
+\end{lstlisting}
 
 All tools provide a \option{-h} option to display help.
 
 \subsection{Abbreviating tool names}
 The command line tool names may be simplified by setting aliases.
 For example, in the bash shell:
-\begin{verbatim}
+
+\begin{lstlisting}
 alias Pathfinder="java graphtools.algorithms.Pathfinder"
-\end{verbatim}
+\end{lstlisting}
+
 allows to type:
-\begin{verbatim}
+
+\begin{lstlisting}
 Pathfinder -h
-\end{verbatim}
+\end{lstlisting}
+
 instead of:
-\begin{verbatim}
+
+\begin{lstlisting}
 java graphtools.algorithms.Pathfinder -h
-\end{verbatim}
+\end{lstlisting}
 
 \subsection{Increasing JVM memory}
 For large graphs, you may need to increase the memory allocated to the java virtual machine.
 You can do so by specifying the \option{-Xmx} option.
+
 Example:
-\begin{verbatim}
+
+\begin{lstlisting}
 java -Xmx800m graphtools.algorithms.Pathfinder -h
-\end{verbatim}
+\end{lstlisting}
 
 \section{Obtaining metabolic networks}
 
@@ -53,9 +60,9 @@ networks.
 \minisec{Reaction network}
 To build the directed reaction network, type:
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.parser.KeggLigandDataManager -m
-\end{verbatim}
+\end{lstlisting}
 
 The network is stored in the current directory.
 
@@ -77,9 +84,9 @@ Then you can run the command above to generate the reaction network.
 \minisec{RPAIR network}\label{RPAIR}
 To construct the undirected RPAIR network, type:
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.parser.KeggLigandDataManager -s -u
-\end{verbatim}
+\end{lstlisting}
 
 Creating the RPAIR network will also create the \file{rpairs.tab} file, which
 can be placed in the KEGG directory for later use by typing:
@@ -94,9 +101,9 @@ in the data/KEGG directory.
 \minisec{Reaction-specific RPAIR network}
 For the reaction-specific undirected RPAIR network, type:
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.parser.KeggLigandDataManager -t -u
-\end{verbatim}
+\end{lstlisting}
 
 \subsection{Building KEGG organism-specific metabolic networks}
 
@@ -106,16 +113,16 @@ a metabolic network specific to a set of organisms.
 \minisec{Prerequisites}
 You may first create the list of available KEGG organisms:
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.parser.MetabolicGraphProvider -O
-\end{verbatim}
+\end{lstlisting}
 
 This command will create the file \file{Kegg\_organisms\_list.txt} in the
 current directory. Since this file is needed by the
 \program{MetabolicGraphProvider}, you may copy it to its default location:
 
 \begin{lstlisting}
-cp Kegg_organisms_list.txt $RSAT/data/KEGG/Kegg_organisms_list.txt
+cp Kegg_organisms_list.txt \$RSAT/data/KEGG/Kegg_organisms_list.txt
 \end{lstlisting}
 
 Alternatively, you may obtain an older version of this file from the \neat web
@@ -126,9 +133,9 @@ server in the data/KEGG directory.
 The command below builds the \org{E. coli}-specific metabolic reaction network
 from its KGML files:
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.util.MetabolicGraphProvider -i eco -o ecoNetwork.tab
-\end{verbatim}
+\end{lstlisting}
 
 The KGML files are automatically obtained from the current KEGG database
 (which may take very long). Alternatively, they can be downloaded manually from
@@ -141,10 +148,10 @@ directory.
 We can also merge the KGML files of several organisms into one network and apply
 some filtering as follows (in one line):
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.util.MetabolicGraphProvider -i ecv/eco -o
 eco_ecv_Network.tab -c C00001/C000002/C00003/C00004/C00005/C00006/C00007/C00008
-\end{verbatim}
+\end{lstlisting}
 
 This command will construct a merged metabolic network from two
 \org{E. coli} strains (\org{Escherichia coli K-12 MG1655} and \org{Escherichia
@@ -166,10 +173,10 @@ from this file using the command below (in one line). Note that the metabolic
 network preserves the reaction directions indicated in the biopax file, that is irreversible reactions are
 kept.
 
-\begin{verbatim}
+\begin{lstlisting}
 java graphtools.util.GDLConverter -i lysine_pwy1.xml 
 -o lysine.txt -O tab -I biopax -b -d
-\end{verbatim}
+\end{lstlisting}
 
 Option \option{-O} indicates the output format (tab-delimited), \option{-I}
 specifies the input format (biopax in this case), \option{-b} flags that
@@ -198,10 +205,10 @@ three highest-ranked lightest paths between
 aspartate (KEGG identifier: C00049) and lysine (KEGG identifier: C00047) with
 the command below (in one line):
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.algorithms.Pathfinder -g KEGG_RPAIR_undirected.txt 
 -s C00049 -t C00047 -y con -b -r 3 -f tab
-\end{verbatim}
+\end{lstlisting}
 
 where option \option{-s} specifies the source node (more than one can be given),
 \option{-t} the target node (as for the source, more than one target can be
@@ -263,11 +270,11 @@ explained in section \ref{Visualize}.
 To output the path list as a network in gml format, run the following command
 (in one line):
 
-\begin{verbatim}
+\begin{lstlisting}
  java -Xmx800m graphtools.algorithms.Pathfinder -g KEGG_RPAIR_undirected.txt 
  -s C00049 -t C00047 -y con -b -r 3 -f tab -T pathsUnion -O gml 
  -o asp_lys_paths.gml
-\end{verbatim}
+\end{lstlisting}
 
 The file \file{asp\_lys\_paths.gml} created in the current directory contains
 the network in gml format.
@@ -305,10 +312,10 @@ ilvL ilvG_1 ilvG_2 ilvM ilvE ilvD ilvA
 These genes can be linked to KEGG reactant pairs using the command below (in one
 line):
 
-\begin{verbatim}
+\begin{lstlisting}
 java graphtools.util.SeedConverter -i ilvL/ilvG_1/ilvG_2/ilvM/ilvE/ilvD/ilvA 
 -I string -O eco -o ilv_operon_seeds.txt -r
-\end{verbatim}
+\end{lstlisting}
 
 Option \option{-r} flags that genes should be mapped to (main) reactant pairs,
 \option{-O} specifies the source organism of the genes, \option{-i} lists the
@@ -330,11 +337,11 @@ is assumed to be stored in a tab-delimited file named
 \file{KEGG\_RPAIR\_undirected.txt}. Then we can predict the pathway for the
 genes in the isoleucine-valine operon with the following command (in one line):
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.algorithms.Pathwayinference -g
 KEGG_RPAIR_undirected.txt -i ilv_operon_seeds.txt -b -f tab  
 -y con -E Result -a takahashihybrid -U -o ilv_predicted_pathway.tab
-\end{verbatim}
+\end{lstlisting}
 
 where option \option{-b} specifies that the network is a metabolic
 network, \option{-f} indicates the input network format (tab-delimited),
@@ -352,21 +359,21 @@ KEGG RPAIR graph, which allows us to link adjacent main reactant pairs (i.e.
 reactant pairs sharing a compound). This is done in a preprocessing step
 (option \option{-P}):
 
-\begin{verbatim}
+\begin{lstlisting}
 java -Xmx800m graphtools.algorithms.Pathwayinference -g
 KEGG_RPAIR_undirected.txt -i ilv_operon_seeds.txt -b -f tab -y con -P 
 -a takahashihybrid -o ilv_predicted_pathway_preprocessed.tab
-\end{verbatim}
+\end{lstlisting}
 
 \subsection{Mapping reference pathways onto the predicted pathway}
 
 The predicted metabolic pathway can be mapped to reference pathways stored in
 the metabolic database. This can be done as follows:
 
-\begin{verbatim}
+\begin{lstlisting}
 java graphtools.util.MetabolicPathwayProvider -i ilv_predicted_pathway.tab 
 -I tab -D KEGG -o ilv_predicted_pathway_mapped.tab
-\end{verbatim}
+\end{lstlisting}
 
 where option \option{-D} indicates that reference pathways should be taken from
 KEGG and \option{-I} indicates the input format of the pathway. In the output
@@ -391,11 +398,11 @@ The command below annotates the metabolic pathway named
 \file{ilv\_predicted\_pathway.tab} and colors its seed
 nodes (stored in the seed node file \file{ilv\_operon\_seeds.txt} ) in blue:
 
-\begin{verbatim}
+\begin{lstlisting}
 java graphtools.util.GraphAnnotator -i ilv_predicted_pathway.tab -I tab 
 -o ilv_predicted_pathway_annotated.tab -O tab -k -b 
 -F ilv_operon_seeds.txt
-\end{verbatim}
+\end{lstlisting}
 
 Option \option{-k} tells \program{GraphAnnotator} to associate EC numbers to
 KEGG genes using the current KEGG database, {-b} indicates that the pathway is a metabolic
@@ -409,10 +416,10 @@ which is available here \url{http://www.graphviz.org/}.
 
 With \program{graphviz} installed, the pathway can be visualized as follows:
 
-\begin{verbatim}
+\begin{lstlisting}
 java graphtools.util.PathwayDisplayer -i ilv_predicted_pathway_annotated.tab 
 -I tab -p
-\end{verbatim}
+\end{lstlisting}
 
 Option \option{-p} tells \program{PathwayDisplayer} to generate the image with
 \program{graphviz}, \option{-I} indicates the input format of the pathway to be
