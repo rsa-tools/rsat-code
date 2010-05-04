@@ -98,40 +98,39 @@ metabolic networks. It is assumed that you have installed the required command-l
 
 \item First we construct the directed metabolic network of \textit{E. coli}.
 
-        {\color{Blue} \begin{footnotesize}
-		\begin{verbatim}
-		java graphtools.util.MetabolicGraphProvider -i eco -d -o eco_metabolic_network_directed.txt
-		\end{verbatim} \end{footnotesize}
-		}
+\begin{lstlisting}
+java graphtools.util.MetabolicGraphProvider -i eco -d 
+   -o eco_metabolic_network_directed.txt
+\end{lstlisting}
 
 \item Then, we search for the lightest paths in this network as follows:
 
-		{\color{Blue} \begin{footnotesize}
-		\begin{verbatim}
-		java graphtools.algorithms.Pathfinder -g eco_metabolic_network_directed.txt -f tab -s C00049
-		-t C00047 -r 1 -d -y con -b -T pathsUnion -O gml -o lysinebiosyn_eco.gml
-		\end{verbatim} \end{footnotesize}
-		}
+
+\begin{lstlisting}
+java graphtools.algorithms.Pathfinder 
+   -g eco_metabolic_network_directed.txt 
+   -f tab -s C00049 -t C00047 -r 1 -d -y con -b -T pathsUnion -O gml 
+   -o lysinebiosyn_eco.gml
+\end{lstlisting}
+
 
 \item To visualize the inferred pathway, you may open lysinebiosyn\_eco.gml in Cytoscape or in yED.
 
 
 \item We proceed by constructing the metabolic network of \textit{S. cerevisiae}:
 
-	 {\color{Blue} \begin{footnotesize}
-		\begin{verbatim}
-		java graphtools.util.MetabolicGraphProvider -i sce -d -o sce_metabolic_network_directed.txt
-		\end{verbatim} \end{footnotesize}
-		}
+\begin{lstlisting}
+java graphtools.util.MetabolicGraphProvider -i sce -d -o sce_metabolic_network_directed.txt
+\end{lstlisting}
 
 \item Then, we enumerate paths between L-aspartate and L-lysine in it:
 
-		{\color{Blue} \begin{footnotesize}
-		\begin{verbatim}
-		java graphtools.algorithms.Pathfinder -g sce_metabolic_network_directed.txt -f tab -s C00049
-		-t C00047 -d -r 1 -y con -b -T pathsUnion -O gml -o lysinebiosyn_sce.gml
-		\end{verbatim} \end{footnotesize}
-		}
+\begin{lstlisting}
+java graphtools.algorithms.Pathfinder
+  -g sce_metabolic_network_directed.txt
+  -f tab -s C00049
+  -t C00047 -d -r 1 -y con -b -T pathsUnion -O gml -o lysinebiosyn_sce.gml
+\end{lstlisting}
 
 \item As before, we can visualize the lysinebiosyn\_sce.gml file in a graph editor capable of reading gml files
      (such as yED or Cytoscape).
@@ -140,40 +139,49 @@ metabolic networks. It is assumed that you have installed the required command-l
 
 \subsection{Interpretation of the results}
 
-After having executed the steps of this tutorial, you should have obtained two pathway images:
-one for the yeast network and one for the \textit{E. coli} network. Both pathways differ quite substantially.
-If we compare each of these pathways with the respective organism-specific pathway map in KEGG, we notice that
+After having executed the steps of this tutorial, you should have
+obtained two pathway images: one for the yeast network and one for the
+\textit{E. coli} network. Both pathways differ quite substantially.
+If we compare each of these pathways with the respective
+organism-specific pathway map in KEGG, we notice that
 the pathway inferred for the \textit{E. coli} network reproduces the reference pathway correctly.\\
-The yeast pathway deviates from the \textit{S. cerevisiae} KEGG pathway map from L-aspartate to but-1-ene-1,2,4-tricarboxylate,
-but recovers otherwise the reference pathway correctly (ignoring the intermediate steps 5-adenyl-2-aminoadipate and
+The yeast pathway deviates from the \textit{S. cerevisiae} KEGG
+pathway map from L-aspartate to but-1-ene-1,2,4-tricarboxylate, but
+recovers otherwise the reference pathway correctly (ignoring the
+intermediate steps 5-adenyl-2-aminoadipate and
 alpha-aminoadipoyl-S-acyl enzyme associated to EC number 1.2.1.31). \\
-For comparison purposes, we have chosen the same start and end compound for both metabolic networks, but it should
-be noted that the reference lysine biosynthesis pathway in \textit{S. cerevisiae} starts from 2-oxoglutarate.
+For comparison purposes, we have chosen the same start and end
+compound for both metabolic networks, but it should be noted that the
+reference lysine biosynthesis pathway in \textit{S. cerevisiae} starts
+from 2-oxoglutarate.
 
 The lysine biosynthesis KEGG map for yeast is available at:
-\begin{verbatim}
+
+\begin{lstlisting}
 http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=sce&mapno=00300
-\end{verbatim}
+\end{lstlisting}
 
 The one for \textit{E. coli} is available at:
-\begin{verbatim}
+
+\begin{lstlisting}
 http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=eco&mapno=00300
-\end{verbatim}
+\end{lstlisting}
 
 
 \section{Summary}
 
-The study case demonstrated that different organisms may employ different metabolic pathways for the synthesis or
-degradation of a given compound. For this reason, it is useful to be able to construct metabolic networks that are
-specific to a selected set of organisms.
+The study case demonstrated that different organisms may employ
+different metabolic pathways for the synthesis or degradation of a
+given compound. For this reason, it is useful to be able to construct
+metabolic networks that are specific to a selected set of organisms.
 
 \section{Troubleshooting}
 
 \begin{enumerate}
 
-\item An empty graph (with zero nodes and edges) is returned.
-Make sure that the entered organism identifiers are valid in KEGG.
-They should consist of three to four letters only. If in doubt,
-check in the provided KEGG organism list.
+\item An empty graph (with zero nodes and edges) is returned.  Make
+  sure that the entered organism identifiers are valid in KEGG.  They
+  should consist of three to four letters only. If in doubt, check in
+  the provided KEGG organism list.
 
 \end{enumerate}
