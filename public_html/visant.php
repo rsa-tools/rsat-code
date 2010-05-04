@@ -83,10 +83,6 @@ $parameters = array(
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
-    # Execute the command
-//     echo ("<pre>");
-//     $echoed = $client->convert_graph($parameters);
-//     echo ("</pre>");
     # Work with exception catch
     try {
       $echoed = $client->convert_graph($parameters);
@@ -142,8 +138,6 @@ $graph = rtrim($graph);
                                  )
                            );
     $functions = $client->__getFunctions();
-    #info(print_r($parameters));
-    #info(print_r($functions));
     try{
         $echoed = $client->graphconversion($parameters);
     }catch(SoapFault $fault){

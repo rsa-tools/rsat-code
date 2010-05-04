@@ -194,12 +194,7 @@ if($reactionattribs){
     	}
 
     	if($error == 0){
-        	 # Display the results (old way)
-    		#echo("<align='left'>The result is available as text file at the following URL:<br><br>
-    		#<a href='$html_location$server'>$html_location$server</a><br><br>
-    		#The result has been generated with command:<br>
-			#$command</align><br><br>");
-			
+
 			# compact result display
 			$resultURL = rsat_path_to_url($server);
 			$URL['tab'] = $resultURL;
