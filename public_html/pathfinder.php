@@ -14,7 +14,9 @@
   require ('functions.php');
   # log file update thanks to Sylvain
   UpdateLogFile("neat","","");
-
+  # File to store the commands
+  $cmd_file = getTempFileName('commands_pathfinder'); 
+  $cmd_handle = fopen($cmd_file, 'a');
   title('Results Pathfinder');
   # Error status
   $error = 0;
@@ -187,7 +189,8 @@
     );
 
     if($email == ""){
-        # Info message
+        ## announce the results
+        echo("<br><br><br><br>");
         info("Results will appear below");
         echo"<hr>\n";
         echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
@@ -235,8 +238,6 @@
     	$file_location = $result_location . $server;
         # content of result file
         $fileContent = storeFile($file_location);
-        # html location
-        $file_html_location = $html_location . $server;
         # Display warning if required
         if(ereg('maximal path number',$client)){
         	echo("<font color='red'>Warning: Path enumeration had to be interrupted, because too many paths were found. Paths might have been missed!</font>");
@@ -244,8 +245,17 @@
         	echo("<font color='red'>Warning: Path enumeration was interrupted by a time out. Paths might have been missed!</font>");
         }
         # Display the results
-    	echo "<align='left'>The result is available as text file at the following URL:<br> ";
-    	echo "<a href = '$file_html_location'>$file_html_location</a><br></align>";
+    	
+        # html location
+        #$file_html_location = $html_location . $server;
+    	#echo "<align='left'>The result is available as text file at the following URL:<br> ";
+    	#echo "<a href = '$file_html_location'>$file_html_location</a><br></align>";
+    	
+    	$resultURL = rsat_path_to_url($server);
+        $URL['tab'] = $resultURL;
+			
+    	# store command in a file
+        store_command("$command", "k-shortest path finding", $cmd_handle);
 
     	# Text-to-html web service (for table of paths only)
     	if(strcmp($outputType,'pathsTable') == 0){
@@ -273,12 +283,27 @@
         $tth_temp_file = explode('/',$tth_server);
    	    $tth_temp_file = end($tth_temp_file);
     	$tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
-    	echo "<align='left'>The result is available as HTML page at the following URL:<br> ";
-    	echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>";
-    	echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br>";
-    	echo "The result has been generated with command:<br><br>";
-    	echo "$command</align><br><br>";
+    	
+    	store_command("$tth_command", "Text to html", $cmd_handle);
+    	
+    	#echo "<align='left'>The result is available as HTML page at the following URL:<br> ";
+    	#echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>";
+    	#echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br>";
+    	#echo "The result has been generated with command:<br><br>";
+    	#echo "$command</align><br><br>";
+    	
+    	$tth_resultURL = rsat_path_to_url($tth_server);
+        $URL['HTML'] = $tth_resultURL;
+    	
     	} # end pathsTable
+    	
+    	        
+         ## Close command handle
+         fclose($cmd_handle);
+         $URL['Server commands'] = rsat_path_to_url($cmd_file);
+         ## DISPLAY THE RESULT
+         print_url_table($URL);
+    	
     	# in case of tab-format, truncate nodes to make it readable by Sylvain Brohee's tools
     	if(strcmp($out_format,'flat') == 0){
     		if(ereg(';ARCS',$fileContent)){
