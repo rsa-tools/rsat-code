@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.51 2010/04/26 23:24:59 jvanheld Exp $
+# $Id: position-analysis,v 1.52 2010/05/04 09:45:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -379,9 +379,9 @@ sub ReadSequence {
 
 	my $ref_pos = 0;
 
-	## Compute the origin as the center of each sequence
+	## Compute the origin
 	if ($origin eq "center") {
-	    $ref_pos = &round($seq_length[$sequence_number]/2);
+	    $ref_pos = &round(($seq_length[$sequence_number]+1)/2);
 	} elsif ($origin eq "end") {
 	    $ref_pos = $seq_length[$sequence_number] + 1;
 	} else {
