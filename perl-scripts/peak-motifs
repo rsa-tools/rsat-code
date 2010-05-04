@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.53 2010/05/04 09:50:30 jvanheld Exp $
+# $Id: peak-motifs,v 1.54 2010/05/04 16:30:45 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.53 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.54 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -300,10 +300,12 @@ sub DefaultParameters {
   ## dyad-analysis
 
   ## position-analysis
-  $main::param{positions_ci} = 50; ## Class interval for position-analysis
+  $main::param{positions_ci} = 50; ## Class interval
+  $main::param{positions_min_occ} = 1; ## Min number of occurrences
 
   ## local-word-analysis
-  $main::param{local_words_ci} = 50; ## Class interval for local-word-analysis
+  $main::param{local_words_heuristic} = "slices"; ## Heuristic
+  $main::param{local_words_window} = 50; ## Class interval
 
   ## matrix-from-patterns
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
@@ -432,7 +434,8 @@ sub SetOutFileNames {
 	## local-word-analysis
 	$pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
 	$main::outfile{$pattern_type} = &OutFileName(".tab", "local_words".$main::param{strand}.$main::param{noov},
-						     $len."nt", "ci".$main::param{local_words_ci},
+						     $len."nt", "wind".$main::param{local_words_window},
+						     $main::param{local_words_heuristic},
 						     "mkv".$markov);
 	push @pattern_types, $pattern_type;
       }
@@ -482,15 +485,6 @@ sub SetOutFileNames {
   $main::outfile{word_compa_heatmap} = &OutFileName(".png", "word_comparison_heatmap");
 
 
-  ## Reference motif (a single motif considered as reference for the test set)
-  if (defined($main::infile{ref_motif})) {
-    $main::outfile{"ref_motif"} = &OutFileName($main::param{ref_motif_format}, "ref_motif");
-    $main::outfile{"ref_motif_transfac"} = &OutFileName(".tf", "ref_motif");
-    $main::outfile{"ref_motif_info"} = &OutFileName(".tab", "ref_motif_info");
-    $main::outfile{"ref_motif_logo"} = &OutFileName("", "ref_motif_logo");
-    $main::outfile{"ref_motif_enriched"} = &OutFileName("tab", "ref_motif_enriched");
-  }
-
   ## Clustering of the discovered motifs + comparison with reference motif
   $main::outfile{motifs_discovered} = &OutFileName(".tf", "motifs_discovered");
   $main::outfile{motifs_disco_compa} = &OutFileName(".tab", "motifs_disco_compa");
@@ -502,9 +496,18 @@ sub SetOutFileNames {
   $main::outfile{motifs_disco_compa_cluster_intra_degree} = &OutFileName(".tab", "motifs_disco_compa_cluster_intra_degree");
   #    $main::outfile{motifs_disco_ref} = &OutFileName(".tf", "motifs_disco_ref");
 
-  ## Comparison betweeen discovered motifs and reference motif
+
   if (defined($main::infile{ref_motif})) {
+    ## Motif(s) considered as reference for the testing set
+    $main::outfile{"ref_motif"} = &OutFileName($main::param{ref_motif_format}, "ref_motif");
+    $main::outfile{"ref_motif_transfac"} = &OutFileName(".tf", "ref_motif");
+    $main::outfile{"ref_motif_info"} = &OutFileName(".tab", "ref_motif_info");
+    $main::outfile{"ref_motif_logo"} = &OutFileName("", "ref_motif_logo");
+    $main::outfile{"ref_motif_enriched"} = &OutFileName("tab", "ref_motif_enriched");
+
+    ## Comparison betweeen discovered motifs and reference motif
     $main::outfile{"motifs_vs_ref"} = &OutFileName(".tab", "motifs_vs_ref");
+    push @timelog_keys, "motifs_vs_ref";
     $main::outfile{"motifs_vs_ref_gml"} = &OutFileName(".gml", "motifs_vs_ref");
     $main::outfile{"motifs_vs_ref_png"} = &OutFileName(".png", "motifs_vs_ref");
     $main::outfile{"motifs_vs_ref_matrices"} = &OutFileName(".tab", "motifs_vs_ref_matrices");
@@ -515,6 +518,7 @@ sub SetOutFileNames {
   if (scalar(@motif_databases) > 0) {
     foreach my $db_name (@motif_databases) {
       $main::outfile{"motifs_vs_db_".$db_name} = &OutFileName(".tab", "motifs_vs_db_".$db_name);
+      push @timelog_keys, "motifs_vs_db_".$db_name;
       $main::outfile{"motifs_vs_db_".$db_name."_gml"} = &OutFileName(".gml", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name."_png"} = &OutFileName(".png", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name."_matrices"} = &OutFileName(".tab", "motifs_vs_db_".$db_name."_matrices");
@@ -553,13 +557,18 @@ sub SequenceLengths {
   $cmd .= " ; cut -f 2 ".$main::outfile{$seq_type.'_seqlen'};
   $cmd .= " | ".$SCRIPTS."/classfreq -v 1 -ci ".$main::param{profiles_ci};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib'};
-  $cmd .= " ; ".$SCRIPTS."/XYgraph -lines -pointsize 0 -legend";
+  &one_command($cmd, 1);
+
+  $cmd = $SCRIPTS."/XYgraph -lines -pointsize 0 -legend";
   $cmd .= " -format ".$main::param{img_format};
   my $title = "Sequence lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
   $cmd .= " -title '".$title."'";
   $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
+  $cmd .= " -xmin 0 -ymin 0";
+  $cmd .= " -xgstep1 ".($main::param{profiles_ci}*10);
+  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen_distrib'};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib_graph'};
   &one_command($cmd, 1);
@@ -737,19 +746,20 @@ sub PositionAnalysis {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'positions_'.$len.'nt';
     &RSAT::message::TimeWarn("Running position-analysis", $len."nt") if ($main::verbose >= 1);
-    my $cmd = $SCRIPTS."/position-analysis -v 1";
+    my $cmd = $SCRIPTS."/position-analysis -v 2";
     $cmd .= " -i ".$main::outfile{"purged_test"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
     $cmd .= " -return chi,sig,distrib,graphs,rank";
-    $cmd .= " -rth ".$main::param{patterns_max_rank};
-    $cmd .= " -lth_sig ".$main::param{min_sig};
     $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
     $cmd .= " ".$main::param{strand};
     $cmd .= " ".$main::param{noov};
     $cmd .= " -seqtype dna";
     $cmd .= " -l ".$len;
     $cmd .= " -ci ".$main::param{positions_ci};
+    $cmd .= " -lth_occ ".$main::param{positions_min_occ};
+    $cmd .= " -lth_sig ".$main::param{min_sig};
+    $cmd .= " -uth_rank ".$main::param{patterns_max_rank};
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
@@ -763,6 +773,7 @@ sub PositionAnalysis {
 ################################################################
 ## Run local-word-analysis on the test set
 sub LocalWords {
+  my $center_pos = &RSAT::util::round($main::param{local_words_window}/2);
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
       ## Convert negative markov orders relative to the oligo length
@@ -772,7 +783,6 @@ sub LocalWords {
       my $cmd = $PYTHON."/local-word-analysis -v 3";
       $cmd .= " -i ".$main::outfile{"purged_test"};
       #  $cmd .= " -format fasta";
-      $cmd .= " --center=0";
       $cmd .= " --min=occ_sig ".$main::param{min_sig};
       $cmd .= " --sort=-occ_sig";
       $cmd .= " --max=rank ".$main::param{patterns_max_rank};
@@ -784,12 +794,14 @@ sub LocalWords {
 	$cmd .= " +-";
       }
       $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
-      $cmd .= " --window=".$main::param{local_words_ci};
+      $cmd .= " --center=".$center_pos;
+      $cmd .= " --window=".$main::param{local_words_window};
+      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
       #  $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
       $cmd .= " --markov ".$markov;
       #  $cmd .= " -pseudo 0.01";
-      $cmd .= " -o ".$main::outfile{$pattern_type};
+      $cmd .= " > ".$main::outfile{$pattern_type};
       &one_command($cmd, 1);
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
     }
@@ -801,11 +813,10 @@ sub LocalWords {
 sub RefMotif {
 
   ## Copy the reference motif in the output directory
-  my $cmd = "rsync -ruptvl ";
+  my $cmd = "rsync -ruptL ";
   $cmd .= " ".$main::infile{ref_motif};
   $cmd .= " ".$main::outfile{ref_motif};
   &one_command($cmd, 1);
-
 
   ## Convert the reference motif to TRANSFAC format, because this
   ## format holds information about the motif name, ID etc
