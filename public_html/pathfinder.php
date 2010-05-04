@@ -245,12 +245,6 @@
         	echo("<font color='red'>Warning: Path enumeration was interrupted by a time out. Paths might have been missed!</font>");
         }
         # Display the results
-    	
-        # html location
-        #$file_html_location = $html_location . $server;
-    	#echo "<align='left'>The result is available as text file at the following URL:<br> ";
-    	#echo "<a href = '$file_html_location'>$file_html_location</a><br></align>";
-    	
     	$resultURL = rsat_path_to_url($server);
         $URL['tab'] = $resultURL;
 			
@@ -285,12 +279,6 @@
     	$tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
     	
     	store_command("$tth_command", "Text to html", $cmd_handle);
-    	
-    	#echo "<align='left'>The result is available as HTML page at the following URL:<br> ";
-    	#echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>";
-    	#echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br>";
-    	#echo "The result has been generated with command:<br><br>";
-    	#echo "$command</align><br><br>";
     	
     	$tth_resultURL = rsat_path_to_url($tth_server);
         $URL['HTML'] = $tth_resultURL;
