@@ -39,18 +39,11 @@ ARGUMENTS
         -p, --overlap         allow overlapping oligomer occurrences
                               EXAMPLE: --overlap
         --window=#            count oligomers in fixed window of length #
+                              use --window=variable to use a variable size window (slower)
+                              use --window=none to search without window
                               EXAMPLE: --window=20 (window of length 20)
         --windowgroup=#       count oligomers in fixed window of length #, 2#, ...
                               EXAMPLE: --windowgroup=20 (use a window of length 20, 40, 60, ...)
-        --all                 do not use windows
-        --heuristic=#         count oligomers in variable size windows
-                              set the heuristic for extracting windows. 
-                              Supported heuristics: all, slices (default), score
-                              EXAMPLE: --heuristic=all
-        --slices=#            in the case of variable size windows extracted with 
-                              the slices heuristic: use # slices (10 by default)
-                              This option is relevant only when heuristic is set
-                              to slices
         --right=#             use right bound position as reference
                               position #. This should be used when dealing with 
                               upstream sequences.
@@ -218,7 +211,6 @@ parser.add_option("-o", "--output",   action="store",      dest="output",       
 parser.add_option("-s", "--strand",   choices=['+', '+-'], dest="strand",            default='+-')
 parser.add_option("-p", "--overlap",  action="store_true", dest="overlap",           default=False)
 parser.add_option("--dyad",           action="store_true", dest="dyad",              default=False)
-parser.add_option("--all",            action="store_true", dest="all",               default=False)
 parser.add_option("--spacing",        action="store",      dest="spacing",       type="string", default='1:1')
 parser.add_option("-m", "--markov",   action="store",      dest="markov",        type="int", metavar="ORDER", default=None)
 parser.add_option("--bgfile",         action="store",      dest="bgfile",        type="string", default=None)
@@ -227,19 +219,16 @@ parser.add_option("--bgoligomarkov",  action="store",      dest="bgoligomarkov",
 parser.add_option("--max",            action="append",     dest="max",           type="string", nargs=2, default=[])
 parser.add_option("--min",            action="append",     dest="min",           type="string", nargs=2, default=[])
 parser.add_option("--sort",           action="append",     dest="sort",          type="string", default=[])
-parser.add_option("--window",         action="store",      dest="window",        type='int', metavar="LENGTH", default=None)
+parser.add_option("--window",         action="store",      dest="window",        type='string', default='20')
 parser.add_option("--windowgroup",    action="store",      dest="window_group",  type='int', metavar="LENGTH", default=None)
 parser.add_option("--bgwindow",       action="store",      dest="bgwindow",      type='int', metavar="LENGTH", default=None)
 parser.add_option("--slices",         action="store",      dest="slices",        type="int", default=10)
 parser.add_option("--right",          action="store",      dest="right",         type="int", default=None)
 parser.add_option( "--left",          action="store",      dest="left",          type="int", default=None)
 parser.add_option( "--center",        action="store",      dest="center",        type="int", default=None)
-
 parser.add_option("--location",       action="store",      dest="location",      type="string", default=None)
 parser.add_option("-r", "--ratio",    action="store",      dest="ratio",         type="float", default=2.0)
-parser.add_option("--heuristic",                           dest="heuristic", choices=['all', 'slices', 'score'], default='slices')
 parser.add_option("--count",          action="store",      dest="count",         type="string", default='hash')
-
 parser.add_option("-e", "--error",     action="store",      dest="error",        type="int", default=0)
 parser.add_option("--debug",           action="store_true", dest="debug")
 parser.add_option("--profile",         action="store_true", dest="profile")
@@ -324,11 +313,12 @@ def main(args, options):
             bgfile = options.bgoligomarkov
         else:
             bg.build(s)
-
-    if options.window > s.location[1] - s.location[0] + 1:
-        options.window = s.location[1] - s.location[0] + 1
-    if options.window_group > s.location[1] - s.location[0] + 1:
-        options.window_group = s.location[1] - s.location[0] + 1
+    
+    if options.window != 'variable' and options.window != 'none':
+        if int(options.window) > s.location[1] - s.location[0] + 1:
+            options.window = s.location[1] - s.location[0] + 1
+        if options.window_group > s.location[1] - s.location[0] + 1:
+            options.window_group = s.location[1] - s.location[0] + 1
 
     if not (location[0] >= bg.location[0] and location[1] <= bg.location[1]):
         cli.error('Given location do not match Background model location')
@@ -348,23 +338,20 @@ def main(args, options):
                 'end'   : (None, None)
                 }
     thresholds = ormlib.convert_thresholds(defaults, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
-
     params = {
               'ratio' : options.ratio,
               'spacing' : spacing,
               'binomial' : 1,
               'error' : options.error,
               'spacing' : spacing,
-              'heuristic' : options.heuristic,
+              #'heuristic' : options.heuristic,
               'count'     : options.count,
               'slices'    : options.slices,
               'window' : options.window,
               'window_group' : options.window_group,
               'dyad' : options.dyad,
-              'all' : options.all
               }
     params.update(thresholds)
-
 
     start_time = time.localtime()
     ##
@@ -385,13 +372,6 @@ def main(args, options):
     thresholds = ormlib.convert_thresholds({'rank' : (None, None)}, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
     r = ormlib.select(r, thresholds, COLUMN_HEADER)
 
-    if options.window != None:
-        windowWidth = '%d' % options.window
-    elif options.all:
-        windowWidth = 'full'
-    else:
-        windowWidth = 'variable'
-
     ##
     #
     # output
@@ -407,7 +387,7 @@ def main(args, options):
                                           numberOfSequences=len(s), 
                                           start=location[0], end=location[1],
                                           command=' '.join(sys.argv),
-                                          windowWidth = windowWidth,
+                                          windowWidth = options.window,
                                           bgwindowWidth = bg.W,
                                           strand=options.strand,
                                           lowerThreshold = str(options.min),

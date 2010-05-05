@@ -142,8 +142,8 @@ def var(values):
         return 0.0
     else:
         m = mean(values)
-        #return sum( [(x-m)**2 for x in values] ) / float(len(values)-1)
-        return sum( [(x-m)**2 for x in values] ) / float(len(values))
+        #return sum([(x-m)**2 for x in values] ) / float(len(values)-1)
+        return sum([(x-m)**2 for x in values] ) / float(len(values))
 
 
 def mean_var(values):

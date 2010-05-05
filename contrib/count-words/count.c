@@ -68,6 +68,16 @@ int fasta_next(string_buffer_t *buffer, FILE *fp)
 // ===========================================================================
 // =                            Count oligos
 // ===========================================================================
+
+int count_array_size(int oligo_length)
+{
+    int i;
+    int size = 1;
+    for (i = 0; i < oligo_length; i++)
+        size *= ALPHABET_SIZE;
+    return size;
+}
+
 long *new_count_array(int oligo_length)
 {
     int i;
@@ -286,6 +296,7 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
     if (spacing != -1)
         oligo_length = oligo_length * 2;
 
+    ASSERT(oligo_length < 256, "too big oligo");
     char letter[ALPHABET_SIZE] = "acgt";
     int i, k;
     int size = 1;
@@ -293,13 +304,13 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
         size *= ALPHABET_SIZE;    
 
     // id buffer
-    char oligo_buffer[oligo_length + 1];
+    char oligo_buffer[256];
     oligo_buffer[oligo_length] = '\0';
     for (i = 0; i < oligo_length; i++)
         oligo_buffer[i] = letter[0];
 
     // rc id buffer
-    char oligo_buffer_rc[oligo_length + 1];
+    char oligo_buffer_rc[256];
     oligo_buffer_rc[oligo_length] = '\0';
     for (i = 0; i < oligo_length; i++)
         oligo_buffer_rc[i] = letter[0];
