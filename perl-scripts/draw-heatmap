@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.14 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: draw-heatmap,v 1.15 2010/05/05 00:48:19 jvanheld Exp $
 #
 ############################################################
 
@@ -70,329 +70,364 @@ use File::Spec;
 package main;
 {
 
-    ################################################################
-    ## Initialise parameters
-    my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-#    $program_version = "0.00";
+  ################################################################
+  ## Initialise parameters
+  my $start_time = &AlphaDate();
+  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
 
-    %main::infile = ();
-    %main::outfile = ();
+  %main::infile = ();
+  %main::outfile = ();
 
-    $main::verbose = 0;
-    $main::in = STDIN;
-    $main::out = STDOUT;
-    ## Output formats
-    local $output_format = "png";
-    %supported_output_format =(
-#			       ps=>1, ## NOT SUPPORTED YET
-			       png=>1,
-			       jpg=>1,
-			       jpeg=>1
-    			      );
-    $supported_output_formats = join (",", keys %supported_output_format);
+  $main::verbose = 0;
+  $main::in = STDIN;
+  $main::out = STDOUT;
+  ## Output formats
+  local $output_format = "png";
+  %supported_output_format =(
+			     #			       ps=>1, ## NOT SUPPORTED YET
+			     png=>1,
+			     jpg=>1,
+			     jpeg=>1
+			    );
+  $supported_output_formats = join (",", keys %supported_output_format);
 
-    ## Color gradients
-    local $gradient = "grey";
-    %supported_gradients =(
-			       blue=>1,
-			       green=>1,
-			       red=>1,
-			       grey=>1,
-			       fire=>1);
-			      
-			       
-    $supported_gradients = join (",", keys %supported_gradients);    
-    $rownames = 0;
+  ## Color gradients
+  local $gradient = "grey";
+  %supported_gradients =(
+			 blue=>1,
+			 green=>1,
+			 red=>1,
+			 grey=>1,
+			 fire=>1);
+  $supported_gradients = join (",", keys %supported_gradients);    
+  $rownames = 0;
 
-    $output_format = "png";
-    
-    # Maximal and minimal values
-    $main::min_val = undef;
-    $main::max_val = undef;
-    # Col width and row height
-    $main::col_width = 50;
-    $main::row_height = 30;
-    $main::no_text = 0;
-    # draw line 
-    $main::lines = 0;
-    #chaos
-    $main::chaos = 0;
-    
-    ################################################################
-    ## Read argument values
-    &ReadArguments();
-    ################################################################
-    ## Check argument values
-    if (!$main::outfile{output}) {
-      &RSAT::error::FatalError("You must specify an output file with the -o option");
-    }
-#    if (!$main::infile{input}) {
-#      &RSAT::error::FatalError("You must specify an input file with the -i option");
-#    }
+  $output_format = "png";
 
-    ## chaos table: no text, no lines, square cells
-    if ($chaos){
-    	 $main::no_text = 1;
-    	 $main::lines = 0;
-    	 my $user_col = 0; ## user specified col
-    	 my $user_row = 0; ## user specified row
-    	 if ($col_width != 50){
-	   $user_col = 1;
-    	 }
-    	 if ($row_height != 30){
-	   $user_row = 1;
-    	 }
-    	 if ($user_col){
-    	 	## user has specified both col and row => keep the largest one
-    	 	if ($user_row){
-    	 		if ($main::col_width > $main::row_height){
-    				$main::row_height = $main::col_width;
-    			} else {
-    				$main::col_width = $main::row_height;
-    			}
-    	 	} else {
-    	 	## user has specified only col
-    	 		$main::row_height = $main::col_width;
-    	 	}
-    	 ## user has specified only row
-    	 } elsif ($user_row){
-    	 	$main::col_width = $main::row_height; 
-    	 ## user has specified nothing
-    	 } elsif ($main::col_width > $main::row_height){
-    		$main::row_height = $main::col_width;
-    	} else {
-    		$main::col_width = $main::row_height;
-    	}
-    }
+  # Maximal and minimal values
+  $main::min_val = undef;
+  $main::max_val = undef;
 
-    ################################################################
-    ## Open output stream
-    $main::out = &OpenOutputFile($main::outfile{output});
-    $main::outhtml = &OpenOutputFile($main::outfile{htmlmap}) if (defined $main::outfile{htmlmap});
-    
-    ################################################################
-    ## If HTML map required, initialization
-    my $html_source = "<html><header><title>Draw Heatmap</title></header><body>\n";
-    ## get the absolute path of the output image
-    $html_source .= "<img src = '".File::Spec->rel2abs($main::outfile{output})."' usemap = '#map' border = 0>\n";
-    $html_source .= "<map name = 'map'>\n";
-    
-    ################################################################
-    ## Read input
-    my $min = 32000;  # min value of the table
-    my $max = -32000; # max value of the table
-    my @header = ();  # header of the table (column names)
-    my @rownames_list = (); #array containing the row names
-    my @table = (); # array containing the values
-    my $max_row_name_length = 0;
-    my $max_header_name_length = 0;
+  # Col width and row height
+  $main::col_width = 50;
+  $main::row_height = 30;
+  $main::no_text = 0;
+  # draw line 
+  $main::lines = 0;
+  #chaos
+  $main::chaos = 0;
 
-    
-    my $tablecpt = 0;
-    my $max_row_elements = 0;
-    ($main::in) = &OpenInputFile($main::infile{input});
-    while (my $ligne = <$main::in>) {
-      next if ($ligne =~ /^;/);
-      chomp $ligne;
-      my @lignecp = split /\t/, $ligne;
-      # Parsing of the header line if any
-      if ($ligne =~ /^#/) {
-        $ligne =~ s/^#//;
-        @lignecp = split /\t/, $ligne;
-        for (my $i = 0; $i < scalar @lignecp; $i++) {
-          push @header, $lignecp[$i];
-          if ($max_header_name_length < length ($lignecp[$i])) {
-            $max_header_name_length = length ($lignecp[$i]);
-          }
-        }
-        next;
-      }
-      # Parsing of the table
-      for (my $i = 0; $i < scalar @lignecp; $i++) {
-        my $val = $lignecp[$i];
-        $table[$tablecpt][$i] = $val;
-        if ($rownames && $i == 0) {
-          push @rownames_list, $val;
-          if ($max_row_name_length < length ($val)) {
-            $max_row_name_length = length ($val);
-          }
-          next;
-        }
-        if (&RSAT::util::IsReal($val)) {
-          $min = $val if ($val < $min);
-          $max = $val if ($val > $max);
-        }
-        if ($i > $max_row_elements) {
-          $max_row_elements = $i;
-        }
-      }
-      $tablecpt++;
-    }
-    close $main::in if ($main::infile{input});
-    my $row_name_width = $max_row_name_length *5 || $col_width;
-    my $header_name_height = $max_header_name_length*10 || $col_width;
-    
-    ## attribution of the minimal and maximal value if specified as arguments
-    $min = $min_val if (defined $min_val && $min_val <= $min);
-    $max = $max_val if (defined $max_val && $max_val >= $max);
-    ################################################################
-    ## Print verbose
-    &Verbose() if ($main::verbose);
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
 
-    ################################################################
-    ## Execute the command
-    if ($output_format eq "ps") {
-
-      ## Comment by JvH: apparently there has been some intention to
-      ## support the ps format, but the code has not been implemented
-      ## yet. I added the error message to avoid having an empty case.
-      &RSAT::error::FatalError("Postscript format is not supported yet.");
-
+  if ($gradient eq "grey") {
+    $null_color = "#FFFFBB";
+    $saturation_color = "#DD0000";
+  } else {
+    $null_color = "#DDDDDD";
+    if (($gradient eq "red") || ($gradient eq "fire")) {
+      $saturation_color = "#000000";
     } else {
-      my $p  = new GD::Image (100+$row_name_width+($col_width*$max_row_elements), $header_name_height+($row_height*($tablecpt+2))) ;
-      my %colors = ();
-      my $white = $p->colorAllocate(255,255,255);
-      my $black = $p->colorAllocate(0,0,0);
-      $p->setThickness(1);
+      $saturation_color = "#FF0000";
+    }
+  }
+
+  ################################################################
+  ## Check argument values
+  if (!$main::outfile{output}) {
+    &RSAT::error::FatalError("You must specify an output file with the -o option");
+  }
+  #    if (!$main::infile{input}) {
+  #      &RSAT::error::FatalError("You must specify an input file with the -i option");
+  #    }
+
+  ## chaos table: no text, no lines, square cells
+  if ($chaos) {
+    $main::no_text = 1;
+    $main::lines = 0;
+    my $user_col = 0;		## user specified col
+    my $user_row = 0;		## user specified row
+    if ($col_width != 50) {
+      $user_col = 1;
+    }
+    if ($row_height != 30) {
+      $user_row = 1;
+    }
+    if ($user_col) {
+      ## user has specified both col and row => keep the largest one
+      if ($user_row) {
+	if ($main::col_width > $main::row_height) {
+	  $main::row_height = $main::col_width;
+	} else {
+	  $main::col_width = $main::row_height;
+	}
+      } else {
+	## user has specified only col
+	$main::row_height = $main::col_width;
+      }
+      ## user has specified only row
+    } elsif ($user_row) {
+      $main::col_width = $main::row_height; 
+      ## user has specified nothing
+    } elsif ($main::col_width > $main::row_height) {
+      $main::row_height = $main::col_width;
+    } else {
+      $main::col_width = $main::row_height;
+    }
+  }
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+  $main::outhtml = &OpenOutputFile($main::outfile{htmlmap}) if (defined $main::outfile{htmlmap});
+
+  ################################################################
+  ## If HTML map required, initialization
+  my $html_source = "<html><header><title>Draw Heatmap</title></header><body>\n";
+  ## get the absolute path of the output image
+  $html_source .= "<img src = '".File::Spec->rel2abs($main::outfile{output})."' usemap = '#map' border = 0>\n";
+  $html_source .= "<map name = 'map'>\n";
+
+  ################################################################
+  ## Read input
+  my $min = +9e-300;		# min value of the table
+  my $max = -9e+300;		# max value of the table
+  my @header = ();		# header of the table (column names)
+  my @rownames_list = ();	#array containing the row names
+  my @table = ();		# array containing the values
+  my $max_row_name_length = 0;
+  my $max_header_name_length = 0;
+
+  my $tablecpt = 0;
+  my $max_row_elements = 0;
+  ($main::in) = &OpenInputFile($main::infile{input});
+  while (my $ligne = <$main::in>) {
+    next if ($ligne =~ /^;/);
+    chomp $ligne;
+    my @lignecp = split /\t/, $ligne;
+    # Parsing of the header line if any
+    if ($ligne =~ /^#/) {
+      $ligne =~ s/^#//;
+      @lignecp = split /\t/, $ligne;
+      for (my $i = 0; $i < scalar @lignecp; $i++) {
+	push @header, $lignecp[$i];
+	if ($max_header_name_length < length ($lignecp[$i])) {
+	  $max_header_name_length = length ($lignecp[$i]);
+	}
+      }
+      next;
+    }
+    # Parsing of the table
+    for (my $i = 0; $i < scalar @lignecp; $i++) {
+      my $val = $lignecp[$i];
+      $table[$tablecpt][$i] = $val;
+      if ($rownames && $i == 0) {
+	push @rownames_list, $val;
+	if ($max_row_name_length < length ($val)) {
+	  $max_row_name_length = length ($val);
+	}
+	next;
+      }
+      if (&RSAT::util::IsReal($val)) {
+	$min = $val if ($val < $min);
+	$max = $val if ($val > $max);
+      }
+      if ($i > $max_row_elements) {
+	$max_row_elements = $i;
+      }
+    }
+    $tablecpt++;
+  }
+  close $main::in if ($main::infile{input});
+  my $row_name_width = $max_row_name_length *5 || $col_width;
+  my $header_name_height = $max_header_name_length*10 || $col_width;
+
+
+  &RSAT::message::Info("max_val=".$max_val, "table_max=".$max) if ($main::verbose >= 4);
+
+  ## attribution of the minimal and maximal value if specified as arguments
+  if (defined($min_val)) {
+    $display_min = &RSAT::stats::max($min_val, $min);
+    #      if ($min_val <= $min)  {
+    #	$display_min = $min_val;
+    #      } else {
+    #	$display_min = $min;
+    #      }
+  }
+  if (defined($max_val)) {	#&& ($max_val >= $max)) {
+    $display_max = &RSAT::stats::min($max_val, $max);
+    #      $max = $max_val;
+  }
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Execute the command
+  if ($output_format eq "ps") {
+
+    ## Comment by JvH: apparently there has been some intention to
+    ## support the ps format, but the code has not been implemented
+    ## yet. I added the error message to avoid having an empty case.
+    &RSAT::error::FatalError("Postscript format is not supported yet.");
+
+  } else {
+    my $p  = new GD::Image (100+$row_name_width+($col_width*$max_row_elements), $header_name_height+($row_height*($tablecpt+2))) ;
+    my %colors = ();
+    my $white = $p->colorAllocate(255,255,255);
+    my $black = $p->colorAllocate(0,0,0);
+    $p->setThickness(1);
       
-      $colors{"255255255"} = $white;
-      $colors{"000000000"} = $black;
-      $p->interlaced('false');
+    $colors{"255255255"} = $white;
+    $colors{"000000000"} = $black;
+    $p->interlaced('false');
       
-      ## CHAOS
-      if ($chaos){
-      	# print chaos ATGC angles
-      	$p->string(gdMediumBoldFont,$row_name_width-7,$header_name_height-7,"C",$black);
-      	$p->string(gdMediumBoldFont,$row_name_width-7,$header_name_height+($row_height*$tablecpt),"A",$black);
-      	$p->string(gdMediumBoldFont,$row_name_width+($col_width*$tablecpt)+2,$header_name_height-7,"G",$black);
-      	$p->string(gdMediumBoldFont,$row_name_width+($col_width*$tablecpt)+2,$header_name_height+($row_height*$tablecpt),"T",$black);
+    ## CHAOS
+    if ($chaos) {
+      # print chaos ATGC angles
+      $p->string(gdMediumBoldFont,$row_name_width-7,$header_name_height-7,"C",$black);
+      $p->string(gdMediumBoldFont,$row_name_width-7,$header_name_height+($row_height*$tablecpt),"A",$black);
+      $p->string(gdMediumBoldFont,$row_name_width+($col_width*$tablecpt)+2,$header_name_height-7,"G",$black);
+      $p->string(gdMediumBoldFont,$row_name_width+($col_width*$tablecpt)+2,$header_name_height+($row_height*$tablecpt),"T",$black);
       
       ## calculate chaos word positions if html
-      	if ($main::outfile{htmlmap}){
-      		our $w_length = log($max_row_elements + 1) / log(2);
-      		%main::oligo_freq = ();
-      		## generate all possible words
-      		&generate_words($w_length);
+      if ($main::outfile{htmlmap}) {
+	our $w_length = log($max_row_elements + 1) / log(2);
+	%main::oligo_freq = ();
+	## generate all possible words
+	&generate_words($w_length);
 
-			##	calculate position of Chaos Table
-  			$main::chaos_table = new RSAT::Chaos();
-  			$main::chaos_table->init_mapping_table();
-   			$main::chaos_table->init_chaos_table($w_length);
-   			@main::chaos = $main::chaos_table->get_chaos_table("word",\%main::oligo_freq);
+	##	calculate position of Chaos Table
+	$main::chaos_table = new RSAT::Chaos();
+	$main::chaos_table->init_mapping_table();
+	$main::chaos_table->init_chaos_table($w_length);
+	@main::chaos = $main::chaos_table->get_chaos_table("word",\%main::oligo_freq);
 
-      	}
       }
-      
-      # display header if any
-      if ((scalar @header) > 0) {
-        for (my $i = 0; $i < scalar @header; $i++) {
-          my $xpos = $row_name_width+($col_width*$i);
-          my $ypos = $header_name_height;
-          my $headeri = $header[$i];
-          $p->stringUp(gdMediumBoldFont,$xpos,$ypos,$headeri,$black);
-        }
-      }
-      
-      # display table
-      my $initj = 0;
-      $initj = 1 if ($rownames);
-      for (my $i = 0; $i < scalar @table; $i ++) {
-        my @row = @{$table[$i]};
-        for (my $j = $initj; $j < scalar @row; $j ++) {
-          my $val = $row[$j];
-          my $current_col = $white;
-          my $textcol = $black;
-          if ($rownames) {
-            my $row_name_xpos = 5;
-            my $row_name_ypos = 5+$header_name_height+($row_height*$i);
-            $p->string(gdSmallFont, $row_name_xpos,$row_name_ypos, $rownames_list[$i], $textcol);
-          }
-          if (&RSAT::util::IsReal($val)) {
-            my $color = &RSAT::util::getBgColorFromOneScore($val, $min, $max, 0, $gradient);
-            my $r = hex(substr($color, 1,2));
-            my $g = hex(substr($color, 3,2));
-            my $b = hex(substr($color, 5,2));
-            my $idcol = join("","$r","$g","$b");
-            $current_col = $colors{$idcol};
-            if (!defined($current_col)) {
-              $current_col = $p->colorAllocate($r, $g, $b);
-              $colors{"$idcol"} = $current_col;
-            }
-            my $mean = ($min+$max)/2;
-            if ($val > $mean) {
-              $textcol = $white;
-            }
-          }
-          my $xpos1 = $row_name_width+($col_width*$j);
-          my $xpos2 = $row_name_width+($col_width*$j)+$col_width;
-          my $ypos1 = 5+$header_name_height+($row_height*$i);
-          my $ypos2 = 5+$header_name_height+($row_height*$i)+$row_height;
-          $p->filledRectangle($xpos1, $ypos1, $xpos2, $ypos2, $current_col);
-          $p->string(gdSmallFont, ($xpos1+5),($ypos1+5), "$val", $textcol) if ($col_width >= 30 && !$no_text);
-          # put the lines only when computing the last row
-          if ($lines && $i == (scalar(@table)-1)) {
-            $p->setThickness(2);
-            $vline_x = $xpos2;
-            $vline_topy = $header_name_height;
-            $vline_bottomy = $ypos2;
-            $p->line($vline_x,$vline_topy,$vline_x,$vline_bottomy, $black);
-            $p->setThickness(1);
-          }
-          if ($main::outfile{htmlmap}) {
-          	my $cell_content;
-          	if ($chaos){
-          		my $value2print = sprintf "%.3e", $val;         		
-          		$cell_content = uc($main::chaos[$i][$j])." : ". $value2print;
-          	} else {
-           	 	$cell_content = "$val (";
-            	if ((scalar @rownames_list) > 0) {
-              	$cell_content .= "Row $rownames_list[$i];";
-            	}
-            	if ((scalar @header) > 0) {
-              	$cell_content .= "Col $header[$j]";
-            	}
-            	$cell_content .= ")";
-          	}	
-            $html_source .= "<area shape = 'rect' coords = '$xpos1,$ypos1,$xpos2,$ypos2' title = '$cell_content'>\n";
-          }
-        }
-        if ($lines) {
-          # Add horizontal lines
-          $p->setThickness(2);
-          $hline_leftx = $row_name_width;
-          $hline_leftx += $col_width  if ($rownames);
-          $hline_y = 5+$header_name_height+($row_height*$i)+$row_height;
-          $hline_rightx = $row_name_width+($col_width*scalar(@row))+$col_width;
-          $hline_rightx -= $col_width  if ($rownames);
-          $p->line($hline_leftx,$hline_y,$hline_rightx,$hline_y, $black);
-          $p->setThickness(1);
-        }
-      }
-      binmode STDOUT;
-      my $output_fhandle = &OpenOutputFile($main::outfile{output});
-      if ($output_format eq "jpg" || $output_format eq "jpeg") {
-        print $output_fhandle $p->jpeg();
-      } elsif ($output_format eq "png") {
-        print $output_fhandle $p->png();
-      } 
-      close $output_fhandle;
     }
+      
+    # display header if any
+    if ((scalar @header) > 0) {
+      for (my $i = 0; $i < scalar @header; $i++) {
+	my $xpos = $row_name_width+($col_width*$i);
+	my $ypos = $header_name_height;
+	my $headeri = $header[$i];
+	$p->stringUp(gdMediumBoldFont,$xpos,$ypos,$headeri,$black);
+      }
+    }
+      
+    # display table
+    my $initj = 0;
+    $initj = 1 if ($rownames);
+    for (my $i = 0; $i < scalar @table; $i ++) {
+      my @row = @{$table[$i]};
+      for (my $j = $initj; $j < scalar @row; $j ++) {
+	my $val = $row[$j];
+	my $current_col = $null_color;
+	my $color = $null_color;
+	my $textcol = $black;
+	if ($rownames) {
+	  my $row_name_xpos = 5;
+	  my $row_name_ypos = 5+$header_name_height+($row_height*$i);
+	  $p->string(gdSmallFont, $row_name_xpos,$row_name_ypos, $rownames_list[$i], $textcol);
+	}
+
+	## Associate a color from the gradient  to the real values
+	if (&RSAT::util::IsReal($val)) {
+	  my $display_val = &RSAT::stats::max($val,$min_val);
+	  if ($val > $max_val) {
+	    $color = $saturation_color;
+	  } else {
+	    $color = &RSAT::util::getBgColorFromOneScore($display_val, $display_min, $display_max, 0, $gradient);
+	  }
+	  my $mean = ($display_min + $display_max)/2;
+	  if ($val > $mean) {
+	    if (($gradient ne "green") || ($val > $max_val)) {
+	      $textcol = $white;
+	    }
+	  }
+	}
+	my $r = hex(substr($color, 1,2));
+	my $g = hex(substr($color, 3,2));
+	my $b = hex(substr($color, 5,2));
+	my $idcol = join("","$r","$g","$b");
+	$current_col = $colors{$idcol};
+	if (!defined($current_col)) {
+	  $current_col = $p->colorAllocate($r, $g, $b);
+	  $colors{"$idcol"} = $current_col;
+	}
+	my $xpos1 = $row_name_width+($col_width*$j);
+	my $xpos2 = $row_name_width+($col_width*$j)+$col_width;
+	my $ypos1 = 5+$header_name_height+($row_height*$i);
+	my $ypos2 = 5+$header_name_height+($row_height*$i)+$row_height;
+	$p->filledRectangle($xpos1, $ypos1, $xpos2, $ypos2, $current_col);
+	$p->string(gdSmallFont, ($xpos1+5),($ypos1+5), "$val", $textcol) if ($col_width >= 30 && !$no_text);
+	# put the lines only when computing the last row
+	if ($lines && $i == (scalar(@table)-1)) {
+	  $p->setThickness(2);
+	  $vline_x = $xpos2;
+	  $vline_topy = $header_name_height;
+	  $vline_bottomy = $ypos2;
+	  $p->line($vline_x,$vline_topy,$vline_x,$vline_bottomy, $black);
+	  $p->setThickness(1);
+	}
+	if ($main::outfile{htmlmap}) {
+	  my $cell_content;
+	  if ($chaos) {
+	    my $value2print = sprintf "%.3e", $val;         		
+	    $cell_content = uc($main::chaos[$i][$j])." : ". $value2print;
+	  } else {
+	    $cell_content = "$val (";
+	    if ((scalar @rownames_list) > 0) {
+	      $cell_content .= "Row $rownames_list[$i];";
+	    }
+	    if ((scalar @header) > 0) {
+	      $cell_content .= "Col $header[$j]";
+	    }
+	    $cell_content .= ")";
+	  }	
+	  $html_source .= "<area shape = 'rect' coords = '$xpos1,$ypos1,$xpos2,$ypos2' title = '$cell_content'>\n";
+	}
+      }
+      if ($lines) {
+	# Add horizontal lines
+	$p->setThickness(2);
+	$hline_leftx = $row_name_width;
+	$hline_leftx += $col_width  if ($rownames);
+	$hline_y = 5+$header_name_height+($row_height*$i)+$row_height;
+	$hline_rightx = $row_name_width+($col_width*scalar(@row))+$col_width;
+	$hline_rightx -= $col_width  if ($rownames);
+	$p->line($hline_leftx,$hline_y,$hline_rightx,$hline_y, $black);
+	$p->setThickness(1);
+      }
+    }
+    binmode STDOUT;
+    my $output_fhandle = &OpenOutputFile($main::outfile{output});
+    if ($output_format eq "jpg" || $output_format eq "jpeg") {
+      print $output_fhandle $p->jpeg();
+    } elsif ($output_format eq "png") {
+      print $output_fhandle $p->png();
+    } 
+    close $output_fhandle;
+  }
     
-    ################################################################
-    ## Print output
-    if (defined ($main::outfile{htmlmap})) {
-      $html_source .= "</map>\n";
-      $html_source .= "</HTML>\n";
-      print $main::outhtml $html_source;
-    }
+  ################################################################
+  ## Print output
+  if (defined ($main::outfile{htmlmap})) {
+    $html_source .= "</map>\n";
+    $html_source .= "</HTML>\n";
+    print $main::outhtml $html_source;
+  }
 
-    ################################################################
-    ## Close output stream
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-    close $main::out if ($main::outfile{output});
-    exit(0);
+  ################################################################
+  ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
+  close $main::out if ($main::outfile{output});
+  exit(0);
 }
 
 ################################################################
@@ -586,15 +621,15 @@ minimal value of the heatmap, then the minimal value of the heatmap
 will be used as minimal value.
 
 =cut
-	} elsif ($arg eq "-min") {
+	  } elsif ($arg eq "-min") {
 	    $min_val = shift (@arguments);
 	    unless (&RSAT::util::IsReal($min_val)) {
-		&RSAT::error::FatalError(join("\t", $min_val, "Invalid value for the minimal value. Must be a real number."));
+	      &RSAT::error::FatalError(join("\t", $min_val, "Invalid value for the minimal value. Must be a real number."));
 	    }
 
 
 =pod
-	    
+
 =item B<-max #>
 
 Maximal value of the heatmap. By default, this value is the maximal
