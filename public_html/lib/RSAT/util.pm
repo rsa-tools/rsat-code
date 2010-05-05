@@ -494,7 +494,8 @@ sub getBgColorFromOneScore {
     if ($gradient eq "fire"){ # yellow-red
       $rval=255;
       $gval=(1-$new_score)*255;
-      $bval=(sqrt($gval*$bval));
+#      $bval=(sqrt($gval*$bval));
+      $bval=sqrt($gval*$bval);
     }
     if ($gradient eq "grey"){ # grey
       $rval=(1-$new_score)*255;
@@ -503,8 +504,8 @@ sub getBgColorFromOneScore {
     }
 
     &RSAT::message::Info(join(" ","Score: ",$new_score,"Red:",$rval,"Green:",$gval,"Blue:",$bval)) if ($main::verbose >= 4);
-    my $hex = &rgb2hex($rval,$gval,$bval );
-    
+    my $hex = &rgb2hex($rval,$gval,$bval);
+
     &RSAT::message::Info(join(" ","Hexcolor :",$hex))  if ($main::verbose >= 4);
     return($hex);
 }
