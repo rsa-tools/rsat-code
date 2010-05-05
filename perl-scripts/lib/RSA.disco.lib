@@ -155,20 +155,19 @@ sub CountWords {
 #      &RSAT::message::Debug("&CountWords()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
 
       ## Decompose dyads into monads (required by dyad-analysis for various computations)
+      my $monad1 = "";
+      my $monad2 = "";
+      my $spacing = 0;
       if ($pattern_type eq "dyads") {
 	if ($pattern_seq =~ /(\w+)n\{(\d+)\}(\w+)/) {
-	  my $monad1 = $1;
-	  my $spacing = $2;
-	  my $monad2 = $3;
-	  $sum_oligo_count += $occ;
-	  $oligo{$monad1}->{occ} += $occ;
-	  $oligo{$monad1}->{monad1_occ} += $occ;
-	  $oligo{$monad2}->{monad2_occ} += $occ;
+	  $monad1 = $1;
+	  $spacing = $2;
+	  $monad2 = $3;
 
 	  ## Approx estimation of forbidden occurrences
 	  $pattern_len = 2*$oligo_length + $spacing;
 
-	  &RSAT::message::Debug("Dyad decomposition", $pattern_seq, $monad1, $spacing, $monad2, $occ, $oligo{$monad1}->{occ}) if ($main::verbose >= 0);
+	  &RSAT::message::Debug("Dyad decomposition", $pattern_seq, $monad1, $spacing, $monad2, $occ, $oligo{$monad1}->{occ}) if ($main::verbose >= 5);
 	} else {
 	  &RSAT::error::FatalError("Invalid dyad", $pattern_seq);
 	}
@@ -195,7 +194,7 @@ sub CountWords {
       $patterns{$pattern_seq}->{forbocc} = $forbocc;
       if ($strands eq "-2str") {
 	  my $rc = &SmartRC($pattern_seq);
-	  $patterns{$rc}->{freq} = $freq;
+	  $patterns{$rc}->{obs_freq} = $freq;
 	  $patterns{$rc}->{occ} = $occ;
 	  $patterns{$rc}->{overlaps} = $overlaps;
 	  $patterns{$rc}->{forbocc} = $forbocc;
@@ -209,6 +208,15 @@ sub CountWords {
 	$sum_noov += $occ;
 	$sum_overlaps += $overlaps;
 	$sum_occurrences += $occ + $overlaps;
+
+	## Specific counters for dyads and monads (one counter for each spacing value)
+	$sum_oligo_count += $occ;
+	$oligo{$monad1}->{occ} += $occ;
+	$oligo{$monad1}->{monad1_occ} += $occ;
+	$oligo{$monad2}->{monad2_occ} += $occ;
+	$dyad_occ_sum{$spacing} += $occ;
+	$dyad_ovl_sum{$spacing} += $overlaps;
+#	&RSAT::message::Debug("HELLO",  $monad1, $spacing, $monad2, $occ, $dyad_occ_sum{$spacing}) if ($main::verbose >= 5);
       }
 
       ## Derive residue occurrences from pattern occurrences (approx)
