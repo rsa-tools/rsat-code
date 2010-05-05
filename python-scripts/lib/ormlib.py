@@ -252,11 +252,11 @@ def extract_windows(sequences, bg, location=None, wl=None, params=None):
     for w in wl:
         info('Extracting windows')
 
-        if params['heuristic'] == 'score':
-            x = extract_windows_score(N, H, bg, location=location, w=w, params=params)
-        else:
-            extractor = Extractor(N, H, bg, location=location, w=w, params=params)
-            x = extractor.run()
+        # if params['heuristic'] == 'score':
+        #     x = extract_windows_score(N, H, bg, location=location, w=w, params=params)
+        # else:
+        extractor = Extractor(N, H, bg, location=location, w=w, params=params)
+        x = extractor.run()
         R.extend(x)
 
     #print pbinom_cached.stats()
@@ -322,15 +322,16 @@ class Extractor:
             return []    
 
         #ALL
-        if params['all']:
+        if params['window'] == 'none':
             a,b = self.location
             obsOcc = len(l)
             self.__next(a,b,obsOcc)
     
         # FIXED SIZE
-        elif params['window']:
-            for a in range(self.location[0], self.location[1]-params['window']+1+1, params['window']):
-                b = a + params['window'] - 1
+        elif params['window'] != 'variable' and params['window'] != 'none':
+            window_with = int(params['window'])
+            for a in range(self.location[0], self.location[1]-window_with+1+1, window_with):
+                b = a + window_with - 1
                 obsOcc = bisect.bisect_right(l, b) - bisect.bisect_left(l, a)
                 self.__next(a,b,obsOcc)
 
@@ -341,13 +342,8 @@ class Extractor:
                     obsOcc = bisect.bisect_right(l, b) - bisect.bisect_left(l, a)
                     self.__next(a,b,obsOcc)
 
-        # SCORE
-        elif params['heuristic'] == 'score':
-            pass
-
         # SLICES
-        elif params['heuristic'] == 'slices':
-
+        elif params['window'] == 'variable':
             if len(l) == 1:
                 return []
 
@@ -361,22 +357,22 @@ class Extractor:
                     obsOcc = j - i + 1
                     self.__next(a,b,obsOcc)
                     
-        # ALL
-        elif params['heuristic'] == 'all':
-            if len(l) == 1:
-                return []
-                
-            #L = list(sets.Set(l))
-            L = list_unique(l)
-            L.sort()
-
-            for i in range(len(L)-1):
-                for j in range(i+1, len(L)):
-                    a,b = L[i], L[j]
-                    if b-a+1 > params['width'][1]:
-                        break
-                    obsOcc = l.index(b) - l.index(a) + l.count(b)
-                    self.__next(a,b,obsOcc)
+        # # ALL
+        # elif params['heuristic'] == 'all':
+        #     if len(l) == 1:
+        #         return []
+        #         
+        #     #L = list(sets.Set(l))
+        #     L = list_unique(l)
+        #     L.sort()
+        # 
+        #     for i in range(len(L)-1):
+        #         for j in range(i+1, len(L)):
+        #             a,b = L[i], L[j]
+        #             if b-a+1 > params['width'][1]:
+        #                 break
+        #             obsOcc = l.index(b) - l.index(a) + l.count(b)
+        #             self.__next(a,b,obsOcc)
 
         R = self.R
         H = self.H
