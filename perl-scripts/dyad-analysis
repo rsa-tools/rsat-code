@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.67 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: dyad-analysis,v 1.68 2010/05/05 20:04:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -16,7 +16,22 @@ require "RSA.disco.lib";
 ################################################################
 #### Initialise parameters
 local $start_time = &AlphaDate();
-local %default_return_fields = (occ=>1,proba=>1);
+local $program_version = do { my @r = (q$Revision: 1.68 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $pattern_type = "dyads";
+
+%supported_return_field = (proba=>1,
+			    zscore=>1,
+			    freq=>1,
+			    exp_freq=>1,
+			    freq=>1,
+			    occ=>1,
+			    exp_occ=>1,
+			    ratio=>1,
+			    rank=>1,
+			    monad_freq=>1);
+$supported_return_fields = join(",", keys (%supported_return_field));
+local %default_return_fields = (occ=>1,freq=>1);
+
 local $timeout = 0; ## This is principally for the Web server
 local @alphabet = ("a","c","g","t"); ## For &all_oligos()
 
@@ -31,7 +46,6 @@ local %supported_bg = ('upstream'=>1,
 		);
 $supported_bg = join ",", sort keys %supported_bg;
 $background_model="monads"; ## Default background model : estimate expected dyad freq from observed monad freq
-
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -52,10 +66,13 @@ $dyad_type = "any";
 $infile{accepted_patterns} = "";
 %accepted_patterns = ();
 
-## Count dyads on single or boths strand
-$strands = "-2str";
-$sum_rc = 1;
-$group_rc = 1;
+## Counting mode
+local $quick_count = 0;
+local $zeroocc = 0;
+local $strands = "-2str";
+local $sum_rc = 1;
+local $group_rc = 1;
+local $noov = "-noov";
 
 ## Input sequences
 $seq_type = "DNA";
@@ -126,7 +143,7 @@ eval {
     ## calibration
 
       ## Suffix for the -noov/-ovlp option
-      if ($noov) {
+      if ($noov eq "-noov") {
 	$noov_suffix = "-noov";
       } else {
 	$noov_suffix = "-ovlp";
@@ -180,9 +197,9 @@ eval {
     &CalcPossibleDyads(); ### Calculate all possible dyads
     &CountDyads(); ### Read sequence and count dyads
     &CountZeroOcc() if ($zeroocc); ## Count patterns with zero occurrences
-    &CalcOccSum(); ## Calculate the sum of occurrences
+    &CalcOccSum() unless ($quick_sums_counted); ## Calculate the sum of occurrences
     if ($sum_rc) {
-	&SumReverseComplements() ; ## Group dyads by pairs of reverse complements
+	&SumReverseComplements() unless ($quick_rc_counted); ## Group dyads by pairs of reverse complements
 	&CountZeroOcc2str(); ## Count patterns with zero occurrences on both strands
     }
     &CalcMonadFrequencies() if ($calc_fields{freq}); ### Calculate observed monad frequencies
@@ -190,11 +207,10 @@ eval {
 
     ## Open output stream
     $out = &OpenOutputFile($outputfile);
-
     &CalcExpectedMonadFreq(); ## Calculate expected monad frequencies
     &CalcExpectedDyadFreq() if ($calc_fields{exp_freq}); ### Calculate expected dyad frequencies
     &CalcExpectedOcc() if ($calc_fields{exp_occ}); ### Calculate expected dyad occurrences
-   
+
     ################################################################
     ## Check some thresholds to filter out undue dyads before starting
     ## the time-consuming computation of probabilities
@@ -209,11 +225,11 @@ eval {
     ## Choose between a single row per pair of reverse complements, or
     ## two separate rows (with identical statistics)
     if ($sum_rc) {
-	if ($group_rc) {
-	    &GroupRC();
-	} else {
-	    &UngroupRC();
-	}
+      if ($group_rc) {
+	&GroupRC();
+      } else {
+	&UngroupRC();
+      }
     }
 
     ## Print the parameters of the analysis
@@ -221,9 +237,6 @@ eval {
 
     ## Print the result
     &PrintResult();
-
-    ###### close input stream
-    close $in if ($infile{input});
 
     ###### close output stream
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
@@ -313,7 +326,7 @@ sub CheckCalcFields {
     }
 
     if ($calc_fields{exp_freq}) {
-	$calc_fields{freq} = 1;	
+	$calc_fields{freq} = 1;
     }
 
     if ($calc_fields{exp_occ}) {
@@ -327,17 +340,41 @@ sub CheckCalcFields {
 ################################################################
 ## Calculate monad frequencies
 sub CalcMonadFrequencies {
-    ## Single-strand frequencies
-    foreach $oligo (keys %oligo) {
-	$oligo{$oligo}->{freq} = $oligo{$oligo}->{occ}/$sum_oligo_count;
-    }
+#   ## New version (April 2010): calculate separately the frequencies
+#   ## of first and second monads in all dyads. This is more accurate
+#   ## than counting the monad frequencies, and it simplifies the
+#   ## integration of quick counts obtained from count-words.
 
-    ## Two-strands frequencies
-    if ($sum_rc) {
-	foreach $oligo (keys %oligo) {
-	    $oligo{$oligo}->{freq_2str} = $oligo{$oligo}->{occ_2str}/$sum_oligo_count;
-	}
+#   ################################################################
+#   ## Compute occurrences of each oligo as first and second
+#   ## monad, respectively.
+#   $sum_dyad_occ = 0;
+#   foreach my $oligo1 (keys %oligo) {
+#     foreach my $spacing (@spacing_list) {
+#       foreach my $oligo2 (&SecondElement($oligo1)) {
+# 	### build the dyad
+# 	my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
+# 	$oligo{$oligo1}->{monad1_occ} += $patterns{$pattern_seq}->{occ};
+# 	$oligo{$oligo2}->{monad2_occ} += $patterns{$pattern_seq}->{occ};
+# 	$sum_dyad_occ += $patterns{$pattern_seq}->{occ};
+#       }
+#     }
+#   }
+
+
+  ## Single-strand frequencies
+  foreach my $oligo (keys %oligo) {
+    $oligo{$oligo}->{freq} = $oligo{$oligo}->{occ}/$sum_oligo_count;
+#    $oligo{$oligo}->{monad1_freq} = $oligo{$oligo}->{monad1_occ}/$sum_dyad_occ;
+#    $oligo{$oligo}->{monad2_freq} = $oligo{$oligo}->{monad2_occ}/$sum_dyad_occ;
+  }
+
+  ## Two-strands frequencies
+  if ($sum_rc) {
+    foreach $oligo (keys %oligo) {
+      $oligo{$oligo}->{freq_2str} = $oligo{$oligo}->{occ_2str}/$sum_oligo_count;
     }
+  }
 }
 
 ################################################################
@@ -362,7 +399,7 @@ sub CalcExpectedMonadFreq {
 	    }
       }
       close $exp;
-	
+
       ################################################################
       ## Use monad frequencies observed in the input file to
       ## estimated expected monad frequencies
@@ -413,7 +450,6 @@ sub CalcExpectedDyadFreq {
 # 		$patterns{$pattern_seq}->{exp_freq} /= $sum_exp_freq;
 # 	    }
 # 	}
-	
 # 	################################################################
 # 	## Treat the reverse complement pairs if the analysis is performed on both strands
 # 	if ($sum_rc) {
@@ -435,19 +471,18 @@ sub CalcExpectedDyadFreq {
 # 	    undef(%patterns_2str);
 # 	    &GroupRC();
 # 	}
+  }
+
+
+  ################################################################
+  ## Delete the entry for dyads having an expected frequency but no
+  ## occurrence (this happens if the expected frequency file
+  ## contains spacings that were not used in the current analysis)
+  foreach my $pattern_seq (keys %patterns) {
+    unless (defined($patterns{$pattern_seq}->{occ})) {
+      delete $patterns{$pattern_seq};
     }
-
-
-    ################################################################
-    ## Delete the entry for dyads having an expected frequency but no
-    ## occurrence (this happens if the expected frequency file
-    ## contains spacings that were not used in the current analysis)
-    foreach my $pattern_seq (keys %patterns) {
-	unless (defined($patterns{$pattern_seq}->{occ})) {
-	    delete $patterns{$pattern_seq};
-	}
-    }
-
+  }
 }
 
 
@@ -581,29 +616,28 @@ sub CalcOccSum {
 ################################################################
 ## Calculate observed dyad frequencies
 sub CalcDyadFrequencies {
-    &RSAT::message::TimeWarn("Calculating dyad frequencies") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Calculating dyad frequencies") if ($main::verbose >= 2);
 
-    foreach $spacing (@spacing_list) {
-	### frequencies are calculated for each spacing value independently
-	foreach $oligo1 (keys %oligo) {
-	    foreach $oligo2 (&SecondElement($oligo1)) {
-		if ($group_sp) {
-		    $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
-		} else {
-		    $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
-		}
-
-		next unless (defined($patterns{$pattern_seq}->{occ}));
-
-		if ($dyad_occ_sum{$spacing} == 0) {
-		    $patterns{$pattern_seq}->{obs_freq} = 0;
-		} else {
-		    $patterns{$pattern_seq}->{obs_freq} = $patterns{$pattern_seq}->{occ}/$dyad_occ_sum{$spacing};
-		}
-	    }
+  foreach $spacing (@spacing_list) {
+    ### frequencies are calculated for each spacing value independently
+    foreach $oligo1 (keys %oligo) {
+      foreach $oligo2 (&SecondElement($oligo1)) {
+	if ($group_sp) {
+	  $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
+	} else {
+	  $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
 	}
-    }
 
+	next unless (defined($patterns{$pattern_seq}->{occ}));
+
+	if ($dyad_occ_sum{$spacing} == 0) {
+	  $patterns{$pattern_seq}->{obs_freq} = 0;
+	} else {
+	  $patterns{$pattern_seq}->{obs_freq} = $patterns{$pattern_seq}->{occ}/$dyad_occ_sum{$spacing};
+	}
+      }
+    }
+  }
 }  ### /CalcDyadFrequencies
 
 
@@ -622,7 +656,7 @@ sub CalcExpectedOcc {
 		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
 		next unless (defined($patterns{$pattern_seq}->{occ}));
   		### calculate expected occurrences
-#  		if ($noov) {
+#  		if ($noov eq "-noov") {
 #  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} *
 #  			($dyad_occ_sum{$spacing} - ($min_overlap_dist{$spacing} - 1) * $patterns{$pattern_seq}->{occ});
 #  		} else {
@@ -805,6 +839,12 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-zeroocc") {
       $zeroocc = 1;
 
+      ################################################################
+      ## Delegate word counting to the C program count-words
+      ## (developed by Matthieu Defrance)
+    } elsif ($ARGV[$a] eq "-quick") {
+      $quick_count = 1;
+
       ### expected frequency table ###
     } elsif ($ARGV[$a] eq "-expfreq") {
       $infile{exp_freq} = $ARGV[$a+1];
@@ -910,34 +950,42 @@ sub ReadArguments {
     } elsif ($ARGV[$a] =~ /^-return/i) {
       @return_fields = split ",", $ARGV[$a+1];
       foreach $field (@return_fields) {
-	if ($field eq "proba") {
-	  $return_fields{proba} = 1;
-	} elsif ($field =~ /^zsc/i) {
-	  $return_fields{zscore} = 1;
-	} elsif ($field eq "freq") {
-	  $return_fields{freq} = 1;
-	} elsif ($field eq "exp_freq") {
-	  $return_fields{exp_freq} = 1;
-	} elsif ($field =~ /^observed_freq/i) {
-	  $return_fields{freq} = 1;
-	} elsif ($field eq "occ") {
-	  $return_fields{occ} = 1;
-	} elsif ($field eq "exp_occ") {
-	  $return_fields{exp_occ} = 1;
-	} elsif ($field eq "ratio") {
-	  $return_fields{ratio} = 1;
-	} elsif ($field eq "rank") {
-	  $return_fields{rank} = 1;
-	} elsif ($field eq "monad_freq") {
-	  $return_fields{monad_freq} = 1;
+# 	if ($field eq "proba") {
+# 	  $return_fields{proba} = 1;
+# 	} elsif ($field =~ /^zsc/i) {
+# 	  $return_fields{zscore} = 1;
+# 	} elsif ($field eq "freq") {
+# 	  $return_fields{freq} = 1;
+# 	} elsif ($field eq "exp_freq") {
+# 	  $return_fields{exp_freq} = 1;
+# 	} elsif ($field =~ /^observed_freq/i) {
+# 	  $return_fields{freq} = 1;
+# 	} elsif ($field eq "occ") {
+# 	  $return_fields{occ} = 1;
+# 	} elsif ($field eq "exp_occ") {
+# 	  $return_fields{exp_occ} = 1;
+# 	} elsif ($field eq "ratio") {
+# 	  $return_fields{ratio} = 1;
+# 	} elsif ($field eq "rank") {
+# 	  $return_fields{rank} = 1;
+# 	} elsif ($field eq "monad_freq") {
+# 	  $return_fields{monad_freq} = 1;
+# 	} else {
+	if ($supported_return_field{$field}) {
+	  $return_fields{$field} = 1;
 	} else {
-	  &RSAT::error::FatalError("Invalid return field $field.");
+	  &RSAT::error::FatalError($field, "Invalid return field. Supported: ".$supported_return_fields);
 	}
+#	}
       }
 
       ### prevent overlapping matches
     } elsif ($ARGV[$a] =~ /^-noov/) {
-      $noov = 1;
+      $noov = "-noov";
+
+      #### Count overlapping matches
+    } elsif ($ARGV[$a] =~ /^-ovlp/) {
+      $noov = "-ovlp";
 
       #### sequence type
     } elsif ($ARGV[$a] =~ /^-seqtype/i) {
@@ -984,7 +1032,7 @@ sub CalcPossibleDyads {
     ### beware : grouping with the reverse complement reduces the number of distintc patterns
     ### but this is only tru for direct repeats,
     ### since inverted repeats are by definition identical to their reverse complement
-   
+
     if ($dyad_type eq "dr") {
 	$main::nb_possible_dyads = $nb_possible_dr;
     } elsif ($dyad_type eq "ir") {
@@ -1029,206 +1077,210 @@ sub CountDyads {
   &RSAT::message::TimeWarn("Counting dyad occurrences") if ($main::verbose >= 2);
   ($in, $input_dir) = &OpenInputFile($infile{input});
   $sequence_number = 0;
-  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format, $input_dir, $seq_type, $mask)) &&
-	 (($current_seq ne "") || ($current_id ne ""))) {
 
-    ### Remove tabs and blank spaces
-    $current_seq = &FoldSequence($current_seq,0);
-    $current_seq = &CleanDNA($current_seq) if ($seq_type eq "DNA");
+  if ($quick_count) {
+      &CountWords();
+  } else {
 
-    ### Index sequence lengths
-    $sequence_number++; 
-    $id_list[$sequence_number] = $current_id;
-    $seq_length[$sequence_number] = length($current_seq);
-    my $prev_sum_seq_len = $sum_seq_length;
-    $sum_seq_length += $seq_length[$sequence_number];
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format, $input_dir, $seq_type, $mask)) &&
+	   (($current_seq ne "") || ($current_id ne ""))) {
 
+      ### Remove tabs and blank spaces
+      $current_seq = &FoldSequence($current_seq,0);
+      $current_seq = &CleanDNA($current_seq) if ($seq_type eq "DNA");
 
-    ################################################################
-    ## Calculate the number of possible positions, as a function of
-    ## dyad spacing (the number of forbidden positions at the end
-    ## of the sequecne depends on the spacing)
-    foreach my $spacing (@spacing_list) {
-      my $new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $spacing + 1);
-      $nb_possible_pos{$spacing} += $new_pos_nb if ($new_pos_nb > 0);
-    }
+      ### Index sequence lengths
+      $sequence_number++; 
+      $id_list[$sequence_number] = $current_id;
+      $seq_length[$sequence_number] = length($current_seq);
+      my $prev_sum_seq_len = $sum_seq_length;
+      $sum_seq_length += $seq_length[$sequence_number];
 
-    ## Calculate las position
-    my $last_pos = $seq_length[$sequence_number] - $oligo_length;
-
-    ## chunks for high verbosity
-    my $chunk = 10000;
-
-    ## Verbosity
-    &RSAT::message::TimeWarn(join ("\t", "\tsequence",
-				   $sequence_number,
-				   "seq_id=".$current_id,
-				   "len=".$seq_length[$sequence_number],
-				   "last_pos=".$last_pos,
-				   "sum_len=".$sum_seq_length,
-				  )) if (($main::verbose >= 3) || ($main::verbose >= 2 && $sequence_number%100==0));
-
-    ################################################################
-    ## Iteration to get teh first monad of the dyad
-    my $pos1 = 0;
-    while ($pos1 <= $last_pos) {
-      #	    &RSAT::message::Debug("p1= ".$pos1, "last= ".$last_pos) if ($main::verbose >= 10);
-
-      ## High verbostity
-      if ($main::verbose >= 3) {
-	if ((($prev_sum_seq_len+$pos1)%$chunk ==0 ) && ($pos1 > 0)) {
-	  $chunk_nb++;
-	  $ps = `ps v -c -p $$ | grep -v TIME`;
-	  chomp $ps;
-	  &RSAT::message::TimeWarn (
-				    "seq=".$sequence_number,
-				    "pos1=".$pos1,
-				    "last_pos=".$last_pos,
-				    $ps), "\n";
-	}
+      ################################################################
+      ## Calculate the number of possible positions, as a function of
+      ## dyad spacing (the number of forbidden positions at the end
+      ## of the sequence depends on the spacing)
+      foreach my $spacing (@spacing_list) {
+	my $new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $spacing + 1);
+	$nb_possible_pos{$spacing} += $new_pos_nb if ($new_pos_nb > 0);
       }
 
-      ################################################################
-      ## Get the first monad
-      my $oligo1 = lc(substr($current_seq,$pos1,$oligo_length));
+      ## Calculate last position
+      my $last_pos = $seq_length[$sequence_number] - $oligo_length;
+
+      ## chunks for high verbosity
+      my $chunk = 10000;
+
+      ## Verbosity
+      &RSAT::message::TimeWarn(join ("\t", "\tsequence",
+				     $sequence_number,
+				     "seq_id=".$current_id,
+				     "len=".$seq_length[$sequence_number],
+				     "last_pos=".$last_pos,
+				     "sum_len=".$sum_seq_length,
+				    )) if (($main::verbose >= 3) || ($main::verbose >= 2 && $sequence_number%100==0));
 
       ################################################################
-      ## For DNA, filter out dyads containing unspecified residues
-      if ($seq_type eq "DNA") {
-	unless ($allowed_monads{$oligo1}) {
-	  $discarded_monad_positions++;
+      ## Iteration to get teh first monad of the dyad
+      my $pos1 = 0;
+      while ($pos1 <= $last_pos) {
+	#	    &RSAT::message::Debug("p1= ".$pos1, "last= ".$last_pos) if ($main::verbose >= 10);
+
+	## High verbostity
+	if ($main::verbose >= 3) {
+	  if ((($prev_sum_seq_len+$pos1)%$chunk ==0 ) && ($pos1 > 0)) {
+	    $chunk_nb++;
+	    $ps = `ps v -c -p $$ | grep -v TIME`;
+	    chomp $ps;
+	    &RSAT::message::TimeWarn (
+				      "seq=".$sequence_number,
+				      "pos1=".$pos1,
+				      "last_pos=".$last_pos,
+				      $ps), "\n";
+	  }
+	}
+
+	################################################################
+	## Get the first monad
+	my $oligo1 = lc(substr($current_seq,$pos1,$oligo_length));
+
+	################################################################
+	## For DNA, filter out dyads containing unspecified residues
+	if ($seq_type eq "DNA") {
+	  unless ($allowed_monads{$oligo1}) {
+	    $discarded_monad_positions++;
+
+	    ## Count dyad positions which are discarded
+	    ## because the first monad contains unspecified
+	    ## residues
+	    foreach my $spacing ($min_spacing..$max_spacing) {
+	      if ($pos1 + $oligo_length + $spacing <= $last_pos) {
+		$discarded_dyad_positions{$spacing}++;
+		#			    &RSAT::message::Debug("Discarded because of monad 1", ++$discarded_monad1, $pos1, $oligo1, $spacing, $last_pos, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
+	      } else {
+		#			    &RSAT::message::Debug("Not discarded because end of sequence reached", ++$not_discarded_too_late, $pos1, $oligo1, $spacing, $last_pos, , $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
+	      }
+	    }
+	    # 		    &RSAT::message::Warning(
+	    # 			"Invalid first monad",
+	    # 			$pos1,
+	    # 			$oligo1,
+	    # 		    ) if ($main::verbose >= 5);
+	    $pos1++;
+	    next;
+	  }
+	}
+
+	################################################################
+	## Count monad occurrences.
+	## These will be used to estimate expected dyad frequencies.
+	$oligo{$oligo1}->{occ}++;
+	$sum_oligo_count++;
+
+	# 	    &RSAT::message::Debug(
+	# 		"First monad",
+	# 		"p1= ".$pos1,
+	# 		"oligo1= ".$oligo1,
+	# 		"occ= ".$oligo{oligo1}->{occ},
+	# 		"sum_oligos= ".$sum_oligo_counts,
+	# 	    ) if ($main::verbose >= 10);
+
+	################################################################
+	## Iterate spacings to obtain the second monad and the dyad
+	foreach my $spacing ($min_spacing..$max_spacing) {
+	  my $pos2 = $pos1 + $oligo_length + $spacing;
+	  #      $min_overlap_dist = $oligo_length;
+	  $min_overlap_dist{$spacing} = 2*$oligo_length + $spacing;
+
+	  if ($pos2 <= $last_pos) {
+	    my $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
+
+	    if ($seq_type eq "DNA") {
+	      unless ($allowed_monads{$oligo2}) {
+
+		## Dyads which are discarded because the second monad contains unspecified residues
+		$discarded_dyad_positions{$spacing}++;
+		#			    &RSAT::message::Debug("Discarded because of monad 2", ++$discarded_monad2, $pos1, $oligo1, $spacing, $pos2, $oligo2, $last_pos, $quick_test, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
 		
-	  ## Count dyad positions which are discarded
-	  ## because the first monad contains unspecified
-	  ## residues
-	  foreach my $spacing ($min_spacing..$max_spacing) {
-	    if ($pos1 + $oligo_length + $spacing <= $last_pos) {
-	      $discarded_dyad_positions{$spacing}++;
-	      #			    &RSAT::message::Debug("Discarded because of monad 1", ++$discarded_monad1, $pos1, $oligo1, $spacing, $last_pos, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
+		## Discard this monad only if it the same
+		## position cannot be discarded as first
+		## monad (avoid discarding twice the same
+		## position)
+		$discarded_monad_positions++
+		  if ($last_pos - $pos2 < $spacing);
+		# 			    &RSAT::message::Debug(
+		# 				    "Invalid second monad",
+		# 				    "p1=".$pos1,
+		# 				    "sp=".$spacing,
+		# 				    "p2=".$pos2,
+		# 				    $oligo2,
+		# 				) if ($main::verbose >= 10);
+		#			    $spacing++;
+		next;
+	      }
+	    }
+
+	    ################################################################
+	    ## Check for specific dyad types
+
+	    ## count only direct repeats
+	    next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2));
+
+	    ## count only inverted repeats
+	    next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1)));
+
+	    ## count only repeats
+	    next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1)));
+
+	    ################################################################
+	    ## Generate the dyad name (grouping all spacings or not)
+	    if ($group_sp) {
+	      $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
 	    } else {
-	      #			    &RSAT::message::Debug("Not discarded because end of sequence reached", ++$not_discarded_too_late, $pos1, $oligo1, $spacing, $last_pos, , $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
+	      $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
 	    }
-	  }
-		
-	  # 		    &RSAT::message::Warning(
-	  # 			"Invalid first monad",
-	  # 			$pos1,
-	  # 			$oligo1,
-	  # 		    ) if ($main::verbose >= 5);
-	  $pos1++;
-	  next;
-	}
-      }
 
-      ################################################################
-      ## Count monad occurrences.
-      ## These will be used to estimate expected dyad frequencies.
-      $oligo{$oligo1}->{occ}++;
-      $sum_oligo_count++;
+	    ################################################################
+	    ## Check accepted patterns
+	    next if (($infile{accepted_patterns}) && (!($accepted_patterns{$pattern_seq})));
 
+	    ################################################################
+	    ## Treatment of self-overlapping occurrences
+	    if ($noov eq "-noov") {
 
-      # 	    &RSAT::message::Debug(
-      # 		"First monad",
-      # 		"p1= ".$pos1,
-      # 		"oligo1= ".$oligo1,
-      # 		"occ= ".$oligo{oligo1}->{occ},
-      # 		"sum_oligos= ".$sum_oligo_counts,
-      # 	    ) if ($main::verbose >= 10);
+	    ################################################################
+	      ## Prevent self-overlap
+	      my $dist = $pos1 - $last_pos{$pattern_seq};
 
-      ################################################################
-      ## Iterate spacings to obtain the second monad and the dyad
-      foreach my $spacing ($min_spacing..$max_spacing) {
-	my $pos2 = $pos1 + $oligo_length + $spacing;
-	#      $min_overlap_dist = $oligo_length;
-	$min_overlap_dist{$spacing} = 2*$oligo_length + $spacing;
-		
-	if ($pos2 <= $last_pos) {
-	  my $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
-		    	
-	  if ($seq_type eq "DNA") {
-	    unless ($allowed_monads{$oligo2}) {
-		
-	      ## Dyads which are discarded because the second monad contains unspecified residues
-	      $discarded_dyad_positions{$spacing}++;
-	      #			    &RSAT::message::Debug("Discarded because of monad 2", ++$discarded_monad2, $pos1, $oligo1, $spacing, $pos2, $oligo2, $last_pos, $quick_test, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
+	      if ((&IsNatural($last_pos{$pattern_seq})) &&
+		  ($dist < $min_overlap_dist{$spacing})) {
+		### new position overlaps with the previous occurrence of the same dyad
+		$patterns{$pattern_seq}->{overlaps}++;
+		#			    $spacing++;
+		next;
+	      }
 
-	      ## Discard this monad only if it the same
-	      ## position cannot be discarded as first
-	      ## monad (avoid discarding twice the same
+	      ################################################################
+	      ## Index the last position where the current
+	      ## dyad has been found (i.e. the current
 	      ## position)
-	      $discarded_monad_positions++
-		if ($last_pos - $pos2 < $spacing);
-	      # 			    &RSAT::message::Debug(
-	      # 				    "Invalid second monad",
-	      # 				    "p1=".$pos1,
-	      # 				    "sp=".$spacing,
-	      # 				    "p2=".$pos2,
-	      # 				    $oligo2,
-	      # 				) if ($main::verbose >= 10);
-	      #			    $spacing++;
-	      next;
+	      $last_pos{$pattern_seq} = $pos1;
+	      if ($sum_rc) {
+		$rc_pattern_seq = &SmartRC($pattern_seq);
+		$last_pos{$rc_pattern_seq} = $pos1;
+	      }
 	    }
+	    $patterns{$pattern_seq}->{occ}++;
 	  }
-
-	  ################################################################
-	  ## Check for specific dyad types
-
-	  ## count only direct repeats
-	  next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2));
-
-	  ## count only inverted repeats
-	  next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1)));
-
-	  ## count only repeats
-	  next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1)));
-
-	  ################################################################
-	  ## Generate the dyad name (grouping all spacings or not)
-	  if ($group_sp) {
-	    $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
-	  } else {
-	    $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
-	  }
-
-	  ################################################################
-	  ## Check accepted patterns
-	  next if (($infile{accepted_patterns}) && (!($accepted_patterns{$pattern_seq})));
-
-	  ################################################################
-	  ## Treatment of self-overlapping occurrences
-	  if ($noov) {
-
-	    ################################################################
-	    ## Prevent self-overlap
-	    my $dist = $pos1 - $last_pos{$pattern_seq};
-
-	    if ((&IsNatural($last_pos{$pattern_seq})) &&
-		($dist < $min_overlap_dist{$spacing})) {
-	      ### new position overlaps with the previous occurrence of the same dyad
-	      $patterns{$pattern_seq}->{overlaps}++;
-	      #			    $spacing++;
-	      next;
-	    }
-
-	    ################################################################
-	    ## Index the last position where the current
-	    ## dyad has been found (i.e. the current
-	    ## position)
-	    $last_pos{$pattern_seq} = $pos1;
-	    if ($sum_rc) {
-	      $rc_pattern_seq = &SmartRC($pattern_seq);
-	      $last_pos{$rc_pattern_seq} = $pos1;
-	    }
-	  }
-	  $patterns{$pattern_seq}->{occ}++;
-
 	}
+	$pos1++;
       }
-      $pos1++;
+      undef %last_pos;
     }
-    undef %last_pos;
   }
 
+  ###### close input stream
+  close $in if ($infile{input});
 
   foreach my $spacing (@spacing_list) {
     ## Make sure the nb of possible positions per spacing is
@@ -1249,25 +1301,24 @@ sub CountDyads {
 ################################################################
 ## Detect patterns with 0 occurrences (single strand counts)
 sub CountZeroOcc {
-    &RSAT::message::TimeWarn("Counting patterns with 0 occurrences on single strand") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Counting patterns with 0 occurrences on single strand") if ($main::verbose >= 2);
+  foreach my $oligo1 (&all_oligos($oligo_length, @alphabet)) {
+    foreach my $spacing (@spacing_list) {
+      foreach my $oligo2 (&all_oligos($oligo_length, @alphabet)) {
+	### build the dyad
+	my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
 
-    foreach my $oligo1 (&all_oligos($oligo_length, @alphabet)) {
-	foreach my $spacing (@spacing_list) {
-	    foreach my $oligo2 (&all_oligos($oligo_length, @alphabet)) {
-		### build the dyad
-		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-
-		## Check if no occurrences were found
-		unless ($patterns{$pattern_seq}->{occ}) {
-#		&RSAT::message::Debug("\tpattern with 0 occurrences\t$pattern_seq") if ($main::verbose >= 0);
-		    $patterns{$pattern_seq}->{occ} = 0;
-		    $zero_occ{$pattern_seq}++;
-		}
-	    }
+	## Check if no occurrences were found
+	unless ($patterns{$pattern_seq}->{occ}) {
+	  #		&RSAT::message::Debug("\tpattern with 0 occurrences\t$pattern_seq") if ($main::verbose >= 0);
+	  $patterns{$pattern_seq}->{occ} = 0;
+	  $zero_occ{$pattern_seq}++;
 	}
+      }
     }
+  }
 
-    &RSAT::message::TimeWarn(join ("\t", scalar(keys(%zero_occ)), "patterns with 0 occurrences (before grouping RC)")) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("\t", scalar(keys(%zero_occ)), "patterns with 0 occurrences (before grouping RC)") if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -1293,6 +1344,7 @@ sub PrintVerbose {
     print $out "; dyad-analysis ";
     &PrintArguments($out);
     print $out "; Citation: van Helden et al. (2000). Nucleic Acids Res. 28(8):1808-18.\n";
+    printf $main::out "; %-29s\t%s\n", "Program version", $program_version;
     printf $out "; %-29s\t%s\n", "Input file", $infile{input} if ($infile{input});
     if ($infile{accepted_patterns}) {
 	printf $out "; %-29s\t%s\n", "Accepted dyad file", $infile{accepted_patterns};
@@ -1340,35 +1392,6 @@ sub PrintVerbose {
     }
     printf $out "; \t%-29s%d\n", "distinct monads", $nb_possible_oligo;
 
-    if ($return_fields{monad_freq}) {
-	print $out ";\tMonad frequencies\n";
-	print $out join("\t", ";\t\t", "monad", "occ_1s", "occ_sum", "freq", "frq_sum");
-	print $out "\t", join("\t", "rc_pair", "occ_2s", "freq_2s") if ($sum_rc);
-	print $out "\n";
-	my $monad_occ_sum = 0;
-	my $monad_freq_sum = 0;
-	foreach my $oligo (sort keys %oligo) {
-	    $monad_occ_sum += $oligo{$oligo}->{occ};
-	    $monad_freq_sum += $oligo{$oligo}->{freq};
-	    print $out join("\t", ";\t", "mon_f",
-			    $oligo,
-			    $oligo{$oligo}->{occ},
-			    $monad_occ_sum,
-			    sprintf("%7.3f", $oligo{$oligo}->{freq}),
-			    sprintf("%7.3f", $monad_freq_sum),
-			   );
-
-	    if ($sum_rc) {
-		print $out ("\t",
-			    join ("\t",
-				  $oligo."|".&SmartRC($oligo),
-				  $oligo{$oligo}->{occ_2str},
-				  sprintf "%7.3f", $oligo{$oligo}->{freq_2str}));
-	    }
-	    print $out "\n";
-	}
-    }
-
 
     ################################################################
     #### dyads
@@ -1396,7 +1419,7 @@ sub PrintVerbose {
     printf $out ";\tDyad counts per spacing\n";
 
     print $out join("\t", ";\t", "spacing", "max_pos", "occ");
-    if ($noov) {
+    if ($noov eq "-noov") {
 	print $out "\t", "ovlps";
 	print $out "\t", "ovl+occ";
     }
@@ -1411,7 +1434,7 @@ sub PrintVerbose {
 	print $out join("\t", ";\t", "sp ".$spacing,
 			$nb_possible_pos{$spacing},
 			$dyad_occ_sum{$spacing});
-	if ($noov) {
+	if ($noov eq "-noov") {
 	    print $out "\t", $dyad_ovl_sum{$spacing};
 	    print $out "\t", $dyad_ovl_sum{$spacing} + $dyad_occ_sum{$spacing};
 	}
@@ -1446,8 +1469,12 @@ sub PrintVerbose {
    
     unless ($#id_list > $max_seq_verbose) {
 	print $out "; Sequences:\n";
-	foreach $s (1..$#id_list) {
+	if ($quick_count) {
+	  print $out ";\tAnalyzed by count-words\n";
+	} else {
+	  foreach $s (1..$#id_list) {
 	    print $out join("\t", ";", "seq ".$s, $id_list[$s], $seq_length[$s]), "\n";
+	  }
 	}
     }
 }
@@ -1516,7 +1543,7 @@ sub PrintHeaderLine {
     push @out_col, "rank"  if ($return_fields{rank});
    
     ## Overlapping occurrences
-    if ($noov) {
+    if ($noov eq "-noov") {
 	push @out_col, "ovl_occ";
 	push @out_col, "all_occ";
     }
@@ -1554,6 +1581,44 @@ sub PrintHeaderLine {
 ## Print the result
 sub PrintResult {
     &RSAT::message::TimeWarn("Printing the result") if ($main::verbose >= 2);
+
+
+    if ($return_fields{monad_freq}) {
+	print $out "; Monad frequencies\n";
+	print $out join("\t", ";", "monad", "occ_1s", "occ_sum", "freq", "frq_sum",
+#			"m1_occ", "m2_occ", "m1_freq", "m2_freq"
+		       );
+	print $out "\t", join("\t", "rc_pair", "occ_2s", "freq_2s") if ($sum_rc);
+	print $out "\n";
+	my $monad_occ_sum = 0;
+	my $monad_freq_sum = 0;
+	foreach my $oligo (sort keys %oligo) {
+	    $monad_occ_sum += $oligo{$oligo}->{occ};
+	    $monad_freq_sum += $oligo{$oligo}->{freq};
+	    print $out join("\t", ";", #"mon_f",
+			    $oligo,
+			    $oligo{$oligo}->{occ},
+			    $monad_occ_sum,
+			    sprintf("%7.3f", $oligo{$oligo}->{freq}),
+			    sprintf("%7.3f", $monad_freq_sum),
+#			    sprintf "%d", $oligo{$oligo}->{monad1_occ},
+#			    sprintf "%d", $oligo{$oligo}->{monad2_occ},
+#			    sprintf "%7.3f", $oligo{$oligo}->{monad1_freq},
+#			    sprintf "%7.3f", $oligo{$oligo}->{monad2_freq},
+			   );
+
+	    if ($sum_rc) {
+		print $out ("\t",
+			    join ("\t",
+				  $oligo."|".&SmartRC($oligo),
+				  $oligo{$oligo}->{occ_2str},
+				  sprintf "%7.3f", $oligo{$oligo}->{freq_2str},
+				 )
+			   );
+	    }
+	    print $out "\n";
+	}
+    }
  
     #### print header line
     &PrintHeaderLine();
@@ -1619,7 +1684,7 @@ sub PrintResult {
 	printf $out "\t%7d", $patterns{$pattern_seq}->{rank} if ($return_fields{rank});
 
 	## Overlapping occurrences
-	if ($noov) {
+	if ($noov eq "-noov") {
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps};
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps} + $patterns{$pattern_seq}->{occ};
 	}
@@ -1877,6 +1942,14 @@ OPTIONS
 		patterns absent from the sequence. This is the
 		function of the option -zeroocc.
 
+	-quick
+		Quick count mode: delegate the counting of word
+		occurrences to count-words, a program written in C by
+		Matthieu Defrance.
+
+		This option is incompatible with the following output
+  	        fields: $quick_forbidden_fields
+
 	-noov	do not allow overlapping matches of the same word
 
 	-timeout #
@@ -2133,6 +2206,7 @@ dyad-analysis options
 -under		detect under-represented instead of over-represented words
 -two_tails      detect under-represented and over-represented words
 -zeroocc	return also patterns with zero occurrences
+-quick		quick count mode (delegate counting to count-words)
 -thosig		threshold on occurrence significance (obsolete)
 -lth param \#	lower threshold on parameter. Supported: $supported_thresholds
 -uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
