@@ -357,11 +357,13 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
                     oligo_buffer[oligo_length / 2] = '\0';
                     fprintf(output_fp, "%sn{%d}", &oligo_buffer[0], spacing);
                     oligo_buffer[oligo_length / 2] = middle;
+                    oligo_buffer[oligo_length] = '\0';
                     fprintf(output_fp, "%s\t", &oligo_buffer[oligo_length / 2]);
 
                     oligo_buffer[oligo_length / 2] = '\0';
                     fprintf(output_fp, "%sn{%d}", &oligo_buffer[0], spacing);
                     oligo_buffer[oligo_length / 2] = middle;
+                    oligo_buffer[oligo_length] = '\0';
                     fprintf(output_fp, "%s|", &oligo_buffer[oligo_length / 2]);
 
                     char middle_rc = oligo_buffer_rc[oligo_length / 2];
@@ -387,10 +389,12 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
                     oligo_buffer[oligo_length / 2] = '\0';
                     fprintf(output_fp, "%sn{%d}", &oligo_buffer[0], spacing);
                     oligo_buffer[oligo_length / 2] = middle;
+                    oligo_buffer[oligo_length] = '\0';
                     fprintf(output_fp, "%s\t", &oligo_buffer[oligo_length / 2]);
                     oligo_buffer[oligo_length / 2] = '\0';
                     fprintf(output_fp, "%sn{%d}", &oligo_buffer[0], spacing);
                     oligo_buffer[oligo_length / 2] = middle;
+                    oligo_buffer[oligo_length] = '\0';
                     fprintf(output_fp, "%s", &oligo_buffer[oligo_length / 2]);
                     fprintf(output_fp, "\t%.13f\t%d", \
                         count_array[i] / (double) position_count, (int) count_array[i]);
