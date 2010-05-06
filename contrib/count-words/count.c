@@ -11,14 +11,14 @@
 #define ALPHABET_SIZE 4
 static long position_count = 0;
 static long total_count = 0;
+#define MAIN_BUFFER_SIZE 100000
+static char main_buffer[MAIN_BUFFER_SIZE];
+static int main_buffer_pos = 0;
+static long array_limit = 0;
 
 // ===========================================================================
 // =                            Fast fasta reader
 // ===========================================================================
-#define MAIN_BUFFER_SIZE 100000
-static char main_buffer[MAIN_BUFFER_SIZE];
-static int main_buffer_pos = 0;
-
 inline char get_char(FILE *fp)
 {
     if (main_buffer_pos >= MAIN_BUFFER_SIZE) 
@@ -192,8 +192,12 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
                 int oligo_length, int spacing, int add_rc, int noov, int grouprc)
 {
     int motif_length = oligo_length;
+    int full_motif_length = motif_length;
     if (spacing != -1)
-        motif_length = oligo_length + spacing + oligo_length;
+    {
+        motif_length = oligo_length + oligo_length;
+        full_motif_length = motif_length + spacing;
+    }
 
     if (noov)
         init_last_position_array(last_position, motif_length);
@@ -204,7 +208,7 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
     int index_r = -1;  // reverse strand
     
     int string_size = (int) strlen(string);
-    for (i = 0; i < string_size - motif_length + 1; i++) 
+    for (i = 0; i < string_size - full_motif_length + 1; i++) 
     {
             // compute index
             if (spacing == -1)
@@ -228,7 +232,7 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
             position_count++;
             
             // overlapping occurrences
-            if (noov && last_position[index] + motif_length - 1 >= i) 
+            if (noov && last_position[index] + full_motif_length - 1 >= i) 
             {
                 overlapping_occ[index]++;
                 if (add_rc && !grouprc)
@@ -287,8 +291,6 @@ void print_header(FILE *output_fp, int oligo_length, int spacing, int noov, long
         fprintf(output_fp, "#seq\tidentifier\tobserved_freq\tocc\tovl_occ\n");
     else
         fprintf(output_fp, "#seq\tidentifier\tobserved_freq\tocc\n");
-    
-    
 }
 
 void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ, int oligo_length, int spacing, int add_rc)
@@ -299,9 +301,7 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
     ASSERT(oligo_length < 256, "too big oligo");
     char letter[ALPHABET_SIZE] = "acgt";
     int i, k;
-    int size = 1;
-    for (i = 0; i < oligo_length; i++)
-        size *= ALPHABET_SIZE;    
+    int size = count_array_size(oligo_length);
 
     // id buffer
     char oligo_buffer[256];
@@ -314,7 +314,6 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
     oligo_buffer_rc[oligo_length] = '\0';
     for (i = 0; i < oligo_length; i++)
         oligo_buffer_rc[i] = letter[0];
-
 
     k = 0;
     for (i = 0; i < size; i++) 
@@ -386,12 +385,10 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
                     fprintf(output_fp, "%sn{%d}", oligo_buffer, spacing);
                     oligo_buffer[oligo_length / 2] = middle;
                     fprintf(output_fp, "%s\t", &oligo_buffer[oligo_length / 2]);
-
                     oligo_buffer[oligo_length / 2] = '\0';
                     fprintf(output_fp, "%sn{%d}", oligo_buffer, spacing);
                     oligo_buffer[oligo_length / 2] = middle;
                     fprintf(output_fp, "%s", &oligo_buffer[oligo_length / 2]);
-
                     fprintf(output_fp, "\t%.13f\t%d", \
                         count_array[i] / (double) position_count, (int) count_array[i]);
                 }
@@ -438,8 +435,9 @@ void count_in_file(FILE *input_fp, FILE *output_fp, int oligo_length, int spacin
 {
     int motif_length = oligo_length;
     if (spacing != -1)
-        motif_length = oligo_length + spacing + oligo_length;
-    
+        motif_length = oligo_length + oligo_length;
+    ASSERT(motif_length <= 14, "too big oligo");
+    array_limit = count_array_size(motif_length);
     long *count = new_count_array(motif_length);
     long *last_position = NULL;
     long *overlapping_occ = NULL;
@@ -453,16 +451,23 @@ void count_in_file(FILE *input_fp, FILE *output_fp, int oligo_length, int spacin
     }
         
     string_buffer_t *buffer = new_string_buffer();
+    VERBOSE2(">start global counting\n");
     int end = FALSE;
     do 
     {
         end = fasta_next(buffer, input_fp);
+        VERBOSE2("    >starting count in seq\n");
         count_occ(count, last_position, overlapping_occ, buffer->data, oligo_length, spacing, add_rc, noov, grouprc);
+        VERBOSE2("    <end count in seq\n");
     } while (end != FALSE);
+    VERBOSE2("<end global counting\n");
 
     if (header)
         print_header(output_fp, oligo_length, spacing, noov, overlapping_occ, argc, argv);
+    VERBOSE2("start printing\n");
     print_count_array(output_fp, count, overlapping_occ, oligo_length, spacing, add_rc);
+    VERBOSE2("end printing\n");
+
     free(count);
     free(last_position);
     free_string_buffer(buffer);
