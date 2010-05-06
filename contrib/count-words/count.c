@@ -215,7 +215,7 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
                 index = index_f = oligo2int(string, i, oligo_length);
             else
                 index = index_f = dyad2int(string, i, oligo_length, spacing);
-            
+            ASSERT(index <= array_limit, "invalid index");
             if (add_rc) 
             {
                 if (spacing == -1)
@@ -224,9 +224,12 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
                     index_r = dyad2int_rc(string, i, oligo_length, spacing);
                 index = MIN(index, index_r);
             }
+            ASSERT(index_r <= array_limit, "invalid index");
 
             if (index == -1) // bad position
                 continue;
+
+            ASSERT(index <= array_limit, "invalid index");
 
             // increment position counter
             position_count++;
