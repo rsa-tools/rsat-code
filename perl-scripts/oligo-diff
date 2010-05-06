@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.12 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: oligo-diff,v 1.13 2010/05/06 07:04:03 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     $SCRIPTS=$ENV{RSAT}."/perl-scripts";
     $BIN=$ENV{RSAT}."/bin";
 #    $program_version = "0.00";
@@ -189,11 +189,10 @@ package main;
     ## Count oligo occurrences and frequencies in the test sequence
     ## file
 
-    &CountWords($infile{test}, "tst");
-    &CountWords($infile{ctrl}, "ctl");
+    &CountWordsOneSet($infile{test}, "tst");
+    &CountWordsOneSet($infile{ctrl}, "ctl");
 
     ## Compute word sums
-    &RSAT::message::TimeWarn("Computing occurrence significance") if ();
     foreach my $oligo (keys %patterns) {
 
       ## Set zero values to absent words
@@ -230,14 +229,17 @@ package main;
       $lth{"max_occ"} = $lth{occ};
       &CheckLowerThresholds("max_occ");
       delete($lth{max_occ});
+      &RSAT::message::TimeWarn("Lower threshold on occurrences", scalar(keys(%patterns))) if ($main::verbose >= 2);
     }
     if (defined($uth{occ})) {
       $uth{"max_occ"} = $uth{occ};
       &CheckUpperThresholds("max_occ");
       delete($uth{max_occ});
+      &RSAT::message::TimeWarn("Upper threshold on occurrences", scalar(keys(%patterns))) if ($main::verbose >= 2);
     }
 
     ## Compute hypergeometric significance
+    &RSAT::message::TimeWarn("Computing occurrence significance for ".$distinct_oligos." oligos") if ($main::verbose >= 2);
     my $test_nb = $distinct_oligos;
     my $ol = 0;
     foreach my $oligo (sort(keys %patterns)) {
@@ -251,16 +253,22 @@ package main;
       my $occ_tst = $patterns{$oligo}->{occ_tst};
       my $occ_ctl = $patterns{$oligo}->{occ_ctl};
 
-      ## Observed/expected ratio
+      ## Frequencies per position
+      $patterns{$oligo}->{freq_test} = sprintf("%.13f", $occ_tst/$occ_sum_test);
+      $patterns{$oligo}->{freq_ctrl} = sprintf("%.13f", $occ_ctl/$occ_sum_ctrl);
+
+      ## Ratio between frequencies
+      my $freq_test = $patterns{$oligo}->{freq_test};
+      my $freq_ctrl = $patterns{$oligo}->{freq_ctrl};
       my $ratio = "NA";
-      if ($occ_tst > 0) {
-	if ($occ_ctl > 0) {
-	  $ratio = sprintf("%.3f", $occ_tst/$occ_ctl);
+      if ($freq_test > 0) {
+	if ($freq_ctrl > 0) {
+	  $ratio = sprintf("%.3f", $freq_test/$freq_ctrl);
 	} else {
 	  $ratio = "inf";
 	}
       } else {
-	if ($occ_ctl > 0) {
+	if ($freq_ctrl > 0) {
 	  $ratio = 0;
 	} else {
 	  $ratio = "NA";
@@ -269,10 +277,6 @@ package main;
       }
       $patterns{$oligo}->{ratio} = $ratio;
       next unless &CheckPatternThresholds("ratio", $oligo);
-
-      ## Frequencies per position
-      $patterns{$oligo}->{freq_test} = sprintf("%.13f", $occ_tst/$occ_sum_test);
-      $patterns{$oligo}->{freq_ctrl} = sprintf("%.13f", $occ_ctl/$occ_sum_ctrl);
 
       ## Expected occurrences
       my $m = $patterns{$oligo}->{occ_sum};
@@ -357,12 +361,12 @@ package main;
     $descr{occ_sum} = "sum of occurrences in both files";
     $descr{exp_tst} = "random expectation for occ_tst";
     $descr{exp_ctl} = "random expectation for occ_ctl";
-    $descr{freq_test} = "frequency in file ".$infile{test};
-    $descr{freq_ctrl} = "frequency in file ".$infile{ctrl};
+    $descr{freq_test} = "frequency (=occurrences per position) in test sequences";
+    $descr{freq_ctrl} = "frequency (=occurrences per position) in control sequences";
     $descr{occ_P} = "Hypergeometric P-value. P(X >= occ)";
     $descr{occ_E} = "Hypergeometric E-value. occ_E = nb_test * occ_P";
     $descr{occ_sig} = "Hypergeometric significance. occ_sig = -log10(occ_E)";
-    $descr{ratio} = "Ratio. R = occ_tst / occ_ctl";
+    $descr{ratio} = "Ratio between test and control frequencies. R = freq_test / freq_ctrl";
     $descr{rank} = "Rank of the patterns sorted by decreasing significance.";
     $descr{side} = "side of the higher representation (test or ctrl)";
 
@@ -785,7 +789,7 @@ sub Verbose {
 
 ################################################################
 ## Count word occurrences in an input file
-sub CountWords {
+sub CountWordsOneSet {
   my ($file, $file_type) = @_;
   my $cmd = "";
   if ($file =~ /.gz$/) {
