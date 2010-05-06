@@ -458,22 +458,17 @@ void count_in_file(FILE *input_fp, FILE *output_fp, int oligo_length, int spacin
     }
         
     string_buffer_t *buffer = new_string_buffer();
-    VERBOSE2(">start global counting\n");
     int end = FALSE;
     do 
     {
         end = fasta_next(buffer, input_fp);
-        VERBOSE2("    >starting count in seq\n");
         count_occ(count, last_position, overlapping_occ, buffer->data, oligo_length, spacing, add_rc, noov, grouprc);
-        VERBOSE2("    <end count in seq\n");
     } while (end != FALSE);
-    VERBOSE2("<end global counting\n");
 
     if (header)
         print_header(output_fp, oligo_length, spacing, noov, overlapping_occ, argc, argv);
-    VERBOSE2("start printing\n");
+
     print_count_array(output_fp, count, overlapping_occ, oligo_length, spacing, add_rc);
-    VERBOSE2("end printing\n");
 
     free(count);
     free(last_position);
