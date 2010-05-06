@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.54 2010/05/04 16:30:45 jvanheld Exp $
+# $Id: peak-motifs,v 1.55 2010/05/06 16:26:41 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.54 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.55 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -304,7 +304,7 @@ sub DefaultParameters {
   $main::param{positions_min_occ} = 1; ## Min number of occurrences
 
   ## local-word-analysis
-  $main::param{local_words_heuristic} = "slices"; ## Heuristic
+#  $main::param{local_words_heuristic} = "slices"; ## Heuristic
   $main::param{local_words_window} = 50; ## Class interval
 
   ## matrix-from-patterns
@@ -435,7 +435,7 @@ sub SetOutFileNames {
 	$pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
 	$main::outfile{$pattern_type} = &OutFileName(".tab", "local_words".$main::param{strand}.$main::param{noov},
 						     $len."nt", "wind".$main::param{local_words_window},
-						     $main::param{local_words_heuristic},
+#						     $main::param{local_words_heuristic},
 						     "mkv".$markov);
 	push @pattern_types, $pattern_type;
       }
@@ -488,6 +488,7 @@ sub SetOutFileNames {
   ## Clustering of the discovered motifs + comparison with reference motif
   $main::outfile{motifs_discovered} = &OutFileName(".tf", "motifs_discovered");
   $main::outfile{motifs_disco_compa} = &OutFileName(".tab", "motifs_disco_compa");
+  push @timelog_keys, "motifs_disco_compa";
   $main::outfile{motifs_disco_compa_gml} = &OutFileName(".gml", "motifs_disco_compa");
   $main::outfile{motifs_disco_compa_png} = &OutFileName(".png", "motifs_disco_compa");
   $main::outfile{motifs_disco_compa_clusters_mcl} = &OutFileName(".mcl", "motifs_disco_compa_clusters");
@@ -796,7 +797,7 @@ sub LocalWords {
       $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
       $cmd .= " --center=".$center_pos;
       $cmd .= " --window=".$main::param{local_words_window};
-      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
+#      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
       #  $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
       $cmd .= " --markov ".$markov;
@@ -1357,6 +1358,11 @@ sub SynthesisSequenceComposition {
     chomp($min_peak_len);
     $min_peak_len =~ s/.*min\s*//;
 
+    ## Get mean peak length
+    my $mean_peak_len = `grep '; mean' $main::outfile{$seq_type."_seqlen_distrib"}`;
+    chomp($mean_peak_len);
+    $mean_peak_len =~ s/.*mean\s*//;
+
     ## Get max peak length
     my $max_peak_len = `grep '; max' $main::outfile{$seq_type."_seqlen_distrib"}`;
     chomp($max_peak_len);
@@ -1375,8 +1381,9 @@ sub SynthesisSequenceComposition {
     my $img = &RelativePath($main::outfile{$seq_type."_seqlen_distrib_graph"});
     my $seq_stats = "Nb of peaks: ".$peak_nb;
     $seq_stats .= "<br>\nTotal seq. size: ".$seq_size." kb";
-    $seq_stats .= "<br>\nMin peak length: ".$min_peak_len." bp";
-    $seq_stats .= "<br>\nMax peak length: ".$max_peak_len." bp";
+    $seq_stats .= "<br>\nMin length: ".$min_peak_len." bp";
+    $seq_stats .= "<br>\nMean length: ".$mean_peak_len." bp";
+    $seq_stats .= "<br>\nMax length: ".$max_peak_len." bp";
     &SyntheticTableAddRow($seq_stats,
 			  "<a  href='".$img."'><img height=150 src='".$img."'></a>",
 			  "lengths",$main::outfile{$seq_type."_seqlen"},
@@ -1715,7 +1722,8 @@ Reference motif (optional).
 
 In some cases, we already dispose of a reference motif, for example
 the motif annotated in some transcription factor database
-(e.g. RegulonDB, Jaspar, TRANSFAC) for the transcription factor of
+(e.g. RegulonDB, Jaspar, TRANSFAC)
+ for the transcription factor of
 interest. These annotations may come from low-throughput experiments,
 and rely on a poor number of sites, but the reference motif may
 nevertheless be informative, because it is based on several
@@ -2218,6 +2226,15 @@ sub CheckArguments {
     %task = %supported_task;
     delete($task{all});
     delete($task{clean_seq});
+    if (defined($main::infile{ctrl_seq})) {
+      delete($task{oligos});
+      delete($task{dyads});
+      delete($task{positions});
+      delete($task{local_words});
+    } else {
+      delete($task{oligo_diff});
+    }
+    delete($task{motifs_vs_ref}) unless (defined($main::infile{ref_motif}));
     delete($task{motifs_vs_db}) unless (scalar(@motif_databases) > 0);
   }
   foreach my $task (@supported_tasks) {
