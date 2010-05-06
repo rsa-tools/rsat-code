@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.110 2010/04/28 16:43:52 jvanheld Exp $
+# $Id: convert-matrix,v 1.111 2010/05/06 16:26:03 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -71,6 +71,7 @@ local $flanks = 0;
 			  "wdistrib"=>1,
 			  "links"=>1,
 			  "logo"=>1,
+			  "logo_table"=>1,
 			 );
 $supported_return_fields = join ",", sort keys %supported_return_type;
 
@@ -150,9 +151,26 @@ unless (scalar(@matrix_files >= 1)) {
 
 &RSAT::message::Info(scalar(@matrix_files), "input matrix files") if ($main::verbose >= 2);
 
+################################################################
 ## Check output parameters
-if (($split_out_files) && !($outfile{output})) {
-  &RSAT::error::FatalError("The option -split requires to specify an output file (option -o)");
+
+## Output file is required for some output formats
+unless ($outfile{output}) {
+  ## Outfile name is required for splitting matrices in a set of output files
+  if ($split_out_files) {
+    &RSAT::error::FatalError("The option -split requires to specify an output file (option -o)");
+  }
+
+  ## Outfile name is required for logo table (HTML)
+  if ($return_field{logo_table}) {
+    &RSAT::error::FatalError("The option -return logo_table requires to specify an output file (option -o)");
+  }
+}
+
+## If logo table has been asked, assume logos are requested even if
+## not explicit on the command line
+if ($return_field{logo_table}) {
+  $return_field{logo} = 1;
 }
 
 ## Check return type(s)
@@ -168,7 +186,6 @@ unless (scalar(@return_fields)) {
 	&RSAT::error::FatalError("You should define at least one return type");
   }
 }
-
 
 ## Permutations are only compatible with -return counts
 if ($perm) {
@@ -224,7 +241,7 @@ if ($return_fields{logo}) {
   }else{
     @logo_formats = ($logo_format);
   }
-
+  
   ## Check that seqlogo is installed at the expected location
   if (-e $seqlogo_path) {
     if(-x $seqlogo_path) {
@@ -278,76 +295,82 @@ if (scalar(@matrix_files >= 1)) {
 ## Process each matrix
 my $m = 0;
 foreach my $matrix (@matrices) {
-    $m++;
+  $m++;
 
-    ## Add flanks
-    if ($flanks) {
-      my @empty_col = ();
-      my $empty_value = 0;
-      my $nrow = $matrix->nrow();
-      for my $r (1..$nrow) {
-	push @empty_col, $empty_value;
-      }
-      for my $i (1..$flanks) {
-	$matrix->add_column("right",@empty_col);
-	$matrix->add_column("left",@empty_col);
-      }
+  ## Add flanks
+  if ($flanks) {
+    my @empty_col = ();
+    my $empty_value = 0;
+    my $nrow = $matrix->nrow();
+    for my $r (1..$nrow) {
+      push @empty_col, $empty_value;
     }
-
-    ## Compute reverse complement
-    $matrix->reverse_complement() if ($rc);
-
-    $matrix->force_attribute("pseudo", $pseudo_weight);
-    $matrix->force_attribute("equi_pseudo", $equi_pseudo);
-    $matrix->force_attribute("decimals", $decimals);
-    $matrix->force_attribute("max_profile", $max_profile);
-    $matrix->force_attribute("sep", $sep);
-    $matrix->force_attribute("header", $return_fields{header});
-    $matrix->force_attribute("margins", $return_fields{margins});
-    $matrix->setInfoLogBase($info_log_base);
-    $matrix->force_attribute("bg_markov_order", 0);
-    if ($infile{prior}) {
-	$matrix->setPrior(%prior);
+    for my $i (1..$flanks) {
+      $matrix->add_column("right",@empty_col);
+      $matrix->add_column("left",@empty_col);
     }
+  }
 
-    ## Calculate parameters before sorting because sorting can be done on
-    ## a computed parameter rather than defined in the input file.
-    if ($return_fields{parameters}) {
-	$matrix->calcWeights();
-	$matrix->calcInformation();
-	$matrix->calcConsensus();
-	$matrix->calcGCcontent();
-    }
+  ## Compute reverse complement
+  $matrix->reverse_complement() if ($rc);
 
-    ## Generate logo
-    if (($return_fields{logo}) && ($seqlogo_path)) {
-      unless ($logo_dir) {
-	if ($outfile{output}) {
-	  $logo_dir = dirname($outfile{output});
-	} else {
-	  $logo_dir = "logos";
-	}
-      }
-      $logo_dir .= "/";
-      $logo_dir =~ s|/+|/|g;
-#      &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 10);
+  $matrix->force_attribute("pseudo", $pseudo_weight);
+  $matrix->force_attribute("equi_pseudo", $equi_pseudo);
+  $matrix->force_attribute("decimals", $decimals);
+  $matrix->force_attribute("max_profile", $max_profile);
+  $matrix->force_attribute("sep", $sep);
+  $matrix->force_attribute("header", $return_fields{header});
+  $matrix->force_attribute("margins", $return_fields{margins});
+  $matrix->setInfoLogBase($info_log_base);
+  $matrix->force_attribute("bg_markov_order", 0);
+  if ($infile{prior}) {
+    $matrix->setPrior(%prior);
+  }
 
-      ## Create logo directory if required
-      &RSAT::util::CheckOutDir($logo_dir);
+  ## Calculate parameters before sorting because sorting can be done on
+  ## a computed parameter rather than defined in the input file.
+  if ($return_fields{parameters}) {
+    $matrix->calcWeights();
+    $matrix->calcInformation();
+    $matrix->calcConsensus();
+    $matrix->calcGCcontent();
+  }
 
-      my $logo_file;
-      if ($logo_file_base) {
-	  $logo_file = $logo_file_base."_m".$m;
+  ## Generate logo
+  if (($return_fields{logo}) && ($seqlogo_path)) {
+    unless ($logo_dir) {
+      if ($outfile{output}) {
+	$logo_dir = dirname($outfile{output});
       } else {
-	  $logo_file = $logo_dir.$matrix->get_attribute("name");
-	  $logo_file .= "_logo";
+	$logo_dir = "logos";
       }
-      #	$logo_file =~ s/\.\w+$//;
-      $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
-      $matrix->set_attribute("logo_file" => $logo_file);
-      $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1); ## Generate logo image for the reverse complementary motif
-      $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
     }
+    $logo_dir .= "/";
+    $logo_dir =~ s|/+|/|g;
+    #      &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 10);
+
+    ## Create logo directory if required
+    &RSAT::util::CheckOutDir($logo_dir);
+
+    my $logo_file;
+    if ($logo_file_base) {
+      $logo_file = $logo_file_base."_m".$m;
+    } else {
+      $logo_file = $logo_dir.$matrix->get_attribute("name");
+      $logo_file .= "_logo";
+    }
+    #	$logo_file =~ s/\.\w+$//;
+    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
+    $matrix->set_attribute("logo_file" => $logo_file);
+    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
+    $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
+
+    ## Index the logos in a HTML table
+    if ($return_field{logo_table}) {
+      print $logo_table "<tr>\n";
+      print $logo_table "</tr>\n";
+    }
+  }
 }
 
 ################################################################
@@ -443,6 +466,7 @@ foreach my $matrix (@matrices) {
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
 print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $main::out if ($outfile{output});
+close $main::logo_table if ($outfile{logo_table});
 
 
 exit(0);
