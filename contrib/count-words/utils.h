@@ -27,8 +27,16 @@ extern int SHOW_DEBUG;
 // ===========================================================================
 // =                            ASSERT, ERROR, ...
 // ===========================================================================
-
-#define ASSERT(assertion, msg) {if(!(assertion)) {fprintf(stderr, "InternError invalid assertion (%s)\n", msg); exit(1);}}
+#define ASSERT(assertion, msg)        \
+({                                    \
+    if (!(assertion))                 \
+    {                                 \
+        fprintf(stderr, "Internal Error: invalid assertion (%s)", msg); \
+        fprintf(stderr, " in %s line %d\n", __FILE__, __LINE__);        \
+        exit(1);                      \
+    }                                 \
+})
+//#define ASSERT(assertion, msg) {if(!(assertion)) {fprintf(stderr, "InternError invalid assertion (%s)\n", msg); exit(1);}}
 #define VERBOSE1(...)          {if (VERBOSITY >= 1) {fprintf(stderr, __VA_ARGS__);}}
 #define VERBOSE2(...)          {if (VERBOSITY >= 2) {fprintf(stderr, __VA_ARGS__);}}
 #define VERBOSE3(...)          {if (VERBOSITY >= 3) {fprintf(stderr, __VA_ARGS__);}}
