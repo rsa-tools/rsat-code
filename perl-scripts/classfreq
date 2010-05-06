@@ -239,7 +239,7 @@ if ($verbose) {
       $std  = 0;
     }
     printf $out "; sum\t%g\n", $sum;
-    printf $out "; mean\t%.3g\n", $mean;
+    printf $out "; mean\t%g\n", $mean;
 ##    printf $out "; median\t%.3g\n", &RSAT::stats::median(@ListOfNumbers); ## The median requires to store and sort all values -> I don't return it for the sake of efficiency
     printf $out "; var\t%.3g\n", $var;
     printf $out "; std\t%.3g\n", $std;
