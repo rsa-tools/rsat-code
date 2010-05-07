@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "count.h"
 
-int VERSION = 20100506;
+int VERSION = 20100507;
 
 // ===========================================================================
 // =                            usage & help
