@@ -92,14 +92,14 @@ long *new_count_array(int oligo_length)
     return array;
 }
 
-void init_last_position_array(long *array, int oligo_length)
+void init_last_position_array(long *array, int oligo_length, int full_oligo_length)
 {
     int i;
     int size = 1;
     for (i = 0; i < oligo_length; i++)
         size *= ALPHABET_SIZE;
     for (i = 0; i < size; i++)
-        array[i] = -oligo_length;
+        array[i] = -full_oligo_length;
 }
 
 inline int oligo2int(char *string, int pos, int length)
@@ -200,7 +200,7 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
     }
 
     if (noov)
-        init_last_position_array(last_position, motif_length);
+        init_last_position_array(last_position, motif_length, full_motif_length);
 
     int i;
     int index = -1;
