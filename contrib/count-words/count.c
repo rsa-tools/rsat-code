@@ -180,11 +180,11 @@ inline int dyad2int(char *string, int pos, int length, int spacing)
 
 inline int dyad2int_rc(char *string, int pos, int length, int spacing)
 {
-    int value = oligo2int_rc(string, pos, length);
+    int value = oligo2int_rc(string, pos + length + spacing, length);
     int i;
     for (i = 0; i < length; i++)
         value *= ALPHABET_SIZE;
-    value += oligo2int_rc(string, pos + length + spacing, length);
+    value += oligo2int_rc(string, pos, length);
     return value;
 }
 
@@ -341,7 +341,7 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
                 oligo_buffer_rc[oligo_length - k - 1] = 'c';
             }
         }        
-        
+
         if (count_array[i] != 0) 
         {
             if (add_rc)
@@ -367,11 +367,10 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
                     fprintf(output_fp, "%s|", &oligo_buffer[oligo_length / 2]);
 
                     char middle_rc = oligo_buffer_rc[oligo_length / 2];
-                    fprintf(output_fp, "%sn{%d}", &oligo_buffer_rc[oligo_length / 2], spacing);
                     oligo_buffer_rc[oligo_length / 2] = '\0';
-                    fprintf(output_fp, "%s", &oligo_buffer_rc[0]);
+                    fprintf(output_fp, "%sn{%d}", &oligo_buffer_rc[0], spacing);
                     oligo_buffer_rc[oligo_length / 2] = middle_rc;
-
+                    fprintf(output_fp, "%s", &oligo_buffer_rc[oligo_length / 2]);
                     fprintf(output_fp, "\t%.13f\t%d", \
                          count_array[i] / (double) position_count, (int) count_array[i]);
                 }
