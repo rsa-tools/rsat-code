@@ -11,25 +11,25 @@
 #define ALPHABET_SIZE 4
 static long position_count = 0;
 static long total_count = 0;
-#define MAIN_BUFFER_SIZE 100000
-static char main_buffer[MAIN_BUFFER_SIZE];
-static int main_buffer_pos = 0;
-static long array_limit = 0;
+// #define MAIN_BUFFER_SIZE 100000
+// static char main_buffer[MAIN_BUFFER_SIZE];
+// static int main_buffer_pos = 0;
+// static long array_limit = 0;
 
 // ===========================================================================
 // =                            Fast fasta reader
 // ===========================================================================
-inline char get_char(FILE *fp)
-{
-    if (main_buffer_pos >= MAIN_BUFFER_SIZE) 
-    {
-        int read_size = fread(main_buffer, 1, MAIN_BUFFER_SIZE, fp);
-        if (read_size != MAIN_BUFFER_SIZE)
-            main_buffer[read_size] = EOF;
-        main_buffer_pos = 0;
-    }
-    return main_buffer[main_buffer_pos++];
-}
+// inline char get_char(FILE *fp)
+// {
+//     if (main_buffer_pos >= MAIN_BUFFER_SIZE) 
+//     {
+//         int read_size = fread(main_buffer, 1, MAIN_BUFFER_SIZE, fp);
+//         if (read_size != MAIN_BUFFER_SIZE)
+//             main_buffer[read_size] = EOF;
+//         main_buffer_pos = 0;
+//     }
+//     return main_buffer[main_buffer_pos++];
+// }
 
 int fasta_next(string_buffer_t *buffer, FILE *fp)
 {
@@ -37,14 +37,16 @@ int fasta_next(string_buffer_t *buffer, FILE *fp)
     char c;
     do 
     {
-        c = get_char(fp);
+        //c = get_char(fp);
+        c = getc(fp);
     } while (c != EOF && c != '\n');
 
     // read sequence
     int i = 0;
     do 
     {
-        c = get_char(fp);
+        //c = get_char(fp);
+        c = getc(fp);
         if (c == EOF)
           break;
         if (c != '\n' && c != '>') 
@@ -171,20 +173,30 @@ inline int oligo2int_rc(char *string, int pos, int length)
 inline int dyad2int(char *string, int pos, int length, int spacing)
 {
     int value = oligo2int(string, pos, length);
+    if (value == -1)
+        return -1;
     int i;
     for (i = 0; i < length; i++)
         value *= ALPHABET_SIZE;
-    value += oligo2int(string, pos + length + spacing, length);
+    int right = oligo2int(string, pos + length + spacing, length);
+    if (right == -1)
+        return -1;
+    value += right;
     return value;
 }
 
 inline int dyad2int_rc(char *string, int pos, int length, int spacing)
 {
     int value = oligo2int_rc(string, pos + length + spacing, length);
+    if (value == -1)
+        return -1;
     int i;
     for (i = 0; i < length; i++)
         value *= ALPHABET_SIZE;
-    value += oligo2int_rc(string, pos, length);
+    int right = oligo2int_rc(string, pos, length);
+    if (right == -1)
+        return -1;
+    value += right;
     return value;
 }
 
@@ -215,7 +227,7 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
                 index = index_f = oligo2int(string, i, oligo_length);
             else
                 index = index_f = dyad2int(string, i, oligo_length, spacing);
-            ASSERT(index <= array_limit, "invalid index");
+            // ASSERT(index <= array_limit, "invalid index");
             if (add_rc) 
             {
                 if (spacing == -1)
@@ -224,12 +236,12 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
                     index_r = dyad2int_rc(string, i, oligo_length, spacing);
                 index = MIN(index, index_r);
             }
-            ASSERT(index_r <= array_limit, "invalid index");
+            // ASSERT(index_r <= array_limit, "invalid index");
 
             if (index == -1) // bad position
                 continue;
 
-            ASSERT(index <= array_limit, "invalid index");
+            // ASSERT(index <= array_limit, "invalid index");
 
             // increment position counter
             position_count++;
@@ -305,7 +317,7 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
     char letter[ALPHABET_SIZE] = "acgt";
     int i, k;
     int size = count_array_size(oligo_length);
-    ASSERT(size <= array_limit, "invalid array");
+    // ASSERT(size <= array_limit, "invalid array");
     // id buffer
     char oligo_buffer[256];
     oligo_buffer[oligo_length] = '\0';
@@ -443,7 +455,7 @@ void count_in_file(FILE *input_fp, FILE *output_fp, int oligo_length, int spacin
     if (spacing != -1)
         motif_length = oligo_length + oligo_length;
     ASSERT(motif_length <= 14, "too big oligo");
-    array_limit = count_array_size(motif_length);
+    // array_limit = count_array_size(motif_length);
     long *count = new_count_array(motif_length);
     long *last_position = NULL;
     long *overlapping_occ = NULL;
@@ -461,6 +473,7 @@ void count_in_file(FILE *input_fp, FILE *output_fp, int oligo_length, int spacin
     do 
     {
         end = fasta_next(buffer, input_fp);
+        //printf("[%c]\n", buffer->data[0]);
         count_occ(count, last_position, overlapping_occ, buffer->data, oligo_length, spacing, add_rc, noov, grouprc);
     } while (end != FALSE);
 
