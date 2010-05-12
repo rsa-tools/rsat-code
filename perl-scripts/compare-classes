@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.57 2010/04/17 03:04:31 jvanheld Exp $
+# $Id: compare-classes,v 1.58 2010/05/12 17:51:31 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -43,7 +43,7 @@ local $multi_cor = "nc"; ## Correction for multi-testing
     nq=>1,
     nr=>1,
     nc=>1,
-    nt=>1,
+#    nt=>1,
 );
 $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 
@@ -381,7 +381,8 @@ if ($infile{ref_classes} eq $infile{query_classes}) {
 
 ################################################################
 ## Calculate multi-testing correction
-if (($multi_cor eq "nc") || ($multi_cor eq "nt")) {
+#if (($multi_cor eq "nc") || ($multi_cor eq "nt")) {
+if ($multi_cor eq "nc")  {
   $correction = $nb_compa;
 } elsif ($multi_cor eq "nq") {
   $correction = $nb_query_classes;
@@ -393,8 +394,6 @@ if (($multi_cor eq "nc") || ($multi_cor eq "nt")) {
   #		    $correction = $nb_tests;
 #  $correction = $nb_ref_classes*$nb_query_classes;
 }
-
-
 
 &Verbose() if ($verbose);
 &PrintHeader();
@@ -613,11 +612,10 @@ ${field_description_text}
     -multi_cor
         Factor used for the multi-testing correction. 
         Supported values: 
-           nt  number of significance tests (default)
            nq  number of query classes
            nr  number of reference classes
            nc  number of comparisons (nc = nq * nr)
-        The differences between these four options are
+        The differences between these options are
         explained below (section E-value).
 
 PROBABILITIES
@@ -716,7 +714,7 @@ PROBABILITIES
             (e.g. the number of co-expression cluster).
 
 
-        -multi_cor nc
+        -multi_cor nc (default)
 
             How many false positives do we expect for the
             whole set of comparisons ?
@@ -726,19 +724,6 @@ PROBABILITIES
 
             Where nc is the number of comparisons between a
             query class and a reference class.
-
-
-        -multi_cor nt
-
-            How many false positives do we expect for the
-            whole set of significance tests actually
-            performed ?
-
-                  E-value = P-value * nt
-
-            where nt is the number of significance tests
-            actually performed (the number of times the
-            hypergeometric or binomial formula was used)
 
         If you do not use any "pre-filtering" threshold, the
         options nc and nt give the same result (nt = nq * nr),
@@ -809,7 +794,7 @@ compare-classes options
 -lth            lower threshold on a given field
 -uth            upper threshold on a given field
 -pop            population size
--multi_cor	multi-testing correction (supoprted: nq,nr,nc,nt)
+-multi_cor	multi-testing correction (supoprted: nq,nr,nc)
 -sort           sort key (supported keys: $supported_sort_fields)
 -rep            sampling with replacement (binomial instead of hyergeometric)
 -sym            symmetric comparison (only with -rep, see detailed help)
@@ -1446,10 +1431,6 @@ sub PrintHeader {
     
     #### header
     my @header_fields = ();
-    if ($return_fields{rank}) {
-      push @header_fields, ("rank");
-    };
-    
     push @header_fields, ("ref","query");
     
     ## Occurrence counts
@@ -1509,14 +1490,19 @@ sub PrintHeader {
       push @header_fields, "I(Q,R)";
       push @header_fields, "IC";
     }
-    
+
+    if ($return_fields{rank}) {
+      push @header_fields, ("rank");
+    };
+
+
     ## Members
     if ($return_fields{members}) {
       push @header_fields, "R_only";
       push @header_fields, "Q_only";
       push @header_fields, "common_members";
     }
-    
+
     ## ##############################################################
     ## Print field descriptions
     if ($main::verbose >= 1) {
@@ -1526,7 +1512,7 @@ sub PrintHeader {
 	printf $out ";\t%d\t%-14s\t%s\n", $f+1, $field, $field_description{$field};
       }
     }
-    
+
     ## Print the header row
     print $out "#", join("\t", @header_fields), "\n";
   }
@@ -1572,8 +1558,6 @@ sub PrintResult {
       &PrintOneMatrix($matrix_key);
     }
   }
-	
-
 }
 
 ################################################################
@@ -1586,18 +1570,13 @@ sub PrintOneComparison {
 #  &RSAT::message::Debug($r, $q) if ($main::verbose >= 0);
 #  my ($r, $q) = split "__VERSUS__", $compa_key;
   $rank++;
-	    
+
   ## Check thresholds on rank
   if ((defined($uth{rank})) && ($rank > $uth{rank})) {
     last;
   }
   if ((defined($lth{rank})) && ($rank < $lth{rank})) {
     next;
-  }
-
-  ## Print the rank of the association
-  if ($return_fields{rank}) {
-    print $out $rank."\t";
   }
 
   #### reference family name
@@ -1614,10 +1593,10 @@ sub PrintOneComparison {
   my $qname =  $query_classes{$q}->get_attribute("name");
   if ($qname ne $q) {
     ## Replace class ID by class name
-    $q_text .= ";".$qname; 
+    $q_text .= ":".$qname;
   }
 #  warn join( "\t", ";query class", $q, $q_text), "\n" if ($main::verbose >= 10);
-	    
+
   print $out join "\t", ($r_text,
 			 $q_text);
 
@@ -1696,6 +1675,11 @@ sub PrintOneComparison {
     printf $out ( "\t%.5f", $current_compa{'H(R|Q)'});
     printf $out ( "\t%.5f", $current_compa{'I(Q,R)'});
     printf $out ( "\t%.5f", $current_compa{'IC'});
+  }
+
+  ## Print the rank of the association
+  if ($return_fields{rank}) {
+    print $out "\t", $rank;
   }
 
   ## Members
