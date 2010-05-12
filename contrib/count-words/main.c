@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "count.h"
 
-int VERSION = 20100510;
+int VERSION = 20100512;
 
 // ===========================================================================
 // =                            usage & help
@@ -190,8 +190,10 @@ int main(int argc, char *argv[])
            ERROR("can not write to file '%s'", output_filename);
        }
     }
-
+    
+    fseek(input_fp, SEEK_SET, 0);
     count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 1);
+
     if (spacing != -1)
     {
         for (spacing = spacing_tab[0] + 1; spacing <= spacing_tab[1]; spacing++)
