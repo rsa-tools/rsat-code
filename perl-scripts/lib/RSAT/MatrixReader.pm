@@ -275,11 +275,12 @@ sub _readFromTRANSFACFile {
   &RSAT::message::Info ("Reading matrix from TRANSFAC file", $file) if ($main::verbose >= 3);
 
   ## open input stream
-  my $in = STDIN;
-  if ($file) {
-    open INPUT, $file;
-    $in = INPUT;
-  }
+  my ($in, $dir) = &main::OpenInputFile($file);
+#  my $in = STDIN;
+#  if ($file) {
+#    open INPUT, $file;
+#    $in = INPUT;
+#  }
   my $current_matrix_nb = 0;
   my @matrices = ();
   my $matrix;
@@ -463,11 +464,12 @@ sub _readFromSTAMPFile {
   &RSAT::message::Info ("Reading matrix from STAMP file", $file) if ($main::verbose >= 3);
 
   ## open input stream
-  my $in = STDIN;
-  if ($file) {
-    open INPUT, $file;
-    $in = INPUT;
-  }
+#  my $in = STDIN;
+  my ($in, $dir) = &main::OpenInputFile($file);
+#  if ($file) {
+#    open INPUT, $file;
+#    $in = INPUT;
+#  }
   my $current_matrix_nb = 0;
   my @matrices = ();
   my $matrix = "";
@@ -610,13 +612,12 @@ sub _readFromInfoGibbsFile {
 
 #  return _readFromTabFile($file);
 
- 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
+#    if ($file) {
+#	open INPUT, $file;
+#	$in = INPUT;
+#    }
 
 
     ## read header
@@ -1138,11 +1139,12 @@ sub _readFromGibbsFile {
     my $final_matrices = 1; ## boolean: indicates whether or not to export the final matrices
 
     ## open input stream
-    my $in = STDIN;
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
+   my ($in, $dir) = &main::OpenInputFile($file);
+#   my $in = STDIN;
+#     if ($file) {
+#	open INPUT, $file;
+#	$in = INPUT;
+#    }
     $in_matrix = 0;
 
     my $matrix;
@@ -1318,13 +1320,14 @@ sub _readFromConsensusFile {
   my ($file) = @_;
   &RSAT::message::Info ("Reading matrix from consensus file", $file) if ($main::verbose >= 3);
   #    ($in, $dir) = &main::OpenInputFile($file);
-  
+
   ## open input stream
-  my $in = STDIN;
-  if ($file) {
-    open INPUT, $file;
-    $in = INPUT;
-  }
+#  my $in = STDIN;
+  my ($in, $dir) = &main::OpenInputFile($file);
+#  if ($file) {
+#    open INPUT, $file;
+#    $in = INPUT;
+#  }
   my $current_matrix_nb = 0;
   my @matrices = ();
   my $matrix;
@@ -1438,15 +1441,14 @@ called by the method C<readFromFile($file, "assembly")>.
 sub _readFromAssemblyFile {
   my ($file) = @_;
   &RSAT::message::Info ("Reading matrix from pattern-assembly file", $file) if ($main::verbose >= 3);
-  
-  #    ($in, $dir) = &main::OpenInputFile($file);
-  
+
   ## open input stream
-  my $in = STDIN;
-  if ($file) {
-    open INPUT, $file;
-    $in = INPUT;
-  }
+#  my $in = STDIN;
+  my ($in, $dir) = &main::OpenInputFile($file);
+#  if ($file) {
+#    open INPUT, $file;
+#    $in = INPUT;
+#  }
   my $current_matrix_nb = 0;
   my @matrices = ();
   my $matrix;
@@ -1577,10 +1579,10 @@ sub _readFromTabFile {
 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
+#    if ($file) {
+#	open INPUT, $file;
+#	$in = INPUT;
+#    }
 
 
     ## read header
@@ -1699,10 +1701,10 @@ sub _readFromClusterBusterFile {
 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
+#    if ($file) {
+#	open INPUT, $file;
+#	$in = INPUT;
+#    }
 
     ## Initialize the matrix list
     my @matrices = ();
@@ -1789,10 +1791,10 @@ sub _readFromJasparFile {
 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
+#    if ($file) {
+#	open INPUT, $file;
+#	$in = INPUT;
+#    }
 
     ## Initialize the matrix list
     my @matrices = ();
@@ -1862,14 +1864,14 @@ method C<readFromFile($file, "MEME")>.
 sub _readFromMEMEFile {
   my ($file) = @_;
   &RSAT::message::Info("Reading matrix from consensus file\t", $file) if ($main::verbose >= 3);
-    
+
   ## open input stream
-  #    ($in, $dir) = &main::OpenInputFile($file);
-  my $in = STDIN;
-  if ($file) {
-    open INPUT, $file;
-    $in = INPUT;
-  }
+  my ($in, $dir) = &main::OpenInputFile($file);
+#  my $in = STDIN;
+#  if ($file) {
+#    open INPUT, $file;
+#    $in = INPUT;
+#  }
   my @matrices = ();
   my $current_matrix_nb = 0;
   my $matrix;
@@ -1982,12 +1984,12 @@ sub _readFromFeatureFile {
   &RSAT::message::Info("Reading matrix from feature file\t", $file) if ($main::verbose >= 3);
 
   ## open input stream
-  #    ($in, $dir) = &main::OpenInputFile($file);
-  my $in = STDIN;
-  if ($file) {
-    open INPUT, $file;
-    $in = INPUT;
-  }
+  my ($in, $dir) = &main::OpenInputFile($file);
+#  my $in = STDIN;
+#  if ($file) {
+#    open INPUT, $file;
+#    $in = INPUT;
+#  }
   my @matrices = (); 
   my %matrices = (); ## Matrices are indexed by name
   my @alphabet =  ("A", "C", "G", "T");
@@ -2225,13 +2227,14 @@ sub _readFromClustalFile {
     my $matrix = new RSAT::matrix();
     $matrix->set_parameter("program", "clustal");
     push @matrices, $matrix;
-    
+
     ## open input stream
-    my $in = STDIN;
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
+#    my $in = STDIN;
+    my ($in, $dir) = &main::OpenInputFile($file);
+#    if ($file) {
+#	open INPUT, $file;
+#	$in = INPUT;
+#    }
 
     ## Check the header
     my $header = <$in>;
