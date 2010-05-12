@@ -701,21 +701,24 @@ sub to_TRANSFAC {
     }
     $to_print .= "XX\n";
 
-    ## Number of sites
+    ## Sequences from which the matrix was built
     my $site_nb = scalar($self->get_attribute("sequences"));
     if ($site_nb > 0) {
+
+      ## Print number of sequences
       $to_print .= sprintf("BA  %d sequences\n",$site_nb);
       $to_print .= "XX\n";
+
+      ## Print sequences
+      my @site_ids = $self->get_attribute("site_ids");
+      my @site_seq = $self->get_attribute("sequences");
+      foreach my $i (0..$#site_ids) {
+	my $site_id = $site_ids[$i];
+	my $site_seq = $site_seq[$i];
+	$to_print .= sprintf("BS  %s; %s\n",$site_seq, $site_id);
+      }
     }
 
-    ## Binding sites
-    my @site_ids = $self->get_attribute("site_ids");
-    my @site_seq = $self->get_attribute("sequences");
-    foreach my $i (0..$#site_ids) {
-      my $site_id = $site_ids[$i];
-      my $site_seq = $site_seq[$i];
-      $to_print .= sprintf("BS  %s; %s\n",$site_seq, $site_id);
-    }
 
     ## Parameters
     my @params = $self->get_attribute("parameters");
