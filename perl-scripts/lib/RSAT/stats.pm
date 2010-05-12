@@ -328,7 +328,7 @@ sub sum_of_binomials {
 
     ($from,$to) = sort {$a <=> $b} ($from, $to);
     if ($to > $trials) {
-	&RSAT::error::FatalError( "Error: successes ($to) cannot be higher than trials ($trials)\n");
+	&RSAT::error::FatalError("&RSAT::stats::binomial()", "Successes ($to) cannot be higher than trials ($trials)\n");
     }
 
 
