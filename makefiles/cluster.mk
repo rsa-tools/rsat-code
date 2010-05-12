@@ -5,6 +5,8 @@
 include ${RSAT}/makefiles/init_RSAT.mk
 MAKEFILE=makefiles/cluster.mk
 
+## IMPORTANT: FOR THE CLUSTER WE INSTALL THE TOOLS IN /usr/local/bin BECAUSE THE ARCHITECTURE IS NODE-DEPENDENT
+BIN=/usr/local/bin
 
 ################################################################
 ## Node list on the PC cluster of the BiGRe laboratory
