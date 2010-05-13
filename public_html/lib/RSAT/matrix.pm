@@ -713,9 +713,13 @@ sub to_TRANSFAC {
       my @site_ids = $self->get_attribute("site_ids");
       my @site_seq = $self->get_attribute("sequences");
       foreach my $i (0..$#site_ids) {
+	## TRANSFAC biding site description
+	# BS (SITE accession no.; Start position for matrix sequence;
+	#     length of sequence used; BS number of gaps inserted;
+	#     strand orientation)
 	my $site_id = $site_ids[$i];
 	my $site_seq = $site_seq[$i];
-	$to_print .= sprintf("BS  %s; %s\n",$site_seq, $site_id);
+	$to_print .= sprintf("BS  %s; %s; 1; %s; 0; p\n", uc($site_seq), $site_id, length($site_seq));
       }
     }
 
@@ -3374,15 +3378,19 @@ sub makeLogo{
   &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file)
     if ($main::verbose >= 5);
 
-  ## Legend on the X axis indicates matrix ID, name and number of sites
-  my $logo_info = $id;
+  ## Logo title indicates matrix ID, name
+  my $logo_title = &RSAT::util::ShortFileName($id);
   if (my $name = $self->get_attribute("name")) {
-    $logo_info .= "  ".$name unless ($name eq $id);
+    unless ($name eq $id) {
+      $logo_title = &RSAT::util::ShortFileName($name);
+    }
   }
   if ($rev_compl) {
-    $logo_info .= "  RC";
+    $logo_title .= "  RC";
   }
-  $logo_info .= "  ".$seq_number." sites";
+
+  ## Legend on the X axis indicates number of sites
+  my $logo_info = $seq_number." sites";
 
   ## Run seqlogo to generate the logo(s)
   foreach my $logo_format (@logo_formats){
@@ -3406,7 +3414,7 @@ sub makeLogo{
 #    $logo_cmd .= " -e -M";
     $logo_cmd .= " ".$logo_options;
     $logo_cmd .= " -o ". $logo_basename;
-#    $logo_cmd .= " -t '".$logo_title."'";
+    $logo_cmd .= " -t '".$logo_title."'";
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
 
