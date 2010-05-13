@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.90 2010/05/13 18:27:05 amedina Exp $
+# $Id: matrix-quality,v 1.91 2010/05/13 18:49:13 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -51,7 +51,7 @@ included in the matrix used to score the left out sequence.
 This option is only valid when the matrix is specified in a format
 that includes both the matrix and the sites (sequences) that were used
 to build this matrix. This is the case for matrices in MEME,
-consensus and MotifSampler formats.
+consensus, transfac and MotifSampler formats.
 
 =head2 Negative set
 
@@ -729,7 +729,7 @@ as positive sequence set, and labelled as "matrix_sites" in the
 distribution tables and graphs.
 
 The option -ms is only valid with the file formats which contain both
-the matrix and its sites (e.g. consensus, MotifSampler, meme, infogibbs). The
+the matrix and its sites (e.g. consensus, MotifSampler, meme, infogibbs and transfac). The
 format of the matrix+site file can be specified with the option
 '-matrix_format'.
 
