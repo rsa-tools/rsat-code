@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.37 2010/04/29 07:38:37 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.38 2010/05/13 00:10:25 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -196,8 +196,9 @@ package main;
     $outfile{sig_matrices} = $outfile{output}."_sig_matrices.txt";
     $outfile{sig_matrices_split} = $outfile{output}."_sig_matrices_split";
     $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
-    $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
     $outfile{count_matrices_tf} = $outfile{output}."_count_matrices.tf"; ## Count matrices in transfac format
+    $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
+    $outfile{links} = $outfile{output}."_count_matriceslinks.txt";
     $outfile{logo_basename} = $outfile{output}."_count_matrices_logo";
     $outfile{gibbs_matrices} = $outfile{output}."_gibbs_matrices.txt";
 
@@ -247,19 +248,23 @@ package main;
     }
 
     ################################################################
-    ## Convert matrices to TRANSFAC format
-    my $tab2tf_cmd = $SCRIPTS."/convert-matrix -v 1 ";
-    $tab2tf_cmd .= " -i ".$outfile{count_matrices};
-    $tab2tf_cmd .= " -from tab -to transfac -return counts,consensus";
-#    if ($return_fields{logo}) {
-#      $convert2_cmd .= " -return logo";
-#      $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
-#    }
-#    $convert2_cmd .= " -return links" if ($return_fields{links});
-    $tab2tf_cmd .= " -prefix ".$matrix_prefix if ($matrix_prefix);
-    $tab2tf_cmd .= " -o ".$outfile{count_matrices_tf};
-    print $log "; convert matrices from tab to transfac format\n", $tab2tf_cmd, "\n";
-    &doit($tab2tf_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    ## Generate motif logos
+    if (($return_fields{logo}) || ($return_fields{links})) {
+      &RSAT::message::TimeWarn("Generating logos and links") if ($main::verbose >= 2);
+      my $logo_link_cmd = $SCRIPTS."/convert-matrix -v 1";
+      $logo_link_cmd .= " -i ". $outfile{count_matrices};
+      $logo_link_cmd .= " -from tab -to tab";
+      $logo_link_cmd .= " -return counts";
+      $logo_link_cmd .= " -return sites" if ($return_fields{sites});
+      if ($return_fields{logo}) {
+	$logo_link_cmd .= " -return logo -logo_format png,pdf ";
+	$logo_link_cmd .= " -logo_file ".$outfile{logo_basename};
+      }
+      $logo_link_cmd .= " -return links" if ($return_fields{links});
+      $logo_link_cmd .= " -o ".$outfile{links};
+      print $log "; sites -> count matrices\n", $logo_link_cmd, "\n";
+      &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
 
     ################################################################
     ## Close output stream
@@ -715,7 +720,7 @@ sub QuickScanForSites {
     }
   }
   ## Extract count matrices from the sites collected with the sig matrices
-  &sites_to_matrix($outfile{sig_sites}, $outfile{count_matrices});
+  &sites_to_matrix($outfile{sig_sites});
 }
 
 
@@ -743,28 +748,45 @@ sub ScanForSites {
   $scan_cmd .= " -o ".$outfile{sig_sites};
   print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
   &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &sites_to_matrix($outfile{sig_sites}, $outfile{count_matrices});
+  &sites_to_matrix($outfile{sig_sites});
 }
 
 ################################################################
 ## Convert the collected sites to count matrices
 sub sites_to_matrix {
-  my ($site_file, $count_matrix) = @_;
+  my ($site_file) = @_;
   &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
-  my $convert2_cmd = $SCRIPTS."/convert-matrix -v 1";
+
+  ################################################################
+  ## The primary export format is TRANSFAC, because this allows to
+  ## store information (site sequences)
+  my $convert2_cmd = $SCRIPTS."/convert-matrix";
+  $convert2_cmd .= " -v 0"; ## Verbosity must be 0 for TRANSFAC format
   $convert2_cmd .= " -i ".$site_file;
-  $convert2_cmd .= " -from feature -to tab";
+  $convert2_cmd .= " -from feature -to transfac";
   $convert2_cmd .= " -return counts";
   #    $convert2_cmd .= " -sort desc information.per.column";
-  $convert2_cmd .= " -return sites" if ($return_fields{sites});
+  #  $convert2_cmd .= " -return sites" if ($return_fields{sites});
   if ($return_fields{logo}) {
     $convert2_cmd .= " -return logo -logo_format png,pdf ";
     $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
   }
   $convert2_cmd .= " -return links" if ($return_fields{links});
-  $convert2_cmd .= " -o ".$count_matrix;
-  print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
+  $convert2_cmd .= " -o ".$outfile{count_matrices_tf};
+  print $log "; sites -> transfac matrices\n", $convert2_cmd, "\n";
   &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ################################################################
+  ## The TRANSFAC matrices are then converted to tab format
+  my $convert3_cmd = $SCRIPTS."/convert-matrix -v 1";
+  $convert3_cmd .= " -i ".$outfile{count_matrices_tf};
+  $convert3_cmd .= " -from transfac -to tab";
+  $convert3_cmd .= " -return counts";
+  $convert3_cmd .= " -return sites" if ($return_fields{sites});
+  $convert3_cmd .= " -o ".$outfile{count_matrices};
+  print $log "; transfac-formatted -> tab-formatted matrices\n", $convert3_cmd, "\n";
+  &doit($convert3_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
 }
 
 ################################################################
