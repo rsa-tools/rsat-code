@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.89 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: matrix-quality,v 1.90 2010/05/13 18:27:05 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -376,7 +376,8 @@ package main;
     $matrix->set_attribute("file", $matrix_file);
     local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
-    $matrix->set_attribute("name", $matrix_name);
+    #$matrix->set_attribute("name", $matrix_name);
+    $matrix->force_attribute("name", $matrix_name);
     $matrix->setMarkovModel($bg_model) if ($main::infile{bg_file}) ;
     local ($Wmin, $Wmax)  = $matrix->weight_range();
     &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
@@ -1758,7 +1759,7 @@ sub CompareDistrib {
       $large_graph_options .= " -legend ";
       $large_graph_options .= " -xsize 800 -ysize 400 ";
       $large_graph_options .= " -xleg1 'matrix score' ";
-      $large_graph_options .= " -yleg1 'Frequency (inverse cumulative) ' ";
+      $large_graph_options .= " -yleg1 'Frequency (decreasing cumulative) ' ";
 
       my $icon_options;
 
@@ -1766,7 +1767,7 @@ sub CompareDistrib {
 
 
       ################################################################
-      ## Draw a graph with all the inverse cumulative distributions
+      ## Draw a graph with all the decreasing cumulative distributions
       my $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
@@ -1785,7 +1786,7 @@ sub CompareDistrib {
       }
 
       ################################################################
-      ## Draw a graph with all the inverse cumulative distributions
+      ## Draw a graph with all the decreasing cumulative distributions
       ## and a logarithmic Y axis
       $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
@@ -1911,7 +1912,7 @@ sub CompareDistrib {
 	  $all_graph_options =~ s/$outfile{distrib_compa}/$outfile{th_distrib_compa}/g; 
 
 	  ################################################################
-	  ## Draw a graph with all the inverse cumulative distributions
+	  ## Draw a graph with all the decreasing cumulative distributions
 	  my $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
 	  my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
@@ -1922,7 +1923,7 @@ sub CompareDistrib {
 	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
 	  ################################################################
-	  ## Draw a graph with all the inverse cumulative distributions
+	  ## Draw a graph with all the decreasing cumulative distributions
 	  ## and a logarithmic Y axis
 	  $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
