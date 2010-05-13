@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.111 2010/05/06 16:26:03 jvanheld Exp $
+# $Id: convert-matrix,v 1.112 2010/05/13 05:51:02 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1181,13 +1181,13 @@ sub ReadArguments {
 
 	    ### output format 
 	} elsif ($ARGV[$a] eq "-to") {
-	    $output_format = $ARGV[$a+1];
+	    $output_format = lc($ARGV[$a+1]);
 	    unless ($supported_output_format{$output_format}) {
 		&RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
 	    }
 	} elsif ($ARGV[$a] eq "-out_format") {
 	    &RSAT::message::Warning("The option -out_format is obsolete, please use -to instead.");
-	    $output_format = $ARGV[$a+1];
+	    $output_format = lc($ARGV[$a+1]);
 	    unless ($supported_output_format{$output_format}) {
 		&RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
 	    }
@@ -1421,14 +1421,16 @@ sub ExportMatrix {
 
   ## Return sites
   if ($return_fields{sites}) {
-    print $out_handle "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
-    my $s = 0;
-    my @site_ids = $matrix->get_attribute("site_ids");
-    foreach my $site_seq ($matrix->get_attribute("sequences")) {
-      $s++;
-      my $site_id =  $site_ids[$s-1] || $s;
-      &PrintNextSequence($out_handle, $site_format, 0, $site_seq, $site_id);
-      #      print $out_handle $s, "\t\\", $site_seq, "\\\n";
+    unless ($output_format eq "transfac") {
+      print $out_handle "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
+      my $s = 0;
+      my @site_ids = $matrix->get_attribute("site_ids");
+      foreach my $site_seq ($matrix->get_attribute("sequences")) {
+	$s++;
+	my $site_id =  $site_ids[$s-1] || $s;
+	&PrintNextSequence($out_handle, $site_format, 0, $site_seq, $site_id);
+	#      print $out_handle $s, "\t\\", $site_seq, "\\\n";
+      }
     }
   }
 
