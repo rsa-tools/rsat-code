@@ -23,7 +23,8 @@
 
   ## Error status
   $error = 0;
-
+  echo ($Qclass_file);
+  echo ($Rclass_file);
   ## Get parameters
   if ($_FILES['Qclass_file']['name'] != "") {
     $Qclass_file = uploadFile('Qclass_file');
@@ -33,6 +34,10 @@
   if ($_FILES['Rclass_file']['name'] != "") {
     $Rclass_file = uploadFile('Rclass_file');
   }
+//   print_r($_FILES);
+//   echo ($Qclass_file);
+//   echo ($Rclass_file);
+  
   $now = date("Ymd_His");
   $classesQ = $_REQUEST['classesQ'];
   $classesR = $_REQUEST['classesR'];
