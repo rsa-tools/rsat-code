@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.112 2010/05/13 05:51:02 jvanheld Exp $
+# $Id: convert-matrix,v 1.113 2010/05/15 15:15:37 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -144,12 +144,11 @@ if ($infile{matrix_list}) {
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
 }
 
-## Check that there is at least one input matrix
-unless (scalar(@matrix_files >= 1)) {
+if (scalar(@matrix_files > 1)) {
     # &RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
+  &RSAT::message::Info(scalar(@matrix_files)." input matrix files") if ($main::verbose >= 2);
 }
 
-&RSAT::message::Info(scalar(@matrix_files), "input matrix files") if ($main::verbose >= 2);
 
 ################################################################
 ## Check output parameters
@@ -291,8 +290,17 @@ if (scalar(@matrix_files >= 1)) {
   }
 }
 
+
+## Check that there is at least one input matrix
+if (scalar(@matrices) < 1) {
+  &RSAT::message::Warning("Input file contained not a single matrix");
+} else {
+  &RSAT::message::TimeWarn("Read ".scalar(@matrices)." matrices") if ($main::verbose >= 1);
+}
+
 ################################################################
 ## Process each matrix
+&RSAT::message::TimeWarn("Processing matrices") if ($main::verbose >= 2);
 my $m = 0;
 foreach my $matrix (@matrices) {
   $m++;
@@ -382,10 +390,11 @@ if ($sort_key) {
 ################################################################
 ## Print the matrices
 $m = 0;
+&RSAT::message::TimeWarn("Exporting ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
 foreach my $matrix (@matrices) {
   $m++;
   last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
-  &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
+  &RSAT::message::TimeWarn("Exporting matrix", $m."/".scalar(@matrices))
     if ($main::verbose >= 3);
 
   my $current_out;
