@@ -702,7 +702,7 @@ sub to_TRANSFAC {
     $to_print .= "XX\n";
 
     ## Sequences from which the matrix was built
-    my $site_nb = scalar($self->get_attribute("sequences"));
+    my $site_nb = scalar($self->get_attribute("sequences")) || 0;
     if ($site_nb > 0) {
 
       ## Print number of sequences
@@ -3361,7 +3361,15 @@ Usage:
 =cut
 sub makeLogo{
   my ($self,$logo_basename,$logo_formats,$logo_dir, $logo_options, $rev_compl) = @_;
+
+  ## We need an ID -> if not defined, use the consensus
   my $id = $self->get_attribute("id");
+  unless ($id) {
+    $self->calcConsensus();
+    $id = $self->get_attribute("consensus.IUPAC");
+    $self->force_attribute("id", $id);
+  }
+
   my $ncol = $self->ncol();
 
   &RSAT::util::CheckOutDir($logo_dir) if ($logo_dir);
@@ -3387,6 +3395,11 @@ sub makeLogo{
   }
   if ($rev_compl) {
     $logo_title .= "  RC";
+  }
+  my $max_logo_title=$ncol*3;
+  if (length($logo_title) > $max_logo_title) {
+    $logo_title = "...".substr($logo_title, -$max_logo_title);
+    &RSAT::message::Warning("truncating logo title", $logo_title) if ($main::verbose >= 4);
   }
 
   ## Legend on the X axis indicates number of sites
