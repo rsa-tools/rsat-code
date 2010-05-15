@@ -186,8 +186,9 @@
 //     $ldh_temp_file = explode('/',$ldh_server);
 //     $ldh_temp_file = end($ldh_temp_file);
     $ldh_resultURL = rsat_path_to_url($ldh_server);
-    $lowres_size = urlfilesize($ldh_resultURL, "mb");
-    $URL['Low-res heat map ('.$lowres_size.' Mb)'] = $ldh_resultURL;
+//    $lowres_size = urlfilesize($ldh_resultURL, "mb");
+//    $URL['Low-res heat map ('.$lowres_size.' Mb)'] = $ldh_resultURL;
+    $URL['Low-res heat map'] = $ldh_resultURL;
 
     ////////////////////////////////////////////////////////////////
     // JvH: I comment the line hereafter because this variable is not
@@ -217,8 +218,9 @@
 //     $hdh_temp_file = explode('/',$hdh_server);
 //     $hdh_temp_file = end($hdh_temp_file);
     $hdh_resultURL = rsat_path_to_url($hdh_server);  
-    $highres_size = urlfilesize($hdh_resultURL, "mb");
-    $URL['High-res heat map ('.$highres_size.' Mb)'] = $hdh_resultURL;
+//    $highres_size = urlfilesize($hdh_resultURL, "mb");
+//    $URL['High-res heat map ('.$highres_size.' Mb)'] = $hdh_resultURL;
+    $URL['High-res heat map'] = $hdh_resultURL;
   
   
     hourglass("off");
