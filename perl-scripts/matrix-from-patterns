@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.38 2010/05/13 00:10:25 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.39 2010/05/15 15:13:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -115,7 +115,7 @@ package main;
     #### initialise parameters
 
     ## Generic parameters
-    my $start_time = &AlphaDate();
+    local $start_time = &AlphaDate();
     local %infile = ();
     local %outfile = ();
     local $matrix_prefix = "";
@@ -213,7 +213,23 @@ package main;
     ################################################################
     ## Assemble the patterns (unless the input is already an assembly
     ## result)
+    my $pattern_nb = 0;
     if ($infile{patterns}) {
+      ## Count the number of patterns and terminate if there is not a single one
+      my ($in) = &OpenInputFile($infile{patterns});
+      while (<$in>) {
+	next if /^;/;
+	next if /^#/;
+	next unless /\S/;
+	$pattern_nb++;
+      }
+      close $in;
+      print $log "; Number of patterns\t", $pattern_nb, "\n";
+      if ($pattern_nb == 0) {
+	&RSAT::message::Warning("Not a single pattern was found in file", $infile{patterns}) if ($main::verbose >= 1);
+	&terminate();
+      }
+
       &RSAT::message::TimeWarn("Assembling the patterns") if ($main::verbose >= 2);
       my $assembly_cmd = $SCRIPTS."/pattern-assembly -v 1 -i ".$infile{patterns};
       $assembly_cmd .= " ".$strands;
@@ -225,6 +241,32 @@ package main;
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
       &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+
+    ################################################################
+    ## Count the number of assemblies and terminate if there is not a
+    ## single one
+    &RSAT::message::TimeWarn("Counting the number of assemblies") if ($main::verbose >= 0);
+    ($in) = &OpenInputFile($outfile{assembly});
+    my $assembly_nb = 0;
+    my $assembled_pattern_nb = 0;
+    while (<$in>) {
+      next if /^;/;
+      next if /^#/;
+      next unless /\S/;
+      if (/best consensus/) {
+	$assembly_nb++;
+      } else {
+	$assembled_pattern_nb++;
+      }
+    }
+    close $in;
+    print $log "; Number of assemblies\t", $assembly_nb, "\n";
+    print $log "; Number of assembled patterns\t", $assembled_pattern_nb, "\n";
+    &RSAT::message::TimeWarn("Pattern assembly file contains", $assembled_pattern_nb." patterns,",  $assembly_nb." assemblies",) if ($main::verbose >= 0);
+    if ($assembled_pattern_nb == 0) {
+      &RSAT::message::Warning("Not a single assembly was found in file", $outfile{assembly}) if ($main::verbose >= 1);
+      &terminate();
     }
 
     ################################################################
@@ -266,16 +308,8 @@ package main;
       &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     }
 
-    ################################################################
-    ## Close output stream
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-    print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-    close $log if ($outfile{output});
 
-    &RSAT::message::Info("matrix-from-pattern log file", $outfile{log})
-      if ($main::verbose >= 2);
-
-    exit(0);
+    &terminate();
 }
 
 ################################################################
@@ -837,6 +871,18 @@ sub InfoGibbs {
     &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
 
+
+################################################################
+## Close output stream
+sub terminate {
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $log if ($outfile{output});
+  &RSAT::message::Info("matrix-from-pattern log file", $outfile{log})
+    if ($main::verbose >= 2);
+
+  exit(0);
+}
 
 __END__
 
