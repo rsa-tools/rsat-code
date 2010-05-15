@@ -174,7 +174,8 @@ if ($output_format eq 'tab') {
     $parameters .= " -to ".$output_format;
     $parameters .= " -return counts";
 }
-$parameters .= " -o $result_file";
+$parameters .= " -o ".$result_file;
+$parameters .= " -logo_file ".$result_file."_logo";
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
