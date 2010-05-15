@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.39 2010/05/15 15:13:38 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.40 2010/05/15 15:15:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -246,7 +246,7 @@ package main;
     ################################################################
     ## Count the number of assemblies and terminate if there is not a
     ## single one
-    &RSAT::message::TimeWarn("Counting the number of assemblies") if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Counting the number of assemblies") if ($main::verbose >= 2);
     ($in) = &OpenInputFile($outfile{assembly});
     my $assembly_nb = 0;
     my $assembled_pattern_nb = 0;
@@ -263,7 +263,7 @@ package main;
     close $in;
     print $log "; Number of assemblies\t", $assembly_nb, "\n";
     print $log "; Number of assembled patterns\t", $assembled_pattern_nb, "\n";
-    &RSAT::message::TimeWarn("Pattern assembly file contains", $assembled_pattern_nb." patterns,",  $assembly_nb." assemblies",) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Pattern assembly file contains", $assembled_pattern_nb." patterns,",  $assembly_nb." assemblies",) if ($main::verbose >= 2);
     if ($assembled_pattern_nb == 0) {
       &RSAT::message::Warning("Not a single assembly was found in file", $outfile{assembly}) if ($main::verbose >= 1);
       &terminate();
