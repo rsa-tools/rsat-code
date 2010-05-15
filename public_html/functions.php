@@ -72,8 +72,9 @@ Function getTempFileName($prefix) {
     $tmpDir = "tmp/";
     $tmpFile = $_FILES[$file]["name"];
     $tmpFile = $tmpFile.$prefix;
+    $randval = randchar(3);  
     $now = date("Ymd_His");
-    $tmpFile = $tmpFile.'_'.$now;
+    $tmpFile = $tmpFile.'_'.$randval."_".$now;
 #    $unique = mktemp('XXXXX');
     return $tmpDir.$tmpFile;
   }
@@ -378,3 +379,13 @@ Function UpdateLogFile($suite ,$script_name, $message) {
   }
 
 ?>
+<?php
+  function randchar($length) {
+    $result = "";
+    $abc= array("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+    for ($i = 0; $i < $length; $i++) {
+      $result .= $abc[rand(0,(count($abc)-1))];
+    }
+    return $result;
+  }
+?> 
