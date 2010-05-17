@@ -107,14 +107,25 @@ sub CountWords {
     &RSAT::error::FatalError("Selected options are incompatible with quick count mode");
   }
 
+  my $cw_verbose = &RSAT::stats::min($main::verbose, 1);
+  my $cmd = "";
+  if ($infile{input} =~ /.gz/) {
+    &RSAT::message::Warning("Input file must be decompressed for anlayzing it with count-words");
+    $cmd = "gunzip ".$infile{input};
+  }
+#  $cmd .= "; ".$BIN."/count-words -v ".$cw_verbose;
+#  } else {
+
+  $cmd = $BIN."/count-words -v ".$cw_verbose;
+  $cmd .= " -i ".$infile{input}; ## Input file
+#  }
+
   ################################################################
   ## Generate the count-words command
-  my $cmd = $BIN."/count-words -v ".$verbose;
-  $cmd .= " -i ".$infile{input}; ## Input file
-  $cmd .= " -l ".$oligo_length; ## Oligonucleotide length
+  $cmd .= " -l ".$oligo_length;	 ## Oligonucleotide length
   $cmd .= " ".$noov if ($noov eq '-noov'); ## overlapping mode
 
-  $cmd .= " ".$strands; ## Strands
+  $cmd .= " ".$strands;		## Strands
   $quick_sums_counted = 1;
   if ($strands eq "-2str") {
     $quick_rc_counted = 1;
@@ -125,10 +136,16 @@ sub CountWords {
   ## done afterwards by oligo-analysis and dyad-analysis. Grouping
   ## them here would make problems for the computation of frequencies,
   ## proba, etc.
-  ##
-  #if ($group_rc) { $cmd .= " -grouprc"; } else {
+  if ($strands eq "-2str") {
     $cmd .= " -nogrouprc";
-#  }
+  }
+
+#   ################################################################
+#   ## In double strand mode, ensure that RC are grouped in order to avoid counting twice the
+#   ## same pair of reverse complement.
+#   if ($strands eq "-2str") {
+#     $cmd .= " -grouprc";
+#   }
 
   ## Dyad spacing
   if ($pattern_type eq "dyads") {
@@ -136,95 +153,122 @@ sub CountWords {
   }
 
   ## Run count-words and parse the result
-  &RSAT::message::TimeWarn("Quick count", $cmd) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Quick count", $cmd) if ($main::verbose >= 2);
   open QUICK, "$cmd |";
   my $l=0;
   while (<QUICK>) {
-      $l++;
-      next if (/^;/); ## Skip comment lines
-      next if (/^#/); ## Skip header line
-      next unless (/\S/); ## Skip empty lines
-      chomp();
-      my ($pattern_seq,$id,$freq,$occ,$overlaps) = split ("\t");
-#       &RSAT::message::Debug($l, $pattern_seq, $id, 
-# 			    "freq=".$freq, 
-# 			    "occ=".$occ,
-# 			    "ovlp=".$overlaps,
-# 	  ) if ($main::verbose >= 5);
+    $l++;
+    next if (/^;/);		## Skip comment lines
+    next if (/^#/);		## Skip header line
+    next unless (/\S/);		## Skip empty lines
+    chomp();
+    my ($pattern_seq,$id,$freq,$occ,$overlaps) = split ("\t");
+    #       &RSAT::message::Debug($l, $pattern_seq, $id, 
+    # 			    "freq=".$freq, 
+    # 			    "occ=".$occ,
+    # 			    "ovlp=".$overlaps,
+    # 	  ) if ($main::verbose >= 5);
+    #      &RSAT::message::Debug("&CountWords()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
 
-#      &RSAT::message::Debug("&CountWords()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
-
+    my $pattern_len;
+    my $monad1 = "";
+    my $monad2 = "";
+    my $spacing = 0;
+    if ($pattern_type eq "dyads") {
+      ################################################################
       ## Decompose dyads into monads (required by dyad-analysis for various computations)
-      my $monad1 = "";
-      my $monad2 = "";
-      my $spacing = 0;
-      if ($pattern_type eq "dyads") {
-	if ($pattern_seq =~ /(\w+)n\{(\d+)\}(\w+)/) {
-	  $monad1 = $1;
-	  $spacing = $2;
-	  $monad2 = $3;
+      if ($pattern_seq =~ /(\w+)n\{(\d+)\}(\w+)/) {
+	$monad1 = $1;
+	$spacing = $2;
+	$monad2 = $3;
 
-	  ## Approx estimation of forbidden occurrences
-	  $pattern_len = 2*$oligo_length + $spacing;
+	## Compute dyad length( (required for estimating forbidden occurrences + for spacing-specific countersXS
+	$pattern_len = 2*$oligo_length + $spacing;
+	&RSAT::message::Debug("Dyad decomposition", $pattern_seq, $monad1, $spacing, $monad2, $occ) if ($main::verbose >= 5);
 
-	  &RSAT::message::Debug("Dyad decomposition", $pattern_seq, $monad1, $spacing, $monad2, $occ, $oligo{$monad1}->{occ}) if ($main::verbose >= 5);
-	} else {
-	  &RSAT::error::FatalError("Invalid dyad", $pattern_seq);
-	}
       } else {
-	$pattern_len = $oligo_length;
+	&RSAT::error::FatalError("Invalid dyad", $pattern_seq);
       }
-
-      ## Approximative estimation of the forbidden occurrences.  An
-      ## accurate number can only be provided during the scanning, but
-      ## count-words does not report forbidden positions.  The
-      ## approximate estimation is better than nothing, because we
-      ## need the number of accepted pattern positions to compute the
-      ## binomial proba.
-      my $forbocc;
-      if ($noov eq "-noov") {
-	$forbocc = ($pattern_len -1)*$occ;
-      }
-
-      ## Store the statistics in the pattern-indexed hash table
-      my $to_sum = 1;
-      $patterns{$pattern_seq}->{obs_freq} = $freq;
-      $patterns{$pattern_seq}->{occ} = $occ;
-      $patterns{$pattern_seq}->{overlaps} = $overlaps;
-      $patterns{$pattern_seq}->{forbocc} = $forbocc;
-      if ($strands eq "-2str") {
-	  my $rc = &SmartRC($pattern_seq);
-	  $patterns{$rc}->{obs_freq} = $freq;
-	  $patterns{$rc}->{occ} = $occ;
-	  $patterns{$rc}->{overlaps} = $overlaps;
-	  $patterns{$rc}->{forbocc} = $forbocc;
-	  if ($rc lt $pattern_seq) {
-	    $to_sum = 0;
-	  }
-      }
-
-      ## update the sum of occurrences
-      if ($to_sum) {
-	$sum_noov += $occ;
-	$sum_overlaps += $overlaps;
-	$sum_occurrences += $occ + $overlaps;
-
-	## Specific counters for dyads and monads (one counter for each spacing value)
-	$sum_oligo_count += $occ;
-	$oligo{$monad1}->{occ} += $occ;
-	$oligo{$monad1}->{monad1_occ} += $occ;
-	$oligo{$monad2}->{monad2_occ} += $occ;
-	$dyad_occ_sum{$spacing} += $occ;
-	$dyad_ovl_sum{$spacing} += $overlaps;
-#	&RSAT::message::Debug("HELLO",  $monad1, $spacing, $monad2, $occ, $dyad_occ_sum{$spacing}) if ($main::verbose >= 5);
-      }
-
+    } else {
+      $pattern_len = $oligo_length;
       ## Derive residue occurrences from pattern occurrences (approx)
-      for my $i  (1..$oligo_length) {
-	  my $letter =lc(substr($pattern_seq,$i-1,1));
-	  $residue_occ{$letter} += $occ/$oligo_length;
+      for my $i (1..$oligo_length) {
+	my $letter =lc(substr($pattern_seq,$i-1,1));
+	$residue_occ{$letter} += $occ/$oligo_length;
       }
+    }
+
+    ## Approximative estimation of the forbidden occurrences.  An
+    ## accurate number can only be provided during the scanning, but
+    ## count-words does not report forbidden positions.  The
+    ## approximate estimation is better than nothing, because we
+    ## need the number of accepted pattern positions to compute the
+    ## binomial proba.
+    my $forbocc;
+    if ($noov eq "-noov") {
+      $forbocc = ($pattern_len -1)*$occ;
+    }
+
+    ## Store the statistics in the pattern-indexed hash table
+    my $to_sum = 1;
+    my $rev_compl = 0;
+    $patterns{$pattern_seq}->{obs_freq} = $freq;
+    $patterns{$pattern_seq}->{occ} = $occ;
+    $patterns{$pattern_seq}->{overlaps} = $overlaps;
+    $patterns{$pattern_seq}->{forbocc} = $forbocc;
+    if ($strands eq "-2str") {
+      my $rc = &SmartRC($pattern_seq);
+      $patterns{$rc}->{obs_freq} = $freq;
+      $patterns{$rc}->{occ} = $occ;
+      $patterns{$rc}->{overlaps} = $overlaps;
+      $patterns{$rc}->{forbocc} = $forbocc;
+      if ($rc lt $pattern_seq) {
+	$to_sum = 0;
+      }
+    }
+
+    next unless ($to_sum);
+
+    ## update the sum of occurrences
+    $sum_noov += $occ;
+    $sum_overlaps += $overlaps;
+    $sum_occurrences += $occ + $overlaps;
+
+    ## Specific counters for dyads and monads (one counter for each spacing value)
+    if ($patter_type eq "dyads") {
+      $dyad_occ_sum{$spacing} += $occ;
+      $dyad_occ_sum{$spacing} += $occ;
+      $dyad_ovl_sum{$spacing} += $overlaps;
+      my $monad1_rc = &SmartRC($monad1); $oligo{$monad1_rc}->{occ} += $occ;
+      my $monad2_rc = &SmartRC($monad1); $oligo{$monad2_rc}->{occ} += $occ;
+      $oligo{$monad1}->{occ} += $occ;
+      $oligo{$monad2}->{occ} += $occ;
+      $sum_oligo_count += $occ;
+      #	&RSAT::message::Debug("HELLO",  $monad1, $spacing, $monad2, $occ, $dyad_occ_sum{$spacing}) if ($main::verbose >= 5);
+    }
   }
+
+  if ($pattern_type eq "dyads") {
+    ################################################################
+    ## Estimate the number of valid dyad positions This is a bit tricky
+    ## since we don't have the sequence lengths and other required
+    ## information -> we simplify by using the sum of occurrences as
+    ## estimate of the valid dyad positions, and we set the number of
+    ## discarded positions to NA.
+    &RSAT::message::TimeWarn("Estimating number of valid dyad positions") if ($main::verbose >= 2);
+    foreach my $spacing (keys (%dyad_occ_sum)) {
+      $valid_dyad_positions{$spacing} = $dyad_occ_sum{$spacing};
+      $discarded_dyad_positions{$spacing} = "NA";
+      &RSAT::message::Debug("CountWords",
+			    "sp=".$spacing,
+			    "occ_sum=".$dyad_occ_sum{$spacing},
+			    "valid=".$valid_dyad_positions{$spacing},
+			    "ovl_sum=".$dyad_ovl_sum{$spacing},
+			   ) if ($main::verbose >= 5);
+    }
+  }
+
+  #  &RSAT::message::TimeWarn("count-words reported", scalar(keys(%patterns))." patterns") if ($main::verbose >= 2);
   close QUICK;
 }
 
