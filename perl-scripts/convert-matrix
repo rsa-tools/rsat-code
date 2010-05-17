@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.113 2010/05/15 15:15:37 jvanheld Exp $
+# $Id: convert-matrix,v 1.114 2010/05/17 23:31:38 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -295,7 +295,7 @@ if (scalar(@matrix_files >= 1)) {
 if (scalar(@matrices) < 1) {
   &RSAT::message::Warning("Input file contained not a single matrix");
 } else {
-  &RSAT::message::TimeWarn("Read ".scalar(@matrices)." matrices") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Read ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
 }
 
 ################################################################
