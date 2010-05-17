@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.55 2010/05/06 16:26:41 jvanheld Exp $
+# $Id: peak-motifs,v 1.56 2010/05/17 23:30:30 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.55 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.56 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -279,14 +279,14 @@ sub DefaultParameters {
 
   ## residue profiles (position-analysis)
   $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
-  $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-2str"; push(@main::param_list, "profiles_strand");
   @main::profiles_oligo_lengths = (1,2);
   $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
   ## Pattern discovery options
-  $main::param{min_ratio} = 1; push(@main::param_list, "strand"); ## For oligo-analysis, dyad-analysis and oligo-diff
-  $main::param{min_sig} = 0; push(@main::param_list, "strand");
+  $main::param{min_ratio} = 1; push(@main::param_list, "min_ratio"); ## For oligo-analysis, dyad-analysis and oligo-diff
+  $main::param{min_sig} = 0; push(@main::param_list, "min_sig");
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
   $main::param{noov} = "-noov"; push(@main::param_list, "noov");
   $main::param{oligo_min_len} = 6; push(@main::param_list, "oligo_min_len");
@@ -568,8 +568,8 @@ sub SequenceLengths {
   $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -xmin 0 -ymin 0";
-  $cmd .= " -xgstep1 ".($main::param{profiles_ci}*10);
-  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
+#  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
+#  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen_distrib'};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib_graph'};
   &one_command($cmd, 1);
@@ -724,10 +724,11 @@ sub DyadAnalysis {
   &RSAT::message::TimeWarn("Running dyad-analysis") if ($main::verbose >= 1);
   my $cmd = $SCRIPTS."/dyad-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"purged_test"};
+  $cmd .= " -quick";
   $cmd .= " -format fasta";
   $cmd .= " -sort -lth ratio ".$main::param{min_ratio};
   $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
-  $cmd .= " -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,rank";
+  $cmd .= " -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,ratio,zscore,rank";
   $cmd .= " ".$main::param{strand};
   $cmd .= " ".$main::param{noov};
   $cmd .= " -seqtype dna";
@@ -738,7 +739,6 @@ sub DyadAnalysis {
   &one_command($cmd, 1);
   &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads");
 }
-
 
 ################################################################
 ## Run position-analysis to discover oligonucleotides with positional
@@ -821,23 +821,22 @@ sub RefMotif {
 
   ## Convert the reference motif to TRANSFAC format, because this
   ## format holds information about the motif name, ID etc
-  $cmd = $SCRIPTS."/convert-matrix -v 1 ";
+  ## Export the logo and matrix parameters
+  $cmd = $SCRIPTS."/convert-matrix -v 0";
   $cmd .= " -i ".$main::infile{ref_motif};
   $cmd .= " -from ".$main::param{ref_motif_format};
-  $cmd .= " -to transfac";
-  $cmd .= " -return counts -decimals 1";
+  $cmd .= " -to transfac -decimals 1";
+  $cmd .= " -return counts,logo,consensus,parameters";
   $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
   $cmd .= " -o ".$main::outfile{ref_motif_transfac};
   &one_command($cmd, 1);
 
-  ## Generate the logos and compute parameters (information content,
-  ## consensus, ...) for the reference motif
-  $cmd = $SCRIPTS."/convert-matrix -v 1";
+  ## Also export the matrices in tab-delimited format
+  $cmd = $SCRIPTS."/convert-matrix -v 0";
   $cmd .= " -i ".$main::infile{ref_motif};
   $cmd .= " -from ".$main::param{ref_motif_format};
   $cmd .= " -to tab";
-  $cmd .= " -return counts,parameters,logo -decimals 1";
-  $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
+  $cmd .= " -return counts";
   $cmd .= " -o ".$main::outfile{ref_motif_info};
   &one_command($cmd, 1);
 }
@@ -952,7 +951,7 @@ sub ClusterMotifs {
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus";
+  $cmd .= " -return matrix_name,direction,Ncor,SW,cor,NdEucl,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
   &one_command($cmd, 1);
 
@@ -1157,7 +1156,7 @@ sub TimeLog {
     $prefix =~ s/_$//;
   }
 
-  print $timelog join("\t", "#start_time       ", "done_time        ", "elapsed", "seconds", "pattern_type", "prefix", "file"), "\n";
+  print $timelog join("\t", "#start_time       ", "done_time        ", "elapsed", "seconds", "task", "prefix", "file"), "\n";
 
 #  foreach my $pattern_type (@pattern_types) {
 #    foreach my $key ($pattern_type, $pattern_type."_2pssm") {
@@ -1419,26 +1418,37 @@ sub SynthesisRefMotif {
     &SyntheticTableAddHeaderRow("Reference motif");
 
     my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
-    $logo_table .= "<tr>\n";
-    my $logo_file = $main::outfile{ref_motif_logo}."_m1.".$main::param{img_format};
-    my $logo_file_rc = $main::outfile{ref_motif_logo}."_m1_rc.".$main::param{img_format};
-    if (-e $logo_file) {
-      my $img = &RelativePath($logo_file);
-      $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-    } elsif ($main::verbose >= 1) {
-      &RSAT::message::Warning("Cannot find reference logo", $logo_file);
+
+    ## get the names of all reference logo files
+    my @logo_files = glob($main::outfile{ref_motif_logo}."_m*.".$main::param{img_format});
+    @logo_files = grep {!/_rc\./} @logo_files;
+#    my @logo_files = glob($main::outfile{ref_motif_logo}."_m\d+.".$main::param{img_format});
+
+    ## Prepare a table with the logos
+    for my $i (1..scalar(@logo_files)) {
+      $logo_table .= "<tr>\n";
+      $logo_table .= "<td>Ref motif ".$i."</td>\n";
+      my $logo_file = $main::outfile{ref_motif_logo}."_m".$i.".".$main::param{img_format};
+      my $logo_file_rc = $main::outfile{ref_motif_logo}."_m".$i."_rc.".$main::param{img_format};
+      if (-e $logo_file) {
+	my $img = &RelativePath($logo_file);
+	$logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+      } elsif ($main::verbose >= 1) {
+	&RSAT::message::Warning("Cannot find reference logo", $logo_file);
+      }
+      if (-e $logo_file_rc) {
+	my $img = &RelativePath($logo_file_rc);
+	$logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+      } elsif ($main::verbose >= 1) {
+	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
+      }
+      $logo_table .= "</tr>\n";
     }
-    if (-e $logo_file_rc) {
-      my $img = &RelativePath($logo_file_rc);
-      $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-    } elsif ($main::verbose >= 1) {
-      &RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
-    }
-    $logo_table .= "</tr>\n";
     $logo_table .= "</table>\n";
+
     &SyntheticTableAddRow("Reference motif",
 			  $logo_table,
-			  $main::param{ref_motif_format},$main::infile{ref_motif},
+#			  $main::param{ref_motif_format}, &RelativePath($main::infile{ref_motif}),
 			  "tf",$main::outfile{ref_motif_transfac},
 			  "info",$main::outfile{ref_motif_info},
 			 );
@@ -1538,8 +1548,8 @@ sub SynthesisPatternDisco {
 			  $pattern_type,$main::outfile{$pattern_type},
 			  "assembly",$main::outfile{$pattern_type.'_asmb'},
 			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-			  "matrices (tab)",$main::outfile{$pattern_type.'_pssm_counts'},
-			  "matrices (tf)",$main::outfile{$pattern_type.'_pssm_tf'},
+			  "matrices .tab",$main::outfile{$pattern_type.'_pssm_counts'},
+			  "matrices .tf",$main::outfile{$pattern_type.'_pssm_tf'},
 			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
 			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
 			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
