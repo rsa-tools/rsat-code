@@ -3388,11 +3388,18 @@ sub makeLogo{
 
   ## Logo title indicates matrix ID, name
   my $logo_title = &RSAT::util::ShortFileName($id);
-  if (my $name = $self->get_attribute("name")) {
-    unless ($name eq $id) {
-      $logo_title = &RSAT::util::ShortFileName($name);
+  if (my $ac = $self->get_attribute("ac")) {
+    if ($ac ne $id) {
+      $logo_title .= " ".&RSAT::util::ShortFileName($ac);
     }
   }
+  if (my $name = $self->get_attribute("name")) {
+    if ($name ne $id) {
+      $logo_title .= " ".&RSAT::util::ShortFileName($name);
+    }
+  }
+
+
   if ($rev_compl) {
     $logo_title .= "  RC";
   }
