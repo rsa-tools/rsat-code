@@ -65,20 +65,32 @@ count_words: dir
 	@echo
 	@echo "Running count-words (dyads)"
 	time count-words -v 1 -i ${SEQ_FILE} -l ${ML} ${NOOV} ${STR} ${GROUPING} -sp ${SP} > ${DYADS}_cw.tab
+	@wc -l ${DYADS}_cw.tab
 	@echo
 	@echo "Running count-words (oligos)"
 	time count-words -v 1 -i ${SEQ_FILE} -l ${OL} ${NOOV} ${STR} ${GROUPING} > ${OLIGOS}_cw.tab
+	@wc -l ${OLIGOS}_cw.tab
 
 ################################################################
 ## Run count-words with the input as STDIN
-## There is apparently a bug 
+## Compare results with STDIN and option  -i.
+##
+## Usage: make -i -f $RSAT/makefiles/quick_test.mk count_words_stdin
+##
+## The option -i is required because the command diff returns an error
+## on the STDER when there is a diff between two files (and there is
+## always a diff, at least in the command line)s
 count_words_stdin: count_words
 	@echo
 	@echo "Running count-words STDIN (dyads)"
-	time cat ${SEQ_FILE}  | count-words -v 1 -l ${ML} ${NOOV} ${STR} ${GROUPING} -sp ${SP} > ${DYADS}_cw_stdin.tab
+	cat ${SEQ_FILE}  | count-words -v 1 -l ${ML} ${NOOV} ${STR} ${GROUPING} -sp ${SP} > ${DYADS}_cw_stdin.tab
+	@echo "Line numbers for dyad files" 
+	@wc -l ${DYADS}_cw.tab ${DYADS}_cw_stdin.tab
 	@echo
 	@echo "Running count-words STDIN (oligos)"
 	time cat  ${SEQ_FILE} | count-words -v 1 -l ${OL} ${NOOV} ${STR} ${GROUPING} > ${OLIGOS}_cw_stdin.tab
+	@echo "Line numbers for oligo files" 
+	@wc -l ${OLIGOS}_cw.tab ${OLIGOS}_cw_stdin.tab
 	@diff ${DYADS}_cw.tab ${DYADS}_cw_stdin.tab > ${DYADS}_cw_sdtin_diff.txt
 	@diff ${OLIGOS}_cw.tab ${OLIGOS}_cw_stdin.tab > ${OLIGOS}_cw_sdtin_diff.txt
 
