@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.283 2010/05/12 17:49:58 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.284 2010/05/17 23:30:56 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -34,11 +34,13 @@ require RSAT::MatrixReader;
 package main;
 {
 
+  local $start_time = &AlphaDate();
+  local $program_version = do { my @r = (q$Revision: 1.284 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $size_names = 0;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.283 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.284 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -301,7 +303,6 @@ package main;
   $known_site_max_len=50;	## ignore known sites larger than 50bp
 
   ## miscellaneous
-  $start_date = `date`;
   $verbose = 0;
 
   #### data export options
@@ -1755,14 +1756,16 @@ sub MatrixFromPatterns {
   $command .= " -bginput -markov 0 ";
   $command .= " -max_asmb_nb ".$nmotifs;
   $command .= " -flanks 2";
+  $command .= " -logo -logo_format png";
+  $command .= " -logo_dir ".$pssm_dir;
   $command .= " -o ".$pssm_file;
 
-  my $pssm_dir = `dirname $pssm_file`;
-  chomp($pssm_dir);
-  $command .= "; convert-matrix -from transfac -to tab -return logo -logo_format png";
-  $command .= " -logo_dir ".$pssm_dir;
-  $command .= " -i ".$pssm_file."_count_matrices.tf";
-
+#  my $pssm_dir = `dirname $pssm_file`;
+#  chomp($pssm_dir);
+#  $command .= "; convert-matrix";
+#  $command .= " -i ".$pssm_file."_count_matrices.tf";
+#  $command .= " -from transfac -to tab -return logo -logo_format png";
+#  $command .= " -logo_dir ".$pssm_dir;
   return ($command);
 }
 
@@ -1790,7 +1793,6 @@ sub MotifsVsDB {
 
   my $wd = `pwd`;
   &RSAT::message::Debug("Working dir", $wd, "\n", $cmd) if ($main::verbose >= 0);
-#  die "HELLO";
   if ($batch) {
     push @main::batch_commands, $cmd;
   } else {
@@ -2729,7 +2731,8 @@ sub IndexPatterns {
 #	  $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
 	}
 	$table[$row][$col] .= &LinkToFile($pssm_file."_sig_matrices.txt", "sig matrix", $base);
-	$table[$row][$col] .= &LinkToFile($pssm_file."_count_matrices.txt", "PSSM", $base);
+	$table[$row][$col] .= &LinkToFile($pssm_file."_count_matrices.tf", "PSSM-tf", $base);
+	$table[$row][$col] .= &LinkToFile($pssm_file."_count_matrices.txt", "PSSM-tab", $base);
 	$table[$row][$col] .= &LinkToFile($pssm_file.".".$img_format, "scan map", $base);
 #	$table[$row][$col] .= "<a href=".$base.$pssm_file."_sig_matrices.txt>[sig matrix]</a>\n";
 #	$table[$row][$col] .= "<a href=".$base.$pssm_file."_count_matrices.txt>[count matrix]</a>\n";
@@ -3068,7 +3071,7 @@ sub compute_bg_dyads {
   my $bg_model_file =  $bg_model_file{"dyads"};
   &RSAT::message::TimeWarn("\tComputing background model for dyads", $bg_model_file) if ($main::verbose >= 1);
   my $cmd = "";
-  $cmd .= " dyad-analysis -v 1";
+  $cmd .= " dyad-analysis -v 2";
   $cmd .= " -quick";
   $cmd .= " -i ".$bg_seq_file;
   $cmd .= " -return occ,freq";
