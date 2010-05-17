@@ -8,11 +8,11 @@ V=1
 
 ################################################################
 ## Generate a ranom sequence
-SEQ_LEN=100
-SEQ_NB=100
+L=100
+N=100
 QUICK_DIR=quick_test
-SEQ_PREFIX=rand_L${SEQ_LEN}_N${SEQ_NB}
-SEQ_EXT=.fa
+SEQ_PREFIX=rand_L${L}_N${N}
+SEQ_EXT=fa
 SEQ_DIR=${QUICK_DIR}
 SEQ_FILE=${SEQ_DIR}/${SEQ_PREFIX}.${SEQ_EXT}
 
@@ -22,7 +22,7 @@ dir:
 rand: dir
 	@echo
 	@echo "Generating random sequence"
-	@random-seq -l ${SEQ_LEN} -n ${SEQ_NB} -o ${SEQ_FILE}
+	@random-seq -l ${L} -n ${N} -o ${SEQ_FILE}
 	@echo ${SEQ_FILE}
 
 ################################################################
@@ -43,6 +43,9 @@ dyads: dir
 	time ${DYAD_CMD}
 	@echo "	${DYADS}.tab"
 
+dyads_quick:
+	${MAKE} dyads COUNT_MODE=-quick 
+
 OL=6
 OLIGO_CMD=oligo-analysis -v ${V} -i ${SEQ_FILE} -l ${OL} ${STR} ${NOOV} ${GROUPING} -return ${RETURN} ${COUNT_MODE} -o ${OLIGOS}.tab
 OLIGO_SUFFIX=oligos_${OL}nt_${STR}${NOOV}${GROUPING}
@@ -53,17 +56,34 @@ oligos: dir
 	time ${OLIGO_CMD}
 	@echo "	${OLIGOS}.tab"
 
-quick:
-	${MAKE} dyads COUNT_MODE=-quick 
+oligos_quick:
 	${MAKE} oligos COUNT_MODE=-quick 
 
-
+################################################################
+## Directly run count-words on the command line
 count_words: dir
 	@echo
-	@echo "Running count-words"
-	time count-words -v 2 -i ${SEQ_FILE} -l ${ML} ${NOOV} ${STR} ${GROUPING} -sp ${SP} > ${DYADS}_cw.tab
-	time count-words -v 2 -i ${SEQ_FILE} -l ${OL} ${NOOV} ${STR} ${GROUPING} > ${OLIGOS}_cw.tab
+	@echo "Running count-words (dyads)"
+	time count-words -v 1 -i ${SEQ_FILE} -l ${ML} ${NOOV} ${STR} ${GROUPING} -sp ${SP} > ${DYADS}_cw.tab
+	@echo
+	@echo "Running count-words (oligos)"
+	time count-words -v 1 -i ${SEQ_FILE} -l ${OL} ${NOOV} ${STR} ${GROUPING} > ${OLIGOS}_cw.tab
 
+################################################################
+## Run count-words with the input as STDIN
+## There is apparently a bug 
+count_words_stdin: count_words
+	@echo
+	@echo "Running count-words STDIN (dyads)"
+	time cat ${SEQ_FILE}  | count-words -v 1 -l ${ML} ${NOOV} ${STR} ${GROUPING} -sp ${SP} > ${DYADS}_cw_stdin.tab
+	@echo
+	@echo "Running count-words STDIN (oligos)"
+	time cat  ${SEQ_FILE} | count-words -v 1 -l ${OL} ${NOOV} ${STR} ${GROUPING} > ${OLIGOS}_cw_stdin.tab
+	@diff ${DYADS}_cw.tab ${DYADS}_cw_stdin.tab > ${DYADS}_cw_sdtin_diff.txt
+	@diff ${OLIGOS}_cw.tab ${OLIGOS}_cw_stdin.tab > ${OLIGOS}_cw_sdtin_diff.txt
+
+################################################################
+## Compare the results of dyad-analysis in slow and quick mode
 SC=3
 COMPA=${QUICK_DIR}/${SEQ_PREFIX}_${DYAD_SUFFIX}_compa_sc${SC}
 compare:
@@ -72,10 +92,11 @@ compare:
 	compare-scores -v 1 -basenames -ic 2 -sc ${SC} -i ${DYADS}.tab -i ${DYADS}-quick.tab | awk '{print $$0"\t"($$3-$$2)}'  > ${COMPA}.tab 
 	@echo "	${COMPA}.tab"
 
-all: dyads oligos quick count_words compare
+all: dyads dyads_quick oligos oligos_quick count_words compare
 
 
 ################################################################
 ## A minimal test: small sequence, small oligo, a few spacings
+SMALL_TASK=rand all
 small:
-	${MAKE} all SEQ_LEN=3 SEQ_NB=10 ML=1 OL=2 SP=0-1 
+	${MAKE} ${SMALL_TASK} L=3 N=10 ML=1 OL=2 SP=0-1 
