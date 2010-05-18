@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "count.h"
 
-int VERSION = 20100512.2;
+int VERSION = 20100518;
 
 // ===========================================================================
 // =                            usage & help
@@ -172,15 +172,15 @@ int main(int argc, char *argv[])
     struct tm * start_time;
     start_time = localtime(&rawtime);
 
-    FILE *input_fp = stdin;
+    FILE *input_fp = NULL; //stdin;
     FILE *output_fp = stdout;
     if (input_filename) 
     {
         input_fp = fopen(input_filename, "r");
-        if (!input_fp) 
-        {
-           ERROR("can not read from file '%s'", input_filename);
-        }
+    }
+    if (!input_fp) 
+    {
+       ERROR("can not read from file '%s'", input_filename);
     }
     if (output_filename) 
     {
