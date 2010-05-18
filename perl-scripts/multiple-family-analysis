@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.284 2010/05/17 23:30:56 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.285 2010/05/18 14:12:57 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -35,12 +35,12 @@ package main;
 {
 
   local $start_time = &AlphaDate();
-  local $program_version = do { my @r = (q$Revision: 1.284 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.285 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $size_names = 0;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.284 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.285 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1757,7 +1757,7 @@ sub MatrixFromPatterns {
   $command .= " -max_asmb_nb ".$nmotifs;
   $command .= " -flanks 2";
   $command .= " -logo -logo_format png";
-  $command .= " -logo_dir ".$pssm_dir;
+  $command .= " -logo_file ".$pssm_file."_logo";
   $command .= " -o ".$pssm_file;
 
 #  my $pssm_dir = `dirname $pssm_file`;
@@ -3029,9 +3029,9 @@ sub define_bg_model_files {
 sub ComputeBG {
   chdir($dir{main});
   &RSAT::message::TimeWarn("Computing background model from background sequence file") if ($main::verbose >= 1);
-#  &compute_bg_oligos();
+  &compute_bg_oligos();
   &compute_bg_dyads();
-#  &compute_bg_meme();
+  &compute_bg_meme();
   chdir($dir{output});
 }
 
