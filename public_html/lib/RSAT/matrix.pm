@@ -3414,7 +3414,7 @@ sub makeLogo{
 
   ## Run seqlogo to generate the logo(s)
   foreach my $logo_format (@logo_formats){
-    my $seqlogo_path = $ENV{seqlogo} || $BIN."/seqlogo";
+    my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     &RSAT::message::Warning("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
