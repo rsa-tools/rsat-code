@@ -90,8 +90,13 @@ $range = $max - $min;
 
 ##### check value of class interval #####
 if ($class_interval eq "") {
+  if ($range > 0) {
     $class_interval = $range/20;
-} 
+  } else {
+    $class_interval = 1;
+    &RSAT::message::Warning("All data have the same value");
+  }
+}
 if ($class_interval <= 0) {
   print "\tclass interval = $class_interval\n";
   print "\tError: class interval should be > 0\n";
