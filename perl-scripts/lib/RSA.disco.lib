@@ -103,6 +103,13 @@ sub CheckQuickCount {
 ## Use count-words (developed by Matthieu Defrance) to count oligos
 ## 100 times faster than with the Perl script
 sub CountWords {
+  my (%args) = @_;
+
+  my $strands = $args{strands} || $main::strands;
+  my $pattern_type = $args{pattern_type} || $main::pattern_type;
+  my $noov = $args{noov} || $main::noov;
+
+  my %patterns = ();
   unless (&CheckQuickCount) {
     &RSAT::error::FatalError("Selected options are incompatible with quick count mode");
   }
@@ -113,9 +120,9 @@ sub CountWords {
     &RSAT::message::Warning("Input file must be decompressed for anlayzing it with count-words");
     $cmd = "gunzip ".$infile{input};
   }
-#  $cmd .= "; ".$BIN."/count-words -v ".$cw_verbose;
+#  $cmd = "gunzip -c ".$infile{input};
+#  $cmd .= "| ".$BIN."/count-words -v ".$cw_verbose;
 #  } else {
-
   $cmd = $BIN."/count-words -v ".$cw_verbose;
   $cmd .= " -i ".$infile{input}; ## Input file
 #  }
@@ -235,15 +242,15 @@ sub CountWords {
     $sum_occurrences += $occ + $overlaps;
 
     ## Specific counters for dyads and monads (one counter for each spacing value)
-    if ($patter_type eq "dyads") {
-      $dyad_occ_sum{$spacing} += $occ;
+    if ($pattern_type eq "dyads") {
       $dyad_occ_sum{$spacing} += $occ;
       $dyad_ovl_sum{$spacing} += $overlaps;
-      my $monad1_rc = &SmartRC($monad1); $oligo{$monad1_rc}->{occ} += $occ;
-      my $monad2_rc = &SmartRC($monad1); $oligo{$monad2_rc}->{occ} += $occ;
-      $oligo{$monad1}->{occ} += $occ;
-      $oligo{$monad2}->{occ} += $occ;
-      $sum_oligo_count += $occ;
+      $dyad_total_sum{$spacing} += $overlaps + $occ;
+#      my $monad1_rc = &SmartRC($monad1); $oligo{$monad1_rc}->{occ} += $occ;
+#      my $monad2_rc = &SmartRC($monad1); $oligo{$monad2_rc}->{occ} += $occ;
+#      $oligo{$monad1}->{occ} += $occ;
+#      $oligo{$monad2}->{occ} += $occ;
+#      $sum_oligo_count += $occ;
       #	&RSAT::message::Debug("HELLO",  $monad1, $spacing, $monad2, $occ, $dyad_occ_sum{$spacing}) if ($main::verbose >= 5);
     }
   }
@@ -270,6 +277,8 @@ sub CountWords {
 
   #  &RSAT::message::TimeWarn("count-words reported", scalar(keys(%patterns))." patterns") if ($main::verbose >= 2);
   close QUICK;
+
+  return(%patterns);
 }
 
 ################################################################
