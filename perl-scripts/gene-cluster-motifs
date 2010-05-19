@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.285 2010/05/18 14:12:57 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.286 2010/05/19 11:23:24 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -24,6 +24,8 @@ BEGIN {
     require "lib/parsing_util.pl";
     require "$ENV{RSAT}/perl-scripts/lib/RSA.classes";
 }
+
+#require RSAT::server; ## For program paths
 require RSAT::util;
 require RSAT::matrix;
 require RSAT::pattern;
@@ -35,12 +37,12 @@ package main;
 {
 
   local $start_time = &AlphaDate();
-  local $program_version = do { my @r = (q$Revision: 1.285 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.286 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $size_names = 0;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.285 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.286 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1447,26 +1449,26 @@ sub OligoAnalysis {
   ## Analyze all oligo lengths
   my @oligo_commands = ();
   for $oligo_len ($min_oligo_len..$max_oligo_len) {
-    my ($one_oligo_command, $one_oligo_file) = &CalcOligoOptions($oligo_len);
-    push @oligo_commands, $one_oligo_command;
-    #	&doit($command, $dry_run, $die_on_error, $verbose);
-    #	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
+      my ($one_oligo_command, $one_oligo_file) = &CalcOligoOptions($oligo_len);
+      push @oligo_commands, $one_oligo_command;
+      #	&doit($command, $dry_run, $die_on_error, $verbose);
+      #	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
   }
+  
+  ## Merge the results obtained with different oligo lengths
+  my $merge_command = &MergeOligoLengths();
+  push @oligo_commands, $merge_command;
 
-   ## Merge the results obtained with different oligo lengths
-   my $merge_command = &MergeOligoLengths();
-   push @oligo_commands, $merge_command;
-
-   ## Assemble the merged patterns
-   my $assemble_command = &AssembleOligos();
-   push @oligo_commands, $assemble_command;
-
-   if ($batch) {
-       push @main::batch_commands, @oligo_commands;
-   } else {
-       my $command = join "; \\\n", @oligo_commands;
-       &doit($command, $dry_run, $die_on_error, $verbose);
-   }
+  ## Assemble the merged patterns
+  my $assemble_command = &AssembleOligos();
+  push @oligo_commands, $assemble_command;
+  
+  if ($batch) {
+      push @main::batch_commands, @oligo_commands;
+  } else {
+      my $command = join "; \\\n", @oligo_commands;
+      &doit($command, $dry_run, $die_on_error, $verbose);
+  }
 }
 
 ################################################################
@@ -1513,6 +1515,7 @@ sub AssembleOligos {
 
   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
   &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
+  my @assemble_commands = ();
 
   #    ## initialize the oligo file
   #    my @assemble_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >= 2);
@@ -3150,7 +3153,6 @@ sub AnalyzeFamilies {
 
   foreach $family_name (@families) {
     #       @main::batch_commands = ();
-
     $fam_count++;
     my @members = @{$family{$family_name}->{members}};
     $gene_nb = scalar(@members);
