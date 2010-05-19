@@ -3,6 +3,42 @@ package RSAT::server;
 require RSAT::util;
 require RSAT::message;
 
+
+################################################################
+## Return the path of a program
+sub GetProgramPath {
+    my ($program_name) = @_;
+    my $program_path = "";
+    
+    ## Find the preferred location of the program
+    if (($ENV{RSAT_BIN}) && (-e $ENV{RSAT_BIN}."/".$program_name)) {
+	## If the RSAT property file contains a RSAT_BIN, use it as
+	## preferred path
+	$program_path = $ENV{RSAT_BIN}."/".$program_name;
+    } elsif (-e $ENV{RSAT}."/bin/".$program_name) {
+	## Standard RSAT bin directory
+	$program_path = $ENV{RSAT}."/bin/".$program_name;
+    } else {
+	## Find the program anywhere in the user path
+	$program_path = `which $program_name`;
+	chomp($program_path);
+    }
+
+    ## Check if the program path has been found
+    unless ($program_path) {
+	&RSAT::error::FatalError("The program ".$program_name." is not found in your path.");
+    }
+
+    ## Check if the program is executable
+    unless (-x $program_path) {
+	&RSAT::error::FatalError("The program ".$program_path." cannot be run. ");
+    }
+
+    &RSAT::message::Debug("&RSAT::server::GetProgramPath()", "path found", $program_path) 
+	if ($main::verbose >= 3);
+    return $program_path;
+}
+
 ################################################################
 #### increment the counter file for monitoring web access
 sub UpdateCounterFile {
