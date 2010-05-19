@@ -175,12 +175,12 @@ sub CountWords {
     next unless (/\S/);		## Skip empty lines
     chomp();
     my ($pattern_seq,$id,$freq,$occ,$overlaps) = split ("\t");
-    #       &RSAT::message::Debug($l, $pattern_seq, $id, 
-    # 			    "freq=".$freq, 
-    # 			    "occ=".$occ,
-    # 			    "ovlp=".$overlaps,
-    # 	  ) if ($main::verbose >= 5);
-    #      &RSAT::message::Debug("&CountWords()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
+#     &RSAT::message::Debug($l, $pattern_seq, $id,
+# 			  "freq=".$freq, 
+# 			  "occ=".$occ,
+# 			  "ovlp=".$overlaps,
+# 			 ) if ($main::verbose >= 5);
+#    &RSAT::message::Debug("&CountWords()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
 
     my $pattern_len;
     my $monad1 = "";
@@ -238,6 +238,10 @@ sub CountWords {
 	$to_sum = 0;
       }
     }
+#    &RSAT::message::Debug($pattern_seq,
+#			  "occ=".$patterns{$pattern_seq}->{occ},
+#			  "obs_freq=".$patterns{$pattern_seq}->{obs_freq},
+#			 ) if ($main::verbose >= 10);
 
     next unless ($to_sum);
 
@@ -341,8 +345,26 @@ sub ThresholdSuffix {
 ## Check thresholds on all parameters for a given parameter
 sub CheckThresholds {
   my ($key) = @_;
+  my $lth = "NA";
+  if (defined($main::lth{$key})) {
+    $lth = $main::lth{$key};
+  }
+
+  my $uth = "NA";
+  if (defined($main::uth{$key})) {
+    $uth = $main::uth{$key};
+  }
+
   &CheckLowerThresholds($key);
   &CheckUpperThresholds($key);
+
+  ## Update the pattern list
+  @patterns = sort(keys(%patterns));
+  &RSAT::message::TimeWarn("Checked thresholds on ".$key,
+			   "lth=".$lth,
+			   "uth=".$uth,
+			   "remaining patterns", scalar(@patterns),
+			  ) if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -358,7 +380,7 @@ sub CheckLowerThresholds {
       }
       ## Check threshold
       elsif ($main::patterns{$pattern_seq}->{$key} < $main::lth{$key}) {
-	#	      &RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 0);
+	#&RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 0);
 	delete $main::patterns{$pattern_seq};
       }
     }
