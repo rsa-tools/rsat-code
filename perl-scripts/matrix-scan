@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.159 2010/05/12 17:54:28 jvanheld Exp $
+# $Id: matrix-scan,v 1.160 2010/05/19 11:21:46 rsat Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3023,9 +3023,18 @@ sub CheckQuickScan {
     &RSAT::message::Warning("Quick scan mode is incompatible with the window background.") if (($main::verbose >= 2) || ($quick_scan));
     return(0);
   }
-  	
+  
   ## check the matrix-scan-quick executable is present and actually works
   my $quick_cmd_test = `which matrix-scan-quick`;
+
+  ################################################################
+  ## MORGANE
+  ## I implemented a new method:
+  ##  my $quick_cmd_test = &RSAT::server::GetProgramPath("matix-scan-quick");
+  ##
+  ## Can you please replace the11 lines below by a call to this server
+  ## funciton, and test if it works on your machine + on the cluster ?
+
   if ($quick_cmd_test) {
     ## In addition, we want to check if the command actually works
     `matrix-scan-quick -h`;
