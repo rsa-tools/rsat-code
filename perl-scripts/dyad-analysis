@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.70 2010/05/18 13:30:51 jvanheld Exp $
+# $Id: dyad-analysis,v 1.71 2010/05/19 14:43:09 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -19,7 +19,7 @@ require "RSA.disco.lib";
 ################################################################
 #### Initialise parameters
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.70 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.71 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "dyads";
 
 %supported_return_field = (proba=>1,
@@ -326,15 +326,17 @@ sub CheckCalcFields {
 	$return_fields{exp_freq} = 1;
     }
 
+    if ($calc_fields{exp_occ}) {
+	$calc_fields{occ} = 1;
+	$calc_fields{exp_freq} = 1;
+    }
+
     if ($calc_fields{exp_freq}) {
 	$calc_fields{freq} = 1;
     }
 
-    if ($calc_fields{exp_occ}) {
-	$calc_fields{occ} = 1;	
-    }
     if ($calc_fields{freq}) {
-	$calc_fields{occ} = 1;	
+	$calc_fields{occ} = 1;
     }
 }
 
@@ -411,7 +413,7 @@ sub CalcExpectedDyadFreq {
 	  my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
 	  next unless (defined($patterns{$pattern_seq}->{occ}));
 	  $patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
-	  #		    &RSAT::message::Debug("Expected dyad frequency", $pattern_seq, $patterns{$pattern_seq}->{exp_freq}) if ($main::verbose >= 0);
+	  #		    &RSAT::message::Debug("Expected dyad frequency", $pattern_seq, $patterns{$pattern_seq}->{exp_freq}) if ($main::verbose >= 10);
 	}
       }
     }
@@ -679,7 +681,7 @@ sub CalcProba {
       foreach my $oligo2 (&SecondElement($oligo1)) {
 	### build the dyad
 	my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-	next unless (defined($patterns{$pattern_seq}->{occ}));
+	next unless (defined($patterns{$pattern_seq}));
 
 	### Detect repeats
 	if (($sum_rc) && (&Palindromic($pattern_seq))) {
@@ -711,6 +713,11 @@ sub CalcProba {
 	  }
 	}
 
+	## Check threshold on expected frequency before computing the
+	## P-value, to save time-consuming computation of P-values for
+	## patterns that do not match the z-score constraints.
+	next unless &CheckPatternThresholds("exp_freq",$pattern_seq);
+
 	### self-overlap coefficient
 	if (($calc_fields{proba}) || ($calc_fields{zscore})) {
 	  $oligo_pair = $oligo1.$oligo2;
@@ -727,26 +734,34 @@ sub CalcProba {
 	  }
 	}
 
+	## Check threshold on zscore before computing the P-value, to
+	## save time-consuming computation of P-values for patterns
+	## that do not match the z-score constraints.
+	next unless &CheckPatternThresholds("zscore",$pattern_seq);
+
 	### calculate occurrence probability ####
 	if ($calc_fields{proba}) {
-	  $patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$valid_dyad_positions{$spacing},$patterns{$pattern_seq}->{occ});
+# 	  &RSAT::message::Debug("binomial test",
+# 				$pattern_seq,
+# 				"p= ".$patterns{$pattern_seq}->{exp_freq},
+# 				"T= ".$valid_dyad_positions{$spacing},
+# 				"x= ".$patterns{$pattern_seq}->{occ},
+# 			       ) if ($main::verbose >= 10);
+	  $patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},
+							    $valid_dyad_positions{$spacing},
+							    $patterns{$pattern_seq}->{occ});
 	  $main::nb_tested_patterns++;
-	  #		    &RSAT::message::Debug("binomial test",
-	  #					  "p= ".$patterns{$pattern_seq}->{exp_freq},
-	  #					  "T= ".$valid_dyad_positions{$spacing},
-	  #					  "x= ".$patterns{$pattern_seq}->{occ},
-	  #					 ) if ($main::verbose >= 10);
 	}
       }
     }
   }
 
+  #### threshold filtering ####
+#  &CheckThresholds("zscore");
+  &CheckThresholds("occ_P");
+
   ## Corrections or multi-testing
   &MultiTestCorrections($nb_tested_patterns, %patterns);
-
-  #### threshold filtering ####
-  &CheckThresholds("zscore");
-  &CheckThresholds("occ_P");
   &CheckThresholds("occ_E");
   &CheckThresholds("occ_sig");
 }				### CalcProba
@@ -1286,20 +1301,21 @@ sub CountDyads {
     }
     ###### close input stream
     close $in if ($infile{input});
+
+
+    foreach my $spacing (@spacing_list) {
+      ## Make sure the nb of possible positions per spacing is
+      ## defined (it can be false if all sequences are smaller than
+      ## the max dyad length)
+      $nb_possible_pos{$spacing} = 0
+	unless (defined($nb_possible_pos{$spacing})) ;
+
+      ## Calculate the number of valid positions per spacing
+      #	$discarded_dyad_positions{$spacing} += $discarded_dyad_positions;
+      $valid_dyad_positions{$spacing} = $nb_possible_pos{$spacing} - $discarded_dyad_positions{$spacing};
+    }
+
   }
-
-  foreach my $spacing (@spacing_list) {
-    ## Make sure the nb of possible positions per spacing is
-    ## defined (it can be false if all sequences are smaller than
-    ## the max dyad length)
-    $nb_possible_pos{$spacing} = 0
-      unless (defined($nb_possible_pos{$spacing})) ;
-
-    ## Calculate the number of valid positions per spacing
-    #	$discarded_dyad_positions{$spacing} += $discarded_dyad_positions;
-    $valid_dyad_positions{$spacing} = $nb_possible_pos{$spacing} - $discarded_dyad_positions{$spacing};
-  }
-
 
   @oligos = sort (keys(%oligo));
   &RSAT::message::TimeWarn("Counted occurrences", scalar(keys(%patterns))." distinct dyads", scalar(@oligos)." distinct oligos") if ($main::verbose >= 2);
@@ -1318,7 +1334,7 @@ sub CountZeroOcc {
 
 	## Check if no occurrences were found
 	unless ($patterns{$pattern_seq}->{occ}) {
-	  #		&RSAT::message::Debug("\tpattern with 0 occurrences\t$pattern_seq") if ($main::verbose >= 0);
+	  #		&RSAT::message::Debug("\tpattern with 0 occurrences\t$pattern_seq") if ($main::verbose >= 10);
 	  $patterns{$pattern_seq}->{occ} = 0;
 	  $zero_occ{$pattern_seq}++;
 	}
