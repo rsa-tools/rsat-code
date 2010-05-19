@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.40 2010/05/15 15:15:08 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.41 2010/05/19 11:22:32 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -104,7 +104,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-
+use RSAT::server;
 
 ################################################################
 ## Main package
@@ -113,6 +113,10 @@ package main;
 
     ################################################################
     #### initialise parameters
+
+    ## Check if required programs are found in the path
+    local $matrix_scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+    local $gibbs_cmd = &RSAT::server::GetProgramPath("info-gibbs");
 
     ## Generic parameters
     local $start_time = &AlphaDate();
@@ -741,7 +745,7 @@ sub QuickScanForSites {
     my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
     &RSAT::message::Debug("\n\tScanning sequences (quick) with sig matrix", $m, $matrix_file) if ($main::verbose >= 3);
     if (-e $matrix_file) {
-      $matrix_scan_cmd = $BIN."/matrix-scan-quick";
+#      $matrix_scan_cmd = $ENV{RSAT_BIN}."/matrix-scan-quick";
       my $scan_cmd = $matrix_scan_cmd." -v 1";
       $scan_cmd .= " -i ".$infile{sequence};
       $scan_cmd .= " -m ".$matrix_file;
@@ -762,7 +766,6 @@ sub QuickScanForSites {
 ## Scan sequences to collect sites
 sub ScanForSites {
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan)") if ($main::verbose >= 2);
-  my $matrix_scan_cmd = $SCRIPTS."/matrix-scan";
   ## matrix-scan parameters
   ## The upper threshold on Pval MUST be defined (if not, all
   ## sites can be taken, resulting in a meaningless matrix)
@@ -827,11 +830,11 @@ sub sites_to_matrix {
 ## Run infogibbs to convert the significance matrices into count matrices
 sub InfoGibbs {
     &RSAT::message::TimeWarn("Running info-gibbs with significance matrices as seeds") if ($main::verbose >= 2);
-    my $gibbs_cmd = $BIN."/info-gibbs";
-    unless (-e $gibbs_cmd) {
-      $gibbs_cmd = `which info-gibbs`;
-      chomp($gibbs_cmd);
-    }
+##    my $gibbs_cmd = $BIN."/info-gibbs";
+#    unless (-e $gibbs_cmd) {
+#      $gibbs_cmd = `which info-gibbs`;
+#      chomp($gibbs_cmd);
+#    }
     &RSAT::error::FatalError("info-gibbs command is not in your path")
       unless ($gibbs_cmd);
 
