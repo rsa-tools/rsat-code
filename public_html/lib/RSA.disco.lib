@@ -25,6 +25,11 @@ package main;
 			 );
 #			   likelihood
 
+## Arbitraty value for the maximal significance. The actual limit for
+## computing P-values is ~e-300 -> we cannot compute significances
+## above ~300.
+$MAX_SIG = 350;
+
 $supported_thresholds = join ",", @supported_thresholds;
 %supported_threshold = ();
 foreach my $thr (@supported_thresholds) {
@@ -266,12 +271,12 @@ sub CountWords {
     foreach my $spacing (keys (%dyad_occ_sum)) {
       $valid_dyad_positions{$spacing} = $dyad_occ_sum{$spacing};
       $discarded_dyad_positions{$spacing} = "NA";
-      &RSAT::message::Debug("CountWords",
-			    "sp=".$spacing,
-			    "occ_sum=".$dyad_occ_sum{$spacing},
-			    "valid=".$valid_dyad_positions{$spacing},
-			    "ovl_sum=".$dyad_ovl_sum{$spacing},
-			   ) if ($main::verbose >= 5);
+#      &RSAT::message::Debug("CountWords",
+#			    "sp=".$spacing,
+#			    "occ_sum=".$dyad_occ_sum{$spacing},
+#			    "valid=".$valid_dyad_positions{$spacing},
+#			    "ovl_sum=".$dyad_ovl_sum{$spacing},
+#			   ) if ($main::verbose >= 5);
     }
   }
 
@@ -382,7 +387,7 @@ sub CheckUpperThresholds {
 
 
 ################################################################
-#### check threshold on some parameter for one pattern
+#### Check threshold on some parameter for one pattern
 sub CheckPatternThresholds {
   my ($key, $pattern_seq) = @_;
 
@@ -424,7 +429,7 @@ sub MultiTestCorrections {
 	    if ($patterns{$pattern_seq}->{occ_E} > 0) {
 		$patterns{$pattern_seq}->{occ_sig} =  -log($patterns{$pattern_seq}->{occ_E})/log(10);
 	    } else {
-		$patterns{$pattern_seq}->{occ_sig} =  999;
+		$patterns{$pattern_seq}->{occ_sig} =  $MAX_SIG;
 	    }
 	} else {
 	    $patterns{$pattern_seq}->{occ_E} = "NA";
@@ -473,34 +478,47 @@ sub UngroupRC {
 ################################################################
 #### Calculate observed/expected ratio
 sub CalcRatio {
-  if ($return{'freq'}) {
-    foreach $pattern_seq (sort keys %patterns) {
-      if ($patterns{$pattern_seq}->{exp_freq} == 0) {
-	$patterns{$pattern_seq}->{ratio} = 0;
-      } else {
-	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
-      }
-      #### check threshold on occurrence probability ####
-      if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
-	delete $patterns{$pattern_seq};
-      }
-    }
-  } elsif ($return{'occ'}) {
-    foreach $pattern_seq (sort keys %patterns) {
-      if ($patterns{$pattern_seq}->{exp_occ} == 0) {
-	$patterns{$pattern_seq}->{ratio} = 0;
-      } else {
-	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
-      }
-      #### check threshold on occurrence probability ####
-      if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
-	delete $patterns{$pattern_seq};
-      }
+  foreach $pattern_seq (keys %patterns) {
+    if ($patterns{$pattern_seq}->{exp_occ} == 0) {
+      $patterns{$pattern_seq}->{ratio} = 0;
+    } else {
+      $patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
     }
   }
   &CheckThresholds("ratio");
 } ### CalcRatio
 
+
+# ################################################################
+# #### Calculate observed/expected ratio
+# sub CalcRatio {
+#   if ($return{'freq'}) {
+#     foreach $pattern_seq (keys %patterns) {
+#       if ($patterns{$pattern_seq}->{exp_freq} == 0) {
+# 	$patterns{$pattern_seq}->{ratio} = 0;
+#       } else {
+# 	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
+#       }
+#       #### check threshold on occurrence probability ####
+#       if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+# 	delete $patterns{$pattern_seq};
+#       }
+#     }
+#   } elsif ($return{'occ'}) {
+#     foreach $pattern_seq (keys %patterns) {
+#       if ($patterns{$pattern_seq}->{exp_occ} == 0) {
+# 	$patterns{$pattern_seq}->{ratio} = 0;
+#       } else {
+# 	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
+#       }
+#       #### check threshold on occurrence probability ####
+#       if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+# 	delete $patterns{$pattern_seq};
+#       }
+#     }
+#   }
+#   &CheckThresholds("ratio");
+# } ### CalcRatio
 
 
 ################################################################
