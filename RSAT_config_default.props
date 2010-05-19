@@ -31,6 +31,14 @@ rsat_server_admin=your.mail@your.mail.server
 ## Main RSAT directory
 RSAT=[your_path_to_rsat]/rsa-tools
 
+## RSAT binary directory. This directory should contain the executable
+## files resulting from the compilation of C programs in RSAT
+## (matrix-scan-quick, count-words, ...) as well as the applications
+## developed by external developers but required for some RSAT
+## functions (vmatch, mkvtree) or any other application considered as
+## complementary to RSAT (patser, consensus, ...).
+RSAT_BIN=[your_path_to_rsat]/rsa-tools/bin
+
 ## Directory for storing temporary file (for stand-alone scripts + web server + web services)
 rsat_tmp=[your_path_to_rsat]/rsa-tools/public_html/tmp
 
