@@ -95,7 +95,7 @@ markov_t *load_markov(char *filename)
         }
         char id[256];
         double freq;
-        fscanf(fp, "%s\t%*s\t%d", &id, &freq);
+        ENSURE(fscanf(fp, "%s\t%*s\t%d", &id, &freq) == 2, "invalid bg file");
         if (self == NULL)
         {
             int id_length = strlen(id);
