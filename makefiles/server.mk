@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.22 2009/10/26 15:49:40 jvanheld Exp $
+# $Id: server.mk,v 1.23 2010/05/19 09:36:19 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -8,6 +8,7 @@
 
 #RSAT=${HOME}/rsa-tools/
 include ${RSAT}/makefiles/util.mk
+MAKEFILE=${RSAT}/makefiles/server.mk
 
 GENBANK_DIR=/home/rsa/downloads/ftp.ncbi.nih.gov/genbank/genomes
 NCBI_DIR=/home/rsa/downloads/ftp.ncbi.nih.gov/genomes
@@ -19,7 +20,6 @@ DATE = `date +%Y%m%d_%H%M%S`
 # programs
 
 WGET = wget -np -rNL 
-MAKEFILE=${RSAT}/makefiles/server.mk
 MAKE=nice -n 19 make -s -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
