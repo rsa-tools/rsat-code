@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.56 2010/05/17 23:30:30 jvanheld Exp $
+# $Id: peak-motifs,v 1.57 2010/05/19 14:45:11 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.56 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.57 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -284,14 +284,18 @@ sub DefaultParameters {
   @main::profiles_oligo_lengths = (1,2);
   $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
+  ################################################################
   ## Pattern discovery options
-  $main::param{min_ratio} = 1; push(@main::param_list, "min_ratio"); ## For oligo-analysis, dyad-analysis and oligo-diff
-  $main::param{min_sig} = 0; push(@main::param_list, "min_sig");
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
   $main::param{noov} = "-noov"; push(@main::param_list, "noov");
   $main::param{oligo_min_len} = 6; push(@main::param_list, "oligo_min_len");
   $main::param{oligo_max_len} = 7; push(@main::param_list, "oligo_max_len");
   $main::param{patterns_max_rank} = 25; push(@main::param_list, "patterns_max_rank");
+
+  ## Thresholds for oligo-analysis, dyad-analysis and oligo-diff
+  $main::param{min_ratio} = 1; push(@main::param_list, "min_ratio");
+  $main::param{min_zscore} = 6; push(@main::param_list, "min_ratio");
+  $main::param{min_sig} = 0; push(@main::param_list, "min_sig");
 
   ## oligo-analysis
   $main::param{oligo_min_mkv} = -3; push(@main::param_list, "oligo_min_mkv");
