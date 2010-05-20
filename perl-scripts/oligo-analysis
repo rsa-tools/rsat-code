@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.148 2010/05/03 20:38:04 jvanheld Exp $
+# $Id: oligo-analysis,v 1.149 2010/05/20 06:57:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.148 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.149 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -76,7 +76,7 @@ local $group_rc = 1;
 $uth{occ_P} = 1;
 $uth{ms_P} = 1;
 
-$Markov_order = -2;
+$markov_order = -2;
 $sequence_number = 0;
 $nb_possible_pos = 0;
 $sum_occurrences = 0;
@@ -154,20 +154,20 @@ if ($noov eq "-noov") {
 
 ### Markov order
 if ($method eq "Markov chain") {
-  if ($Markov_order < 0){
+  if ($markov_order < 0){
     if ($oligo_length == 1) {
-      $Markov_order = 0;
+      $markov_order = 0;
     } else {
-      $Markov_order = $oligo_length + $Markov_order;
+      $markov_order = $oligo_length + $markov_order;
     }
   }
 
 
-  if (($Markov_order > $oligo_length -2) &&
-      ($Markov_order > 0)){
-    &RSAT::error::FatalError("Markov order ($Markov_order) cannot be higher than word length - 2 ($oligo_length -2)");
-  } elsif ($Markov_order < 0) {
-    &RSAT::error::FatalError("invalid Markov order $Markov_order");
+  if (($markov_order > $oligo_length -2) &&
+      ($markov_order > 0)){
+    &RSAT::error::FatalError("Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)");
+  } elsif ($markov_order < 0) {
+    &RSAT::error::FatalError("invalid Markov order $markov_order");
   }
 }
 
@@ -208,6 +208,7 @@ if ($background_model eq "equi") {
 					  type=>"oligo",
 					  noov=>$noov, str=>$strands, taxon=>$taxon);
     &ReadExpectedFrequencies($infile{exp_freq}, $sum_rc, $rescale_freq);
+#die "HELLO";
 
 
     #### read alphabet from a file
@@ -316,7 +317,7 @@ if ($return{'table'}) {
   &CheckThresholds("exp_freq") if ($return{'exp_freq'}); ## Check thresholds on expected frequencies
   &CheckThresholds("occ") if ($return{occ}); ## Check thresholds on occurrences
   &CheckThresholds("mseq") if ($return{mseq}); ## Check thresholds on matching sequences
-  &CheckThresholds("observed_freq") if ($return{'freq'}); ## Check thresholds on frequencies
+  &CheckThresholds("obs_freq") if ($return{'freq'}); ## Check thresholds on frequencies
 
   #    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 10);
 
@@ -383,7 +384,7 @@ sub CountOligos {
   }
 
   if ($quick_count) {
-      &CountWords();
+      %patterns = &CountWords();
   } else {
 
       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
@@ -605,6 +606,7 @@ sub CountOligos {
   }
 
   #    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 10);
+  &RSAT::message::TimeWarn("Counted occurrences", scalar(keys(%patterns))." distinct oligos") if ($main::verbose >= 2);
 
   ## Detect patterns with 0 occurrences if the left tail of the distribution is to be tested.
   if ($zeroocc) {
@@ -783,7 +785,7 @@ sub CalcSubWordFrequencies {
 #	    }
 	}
 	foreach $subseq (keys %{$sub_word[$w]}) {
-	    $sub_word[$w]{$subseq}->{observed_freq} = $sub_word[$w]{$subseq}->{occ}/$occ_sum[$w];
+	    $sub_word[$w]{$subseq}->{obs_freq} = $sub_word[$w]{$subseq}->{occ}/$occ_sum[$w];
 	}
     }
 
@@ -817,7 +819,7 @@ sub CalcSubWordFrequencies {
 				       $w,
 				       $occ_sum[$w],
 				       $pattern_seq,
-				       sprintf("%15.13f", $sub_word[$w]{$pattern_seq}->{observed_freq}));
+				       sprintf("%15.13f", $sub_word[$w]{$pattern_seq}->{obs_freq}));
 	    }
 	}
     }
@@ -843,11 +845,11 @@ sub CalcFrequencies {
     #### relative frequencies
 #    if ($noov eq "-noov") {
 #	foreach $pattern_seq (keys %patterns) {
-#	    $patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_noov;
+#	    $patterns{$pattern_seq}->{obs_freq} = $patterns{$pattern_seq}->{occ}/$sum_noov;
 #	}
 #    } else {
 	foreach $pattern_seq (keys %patterns) {
-	    $patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_occurrences;
+	    $patterns{$pattern_seq}->{obs_freq} = $patterns{$pattern_seq}->{occ}/$sum_occurrences;
 	}
 #    }
 
@@ -981,12 +983,12 @@ sub CalcExpected {
   } elsif ($method eq "Markov chain") {
     foreach $pattern_seq (sort keys %patterns) {
       $patterns{$pattern_seq}->{exp_freq} = 1;
-      for $offset (0..($oligo_length - $Markov_order -1)) {
-	$subseq = substr($pattern_seq,$offset,$Markov_order+1);
-	$patterns{$pattern_seq}->{exp_freq} *= $sub_word[$Markov_order+1]{$subseq}->{observed_freq};
-	if (($Markov_order > 0) && ($offset > 0)) {
-	  $subseq = substr($pattern_seq,$offset,$Markov_order);
-	  $patterns{$pattern_seq}->{exp_freq} /= $sub_word[$Markov_order]{$subseq}->{observed_freq};
+      for $offset (0..($oligo_length - $markov_order -1)) {
+	$subseq = substr($pattern_seq,$offset,$markov_order+1);
+	$patterns{$pattern_seq}->{exp_freq} *= $sub_word[$markov_order+1]{$subseq}->{obs_freq};
+	if (($markov_order > 0) && ($offset > 0)) {
+	  $subseq = substr($pattern_seq,$offset,$markov_order);
+	  $patterns{$pattern_seq}->{exp_freq} /= $sub_word[$markov_order]{$subseq}->{obs_freq};
 	}
       }
     }
@@ -1018,12 +1020,12 @@ sub CalcExpected {
   } elsif ($method eq "lexicon") {
     my $l  = 1;
     foreach $pattern_seq (&alphabet()) {
-      $sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{observed_freq};
+      $sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{obs_freq};
     }
     for $l (2..$oligo_length - 1) {
       foreach $pattern_seq (keys %{$sub_word[$l]}) {
 	$sub_word[$l]{$pattern_seq}->{exp_freq} = 0;
-	$sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{observed_freq};
+	$sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{obs_freq};
 
 	#### all possible segmentations of the word
 	for my $s (1..$l-1) {
@@ -1209,8 +1211,8 @@ sub CalcLikelihood {
     ### log likelihood for occurrences
     if ($return{'occ'}) {
 	foreach $pattern_seq (keys %patterns) {
-	    if (($patterns{$pattern_seq}->{exp_freq} > 0) && ($patterns{$pattern_seq}->{observed_freq} > 0)) {
-		$patterns{$pattern_seq}->{occ_lkh} = $patterns{$pattern_seq}->{observed_freq} * log($patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq});
+	    if (($patterns{$pattern_seq}->{exp_freq} > 0) && ($patterns{$pattern_seq}->{obs_freq} > 0)) {
+		$patterns{$pattern_seq}->{occ_lkh} = $patterns{$pattern_seq}->{obs_freq} * log($patterns{$pattern_seq}->{obs_freq}/$patterns{$pattern_seq}->{exp_freq});
 	    } else {
 		$patterns{$pattern_seq}->{occ_lkh} = "NA";
 	    }
@@ -1340,7 +1342,7 @@ sub CalcProba {
 		if ($patterns{$pattern_seq}->{ms_P} > 0) {
 		    $patterns{$pattern_seq}->{ms_sig} = -log($patterns{$pattern_seq}->{ms_E})/log(10);
 		} else {
-		    $patterns{$pattern_seq}->{ms_sig} = 999;
+		    $patterns{$pattern_seq}->{ms_sig} = $MAX_SIG;
 		}
 	    }
 	}
@@ -1368,7 +1370,7 @@ sub PrintHeaderLine {
     $col_description{"sequence"} = "oligomer sequence";
     $col_description{"identifier"} = "oligomer identifier";
     $col_description{"id"} = "oligomer identifier";
-    $col_description{"observed_freq"} = "observed relative frequency";
+    $col_description{"obs_freq"} = "observed relative frequency";
     $col_description{"exp_freq"} = "expected relative frequency";
     $col_description{"occ"} = "observed occurrences";
     $col_description{"exp_occ"} = "expected occurrences";
@@ -1423,7 +1425,7 @@ sub PrintHeaderLine {
     }
 
     ### Frequencies
-    push(@out_col,"observed_freq") if ($return{'freq'});
+    push(@out_col,"obs_freq") if ($return{'freq'});
     push(@out_col,"exp_freq") if ($return{'exp_freq'});
 
     ### Occurrences
@@ -1567,7 +1569,7 @@ sub Verbose {
 	    printf $out "; %-29s\t%s\n", "Expected frequency file", $infile{exp_freq} if ($infile{exp_freq});
 	    printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
 	    printf $out "; %-29s\t%s\n", "Calibration file", $infile{calibration} if ($infile{calibration});
-	    printf $out "; %-29s\t%s\n", "Markov chain order", $Markov_order if ($method eq "Markov chain");
+	    printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
 	    printf $out "; %-29s\t%s\n", "Alphabet frequency file", $infile{alphabet} if ($infile{alphabet});
 	    if (($alphabet) || ($method eq "alphabet")){
 		print $out "; Alphabet\n";
@@ -1672,7 +1674,7 @@ sub PrintResult {
       }
       ### if no matching sequence request, sort by statistics on occurrences
     } elsif ($return{'freq'}) {
-      @sorted_keys = sort {$patterns{$b}->{observed_freq} <=> $patterns{$a}->{observed_freq}} keys %patterns;
+      @sorted_keys = sort {$patterns{$b}->{obs_freq} <=> $patterns{$a}->{obs_freq}} keys %patterns;
       $sorted = 1;
     }
   }
@@ -1714,7 +1716,7 @@ sub PrintResult {
     print $out "\t", &PatternID($pattern_seq, $sum_rc);
 
     ### relative frequencies
-    printf $out "\t%15.13f", $patterns{$pattern_seq}->{observed_freq} if ($return{'freq'});
+    printf $out "\t%15.13f", $patterns{$pattern_seq}->{obs_freq} if ($return{'freq'});
     printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return{'exp_freq'});
 
     ### occurrences ###
@@ -2012,7 +2014,7 @@ sub ReadArguments {
 	    $return{'exp_freq'} = 1;
 	    if (&IsInteger($ARGV[$a+1])) {
 		$a++;
-		$Markov_order = $ARGV[$a];
+		$markov_order = $ARGV[$a];
 	    } else {
 		&RSAT::error::FatalError("The Markov order must be an integer value");
 	    }
