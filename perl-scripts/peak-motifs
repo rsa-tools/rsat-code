@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.57 2010/05/19 14:45:11 jvanheld Exp $
+# $Id: peak-motifs,v 1.58 2010/05/20 06:58:18 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.57 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.58 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -726,7 +726,7 @@ sub OligoDiff {
 ## Run dyad-analysis on the test set
 sub DyadAnalysis {
   &RSAT::message::TimeWarn("Running dyad-analysis") if ($main::verbose >= 1);
-  my $cmd = $SCRIPTS."/dyad-analysis -v 1";
+  my $cmd = $SCRIPTS."/dyad-analysis -v 2";
   $cmd .= " -i ".$main::outfile{"purged_test"};
   $cmd .= " -quick";
   $cmd .= " -format fasta";
@@ -923,7 +923,7 @@ sub MergeMotifs {
       $convert_cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
       $convert_cmd .= " -from tab -to transfac -return counts,consensus";
       $convert_cmd .= " -prefix $pattern_type";
-      $convert_cmd .= " -o ".$matrix_file; 
+      $convert_cmd .= " -o ".$matrix_file;
       &one_command($convert_cmd, 1);
    }
 
