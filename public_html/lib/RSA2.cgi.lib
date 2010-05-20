@@ -1776,8 +1776,10 @@ sub MatrixFromPatterns_run {
   my ($out_matrix_file) = &display_matrices_web($TMP."/".$pssm_file_tab, "tab", 1);
 }
 
+################################################################
+## Generate a form for piping the results of oligo-analysis and
+## dyad-analysis to various programs.
 sub OligoDyadPipingForm {
-    ### prepare data for piping
 
     #### title
     $title = $query->param('title');
