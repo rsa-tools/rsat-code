@@ -196,9 +196,10 @@ if ($query->param('output') eq "display") {
     if ($_ =~ /logo file:(.*)\.png$/){
       (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
       $logo =~ s/\.png//;
-      print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
-      print "<br/>";
-      &DelayedRemoval("$TMP/$1");
+      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a> ";
+#      print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
+#      print "<br/>";
+#      &DelayedRemoval("$TMP/$1");
     } else {
       print $_;
     }
