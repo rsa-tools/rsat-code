@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.41 2010/05/19 11:22:32 rsat Exp $
+# $Id: matrix-from-patterns,v 1.42 2010/05/20 06:58:59 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -274,10 +274,10 @@ package main;
     }
 
     ################################################################
-    ## Convert assembled patterns into matrices
+    ## Convert assembled patterns into significance matrices
     &RSAT::message::TimeWarn("Converting assemblies to significance matrices") if ($main::verbose >= 2);
     my $convert_cmd = $SCRIPTS."/convert-matrix -v 1 -i ".$outfile{assembly};
-    $convert_cmd .= " -from assembly";
+    $convert_cmd .= " -from assembly -to tab";
     $convert_cmd .= " -return counts";
     $convert_cmd .= " -flanks ".$flanks;
     $convert_cmd .= " -top ".$max_asmb_nb;
@@ -801,6 +801,7 @@ sub sites_to_matrix {
   $convert2_cmd .= " -v 0"; ## Verbosity must be 0 for TRANSFAC format
   $convert2_cmd .= " -i ".$site_file;
   $convert2_cmd .= " -from feature -to transfac";
+  $convert2_cmd .= " -prefix ".$matrix_prefix if ($matrix_prefix);
   $convert2_cmd .= " -return counts";
   #    $convert2_cmd .= " -sort desc information.per.column";
   #  $convert2_cmd .= " -return sites" if ($return_fields{sites});
@@ -808,7 +809,7 @@ sub sites_to_matrix {
     $convert2_cmd .= " -return logo -logo_format png,pdf ";
     $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
   }
-  $convert2_cmd .= " -return links" if ($return_fields{links});
+#  $convert2_cmd .= " -return links" if ($return_fields{links});
   $convert2_cmd .= " -o ".$outfile{count_matrices_tf};
   print $log "; sites -> transfac matrices\n", $convert2_cmd, "\n";
   &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
