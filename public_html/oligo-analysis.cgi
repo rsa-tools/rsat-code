@@ -96,7 +96,7 @@ if ($query->param('noov')) {
 $parameters .= " -v 1 ";
 
 ### quick count mode
-$parameters .= " -quick_if_possible ";
+#$parameters .= " -quick_if_possible ";
 
 #### sequence type
 $parameters .= " -seqtype ".$query->param("sequence_type");
