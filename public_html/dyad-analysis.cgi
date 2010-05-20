@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.38 2010/04/11 07:25:07 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.39 2010/05/20 07:01:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -43,7 +43,7 @@ $query = new CGI;
 &UpdateLogFile;
 
 #### read parameters ####
-$parameters = " -v 1 -sort";
+$parameters = " -v 1 -quick -sort";
 
 ################################################################
 ## Timeout prevents over-utilization of the server when large files are analyzed
