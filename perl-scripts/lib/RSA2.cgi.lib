@@ -1746,15 +1746,18 @@ sub MatrixFromPatterns_print_form {
 sub MatrixFromPatterns_run {
   my $pssm_prefix = $tmp_file_name."_pssm";
   my $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
-  $gibbs_matrix_file = $pssm_prefix."_gibbs_matrices.txt";
-  $pssm_file = $pssm_prefix."_count_matrices.txt"; ## has to be global for the piping form
+#  $gibbs_matrix_file = $pssm_prefix."_gibbs_matrices.txt";
+  $pssm_file_tab = $pssm_prefix."_count_matrices.txt"; ## has to be global for the piping form
+  $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
+
+  ## Generate the command to extract matrices from patterns
   $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 -links -logo ";
-#  $pssm_command .= " ".$str;
+  #  $pssm_command .= " ".$str;
   $pssm_command .= " -seq ".$sequence_file;
   $pssm_command .= " -format $sequence_format";
   $pssm_command .= " -asmb ".$assembly_file;
-#  $pssm_command .= " -gibbs_msps ".$query->param('gibbs_msps');
-#  $pssm_command .= " -gibbs_iter ".$query->param('gibbs_iter');
+  #  $pssm_command .= " -gibbs_msps ".$query->param('gibbs_msps');
+  #  $pssm_command .= " -gibbs_iter ".$query->param('gibbs_iter');
   $pssm_command .= " -min_weight ".$query->param('min_weight');
   $pssm_command .= " -flanks ".$query->param('flanks');
   #	  $pssm_command .= " -gibbs_final" if ($query->param('gibbs_final'));
@@ -1762,32 +1765,15 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -bginput -markov 0";
   $pssm_command .= " -o ".$TMP."/".$pssm_prefix;
   print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+
+  ## Run the command
   system "$pssm_command";
   push @result_files, ('significance matrices', $sig_matrix_file);
-#  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
-  push @result_files, ('matrices', $pssm_file);
+  #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
+  push @result_files, ('final matrices (tranfac format)', $pssm_file_tf);
+  push @result_files, ('final matrices (tab format)', $pssm_file_tab);
 
-#   print "<H2>Significance matrices (intermediate result)</H2>\n";
-#   open SIG, $TMP."/".$sig_matrix_file;
-#   print "<PRE>\n";
-#   while (<SIG>) {
-#     s|$ENV{RSAT}/||g;
-#     print;
-#   }
-#   print "</PRE>\n";
-#   close(SIG);
-
-#   print "<H2>Matrices (info-gibbs result)</H2>\n";
-#   open GIBBS, $TMP."/".$gibbs_matrix_file;
-#   print "<PRE>\n";
-#   while (<GIBBS>) {
-#     s|$ENV{RSAT}/||g;
-#     print;
-#   }
-#   print "</PRE>\n";
-#   close(GIBBS);
-
-  my ($out_matrix_file) = &display_matrices_web($TMP."/".$pssm_file, "tab", 1);
+  my ($out_matrix_file) = &display_matrices_web($TMP."/".$pssm_file_tab, "tab", 1);
 }
 
 sub OligoDyadPipingForm {
@@ -1806,11 +1792,12 @@ sub OligoDyadPipingForm {
 
     ## matrix scanning and conversion
     if ($query->param('to_matrix')) {
-      ## Prepare form for sending matrices to convert-matrix
+
+      ## Prepare form for sending matrices and sequences to matrix-scan
       $to_matrix_scan = "<td valign=bottom align=center>";
       $to_matrix_scan .= "<FORM METHOD='POST' ACTION='matrix-scan_form.cgi'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$TMP/$pssm_file'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_format' VALUE='tab'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$TMP/$pssm_file_tf'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_format' VALUE='transfac'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>";
       $to_matrix_scan .= "<INPUT type='submit' value='matrix-based pattern matching (matrix-scan)'>";
@@ -1820,8 +1807,8 @@ sub OligoDyadPipingForm {
       ## Prepare form for sending matrices to convert-matrix
       $to_convert_matrix = "<td valign=bottom align=center>";
       $to_convert_matrix .= "<FORM METHOD='POST' ACTION='convert-matrix_form.cgi'>";
-      $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$TMP/$gibbs_matrix_file'>";
-      $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_format' VALUE='tab'>";
+      $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$TMP/$pssm_file_tf'>";
+      $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_format' VALUE='transfac'>";
       $to_convert_matrix .= "<INPUT type='submit' value='matrix conversion'>";
       $to_convert_matrix .= "</FORM>";
       $to_convert_matrix .= "</TD>";
@@ -1888,7 +1875,7 @@ End_of_form
 ## Display one or several PSSM on a Web page
 ##
 ## Usage:
-##  my ($out_matrix_file) = &display_matrices_web($in_matrix_file, $in_format, $no_convert);
+##   my ($out_matrix_file) = &display_matrices_web($in_matrix_file, $in_format, $no_convert);
 sub display_matrices_web {
   my ($in_matrix_file, $in_format, $no_convert) = @_;
   &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
@@ -1939,6 +1926,7 @@ sub display_matrices_web {
   }
   close ($res);
   print "</pre>";
+
 
   return ($out_matrix_file);
 }
