@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.30 2010/03/09 07:23:00 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.31 2010/05/20 07:27:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -202,7 +202,7 @@ print "<HR width=550 align=left>\n";
 
 &SelectOutput();
 
-print "<font color=red><B>Warning !</B> dyad-analysis is time-consuming, especially if you select a wide spacing range. If you don't obtain any result after 5 minutes, we recommend email output.</font><BR>\n";
+#print "<font color=red><B>Warning !</B> dyad-analysis is time-consuming, especially if you select a wide spacing range. If you don't obtain any result after 5 minutes, we recommend email output.</font><BR>\n";
 
 ### action buttons
 print "<UL><UL><TABLE class = 'formbutton'>\n";
