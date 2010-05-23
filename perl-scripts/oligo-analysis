@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.149 2010/05/20 06:57:48 jvanheld Exp $
+# $Id: oligo-analysis,v 1.150 2010/05/23 19:17:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.149 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.150 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -119,7 +119,14 @@ if (($tail eq "left") ||
     $zeroocc = 1;
 }
 
+################################################################
 ### Check output fields
+
+if ($return{'exp'}) {
+  $return{'exp_occ'} = 1;
+  $return{'exp_freq'} = 1;
+}
+
 if (@output_fields == ()) { #default output is occurrence numbers
     @output_fields = ("occurrences");
     $return{'occ'} = 1;
@@ -129,12 +136,12 @@ if (@output_fields == ()) { #default output is occurrence numbers
     $return{'exp_freq'};
 }
 if ($method =~  /calibration/i) {
-    $return{exp_occ} = 1;
+    $return{'exp_occ'} = 1;
     $return{'exp_var'} = 1;
     $return{'fitted'} = 1;
 }
 
-#### conditions which require the calculateion of the overlap coefficient
+#### conditions which require the calculation of the overlap coefficient
 if ($return{'zscore'} && !($noov eq "-noov")) {
     $return{'ovlp'} = 1;
 }
@@ -175,11 +182,36 @@ if ($method eq "Markov chain") {
 ### check input format
 &CheckInputSeqFormat($in_format);
 
-### Pre-defined frequency tables
-### for background frequency calibration
 
-&RSAT::message::Debug("Background model", $background_model, $method) if ($main::verbose >= 2);
+################################################################
+## Check if quick counting mode is possible
+if ($quick_count_if_possible) {
+    $quick_count = &CheckQuickCount();
+}
 
+################################################################
+## Read a file containing a selection of accepted patterns
+if ($infile{accepted_patterns}) {
+  &ReadAcceptedPatterns($infile{accepted_patterns});
+}
+
+#### open sequence stream
+($in, $input_dir) = &OpenInputFile($infile{input});
+
+#die join "\t", "BOUM",  $infile{input}, $input_dir;
+
+#### open output stream
+$out = &OpenOutputFile($outputfile);
+
+
+################################################################
+## Count oligo occurrences
+&CountOligos();
+
+
+################################################################
+### Pre-defined frequency tables for background frequency calibration
+&RSAT::message::Info("Background model", $background_model, $method) if ($main::verbose >= 2);
 if ($background_model eq "equi") {
     $method = "Equiprobable residues";
 
@@ -188,11 +220,10 @@ if ($background_model eq "equi") {
 
 } elsif ($background_model eq "file") {
     ## Read expected frequencies from a file
-    &ReadExpectedFrequencies($infile{exp_freq}, $sum_rc, $rescale_freq);
+    &ReadExpectedFrequencies($infile{'exp_freq'}, $sum_rc, $rescale_freq);
 
 } elsif (($background_model) &&
 	 ($background_model ne "bernoulli")) {
-
 
     ### localize oligo non-coding frequency file
     $method = "Frequency file";
@@ -202,14 +233,12 @@ if ($background_model eq "equi") {
 	$strands="-1str";
     }
 
-    $infile{exp_freq} = &ExpectedFreqFile($org_or_taxon, 
+    $infile{'exp_freq'} = &ExpectedFreqFile($org_or_taxon, 
 					  $oligo_length, 
 					  $background_model,
 					  type=>"oligo",
 					  noov=>$noov, str=>$strands, taxon=>$taxon);
-    &ReadExpectedFrequencies($infile{exp_freq}, $sum_rc, $rescale_freq);
-#die "HELLO";
-
+    &ReadExpectedFrequencies($infile{'exp_freq'}, $sum_rc, $rescale_freq);
 
     #### read alphabet from a file
 } elsif ($infile{alphabet}) {
@@ -254,35 +283,11 @@ if (($alphabet) && ($background_model ne "bernoulli")) {
 }
 
 ################################################################
-## Check if quick counting mode is possible
-if ($quick_count_if_possible) {
-    $quick_count = &CheckQuickCount();
-}
-
-################################################################
 #### Read calibration from a file
 if ($method =~ /calibration/i) {
     &RSAT::message::TimeWarn( join('\t', "Reading calibration file",$infile{calibration})) if ($main::verbose >= 1);
     &ReadCalibration($infile{calibration});
 }
-
-################################################################
-## Read a file containing a selection of accepted patterns
-if ($infile{accepted_patterns}) {
-  &ReadAcceptedPatterns($infile{accepted_patterns});
-}
-
-#### open sequence stream
-($in, $input_dir) = &OpenInputFile($infile{input});
-
-#die join "\t", "BOUM",  $infile{input}, $input_dir;
-
-#### open output stream
-$out = &OpenOutputFile($outputfile);
-
-################################################################
-## Count oligo occurrences
-&CountOligos();
 
 if ($return{'table'}) {
   ## already printed
@@ -384,7 +389,8 @@ sub CountOligos {
   }
 
   if ($quick_count) {
-      %patterns = &CountWords();
+    %patterns = &CountWords();
+
   } else {
 
       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
@@ -982,13 +988,13 @@ sub CalcExpected {
     ## Calculate expected frequencies according to a Markov chain model
   } elsif ($method eq "Markov chain") {
     foreach $pattern_seq (sort keys %patterns) {
-      $patterns{$pattern_seq}->{exp_freq} = 1;
+      $patterns{$pattern_seq}->{'exp_freq'} = 1;
       for $offset (0..($oligo_length - $markov_order -1)) {
 	$subseq = substr($pattern_seq,$offset,$markov_order+1);
-	$patterns{$pattern_seq}->{exp_freq} *= $sub_word[$markov_order+1]{$subseq}->{obs_freq};
+	$patterns{$pattern_seq}->{'exp_freq'} *= $sub_word[$markov_order+1]{$subseq}->{obs_freq};
 	if (($markov_order > 0) && ($offset > 0)) {
 	  $subseq = substr($pattern_seq,$offset,$markov_order);
-	  $patterns{$pattern_seq}->{exp_freq} /= $sub_word[$markov_order]{$subseq}->{obs_freq};
+	  $patterns{$pattern_seq}->{'exp_freq'} /= $sub_word[$markov_order]{$subseq}->{obs_freq};
 	}
       }
     }
@@ -999,9 +1005,9 @@ sub CalcExpected {
   } elsif ($method =~ /calibration/i) {
     foreach $pattern_seq (sort keys %patterns) {
       if ($patterns{$pattern_seq}->{notforb} > 0) {
-	$patterns{$pattern_seq}->{exp_freq} = $patterns{$pattern_seq}->{exp_occ}/$patterns{$pattern_seq}->{notforb};
+	$patterns{$pattern_seq}->{'exp_freq'} = $patterns{$pattern_seq}->{'exp_occ'}/$patterns{$pattern_seq}->{notforb};
       } else {
-	$patterns{$pattern_seq}->{exp_freq} = "NA";
+	$patterns{$pattern_seq}->{'exp_freq'} = "NA";
       }
     }
 
@@ -1010,7 +1016,7 @@ sub CalcExpected {
   } elsif ($method =~ /equiprobable/i) {
     my $common_exp_freq = 1/($alphabet_size**$oligo_length);
     foreach $pattern_seq (sort keys %patterns) {
-      $patterns{$pattern_seq}->{exp_freq} = $common_exp_freq;
+      $patterns{$pattern_seq}->{'exp_freq'} = $common_exp_freq;
     }
 
 
@@ -1024,7 +1030,7 @@ sub CalcExpected {
     }
     for $l (2..$oligo_length - 1) {
       foreach $pattern_seq (keys %{$sub_word[$l]}) {
-	$sub_word[$l]{$pattern_seq}->{exp_freq} = 0;
+	$sub_word[$l]{$pattern_seq}->{'exp_freq'} = 0;
 	$sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{obs_freq};
 
 	#### all possible segmentations of the word
@@ -1032,24 +1038,24 @@ sub CalcExpected {
 	  my $prefix = substr($pattern_seq,0,$s);
 	  my $suffix = substr($pattern_seq,$s);
 	  my $segmentation_freq = $sub_word[$s]{$prefix}->{max_freq} * $sub_word[$l-$s]{$suffix}->{max_freq};
-	  if ($segmentation_freq > $sub_word[$l]{$pattern_seq}->{exp_freq}) {
-	    $sub_word[$l]{$pattern_seq}->{exp_freq} = $segmentation_freq;
+	  if ($segmentation_freq > $sub_word[$l]{$pattern_seq}->{'exp_freq'}) {
+	    $sub_word[$l]{$pattern_seq}->{'exp_freq'} = $segmentation_freq;
 	    $sub_word[$l]{$pattern_seq}->{max_freq} = &max($sub_word[$l]{$pattern_seq}->{max_freq},
-							   $sub_word[$l]{$pattern_seq}->{exp_freq});
+							   $sub_word[$l]{$pattern_seq}->{'exp_freq'});
 	  }
 	}
       }
     }
     $l = $oligo_length;
     foreach $pattern_seq (keys %patterns) {
-      $patterns{$pattern_seq}->{exp_freq} = 0;
+      $patterns{$pattern_seq}->{'exp_freq'} = 0;
       #### all possible segmentations of the word
       for my $s (1..$l-1) {
 	my $prefix = substr($pattern_seq,0,$s);
 	my $suffix = substr($pattern_seq,$s);
 	my $segmentation_freq = $sub_word[$s]{$prefix}->{max_freq} * $sub_word[$l-$s]{$suffix}->{max_freq};
-	if ($segmentation_freq > $patterns{$pattern_seq}->{exp_freq}) {
-	  $patterns{$pattern_seq}->{exp_freq} = $segmentation_freq;
+	if ($segmentation_freq > $patterns{$pattern_seq}->{'exp_freq'}) {
+	  $patterns{$pattern_seq}->{'exp_freq'} = $segmentation_freq;
 	  $patterns{$pattern_seq}->{segments} = join (" ",
 						      $prefix,
 						      $suffix,
@@ -1080,10 +1086,10 @@ sub CalcExpected {
     }
 
     foreach $pattern_seq (keys %patterns) {
-      $patterns{$pattern_seq}->{exp_freq} = 1;
+      $patterns{$pattern_seq}->{'exp_freq'} = 1;
       foreach $l (0..length($pattern_seq)-1) {
 	$nt = substr($pattern_seq, $l, 1);
-	$patterns{$pattern_seq}->{exp_freq} *= $residue_proba{$nt};
+	$patterns{$pattern_seq}->{'exp_freq'} *= $residue_proba{$nt};
       }
     }
   }
@@ -1093,8 +1099,8 @@ sub CalcExpected {
   if ($pseudo_weight > 0) {
     $pseudo_frequency = $pseudo_weight/$nb_possible_oligos;
     foreach $pattern_seq (keys %patterns) {
-      $patterns{$pattern_seq}->{exp_freq} *= 1 - $pseudo_weight;
-      $patterns{$pattern_seq}->{exp_freq} += $pseudo_frequency;
+      $patterns{$pattern_seq}->{'exp_freq'} *= 1 - $pseudo_weight;
+      $patterns{$pattern_seq}->{'exp_freq'} += $pseudo_frequency;
     }
   }
 
@@ -1105,8 +1111,8 @@ sub CalcExpected {
       ($method ne "Frequency file")) { #### this has alrady been treated when reading expected frequency file
     foreach $pattern_seq (sort keys %patterns) {
       $rc = &SmartRC($pattern_seq);
-      unless (defined($patterns{$rc}->{exp_freq})) {
-	$patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
+      unless (defined($patterns{$rc}->{'exp_freq'})) {
+	$patterns{$rc}->{'exp_freq'} = $patterns{$pattern_seq}->{'exp_freq'};
       }
     }
     &SumExpectedFrequencies(%patterns);
@@ -1116,14 +1122,14 @@ sub CalcExpected {
   #### expected number of occurrences and matching sequences ####
   foreach $pattern_seq (sort keys %patterns) {
     unless ($method =~ /calibration/i) {
-      # 	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{notforb};
-      $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $sum_occurrences;
-      #	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $sum_noov;
+      # 	    $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $patterns{$pattern_seq}->{notforb};
+      $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $sum_occurrences;
+      #	    $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $sum_noov;
     }
     if ($return{'mseq'}) {
       ### expected number of matching sequences ###
       $avg_seq_length = $sum_seq_length/$sequence_number;
-      $exp_freq_est = $patterns{$pattern_seq}->{exp_freq};
+      $exp_freq_est = $patterns{$pattern_seq}->{'exp_freq'};
 
       ## Compute the average number of positions per sequence 2010
       ## correction: instead of using avg_seq_length, I use
@@ -1143,12 +1149,12 @@ sub CalcExpected {
 	unless (defined($patterns{$pattern_seq}->{ovlp})) {
 	  $patterns{$pattern_seq}->{ovlp} = $patterns{&SmartRC($pattern_seq)}->{ovlp}
 	}
-	$exp_freq_est = $patterns{$pattern_seq}->{exp_freq}/$patterns{$pattern_seq}->{ovlp};
+	$exp_freq_est = $patterns{$pattern_seq}->{'exp_freq'}/$patterns{$pattern_seq}->{ovlp};
 	$one_seq_match_proba =  1 - (1-$exp_freq_est)**$pos_per_seq;
 	$patterns{$pattern_seq}->{ems_cor} =  $one_seq_match_proba*$sequence_number;
 	warn join ( "\t", $pattern_seq,
 		    "overlap: $patterns{$pattern_seq}->{ovlp}",
-		    "exp_freq: $patterns{$pattern_seq}->{exp_freq}",
+		    "exp_freq: $patterns{$pattern_seq}->{'exp_freq'}",
 		    "exp_freq_est: $exp_freq_est",
 		    "ems_cor", $patterns{$pattern_seq}->{ems_cor}
 		  ), "\n" if ($verbose >= 4);
@@ -1181,18 +1187,18 @@ sub CalcZscore {
 		if ($noov eq "-noov") {
 		    ### With the option -noov, there is no problem of overlap
 		    ### The expected variance thus equals the expected occurrences
-		    $patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{exp_occ};
+		    $patterns{$pattern_seq}->{'exp_var'} = $patterns{$pattern_seq}->{'exp_occ'};
 		} else {
 		    ### Correction for self-overlapping patterns
 #		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
-		    $patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{notforb} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
-#       	$patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{notforb} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
+		    $patterns{$pattern_seq}->{'exp_var'} = $patterns{$pattern_seq}->{notforb} * $patterns{$pattern_seq}->{'exp_freq'}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{'exp_freq'});
+#       	$patterns{$pattern_seq}->{'exp_var'} = $patterns{$pattern_seq}->{notforb} * $patterns{$pattern_seq}->{'exp_freq'}*(1 - $patterns{$pattern_seq}->{'exp_freq'});
 		}
 	    }
 
-	    if ($patterns{$pattern_seq}->{exp_var} > 0) {
-		$stdev = sqrt($patterns{$pattern_seq}->{exp_var});
-		$patterns{$pattern_seq}->{zscore} = ($patterns{$pattern_seq}->{occ} - $patterns{$pattern_seq}->{exp_occ})/$stdev;
+	    if ($patterns{$pattern_seq}->{'exp_var'} > 0) {
+		$stdev = sqrt($patterns{$pattern_seq}->{'exp_var'});
+		$patterns{$pattern_seq}->{zscore} = ($patterns{$pattern_seq}->{occ} - $patterns{$pattern_seq}->{'exp_occ'})/$stdev;
 	    } else {
 		$stdev = "NA";
 		$patterns{$pattern_seq}->{zscore} = "NA";
@@ -1211,8 +1217,8 @@ sub CalcLikelihood {
     ### log likelihood for occurrences
     if ($return{'occ'}) {
 	foreach $pattern_seq (keys %patterns) {
-	    if (($patterns{$pattern_seq}->{exp_freq} > 0) && ($patterns{$pattern_seq}->{obs_freq} > 0)) {
-		$patterns{$pattern_seq}->{occ_lkh} = $patterns{$pattern_seq}->{obs_freq} * log($patterns{$pattern_seq}->{obs_freq}/$patterns{$pattern_seq}->{exp_freq});
+	    if (($patterns{$pattern_seq}->{'exp_freq'} > 0) && ($patterns{$pattern_seq}->{obs_freq} > 0)) {
+		$patterns{$pattern_seq}->{occ_lkh} = $patterns{$pattern_seq}->{obs_freq} * log($patterns{$pattern_seq}->{obs_freq}/$patterns{$pattern_seq}->{'exp_freq'});
 	    } else {
 		$patterns{$pattern_seq}->{occ_lkh} = "NA";
 	    }
@@ -1255,22 +1261,22 @@ sub CalcProba {
     foreach $pattern_seq (sort keys %patterns) {
 	warn sprintf("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n",
 		     $patterns{$pattern_seq}->{occ},
-		     $patterns{$pattern_seq}->{exp_occ},
-		     $patterns{$pattern_seq}->{exp_freq},
+		     $patterns{$pattern_seq}->{'exp_occ'},
+		     $patterns{$pattern_seq}->{'exp_freq'},
 		     $patterns{$pattern_seq}->{notforb}
 		     ) if ($verbose >= 4);
 
-	if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
+	if ($patterns{$pattern_seq}->{'exp_freq'} <= 0) {
 	    &Warning(join "\t", "Cannot calculate probability for pattern", $pattern_seq,
 		     "Invalid expected frequency",
-		     $patterns{$pattern_seq}->{exp_freq});
-	    $patterns{$pattern_seq}->{exp_occ} = "NA";
+		     $patterns{$pattern_seq}->{'exp_freq'});
+	    $patterns{$pattern_seq}->{'exp_occ'} = "NA";
 	    next;
 	}
 
 	## Select the left or right tail of the theoretical distribution
 	if (($tail eq "left") ||
-	    (($tail eq "two") &&  ($patterns{$pattern_seq}->{occ} < $patterns{$pattern_seq}->{exp_occ}))) {
+	    (($tail eq "two") &&  ($patterns{$pattern_seq}->{occ} < $patterns{$pattern_seq}->{'exp_occ'}))) {
 	    ## Left tail
 	    $occ_from = 0;
 	    $occ_to = $patterns{$pattern_seq}->{occ};
@@ -1284,27 +1290,27 @@ sub CalcProba {
 	}
 
 	if ($method =~ /calibration/i) {
-	    if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
+	    if ($patterns{$pattern_seq}->{'exp_occ'} < $patterns{$pattern_seq}->{'exp_var'}) {
 		#### Fit a negative binomial
-		($p, $k, $patterns{$pattern_seq}->{occ_P}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
-									       $patterns{$pattern_seq}->{exp_var},
+		($p, $k, $patterns{$pattern_seq}->{occ_P}) = &sum_of_negbin2($patterns{$pattern_seq}->{'exp_occ'},
+									       $patterns{$pattern_seq}->{'exp_var'},
 									       $occ_from,
 									       $occ_to);
 		$patterns{$pattern_seq}->{fitted} = "negbin";
 	    } else {
 		#### Fit a Poisson
-		$patterns{$pattern_seq}->{occ_P} = &sum_of_poisson($patterns{$pattern_seq}->{exp_occ},
+		$patterns{$pattern_seq}->{occ_P} = &sum_of_poisson($patterns{$pattern_seq}->{'exp_occ'},
 								     $occ_from,
 								     $occ_to);
 		$patterns{$pattern_seq}->{fitted} = "Poisson";
 	    }
 	} else {
-	    $patterns{$pattern_seq}->{occ_P} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
+	    $patterns{$pattern_seq}->{occ_P} = &sum_of_binomials($patterns{$pattern_seq}->{'exp_freq'},
 								 $sum_occurrences,
 								 $occ_from,
 								 $occ_to);
 #	    &RSAT::message::Debug($pattern_seq,
-#				  $patterns{$pattern_seq}->{exp_freq},
+#				  $patterns{$pattern_seq}->{'exp_freq'},
 #				  $patterns{$pattern_seq}->{forbocc},
 #				  $patterns{$pattern_seq}->{notforb},
 #				  $occ_from,
@@ -1431,7 +1437,7 @@ sub PrintHeaderLine {
     ### Occurrences
     if ($return{'occ'}) {
 	push(@out_col,"occ");
-	push(@out_col,"exp_occ") if ($return{'exp_freq'});
+	push(@out_col,"exp_occ") if ($return{'exp_occ'});
 
 	## Binomial probability
 	if ($return{'proba'}) {
@@ -1566,7 +1572,7 @@ sub Verbose {
 	    }
 
 	    printf $out "; %-29s\t%s\n", "Method", $method;
-	    printf $out "; %-29s\t%s\n", "Expected frequency file", $infile{exp_freq} if ($infile{exp_freq});
+	    printf $out "; %-29s\t%s\n", "Expected frequency file", $infile{'exp_freq'} if ($infile{'exp_freq'});
 	    printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
 	    printf $out "; %-29s\t%s\n", "Calibration file", $infile{calibration} if ($infile{calibration});
 	    printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
@@ -1717,18 +1723,18 @@ sub PrintResult {
 
     ### relative frequencies
     printf $out "\t%15.13f", $patterns{$pattern_seq}->{obs_freq} if ($return{'freq'});
-    printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return{'exp_freq'});
+    printf $out "\t%15.13f", $patterns{$pattern_seq}->{'exp_freq'} if ($return{'exp_freq'});
 
     ### occurrences ###
     if ($return{'occ'}) {
       printf $out "\t%d", $patterns{$pattern_seq}->{occ};
 
       ### expected occurrences
-      if ($return{'exp_freq'}) {
-	if ($patterns{$pattern_seq}->{exp_occ} >= 0.01) {
-	  printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_occ};
+      if ($return{'exp_occ'}) {
+	if ($patterns{$pattern_seq}->{'exp_occ'} >= 0.01) {
+	  printf $out "\t%.2f", $patterns{$pattern_seq}->{'exp_occ'};
 	} else {
-	  printf $out "\t%.2g", $patterns{$pattern_seq}->{exp_occ};
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{'exp_occ'};
 	}
       }
 
@@ -1769,7 +1775,7 @@ sub PrintResult {
       } else {
 	printf $out "\t%s", $patterns{$pattern_seq}->{zscore};
       }
-      printf $out "\t%.3f", $patterns{$pattern_seq}->{exp_var};
+      printf $out "\t%.3f", $patterns{$pattern_seq}->{'exp_var'};
     }
 
 
@@ -1970,7 +1976,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-expfreq") {
 	    $method = "Frequency file";
 	    $background_model = "file";
-	    $infile{exp_freq} = $ARGV[$a+1];
+	    $infile{'exp_freq'} = $ARGV[$a+1];
 
 	    #### calibration file, occ and var for N sequences
 	} elsif ($ARGV[$a] eq "-calibN") {
@@ -3125,12 +3131,12 @@ sub PrintCountDistrib {
 sub CalibrateSetFromSingleSequence {
     warn "; Estimating mean and var from single-sequence calibration\n" if ($main::verbose >= 1);
     foreach my $pattern_seq (keys %patterns) {
-	$patterns{$pattern_seq}->{exp_occ} *= $sequence_number;
-	$patterns{$pattern_seq}->{exp_var} *= $sequence_number;
+	$patterns{$pattern_seq}->{'exp_occ'} *= $sequence_number;
+	$patterns{$pattern_seq}->{'exp_var'} *= $sequence_number;
 	warn join ("\t",
 		  $pattern_seq,
-		  $patterns{$pattern_seq}->{exp_occ},
-		  $patterns{$pattern_seq}->{exp_var},
+		  $patterns{$pattern_seq}->{'exp_occ'},
+		  $patterns{$pattern_seq}->{'exp_var'},
 		  ), "\n" if ($main::verbose >= 5);
     }
 }
