@@ -154,6 +154,50 @@ sub AlphaDate {
 }
 
 
+
+################################################################
+## Update the start log file
+## Usage:
+##  local $start_time = &StartScript();
+sub StartScript {
+  my $start_time = &AlphaDate();
+
+  ## If specified in the server configuration, report start time 
+  ## in a specific log file.
+  if ($ENV{start_time}) {
+    my $script_name = &RSAT::util::ShortFileName($0) || 'undefined';
+    my $command = join (" ", $script_name, @ARGV);
+    my $login = getlogin || getpwuid($<) || "Kilroy";
+    &RSAT::message::TimeWarn("Updating start script log file", $main::start_time_log_file)
+      if ($main::verbose >= 3);
+
+    ## Write header of the exec time log file if required
+    unless (-e $main::start_time_log_file) {
+      open LOG, ">".$main::start_time_log_file;
+      print LOG join ("\t",
+		      "#start_date.time",
+		      "PID",
+		      "username",
+		      "script_name",
+		      "command",
+		     ), "\n";
+      close LOG;
+    }
+
+    open LOG, ">>".$main::start_time_log_file;
+    print LOG join ("\t",
+		    $start_time,
+		    $$,
+		    $login,
+		    $script_name,
+		    $command,
+		   ), "\n";
+    close LOG;
+    chmod 0777, $main::start_time_log_file;
+  }
+  return($start_time);
+}
+
 ################################################################
 
 =pod
@@ -168,18 +212,19 @@ Usage:
 =cut
 sub ReportExecutionTime {
   my ($start_time) = @_;
-  my $time_report = "";
+  my $time_report;
   my $done_time = &AlphaDate();
   my $elapsed = times;
 
   ## Report the execution time string only if verbosity >= 1.
-  $time_report .= "; Job started\t$start_time\n";
-  $time_report .=  "; Job done\t$done_time\n";
+  $time_report =  "; Job started\t".$start_time."\n";
+  $time_report .=  "; Job done\t".$done_time."\n";
   $time_report .=  "; Seconds\t".$elapsed."\n";
 
   ## If specified in the server configuration, report task + execution
   ## time in log file.
-  &RSAT::server::UpdateExecTimeLogFile($start_time, $done_time, $elapsed);# if $ENV{exec_time};
+  &RSAT::server::UpdateExecTimeLogFile($start_time, $done_time, $elapsed) 
+    if $ENV{exec_time};
 
   return($time_report);
 }
