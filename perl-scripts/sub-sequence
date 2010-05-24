@@ -10,7 +10,7 @@ require "RSA.lib";
 
 #### initialise parameters ####
 $origin = "start";
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $line_width = 0;
 $in_format = "fasta";
 $out_format = "fasta";

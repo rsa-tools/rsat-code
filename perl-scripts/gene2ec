@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 ### initialization
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $rev = 0;
 
 #### default parameters

@@ -16,7 +16,7 @@ require RSAT::match;
 &InitMatchScores();
 
 
-my $start_time = &AlphaDate();
+my $start_time = &RSAT::util::StartScript();
 
 local %infile = ();
 local %outfile = ();

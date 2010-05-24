@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: random-genes,v 1.21 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: random-genes,v 1.22 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -20,7 +20,7 @@ use POSIX;
 package main;
 
 #### initialise parameters 
-my $start_time = &AlphaDate();
+my $start_time = &RSAT::util::StartScript();
 
 local %infile = ();
 local %outfile = ();

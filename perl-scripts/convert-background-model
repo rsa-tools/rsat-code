@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.25 2010/04/28 06:28:16 jvanheld Exp $
+# $Id: convert-background-model,v 1.26 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -159,7 +159,7 @@ package main;
 
     ################################################################
     #### initialise parameters
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
     local $bg_model = new RSAT::MarkovModel();
     local $decimals;
     local $default_transition_decimals = 5;

@@ -28,7 +28,7 @@ use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 
 ################################################################
 #### initialise parameters
-my $start_time = &AlphaDate();
+my $start_time = &RSAT::util::StartScript();
 my $slice_type = "chromosome";
 my $chromname = 'Y';
 
