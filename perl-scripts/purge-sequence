@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.37 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: purge-sequence,v 1.38 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -26,7 +26,7 @@ my $skdir = "$ENV{RSAT}/bin";
 my $delete_repeats=0;
 
 #### initialise parameters ####
-my $start_time = &AlphaDate();
+my $start_time = &RSAT::util::StartScript();
 my $convert_seq_command = $ENV{RSAT}."/perl-scripts/convert-seq";
 
 $both_strands = 1;

@@ -77,7 +77,7 @@ End_of_help
 
 #### initialise parameters ####
 $gibbs_command = "$BIN/gibbs";
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $fragmentation = 0;
 $repetitions = 1;
 $print_matrices = 0;

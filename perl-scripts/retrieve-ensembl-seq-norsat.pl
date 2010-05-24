@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq-norsat.pl,v 1.4 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: retrieve-ensembl-seq-norsat.pl,v 1.5 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -32,7 +32,7 @@ package main;
 
   ################################################################
   #### initialise parameters
-  my $start_time = &AlphaDate();
+  my $start_time = &RSAT::util::StartScript();
 
   local $verbose = 0;
   local $feattype = "mrna";    # other values: Gene, Intron, Exon, CDS and UTR

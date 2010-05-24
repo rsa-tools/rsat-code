@@ -5,8 +5,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 
-local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $start_time = &RSAT::util::StartScript();
+local $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 $seq_oligofreq_command = "$SCRIPTS/seq_oligofreq";
 

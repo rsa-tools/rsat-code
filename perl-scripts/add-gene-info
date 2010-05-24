@@ -10,7 +10,7 @@ use Storable qw(nstore retrieve);
 my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
 
 ## Initialization
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $calc_neighbours = 0;
 $info_before = 0;
 @ORF_column = ();

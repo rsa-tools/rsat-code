@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.59 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.60 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -26,7 +26,7 @@ require "classes/Genbank_classes.pl";
 package main;
 {
     #### initialise parameters ####
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
     local %infile = ();
     local %outfile = ();
     local $verbose = 0;

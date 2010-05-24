@@ -12,7 +12,8 @@ require RSAT::pattern;
 package main;;
 
 #### initialise parameters ####
-my $start_time = &AlphaDate();
+my $start_time = &RSAT::util::StartScript();
+
 
 local $inputfile = ""; 
 local $outputfile = "";

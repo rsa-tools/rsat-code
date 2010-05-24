@@ -221,7 +221,7 @@ if ($config_site eq "bigre") {
 $inputfile = "$TF_folder/site.dat";
 
 ##### variable initialisation #####
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 
 $LastField = -1;
 $RecordNb = 0;

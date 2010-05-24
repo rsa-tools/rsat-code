@@ -8,7 +8,7 @@ require "RSA.seq.lib";
 ## TO DO: use the matching weight rather than the number of matches as criterion
 
 #### initialise parameters ####
-$start_time = &AlphaDate();;
+$start_time = &RSAT::util::StartScript();;
 $max_flanking = 1;
 $max_subst = 0;
 $max_asmb_size = 50;
