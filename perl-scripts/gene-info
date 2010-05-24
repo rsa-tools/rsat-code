@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.14 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: gene-info,v 1.15 2010/05/24 13:51:08 rsat Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -23,7 +23,8 @@ use Storable qw(nstore retrieve);
 my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
 
 
-$start_time = $date = &AlphaDate();
+$start_time = &RSAT::util::StartScript(); 
+$date = $start_time;
 
 #### initialise parameters ####
 $orf_col = 0;
