@@ -11,15 +11,24 @@
 ## parameters of the Web forms, which can be confising for the users.
 rsat_echo=0
 
-## Set the option exec_time to 1 if you want to report execution time
-## of each task in a monthly log file.
+
+################################################################
+## Set the options
 ##
-## Log file name:
-##      $RSAT/logs/exec_time_log_[SITE]_[YEAR]_[MONTH].txt
+##     exec_time=1
+##     start_time=1
 ##
-## This report file is useful for detecting time-consuming tasks on
+## if you want to report respectively the start time and execution
+## time of each task in a monthly log file.  
+##
+## Log file names:
+##    $RSAT/logs/exec_time_log_[SITE]_[YEAR]_[MONTH].txt 
+##    $RSAT/logs/start_time_log_[SITE]_[YEAR]_[MONTH].txt 
+##
+## These report files are useful for detecting time-consuming tasks on
 ## the server.  All RSAT Perl scripts are monitored, whether they are
-## run on the Web site or on the command-line.
+## run on the Web site or on the command-line.  
+start_time=0
 exec_time=0
 
 ## name of the site (which will appear in the log file)
