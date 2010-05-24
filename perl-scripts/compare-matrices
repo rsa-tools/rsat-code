@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.48 2010/04/26 23:29:02 jvanheld Exp $
+# $Id: compare-matrices,v 1.49 2010/05/24 08:09:01 jvanheld Exp $
 #
 ############################################################
 
@@ -266,8 +266,8 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  my $start_time = &RSAT::util::StartScript();
+  $program_version = do { my @r = (q$Revision: 1.49 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();

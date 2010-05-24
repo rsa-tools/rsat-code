@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.18 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: go-hierarchy,v 1.19 2010/05/24 08:09:01 jvanheld Exp $
 #
 ############################################################
 
@@ -87,7 +87,7 @@ package main;
 
     ################################################################
     ## Initialise parameters
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
      @class_names = ();
      @known_classes = ();
      @unknown_classes = ();

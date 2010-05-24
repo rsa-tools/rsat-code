@@ -76,7 +76,7 @@ End_short_help
   exit;
 }
 
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 
 #### initialise parameters ####
 

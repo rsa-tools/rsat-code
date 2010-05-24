@@ -9,7 +9,7 @@ require "RSA.lib";
 use GD;
 use RSAT::PostscriptWrapper;
 
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 
 ##################################################################
 ##################### DEFAULT PARAMETERS #########################

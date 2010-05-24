@@ -206,7 +206,7 @@ of TFBS located on the target region. These positions are relative to the target
 
 ################################################################
 ## Initialize parameters
-my $start_time = &AlphaDate();
+my $start_time = &RSAT::util::StartScript();
 
 my $help;
 my $xmlInputFile;

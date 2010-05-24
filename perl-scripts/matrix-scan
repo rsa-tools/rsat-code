@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.160 2010/05/19 11:21:46 rsat Exp $
+# $Id: matrix-scan,v 1.161 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -302,7 +302,7 @@ package main;
   ################################################################
   #### initialize parameters
   local $top_matrices = 0;
-  local $start_time = &AlphaDate();
+  local $start_time = &RSAT::util::StartScript();
   local $decimals=1;
   local $base = exp(1);
   local $sig_base = log(10);

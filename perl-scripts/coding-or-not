@@ -10,7 +10,7 @@ require "RSA.stat.lib";
 $line_width = 0;
 $out_dir = ".";
 $seq_format = "fasta";
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $number_format = "%-7g";
 $NULL="<NULL>";
 

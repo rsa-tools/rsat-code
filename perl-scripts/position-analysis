@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.53 2010/05/04 16:30:06 jvanheld Exp $
+# $Id: position-analysis,v 1.54 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -37,7 +37,7 @@ $supported_origins = join ",", @supported_origins;
 $offset = 0;
 
 #### initialize other variables
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $sequence_number = 0;
 
 $max_seq_length = 0;

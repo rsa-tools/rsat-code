@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.23 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.24 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -201,7 +201,7 @@ package main;
 {
 
     #### initialise parameters ####
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
 
     ### initial directory
     $dir{main} = `pwd`; #### remember working directory

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.17 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.18 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -37,7 +37,7 @@ package main;
     
     ################################################################
     #### initialise parameters
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
     
     
     local $slice_type = "chromosome";

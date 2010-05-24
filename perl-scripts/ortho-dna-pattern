@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: ortho-dna-pattern,v 1.6 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: ortho-dna-pattern,v 1.7 2010/05/24 08:09:01 jvanheld Exp $
 #
 ############################################################
 
@@ -51,7 +51,7 @@ package main;
 
     ################################################################
     ## Initialise parameters
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
 
 
     %main::infile = ();

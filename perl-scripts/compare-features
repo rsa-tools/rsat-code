@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.22 2010/04/17 03:04:31 jvanheld Exp $
+# $Id: compare-features,v 1.23 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -148,7 +148,7 @@ perl -pe 's/^;//' outfile
 {
     ################################################################
     #### initialise parameters
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
     
     #local %infile = ();
     local @input_files = ();

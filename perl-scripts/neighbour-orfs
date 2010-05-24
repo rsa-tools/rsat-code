@@ -17,7 +17,7 @@ require "RSA.lib";
 
 
 ### initialization
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $in_format = "orf";
 $out_format = "lr";
 
