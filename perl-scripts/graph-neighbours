@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.20 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: graph-neighbours,v 1.21 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -69,7 +69,7 @@ package main;
 
     ################################################################
     ## Initialise parameters
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
 
     %unknown_nodes = (); ## Names of the unidentified nodes
     $all_seeds = 0; ## Use all nodes as seeds

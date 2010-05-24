@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.91 2010/05/13 18:49:13 amedina Exp $
+# $Id: matrix-quality,v 1.92 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -215,7 +215,7 @@ package main;
 
     ################################################################
     #### Initialise parameters
-    my $start_time = &AlphaDate();
+    my $start_time = &RSAT::util::StartScript();
     @image_formats = ();
     $image_formats = "";
     @distrib_files = ();

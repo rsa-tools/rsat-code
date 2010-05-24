@@ -81,7 +81,7 @@ if (defined($SCRIPTS)) {
   $get_leader_cmd = "get-leader";
 }
 
-my $start_time = &AlphaDate();
+my $start_time = &RSAT::util::StartScript();
 
 local $label_specified = 0;	## indicates whether the label is specified in the option lines
 local $default_label = "id,organism_name,name";

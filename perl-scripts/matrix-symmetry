@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.16 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: matrix-symmetry,v 1.17 2010/05/24 08:09:01 jvanheld Exp $
 #
 ############################################################
 
@@ -154,8 +154,8 @@ package main;
 
     ################################################################
     ## Initialise parameters
-    my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    my $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
     local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     $seqlogo_path = &trim($seqlogo_path);

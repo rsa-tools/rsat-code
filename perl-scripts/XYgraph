@@ -25,7 +25,7 @@ $supported_formats = join (",", keys %supported_format);
 
 ################################################################
 ##### initialize default parameters #####
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $x_log_base=10;
 $y_log_base=10;
 $data_fields = "columns";

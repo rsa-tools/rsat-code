@@ -74,7 +74,7 @@ End_short_help
   exit;
 }
 
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $ORF_column = 1;
 
 #### initialise parameters ####

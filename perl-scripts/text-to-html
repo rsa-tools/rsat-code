@@ -8,7 +8,7 @@ require "RSA2.cgi.lib";
 
 
 #### initialise parameters ####
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 $out_format = 'html';
 
 %supported_output_format = (html=>1,

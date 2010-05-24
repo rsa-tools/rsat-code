@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.93 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: install-organism,v 1.94 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -65,7 +65,7 @@ $taxonomy = $null;
 
 ################################################################
 ## Initialize parameters
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 
 ### installation date
 local $install_date = $force_date || &AlphaDate();

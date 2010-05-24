@@ -8,7 +8,7 @@ require "RSA.lib";
 
 
 #### initialise parameters ####
-$start_time = &AlphaDate();
+$start_time = &RSAT::util::StartScript();
 
 &ReadArguments();
 

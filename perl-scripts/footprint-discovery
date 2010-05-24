@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.37 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: footprint-discovery,v 1.38 2010/05/24 08:09:01 jvanheld Exp $
 #
 ############################################################
 
@@ -183,7 +183,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -283,7 +283,7 @@ package main;
 sub RunFootprintDisco {
   local (@current_query_genes) = @_;
 
-  local $start_time = &AlphaDate();
+  local $start_time = &RSAT::util::StartScript();
   local $batch_cmd = "";
   local $out = "";
   local $genes = "";

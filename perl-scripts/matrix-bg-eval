@@ -75,7 +75,7 @@ package main;
 ################# ARGUMENTS AND OPTIONS ########################
 ################################################################
   
-  our $start_time = &AlphaDate();
+  our $start_time = &RSAT::util::StartScript();
   
   #####################################################################
   ### Declaring command lines options variables

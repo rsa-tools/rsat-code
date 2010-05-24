@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-footprinter,v 1.5 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: parse-footprinter,v 1.6 2010/05/24 08:09:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -14,7 +14,7 @@ require "RSA.lib";
 
 ################################################################
 #### initialise parameters
-my $start_time = &AlphaDate();
+my $start_time = &RSAT::util::StartScript();
 my $comment_char = "; ";
 my $out_format = "tab";
 
