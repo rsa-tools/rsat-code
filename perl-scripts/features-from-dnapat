@@ -74,7 +74,8 @@ End_short_help
   exit;
 }
 
-$start_time = $date = &AlphaDate();
+$start_time = &RSAT::util::StartScript(); 
+$date = $start_time;
 
 #### initialise parameters ####
 $type="dnapat";
