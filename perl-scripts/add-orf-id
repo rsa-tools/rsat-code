@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: add-orf-id,v 1.8 2010/04/17 03:04:31 jvanheld Exp $
+# $Id: add-orf-id,v 1.9 2010/05/24 13:51:08 rsat Exp $
 #
 # Time-stamp: <2003-07-06 20:15:40 jvanheld>
 #
@@ -13,7 +13,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 #require "RSA.classes";
 
-$start_time = $date = &AlphaDate();
+$start_time = &RSAT::util::StartScript(); 
+$date = $start_time;
 
 #### initialise parameters ####
 
