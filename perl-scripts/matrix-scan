@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.161 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: matrix-scan,v 1.162 2010/05/25 10:04:45 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -835,12 +835,19 @@ if ($quick_scan_if_possible) {
       }
 
       my $input_seq_length = 0;
+      my $atgc_found=0;## flag to deal with NNN-only sequences
       my ($in, $input_dir) = &OpenInputFile($main::infile{input});
       while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	     (($current_seq ne "") || ($seq_id ne ""))) {
+	     	$current_seq = lc($current_seq);
+	     	## skip the top sequences if only NNN (this fix a bug with matrix-scan use in footprint-scan)
+	     	if (($atgc_found == 0)&&($current_seq !~ /(a|c|t|g)/)){
+	     		$input_seq_length += length($current_seq);
+	     		next;
+	     	}
+	$atgc_found=1; ## sequence does not only contain NNN
 	## Sequence length
 	$input_seq_length += length($current_seq);
-	$current_seq = lc($current_seq);
 	$bg_model->calc_from_seq($current_seq, add=>1);
       }
       close $in;
