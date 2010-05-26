@@ -33,6 +33,7 @@ formats.
 			   'assembly'=>1,
 			   'clustal'=>1,
 			   'cluster-buster'=>1,
+			   'cb'=>1,
 			   'consensus'=>1,
 			   'feature'=>1,
 			   'gibbs'=> 1,
@@ -78,6 +79,7 @@ cluster-buster).
 sub readFromFile {
     my ($file, $format, %args) = @_;
     $format = lc($format);
+    $format =~ s/^cb$/cluster-buster/;
 
     my @matrices = ();
 
@@ -199,9 +201,12 @@ Initialize prior residue frequencies as equiprobable alphabet.
 =cut
 sub InitializeEquiPriors {
   my @matrices = @_;
+  &RSAT::message::Info("Initializing equiprobable priors for all matrices") if ($main::verbose >= 3);
   foreach my $matrix (@matrices) {
     my @alphabet = $matrix->getAlphabet();
-#    my @alphabet = qw(a c g t);
+    if (scalar(@alphabet) == 0) {
+      @alphabet = qw(a c g t);
+    }
     $matrix->setAlphabet_lc(@alphabet);
     $matrix->set_attribute("nrow", scalar(@alphabet));
     my %tmp_prior = ();
@@ -1701,13 +1706,10 @@ sub _readFromClusterBusterFile {
 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
-#    if ($file) {
-#	open INPUT, $file;
-#	$in = INPUT;
-#    }
 
     ## Initialize the matrix list
     my @matrices = ();
+    my @alphabet = qw(a c g t); ## cluster-buster does not explicitly indicate the alphabet, it is always supposed to represent DNA matrices
     my $matrix;
     my $current_matrix_nb = 1;
     my $l = 0;
@@ -1732,6 +1734,9 @@ sub _readFromClusterBusterFile {
 	  $matrix->set_attribute("AC", $name);
 	  $matrix->set_attribute("accession", $name);
 	}
+	my @alphabet = qw(a c g t);
+	$matrix->setAlphabet_lc(@alphabet);
+	$matrix->set_attribute("nrow", 4);
 	push @matrices, $matrix;
 	$current_matrix_nb++;
 	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
@@ -1741,6 +1746,7 @@ sub _readFromClusterBusterFile {
       if ($line =~ /^\s*(\S+)\s+/) {
 	$line = &main::trim($line);
 	my @fields = split /\t/, $line;
+#	&RSAT::message::Info("line", $l, "adding column", join(";", @fields)) if ($main::verbose >= 10);
 	$matrix->addColumn(@fields);
 	$ncol++;
 	$matrix->force_attribute("ncol", $ncol);
@@ -2393,11 +2399,11 @@ sub SortMatrices {
     if ($attr_not_found > 0) {
       &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
 			      "because this attribute is missing in", $attr_not_found."/".$nb_matrices, "matrices")
-	if ($main::verbose >= 0);
+	if ($main::verbose >= 1);
     } elsif ($not_real > 0) {
       &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
 			      "because this attribute has non real values in", $not_real."/".$nb_matrices, "matrices")
-	if ($main::verbose >= 0);
+	if ($main::verbose >= 1);
     } else {
       #    ## Check if the first matrix has the sort key as attribute
       #    my $first_matrix = $matrices[0];
