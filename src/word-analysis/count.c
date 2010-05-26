@@ -27,6 +27,7 @@ void init_last_position_array(long *array, int l)
         array[i] = -l;
 }
 
+static
 int oligo2index(seq_t *seq, int pos, int l)
 {
     int value = 0;
@@ -42,6 +43,7 @@ int oligo2index(seq_t *seq, int pos, int l)
     return value;
 }
 
+static
 int oligo2index_rc(seq_t *seq, int pos, int l)
 {
     int value = 0;

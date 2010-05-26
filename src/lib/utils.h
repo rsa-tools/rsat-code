@@ -15,6 +15,7 @@
 #include <string.h>
 #include <time.h>
 
+extern int SHOW_DEBUG;
 extern int VERBOSITY;
 //extern int VERSION;
 //extern char* COMMAND_LINE;
