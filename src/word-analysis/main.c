@@ -8,6 +8,7 @@
 
 #include "utils.h"
 //#include "count.h"
+#include "markov.h"
 
 //int VERSION = 20100512.2;
 
@@ -29,7 +30,8 @@ void help(char *progname)
 "        Matthieu Defrance\n"
 "\n"
 "DESCRIPTION\n"
-"        calculates oligomer frequencies from a set of sequences\n"
+"        calculates oligomer frequencies in a set of sequences,\n"
+"        and detects overrepresented oligomers.\n"
 "\n"
 "CATEGORY\n"
 "        sequences\n"
@@ -43,6 +45,7 @@ void help(char *progname)
 "        --version        print version\n"
 "        -v #             change verbosity level (0, 1, 2)\n"
 "        -l #             set oligomer length to # (monad size when using dyads)\n"
+"        -bg #            load the background model from # (oligo-analysis format)\n"
 "        -2str            add reverse complement\n"
 "        -1str            do not add reverse complement\n"
 "        -noov            do not allow overlapping occurrences\n"
@@ -76,8 +79,10 @@ void help(char *progname)
 
 int main(int argc, char *argv[])
 {
-    // char *input_filename = NULL;
-    // char *output_filename = NULL;
+    char *input_filename = NULL;
+    char *output_filename = NULL;
+    char *bg_filename = NULL;
+
     // int add_rc = TRUE;
     // int noov = FALSE;
     // int oligo_length = 1;
@@ -92,14 +97,22 @@ int main(int argc, char *argv[])
     //     exit(0);
     // }
     // 
-    // int i;
-    // for (i = 1; i < argc; i++) 
-    // {
-    //     if (strcmp(argv[i], "--help") == 0) 
-    //     {
-    //         help(argv[0]);
-    //         exit(0);
-    //     } 
+
+
+    int i;
+    for (i = 1; i < argc; i++) 
+    {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) 
+        {
+            help(argv[0]);
+            exit(0);
+        } 
+        else if (strcmp(argv[i], "-bg") == 0) 
+        {
+            ENSURE(argc > i + 1, "-v requires a nummber (0, 1 or 2)");
+            bg_filename = argv[++i];
+        } 
+
     //     else if (strcmp(argv[i], "--version") == 0) 
     //     {
     //         printf("%d\n", VERSION);
@@ -162,7 +175,11 @@ int main(int argc, char *argv[])
     //     {
     //         ERROR("invalid option %s", argv[i]);
     //     }
-    // }
+    }
+
+    markov_t *m = load_markov("../2nt_upstream-noorf_Escherichia_coli_K12-noov-2str.freq");
+    print_markov(m);
+    markov_P(m, "ac", 0, 2);
     // 
     // // monitor start & end time
     // time_t rawtime;

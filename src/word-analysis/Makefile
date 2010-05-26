@@ -1,7 +1,7 @@
 CC      = gcc
 CCFLAGS = -Wall -O3
 INC     = -I../lib
-OBJS    = main.o count.o ../lib/fasta.o ../lib/utils.o
+OBJS    = main.o count.o ../lib/fasta.o ../lib/utils.o ../lib/markov.o 
 APP     = word-analysis
 
 $(APP):	$(OBJS)
@@ -14,4 +14,5 @@ clean:
 	rm -f *.o $(APP)
 
 all: 
-	clean $(APP)
+	$(MAKE) clean
+	$(MAKE) $(APP)
