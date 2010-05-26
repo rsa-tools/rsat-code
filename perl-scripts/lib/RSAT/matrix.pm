@@ -3363,11 +3363,16 @@ sub makeLogo{
   my ($self,$logo_basename,$logo_formats,$logo_dir, $logo_options, $rev_compl) = @_;
 
   ## We need an ID -> if not defined, use the consensus
+  my $ac = $self->get_attribute("accession");
   my $id = $self->get_attribute("id");
   unless ($id) {
     $self->calcConsensus();
     $id = $self->get_attribute("consensus.IUPAC");
     $self->force_attribute("id", $id);
+  }
+
+  unless ($logo_basename) {
+    $logo_basename = $accession || $id;
   }
 
   my $ncol = $self->ncol();
