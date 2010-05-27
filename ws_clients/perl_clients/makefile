@@ -5,8 +5,8 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefile
 
-#SERVER=rsat.ulb.ac.be
-SERVER=localhost
+SERVER=rsat.ulb.ac.be
+#SERVER=localhost
 stubb:
 	wsdl2perl.pl -b RSATWS http://${SERVER}/rsat/web_services/RSATWS.wsdl
 
