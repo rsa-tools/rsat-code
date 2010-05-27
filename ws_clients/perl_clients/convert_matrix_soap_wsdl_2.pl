@@ -8,7 +8,8 @@ use lib 'RSATWS';
 use MyInterfaces::RSATWebServices::RSATWSPortType;
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+## The server cannot be defined in the Perl script anymore, it is defined in the stubb (RSATWS/*).
+#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
 
 ## Service call
 my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
@@ -41,7 +42,7 @@ my %args = (
 	);
 
 ## Send the request to the server
-print "Sending request to the server $server\n";
+#print "Sending request to the server $server\n";
 my $som = $soap->convert_matrix({'request' => \%args});
 
 ## Get the result
