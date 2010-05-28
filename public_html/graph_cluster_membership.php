@@ -135,7 +135,7 @@
 
 
     #comment_file 
-    $comment_file = $server.".comments";
+    $comment_file = $server_file.".comments";
     $comments = storeFile($comment_file);
     if ($comments != "") {
       warning($comments);
