@@ -143,9 +143,13 @@ seqlogo=[your_path_to_rsat]/rsa-tools/bin/seqlogo
 ## MEME, motif discovery program developed by Tim Bailey
 # meme_dir=/rsat/applications/meme.3.0.5/
 
-## MCL , graph-based clustering algorithm developed by Stijn Van Dongen
-## Integrated on the NeAT suite.
-mcl_dir=/usr/local/bin/mcl
+## MCL , graph-based clustering algorithm developed by Stijn Van Dongen, and
+## integrated in the NeAT suite.
+mcl_dir=[your_path_to_rsat]/rsa-tools/bin
+
+## RNSC , graph-based clustering algorithm developed by Andrew King and Igor
+## Jurisica, and integrated in the NeAT suite.
+rnsc_dir=[your_path_to_rsat]/rsa-tools/bin
 
 ## REA, k-shortest path finding program by Jimenez and Marzal. 
 ## Used for the path finding algorithms in the NeAT suite.
