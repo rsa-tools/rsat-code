@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.16 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: draw-heatmap,v 1.17 2010/05/28 11:01:21 rsat Exp $
 #
 ############################################################
 
@@ -73,7 +73,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -250,15 +250,13 @@ package main;
   ## attribution of the minimal and maximal value if specified as arguments
   if (defined($min_val)) {
     $display_min = &RSAT::stats::max($min_val, $min);
-    #      if ($min_val <= $min)  {
-    #	$display_min = $min_val;
-    #      } else {
-    #	$display_min = $min;
-    #      }
+  } else {
+    $display_min = $min;
   }
   if (defined($max_val)) {	#&& ($max_val >= $max)) {
     $display_max = &RSAT::stats::min($max_val, $max);
-    #      $max = $max_val;
+  } else {
+    $display_max = $max;
   }
 
   ################################################################
@@ -337,8 +335,8 @@ package main;
 
 	## Associate a color from the gradient  to the real values
 	if (&RSAT::util::IsReal($val)) {
-	  my $display_val = &RSAT::stats::max($val,$min_val);
-	  if ($val > $max_val) {
+	  my $display_val = &RSAT::stats::max($val,$display_min);
+	  if ($val > $display_max) {
 	    $color = $saturation_color;
 	  } else {
 	    $color = &RSAT::util::getBgColorFromOneScore($display_val, $display_min, $display_max, 0, $gradient);
