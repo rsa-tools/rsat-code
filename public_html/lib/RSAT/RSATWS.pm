@@ -21,15 +21,16 @@ require RSAT::TaskManager;
 
 &main::InitRSAT();
 
-#my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
-my $RSAT = $ENV{RSAT};
-#$RSAT = "/cobelix/jvanheld/rsa-tools";
-unless ($RSAT) {
-    $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
-#    $RSAT = join(";","ENV", keys(%ENV));
+#my $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||;
+#my $RSAT = $ENV{RSAT};
+unless ($ENV{RSAT}) {
+    $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
+#    $ENV{RSAT} = join(";","ENV", keys(%ENV));
 }
-my $SCRIPTS = $RSAT.'/perl-scripts';
-my $TMP = $RSAT.'/public_html/tmp';
+#$ENV{RSAT} = "/cobelix/jvanheld/rsa-tools";
+
+my $SCRIPTS = $ENV{RSAT}.'/perl-scripts';
+my $TMP = $ENV{RSAT}.'/public_html/tmp';
 
 
 #require "RSA.lib";
@@ -5068,7 +5069,7 @@ sub UpdateLogFileWS {
     $ENV{rsat_site} = `hostname`;
     chomp($ENV{rsat_site});
   }
-  my $log_file = join("", $RSAT, "/public_html/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
+  my $log_file = join("", $ENV{RSAT}, "/public_html/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
   print "LOG ### $log_file";
   if (open LOG, ">>".$log_file) {
     #flock(LOG,2);
