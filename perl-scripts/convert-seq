@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.35 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: convert-seq,v 1.36 2010/05/28 14:03:09 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -78,8 +78,10 @@ if ($verbose) {
 ## Read the sequences and convert them
 while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
-
     $seq_nb++;
+    my $seq_len = length($current_seq);
+
+    &RSAT::message::Info("Converting sequence", $seq_nb, $current_id, $seq_len."bp") if ($main::verbose >= 2);
 
 #    ## Remove empty sequences 
 #    if (($noempty) && ($current_seq !~ /\S/)) {
@@ -88,44 +90,42 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 
     ## Skip short sequences
     if ($skip_short) {
-	my $seq_len = length($current_seq);
-	if ($seq_len < $skip_short) {
-	    &RSAT::message::Warning(join("\t", "Skipping short sequence", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
-	    next;
-	}
+      if ($seq_len < $skip_short) {
+	&RSAT::message::Warning(join("\t", "Skipping short sequence", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
+	next;
+      }
     }
 
     ## Skip long sequences
     if ($skip_long) {
-	my $seq_len = length($current_seq);
-	if ($seq_len > $skip_long) {
-	    &RSAT::message::Warning(join("\t", "Skipping long sequence", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
-	    next;
-	}
+      if ($seq_len > $skip_long) {
+	&RSAT::message::Warning(join("\t", "Skipping long sequence", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
+	next;
+      }
     }
 
     ## Mask short sequences
     if ($mask_short) {
-	my $seq_len = length($current_seq);
-	if ($seq_len < $mask_short) {
-	    $current_seq = "N"x$seq_len;
-	}
+      if ($seq_len < $mask_short) {
+	$current_seq = "N"x$seq_len;
+      }
     }
 
     #### case conversion
     if ($lowercases) {
-        $current_seq = lc($current_seq);
-
+      $current_seq = lc($current_seq);
     } elsif ($uppercases) {
-        $current_seq = uc($current_seq);
-    } 
+      $current_seq = uc($current_seq);
+    }
+
 
     #### DNA only
     if ($dna) {
-        $current_seq = &CleanDNA($current_seq, "n");
-	if ($out_format eq "wc") {
-	  $dotmask = 1;
-	}
+      &RSAT::message::Info("Cleaning DNA") if ($main::verbose >= 2);
+      $current_seq = &CleanDNA($current_seq, "n");
+      if ($out_format eq "wc") {
+	$dotmask = 1;
+      }
     }
 
     ## Replace N by dots
@@ -146,7 +146,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     unless ($current_id) {
 	$current_id = $seq_nb;
     }
-    
+
     ## Add a prefix to the sequence ID
     if ($seq_prefix) {
 	$current_id = join ("", $seq_prefix, $current_id);
@@ -173,7 +173,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	close RAW;
 	print $out "$one_seq_file\t$current_id\n";
     } else {
-	&PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
+      &PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
     }
     if ($add_RC) {
 	$current_id .= "_reverse_complement";
