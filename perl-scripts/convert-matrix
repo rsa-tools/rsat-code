@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.116 2010/05/26 21:39:33 jvanheld Exp $
+# $Id: convert-matrix,v 1.117 2010/05/28 01:04:57 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1476,7 +1476,7 @@ sub ExportMatrix {
   ## when convert-matrix is used to convert multiple matrices, a
   ## separate HTML button has to be dispplayed aftr each matrix
   if ($return_fields{links}) {
-    print $out_handle $matrix->link_button_TOMTOM();
+    print $out_handle "\n", $matrix->link_button_TOMTOM(), "\n";
   }
 
 
