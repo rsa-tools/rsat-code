@@ -23,7 +23,7 @@ require RSAT::TaskManager;
 
 #my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $RSAT = $ENV{RSAT};
-$RSAT = "/cobelix/jvanheld/rsa-tools";
+#$RSAT = "/cobelix/jvanheld/rsa-tools";
 unless ($RSAT) {
     $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
 #    $RSAT = join(";","ENV", keys(%ENV));
