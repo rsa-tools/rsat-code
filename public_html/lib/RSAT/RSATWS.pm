@@ -23,6 +23,7 @@ require RSAT::TaskManager;
 
 #my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $RSAT = $ENV{RSAT};
+$RSAT = "/cobelix/jvanheld/rsa-tools";
 unless ($RSAT) {
     $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
 #    $RSAT = join(";","ENV", keys(%ENV));
@@ -42,7 +43,7 @@ my $TMP = $RSAT.'/public_html/tmp';
 =head1 DESCRIPTION
 
 Documentation for this module is at
-  http://rsat.bigre.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
+  http://rsat.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
 
 =cut
 
@@ -4516,10 +4517,11 @@ Generate the command for the network-based clustering algorithm RNSC
 sub rnsc_cmd {
   my ($self, %args) =@_;
 
-  my $command = "rnsc";
-  if (-e $ENV{RSAT}."/bin/rnsc") {
-    $command = $ENV{RSAT}."/bin/rnsc";
-  }
+#  my $command = "rnsc";
+#  if (-e $ENV{RSAT}."/bin/rnsc") {
+#    $command = $ENV{RSAT}."/bin/rnsc";
+#  }
+  my $command = &RSAT::server::GetProgramPath("rnsc");
 
   ## Check that the rnsc command file exists
   unless (-e $command) {
@@ -4663,14 +4665,15 @@ sub mcl_cmd {
 
   ## In principle, the mcl directory must have been defined in the
   ## file ${RSAT}/RSAT_config.props
-  my $command = "mcl";
-  if (defined($ENV{mcl_dir})) {
-    $command = $ENV{mcl_dir}.'/mcl',
-  } elsif (-e $ENV{RSAT}.'/bin/mcl') {
-    $command = $ENV{RSAT}.'/bin/mcl'
-  } elsif (-e '/usr/local/bin/mcl') {
-    $command = '/usr/local/bin/mcl';
-  }
+#  my $command = "mcl";
+#  if (defined($ENV{mcl_dir})) {
+#    $command = $ENV{mcl_dir}.'/mcl',
+#  } elsif (-e $ENV{RSAT}.'/bin/mcl') {
+#    $command = $ENV{RSAT}.'/bin/mcl'
+#  } elsif (-e '/usr/local/bin/mcl') {
+#    $command = '/usr/local/bin/mcl';
+#  }
+  my $command = &RSAT::server::GetProgramPath("mcl");
 
   ## Check that the mcl command file exists
   unless (-e $command) {
