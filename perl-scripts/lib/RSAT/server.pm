@@ -3,9 +3,23 @@ package RSAT::server;
 require RSAT::util;
 require RSAT::message;
 
+unless ($ENV{RSAT}) {
+    $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
+#    $ENV{RSAT} = join(";","ENV", keys(%ENV));
+}
+#$ENV{RSAT} = "/cobelix/jvanheld/rsa-tools";
 
 ################################################################
-## Return the path of a program
+## Return the path of a program.
+##
+## The function successively checks if the program exists in various
+## directories: 
+## 1)  $ENV{RSAT_BIN} (defined in RSAT_config.props)
+## 2)  $ENV{RSAT}/bin
+## 3) in the user path
+##
+## Usage:
+##    my $program_path = &RSAT::server::GetProgramPath("program_name");
 sub GetProgramPath {
     my ($program_name) = @_;
     my $program_path = "";
