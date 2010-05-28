@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.16 2010/03/11 12:11:51 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.17 2010/05/28 00:19:28 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -234,7 +234,7 @@ install_gd:
 	)
 
 ################################################################
-## Generic call for installin a program. This tag is called with
+## Generic call for installing a program. This tag is called with
 ## specific parameters for each program (consensus, patser, ...)
 APP_DIR=${RSAT}/applications
 PROGRAM=consensus
@@ -405,3 +405,65 @@ install_meme:
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH ${MEME_BIN_DIR}:\$$PATH"
 
+################################################################
+## Install the graph-based clustering algorithm MCL
+MCL_BASE_DIR=${RSAT}/app_source/mcl
+MCL_VERSION=09-308
+MCL_ARCHIVE=mcl-${MCL_VERSION}.tar.gz
+MCL_URL=http://www.micans.org/mcl/src/${MCL_ARCHIVE}
+MCL_DISTRIB_DIR=${MCL_BASE_DIR}/mcl-${MCL_VERSION}
+download_mcl:
+	@mkdir -p ${MCL_BASE_DIR}
+	wget --no-directories  --directory-prefix ${MCL_BASE_DIR} -rNL ${MCL_URL}
+	(cd ${MCL_BASE_DIR}; tar -xpzf ${MCL_ARCHIVE})
+	@echo ${MCL_DISTRIB_DIR}
+
+MCL_INSTALL_DIR=${RSAT}
+MCL_BIN_DIR=${MCL_INSTALL_DIR}/bin
+install_mcl:
+	@mkdir -p ${MCL_INSTALL_DIR}
+	(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_INSTALL_DIR} ; \
+	make clean; make ; make install)
+	@echo "Please edit the RSAT configuration file"
+	@echo "	${RSAT}/RSAT_config.props"
+	@echo "and copy-paste the following line to specify the MCL bin pathway"
+	@echo "	mcl_dir=${MCL_BIN_DIR}"
+	@echo "This will allow RSAT programs to idenfity mcl path on this server."
+	@echo
+	@echo "You can also add the MCL bin directory in your path."
+	@echo "If your shell is bash"
+	@echo "	export PATH=${MCL_BIN_DIR}:\$$PATH"
+	@echo "If your shell is csh or tcsh"
+	@echo "	setenv PATH ${MCL_BIN_DIR}:\$$PATH"
+
+################################################################
+## Install the graph-based clustering algorithm RNSC
+RNSC_BASE_DIR=${RSAT}/app_source/rnsc
+RNSC_VERSION=09-308
+RNSC_ARCHIVE=rnsc.zip
+RNSC_URL=http://www.cs.utoronto.ca/~juris/data/rnsc/rnsc.zip
+download_rnsc:
+	@mkdir -p ${RNSC_BASE_DIR}
+	wget --no-directories  --directory-prefix ${RNSC_BASE_DIR} -rNL ${RNSC_URL}
+	(cd ${RNSC_BASE_DIR}; unzip ${RNSC_ARCHIVE})
+	@echo ${RNSC_BASE_DIR}
+
+RNSC_BIN_DIR=${RSAT}/bin
+install_rnsc:
+	@mkdir -p ${RNSC_BIN_DIR}
+	(cd ${RNSC_BASE_DIR}; make ; \
+	mv -f rnsc ${RNSC_BIN_DIR}; \
+	mv -f rnscfilter ${RNSC_BIN_DIR}; \
+	mv -f rnscconvert ${RNSC_BIN_DIR}; \
+	)
+	@echo "Please edit the RSAT configuration file"
+	@echo "	${RSAT}/RSAT_config.props"
+	@echo "and copy-paste the following line to specify the RNSC bin pathway"
+	@echo "	rnsc_dir=${RNSC_BIN_DIR}"
+	@echo "This will allow RSAT programs to idenfity rnsc path on this server."
+	@echo
+	@echo "You can also add the RNSC bin directory in your path."
+	@echo "If your shell is bash"
+	@echo "	export PATH=${RNSC_BIN_DIR}:\$$PATH"
+	@echo "If your shell is csh or tcsh"
+	@echo "	setenv PATH ${RNSC_BIN_DIR}:\$$PATH"
