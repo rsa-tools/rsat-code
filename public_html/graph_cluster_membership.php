@@ -164,6 +164,7 @@
    # $tth_resultURL = rsat_path_to_url($tth_server);
   
     # Draw heatmap (low resolution)
+    info("Generating heatmap (low resolution)");
      echo "</pre>"; 
     $ldh_parameters = array( 
       "request" => array(
@@ -179,6 +180,7 @@
     $ldh_echoed = $client->draw_heatmap($ldh_parameters);
     $ldh_response = $ldh_echoed->response;
     $ldh_command = $ldh_response->command;
+    echo($ldh_command);
     store_command("$ldh_command", "Low-resoltion map", $cmd_handle);
     $ldh_server = $ldh_response->server;
     $ldh_client = $ldh_response->client;
@@ -199,6 +201,7 @@
     ////////////////////////////////////////////////////////////////
     
     # Draw heatmap (high resolution)
+    info("Generating heatmap (high resolution)");
     //     echo "</pre>"; 
     $hdh_parameters = array( 
       "request" => array(
