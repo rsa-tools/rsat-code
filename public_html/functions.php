@@ -52,6 +52,7 @@ Function info($info) {
 //     $tmpFile = $tmpFile.$now;
 //     $tmpFileName = $tmpDir.$tmpFile;
    $tmpFileName = getTempFileName('upload');
+//   echo ("TEMP $tmpFileName");
 
   if (is_uploaded_file($_FILES[$file]['tmp_name'])) {
     if (rename($_FILES[$file]['tmp_name'], $tmpFileName)) {
@@ -61,6 +62,7 @@ Function info($info) {
     }
   } else {
     echo "File ".$_FILES[$file]['tmp_name']." could not be uploaded<br>";
+//     print_r($_FILES[$file]);
   }
   return $tmpFileName;
   }
@@ -84,6 +86,7 @@ Function getTempFileName($prefix) {
 
 <?php
     Function storeFile($file) {
+
       $fh = fopen($file, 'r');
       $theData = "";
       if (filesize($file) > 0) {
@@ -187,13 +190,15 @@ Function load_props($props) {
   # LOAD PROPERTIES
   $properties = load_props($rsat_main."/RSAT_config.props");
   $tmp = $properties[rsat_tmp];
-  $WWW_RSA = $properties[www_rsa];
+  $WWW_RSA = $properties[rsat_www];
   $log_name = $properties[rsat_site];
   date_default_timezone_set("Europe/Paris");
   $neat_wsdl = $properties[neat_ws];
+  $neat_www_root = $properties[neat_www_root];
   $neat_java_wsdl = $properties[neat_java_ws];
   # host may include tomcat port
-  $neat_java_host = str_replace("/rsat/","",$WWW_RSA);
+##  $neat_java_host = str_replace("/rsat/","",$WWW_RSA);
+  $neat_java_host = $properties[neat_java_host];
   $tomcat_port = $properties[tomcat_port];
   if(strcmp($tomcat_port,"") != 0){
   	  $neat_java_host = $neat_java_host . ":" . $tomcat_port;
@@ -389,3 +394,13 @@ Function UpdateLogFile($suite ,$script_name, $message) {
     return $result;
   }
 ?> 
+
+<?php
+  ini_set('max_execution_time', 2400);
+  ini_set('max_input_time', 6000);
+  ini_set('memory_limit', "100M");
+  ini_set('display_errors', 'on');
+  ini_set('post_max_size', 80000000);
+  ini_set('error_reporting', "E_ALL & ~E_NOTICE");
+  ini_set('upload_max_filesize', 100000000);
+?>
