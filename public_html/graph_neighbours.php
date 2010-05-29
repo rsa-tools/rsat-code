@@ -203,7 +203,7 @@
     ## DISPLAY THE RESULT
     print_url_table($URL);
 
-    ## Display the "Netx step" table
+    ## Display the "Next step" table
     echo "
   <TABLE CLASS = 'nextstep'>
     <TR>
