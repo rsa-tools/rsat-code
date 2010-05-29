@@ -14,6 +14,11 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
+
+  # File to store the commands
+  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_handle = fopen($cmd_file, 'a');
+
   title('compare-graphs - results');
   # Error status
   $error = 0;
@@ -120,8 +125,8 @@
 //     phpinfo();
 
     $client = new SoapClient(
-//                       $neat_wsdl,
-"http://tagc.univ-mrs.fr/rsa-tools/web_services/RSATWSnew3.wsdl",
+                       $neat_wsdl,
+		       //"http://tagc.univ-mrs.fr/rsa-tools/web_services/RSATWSnew3.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -137,25 +142,32 @@
     hourglass("off");
     $response =  $echoed->response;
     $command = $response->command;
+    store_command($command, "graph comparison", $cmd_handle);
     $server = $response->server;
     $client = $response->client;
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
+    $URL['Result'] = rsat_path_to_url($temp_file);
 //    $resultURL = $WWW_RSA."/tmp/".$temp_file;
-    $resultURL = $neat_www_root."/tmp/".$temp_file;
+//    $resultURL = $neat_www_root."/tmp/".$temp_file;
     # The comment file has the same name as the
     # result file with ".comments" at the end of the string.
     $comments_temp_file = $server.".comments";
     $comments = storeFile($comments_temp_file);
-    
-    # Comments
+
+    ## Close command handle
+    fclose($cmd_handle);
+    $URL['Server commands'] = rsat_path_to_url($cmd_file);
+
+    ## Print the comparison statistics
     echo "<pre>";
     echo "$comments";
     echo "</pre><hr>";
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
+
+    ## DISPLAY THE RESULT
+    print_url_table($URL);
+    
     echo "<hr>\n";
   echo "
   <TABLE CLASS = 'nextstep'>
