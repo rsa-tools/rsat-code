@@ -135,11 +135,11 @@
     store_command($command, "graph topology", $cmd_handle);
     $URL['Graph topology (tab)'] = rsat_path_to_url($server);
     
-    $server = rtrim ($server);
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
- $graph_topology_result = storeFile($server);
+#    $server = rtrim ($server);
+#    $temp_file = explode('/',$server);
+#    $temp_file = end($temp_file);
+#    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+# $graph_topology_result = storeFile($server);
    # Text-to-html
    $tth_parameters = array( 
      "request" => array(
@@ -152,20 +152,20 @@
    $tth_command = $tth_response->command;
    $tth_server = $tth_response->server;
    $tth_client = $tth_response->client;
-   $tth_server = rtrim ($tth_server);
-   $tth_temp_file = explode('/',$tth_server);
-   $tth_temp_file = end($tth_temp_file);
-   $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;   
+#   $tth_server = rtrim ($tth_server);
+#   $tth_temp_file = explode('/',$tth_server);
+#   $tth_temp_file = end($tth_temp_file);
+#   $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;   
    store_command($tth_command, "text-to-html", $cmd_handle);
    $URL['Graph topology (html)'] = rsat_path_to_url($tth_server);
   
 
-    # Display the results
-    echo "The result is available as text file at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a><br>"; 
-    echo "The result is available as HTML page at the following URL ";
-    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
-    echo "<hr>\n"; 
+//     # Display the results
+//     echo "The result is available as text file at the following URL ";
+//     echo "<a href = '$resultURL'>$resultURL</a><br>"; 
+//     echo "The result is available as HTML page at the following URL ";
+//     echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
+//     echo "<hr>\n"; 
    
    if ($nodes != "") {
    
@@ -220,10 +220,10 @@
      $xy_all_command = $xy_all_response->command;
      $xy_all_server = $xy_all_response->server;
      $xy_all_client = $xy_all_response->client;
-     $xy_all_server = rtrim ($xy_all_server);
-     $xy_all_temp_file = explode('/',$xy_all_server);
-     $xy_all_temp_file = end($xy_all_temp_file);
-     $xy_all_resultURL = "tmp/".$xy_all_temp_file;
+#     $xy_all_server = rtrim ($xy_all_server);
+#     $xy_all_temp_file = explode('/',$xy_all_server);
+#     $xy_all_temp_file = end($xy_all_temp_file);
+#     $xy_all_resultURL = "tmp/".$xy_all_temp_file;
      store_command($xy_all_command, "degree distrib graph", $cmd_handle);
      $URL['Degree distribution (png)'] = rsat_path_to_url($xy_all_server);
     
@@ -255,11 +255,11 @@
      store_command($xy_all_command_log, "degree distrib graph (log)", $cmd_handle);
      $URL['Degree distribution Y log (png)'] = rsat_path_to_url($xy_all_server_log);
 
-     echo "</pre>";
-     $xy_all_server_log = rtrim ($xy_all_server_log);
-     $xy_all_temp_file_log = explode('/',$xy_all_server_log);
-     $xy_all_temp_file_log = end($xy_all_temp_file_log);
-     $xy_all_resultURL_log = "tmp/".$xy_all_temp_file_log;
+#     echo "</pre>";
+#     $xy_all_server_log = rtrim ($xy_all_server_log);
+#     $xy_all_temp_file_log = explode('/',$xy_all_server_log);
+ #    $xy_all_temp_file_log = end($xy_all_temp_file_log);
+ #    $xy_all_resultURL_log = "tmp/".$xy_all_temp_file_log;
 
      if ($directed) {
        ### CLASSFREQ + XY-GRAPH (intra nodes degree)
@@ -278,12 +278,12 @@
        $cf_in_command = $cf_in_response->command;
        $cf_in_server = $cf_in_response->server;
        $cf_in_client = $cf_in_response->client;
-       $cf_in_server = rtrim ($cf_in_server);
-       $cf_in_temp_file = explode('/',$cf_in_server);
-       $cf_in_temp_file = end($cf_in_temp_file);
-       $cf_in_resultURL = "tmp/".$cf_in_temp_file;
+#       $cf_in_server = rtrim ($cf_in_server);
+#       $cf_in_temp_file = explode('/',$cf_in_server);
+#       $cf_in_temp_file = end($cf_in_temp_file);
+#       $cf_in_resultURL = "tmp/".$cf_in_temp_file;
 #       echo "</pre>";
-       $cf_in_server = rtrim ($cf_in_server);
+#       $cf_in_server = rtrim ($cf_in_server);
        store_command($cf_in_command, "incoming degree distribution", $cmd_handle);
        $URL['Incoming degree distribution (tab)'] = rsat_path_to_url($cf_in_server);
     
@@ -314,10 +314,10 @@
        $URL['Incoming degree distribution (png)'] = rsat_path_to_url($xy_in_server);
 
 ##       echo "</pre>";
-       $xy_in_server = rtrim ($xy_in_server);
-       $xy_in_temp_file = explode('/',$xy_in_server);
-       $xy_in_temp_file = end($xy_in_temp_file);
-       $xy_in_resultURL = "tmp/".$xy_in_temp_file;
+#       $xy_in_server = rtrim ($xy_in_server);
+#       $xy_in_temp_file = explode('/',$xy_in_server);
+#       $xy_in_temp_file = end($xy_in_temp_file);
+#       $xy_in_resultURL = "tmp/".$xy_in_temp_file;
   
 # xy graph (log)
        $xy_in_parameters_log = array( 
@@ -347,10 +347,10 @@
        $URL['Incoming degree distribution Y log (png)'] = rsat_path_to_url($xy_in_server);
 
 #       echo "</pre>";
-       $xy_in_server_log = rtrim ($xy_in_server_log);
-       $xy_in_temp_file_log = explode('/',$xy_in_server_log);
-       $xy_in_temp_file_log = end($xy_in_temp_file_log);
-       $xy_in_resultURL_log = "tmp/".$xy_in_temp_file_log;  
+#       $xy_in_server_log = rtrim ($xy_in_server_log);
+#       $xy_in_temp_file_log = explode('/',$xy_in_server_log);
+#       $xy_in_temp_file_log = end($xy_in_temp_file_log);
+#       $xy_in_resultURL_log = "tmp/".$xy_in_temp_file_log;  
   
   
   
@@ -370,12 +370,12 @@
        $cf_out_command = $cf_out_response->command;
        $cf_out_server = $cf_out_response->server;
        $cf_out_client = $cf_out_response->client;
-       $cf_out_server = rtrim ($cf_out_server);
-       $cf_out_temp_file = explode('/',$cf_out_server);
-       $cf_out_temp_file = end($cf_out_temp_file);
-       $cf_out_resultURL = "tmp/".$cf_out_temp_file;
+#       $cf_out_server = rtrim ($cf_out_server);
+#       $cf_out_temp_file = explode('/',$cf_out_server);
+#       $cf_out_temp_file = end($cf_out_temp_file);
+#       $cf_out_resultURL = "tmp/".$cf_out_temp_file;
 #       echo "</pre>";
-       $cf_out_server = rtrim ($cf_out_server);
+#       $cf_out_server = rtrim ($cf_out_server);
        store_command($cf_out_command, "outgoing degree distribution", $cmd_handle);
        $URL['Outgoing degree distribution (tab)'] = rsat_path_to_url($cf_out_server);
     
@@ -406,10 +406,10 @@
        $URL['Outgoing degree distribution (png)'] = rsat_path_to_url($cf_out_server);
 
 #       echo "</pre>";
-       $xy_out_server = rtrim ($xy_out_server);
-       $xy_out_temp_file = explode('/',$xy_out_server);
-       $xy_out_temp_file = end($xy_out_temp_file);
-       $xy_out_resultURL = "tmp/".$xy_out_temp_file;
+#       $xy_out_server = rtrim ($xy_out_server);
+#       $xy_out_temp_file = explode('/',$xy_out_server);
+#       $xy_out_temp_file = end($xy_out_temp_file);
+#       $xy_out_resultURL = "tmp/".$xy_out_temp_file;
    
 # xy graph (log)
        $xy_out_parameters_log = array( 
@@ -439,10 +439,10 @@
        $URL['Outgoing degree distribution Y log (png)'] = rsat_path_to_url($cf_out_server_log);
 
 #       echo "</pre>";
-       $xy_out_server_log = rtrim ($xy_out_server_log);
-       $xy_out_temp_file_log = explode('/',$xy_out_server_log);
-       $xy_out_temp_file_log = end($xy_out_temp_file_log);
-       $xy_out_resultURL_log = "tmp/".$xy_out_temp_file_log;
+#       $xy_out_server_log = rtrim ($xy_out_server_log);
+#       $xy_out_temp_file_log = explode('/',$xy_out_server_log);
+#       $xy_out_temp_file_log = end($xy_out_temp_file_log);
+#       $xy_out_resultURL_log = "tmp/".$xy_out_temp_file_log;
 
 
        echo "<table>
