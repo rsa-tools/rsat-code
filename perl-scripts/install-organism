@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.94 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: install-organism,v 1.95 2010/05/29 17:38:47 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -219,9 +219,6 @@ exit(0);
 sub Verbose {
     print $out "; install-organism ";
     &PrintArguments($out);
-    print $out ";\n; Installing organism\n";
-    print $out "; -------------------\n";
-
     print $out ";\n; Tasks:\n";
     foreach my $task (keys %task) {
 	print $out ";\t$task\n";

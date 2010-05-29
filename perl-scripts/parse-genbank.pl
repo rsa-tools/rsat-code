@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.60 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.61 2010/05/29 17:38:47 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -158,7 +158,7 @@ package main;
     unless ($org) {
 	$org = `basename $dir{input}`;
 	chomp($org);
-	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
+	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 2);
     }
 
     ## treat organism-specific preferred IDs
@@ -186,14 +186,18 @@ package main;
 #	chdir ($dir{input});
 	push @genbank_files, glob($dir{input}."/*.${ext}");
 	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
-	&RSAT::message::Info("Genbank files found in the directory", join("; ", @genbank_files));
+	if (scalar(@genbank_files) > 1) {
+	    &RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the directory");
+	}
 
 	## If no genbank files were found in the main directory (Bacteria),
 	## search in CHR_* directories (eukaryotes)
-	if (scalar(@genbank_files) < 1) {
+	if (scalar(@genbank_files) ==0 ) {
 	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}");
 	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}.gz");
-	    &RSAT::message::Info("Genbank files found in the CHR_* subdirectories", join("; ", @genbank_files));
+	    if (scalar(@genbank_files) > 1) {
+		&RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the CHR_* subdirectories");
+	    }
 	}
     }
 
@@ -201,7 +205,7 @@ package main;
 	system "ls -l";
 	&RSAT::error::FatalError("There is no genbank file in the input directory $dir{input}\n");
     } else {
-	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
+	&RSAT::message::Info("Genbank files\n;\t", join("\n;\t", @genbank_files)) if ($verbose >= 2);
     }
     chdir($dir{main});     #### come back to the starting directory
 
@@ -210,10 +214,10 @@ package main;
 	if (($dir{input} =~ /refseq/) ||
 	    ($data_type eq "refseq")) {
 	    $dir{output} = $parsed_data."/refseq/".$ext."/".$delivery_date;
-	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 2);
 	} else {
 	    $dir{output} = "$ENV{RSAT}/data/genomes/".$org."/genome";
-	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 2);
 	}
     }
     chdir $dir{main};
@@ -295,7 +299,7 @@ package main;
 
     foreach my $factory_name (@class_factories) {
 	my $class_factory = $$factory_name;
-	&RSAT::message::TimeWarn("Dumping class $factory_name $class_factory") 
+	&RSAT::message::TimeWarn("Dumping class $factory_name") 
 	  if ($verbose >= 1);
 	$suffix = "_$org" unless ($no_suffix);
 	$class_factory->dump_tables($suffix);
@@ -628,13 +632,14 @@ sub Verbose {
 	}
     }
     printf $out "; %-29s\t%s\n", "organism", $org;
-    printf $out "; %-29s\t%s\n", "genbank files", join (" ", @genbank_files);
+    printf $out "; %-29s\t%d\n", "genbank files", scalar (@genbank_files);
+    printf $out "; %-29s\t%s\n", "genbank files", join (" ", @genbank_files) if ($main::verbose >= 2);
 }
 
 ################################################################
 ## Specific postprocessing for Refseq data
 sub RefseqPostProcessing {
-    warn "; Postprocessing proteins parsed from Refseq\n" if ($main::verbose >= 1);
+    warn "; Postprocessing proteins parsed from Refseq\n" if ($main::verbose >= 2);
     foreach my $protein ($contigs->get_objects()) {
 	my $id = $protein->get_attribute("id");
 	my $version = $protein->get_attribute("version");
@@ -667,7 +672,7 @@ sub ExportProteinSequences {
     $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
 
     &RSAT::message::TimeWarn("Exporting translated sequences to file", $out_file{pp})
-	if ($main::verbose >= 1);
+	if ($main::verbose >= 2);
 
     open PP, ">$out_file{pp}";
     foreach my $cds ($CDSs->get_objects()) {
@@ -742,7 +747,7 @@ sub ExportMaskedSequences {
 # 				  "len=".$len,
 # ##				  $before,
 # ##				  $after,
-# 				  ) if ($main::verbose >= 10);
+# 				  ) if ($main::verbose >= 20);
 	    
 	    substr($sequence, $offset, $len) = "n"x$len;
 	}
