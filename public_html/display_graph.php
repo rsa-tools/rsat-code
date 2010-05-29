@@ -11,11 +11,14 @@
 </head>
 <body class="results">
 <?php 
+  
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
   
+  
   title('display-graph - results');
+
   # Error status
   $error = 0;
   # Get parameters
@@ -26,7 +29,11 @@
   } else if ($_REQUEST['pipe_graph_file'] != "")  {
     $graph_file = $_REQUEST['pipe_graph_file'];
   }
-  $now = date("Ymd_His");
+  $now = date("Ymd_His");  ini_set('default_socket_timeout', 3000);
+  
+
+  
+  
   $graph = $_REQUEST['graph'];
   $layout = $_REQUEST['layout'];
   if ($layout == 'spring') {
@@ -54,6 +61,7 @@
   if ($in_format == "tab" && $s_col == "" && $t_col == "") {
     warning("Default value for source and target columns for tab-delimited input format are 1 and 2");
   }
+
   ## put the content of the file $graph_file in $graph
   if ($graph_file != "" && $graph == "") {
     $graph = storeFile($graph_file);
@@ -98,9 +106,6 @@
         
       )
     );
-    echo "<pre>";
-//      print_r ($parameters);
-    echo "</pre>";
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
