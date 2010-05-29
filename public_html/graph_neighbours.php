@@ -14,6 +14,11 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
+
+  # File to store the commands
+  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_handle = fopen($cmd_file, 'a');
+
   title('graph-neighbours - results');
   # Error status
   $error = 0;
@@ -144,14 +149,14 @@
                                  )
                            );
     # Execute the command
-    echo "<pre>";
+#    echo "<pre>";
     $gn_echoed = $soap_client->graph_neighbours($gn_parameters);
 
     $gn_response =  $gn_echoed->response;
     $gn_command = $gn_response->command;
     $gn_server = $gn_response->server;
     $gn_client = $gn_response->client;
-    echo "</pre>";
+#    echo "</pre>";
     $gn_server = rtrim ($gn_server);
     $gn_temp_file = explode('/',$gn_server);
     $gn_temp_file = end($gn_temp_file);
@@ -164,6 +169,8 @@
         "chunk"=>1000,
       )
     );
+    store_command($gn_command, "graph-neighbours", $cmd_handle);
+    $URL['Neighbour table'] = rsat_path_to_url($gn_server);
     
     $tth_echoed = $soap_client->text_to_html($tth_parameters);
 
@@ -177,19 +184,26 @@
     $tth_temp_file = explode('/',$tth_server);
     $tth_temp_file = end($tth_temp_file);
     $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
+    store_command($gn_command, "text-to-html", $cmd_handle);
+    $URL['Neighbour table (html)'] = rsat_path_to_url($tth_server);
     
-    
-    
-    
-    
-    
-    # Display the results
-    echo "The results is available as text file at the following URL ";
-    echo "<a href = '$gn_resultURL'>$gn_resultURL</a><br>"; 
-    echo "The results is available as HTML page at the following URL ";
-    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
-    echo "<hr>\n";
-     
+
+//     # Display the results
+//     echo "The results is available as text file at the following URL ";
+//     echo "<a href = '$gn_resultURL'>$gn_resultURL</a><br>"; 
+//     echo "The results is available as HTML page at the following URL ";
+//     echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
+//     echo "<hr>\n";
+
+
+    ## Close command handle
+    fclose($cmd_handle);
+    $URL['Server commands'] = rsat_path_to_url($cmd_file);
+
+    ## DISPLAY THE RESULT
+    print_url_table($URL);
+
+    ## Display the "Netx step" table
     echo "
   <TABLE CLASS = 'nextstep'>
     <TR>
