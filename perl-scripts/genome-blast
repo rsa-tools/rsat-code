@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.17 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: genome-blast,v 1.18 2010/05/29 07:10:30 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -258,6 +258,7 @@ local @db_organisms = ();
 local @query_taxons = ();
 local @db_taxons = ();
 
+local $reciprocal = 0;
 
 ## Options for the command &doit()
 local $dry = 0;
@@ -344,110 +345,16 @@ foreach $query_organism (@query_organisms) {
 #### print verbose
 $out = &OpenOutputFile($outfile{output});
 &Verbose() if ($verbose);
-my $d = 0;
-foreach $db_organism (@db_organisms) {
-    $d++;
-#    &RSAT::message::TimeWarn("DB organism" $db_organims, $d."/".scalar(@db_organisms)) if ($main::verbose >= 1);
-
-    ## DB organism
-    $dir{db_org_dir} = $supported_organism{$db_organism}->{'data'};
-    $dir{db_org_genome} = $dir{db_org_dir}."/genome";
-    $infile{db_org_fasta}=$dir{db_org_genome}."/".$db_organism."_aa.fasta";
-    if ($dir{output}) {
-	$dir{blast_db}=$dir{output}."/blastdb";
-    } else {
-	$dir{blast_db}= $dir{db_org_dir}."/blastdb";
-    }
-    $outfile{blast_db}=$dir{blast_db}."/".$db_organism."_db"; 
-
-    &FormatDB() if (($task{formatdb})&&(! $new_only));
-    my $formatdb=0; # used with the option -new_only
-  
-    ## Query organism(s)
-    my $q = 0;
-    foreach $query_organism (@query_organisms) {
-	$q++;
-
-	## Skip self-comparison if required
-	if (($no_self) && ($query_organism eq $db_organism)) {
-	  &RSAT::message::Warning("Skipping self-comparison", "DB", $d."/".scalar(@db_organisms), $db_organism, 
-				  "Query", $q."/".scalar(@query_organisms), $query_organism,
-				 ) if ($main::verbose >= 1);
-	  next;
-	}
-
-	&RSAT::message::TimeWarn("DB", $d."/".scalar(@db_organisms), $db_organism, 
-				 "Query", $q."/".scalar(@query_organisms), $query_organism, 
-				 ) if ($main::verbose >= 1);
 
 
-	################################################################
-	## Directories and files
 
-	## Query organism
-	$dir{query_org_dir} = $supported_organism{$query_organism}->{'data'};
-	$dir{query_org_genome} = $dir{query_org_dir}."/genome";
-	$infile{query_org_fasta}=$dir{query_org_genome}."/".$query_organism."_aa.fasta";
+&iterate_blast(\@db_organisms, \@query_organisms);
 
-	## Blast result
-	if ($dir{output}) {
-	    $dir{blast_result}=$dir{output}."/blast_hits";
-	} else {
-	    $dir{blast_result}=$dir{query_org_dir}."/blast_hits";
-	}
-
-	## Name of the output file
-	$compa_prefix="q_".${query_organism}."_db_".${db_organism};
-	$outfile{blast_ranks}=$dir{blast_result}."/".$compa_prefix."_ranks.tab.gz";
-
-	## Skip comparison if the BLAST file already exists
-	if ($new_only) {
-	  if (-s $outfile{blast_ranks}) {
-	    &RSAT::message::Warning("BLAST result already exists, skipping", $outfile{blast_ranks}) if ($main::verbose >= 1);
-	    next;
-	  }elsif (($task{formatdb})&&(!$formatdb)){
-	    &FormatDB();
-	    $formatdb=1;
-	  }
-	}
-
-	if ($batch) {
-	    my $batch_command = "genome-blast";
-	    $batch_command .= " -q ".$query_organism;
-	    $batch_command .= " -db ".$db_organism;
-
-	    ## pass the other arguments to the batch command
-	    my @args_to_pass = @ARGV; ## Arguments to pass for the batch genome-blast
-	    while ($arg = shift(@args_to_pass)) {
-		if (($arg eq "-dbtaxon") ||
-		    ($arg eq "-db") ||
-		    ($arg eq "-q") ||
-		    ($arg eq "-qtaxon")) {
-		    shift @args_to_pass;
-		    next;
-		} elsif ($arg eq "-batch") {
-		    next;
-		} else {
-		    if ($arg =~ /\s/) {
-			$batch_command .= " '".$arg."'"; ## quote argument if it contains quotes
-		    } else {
-			$batch_command .= " ".$arg; 
-		    }
-		}
-	    }
-	    &RSAT::message::Debug($batch_command) if ($main::verbose >= 4);
-	    $job_prefix="q_".$query_organism."_db_".$db_organism;
-	    &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-	} else {
-	    &BlastAndRank() if ($task{blastall});
-	}
-    }
-    if ($task{cleandb}) {
-	my $clean_command = "rm -f ".$outfile{blast_db}.".*";
-	&doit($clean_command,$dry, $die_on_error, $verbose);
-    }
+if ($reciprocal) {
+    &RSAT::message::TimeWarn("Running reciprocal BLAST tasks");
+    &iterate_blast(\@query_organisms, \@db_organisms);
 }
+
 
 ################################################################
 ## Report execution time and close output stream
@@ -461,6 +368,118 @@ exit(0);
 ################################################################
 ################### subroutine definition ######################
 ################################################################
+
+################################################################
+## Iterate blast for all each pair of query/ref organisms
+sub iterate_blast {
+    my ($db_organisms_ref, $query_organisms_ref) = @_;
+    my @db_organisms = @{$db_organisms_ref};
+    my @query_organisms = @{$query_organisms_ref};
+    my $d = 0;
+    foreach $db_organism (@db_organisms) {
+	$d++;
+#    &RSAT::message::TimeWarn("DB organism" $db_organims, $d."/".scalar(@db_organisms)) if ($main::verbose >= 1);
+
+	## DB organism
+	$dir{db_org_dir} = $supported_organism{$db_organism}->{'data'};
+	$dir{db_org_genome} = $dir{db_org_dir}."/genome";
+	$infile{db_org_fasta}=$dir{db_org_genome}."/".$db_organism."_aa.fasta";
+	if ($dir{output}) {
+	    $dir{blast_db}=$dir{output}."/blastdb";
+	} else {
+	    $dir{blast_db}= $dir{db_org_dir}."/blastdb";
+	}
+	$outfile{blast_db}=$dir{blast_db}."/".$db_organism."_db"; 
+
+	&FormatDB() if (($task{formatdb})&&(! $new_only));
+	my $formatdb=0; # used with the option -new_only
+	
+	## Query organism(s)
+	my $q = 0;
+	foreach $query_organism (@query_organisms) {
+	    $q++;
+
+	    ## Skip self-comparison if required
+	    if (($no_self) && ($query_organism eq $db_organism)) {
+		&RSAT::message::Warning("Skipping self-comparison", "DB", $d."/".scalar(@db_organisms), $db_organism, 
+					"Query", $q."/".scalar(@query_organisms), $query_organism,
+		    ) if ($main::verbose >= 1);
+		next;
+	    }
+
+	    &RSAT::message::TimeWarn("DB", $d."/".scalar(@db_organisms), $db_organism, 
+				     "Query", $q."/".scalar(@query_organisms), $query_organism, 
+		) if ($main::verbose >= 1);
+
+
+	    ################################################################
+	    ## Directories and files
+
+	    ## Query organism
+	    $dir{query_org_dir} = $supported_organism{$query_organism}->{'data'};
+	    $dir{query_org_genome} = $dir{query_org_dir}."/genome";
+	    $infile{query_org_fasta}=$dir{query_org_genome}."/".$query_organism."_aa.fasta";
+
+	    ## Blast result
+	    if ($dir{output}) {
+		$dir{blast_result}=$dir{output}."/blast_hits";
+	    } else {
+		$dir{blast_result}=$dir{query_org_dir}."/blast_hits";
+	    }
+
+	    ## Name of the output file
+	    $compa_prefix="q_".${query_organism}."_db_".${db_organism};
+	    $outfile{blast_ranks}=$dir{blast_result}."/".$compa_prefix."_ranks.tab.gz";
+
+	    ## Skip comparison if the BLAST file already exists
+	    if ($new_only) {
+		if (-s $outfile{blast_ranks}) {
+		    &RSAT::message::Warning("BLAST result already exists, skipping", $outfile{blast_ranks}) if ($main::verbose >= 1);
+		    next;
+		}elsif (($task{formatdb})&&(!$formatdb)){
+		    &FormatDB();
+		    $formatdb=1;
+		}
+	    }
+
+	    if ($batch) {
+		my $batch_command = "genome-blast";
+		$batch_command .= " -q ".$query_organism;
+		$batch_command .= " -db ".$db_organism;
+
+		## pass the other arguments to the batch command
+		my @args_to_pass = @ARGV; ## Arguments to pass for the batch genome-blast
+		while ($arg = shift(@args_to_pass)) {
+		    if (($arg eq "-dbtaxon") ||
+			($arg eq "-db") ||
+			($arg eq "-q") ||
+			($arg eq "-qtaxon")) {
+			shift @args_to_pass;
+			next;
+		    } elsif ($arg eq "-batch") {
+			next;
+		    } else {
+			if ($arg =~ /\s/) {
+			    $batch_command .= " '".$arg."'"; ## quote argument if it contains quotes
+			} else {
+			    $batch_command .= " ".$arg; 
+			}
+		    }
+		}
+		&RSAT::message::Debug($batch_command) if ($main::verbose >= 4);
+		$job_prefix="q_".$query_organism."_db_".$db_organism;
+		&doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+	    } else {
+		&BlastAndRank() if ($task{blastall});
+	    }
+	}
+	if ($task{cleandb}) {
+	    my $clean_command = "rm -f ".$outfile{blast_db}.".*";
+	    &doit($clean_command,$dry, $die_on_error, $verbose);
+	}
+    }
+}
 
 
 ################################################################
@@ -575,32 +594,19 @@ several taxons.
 	} elsif ($ARGV[$a] eq "-dbtaxon") {
 	    push @db_taxons, $ARGV[$a+1];
 	    
-	    
-# 	    ## BLAST file
-# =pod
+=pod
 
-# =item B<-i blast_file>
+=item B<-reciprocal>
 
-# The input file should be the result of the genome-to-genome BLAST,
-# obtained with the option blastall -m 8 (table output). 
+Run blastall in both direction, i.e. after having blasted query
+organism against database organism, blast database organism against
+taxon organism. This option is useless when dbtaxon == qtaxon.
 
-# The input file is the result of a BLAST for all protein sequences of
-# the query organism against all protein sequences of the DB organism.
 
-# =cut
-# 	} elsif ($ARGV[$a] eq "-i") {
-# 	    $infile{input} = $ARGV[$a+1];
+=cut
+	} elsif ($ARGV[$a] eq "-reciprocal") {
+	    $main::reciprocal = 1;
 
-# =pod
-	    
-# =item	B<-o outputfile>
-
-# If no output file is specified, the standard output is used.  This
-# allows to use the command within a pipe.
-
-# =cut
-# 	} elsif ($ARGV[$a] eq "-o") {
-# 	    $outfile{blast_ranks} = $ARGV[$a+1];
 
 =pod
 
@@ -937,12 +943,6 @@ computed by genome-blast.
 =head1 WISH LIST
 
 =over
-
-=item B<-reciprocal>
-
-Run blastall in both direction, i.e. after having blasted query
-organism against database organism, blast database organism against
-taxon organism. This option is useless when dbtaxon == qtaxon.
 
 =back
 
