@@ -60,14 +60,12 @@
   
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
-  <TD><B><A HREF='contingency_stats_form.php?demo=0'>RESET</A></B></TD>");
-  // No demo at the moment
-  //<TD><B><A HREF='contingency_stats_form.php?demo=1'>DEMO</A></B></TD>
+  <TD><B><A HREF='contingency_stats_form.php?demo=0'>RESET</A></B></TD>
+  <TD><B><A HREF='contingency_stats_form.php?demo=1'>DEMO</A></B></TD>");
   echo("</form>
   <TD><B><A HREF='help.contingency_stats.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Influence_graph_alteration.html")."'>TUTORIAL</A></B></TD>
 
-  <TD><B><A HREF='contingency_stats_form.php?demo=1'>DEMO</A></B></TD>
   <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>
  ");

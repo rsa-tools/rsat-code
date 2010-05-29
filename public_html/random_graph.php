@@ -152,7 +152,7 @@
 #    $temp_file = end($temp_file);
 #    $resultURL = $WWW_RSA."/tmp/".$temp_file;
     store_command($command, "random-graph", $cmd_handle);
-    $URL['Neighbour table'] = rsat_path_to_url($server);
+    $URL['Random graph'] = rsat_path_to_url($server);
      
     $server = rtrim ($server);
     hourglass("off");
