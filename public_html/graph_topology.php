@@ -105,10 +105,11 @@
         "directed"=>$directed
       )
     );
+    hourglass("on");
+
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
-    hourglass("on");
     # Open the SOAP client
     $soap_client = new SoapClient(
                        $neat_wsdl,
@@ -420,6 +421,7 @@
      $xy_out_temp_file_log = explode('/',$xy_out_server_log);
      $xy_out_temp_file_log = end($xy_out_temp_file_log);
      $xy_out_resultURL_log = "tmp/".$xy_out_temp_file_log;
+
      hourglass("off");
    
      echo "<table>
