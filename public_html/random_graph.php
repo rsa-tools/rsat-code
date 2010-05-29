@@ -14,6 +14,11 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
+
+  # File to store the commands
+  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_handle = fopen($cmd_file, 'a');
+
   title('random-graph - results');
   # Error status
   $error = 0;
@@ -143,16 +148,32 @@
     $command = $response->command;
     $server = $response->server;
     $client = $response->client;
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+#    $temp_file = explode('/',$server);
+#    $temp_file = end($temp_file);
+#    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    store_command($command, "random-graph", $cmd_handle);
+    $URL['Neighbour table'] = rsat_path_to_url($server);
      
     $server = rtrim ($server);
     hourglass("off");
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>";
-    echo "<hr>";
+
+
+
+//     # Display the results
+//     echo "The results is available at the following URL ";
+//     echo "<a href = '$resultURL'>$resultURL</a>";
+//     echo "<hr>";
+
+
+    ## Close command handle
+    fclose($cmd_handle);
+    $URL['Server commands'] = rsat_path_to_url($cmd_file);
+
+    ## DISPLAY THE RESULT
+    print_url_table($URL);
+    
+
+    ## Display the "Next step" table
     echo "
   <TABLE CLASS = 'nextstep'>
     <TR>
