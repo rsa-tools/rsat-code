@@ -14,6 +14,11 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
+
+  # File to store the commands
+  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_handle = fopen($cmd_file, 'a');
+
   title('contingency-stats - results');
   # Error status
   $error = 0;
@@ -89,23 +94,33 @@
                                  )
                            );
     # Execute the command
-    echo ("<pre>");
+#    echo ("<pre>");
     $echoed = $client->contingency_stats($parameters);
-
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
     $client = $response->client;
-    $server = rtrim ($server);
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
-    echo ("</pre>");
+#    $server = rtrim ($server);
+#    $temp_file = explode('/',$server);
+#    $temp_file = end($temp_file);
+#    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    store_command($command, "graph comparison", $cmd_handle);
+    $URL['Result'] = rsat_path_to_url($server);
+#    echo ("</pre>");
     hourglass("off");
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
-    echo "<hr>\n";
+
+
+    ## Close command handle
+    fclose($cmd_handle);
+    $URL['Server commands'] = rsat_path_to_url($cmd_file);
+
+    ## DISPLAY THE RESULT
+    print_url_table($URL);
+
+//     # Display the results
+//     echo "The results is available at the following URL ";
+//     echo "<a href = '$resultURL'>$resultURL</a>"; 
+//     echo "<hr>\n";
     
   }
 ?>
