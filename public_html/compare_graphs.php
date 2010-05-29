@@ -126,7 +126,6 @@
 
     $client = new SoapClient(
                        $neat_wsdl,
-		       //"http://tagc.univ-mrs.fr/rsa-tools/web_services/RSATWSnew3.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -145,12 +144,7 @@
     store_command($command, "graph comparison", $cmd_handle);
     $server = $response->server;
     $client = $response->client;
-    $server = rtrim ($server);
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $URL['Result'] = rsat_path_to_url($temp_file);
-//    $resultURL = $WWW_RSA."/tmp/".$temp_file;
-//    $resultURL = $neat_www_root."/tmp/".$temp_file;
+    $URL['Result'] = rsat_path_to_url($server);
     # The comment file has the same name as the
     # result file with ".comments" at the end of the string.
     $comments_temp_file = $server.".comments";
