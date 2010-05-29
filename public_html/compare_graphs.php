@@ -117,9 +117,11 @@
     echo"<hr>\n";
     hourglass("on");
     # Open the SOAP client
+//     phpinfo();
+
     $client = new SoapClient(
-                      $neat_wsdl,
-// "http://rsat.ulb.ac.be/rsat/web_services/RSATWS2.wsdl",
+//                       $neat_wsdl,
+"http://tagc.univ-mrs.fr/rsa-tools/web_services/RSATWSnew3.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -140,7 +142,8 @@
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+//    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    $resultURL = $neat_www_root."/tmp/".$temp_file;
     # The comment file has the same name as the
     # result file with ".comments" at the end of the string.
     $comments_temp_file = $server.".comments";
@@ -163,7 +166,7 @@
     </TR>
     <TR>
       <TD>
-        <FORM METHOD='POST' ACTION='display_graph_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/display_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -179,7 +182,7 @@
         </form>
       </td>
       <TD>
-        <FORM METHOD='POST' ACTION='convert_graph_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/convert_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -195,7 +198,7 @@
         </form>
       </td>
       <TD>
-        <FORM METHOD='POST' ACTION='random_graph_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/random_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -212,7 +215,7 @@
     </tr>
     <tr>
       <TD>
-        <FORM METHOD='POST' ACTION='graph_get_clusters_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/graph_get_clusters_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -227,7 +230,7 @@
         </form>
       </td>
       <TD>
-        <FORM METHOD='POST' ACTION='graph_topology_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/graph_topology_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -242,7 +245,7 @@
         </form>
       </td>
       <TD>
-        <FORM METHOD='POST' ACTION='graph_neighbours_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/graph_neighbours_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -259,7 +262,7 @@
     </tr>
     <TR>
       <TD>
-        <FORM METHOD='POST' ACTION='mcl_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/mcl_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -274,7 +277,7 @@
         </form>
       </td>
       <TD>
-        <FORM METHOD='POST' ACTION='alter_graph_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/alter_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -289,7 +292,7 @@
         </form>
       </td>
       <TD>
-        <FORM METHOD='POST' ACTION='pathfinder_form.php'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/pathfinder_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='in_format' VALUE='$out_format'>";
@@ -300,7 +303,7 @@
       </tr>
       <tr>
         <TD>
-          <FORM METHOD='POST' ACTION='visant.php'>
+          <FORM METHOD='POST' ACTION='${neat_www_root}/visant.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='visant_graph_file' VALUE='$server'>
           <input type='hidden' NAME='visant_graph_format' VALUE='$out_format'>
@@ -313,7 +316,7 @@
 	  if (($out_format == 'tab')&&($outweight != "Q::R")){
 	    echo "
       <TD>
-        <FORM METHOD='POST' ACTION='roc-stats_form.cgi'>
+        <FORM METHOD='POST' ACTION='${neat_www_root}/roc-stats_form.cgi'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='roc-stats_graph_file' VALUE='$resultURL'>
           <input type='hidden' NAME='sc_col' VALUE='3'>
