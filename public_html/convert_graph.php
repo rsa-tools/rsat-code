@@ -86,7 +86,7 @@
   ## If layout has been selected, check that the output format is GML
   if ($out_format != "gml" && $layout != "none") {
     $layout = 0;
-    warning("Layout is not compatible with outpuf tormat $out_format (requires GML).");    
+    warning("Layout is not compatible with output format $out_format (requires GML).");    
   }
 
   ## TEMPORARY: since the layout option requires a 0 or 1 value on the Web
