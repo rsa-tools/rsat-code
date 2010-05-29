@@ -141,10 +141,11 @@
     hourglass("off");
     $response =  $echoed->response;
     $command = $response->command;
-    store_command($command, "graph comparison", $cmd_handle);
     $server = $response->server;
     $client = $response->client;
+    store_command($command, "graph comparison", $cmd_handle);
     $URL['Result'] = rsat_path_to_url($server);
+
     # The comment file has the same name as the
     # result file with ".comments" at the end of the string.
     $comments_temp_file = $server.".comments";
