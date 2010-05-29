@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.36 2009/11/30 01:37:50 rsat Exp $
+# $Id: install_genomes.mk,v 1.37 2010/05/29 07:24:05 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -164,6 +164,7 @@ install_one_fungus:
 	@echo
 	@echo "${DATE}	Installing fungus ${FUNGUS}"
 	@${MAKE} install_one_organism ORG=${FUNGUS}		\
+		OPT='-prefid CDS locus_tag' \
 		NCBI_DIR=${NCBI_DIR}/Fungi 
 
 ### List the Protozoa in the NCBI directory
