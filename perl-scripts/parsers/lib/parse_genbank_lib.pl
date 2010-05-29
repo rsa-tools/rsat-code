@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.40 2010/03/29 20:53:53 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.41 2010/05/29 17:38:47 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -142,7 +142,7 @@ sub ParseAllGenbankFiles {
     }
     push @preferred_ids_cds, qw (locus_tag protein_id GI GeneID gene); ## These IDs will be used if the preferred ID is not found
 
-    &RSAT::message::TimeWarn("Finding preferred IDs for CDS", join(",", @preferred_ids_cds)) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Finding preferred IDs for CDS", join(",", @preferred_ids_cds)) if ($main::verbose >= 2);
     foreach my $object ($CDSs->get_objects()) {
       $object->UseAttributesAsID(@preferred_ids_cds);
     }
@@ -155,7 +155,7 @@ sub ParseAllGenbankFiles {
     } else {
       @preferred_ids_mrna = qw (locus_tag transcript_id GI);
     }
-    &RSAT::message::TimeWarn("Finding preferred IDs for mRNA", join(",", @preferred_ids_mrna)) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Finding preferred IDs for mRNA", join(",", @preferred_ids_mrna)) if ($main::verbose >= 2);
     foreach my $object ($mRNAs->get_objects()) {
       $object->UseAttributesAsID(@preferred_ids_mrna);
     }
@@ -166,7 +166,7 @@ sub ParseAllGenbankFiles {
       my $object_type = lc($holder->get_object_type());
       $object_type =~ s/genbank:://;
       my $preferred_id = $preferred_id{$object_type} || "locus_tag";
-      &RSAT::message::TimeWarn("Finding preferred IDs for class", $object_type, $preferred_id) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Finding preferred IDs for class", $object_type, $preferred_id) if ($main::verbose >= 2);
       foreach my $object ($holder->get_objects()) {
 	$object->UseAttributesAsID($preferred_id);
       }
@@ -266,11 +266,12 @@ sub ParseGenbankFile {
 			     gene=>1
 			     );
 
-    &RSAT::message::TimeWarn(join("\t", "Parsing gbk file",
-				   $input_file,
-				   "Features", join (",", keys %features_to_parse)))
+    &RSAT::message::TimeWarn("Parsing gbk file",$input_file)
 	if ($main::verbose >= 1);
-    &RSAT::message::TimeWarn(join("\t", "Sequence directory", $args{sequence_dir})) if ($main::verbose <= 1);
+    &RSAT::message::TimeWarn("Parsing features", join (",", keys %features_to_parse))
+	if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "Sequence directory", $args{sequence_dir})) 
+	if ($main::verbose >= 2);
 
     open GBK, $input_file
 	|| die "Error: cannot open input file $input_file.\n";
@@ -893,7 +894,7 @@ sub CreateGenbankFeatures {
       $contigs) = @_;
   
   ## Index gene names
-  #    &RSAT::message::TimeWarn("Indexing gene names") if ($main::verbose >= 1);
+  #    &RSAT::message::TimeWarn("Indexing gene names") if ($main::verbose >= 2);
   #    $genes->index_ids();  
   #    $genes->index_names();  
   
@@ -938,7 +939,7 @@ sub CreateGenbankFeatures {
   ################################################################
   ## Create unified features
   &RSAT::message::TimeWarn("Creating unified features from parsed features")
-    if ($main::verbose >= 1);
+    if ($main::verbose >= 2);
   
   foreach my $parent_feature ($CDSs->get_objects(),
 			      $mRNAs->get_objects(),
@@ -1449,7 +1450,7 @@ sub InheritGeneNames {
       my $GeneID = $feature->get_attribute("GeneID");
 
       if (($GeneID eq "") || ($GeneID eq $main::null)) {
-	&RSAT::message::Warning("No GeneID for feature", $feature->get_attribute("id")) if ($main::verbose >= 1);
+	&RSAT::message::Warning("No GeneID for feature", $feature->get_attribute("id")) if ($main::verbose >= 2);
       } else {
 	my $gene = $genes->get_object($GeneID);
 	if ($gene) {
@@ -1459,7 +1460,7 @@ sub InheritGeneNames {
 	    &RSAT::message::Info("Added gene name", $name, "to feature", $feature->get_attribute("id")) if ($main::verbose >= 4);
 	  }
 	} else {
-	  &RSAT::message::Warning("No gene corresponding to GeneID", $GeneID, "for feature", $feature->get_attribute("id")) if ($main::verbose >= 1);
+	  &RSAT::message::Warning("No gene corresponding to GeneID", $GeneID, "for feature", $feature->get_attribute("id")) if ($main::verbose >= 2);
 	}
       }
     }
