@@ -1571,12 +1571,6 @@ sub FoldSequence {
     #### insert newline characters for output ####
     if ($lw > 0) {
       $out_seq =~ s/(\S{$lw})/$1\n/g;
-#	$out_seq = "";
-#	while (length($in_seq) > $lw) {
-#	    $out_seq .= substr($in_seq, 0, $lw);
-#	    $in_seq = substr($in_seq, $lw);
-#	    $out_seq .= "\n" unless ($in_seq eq "");
-#	}
     }
     return $out_seq;
 }
