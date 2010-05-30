@@ -15,6 +15,11 @@
   
   # log file update
   UpdateLogFile("neat","","");
+
+  # File to store the commands
+  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_handle = fopen($cmd_file, 'a');
+
   title('convert-graph - results');
   # Error status
   $error = 0;
@@ -169,15 +174,21 @@
       $response =  $echoed->response;
 //       print_r ($response);
       $command = $response->command;
-      echo("<p><b>Convert-graph command:</b> $command</p>\n");
+#      echo("<p><b>Convert-graph command:</b> $command</p>\n");
       $server = $response->server;
       $client = $response->client;
-      $server = rtrim ($server);
-      $temp_file = explode('/',$server);
-      $temp_file = end($temp_file);
-      $URL['result'] = $WWW_RSA."/tmp/".$temp_file;
+#      $server = rtrim ($server);
+#      $temp_file = explode('/',$server);
+#      $temp_file = end($temp_file);
+       store_command($command, "graph comparison", $cmd_handle);
+       $URL['Result'] = rsat_path_to_url($server);
+
       hourglass("off");
 
+
+    ## Close command handle
+    fclose($cmd_handle);
+    $URL['Server commands'] = rsat_path_to_url($cmd_file);
 
     ## DISPLAY THE RESULT
     print_url_table($URL);
