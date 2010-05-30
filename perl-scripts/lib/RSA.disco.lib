@@ -109,6 +109,7 @@ sub CheckQuickCount {
 ## 100 times faster than with the Perl script
 sub CountWords {
   my (%args) = @_;
+  local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
 
   my $strands = $args{strands} || $main::strands;
   my $pattern_type = $args{pattern_type} || $main::pattern_type;
@@ -126,9 +127,9 @@ sub CountWords {
     $cmd = "gunzip ".$infile{input};
   }
 #  $cmd = "gunzip -c ".$infile{input};
-#  $cmd .= "| ".$BIN."/count-words -v ".$cw_verbose;
+#  $cmd .= "| ".$count_words_cmd." -v ".$cw_verbose;
 #  } else {
-  $cmd = $BIN."/count-words -v ".$cw_verbose;
+  $cmd = $count_words_cmd." -v ".$cw_verbose;
   $cmd .= " -i ".$infile{input}; ## Input file
 #  }
 

@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.287 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.288 2010/05/30 13:11:58 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -27,6 +27,7 @@ BEGIN {
 
 #require RSAT::server; ## For program paths
 require RSAT::util;
+require RSAT::server;
 require RSAT::matrix;
 require RSAT::pattern;
 require RSAT::Analysis;
@@ -37,12 +38,16 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.287 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.288 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+  ## Paths of the programs called by multiple-family-analysis
+  local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
+  local $matrix_scan_cmd = $ENV{RSAT}."/perl-scripts/matrix-scan";
+
   $size_names = 0;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.287 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1618,7 +1623,7 @@ sub ScanSequences {
 			"\n;\t", $feature_file,
 		       )  if ($verbose >= 2);
 
-   my $command = "matrix-scan -v 1 -bginput -markov 1 -i ".$family{$family_name}->{seq_file};
+   my $command = "$matrix_scan_cmd -v 1 -bginput -markov 1 -i ".$family{$family_name}->{seq_file};
    $command .= " ".${quick_scan};
    $command .= " -seq_format ".$seq_format;
    $command .= " -matrix_format ".$matrix_format;
@@ -3052,9 +3057,9 @@ sub compute_bg_oligos {
     &RSAT::message::TimeWarn("\tComputing background model for oligos", $oligo_len."nt", $bg_model_file) if ($main::verbose >= 1);
     my $cmd = "";
     if ($bg_seq_file =~ /.gz$/) {
-      $cmd .= "gunzip -c ".$bg_seq_file. "| count-words -v 1";
+      $cmd .= "gunzip -c ".$bg_seq_file. "| $count_words_cmd -v 1";
     } else {
-      $cmd .= "count-words -v 1 -i ".$bg_seq_file;
+      $cmd .= "$count_words_cmd -v 1 -i ".$bg_seq_file;
     }
     $cmd .= " -nogrouprc $bg_strands $noov ";
     $cmd .= " -l ".$oligo_len;
