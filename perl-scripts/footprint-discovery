@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.38 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: footprint-discovery,v 1.39 2010/05/30 06:03:38 jvanheld Exp $
 #
 ############################################################
 
@@ -183,7 +183,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -229,9 +229,13 @@ package main;
 #  local $supported_organism;
 
 
-
   local $map_format = "png";	## Image format
 
+  ## Job management options
+  local $job_prefix = "fpdisco";
+  local $die_on_error = 1;
+  local $batch = 0;
+  local $dry = 0;
 
   ################################################################
   ## Read argument values
@@ -287,7 +291,6 @@ sub RunFootprintDisco {
   local $batch_cmd = "";
   local $out = "";
   local $genes = "";
-
 
   ################################################################
   ## Initialize output directory + output files
@@ -409,7 +412,6 @@ sub RunFootprintDisco {
   $cmd .= " -sort";
   $cmd .= " -o ".$outfile{dyads};
   &one_command($cmd) if ($task{dyads});
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("dyads", $outfile{dyads}) if ($create_index);
 
   ## Generate a HTML table with the discovered dyads
@@ -419,7 +421,6 @@ sub RunFootprintDisco {
   $cmd .= " -font variable -chunk 1000";
   $cmd .= " -o ".$outfile{dyads_html};
   &one_command($cmd) if ($task{dyads});
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("dyads [htm]", $outfile{dyads_html}) if ($create_index);
 
   ################################################################
@@ -431,7 +432,6 @@ sub RunFootprintDisco {
   $cmd .= " -subst 0 -maxfl 1 -toppat 50";
   $cmd .= " -o ".$outfile{asmb};
   &one_command($cmd) if ($task{dyads});
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
 
   ################################################################
@@ -451,7 +451,6 @@ sub RunFootprintDisco {
   $cmd .= " -scorethick";
   $cmd .= " -o ".$outfile{map};
   &one_command($cmd) if ($task{map});
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("feature map", $outfile{map}, image=>1) if ($create_index);
 
   ################################################################
@@ -470,7 +469,6 @@ sub RunFootprintDisco {
     $cmd .= " -logo";
     $cmd .= " -o ".$outfile{pssm_prefix};
     &one_command($cmd);
-    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM}) if ($create_index);
     &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM}) if ($create_index);
   }
