@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.95 2010/05/29 17:38:47 rsat Exp $
+# $Id: install-organism,v 1.96 2010/05/30 14:37:06 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -722,13 +722,25 @@ sub CalcOligoFreq {
     $residue_type = "pept";
     @strands = ("");
   }
+
+  ## uncompress sequence file if required because the option -quick
+  ## currently does not support compressed files
+  my $uncompressed = 0;
+  if (!(-e $seq_file) && (-e $seq_file.".gz")) {
+      &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 0);
+      my $command = "gunzip ".$seq_file.".gz";
+      $uncompressed = 1;
+      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      $seq_file =~ s/\.gz$//;
+  }
+
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
       foreach my $oligo_length (@current_oligo_lengths) {
 	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 1);
 	$job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	$out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
-	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
+	my $command = "$SCRIPTS/oligo-analysis -quick -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
 	$command .= " -seqtype ".$oligo_seq_type;
 	$command .= " ".$noov;
@@ -739,6 +751,13 @@ sub CalcOligoFreq {
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
       }
     }
+  }
+
+  ## Recompress the sequence file if required
+  if ($uncompressed) {
+      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 0);
+      my $command = "gzip ".$seq_file;
+      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
   }
 }
 
@@ -787,6 +806,19 @@ sub CalcDyadFreq {
   $max_spacing = 20;
   @monad_lengths = (3,2,1);
   @strands = ("-1str", "-2str");
+
+  ## uncompress sequence file if required because the option -quick
+  ## currently does not support compressed files
+  my $uncompressed = 0;
+  if (!(-e $seq_file) && (-e $seq_file.".gz")) {
+      &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 0);
+      my $command = "gunzip ".$seq_file.".gz";
+      $uncompressed = 1;
+      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      $seq_file =~ s/\.gz$//;
+  }
+
+
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
       foreach my $monad_length (@monad_lengths) {
@@ -794,7 +826,7 @@ sub CalcDyadFreq {
 	$job_prefix = ${organism_short_name}."_dyad_".$monad_length;
 	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
-	my $command = "$SCRIPTS/dyad-analysis -v 1 -i $seq_file -format $seq_format";
+	my $command = "$SCRIPTS/dyad-analysis -quick -v 1 -i $seq_file -format $seq_format";
 	$command .= " -timeout 240000 ";
 	$command .= " -type any -seqtype dna";
 	$command .= " $strands";
@@ -807,6 +839,13 @@ sub CalcDyadFreq {
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
       }
     }
+  }
+
+  ## Recompress the sequence file if required
+  if ($uncompressed) {
+      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 0);
+      my $command = "gzip ".$seq_file;
+      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
   }
 }
 
@@ -1191,7 +1230,7 @@ sub StartAndStopCodons {
     $command .= "-type upstream -feattype CDS -from 0 -to 2  \ ";
     $command .= "-format wc -nocomment -label $label \ ";
     $command .= " -o ".$prefix."_start_codons.wc";
-    $command .= " ; oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+    $command .= " ; oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
     $command .= " -i ".$prefix."_start_codons.wc";
     $command .= " -o ".$prefix."_start_codon_frequencies";
     &doit($command, $dry_run, $die_on_error, $verbose);
@@ -1200,7 +1239,7 @@ sub StartAndStopCodons {
     $command .= "-type downstream  -feattype CDS -from 0 -to -2  \ ";
     $command .= "-format wc -nocomment -label $label \ ";
     $command .= " -o ".$prefix."_stop_codons.wc";
-    $command .= " ; oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+    $command .= " ; oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
     $command .= " -i ".$prefix."_stop_codons.wc";
     $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
     &doit($command, $dry_run, $die_on_error, $verbose);
@@ -1213,14 +1252,14 @@ sub StartAndStopCodons {
 #     my $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
 #     $command .= "-type downstream -from 0 -to -2  \ ";
 #     $command .= "-format wc -nocomment -label orf \ ";
-#     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+#     $command .= " | oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
 #     $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
 #     &doit($command, $dry_run, $die_on_error, $verbose);
 
 #     $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
 #     $command .= "-type upstream -from 0 -to 2  \ ";
 #     $command .= "-format wc -nocomment -label orf \ ";
-#     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+#     $command .= " | oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
 #     $command .= " -o $dir{genome}/${organism_short_name}_start_codon_frequencies";
 #     &doit($command, $dry_run, $die_on_error, $verbose);
 # }
