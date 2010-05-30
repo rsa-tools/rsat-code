@@ -403,7 +403,7 @@
        $xy_out_server = $xy_out_response->server;
        $xy_out_client = $xy_out_response->client;
        store_command($xy_out_command, "outgoing degree distrib graph", $cmd_handle);
-       $URL['Outgoing degree distribution (png)'] = rsat_path_to_url($cf_out_server);
+       $URL['Outgoing degree distribution (png)'] = rsat_path_to_url($xy_out_server_log);
 
 #       echo "</pre>";
        $xy_out_server = rtrim ($xy_out_server);
