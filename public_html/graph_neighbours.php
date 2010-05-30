@@ -140,7 +140,6 @@
     # Open the SOAP client
     $soap_client = new SoapClient(
                         $neat_wsdl,
-//"http://127.0.0.1/rsat/web_services/RSATWS2.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -148,10 +147,10 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
+
     # Execute the command
 #    echo "<pre>";
     $gn_echoed = $soap_client->graph_neighbours($gn_parameters);
-
     $gn_response =  $gn_echoed->response;
     $gn_command = $gn_response->command;
     $gn_server = $gn_response->server;
