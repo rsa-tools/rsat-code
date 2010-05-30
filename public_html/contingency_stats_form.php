@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - contingency-stats</title>
+   <title>Network Analysis Tools - contingency-stats</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
