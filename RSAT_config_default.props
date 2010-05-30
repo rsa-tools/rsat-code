@@ -116,7 +116,7 @@ neat_supported=1
 
 ## URL of the Web server hosting the NeAT Web services, where the result files
 ## are to be found 
-neat_www_root=http://tagc.univ-mrs.fr/rsa-tools
+neat_www_root=http://rsat.ulb.ac.be/rsat/
 
 ## URL for the NeAT web services.  NeAT requires to install some
 ## specific programs for path finding and graph layout.  Before
