@@ -15,6 +15,11 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
+
+  # File to store the commands
+  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_handle = fopen($cmd_file, 'a');
+
   title('graph-cliques - results');
   # Error status
   $error = 0;
@@ -106,9 +111,10 @@
         "chunk"=>1000,
       )
     );
+    store_command($gc_command, "graph-cliques", $cmd_handle);
+    $URL['CLiques'] = rsat_path_to_url($gc_server);
 
     $tth_echoed = $soap_client->text_to_html($tth_parameters);
-
     $tth_response =  $tth_echoed->response;
     $tth_command = $tth_response->command;
     $tth_server = $tth_response->server;
@@ -118,19 +124,29 @@
     $tth_temp_file = explode('/',$tth_server);
     $tth_temp_file = end($tth_temp_file);
     $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
+    store_command($tth_command, "text-to-html", $cmd_handle);
+    $URL['Cliques (html)'] = rsat_path_to_url($tth_server);
     
     hourglass("off");
     
     
     
     
-    # Display the results
-    echo "The results is available as text file at the following URL ";
-    echo "<a href = '$gc_resultURL'>$gc_resultURL</a><br>"; 
-    echo "The results is available as HTML page at the following URL ";
-    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
-    echo "<hr>\n";
-     
+//     # Display the results
+//     echo "The results is available as text file at the following URL ";
+//     echo "<a href = '$gc_resultURL'>$gc_resultURL</a><br>"; 
+//     echo "The results is available as HTML page at the following URL ";
+//     echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
+//     echo "<hr>\n";
+
+    ## Close command handle
+    fclose($cmd_handle);
+    $URL['Server commands'] = rsat_path_to_url($cmd_file);
+
+    ## DISPLAY THE RESULT
+    print_url_table($URL);
+
+    ## Display the "Next step" table     
     echo "
   <TABLE CLASS = 'nextstep'>
     <TR>
