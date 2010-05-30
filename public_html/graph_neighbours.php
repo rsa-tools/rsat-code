@@ -178,15 +178,16 @@
     $tth_command = $tth_response->command;
     $tth_server = $tth_response->server;
     $tth_client = $tth_response->client;
-    echo "</pre>";
-    hourglass("off");
-    $tth_server = rtrim ($tth_server);
-    $tth_temp_file = explode('/',$tth_server);
-    $tth_temp_file = end($tth_temp_file);
-    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
-    store_command($gn_command, "text-to-html", $cmd_handle);
+#    echo "</pre>";
+#    $tth_server = rtrim ($tth_server);
+#    $tth_temp_file = explode('/',$tth_server);
+#    $tth_temp_file = end($tth_temp_file);
+#    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
+    store_command($tth_command, "text-to-html", $cmd_handle);
     $URL['Neighbour table (html)'] = rsat_path_to_url($tth_server);
     
+
+    hourglass("off");
 
 //     # Display the results
 //     echo "The results is available as text file at the following URL ";
@@ -194,7 +195,6 @@
 //     echo "The results is available as HTML page at the following URL ";
 //     echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
 //     echo "<hr>\n";
-
 
     ## Close command handle
     fclose($cmd_handle);
