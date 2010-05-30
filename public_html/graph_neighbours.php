@@ -139,8 +139,8 @@
   
     # Open the SOAP client
     $soap_client = new SoapClient(
-//                        $neat_wsdl,
-"http://127.0.0.1/rsat/web_services/RSATWS2.wsdl",
+                        $neat_wsdl,
+//"http://127.0.0.1/rsat/web_services/RSATWS2.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
