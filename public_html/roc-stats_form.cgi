@@ -271,11 +271,11 @@ sub NeAT_header {
   print $query->header();
   print sorttable_script();
   ### print the header of the result page
-  print $query->start_html(-title=>"NeA-tools : $title",
+  print $query->start_html(-title=>"Network Analysis Tools : $title",
 			   -class => "$css_body_class",
 			   -author=>'jacques.van.helden@ulb.ac.be',
 			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
-  print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/NeAT_home.html'>NeA-tools</A> - $title</H3>";
+  print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/NeAT_home.html'>Network Analysis Tools</A> - $title</H3>";
 }

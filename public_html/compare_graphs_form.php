@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - compare-graphs</title>
+   <title>Network Analysis Tools - compare-graphs</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">

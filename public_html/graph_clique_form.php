@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - graph-cliques</title>
+   <title>Network Analysis Tools - graph-cliques</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
