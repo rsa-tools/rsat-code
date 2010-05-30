@@ -135,10 +135,9 @@
                            );
     
     # Execute the command
-    echo "<pre>";
+#    echo "<pre>";
     $echoed = $client->compare_graphs($parameters);
-    echo "</pre>"; 
-    hourglass("off");
+#    echo "</pre>"; 
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
@@ -150,6 +149,8 @@
     # result file with ".comments" at the end of the string.
     $comments_temp_file = $server.".comments";
     $comments = storeFile($comments_temp_file);
+
+    hourglass("off");
 
     ## Close command handle
     fclose($cmd_handle);
