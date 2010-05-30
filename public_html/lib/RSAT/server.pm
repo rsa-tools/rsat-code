@@ -36,6 +36,7 @@ sub GetProgramPath {
 	## Find the program anywhere in the user path
 	$program_path = `which $program_name`;
 	chomp($program_path);
+	
     }
 
     ## Check if the program path has been found
