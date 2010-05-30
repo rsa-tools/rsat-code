@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - random-graph</title>
+   <title>Network Analysis Tools - random-graph</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">

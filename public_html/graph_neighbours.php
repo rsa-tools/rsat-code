@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - graph-neighbours</title>
+   <title>Network Analysis Tools - graph-neighbours</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
       <style type="text/css">
     <!--
