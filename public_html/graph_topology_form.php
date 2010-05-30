@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - graph-topology</title>
+   <title>Network Analysis Tools - graph-topology</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">

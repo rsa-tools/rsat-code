@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - MCL</title>
+   <title>Network Analysis Tools - MCL</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
       <style type="text/css">
     <!--

@@ -4,7 +4,7 @@
 <HTML>
 	<head>
 		<meta http-equiv='Content-Type' content='text/html; charset=iso-8859-1'>
-		<title>NeA-tools - menu</title>
+		<title>Network Analysis Tools - menu</title>
 		<link rel='stylesheet' type='text/css' href='menu.css' media='screen' />
 		<script src='RSAT_menu.js' type='text/javascript'></script>
 	</head>
