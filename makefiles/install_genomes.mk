@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.37 2010/05/29 07:24:05 rsat Exp $
+# $Id: install_genomes.mk,v 1.38 2010/05/30 14:37:37 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -54,6 +54,13 @@ calibrate_one_organism:
 install_one_organism:
 	@echo "Installing organism ${ORG}" 
 	@${MAKE} one_install_command 
+
+## Install a set of selected organuisms
+SELECTED_ORGANISMS=Mycoplasma_genitalium Escherichia_coli_K12
+install_selected_organisms:
+	@for org in ${SELECTED_ORGANISMS}; do				\
+		${MAKE} install_one_organism ORG=$${org};	\
+	done
 
 one_install_command:
 	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=${ORG}_install
