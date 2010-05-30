@@ -114,6 +114,10 @@ bioperl=[your_path_to_rsat]/rsa-tools/lib/bioperl-live
 ## Parameters for Network Analysis Tools (NeAT)
 neat_supported=1
 
+## URL of the Web server hosting the NeAT Web services, where the result files
+## are to be found 
+neat_www_root=http://tagc.univ-mrs.fr/rsa-tools
+
 ## URL for the NeAT web services.  NeAT requires to install some
 ## specific programs for path finding and graph layout.  Before
 ## changing this URL, check that all the required tools are installed
@@ -123,10 +127,6 @@ neat_ws=http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl
 ## URL for the NeAT Web services temporary directory, where the result files
 ## are to be found
 neat_ws_tmp=http://rsat.ulb.ac.be/rsat/tmp/
-
-## URL of the Web server hosting the NeAT Web services, where the result files
-## are to be found 
-neat_www_root=http://tagc.univ-mrs.fr/rsa-tools
 
 ## URL for java-based NeAT web services. The same remark as above holds,
 ## please check the RSAT web server install guide to install the additional
