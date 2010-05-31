@@ -16,7 +16,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_file = getTempFileName('compgraph_cmd');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('compare-graphs - results');
@@ -54,7 +54,7 @@
   if ($self == "on") {
     $self = 1;
   }
-  
+
   $return =  $_REQUEST['return'];
   $outweight =  $_REQUEST['outweight']; 
   ## If a query graph file and a query graph are submitted -> error

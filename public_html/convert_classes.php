@@ -32,7 +32,7 @@
   $now = date("Ymd_His");
   $classes = $_REQUEST['classes'];
 
-  $s_col = $_REQUEST['s_col'];
+  $c_col = $_REQUEST['c_col'];
   $m_col = $_REQUEST['m_col'];
   $w_col = $_REQUEST['w_col'];
   
@@ -114,7 +114,6 @@
 #      $temp_file = explode('/',$server);
 #      $temp_file = end($temp_file);
        store_command($command, "class conversion", $cmd_handle);
-       echo ($command);
        $URL['Result'] = rsat_path_to_url($server);
 
       hourglass("off");
@@ -128,163 +127,23 @@
     print_url_table($URL);
 
       ## Send result to next step
-      echo "
-    <TABLE CLASS = 'nextstep'>
-      <TR>
-        <Th colspan = 3>
-          Next step
-        </Th>
-      </TR>
-      <TR>
-        <TD>
-          <FORM METHOD='POST' ACTION='display_graph_form.php'>
-            <input type='hidden' NAME='pipe' VALUE='1'>
-            <input type='hidden' NAME='graph_file' VALUE='$server'>
-            <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-            if ($out_format == 'tab') {
-              echo "
-              <input type='hidden' NAME='scol' VALUE='1'>
-              <input type='hidden' NAME='tcol' VALUE='2'>
-              <input type='hidden' NAME='wcol' VALUE='3'>
-              <input type='hidden' NAME='eccol' VALUE='4'>";
-            }
-            echo "
-            <INPUT type='submit' value='Display the graph'>
-          </form>
-        </td>
-        <TD>
-          <FORM METHOD='POST' ACTION='compare_graphs_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
-          <INPUT type='submit' value='Compare this graph to another one'>
-        </form>
-      </td>
-      <TD>
-        <FORM METHOD='POST' ACTION='random_graph_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
-          <INPUT type='submit' value='Randomize this graph'>
-        </form>
-      </td>
-    </tr>
-    <tr>
-      <TD>
-        <FORM METHOD='POST' ACTION='graph_get_clusters_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
-          <INPUT type='submit' value='Map clusters or extract a subnetwork'>
-        </form>
-      </td>
-      <TD>
-        <FORM METHOD='POST' ACTION='graph_topology_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
-          <INPUT type='submit' value='Nodes topology statistics'>
-        </form>
-      </td>
-      <TD>
-        <FORM METHOD='POST' ACTION='graph_neighbours_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
-          <INPUT type='submit' value='Neighbourhood analysis'>
-        </form>
-      </td>    
-    </tr>
+    echo "
+  <TABLE CLASS = 'nextstep'>
+    <TR>
+      <Th colspan = 3>
+        Next step
+      </Th>
+    </TR>
     <TR>
       <TD>
-        <FORM METHOD='POST' ACTION='mcl_form.php'>
+        <FORM METHOD='POST' ACTION='compare_classes_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
-          <INPUT type='submit' value='MCL Graph clustering'>
+          <input type='hidden' NAME='class_file' VALUE='$server'>
+          <INPUT type='submit' value='Compare these clusters with other clusters'>
         </form>
       </td>
-      <TD>
-        <FORM METHOD='POST' ACTION='alter_graph_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
-          <INPUT type='submit' value='Graph alteration'>
-        </form>
-      </td>
-      <TD>
-        <FORM METHOD='POST' ACTION='pathfinder_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='in_format' VALUE='$out_format'>";
-          echo "
-          <INPUT type='submit' value='Path Finding'>
-        </form>
-      </td>
-      </tr>
-        <tr>
-        <TD>
-          <FORM METHOD='POST' ACTION='visant.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='visant_graph_file' VALUE='$server'>
-          <input type='hidden' NAME='visant_graph_format' VALUE='$out_format'>
-          <input type='hidden' NAME='visant_directed' VALUE='$directed'>";
-          echo "
-          <INPUT type='submit' value='Load in VisANT'>
-          </form>
-        </td>
-      </tr>
+</tr>
 
-    </table>";
-    }
-  }
+   ";  
+  }}
 ?>
