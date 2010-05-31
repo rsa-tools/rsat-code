@@ -22,7 +22,7 @@
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('201')' id='heading201'>Networks</div>
-<div id='menu201' class='menu_collapsible'>
+<div id='menu201' >
 	<a class='menu_item' href='compare_graphs_form.php' target='tools'>Network comparison</a>
 	<a class='menu_item' href='graph_topology_form.php' target='tools'>Node topology statistics</a>
 	<a class='menu_item' href='graph_neighbours_form.php' target='tools'>Get node neighborhood</a>
@@ -35,7 +35,7 @@ onclick='toggleMenu('201')' id='heading201'>Networks</div>
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('202')' id='heading202'>Path finding and pathway extraction</div>
-<div id='menu202' class='menu_collapsible'>
+<div id='menu202' >
         <a class='menu_item' target='tools' href='$neat_java_host/rsat/pathfinder_form.php'>k-shortest path finding </a>
 	<a class='menu_item' target='tools' href='$neat_java_host/metabolicpathfinding/metabolicPathfinder_form.jsp'>Metabolic path finding</a>
 	<a class='menu_item_last' target='tools' href='$neat_java_host/metabolicpathfinding/pathwayinference_form.jsp'>Pathway extraction</a>
@@ -47,7 +47,7 @@ onclick='toggleMenu('202')' id='heading202'>Path finding and pathway extraction<
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('203')' id='heading203'>Clusters</div>
-<div id='menu203' class='menu_collapsible'>
+<div id='menu203' >
 	<a class='menu_item' href='compare_classes_form.php' target='tools'>Compare classes/clusters</a>
 	<a class='menu_item_last' href='contingency_stats_form.php' target='tools'>Contingency stats</a>
 </div>
