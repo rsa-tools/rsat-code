@@ -26,6 +26,7 @@ $wcol = $_REQUEST['wcol'];
 $demo = $_REQUEST['demo'];
 if ($demo == 1) {
   $demo_graph = storeFile("demo_files/protein_interactions_gavin_2006_names.tab");
+//   $demo_graph = storeFile("demo_files/rdm_test.tab");
 ;
   $demo_ecolors = "selected";
   $demo_ewidth = "checked";
