@@ -62,7 +62,7 @@ Read the classification from a text file.
  Title    : read_from_file
  Usage    : $classificaion->->read_from_file($input_file, $input_format)
  Function : Read the Classification from a text file. 
- Supported formats: mcl
+ Supported formats: mcl, tab, profiles, ermg, rnsc
 
 =cut
 
@@ -78,6 +78,8 @@ sub read_from_file {
 	$self->read_ermg($input_file, %args);
     } elsif ($input_format eq "rnsc") {
 	$self->read_rnsc($input_file, $name_file, %args);
+    } elsif ($input_format eq "mcode") {
+        $self->read_mcode($input_file, $name_file, %args);
     } else {
 	&RSAT::error::FatalError(join ("\t", "Classification::read_from_file", $input_format, "is not a supported input format"));
     }
@@ -118,7 +120,51 @@ sub read_mcl {
 	$self->push_attribute("classes", $class);
     }
 }
+################################################################
+=pod
 
+=item B<read_mcode>
+
+Read the classification from a MCODE output text file (exported from Cytoscape plugin).
+
+
+ Title    : read_rnsc
+ Usage    : $classificaion->->read_rnsc($input_file, $input_file_names)
+ Function : Read the Classification from a rnsc text file.
+ Argument : $input_file -> the output of RNSC
+          : $input_file_names -> names of the nodes
+ 
+
+=cut
+
+sub read_mcode {
+    
+    my ($self, $input_file, $input_file_names) = @_;
+    ($main::in) = &RSAT::util::OpenInputFile($input_file);
+    ## Load the classification
+    while (my $ligne = <$main::in>) {
+      next if ($ligne !~ /^[0-9]+\t/);
+      chomp $ligne;
+      my @lignecp = split /\t/, $ligne;
+      my $class_number = $lignecp[0];
+      my $nodes_id_list = $lignecp[4];
+      my @labels = split /, /, $nodes_id_list;
+      
+      if ((scalar @labels) > 1) { 
+        my $class_name = "cl_".$class_number;
+        my $class = new RSAT::Family(name=>$class_name);
+        &RSAT::message::Info("Reading", $class, $class_number, $class_name) if ($main::verbose >= 3);
+        foreach my $label (@labels) {
+          if ($label ne "-1") {
+            my $member_name = $label;
+            $member_name = $id_names{$label} if defined($id_names{$label});
+            $class->new_member($member_name);
+          }
+        }
+        $self->push_attribute("classes", $class);
+      }
+  }
+}
 ################################################################
 =pod
 
