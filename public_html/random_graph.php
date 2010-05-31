@@ -12,6 +12,7 @@
 <body class="results">
 <?php 
   require ('functions.php');
+
   # log file update
   UpdateLogFile("neat","","");
 
@@ -125,6 +126,7 @@
 	"self"=>$self
       )
     );
+
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
@@ -140,10 +142,11 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
+
     # Execute the command
-    echo "<pre>";
+#    echo "<pre>";
     $echoed = $client->random_graph($parameters);
-    echo "</pre>";
+#    echo "</pre>";
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;

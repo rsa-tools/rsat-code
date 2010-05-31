@@ -50,6 +50,8 @@ onclick='toggleMenu('203')' id='heading203'>Clusters</div>
 <div id='menu203' >
 	<a class='menu_item' href='compare_classes_form.php' target='tools'>Compare classes/clusters</a>
 	<a class='menu_item_last' href='contingency_stats_form.php' target='tools'>Contingency stats</a>
+	<a class='menu_item_last' href='convert_classes_form.php' target='tools'>Convert classification to different format</a>
+
 </div>
 </div>
 
