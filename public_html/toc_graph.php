@@ -56,7 +56,7 @@ onclick='toggleMenu('203')' id='heading203'>Clusters</div>
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('204')' id='heading204'>Clusters/Networks</div>
-<div id='menu204' class='menu_collapsible'>
+<div id='menu204' >
 	<a class='menu_item' href='graph_clique_form.php' target='tools'>Find cliques</a>
 	<a class='menu_item' href='mcl_form.php' target='tools'>MCL clustering</a>
 	<a class='menu_item' href='rnsc_form.php' target='tools'>RNSC clustering</a>
@@ -69,7 +69,7 @@ onclick='toggleMenu('204')' id='heading204'>Clusters/Networks</div>
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('205')' id='heading205'>Roc curves</div>
-<div id='menu205' class='menu_collapsible'>
+<div id='menu205' >
 	<a class='menu_item' href='roc-stats_form.cgi' target='tools'>ROC curves and stats</a>
 
 </div>
@@ -78,7 +78,7 @@ onclick='toggleMenu('205')' id='heading205'>Roc curves</div>
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('206')' id='heading206'>Data</div>
-<div id='menu206' class='menu_collapsible'>
+<div id='menu206' >
 	<a class='menu_separator'>Collect data from external servers</a>
 	<a class='menu_item' href='string_dataset_form.php' target='tools'>Download a subgraph from STRING</a>
 	<a class='menu_item' href='keggnetworkprovider_form.php' target='tools'>Download organism-specific networks from KEGG</a>
@@ -101,7 +101,7 @@ onclick='toggleMenu('207')' id='heading207'>Web services</div>
 <div class='menu'>
 <div class='menu_heading_closed'
 onclick='toggleMenu('208')' id='heading208'>Help</div>
-	<div id='menu208'  class='menu_collapsible'>
+	<div id='menu208'  >
 	<a class='menu_item' href='images/NeAT_flowchart.png' target='tools'>Site map</a>
 	<a class='menu_item' href='neat_tutorial.html' target='tools'>Tutorial</a>
 	<a class='menu_item_last' href='http://www.bigre.ulb.ac.be/forums/' target='tools'>Contact & Forum</a>
@@ -111,7 +111,7 @@ onclick='toggleMenu('208')' id='heading208'>Help</div>
 <div class='menu'>
 <div class='menu_heading_closed'
 onclick='toggleMenu('209')' id='heading209'>Information</div>
-	<div id='menu209'  class='menu_collapsible'>
+	<div id='menu209'  >
 	<a class='menu_item' href='neat_intro.html' target='tools'>Introduction</a>
 	<a class='menu_item' href='people.html' target='tools'>People</a>
 	<a class='menu_item' href='neat_publications.html' target='tools'>Publications</a>
