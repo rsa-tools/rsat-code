@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.14 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: convert-classes,v 1.15 2010/05/31 11:30:11 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -44,6 +44,13 @@ clustering algorithm developed by Stijn Van Dongen
 
 The output format has one row per cluster, each row giving a list of
 elements, separated by tabulations.
+
+=head2 mcode
+
+The output format of the MCODE algorithm. MCODE is a graph-based
+clustering algorithm developed by Bader and Hogue (Bader and Hogue, BMC Bioinformatics, 2003)
+
+http://baderlab.org/Software/MCODE
 
 =head2 tab
 
@@ -118,6 +125,7 @@ package main;
     %supported_input_format =(
 	ermg=>1,
 	mcl=>1,
+	mcode=>1,
 	tab=>1,
 	profiles=>1,
 	rnsc=>1
