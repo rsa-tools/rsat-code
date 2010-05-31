@@ -91,8 +91,8 @@ onclick='toggleMenu('105')' id='heading105'>Data</div>
 
 <div class='menu'>
 <div class='menu_heading_closed'
-onclick='toggleMenu('108')' id='heading108'>Web services</div>
-	<div id='menu108'  class='menu_collapsible'>
+onclick='toggleMenu('106')' id='heading106'>Web services</div>
+	<div id='menu106'  class='menu_collapsible'>
 		<a class='menu_item' href='neat_webservices.php' target=tools>Documentation and clients</a>
 		<a class='menu_item' href='neat_workflows.php' target=tools>Taverna workflows</a>
 	</div>
@@ -100,8 +100,8 @@ onclick='toggleMenu('108')' id='heading108'>Web services</div>
 
 <div class='menu'>
 <div class='menu_heading_closed'
-onclick='toggleMenu('106')' id='heading106'>Help</div>
-	<div id='menu106'  class='menu_collapsible'>
+onclick='toggleMenu('107')' id='heading107'>Help</div>
+	<div id='menu107'  class='menu_collapsible'>
 	<a class='menu_item' href='images/NeAT_flowchart.png' target='tools'>Site map</a>
 	<a class='menu_item' href='neat_tutorial.html' target='tools'>Tutorial</a>
 	<a class='menu_item_last' href='http://www.bigre.ulb.ac.be/forums/' target='tools'>Contact & Forum</a>
@@ -110,8 +110,8 @@ onclick='toggleMenu('106')' id='heading106'>Help</div>
 
 <div class='menu'>
 <div class='menu_heading_closed'
-onclick='toggleMenu('107')' id='heading107'>Information</div>
-	<div id='menu107'  class='menu_collapsible'>
+onclick='toggleMenu('108')' id='heading108'>Information</div>
+	<div id='menu108'  class='menu_collapsible'>
 	<a class='menu_item' href='neat_intro.html' target='tools'>Introduction</a>
 	<a class='menu_item' href='people.html' target='tools'>People</a>
 	<a class='menu_item' href='neat_publications.html' target='tools'>Publications</a>
