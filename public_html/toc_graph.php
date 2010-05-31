@@ -22,23 +22,23 @@
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('100')' id='heading100'>Networks</div>
-<div id='menu100'>
+<div id='menu100' class='menu_collapsible'>
 	<a class='menu_item' href='compare_graphs_form.php' target='tools'>Network comparison</a>
 	<a class='menu_item' href='graph_topology_form.php' target='tools'>Node topology statistics</a>
 	<a class='menu_item' href='graph_neighbours_form.php' target='tools'>Get node neighborhood</a>
 	<a class='menu_item' href='random_graph_form.php' target='tools'>Randomize network</a>
 	<a class='menu_item' href='alter_graph_form.php' target='tools'>Alter network</a>
 	<a class='menu_item' href='convert_graph_form.php' target='tools'>Format conversion / layout calculation</a>
-	<a class='menu_item' href='display_graph_form.php' target='tools'>Graph display</a>
+	<a class='menu_item_last' href='display_graph_form.php' target='tools'>Graph display</a>
 </div>
 </div>
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('101')' id='heading101'>Path finding and pathway extraction</div>
-<div id='menu101'>
+<div id='menu101' class='menu_collapsible'>
         <a class='menu_item' target='tools' href='$neat_java_host/rsat/pathfinder_form.php'>k-shortest path finding </a>
 	<a class='menu_item' target='tools' href='$neat_java_host/metabolicpathfinding/metabolicPathfinder_form.jsp'>Metabolic path finding</a>
-	<a class='menu_item' target='tools' href='$neat_java_host/metabolicpathfinding/pathwayinference_form.jsp'>Pathway extraction</a>
+	<a class='menu_item_last' target='tools' href='$neat_java_host/metabolicpathfinding/pathwayinference_form.jsp'>Pathway extraction</a>
 </div>
 
 </div>
@@ -47,21 +47,21 @@ onclick='toggleMenu('101')' id='heading101'>Path finding and pathway extraction<
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('102')' id='heading102'>Clusters</div>
-<div id='menu102'>
+<div id='menu102' class='menu_collapsible'>
 	<a class='menu_item' href='compare_classes_form.php' target='tools'>Compare classes/clusters</a>
-	<a class='menu_item' href='contingency_stats_form.php' target='tools'>Contingency stats</a>
+	<a class='menu_item_last' href='contingency_stats_form.php' target='tools'>Contingency stats</a>
 </div>
 </div>
 
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('103')' id='heading103'>Clusters/Networks</div>
-<div id='menu103'>
+<div id='menu103' class='menu_collapsible'>
 	<a class='menu_item' href='graph_clique_form.php' target='tools'>Find cliques</a>
 	<a class='menu_item' href='mcl_form.php' target='tools'>MCL clustering</a>
 	<a class='menu_item' href='rnsc_form.php' target='tools'>RNSC clustering</a>
 	<a class='menu_item' href='graph_get_clusters_form.php' target='tools'>Map clusters onto network</a>
-	<a class='menu_item' href='graph_cluster_membership_form.php' target='tools'>Cluster membership</a>
+	<a class='menu_item_last' href='graph_cluster_membership_form.php' target='tools'>Cluster membership</a>
 
 </div>
 </div>
@@ -69,7 +69,7 @@ onclick='toggleMenu('103')' id='heading103'>Clusters/Networks</div>
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('104')' id='heading104'>Roc curves</div>
-<div id='menu104'>
+<div id='menu104' class='menu_collapsible'>
 	<a class='menu_item' href='roc-stats_form.cgi' target='tools'>ROC curves and stats</a>
 
 </div>
@@ -78,13 +78,13 @@ onclick='toggleMenu('104')' id='heading104'>Roc curves</div>
 <div class='menu'>
 <div class='menu_heading_open'
 onclick='toggleMenu('105')' id='heading105'>Data</div>
-<div id='menu105'>
+<div id='menu105' class='menu_collapsible'>
 	<a class='menu_separator'>Collect data from external servers</a>
 	<a class='menu_item' href='string_dataset_form.php' target='tools'>Download a subgraph from STRING</a>
 	<a class='menu_item' href='keggnetworkprovider_form.php' target='tools'>Download organism-specific networks from KEGG</a>
 	<a class='menu_separator'>Sample data</a>
 	<a class='menu_item' href='$WWW_RSA/demo_files/' target='tools'>DEMO data</a>
-	<a class='menu_item' href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'
+	<a class='menu_item_last' href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'
 	target='tools'>Nature protocol data</a>
 </div>
 </div>
@@ -94,7 +94,7 @@ onclick='toggleMenu('105')' id='heading105'>Data</div>
 onclick='toggleMenu('106')' id='heading106'>Web services</div>
 	<div id='menu106'  class='menu_collapsible'>
 		<a class='menu_item' href='neat_webservices.php' target=tools>Documentation and clients</a>
-		<a class='menu_item' href='neat_workflows.php' target=tools>Taverna workflows</a>
+		<a class='menu_item_last' href='neat_workflows.php' target=tools>Taverna workflows</a>
 	</div>
 </div>
 
@@ -117,7 +117,7 @@ onclick='toggleMenu('108')' id='heading108'>Information</div>
 	<a class='menu_item' href='neat_publications.html' target='tools'>Publications</a>
 	<a class='menu_item' href='distrib/index.html' target='tools'>Distribution</a>
 	<a class='menu_item' href='neat_credits.html' target='tools'>Credits</a>
-	<a class='menu_item' href='neat_links.html' target='tools'>Links</a>
+	<a class='menu_item_last' href='neat_links.html' target='tools'>Links</a>
 	</div>
 </div>
 
