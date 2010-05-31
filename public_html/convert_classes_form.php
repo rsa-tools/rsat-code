@@ -76,8 +76,8 @@ if ($pipe) {
   
     <br><a href = 'help.convert_classes.html#columns'><B>Column specification (only relevant for tab-delimited input)</b></a><br>
     <table>
-    <tr><td><B><a href = 'help.convert_classes.html#mcol'>Member</a></B></td><td><input type = 'text' name='s_col' value = '$default_mcol' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.convert_classes.html#ccol'>Class</a></B></td><td><input type = 'text' name='m_col' value = '$default_ccol' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.convert_classes.html#mcol'>Member</a></B></td><td><input type = 'text' name='m_col' value = '$default_mcol' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.convert_classes.html#ccol'>Class</a></B></td><td><input type = 'text' name='c_col' value = '$default_ccol' size = 1></input></td></tr>
     <tr><td><B><a href = 'help.convert_classes.html#wcol'>Weight</a></B></td><td><input type = 'text' name='w_col' size = 1 value = '$default_wcol'></input></td></tr>
     </table>");
  }

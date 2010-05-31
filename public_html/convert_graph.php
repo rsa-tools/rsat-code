@@ -156,9 +156,10 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
+
     # Execute the command
 //     echo ("<pre>");
-//     $echoed = $client->convert_graph($parameters);
+  $echoed = $client->convert_graph($parameters);
 //     echo ("</pre>");
     # Work with exception catch
     try {

@@ -12,18 +12,21 @@
 <body class="results">
 <?php 
   require ('functions.php');
+
   # log file update
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_file = getTempFileName('graph_neighb_cmd');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('graph-neighbours - results');
+  
   # Error status
   $error = 0;
   # Get parameters
   $in_format = $_REQUEST['in_format'];
+  
   if ($_FILES['graph_file']['name'] != "") {
     $graph_file = uploadFile('graph_file');
   } else if ($_REQUEST['pipe_graph_file'] != "")  {
@@ -33,6 +36,10 @@
     $seeds_file = uploadFile('seeds_file');
   }
   $now = date("Ymd_His");
+  
+//   $graph = "";
+//   $graph_file = "";
+  
   $graph = $_REQUEST['graph'];
   $seeds = $_REQUEST['seeds'];
   $s_col = $_REQUEST['s_col'];
@@ -132,10 +139,13 @@
         "direction"=>$direction
       )
     );
+
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
     hourglass("on");
+
+   error("DEBUG before opening SOAP client: neat_wsdl=$neat_wsdl");
   
     # Open the SOAP client
     $soap_client = new SoapClient(
@@ -148,6 +158,8 @@
                                  )
                            );
 
+   error("DEBUG YEAH !");
+
     # Execute the command
 #    echo "<pre>";
     $gn_echoed = $soap_client->graph_neighbours($gn_parameters);
@@ -155,6 +167,7 @@
     $gn_command = $gn_response->command;
     $gn_server = $gn_response->server;
     $gn_client = $gn_response->client;
+
 #    echo "</pre>";
     $gn_server = rtrim ($gn_server);
     $gn_temp_file = explode('/',$gn_server);
@@ -168,6 +181,7 @@
         "chunk"=>1000,
       )
     );
+
     store_command($gn_command, "graph-neighbours", $cmd_handle);
     $URL['Neighbour table'] = rsat_path_to_url($gn_server);
     
