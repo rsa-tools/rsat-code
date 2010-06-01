@@ -53,7 +53,8 @@
     array_push($return,'tables');
   }
   $return = join(",", $return);
-  ## If a file and a graph are submitted -> error
+
+  ## If both a file upload and a matrix are submitted -> error
   if ($matrix != "" && $matrix_file != "") {
     $error = 1;
     error("You must not submit both a table and a table file");
@@ -62,7 +63,8 @@
   if ($matrix_file != "" && $matrix == "") {
     $matrix = storeFile($matrix_file);
   }
-  ## If no graph are submitted -> error
+
+  ## If no matrix is submitted -> error
   if ($matrix == "" && $matrix_file == "") {
     $error = 1;
     error("You must submit a contingency table");
@@ -84,7 +86,7 @@
     echo"<hr>\n";
     hourglass("on");
     # Open the SOAP client
-    $client = new SoapClient(
+    $soap_client = new SoapClient(
                        $neat_wsdl,
                            array(
                                  'trace' => 1,
@@ -94,21 +96,31 @@
                                  )
                            );
     # Execute the command
-#    echo ("<pre>");
-    $echoed = $client->contingency_stats($parameters);
+    $echoed = $soap_client->contingency_stats($parameters);
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
-    $client = $response->client;
-#    $server = rtrim ($server);
-#    $temp_file = explode('/',$server);
-#    $temp_file = end($temp_file);
-#    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+#    $client = $response->client;
     store_command($command, "graph comparison", $cmd_handle);
-    $URL['Result'] = rsat_path_to_url($server);
-#    echo ("</pre>");
+    $URL['Contingency stats (tab)'] = rsat_path_to_url($server);
     hourglass("off");
 
+    ## Text-to-html
+    $server = rtrim ($server);
+    $file = storeFile($server);
+    $tth_parameters = array( 
+      "request" => array(
+        "inputfile"=>$file,
+        "chunk"=>1000,
+      )
+    );
+    $tth_echoed = $soap_client->text_to_html($tth_parameters);
+    $tth_response =  $tth_echoed->response;
+    $tth_command = $tth_response->command;
+    $tth_server = $tth_response->server;
+    $tth_client = $tth_response->client;
+    store_command($tth_command, "text-to-html", $cmd_handle);
+    $URL['Contingency stats (html)'] = rsat_path_to_url($tth_server);
 
     ## Close command handle
     fclose($cmd_handle);
@@ -116,11 +128,6 @@
 
     ## DISPLAY THE RESULT
     print_url_table($URL);
-
-//     # Display the results
-//     echo "The results is available at the following URL ";
-//     echo "<a href = '$resultURL'>$resultURL</a>"; 
-//     echo "<hr>\n";
     
   }
 ?>
