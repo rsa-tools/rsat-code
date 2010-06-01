@@ -417,6 +417,13 @@
               <INPUT type='submit' value='Contingency-table statistics'>
             </form>
           </td>
+          <td>
+            <form method='post' action='draw_heatmap_form.php'>
+              <input type='hidden' name='pipe' value='1'>
+              <input type='hidden' name='table_file' value='$cc_server'>
+              <INPUT type='submit' value='Represent the matrix as heatmap'>
+            </form>
+          </td>
         </tr>
       </table>";
 
