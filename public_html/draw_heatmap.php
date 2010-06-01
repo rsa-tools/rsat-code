@@ -27,7 +27,10 @@
   $out_format = $_REQUEST['out_format'];
   if ($_FILES['table_file']['name'] != "") {
     $table_file = uploadFile('table_file');
-  } 
+  } else if ($_REQUEST['pipe_query_table_file'] != "") {
+    $table_file = $_REQUEST['pipe_query_table_file'];
+  }
+
   $now = date("Ymd_His");
   $table = $_REQUEST['table'];
 
@@ -119,7 +122,7 @@
 #      $server = rtrim ($server);
 #      $temp_file = explode('/',$server);
 #      $temp_file = end($temp_file);
-       store_command($command, "class conversion", $cmd_handle);
+       store_command($command, "draw-heatmap", $cmd_handle);
        $URL['Result'] = rsat_path_to_url($server);
 
       hourglass("off");
