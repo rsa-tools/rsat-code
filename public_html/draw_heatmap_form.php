@@ -99,10 +99,10 @@ echo ("<option selected value = 'fire'>fire
 </select><br><br><br>");
 
 # Text in the cells
-echo ("<input type='checkbox' name='no_text'/>&nbsp;<B><a href = 'help.draw_heatmap.html#no_text'>Cell text not displayed</a></B><br><br>");
+echo ("<input type='checkbox' value = '1' name='no_text'/>&nbsp;<B><a href = 'help.draw_heatmap.html#no_text'>Cell text not displayed</a></B><br><br>");
 
 # The fist column of the table contains row names
-echo ("<input type='checkbox' checked name='rownames'/>&nbsp;<B><a href = 'help.draw_heatmap.html#rownames'>The first column contains the names of the row.</a></B><br><br>");
+echo ("<input type='checkbox' value = '1' checked name='rownames'/>&nbsp;<B><a href = 'help.draw_heatmap.html#rownames'>The first column contains the names of the row.</a></B><br><br>");
 
 
 
