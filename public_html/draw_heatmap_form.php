@@ -13,7 +13,10 @@ $default_colw = 30;
 $default_min = "";
 $default_max = "";
 $default_gradient = " selected ";
-
+  
+# PIPE VALUES
+$pipe = $_REQUEST['pipe'];
+$query_table_file = $_REQUEST['table_file'];
   
 # demo classes
 $demo = $_REQUEST['demo'];
@@ -48,10 +51,11 @@ echo("<p><b>Input</b></p>");
 ## Input format   
 
 if ($pipe) {
-
+    info_link("Table uploaded from the previous treatment", rsat_path_to_url($query_table_file));
+    echo "<input type='hidden' NAME='pipe_query_table_file' VALUE='$query_table_file'/>";
 } else {
   if ($demo) {
-    demo("This demonstration consists in a contingency table that results from the comparison of the complexes annotated in the MIPS database to clusters returned by the MCL algorithm when applied to the yeast interaction dataset produced by Krogan et al (2006).");
+    demo("This demonstration consists in a contingency table that results from the comparison of the complexes annotated in the MIPS database to clusters returned by the MCL algorithm when applied to the yeast interaction dataset produced by Krogan et al (2006). Each cell contains the Jaccard coefficient (intersection size / union size) of a cluster - complex comparison.");
   }
 
   ## Classes
