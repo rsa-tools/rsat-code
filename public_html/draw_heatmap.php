@@ -26,10 +26,10 @@
   # Get parameters
   $out_format = $_REQUEST['out_format'];
   if ($_FILES['table_file']['name'] != "") {
-    $classes_file = uploadFile('table_file');
+    $table_file = uploadFile('table_file');
   } 
   $now = date("Ymd_His");
-  $classes = $_REQUEST['table'];
+  $table = $_REQUEST['table'];
 
   $row_h = $_REQUEST['rowh'];
   $col_w = $_REQUEST['colw'];
@@ -38,7 +38,10 @@
   $gradient = $_REQUEST['gradient'];
   $no_text = $_REQUEST['no_text'];
   $row_names = $_REQUEST['rownames'];
-  
+/*  
+  echo "ROW $row_names";
+  exit(0);
+  */
   ## If a file and a graph are submitted -> error
   if ($table != "" && $table_file != "") {
     $error = 1;
@@ -46,19 +49,19 @@
   }
 
 
-  ## put the content of the file classes_file in $classes
+  ## put the content of the file table_file in $table
   if ($table_file != "" && $table == "") {
     $table = storeFile($table_file);
   }
-  ## If no graph are submitted -> error
-  if ($classes == "" && $classes_file == "") {
+  ## If no table is submitted -> error
+  if ($table == "" && $table_file == "") {
     $error = 1;
     error("You must submit a table");
   }
 
   
   if (!$error) { 
-//       echo ("<pre>$classes</pre>");
+//       echo ("<pre>$table</pre>");
     $table = trim_text($table);
 
     
@@ -128,25 +131,6 @@
 
     ## DISPLAY THE RESULT
     print_url_table($URL);
-
-      ## Send result to next step
-    echo "
-  <TABLE CLASS = 'nextstep'>
-    <TR>
-      <Th colspan = 3>
-        Next step
-      </Th>
-    </TR>
-    <TR>
-      <TD>
-        <FORM METHOD='POST' ACTION='compare_classes_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='class_file' VALUE='$server'>
-          <INPUT type='submit' value='Compare these clusters with other clusters'>
-        </form>
-      </td>
-</tr>
-
-   ";  
+  
   }}
 ?>
