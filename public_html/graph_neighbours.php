@@ -145,8 +145,6 @@
     echo"<hr>\n";
     hourglass("on");
 
-   error("DEBUG before opening SOAP client: neat_wsdl=$neat_wsdl");
-  
     # Open the SOAP client
     $soap_client = new SoapClient(
                         $neat_wsdl,
@@ -158,21 +156,20 @@
                                  )
                            );
 
-   error("DEBUG YEAH !");
-
     # Execute the command
-#    echo "<pre>";
     $gn_echoed = $soap_client->graph_neighbours($gn_parameters);
     $gn_response =  $gn_echoed->response;
     $gn_command = $gn_response->command;
     $gn_server = $gn_response->server;
     $gn_client = $gn_response->client;
 
-#    echo "</pre>";
+    store_command($gn_command, "graph-neighbours", $cmd_handle);
+    $URL['Neighbour table'] = rsat_path_to_url($gn_server);
+
     $gn_server = rtrim ($gn_server);
-    $gn_temp_file = explode('/',$gn_server);
-    $gn_temp_file = end($gn_temp_file);
-    $gn_resultURL = $WWW_RSA."/tmp/".$gn_temp_file;
+#    $gn_temp_file = explode('/',$gn_server);
+#    $gn_temp_file = end($gn_temp_file);
+#    $gn_resultURL = $WWW_RSA."/tmp/".$gn_temp_file;
     # Text-to-html
     $gn_file = storeFile($gn_server);
     $tth_parameters = array( 
@@ -181,9 +178,6 @@
         "chunk"=>1000,
       )
     );
-
-    store_command($gn_command, "graph-neighbours", $cmd_handle);
-    $URL['Neighbour table'] = rsat_path_to_url($gn_server);
     
     $tth_echoed = $soap_client->text_to_html($tth_parameters);
 
