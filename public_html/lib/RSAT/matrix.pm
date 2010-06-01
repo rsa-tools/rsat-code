@@ -228,10 +228,12 @@ the program consensus (Hertz), but not by other programs.
 #			    "motifsampler"=>1,
 			    "jaspar"=>1,
 			    "transfac"=>1,
+			    "tf"=>1,
 			    "stamp"=>1,
 			    "tab"=>1,
 			    "consensus"=>1,
 			    "cluster-buster" =>1,
+			    "cb" =>1,
 			    "infogibbs" =>1
 #			    "logo"=>1
 			   );
@@ -610,6 +612,9 @@ to_MotifSampler, to_TRANSFAC), depending on the chosen output format.
 sub toString {
     my ($self, %args) = @_;
     my $output_format = $args{format} || "tab";
+    $output_format =~ s|^cb$|cluster-buster|;
+    $output_format =~ s|^tf$|transfac|;
+
     $output_format = lc($output_format);
     if (($output_format eq "patser") || ($output_format eq "tab")) {
       return $self->to_patser(%args);
@@ -695,7 +700,7 @@ sub to_TRANSFAC {
       $to_print .= sprintf "%-4d",$c;
       for my $r (1..$nrow) {
 	my $occ = $matrix[$c-1][$r-1];
-	$to_print .= sprintf "%6d",$occ;
+	$to_print .= sprintf " %5g",$occ;
       }
       $to_print .= "\n";
     }
@@ -1053,6 +1058,150 @@ sub to_patser {
     return $to_print;
 }
 
+=pod
+
+=item to_infogibbs(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_char)
+
+Return a string description of the matrix in the same format as
+Matthieu De France programs. Additional parameters are also exported
+as comments, when the verbosity is > 0.
+
+Supported parameters:
+
+=over
+
+=item comment_char
+
+A character or string to print before each row of the matrix.
+
+
+=item format
+
+Output matrix format
+
+=back
+
+=cut
+sub to_infogibbs{
+    my ($self, %args) = @_;
+    my $to_print = "";
+    my $output_format = $args{format};
+    $output_format = lc($output_format);
+    $to_print .="; info-gibbs ". "\n"  ;
+
+    my @site_sequences = $self->get_attribute("sequences");
+
+    my $command =  $self->get_attribute("command") || "no original command available";
+    my $date =$main::start_time;
+    my $motif_ID =  $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("name");
+    my $random_seed= $self->get_attribute("random_seed") || "NA";
+    my $num_runs = $self->get_attribute("num_runs")|| "NA" ;
+    my $num_iterations =  $self->get_attribute("num_iterations") || "NA";
+    my $nb_seq = $self->get_attribute("nb_seq") ||  scalar ( @site_sequences) ||"NA" ;
+    my $total_size_bp = $self->get_attribute("total_size_bp") || "NA";
+    my $exp_motif_occ = $self->get_attribute("exp_motif_occ")|| $self->get_attribute("exp") || $self->get_attribute("E-value") || "NA";
+    my %prior = $self->getPrior() ;
+
+    my @alphabet = $self->getAlphabet();
+
+    my $motif_to_find =  $self->get_attribute("motif_to_find") || "NA";
+    my $avg_llr =        $self->get_attribute("avg_llr") || "NA";
+    my $avg_ic  =      $self->get_attribute("avg_ic") || "NA";
+    my $llr = $self->get_attribute("llr") || "NA"; 
+
+    $self->calcInformation();
+    my $ic  = $self->get_attribute("ic")|| $self->get_attribute("total.information")  || "NA"; 
+    $to_print .="; ".$command ."\n";
+    $to_print .="; "."title"."\n";
+    $to_print .="; started at                     ". $date;
+    $to_print .="; random seed                    ".  $random_seed  ."\n";
+    $to_print .="; number of runs                 ".  $num_runs   ."\n";
+    $to_print .="; number of iterations           ".  $num_iterations  ."\n";
+    $to_print .="; sequences                      ". $nb_seq   ."\n";
+    $to_print .="; total size in bp               ". $total_size_bp   ."\n";
+    $to_print .="; expected motif occurrences     ". $exp_motif_occ   ."\n";
+   
+    foreach my $l (1..scalar(@alphabet)) {
+      my $letter = $alphabet[$l-1];
+      my $prior = $prior{$letter} || $prior{uc($letter)};
+      $string_aux .= $letter.":".$prior."|";
+    }
+    $to_print .="; prior                          ".    $string_aux. "\n";
+    $to_print .="; motifs fo find                 ". "1"    ."\n";
+    $to_print .="; "."\n";
+    $to_print .="; motif                          ".  $motif_ID  ."\n";
+    $to_print .="; avg.llr                        ".  $avg_llr   ."\n";
+    $to_print .="; avg.ic                         ". $avg_ic    ."\n";
+    $to_print .="; log likelihood ratio           ".  $llr   ."\n";
+    $to_print .="; information content            ". $ic   ."\n";
+
+#    &RSAT::message::Debug("RSAT::matrix::infogibbs", $motif_ID , "++") if ($main::verbose >= 10);
+  #  <STDIN>;
+
+    ## Separator between row names (residues) and matrix content
+    my $pipe =  "|";
+    if (defined($args{pipe})) {
+	$pipe = $args{pipe};
+    }
+    $self->force_attribute("pipe", $pipe);
+    
+    ## Set formatting parameters provided in arguments as matrix attribute
+    foreach my $key ("sep", "col_width", "decimals") {
+	if (defined($args{$key})) {
+	    $self->force_attribute($key, $args{$key});
+	}
+    }
+    
+    ## Format for the matrix entries
+    my $sep = $self->get_attribute("sep") || "\t";
+    my $col_width = $self->get_attribute("col_width") || $self->ncol();;
+    my $decimals = $self->get_attribute("decimals");
+    
+    ## Calculate number width
+    my $number_width = 0;
+    if ($col_width) {
+	$number_width = $col_width - 1;
+    }
+    $to_print .="; motifs width                      ".  $col_width   ."\n";
+    $to_print .="; sites                             ".  $nb_seq ."\n";
+    $to_print .="; (seq and pos start at 1) "."\n";
+    $to_print .=join ("\t","; seq", "strand","pos","site","\n");
+
+    if (@site_sequences){
+	foreach my $s (0..$#site_sequences) {
+	    my $sequence = $site_sequences[$s];
+	    $to_print .= sprintf "; %4d\t%5s\t%-6d\t%s\n", $s, "+", $col_width , $sequence;
+	}
+    }
+    else {
+	$to_print.=";\n";
+    }
+
+    ################################################################
+    ## Print the matrix
+    my @matrix = ();
+    
+    @matrix = @{$self->{table}};
+
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+
+    ## Print the matrix
+    for $a (0..$#alphabet) {
+	my @row = &RSAT::matrix::get_row($a+1, $ncol, @matrix);
+	if (defined($args{comment_char})) {
+	    $to_print .= $args{comment_char};
+	}
+	$to_print .= $self->_printMatrixRow(uc( $alphabet[$a]), @row) ;
+    }
+    
+    
+    ## End of record
+    $to_print .=  $matrix_terminator{$output_format}."\n";
+    
+    return $to_print;
+}
+
 
 ################################################################
 
@@ -1405,6 +1554,34 @@ sub calcInformation {
     $self->force_attribute("information_calculated", 1);
 }
 
+
+################################################################
+
+=pod
+
+=item multiply()
+
+Multiply each cell of the counts matrix by a given factor.
+
+Usage: $matrix->multiply($n);
+
+=cut
+sub multiply {
+  my ($self, $n) = @_;
+
+  ## count matrix
+  my @matrix = $self->getMatrix();
+  my $ncol = $self->ncol();
+  my $nrow = $self->nrow();
+
+  for my $c (0..($ncol-1)) {
+    my $col_sum = 0;
+    for my $r (0..($nrow-1)) {
+      $matrix[$c][$r] *= $n;
+    }
+  }
+  $self->setMatrix($nrow, $ncol, @matrix);
+}
 
 ################################################################
 
@@ -3620,152 +3797,6 @@ sub link_button_TOMTOM {
     return $button;
 }
 
-
-################################################################
-
-=pod
-
-=item to_infogibbs(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_char)
-
-Return a string description of the matrix in the same format as
-Matthieu De France programs. Additional parameters are also exported
-as comments, when the verbosity is > 0.
-
-Supported parameters:
-
-=over
-
-=item comment_char
-
-A character or string to print before each row of the matrix.
-
-
-=item format
-
-Output matrix format
-
-=back
-
-=cut
-sub to_infogibbs{
-    my ($self, %args) = @_;
-    my $to_print = "";
-    my $output_format = $args{format};
-    $output_format = lc($output_format);
-    $to_print .="; info-gibbs ". "\n"  ;
-
-    my @site_sequences = $self->get_attribute("sequences");
-
-    my $command =  $self->get_attribute("command") || "no original command available";
-    my $date =$main::start_time;
-    my $motif_ID =  $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("name");
-    my $random_seed= $self->get_attribute("random_seed") || "NA";
-    my $num_runs = $self->get_attribute("num_runs")|| "NA" ;
-    my $num_iterations =  $self->get_attribute("num_iterations") || "NA";
-    my $nb_seq = $self->get_attribute("nb_seq") ||  scalar ( @site_sequences) ||"NA" ;
-    my $total_size_bp = $self->get_attribute("total_size_bp") || "NA";
-    my $exp_motif_occ = $self->get_attribute("exp_motif_occ")|| $self->get_attribute("exp") || $self->get_attribute("E-value") || "NA";
-    my %prior = $self->getPrior() ;
-
-    my @alphabet = $self->getAlphabet();
-
-    my $motif_to_find =  $self->get_attribute("motif_to_find") || "NA";
-    my $avg_llr =        $self->get_attribute("avg_llr") || "NA";
-    my $avg_ic  =      $self->get_attribute("avg_ic") || "NA";
-    my $llr = $self->get_attribute("llr") || "NA"; 
-
-    $self->calcInformation();
-    my $ic  = $self->get_attribute("ic")|| $self->get_attribute("total.information")  || "NA"; 
-    $to_print .="; ".$command ."\n";
-    $to_print .="; "."title"."\n";
-    $to_print .="; started at                     ". $date;
-    $to_print .="; random seed                    ".  $random_seed  ."\n";
-    $to_print .="; number of runs                 ".  $num_runs   ."\n";
-    $to_print .="; number of iterations           ".  $num_iterations  ."\n";
-    $to_print .="; sequences                      ". $nb_seq   ."\n";
-    $to_print .="; total size in bp               ". $total_size_bp   ."\n";
-    $to_print .="; expected motif occurrences     ". $exp_motif_occ   ."\n";
-   
-    foreach my $l (1..scalar(@alphabet)) {
-      my $letter = $alphabet[$l-1];
-      my $prior = $prior{$letter} || $prior{uc($letter)};
-      $string_aux .= $letter.":".$prior."|";
-    }
-    $to_print .="; prior                          ".    $string_aux. "\n";
-    $to_print .="; motifs fo find                 ". "1"    ."\n";
-    $to_print .="; "."\n";
-    $to_print .="; motif                          ".  $motif_ID  ."\n";
-    $to_print .="; avg.llr                        ".  $avg_llr   ."\n";
-    $to_print .="; avg.ic                         ". $avg_ic    ."\n";
-    $to_print .="; log likelihood ratio           ".  $llr   ."\n";
-    $to_print .="; information content            ". $ic   ."\n";
-
-#    &RSAT::message::Debug("RSAT::matrix::infogibbs", $motif_ID , "++") if ($main::verbose >= 10);
-  #  <STDIN>;
-
-    ## Separator between row names (residues) and matrix content
-    my $pipe =  "|";
-    if (defined($args{pipe})) {
-	$pipe = $args{pipe};
-    }
-    $self->force_attribute("pipe", $pipe);
-    
-    ## Set formatting parameters provided in arguments as matrix attribute
-    foreach my $key ("sep", "col_width", "decimals") {
-	if (defined($args{$key})) {
-	    $self->force_attribute($key, $args{$key});
-	}
-    }
-    
-    ## Format for the matrix entries
-    my $sep = $self->get_attribute("sep") || "\t";
-    my $col_width = $self->get_attribute("col_width") || $self->ncol();;
-    my $decimals = $self->get_attribute("decimals");
-    
-    ## Calculate number width
-    my $number_width = 0;
-    if ($col_width) {
-	$number_width = $col_width - 1;
-    }
-    $to_print .="; motifs width                      ".  $col_width   ."\n";
-    $to_print .="; sites                             ".  $nb_seq ."\n";
-    $to_print .="; (seq and pos start at 1) "."\n";
-    $to_print .=join ("\t","; seq", "strand","pos","site","\n");
-
-    if (@site_sequences){
-	foreach my $s (0..$#site_sequences) {
-	    my $sequence = $site_sequences[$s];
-	    $to_print .= sprintf "; %4d\t%5s\t%-6d\t%s\n", $s, "+", $col_width , $sequence;
-	}
-    }
-    else {
-	$to_print.=";\n";
-    }
-
-    ################################################################
-    ## Print the matrix
-    my @matrix = ();
-    
-    @matrix = @{$self->{table}};
-
-    my $ncol = $self->ncol();
-    my $nrow = $self->nrow();
-
-    ## Print the matrix
-    for $a (0..$#alphabet) {
-	my @row = &RSAT::matrix::get_row($a+1, $ncol, @matrix);
-	if (defined($args{comment_char})) {
-	    $to_print .= $args{comment_char};
-	}
-	$to_print .= $self->_printMatrixRow(uc( $alphabet[$a]), @row) ;
-    }
-    
-    
-    ## End of record
-    $to_print .=  $matrix_terminator{$output_format}."\n";
-    
-    return $to_print;
-}
 
 
 
