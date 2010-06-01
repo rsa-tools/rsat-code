@@ -332,9 +332,8 @@
     echo"<hr>\n";
     hourglass("on");
     # Open the SOAP client
-    $client = new SoapClient(
+    $soap_client = new SoapClient(
                        $neat_wsdl,
-// "http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -343,11 +342,9 @@
                                  )
                            );
    
-    # Execute the command
-#    echo "<pre>";
     # Execute the command and catch the errors
     try {
-      $cc_echoed = $client->compare_classes($cc_parameters);
+      $cc_echoed = $soap_client->compare_classes($cc_parameters);
       $soap_error = 0;
     } catch (Exception $soap_exception) {
       echo ("<pre>");
@@ -360,36 +357,27 @@
     $cc_command = $cc_response->command;
     $cc_server = $cc_response->server;
     $cc_client = $cc_response->client;
-//     $cc_server = rtrim ($cc_server);
-//     $cc_temp_file = explode('/',$cc_server);
-//     $cc_temp_file = end($cc_temp_file);
     $cc_resultURL = rsat_path_to_url($cc_server);
-    store_command("$cc_command", "Class conversion", $cmd_handle);
-    $URL['tab'] = $cc_resultURL;
+    store_command($cc_command, "Class conversion", $cmd_handle);
+    $URL['Class comparison (tab)'] = $cc_resultURL;
 
     ## Text-to-html
+    $cc_server = rtrim ($cc_server);
     $cc_file = storeFile($cc_server);
-#    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
     $tth_parameters = array( 
       "request" => array(
         "inputfile"=>$cc_file,
-        "chunk"=>1000
+        "chunk"=>1000,
       )
     );
-    
-    $tth_echoed = $client->text_to_html($tth_parameters);
+    $tth_echoed = $soap_client->text_to_html($tth_parameters);
     $tth_response =  $tth_echoed->response;
     $tth_command = $tth_response->command;
-    store_command("$tth_command", "Text to html", $cmd_handle);
     $tth_server = $tth_response->server;
     $tth_client = $tth_response->client;
-#    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
-//     $tth_server = rtrim ($tth_server);
-//     $tth_temp_file = explode('/',$tth_server);
-//     $tth_temp_file = end($tth_temp_file);
-    $tth_resultURL = rsat_path_to_url($tth_server);
-    $URL['HTML'] = $tth_resultURL;
-
+    store_command($tth_command, "text-to-html", $cmd_handle);
+    $URL['Class comparison (html)'] = rsat_path_to_url($tth_server);
+    
     
     hourglass("off");
 
