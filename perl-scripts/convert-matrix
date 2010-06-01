@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.117 2010/05/28 01:04:57 jvanheld Exp $
+# $Id: convert-matrix,v 1.118 2010/06/01 10:26:41 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -36,6 +36,7 @@ $perm = 0;
 %args = (); ## Arguments for matrix reading
 %force_attribute = ();
 $top_matrices = "none";
+$multiply = 1;
 
 local %infile = ();
 local %outfile = ();
@@ -304,6 +305,11 @@ if (scalar(@matrices) < 1) {
 my $m = 0;
 foreach my $matrix (@matrices) {
   $m++;
+
+  ## Multiply
+  if ($multiply != 1) {
+      $matrix->multiply($multiply);
+  }
 
   ## Add flanks
   if ($flanks) {
@@ -642,6 +648,14 @@ OPTIONS
 		distributed in an equiprobable way between residues.
 		By default, the pseudo-weight is distributed
 		proportionally to residue priors.
+
+	-multiply #
+		Multiply all the values of the input matrices by the
+		number #. This option allows to convert frequency
+		matrices into count matrices. It is somewhat tricky,
+		but can be useful for converting matrices for which
+		the actual counts are not provided but which only
+		provide relative frequencies.
 
 	-base #
 	      Base for the logarithms used in the scores involving a
@@ -1072,6 +1086,7 @@ convert-matrix options
 -bg_pseudo	pseudo-frequency for background model. (default:$bg_model->{bg_pseudo})
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
+-multiply #	multiply all values of the input matrices by #
 -base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
 -prefix		prefix to add before matrix identifiers
@@ -1087,7 +1102,6 @@ End_short_help
   close HELP;
   exit(0);
 }
-
 
 ################################################################
 ## Read arguments
@@ -1222,6 +1236,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-equi_pseudo") {
 	    $equi_pseudo = 1;
 
+	    ## Multiplicative factor
+	} elsif ($ARGV[$a] eq "-multiply") {
+	    $multiply = $ARGV[$a+1];
+	    &RSAT::error::FatalError($multiply, "Invalid multiplicative factor. ust be a Real number")
+		unless &RSAT::util::IsReal($multiply);
 
 	    ## base for the logarihtms in the weight and info content
 	} elsif ($ARGV[$a] eq "-base") {
