@@ -161,16 +161,13 @@
     $gn_response =  $gn_echoed->response;
     $gn_command = $gn_response->command;
     $gn_server = $gn_response->server;
-    $gn_client = $gn_response->client;
+//    $gn_client = $gn_response->client;
 
     store_command($gn_command, "graph-neighbours", $cmd_handle);
     $URL['Neighbour table'] = rsat_path_to_url($gn_server);
 
+    ## Text-to-html
     $gn_server = rtrim ($gn_server);
-#    $gn_temp_file = explode('/',$gn_server);
-#    $gn_temp_file = end($gn_temp_file);
-#    $gn_resultURL = $WWW_RSA."/tmp/".$gn_temp_file;
-    # Text-to-html
     $gn_file = storeFile($gn_server);
     $tth_parameters = array( 
       "request" => array(
@@ -178,30 +175,15 @@
         "chunk"=>1000,
       )
     );
-    
     $tth_echoed = $soap_client->text_to_html($tth_parameters);
-
     $tth_response =  $tth_echoed->response;
     $tth_command = $tth_response->command;
     $tth_server = $tth_response->server;
-    $tth_client = $tth_response->client;
-#    echo "</pre>";
-#    $tth_server = rtrim ($tth_server);
-#    $tth_temp_file = explode('/',$tth_server);
-#    $tth_temp_file = end($tth_temp_file);
-#    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
+//    $tth_client = $tth_response->client;
     store_command($tth_command, "text-to-html", $cmd_handle);
     $URL['Neighbour table (html)'] = rsat_path_to_url($tth_server);
-    
 
     hourglass("off");
-
-//     # Display the results
-//     echo "The results is available as text file at the following URL ";
-//     echo "<a href = '$gn_resultURL'>$gn_resultURL</a><br>"; 
-//     echo "The results is available as HTML page at the following URL ";
-//     echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
-//     echo "<hr>\n";
 
     ## Close command handle
     fclose($cmd_handle);
