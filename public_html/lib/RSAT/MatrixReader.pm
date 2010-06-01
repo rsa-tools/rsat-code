@@ -31,9 +31,9 @@ formats.
 %supported_input_format = (
 			   'alignace'=> 1,
 			   'assembly'=>1,
+			   'cb'=>1,
 			   'clustal'=>1,
 			   'cluster-buster'=>1,
-			   'cb'=>1,
 			   'consensus'=>1,
 			   'feature'=>1,
 			   'gibbs'=> 1,
@@ -41,9 +41,10 @@ formats.
 			   'jaspar'=>1,
 			   'meme'=>1,
 			   'motifsampler'=>1,
-			   'tab'=>1,
-			   'transfac'=>1,
 			   'stamp'=>1,
+			   'tab'=>1,
+			   'tf'=>1,
+			   'transfac'=>1,
 			   'uniprobe'=>1,
 			  );
 $supported_input_formats = join ",", keys %supported_input_formats;
@@ -80,6 +81,7 @@ sub readFromFile {
     my ($file, $format, %args) = @_;
     $format = lc($format);
     $format =~ s/^cb$/cluster-buster/;
+    $format =~ s/^tf$/transfac/;
 
     my @matrices = ();
 
