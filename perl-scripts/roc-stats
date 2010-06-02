@@ -8,7 +8,7 @@ roc-stats
 
 =head1 DESCRIPTION
 
-This program takes azs input a set of scored results associated with
+This program takes as input a set of scored results associated with
 validation labels (TP for true positive, FP for false positive, FN for
 false negatives), and computes, for each score value, the derived
 statistics (Sn, PPV, FPR), which can be further used to draw a ROC

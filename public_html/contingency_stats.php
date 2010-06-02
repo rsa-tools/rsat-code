@@ -73,6 +73,7 @@
   if (!$error) { 
   
     $matrix = trim_text($matrix);
+
     ## Load the parameters of the program in to an array
     $parameters = array( 
       "request" => array(
@@ -81,10 +82,12 @@
         "return"=>$return
       )
     );
+
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
     hourglass("on");
+
     # Open the SOAP client
     $soap_client = new SoapClient(
                        $neat_wsdl,
