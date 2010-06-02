@@ -8,8 +8,8 @@
    require ('functions.php');
 
 # variable definition
-$default_rowh = 30;
-$default_colw = 30;
+$default_rowh = 10;
+$default_colw = 10;
 $default_min = "";
 $default_max = "";
 $default_gradient = " selected ";
