@@ -95,7 +95,7 @@ onclick='toggleMenu('206')' id='heading206'>Data</div>
 <div class='menu_heading_open'
 onclick='toggleMenu('206')' id='heading206'>Graphics</div>
 <div id='menu206' >
-	<a class='menu_item' href='draw_heatmap_form.php' target='tools'>Generate a heatmap</a>
+	<a class='menu_item' href='draw_heatmap_form.php' target='tools'>Draw heatmap</a>
 </div>
 </div>
 
