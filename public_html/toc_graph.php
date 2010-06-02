@@ -70,6 +70,14 @@ onclick='toggleMenu('204')' id='heading204'>Clusters/Networks</div>
 
 <div class='menu'>
 <div class='menu_heading_open'
+onclick='toggleMenu('206')' id='heading206'>Graphics</div>
+<div id='menu206' >
+	<a class='menu_item' href='draw_heatmap_form.php' target='tools'>Draw heatmap</a>
+</div>
+</div>
+
+<div class='menu'>
+<div class='menu_heading_open'
 onclick='toggleMenu('205')' id='heading205'>Roc curves</div>
 <div id='menu205' >
 	<a class='menu_item' href='roc-stats_form.cgi' target='tools'>ROC curves and stats</a>
@@ -88,14 +96,6 @@ onclick='toggleMenu('206')' id='heading206'>Data</div>
 	<a class='menu_item' href='$WWW_RSA/demo_files/' target='tools'>DEMO data</a>
 	<a class='menu_item_last' href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'
 	target='tools'>Nature protocol data</a>
-</div>
-</div>
-
-<div class='menu'>
-<div class='menu_heading_open'
-onclick='toggleMenu('206')' id='heading206'>Graphics</div>
-<div id='menu206' >
-	<a class='menu_item' href='draw_heatmap_form.php' target='tools'>Draw heatmap</a>
 </div>
 </div>
 
