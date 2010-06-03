@@ -93,8 +93,8 @@ onclick='toggleMenu('206')' id='heading206'>Data</div>
 	<a class='menu_item' href='string_dataset_form.php' target='tools'>Download a subgraph from STRING</a>
 	<a class='menu_item' href='keggnetworkprovider_form.php' target='tools'>Download organism-specific networks from KEGG</a>
 	<a class='menu_separator'>Sample data</a>
-	<a class='menu_item' href='$WWW_RSA/demo_files/' target='tools'>DEMO data</a>
-	<a class='menu_item_last' href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'
+	<a class='menu_item' href='http://rsat.ulb.ac.be/rsat/demo_files/' target='tools'>DEMO data</a>
+	<a class='menu_item_last' href='http://rsat.ulb.ac.be/rsat/data/published_data/nature_protocols/network_analysis/'
 	target='tools'>Nature protocol data</a>
 </div>
 </div>
