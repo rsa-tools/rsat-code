@@ -52,7 +52,7 @@ foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-} 
+}
 
 
 ################################################################
@@ -62,17 +62,19 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("matrix-quality", "form");
-print "<CENTER>";
+print "<center>";
 print "Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by
     comparing score distributions obtained with this matrix in various
-    sequence sets.</p>
-    The most classical use of the program is to compare score distributions
+    sequence sets.</p>\n";
+print "The most classical use of the program is to compare score distributions
     between <em>positive</em> sequences (e.g. true binding sites for the considered
     transcription factor) and <em>negative</em> sequences (e.g. intergenic
-    sequences between convergently transcribed genes).<P>\n";
-print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
-print "</CENTER>";
-print "<BLOCKQUOTE>\n";
+    sequences between convergently transcribed genes).<p>\n";
+print "<p>Program developed by <a target='_top' href='http://www.ccg.unam.mx/ccg-OrganicG/personalInfo?idPersona=253'>Alejandra Medina Rivera</a>, \n";
+print " <a target='_top' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</A>,\n";
+print "and <a target='_top' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</A>.</p>\n";
+print "</center>";
+print "<blockquote>\n";
 
 ## demo description
 print $default{demo_descr};
@@ -793,7 +795,7 @@ As a positive set we will use the obtained sequences from the ChIP-chip experime
 As a negative sequence set we will use the reported binding sites of CRP in the Escherichia coli K12 Genome annotated at RegulonDB. </p>";
 $demo_markov=1;
 
-print "<TD><B>";
+print "<td><b>";
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr."</blockquote>");
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
@@ -807,14 +809,12 @@ print $query->hidden(-name=>'tag2',-default=>'negative_set');
 print $query->hidden(-name=>'sequence2',-default=>$demo_seq2);
 print $query->hidden(-name=>'markov_order',-default=>$demo_markov);
 print $query->submit(-label=>"DEMO");
-print "</B></TD>\n";
+print "</b></td>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.matrix-quality.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_PSSM.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
+print "<td><b><a href='help.matrix-quality.html'>MANUAL</A></B></TD>\n";
+print "</tr></table></ul></ul>\n";
 
 print "</FONT>\n";
 
