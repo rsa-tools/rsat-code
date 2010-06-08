@@ -400,8 +400,8 @@ for $series (0..$#y_col_list) {
     } elsif ($color_string =~ /^#\S{6}$/) { 
       ($R,$G,$B) = &RSAT::util::hex2rgb($color_string);
     } else {
-      &RSAT::message::Warning("series:".$series, "Invalid color specification", $color_string);
-      return();
+      &RSAT::message::Warning("series:".$series, $series_name, "Invalid color specification", $color_string);
+#      return();
     }
     $series_color[$series] = $image->colorAllocate($R,$G,$B);
     &RSAT::message::Debug("series:".$series,
