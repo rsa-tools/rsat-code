@@ -62,6 +62,22 @@ int oligo2index_char(char *seq, int pos, int l)
     return value;
 }
 
+int oligo2index_rc_char(char *seq, int pos, int l)
+{
+    int value = 0;
+    int S = 1;
+    int i;
+    for (i = 0; i < l; i++) 
+    {
+        int v = char2int(seq[pos + i]);
+        if (v == -1)
+            return -1;
+        value += S * (3 - v);
+        S *= 4;
+    }
+    return value;
+}
+
 // int oligo2index(int *seq, int pos, int l)
 // {
 //     int value = 0;
@@ -143,26 +159,18 @@ markov_t *load_markov(char *filename)
     // S
     double sum = 0;
     for (i = 0; i < size; i++)
-    {
         sum += self->S[i];
-    }
     for (i = 0; i < size; i++)
-    {
         self->S[i] = self->S[i] / sum;
-    }
     // T
     for (i = 0; i < size * 4; i += 4)
     {
         int j;
         double sum = 0.0;
         for (j = i; j < i + 4; j++)
-        {
             sum += self->T[j];
-        }
         for (j = i; j < i + 4; j++)
-        {
             self->T[j] = self->T[j] / sum;
-        }
     }
 
     //
@@ -177,21 +185,19 @@ void print_markov(markov_t *self)
     printf("S\n");
     int i;
     for (i = 0; i < size; i++)
-    {
         printf("%.3f\n", self->S[i]);
-    }
 
     // T
     printf("T\n");
     for (i = 0; i < size * 4; i++)
-    {
         printf("%.3f\n", self->T[i]);
-    }
 }
 
 double markov_P(markov_t *self, char *seq, int pos, int length)
 {
     int prefix = oligo2index_char(seq, pos, length - 1);
+    if (prefix == -1)
+        return 0.0;
     double p = self->S[prefix];
     // INFO("p=%.3f", p);
     int i;
@@ -199,6 +205,8 @@ double markov_P(markov_t *self, char *seq, int pos, int length)
     {
         int suffix = char2int(seq[i]);
         int prefix = oligo2index_char(seq, i - self->order, self->order);
+        if (suffix == -1 || prefix == -1)
+            return 0.0;
         p *= self->T[4 * prefix + suffix];
     }
     // INFO("p=%.3f", p);

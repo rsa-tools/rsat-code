@@ -7,10 +7,10 @@
 // 
 
 #include "utils.h"
-//#include "count.h"
+#include "count.h"
 #include "markov.h"
 
-//int VERSION = 20100512.2;
+int VERSION = 20100602;
 
 // ===========================================================================
 // =                            usage & help
@@ -107,17 +107,16 @@ int main(int argc, char *argv[])
             help(argv[0]);
             exit(0);
         } 
+        else if (strcmp(argv[i], "--version") == 0) 
+        {
+            printf("%d\n", VERSION);
+            exit(0);
+        } 
         else if (strcmp(argv[i], "-bg") == 0) 
         {
             ENSURE(argc > i + 1, "-v requires a nummber (0, 1 or 2)");
             bg_filename = argv[++i];
         } 
-
-    //     else if (strcmp(argv[i], "--version") == 0) 
-    //     {
-    //         printf("%d\n", VERSION);
-    //         exit(0);
-    //     } 
     //     else if (strcmp(argv[i], "-v") == 0) 
     //     {
     //         ASSERT(argc > i + 1, "-v requires a nummber (0, 1 or 2)");
@@ -177,9 +176,9 @@ int main(int argc, char *argv[])
     //     }
     }
 
-    markov_t *m = load_markov("../2nt_upstream-noorf_Escherichia_coli_K12-noov-2str.freq");
-    print_markov(m);
-    markov_P(m, "ac", 0, 2);
+    // markov_t *m = load_markov("../2nt_upstream-noorf_Escherichia_coli_K12-noov-2str.freq");
+    // print_markov(m);
+    //markov_P(m, "ac", 0, 2);
     // 
     // // monitor start & end time
     // time_t rawtime;
