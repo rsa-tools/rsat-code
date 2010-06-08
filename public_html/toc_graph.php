@@ -101,9 +101,9 @@ onclick='toggleMenu('206')' id='heading206'>Data</div>
 
 
 <div class='menu'>
-<div class='menu_heading_closed'
+<div class='menu_heading_open'
 onclick='toggleMenu('207')' id='heading207'>Web services</div>
-	<div id='menu207'  class='menu_collapsible'>
+	<div id='menu207' >
 		<a class='menu_item' href='neat_webservices.php' target='tools'>Documentation and clients</a>
 		<a class='menu_item_last' href='neat_workflows.php' target='tools'>Taverna workflows</a>
 	</div>
