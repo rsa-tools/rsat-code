@@ -208,6 +208,7 @@ Function load_props($props) {
   	  $neat_java_host = $neat_java_host . ":" . $tomcat_port;
   }
   $neat_java_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl";
+  $neat_java_remote_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl";
   # LOG
   $year = date("Y");
   $month = date("m");
