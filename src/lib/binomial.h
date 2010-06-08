@@ -11,8 +11,14 @@
 
 #include "utils.h"
 
-// P[x] = P[x-1] * p (N-x+1) / (q x)
+// Compute the binomial P-value P(x >= n)
+// n -- number of success
+// N -- number of trials
+// p -- prob of success
+// binomial recursive formula:
+//            P[x] * p(N-x)
+//   P[x+1] = -------------
+//               q(x+1)
 double pbinom(int n, int N, double p);
-
 
 #endif

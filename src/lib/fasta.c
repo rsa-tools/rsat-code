@@ -25,9 +25,7 @@ seq_t *new_seq_rc(seq_t *seq)
     seq_t *rc = new_seq(seq->size);
     int i;
     for (i = 0; i < seq->size; i++)
-    {
         rc->data[seq->size - i - 1] = 3 - seq->data[i];
-    }
     return rc;
 }
 
@@ -107,7 +105,7 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
 {
     seq_t *seq = new_seq(1000);
 
-    // read header
+    // header
     char c;
     int i = 0;
     do 
@@ -121,7 +119,7 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
     if (c == EOF)
         return NULL;
 
-    // read sequence
+    // sequence
     do 
     {
         c = fasta_reader_getc(reader);
@@ -129,7 +127,6 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
           break;
         if (c != '\n' && c != '>') 
             seq_append_c(seq, c);
-
     } while (c != '>');
 
     return seq;
