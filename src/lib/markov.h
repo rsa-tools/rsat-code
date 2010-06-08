@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  *  markov.h
- *  Markov chains
+ *  DNA Markov model
  *   
  *
  *                                                                         *
@@ -34,5 +34,11 @@ double markov_P(markov_t *self, char *seq, int pos, int length);
 
 // print to stdout markov model
 void print_markov(markov_t *self);
+
+// oligo2index
+int oligo2index_char(char *seq, int pos, int l);
+
+// oligo2index reverse complement
+int oligo2index_rc_char(char *seq, int pos, int l);
 
 #endif

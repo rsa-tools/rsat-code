@@ -1,5 +1,6 @@
 #include "count.h"
 
+static inline
 int count_array_size(int l)
 {
     int i;
@@ -27,55 +28,84 @@ void init_last_position_array(long *array, int l)
         array[i] = -l;
 }
 
+// static
+// int oligo2index(seq_t *seq, int pos, int l)
+// {
+//     int value = 0;
+//     int S = 1;
+//     int i;
+//     for (i = l - 1; i >= 0; i--) 
+//     {
+//         if (seq->data[pos + i] == -1)
+//             return -1;
+//         value += S * seq->data[pos + i];
+//         S *= 4;
+//     }
+//     return value;
+// }
+// 
+// static
+// int oligo2index_rc(seq_t *seq, int pos, int l)
+// {
+//     int value = 0;
+//     int S = 1;
+//     int i;
+//     for (i = 0; i < l; i++) 
+//     {
+//         if (seq->data[pos + i] == -1)
+//             return -1;
+//         value += S * (3 - seq->data[pos + i]);
+//         S *= 4;
+//     }
+//     return value;
+// }
+
 static
-int oligo2index(seq_t *seq, int pos, int l)
+int oligo2index(seq_t *seq, int pos, int l, int sp)
 {
-    int value = 0;
-    int S = 1;
-    int i;
-    for (i = l - 1; i >= 0; i--) 
+    if (sp > 0)
     {
-        if (seq->data[pos + i] == -1)
-            return -1;
-        value += S * seq->data[pos + i];
-        S *= 4;
+        int m = (l - sp) / 2;
+        int S = count_array_size(m);
+        return S * oligo2index_char(seq->data, pos, m) + \
+                   oligo2index_char(seq->data, pos + m + sp, m);
     }
-    return value;
+    else
+    {
+        return oligo2index_char(seq->data, pos, l);
+    }
 }
 
 static
-int oligo2index_rc(seq_t *seq, int pos, int l)
+int oligo2index_rc(seq_t *seq, int pos, int l, int sp)
 {
-    int value = 0;
-    int S = 1;
-    int i;
-    for (i = 0; i < l; i++) 
+    if (sp > 0)
     {
-        if (seq->data[pos + i] == -1)
-            return -1;
-        value += S * (3 - seq->data[pos + i]);
-        S *= 4;
+        int m = (l - sp) / 2;
+        int S = count_array_size(m);
+        return oligo2index_rc_char(seq->data, pos, m) + \
+               S * oligo2index_rc_char(seq->data, pos + m + sp, m);
     }
-    return value;
+    else
+    {
+        return oligo2index_rc_char(seq->data, pos, l);
+    }
 }
-
-void count_occ(long *count_table, long *last_position, int l, seq_t *seq, int add_rc, int noov)
+void count_occ(long *count_table, long *last_position, int l, int sp, seq_t *seq, int rc, int noov)
 {
     if (noov)
         init_last_position_array(last_position, l);
 
     int index = -1;
-    // int index_f = -1;  // forward strand
-    // int index_r = -1;  // reverse strand
     int position_count = 0;
     int total_count = 0;
 
     int i;
     for (i = 0; i < seq->size - l + 1; i++) 
     {
-        index = oligo2index(seq, i, l);
-        if (add_rc)
-            index = MIN(index, oligo2index_rc(seq, i, l));
+        index = oligo2index(seq, i, l, sp);
+        if (rc)
+            index = MIN(index, oligo2index_rc(seq, i, l, sp));
 
         // invalid position
         if (index == -1)
@@ -100,5 +130,3 @@ void count_occ(long *count_table, long *last_position, int l, seq_t *seq, int ad
         total_count++;
     }
 }
-
-
