@@ -115,10 +115,15 @@ if (($img_format eq "eps")||($img_format eq "pdf")) {
 # Load user-specified colors from a file
 %header_colors = ();
 if ($colorfile) {
+  &RSAT::message::TimeWarn("Reading colors from file", $colorfile) if ($main::verbose >= 2);
   my ($colorsfromfile) = &OpenInputFile($colorfile);
   while (<$colorsfromfile>) {
-    if ($_=~/(.*)\t(.*)/){
-      $header_colors{$1}=$2;
+    if ($_=~/(.+)\t(.+)/){
+      my $series_name = $1;
+      $series_name = &trim($series_name);
+      my $color = $2;
+      $header_colors{$series_name}= $color;
+      &RSAT::message::Debug("Series", $series_name, "color", $header_colors{$series_name}) if ($main::verbose >= 3);
     }
   }
   close $colorsfromfile;
@@ -381,8 +386,9 @@ unless ($hbox_left eq ""){
   $image->filledRectangle($hbox_left, $hbox_top, $hbox_right, $hbox_bottom, $highlight_box_color);
 }
 
-
+################################################################
 ## Assign a color to each series
+&RSAT::message::TimeWarn("Assigning series colors") if ($main::verbose >= 2);
 @series_color = ();
 for $series (0..$#y_col_list) {
   my $series_name = $header_fields[$y_col_list[$series]];
@@ -397,13 +403,22 @@ for $series (0..$#y_col_list) {
       &RSAT::message::Warning("series:".$series, "Invalid color specification", $color_string);
       return();
     }
-
     $series_color[$series] = $image->colorAllocate($R,$G,$B);
-    &RSAT::message::Debug("series:".$series, "column:".$y_col_list[$series], "color:".$series_color[$series], $color_string, "$R,$G,$B", $series_name) if ($main::verbose >= 2);
-
+    &RSAT::message::Debug("series:".$series,
+			"column:".$y_col_list[$series],
+			"color:".$series_color[$series], 
+			$color_string,
+			"RGB=($R,$G,$B)",
+			$series_name)
+    if ($main::verbose >= 3);
   } else {
     $series_color[$series] = $color_list[$series%($#color_list+1)];
   }
+  &RSAT::message::Debug("series:".$series,
+			"column:".$y_col_list[$series],
+			"color:".$series_color[$series],
+			$series_name)
+    if ($main::verbose >= 3);
 }
 
 #### draw dots ####
@@ -623,7 +638,10 @@ sub GnuPlotEPS {
     my ($out) = &OpenOutputFile($tmp_file);
     while (<$in>) {
       next if (/^;/); # skip comment lines
-      next if (/^#/); # skip header line
+#      next if (/^#/); # We don't want to skip header line
+      if (/^#/) {
+	s/^#//;
+      }
       print $out $_;
     }
     close $out;
@@ -794,7 +812,7 @@ sub GnuPlotEPS {
   if ($colorfile){
     @color_list = ();
 
-## JvH moved this to the begin of the script in order to support color file for bitmap formats as well
+# ## JvH moved this to the begin of the script in order to support color file for bitmap formats as well
 #     # Read colors from color file
 #     %header_colors = ();
 #     ($colorsfromfile) = &OpenInputFile($colorfile);
@@ -806,13 +824,15 @@ sub GnuPlotEPS {
 #     close $colorsfromfile;
 
     #get the column headers
-    $header = `head -n 1 $input_data_file`;
+    my $header = `head -n 1 $input_data_file`;
     chomp($header);
-    @header_list = split ('\t',$header);
-    foreach my $h (@header_list){
-    	if ($header_colors{$h}){
-    		push @color_list, $header_colors{$h};
-    	}
+    my @header_list = split ('\t',$header);
+    &RSAT::message::Debug("File", $input_data_file, "Header", $header, "\n", join(";", @header_list)) if ($main::verbose >= 5);
+    foreach my $series_name (@header_list){
+      if ($header_colors{$series_name}){
+	push @color_list, $header_colors{$series_name};
+      }
+      &RSAT::message::Debug("Color for gnuplot", $series_name, $header_colors{$series_name}) if ($main::verbose >= 4);
     }
   } else {
 
@@ -1360,16 +1380,18 @@ sub ReadData {
       next unless ($new_data_line =~ /\S/);
       $l++; 
       if (($header) && ($l == 1) || ($new_data_line =~ /^#/)) {
+
 	#### read legend ####
 	$header_line = $new_data_line;
 	$header_line =~ s/^;//; ## Suppress leading comment char
+	$header_line =~ s/^#//; ## Suppress leading header char
 	unless ($header_line =~ /\t/) {	# if there are no tabs,
 	  $header_line =~ s/ {1,}/\t/g;	# single or multiple spaces are considered as a singlew tab
 	}
 	@header_fields = split(/[\t\n\r]/, $header_line);
 	&RSAT::message::Info(join("\t", "Legend fields\t", join (";", @header_fields))) if ($main::verbose >= 1);
 
-	### calculate legend width ###
+	### calculate legend width
 	if ($legend) {
 	  $legend_length = 0;
 	  for $series (0..$#y_col_list) {
