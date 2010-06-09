@@ -44,7 +44,7 @@ use Pod::Text;
 
 ################################################################
 ## Initialize parameters
-my $start_time = &RSAT::util::StartScript();
+local $start_time = &RSAT::util::StartScript();
 
 #### package variables
 $verbose = 0;
