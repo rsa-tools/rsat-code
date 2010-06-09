@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.24 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: compare-profiles,v 1.25 2010/06/09 23:06:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -343,7 +343,7 @@ sig = max(sig_R, sig_L)
 
 ################################################################
 #### initialise parameters
-my $start_time = &RSAT::util::StartScript();
+local $start_time = &RSAT::util::StartScript();
 local $distinct = 0;
 local $header=1;
 local $base=exp(1); ## Base for the logarithms

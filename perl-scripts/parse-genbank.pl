@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.61 2010/05/29 17:38:47 rsat Exp $
+# $Id: parse-genbank.pl,v 1.62 2010/06/09 23:06:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -26,7 +26,7 @@ require "classes/Genbank_classes.pl";
 package main;
 {
     #### initialise parameters ####
-    my $start_time = &RSAT::util::StartScript();
+    local $start_time = &RSAT::util::StartScript();
     local %infile = ();
     local %outfile = ();
     local $verbose = 0;
@@ -186,18 +186,28 @@ package main;
 #	chdir ($dir{input});
 	push @genbank_files, glob($dir{input}."/*.${ext}");
 	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
+<<<<<<< parse-genbank.pl
+	&RSAT::message::Info("Genbank files found in the directory", scalar(@genbank_files)) 
+	  if ($main::verbose >= 1);
+=======
 	if (scalar(@genbank_files) > 1) {
 	    &RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the directory");
 	}
+>>>>>>> 1.61
 
 	## If no genbank files were found in the main directory (Bacteria),
 	## search in CHR_* directories (eukaryotes)
 	if (scalar(@genbank_files) ==0 ) {
 	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}");
 	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}.gz");
+<<<<<<< parse-genbank.pl
+	    &RSAT::message::Info("Genbank files found in the CHR_* subdirectories", scalar(@genbank_files)) 
+	      if ($main::verbose >= 1);
+=======
 	    if (scalar(@genbank_files) > 1) {
 		&RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the CHR_* subdirectories");
 	    }
+>>>>>>> 1.61
 	}
     }
 
@@ -205,9 +215,22 @@ package main;
 	system "ls -l";
 	&RSAT::error::FatalError("There is no genbank file in the input directory $dir{input}\n");
     } else {
+<<<<<<< parse-genbank.pl
+	&RSAT::message::Info(scalar(@genbank_files)." Genbank files") if ($verbose >= 1);
+	&RSAT::message::Info("Genbank file names\n;\t", join("\n;\t", @genbank_files)) if ($verbose >= 2);
+=======
 	&RSAT::message::Info("Genbank files\n;\t", join("\n;\t", @genbank_files)) if ($verbose >= 2);
+>>>>>>> 1.61
     }
-    chdir($dir{main});     #### come back to the starting directory
+
+    my @filtered_genbank_files = grep (!/\/CHR_Un\//, @genbank_files);
+    if (scalar(@filtered_genbank_files) < scalar(@genbank_files)) {
+      @genbank_files = @filtered_genbank_files;
+      &RSAT::message::Warning("Filtering out CHR_Un folder", scalar(@genbank_files). " remaining files");
+    }
+
+    #### come back to the starting directory
+    chdir($dir{main});     
 
     #### output directory
     unless (defined($dir{output})) {

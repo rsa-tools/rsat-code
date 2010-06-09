@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.20 2010/06/08 22:43:49 amedina Exp $
+# $Id: matrix-distrib,v 1.21 2010/06/09 23:06:11 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -128,7 +128,7 @@ package main;
 
   ################################################################
   #### initialise parameters
-  my $start_time = &RSAT::util::StartScript();
+  local $start_time = &RSAT::util::StartScript();
   local $bg_model = new RSAT::MarkovModel();
   local $decimals = 1;
   local $pseudo = 1;

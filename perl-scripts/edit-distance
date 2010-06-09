@@ -7,7 +7,7 @@ require "RSA.lib";
 
 
 #### initialise parameters ####
-my $start_time = &RSAT::util::StartScript();
+local $start_time = &RSAT::util::StartScript();
 local $inputfile = "";
 local $outputfile = "";
 local $verbose = 0;
