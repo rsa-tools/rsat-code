@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.118 2010/06/01 10:26:41 jvanheld Exp $
+# $Id: convert-matrix,v 1.119 2010/06/09 22:26:01 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -23,7 +23,7 @@ use File::Basename;
 use Data::Dumper;
 
 #### initialise parameters ####
-my $start_time = &RSAT::util::StartScript();
+local $start_time = &RSAT::util::StartScript();
 local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
 $seqlogo_path = &trim($seqlogo_path);
 $decimals = 1;
