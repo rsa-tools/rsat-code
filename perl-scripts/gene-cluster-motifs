@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.288 2010/05/30 13:11:58 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.289 2010/06/09 22:30:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.288 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.289 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Paths of the programs called by multiple-family-analysis
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -251,7 +251,7 @@ package main;
 
   ## Default MEME options
   $MEME_options{text} = ""; push @MEME_options, "text";	## Ouptut format = text
-  $MEME_optiont{dna} = ""; push @MEME_options, "dna"; ## Sequence type == dna
+  $MEME_options{dna} = ""; push @MEME_options, "dna"; ## Sequence type == dna
   $MEME_options{mod} = "anr"; push @MEME_options, "mod"; ## Accept any number of occurrences per sequence
   $MEME_options{minw} = 8; push @MEME_options, "minw"; ## Minimal motif width
   $MEME_options{maxw}=20; push @MEME_options, "maxw"; ## Maximal motif width
@@ -3101,7 +3101,8 @@ sub check_meme_path {
     &RSAT::error::FatalError("The variable meme_dir is not defined. Please check the RSAT config file ".$ENV{RSAT}."/RSAT_config.props");
   }
   $fasta_get_markov = $meme_dir."/fasta-get-markov";
-  $meme_cmd = $meme_dir."/meme";
+#  $meme_cmd = $meme_dir."/meme";
+  $meme_cmd =  = &RSAT::server::GetProgramPath("meme", $meme_dir);
 }
 
 ################################################################
