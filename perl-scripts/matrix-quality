@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.92 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: matrix-quality,v 1.93 2010/06/09 22:48:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -235,7 +235,7 @@ package main;
     $bg_format = "oligos";
     $bg_model = new RSAT::MarkovModel();
 
-    $distrib_score_col = 5; ## Column containing the cCDF (complementary cumulative density function) in the output of the command matrix-distrib-quick -distrib
+    $distrib_score_col = 5; ## Column containing the dCDF (decreasing cumulative density function) in the output of the command matrix-distrib-quick -distrib
 
     %dir = ();
     @seq_types = (); ## Sequence types
@@ -265,8 +265,9 @@ package main;
 
     ## Tasks
     %supported_tasks = (
-			scan=>1, ## Scan sequences with matrix-scan
 			theor=>1, ## Calculate the theoretical distribution
+			export_matrix=>1, ## Export the matrix and sites in various formats (tab, info, logos)
+			scan=>1, ## Scan sequences with matrix-scan
 			loo=>1, ## Leave-one-out test on the matrix sites
 			theor_loo=>1, ## Calculate the theoretical distribution of loo partial matrices
 			permute=>1, ## Scan sequences with permuted matrices
@@ -343,12 +344,12 @@ package main;
 	$perm_nb{$seq_type} = 0;
       }
     }
+
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($outfile{log});
     &PreVerbose() if ($main::verbose);
 
-    
     ################################################################
     ### Read background model to use for theorical distribution
     if ($main::infile{bg_file}){
@@ -403,22 +404,25 @@ package main;
     ####################
 
 
-    ## Export input sites with the matrix
-    &ExportInputSites($matrix, $matrix_file) if $main::infile{matrix_sites};
+    if ($task{export_matrix}) {
 
-    ## Export the matrix in tab-delimited format
-    &ExportTabMatrix($matrix);
+      ## Export input sites with the matrix
+      &ExportInputSites($matrix, $matrix_file) if $main::infile{matrix_sites};
 
-    ## Export the matrix in tab-delimited format with additional information + the logos
-    &ExportMatrixInfo($matrix);
+      ## Export the matrix in tab-delimited format
+      &ExportTabMatrix($matrix);
 
-    ## Shuffle the columns of the matrix (permutation test)
-    local $perm_nb_max = &RSAT::stats::checked_max(0, values %perm_nb);
-    print $main::out "; Sequence sets (name, permutations, file)";
-    foreach my $seq_type (@seq_types) {
-      print $main::out join("\t", ";", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
+      ## Export the matrix in tab-delimited format with additional information + the logos
+      &ExportMatrixInfo($matrix);
+
+      ## Shuffle the columns of the matrix (permutation test)
+      local $perm_nb_max = &RSAT::stats::checked_max(0, values %perm_nb);
+      print $main::out "; Sequence sets (name, permutations, file)";
+      foreach my $seq_type (@seq_types) {
+	print $main::out join("\t", ";", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
+      }
+      &PermuteMatrixColumns() if ($perm_nb_max > 0);
     }
-    &PermuteMatrixColumns() if ($perm_nb_max > 0);
 
     ## Calculate theoretical distribution of probabilities
     $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab";
@@ -521,9 +525,9 @@ package main;
       print $main::index "\n<h4>Matrix logo</h4>\n";
       &index_one_image($outfile{matrix_logo}."_m1");
       &index_one_image($outfile{matrix_rc_logo}."_m1");
-      print $main::index "\n<h4>Complementary cumulative distributions</h4>\n";
+      print $main::index "\n<h4>Decreasing cumulative distributions (dCDF)</h4>\n";
       &index_one_image($outfile{distrib_compa});
-      print $main::index "\n<h4>Complementary cumulative distributions (logarithmic Y axis)</h4>\n";
+      print $main::index "\n<h4>Decreasing cumulative distributions (dCDF), logarithmic Y axis</h4>\n";
       &index_one_image($outfile{distrib_compa}."_logy");
       print $main::index "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
       &index_one_image($outfile{distrib_compa}."_roc_xlog");
@@ -1362,16 +1366,16 @@ sub LOO_scores {
    #  if ($quick_cmd) {
 #       $matrix_scan_cmd .= "matrix-scan-quick";
 #     } else {
-      $matrix_scan_cmd .= "$SCRIPTS/matrix-scan";
-      $matrix_scan_cmd .= " -seq_format fasta";
-      $matrix_scan_cmd .= " -top_matrices 1";
-      $matrix_scan_cmd .= " -matrix_format tab";
-      $matrix_scan_cmd .= " -uth rank 1";
+    $matrix_scan_cmd .= "$SCRIPTS/matrix-scan";
+    $matrix_scan_cmd .= " -m ".$partial_matrix_file;
+    $matrix_scan_cmd .= " -top_matrices 1";
+    $matrix_scan_cmd .= " -matrix_format tab";
+    $matrix_scan_cmd .= " -seq_format fasta";
+    $matrix_scan_cmd .= " -uth rank 1";
 #    }
 #    $matrix_scan_cmd .= " -v ".$main::verbose; ## no verbose needed here
     $matrix_scan_cmd .= " -i ".$lo_site_file;
     $matrix_scan_cmd .= " -decimals ".$decimals;
-    $matrix_scan_cmd .= " -m ".$partial_matrix_file;
     $matrix_scan_cmd .= " -return sites";
     $matrix_scan_cmd .= " -1str";
     $matrix_scan_cmd .= join(" ", "", @args);
@@ -1431,10 +1435,11 @@ sub CalcSequenceDistrib {
 
   my $matrix_scan_cmd = "";
   $matrix_scan_cmd = "$SCRIPTS/matrix-scan -v ".$main::verbose;
-
+  $matrix_scan_cmd .= " -quick"; ## Run in quick mode if possible
   #  $matrix_scan_cmd .= " -top_matrices 1"; ## We cannot restrict to the top matrix, because the permutation test involves several matrices (one per permutation)
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
+  $matrix_scan_cmd .= " -top_matrices 1";
   $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
   $matrix_scan_cmd .= " -return sites";
   $matrix_scan_cmd .= " -decimals ".$decimals;
@@ -1442,8 +1447,8 @@ sub CalcSequenceDistrib {
   if (defined($main::scanopt{$seq_type})) {
       $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
   }
-  
-   ## Prepare the classfreq command (to extract the distribution from the scores)
+
+  ## Prepare the classfreq command (to extract the distribution from the scores)
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
     ## in case matrix-scan scores need to be kept
   if ($main::export_hits) {
