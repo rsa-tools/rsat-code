@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.94 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: matrix-quality,v 1.95 2010/06/09 23:23:19 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -265,6 +265,7 @@ package main;
 
     ## Tasks
     %supported_tasks = (
+			all=>1, ## Run all other tasks
 			theor=>1, ## Calculate the theoretical distribution
 			export_matrix=>1, ## Export the matrix and sites in various formats (tab, info, logos)
 			scan=>1, ## Scan sequences with matrix-scan
@@ -282,7 +283,6 @@ package main;
     ## matrix-scan. If it is supported on this machine, use it !
     $quick_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick09");
     &RSAT::message::Info("matrix-scan-quick command", $quick_cmd) if ($main::verbose >= 0);
-    die "HELLO";
 
     ################################################################
     ## Read argument values
@@ -295,8 +295,9 @@ package main;
     ## Check argument values
 
     ## If no tasks has been specified, execute them all
-    unless (scalar(keys(%tasks))>0) {
+    if (($tasks{all}) || (scalar(keys(%tasks))==0)) {
       %tasks = %supported_tasks;
+      $tasks{all} = 0;
     }
 
     ## Matrix+sites file is also matrix
@@ -406,7 +407,7 @@ package main;
     ####################
 
 
-    if ($task{export_matrix}) {
+    if ($tasks{export_matrix}) {
 
       ## Export input sites with the matrix
       &ExportInputSites($matrix, $matrix_file) if $main::infile{matrix_sites};
