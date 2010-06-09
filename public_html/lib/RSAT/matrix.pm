@@ -242,7 +242,7 @@ the program consensus (Hertz), but not by other programs.
 %matrix_terminator = ("consensus"=>"\n",
 		      "tab"=>"//", 
 		      "patser"=>"//",
-		      #"transfac"=>"");
+		      "tf"=>"//" ,
 		      "transfac"=>"//" ,
 		      "stamp"=>"\n" ,
 		      "infogibbs"=>"//");
@@ -740,7 +740,6 @@ sub to_TRANSFAC {
 
     ## End of record
     $to_print .=  $matrix_terminator{$output_format}."\n";
-
 }
 
 ################################################################
