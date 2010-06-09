@@ -1331,14 +1331,15 @@ sub _readFromConsensusFile {
   ## open input stream
 #  my $in = STDIN;
   my ($in, $dir) = &main::OpenInputFile($file);
-#  if ($file) {
-#    open INPUT, $file;
-#    $in = INPUT;
-#  }
   my $current_matrix_nb = 0;
   my @matrices = ();
   my $matrix;
   my $command = "";
+
+  my $prefix = "matrix";
+  if ($file) {
+    $prefix = &RSAT::util::ShortFileName($file);
+  }
 
   my %prior = ();
   my $l = 0;
@@ -1364,6 +1365,7 @@ sub _readFromConsensusFile {
       $matrix = new RSAT::matrix();
       push @matrices, $matrix;
       $matrix->set_parameter("program", "consensus");
+      $matrix->set_parameter("id", $prefix.$current_matrix_nb);
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       $matrix->set_parameter("command", $command);
       $matrix->setPrior(%prior);
