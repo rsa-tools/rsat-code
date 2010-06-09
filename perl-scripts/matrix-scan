@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.162 2010/05/25 10:04:45 morgane Exp $
+# $Id: matrix-scan,v 1.163 2010/06/09 22:26:41 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -457,24 +457,24 @@ package main;
   
   
   ## Return field not supported by the quick scan mode
-	local %quick_forbidden_field = (
-			 'sites'=>1,
-			 'pval'=>1,
-			 'rank'=>1,
-			  'normw'=>1,
-			  'limits'=>1,
-			  'seq_scores'=>1,
-			  'p_score'=>1,
-			  'bg_residues'=>1,
-			  'weight_limits'=>1,
-			  'crer'=>1,
-			  'occ_proba'=>1,
-			  'matrix'=>1,
-			  'freq_matrix'=>1,
-			  'weight_matrix'=>1,
-			  'bg_model'=>1,
-    );
-	$quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
+  local %quick_forbidden_field = (
+				  'sites'=>1,
+				  'pval'=>1,
+				  'rank'=>1,
+				  'normw'=>1,
+				  'limits'=>1,
+				  'seq_scores'=>1,
+				  'p_score'=>1,
+				  'bg_residues'=>1,
+				  'weight_limits'=>1,
+				  'crer'=>1,
+				  'occ_proba'=>1,
+				  'matrix'=>1,
+				  'freq_matrix'=>1,
+				  'weight_matrix'=>1,
+				  'bg_model'=>1,
+				 );
+  $quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
   
   local %sequence_scores = ();
   local %matches_per_seq = ();
@@ -573,13 +573,13 @@ package main;
     &RSAT::message::Info("Read matrix threshold list from file", $infile{matrix_thresholds}) if ($main::verbose >= 2);
   }
   %matrices_mth = %matrix_thr;
-  
-################################################################
-## Check if quick counting mode is possible
-if ($quick_scan_if_possible) {
-	$quick_scan = &CheckQuickScan();
-}
-  
+
+  ################################################################
+  ## Check if quick counting mode is possible
+  if ($quick_scan_if_possible) {
+    $quick_scan = &CheckQuickScan();
+  }
+
   #########################################
 
   ## normw is incompatible with sliding windows
@@ -3010,7 +3010,6 @@ sub Verbose {
 ##
 ## Usage:
 ##  my $quick_scan = &CheckQuickScan();
-
 sub CheckQuickScan { 
   ## check that a sequence has been provided
   unless ($main::infile{input}) {
@@ -3030,7 +3029,7 @@ sub CheckQuickScan {
     &RSAT::message::Warning("Quick scan mode is incompatible with the window background.") if (($main::verbose >= 2) || ($quick_scan));
     return(0);
   }
-  
+
   ## check the matrix-scan-quick executable is present and actually works
   my $quick_cmd_test = `which matrix-scan-quick`;
 
