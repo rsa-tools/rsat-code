@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.17 2010/05/28 11:01:21 rsat Exp $
+# $Id: draw-heatmap,v 1.18 2010/06/09 23:06:11 jvanheld Exp $
 #
 ############################################################
 
@@ -72,8 +72,8 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  my $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $start_time = &RSAT::util::StartScript();
+  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();

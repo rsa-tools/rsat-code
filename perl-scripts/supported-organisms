@@ -11,7 +11,7 @@ require RSAT::OrganismManager;
 
 
 ## Initialize parameters
-my $start_time = &RSAT::util::StartScript();
+local $start_time = &RSAT::util::StartScript();
 
 ## Main RSAT server for the option -server
 ## WSDL  Web services

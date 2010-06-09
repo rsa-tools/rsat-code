@@ -73,7 +73,7 @@ package main;
 
   ################################################################
   #### initialise parameters
-  my $start_time = &RSAT::util::StartScript();
+  local $start_time = &RSAT::util::StartScript();
 
   %main::infile = ();
   %main::outfile = ();

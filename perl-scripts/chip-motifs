@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.59 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: chip-motifs,v 1.60 2010/06/09 23:06:11 jvanheld Exp $
 #
 ############################################################
 
@@ -98,14 +98,14 @@ package main;
 
   ################################################################
   ## Initialize parameters
-  my $start_time = &RSAT::util::StartScript();
+  local $start_time = &RSAT::util::StartScript();
 
   ## Check that the RSAT paths of the programs required for the script are specified
   $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.59 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.60 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();

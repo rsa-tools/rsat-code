@@ -11,7 +11,7 @@ require "RSA.lib";
 $soe = 0;
 $series = 0;
 
-my $start_time = &RSAT::util::StartScript();
+local $start_time = &RSAT::util::StartScript();
 local %outfile = ();
 local $verbose = 0;
 local $out = STDOUT;

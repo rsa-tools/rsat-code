@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.14 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: download-organism,v 1.15 2010/06/09 23:06:11 jvanheld Exp $
 #
 ############################################################
 
@@ -121,9 +121,9 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  my $start_time = &RSAT::util::StartScript();
+  local $start_time = &RSAT::util::StartScript();
   $get_command = "wget";
-  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
   $rsat_server_login = "rsat\@rsat.ulb.ac.be";
