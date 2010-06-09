@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-chip,v 1.6 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: convert-chip,v 1.7 2010/06/09 23:06:11 jvanheld Exp $
 #
 # Time-stamp: <2003-09-03 10:23:23 jvanheld>
 #
@@ -14,7 +14,7 @@ require "RSA.lib";
 
 ################################################################
 #### initialise parameters
-my $start_time = &AlphaDate;
+local $start_time = &AlphaDate;
 
 local %infile = ();
 local %outfile = ();

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.14 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: graph-topology,v 1.15 2010/06/09 23:06:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -67,7 +67,7 @@ package main;
 
     ################################################################
     ## Initialise parameters
-    my $start_time = &RSAT::util::StartScript();
+    local $start_time = &RSAT::util::StartScript();
 
     %unknown_nodes = (); ## Names of the unidentified nodes
     $all_seeds = 0; ## Use all nodes as seeds 

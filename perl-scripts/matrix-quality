@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.93 2010/06/09 22:48:29 jvanheld Exp $
+# $Id: matrix-quality,v 1.94 2010/06/09 23:06:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -215,7 +215,7 @@ package main;
 
     ################################################################
     #### Initialise parameters
-    my $start_time = &RSAT::util::StartScript();
+    local $start_time = &RSAT::util::StartScript();
     @image_formats = ();
     $image_formats = "";
     @distrib_files = ();
@@ -280,7 +280,9 @@ package main;
 
     ## The C command matrix-scan-quick is MUCH faster than
     ## matrix-scan. If it is supported on this machine, use it !
-    #$quick_cmd = `which matrix-scan-quick`;
+    $quick_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick09");
+    &RSAT::message::Info("matrix-scan-quick command", $quick_cmd) if ($main::verbose >= 0);
+    die "HELLO";
 
     ################################################################
     ## Read argument values
@@ -518,8 +520,6 @@ package main;
       }
    #   &RSAT::message::Info("Index file", $outfile{index});
 
-     
-
       ## Display the distributions
       print $main::index "\n<h3>Figures</h3>\n";
       print $main::index "\n<h4>Matrix logo</h4>\n";
@@ -743,8 +743,8 @@ my_matrix.tab" and "-seq matrix_sites site_sequences.fasta". Althougth
 when this option is used the LOO test is not performed.
 
 If I<matrix-scan-quick> is available in the machine this programe will
-be used instead of matrix-scan.  For I<matrix-scan-quick> the -matrix
-most be in infogibbs format.
+be used instead of matrix-scan.  For I<matrix-scan-quick> the matrix
+most be in infogibbs or tab format.
 
 If the file includes several matrices, it will only take the first one.
 
@@ -1616,7 +1616,7 @@ sub ExportTabMatrix {
   my ($matrix) = @_;
 
   $outfile{matrix_tab} = $outfile{prefix}."_matrix.tab";
-  &RSAT::message::TimeWarn("Exporting matrix in tab-delimited format",  $outfile{matrix_tab}) 
+  &RSAT::message::TimeWarn("Exporting matrix in tab-delimited format",  $outfile{matrix_tab})
     if ($main::verbose >= 1);
 
   my $verbose_bk = $verbose;
@@ -1644,6 +1644,7 @@ sub ExportMatrixInfo {
   $outfile{matrix_logo}= $outfile{prefix}."_".$matrix_name."_logo" ;
   $outfile{matrix_rc_logo}=$outfile{prefix}."_".$matrix_name."_logo_rc";
 
+  ## Compute information (logos, consensus, parameters)
   &RSAT::message::TimeWarn("Exporting matrix information",  $outfile{matrix_info})
     if ($main::verbose >= 1);
   my $cmd = "$SCRIPTS/convert-matrix -v 1";

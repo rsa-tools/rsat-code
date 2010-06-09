@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.12 2010/04/17 03:04:31 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.13 2010/06/09 23:06:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -16,7 +16,7 @@ require POSIX;
 
 ################################################################
 #### initialise parameters
-my $start_time = &AlphaDate;
+local $start_time = &AlphaDate;
 
 local %infile = ();
 local %outfile = ();

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.18 2010/05/29 07:10:30 rsat Exp $
+# $Id: genome-blast,v 1.19 2010/06/09 23:06:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -235,7 +235,7 @@ require RSAT::blast_hit;
 
 ################################################################
 #### initialise parameters
-my $start_time = &RSAT::util::StartScript();
+local $start_time = &RSAT::util::StartScript();
 
 #local $null = "<NULL>";
 

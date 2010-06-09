@@ -9,7 +9,7 @@ require "RSA.seq.lib";
 require RSAT::Sequence;
 
 #### initialise parameters ####
-my $start_time = &RSAT::util::StartScript();
+local $start_time = &RSAT::util::StartScript();
 
 local $seq_format = "fasta";	### default sequence format
 local $inputfile = "";
