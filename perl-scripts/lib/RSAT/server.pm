@@ -21,29 +21,31 @@ unless ($ENV{RSAT}) {
 ## Usage:
 ##    my $program_path = &RSAT::server::GetProgramPath("program_name");
 sub GetProgramPath {
-    my ($program_name) = @_;
+    my ($program_name, @preferred_paths) = @_;
     my $program_path = "";
-    
+
     ## Find the preferred location of the program
-    my @rsat_path = ($ENV{RSAT_BIN}, 
-		     $ENV{RSAT}."/bin/",
-		     $ENV{RSAT}."/python-scripts/",
-		     $ENV{RSAT}."/perl-scripts/",
-		     ".",
-	);
+    my @rsat_path = @preferred_paths;
+    if (defined($ENV{RSAT_BIN})) {
+      push @rsat_path, ($ENV{RSAT_BIN});
+    };
+    push @rsat_path, ($ENV{RSAT}."/bin/",
+		      $ENV{RSAT}."/python-scripts/",
+		      $ENV{RSAT}."/perl-scripts/",
+		      ".");
 
     my $path_found = 0;
     foreach my $dir (@rsat_path) {
-	my $possible_path = $dir."/".$program_name;
-	$possible_path =~ s|/+|/|g;
-	if (-e $possible_path) {
-	    ## If the RSAT property file contains a RSAT_BIN, use it as
-	    ## preferred path
-	    $program_path = $possible_path;
-	    last;
-	}
+      my $possible_path = $dir."/".$program_name;
+      $possible_path =~ s|/+|/|g;
+      if (-e $possible_path) {
+	## If the RSAT property file contains a RSAT_BIN, use it as
+	## preferred path
+	$program_path = $possible_path;
+	last;
+      }
     }
-    
+
     ## If the path has ont ben found yet, find the program anywhere in
     ## the user path
     unless ($program_path) {
