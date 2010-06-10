@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.289 2010/06/09 22:30:04 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.290 2010/06/10 08:52:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.289 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.290 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Paths of the programs called by multiple-family-analysis
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -3102,7 +3102,7 @@ sub check_meme_path {
   }
   $fasta_get_markov = $meme_dir."/fasta-get-markov";
 #  $meme_cmd = $meme_dir."/meme";
-  $meme_cmd =  = &RSAT::server::GetProgramPath("meme", $meme_dir);
+  $meme_cmd =  = &RSAT::server::GetProgramPath("meme", $die_on_error, $meme_dir);
 }
 
 ################################################################
