@@ -264,7 +264,7 @@ sub ReadCalibration {
 sub ReadPatternFrequencies {
   my ($pattern_freq_file, $sum_rc, $rescale_freq) = @_;
   &RSAT::message::TimeWarn ("Reading pattern frequency file", $pattern_freq_file) if ($main::verbose >= 2);
-  
+
   my ($exp) = &OpenInputFile($pattern_freq_file);
   my $l=0;
   my %patterns = ();
