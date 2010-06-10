@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.95 2010/06/09 23:23:19 jvanheld Exp $
+# $Id: matrix-quality,v 1.96 2010/06/10 09:25:35 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -216,8 +216,15 @@ package main;
     ################################################################
     #### Initialise parameters
     local $start_time = &RSAT::util::StartScript();
+
+    ## Format for the graphs
     @image_formats = ();
     $image_formats = "";
+
+    ## Format of the sequence logos
+    @logo_formats = ("png");
+    $logo_formats = "";
+
     @distrib_files = ();
     %file_nb = ();
     @matrix_scan_options = ();
@@ -243,12 +250,10 @@ package main;
     %seqfile = ();
     %outfile = ();
 
-    
-
     $main::verbose = 0;
     $main::out = STDOUT;
     $main::html_title=0;
-    
+
     ## Parameters for the &doit() command
     $dry = 0;
     $die_on_error = 1;
@@ -281,8 +286,14 @@ package main;
 
     ## The C command matrix-scan-quick is MUCH faster than
     ## matrix-scan. If it is supported on this machine, use it !
-    $quick_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick09");
-    &RSAT::message::Info("matrix-scan-quick command", $quick_cmd) if ($main::verbose >= 0);
+    local $quick_scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+    &RSAT::message::Info("matrix-scan-quick command", $quick_scan_cmd) if ($main::verbose >= 0);
+    local $quick = 0;
+    if ($quick_scan_cmd) {
+      $quick = 1;
+    } else {
+      &RSAT::message::Warning("Cannot find the command matrix-scan-quick");
+    }
 
     ################################################################
     ## Read argument values
@@ -309,30 +320,56 @@ package main;
     &RSAT::error::FatalError("You must define a matrix file, with either option -m or -ms")
       unless ($infile{matrix});
 
-    ## Background model file is mandatory
-    foreach my $i (0..$#matrix_scan_options) {
-      if (($matrix_scan_options[$i] eq "-bgfile") && (!$main::infile{bg_file})) {
-	$infile{bg_file} = $matrix_scan_options[$i+1];
-      }
-      if ($matrix_scan_options[$i] eq "-bg_pseudo") {
-	$main::bg_pseudo = $matrix_scan_options[$i+1]
-      }
-    }
-    if (($tasks{theor}) || ($tasks{theor_loo})) {
-      &RSAT::error::FatalError("You must define a background model file for the theoretical distribution, with either option -bgfile or -th_prior")
-	unless ($infile{bg_file});
-    }
 
     ## Output prefix is mandatory
     &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
       unless ($outfile{prefix});
-    $outfile{log} = $main::outfile{prefix}."_log.txt";
+    $outfile{log} = $main::outfile{prefix}."_log.txt"; push @files_to_index, "log";
     $outfile{index} = $main::outfile{prefix}."_index.html";
 
     ## Create output directory if required
     $dir{output} = `dirname $outfile{prefix}`;
     chomp($dir{output});
     &RSAT::util::CheckOutDir($dir{output});
+
+    ## Identify background model in the options
+    foreach my $i (0..$#matrix_scan_options) {
+      if ($matrix_scan_options[$i] eq "-bgfile") {
+	$infile{bg_file} = $matrix_scan_options[$i+1];
+
+	## Define name of the converted bg file
+	$outfile{bg_file_inclusive} = $dir{output};
+	$outfile{bg_file_inclusive} .= &ShortFileName($infile{bg_file});
+	$outfile{bg_file_inclusive} =~ s|\.\w$||;
+	$outfile{bg_file_inclusive} .= "_inclusive.tab";
+	$matrix_scan_options[$i+1] = $outfile{bg_file_inclusive};
+
+      } elsif ($matrix_scan_options[$i] eq "-bg_format") {
+	$matrix_scan_options[$i+1] = "inclusive";
+      }
+      if ($matrix_scan_options[$i] eq "-bg_pseudo") {
+	$main::bg_pseudo = $matrix_scan_options[$i+1]
+      }
+    }
+
+    ## Background model file is mandatory
+    unless ($infile{bg_file}) {
+      &RSAT::error::FatalError("You must define a background model file for the theoretical distribution, with option -bgfile");
+    }
+
+    ## Convert BG file in inclusive format for matrix-scan-quick
+    my $bg_convert_cmd = "convert-background-model";
+    $bg_convert_cmd .= " -i ".$infile{bg_file};
+    $bg_convert_cmd .= " -from ".$bg_format;
+    $bg_convert_cmd .= " -to inclusive";
+    $bg_convert_cmd .= " -o ".$outfile{bg_file_inclusive};
+    &doit($bg_convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &RSAT::message::TimeWarn("Converted background model to inclusive format", $outfile{bg_file_inclusive}) if ($main::verbose >= 1);
+    push @files_to_index, "bg_file_inclusive";
+
+    ## Name of the tab-delimited file containing only the top matrix, which will be used for scanning
+    $outfile{matrix_tab} = $outfile{prefix}."_matrix.tab";
+    push @files_to_index, "matrix_tab";
 
     ## Graph image formats : png is default
     unless (scalar(@image_formats)>0) {
@@ -341,12 +378,21 @@ package main;
     $image_formats = join ",", @image_formats; ## For the logo
     &RSAT::message::Info("Image formats for graphs: ".join (",", sort(@image_formats))) if ($main::verbose >= 2);
 
+    ## Lofo formats : png is default
+    unless (scalar(@logo_formats)>0) {
+      push (@logo_formats,"png");
+    }
+    $logo_formats = join ",", @logo_formats; ## For the logo
+    &RSAT::message::Info("Image formats for logos: ".join (",", sort(@logo_formats))) if ($main::verbose >= 2);
+
     ## Permutation number for each sequence type
     foreach my $seq_type (@seq_types) {
       unless (defined($perm_nb{$seq_type})) {
 	$perm_nb{$seq_type} = 0;
       }
     }
+    local $perm_nb_max = &RSAT::stats::checked_max(0, values %perm_nb);
+
 
     ################################################################
     ### open output stream
@@ -382,30 +428,32 @@ package main;
     $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
     #$matrix->set_attribute("name", $matrix_name);
     $matrix->force_attribute("name", $matrix_name);
-    $matrix->setMarkovModel($bg_model) if ($main::infile{bg_file}) ;
+    $matrix->setMarkovModel($bg_model) if ($main::outfile{bg_file_inclusive}) ;
+
+    ## DEBUG
+    ## JvH: $matrix->weight_range costs too much time because it
+    ## computes the proba distribution, which is not necessary ->
+    ## should be revised
     local ($Wmin, $Wmax)  = $matrix->weight_range();
     &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
-
     $main::html_title=" $matrix_name " unless $main::html_title;
-    #####################
-    #Open HTML outstream
-    if ($tasks{index}) {
-	$main::index = &OpenOutputFile($outfile{index});
-	print $main::index "<html>\n";
-	print $main::index "<head>\n";
-	print $main::index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
-	print $main::index "</head>\n\n";
-	print $main::index "<body>\n\n";
-	
-	## Print the command
-	print $main::index "<h1>matrix-quality result: ", $main::html_title,"</h1>\n\n";
-	print $main::index "<b>Command:</b>\n";
-	print $main::index "<pre>matrix-quality ";
-	&PrintArguments($main::index);
-	print $main::index "</pre>";
-    }
-    ####################
 
+
+    ################################################################
+    ## Export matrix in various formatsS
+
+    ## Define file names here because we need them for the index, even
+    ## if we don't run the export task
+    $outfile{matrix_info} = $outfile{prefix}."_matrix_info.txt";  push @files_to_index, "matrix_info";
+#    $outfile{matrix_rc} = $outfile{prefix}."_matrix_rc"; push @files_to_index, "matrix_rc";
+    $outfile{matrix_logo}= $outfile{prefix}."_".$matrix_name."_logo" ; 
+#    $outfile{matrix_logo_rc}=$outfile{prefix}."_".$matrix_name."_logo_rc";
+    foreach my $logo_format (@logo_formats) {
+      $outfile{"matrix_logo_".$logo_format} = $outfile{matrix_logo}."_m1.".$logo_format; push @files_to_index, "matrix_logo_".$logo_format;
+      $outfile{"matrix_logo_rc_".$logo_format} = $outfile{matrix_logo}."_m1.".$logo_format; push @files_to_index, "matrix_logo_rc_".$logo_format;
+    }
+    $main::outfile{matrix_sites} = $outfile{prefix}."_matrix_sites.fasta"; push @files_to_index, "matrix_sites";
+    $main::seqfile{input_matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites}); 
 
     if ($tasks{export_matrix}) {
 
@@ -419,7 +467,6 @@ package main;
       &ExportMatrixInfo($matrix);
 
       ## Shuffle the columns of the matrix (permutation test)
-      local $perm_nb_max = &RSAT::stats::checked_max(0, values %perm_nb);
       print $main::out "; Sequence sets (name, permutations, file)";
       foreach my $seq_type (@seq_types) {
 	print $main::out join("\t", ";", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
@@ -502,36 +549,64 @@ package main;
     ## Index results in a HTML file
     if ($tasks{index}) {
 
+      ################################################################
+      ## Open HTML outstream
+      $main::index = &OpenOutputFile($outfile{index});
+      print $main::index "<html>\n";
+      print $main::index "<head>\n";
+      print $main::index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
+      print $main::index "</head>\n\n";
+      print $main::index "<body>\n\n";
+
+      ## Print the command
+      print $main::index "<h1>matrix-quality result: ", $main::html_title,"</h1>\n\n";
+      print $main::index "<b>Command:</b>\n";
+      print $main::index "<pre>matrix-quality ";
+      &PrintArguments($main::index);
+      print $main::index "</pre>";
+
+      ## Subroutines for indexing one image
       sub index_one_image {
 	my ($image) = @_;
 	my $short_image = &RSAT::util::ShortFileName($image);
-	my $image_format = "png";
-	print $main::index "<a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a>\n\n";
+#	my $image_format = "png";
+#	print $main::index "<a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a>\n\n";
+	print $main::index "<a href='",$short_image,"'><img border=1 src='",$short_image, "'></a>\n\n";
       }
 
-      sub list_one_file {
-	my ($description, @files) = @_;
+      ## Subroutines for indexing one file in the lin table
+      sub index_one_file {
+	my ($description, $file) = @_;
 	print $main::index "<tr>";
 	print $main::index "<td>", $description,"</td>\n";
-	foreach my $file (@files) {
-	  my $short_file = &RSAT::util::ShortFileName($file);
-	  print $main::index "<td><a href='",$short_file,"'>", $short_file,"</a></td>\n";
+#	foreach my $file (@files) {
+	unless ($file) {
+	  print $main::index "<td>Undefined</td>\n";
+	} else {
+	  if (-e $dir{output}.$file) {
+	    print $main::index "<td><font color='red'>Missing file</font>".$file."</a></td>\n";
+	  } else {
+	    my ($link, $shared_path) = &RSAT::util::RelativePath($outfile{index}, $file);
+	    #	  my $short_file = &RSAT::util::ShortFileName($file);
+	    print $main::index "<td><a href='",$link,"'>", $link,"</a></td>\n";
+	    &RSAT::message::Debug("Indexing one file", $description, $file, $link, $shared_path) if ($main::verbose >= 5);
+	  }
 	}
+#      }
 	print $main::index "</tr>\n\n";
       }
-   #   &RSAT::message::Info("Index file", $outfile{index});
 
       ## Display the distributions
       print $main::index "\n<h3>Figures</h3>\n";
       print $main::index "\n<h4>Matrix logo</h4>\n";
-      &index_one_image($outfile{matrix_logo}."_m1");
-      &index_one_image($outfile{matrix_rc_logo}."_m1");
+      &index_one_image($outfile{matrix_logo_png});
+      &index_one_image($outfile{matrix_logo_rc_png});
       print $main::index "\n<h4>Decreasing cumulative distributions (dCDF)</h4>\n";
-      &index_one_image($outfile{distrib_compa});
+      &index_one_image($outfile{distrib_compa}.".png");
       print $main::index "\n<h4>Decreasing cumulative distributions (dCDF), logarithmic Y axis</h4>\n";
-      &index_one_image($outfile{distrib_compa}."_logy");
+      &index_one_image($outfile{distrib_compa}."_logy".".png");
       print $main::index "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
-      &index_one_image($outfile{distrib_compa}."_roc_xlog");
+      &index_one_image($outfile{distrib_compa}."_roc_xlog".".png");
 
       ## Type the matrix information
       print $main::index "\n<h3>Matrix information</h3>\n";
@@ -543,32 +618,38 @@ package main;
       print $main::index "\n<h3>Result files</h3>\n";
       print $main::index "<p><table border=1 cellpadding=3 cellpsacing=3>";
 
+      ## Compress all the results in a zip archive
       if ($main::archive){
-	$outfile{zip_dir} =$main::outfile{prefix}."_dir.zip";
-	$zip_command=" zip ".$outfile{zip_dir}."  ".$main::outfile{prefix}."* ";
+	$outfile{zip_archive} =$main::outfile{prefix}."_dir.zip"; push @files_to_index, "zip_archive";
+	$zip_command=" zip ".$outfile{zip_archive}."  ".$main::outfile{prefix}."* ";
 	&doit($zip_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&list_one_file("Output directory",$outfile{zip_dir} );
+	#	&index_one_file("Output directory",$outfile{zip_archive} );
       }
-      else{
-	  &list_one_file("Output directory", ".");
+#      } else{
+
+      &index_one_file("Output directory", ".");
+      &index_one_file("Matrix info", $outfile{matrix_info});
+      &index_one_file("Matrix in tab format", $outfile{matrix_tab});
+      &index_one_file("Theoretical distribution", $outfile{theoretical_distrib});
+      &index_one_file("Score distrubutions", $outfile{distrib_compa}.".tab");
+#      &index_one_file("Matrix site sequences", $seqfile{matrix_sites});
+      &index_one_file("Matrix sites LOO scores", $outfile{matrix_sites_loo}) if (defined($outfile{matrix_sites_loo}));
+
+      foreach my $key (@files_to_index) {
+	&index_one_file($key, $outfile{$key});
       }
-      &list_one_file("Matrix info", $outfile{matrix_info});
-      &list_one_file("Matrix in tab format", $outfile{matrix_tab});
-      &list_one_file("Theoretical distribution", $outfile{theoretical_distrib});
-      &list_one_file("Score distrubutions", $outfile{distrib_compa}.".tab");
-      &list_one_file("Matrix site sequences", $seqfile{matrix_sites});
-      &list_one_file("Matrix sites LOO scores", $outfile{matrix_sites_loo});
+
       foreach my $seq_type (@seq_types) {
-	&list_one_file($seq_type, $outfile{$seq_type});
+	&index_one_file($seq_type, $outfile{$seq_type});
       }
-      &list_one_file("Log file", $outfile{log});
+
+      &index_one_file("Log file", $outfile{log});
       print $main::index "</table>";
 
       ## Close the index file
       print $main::index "</body></html>\n";
       close $main::index;
     }
-
 
 
     ################################################################
@@ -655,6 +736,7 @@ sub ReadArguments {
 #      &RSAT::message::Debug("argument", $arg) if ($main::verbose >= 10);
 
 	## Verbosity
+
 =pod
 	    
 
@@ -675,6 +757,7 @@ Level of verbosity (detail in the warning messages during execution)
 	    }
 	    
 	    ## Help message
+
 =pod
 
 =item B<-h>
@@ -686,6 +769,7 @@ Display full help message
 	    &PrintHelp();
 	    
 	    ## Dry run
+
 =pod
 
 =item B<-dry>
@@ -697,6 +781,7 @@ Dry run: print the commands but do not execute them.
 	    $main::dry = 1;;
 	    
 	    ## List of options
+
 =pod
 
 =item B<-help>
@@ -708,6 +793,7 @@ Same as -h
 	    &PrintOptions();
 
 	    ## Matrix file
+
 =pod
 
 =item B<-m matrix_file>
@@ -725,6 +811,7 @@ If the file includes several matrices, it will only take the first one.
 
 
 	    ## File containing both the matrix and its sites
+
 =pod
 
 =item B<-ms matrix_sites>
@@ -760,6 +847,7 @@ If the file includes several matrices, it will only take the first one.
 	  $main::infile{matrix_sites} = shift(@arguments);
 
 	    ## Matrix format
+
 =pod
 
 =item B<-matrix_format matrix_format>
@@ -771,6 +859,7 @@ Format of the matrix file.
 	    $matrix_format = shift(@arguments);
 
 	    ## File containing a sequence set of a given type
+
 =pod
 
 =item B<-seq seq_type seq_file>
@@ -787,6 +876,7 @@ leend of the plots), and the second next argument the file name.
          push @main::seq_types, $seq_type;
 
 	    ## Sequence-specific scanning options
+
 =pod
 
 =item B<-scanopt seq_type "option1 option2 ...">
@@ -801,6 +891,7 @@ end of the matrix-scan command for scanning the specified sequence set.
 	   " ".shift(@arguments);
 
 	    ## Skip the Leave-one-out (LOO) test for the positive set
+
 =pod
 
 =item B<-noloo>
@@ -812,6 +903,7 @@ Do not apply the leave-one-out (LOO) test on the positive sequences.
 	  $main::noloo = 1;
 
 	    ## Skip the matrix permutation step
+
 =pod
 
 =item B<-noperm>
@@ -825,6 +917,7 @@ without re-running the time-consuming scanning steps.
 	  $supported_tasks{permute} = 0;
 
 	    ## Skip the matrix-scan step. 
+
 =pod
 
 =item B<-noscan>
@@ -838,6 +931,7 @@ re-running the time-consuming scanning steps.
 	  $supported_tasks{scan} = 0;
 
 	    ## Skip the distrib comparison step
+
 =pod
 
 =item B<-nocompa>
@@ -852,6 +946,7 @@ steps.
 	  $supported_tasks{compare} = 0;
 
 	    ## Skip the distrib comparison graphs
+
 =pod
 
 =item B<-nograph>
@@ -875,6 +970,7 @@ indexes.
 
 
 	    ## keep matrix-scan scores
+
 =pod
 
 =item B<-export_hits>
@@ -888,6 +984,7 @@ disk space.
 	  $main::export_hits = 1;
 
 	    ## Number of permutations for a specific set
+
 =pod
 
 =item B<-perm seq_type #>
@@ -902,6 +999,7 @@ Number of permutations for a specific set (default 0).
 	    unless (&IsNatural($main::perm_nb{$seq_type}));
 
 	    ## perm_sep
+
 =pod
 
 =item B<-perm_sep>
@@ -923,6 +1021,7 @@ with list).
 	  $main::perm_separate_distrib = 1;
 
 	    ## Sequence format
+
 =pod
 
 =item B<-seq_format sequence_format>
@@ -934,6 +1033,7 @@ Sequence format.
 	    $seq_format = shift(@arguments);
 
 	    ## Pseudo weight
+
 =pod
 
 =item B<-pseudo pseudo_counts>
@@ -949,6 +1049,7 @@ Pseudo-weight.
 			&& ($main::pseudo_counts >= 0));
 
 	    ## Background model for theorical score distribution
+
 =pod
 
 =item B<-th_prior background_file>
@@ -964,6 +1065,7 @@ details).
 		$main::infile{bg_file} = shift(@arguments);
 
 	    ## Format of Background model for theorical score distribution
+
 =pod
 
 =item B<-bg_format background_file>
@@ -977,6 +1079,7 @@ the background format must be the same in both cases.
 		$main::bg_format = shift(@arguments);
 
 		## Number of decimals for computing scores
+
 =pod
 
 =item B<-decimals #>
@@ -990,6 +1093,7 @@ arguments is passed to I<matrix-scan> and I<matrix-distrib>.
 	  &RSAT::error::FatalError("The number of decimals must be a natural number") unless &IsNatural($main::decimals);
 
 	    ## Output file
+
 =pod
 
 =item	B<-o output_prefix>
@@ -1010,6 +1114,7 @@ Scores of the positive sequence set.
 	    $main::outfile{prefix} = shift(@arguments);
 
 	    ## Options for the graphs
+
 =pod
 
 =item B<-graph_option 'option1 options2 ...'>
@@ -1034,6 +1139,7 @@ This option can be used iteratively on a command line.
 
 
 	  ## Reference distribution for the ROC curve
+
 =pod
 
 =item B<-roc_ref>
@@ -1047,6 +1153,7 @@ Reference distribution for the ROC curve.
 
 
 	    ## Options for the ROC curves
+
 =pod
 
 =item B<-roc_option 'option1 options2 ...'>
@@ -1070,6 +1177,7 @@ This option can be used iteratively on a command line.
 	  $main::roc_options .= " ".shift @arguments;
 
 	    ## Options for the drawing the distributions
+
 =pod
 
 =item B<-distrib_option 'option1 options2 ...'>
@@ -1087,7 +1195,7 @@ Beware: if an option requires to be followed by a value (ex -xsize
 	} elsif ($arg =~ /^-distrib_option/) {
 	  $main::distrib_options .= " ".shift @arguments;
 
-	    ## Image format
+
 =pod
 
 =item	B<-img_format>
@@ -1104,17 +1212,42 @@ Example:
 
 =cut
 	} elsif ($arg eq "-img_format") {
-	    my $image_format = shift(@arguments);
-	    my @tmp_img_formats = split(',',$image_format);
-	    if (scalar(@tmp_img_formats)>0) {
-	    	foreach my $f (@tmp_img_formats) {
-        		push (@main::image_formats, $f);
-	    	}
-	    } else {
-	    	push (@main::image_formats, $image_format);
+	  my $image_format = shift(@arguments);
+	  my @tmp_img_formats = split(',',$image_format);
+	  if (scalar(@tmp_img_formats)>0) {
+	    foreach my $f (@tmp_img_formats) {
+	      push (@main::image_formats, $f);
 	    }
+	  } else {
+	    push (@main::image_formats, $image_format);
+	  }
+
+=pod
+
+=item	B<-logo_format>
+
+Image format for the sequence logos.
+
+Multiple image formats can be specified either by using iteratively
+the option, or by separating them by commas.
+
+Example:
+   -logo_format png,pdf
+
+=cut
+	} elsif ($arg eq "-logo_format") {
+	  my $image_format = shift(@arguments);
+	  my @tmp_logo_formats = split(',',$image_format);
+	  if (scalar(@tmp_logo_formats)>0) {
+	    foreach my $f (@tmp_logo_formats) {
+	      push (@main::image_formats, $f);
+	    }
+	  } else {
+	    push (@main::image_formats, $image_format);
+	  }
 
  ## Archive
+
 =pod
 
 =item	B<-archive>
@@ -1127,9 +1260,11 @@ Compress the result directory into a zip archive of the same name
 	    $main::archive = 1;
 
 	    ## Tasks
+
 =pod
 
  ## Title for html
+
 =pod
 
 =item	B<-html_title>
@@ -1141,6 +1276,7 @@ Get a title for the html page.
 	    $main::html_title =shift(@arguments);
 
 	    ## Tasks
+
 =pod
 
 =item B<-task tasks>
@@ -1207,6 +1343,7 @@ format.
 	 }
 
 	    ## Other options
+
 =pod
 
 =item B<Background model>
@@ -1254,9 +1391,6 @@ For I<matrix-scan-quick> the -bgfile most be in MotifSampler format.
 ## Export the sites which were use to build the matrix in a fasta file.
 sub ExportInputSites {
   my ($matrix, $matrix_file) = @_;
-
-  $main::outfile{matrix_sites} = $outfile{prefix}."_matrix_sites.fasta";
-  $main::seqfile{matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites});
   push @main::seq_types, "matrix_sites";
   &RSAT::message::TimeWarn("Exporting matrix sites", $outfile{matrix_sites}) 
     if ($main::verbose >= 1);
@@ -1364,8 +1498,8 @@ sub LOO_scores {
 
     ## Score the left out site with the partial matrix
     my $matrix_scan_cmd = "";
-   #  if ($quick_cmd) {
-#       $matrix_scan_cmd .= "matrix-scan-quick";
+   #  if ($quick) {
+#       $matrix_scan_cmd .= $quick_scan_cmd;
 #     } else {
     $matrix_scan_cmd .= "$SCRIPTS/matrix-scan";
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
@@ -1387,7 +1521,7 @@ sub LOO_scores {
       $matrix_scan_cmd .= " | grep -v '^;'";
       $matrix_scan_cmd .= " | grep -v '^#'";
     }
-    # if ($quick_cmd) {
+    # if ($quick) {
 #       ## Select the top ranking score
 #       $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
 #     }
@@ -1428,20 +1562,27 @@ sub CalcSequenceDistrib {
   ## Define the output file for the current sequence type
   $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type."_score_distrib.tab";
 
-  &RSAT::message::TimeWarn("Computing observed distribution for sequences", $seq_type,  $outfile{$seq_type})
+  &RSAT::message::TimeWarn("Computing observed distribution for sequences", $seq_type,  $sequence_file, $outfile{$seq_type})
     if ($main::verbose >= 1);
   &RSAT::message::TimeWarn("\tScanning options for ".$seq_type,  $scanopt{$seq_type})
     if (($main::verbose >= 1) && (defined($main::scanopt{$seq_type})));
 
-
   my $matrix_scan_cmd = "";
-  $matrix_scan_cmd = "$SCRIPTS/matrix-scan -v ".$main::verbose;
-  $matrix_scan_cmd .= " -quick"; ## Run in quick mode if possible
+  if ($quick) {
+    $matrix_scan_cmd = $quick_scan_cmd;
+  } else {
+    $matrix_scan_cmd = "$SCRIPTS/matrix-scan -v ".$main::verbose;
+#    $matrix_scan_cmd .= " -quick"; ## Run in quick mode if possible
+#    $matrix_scan_cmd .= " -m ".$matrix_file;
+#    $matrix_scan_cmd .= " -top_matrices 1";
+#    $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+    $matrix_scan_cmd .= " -matrix_format tab"; ## We use tab as matrix format for compatibiliy with matrix-scan-quick
+    $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
+
+  }
   #  $matrix_scan_cmd .= " -top_matrices 1"; ## We cannot restrict to the top matrix, because the permutation test involves several matrices (one per permutation)
   $matrix_scan_cmd .= " -i ".$sequence_file;
-  $matrix_scan_cmd .= " -m ".$matrix_file;
-  $matrix_scan_cmd .= " -top_matrices 1";
-  $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+  $matrix_scan_cmd .= " -m ".$outfile{matrix_tab};
   $matrix_scan_cmd .= " -return sites";
   $matrix_scan_cmd .= " -decimals ".$decimals;
   $matrix_scan_cmd .= join(" ", "", @args);
@@ -1467,7 +1608,6 @@ sub CalcSequenceDistrib {
   $matrix_scan_cmd .= " -min ".$classfreq_min;
   $matrix_scan_cmd .= " | cut -f 1,4,5,6,9 "; ## This ensures compatibility with the columns of matrix-scan-quick -distrib
   $matrix_scan_cmd .= " > ".$outfile{$seq_type};
-  
 
   &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 0);
   ## Print the complete command in the log file
@@ -1481,18 +1621,17 @@ sub CalcSequenceDistrib {
   printf $main::out ";%-22s\n%s\n", "Command:", $matrix_scan_cmd;
   print $main::out "\n";
 
-  
   ## Execute the command
   &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix) if  ($tasks{scan});
 
   ## Add the file to the list for the comparison of distributions
   push @main::distrib_files, $outfile{$seq_type}; $main::file_nb{$seq_type} = scalar(@distrib_files);
-
 }
 
 
 ################################################################
-## Score the sites which were use to build the matrix.
+## Scan a sequence set with the matrix
+## BEWARE: THIS FUNCTION IS APPARENTLY NOT CALLED ANYMORE
 sub ScanSequences {
   my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
 
@@ -1538,7 +1677,9 @@ sub ScoreDistrib {
 
   $main::outfile{$seq_type."_distrib_tmp"} = $outfile{prefix}."_scan_".$seq_type."_distrib_tmp.tab";
   my $classfreq_min = sprintf("%.${decimals}f", $Wmin);
-  &RSAT::message::TimeWarn("Calculating score distribution for sequences of type", $seq_type,  $outfile{${seq_type}."_distrib_tmp"}, $Wmin, $classfreq_min)
+  &RSAT::message::TimeWarn("Calculating score distribution for sequences of type",
+			   $seq_type,
+			   $outfile{${seq_type}."_distrib_tmp"}, $Wmin, $classfreq_min)
     if ($main::verbose >= 1);
   return unless ($outfile{$seq_type});
   my $reformat_cmd = "grep -v '^;' $outfile{$seq_type} | grep -v '^#' | cut -f 2,3 | sort -n > ".$outfile{${seq_type}."_distrib_tmp"};
@@ -1616,7 +1757,6 @@ sub ScoreDistrib {
 sub ExportTabMatrix {
   my ($matrix) = @_;
 
-  $outfile{matrix_tab} = $outfile{prefix}."_matrix.tab";
   &RSAT::message::TimeWarn("Exporting matrix in tab-delimited format",  $outfile{matrix_tab})
     if ($main::verbose >= 1);
 
@@ -1639,12 +1779,6 @@ sub ExportTabMatrix {
 sub ExportMatrixInfo {
   my ($matrix) = @_;
 
-  $outfile{matrix_info} = $outfile{prefix}."_matrix_info.txt";
-  $outfile{matrix_rc} = $outfile{prefix}."_matrix_rc";
-
-  $outfile{matrix_logo}= $outfile{prefix}."_".$matrix_name."_logo" ;
-  $outfile{matrix_rc_logo}=$outfile{prefix}."_".$matrix_name."_logo_rc";
-
   ## Compute information (logos, consensus, parameters)
   &RSAT::message::TimeWarn("Exporting matrix information",  $outfile{matrix_info})
     if ($main::verbose >= 1);
@@ -1652,36 +1786,36 @@ sub ExportMatrixInfo {
   $cmd .= " -i ".$matrix_file;
   $cmd .= " -from ".$matrix_format;
   $cmd .= " -to tab -o ".$outfile{matrix_info};
-  $cmd .= " -bgfile ".$infile{bg_file};
-  $cmd .= " -bg_format ".$bg_format;
+  $cmd .= " -bgfile ".$outfile{bg_file_inclusive};
+  $cmd .= " -bg_format inclusive";
   $cmd .= " -return counts,frequencies,weights,info,parameters,sites,logo";
-  $cmd .= " -logo_format ".$image_formats;
+  $cmd .= " -logo_format ".$logo_formats;
   $cmd .= " -logo_opt '-e -M -t ".$matrix_name." ' ";
   $cmd .= " -logo_file ". $outfile{matrix_logo};
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 
- # Generate reverse complement
-  $cmd = "$SCRIPTS/convert-matrix -rc ";
-  $cmd .= " -i ".$matrix_file;
-  $cmd .= " -from ".$matrix_format;
-  $cmd .= " -to tab -o ".$outfile{matrix_rc}.".tab";
-  $cmd .= " -bgfile ".$infile{bg_file};
-  $cmd .= " -bg_format ".$bg_format;
-  $cmd .= " -return counts";
-  &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+  # # Generate reverse complement
+#   $cmd = "$SCRIPTS/convert-matrix -rc ";
+#   $cmd .= " -i ".$matrix_file;
+#   $cmd .= " -from ".$matrix_format;
+#   $cmd .= " -to tab -o ".$outfile{matrix_rc}.".tab";
+#   $cmd .= " -bgfile ".$outfile{bg_file_inclusive};
+#   $cmd .= " -bg_format inclusive";
+#   $cmd .= " -return counts";
+#   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 
-  ## Generate logo for the reverse complement
-  $cmd = "$SCRIPTS/convert-matrix ";
-  $cmd .= " -i ". $outfile{matrix_rc}.".tab";
-  $cmd .= " -from tab";
-  $cmd .= " -to tab -o ".$outfile{matrix_rc}."_info.tab";
-  $cmd .= " -bgfile ".$infile{bg_file};
-  $cmd .= " -bg_format ".$bg_format;
-  $cmd .= " -return counts,logo";
-  $cmd .= " -logo_format ".$image_formats;
-  $cmd .= " -logo_opt '-e -M -t ".$matrix_name."_rc ' ";
-  $cmd .= " -logo_file ". $outfile{matrix_rc_logo};
-  &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+#   ## Generate logo for the reverse complement
+#   $cmd = "$SCRIPTS/convert-matrix ";
+#   $cmd .= " -i ". $outfile{matrix_rc}.".tab";
+#   $cmd .= " -from tab";
+#   $cmd .= " -to tab -o ".$outfile{matrix_rc}."_info.tab";
+#   $cmd .= " -bgfile ".$outfile{bg_file_inclusive};
+#   $cmd .= " -bg_format inclusive";
+#   $cmd .= " -return counts,logo";
+#   $cmd .= " -logo_format ".$logo_formats;
+#   $cmd .= " -logo_opt '-e -M -t ".$matrix_name."_rc ' ";
+#   $cmd .= " -logo_file ". $outfile{matrix_logo_rc};
+#   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 }
 
 
@@ -1770,8 +1904,6 @@ sub CompareDistrib {
 
       my $icon_options;
 
-#	  die "HELLO\n", $main::distrib_options, "\n";
-
 
       ################################################################
       ## Draw a graph with all the decreasing cumulative distributions
@@ -1829,7 +1961,7 @@ sub CompareDistrib {
       }
 
       $ycols = join ",", 2..(scalar(@distrib_files)+2);
-      $large_graph_options =~ s/-xsize 800/-xsize 400/;
+#      $large_graph_options =~ s/-xsize 800/-xsize 400/;
       $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
       $XYgraph_cmd .= " -xcol ".$ref_column;
       $XYgraph_cmd .= " -ycol ".$ycols;
@@ -1955,12 +2087,13 @@ sub PrintTheorScoreDistribution {
   &RSAT::message::TimeWarn("Calculating theorical distribution for matrix", $matrix_tab_file)
     if ($main::verbose >= 1);
 
-  my $matrix_distrib_cmd = "$SCRIPTS/matrix-distrib -v 1 ";
+  my $matrix_distrib_cmd = "$SCRIPTS/matrix-distrib";
+  $matrix_distrib_cmd .= " -v 1";
   $matrix_distrib_cmd .= " -m ".$matrix_tab_file;
   $matrix_distrib_cmd .= " -matrix_format tab";
   $matrix_distrib_cmd .= " -pseudo ".$main::pseudo_counts;
-  $matrix_distrib_cmd .= " -bgfile ".$main::infile{bg_file};
-  $matrix_distrib_cmd .= " -bg_format ".$main::bg_format;
+  $matrix_distrib_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
+  $matrix_distrib_cmd .= " -bg_format inclusive";
   if (defined($main::bg_pseudo)){
   	$matrix_distrib_cmd .= " -bg_pseudo ".$main::bg_pseudo;
   }
