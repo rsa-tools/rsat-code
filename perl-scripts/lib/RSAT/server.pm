@@ -19,9 +19,9 @@ unless ($ENV{RSAT}) {
 ## 3) in the user path
 ##
 ## Usage:
-##    my $program_path = &RSAT::server::GetProgramPath("program_name");
+##    my $program_path = &RSAT::server::GetProgramPath("program_name", $die_on_error, @preferred_paths);
 sub GetProgramPath {
-    my ($program_name, @preferred_paths) = @_;
+    my ($program_name, $die_on_error, @preferred_paths) = @_;
     my $program_path = "";
 
     ## Find the preferred location of the program
@@ -69,15 +69,22 @@ sub GetProgramPath {
 
     ## Check if the program path has been found
     unless ($program_path) {
+      if ($die_on_error) {
 	&RSAT::error::FatalError("The program ".$program_name." is not found in your path.");
+      } else {
+	&RSAT::message::Warning("The program ".$program_name." is not found in your path.");
+      }
     }
 
-    
     unless (-x $program_path) {
+      if ($die_on_error) {
 	&RSAT::error::FatalError("The program ".$program_path." cannot be run. ");
+      } else {
+	&RSAT::message::Warning("The program ".$program_path." cannot be run. ");
+      }
     }
 
-    &RSAT::message::Debug("&RSAT::server::GetProgramPath()", "path found", $program_path) 
+    &RSAT::message::Info("&RSAT::server::GetProgramPath()", "path found", $program_path)
 	if ($main::verbose >= 3);
     return $program_path;
 }
