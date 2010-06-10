@@ -19,7 +19,6 @@
       $wget_command = "wget 'http://stitch.embl.de/api/tsv-no-header/resolve?identifier={$name}&species=$organism_id&echo_query=1' -O $tempfile";
       
 //       $wget_command = "wget 'http://string80.embl.de/api/tsv/interactors?identifier=$name&species=$organism_id' -O $tempfile";
-      echo($wget_command);
       exec ($wget_command);
       $resolve_content = storeFile ($tempfile);
       $lines = explode("\n", $resolve_content);
