@@ -19,6 +19,8 @@
   $uth = $_REQUEST['uth'];
   $lth = $_REQUEST['lth'];
   
+  
+  
   if ($_REQUEST['automated_textmining'] != "") {
     array_push ($channels, 'automated_textmining');
   }
@@ -47,21 +49,21 @@
     echo("<table border = 1>");
     echo("<tr><td></td><td>Usual name</td><td>String ID</td><td>Description</td></tr>");
     for ($i = 0; $i < count($gene_description); $i++) {
-      $varname = $gene_description[$i][0];
+      $varname = $gene_description[$i][1];
       $varname = trim ($varname);
       $varname = str_replace(".", "_", $varname);
       $checked = "checked";
-      if ($gene_description[$i][0] == "Not found in STRING") {
+      if ($gene_description[$i][1] == "Not found in STRING") {
         $checked = "";
         $not_found = 1;
       }
       echo ("<tr>");
       if ($checked != "") {
-        echo ("<td><input type='checkbox' $checked name='".$varname."' value='1'/></td>");
+        echo ("<td><input type='checkbox' name='".$varname."' value='1'/></td>");
       } else {
         echo ("<td></td>");
       }
-      echo ("<td><b>".$gene_description[$i][1]."</b></td><td>".$gene_description[$i][0]."</td><td>".$gene_description[$i][2]."</td>");
+      echo ("<td><b>".$gene_description[$i][0]."</b></td><td>".$gene_description[$i][1]."</td><td>".$gene_description[$i][2]."</td>");
       array_push ($gene_list, $varname);
     }
     echo "</table>";
