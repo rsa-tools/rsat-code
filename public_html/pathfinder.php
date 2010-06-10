@@ -197,6 +197,7 @@
         flush();
 
          # Open the SOAP client
+        # echo($neat_java_wsdl);
         $client = new SoapClient(
                       $neat_java_wsdl,
                            array(
@@ -211,7 +212,7 @@
         $types = $client->__getTypes();
         # info(print_r($parameters));
         # info(print_r($functions));
- 	    # info(print_r($types));
+        # info(print_r($types));
  	  try{
         $echoed = $client->pathfinding($parameters);
         }catch(SoapFault $fault){
@@ -254,7 +255,7 @@
     	# Text-to-html web service (for table of paths only)
     	if(strcmp($outputType,'pathsTable') == 0){
     	 $rsat_client = new SoapClient(
-                          "web_services/RSATWS.wsdl",
+                          $neat_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
