@@ -2749,30 +2749,44 @@ from the matrix of weights.
 Usage: my ($Wmin, $Wmax, $Wrange)  = $matrix->weight_range();
 
 =cut
-
 sub weight_range {
-    my ($self) = @_;
-    my $Wmin = 0;
-    my $Wmax = 0;
-    my %score_proba = $self->getTheorScoreDistrib("weights");
-    my @weights = sort {$a <=> $b} (keys (%score_proba));
+  my ($self) = @_;
+  my $Wmin = 0;
+  my $Wmax = 0;
 
-    $Wmin = $weights[0];
-    $Wmax = $weights[$#weights];
-    my $Wrange = $Wmax-$Wmin;
 
-    &RSAT::message::Debug("Weights",$c, "min:".$Wmin, "max:".$Wmax, "range:", $Wrange) if ($main::verbose >= 5);
+  my @weights = $self->getWeights();
 
-    $self->set_parameter("Wmin", $Wmin);
-    $self->set_parameter("Wmax", $Wmax);
-    $self->set_parameter("Wrange", $Wrange);
-    if ($main::verbose >= 3) {
-	    &RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
-	    &RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
-	    &RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
+  #    my %score_proba = $self->getTheorScoreDistrib("weights");
+  #    my @weights = sort {$a <=> $b} (keys (%score_proba));
+  #   $Wmin = $weights[0];
+  #   $Wmax = $weights[$#weights];
+
+  ## Calculate min and max weights
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  for my $c (0..($ncol-1)) {
+    my @col_weights = 0;
+    for my $r (0..($nrow-1)) {
+      push @col_weights, $weights[$c][$r];
     }
-    
-    return ($Wmin, $Wmax, $Wrange);
+    $Wmin += &RSAT::stats::min(@col_weights);
+    $Wmax += &RSAT::stats::max(@col_weights);
+  }
+
+  my $Wrange = $Wmax-$Wmin;
+
+  &RSAT::message::Debug("Weights",$c, "min:".$Wmin, "max:".$Wmax, "range:", $Wrange) if ($main::verbose >= 5);
+
+  $self->set_parameter("Wmin", $Wmin);
+  $self->set_parameter("Wmax", $Wmax);
+  $self->set_parameter("Wrange", $Wrange);
+  if ($main::verbose >= 3) {
+    &RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
+    &RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
+    &RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
+  }
+  return ($Wmin, $Wmax, $Wrange);
 }
 
 # sub weight_range {
