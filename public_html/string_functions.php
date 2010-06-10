@@ -5,7 +5,7 @@
 <?php
   // Check if the gene names exists in STRING
   // return their description in an array
-  // 1 String ID
+//   // 1 String ID
   // 2 Usual name
   // 3 annotation
   Function resolveName($names, $organism_id) {
@@ -16,7 +16,10 @@
         continue;
       }
       $tempfile = writeTempFile("resolveString", "");
-      $wget_command = "wget 'http://stitch.embl.de/api/tsv/resolve?identifier=$name&species=$organism_id' -O $tempfile";
+      $wget_command = "wget 'http://stitch.embl.de/api/tsv-no-header/resolve?identifier={$name}&species=$organism_id&echo_query=1' -O $tempfile";
+      
+//       $wget_command = "wget 'http://string80.embl.de/api/tsv/interactors?identifier=$name&species=$organism_id' -O $tempfile";
+      echo($wget_command);
       exec ($wget_command);
       $resolve_content = storeFile ($tempfile);
       $lines = explode("\n", $resolve_content);
@@ -33,9 +36,9 @@
           $result[$result_size][2] = "No available definition";
           break;
         }
-        $result[$result_size][0] = $linecp[0]; 
-        $result[$result_size][1] = $linecp[3];
-        $result[$result_size][2] = $linecp[4];
+        $result[$result_size][0] = $linecp[4]; 
+        $result[$result_size][1] = $linecp[1];
+        $result[$result_size][2] = $linecp[5];
         $result_size++;
       }
     }
@@ -48,7 +51,7 @@
   // 1) the organism ID
   // 2) the usual name of the organism
   Function readStringOrganisms() {
-    $organisms = file_get_contents("http://string.embl.de/newstring_download/species.v7.1.txt");
+    $organisms = file_get_contents("http://string-db.org/newstring_download/species.v8.3.txt");
     $lines = explode("\n",$organisms);
     $array_count = count($lines);
     for($y=0; $y<$array_count; $y++) {
