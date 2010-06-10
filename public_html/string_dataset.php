@@ -21,6 +21,7 @@
   # Get parameters
   $now = date("Ymd_His");
   $gene_list = $_REQUEST['genes'];
+  print_r($_REQUEST);
   $gene_list = explode("-sep-", $gene_list);
   $genes = array();
   for ($i = 0; $i <= count($gene_list); $i++) {
