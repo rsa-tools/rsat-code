@@ -1150,12 +1150,12 @@ sub to_infogibbs{
 	    $self->force_attribute($key, $args{$key});
 	}
     }
-    
+
     ## Format for the matrix entries
     my $sep = $self->get_attribute("sep") || "\t";
     my $col_width = $self->get_attribute("col_width") || $self->ncol();;
     my $decimals = $self->get_attribute("decimals");
-    
+
     ## Calculate number width
     my $number_width = 0;
     if ($col_width) {
@@ -2774,6 +2774,11 @@ sub weight_range {
     $Wmax += &RSAT::stats::max(@col_weights);
   }
 
+  ## Get the rounded Wmin and Wmax values
+  my $decimals = $self->get_attribute("decimals");
+  my $factor = 10**$decimals;
+  $Wmin = &POSIX::floor($Wmin*$factor)/$factor;
+  $Wmax = &POSIX::ceil($Wmax*$factor)/$factor;
   my $Wrange = $Wmax-$Wmin;
 
   &RSAT::message::Debug("Weights",$c, "min:".$Wmin, "max:".$Wmax, "range:", $Wrange) if ($main::verbose >= 5);
