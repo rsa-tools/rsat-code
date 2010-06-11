@@ -364,28 +364,23 @@ estimate them on the basis of equiprrobable residues.
 
 =cut
 sub getPrior() {
-    my ($self) = @_;
-    my %prior = ();
-    if ($self->get_attribute("prior_specified")) {
-	%prior = $self->get_attribute("prior");
-    } else {
-	if (scalar(keys %prior) <= 0) {
-	    &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
-	    my @alphabet = $self->getAlphabet();
-	    my $alphabet_size = scalar(@alphabet);
-	    foreach my $letter (@alphabet) {
-		$prior{$letter} = 1/$alphabet_size;
-#		&RSAT::message::Debug("RSAT::matrix::setPrior", $letter, $prior{$letter}) if ($main::verbose >= 10);
-	    }
-	    $self->setPrior(%prior);
-	}
+  my ($self) = @_;
+  my %prior = ();
+  if ($self->get_attribute("prior_specified")) {
+    %prior = $self->get_attribute("prior");
+  } else {
+    if (scalar(keys %prior) <= 0) {
+      &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
+      my @alphabet = $self->getAlphabet();
+      my $alphabet_size = scalar(@alphabet);
+      foreach my $letter (@alphabet) {
+	$prior{$letter} = 1/$alphabet_size;
+	#		&RSAT::message::Debug("RSAT::matrix::setPrior", $letter, $prior{$letter}) if ($main::verbose >= 10);
+      }
+      $self->setPrior(%prior);
     }
-#    if ($main::verbose >= 10) {
-#	foreach my $letter (sort keys %prior) {
-#	    &RSAT::message::Debug("getPrior", $letter, $prior{$letter});
-#	}
-#    }
-    return %prior;
+  }
+  return %prior;
 }
 
 ################################################################
