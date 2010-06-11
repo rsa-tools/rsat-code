@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.96 2010/06/10 09:25:35 jvanheld Exp $
+# $Id: matrix-quality,v 1.97 2010/06/11 04:16:05 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -269,21 +269,25 @@ package main;
     $roc_ref = "theor";
 
     ## Tasks
-    %supported_tasks = (
-			all=>1, ## Run all other tasks
-			theor=>1, ## Calculate the theoretical distribution
-			export_matrix=>1, ## Export the matrix and sites in various formats (tab, info, logos)
-			scan=>1, ## Scan sequences with matrix-scan
-			loo=>1, ## Leave-one-out test on the matrix sites
-			theor_loo=>1, ## Calculate the theoretical distribution of loo partial matrices
-			permute=>1, ## Scan sequences with permuted matrices
-			compare=>1, ## Compare distributions between the various input files
-			graphs=>1, ## Draw the graphs with distrib comparisons
-			index=>1, ## Index results in a HTML file
+    local @supported_tasks = ("all", ## Run all other tasks
+			"export_matrix", ## Export the matrix and sites in various formats (tab, info, logos)
+			"permute", ## Scan sequences with permuted matrices
+			"theor", ## Calculate the theoretical distribution
+			"loo", ## Leave-one-out test on the matrix sites
+			"theor_loo", ## Calculate the theoretical distribution of loo partial matrices
+			"scan", ## Scan sequences with matrix-scan
+			"compare", ## Compare distributions between the various input files
+			"graphs", ## Draw the graphs with distrib comparisons
+			"index", ## Index results in a HTML file
 		       );
-    $supported_tasks = join (",", sort(keys( %supported_tasks)));
+    $supported_tasks = join (",", @supported_tasks);
+    local %supported_tasks = ();
+    foreach my $task (@supported_tasks) {
+      $supported_tasks{$task} = 1;
+    }
     %tasks = ();
 
+    ################################################################
     ## The C command matrix-scan-quick is MUCH faster than
     ## matrix-scan. If it is supported on this machine, use it !
     local $quick_scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
@@ -336,14 +340,13 @@ package main;
     foreach my $i (0..$#matrix_scan_options) {
       if ($matrix_scan_options[$i] eq "-bgfile") {
 	$infile{bg_file} = $matrix_scan_options[$i+1];
-
 	## Define name of the converted bg file
 	$outfile{bg_file_inclusive} = $dir{output};
 	$outfile{bg_file_inclusive} .= &ShortFileName($infile{bg_file});
 	$outfile{bg_file_inclusive} =~ s|\.\w$||;
 	$outfile{bg_file_inclusive} .= "_inclusive.tab";
 	$matrix_scan_options[$i+1] = $outfile{bg_file_inclusive};
-
+	$matrix_scan_options[$i+1] .= " -bg_format inclusive";
       } elsif ($matrix_scan_options[$i] eq "-bg_format") {
 	$matrix_scan_options[$i+1] = "inclusive";
       }
@@ -351,6 +354,7 @@ package main;
 	$main::bg_pseudo = $matrix_scan_options[$i+1]
       }
     }
+    &RSAT::message::Info("matrix-scan options", join(" ", @matrix_scan_options));
 
     ## Background model file is mandatory
     unless ($infile{bg_file}) {
@@ -401,9 +405,9 @@ package main;
 
     ################################################################
     ### Read background model to use for theorical distribution
-    if ($main::infile{bg_file}){
-      $bg_model->load_from_file($main::infile{bg_file},$bg_format);
-    }
+#    if ($main::infile{bg_file}){
+    $bg_model->load_from_file($main::outfile{bg_file_inclusive},"inclusive");
+#    }
     if (defined($main::bg_pseudo)){
       $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
     }
@@ -430,17 +434,14 @@ package main;
     $matrix->force_attribute("name", $matrix_name);
     $matrix->setMarkovModel($bg_model) if ($main::outfile{bg_file_inclusive}) ;
 
-    ## DEBUG
-    ## JvH: $matrix->weight_range costs too much time because it
-    ## computes the proba distribution, which is not necessary ->
-    ## should be revised
+    ## Compute min and max weight values for score distributions
     local ($Wmin, $Wmax)  = $matrix->weight_range();
     &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
     $main::html_title=" $matrix_name " unless $main::html_title;
 
 
     ################################################################
-    ## Export matrix in various formatsS
+    ## Export matrix in various formats
 
     ## Define file names here because we need them for the index, even
     ## if we don't run the export task
@@ -474,6 +475,7 @@ package main;
       &PermuteMatrixColumns() if ($perm_nb_max > 0);
     }
 
+    ################################################################
     ## Calculate theoretical distribution of probabilities
     $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab";
     &PrintTheorScoreDistribution($outfile{matrix_tab},$main::outfile{'theoretical_distrib'}) if ($tasks{theor});
@@ -483,9 +485,9 @@ package main;
 
     ## Calculate the Leave-one-out score distribution for the matrix sites
     unless ($noloo) {
+      $outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab"; push @files_to_index, "matrix_sites_loo";
+      $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab" ;push @files_to_index, "matrix_sites_loo_distrib";
       if (($tasks{loo}) || ($tasks{compare}) || ($tasks{graphs})) {
-	$main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
-	$outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";
 	push @distrib_files, $outfile{matrix_sites_loo_distrib}; $file_nb{matrix_sites_loo_distrib} = scalar(@distrib_files);
       }
       if ($tasks{loo}) {
@@ -504,7 +506,8 @@ package main;
       }
     }
 
-    ## Other sequence files
+    ################################################################
+    ## Compute empirical distribution in the input sequence files
     foreach my $seq_type (@seq_types) {
       &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type});
       &CalcSequenceDistrib($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
@@ -1287,7 +1290,7 @@ specified, all the tasks are run.
 Note that some tasks depend on other ones. This option should thus be
 used with caution, by experimented users only.
 
-Supported fields:
+Supported tasks:
 
 =over
 
@@ -1434,7 +1437,6 @@ sub LOO_scores {
 
   for my $i (0..$#sites) {
 
-
     ## Select the left out site
     my $lo_site_nb = $i+1;
     my $lo_site = $sites[$i];
@@ -1502,6 +1504,8 @@ sub LOO_scores {
 #       $matrix_scan_cmd .= $quick_scan_cmd;
 #     } else {
     $matrix_scan_cmd .= "$SCRIPTS/matrix-scan";
+    $matrix_scan_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
+    $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
     $matrix_scan_cmd .= " -top_matrices 1";
     $matrix_scan_cmd .= " -matrix_format tab";
@@ -1525,7 +1529,7 @@ sub LOO_scores {
 #       ## Select the top ranking score
 #       $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
 #     }
-    &RSAT::message::TimeWarn("LOO command",  ($i+1)."/".scalar(@sites), $matrix_scan_cmd) if ($main::verbose >= 9);
+    &RSAT::message::TimeWarn("LOO command",  ($i+1)."/".scalar(@sites), $matrix_scan_cmd) if ($main::verbose >= 0);
     my $score_result = `$matrix_scan_cmd`;
     print $loo_scores_handle $score_result;
     &RSAT::message::TimeWarn("LOO scored site",  ($i+1)."/".scalar(@sites)) if ($main::verbose >= 0);
