@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.98 2010/06/11 05:34:46 jvanheld Exp $
+# $Id: matrix-quality,v 1.99 2010/06/11 07:13:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -456,19 +456,20 @@ package main;
       $outfile{"matrix_logo_rc_".$logo_format} = $outfile{matrix_logo}."_m1_rc.".$logo_format; push @files_to_index, "matrix_logo_rc_".$logo_format;
     }
     $main::outfile{matrix_sites} = $outfile{prefix}."_matrix_sites.fasta"; push @files_to_index, "matrix_sites";
-    $main::seqfile{input_matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites}); 
+    $main::seqfile{matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites});
 
-    if ($tasks{export_matrix}) {
 
-      ## Export input sites with the matrix
-      &ExportInputSites($matrix, $matrix_file) if $main::infile{matrix_sites};
-
-      ## Export the matrix in tab-delimited format
-      &ExportTabMatrix($matrix);
-
-      ## Export the matrix in tab-delimited format with additional information + the logos
-      &ExportMatrixInfo($matrix);
+    ## Export input sites with the matrix 
+    if ($main::infile{matrix_sites}) {
+      push @main::seq_types, "matrix_sites";
+      &ExportInputSites($matrix, $matrix_file) if ($tasks{export_matrix});
     }
+
+    ## Export the matrix in tab-delimited format
+    &ExportTabMatrix($matrix) if ($tasks{export_matrix});
+
+    ## Export the matrix in tab-delimited format with additional information + the logos
+    &ExportMatrixInfo($matrix) if ($tasks{export_matrix});
 
     ## Shuffle the columns of the matrix (permutation test)
     print $main::out "; Sequence sets (name, permutations, file)";
@@ -756,6 +757,7 @@ If the file includes several matrices, it will only take the first one.
 	  &RSAT::error::FatalError("You are not allowed to specify several matrices.") 
 	    if ($main::infile{matrix_sites});
 	  $main::infile{matrix_sites} = shift(@arguments);
+#	  push @seq_types, 'matrix_sites';
 
 	    ## Matrix format
 
@@ -1302,8 +1304,7 @@ For I<matrix-scan-quick> the -bgfile most be in MotifSampler format.
 ## Export the sites which were use to build the matrix in a fasta file.
 sub ExportInputSites {
   my ($matrix, $matrix_file) = @_;
-  push @main::seq_types, "matrix_sites";
-  &RSAT::message::TimeWarn("Exporting matrix sites", $outfile{matrix_sites}) 
+  &RSAT::message::TimeWarn("Exporting matrix sites", $outfile{matrix_sites})
     if ($main::verbose >= 1);
   my $site_handler = &OpenOutputFile($outfile{matrix_sites});
   my $site_nb = 0; 
