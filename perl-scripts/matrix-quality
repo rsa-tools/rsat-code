@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.99 2010/06/11 07:13:01 jvanheld Exp $
+# $Id: matrix-quality,v 1.100 2010/06/11 09:31:26 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -347,9 +347,9 @@ package main;
 	$outfile{bg_file_inclusive} =~ s|\.\w$||;
 	$outfile{bg_file_inclusive} .= "_inclusive.tab";
 	$matrix_scan_options[$i+1] = $outfile{bg_file_inclusive};
-	$matrix_scan_options[$i+1] .= " -bg_format inclusive";
+	$matrix_scan_options[$i+1] .= " -bg_format inclusive" unless $quick;
       } elsif ($matrix_scan_options[$i] eq "-bg_format") {
-	$matrix_scan_options[$i+1] = "inclusive";
+	$matrix_scan_options[$i+1] = "inclusive"    unless $quick  ;  
       }
       if ($matrix_scan_options[$i] eq "-bg_pseudo") {
 	$main::bg_pseudo = $matrix_scan_options[$i+1]
