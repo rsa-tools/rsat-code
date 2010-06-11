@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.100 2010/06/11 09:31:26 amedina Exp $
+# $Id: matrix-quality,v 1.101 2010/06/11 15:03:50 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -342,7 +342,8 @@ package main;
       if ($matrix_scan_options[$i] eq "-bgfile") {
 	$infile{bg_file} = $matrix_scan_options[$i+1];
 	## Define name of the converted bg file
-	$outfile{bg_file_inclusive} = $dir{output};
+	#$outfile{bg_file_inclusive} = $dir{output};
+	$outfile{bg_file_inclusive} = $outfile{prefix};
 	$outfile{bg_file_inclusive} .= &ShortFileName($infile{bg_file});
 	$outfile{bg_file_inclusive} =~ s|\.\w$||;
 	$outfile{bg_file_inclusive} .= "_inclusive.tab";
