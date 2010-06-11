@@ -136,6 +136,10 @@ sub readFromFile {
     my $matrix_nb = 0;
     foreach my $matrix (@matrices) {
 
+      ## Some programs require sorted alphabet (A,C,G,T). We re-order
+      ## the rows alphabetically.
+      $matrix->sort_rows();
+
       ## Reassign matrix numbers
       $matrix_nb++;
       $matrix->set_parameter("matrix.nb", $matrix_nb);
@@ -153,21 +157,25 @@ sub readFromFile {
       }
 
       ## Check that each matrix contains at least one row and one col
-      if (($matrix->nrow() > 0) && ($matrix->ncol() > 0)) {
-	&RSAT::message::Info("Matrix read", 
-			     "nrow = ".$matrix->nrow(),
-			     "ncol = ".$matrix->ncol(),
-			     "prior : ".join (" ", $matrix->getPrior()),
-			    ) if ($main::verbose >= 3);
+      if ($matrix->nrow() > 0) {
+	if ($matrix->ncol() > 0) {
+	  &RSAT::message::Info("Matrix read", 
+			       "nrow = ".$matrix->nrow(),
+			       "ncol = ".$matrix->ncol(),
+			       "prior : ".join (" ", $matrix->getPrior()),
+			      ) if ($main::verbose >= 3);
 
-	## Count number of sites per matrix
-	my $site_nb = scalar($matrix->get_attribute("sequences"));
-	if ($site_nb) {
-	  $matrix->set_parameter("sites", $site_nb);
+	  ## Count number of sites per matrix
+	  my $site_nb = scalar($matrix->get_attribute("sequences"));
+	  if ($site_nb) {
+	    $matrix->set_parameter("sites", $site_nb);
+	  }
+
+	} else {
+	  &RSAT::message::Warning("The matrix", $matrix_nb, $matrix->get_attribute("id"), "contains 0 columns.");
 	}
-
       } else {
-	&RSAT::message::Warning("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
+	&RSAT::message::Warning("The matrix", $matrix_nb, $matrix->get_attribute("id"), "contains 0 rows.");
       }
 
       ## Replace undefined values by 0
@@ -210,7 +218,7 @@ sub InitializeEquiPriors {
       @alphabet = qw(a c g t);
     }
     $matrix->setAlphabet_lc(@alphabet);
-    $matrix->set_attribute("nrow", scalar(@alphabet));
+#    $matrix->force_attribute("nrow", scalar(@alphabet));
     my %tmp_prior = ();
     my $prior = 1/scalar(@alphabet);
     foreach my $residue (@alphabet) {
@@ -802,12 +810,6 @@ sub _readFromInfoGibbsFile {
       @matrices = ();
     }
 
-    ## Some programs require sorted alphabet (A,C,G,T). We re-order
-    ## the rows alphabetically.
-    foreach my $matrix (@matrices) {
-      $matrix->sort_rows();
-    }
-
     return (@matrices);
 }
 
@@ -930,6 +932,7 @@ sub _readFromOldInfoGibbsFile {
 	## Alphabet is parsed from the InfoGibbs matrix header (P0 row)
 	my @alphabet = split /\s+/, $header;
 	$matrix->setAlphabet_lc(@alphabet);
+
 	## Check that prior has been specified
 	unless ($matrix->get_attribute("prior_specified")) {
 	  foreach my $letter (@alphabet) {
@@ -1083,11 +1086,12 @@ sub _readFromAlignACEFile {
       $matrix->set_parameter("alignace.undersample", $undersample);
       $matrix->set_parameter("alignace.oversample", $oversample);
       &RSAT::message::Info("Starting to read matrix", $matrix_nb) if ($main::verbose >= 3);
+
       # default nucletodide alphabet
       $matrix->setAlphabet_lc("a","c","g","t");
       my $atback = 1-$gcback;
       $matrix->setPrior(a=>$atback/2, c=>$gcback/2,t=>$atback/2, g=>$gcback/2);
-      $matrix->set_attribute("nrow",4);
+      $matrix->force_attribute("nrow",4);
       push @matrices, $matrix;
       $in_matrix = 1;
     } elsif (/^AlignACE (\d+\.\d+)\s+(\S+)/) {
@@ -1208,7 +1212,7 @@ sub _readFromGibbsFile {
 	  $in_matrix = 1;
 	  # default nucletodide alphabet
 	  $matrix->setAlphabet_lc("a","c","g","t");
-	  $matrix->set_attribute("nrow",4);
+#	  $matrix->force_attribute("nrow",4);
 	}
 
 	my $seq_nb = $1;
@@ -1441,11 +1445,9 @@ sub _readFromConsensusFile {
   }
   close $in if ($file);
 
-  ## BEWARE: the order of the rows in the consensus file is A, T,
-  ## C, G, which is incompatibile with some other programs. We re-order the rows alphabetically
-  foreach my $matrix (@matrices) {
-    $matrix->sort_rows();
-  }
+  &RSAT::message::Debug("matrices read", scalar(@matrices)) if ($main::verbose >= 0);
+
+  &RSAT::message::Debug("matrices after sorting", scalar(@matrices)) if ($main::verbose >= 0);
 
   return @matrices;
 }
@@ -1490,7 +1492,7 @@ sub _readFromAssemblyFile {
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       push @matrices, $matrix;
       $matrix->setAlphabet_lc("A","C","G","T");
-      $matrix->set_attribute("nrow", 4);
+#      $matrix->force_attribute("nrow", 4);
       $matrix->set_parameter("asmb.seed", $seed);
       &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
 
@@ -1574,7 +1576,7 @@ sub _from_isolated {
   $matrix->set_parameter("program", "pattern-assembly");
   $matrix->set_parameter("matrix.nb", $current_matrix_nb);
   $matrix->setAlphabet_lc("A","C","G","T");
-  $matrix->set_attribute("nrow", 4);
+#  $matrix->force_attribute("nrow", 4);
   $matrix->set_parameter("asmb.seed", $pattern);
   $matrix->set_attribute("asmb.consensus", $pattern);
   $matrix->set_attribute("asmb.consensus.rc", $pattern_rc);
@@ -1751,7 +1753,7 @@ sub _readFromClusterBusterFile {
 	}
 	my @alphabet = qw(a c g t);
 	$matrix->setAlphabet_lc(@alphabet);
-	$matrix->set_attribute("nrow", 4);
+#	$matrix->force_attribute("nrow", 4);
 	push @matrices, $matrix;
 	$current_matrix_nb++;
 	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
@@ -1774,7 +1776,7 @@ sub _readFromClusterBusterFile {
 #     foreach my $matrix (@matrices) {
 #       my @alphabet = qw(a c g t);
 #       $matrix->setAlphabet_lc(@alphabet);
-#       $matrix->set_attribute("nrow", 4);
+###       $matrix->force_attribute("nrow", 4);
 #       my %tmp_prior = ();
 #       my $prior = 1/scalar(@alphabet);
 #       foreach my $residue (@alphabet) {
@@ -1931,7 +1933,7 @@ sub _readFromMEMEFile {
       $matrix->setPrior(%residue_frequencies);
 #      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
       $matrix->setAlphabet_lc(@alphabet);
-      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
+#      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
       push @matrices, $matrix;
 
       ## Meme command
@@ -2056,7 +2058,7 @@ sub _readFromFeatureFile {
 #      $matrix->setPrior(%residue_frequencies);
 #      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
       $matrix->setAlphabet_lc(@alphabet);
-      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
+#      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
       $matrices{$matrix_name} = $matrix;
       push @matrices, $matrix;
     }
@@ -2134,7 +2136,7 @@ sub _readFromMotifSamplerFile {
       }
       $matrix->setAlphabet_lc(@alphabet);
       $matrix->setPrior(%prior);
-      $matrix->set_attribute("nrow", 4);
+      $matrix->force_attribute("nrow", 4);
 
       push @matrices, $matrix;
     } elsif (/^#/) {
@@ -2207,7 +2209,7 @@ sub _readFromMotifSamplerMatrixFile {
 	$matrix->set_parameter("program", "MotifSampler");
 	$matrix->set_attribute("AC", $id);
 	$matrix->set_attribute("id", $id);
-	$matrix->set_attribute("nrow", 4);
+	$matrix->force_attribute("nrow", 4);
 	$matrix->setAlphabet_lc("a","c","g","t");
 	push @matrices, $matrix;
       } elsif (/^#Score = (\S+)/i) {
@@ -2356,7 +2358,7 @@ sub _readFromClustalFile {
     }
     $matrix->setAlphabet_lc(@alphabet);
     $matrix->force_attribute("ncol", $ncol);
-    $matrix->force_attribute("nrow", $nrow);
+#    $matrix->force_attribute("nrow", $nrow);
 
     warn join ("\t", "; Matrix size",  
 	       $nrow,
