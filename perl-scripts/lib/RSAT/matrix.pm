@@ -577,6 +577,48 @@ sub setMatrix {
 }
 
 
+=pod
+
+=item sort_rows();
+
+Sort the rows of a matrix according to alphabetical order. This solves
+incompatibilities between some matrix formats, for example consensus,
+which provides the rows in the order A,T,C,G and matrix-scan-quick,
+which requires A,C,G,T.
+
+Usage: $matrix->sort_row()
+
+=cut
+sub sort_rows {
+  my ($self) = @_;
+  my @alphabet = $self->getAlphabet();
+  my $ncol = $self->ncol();
+  my $nrow = $self->nrow();
+
+  ## Determine the column for each residue
+  my @sorted_alphabet = sort @alphabet;
+  foreach my $r (0..$#sorted_alphabet) {
+    my $residue = $sorted_alphabet[$r];
+    $order{$residue} = $r;
+  }
+
+  &RSAT::message::Info("Sorting matrix rows", join(";", @alphabet), join(";", @sorted_alphabet)) if ($main::verbose >= 0);
+
+  ## Get the original count matrix
+  my @ori_matrix = $self->getMatrix();
+
+  my @sorted_matrix = ();
+  for my $r  (0..$#alphabet) {
+    my $residue = $alphabet[$r];
+    my $target_row = $order{$residue};
+    for my $c (0..($ncol-1)) {
+      $sorted_matrix[$c][$target_row] = $ori_matrix[$c][$r];
+    }
+  }
+  $self->setMatrix($nrow, $ncol, @sorted_matrix);
+  $self->setAlphabet_lc(@sorted_alphabet);
+}
+
 
 ################################################################
 
