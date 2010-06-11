@@ -632,14 +632,15 @@ Specify the alphabet (i.e. the list of valid letters) for the table.
 =cut
 sub setAlphabet {
     my ($self, @new_alphabet) = @_;
+    &RSAT::message::Debug("before setAlphabet_lc", $self->nrow()) if ($main::verbose >= 0);
 
-    @{$self->{alphabet}} = @new_alphabet;	
+    @{$self->{alphabet}} = @new_alphabet;
 
 #    warn join("\t", "; Alphabet", $self->getAlphabet()), "\n" if ($main::verbose >= 10);
 
     ## update the number of columns
-    $self->force_attribute("nrow", scalar(@alphabet));
-} 
+    $self->force_attribute("nrow", scalar(@new_alphabet));
+}
 
 
 ################################################################
@@ -679,7 +680,6 @@ sub setAlphabet_lc {
     for my $i (0..$#new_alphabet) {
 	$new_alphabet[$i] = lc($new_alphabet[$i]);
     }
-
     $self->setAlphabet(@new_alphabet);
 }
 
