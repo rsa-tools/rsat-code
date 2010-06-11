@@ -802,6 +802,12 @@ sub _readFromInfoGibbsFile {
       @matrices = ();
     }
 
+    ## Some programs require sorted alphabet (A,C,G,T). We re-order
+    ## the rows alphabetically.
+    foreach my $matrix (@matrices) {
+      $matrix->sort_rows();
+    }
+
     return (@matrices);
 }
 
@@ -1433,12 +1439,17 @@ sub _readFromConsensusFile {
   unless (scalar(@matrices) > 0) {
     &RSAT::message::Warning("This file does not contain any final cycle matrix") if ($main::verbose >= 2);
   }
-
   close $in if ($file);
+
+  ## BEWARE: the order of the rows in the consensus file is A, T,
+  ## C, G, which is incompatibile with some other programs. We re-order the rows alphabetically
+  foreach my $matrix (@matrices) {
+    $matrix->sort_rows();
+  }
+
   return @matrices;
 }
 
-################################################################
 =pod
 
 =item _readFromAssemblyFile($file)
