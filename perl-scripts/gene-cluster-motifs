@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.291 2010/06/11 15:08:50 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.292 2010/06/12 23:33:20 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,9 +38,9 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.291 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.292 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-  ## Paths of the programs called by multiple-family-analysis
+  ## Paths of the programs called by gene-cluster-motifs
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
   local $matrix_scan_cmd = $ENV{RSAT}."/perl-scripts/matrix-scan";
 
@@ -3421,7 +3421,7 @@ sub PrintHelp {
    open HELP, "| more";
    print HELP <<End_of_help;
 NAME
-	multiple-family-analysis
+	gene-cluster-motifs
 
 VERSION
        $program_version
@@ -3431,7 +3431,7 @@ AUTHOR
        Since 2004 Olivier Sand (oly\@bigre.ulb.ac.be)
 
 USAGE
-       multiple-family-analysis [-i inputfile] [-v]
+       gene-cluster-motifs [-i inputfile] [-v]
 
 DESCRIPTION
 	Runs a combination of programs in order to discover significant
@@ -3841,7 +3841,7 @@ OPTIONS
 
 	-nodie
 		Continue the analysis even if errors are raised by
-		sub-processes. By default, multiple-family-analysis
+		sub-processes. By default, gene-cluster-motifs
 		stops if an error has occurred in one of the
 		sub-programs. However, in some particular the user
 		might want to ignore such errors.
@@ -3863,7 +3863,7 @@ QUICK START
 
    3) run the command. For example, with a bacterial genome :
 
-      multiple-family-analysis -org organism -i family_file \
+      gene-cluster-motifs -org organism -i family_file \
           -v -from -200 -to 49 -task all
 
    4) With a web browser (e.g. Netscape), open the folder
@@ -4133,7 +4133,7 @@ sub ReadArguments {
       if ($option eq "s") {
 	&RSAT::error::FatalError("info-gibbs option: Strand should be defined with options -2str|-1str");
       } elsif ($option eq "i") {
-	&RSAT::error::FatalError("info-gibbs option: Input file is automaticaly specified by multiple-family-analysis");
+	&RSAT::error::FatalError("info-gibbs option: Input file is automaticaly specified by gene-cluster-motifs");
       } elsif ($option eq "l") {
 	&RSAT::error::FatalError("info-gibbs option: Matrix width should be defined with option -w");
       } elsif ($option eq "m") {
@@ -4390,7 +4390,7 @@ sub ReadArguments {
 #
 sub Verbose {
   my $verbose_message = "";
-  $verbose_message .= "; multiple-family-analysis ";
+  $verbose_message .= "; gene-cluster-motifs ";
   $verbose_message .= &PrintArguments()."\n";
   printf "; %-22s\t%s\n", "Program version", $program_version;
   printf "; clusters     \t%d\n", $#families + 1;
@@ -5770,8 +5770,8 @@ sub CalibrateOligosN {
 sub PrintOptions {
  open HELP, "| more";
  print HELP <<End_short_help;
-multiple-family-analysis options
---------------------------------
+gene-cluster-motifs options
+---------------------------
 ## General options
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
