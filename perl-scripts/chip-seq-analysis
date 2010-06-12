@@ -1,9 +1,12 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.61 2010/06/12 23:16:08 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.62 2010/06/12 23:20:58 jvanheld Exp $
 #
 ############################################################
+
+die "ERROR: chip-seq-analysis has been renamed chip-motifs\n";
+
 
 ## use strict;
 
@@ -105,7 +108,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.61 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
