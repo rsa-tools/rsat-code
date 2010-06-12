@@ -87,7 +87,7 @@ sub AlignMatrices {
   my $shifted_matrix1 = new RSAT::matrix();
   $shifted_matrix1->force_attribute("ncol", $ncol);
   $shifted_matrix1->setAlphabet_lc(@alphabet);
-  $shifted_matrix1->set_attribute("nrow", scalar(@alphabet));
+#  $shifted_matrix1->force_attribute("nrow", scalar(@alphabet));
   my @shifted_counts1 = ();
 
   ## Create the shifted matrix 2.  This matrix is not necessary for
@@ -96,7 +96,7 @@ sub AlignMatrices {
   my $shifted_matrix2 = new RSAT::matrix();
   $shifted_matrix2->force_attribute("ncol", $ncol);
   $shifted_matrix2->setAlphabet_lc(@alphabet);
-  $shifted_matrix2->set_attribute("nrow", scalar(@alphabet));
+#  $shifted_matrix2->force_attribute("nrow", scalar(@alphabet));
   my @shifted_counts2 = ();
 
   ## Create the alignment matrix
@@ -104,7 +104,7 @@ sub AlignMatrices {
   $aligned_matrix->force_attribute("id", $id1."_".$id2."_".$stat),
   $aligned_matrix->force_attribute("ncol", $ncol);
   $aligned_matrix->setAlphabet_lc(@alphabet);
-  $aligned_matrix->set_attribute("nrow", scalar(@alphabet));
+#  $aligned_matrix->force_attribute("nrow", scalar(@alphabet));
   my @ali_counts = ();
 
   ## Compute the cell values of the aligned matrix
