@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.60 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: peak-motifs,v 1.61 2010/06/12 23:16:08 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.60 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.61 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -315,9 +315,9 @@ sub DefaultParameters {
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
 
   ## Matrix comparisons
-  $main::param{matrix_compa_min_cor} = 0.85;
+  $main::param{matrix_compa_min_cor} = 0.75;
   $main::param{matrix_compa_min_w} = 5;
-  $main::param{matrix_compa_min_Ncor} = 0.4;
+  $main::param{matrix_compa_min_Ncor} = 0.3;
 
 
   ## matrix-scan-quick
