@@ -1,10 +1,12 @@
 #!/usr/bin/perl
 
+die "ERROR: multiple-family-analysis has been renamed gene-cluster-motifs";
+
 ## Ce script est une usine a gaz
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.291 2010/06/11 15:08:50 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.292 2010/06/12 23:25:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +40,7 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.291 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.292 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Paths of the programs called by multiple-family-analysis
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
