@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.163 2010/06/09 22:26:41 jvanheld Exp $
+# $Id: matrix-scan,v 1.164 2010/06/12 23:17:09 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2044,11 +2044,9 @@ Background model file.
 
 =cut
     } elsif ($arg eq "-bgfile") {
-      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "file"));
       $main::bg_method = "file";
       $main::infile{bg} = shift(@arguments);
-      &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
-	if ($main::markov >= 0);
 
       ## Background model format
 
@@ -2081,12 +2079,8 @@ Calculate background model from the input sequence set.
 
 =cut
     } elsif ($arg eq "-bginput") {
-      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "input"));
       $main::bg_method = "input";
-      &RSAT::error::FatalError("The options -bginput and -window are mutually exclusive.") 
-	if ($main::window >= 0);
-      &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.") 
-	if defined($main::infile{bg});
 
       ## Calculate background model from the input sequence
 
@@ -2101,10 +2095,11 @@ This option is incompatible with the option -bgfile.
 =cut
     } elsif ($arg eq "-markov") {
       $main::markov = shift(@arguments);
+      $main::bg_method = "input";
       &RSAT::error::FatalError("Markov order must be a natural number.") 
 	unless &RSAT::util::IsNatural($main::markov);
       &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
-	if defined($main::infile{bg});
+	if (defined($infile{bg}));
 
 
 =pod
@@ -2116,13 +2111,11 @@ When this option is specified, the matrix pseudo-count is equally distributed.
 
 =cut
     } elsif ($arg eq "-window") {
-      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "window"));
       $main::bg_method = "window";
       $main::window = shift(@arguments);
       &RSAT::error::FatalError("Window size must be a natural number.") 
 	unless &RSAT::util::IsNatural($main::window);
-      &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
-	if defined($main::infile{bg});
 
       ## Matrix file
 
