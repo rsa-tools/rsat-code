@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.61 2010/06/12 23:16:08 jvanheld Exp $
+# $Id: chip-motifs,v 1.62 2010/06/12 23:31:27 jvanheld Exp $
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-chip-seq-analysis
+chip-motifs
 
 =head1 VERSION
 
@@ -19,8 +19,8 @@ $program_version
 
 =head1 DESCRIPTION
 
-Pipeline for discoering motifs from ChIP-seq (or ChIP-chip) peak
-sequences.
+Pipeline for discoering motifs from ChIP-seq (or ChIP-chip, or
+ChIP-PET) peak sequences.
 
 =head1 AUTHORS
 
@@ -56,7 +56,7 @@ Pattern discovery
 
 =head1 USAGE
 
-chip-seq-analysis [-i inputfile] [-o outputfile] [-v #] [...]
+chip-motifs [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.61 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1225,7 +1225,7 @@ sub Synthesis {
   ## HTML Header and title
   print $syn "<html>\n";
   print $syn "<head>\n";
-  print $syn "<title>chip-seq-analysis ".$main::param{title}."</title>\n";
+  print $syn "<title>chip-motifs ".$main::param{title}."</title>\n";
 
   ## Page styles
   print $syn "<style type='text/css'>\n";
@@ -1235,11 +1235,11 @@ sub Synthesis {
 
   print $syn "</head>\n";
   print $syn "<body>\n";
-  print $syn "<h1>Result: chip-seq-analysis ".$main::param{title}."</h1>\n";
+  print $syn "<h1>Result: chip-motifs ".$main::param{title}."</h1>\n";
 
   ## Print the command line
   print $syn "<pre>";
-  print $syn "<b>Command:</b>  chip-seq-analysis ";
+  print $syn "<b>Command:</b>  chip-motifs ";
   &PrintArguments($syn);
   print $syn "</pre>";
 
@@ -1879,7 +1879,7 @@ Residue profiles may reveal composition biases in the neighborhood of
 the peak sequences. Dinucleotide profiles can reveal (for example) an
 enrichment in CpG island.
 
-Note that I<chip-seq-analysis> also runs I<position-analysis> with
+Note that I<chip-motifs> also runs I<position-analysis> with
 larger oligonucleotide length (see option -l) to detect motifs on the
 basis of positionally biased oligonucleotides (see task B<positions>).
 
@@ -1921,7 +1921,7 @@ variable content (van Helden et al., 2000). Spaced motifs are typical
 of certain classes of transcription factors forming homo- or
 heterodimers.
 
-By default, chip-seq-analysis analyzes pairs of trinucleotides with
+By default, chip-motifs analyzes pairs of trinucleotides with
 any spacing between 0 and 20.
 
 The expected frequency of each dyad is estimated as the product of its
@@ -1940,7 +1940,7 @@ poly-adenylation signals in downstream sequences (van Helden et al.,
 centred on the ChIP-seq peaks. For ChIP-seq analysis, the reference
 position is the center of each sequence.
 
-Note that I<chip-seq-analysis> also uses I<position-analysis> for the
+Note that I<chip-motifs> also uses I<position-analysis> for the
 task B<profiles>, in order to detect compositional biases (residues,
 dinucleotides) in the test sequence set.
 
@@ -2260,7 +2260,7 @@ sub CheckArguments {
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; chip-seq-analysis ";
+    print $main::out "; chip-motifs ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
 
@@ -2294,7 +2294,7 @@ sub Verbose {
 
 =head1 REFERENCES
 
-The program I<chip-seq-analysis> combines a series of tried-and-tested
+The program I<chip-motifs> combines a series of tried-and-tested
 programs which have been detailed in the following publications.
 
 =over
