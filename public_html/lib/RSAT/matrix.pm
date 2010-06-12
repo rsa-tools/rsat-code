@@ -597,7 +597,7 @@ sub sort_rows {
     $order{$residue} = $r;
   }
 
-  &RSAT::message::Info("Sorting matrix rows", join(";", @alphabet), join(";", @sorted_alphabet)) if ($main::verbose >= 0);
+#  &RSAT::message::Info("Sorting matrix rows", join(";", @alphabet), join(";", @sorted_alphabet)) if ($main::verbose >= 10);
 
   ## Get the original count matrix
   my @ori_matrix = $self->getMatrix();
