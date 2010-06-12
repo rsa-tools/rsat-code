@@ -20,8 +20,8 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ############################################ configuration
-$command = "$ENV{RSAT}/perl-scripts/chip-seq-analysis";
-$output_directory = sprintf "chip-seq-analysis.%s", &AlphaDate();
+$command = "$ENV{RSAT}/perl-scripts/chip-motifs";
+$output_directory = sprintf "chip-motifs.%s", &AlphaDate();
 $output_prefix = "ChIP-seq_analysis_";
 $output_path = "$TMP/$output_directory";
 $output_path =~ s|\/\/|\/|g;
@@ -122,7 +122,7 @@ $parameters .= " -2str -noov -minol 5 -maxol 8 -max_markov -2 -min_markov -3 -im
 
 ############################################ display or send result
 $index_file = $output_directory."/".$output_prefix."synthesis.html";
-my $mail_title = join (" ", "[RSAT]", "chip-seq-analysis", &AlphaDate());
+my $mail_title = join (" ", "[RSAT]", "chip-motifs", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 #&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
 # $debug = "$command $parameters 2> $TMP/log.txt";

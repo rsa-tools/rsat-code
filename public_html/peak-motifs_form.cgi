@@ -53,7 +53,7 @@ foreach $key (keys %default) {
 
 ################################################################
 ### header
-&RSA_header("ChIP-seq analysis", "form");
+&RSA_header("ChIP-motifs", "form");
 print "<CENTER>";
 print "Pipeline for discovering motifs in ChIP-seq peak sequences.<P>\n";
 print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
