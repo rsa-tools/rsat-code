@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-#### this cgi script fills the HTML form for the program chip-seq-analysis
+#### this cgi script fills the HTML form for the program chip-motifs
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -66,7 +66,7 @@ print "<BLOCKQUOTE>\n";
 print $default{demo_descr1};
 print $default{demo_descr2};
 
-print $query->start_multipart_form(-action=>"chip-seq-analysis.cgi");
+print $query->start_multipart_form(-action=>"chip-motifs.cgi");
 
 ################################################################
 #### Start tab panel
@@ -110,7 +110,7 @@ print '
 
 ##
 print "<fieldset>
-<legend><b><a href='help.chip-seq-analysis.html#tasks'>Compare motifs </a></b></legend>";
+<legend><b><a href='help.chip-motifs.html#tasks'>Compare motifs </a></b></legend>";
 
 #
 ### compare motifs
@@ -127,7 +127,7 @@ print "</fieldset><p/>";
 ### matrix-scan
 #
 print "<fieldset>
-<legend><b><a href='help.chip-seq-analysis.html#tasks'>Locate motifs </a></b></legend>";
+<legend><b><a href='help.chip-motifs.html#tasks'>Locate motifs </a></b></legend>";
 print $query->checkbox(-name=>'matrix-scan-quick',
 		       -checked=>$default{matrix-scan-quick},
 		       -label=>'');  
@@ -159,7 +159,7 @@ print "</fieldset><p/>";
 ### logo
 #
 print "<fieldset>
-<legend><b><a href='help.chip-seq-analysis.html#tasks'>Visualize motifs </a></b></legend>";
+<legend><b><a href='help.chip-motifs.html#tasks'>Visualize motifs </a></b></legend>";
 print $query->checkbox(-name=>'logo',
 		       -checked=>$default{logo},
 		       -label=>'');  
@@ -185,12 +185,12 @@ print "&nbsp;<b>Visualize on UCSC genome browser</b> <a href='help.matrix-scan.h
 print "<br/>";
 
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-seq-analysis.html'>BED file with peak coordinates</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html'>BED file with peak coordinates</A>&nbsp;</B>\n";
 print $query->filefield(-name=>'bed_file',
 			-size=>10);
 
 ### threshold (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-seq-analysis.html'>Assembly version (UCSC)</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html'>Assembly version (UCSC)</A>&nbsp;</B>\n";
 print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
@@ -229,8 +229,8 @@ In this demonstration, we .....<p/>
 The program will return ...
 </blockquote>";
 
-print $query->start_multipart_form(-action=>"chip-seq-analysis_form.cgi");
-$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
+print $query->start_multipart_form(-action=>"chip-motifs_form.cgi");
+$demo_seq=`cat demo_files/chip-motifs_demo.fa`;
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
@@ -246,8 +246,8 @@ The program will return ...
 </blockquote>";
 
 ### data for the demo with control
-print $query->start_multipart_form(-action=>"chip-seq-analysis_form.cgi");
-$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
+print $query->start_multipart_form(-action=>"chip-motifs_form.cgi");
+$demo_seq=`cat demo_files/chip-motifs_demo.fa`;
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr2',-default=>$descr2);
 print $query->hidden(-name=>'tab1',-default=>"");
@@ -261,7 +261,7 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.chip-seq-analysis.html'>[MANUAL]</A></B></TD>\n";
+print "<TD><B><A HREF='help.chip-motifs.html'>[MANUAL]</A></B></TD>\n";
 print "<TD><B><A HREF='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
@@ -298,7 +298,7 @@ print '
 
 ################# Motif discovery single input
 print "<p/><fieldset>
-<legend><b><a href='help.chip-seq-analysis.html#tasks'>Discover motifs </a></b></legend>";
+<legend><b><a href='help.chip-motifs.html#tasks'>Discover motifs </a></b></legend>";
 
 #
 ### oligo analysis
@@ -430,7 +430,7 @@ print '
 
 	
 print "<p/><fieldset>
-<legend><b><a href='help.chip-seq-analysis.html#tasks'>Discover motifs </a></b></legend>";
+<legend><b><a href='help.chip-motifs.html#tasks'>Discover motifs </a></b></legend>";
 
 
 
