@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.167 2010/06/14 13:57:33 morgane Exp $
+# $Id: matrix-scan,v 1.168 2010/06/14 14:54:11 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -849,32 +849,27 @@ package main;
       unless ($main::infile{input}) {
 	&RSAT::error::FatalError("The option -bg_input requires to specify an input file (STDIN is not supported with this option.");
       }
+       
+      ## use count-words to calculate bginput
+      my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_");
+      $tmp_bg_file .= "_MotifSampler.txt";
+      my $oligo_len = $main::markov+1;
+      my $count_words_cmd = &RSAT::server::GetProgramPath("count-words",1);# die if cound-words not found
 
-      my $input_seq_length = 0;
-      my $atgc_found=0;## flag to deal with NNN-only sequences
-      my ($in, $input_dir) = &OpenInputFile($main::infile{input});
-      while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
-	     (($current_seq ne "") || ($seq_id ne ""))) {
-	     	$current_seq = lc($current_seq);
-	     	## skip the top sequences if only NNN (this fix a bug with matrix-scan use in footprint-scan)
-	     	if (($atgc_found == 0)&&($current_seq !~ /(a|c|t|g)/)){
-	     		$input_seq_length += length($current_seq);
-	     		next;
-	     	}
-	$atgc_found=1; ## sequence does not only contain NNN
-	## Sequence length
-	$input_seq_length += length($current_seq);
-	$bg_model->calc_from_seq($current_seq, add=>1);
-      }
-      close $in;
-      $bg_model->check_missing_transitions();
-
-      #calculate pseudo
-      unless ($bg_pseudo_user_specified) {
-     	$main::bg_pseudo = sqrt($input_seq_length)/(sqrt($input_seq_length) + $input_seq_length);
-     	&RSAT::message::Debug("sequence length: ", $input_seq_length,"bg pseudo-frequency calculated:",$main::bg_pseudo) 
-	  if ($main::verbose >= 3);
-      	}
+      my $bg_cmd = $count_words_cmd;
+      $bg_cmd .= " -i ".$main::infile{input};
+      $bg_cmd .= " -1str -l ".$oligo_len; ## -1str for matrix usage
+      $bg_cmd .= " | ".$SCRIPTS."/convert-background-model -from oligos -to MotifSampler";
+      $bg_cmd .= " -o ".$tmp_bg_file;
+      $bg_cmd .= " -bg_pseudo ".$bg_model->get_attribute("bg_pseudo");
+      &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 3);
+      &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
+      &RSAT::server::DelayedRemoval($tmp_bg_file);
+      $bg_quick_file = $tmp_bg_file;	
+      
+    $bg_model->load_from_file($tmp_bg_file, "motifsampler");
+    $bg_model->check_missing_transitions();
+      
     }
   } else {
     &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
@@ -3077,7 +3072,7 @@ sub CheckQuickScan {
 
   ## In addition, we want to check if the command actually works
   if ($quick_cmd_test) {
-    `matrix-scan-quick -h`;
+    `$quick_cmd_test -h`;
     if ($?) {
       &RSAT::message::Warning("matrix-scan-quick is installed but not working. Will use the slower version instead.");
       return(0);
@@ -3126,7 +3121,7 @@ sub QuickScan {
 	my $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
 	my $tmp_bg_file =  $TMP."/".$tmp_file_name.".ms";
 	my $convert_bg_cmd = 
-	  "convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$tmp_bg_file." -bg_pseudo ".$bg_model->get_attribute("bg_pseudo"); 
+	  $SCRIPTS."/convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$tmp_bg_file." -bg_pseudo ".$bg_model->get_attribute("bg_pseudo"); 
 	&RSAT::message::Debug("Converting background to motifsampler format:", $convert_bg_cmd) if ($main::verbose >= 3);
 	&doit($convert_bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
 	&RSAT::server::DelayedRemoval($tmp_bg_file);
@@ -3146,7 +3141,7 @@ sub QuickScan {
       my $bg_cmd = $count_words_cmd;
       $bg_cmd .= " -i ".$main::infile{input};
       $bg_cmd .= " -1str -l ".$oligo_len;
-      $bg_cmd .= " | convert-background-model -from oligos -to MotifSampler";
+      $bg_cmd .= " | ".$SCRIPTS."/convert-background-model -from oligos -to MotifSampler";
       $bg_cmd .= " -o ".$tmp_bg_file;
       $bg_cmd .= " -bg_pseudo ".$bg_model->get_attribute("bg_pseudo");
       &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 3);
@@ -3226,7 +3221,7 @@ sub QuickScan {
   		## calculate distibution of score
   		my $tmp_file_name = sprintf "matrix-distrib.%s", &AlphaDate();
 		my $tmp_distrib_file =  $TMP."/".$tmp_file_name.".tab";
-		my $matrix_distrib_cmd = "matrix-distrib ";
+		my $matrix_distrib_cmd = $SCRIPTS."/matrix-distrib ";
 		$matrix_distrib_cmd .= " -m ".$matrix_quick_file;
 		$matrix_distrib_cmd .= " -matrix_format tab";
 		$matrix_distrib_cmd .= " -pseudo ".$pseudo_counts;
