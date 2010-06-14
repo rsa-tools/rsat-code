@@ -10,6 +10,7 @@
 #define __PVAL__
 
 #include "utils.h"
+#include <math.h>
 
 typedef struct
 {
