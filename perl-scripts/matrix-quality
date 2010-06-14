@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.105 2010/06/14 14:03:21 jvanheld Exp $
+# $Id: matrix-quality,v 1.106 2010/06/14 16:00:44 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -154,7 +154,7 @@ the matrix were computed.
 distribution
 
  matrix-quality -v 1 -ms my_matrix.meme -matrix_format meme \
-   -noloo -perm matrix_sites 0 -bgfile my_background.txt \
+   -no_cv -perm matrix_sites 0 -bgfile my_background.txt \
    -o my_matrix_quality
 
 This will produce the simplest possible analysis: computing the score
@@ -173,7 +173,7 @@ To circumvent the problem of over-fitting mentioned above, we have
 need to perform the Leave-One-Out (LOO) procedure. Actually,
 I<matrix-scan> automatically runs the leave-one-out test by
 default. The reason why it was not done in the previous section is
-because we used the option -noloo, for the only purpose of
+because we used the option -no_cv, for the only purpose of
 illustrating the problem of overfitting. We will now run
 I<matrix-scan> in the normal way, without inactivating the LOO
 procedure.
@@ -244,7 +244,7 @@ BEGIN {
 }
 
 require "RSA.lib";
-use POSIX;
+use POSIX qw(ceil floor);
 use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::MarkovModel;
@@ -277,9 +277,9 @@ package main;
     $class_interval = 1/(10**$decimals);
     %perm_nb = (); ## Number of permutations per sequence set
     $perm_separate_distrib = 1; ## Calculate the distribution for each permuted matrix separately
-    $noloo = 0; # Inactivate the leave-one-out test and all the related outputs
+    $no_cv = 0; # Inactivate the leave-one-out test and all the related outputs
     $noicon = 0; # Inactivate the generation of icons (small version of the graphs for galleries)
-    $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
+    $cv_rm_twins = 1; ## Exclude twin sites in the cross-validation procedure.
     $pseudo_counts = 1;
     $bg_format = "oligos";
     $bg_model = new RSAT::MarkovModel();
@@ -317,8 +317,8 @@ package main;
 			      "export_matrix", ## Export the matrix and sites in various formats (tab, info, logos)
 			      "permute", ## Scan sequences with permuted matrices
 			      "theor", ## Calculate the theoretical distribution
-			      "loo", ## Leave-one-out test on the matrix sites
-			      "theor_cv", ## Calculate the theoretical distribution of loo partial matrices
+			      "cv", ## Cross-validation (loo or k-fold) on the matrix sites
+			      "theor_cv", ## Calculate the theoretical distribution of cross-validation partial matrices
 			      "scan", ## Scan sequences with matrix-scan
 			      "compare", ## Compare distributions between the various input files
 			      "graphs", ## Draw the graphs with distrib comparisons
@@ -355,16 +355,16 @@ package main;
     ## Check argument values
 
     ## Report user-selected contradictory options
-    if (($noloo) && ($task{loo})) {
-      &RSAT::message::Warning("Contradictory options: -noloo and -task loo. Task skipped.");
+    if (($no_cv) && ($tasks{cv})) {
+      &RSAT::message::Warning("Contradictory options: -no_cv and -task cv. Task skipped.");
     }
 
     ## If no tasks has been specified, execute them all
     if (($tasks{all}) || (scalar(keys(%tasks))==0)) {
       %tasks = %supported_tasks;
       $tasks{all} = 0;
-      if ($noloo) {
-	$task{loo} = 0;
+      if ($no_cv) {
+	$tasks{cv} = 0;
       }
     }
 
@@ -538,24 +538,26 @@ package main;
     ################################################################
     ## Calculate the Leave-one-out score distribution for the matrix sites
 
-    unless ($noloo) {
+    unless ($no_cv) {
 
-      $cv_suffix = "_cv";
+      $cv_type = "";
       if ($kfold > 0) {
-	$cv_suffix .= "_".$kfold."-fold";
+	$cv_type = $kfold."-fold";
       } else {
-	$cv_suffix .= "_loo";
+	$cv_type .= "loo";
       }
+      $cv_suffix = "_cv_".$cv_type;
 
 
 
+      $outfile{partial_matrices_cv} = $outfile{prefix}."_partial_matrices${cv_suffix}.tf"; push @files_to_index, "partial_matrices_cv";
       $outfile{matrix_sites_cv} = $outfile{prefix}."_matrix_sites${cv_suffix}.tab"; push @files_to_index, "matrix_sites_cv";
       $outfile{matrix_sites_cv_distrib} = $outfile{prefix}."_scan_matrix_sites${cv_suffix}_score_distrib.tab" ;push @files_to_index, "matrix_sites_cv_distrib";
-      if (($tasks{loo}) || ($tasks{compare}) || ($tasks{graphs})) {
+      if (($tasks{cv}) || ($tasks{compare}) || ($tasks{graphs})) {
 	push @distrib_files, $outfile{matrix_sites_cv_distrib}; $file_nb{matrix_sites_cv_distrib} = scalar(@distrib_files);
       }
-      if ($tasks{loo}) {
-	&LOO_scores($matrix, @matrix_scan_options);
+      if ($tasks{cv}) {
+	&CrossValidation($matrix, @matrix_scan_options);
       }
 
       ## Calculate the theorical distributions of LOO partial matrices
@@ -862,13 +864,13 @@ end of the matrix-scan command for scanning the specified sequence set.
 
 =pod
 
-=item B<-noloo>
+=item B<-no_cv>
 
 Do not apply the leave-one-out (LOO) test on the matrix site sequences.
 
 =cut
-	} elsif ($arg eq "-noloo") {
-	  $main::noloo = 1;
+	} elsif ($arg eq "-no_cv") {
+	  $main::no_cv = 1;
 
 =pod
 
@@ -883,7 +885,12 @@ are sampled in a random way.
 	} elsif ($arg eq "-kfold") {
 	  $main::kfold = shift(@arguments);
 	  &RSAT::error::FatalError($main::kfold, "Invalid k-fold value. Must be a Natural number.")
-	    unless &RSAT::util::IsNatural($kfold);
+	    unless &RSAT::util::IsNatural($main::kfold);
+	  &RSAT::error::FatalError("k-fold cannot be 1, because we need to partition the sites in testing and training sets.") 
+	    if ($main::kfold == 1);
+	  if ($main::kfold == 0) {
+	    &RSAT::message::Warning("0-fold cross-validation will be replaced by Leave-One-Out test.");
+	  }
 
 	    ## Skip the matrix permutation step
 
@@ -1389,72 +1396,132 @@ sub ExportInputSites {
 }
 
 ################################################################
-## LOO scoring of the sites Discard one site (the "left out"
-## site), build a partial matrix with the remaining ones, and
-## score the left-out site with the partial matrix. Iterate this
-## procedure over all sites.
-sub LOO_scores {
+## Cross-valitation scoring of the sites. 
+##
+##  Discard a subset of sites (the "test" sites), build a partial
+##  matrix with the remaining ones (training sites), and score the
+##  test sites with the partial matrix. Iterate this procedure for a
+##  random partition of k subsets of the sites (k-fold
+##  cross-validation), or for the n sites separately (Leav-one-out
+##  cross-validation).
+sub CrossValidation {
   my ($matrix, @args) = @_;
 
   if ($main::verbose >= 1) {
-    print $main::out "; LOO partial matrices\n";
+    print $main::out "; Cross-validation partial matrices\n";
   }
 
   my $seq_type = "matrix_sites_cv";
 
-  &RSAT::message::TimeWarn("LOO scoring of the matrix sites",  $outfile{matrix_sites_cv})
+  &RSAT::message::TimeWarn($cv_type, "cross-validation of the matrix sites",  $outfile{matrix_sites_cv})
     if ($main::verbose >= 1);
-  $loo_scores_handle = &OpenOutputFile($main::outfile{matrix_sites_cv});
+
+  ## open handle to hold the cross-validation scores of the sites
+  $cv_scores_handle = &OpenOutputFile($main::outfile{matrix_sites_cv});
+
+  ## open handle to print cross-validation matrices (together with their sites)
+  $cv_matrices_handle = &OpenOutputFile($outfile{partial_matrices_cv});
 
   my @sites = $matrix->get_attribute("sequences");
+  my $n = scalar(@sites);
+  my $matrix_width = length($sites[0]);
+
+  ################################################################
+  ## Discard "twin" sites : exclude sites identical to the ith test site
+  if ($cv_rm_twins) {
+    @sites = sort (@sites);
+    my @cleaned_sites = $sites[0];
+    for my $i (1..$#sites) {
+      unless (lc($sites[$i]) eq lc($sites[$i-1])) {
+	push @cleaned_sites, $sites[$i];
+      }
+    }
+    if (scalar(@sites) > scalar(@cleaned_sites)) {
+      &RSAT::message::Info("Discarding twin sites", scalar(@sites) - scalar(@cleaned_sites), "among", scalar(@sites)) if ($main::verbose >= 2);
+      print $main::out "; Matrix sites before twin removal: ", scalar(@sites), "/n";
+      print $main::out "; Matrix sites after twin removal: ", scalar(@cleaned_sites), "/n";
+      @sites = @cleaned_sites;
+    }
+    $n = scalar(@sites); ## Update the number of sites
+  }
 
 
+  ################################################################
+  ## Define the chunk size (k-fold or LOO)
+  if ($kfold > 0) {
+    $k = $kfold;
+    @sites = &RSAT::stats::permute(@sites);
+  } else {
+    $k = $n;
+  }
+
+  ################################################################
+  ## Check that the number of sites is sufficient for the k-fold cross-validation
+  if ($k > $n) {
+    &RSAT::error::FatalError($k, "Invalid value for k-fold validation: the fold number ($k) exceeds the number of non-redundant sites ($n)");
+  }
+
+  my $chunk = POSIX::floor($n/$k);
+  my $remain = $n%$k;
+  &RSAT::message::Info("k-fold cross validation", "k=".$k,
+		       "n=".$n,
+		       "chunk=".$chunk,
+		       "remain=".$remain,
+		      ) if ($main::verbose >= 3);
+
+
+
+  ## Build files with test sites and partial matrices
   my @partial_matrices = ();
-
-  for my $i (0..$#sites) {
-
-    ## Select the left out site
-    my $lo_site_nb = $i+1;
-    my $lo_site = $sites[$i];
-    my $lo_site_id = $matrix->get_attribute("name");
-    $lo_site_id .= "_site_".$lo_site_nb;
-
-
-    my $lo_site_file = $outfile{prefix}."_leftout_site_".$lo_site_nb.".fasta";
+  my $min_i = 0;
+  my $max_i = 0;
+  for my $group (1..$k) {
+    my $lo_site_file = $outfile{prefix}."_test_sites_".$group.".fasta";
     $lo_site_handle = &OpenOutputFile($lo_site_file);
-    my $lo_site_fasta = ">".$lo_site_id."\n";
-    $lo_site_fasta .= $lo_site."\n";
-    print $lo_site_handle $lo_site_fasta;
-    &RSAT::message::TimeWarn("Leftout site", $lo_site_nb."/".scalar(@sites), $lo_site_id, $lo_site, $lo_site_file) if ($main::verbose >= 5);
+
+    $min_i = $max_i + 1;
+    $max_i = $min_i + $chunk -1;
+    $max_i += 1 if ($group <= $remain);
+
+    ## Select the test site(s)
+    for my $i ($min_i..$max_i) {
+      my $lo_site_nb = $i;
+      my $lo_site = $sites[$i-1];
+      my $lo_site_id = $matrix->get_attribute("name");
+      $lo_site_id .= "_site_".$lo_site_nb;
+
+      my $lo_site_fasta = ">".$lo_site_id."\n";
+      $lo_site_fasta .= $lo_site."\n";
+      print $lo_site_handle $lo_site_fasta;
+#      &RSAT::message::TimeWarn("Test site", $lo_site_nb."/".scalar(@sites), $lo_site_id, $lo_site, $lo_site_file) if ($main::verbose >= 5);
+    }
     close $lo_site_handle;
+
+    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $lo_site_file) if ($main::verbose >= 5);
+
 
     ## Build a partial matrix with the other sites
     my $partial_matrix_name = $matrix->get_attribute("name");
-    $partial_matrix_name .= "_leftout_".$lo_site_nb;
+    $partial_matrix_name .= "_cv_".$group;
 
     my $partial_matrix = new RSAT::matrix();
     $partial_matrix->init();
     $partial_matrix->set_attribute("name", $partial_matrix_name);
-    $partial_matrix->set_attribute("number", $lo_site_nb);
-    $partial_matrix->set_attribute("ncol", length($lo_site));
+    $partial_matrix->set_attribute("number", $group);
+    $partial_matrix->set_attribute("ncol", $matrix_width);
     $partial_matrix->setAlphabet_lc(@alphabet);
-    $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
+#    $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
     push @partial_matrices, $partial_matrix;
-    for my $j (0..$#sites) {
-      next if ($j == $i) ; ## Discard the ith site (curently left out)
-
-      ## Discard "twin" sites : exclude sites identical to the ith leftout site
-      if ($loo_rm_twin) {
-	next if ($sites[$j] eq $sites[$i]);
+    for my $j (1..$n) {
+      if (($j < $min_i) || ($j > $max_i)) { ## Discard the test sites
+	$partial_matrix->add_site(lc($sites[$j]));
       }
-
-      $partial_matrix->add_site(lc($sites[$j]));
     }
     $partial_matrix->treat_null_values();
-    &RSAT::message::TimeWarn("Built partial matrix", $lo_site_nb."/".scalar(@sites)) if ($main::verbose >= 5);
+    &RSAT::message::TimeWarn("Built partial matrix", $group."/".scalar(@sites)) if ($main::verbose >= 5);
 
     ## Save the partial matrix in a file
-    my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$lo_site_nb.".tab";
+    my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$group.".tab";
     push @partial_matrix_files,  $partial_matrix_file;
     if ($main::verbose >= 1) {
       my @partial_matrix_sites = $partial_matrix->get_attribute("sequences");
@@ -1463,7 +1530,7 @@ sub LOO_scores {
 			 scalar(@partial_matrix_sites),
 			 $partial_matrix_file);
     }
-    $partial_matrix_handle = &OpenOutputFile($partial_matrix_file);
+    my $partial_matrix_handle = &OpenOutputFile($partial_matrix_file);
     $tmp_verbose = $verbose;
     $verbose = 0;
     print $partial_matrix_handle $partial_matrix->toString(sep=>"\t",
@@ -1472,24 +1539,37 @@ sub LOO_scores {
 							  );
     $verbose = $tmp_verbose;
     close $partial_matrix_handle;
-    &RSAT::message::TimeWarn("Exported partial matrix to file", $partial_matrix_file) if ($main::verbose >= 4);
+    &RSAT::message::TimeWarn("Exported partial matrix to tab file", $partial_matrix_file) if ($main::verbose >= 5);
 
-    ## Score the left out site with the partial matrix
+    ## Save the partial matrix in a separate file in TRANSFAC format, in order to get the sites together with the matrix
+#    my $partial_matrix_file_tf = $outfile{prefix}."_partial_matrix_".$group.".tf";
+#    $partial_matrix_handle = &OpenOutputFile($partial_matrix_file_tf);
+#    $tmp_verbose = $verbose;
+#    $verbose = 0;
+    print $cv_matrices_handle $partial_matrix->toString(sep=>"\t",
+							type=>"counts",
+							format=>"transfac",
+						       );
+#    $verbose = $tmp_verbose;
+#    close $partial_matrix_handle;
+#    &RSAT::message::TimeWarn("Exported partial matrix to tf file", $partial_matrix_file_tf) if ($main::verbose >= 5);
+
+    ################################################################
+    ## Score the test site(s) with the partial matrix
     my $matrix_scan_cmd = "";
-   #  if ($quick) {
-#       $matrix_scan_cmd .= $quick_scan_cmd;
-#     } else {
-    $matrix_scan_cmd .= "$SCRIPTS/matrix-scan";
-    $matrix_scan_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
-    $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
-    $matrix_scan_cmd .= " -m ".$partial_matrix_file;
-    $matrix_scan_cmd .= " -top_matrices 1";
-    $matrix_scan_cmd .= " -matrix_format tab";
-    $matrix_scan_cmd .= " -seq_format fasta";
-    $matrix_scan_cmd .= " -uth rank 1";
-#    }
-#    $matrix_scan_cmd .= " -v ".$main::verbose; ## no verbose needed here
+    if ($quick) {
+      $matrix_scan_cmd .= $quick_scan_cmd;
+    } else {
+      $matrix_scan_cmd .= "$SCRIPTS/matrix-scan";
+      $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
+      $matrix_scan_cmd .= " -matrix_format tab";
+      $matrix_scan_cmd .= " -seq_format fasta";
+      $matrix_scan_cmd .= " -uth rank 1";
+#      $matrix_scan_cmd .= " -top_matrices 1";
+    }
     $matrix_scan_cmd .= " -i ".$lo_site_file;
+    $matrix_scan_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
+    $matrix_scan_cmd .= " -m ".$partial_matrix_file;
     $matrix_scan_cmd .= " -decimals ".$decimals;
     $matrix_scan_cmd .= " -return sites";
     $matrix_scan_cmd .= " -1str";
@@ -1497,31 +1577,31 @@ sub LOO_scores {
     if (defined($main::scanopt{$seq_type})) {
       $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
     }
-    if ($i > 0) {
-      $matrix_scan_cmd .= " | grep -v '^;'";
+    $matrix_scan_cmd .= " | grep -v '^;'";
+    if ($group > 0) {
       $matrix_scan_cmd .= " | grep -v '^#'";
     }
-    # if ($quick) {
-#       ## Select the top ranking score
-#       $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
-#     }
-    &RSAT::message::TimeWarn("LOO command",  ($i+1)."/".scalar(@sites), $matrix_scan_cmd) if ($main::verbose >= 3);
+#    if ($quick) {
+#      ## Select the top ranking score
+#      $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
+#    }
+
+    push @cv_commands, $matrix_scan_cmd;
+
+    &RSAT::message::TimeWarn("Cross-validation command",  $group."/".$k, $matrix_scan_cmd) if ($main::verbose >= 5);
+
     my $score_result = `$matrix_scan_cmd`;
-    print $loo_scores_handle $score_result;
-    &RSAT::message::TimeWarn("LOO scored site",  ($i+1)."/".scalar(@sites)) if ($main::verbose >= 4);
+    print $cv_scores_handle $score_result;
+    &RSAT::message::TimeWarn("Cross-validation scored group",  $group."/".$k) if ($main::verbose >= 4);
   }
+  close $cv_scores_handle;
+  close $cv_matrices_handle;
 
-  ## Print the LOO parameters in the log file
-  print $main::out "\n; ", &AlphaDate(), "\trunning matrix-scan\n";
-  printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
-  if (defined($main::scanopt{$seq_type})) {
-      printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
-  }
-  print $main::out "\n";
-  close $loo_scores_handle;
+  print $main::out "; Cross-validation commands\n";
+  print $main::out join("\n", @cv_commands), "\n";
 
-  ## Prepare and run the classfreq command (to extract the distribution from the scores)
-  &RSAT::message::TimeWarn("Computing LOO distribution") if ($main::verbose >= 3);
+  ## Run the classfreq command (to extract the distribution from the scores)
+  &RSAT::message::TimeWarn("Computing CV distribution") if ($main::verbose >= 3);
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_cv}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
@@ -1591,7 +1671,7 @@ sub CalcSequenceDistrib {
     $matrix_scan_cmd .= " > ".$outfile{'empirical_distrib_'.$seq_type};
 
 
-    &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 0);
+    &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 5);
 
     ## Print the complete command in the log file
     print $main::out "\n; ", &AlphaDate(), "\tComputing score distribution\n";
@@ -2079,7 +2159,7 @@ sub CompareDistrib {
 	}
       }
 
-      unless ($noloo) {
+      unless ($no_cv) {
 	if ($tasks{theor_cv}) {
 
 	  $outfile{th_distrib_compa} = $outfile{prefix}."_theorical_score_distrib_compa";
