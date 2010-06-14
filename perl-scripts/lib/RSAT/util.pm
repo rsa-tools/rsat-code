@@ -311,23 +311,48 @@ sub RelativePath {
   my ($referring_file, $referred_file) = @_;
 
   my ($referring_dir, $referring_basename) = &RSAT::util::SplitFileName($referring_file);
-  my @referring_path = split "/", $referring_dir;
+  my @referring_path = split /\/+/, $referring_dir;
 
   my ($referred_dir, $referred_basename) = &RSAT::util::SplitFileName($referred_file);
-  my @referred_path = split "/", $referred_dir;
+  my @referred_path = split /\/+/, $referred_dir;
 
   my @shared_path = ();
-  while ((scalar(@referring_path) > 0) && (scalar(@referring_path) > 0)) {
-    last if ($referring_path[0] ne $referred_path[0]);
-    my $shared_folder = shift(@referring_path);
-    shift(@referred_path);
-    push @shared_path, $shared_folder;
+
+#  my $level = 0;
+  while ((scalar(@referring_path) > 0) && (scalar(@referred_path) > 0)) {
+#    $level++;
+#    &RSAT::message::Debug("level=".$level,
+#			  "\n\treferring=".$referring_path[0], join("; ", @referring_path),
+#			  "\n\treferred:".$referred_path[0], join("; ", @referred_path))
+#      if ($main::verbose >= 10);
+
+    if ($referring_path[0] eq $referred_path[0]) {
+      my $shared_folder = shift(@referring_path);
+      shift(@referred_path);
+      push @shared_path, $shared_folder;
+    } else {
+      last;
+    }
   }
 
   my $shared_path = join "/", @shared_path;
-  my $up_levels = scalar(@referring_path);
-  my $link = "../" x $up_levels;
-  $link .= join ("/", @referred_path, $referred_basename);
+
+  my $up_levels = 0;
+  my $link = "";
+
+  if ((defined($referring_path[0])) && ($referring_path[0] eq $referred_basename)) {
+    ## The referred path is the folder of the referring file
+    $link = ".";
+  } else {
+    $up_levels = scalar(@referring_path);
+    $link = "../" x $up_levels;
+    $link .= join ("/", @referred_path, $referred_basename);
+  }
+
+#  &RSAT::message::Debug("Computed relative path", $referring_file, $referred_file,
+#			$shared_path, $link,
+#			)
+#    if ($main::verbose >= 10);
 
   if (wantarray) {
     return ($link, $shared_path);
