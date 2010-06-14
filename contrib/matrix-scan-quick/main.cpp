@@ -326,7 +326,13 @@ int main(int argc, char *argv[])
     fasta_reader_t *reader = new_fasta_reader(fp);
 
     if (!distrib)
-        fprintf(fout, "#seq_id\tft_type\tft_name\tstrand\tstart\tend\tsequence\tweight\tproba_M\t\tproba_B\tPval\n");
+    {
+        fprintf(fout, "#seq_id\tft_type\tft_name\tstrand\tstart\tend\tsequence\tweight");
+        if (distribfile)
+            fprintf(fout, "\tPval\n");
+        else
+            fprintf(fout, "\n");
+    }
     
     // scan all sequences
     int s = 1;
@@ -336,7 +342,6 @@ int main(int argc, char *argv[])
         seq_t *seq = fasta_reader_next(reader);
         if (seq == NULL)
             break;
-
         scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, matrix_name, &scanned_pos);
         free_seq(seq);
     }

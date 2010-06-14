@@ -62,8 +62,6 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
         if (W >= threshold)
         {
             double Pval = score2pvalue(pvalues, W);
-
-
             if (values != NULL)
             {
                 values_add(values, W);
@@ -73,7 +71,7 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
                 //const char *seqstr = "?";
                 set_buffer(buffer, seq->data, i, l);
                 fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, 'D', a, b, buffer, W);
-                if (Pval != 0.0)
+                if (pvalues != NULL)
                     fprintf(fout, "\t%G", Pval);
                 fprintf(fout, "\n");
             }
@@ -102,7 +100,7 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
                 //const char *seqrcstr = "?";
                 set_buffer(buffer, seqrc->data, seq->size - i - l, l);
                 fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, 'R', a, b, buffer, Wrc);
-                if (Pval_rc != 0.0)
+                if (pvalues != NULL)
                     fprintf(fout, "\t%G", Pval_rc);
                 fprintf(fout, "\n");
             }
