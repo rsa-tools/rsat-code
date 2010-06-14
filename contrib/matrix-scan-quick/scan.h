@@ -31,6 +31,6 @@ typedef struct
 
 // scan seq with matrix
 int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values,
-            double threshold, int rc, pvalues_t *pvalues, int origin, char *matrix_name);
+            double threshold, int rc, pvalues_t *pvalues, int origin, char *matrix_name, int *scanned_pos);
 
 #endif
