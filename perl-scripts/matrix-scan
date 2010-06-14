@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.168 2010/06/14 14:54:11 morgane Exp $
+# $Id: matrix-scan,v 1.169 2010/06/14 15:52:17 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -4043,8 +4043,21 @@ sub PrintSequenceLimits {
 			   1-$orig_pos,
 			   $seq_len-$orig_pos,
 			   ".",
-			   0,
-			  ), "\n";
+			   0
+			  );
+	if ($return_fields{pval}){
+		print "\t";
+		print $main::out join ("\t", 
+		0,
+		0,
+		0);
+	}
+	if ($return_fields{eval}){
+		print "\t";
+		print $main::out join ("\t", 
+		0);
+	}
+	print $main::out "\n";
 
 #     print $main::out join ("\t", 
 # 			   $seq_id,
