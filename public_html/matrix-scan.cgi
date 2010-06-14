@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.32 2010/03/24 17:19:32 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.33 2010/06/14 15:27:18 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -42,8 +42,23 @@ $query = new CGI;
 &UpdateLogFile();
 
 ################################################################
+## quick  mode
+my $quick_mode = 0;
+if ($query->param("quick")) {
+	$parameters .= " -quick";
+	$quick_mode = 1;
+}
+
+################################################################
 ## sequence file
-($sequence_file,$sequence_format) = &GetSequenceFile();
+if ($quick_mode) {
+	($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $main::TMP."/".$tmp_file_name.".seq", 1);
+} else {
+	($sequence_file,$sequence_format) = &GetSequenceFile();
+}
+
+
+
 
 #### matrix-scan parameters
 &ReadMatrixScanParameters();
@@ -354,6 +369,25 @@ sub ReadMatrixScanParameters {
   ################################################################
   ## Return sites
   if ($query->param('analysis_type') eq "analysis_sites") {
+  	
+  	if ($query->param("return_site_limits") eq "on") {
+      $parameters .= " -return limits";
+    } 
+  	
+  	if ($quick_mode){
+  		 if ($query->param("return_field")){
+  				$parameters .= " -return ".$query->param("return_field");
+  		 }
+  		 my $th = $query->param("thresh_value");
+		 &RSAT::error::FatalError($th." is not a valid value for the threshold. Should be a number. ") unless (&IsReal($th));
+  		 if ($query->param("thresh_field") eq "weight"){
+  				$parameters .= " -lth score ".$th;
+  		 }
+  		 if ($query->param("thresh_field") eq "pval"){
+  				$parameters .= " -uth pval ".$th;
+  		  }	 
+  	} else {
+  	
     my @return_fields = qw(sites pval rank normw weight_limits bg_residues);
     foreach my $field (@return_fields) {
       if ($query->param("return_".$field) eq "on") {
@@ -361,9 +395,6 @@ sub ReadMatrixScanParameters {
       }
     }
     
-     if ($query->param("return_site_limits") eq "on") {
-      $parameters .= " -return limits";
-    }
 
     ## thresholds
     my @threshold_fields = qw(score pval sig rank proba_M proba_B normw);
@@ -380,6 +411,7 @@ sub ReadMatrixScanParameters {
 	$parameters .= " -uth $field $uth ";
       }
     }
+  }
   }
 
   ################################################################
