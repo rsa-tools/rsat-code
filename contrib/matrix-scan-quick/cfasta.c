@@ -48,9 +48,9 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
     do 
     {
         c = fasta_reader_getc(reader);
-        if (i < 1024 && c!= EOF && c != '\n')
+        if (i < 1024 && c!= EOF && c != '\n' && c != '\t' && c != ' ')
             seq->name[i++] = c;
-        if (c == ' ' && end == 0)
+        if (((c == ' ') || (c == '\t')) && end == 0)
             end = i;
     } while (c != EOF && c != '\n');
     if (end == 0)
