@@ -169,24 +169,7 @@ option {
 	/*text-align: center;*/
 }
 
-select {
-	padding-left:2px;
-	padding-right:2px;
-	margin-top:5px;
-	margin-bottom:5px;
-	display: inline;
-	vertical-align: middle;
-}
 
-
-input {
-	padding:2px;
-	margin-top:5px;
-        margin-bottom:5px;
-	vertical-align: middle;
-	margin-right:5px;
-	margin-left:5px;
-}
 
 #grey_border {
 	border-color: #CCCCCC;
@@ -271,6 +254,59 @@ body.results center {
 	font-weight: bold;
 }
 
+/* FORM 
+input:hover {background:#EFFBFB;}
+input:focus {background:#ffffff;}
+
+textarea:hover {background:#EFFBFB;}
+textarea:focus {background:#ffffff;}
+
+textarea,input {
+	background-color: #E7F6FD; 
+	border: 1px solid #0D73A7;
+	}
+
+input.formbutton {
+ font: 11px Verdana, Geneva, Arial, Helvetica, sans-serif;    
+ background-color: #D7E5F2;    
+ color: #102132;    
+ margin-left: 12px;    
+ margin-top: 3px;    
+ margin-bottom: 2px; 
+}
+*/
+
+fieldset {
+background: #EFFBFB;
+margin-left: 50px;
+margin-right: 50px;
+border: 1px solid;
+}
+
+legend {
+background: #D6EEFA;
+border: 1px solid;
+padding: 2px 6px;
+} 
+
+select {
+	padding-left:2px;
+	padding-right:2px;
+	margin-top:5px;
+	margin-bottom:5px;
+	display: inline;
+	vertical-align: middle;
+}
+
+
+input {
+	padding:2px;
+	margin-top:5px;
+        margin-bottom:5px;
+	vertical-align: middle;
+	margin-right:5px;
+	margin-left:5px;
+}
 
 /* TABLE */
 table.simple {
@@ -584,5 +620,4 @@ table.simpleform td.left {
 	color: #D6EEFA;
 	text-decoration: none;
 }
-
 
