@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.165 2010/06/14 09:00:24 morgane Exp $
+# $Id: matrix-scan,v 1.166 2010/06/14 10:38:22 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -435,6 +435,8 @@ package main;
 			      rank=>1,	## site-wise ranking
 			      normw=>1, ## Normalized weight
 			      
+			      proba_bm =>1, ## individual P_M and P_B proba
+			      
 			      eval=>1, ## pval * nb tests, only possible with matrix-scan-quick
 
 			      limits=>1, ## Sequence limits (for drawing feature maps)
@@ -462,6 +464,7 @@ package main;
   local %quick_forbidden_field = (
 				  'rank'=>1,
 				  'normw'=>1,
+				  'proba_bm' => 1,
 				  'seq_scores'=>1,
 				  'p_score'=>1,
 				  'bg_residues'=>1,
@@ -1071,8 +1074,7 @@ package main;
 			 end
 			 sequence
 			 weight
-			 proba_M
-			 proba_B);
+			 );
     if ($verbose >= 1) {
       my $f=0;
       print $out "; Output columns\n";
@@ -1086,6 +1088,10 @@ package main;
 	  print $out "\t", "Pval";
 	  print $out "\t", "ln_Pval";
 	  print $out "\t", "sig";
+      }
+      if ($return_fields{proba_bm}) {
+	  print $out "\t", "proba_M";
+	  print $out "\t", "proba_B";
       }
        if ($return_fields{eval}) {
        	print $out "\t", "eval";
@@ -1986,7 +1992,7 @@ matrix-scan options
 -bg_pseudo #	pseudo frequency for background model (must be a real between 0 and 1)
 -2str		scan both strands for DNA sequences.
 -1str		single-strand search for DNA sequences.
--return		lists of fields to return. Supported fields: sites, p_score, pval, seq_scores, rank, normw,
+-return		lists of fields to return. Supported fields: sites, p_score, pval, seq_scores, rank, normw, proba_BM,
                 limits,weight_limits, distrib, occ_proba, bg_model,bg_residues, matrix, freq_matrix, weight_matrix,crer
 -lth/uth param # : lower/upper threshold on some parameters
 
@@ -2675,6 +2681,11 @@ are calculated in base 10, but this can be modified with the option
 Score each sequence according to Bailey (1998), with the difference
 that, instead of computing the product of P-values, we compute the sum
 of significances.
+
+=item B<proba_BM:> P(S|M) and P(S|B)
+
+For each scored segment S, returns its probability under the matrix model P(S|M) and its
+probability under the background model P(S|B).
 
 =item B<p_score:> return the p_score
 
@@ -3642,29 +3653,20 @@ sub print_match {
 		     $match->get_attribute('end'),
 		     $match->get_attribute('description'),
 		     $match->get_attribute('score'),
-#		     sprintf("%5.2g\t%5.2g",
-		    sprintf("%.1e\t%.1e",
-			     $match->get_attribute('proba_M'),
-			     $match->get_attribute('proba_B'),
-			     )
-		     );
-#			 "site",
-#			 $matrix->{name},
-#			 $strand,
-#			 $start_pos,
-#			 $end_pos,
-#			 $segment,
-#			 $score,
-#			 sprintf("%5.2g\t%5.2g",
-#				 $proba_M,
-#				 $proba_B,
-#				)
+		);
 
     if ($return_fields{pval}) {
       print $out "\t", $match->get_attribute('pval');
       print $out "\t", $match->get_attribute('ln_pval');
       print $out "\t", $match->get_attribute('sig');
     }
+    
+    if ($return_fields{proba_bm}){
+		print $out "\t",    sprintf("%.1e\t%.1e",
+			     $match->get_attribute('proba_M'),
+			     $match->get_attribute('proba_B'),
+			     );
+	}  
     
     if ($return_fields{eval}) {
     	 print $out "\t", $match->get_attribute('eval');
