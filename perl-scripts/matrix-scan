@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.166 2010/06/14 10:38:22 morgane Exp $
+# $Id: matrix-scan,v 1.167 2010/06/14 13:57:33 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3264,9 +3264,8 @@ sub QuickScan {
       $l++;
       my @line = split (/\t/,$_);
       my $seq_id = $line[0];
-      $seq_id =~ s/\s+.*//;
       $match->force_attribute('seq_name', $seq_id);
-      
+
       ## Update statistics
       $matrix->{matches}++;
       $sequence_scores->{$seq_id}->{matches}++;
@@ -3282,12 +3281,9 @@ sub QuickScan {
       $sequence_scores->{$seq_id}->{weight_sum} += $score;
       $sequence_scores->{$seq_id}->{sig_sum} = 0;
       $match->force_attribute('score',$score);
-      
-      $match->force_attribute('proba_M',$line[8]);
-      $match->force_attribute('proba_B',$line[9]);
     
      if ($return_fields{pval}) {
-     	my $pval_value = $line[10];
+     	my $pval_value = $line[8];
      	chomp($pval_value);
      	$pval = sprintf("%.1e", $pval_value);
       	$match->force_attribute('pval',$pval);
