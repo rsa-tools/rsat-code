@@ -26,7 +26,7 @@ using namespace std;
 #include "dist.h"
 #include "pval.h"
 
-int VERSION = 20100611;
+int VERSION = 20100614;
 char *COMMAND_LINE;
 
 /*
@@ -330,13 +330,14 @@ int main(int argc, char *argv[])
     
     // scan all sequences
     int s = 1;
+    int scanned_pos = 0;
     while (1)
     {
         seq_t *seq = fasta_reader_next(reader);
         if (seq == NULL)
             break;
 
-        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, matrix_name);
+        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, matrix_name, &scanned_pos);
         free_seq(seq);
     }
     
@@ -354,6 +355,7 @@ int main(int argc, char *argv[])
     if (VERBOSITY >= 1)
     {
         strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", start_time);
+        printf("; Scanned positions %d\n", scanned_pos);
         printf("; Job started %s\n", time_buffer);
         strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", end_time);
         printf("; Job done    %s\n", time_buffer);
