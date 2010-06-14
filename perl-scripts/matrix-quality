@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.106 2010/06/14 16:00:44 jvanheld Exp $
+# $Id: matrix-quality,v 1.107 2010/06/14 19:42:26 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -481,6 +481,8 @@ package main;
     $matrix->force_attribute("name", $matrix_name);
     $matrix->setMarkovModel($bg_model) if ($main::outfile{bg_file_inclusive}) ;
 
+    
+    
     ################################################################
     ## Compute min and max weight values for score distributions
     local ($Wmin, $Wmax)  = $matrix->weight_range();
@@ -537,7 +539,12 @@ package main;
 
     ################################################################
     ## Calculate the Leave-one-out score distribution for the matrix sites
-
+    unless ( $matrix->get_attribute("sequences")  ){
+	  &RSAT::message::Warning("matrix file does not cotain sites for perfomring ".$kfold."-fold validation");
+	  $tasks{cv}=0; 
+	  $no_cv=1;
+    }
+    
     unless ($no_cv) {
 
       $cv_type = "";
@@ -553,10 +560,16 @@ package main;
       $outfile{partial_matrices_cv} = $outfile{prefix}."_partial_matrices${cv_suffix}.tf"; push @files_to_index, "partial_matrices_cv";
       $outfile{matrix_sites_cv} = $outfile{prefix}."_matrix_sites${cv_suffix}.tab"; push @files_to_index, "matrix_sites_cv";
       $outfile{matrix_sites_cv_distrib} = $outfile{prefix}."_scan_matrix_sites${cv_suffix}_score_distrib.tab" ;push @files_to_index, "matrix_sites_cv_distrib";
+   
+      
+   
+
       if (($tasks{cv}) || ($tasks{compare}) || ($tasks{graphs})) {
 	push @distrib_files, $outfile{matrix_sites_cv_distrib}; $file_nb{matrix_sites_cv_distrib} = scalar(@distrib_files);
       }
-      if ($tasks{cv}) {
+  
+     
+      if ($tasks{cv} ) {
 	&CrossValidation($matrix, @matrix_scan_options);
       }
 
