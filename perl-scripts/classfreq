@@ -42,9 +42,7 @@ foreach $a (0..$#ARGV) {
   } elsif (($ARGV[$a] eq "-col") && (&IsNatural($ARGV[$a+1]))) {
     push @cols, $ARGV[$a+1];
   }
-  
-}  
-
+}
 
 ##### open input file #####
 ($in, $input_dir) = &OpenInputFile($inputfile);
@@ -254,7 +252,7 @@ if ($verbose) {
   printf $out "; range\t%g\n",$max - $min;
 
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
 }
 
@@ -435,8 +433,8 @@ sub PrintOptions {
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; classfreq ";
-    &PrintArguments($main::out);
+  print $out "; classfreq ";
+  &PrintArguments($out);
   printf $out ";\t%-20s\t%s\n", "min", "minimum of class interval (inclusive)";
   printf $out ";\t%-20s\t%s\n", "max", "maximum of class interval (exclusive)";
   printf $out ";\t%-20s\t%s\n", "center", "center of class interval";
