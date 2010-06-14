@@ -44,15 +44,18 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
     // read header
     char c;
     int i = 0;
+    int end = 0;
     do 
     {
         c = fasta_reader_getc(reader);
         if (i < 1024 && c!= EOF && c != '\n')
             seq->name[i++] = c;
-        if (c == ' ')
-            break;
+        if (c == ' ' && end == 0)
+            end = i;
     } while (c != EOF && c != '\n');
-    seq->name[i] = '\0';
+    if (end == 0)
+        end = i;
+    seq->name[end] = '\0';
     
     if (c == EOF)
         return NULL;
