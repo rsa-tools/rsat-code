@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.54 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: position-analysis,v 1.55 2010/06/15 19:43:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -355,7 +355,8 @@ sub LocalReadPatterns {
 sub ReadSequence {
   &RSAT::message::TimeWarn(join("\t", "Reading sequences"))
     if ($main::verbose >= 2);
-  #### read all sequences and count oligo occurrences per class interval
+
+  ## Read all sequences and count oligo occurrences per class interval
   $sequence_number = 0;
   while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
 	 (($current_seq ne "") || ($current_id ne ""))) {
@@ -372,6 +373,7 @@ sub ReadSequence {
 
     ### statistics about sequences ###
     $seq_length[$sequence_number] = length($current_seq);
+    $sum_seq_length += $seq_length[$sequence_number];
     $id_list[$sequence_number] = $current_id;
     my $last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
     $max_last_pos = &max($max_last_pos, $last_pos);
@@ -398,11 +400,11 @@ sub ReadSequence {
 				   "",
 				   "Reading sequence",
 				   $sequence_number,
-				   $current_id,
-				   "len=".$seq_length[$sequence_number],
+				   "id=".$current_id,
+				   "length_sum=".$sum_seq_length,
 				   "last_pos=".$last_pos,
 				   "ref_pos=".$ref_pos,
-				  )) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%250==0)));
+				  )) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
 
     #### count oligonucleotides ####
     my $current_pos = 1;
@@ -485,7 +487,6 @@ sub ReadSequence {
     if ($main::verbose >= 2);
 
   for my $s (1..$sequence_number) {
-    $sum_seq_length += $seq_length[$s];
     if ($seq_length[$s] >= $oligo_length) {
       if ($strands eq "2str") {
 	$nb_possible_pos += 2*($seq_length[$s] + 1 - $oligo_length);
