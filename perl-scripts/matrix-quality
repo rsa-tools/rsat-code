@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.109 2010/06/15 10:39:24 amedina Exp $
+# $Id: matrix-quality,v 1.110 2010/06/15 19:41:33 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -539,14 +539,14 @@ package main;
 
     ################################################################
     ## Calculate the Leave-one-out score distribution for the matrix sites
-    unless ( $matrix->get_attribute("sequences")  ){
-	  &RSAT::message::Warning("matrix file does not cotain sites for perfomring ".$kfold."-fold validation");
-	  $tasks{cv}=0; 
-	  $no_cv=1;
+    my @matrix_sites = $matrix->get_attribute("sequences");
+    if (scalar(@matrix_sites) == 0) {
+      &RSAT::message::Warning("Cannot perform cross-validation because the matrix file does not contain any site.");
+      $tasks{cv}=0;
+      $no_cv=1;
     }
-    
-    unless ($no_cv) {
 
+    unless ($no_cv) {
       $cv_type = "";
       if ($kfold > 0) {
 	$cv_type = $kfold."-fold";
@@ -1374,8 +1374,6 @@ another type of background model is specified for matrix-scan
 background model to be used for the calculation of the matrix
 theorical distribution.
 
-If I<matrix-scan-quick> is available in the machine this programe will be used instead of matrix-scan.
-For I<matrix-scan-quick> the -bgfile most be in MotifSampler format.
 
 =cut
 
@@ -1471,7 +1469,7 @@ sub CrossValidation {
   ################################################################
   ## Check that the number of sites is sufficient for the k-fold cross-validation
   if ($k > $n) {
-    &RSAT::error::FatalError($k, "Invalid value for k-fold validation: the fold number ($k) exceeds the number of non-redundant sites ($n)");
+    &RSAT::error::FatalError("Cannot perform k-fold validation because the fold number (k=$k) exceeds the number of non-redundant sites (n=$n).");
   }
 
   my $chunk = POSIX::floor($n/$k);
