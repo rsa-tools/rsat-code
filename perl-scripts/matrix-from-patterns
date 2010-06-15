@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.43 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.44 2010/06/15 19:41:05 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -345,6 +345,7 @@ sub ReadArguments {
       $arg = shift (@arguments);
 
 	## Verbosity
+
 =pod
 
 =head1 OPTIONS
@@ -364,6 +365,7 @@ Level of verbosity (detail in the warning messages during execution)
 	    }
 
 	    ## Help message
+
 =pod
 
 =item B<-h>
@@ -375,6 +377,7 @@ Display full help message
 	    &PrintHelp();
 
 	    ## List of options
+
 =pod
 
 =item B<-help>
@@ -386,6 +389,7 @@ Same as -h
 	    &PrintOptions();
 
 	    ## Input file
+
 =pod
 
 =item B<-seq sequence_file>
@@ -398,6 +402,7 @@ allows to use the command within a pipe.
 	    $infile{sequence} = shift(@arguments);
 
 	    ## Sequence format
+
 =pod
 
 =item B<-format sequence_format>
@@ -409,6 +414,7 @@ Sequence format.
 	    $seq_format = shift(@arguments);
 
 	    ## Pattern file
+
 =pod
 
 =item B<-pl pattern_file>
@@ -424,7 +430,23 @@ dyad-analysis.
 	  $infile{patterns} = shift(@arguments);
 
 
+	    ## Assembly file
+
+=pod
+
+=item B<-asmb assembly_file>
+
+Assembly file. As an alternative to the pattern file, the patterns can
+be provided in the form of the result of pattern-assembly.
+
+=cut
+	} elsif ($arg eq "-asmb") {
+	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
+	    if (defined($infile{patterns}));
+	  $infile{assembly} = shift(@arguments);
+
 	  ## Max number of assemblies
+
 =pod
 
 =item B<-max_asmb_nb>
@@ -445,21 +467,27 @@ Note that when matrix-from-patterns is fed with pre-assembled patterns
 	  &RSAT::error::FatalError($max_asmb_nb, "is not a valid value for option -max_asmb_nb (should be Natural number).")
 	    unless (&IsNatural($max_asmb_nb));
 
-	    ## Assembly file
+	  ## Max substitutions for pattern assembly
+
 =pod
 
-=item B<-asmb assembly_file>
+=item B<-subst>
 
-Assembly file. As an alternative to the pattern file, the patterns can
-be provided in the form of the result of pattern-assembly.
+This parameter is passed to pattern-assembly, to indicate the maximal
+number of substitutions.
+
 
 =cut
-	} elsif ($arg eq "-asmb") {
-	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
-	    if (defined($infile{patterns}));
-	  $infile{assembly} = shift(@arguments);
+	} elsif ($arg eq "-subst") {
+	  $asmb_subst = shift(@arguments);
+	  &RSAT::error::FatalError($max_asmb_nb, "is not a valid value for option -max_asmb_nb (should be Natural number).")
+	    unless (&IsNatural($max_asmb_nb));
+
+
+
 
 	    ## Strands
+
 =pod
 
 =item B<-1str|-2str>
