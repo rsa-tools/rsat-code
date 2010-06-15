@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.108 2010/06/15 09:47:12 amedina Exp $
+# $Id: matrix-quality,v 1.109 2010/06/15 10:39:24 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1594,10 +1594,10 @@ sub CrossValidation {
     if ($group > 0) {
       $matrix_scan_cmd .= " | grep -v '^#'";
     }
-   if ($quick) {
+   #if ($quick) {
       ## Select the top ranking score
-      $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
-    }
+     # $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
+    #}
 
     push @cv_commands, $matrix_scan_cmd;
 
