@@ -1326,10 +1326,10 @@ sub ReadNextSequence {
 	push @comments, $_;
       }
     }
-	
+
     #	$sequence = &FoldSequence($sequence, 0);
     return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	
+
     ### NCBI/GENBANK format ###
   } elsif (($sequence_format eq "ncbi") ||
 	   ($sequence_format eq "genbank")) {
@@ -1359,7 +1359,7 @@ sub ReadNextSequence {
       } elsif (/^DEFINITION\s+/) { ### definition
 	push @comments, "$'";
       } elsif (/^ORIGIN/) {
-	warn "Reading sequence\t$seq_id\n" if ($verbose >= 2);
+	&RSAT::message::Info( "Reading sequence", $seq_id) if ($verbose >= 2);
 	$in_sequence = 1;
       } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
 	$position = $1;

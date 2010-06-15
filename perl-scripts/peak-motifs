@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.62 2010/06/12 23:31:27 jvanheld Exp $
+# $Id: peak-motifs,v 1.63 2010/06/15 19:40:42 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -264,7 +264,7 @@ sub PrintOptions {
 ################################################################
 ## Set parameter values for all the programs
 sub DefaultParameters {
-  &RSAT::message::TimeWarn("Setting default parameter values") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n; Setting default parameter values") if ($main::verbose >= 1);
 
   ## Formats
   $main::param{seq_format} = "fasta"; push(@main::param_list, "seq_format");
@@ -537,7 +537,7 @@ sub SetOutFileNames {
 ## Purge sequences
 sub PurgeOneSeq {
   my ($seq_file, $seq_type) = @_;
-  &RSAT::message::TimeWarn("Purging sequences", $seq_type) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n\n; Purging sequences", $seq_type) if ($main::verbose >= 1);
   my $cmd = $SCRIPTS."/convert-seq";
   $cmd .= " -i ".$seq_file;
   $cmd .= " -from ".$main::param{seq_format};
@@ -555,7 +555,7 @@ sub PurgeOneSeq {
 ## Compute sequence lengths
 sub SequenceLengths {
   my ($seq_file, $seq_type) = @_;
-  &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n\n; Computing sequence lengths", $seq_type) if ($main::verbose >= 1);
   my $cmd = $SCRIPTS."/sequence-lengths";
   $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen'};
@@ -598,7 +598,7 @@ sub SequenceLengths {
 sub CompositionProfiles {
   my ($seq_file, $seq_type) = @_;
   for my $ol (@profiles_oligo_lengths) {
-    &RSAT::message::TimeWarn("Computing composition profiles", $ol."nt") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\n\n; Computing composition profiles", $ol."nt") if ($main::verbose >= 1);
     my $cmd =$SCRIPTS."/position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"purged_".$seq_type};
     $cmd .= " -format fasta";
@@ -672,7 +672,7 @@ sub OligoAnalysis {
       ## Convert negative markov orders relative to the oligo length
       $markov += $len if ($markov < 0);
       my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
-      &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("\n\n; Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 1);
       my $cmd = $SCRIPTS."/oligo-analysis -v 1";
       $cmd .= " -quick";
       $cmd .= " -i ".$main::outfile{"purged_test"};
@@ -699,7 +699,7 @@ sub OligoAnalysis {
 sub OligoDiff {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'oligo_diff_'.$len.'nt';
-    &RSAT::message::TimeWarn("Running oligo-diff", $len."nt") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\n\n; Running oligo-diff", $len."nt") if ($main::verbose >= 1);
     my $cmd = $SCRIPTS."/oligo-diff -v 2";
     $cmd .= " -test ".$main::outfile{"purged_test"};
     $cmd .= " -ctrl ".$main::outfile{"purged_ctrl"};
@@ -725,7 +725,7 @@ sub OligoDiff {
 ################################################################
 ## Run dyad-analysis on the test set
 sub DyadAnalysis {
-  &RSAT::message::TimeWarn("Running dyad-analysis") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n\n; Running dyad-analysis") if ($main::verbose >= 1);
   my $cmd = $SCRIPTS."/dyad-analysis -v 2";
   $cmd .= " -i ".$main::outfile{"purged_test"};
   $cmd .= " -quick";
@@ -750,7 +750,7 @@ sub DyadAnalysis {
 sub PositionAnalysis {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'positions_'.$len.'nt';
-    &RSAT::message::TimeWarn("Running position-analysis", $len."nt") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\n Running position-analysis", $len."nt") if ($main::verbose >= 1);
     my $cmd = $SCRIPTS."/position-analysis -v 2";
     $cmd .= " -i ".$main::outfile{"purged_test"};
     $cmd .= " -format fasta";
@@ -784,7 +784,7 @@ sub LocalWords {
       ## Convert negative markov orders relative to the oligo length
       $markov += $len if ($markov < 0);
       my $pattern_type = 'local_words_'.$len.'nt'.'_mkv'.$markov;
-      &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("\n\n; Running local-word-analysis", $len."nt") if ($main::verbose >= 1);
       my $cmd = $PYTHON."/local-word-analysis -v 3";
       $cmd .= " -i ".$main::outfile{"purged_test"};
       #  $cmd .= " -format fasta";
@@ -1008,7 +1008,7 @@ sub ClusterMotifs {
 ################################################################
 ## Compare discovered motifs to the referencemotif 
 sub MotifsVersusReference {
-  &RSAT::message::TimeWarn("Comparing discovered motifs with reference motif") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n\n; Comparing discovered motifs with reference motif") if ($main::verbose >= 1);
 
   ## Comparison between discovered matrices, and with the reference motif
   my $cmd = $SCRIPTS."/compare-matrices -v 2";
@@ -1049,7 +1049,7 @@ sub MotifsVersusReference {
 ## Compare discovered motifs to the motif database
 sub MotifsVersusDatabase {
   foreach my $db_name (@motif_databases) {
-    &RSAT::message::TimeWarn("Comparing discovered motifs with database", $db_name) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\n\n; Comparing discovered motifs with database", $db_name) if ($main::verbose >= 1);
 
     ## Comparison between discovered matrices, and with the reference motif
     my $cmd = $SCRIPTS."/compare-matrices -v 2";
@@ -1092,12 +1092,17 @@ sub MotifsVersusDatabase {
 sub MatrixFromPatterns {
   my ($pattern_file, $pssm_file, $pattern_type) = @_;
 
-  &RSAT::message::TimeWarn("\tMatrix from patterns", $pattern_type) if ($verbose >= 1);
+  &RSAT::message::TimeWarn("\n;\tMatrix from patterns", $pattern_type) if ($verbose >= 1);
   my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
   $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -pl ".$pattern_file;
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
+  if ($pattern_type eq "dyads") {
+    $cmd .= " -subst 0";
+  } else {
+    $cmd .= " -subst 1";
+  }
   $cmd .= " -prefix ".$pattern_type;
   $cmd .= " -flanks 2";
   $cmd .= " -collect_method matrix-scan-quick";
@@ -1114,7 +1119,7 @@ sub MatrixFromPatterns {
 ## USES THE FIRST MATRIX OF EACH FILE.
 sub ScanSequences {
   $main::param{scan_min_score} = 7.5;
-  &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n\n; Scanning sequences") if ($main::verbose >= 1);
 #  foreach my $seq_type (@seq_types) {
     foreach my $pattern_type (@pattern_types) {
       my $cmd = $BIN."/matrix-scan-quick -v 1";
@@ -1203,7 +1208,7 @@ sub TimeLog {
   }
   #}
   close $timelog;
-  &RSAT::message::TimeWarn("Time log file", $main::outfile{timelog}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n\n; Time log file", $main::outfile{timelog}) if ($main::verbose >= 1);
 
   ## Create a HMTL version of the timelog table
   my $cmd = $SCRIPTS."/text-to-html";
@@ -2179,7 +2184,7 @@ Class interval for I<position-analysis>.
 ################################################################
 ## Check arguments
 sub CheckArguments {
-  &RSAT::message::TimeWarn("Checking arguments") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n\n; Checking arguments") if ($main::verbose >= 1);
 
   if ($infile{test_seq}) {
     unless (-e $infile{test_seq}) {
@@ -2254,7 +2259,7 @@ sub CheckArguments {
   foreach my $task (@supported_tasks) {
    push (@tasks, $task) if $task{$task};
   }
-  &RSAT::message::Info("Tasks: ", join (",", @tasks)) if ($main::verbose >= 1);
+  &RSAT::message::Info("\n\n; Tasks: ", join (",", @tasks)) if ($main::verbose >= 1);
 }
 
 ################################################################
