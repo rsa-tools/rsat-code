@@ -754,12 +754,15 @@ sub to_TRANSFAC {
       ## Print sequences
       my @site_ids = $self->get_attribute("site_ids");
       my @site_seq = $self->get_attribute("sequences");
-      foreach my $i (0..$#site_ids) {
+      foreach my $i (0..$#site_seq) {
 	## TRANSFAC biding site description
 	# BS (SITE accession no.; Start position for matrix sequence;
 	#     length of sequence used; BS number of gaps inserted;
 	#     strand orientation)
-	my $site_id = $site_ids[$i];
+	my $site_id = "site_".$i;
+	if (defined($side_ids[$i])) {
+	  $site_id = $side_ids[$i];
+	};
 	my $site_seq = $site_seq[$i];
 	$to_print .= sprintf("BS  %s; %s; 1; %s; 0; p\n", uc($site_seq), $site_id, length($site_seq));
       }
