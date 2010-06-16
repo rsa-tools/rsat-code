@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.110 2010/06/15 19:41:33 jvanheld Exp $
+# $Id: matrix-quality,v 1.111 2010/06/16 15:26:31 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -647,13 +647,15 @@ package main;
 
     if ($tasks{clean}) {
       ## Remove the single permuted matrix files (all matrices are stored in another file)
-      for my $i (1..$perm_nb_max) {
-	my $perm_file = $outfile{'matrix_perm_col_'.$i};
-	if ($perm_file) {
-	  my $clean_cmd = "rm -f ".$perm_file;
-	  &doit($clean_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	if(defined($perm_nb_max)){
+	    for my $i (1..$perm_nb_max) {
+		my $perm_file = $outfile{'matrix_perm_col_'.$i};
+		if ($perm_file) {
+		    my $clean_cmd = "rm -f ".$perm_file;
+		    &doit($clean_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+		}
+	    }
 	}
-      }
 
       ## Remove the files containing theorical distribution computed from partial matrices
       if (scalar(@partial_matrix_files) > 0) {
