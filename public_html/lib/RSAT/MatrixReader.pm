@@ -38,6 +38,7 @@ formats.
 			   'feature'=>1,
 			   'gibbs'=> 1,
 			   'infogibbs'=>1,
+			   'info-gibbs'=>1,
 			   'jaspar'=>1,
 			   'meme'=>1,
 			   'motifsampler'=>1,
@@ -82,6 +83,7 @@ sub readFromFile {
     $format = lc($format);
     $format =~ s/^cb$/cluster-buster/;
     $format =~ s/^tf$/transfac/;
+    $format =~ s/^info-gibbs$/infogibbs/;
 
     my @matrices = ();
 
@@ -629,11 +631,6 @@ sub _readFromInfoGibbsFile {
 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
-#    if ($file) {
-#	open INPUT, $file;
-#	$in = INPUT;
-#    }
-
 
     ## read header
     if ($args{header}) {
@@ -669,31 +666,25 @@ sub _readFromInfoGibbsFile {
       chomp($line); ## Suppress newline
       $line =~ s/\r//; ## Suppress carriage return
       $line =~ s/(^.)\|/$1\t\|/; ## Add missing tab after residue
-      
-      $line_aux=$line;
+      $line_aux = $line;
       @aux_line=split (/ +/,$line_aux);
 
       if ($line =~ /^; random see/ ) {
 	  $matrix->force_attribute("random_seed", pop (@aux_line) );
 	  next;
-      }
-      elsif ($line =~ /^; number of runs/ ){
+      } elsif ($line =~ /^; number of runs/ ){
 	  $matrix->set_attribute("num_runs", pop (@aux_line) );
 	  next;
-      }          
-      elsif ($line =~ /^; number of iterations/){
+      } elsif ($line =~ /^; number of iterations/){
 	  $matrix->set_attribute("num_iterations", pop (@aux_line) ) ;
 	  next;
-      }
-      elsif ($line =~ /^; sequences/){
+      } elsif ($line =~ /^; sequences/){
 	  $matrix->set_attribute("nb_seq" , pop (@aux_line) );  
 	  next;
-      }
-      elsif ($line =~ /^; total size in bp/){
+      } elsif ($line =~ /^; total size in bp/){
 	  $matrix->set_attribute("total_size_bp",  pop (@aux_line) ) ;
 	  next;
-      }
-      elsif ($line =~ /^; expected motif occurrences/){
+      } elsif ($line =~ /^; expected motif occurrences/){
 	  $matrix->set_attribute("exp_motif_occ",  pop (@aux_line) ) ;  
 	  next;
       }elsif ($line =~ /^; avg.llr/){
@@ -702,25 +693,19 @@ sub _readFromInfoGibbsFile {
       }elsif ($line =~ /^; avg.ic/){
 	  $matrix->set_attribute("avg_ic",  pop (@aux_line) ) ;  
 	  next;
-      } 
-      elsif ($line =~ /^; log likelihood ratio/){
+      }  elsif ($line =~ /^; log likelihood ratio/){
 	  $matrix->set_attribute("llr",  pop (@aux_line) ) ;  
 	  next;
-      } 
-      elsif ($line =~ /^; information content/){
+      }  elsif ($line =~ /^; information content/){
 	  $matrix->set_attribute("ic",  pop (@aux_line) ) ;  
 	  next;
-      }
-      elsif ($line =~ /^; seq/ ) {
+      } elsif ($line =~ /^; seq/ ) {
       	  $no_motif = 0;
-      }
-      elsif( ($line =~ /^;.+-i/) ){
+       } elsif( ($line =~ /^;.+-i/) ){
 	  $line =~ s/; //;
 	  $matrix->set_attribute("command", $line );
 	  next;
       }
-      
-      
       if ($line =~ /^; seq	strand	pos	site/ ){
 	  &RSAT::message::Info("Reading sequences from infogibbs ") if ($main::verbose >= 5);
 	  $read_seqs=1; 
@@ -728,14 +713,14 @@ sub _readFromInfoGibbsFile {
 	#  <STDIN>;
 	  next;
       }
-      
+
       next if ( ($line =~ /^;/) && ($no_motif)) ; # skip comment lines
-      
-      if ($read_seqs && ($line =~ /^; \d/) ){
+
+      if ($read_seqs && ($line =~ /^;\s+\d/) ){
 	  $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
 	  #print $line."\n";
 	  local @fields2 = split /\t/, $line;
-	  local $site_sequence= $fields2[4];	  
+	  local $site_sequence= $fields2[4];
 	  $matrix->push_attribute("sequences", $site_sequence);
 	  &RSAT::message::Debug("site", $site_sequence) if ($main::verbose >= 5);
 	 # <STDIN>;
