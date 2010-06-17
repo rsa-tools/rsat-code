@@ -679,6 +679,8 @@ sub GnuPlotEPS {
   ## fonts
   $gnuplot_cmd .= "small='Arial,9'\n";
   $gnuplot_cmd .= "big='Arial,11'\n";
+  ## add the ; to the default comment character # 
+  $gnuplot_cmd .= "set datafile commentschars '#;'\n";
 
   ## color
   if ($monochrome) {
