@@ -889,10 +889,10 @@ sub GnuPlotEPS {
 
   ## hline and vline
   if ($hline){
-  	$gnuplot_cmd .= "set arrow from graph 0, ".$hline_pos." to graph 1, ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."'\n";
-  }
+  	$gnuplot_cmd .= "set arrow from graph 0, first ".$hline_pos." to graph 1, first ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."'\n";
+   }
   if ($vline){
-  	$gnuplot_cmd .= "set arrow from ".$vline_pos.", graph 0  to ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."'\n";
+  	$gnuplot_cmd .= "set arrow from first ".$vline_pos.", graph 0  to first ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."'\n";
   }
 
   ## additional user-specified commands
