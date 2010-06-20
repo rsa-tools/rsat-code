@@ -1799,7 +1799,6 @@ OPTIONS
 			Several columns can be specified by:
 				-ycol #,#,#
 			A range of columns can be specified by:
-				-ycol #-#
 			They have to be separated by commas without spaces. 
 	-xlog #		X data are displayed on a logarithmic scale
 			If the next argument is a number, it provides the 
@@ -2079,7 +2078,7 @@ sub ReadArguments {
 	@y_col_list = ();
 	push @y_col_list, $ARGV[$a+1]-1;
 
-	### range of column
+	### range of columns
       } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
 	       (&IsNatural($1)) &&
 	       (&IsNatural($2)) && 
