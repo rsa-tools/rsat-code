@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.114 2010/06/20 15:36:26 jvanheld Exp $
+# $Id: matrix-quality,v 1.115 2010/06/20 21:54:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1730,7 +1730,9 @@ sub CalcSequenceDistrib {
 
 
     local $matrix_scan_cmd = "";
-    if ($quick) {
+    if (($quick) && 
+	!($scanopt{$seq_type}) ## Scanning options may be incompatible with matrix-scan-quick -> if specified, we pass the command to matrix-scan
+       ) {
       $matrix_scan_cmd = $quick_scan_cmd;
     } else {
       $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
@@ -1746,16 +1748,22 @@ sub CalcSequenceDistrib {
     $matrix_scan_cmd .= " -decimals ".$decimals;
     $matrix_scan_cmd .= join(" ", "", @args);
 
-
-#    &AddSequenceDistribOptions_classfreq();
-    &AddSequenceDistribOptions_direct();
-
     ## Sequence type-Specific options
     &RSAT::message::TimeWarn("\tScanning options for ".$seq_type,  $scanopt{$seq_type})
       if ((defined($main::scanopt{$seq_type})) && ($main::verbose >= 1));
     if (defined($main::scanopt{$seq_type})) {
       $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
     }
+
+    if ($scanopt{$seq_type}) {
+      ## Scanning options may be ignored by the option -return distrib
+      ## -> if specified, we detect sites and use classfeq do
+      ## determine the distirbution of weight scores
+      &AddSequenceDistribOptions_classfreq();
+    } else {
+      &AddSequenceDistribOptions_direct();
+    }
+
     $matrix_scan_cmd .= " > ".$outfile{'empirical_distrib_'.$seq_type};
 
     &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 5);
