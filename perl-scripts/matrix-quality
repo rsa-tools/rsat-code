@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.112 2010/06/20 09:45:16 jvanheld Exp $
+# $Id: matrix-quality,v 1.113 2010/06/20 09:55:39 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1490,36 +1490,29 @@ sub CrossValidation {
   my $max_i = 0;
   for my $group (1..$k) {
 
+    ## Define the sites that will be used for testing (indices between min_i and max_i
     $min_i = $max_i + 1;
     $max_i = $min_i + $chunk -1;
     $max_i += 1 if ($group <= $remain);
 
-    ## Select the test site(s)
     my $test_sites_fasta = "";
-    for my $i ($min_i..$max_i) {
-      my $test_sites_nb = $i;
-      my $test_site = $sites[$i-1];
-      my $test_site_id = $matrix->get_attribute("name");
-      $test_site_id .= "_site_".$test_sites_nb;
 
-      $test_sites_fasta .= ">".$test_site_id."\n";
-      $test_sites_fasta .= $test_site."\n";
+    ## Select the test site(s)
+#    for my $i ($min_i..$max_i) {
+#      my $test_sites_nb = $i;
+#      my $test_site = $sites[$i-1];
+#      my $test_site_id = $matrix->get_attribute("name");
+#      $test_site_id .= "_site_".$test_sites_nb;
+#
+#      $test_sites_fasta .= ">".$test_site_id."\n";
+#      $test_sites_fasta .= $test_site."\n";
 #      &RSAT::message::TimeWarn("Test site", $test_sites_nb."/".scalar(@sites), $test_site_id, $test_site, $test_sites_file) if ($main::verbose >= 5);
-    }
-
-    ## Print test site(s) in a file
-    my $test_sites_file = $outfile{prefix}."_test_sites_".$group.".fasta";
-    $test_sites_handle = &OpenOutputFile($test_sites_file);
-    print $test_sites_handle $test_sites_fasta;
-    close $test_sites_handle;
-
-    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $test_sites_file, $test_sites_fasta) if ($main::verbose >= 0);
+#    }
 
 
     ## Build a partial matrix with the other sites
     my $partial_matrix_name = $matrix->get_attribute("name");
     $partial_matrix_name .= "_cv_".$group;
-
     my $partial_matrix = new RSAT::matrix();
     $partial_matrix->init();
     $partial_matrix->set_attribute("name", $partial_matrix_name);
@@ -1528,17 +1521,31 @@ sub CrossValidation {
     $partial_matrix->setAlphabet_lc(@alphabet);
 #    $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
     push @partial_matrices, $partial_matrix;
-    for my $j (1..$n) {
-      my $site = lc($sites[$j-1]);
-      if (($j < $min_i) || ($j > $max_i)) { ## Discard the test sites
+    for my $i (1..$n) {
+      my $sites_nb = $i;
+      my $site = lc($sites[$i-1]);
+      my $site_id = $matrix->get_attribute("name");
+      $site_id .= "_site_".$sites_nb;
+      if (($i < $min_i) || ($i > $max_i)) { ## Discard the test sites
 	$partial_matrix->add_site($site);
-	&RSAT::message::Debug("Partial matrix", "group=".$group."/".$k, "including site", $j, $site) if ($main::verbose >= 0);
+	&RSAT::message::Debug("Partial matrix", "group=".$group."/".$k, "including site", $i, $site) if ($main::verbose >= 0);
       } else {
-	&RSAT::message::Debug("Partial matrix", "group=".$group."/".$k, "discarding site", $j, $site) if ($main::verbose >= 0);
+	$test_sites_fasta .= ">".$site_id."\n";
+	$test_sites_fasta .= $site."\n";
+	&RSAT::message::Debug("Partial matrix", "group=".$group."/".$k, "discarding site", $i, $site) if ($main::verbose >= 0);
       }
     }
     $partial_matrix->treat_null_values();
     &RSAT::message::TimeWarn("Built partial matrix", $group."/".scalar(@sites)) if ($main::verbose >= 5);
+
+
+    ## Print test site(s) in a file
+    my $test_sites_file = $outfile{prefix}."_test_sites_".$group.".fasta";
+    $test_sites_handle = &OpenOutputFile($test_sites_file);
+    print $test_sites_handle $test_sites_fasta;
+    close $test_sites_handle;
+
+    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $test_sites_file, $test_sites_fasta) if ($main::verbose >= 5);
 
     ## Save the partial matrix in a file
     my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$group.".tab";
