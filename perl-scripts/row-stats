@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: row-stats,v 1.10 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: row-stats,v 1.11 2010/06/20 15:36:01 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:37:27 jvanheld>
 #
@@ -24,12 +24,23 @@ local $in = STDIN;
 local $out = STDOUT;
 local $number_format = "%g";
 local $sort = 0;
+local $stats_before = 0;
 
-&ReadArguments;
-
+&ReadArguments();
 
 #### check argument values ####
 
+## Check data columns
+my %data_col = ();
+my $data_columns = scalar(@data_columns);
+if ($data_columns > 0) {
+    foreach my $col (@data_columns) {
+	&RSAT::message::FatalError($col, "Invalid column specification, should be a strictly positive Natural number")
+	    unless ((&IsNatural($col)) && ($col > 0));
+	$data_col_index{$col-1} = 1; ## Column numbers start at 1, field indexes start at 0
+    }
+    &RSAT::message::Info("Data columns", join (",", sort {$a <=> $b} keys(%data_col_index))) if ($main::verbose >= 2);
+}
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
@@ -50,13 +61,22 @@ while (<$in>) {
 
     ## Treat header line
     if (/^#/) {
-	$header_line = join ("\t",
-			     $_,
-			     "min",
-			     "max",
-			     "sum",
-			     "avg"
-	    );
+	if ($stats_before) {
+	    s/^#//;
+	    $header_line = join ("\t",
+				 "#min",
+				 "max",
+				 "sum",
+				 "avg",
+				 $_);
+	} else {
+	    $header_line = join ("\t",
+				 $_,
+				 "min",
+				 "max",
+				 "sum",
+				 "avg");
+	}
 	$header_line .= "\n";
 	unless ($sort) {
 	    print $out $header_line;
@@ -67,14 +87,39 @@ while (<$in>) {
     ## Treat other lines
 #    &RSAT::message::Debug($line_nb, $_) if ($main::verbose >= 10);
     my $to_print = $_;
-    my @values = split "\t";
-    my $min = sprintf "${number_format}", &checked_min(@values);
-    my $max = sprintf "${number_format}", &checked_max(@values);
-    my $sum = sprintf "${number_format}", &checked_sum(@values);
-    my $avg = sprintf "${number_format}", &checked_avg(@values);
-    $to_print .= "\t";
-    $to_print .= join ("\t", $min, $max, $sum, $avg);
-    $to_print .= "\n";
+    my @fields = split "\t";
+    my @values = ();
+    if ($data_columns > 0) {
+	for $i (0..$#fields) {
+	    if ($data_col_index{$i}) {
+		my $value =  $fields[$i];
+		if (&IsReal($value)) {
+		    push @values, $value;
+#		    &RSAT::message::Debug("col=".$i, "value=".$value) if ($main::verbose >= 5);
+		}
+	    }
+	}
+    } else {
+	@values = @fields;
+    }
+    my $min = "NA";
+    my $max = "NA";
+    my $sum = "NA";
+    my $avg = "NA";
+    if (scalar(@values) > 0) {
+	$min = sprintf "${number_format}", &checked_min(@values);
+	$max = sprintf "${number_format}", &checked_max(@values);
+	$sum = sprintf "${number_format}", &checked_sum(@values);
+	$avg = sprintf "${number_format}", &checked_avg(@values);
+    }
+    if ($stats_before) {
+      $to_print = join ("\t", $min, $max, $sum, $avg, $to_print);
+      $to_print .= "\n";
+    } else {
+      $to_print = join ("\t", $to_print, $min, $max, $sum, $avg);
+      $to_print .= "\n";
+    }
+
 
     if ($sort) {
       ## Index line for printing after sorting
@@ -146,6 +191,15 @@ OPTIONS
 		Any format specification that is compliant with the
 		perl printf function is supported (e.g. '%7.4f')
 	-sort	sort lines by decreasing value of the row sum
+	-col #	column(s) containing data 
+		Several columns can be specified by:
+			-ycol #,#,#
+		A range of columns can be specified by:
+			-ycol #-#
+	-before
+		add the stat columns before the input line (by
+         	default, they are added at the end of each input
+         	line).
 
 INPUT FORMAT
 
@@ -182,6 +236,8 @@ row-stats options
 -v	verbose
 -nf	number format (e.g. '%7.4f')
 -sort	sort lines by decreasing value of the row sum
+-col	data columns
+-before	add stat columns before rather than afte the input line
 End_short_help
   close HELP;
   exit;
@@ -224,6 +280,34 @@ sub ReadArguments {
       ### sort
     } elsif ($ARGV[$a] eq "-sort") {
       $sort = 1;
+
+      #### add info before the input line
+    } elsif ($ARGV[$a] eq "-before") {
+	$stats_before = 1;
+
+    } elsif ($ARGV[$a] eq "-col") {
+      $col_string = $ARGV[$a+1];
+      ### single column
+      if (&IsNatural($ARGV[$a+1])) {
+	  push @data_columns, $ARGV[$a+1]-1;
+	  
+	  ### range of columns
+      } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
+	       (&IsNatural($1)) &&
+	       (&IsNatural($2)) && 
+	       ($2 >= $1)) {
+	  for $col ($1..$2) {
+	      push  @data_columns, $col;
+	  }
+	  
+	  ### comma-separated list of columns
+      } elsif ($ARGV[$a+1] =~ /\,/) {
+	  push @data_columns, split(/,/,$col_string);
+	  
+      } else {
+	  &RSAT::message::FatalError("Invalid column specification.");
+      }
+
     }
   }
 }
