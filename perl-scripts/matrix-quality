@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.111 2010/06/16 15:26:31 amedina Exp $
+# $Id: matrix-quality,v 1.112 2010/06/20 09:45:16 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1489,28 +1489,31 @@ sub CrossValidation {
   my $min_i = 0;
   my $max_i = 0;
   for my $group (1..$k) {
-    my $lo_site_file = $outfile{prefix}."_test_sites_".$group.".fasta";
-    $lo_site_handle = &OpenOutputFile($lo_site_file);
 
     $min_i = $max_i + 1;
     $max_i = $min_i + $chunk -1;
     $max_i += 1 if ($group <= $remain);
 
     ## Select the test site(s)
+    my $test_sites_fasta = "";
     for my $i ($min_i..$max_i) {
-      my $lo_site_nb = $i;
-      my $lo_site = $sites[$i-1];
-      my $lo_site_id = $matrix->get_attribute("name");
-      $lo_site_id .= "_site_".$lo_site_nb;
+      my $test_sites_nb = $i;
+      my $test_site = $sites[$i-1];
+      my $test_site_id = $matrix->get_attribute("name");
+      $test_site_id .= "_site_".$test_sites_nb;
 
-      my $lo_site_fasta = ">".$lo_site_id."\n";
-      $lo_site_fasta .= $lo_site."\n";
-      print $lo_site_handle $lo_site_fasta;
-#      &RSAT::message::TimeWarn("Test site", $lo_site_nb."/".scalar(@sites), $lo_site_id, $lo_site, $lo_site_file) if ($main::verbose >= 5);
+      $test_sites_fasta .= ">".$test_site_id."\n";
+      $test_sites_fasta .= $test_site."\n";
+#      &RSAT::message::TimeWarn("Test site", $test_sites_nb."/".scalar(@sites), $test_site_id, $test_site, $test_sites_file) if ($main::verbose >= 5);
     }
-    close $lo_site_handle;
 
-    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $lo_site_file) if ($main::verbose >= 5);
+    ## Print test site(s) in a file
+    my $test_sites_file = $outfile{prefix}."_test_sites_".$group.".fasta";
+    $test_sites_handle = &OpenOutputFile($test_sites_file);
+    print $test_sites_handle $test_sites_fasta;
+    close $test_sites_handle;
+
+    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $test_sites_file, $test_sites_fasta) if ($main::verbose >= 0);
 
 
     ## Build a partial matrix with the other sites
@@ -1526,8 +1529,12 @@ sub CrossValidation {
 #    $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
     push @partial_matrices, $partial_matrix;
     for my $j (1..$n) {
+      my $site = lc($sites[$j-1]);
       if (($j < $min_i) || ($j > $max_i)) { ## Discard the test sites
-	$partial_matrix->add_site(lc($sites[$j]));
+	$partial_matrix->add_site($site);
+	&RSAT::message::Debug("Partial matrix", "group=".$group."/".$k, "including site", $j, $site) if ($main::verbose >= 0);
+      } else {
+	&RSAT::message::Debug("Partial matrix", "group=".$group."/".$k, "discarding site", $j, $site) if ($main::verbose >= 0);
       }
     }
     $partial_matrix->treat_null_values();
@@ -1580,7 +1587,7 @@ sub CrossValidation {
       $matrix_scan_cmd .= " -uth rank 1";
 #      $matrix_scan_cmd .= " -top_matrices 1";
     }
-    $matrix_scan_cmd .= " -i ".$lo_site_file;
+    $matrix_scan_cmd .= " -i ".$test_sites_file;
     $matrix_scan_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
     $matrix_scan_cmd .= " -decimals ".$decimals;
