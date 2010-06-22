@@ -31,6 +31,8 @@ $default{output}="display";
 $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "meme";
+$default{kfold}="0";
+
 $default{permutation1} = "1";
 $default{permutation2} = "1";
 $default{tag1} = "sequence_set1";
@@ -45,7 +47,7 @@ $checked{$default{bg_method}} = "CHECKED";
 $default{organism}="Escherichia_coli_K12";
 #$default{html_title}="";
 
-&ReadMatrixFromFile();
+
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -54,6 +56,9 @@ foreach $key (keys %default) {
   }
 }
 
+&ListParameters() if ($ENV{rsat_echo} >=2);
+
+&ReadMatrixFromFile();
 
 ################################################################
 ### print the form ###
@@ -73,32 +78,43 @@ print "The most classical use of the program is to compare score distributions
 print "<p>Program developed by <a target='_top' href='http://www.ccg.unam.mx/ccg-OrganicG/personalInfo?idPersona=253'>Alejandra Medina Rivera</a>, \n";
 print " <a target='_top' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</A>,\n";
 print "and <a target='_top' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</A>.</p>\n";
-print "</center>";
-print "<blockquote>\n";
+print "</center>\n";
 
 ## demo description
 print $default{demo_descr};
 
 print $query->start_multipart_form(-action=>"matrix-quality.cgi");
 
-#print "<FONT FACE='Helvetica'>";
 
 ################################################################
 #### Matrix specification
 print "<hr>";
-print "<h2> Title ";
-print $query->textarea(-name=>'html_title',
-			 -default=>$default{html_title},
-			 -rows=>1,
-			 -columns=>30) . "<\h2>" ;
+print "<h2 style='margin-left: 50px;'> Title ";
 
-#print "<hr>";
+print $query->textfield(-name=>'html_title',
+			 -default=>$default{html_title},
+			 -size=>30) ."</h2>";
+
+print "<fieldset>
+<legend><b><a href='help.convert-matrix.html#io_format'>1 - Matrix </a></b></legend>";
+
+
 &GetMatrix();
+ print "<\p><b>K fold validation</B>&nbsp;";
+ print $query->popup_menu(-name=>'kfold',
+			   -Values=>[0,3,4,5,6,7,8,9,10],
+			   -default=>$default{kfold});
 print "<p><font color=red>Only the first matrix will be taken in acount</font></p>";
-print "<hr>";
+
+print "</fieldset><p/>";
+
 
 ################################################################
 #### Sequence specification
+
+print "<fieldset>
+<legend><b><a href='help.formats.html'>2 - Sequences </a></b></legend>";
+
 
 print "<h2> Mandatory Sequence </h2>";
 
@@ -108,10 +124,13 @@ print "<hr>";
 print "<h2> Optional Sequence </h2>";
 &SeqBoxMQ(2);
 
-print "<hr>";
+print "</fieldset><p/>";
 
 ################################################################
 #### Background specifiaction
+
+print "<fieldset>
+<legend><b><a href='help.matrix-scan.html#markov_order'>3 - Background </a></b></legend>";
 my %bg_params =(
     "markov" => 1,
     "markov_message" => 1
@@ -119,7 +138,7 @@ my %bg_params =(
 &GetBackgroundModel(\%bg_params);
 
 print "<br/>Note: Only Bernoulli models are supported. Higher-order Markov models are converted into Markov 0 (Bernoulli).";
-print "<hr>";
+print "</fieldset><p/>";
 
 
 
@@ -800,14 +819,18 @@ print $query->hidden(-name=>'demo_descr',-default=>$demo_descr."</blockquote>");
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'meme');
+print $query->hidden(-name=>'kfold',-default=>$default{kfold});
 
 print $query->hidden(-name=>'tag1',-default=>'positive_set');
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq1);
 print $query->hidden(-name=>'permutation1',-default=>1);
+print $query->hidden(-name=>'scanopt1',-default=>'');
 
 print $query->hidden(-name=>'tag2',-default=>'negative_set');
 print $query->hidden(-name=>'sequence2',-default=>$demo_seq2);
 print $query->hidden(-name=>'markov_order',-default=>$demo_markov);
+print $query->hidden(-name=>'scanopt2',-default=>'');
+
 print $query->submit(-label=>"DEMO");
 print "</b></td>\n";
 print $query->end_form;
