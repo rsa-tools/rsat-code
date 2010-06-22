@@ -97,6 +97,11 @@ if (&IsReal($query->param('pseudo_counts'))) {
 if ($query->param('pseudo_distribution') eq "equi_pseudo") {
     $parameters .= " -equi_pseudo ";
 }
+############
+#Kfold
+if (&IsInteger($query->param('kfold'))) {
+    $parameters .= " -kfold ".$query->param('kfold');
+}
 
 ################################################################
 ## sequence file
@@ -105,13 +110,18 @@ if ($query->param('pseudo_distribution') eq "equi_pseudo") {
 if ($query->param('tag1') ){
     $tag1 =$query->param('tag1') ;
 }
+
 $parameters .= " -seq ". $tag1 ." ".$sequence_file1 ;
 $parameters .= " -seq_format ". $sequence_format1 ;
+
+
 
 ($sequence_file2) = &MultiGetSequenceFile(2,$result_dir."sequence2.input", 0);
 if ($query->param('tag2') ){
     $tag2 =$query->param('tag2') ;
 }
+
+
 $parameters .= " -seq ". $tag2 ." ".$sequence_file2  if $sequence_file2 ;
 
 
@@ -126,6 +136,19 @@ if (&IsInteger($query->param('permutation1'))) {
 if (&IsInteger($query->param('permutation2'))) {
     $parameters .= " -perm ".$tag2." ".$query->param('permutation2')  if  $sequence_file2 ;
 }
+#############
+#scan options
+if ($query->param('scanopt1') ){
+    $scanopt2 =$query->param('scanopt1') ;
+}
+$parameters .= " -scanopt ".$tag1." ".$scanopt1 if (  $scanopt1 ); 
+
+if ($query->param('scanopt2') ){
+    $scanopt1 =$query->param('scanopt2') ;
+}
+$parameters .= " -scanopt ".$tag2." ".$scanopt2   if ( $sequence_file2 && $scanopt2 ) ;
+
+
 
 ################################################################
 ## Background model method
@@ -142,7 +165,7 @@ if ($bg_method eq "from_matrix") {
 			       $oligo_length, $background_model,
 			       noov=>$noov, str=>"-1str");
   $parameters .= " -bgfile ".$bg_file;
-
+   $parameters .= " -bg_format ".'oligo-analysis';
 } elsif ($bg_method =~ /upload/i) {
   ## Upload user-specified background file
   local $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
