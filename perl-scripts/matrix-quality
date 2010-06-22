@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.115 2010/06/20 21:54:45 jvanheld Exp $
+# $Id: matrix-quality,v 1.116 2010/06/22 06:31:46 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -416,7 +416,7 @@ package main;
     }
 
     ## Convert BG file in inclusive format for matrix-scan-quick
-    my $bg_convert_cmd = "convert-background-model";
+    my $bg_convert_cmd = $SCRIPTS."/convert-background-model";
     $bg_convert_cmd .= " -i ".$infile{bg_file};
     $bg_convert_cmd .= " -from ".$bg_format;
     $bg_convert_cmd .= " -to inclusive";
