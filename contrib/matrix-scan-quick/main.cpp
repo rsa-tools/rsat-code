@@ -26,7 +26,7 @@ using namespace std;
 #include "dist.h"
 #include "pval.h"
 
-int VERSION = 20100614;
+int VERSION = 20100624;
 char *COMMAND_LINE;
 
 /*
@@ -295,9 +295,7 @@ int main(int argc, char *argv[])
     }
 
     if (matfile == NULL)
-    {
         ERROR("You should specify at least a matrix file and a DNA sequence file");
-    }
     
     // input distrib
     if (distribfile != NULL)

@@ -49,17 +49,15 @@ void values_print(FILE *fout, values_t *values)
     // total
     int total = 0;
     for (i = a; i <= b; i++)
-    {
         total += values->data[i];
-    }
     
     // print
-    fprintf(fout, "#score\tocc\tco\tcco\tccdf\n");
+    fprintf(fout, "#score\tocc\tco\tcco\tdCDF\n");
     int cum = 0;
     for (i = a; i <= b; i++)
     {
+        cum += values->data[i];
         fprintf(fout, "%G\t%d\t%d\t%d\t%G\n", 
             values->min + i * values->e, values->data[i], cum, total - cum, (total - cum) / (double) total);
-        cum += values->data[i];
     }
 }
