@@ -59,9 +59,9 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
 
         (*scanned_pos) += 1;
 
-        if (W >= threshold)
+        double Pval = score2pvalue(pvalues, W);
+        if (pvalues != NULL && Pval >= threshold || W >= threshold)
         {
-            double Pval = score2pvalue(pvalues, W);
             if (values != NULL)
             {
                 values_add(values, W);
@@ -86,11 +86,9 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
         else
             Wrc = matrix.logP(&seqrc->data[maxpos - i]) - bg.logP(&seqrc->data[maxpos - i], l);
 
-        if (Wrc >= threshold)
+        double Pval_rc = score2pvalue(pvalues, Wrc);
+        if (pvalues != NULL && Pval_rc >= threshold || Wrc >= threshold)
         {
-
-            double Pval_rc = score2pvalue(pvalues, Wrc);
-
             if (values != NULL)
             {
                 values_add(values, Wrc);
@@ -112,9 +110,3 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
     
     return 1;
 }
-
-
-
-
-
-
