@@ -60,7 +60,7 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
         (*scanned_pos) += 1;
 
         double Pval = score2pvalue(pvalues, W);
-        if (pvalues != NULL && Pval >= threshold || W >= threshold)
+        if (pvalues == NULL && W >= threshold || pvalues != NULL && Pval <= threshold)
         {
             if (values != NULL)
             {
@@ -87,7 +87,7 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
             Wrc = matrix.logP(&seqrc->data[maxpos - i]) - bg.logP(&seqrc->data[maxpos - i], l);
 
         double Pval_rc = score2pvalue(pvalues, Wrc);
-        if (pvalues != NULL && Pval_rc >= threshold || Wrc >= threshold)
+        if (pvalues == NULL && Wrc >= threshold || pvalues != NULL && Pval_rc <= threshold)
         {
             if (values != NULL)
             {
