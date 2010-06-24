@@ -99,7 +99,7 @@ void help()
 "\n"
 "    -1str                 scan only one DNA strand.\n"
 "\n"
-"    -t #                  only capture site with a score >= #.\n"
+"    -t #                  only capture site with a score >= #. or Pvalue <= # if -return distrib is used\n"
 "\n"
 "    -name #               set the matrix name to #.\n"
 "\n"
