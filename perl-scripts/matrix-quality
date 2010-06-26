@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.116 2010/06/22 06:31:46 morgane Exp $
+# $Id: matrix-quality,v 1.117 2010/06/26 14:20:10 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1658,7 +1658,7 @@ sub CrossValidation {
     $matrix_scan_cmd .= " -decimals ".$decimals;
     $matrix_scan_cmd .= " -return sites";
     $matrix_scan_cmd .= " -1str";
-    $matrix_scan_cmd .= join(" ", "", @args);
+   # $matrix_scan_cmd .= join(" ", "", @args);
     if (defined($main::scanopt{$seq_type})) {
       $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
     }
