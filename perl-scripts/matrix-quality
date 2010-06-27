@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.117 2010/06/26 14:20:10 amedina Exp $
+# $Id: matrix-quality,v 1.118 2010/06/27 06:05:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -506,16 +506,17 @@ package main;
     $main::outfile{matrix_sites} = $outfile{prefix}."_matrix_sites.fasta"; push @files_to_index, "matrix_sites";
     $main::seqfile{matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites});
 
-    ## Export input sites with the matrix 
+    ## Export input sites with the matrix
     if ($main::infile{matrix_sites}) {
-      push @main::seq_types, "matrix_sites";
+      unshift @main::seq_types, "matrix_sites"; ## Matrix sites are the first ones to be analyzed and to appear in graph legends
+#      push @main::seq_types, "matrix_sites";
 
       ## Specific options for scanning matrix sites
       $scanopt{matrix_sites} = "" unless ($scanopt{matrix_sites});
       $scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation used to build the matrix
-      unless ($quick) {
-	$scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
-      }
+#      unless ($quick) {
+      $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
+#      }
 
       &ExportInputSites($matrix, $matrix_file) if ($tasks{export_matrix});
     }
@@ -1719,6 +1720,57 @@ sub CalcSequenceDistrib {
     push @main::distrib_files, $outfile{'empirical_distrib_'.$seq_type}; $main::file_nb{$seq_type} = scalar(@distrib_files);
   }
 
+
+  local $matrix_scan_cmd = "";
+  if (($quick) && 
+      !($scanopt{$seq_type}) ## Scanning options may be incompatible with matrix-scan-quick -> if specified, we pass the command to matrix-scan
+     ) {
+    $matrix_scan_cmd = $quick_scan_cmd;
+  } else {
+    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
+    #    $matrix_scan_cmd .= " -quick"; ## Run in quick mode if possible
+    #    $matrix_scan_cmd .= " -m ".$matrix_file;
+    #    $matrix_scan_cmd .= " -top_matrices 1";
+    #    $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+    $matrix_scan_cmd .= " -matrix_format tab"; ## We use tab as matrix format for compatibiliy with matrix-scan-quick
+    $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
+  }
+  $matrix_scan_cmd .= " -i ".$sequence_file;
+  $matrix_scan_cmd .= " -m ".$matrix_file;
+  $matrix_scan_cmd .= " -decimals ".$decimals;
+  $matrix_scan_cmd .= join(" ", "", @args);
+
+  ## Sequence type-Specific options
+  &RSAT::message::TimeWarn("\tScanning options for ".$seq_type,  $scanopt{$seq_type})
+    if ((defined($main::scanopt{$seq_type})) && ($main::verbose >= 1));
+  if (defined($main::scanopt{$seq_type})) {
+    $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
+  }
+
+  if ($scanopt{$seq_type}) {
+    ## Scanning options may be ignored by the option -return distrib
+    ## -> if specified, we detect sites and use classfeq do
+    ## determine the distirbution of weight scores
+    &AddSequenceDistribOptions_classfreq();
+  } else {
+    &AddSequenceDistribOptions_direct();
+  }
+
+  $matrix_scan_cmd .= " > ".$outfile{'empirical_distrib_'.$seq_type};
+
+  &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 5);
+
+  ## Print the complete command in the log file
+  print $main::out "\n; ", &AlphaDate(), "\tComputing score distribution\n";
+  printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
+  printf $main::out ";\t%-22s\t%s\n", "Sequence file", $sequence_file;
+  if (defined($main::scanopt{$seq_type})) {
+    printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
+  }
+  printf $main::out "; %s\n%s\n", "Command:", $matrix_scan_cmd;
+  print $main::out "\n";
+
+  ## Execute the command
   if ($tasks{scan}) {
     &RSAT::message::TimeWarn("Computing observed distribution",
 			     "\nseq_type=".$seq_type,
@@ -1726,60 +1778,8 @@ sub CalcSequenceDistrib {
 			     "\nseq_file=".$sequence_file, 
 			     "\nout_file=".$outfile{'empirical_distrib_'.$seq_type},
 			    )
-      if ($main::verbose >= 1);
+      if ($main::verbose >= 2);
 
-
-    local $matrix_scan_cmd = "";
-    if (($quick) && 
-	!($scanopt{$seq_type}) ## Scanning options may be incompatible with matrix-scan-quick -> if specified, we pass the command to matrix-scan
-       ) {
-      $matrix_scan_cmd = $quick_scan_cmd;
-    } else {
-      $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
-      #    $matrix_scan_cmd .= " -quick"; ## Run in quick mode if possible
-      #    $matrix_scan_cmd .= " -m ".$matrix_file;
-      #    $matrix_scan_cmd .= " -top_matrices 1";
-      #    $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
-      $matrix_scan_cmd .= " -matrix_format tab"; ## We use tab as matrix format for compatibiliy with matrix-scan-quick
-      $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
-    }
-    $matrix_scan_cmd .= " -i ".$sequence_file;
-    $matrix_scan_cmd .= " -m ".$matrix_file;
-    $matrix_scan_cmd .= " -decimals ".$decimals;
-    $matrix_scan_cmd .= join(" ", "", @args);
-
-    ## Sequence type-Specific options
-    &RSAT::message::TimeWarn("\tScanning options for ".$seq_type,  $scanopt{$seq_type})
-      if ((defined($main::scanopt{$seq_type})) && ($main::verbose >= 1));
-    if (defined($main::scanopt{$seq_type})) {
-      $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
-    }
-
-    if ($scanopt{$seq_type}) {
-      ## Scanning options may be ignored by the option -return distrib
-      ## -> if specified, we detect sites and use classfeq do
-      ## determine the distirbution of weight scores
-      &AddSequenceDistribOptions_classfreq();
-    } else {
-      &AddSequenceDistribOptions_direct();
-    }
-
-    $matrix_scan_cmd .= " > ".$outfile{'empirical_distrib_'.$seq_type};
-
-    &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 5);
-
-    ## Print the complete command in the log file
-    print $main::out "\n; ", &AlphaDate(), "\tComputing score distribution\n";
-    printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
-    printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
-    printf $main::out ";\t%-22s\t%s\n", "Sequence file", $sequence_file;
-    if (defined($main::scanopt{$seq_type})) {
-      printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
-    }
-    printf $main::out ";%-22s\n%s\n", "Command:", $matrix_scan_cmd;
-    print $main::out "\n";
-
-    ## Execute the command
     &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   }
 
