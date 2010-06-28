@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.119 2010/06/09 22:26:01 jvanheld Exp $
+# $Id: convert-matrix,v 1.120 2010/06/28 23:44:25 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1386,67 +1386,72 @@ sub SetMatrixName {
 ################################################################
 ## Export one matrix
 sub ExportMatrix {
-    my ($matrix, $m, $out_handle) = @_;
-    #  $matrix->readFromFile($infile{input}, $input_format);
-    if ($infile{prior}) {
-	$matrix->setPrior(%prior);
-    }
+  my ($matrix, $m, $out_handle) = @_;
+  #  $matrix->readFromFile($infile{input}, $input_format);
+  if ($infile{prior}) {
+    $matrix->setPrior(%prior);
+  }
 
-    ## Define an Identifier (ID) and an Accession number (AC)
-    my $ID = $matrix->get_attribute("identifier")
-	|| $matrix->get_attribute("name")
-	|| $matrix->get_attribute("id")
+  ## Define an Identifier (ID) and an Accession number (AC)
+  my $ID = $matrix->get_attribute("identifier")
+    || $matrix->get_attribute("name")
+      || $matrix->get_attribute("id")
 	|| $matrix->get_attribute("AC")
-	|| "matrix_".$m;
-    my $AC = $matrix->get_attribute("accession") || $ID;
-    &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
+	  || "matrix_".$m;
+  my $AC = $matrix->get_attribute("accession") || $ID;
+  &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
 
-    foreach my $key (keys(%force_attribute)) {
-	my $value = $force_attribute{$key};
-	$matrix->force_attribute($key, $value);	
-    }
+  if (($return_fields{consensus}) ||
+      ($return_fields{parameters})) {
+    $matrix->calcConsensus();
+  }
 
-    ## Print the counts matrix
-    if ($return_fields{counts}) {
-	print $out_handle $matrix->toString(sep=>"\t",
-				     type=>"counts",
-				     format=>$output_format,
-				);
+  foreach my $key (keys(%force_attribute)) {
+    my $value = $force_attribute{$key};
+    $matrix->force_attribute($key, $value);	
+  }
+
+  ## Print the counts matrix
+  if ($return_fields{counts}) {
+    print $out_handle $matrix->toString(sep=>"\t",
+					type=>"counts",
+					format=>$output_format,
+				       );
   } 
 
   ## Calculate frequency matrix
   if ($return_fields{frequencies}) {
     $matrix->calcFrequencies();
     print $out_handle $matrix->toString(col_width=>($decimals+4), 
-				 decimals=>$decimals, 
-				 type=>"frequencies",
-				 format=>$output_format);
+					decimals=>$decimals, 
+					type=>"frequencies",
+					format=>$output_format);
   }
 
   ## Calculate weight matrix
   if ($return_fields{weights}) {
     $matrix->calcWeights();
     print $out_handle $matrix->toString(col_width=>($decimals+4), 
-				 decimals=>$decimals, 
-				 type=>"weights",
-				 format=>$output_format);
+					decimals=>$decimals, 
+					type=>"weights",
+					format=>$output_format);
   }
 
   ## Print the profile matrix
   if ($return_fields{profile}) {
     print $out_handle $matrix->toString(sep=>"\t",
-				 type=>"profile",
-				 format=>$output_format,
-				);
+					type=>"profile",
+					format=>$output_format,
+				       );
   }
 
   ## Calculate information content matrix
   if ($return_fields{info}) {
     $matrix->calcInformation();
     print $out_handle $matrix->toString(col_width=>($decimals+4), 
-				 decimals=>$decimals, 
-				 type=>"information",
-				 format=>$output_format);
+					decimals=>$decimals, 
+					type=>"information",
+					format=>$output_format);
   }
 
 
@@ -1465,19 +1470,20 @@ sub ExportMatrix {
     }
   }
 
-  ## Calculate consensus
-  if ($return_fields{consensus}) {
-    $matrix->calcConsensus();
-    print $out_handle $matrix->toString(type=>'consensus');
+  ## Consensus and parameters are written in comments (lines start with ';') only in tab / infogibbs formats
+  if (($output_format eq "tab") || ($output_format eq "infogibbs")) {
+    ## Calculate consensus
+    if ($return_fields{consensus}) {
+      print $out_handle $matrix->toString(type=>'consensus');
+    }
+
+    ## Return parameters
+    if ($return_fields{parameters}) {
+      print $out_handle $matrix->toString(type=>"parameters") 
+    }
   }
 
-  ## Return parameters
-  if ($return_fields{parameters}) {
-    $matrix->calcConsensus();
-    print $out_handle $matrix->toString(type=>"parameters") if (($output_format eq "tab") || ($output_format eq "infogibbs"));
-  }
-
-  ## Return parameters
+  ## Return logo
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
       my $logo_file = $matrix->get_attribute("logo_file");
@@ -1501,7 +1507,7 @@ sub ExportMatrix {
 
   ## Return weight distribution
   if ($return_fields{wdistrib}) {
-#    print ";WARNING: return wdistrib is deprecated in convert-matrix! Use matrix-dsitrib instead\n";
+    #    print ";WARNING: return wdistrib is deprecated in convert-matrix! Use matrix-dsitrib instead\n";
     $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
     my %weight_proba = $matrix->getTheorScoreDistrib("weights");
     my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
@@ -1563,13 +1569,13 @@ sub ExportMatrix {
 	}
       }
       print $out_handle join("\t", $weight, 
-		      $weight_proba,
-		      $weight_proba_cum,
-		      $weight_proba_inv_cum,
-		      $ln_pval,
-		      $log_P,
-		      $sig,
-		     ), "\n";
+			     $weight_proba,
+			     $weight_proba_cum,
+			     $weight_proba_inv_cum,
+			     $ln_pval,
+			     $log_P,
+			     $sig,
+			    ), "\n";
     }
 
 
