@@ -362,7 +362,7 @@ sub InitRSAT {
   $main::PYTHON = "$ENV{RSAT}/python-scripts";
 
   ################################################################
-  ## Redirect queries to a remote server 
+  ## Redirect queries to a remote server
   ##
   ## This piece of code used to ensure load balancing between several
   ## machines, but it relies on rsh, which is not a safe protocol. In
@@ -374,8 +374,8 @@ sub InitRSAT {
     if (($login eq "webserv") || !($login)) {
       $main::NICE = "nice +5";
       $main::RSH = "rsh -l jvanheld ${REMOTE_SERVER} $NICE";
-      $main::SCRIPTS = "$RSH /home/rsa/rsa-tools/perl-scripts";
-      $main::BIN = "$RSH /home/rsa/rsa-tools/bin";
+      $main::SCRIPTS = "$RSH rsa-tools/perl-scripts";
+      $main::BIN = "$RSH rsa-tools/bin";
     }
   }
   $main::HTML = "$ENV{RSAT}/public_html"; 
