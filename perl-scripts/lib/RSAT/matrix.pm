@@ -771,12 +771,14 @@ sub to_TRANSFAC {
 
     ## Parameters
     my @params = $self->get_attribute("parameters");
-    for my $param (@params) {
-      $to_print .= sprintf("CC  %s: ",$param);
-      $to_print .= $self->get_attribute($param);
-      $to_print .= "\n";
+    if (scalar(@params) > 0) {
+      for my $param (@params) {
+	$to_print .= sprintf("CC  %s: ",$param);
+	$to_print .= $self->get_attribute($param);
+	$to_print .= "\n";
+      }
+      $to_print .= "XX\n";
     }
-    $to_print .= "XX\n";
 
     ## End of record
     $to_print .=  $matrix_terminator{$output_format}."\n";
