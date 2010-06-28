@@ -184,7 +184,7 @@ print $query->end_form;
 ### data for the demo
 print $query->start_multipart_form(-action=>"matrix-scan-quick_form.cgi");
 
-$demo_sequence=">dm3_flyBaseGene_CG2328-RA range=chr2R:5861246-5866745 5'pad=0 3'pad=0 strand=+ repeatMasking=none
+$demo_sequence=">dm3_flyBaseGene_CG2328-RA
 GCCACTGAAGCTGTGGGTTTGCTCCTGCCGAGCGAATCCAACGCGAGTAG
 GGTCCCATTCGGGGCCCGAGTAGCCAGAGTCCTGCAGCTCACTCGAAACC
 GCCACTCACCGTGGCTAATTGCCCATCAATAAAGGGCCCGGGCAGTGAGG
