@@ -22,19 +22,20 @@ void free_fasta_reader(fasta_reader_t *fasta_reader)
 static inline
 char fasta_reader_getc(fasta_reader_t *reader)
 {
-    if (reader->pos >= reader->bufsize) 
-    {
-        int read_size = fread(reader->buffer, 1, reader->bufsize, reader->fp);
-        if (read_size != reader->bufsize)
-            reader->buffer[read_size] = EOF;
-
-        reader->pos = 0;
-    }
-    
-    char c = reader->buffer[reader->pos];
-    if (c != EOF)
-        reader->pos++;
-    return c;
+    return fgetc(reader->fp);
+    // if (reader->pos >= reader->bufsize) 
+    // {
+    //     int read_size = fread(reader->buffer, 1, reader->bufsize, reader->fp);
+    //     if (read_size != reader->bufsize)
+    //         reader->buffer[read_size] = EOF;
+    // 
+    //     reader->pos = 0;
+    // }
+    // 
+    // char c = reader->buffer[reader->pos];
+    // if (c != EOF)
+    //     reader->pos++;
+    // return c;
 }
 
 seq_t *fasta_reader_next(fasta_reader_t *reader)
