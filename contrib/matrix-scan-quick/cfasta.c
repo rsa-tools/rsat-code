@@ -51,7 +51,6 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
             seq->name[i++] = c;
     } while (c != EOF && c != '\n');
     seq->name[i] = '\0';
-    DEBUG("%s", seq->name);
     if (c == EOF)
         return NULL;
 
