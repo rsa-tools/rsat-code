@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.118 2010/06/27 06:05:58 jvanheld Exp $
+# $Id: matrix-quality,v 1.119 2010/06/30 22:58:10 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2129,7 +2129,7 @@ sub CompareDistrib {
       $large_graph_options .= " -legend ";
       $large_graph_options .= " -xsize 800 -ysize 400 ";
       $large_graph_options .= " -xleg1 'matrix score' ";
-      $large_graph_options .= " -yleg1 'Frequency (decreasing cumulative) ' ";
+      $large_graph_options .= " -yleg1 'Decreasing Cumulative Distribution (log)' ";
 
       my $icon_options;
 
