@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.33 2010/06/14 15:27:18 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.34 2010/06/30 12:20:09 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -380,10 +380,10 @@ sub ReadMatrixScanParameters {
   		 }
   		 my $th = $query->param("thresh_value");
 		 &RSAT::error::FatalError($th." is not a valid value for the threshold. Should be a number. ") unless (&IsReal($th));
-  		 if ($query->param("thresh_field") eq "weight"){
+  		 if ($query->param("return_field") eq "sites"){
   				$parameters .= " -lth score ".$th;
   		 }
-  		 if ($query->param("thresh_field") eq "pval"){
+  		 if ($query->param("return_field") eq "pval"){
   				$parameters .= " -uth pval ".$th;
   		  }	 
   	} else {
