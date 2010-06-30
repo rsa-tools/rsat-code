@@ -131,32 +131,47 @@ print "<br/>";
 ################################################################
 ## Fields to return + thresholds
 print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html#return_fields'><B>Return</B></A>\n";
-print $query->popup_menu(-name=>'return_field',
-			 -Values=>['sites',
-				   'pval'],
-			 -default=>$default{return_field});
 
-print "&nbsp;"x2, "<i>Calculating pval is slighly slower</i>";
-print "<br/>";
-			 
-print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html#thresholds'><B>Threshold</B></A>\n";
-my %threshs = ("weight" => "weight score >=",
-				"pval" => "pval <=");
+my %returns = ("sites" => "sites only",
+				"pval" => "sites + pval");
+
 my $Popup = "";
-    $Popup .=  "<SELECT NAME='thresh_field' style='text-align:right'>\n";
-     foreach my $th (keys %threshs) {
-     	if ($th eq $default{thresh_field}){
-			$Popup .=  "<OPTION  SELECTED VALUE=$th style='text-align:right'>$threshs{$th}</option>\n";
+    $Popup .=  "<SELECT NAME='return_field' onChange=\"toggle(this.options[this.selectedIndex].value)\">";
+     foreach my $f (keys %returns) {
+     	if ($f eq $default{return_field}){
+			$Popup .=  "<OPTION  SELECTED VALUE=$f>$returns{$f}</option>\n";
      	} else {
-     			$Popup .=  "<OPTION VALUE=$th style='text-align:right'>$threshs{$th}</option>\n";
+     		$Popup .=  "<OPTION VALUE=$f  >$returns{$f}</option>\n";
      	}
      }
     $Popup .=  "</SELECT>";
     print $Popup;
 
+print "&nbsp;"x2, "<i>Calculating pval is slighly slower</i>";
+print "<br/>";
+
+## thresholds	 
+print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html#thresholds'><B>Threshold</B></A>\n";
+print "<br/>";
+
+print "<table style='padding-left:50px;'>";
+print "<tr>";
+print "<td style='text-align:right;'>weight score >=</td>";
+print "<td rowspan=2>";
 print $query->textfield(-name=>'thresh_value',
 							    -default=>$default{thresh_value},
 							    -size=>5);
+print "</td>";
+print "<td><i>if return is '<b>sites only</b>', the threshold is set on the weight score</i></td>";
+print "</tr>";
+
+print "<tr>";
+print "<td style='text-align:right;'>pval <=</td>";
+print "<td><i>if return is '<b>sites + pval </b>', the threshold is set on the pval</i></td>";
+print "</tr>";
+print "</table>";
+
+
 print "</fieldset>";
 
 ## add the -quick option
