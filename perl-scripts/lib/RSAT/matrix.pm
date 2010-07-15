@@ -1341,12 +1341,15 @@ sub to_cb {
   $output_format = lc($output_format);
 
   ## name
-  my $name = $self->get_attribute("name") ||  $self->get_attribute("AC") || $self->get_attribute("accession")
-    || $self->get_attribute("identifier") || $self->get_attribute("id");
-  $to_print .= ">".$name." ";
+  my $accession = $self->get_attribute("AC") || $self->get_attribute("accession")
+    || $self->get_attribute("identifier") || $self->get_attribute("id") || $self->get_attribute("name");
+
+  $to_print .= ">".$accession." ";
 
   ## other information in the header:
   #name
+  my $name = $self->get_attribute("name") ||  $self->get_attribute("AC") || $self->get_attribute("accession")
+    || $self->get_attribute("identifier") || $self->get_attribute("id");
   $to_print .= "/name=".$name." ";
   #information content
   my @information = $self->getInformation();
