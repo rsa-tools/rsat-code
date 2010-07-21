@@ -1044,6 +1044,7 @@ sub ReadNextSequence {
   local $sequence = "";
   local $seq_id = "";
   local @comments = ();
+  local @next_comments = ();
 
   ### single raw file ###
   if ($sequence_format eq "raw") {
@@ -1209,32 +1210,41 @@ sub ReadNextSequence {
     ### FastA format ###
   } elsif ($sequence_format eq "fasta") {
     while (<$SEQ>) {
-      next if ((/^;/) || (/^\#/));
-      if (/^\s*>\s*(\S*)\s*(.*)/) { 
-	## new sequence identifier
-	my $next_id = $1;
+      next if ((/^;/) || (/^\#/)); ## Skip comment lines (note that those comment lines are not part of the canonical fasta format)
+
+      ## Fasta header.
+      ## Slight difficulty: we have to return the
+      ## previous sequence after having read the fasta header of the
+      ## next sequence -> we have to keep the the previous and next ID
+      ## and comment fields, and treat in a special way the first and
+      ## last sequence of a file.
+      if (/^\s*>\s*(\S*)\s*(.*)/) {
+	my $next_id = $1; ## new sequence identifier
+	@next_comments = ($2); 	## new sequence comments/description
+
+	## Check that sequence ID is not empty
 	unless ($next_id) {
-	  ## Check that sequence ID is not empty
 	  &RSAT::message::Warning("Invalid format for a fasta file: empty sequence identifier.");
 	  $empty_seq_counter++;
 	  $next_id = "unidentified_seq_".$empty_seq_counter;
 	}
 	&RSAT::message::Debug("ReadNextSequence()","ID", $next_id) if ($main::verbose >= 3);
 
-	## Comments
-	@comments = ($2);
 
-	if ((defined($current_seq_id)) && ($current_seq_id ne "")) {
+	if ($current_seq_id) {
 	  ## New ID after a previous sequence.  Action: return the
-	  ## previous sequence and take the new ID for the next
+	  ## previous sequence and hold the new ID in the variable $current_seq_id for the next
 	  ## sequence
 	  my $seq_id = $current_seq_id;
-	  $current_seq_id = $next_id;
+	  my @comments = @current_comments;
 	  # &CheckFormat($sequence, "raw", $seq_type);
+	  $current_seq_id = $next_id;
+	  @current_comments = @next_comments;
 	  return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	} else {
 	  ##  first id from the seq file
 	  $current_seq_id = $next_id;
+	  @current_comments = @next_comments;
 	}
       } else {
 	## continuation of the previous sequence: concatenate it
@@ -1247,6 +1257,7 @@ sub ReadNextSequence {
       #	    $sequence = &FoldSequence($sequence, 0);
       $seq_id = $current_seq_id;
       $current_seq_id = "";
+      @comments = @current_comments;
       return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
     } else {
       return ("","");
