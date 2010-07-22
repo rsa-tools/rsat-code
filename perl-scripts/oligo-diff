@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.15 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: oligo-diff,v 1.16 2010/07/22 09:26:34 morgane Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     $SCRIPTS=$ENV{RSAT}."/perl-scripts";
     $BIN=$ENV{RSAT}."/bin";
 #    $program_version = "0.00";
@@ -801,7 +801,15 @@ sub CountWordsOneSet {
   if ($purge) {
     $cmd .= " | ".$SCRIPTS."/purge-sequence -mis 0 -ml 20 ".$main::strand;
   }
-  $cmd .= " | ".$main::count_words_cmd;
+  
+   my $tmp_input_file  = &RSAT::util::make_temp_file("", "oligo_diff_");
+   $tmp_input_file .= "_input.fa";
+  
+  `$cmd > $tmp_input_file`;
+   &RSAT::server::DelayedRemoval($tmp_input_file);
+  
+  $cmd = $main::count_words_cmd;
+  $cmd .= " -i ".$tmp_input_file;
   $cmd .= " -l ".$main::oligo_len;
   $cmd .= " ".$main::strand;
   $cmd .= " ".$main::overlap_mode if ($overlap_mode eq "-noov");
