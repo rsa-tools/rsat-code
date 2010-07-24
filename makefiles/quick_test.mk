@@ -33,10 +33,10 @@ STR=-1str
 NOOV=-noov
 SP=0-20
 ML=3
-DYAD_CMD=dyad-analysis -v ${V} -i ${SEQ_FILE} -sp ${SP} -l ${ML} ${STR} ${NOOV} ${GROUPING} -return ${RETURN} ${COUNT_MODE} -o ${DYADS}.tab
+DYAD_CMD=dyad-analysis -v ${V} -i ${SEQ_FILE} -sp ${SP} -l ${ML} ${STR} ${NOOV} ${GROUPING} -return ${RETURN} ${COUNT_MODE} -o ${DYADS}.tab ${OPT}
 DYAD_SUFFIX=dyads_${ML}nt_sp${SP}${STR}${NOOV}${GROUPING}
 DYADS=${QUICK_DIR}/${SEQ_PREFIX}_${DYAD_SUFFIX}${COUNT_MODE}
-RETURN=occ
+RETURN=occ,freq,ratio,zscore,proba,rank
 dyads: dir
 	@echo
 	@echo "Running dyad-analysis	${COUNT_MODE}"
@@ -47,7 +47,7 @@ dyads_quick:
 	${MAKE} dyads COUNT_MODE=-quick 
 
 OL=6
-OLIGO_CMD=oligo-analysis -v ${V} -i ${SEQ_FILE} -l ${OL} ${STR} ${NOOV} ${GROUPING} -return ${RETURN} ${COUNT_MODE} -o ${OLIGOS}.tab
+OLIGO_CMD=oligo-analysis -v ${V} -i ${SEQ_FILE} -l ${OL} ${STR} ${NOOV} ${GROUPING} -return ${RETURN} ${COUNT_MODE} -o ${OLIGOS}.tab ${OPT}
 OLIGO_SUFFIX=oligos_${OL}nt_${STR}${NOOV}${GROUPING}
 OLIGOS=${QUICK_DIR}/${SEQ_PREFIX}_${OLIGO_SUFFIX}${COUNT_MODE}
 oligos: dir
