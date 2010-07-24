@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.36 2010/05/28 14:03:09 jvanheld Exp $
+# $Id: convert-seq,v 1.37 2010/07/24 10:42:38 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -81,7 +81,8 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     $seq_nb++;
     my $seq_len = length($current_seq);
 
-    &RSAT::message::Info("Converting sequence", $seq_nb, $current_id, $seq_len."bp") if ($main::verbose >= 2);
+    &RSAT::message::Info("Converting sequence", $seq_nb, $current_id, $seq_len."bp", $comments[0]) if ($main::verbose >= 2);
+
 
 #    ## Remove empty sequences 
 #    if (($noempty) && ($current_seq !~ /\S/)) {
@@ -173,8 +174,10 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	close RAW;
 	print $out "$one_seq_file\t$current_id\n";
     } else {
+#      &RSAT::message::Debug("Printing sequence", $current_id, $comments[0]) if ($main::verbose >= 10);
       &PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
     }
+
     if ($add_RC) {
 	$current_id .= "_reverse_complement";
 	@comments = ();
