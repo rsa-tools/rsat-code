@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.17 2010/05/28 00:19:28 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.18 2010/07/24 10:43:20 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -8,6 +8,7 @@
 
 GENBANK_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genbank/genomes
 NCBI_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genomes
+include ${RSAT}/makefiles/util.mk
 V=1
 DATE = `date +%Y%m%d_%H%M%S`
 
@@ -36,12 +37,6 @@ SERVERS = ${CIFN} ${UPPSALA} ${LIV}
 
 #SERVER=${RSAT_SERVER}
 SERVER=${UPPSALA}
-
-### tags
-usage:
-	@echo "usage: make [-OPT='options'] target"
-	@echo "implemented targets"
-	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n"}' ${MAKEFILE}
 
 ################################################################
 #### from brol to servers
