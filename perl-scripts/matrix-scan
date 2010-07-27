@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.170 2010/07/27 16:10:01 jvanheld Exp $
+# $Id: matrix-scan,v 1.171 2010/07/27 16:18:26 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1615,7 +1615,7 @@ package main;
 		     "Wmin",
 		     "Wmax",
 		     "Wrange",
-		     "prior",
+#		     "prior",
 		    ), "\n";
 
     my $m = 0;
@@ -1633,7 +1633,7 @@ package main;
 		       sprintf("%.3f", $matrix->get_attribute("Wmax")),
 		       sprintf("%.3f", $matrix->get_attribute("Wrange")),
 		      );
-      my %prior = $matrix->getPrior();
+#      my %prior = $matrix->getPrior();
       print $out "\t";
       foreach my $letter (sort keys %prior) {
 	printf $out "%s:%.3f ", $letter, $prior{$letter};
