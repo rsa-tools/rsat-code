@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.169 2010/06/14 15:52:17 morgane Exp $
+# $Id: matrix-scan,v 1.170 2010/07/27 16:10:01 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -927,13 +927,13 @@ package main;
 	  $matrix->force_attribute("name", $matrix_name);
 	}
 
-	## check matrix name with thresholds
+	## Check matrix name with thresholds
 	foreach my $thr_matrix_name (keys (%matrices_mth)){
-		if ($matrix->get_attribute("name") eq $thr_matrix_name){
-			delete $matrices_mth{$thr_matrix_name};
-		}
+	  if ($matrix->get_attribute("name") eq $thr_matrix_name){
+	    delete $matrices_mth{$thr_matrix_name};
+	  }
 	}
-	
+
 	## Check that the matrix width is smaller than markov order + 1
 	my $matrix_width = $matrix->ncol();
 	my $markov_order = $bg_model->get_attribute("order");
@@ -944,9 +944,12 @@ package main;
 					  $matrix->get_attribute("name"),
 					  "of width ".$matrix_width."."));
 	}
-	
+
 	## Calculate min and max values for P(S|M)
  	$matrix->proba_range();
+
+	## Calculate weight range
+	$matrix->weight_range();
 
 # 	unless ($bg_method eq "window") {
 # 		## Set the matrix prior
@@ -1012,11 +1015,12 @@ package main;
   ## Assign the specific thresholds read in the threshold file
   if ($infile{matrix_thresholds}) {
 
-  ## check that matrices name given in the file are actual matrices
+  ## Check that matrices name given in the file are actual matrices
   foreach my $thr_matrix_name (keys (%matrices_mth)){
       &RSAT::message::Warning("$thr_matrix_name does not correspond to any input matrix. Check your threshold file.");
   	  delete $matrix_thr{$thr_matrix_name}; #remove this unfound matrix from the list of matrices
-  } 
+  }
+
   ## replace the global thresholds by specific thresholds
   foreach my $matrix_name (sort keys %matrix_thr) {
   	foreach my $thr_field (sort keys %{$matrix_thr_val->{$matrix_name}}) {
@@ -1048,7 +1052,7 @@ package main;
   }
 
   ################################################################
-  ## Calculate th pval distribution
+  ## Calculate pval distribution
   if (($calc_fields{pval})&&($bg_method ne "window")) {
     foreach my $matrix (@matrices) {
       %{$pval{$matrix}} = $matrix->getTheorScoreDistrib("weights", "inv_cum");
@@ -1606,8 +1610,8 @@ package main;
 		     "ncol",
 		     "nrow",
 		     "pseudo",
-		     "Pmin",
-		     "Pmax",
+#		     "Pmin",
+#		     "Pmax",
 		     "Wmin",
 		     "Wmax",
 		     "Wrange",
@@ -1623,8 +1627,8 @@ package main;
 		       $matrix->get_attribute("ncol"),
 		       $matrix->get_attribute("nrow"),
 		       $matrix->get_attribute("pseudo"),
-		       sprintf("%5.2g", $matrix->get_attribute("min(P(S|M))")),
-		       sprintf("%5.2g", $matrix->get_attribute("max(P(S|M))")),
+#		       sprintf("%5.2g", $matrix->get_attribute("min(P(S|M))")),
+#		       sprintf("%5.2g", $matrix->get_attribute("max(P(S|M))")),
 		       sprintf("%.3f", $matrix->get_attribute("Wmin")),
 		       sprintf("%.3f", $matrix->get_attribute("Wmax")),
 		       sprintf("%.3f", $matrix->get_attribute("Wrange")),
