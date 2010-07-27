@@ -359,6 +359,8 @@ $demo_matrix = "
 ;
 AC  Kr
 XX
+ID  Kr
+XX
 PO       A     C     G     T
 1       30     4     4     6
 2       37     0     2     5
@@ -375,6 +377,8 @@ XX
 ;
 AC  Med
 XX
+ID  Med
+XX
 PO       A     C     G     T
 1        0     6     1     3
 2        0     0    10     0
@@ -388,6 +392,8 @@ XX
 ; MATRIX 3/12 : Stat92E
 ;
 AC  Stat92E
+XX
+ID  Stat92E
 XX
 PO       A     C     G     T
 1        0     0     0     3
@@ -406,6 +412,8 @@ XX
 ;
 AC  bcd
 XX
+ID  bcd
+XX
 PO       A     C     G     T
 1        8     3     1    36
 2       45     1     1     1
@@ -419,6 +427,8 @@ XX
 ; MATRIX 5/12 : eve
 ;
 AC  eve
+XX
+ID  eve
 XX
 PO       A     C     G     T
 1        0     8     1     0
@@ -443,6 +453,8 @@ XX
 ;
 AC  gt
 XX
+ID  gt
+XX
 PO       A     C     G     T
 1        3     0     0     5
 2        0     0     1     7
@@ -461,6 +473,8 @@ XX
 ;
 AC  hb
 XX
+ID  hb
+XX
 PO       A     C     G     T
 1        1     0     3    99
 2        4     4     4    91
@@ -476,6 +490,8 @@ XX
 ; MATRIX 8/12 : kni
 ;
 AC  kni
+XX
+ID  kni
 XX
 PO       A     C     G     T
 1        6     2    22     3
@@ -493,6 +509,8 @@ XX
 ;
 AC  pan
 XX
+ID  pan
+XX
 PO       A     C     G     T
 1       15     1     3     6
 2        7     2     0    16
@@ -508,6 +526,8 @@ XX
 ; MATRIX 10/12 : prd
 ;
 AC  prd
+XX
+ID  prd
 XX
 PO       A     C     G     T
 1        0     6     0     3
@@ -525,6 +545,8 @@ XX
 ;
 AC  tin
 XX
+ID  tin
+XX
 PO       A     C     G     T
 1       10     1     0     0
 2        0    11     0     0
@@ -538,6 +560,8 @@ XX
 ; MATRIX 12/12 : ttk
 ;
 AC  ttk
+XX
+ID  ttk
 XX
 PO       A     C     G     T
 1        3     5     0     0
