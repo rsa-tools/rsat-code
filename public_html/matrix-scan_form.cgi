@@ -353,10 +353,6 @@ CTCAGCACCGAGAGCACAGCAGCGCATCCACTCTCAGCACCGCACGATTA
 GCACCGTTCCGCTCAGGCTGTCCCGCTCGCACCTGCCTGGGTCGCTGCGA";
 
 $demo_matrix = "
-; Matrices derived from OregAnno by J.V. Turatsinze (2007).
-;
-; MATRIX 1/12 : Kr
-;
 AC  Kr
 XX
 ID  Kr
@@ -372,9 +368,6 @@ PO       A     C     G     T
 8        2     4     0    38
 XX
 //
-;
-; MATRIX 2/12 : Med
-;
 AC  Med
 XX
 ID  Med
@@ -388,9 +381,6 @@ PO       A     C     G     T
 6        0     0     7     3
 XX
 //
-;
-; MATRIX 3/12 : Stat92E
-;
 AC  Stat92E
 XX
 ID  Stat92E
@@ -407,9 +397,6 @@ PO       A     C     G     T
 9        3     0     0     0
 XX
 //
-;
-; MATRIX 4/12 : bcd
-;
 AC  bcd
 XX
 ID  bcd
@@ -423,9 +410,6 @@ PO       A     C     G     T
 6        3    27     3    15
 XX
 //
-;
-; MATRIX 5/12 : eve
-;
 AC  eve
 XX
 ID  eve
@@ -448,9 +432,6 @@ PO       A     C     G     T
 15       0     7     0     2
 XX
 //
-;
-; MATRIX 6/12 : gt
-;
 AC  gt
 XX
 ID  gt
@@ -468,9 +449,6 @@ PO       A     C     G     T
 10       5     0     0     3
 XX
 //
-;
-; MATRIX 7/12 : hb
-;
 AC  hb
 XX
 ID  hb
@@ -486,9 +464,6 @@ PO       A     C     G     T
 8        2    20    55    26
 XX
 //
-;
-; MATRIX 8/12 : kni
-;
 AC  kni
 XX
 ID  kni
@@ -504,9 +479,6 @@ PO       A     C     G     T
 8       10     2     2    19
 XX
 //
-;
-; MATRIX 9/12 : pan
-;
 AC  pan
 XX
 ID  pan
@@ -522,9 +494,6 @@ PO       A     C     G     T
 8        7     6     9     3
 XX
 //
-;
-; MATRIX 10/12 : prd
-;
 AC  prd
 XX
 ID  prd
@@ -540,9 +509,6 @@ PO       A     C     G     T
 8        7     2     0     0
 XX
 //
-;
-; MATRIX 11/12 : tin
-;
 AC  tin
 XX
 ID  tin
@@ -556,9 +522,6 @@ PO       A     C     G     T
 6       10     0     1     0
 XX
 //
-;
-; MATRIX 12/12 : ttk
-;
 AC  ttk
 XX
 ID  ttk
