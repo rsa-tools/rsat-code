@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.38 2010/08/06 09:50:10 jvanheld Exp $
+# $Id: convert-seq,v 1.39 2010/08/06 09:50:50 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -20,6 +20,8 @@ $start_time = &RSAT::util::StartScript();
 $line_width = 60;
 $check_id = 1;
 $dotmask = 0;
+
+$top = 0;
 
 $accepted_input_string = join "\n\t\t\t", "", sort(keys %accepted_input_seq);
 $accepted_output_string = join "\n\t\t\t", "", sort(keys %accepted_output_seq); 
