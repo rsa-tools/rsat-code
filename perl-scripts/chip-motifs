@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.63 2010/06/15 19:40:42 jvanheld Exp $
+# $Id: chip-motifs,v 1.64 2010/08/06 10:38:04 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -342,26 +342,33 @@ sub OutFileName {
 sub SetOutFileNames {
   ## Purged sequences
   foreach my $seq_type (@seq_types) {
+    my @seq_suffix = ();
     if (defined($main::param{max_seq_len})) {
-      $main::outfile{"truncated_".$seq_type} = &OutFileName(".fasta",
-							    $seq_type,
-							    "maxlen".$main::param{max_seq_len});
-      $main::outfile{"purged_".$seq_type} = &OutFileName(".fasta", 
-							 $seq_type,
-							 "purged",
-							 "ml".$main::param{purge_match_length},
-							 "mis".$main::param{purge_mismatches},
-							 "maxlen".$main::param{max_seq_len},
-							);
-      $seqfile{$seq_type} = $main::outfile{"truncated_".$seq_type};
-    } else {
-      $main::outfile{"purged_".$seq_type} = &OutFileName(".fasta", 
-							 $seq_type,
-							 "purged",
-							 "ml".$main::param{purge_match_length},
-							 "mis".$main::param{purge_mismatches});
-      $seqfile{$seq_type} = $main::infile{$seq_type."_seq"};
+      push @seq_suffix, "maxlen".$main::param{max_seq_len};
     }
+    if (defined($main::param{top_peaks})) {
+      push @seq_suffix, "top".$main::param{top_peaks};
+    }
+#    if (defined($main::param{max_seq_len})) {
+    $main::outfile{$seq_type."_converted"} = &OutFileName(".fasta",
+							  $seq_type,
+							  @seq_suffix);
+    $main::outfile{$seq_type."_purged"} = &OutFileName(".fasta",
+						       $seq_type,
+						       "purged",
+						       @seq_suffix,
+						       "ml".$main::param{purge_match_length},
+						       "mis".$main::param{purge_mismatches},
+						      );
+#      $seqfile{$seq_type} = $main::outfile{$seq_type."_converted"};
+#  } else {
+#      $main::outfile{$seq_type."_purged"} = &OutFileName(".fasta", 
+#							 $seq_type,
+#							 "purged",
+#							 "ml".$main::param{purge_match_length},
+#							 "mis".$main::param{purge_mismatches});
+      $seqfile{$seq_type} = $main::infile{$seq_type."_seq"};
+#    }
 
     ## Sequence lengths
     $main::outfile{$seq_type."_seqlen"} = &OutFileName(".tab", $seq_type."_seqlen");
@@ -534,19 +541,48 @@ sub SetOutFileNames {
 }
 
 ################################################################
-## Purge sequences
+## Convert, truncate, select top and purge sequences
 sub PurgeOneSeq {
   my ($seq_file, $seq_type) = @_;
-  &RSAT::message::TimeWarn("\n\n; Purging sequences", $seq_type) if ($main::verbose >= 1);
+
+
+  ## Convert sequences to standard fasta format, mask non-DNA seqences
+  ## selectd top peaks if required, and truncate sequences to max
+  ## length if specified.
+  &RSAT::message::TimeWarn("\n\n; Converting sequences", $seq_type) if ($main::verbose >= 1);
   my $cmd = $SCRIPTS."/convert-seq";
   $cmd .= " -i ".$seq_file;
   $cmd .= " -from ".$main::param{seq_format};
   $cmd .= " -to fasta";
   $cmd .= " -mask non-dna";
-  $cmd .= "| $SCRIPTS/purge-sequence -dna";
+
+  ## Select top peaks if required
+  if (defined($main::param{top_peaks})) {
+    &RSAT::message::Info("\tSelecting top peaks", $main::param{top_peaks}) if ($main::verbose >= 2);
+    $cmd .= " -top ".$main::param{top_peaks};
+  }
+
+  ## Truncate sequences if required
+  if (defined($main::param{max_seq_len})) {
+    my $from = -round($main::param{max_seq_len}/2);
+    my $to = $from + $main::param{max_seq_len} -1;
+    &RSAT::message::Info("\tTruncating to ", $main::param{max_seq_len}." bp max") if ($main::verbose >= 2);
+    $cmd .= "| ".$SCRIPTS."/sub-sequence";
+    #    $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
+    $cmd .= " -origin center";
+    $cmd .= " -from ".$from;
+    $cmd .= " -to ".$to;
+  }
+  $cmd .= " -o ".$main::outfile{$seq_type."_converted"};
+  &one_command($cmd, 1);
+
+  ## Purge sequences (mask redundant fragments)
+  &RSAT::message::TimeWarn("\n\n; Purging sequences", $seq_type) if ($main::verbose >= 1);
+  $cmd = "$SCRIPTS/purge-sequence -dna";
+  $cmd .= " -i ".$main::outfile{$seq_type."_converted"};
   $cmd .= " -ml ".$main::param{purge_match_length};
   $cmd .= " -mis ".$main::param{purge_mismatches};
-  $cmd .= " -o ".$main::outfile{"purged_".$seq_type};
+  $cmd .= " -o ".$main::outfile{$seq_type."_purged"};
   &one_command($cmd, 1);
 }
 
@@ -557,7 +593,8 @@ sub SequenceLengths {
   my ($seq_file, $seq_type) = @_;
   &RSAT::message::TimeWarn("\n\n; Computing sequence lengths", $seq_type) if ($main::verbose >= 1);
   my $cmd = $SCRIPTS."/sequence-lengths";
-  $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
+#  $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
+  $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen'};
   $cmd .= " ; cut -f 2 ".$main::outfile{$seq_type.'_seqlen'};
   $cmd .= " | ".$SCRIPTS."/classfreq -v 1 -ci ".$main::param{profiles_ci};
@@ -577,19 +614,6 @@ sub SequenceLengths {
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen_distrib'};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib_graph'};
   &one_command($cmd, 1);
-
-  ## Truncate sequences if required
-  if (defined($main::param{max_seq_len})) {
-    my $from = -round($main::param{max_seq_len}/2);
-    my $to = $from + $main::param{max_seq_len} -1;
-    $cmd = $SCRIPTS."/sub-sequence";
-    $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
-    $cmd .= " -origin center";
-    $cmd .= " -from ".$from;
-    $cmd .= " -to ".$to;
-    $cmd .= " -o ".$main::outfile{"truncated_".$seq_type};
-    &one_command($cmd, 1);
-  }
 }
 
 ################################################################
@@ -600,7 +624,7 @@ sub CompositionProfiles {
   for my $ol (@profiles_oligo_lengths) {
     &RSAT::message::TimeWarn("\n\n; Computing composition profiles", $ol."nt") if ($main::verbose >= 1);
     my $cmd =$SCRIPTS."/position-analysis -v 1";
-    $cmd .= " -i ".$main::outfile{"purged_".$seq_type};
+    $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
     $cmd .= " -return chi,sig,distrib,graphs,rank";
@@ -640,7 +664,7 @@ sub CompositionProfiles {
     ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
     ## from the input sequence
     $cmd = $BIN."/count-words -v 1";
-    $cmd .= " -i ".$main::outfile{"purged_".$seq_type};
+    $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -l ".$ol;
     $cmd .= " -1str";
     $cmd .= " ".$main::param{noov};
@@ -675,7 +699,7 @@ sub OligoAnalysis {
       &RSAT::message::TimeWarn("\n\n; Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 1);
       my $cmd = $SCRIPTS."/oligo-analysis -v 1";
       $cmd .= " -quick";
-      $cmd .= " -i ".$main::outfile{"purged_test"};
+      $cmd .= " -i ".$main::outfile{"test_purged"};
       $cmd .= " -format fasta";
       $cmd .= " -sort -lth ratio ".$main::param{min_ratio};
       $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
@@ -701,8 +725,8 @@ sub OligoDiff {
     my $pattern_type = 'oligo_diff_'.$len.'nt';
     &RSAT::message::TimeWarn("\n\n; Running oligo-diff", $len."nt") if ($main::verbose >= 1);
     my $cmd = $SCRIPTS."/oligo-diff -v 2";
-    $cmd .= " -test ".$main::outfile{"purged_test"};
-    $cmd .= " -ctrl ".$main::outfile{"purged_ctrl"};
+    $cmd .= " -test ".$main::outfile{"test_purged"};
+    $cmd .= " -ctrl ".$main::outfile{"ctrl_purged"};
     $cmd .= " -nopurge"; ## The input sequences have already been purged
     $cmd .= " -l ".$len;
     $cmd .= " ".$main::param{strand};
@@ -727,7 +751,7 @@ sub OligoDiff {
 sub DyadAnalysis {
   &RSAT::message::TimeWarn("\n\n; Running dyad-analysis") if ($main::verbose >= 1);
   my $cmd = $SCRIPTS."/dyad-analysis -v 2";
-  $cmd .= " -i ".$main::outfile{"purged_test"};
+  $cmd .= " -i ".$main::outfile{"test_purged"};
   $cmd .= " -quick";
   $cmd .= " -format fasta";
   $cmd .= " -sort -lth ratio ".$main::param{min_ratio};
@@ -752,7 +776,7 @@ sub PositionAnalysis {
     my $pattern_type = 'positions_'.$len.'nt';
     &RSAT::message::TimeWarn("\n Running position-analysis", $len."nt") if ($main::verbose >= 1);
     my $cmd = $SCRIPTS."/position-analysis -v 2";
-    $cmd .= " -i ".$main::outfile{"purged_test"};
+    $cmd .= " -i ".$main::outfile{"test_purged"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
     $cmd .= " -return chi,sig,distrib,graphs,rank";
@@ -786,7 +810,7 @@ sub LocalWords {
       my $pattern_type = 'local_words_'.$len.'nt'.'_mkv'.$markov;
       &RSAT::message::TimeWarn("\n\n; Running local-word-analysis", $len."nt") if ($main::verbose >= 1);
       my $cmd = $PYTHON."/local-word-analysis -v 3";
-      $cmd .= " -i ".$main::outfile{"purged_test"};
+      $cmd .= " -i ".$main::outfile{"test_purged"};
       #  $cmd .= " -format fasta";
       $cmd .= " --min=occ_sig ".$main::param{min_sig};
       $cmd .= " --sort=-occ_sig";
@@ -1394,6 +1418,8 @@ sub SynthesisSequenceComposition {
     $seq_stats .= "<br>\nMax length: ".$max_peak_len." bp";
     &SyntheticTableAddRow($seq_stats,
 			  "<a  href='".$img."'><img height=150 src='".$img."'></a>",
+			  "converted",$main::outfile{$seq_type."_converted"},
+			  "purged",$main::outfile{$seq_type."_purged"},
 			  "lengths",$main::outfile{$seq_type."_seqlen"},
 			  "distrib",$main::outfile{$seq_type."_seqlen_distrib"},
 			  "graph",$main::outfile{$seq_type."_seqlen_distrib_graph"},
@@ -1640,7 +1666,7 @@ sub SynthesisMotifsVersusDatabase {
 sub CleanSequences {
   foreach my $seq_type (@seq_types) {
     &RSAT::message::TimeWarn("Cleaning sequences", $seq_type) if ($main::verbose >= 1);
-    &one_command("rm -f ".$main::outfile{"purged_".$seq_type}, 1);
+    &one_command("rm -f ".$main::outfile{$seq_type."_purged"}, 1);
   }
 }
 
@@ -1731,6 +1757,28 @@ specified length around the sequence center (from -msl/2 to +msl/2).
       $main::param{max_seq_len} = shift(@arguments);
       &RSAT::error::FatalError($main::param{max_seq_len}, "is not a valid value for max sequence length. Should be a strictly positive Natural number.")
 	unless ((&IsNatural($main::param{max_seq_len})) && ($main::param{max_seq_len} > 0));
+
+
+=pod
+
+=item B<-top_peaks N>
+
+Restrict the analysis to the N peaks at the top of the input sequence
+file. Some peak calling programs return the peaks sorted by score. In
+such case, the -top_peaks option allows to restrict the analysis to
+the highest scoring peaks. In some cases, the top-scoring peaks might
+contain a higher density of binding sites, allowing to detect motifs
+with a higher significance.
+
+This option can alos be convenient for performing quick tests,
+parameter selection and debugging before running the full analysis of
+large sequence sets.
+
+=cut
+    } elsif ($arg eq "-top_peaks") {
+      $main::param{top_peaks} = shift(@arguments);
+      &RSAT::error::FatalError($main::param{top_peaks}, "is not a valid value for the number of top peaks. Should be a strictly positive Natural number.")
+	unless ((&IsNatural($main::param{top_peaks})) && ($main::param{top_peaks} > 0));
 
 
 =pod
