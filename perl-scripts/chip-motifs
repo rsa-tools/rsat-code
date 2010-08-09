@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.68 2010/08/09 10:06:37 jvanheld Exp $
+# $Id: chip-motifs,v 1.69 2010/08/09 12:25:40 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.68 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.69 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -703,7 +703,7 @@ sub CompositionProfiles {
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles"};
-    &one_command($cmd, 1);
+#    &one_command($cmd, 1);
 
     ## Draw the XY graph with composition profiles
     my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
@@ -715,14 +715,14 @@ sub CompositionProfiles {
       $cmd .= " -colors ".$color_file;
     } else {
       &RSAT::message::Warning("Cannot find residue color specification file", $color_file);
-    }
+   }
     #    $cmd .= " -symbols "; ## THIS OPTION IS NOT WORKING ANYMORE : THE LEGEND DISPLAYS SYMBOLS BUT NOT THE GRAPH. THIS HAS TO BE FIXED
     my $title = $ol."nt composition profiles : ";
     $title .= "; ".$seq_type." sequence";
     $title .= "; ".$main::param{title} if ($main::param{title});
     $cmd .= " -title '".$title."'";
     $cmd .= " -xleg1 'Position' -xsize 800";
-    $cmd .= " -yleg1 'Occurrences' -ysize 300";
+    $cmd .= " -yleg1 'Occurrences' -ysize 300  -ymin 0";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
     &one_command($cmd, 1);
 
@@ -1375,13 +1375,13 @@ sub Synthesis {
   &RSAT::message::TimeWarn("Synthetic report", $main::outfile{synthesis}) if ($main::verbose >= 1);
 }
 
-################################################################
-## Compute a file path relative to the synthesis file
-sub RelativePath {
-  my ($file) = @_;
-  my ($link, $shared_path) = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-  return $link;
-}
+# ################################################################
+# ## Compute a file path relative to the synthesis file
+# sub RelativePath {
+#   my ($file) = @_;
+#   my ($link, $shared_path) = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+#   return $link;
+# }
 
 ################################################################
 ## Add a row to the syhnthetic table
