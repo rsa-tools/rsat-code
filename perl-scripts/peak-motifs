@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.69 2010/08/09 12:25:40 jvanheld Exp $
+# $Id: peak-motifs,v 1.70 2010/08/09 23:14:02 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.69 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.70 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -543,7 +543,7 @@ sub SetOutFileNames {
     ## Motif(s) considered as reference for the testing set
     $main::outfile{"ref_motif"} = &OutFileName($main::param{ref_motif_format}, "ref_motif");
     $main::outfile{"ref_motif_transfac"} = &OutFileName(".tf", "ref_motif");
-    $main::outfile{"ref_motif_info"} = &OutFileName(".tab", "ref_motif_info");
+    $main::outfile{"ref_motif_tab"} = &OutFileName(".tab", "ref_motif_tab");
     $main::outfile{"ref_motif_logo"} = &OutFileName("", "ref_motif_logo");
     $main::outfile{"ref_motif_enriched"} = &OutFileName("tab", "ref_motif_enriched");
 
@@ -703,7 +703,7 @@ sub CompositionProfiles {
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles"};
-#    &one_command($cmd, 1);
+    &one_command($cmd, 1);
 
     ## Draw the XY graph with composition profiles
     my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
@@ -896,22 +896,29 @@ sub RefMotif {
   ## Convert the reference motif to TRANSFAC format, because this
   ## format holds information about the motif name, ID etc
   ## Export the logo and matrix parameters
-  $cmd = $SCRIPTS."/convert-matrix -v 0";
-  $cmd .= " -i ".$main::infile{ref_motif};
-  $cmd .= " -from ".$main::param{ref_motif_format};
-  $cmd .= " -to transfac -decimals 1";
-  $cmd .= " -return counts,logo,consensus,parameters";
-  $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
-  $cmd .= " -o ".$main::outfile{ref_motif_transfac};
+  if ((lc($main::param{ref_motif_format}) eq "transfac") ||
+      (lc($main::param{ref_motif_format}) eq "transfac")) {
+    $cmd = "cp ";
+    $cmd .= " ".$main::infile{ref_motif};
+    $cmd .= " ".$main::outfile{ref_motif_transfac};
+  } else {
+    $cmd = $SCRIPTS."/convert-matrix -v 0";
+    $cmd .= " -i ".$main::infile{ref_motif};
+    $cmd .= " -from ".$main::param{ref_motif_format};
+    $cmd .= " -to transfac -decimals 1";
+    $cmd .= " -return counts,consensus,parameters";
+    $cmd .= " -o ".$main::outfile{ref_motif_transfac};
+  }
   &one_command($cmd, 1);
 
-  ## Also export the matrices in tab-delimited format
+  ## Also export the matrices in tab-delimited format and export sequence logos
   $cmd = $SCRIPTS."/convert-matrix -v 0";
   $cmd .= " -i ".$main::infile{ref_motif};
   $cmd .= " -from ".$main::param{ref_motif_format};
   $cmd .= " -to tab";
-  $cmd .= " -return counts";
-  $cmd .= " -o ".$main::outfile{ref_motif_info};
+  $cmd .= " -return counts,logo";
+    $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
+  $cmd .= " -o ".$main::outfile{ref_motif_tab};
   &one_command($cmd, 1);
 }
 
@@ -1546,7 +1553,7 @@ sub SynthesisRefMotif {
 			  $logo_table,
 #			  $main::param{ref_motif_format}, &RSAT::util::RelativePath($main::outfile{synthesis}, $main::infile{ref_motif}),
 			  "tf",$main::outfile{ref_motif_transfac},
-			  "info",$main::outfile{ref_motif_info},
+			  "tab",$main::outfile{ref_motif_tab},
 			 );
   }
 }
