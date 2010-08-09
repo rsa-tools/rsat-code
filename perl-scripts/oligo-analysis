@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.151 2010/05/24 07:51:24 jvanheld Exp $
+# $Id: oligo-analysis,v 1.152 2010/08/09 09:50:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.151 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.152 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -130,11 +130,15 @@ if ($return{'exp'}) {
 if (@output_fields == ()) { #default output is occurrence numbers
     @output_fields = ("occurrences");
     $return{'occ'} = 1;
-} elsif (($return{'proba'}) ||
-	 ($return{'like'}) ||
-	 ($return{'ratio'})) {
-    $return{'exp_freq'};
 }
+
+if (($return{'proba'}) ||
+    ($return{'like'}) ||
+    ($return{'ratio'})) {
+  $return{'exp_freq'} = 1;
+  $return{'exp_occ'} = 1;
+}
+
 if ($method =~  /calibration/i) {
     $return{'exp_occ'} = 1;
     $return{'exp_var'} = 1;
