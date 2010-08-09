@@ -17,13 +17,13 @@ $sequence_type = "dna";
 ################################################################
 ## Supported background models
 %supported_bg = (
-		 equi=>1,
-		 intergenic=>1,
-		 upstream=>1,
-		 upstream-noorf=>1,
-		 protein=>1,
+		 'equi'=>1,
+		 'intergenic'=>1,
+		 'upstream'=>1,
+		 'upstream-noorf'=>1,
+		 'protein'=>1,
 		 );
-$supported_bg = sort keys %supported_bg;
+$supported_bg = join(",", sort keys %supported_bg);
 
 &ReadArguments();
 
@@ -304,7 +304,7 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-ol") {
       $oligo_length = $ARGV[$a+1];
 
-      #### file containing a list of the desired lengths of random sequences 
+      #### file containing a list of the desired lengths of random sequences
     } elsif ($ARGV[$a] eq "-lf") {
       $length_file =$ARGV[$a+1];
 
@@ -456,17 +456,17 @@ random-seq options
 -n		repetitions (number of sequences)
 -v		verbose
 -o		outputfile
--format		output format. 
--lw ##		Line width. 
+-format		output format
+-lw ##		Line width
 -a		alphabet. ex: -a a:t 0.3 c:g 0.2
 -expfreq	file containing expected oligomer frequencies
 -type		protein|DNA|other
 -seed #	seed for the random generator
--ncf		(deprecated, use '-bg intergenic' instead) 
+-ncf		(deprecated, use '-bg intergenic' instead)
 -bg		background model (supported: $supported_bg)
--org		organism 
+-org		organism
 -ol		oligo-length
--lf		length file 
+-lf		length file
 End_short_help
     close HELP;
     exit(0);
