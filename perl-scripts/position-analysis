@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.55 2010/06/15 19:43:48 jvanheld Exp $
+# $Id: position-analysis,v 1.56 2010/08/09 12:25:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -31,7 +31,7 @@ $log_base = log(10);
 $origin = "start";
 @supported_origins = qw(start center end);
 foreach my $ori (@supported_origins) {
-    $supported_origin{$ori} = 1;
+  $supported_origin{$ori} = 1;
 }
 $supported_origins = join ",", @supported_origins;
 $offset = 0;
@@ -390,6 +390,8 @@ sub ReadSequence {
     }
     $ref_pos += $offset;
 
+
+
     #	if (($origin eq "-0") || ($origin < 0)) {
     #	    $ref_pos = $seq_length[$sequence_number] + $origin + 1;
     #	} else {
@@ -405,6 +407,8 @@ sub ReadSequence {
 				   "last_pos=".$last_pos,
 				   "ref_pos=".$ref_pos,
 				  )) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
+
+
 
     #### count oligonucleotides ####
     my $current_pos = 1;
