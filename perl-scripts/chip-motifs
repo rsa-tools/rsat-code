@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.67 2010/08/09 06:10:43 jvanheld Exp $
+# $Id: chip-motifs,v 1.68 2010/08/09 10:06:37 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.67 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.68 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1379,10 +1379,8 @@ sub Synthesis {
 ## Compute a file path relative to the synthesis file
 sub RelativePath {
   my ($file) = @_;
-#  &RSAT::message::Debug("RelativePath", $file) if ($main::verbose >= 10);
-  my $rel_file = $file;
-  $rel_file =~ s|${synthesis_path}/||;
-  return ($rel_file);
+  my ($link, $shared_path) = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+  return $link;
 }
 
 ################################################################
@@ -1400,7 +1398,7 @@ sub SyntheticTableAddRow {
     $file = shift(@files);
     if (-e $file) {
       &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
-      $file = &RelativePath($file);
+      $file = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn "<a href='".$file."'>[".$key."]</a><br>\n";
     } else {
       print $syn "<font color='red'>[".$key."]</font><br>\n";
@@ -1473,7 +1471,7 @@ sub SynthesisSequenceComposition {
     }
 
     ## Sequence lengths
-    my $img = &RelativePath($main::outfile{$seq_type."_seqlen_distrib_graph"});
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$seq_type."_seqlen_distrib_graph"});
     my $seq_stats = "Nb of peaks: ".$peak_nb;
     $seq_stats .= "<br>\nTotal seq. size: ".$seq_size." kb";
     $seq_stats .= "<br>\nMin length: ".$min_peak_len." bp";
@@ -1492,9 +1490,9 @@ sub SynthesisSequenceComposition {
     ## Residue composition
     for my $ol (@profiles_oligo_lengths) {
       my $table = "<table><tr>";
-      my $img = &RelativePath($main::outfile{$ol."nt_".$seq_type."_heatmap"});
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
       $table .= "<td>Transition frequencies<br><a  href='".$img."'><img width=200 src='".$img."'></a></td>";
-      $img = &RelativePath($main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
+      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
       $table .= "<td>Position profile<br><a  href='".$img."'><img height=150 src='".$img."'></a></td>";
       $table .= "</tr></table>";
       &SyntheticTableAddRow($ol."nt composition",
@@ -1529,13 +1527,13 @@ sub SynthesisRefMotif {
       my $logo_file = $main::outfile{ref_motif_logo}."_m".$i.".".$main::param{img_format};
       my $logo_file_rc = $main::outfile{ref_motif_logo}."_m".$i."_rc.".$main::param{img_format};
       if (-e $logo_file) {
-	my $img = &RelativePath($logo_file);
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
 	$logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
       } elsif ($main::verbose >= 1) {
 	&RSAT::message::Warning("Cannot find reference logo", $logo_file);
       }
       if (-e $logo_file_rc) {
-	my $img = &RelativePath($logo_file_rc);
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
 	$logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
       } elsif ($main::verbose >= 1) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
@@ -1546,7 +1544,7 @@ sub SynthesisRefMotif {
 
     &SyntheticTableAddRow("Reference motif",
 			  $logo_table,
-#			  $main::param{ref_motif_format}, &RelativePath($main::infile{ref_motif}),
+#			  $main::param{ref_motif_format}, &RSAT::util::RelativePath($main::outfile{synthesis}, $main::infile{ref_motif}),
 			  "tf",$main::outfile{ref_motif_transfac},
 			  "info",$main::outfile{ref_motif_info},
 			 );
@@ -1613,7 +1611,7 @@ sub SynthesisPatternDisco {
       }
       &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
       if (-e $logo_file) {
-	my $img = &RelativePath($logo_file);
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
 	$pattern_table .= "<td align='right'>";
 	$pattern_table .= $start_format;
 	$pattern_table .= "$asmb_or_isol";
@@ -1627,7 +1625,7 @@ sub SynthesisPatternDisco {
 	&RSAT::message::Warning("Cannot find logo", $logo_file);
       }
       if (-e $logo_file_rc) {
-	my $img = &RelativePath($logo_file_rc);
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
 	$pattern_table .= "<td align='left'>";
 	$pattern_table .= $start_format;
 	$pattern_table .= $pattern_info[$logo_nb]->{rc_word};
@@ -1669,7 +1667,7 @@ sub SynthesisPatternDisco {
 ################################################################
 ## Synthesis of word comparisons
 sub SynthesisWordCompa {
-  my $img = &RelativePath($main::outfile{word_compa_heatmap});
+  my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{word_compa_heatmap});
   &SyntheticTableAddRow("Word comparisons",
 			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
 			"tab",$main::outfile{word_compa},
@@ -1680,7 +1678,7 @@ sub SynthesisWordCompa {
 ################################################################
 ## Synthesis of motif comparisons
 sub SynthesisMotifCompa {
-  my $img = &RelativePath($main::outfile{motifs_disco_compa_png});
+  my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{motifs_disco_compa_png});
   &SyntheticTableAddRow("Motif comparisons",
 			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
 			"motifs", $main::outfile{motifs_discovered},
@@ -1694,7 +1692,7 @@ sub SynthesisMotifCompa {
 ## Synthesis of comparisons betwween discovered motifs and reference motif
 sub SynthesisMotifsVersusReference {
   &SyntheticTableAddHeaderRow("Discovered motifs versus reference motif");
-  my $img = &RelativePath($main::outfile{"motifs_vs_ref_png"});
+  my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_ref_png"});
   &SyntheticTableAddRow("Motifs versus reference motif",
 			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
 			"Reference motif",$main::infile{ref_motif},
@@ -1711,7 +1709,7 @@ sub SynthesisMotifsVersusReference {
 sub SynthesisMotifsVersusDatabase {
   &SyntheticTableAddHeaderRow("Discovered motifs versus transcription factor databases");
   foreach my $db_name (@motif_databases) {
-    my $img = &RelativePath($main::outfile{"motifs_vs_db_".$db_name."_png"});
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_db_".$db_name."_png"});
     &SyntheticTableAddRow("Motifs versus ".$db_name." database",
 			  "<a  href='".$img."'><img height=300 src='".$img."'></a>",
 			  $db_name." DB",$main::infile{"motif_db_".$db_name},
