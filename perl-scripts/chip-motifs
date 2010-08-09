@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.66 2010/08/09 06:06:29 jvanheld Exp $
+# $Id: chip-motifs,v 1.67 2010/08/09 06:10:43 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.66 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.67 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1398,9 +1398,13 @@ sub SyntheticTableAddRow {
   while ($key = shift (@files)){
     last unless $key;
     $file = shift(@files);
-    &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
-    $file = &RelativePath($file);
-    print $syn "<a href='".$file."'>[".$key."]</a><br>\n";
+    if (-e $file) {
+      &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
+      $file = &RelativePath($file);
+      print $syn "<a href='".$file."'>[".$key."]</a><br>\n";
+    } else {
+      print $syn "<font color='red'>[".$key."]</font><br>\n";
+    }
   }
   print $syn "</td>\n";
   print $syn "</tr>\n";
