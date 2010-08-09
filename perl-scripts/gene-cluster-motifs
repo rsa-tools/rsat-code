@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.292 2010/06/12 23:33:20 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.293 2010/08/09 11:36:03 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.292 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.293 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Paths of the programs called by gene-cluster-motifs
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -1235,7 +1235,8 @@ sub StoreSequences  {
     if (defined($all_sequences{lc($member)})) {
       my $current_seq = $all_sequences{lc($member)};
       my $current_id = $member;
-      &PrintNextSequence($out, $seq_format, 0, $current_seq, $current_id);
+      my $current_comment = $all_sequences_comment{lc($member)};
+      &PrintNextSequence($out, $seq_format, 0, $current_seq, $current_id, $current_comment);
     } else {
       &RSAT::message::Warning("No sequence with ID", $member,"in  file", $all_seq_file);
     }
@@ -4646,6 +4647,8 @@ sub ReadAllSequences {
     &RSAT::message::TimeWarn("Read sequence", $seq_nb) if (($main::verbose >= 0) && ($seq_nb%1000==0));
     #	&RSAT::message::Debug("", "read sequence", $seq_nb, $current_id) if ($main::verbose >= 10);
     $all_sequences{lc($current_id)} = $current_seq;
+    $all_sequences_comment{lc($current_id)} = join "; ", @comments;
+#    &RSAT::message::Debug($current_id, length($current_seq)." bp", $all_sequences_comment{lc($current_id)}) if ($main::verbose >= 10);
   }
   close $in;
   chdir($dir{output});
