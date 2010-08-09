@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.65 2010/08/09 05:08:28 jvanheld Exp $
+# $Id: chip-motifs,v 1.66 2010/08/09 06:06:29 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.65 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.66 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -296,7 +296,7 @@ sub DefaultParameters {
   ## may include repeated residues. Using the option -noov here would
   ## induce an under-estimation of the expected frequency for words
   ## containing repeated residues.
-  $main::param{profiles_noov} = "-noov"; push(@main::param_list, "profiles_noov");
+  $main::param{profiles_noov} = "-ovlp"; push(@main::param_list, "profiles_noov");
 
   ################################################################
   ## Pattern discovery options
@@ -368,8 +368,8 @@ sub SetOutFileNames {
 							  @seq_suffix);
     $main::outfile{$seq_type."_purged"} = &OutFileName(".fasta",
 						       $seq_type,
-						       "purged",
 						       @seq_suffix,
+						       "purged",
 						       "ml".$main::param{purge_match_length},
 						       "mis".$main::param{purge_mismatches},
 						      );
@@ -404,20 +404,17 @@ sub SetOutFileNames {
       push @timelog_keys, $ol."nt_".$seq_type."_profiles";
 
       ## oligo frequencies in the sequence set
-      $main::outfile{$ol."nt_".$seq_type."_freq"} = &OutFileName(".tab", $seq_type."_freq"."-1str".$main::param{disco_noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_freq"} = &OutFileName(".tab", $seq_type."_freq"."-1str".$main::param{profiles_noov},$ol."nt");
       push @timelog_keys, $ol."nt_".$seq_type."_freq";
-      $main::outfile{$ol."nt_".$seq_type."_transit"} = &OutFileName(".tab", $seq_type."_transitions"."-1str".$main::param{disco_noov},$ol."nt");
-      $main::outfile{$ol."nt_".$seq_type."_inclusive"} = &OutFileName(".txt", $seq_type."_inclusive"."-1str".$main::param{disco_noov},$ol."nt");
-      $main::outfile{$ol."nt_".$seq_type."_heatmap"} = &OutFileName(".".$main::param{img_format}, $seq_type."_heatmap"."-1str".$main::param{disco_noov},$ol."nt");
-
+      $main::outfile{$ol."nt_".$seq_type."_transit"} = &OutFileName(".tab", $seq_type."_transitions"."-1str".$main::param{profiles_noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_inclusive"} = &OutFileName(".txt", $seq_type."_inclusive"."-1str".$main::param{profiles_noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_heatmap"} = &OutFileName(".".$main::param{img_format}, $seq_type."_heatmap"."-1str".$main::param{profiles_noov},$ol."nt");
       ## HTML index to the individual oligonucleotide profiles
       $main::outfile{$ol."nt_".$seq_type."_profiles_index"} = $main::outfile{$ol."nt_".$seq_type."_profiles"};
       $main::outfile{$ol."nt_".$seq_type."_profiles_index"} =~ s/\.tab$//;
       $main::outfile{$ol."nt_".$seq_type."_profiles_index"} .= "_graph_index.html";
-    }
 
-    ## Compositional profiles
-    for my $ol (1,2) {
+      ## Graph prefix for positional profiles
       $main::outfile{$ol."nt_".$seq_type."_profiles_graph"} = $main::outfile{$ol."nt_".$seq_type."_profiles"};
       $main::outfile{$ol."nt_".$seq_type."_profiles_graph"} =~ s/\.tab$//;
       $main::outfile{$ol."nt_".$seq_type."_profiles_graph"} .= ".".$main::param{img_format};
@@ -654,7 +651,42 @@ sub SequenceLengths {
 ## sequence scanning.
 sub CompositionProfiles {
   my ($seq_file, $seq_type) = @_;
+
+  ################################################################
+  ## Compute nucleotide and dinucleotide frequencies
+  &RSAT::message::TimeWarn("Computing nucleotide and dinucleotide frequencies") if ($main::verbose >= 2);
   for my $ol (@profiles_oligo_lengths) {
+
+    ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
+    ## from the input sequence
+    $cmd = $BIN."/count-words -v 1";
+    $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
+    $cmd .= " -l ".$ol;
+    $cmd .= " -1str";
+    $cmd .= " ".$main::param{profiles_noov} if ($main::param{profiles_noov} eq "-noov"); ## The option -ovlp is not supported by count-words
+    $cmd .= " > ".$main::outfile{$ol."nt_".$seq_type."_freq"};
+
+    ## Convert background model in INCLUSIVE format for matrix-scan-quick
+    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+    $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
+    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_inclusive"};
+
+    ## Convert background model to transition table and draw the heatmap of transition probabilities
+    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
+    $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
+    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transit"};
+    $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol."nt_".$seq_type."_transit"};
+    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
+    &one_command($cmd, 1);
+  }
+
+  ################################################################
+  ## Compute position profiles for 1nt and 2nt
+  &RSAT::message::TimeWarn("Computing composition profiles") if ($main::verbose >= 2);
+  for my $ol (@profiles_oligo_lengths) {
+
+    ## Compute positional profiles
     &RSAT::message::TimeWarn("\n\n; Computing composition profiles", $ol."nt") if ($main::verbose >= 1);
     my $cmd =$SCRIPTS."/position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
@@ -692,29 +724,6 @@ sub CompositionProfiles {
     $cmd .= " -xleg1 'Position' -xsize 800";
     $cmd .= " -yleg1 'Occurrences' -ysize 300";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
-    &one_command($cmd, 1);
-
-    ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
-    ## from the input sequence
-    $cmd = $BIN."/count-words -v 1";
-    $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
-    $cmd .= " -l ".$ol;
-    $cmd .= " -1str";
-    $cmd .= " ".$main::param{profiles_noov};
-    $cmd .= " > ".$main::outfile{$ol."nt_".$seq_type."_freq"};
-
-    ## Convert background model in INCLUSIVE format for matrix-scan-quick
-    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to inclusive ";
-    $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
-    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_inclusive"};
-
-    ## Convert background model to transition table and draw the heatmap of transition probabilities
-    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
-    $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
-    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transit"};
-    $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol."nt_".$seq_type."_transit"};
-    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
-    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
     &one_command($cmd, 1);
 
   }
@@ -2267,6 +2276,18 @@ It is recommended to use the -noov mode (default) to avoid the effect
 of self-overlap, which violates the hypothesis of independence of
 successive occurrences underlying the binomial significance test
 (oligo-analysis, dyad-analysis).
+
+<I>Beware</I>: the options -noov and -ovlp only apply to pattern discovery,
+and not to compositional profiles. Dinucleotide frequencies are always
+computed with the option -ovlp (count all occurrences), to avoid weird
+effect. Since those compositin profiles further serve to estimate the
+probability of larger words, which may include repeated residues, we
+need to count all dinucleotide occurrences. Indeed with the -noov mode
+(renewing occurrences only), the transition tables of the first order
+Markov model would be unbalanced: the expected frequency of all the
+repeated dinucleotides (AA, TT, CC, GG) would be under-estimated,
+leading to an under-estimation of the expected frequency of
+repeat-containing words (e.g. AAAAAA, AAAGGG, ...).
 
 =cut
     } elsif ($arg eq "-noov") {
