@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.64 2010/08/06 10:38:04 jvanheld Exp $
+# $Id: peak-motifs,v 1.65 2010/08/09 05:08:28 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.65 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -191,20 +191,22 @@ package main;
   &Verbose() if ($main::verbose);
 
   foreach my $seq_type (@seq_types) {
-    &PurgeOneSeq($seqfile{$seq_type}, $seq_type) if ($task{purge});
+    &PurgeSeq($seqfile{$seq_type}, $seq_type) if ($task{purge});
     &SequenceLengths($seqfile{$seq_type}, $seq_type) if ($task{seqlen});
     &CompositionProfiles($seqfile{$seq_type}, $seq_type) if ($task{profiles});
   }
 
 
   if ($main::infile{ctrl_seq}) {
+    &ComputeBgModels($main::infile{ctrl_seq});
     &OligoDiff() if ($task{oligo_diff});
-  } else {
-    &OligoAnalysis() if ($task{oligos});
-    &DyadAnalysis() if ($task{dyads});
-    &PositionAnalysis() if ($task{positions});
-    &LocalWords() if ($task{local_words});
   }
+
+
+  &OligoAnalysis() if ($task{oligos});
+  &DyadAnalysis() if ($task{dyads});
+  &PositionAnalysis() if ($task{positions});
+  &LocalWords() if ($task{local_words});
 
   if (defined($main::infile{ref_motif})) {
     &RefMotif() if ($task{ref_motif});
@@ -277,17 +279,29 @@ sub DefaultParameters {
   $main::param{purge_match_length} = 30; push(@main::param_list, "purge_match_length");
   $main::param{purge_mismatches} = 0; push(@main::param_list, "purge_mismatches");
 
-  ## residue profiles (position-analysis)
+  ################################################################
+  ## Residue  profiles (position-analysis)
   $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-2str"; push(@main::param_list, "profiles_strand");
   @main::profiles_oligo_lengths = (1,2);
   $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
+  ## Beware: computational profiles are always computed with the
+  ## option -ovlp (count all occurrences), to avoid weird effectw:
+  ## with the -noov mode, the transition tables are unbalanced even
+  ## when the input sequences are generated with equiprobable
+  ## residues. This is consistent with the fact that those profiles
+  ## further serve to estimate the probability of larger words, which
+  ## may include repeated residues. Using the option -noov here would
+  ## induce an under-estimation of the expected frequency for words
+  ## containing repeated residues.
+  $main::param{profiles_noov} = "-noov"; push(@main::param_list, "profiles_noov");
+
   ################################################################
   ## Pattern discovery options
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
-  $main::param{noov} = "-noov"; push(@main::param_list, "noov");
+  $main::param{disco_noov} = "-noov"; push(@main::param_list, "disco_noov");
   $main::param{oligo_min_len} = 6; push(@main::param_list, "oligo_min_len");
   $main::param{oligo_max_len} = 7; push(@main::param_list, "oligo_max_len");
   $main::param{patterns_max_rank} = 25; push(@main::param_list, "patterns_max_rank");
@@ -298,8 +312,8 @@ sub DefaultParameters {
   $main::param{min_sig} = 0; push(@main::param_list, "min_sig");
 
   ## oligo-analysis
-  $main::param{oligo_min_mkv} = -3; push(@main::param_list, "oligo_min_mkv");
-  $main::param{oligo_max_mkv} = -3; push(@main::param_list, "oligo_max_mkv");
+  $main::param{oligo_min_mkv} = -2; push(@main::param_list, "oligo_min_mkv");
+  $main::param{oligo_max_mkv} = -2; push(@main::param_list, "oligo_max_mkv");
 
   ## dyad-analysis
 
@@ -331,8 +345,7 @@ sub DefaultParameters {
 ## Define one output file name by concatenating arguments
 sub OutFileName {
   my ($extension, @name_elements) = @_;
-  my $out_file_name = $dir{output}."/".$main::param{prefix};
-  $out_file_name .= join ("_", @name_elements);
+  my $out_file_name = join ("_", $dir{output}."/".$main::param{prefix}, @name_elements);
   $out_file_name .= $extension;
   return($out_file_name);
 }
@@ -360,7 +373,7 @@ sub SetOutFileNames {
 						       "ml".$main::param{purge_match_length},
 						       "mis".$main::param{purge_mismatches},
 						      );
-#      $seqfile{$seq_type} = $main::outfile{$seq_type."_converted"};
+#    $seqfile{$seq_type} = $main::outfile{$seq_type."_converted"};
 #  } else {
 #      $main::outfile{$seq_type."_purged"} = &OutFileName(".fasta", 
 #							 $seq_type,
@@ -382,17 +395,20 @@ sub SetOutFileNames {
 
     ## Compositional Profiles
     for my $ol (@profiles_oligo_lengths) {
+
+      ################################################################
       ## Profiles of oligo frequencies as a function of the position
-      $main::outfile{$ol."nt_".$seq_type."_profiles"} = &OutFileName(".tab", $seq_type."_profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
-								     "ci".$main::param{profiles_ci});
+      ##
+      $main::outfile{$ol."nt_".$seq_type."_profiles"} = &OutFileName(".tab", $seq_type."_profiles".$main::param{profiles_strand}.$main::param{profiles_noov},
+								     $ol."nt","ci".$main::param{profiles_ci});
       push @timelog_keys, $ol."nt_".$seq_type."_profiles";
 
       ## oligo frequencies in the sequence set
-      $main::outfile{$ol."nt_".$seq_type."_freq"} = &OutFileName(".tab", $seq_type."_freq"."-1str".$main::param{noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_freq"} = &OutFileName(".tab", $seq_type."_freq"."-1str".$main::param{disco_noov},$ol."nt");
       push @timelog_keys, $ol."nt_".$seq_type."_freq";
-      $main::outfile{$ol."nt_".$seq_type."_transit"} = &OutFileName(".tab", $seq_type."_transitions"."-1str".$main::param{noov},$ol."nt");
-      $main::outfile{$ol."nt_".$seq_type."_inclusive"} = &OutFileName(".txt", $seq_type."_inclusive"."-1str".$main::param{noov},$ol."nt");
-      $main::outfile{$ol."nt_".$seq_type."_heatmap"} = &OutFileName(".".$main::param{img_format}, $seq_type."_heatmap"."-1str".$main::param{noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_transit"} = &OutFileName(".tab", $seq_type."_transitions"."-1str".$main::param{disco_noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_inclusive"} = &OutFileName(".txt", $seq_type."_inclusive"."-1str".$main::param{disco_noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_heatmap"} = &OutFileName(".".$main::param{img_format}, $seq_type."_heatmap"."-1str".$main::param{disco_noov},$ol."nt");
 
       ## HTML index to the individual oligonucleotide profiles
       $main::outfile{$ol."nt_".$seq_type."_profiles_index"} = $main::outfile{$ol."nt_".$seq_type."_profiles"};
@@ -409,15 +425,16 @@ sub SetOutFileNames {
   }
 
 
+
   ################################################################
   ## Background model for matrix scanning
   $main::param{scan_markov_order} = 1;
-  my $bg_ol = $main::param{scan_markov_order}+1;
-  $main::param{scan_bg_file} = $main::outfile{$bg_ol."nt_test_inclusive"};
+  my $scan_bg_ol = $main::param{scan_markov_order}+1;
+  $main::param{scan_bg_file} = $main::outfile{$scan_bg_ol."nt_test_inclusive"};
   &RSAT::message::Debug("bg model", 
 			"order=".$main::param{scan_markov_order},
-			"bg_ol=".$bg_ol,
-			"key=".$bg_ol."nt_test_inclusive",
+			"bg_ol=".$scan_bg_ol,
+			"key=".$scan_bg_ol."nt_test_inclusive",
 			"file=".$main::param{scan_bg_file}
 		       );
 
@@ -428,38 +445,54 @@ sub SetOutFileNames {
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
       ## oligo-diff
       $pattern_type = 'oligo_diff_'.$len.'nt';
-      $main::outfile{$pattern_type} = &OutFileName(".tab", "oligo_diff".$main::param{strand}.$main::param{noov},$len."nt");
+      $main::outfile{$pattern_type} = &OutFileName(".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$len."nt");
       push @pattern_types, $pattern_type;
     }
   } else {
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-      for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
-	## Convert negative markov orders relative to the oligo length
-	$markov += $len if ($markov < 0);
+
+      if ($main::infile{ctrl_seq}) {
+	################################################################
+	## Background models estimated from the control sequences
 	## oligo-analysis
-	$pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
-	$main::outfile{$pattern_type} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov},
-						     $len."nt", "mkv".$markov);
+	$pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
+	$main::outfile{$pattern_type} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
+						     $len."nt", "vs_ctrl");
 	push @pattern_types, $pattern_type;
 
-	## local-word-analysis
-	$pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
-	$main::outfile{$pattern_type} = &OutFileName(".tab", "local_words".$main::param{strand}.$main::param{noov},
-						     $len."nt", "wind".$main::param{local_words_window},
-#						     $main::param{local_words_heuristic},
-						     "mkv".$markov);
-	push @pattern_types, $pattern_type;
+      } else {
+	################################################################
+	## Background models estimated from the test sequences
+	## themselves (lower order Markov chain)
+	for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+	  ## Convert negative markov orders relative to the oligo length
+	  $markov += $len if ($markov < 0);
+
+	  ## oligo-analysis
+	  $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
+	  $main::outfile{$pattern_type} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
+						       $len."nt", "mkv".$markov);
+	  push @pattern_types, $pattern_type;
+
+	  ## local-word-analysis
+	  $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
+	  $main::outfile{$pattern_type} = &OutFileName(".tab", "local_words".$main::param{strand}.$main::param{disco_noov},
+						       $len."nt", "wind".$main::param{local_words_window},
+						       #						     $main::param{local_words_heuristic},
+						       "mkv".$markov);
+	  push @pattern_types, $pattern_type;
+	}
       }
 
       ## position-analysis
       $pattern_type = 'positions_'.$len.'nt';
-      $main::outfile{$pattern_type} = &OutFileName(".tab", "positions".$main::param{strand}.$main::param{noov},
+      $main::outfile{$pattern_type} = &OutFileName(".tab", "positions".$main::param{strand}.$main::param{disco_noov},
 						   $len."nt", "ci".$main::param{positions_ci});
       push @pattern_types, $pattern_type;
     }
 
     ## dyad-analysis
-    $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov},
+    $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
 					 "3nt_sp0-20_bg_monads");
     push @pattern_types, "dyads";
   }
@@ -542,9 +575,8 @@ sub SetOutFileNames {
 
 ################################################################
 ## Convert, truncate, select top and purge sequences
-sub PurgeOneSeq {
+sub PurgeSeq {
   my ($seq_file, $seq_type) = @_;
-
 
   ## Convert sequences to standard fasta format, mask non-DNA seqences
   ## selectd top peaks if required, and truncate sequences to max
@@ -618,7 +650,8 @@ sub SequenceLengths {
 
 ################################################################
 ## Run position-analysis to compute composition profiles (residues,
-## dinucleotides)
+## dinucleotides) anw count-words to compute background models for
+## sequence scanning.
 sub CompositionProfiles {
   my ($seq_file, $seq_type) = @_;
   for my $ol (@profiles_oligo_lengths) {
@@ -630,7 +663,7 @@ sub CompositionProfiles {
     $cmd .= " -return chi,sig,distrib,graphs,rank";
     #    $cmd .= " -max_graphs ".$main::param{profiles_max_graphs};
     $cmd .= " ".$main::param{profiles_strand};
-    $cmd .= " ".$main::param{noov};
+    $cmd .= " ".$main::param{profiles_noov};
     $cmd .= " -seqtype dna";
     $cmd .= " -l ".$ol;
     $cmd .= " -ci ".$main::param{profiles_ci};
@@ -667,7 +700,7 @@ sub CompositionProfiles {
     $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -l ".$ol;
     $cmd .= " -1str";
-    $cmd .= " ".$main::param{noov};
+    $cmd .= " ".$main::param{profiles_noov};
     $cmd .= " > ".$main::outfile{$ol."nt_".$seq_type."_freq"};
 
     ## Convert background model in INCLUSIVE format for matrix-scan-quick
@@ -706,10 +739,14 @@ sub OligoAnalysis {
       $cmd .= " -uth rank ".$main::param{patterns_max_rank};
       $cmd .= " -return occ,proba,rank";
       $cmd .= " ".$main::param{strand};
-      $cmd .= " ".$main::param{noov};
+      $cmd .= " ".$main::param{disco_noov};
       $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
+#      if ($main::infile{ctrl_seq}) {
+#	$cmd .= " -expfreq ".;
+#      } else {
       $cmd .= " -markov ".$markov;
+#      }
       $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &one_command($cmd, 1);
@@ -730,7 +767,7 @@ sub OligoDiff {
     $cmd .= " -nopurge"; ## The input sequences have already been purged
     $cmd .= " -l ".$len;
     $cmd .= " ".$main::param{strand};
-    $cmd .= " ".$main::param{noov};
+    $cmd .= " ".$main::param{disco_noov};
     $cmd .= " -side test";
     #    $cmd .= " -sort";
     $cmd .= " -lth ratio ".$main::param{min_ratio};
@@ -758,7 +795,7 @@ sub DyadAnalysis {
   $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
   $cmd .= " -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,ratio,zscore,rank";
   $cmd .= " ".$main::param{strand};
-  $cmd .= " ".$main::param{noov};
+  $cmd .= " ".$main::param{disco_noov};
   $cmd .= " -seqtype dna";
   $cmd .= " -l 3 -sp 0-20 ";
   $cmd .= " -bg monads";
@@ -782,7 +819,7 @@ sub PositionAnalysis {
     $cmd .= " -return chi,sig,distrib,graphs,rank";
     $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
     $cmd .= " ".$main::param{strand};
-    $cmd .= " ".$main::param{noov};
+    $cmd .= " ".$main::param{disco_noov};
     $cmd .= " -seqtype dna";
     $cmd .= " -l ".$len;
     $cmd .= " -ci ".$main::param{positions_ci};
@@ -822,7 +859,7 @@ sub LocalWords {
       } else {
 	$cmd .= " +-";
       }
-      $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
+      $cmd .= " --overlap" if ($main::param{disco_noov} eq "ovlp");
       $cmd .= " --center=".$center_pos;
       $cmd .= " --window=".$main::param{local_words_window};
 #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
@@ -905,7 +942,7 @@ sub WordsVersusWords {
   $cmd .= " -ic 2 -lc";
   $cmd .= " -null .";
   $cmd .= " -suppress ".$main::dir{output}."/";
-  $cmd .= " -suppress ".$main::param{prefix};
+  $cmd .= " -suppress ".$main::param{prefix}."_";
   $cmd .= " -suppress '\.tab'";
   $cmd .= " -o ".$main::outfile{word_compa};
   $cmd .= " ; ".$SCRIPTS."/draw-heatmap -min 0 -max 10  -out_format png";
@@ -1186,7 +1223,7 @@ sub TimeLog {
   my $prefix = "NA";
   if (defined($main::param{prefix})) {
     $prefix = $main::param{prefix};
-    $prefix =~ s/_$//;
+#    $prefix =~ s/_$//;
   }
 
   print $timelog join("\t", "#start_time       ", "done_time        ", "elapsed", "seconds", "task", "prefix", "file"), "\n";
@@ -1380,34 +1417,47 @@ sub SynthesisSequenceComposition {
     ## Header line
     &SyntheticTableAddHeaderRow("Sequence composition (".$seq_type." sequences)");
 
-    ## Get number of peaks from sequence length distribution
-    my $peak_nb = `grep '; count' $main::outfile{$seq_type."_seqlen_distrib"}`;
-    chomp($peak_nb);
-    $peak_nb =~ s/.*count\s*//;
 
-    ## Get min peak length
-    my $min_peak_len = `grep '; min' $main::outfile{$seq_type."_seqlen_distrib"}`;
-    chomp($min_peak_len);
-    $min_peak_len =~ s/.*min\s*//;
+    my $peak_nb = "NA";
+    my $mean_peak_len = "NA";
+    my $min_peak_len = "NA";
+    my $max_peak_len = "NA";
+    my $seq_size = "NA";
 
-    ## Get mean peak length
-    my $mean_peak_len = `grep '; mean' $main::outfile{$seq_type."_seqlen_distrib"}`;
-    chomp($mean_peak_len);
-    $mean_peak_len =~ s/.*mean\s*//;
+    if (-e $main::outfile{$seq_type."_seqlen_distrib"}) {
+      &RSAT::message::Info("Collecting sequence length statistics from file", $main::outfile{$seq_type."_seqlen_distrib"}) if ($main::verbose >= 3);
 
-    ## Get max peak length
-    my $max_peak_len = `grep '; max' $main::outfile{$seq_type."_seqlen_distrib"}`;
-    chomp($max_peak_len);
-    $max_peak_len =~ s/.*max\s*//;
+      ## Get number of peaks from sequence length distribution
+      $peak_nb = `grep '; count' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($peak_nb);
+      $peak_nb =~ s/.*count\s*//;
 
-    ## Get total sequence size from sequence length distribution
-    my $seq_size = `grep '; sum' $main::outfile{$seq_type."_seqlen_distrib"}`;
-    chomp($seq_size);
-    $seq_size =~ s/.*sum\s*//;
-    $seq_size = round($seq_size/1000);
+      ## Get min peak length
+      $min_peak_len = `grep '; min' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($min_peak_len);
+      $min_peak_len =~ s/.*min\s*//;
 
-    &RSAT::message::Debug("Nb of peaks=".$peak_nb, 
-			  "sequence size=".$seq_size) if ($main::verbose >= 0);
+      ## Get mean peak length
+      $mean_peak_len = `grep '; mean' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($mean_peak_len);
+      $mean_peak_len =~ s/.*mean\s*//;
+
+      ## Get max peak length
+      $max_peak_len = `grep '; max' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($max_peak_len);
+      $max_peak_len =~ s/.*max\s*//;
+
+      ## Get total sequence size from sequence length distribution
+      $seq_size = `grep '; sum' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($seq_size);
+      $seq_size =~ s/.*sum\s*//;
+      $seq_size = round($seq_size/1000);
+
+      &RSAT::message::Debug("Nb of peaks=".$peak_nb,
+			    "sequence size=".$seq_size) if ($main::verbose >= 5);
+    } else {
+      &RSAT::message::Warning("Sequence length file does not exist. Cannot collect statistics for the synthesis.\n", $main::outfile{$seq_type."_seqlen_distrib"});
+    }
 
     ## Sequence lengths
     my $img = &RelativePath($main::outfile{$seq_type."_seqlen_distrib_graph"});
@@ -1739,11 +1789,34 @@ sequences.
 
 Control peak sequence file (optional).
 
-This option is used only for the test versus control analysis.
+The control sequence file is used:
+- as control sequence for oligo-diff
+- to estimate the background models for oligo-analysis and
+  dyad-analysis.
+
+Control sequences are supposed to contain a large number of sequences
+without particular enrichment for any motif. The choice of appropriate
+background sequences is crucial to detect relevant motifs.
+
+The file should be sufficiently large (several Mb) to provide a robust
+estimate of prior probabilities (frequencies expected at random) for
+oligonucleotides and dyads.
+
+Typical examples of control sequences:
+
+- random fragments of the genome of interest
+  (e.g. obtained with I<random-genome-fragments>)
+
+- sets of sequences pulled down in a mock experiment (without the
+  antibody) and characterized by ChIP-seq or ChIP-chip.
+
+- sets of peaks for a compendium of transcription factors different
+  from the factor of interest.
 
 =cut
     } elsif ($arg eq "-ctrl") {
       $main::infile{ctrl_seq} = shift(@arguments);
+
 
 =pod
 
@@ -1853,7 +1926,7 @@ will be stored in this directory.
 
 =item	B<-prefix output_prefix>
 
-Prefix for the output files
+Prefix for the output files.
 
 =cut
     } elsif ($arg eq "-prefix") {
@@ -2186,9 +2259,9 @@ particular strand orientation.
 
 =item B<-noov | -ovlp>
 
-Treatment of self-overlapping words: count (-ovlp) or do not count
-(-noov) overlapping occurrences. In -noov mode, only renewing
-occurrences are counted.
+Treatment of self-overlapping words for motif discovery: count (-ovlp)
+or do not count (-noov) overlapping occurrences. In -noov mode, only
+renewing occurrences are counted.
 
 It is recommended to use the -noov mode (default) to avoid the effect
 of self-overlap, which violates the hypothesis of independence of
@@ -2197,9 +2270,9 @@ successive occurrences underlying the binomial significance test
 
 =cut
     } elsif ($arg eq "-noov") {
-      $main::param{noov} = "-noov";
+      $main::param{disco_noov} = "-noov";
     } elsif ($arg eq "-ovlp") {
-      $main::param{noov} = "-ovlp";
+      $main::param{disco_noov} = "-ovlp";
 
 =pod
 
@@ -2234,6 +2307,7 @@ Class interval for I<position-analysis>.
 sub CheckArguments {
   &RSAT::message::TimeWarn("\n\n; Checking arguments") if ($main::verbose >= 1);
 
+  ## Input sequence file
   if ($infile{test_seq}) {
     unless (-e $infile{test_seq}) {
       &FatalError("Test sequence file does not exist", $infile{test_seq});
@@ -2243,6 +2317,7 @@ sub CheckArguments {
     &FatalError("You must define the test sequence set (option -i)");
   }
 
+  ## If control file has been specified, chec that it exists
   if ($infile{ctrl_seq}) {
     unless (-e $infile{ctrl_seq}) {
       &FatalError("Control sequence file does not exist", $infile{ctrl_seq});
@@ -2250,11 +2325,21 @@ sub CheckArguments {
     push @main::seq_types, ("ctrl");
   }
 
-  ## output directory
+  ## Output directory
   if ($main::dir{output}) {
     &RSAT::util::CheckOutDir($main::dir{output});
   } else {
     &FatalError("You must define the output directory (option -outdir)");
+  }
+
+  ## Prefix
+  unless ($main::param{prefix}) {
+    &FatalError("You must define a prefix for the output files (option -prefix)");
+  }
+
+  ## Title
+  unless ($main::param{title}) {
+    $main::param{title} = $main::param{prefix};
   }
 
   ## Log files
@@ -2399,6 +2484,12 @@ factor binding sites and cis-regulatory modules. Nat Protoc 3,
 =head1 WISH LIST
 
 =over
+
+=item B<background models from ctrl sequences>
+
+Estimate background models from control sequences, for oligo-analysis,
+dyad-analysis, and local-word-analysis. This should in principle
+reduce the rate of false positive.
 
 =item B<partial synthesis>
 
