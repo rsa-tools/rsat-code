@@ -2635,7 +2635,7 @@ sub layout_spring_embedding_new {
 			   "arcs: ".$nb_arcs,
 			   "X size: ".$x_size,
 			   "Y size: ".$y_size)
-    if ($main::verbose >= 0);
+    if ($main::verbose >= 2);
 
 
   ## Sylvain : je re-indexe les arcs par source et cible, il faudrait
@@ -2684,7 +2684,7 @@ sub layout_spring_embedding_new {
       &RSAT::message::Info("Arc", $i, $source, $target,
 			   "factor=".$weight_factor,
 			   "weight=".$weight,
-			   "len=".$arc_index{$source}{$target}) if ($main::verbose >= 0);
+			   "len=".$arc_index{$source}{$target}) if ($main::verbose >= 5);
     }
   } else {
     for my $i (0..$#arcs) {
@@ -2713,7 +2713,7 @@ sub layout_spring_embedding_new {
 			  sprintf("needed:%ds",$needed),
 			  sprintf("remain:%ds",$remaining),
 			  "max allowed move:".sprintf("%d",$max_move_per_step))
-      if (($main::verbose >= 0) && ($iter % 10 == 1));
+      if (($main::verbose >= 2) && ($iter % 10 == 1));
     if ($elapsed > $max_time) {
       &RSAT::message::Warning("Max time reached (".$max_time."s). Iterations performed:", $iter."/".$max_iter) if ($main::verbose >= 1);
       last;
@@ -2753,16 +2753,16 @@ sub layout_spring_embedding_new {
       $dx{$id1} -= $dx;
       $dy{$id1} -= $dy;
 
-      &RSAT::message::Debug("F_pair", "iter=".$iter,
-			    "edge ".$i,
-			    sprintf("n".$id1."=%d,%d",$x1, $y1),
-			    sprintf("n".$id2."=%d,%d",$x2, $y2),
-			    "dist=".sprintf("%.d", $dist),
-			    "arc len=".sprintf("%.d", $arc_len),
-			    sprintf("Force=%.1f", $force),
-			    sprintf("dx=%.1f", $dx),
-			    sprintf("dy=%.1f", $dy),
-			   ) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("F_pair", "iter=".$iter,
+#			    "edge ".$i,
+#			    sprintf("n".$id1."=%d,%d",$x1, $y1),
+#			    sprintf("n".$id2."=%d,%d",$x2, $y2),
+#			    "dist=".sprintf("%.d", $dist),
+#			    "arc len=".sprintf("%.d", $arc_len),
+#			    sprintf("Force=%.1f", $force),
+#			    sprintf("dx=%.1f", $dx),
+#			    sprintf("dy=%.1f", $dy),
+#			   ) if ($main::verbose >= 10);
     }
   }
 }
@@ -2953,7 +2953,7 @@ sub layout_spring_embedding {
  	  &RSAT::message::Info("Arc", $i, $source, $target, 
  			       "factor=".$weight_factor, 
  			       "weight=".$weight, 
- 			       "len=".$arc_index{$source}{$target}) if ($main::verbose >= 0);
+ 			       "len=".$arc_index{$source}{$target}) if ($main::verbose >= 5);
       }
   } else {
       for my $i (0..$#arcs) {
@@ -3405,8 +3405,8 @@ sub to_gml {
 
     my %node_attribute = $self->get_attribute('node_attribute');
     my %edge_attribute = $self->get_attribute('edge_attribute');
-#    &RSAT::message::Debug("node_attribute", join (";", keys(%node_attribute))) if ($main::verbose >= 0);
-#    &RSAT::message::Debug("edge_attribute", join (";", keys(%edge_attribute))) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("node_attribute", join (";", keys(%node_attribute))) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("edge_attribute", join (";", keys(%edge_attribute))) if ($main::verbose >= 10);
 
     ## Graph description
     my $graph_label = $self->get_attribute("label") || "graph";
