@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.70 2010/08/09 23:14:02 jvanheld Exp $
+# $Id: peak-motifs,v 1.71 2010/08/11 23:35:25 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.70 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.71 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1898,24 +1898,36 @@ interest.
 
 =pod
 
-=item B<-motif_db db_name motif_db_file>
+=item B<-motif_db db_name db_format db_file>
 
 File containinf a database of transcription factor binding motifs
 (e.g. JASPAR, TRANSFAC, RegulonDB, ...) which will be compared to the
 discovered motifs (task motifs_vs_db). 
 
 The option requires three arguments:
+
  - DB name
- - matrix format (same supported formats as convert-matrices)
+
+ - matrix format. same supported formats as convert-matrices, but we
+   recommend to use a format that includes an ID and a name for each
+   motif (e.g. TRANSFAC)
+
  - file containing the DB motifs
 
 The option can be called iteratively on the ame command line in order
 to compare discovered motifs with several databases.
 
-Example:
- -motif_db JASPAR jaspar jaspar_file.tab
+Examples:
+
  -motif_db TRANSFAC transfac transfac_download_dir/cgi-bin/data/matrix.dat
 
+   will load a file containing all matrices from the TRANSFAC
+   database.
+
+ -motif_db JASPAR jaspar jaspar_file.tf
+
+   will load a file containing motifs from the JASPAR database that
+   have previously been converted to TRANSFAC format.
 
 =cut
 
@@ -1924,7 +1936,11 @@ Example:
       $db_name =~ s/\s/_/g;
       push @main::motif_databases, $db_name;
       $main::motif_db_format{$db_name} = shift(@arguments);
-      $main::infile{"motif_db_".$db_name} = shift(@arguments);
+      my $db_file = shift(@arguments);
+      unless (-e $db_file) {
+	&RSAT::error::FatalError("Motif DB file does not exist.", $db_file);
+      }
+      $main::infile{"motif_db_".$db_name} = $db_file;
 
 =pod
 
