@@ -2482,6 +2482,8 @@ sub layout {
     $self->layout_random(%args);
   } elsif ($algorithm eq "spring") {
     $self->layout_spring_embedding(%args);
+  } elsif ($algorithm eq "spring2") {
+    $self->layout_spring_embedding_new(%args);
   } elsif ($algorithm eq "none") {
     &RSAT::message::Info("No layout") if ($main::verbose >= 2);
   } else {
@@ -2588,7 +2590,182 @@ sub layout_fr {
 
 }
 
+=pod
 
+=item B<layout_spring_embedding_new()>
+
+Apply spring embedding to assign positions to all the nodes of the
+graph.
+
+Usage: $graph->layout_embedding(%args);
+
+Adapted by Jacques van Helden from a java simple graph demo
+(http://java.sun.com/applets/jdk/1.4/demo/applets/GraphLayout/example1.html).
+
+=cut
+
+sub layout_spring_embedding_new {
+  my ($self, %args) = @_;
+
+  my $default_arc_len = $args{default_arc_len} || 100; ## Preferred edge length
+  my $max_iter = $args{max_iter} || 1000; ## Maximal number of iterations
+  my $max_time = $args{max_time} || 30; ## Max time (seconds)
+  my $max_move_per_step = 10; ## Maximal move of a node per step in each direction (X,Y)
+  my $cooling = 0.995; ## Reduction of max move at each iteration
+
+  ## Initialize by setting random positions to all nodes
+  $self->layout_random(%args);
+
+
+  ## Get required info from the graph
+  my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
+  my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
+  my %nodes_name_id = $self->get_attribute("nodes_name_id");
+#  my %arcs_name_id = $self->get_attribute("arcs_name_id");
+  my %arc_index = ();
+  my @arcs = $self->get_attribute("arcs");
+  my @node_names = sort(keys(%nodes_name_id));
+  my @node_ids = sort(values(%nodes_name_id));
+  my $nb_nodes = scalar(@node_names);
+  my $nb_arcs = scalar(@arcs);
+  my ($x_size, $y_size) = $self->get_diagram_size(%args);
+
+  &RSAT::message::TimeWarn("Graph layout: spring_embedding_new",
+			   "nodes: ".$nb_nodes,
+			   "arcs: ".$nb_arcs,
+			   "X size: ".$x_size,
+			   "Y size: ".$y_size)
+    if ($main::verbose >= 0);
+
+
+  ## Sylvain : je re-indexe les arcs par source et cible, il faudrait
+  ## verifier si ce n'est pas redondant.
+
+  ## Index all arc sources and targets
+  my $max_weight = $arcs[0][2];
+  $max_weight = 0 unless (&RSAT::util::IsReal($max_weight));
+  my $min_weight = $arcs[0][2];
+  $min_weight = 999999999 unless (&RSAT::util::IsReal($min_weight));
+  my @arc_weight = ();
+  for my $i (0..$#arcs) {
+    my $source = $arcs[$i][0];
+    my $target = $arcs[$i][1];
+    my $label  = $arcs[$i][2];
+    if (&RSAT::util::IsReal($label)) {
+      $max_weight = &RSAT::stats::max($label, $max_weight);
+      $min_weight = &RSAT::stats::min($label, $min_weight);
+      $weight{$source}{$target} = $label;
+    } else {
+      $weight{$source}{$target} = 1;
+    }
+
+#    &RSAT::message::Debug("", "arc", $i, $source, $target, $label) if ($main::verbose >= 10);
+  }
+
+  ## Edge length inversely proportional to weight. Range from
+  ## 1/2*default_arc_len to 3/2*default_arc_len.
+  my @arc_len = ();
+  if ($max_weight > $min_weight) {
+    ## The graph is apparently weighted
+    my $weight_exp = 1;
+    &RSAT::message::Info("Weighted spring embedding", 
+			 "max_w=".$max_weight, 
+			 "min_w=".$min_weight, 
+			) if ($main::verbose >= 1);
+    for my $i (0..$#arcs) {
+      my $source = $arcs[$i][0];
+      my $target = $arcs[$i][1];
+      my $weight = $weight{$source}{$target};
+      #	  if ($source eq $target) {
+      #	      $weight = 0;
+      #	  }
+      my $weight_factor = ($weight - $min_weight)/($max_weight - $min_weight);
+      $arc_index{$source}{$target} = sprintf("%d",($default_arc_len * $weight_factor) + $default_arc_len/2);
+      &RSAT::message::Info("Arc", $i, $source, $target,
+			   "factor=".$weight_factor,
+			   "weight=".$weight,
+			   "len=".$arc_index{$source}{$target}) if ($main::verbose >= 0);
+    }
+  } else {
+    for my $i (0..$#arcs) {
+      my $source = $arcs[$i][0];
+      my $target = $arcs[$i][1];
+      $arc_index{$source}{$target} = $default_arc_len;
+    }
+  }
+
+
+  ################################################################
+  ## Iterations of spring embedding
+  my $iter = 0;
+  for $iter (1..$max_iter) {
+    my %x_force = ();
+    my %y_force = ();
+
+    $max_move_per_step *= $cooling if ($max_move_per_step*$cooling > 3);
+
+    ## Check elapsed time
+    my $elapsed = times;
+    my $remaining = $max_time - $elapsed;
+    my $needed = $elapsed*($max_iter/$iter -1);
+    &RSAT::message::TimeWarn("Spring embedding iteration", "iter:".$iter."/".$max_iter,
+			  sprintf("elapsed:%ds",$elapsed),
+			  sprintf("needed:%ds",$needed),
+			  sprintf("remain:%ds",$remaining),
+			  "max allowed move:".sprintf("%d",$max_move_per_step))
+      if (($main::verbose >= 0) && ($iter % 10 == 1));
+    if ($elapsed > $max_time) {
+      &RSAT::message::Warning("Max time reached (".$max_time."s). Iterations performed:", $iter."/".$max_iter) if ($main::verbose >= 1);
+      last;
+    }
+
+    ## Iterate over edges to compute spring-related forces
+    for (my $i = 0 ; $i < $nb_arcs ; $i++) {
+      ## Source node
+      my $name1 = $arcs[$i][0];
+      my $id1 = $nodes_name_id{$name1};
+      my $x1 = $nodes_id_xpos{$id1};
+      my $y1 = $nodes_id_ypos{$id1};
+#      &RSAT::message::Debug("Node 1", $name1, $id1, "(".$x1.",".$y1.")") if ($main::verbose >= 10);
+
+      ## Target node
+      my $name2 = $arcs[$i][1];
+      my $id2 = $nodes_name_id{$name2};
+      my $x2 = $nodes_id_xpos{$id2};
+      my $y2 = $nodes_id_ypos{$id2};
+#      &RSAT::message::Debug("", "Node 2", $name2, $id2, "(".$x2.",".$y2.")") if ($main::verbose >= 10);
+
+      ## Compute distance between source and target nodes
+      my $x_diff = $x2 -$x1; ## Horizontal distance between nodes
+      my $y_diff = $y2 - $y1; ## Vertical distance between nodes
+      my $dist_squared = $x_diff**2 + $y_diff**2; ## Euclidiant distance (application of Pythagor's theorem)
+      my $dist = sqrt($dist_squared);
+      $dist = 0.001 if ($dist == 0); ## if the distance is null, add a slight shift
+
+      ## Compute force exerted by the spring and displacement of the nodes
+      my $arc_len = $arc_index{$name1}{$name2};
+      my $force = ($arc_len - $dist) / ($dist*3);
+      my $dx = $x_diff * $force;
+      my $dy = $y_diff * $force;
+
+      $dx{$id2} += $dx;
+      $dy{$id2} += $dy;
+      $dx{$id1} -= $dx;
+      $dy{$id1} -= $dy;
+
+      &RSAT::message::Debug("F_pair", "iter=".$iter,
+			    "edge ".$i,
+			    sprintf("n".$id1."=%d,%d",$x1, $y1),
+			    sprintf("n".$id2."=%d,%d",$x2, $y2),
+			    "dist=".sprintf("%.d", $dist),
+			    "arc len=".sprintf("%.d", $arc_len),
+			    sprintf("Force=%.1f", $force),
+			    sprintf("dx=%.1f", $dx),
+			    sprintf("dy=%.1f", $dy),
+			   ) if ($main::verbose >= 0);
+    }
+  }
+}
 
 =pod
 
@@ -2667,15 +2844,16 @@ sub layout_spring_embedding {
   ## their default values
 
   ## Preferred edge length
-  my $default_arc_len = $args{default_arc_len} || 250;
+  my $default_arc_len = $args{default_arc_len} || 200; ## Was 250
+  my $max_arc_len = $args{max_arc_len} || 300;
 
   ## maximal number of iterations
   my $max_iter = $args{max_iter} || 1000;
-  my $coulomb_delay = $args{coulomb_delay} || 20;
+  my $coulomb_delay = $args{coulomb_delay} || 2; ## Repulsive forces are computed every 2 iterations to save time
   my $max_time = $args{max_time} || 30;
 
   ## Maximal move of a node per step in each direction (X,Y)
-  my $max_move_per_step = 100;
+  my $max_move_per_step = 5; ## Was 100
 
   ## Reduction of max move at each iteration
   my $cooling = 0.995;
@@ -2710,18 +2888,19 @@ sub layout_spring_embedding {
   my $nb_arcs = scalar(@arcs);
 
   &RSAT::message::TimeWarn("Starting spring embedding",
-			    sprintf("\n\t%-22s%d", "nodes",$nb_nodes),
-			    sprintf("\n\t%-22s%d", "arcs",$nb_arcs),
-			    sprintf("\n\t%-22s%d", "max iter",$max_iter),
-			    sprintf("\n\t%-22s%d", "Max time (seconds)",$max_time),
-			    sprintf("\n\t%-22s%d", "Max move (pixels)",$max_move_per_step),
-			    sprintf("\n\t%-22s%f", "Cooling",$cooling),
-			    sprintf("\n\t%-22s%d", "X size",$x_size),
-			    sprintf("\n\t%-22s%d", "Y size",$y_size),
-			    sprintf("\n\t%-22s%d", "Repulsion radius",$rep_radius),
-			    sprintf("\n\t%-22s%d", "Attraction constant",$attr_k),
-			    sprintf("\n\t%-22s%d", "Preferred edge length",$default_arc_len),
-		       )
+			   sprintf("\n\t%-22s%d", "nodes",$nb_nodes),
+			   sprintf("\n\t%-22s%d", "arcs",$nb_arcs),
+			   sprintf("\n\t%-22s%d", "max iter",$max_iter),
+			   sprintf("\n\t%-22s%d", "Max time (seconds)",$max_time),
+			   sprintf("\n\t%-22s%d", "Max move (pixels)",$max_move_per_step),
+			   sprintf("\n\t%-22s%f", "Cooling",$cooling),
+			   sprintf("\n\t%-22s%d", "X size",$x_size),
+			   sprintf("\n\t%-22s%d", "Y size",$y_size),
+			   sprintf("\n\t%-22s%d", "Repulsion radius",$rep_radius),
+			   sprintf("\n\t%-22s%d", "Attraction constant",$attr_k),
+			   sprintf("\n\t%-22s%d", "Preferred edge length",$default_arc_len),
+			   sprintf("\n\t%-22s%d", "Max edge length",$max_arc_len),
+			  )
     if ($main::verbose >= 1);
 #  &RSAT::message::Debug(join("\n",sort(keys(%arcs_name_id)))) if ($main::verbose >= 10);
 
@@ -2769,10 +2948,12 @@ sub layout_spring_embedding {
 #	  }
 	  my $weight_factor = ($weight - $min_weight)/($max_weight - $min_weight);
 	  $arc_index{$source}{$target} = sprintf("%d",($default_arc_len * $weight_factor) + $default_arc_len/2);
-# 	  &RSAT::message::Info("Arc", $i, $source, $target, 
-# 			       "factor=".$weight_factor, 
-# 			       "weight=".$weight, 
-# 			       "len=".$arc_index{$source}{$target}) if ($main::verbose >= 10);
+	  $arc_index{$source}{$target} = &RSAT::stats::min($arc_index{$source}{$target}, $max_arc_len);
+
+ 	  &RSAT::message::Info("Arc", $i, $source, $target, 
+ 			       "factor=".$weight_factor, 
+ 			       "weight=".$weight, 
+ 			       "len=".$arc_index{$source}{$target}) if ($main::verbose >= 0);
       }
   } else {
       for my $i (0..$#arcs) {
