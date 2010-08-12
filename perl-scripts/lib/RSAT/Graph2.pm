@@ -2609,13 +2609,12 @@ sub layout_spring_embedding_new {
 
   my $default_arc_len = $args{default_arc_len} || 100; ## Preferred edge length
   my $max_iter = $args{max_iter} || 1000; ## Maximal number of iterations
-  my $max_time = $args{max_time} || 30; ## Max time (seconds)
+  my $max_time = $args{max_time} || 60; ## Max time (seconds)
   my $max_move_per_step = 10; ## Maximal move of a node per step in each direction (X,Y)
   my $cooling = 0.995; ## Reduction of max move at each iteration
 
   ## Initialize by setting random positions to all nodes
   $self->layout_random(%args);
-
 
   ## Get required info from the graph
   my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
@@ -2788,7 +2787,7 @@ Supported-arguments:
 =item rep_radius I<r>
 
 Repulsion radius, i.e. the radius within which a node exerts a
-sensible repulsion (rep force >= 1).
+sensible short-distance repulsion (rep force >= 1).
 
 This repulsion radius is converted into a repulsion constant I<k>
 
@@ -2840,6 +2839,11 @@ Maximum processing time in seconds (default=300).
 sub layout_spring_embedding {
   my ($self, %args) = @_;
 
+
+  ## Initiate the layout by assigning random posiitions
+  $self->layout_random(%args);
+  my ($x_size, $y_size) = $self->get_diagram_size(%args);
+
   ## Assign values for parameter specified in the arguments or use
   ## their default values
 
@@ -2849,11 +2853,22 @@ sub layout_spring_embedding {
 
   ## maximal number of iterations
   my $max_iter = $args{max_iter} || 1000;
-  my $coulomb_delay = $args{coulomb_delay} || 2; ## Repulsive forces are computed every 2 iterations to save time
-  my $max_time = $args{max_time} || 30;
+
+  ## Repulsive forces are computed every X iterations to save time,
+  ## because it si of O(V^2).  However, we need them to avoid overlap
+  ## between nodes hanging by a single edge. We use here a trick: the
+  ## beginning of the layout relies principaly on spring (Hook's)
+  ## forces, and the short-distance repulsion (Coulomb) is applied
+  ## every X iterations. The delay between two runs of the Coulomb
+  ## progressively decreases, so at the end of the layout we apply it
+  ## at every iteration.
+  my $coulomb_delay_init = $args{coulomb_delay_init} || 25;
+  my $coulomb_delay = $coulomb_delay_init;
+
+  my $max_time = $args{max_time} || 60;
 
   ## Maximal move of a node per step in each direction (X,Y)
-  my $max_move_per_step = 5; ## Was 100
+  my $max_move_per_step = &RSAT::stats::min($x_size, $y_size)/50;
 
   ## Reduction of max move at each iteration
   my $cooling = 0.995;
@@ -2865,14 +2880,10 @@ sub layout_spring_embedding {
   ## solutions.
   my $rand_k = 5;
 
-  ## Initiate the layout by assigning random posiitions
-  $self->layout_random(%args);
-  my ($x_size, $y_size) = $self->get_diagram_size(%args);
-
   ## Repulsion radius, i.e. the radius around which repulsion force is
   ## >= 1.  In principle, this parameter should affect the distance
   ## between components + distance betwen nodes.
-  my $rep_radius = $args{rep_radius} || $x_size/3;
+  my $rep_radius = $args{rep_radius} || &RSAT::stats::max($x_size/5, 100); ## Was $x_size/3
   my $rep_k = $rep_radius**2;
 
   ## Get required info from the graph
@@ -2971,20 +2982,30 @@ sub layout_spring_embedding {
     my %y_force = ();
     $max_move_per_step *= $cooling if ($max_move_per_step*$cooling > 3);
 
+    ################################################################
     ## Check elapsed time
     my $elapsed = times;
     my $remaining = $max_time - $elapsed;
     my $needed = $elapsed*($max_iter/$iter -1);
+
+    ## Estimate the proportion of remaining time (either in terms of
+    ## iteration, or of max time)
+    my $progress = &RSAT::stats::max($iter/$max_iter, $elapsed/$max_time);
+
     &RSAT::message::TimeWarn("Spring embedding iteration", "iter:".$iter."/".$max_iter,
-			  sprintf("elapsed:%ds",$elapsed),
-			  sprintf("needed:%ds",$needed),
-			  sprintf("remain:%ds",$remaining),
-			  "max allowed move:".sprintf("%d",$max_move_per_step))
+			     sprintf("elapsed:%ds",$elapsed),
+			     sprintf("needed:%ds",$needed),
+			     sprintf("remain:%ds",$remaining),
+			     sprintf("progress:%d%s",$progress*100, "%"),
+			     sprintf("max allowed move:%d",$max_move_per_step),
+			     sprintf("Coulomb delay:%d",$coulomb_delay),
+			    )
       if (($main::verbose >= 2) && ($iter % 10 == 1));
     if ($elapsed > $max_time) {
       &RSAT::message::Warning("Max time reached (".$max_time."s). Iterations performed:", $iter."/".$max_iter) if ($main::verbose >= 1);
       last;
     }
+
 
     ################################################################
     ## Iterate over all arcs to compute spring forces (attraction and
@@ -3192,6 +3213,12 @@ sub layout_spring_embedding {
 	}
 
       }
+
+      ################################################################
+      ## Adapt the delay between Coulomb forces. This delay goes
+      ## decreasing in order to intensify the short-distance repulsion
+      ## during the last iterations.
+      $coulomb_delay = &RSAT::stats::max(&POSIX::floor(($coulomb_delay_init*(1-$progress)**2)), 1);
     }
 
     ## Apply moves to all nodes
@@ -3218,9 +3245,11 @@ sub layout_spring_embedding {
 	$y_move *= $reduction;
       }
 
-      ## Ensure that the node does not exceed frame limits
+      ## Apply the move
       my $new_x = $nodes_id_xpos{$id} + $x_move;
       my $new_y = $nodes_id_ypos{$id} + $y_move;
+
+
 
 #       &RSAT::message::Debug("Move", $iter, $n,
 # 			    sprintf("F=%.1f,%.1f",$x_force{$id}, $y_force{$id}),
@@ -3228,6 +3257,13 @@ sub layout_spring_embedding {
 # 			    sprintf("prev_pos=%d,%d", $nodes_id_xpos{$id}, $nodes_id_ypos{$id}),
 # 			    sprintf("new_pos=%d,%d", $new_x, $new_y),
 # 			   ) if ($main::verbose >= 10);
+
+      ## Ensure that the node does not exceed frame limits
+      $new_x = &RSAT::stats::max($new_x, 0);
+      $new_x = &RSAT::stats::min($new_x, $x_size);
+      $new_y = &RSAT::stats::max($new_y, 0);
+      $new_y = &RSAT::stats::min($new_y, $y_size);
+
       $nodes_id_xpos{$id} = $new_x;
       $nodes_id_ypos{$id} = $new_y;
     }
