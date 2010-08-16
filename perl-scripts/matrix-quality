@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.120 2010/07/01 00:56:05 amedina Exp $
+# $Id: matrix-quality,v 1.121 2010/08/16 02:47:40 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -513,9 +513,9 @@ package main;
 
       ## Specific options for scanning matrix sites
       $scanopt{matrix_sites} = "" unless ($scanopt{matrix_sites});
+      $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
       $scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation used to build the matrix
 #      unless ($quick) {
-      $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
 #      }
 
       &ExportInputSites($matrix, $matrix_file) if ($tasks{export_matrix});
