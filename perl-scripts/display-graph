@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.25 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: display-graph,v 1.26 2010/08/17 23:54:08 jvanheld Exp $
 #
 ############################################################
 
@@ -85,6 +85,8 @@ package main;
     local $target_color_col = 0;
     local $color_col = 0;
     local $edge_width = 0;
+    local $letter_width = 10;
+
     ## Output formats
     local $output_format = "png";
     %supported_output_format =(
@@ -212,7 +214,6 @@ package main;
     my @out_labels = $graph->get_attribute("out_label");
 
 
-
     ## Compute the total size of the picture
     my $margin_x = 50;
     my $margin_y = 50;
@@ -261,7 +262,7 @@ package main;
       $p->setfont("Arial", 12);
       my $not_connected_nodes = 30;
       while (my ($id, $name) = each (%nodes_id_name)) {
-        my $length_name = length($name)*10;
+        my $length_name = length($name)*$letter_width;
         my $xpos = $nodes_id_xpos{$id};
         my $ypos = $nodes_id_ypos{$id} || $margin_y + 5;
         if (!defined($xpos)) {
@@ -279,8 +280,8 @@ package main;
 	  ## nodes, you would get a more compact picture by aligning
 	  ## them vertically than horizontally.
 
-          $xpos = ($not_connected_nodes+$length_name*10) + $margin_x;
-          $not_connected_nodes += $length_name+10;
+          $xpos = ($not_connected_nodes+$length_name*$letter_width) + $margin_x;
+          $not_connected_nodes += $length_name + $letter_width;
         } else {
           $xpos = $nodes_id_xpos{$id} + $margin_x;
           $ypos = $nodes_id_ypos{$id} + $margin_y;
@@ -356,7 +357,7 @@ package main;
       my $small_font = gdSmallFont;
       my $not_connected_nodes = 30;
       while (my ($id, $name) = each (%nodes_id_name)) {
-        my $length_name = length($name)*10;
+        my $length_name = length($name)*$letter_width;
         my $xpos = $nodes_id_xpos{$id};
         my $ypos = $nodes_id_ypos{$id} || $margin_y + 5;
         if (!defined($xpos)) {
