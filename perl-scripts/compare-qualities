@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-qualities,v 1.8 2010/08/12 00:51:13 amedina Exp $
+# $Id: compare-qualities,v 1.9 2010/08/17 02:20:27 amedina Exp $
 #
 ############################################################
 
@@ -126,7 +126,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
     
     %main::infile = ();
@@ -337,9 +337,10 @@ package main;
     }
     
     close ( $main::out_file_comparison_table );
-
+    $ycol= scalar( @main::params) +scalar(@main::extra_headers) +1;
+    #die $ycol;
     $xy_graph_command=" XYgraph -i ".$comparison_table_name." ";
-    $xy_graph_command.= " -format png -xcol 3 -ycol 44 ";
+    $xy_graph_command.= " -format png -xcol 3 -ycol $ycol ";
     $xy_graph_command.= " -o  ".$comparison_graph_image."  -legend ";
     $xy_graph_command.= " -htmap -lc 1 > ".$comparison_graph_image_html. " ";
 
