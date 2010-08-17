@@ -2832,6 +2832,15 @@ Maximum number of iterations (default=200).
 
 Maximum processing time in seconds (default=300).
 
+=item weighted
+
+Boolean parameter indicating if edge weights should be taken into
+account for defining an edge-specific length.
+
+Values: 
+ weighted=>1  apply wieghted spring embedding (default) if the graph is weighted
+ weighted=>0  apply un-wieghted spring embedding
+
 =back
 
 =cut
@@ -2847,12 +2856,22 @@ sub layout_spring_embedding {
   ## Assign values for parameter specified in the arguments or use
   ## their default values
 
+  ## Boolean varianble indicating whether the edge weights should be
+  ## used to determine edge-specific length
+  my $weighted = $args{weighted} || 1;
+
   ## Preferred edge length
   my $default_arc_len = $args{default_arc_len} || 200; ## Was 250
   my $max_arc_len = $args{max_arc_len} || 300;
 
+  ## Approximated estimation of letter width (fixed width).
+  local $letter_width = 10;
+
   ## maximal number of iterations
   my $max_iter = $args{max_iter} || 1000;
+
+  ## Maximal execution time for the algorithm
+  my $max_time = $args{max_time} || 60;
 
   ## Repulsive forces are computed every X iterations to save time,
   ## because it si of O(V^2).  However, we need them to avoid overlap
@@ -2865,7 +2884,16 @@ sub layout_spring_embedding {
   my $coulomb_delay_init = $args{coulomb_delay_init} || 25;
   my $coulomb_delay = $coulomb_delay_init;
 
-  my $max_time = $args{max_time} || 60;
+  ## Repulsion radius, i.e. the radius around which repulsion force is
+  ## >= 1.  In principle, this parameter should affect the distance
+  ## between components + distance betwen nodes.
+  my $rep_radius = $args{rep_radius} || &RSAT::stats::max($x_size/5, 100); ## Was $x_size/3
+
+  ## This is a bit tricky. Empirically, the repulsion gives nicer
+  ## effects when rep_k is proportional to the third power of the
+  ## radius.
+  my $rep_k = $rep_radius**3;
+  my $max_rep = 10; ## Max value for repulsive force
 
   ## Maximal move of a node per step in each direction (X,Y)
   my $max_move_per_step = &RSAT::stats::min($x_size, $y_size)/50;
@@ -2880,11 +2908,8 @@ sub layout_spring_embedding {
   ## solutions.
   my $rand_k = 5;
 
-  ## Repulsion radius, i.e. the radius around which repulsion force is
-  ## >= 1.  In principle, this parameter should affect the distance
-  ## between components + distance betwen nodes.
-  my $rep_radius = $args{rep_radius} || &RSAT::stats::max($x_size/5, 100); ## Was $x_size/3
-  my $rep_k = $rep_radius**2;
+  ## Rezise the diagram at each iteration before moving the nodes
+  my $resize = 1;
 
   ## Get required info from the graph
   my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
@@ -2919,16 +2944,19 @@ sub layout_spring_embedding {
   ## Sylvain : je re-indexe les arcs par source et cible, il faudrait
   ## verifier si ce n'est pas redondant.
 
-  ## Index all arc sources and targets
+  ## Index all arc sources and targets and compute min and max weights
+  ## for the weighted spring embedding
   my $max_weight = $arcs[0][2];
   $max_weight = 0 unless (&RSAT::util::IsReal($max_weight));
   my $min_weight = $arcs[0][2];
   $min_weight = 999999999 unless (&RSAT::util::IsReal($min_weight));
   my @arc_weight = ();
+  my $max_label_len = 0;
   for my $i (0..$#arcs) {
     my $source = $arcs[$i][0];
     my $target = $arcs[$i][1];
     my $label  = $arcs[$i][2];
+    $max_label_len = &RSAT::stats::max($max_label_len, length($label));
     if (&RSAT::util::IsReal($label)) {
       $max_weight = &RSAT::stats::max($label, $max_weight);
       $min_weight = &RSAT::stats::min($label, $min_weight);
@@ -2936,43 +2964,50 @@ sub layout_spring_embedding {
     } else {
       $weight{$source}{$target} = 1;
     }
-
 #    &RSAT::message::Debug("", "arc", $i, $source, $target, $label) if ($main::verbose >= 10);
   }
+
+
+  ## Default minimal inter-node distance. Note that the X min dist
+  ## will be adjusted for each node pair, depending on the label width
+  my $min_x_diff = $args{min_x_diff} || 20;
+  my $min_y_diff = $args{min_y_diff} || 20;
+
 
   ## Edge length inversely proportional to weight. Range from
   ## 1/2*default_arc_len to 3/2*default_arc_len.
   my @arc_len = ();
-  if ($max_weight > $min_weight) {
-      ## The graph is apparently weighted
+  if (($weighted) &&
+      ($max_weight > $min_weight)) {
+    ## The graph is apparently weighted
       my $weight_exp = 1;
-       &RSAT::message::Info("Weighted spring embedding", 
+      &RSAT::message::Info("Weighted spring embedding",
  			   "max_w=".$max_weight, 
  			   "min_w=".$min_weight, 
- 	  ) if ($main::verbose >= 1);
+			  ) if ($main::verbose >= 1);
       for my $i (0..$#arcs) {
-	  my $source = $arcs[$i][0];
-	  my $target = $arcs[$i][1];
-	  my $weight = $weight{$source}{$target};
-#	  if ($source eq $target) {
-#	      $weight = 0;
-#	  }
-	  my $weight_factor = ($weight - $min_weight)/($max_weight - $min_weight);
-	  $arc_index{$source}{$target} = sprintf("%d",($default_arc_len * $weight_factor) + $default_arc_len/2);
-	  $arc_index{$source}{$target} = &RSAT::stats::min($arc_index{$source}{$target}, $max_arc_len);
-
- 	  &RSAT::message::Info("Arc", $i, $source, $target, 
- 			       "factor=".$weight_factor, 
- 			       "weight=".$weight, 
- 			       "len=".$arc_index{$source}{$target}) if ($main::verbose >= 5);
+	my $source = $arcs[$i][0];
+	my $target = $arcs[$i][1];
+	my $weight = $weight{$source}{$target};
+	#	  if ($source eq $target) {
+	#	      $weight = 0;
+	#	  }
+	my $weight_factor = ($weight - $min_weight)/($max_weight - $min_weight);
+	$arc_index{$source}{$target} = sprintf("%d",($default_arc_len * $weight_factor) + $default_arc_len/2);
+	$arc_index{$source}{$target} = &RSAT::stats::min($arc_index{$source}{$target}, $max_arc_len);
+	&RSAT::message::Info("Arc", $i, $source, $target, 
+			     "factor=".$weight_factor, 
+			     "weight=".$weight, 
+			     "len=".$arc_index{$source}{$target}) if ($main::verbose >= 3);
       }
-  } else {
+    } else {
+      &RSAT::message::Info("Non-weighted spring embedding") if ($main::verbose >= 1);
       for my $i (0..$#arcs) {
-	  my $source = $arcs[$i][0];
-	  my $target = $arcs[$i][1];
-	  $arc_index{$source}{$target} = $default_arc_len;
+	my $source = $arcs[$i][0];
+	my $target = $arcs[$i][1];
+	$arc_index{$source}{$target} = $default_arc_len;
       }
-  }
+    }
 
   ################################################################
   ## Iterations of spring embedding
@@ -3047,11 +3082,6 @@ sub layout_spring_embedding {
       ################################################################
       ## Hooke's force
       ##
-      ## SYLVAIN: we could add some constraint here to avoid overlap
-      ## of labels. More generally, we could add a minimal
-      ## inter-node distance along the Y axis and along the X
-      ## axis. The Y min distance should be ~20 pixels. The X min
-      ## would depend on the size of node labels.
       my $attr = 0;
       my $arc_len = $arc_index{$name1}{$name2};
       $attr = $attr_k * ($dist - $arc_len);
@@ -3080,10 +3110,21 @@ sub layout_spring_embedding {
       $x_force{$id1} -= $x_force;
       $x_force{$id2} += $x_force;
 
+      ## Ensure that node labels do not overlap
+      my $min_label_letters = (length($name1) + length($name2))/2 + 1;
+      if ($x_diff < $min_x_diff) {
+	my $min_label_spacing = $letter_width*$min_label_letters;
+#	$x_force = &RSAT::stats::max($x_force, $min_x_diff, $min_label_spacing);
+	#      &RSAT::message::Debug("edge", $name1, $name2, "min label spacing", $min_label_spacing, $x_force) if ($main::verbose >= 10);
+      }
+
       ## Force on the Y ayis.
       my $y_force = $force * $sin;
       $y_force{$id1} -= $y_force;
       $y_force{$id2} += $y_force;
+      if ($y_diff < $min_y_diff) {
+#	$y_force = $min_y_diff;
+      }
 
     	&RSAT::message::Debug("F_pair", "iter=".$iter,
     			      sprintf("n".$id1."=%d,%d",$x1, $y1),
@@ -3142,35 +3183,9 @@ sub layout_spring_embedding {
 	  ## Repulsive force exists between all node pairs
 	  my $rep = $max_rep;
 	  if ($dist_squared > 0) {
+#	    $rep = &RSAT::stats::min($max_rep, $rep_k/$dist_squared);
 	    $rep = $rep_k/$dist_squared;
 	  }
-
-	  # 	################################################################
-	  # 	## Attractive force only between node pairs linked by an arc
-	  # 	##
-	  # 	## SYLVAIN: we could add some constraint here to avoid overlap
-	  # 	## of labels. More generally, we could add a minimal
-	  # 	## inter-node distance along the Y axis and along the X
-	  # 	## axis. The Y min distance should be ~20 pixels. The X min
-	  # 	## woudl depend on the size of node labels.
-	  # 	my $attr = 0;
-	  # 	if ($arc_index{$name1}{$name2}) {
-	  # 	    my $arc_len = $arc_index{$name1}{$name2};
-	  # 	    $attr = $attr_k * ($dist - $arc_len);
-	  # #	    &RSAT::message::Debug("Arc attraction", $name1, $name2, "len=".$arc_len, 
-	  # #				  "w=".$weight{$name1}{$name2}, "attr=".$attr) if ($main::verbose >= 10);
-	  # 	}
-
-
-	  ## Reciprocal force between the two nodes (positive is
-	  ## repulsive, negative is attractive)
-	  #	my $force = $rep - $attr;
-	  # 	&RSAT::message::Debug("", "Forces", $iter, $id1, $id2,
-	  # 			      "dist=".(sprintf("%.2f",$dist)),
-	  # 			      "rep=".(sprintf("%.2f",$rep)),
-	  # 			      "attr=".(sprintf("%.2f",$attr)),
-	  # 			      "move=".(sprintf("%.2f",$force)))
-	  # 	  if ($main::verbose >= 10);
 
 
 	  ################################################################
@@ -3250,41 +3265,54 @@ sub layout_spring_embedding {
       my $new_y = $nodes_id_ypos{$id} + $y_move;
 
 
-
-#       &RSAT::message::Debug("Move", $iter, $n,
-# 			    sprintf("F=%.1f,%.1f",$x_force{$id}, $y_force{$id}),
-# 			    sprintf("move=%d,%d", $x_move, $y_move),
-# 			    sprintf("prev_pos=%d,%d", $nodes_id_xpos{$id}, $nodes_id_ypos{$id}),
-# 			    sprintf("new_pos=%d,%d", $new_x, $new_y),
-# 			   ) if ($main::verbose >= 10);
-
       ## Ensure that the node does not exceed frame limits
-      $new_x = &RSAT::stats::max($new_x, 0);
-      $new_x = &RSAT::stats::min($new_x, $x_size);
-      $new_y = &RSAT::stats::max($new_y, 0);
-      $new_y = &RSAT::stats::min($new_y, $y_size);
+      if ($resize) {
+	$new_x = &RSAT::stats::max($new_x, 0);
+	$new_x = &RSAT::stats::min($new_x, $x_size);
+	$new_y = &RSAT::stats::max($new_y, 0);
+	$new_y = &RSAT::stats::min($new_y, $y_size);
+      } else {
+	## This option is incompatible with the resizing
+	my $label_half_width = length($name)/2 * $letter_width;
+	$new_x = &RSAT::stats::max($new_x, $label_half_width);
+	$new_x = &RSAT::stats::min($new_x, $x_size - $label_half_width);
+	$new_y = &RSAT::stats::max($new_y, 10);
+	$new_y = &RSAT::stats::min($new_y, $y_size - 10);
+      }
+
+      &RSAT::message::Debug("Move", $iter, $n,
+			    sprintf("F=%.1f,%.1f",$x_force{$id}, $y_force{$id}),
+			    sprintf("move=%d,%d", $x_move, $y_move),
+			    sprintf("prev_pos=%d,%d", $nodes_id_xpos{$id}, $nodes_id_ypos{$id}),
+			    sprintf("new_pos=%d,%d", $new_x, $new_y),
+			    $name, $label_half_width
+			   ) if ($main::verbose >= 10);
 
       $nodes_id_xpos{$id} = $new_x;
       $nodes_id_ypos{$id} = $new_y;
     }
 
-    ## Center and scale
-    my $x_min = $nodes_id_xpos{$node_ids[0]};
-    my $y_min = $nodes_id_ypos{$node_ids[0]};
-    my $x_max = $nodes_id_xpos{$node_ids[0]};
-    my $y_max = $nodes_id_ypos{$node_ids[0]};
-    foreach my $id (@node_ids) {
-      my $x = $nodes_id_xpos{$id};
-      $x_max = &RSAT::stats::max($x, $x_max);
-      $x_min = &RSAT::stats::min($x, $x_min);
-      my $y = $nodes_id_ypos{$id};
-      $y_max = &RSAT::stats::max($y, $y_max);
-      $y_min = &RSAT::stats::min($y, $y_min);
+    ## SUPPRESSED BECAUSE USELESS AFTER THE PREVIOUS CHECK ON GRAPH LIMITS
+#     ## Center and scale
+    if ($resize) {
+      my $x_min = $nodes_id_xpos{$node_ids[0]};
+      my $y_min = $nodes_id_ypos{$node_ids[0]};
+      my $x_max = $nodes_id_xpos{$node_ids[0]};
+      my $y_max = $nodes_id_ypos{$node_ids[0]};
+      foreach my $id (@node_ids) {
+	my $x = $nodes_id_xpos{$id};
+	$x_max = &RSAT::stats::max($x, $x_max);
+	$x_min = &RSAT::stats::min($x, $x_min);
+	my $y = $nodes_id_ypos{$id};
+	$y_max = &RSAT::stats::max($y, $y_max);
+	$y_min = &RSAT::stats::min($y, $y_min);
+      }
+      foreach my $id (@node_ids) {
+	$nodes_id_xpos{$id} = $x_size*($nodes_id_xpos{$id} - $x_min)/($x_max - $x_min);
+	$nodes_id_ypos{$id} = $y_size*($nodes_id_ypos{$id} - $y_min)/($y_max - $y_min);
+      }
     }
-    foreach my $id (@node_ids) {
-      $nodes_id_xpos{$id} = $x_size*($nodes_id_xpos{$id} - $x_min)/($x_max - $x_min);
-      $nodes_id_ypos{$id} = $y_size*($nodes_id_ypos{$id} - $y_min)/($y_max - $y_min);
-    }
+
   }
 
   $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
@@ -3336,9 +3364,15 @@ sub get_diagram_size {
   } elsif (defined($args{x_size})) {
     $x_size = $args{x_size};
   } else {
+    ## Compute number of nodes.
+    ################################################################
+    ## SYLVAIN, DO WE REALLY NEED TO TRANSFER A ID/NAME HASH JUST TO
+    ## GET THE NUMBER OF NODES OF THE GRAPH OBJECT ? THIS SEEMS VER
+    ## INEFFICIENT.
+    ################################################################
     %nodes_name_id = $self->get_attribute("nodes_name_id");
     $nb_nodes = scalar(keys(%nodes_name_id));
-    $x_size = sprintf("%d", 400+200*sqrt($nb_nodes));
+    $x_size = sprintf("%d", 400+250*sqrt($nb_nodes));
   }
 
   ## Y size
@@ -3347,11 +3381,12 @@ sub get_diagram_size {
   } elsif (defined($args{y_size})) {
     $y_size = $args{y_size};
   } else {
-    if ($nb_nodes == -1) {
-      %nodes_name_id = $self->get_attribute("nodes_name_id");
-      $nb_nodes = scalar(keys(%nodes_name_id));
-    }
-    $y_size = sprintf("%d", 280+140*sqrt($nb_nodes));
+    $y_size = sprintf("%d", $x_size/sqrt(2));
+#     if ($nb_nodes == -1) {
+#       %nodes_name_id = $self->get_attribute("nodes_name_id");
+#       $nb_nodes = scalar(keys(%nodes_name_id));
+#     }
+#     $y_size = sprintf("%d", 280+176*sqrt($nb_nodes));
   }
   $self->force_attribute("x_size", $x_size);
   $self->force_attribute("y_size", $y_size);
@@ -3431,6 +3466,8 @@ sub to_gml {
     my $min = $self->get_attribute("min_weight");
     my $max = $self->get_attribute("max_weight");
     my $edge_width_calc = 0;
+    my $letter_width = 10;
+
     if ($min ne "null" && $max ne "null" && $main::edge_width) {
       $edge_width_calc = 1;
       ## attribution of the minimal and maximal value if specified as arguments
@@ -3457,7 +3494,7 @@ sub to_gml {
     &RSAT::message::Info("Exporting nodes") if $main::verbose >= 3;
     while (($id, $node_name) = each %nodes_id_name) {
         my $label = $nodes_label{$id};
-	my $w = 1 + length($label)*10; ## label width
+	my $w = 1 + length($label)*$letter_width; ## label width
 	my $h = 16; ## label height
 	my $x = $nodes_id_xpos{$id} || $id*10;
 	my $y = $nodes_id_ypos{$id} || $id*10;
