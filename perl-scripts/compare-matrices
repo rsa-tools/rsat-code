@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.50 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: compare-matrices,v 1.51 2010/08/17 23:54:28 jvanheld Exp $
 #
 ############################################################
 
@@ -24,9 +24,17 @@ return various similarity statistics.
 
 =head1 AUTHORS
 
-Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
-Gipsi Lima-Mendez <gipsi@bigre.ulb.ac.be>
-Matthieu Defrance <defrance@bigre.ulb.ac.be>
+=over
+
+=item Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
+
+with the help of
+
+=item Gipsi Lima-Mendez <gipsi@bigre.ulb.ac.be>
+
+=item Matthieu Defrance <defrance@bigre.ulb.ac.be>
+
+=back
 
 =head1 CATEGORY
 
@@ -44,7 +52,7 @@ Matthieu Defrance <defrance@bigre.ulb.ac.be>
 
 compare-matrices -file1 inputfile1 -file2 inputfile2 [-o outputfile] [-v #] [...]
 
-=head1 INPUT FORMAT
+=head1 INPUT FORMATS
 
 The user has to specify exactly input files (options I<-file1> and
 I<-file2>), each containing one or several PSSMs. Each matrix of file
@@ -53,14 +61,18 @@ one is compared with each matrix of file2.
 Any PSSM format supported in RSAT (type I<convert-matrix -h> for a
 description).
 
-=head1 OUTPUT FORMAT
+=head1 OUTPUT FORMATS
 
 By default, the output format is a tab-delimited file with one row per
 matrix comparison, and one column per statistics.
 
-=head2 ALGORITHM
+Optionally, I<compare-matrices> can also export tab-delimited file
+with the aligned matrices, and a HTML file displaying the aligned
+logos.
 
-The program successively computs one or several (dis)similiraty
+=head1 ALGORITHM
+
+The program successively computes one or several (dis)similiraty
 metrics between each matrix of the first input file and each matrix of
 the secnd input file.
 
@@ -267,7 +279,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.50 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.51 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -475,7 +487,7 @@ package main;
 
   ################################################################
   ## Reverse complements
-
+  ##
   ## TEMPORARY: if the comparison is DR, te input file 1 is read
   ## twice: the first reading is converted to reverse complement, and
   ## the second reading used for direct "strand". This should be
@@ -934,7 +946,6 @@ package main;
 	    print $out_matrices_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
 	    print $out_matrices_html "<td><pre>".$matrix1_string."</pre></td>\n";
 	    print $out_matrices_html "</tr>\n";
-
 
 	    ## Generate a string to display the first matrix in text output file
 	    my $matrix2_string = join("\t", "; ".$desc2,
