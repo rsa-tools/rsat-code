@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.72 2010/08/16 02:47:54 jvanheld Exp $
+# $Id: chip-motifs,v 1.73 2010/08/18 21:04:32 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1033,7 +1033,7 @@ sub ClusterMotifs {
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,direction,Ncor,SW,cor,NdEucl,width,consensus";
+  $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,NdEucl,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
   &one_command($cmd, 1);
 
@@ -1098,7 +1098,7 @@ sub MotifsVersusReference {
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus,aligned_matrices";
+  $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,width,consensus,aligned_matrices";
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref"};
   $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_ref_matrices"};
   &one_command($cmd, 1);
@@ -1140,7 +1140,7 @@ sub MotifsVersusDatabase {
     $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
     $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
     $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-    $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus,aligned_matrices";
+    $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,width,consensus,aligned_matrices";
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_db_".$db_name."_matrices"};
     &one_command($cmd, 1);
