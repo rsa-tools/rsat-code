@@ -62,7 +62,7 @@ by the total count of the column.
 
 S<Fij=Nij/SUMi(Nij)>
 
-where 
+where
 
 =over
 
@@ -91,7 +91,7 @@ or according to residue prior frequencies.
   S<F''ij=(Nij + b*Pi)/[SUMi(Nij)+b]>
 
 
-where 
+where
 
 =over
 
@@ -150,12 +150,12 @@ where
 is the number of occurrences of residue i at position j of
 the matrix.
 
-=item N.j 
+=item N.j
 
 is the sum of all residue occurrences at position j of the
 matrix.
 
-=item Pi 
+=item Pi
 
 is the prior probability of residue i.
 
@@ -184,7 +184,7 @@ expected frequency. Uppercases are used to highlight weights >= 1.
 The consensus is exported as regular expression, and with the IUPAC
 code for ambiguous nucleotides (http://www.chem.qmw.ac.uk/iupac/misc/naseq.html).
 
-       	A			(Adenine) 
+       	A			(Adenine)
 	C			(Cytosine)
 	G			(Guanine)
 	T			(Thymine)
@@ -240,7 +240,7 @@ the program consensus (Hertz), but not by other programs.
 
 ## Separator between matrices for multi-matrix files
 %matrix_terminator = ("consensus"=>"\n",
-		      "tab"=>"//", 
+		      "tab"=>"//",
 		      "patser"=>"//",
 		      "tf"=>"//" ,
 		      "transfac"=>"//" ,
@@ -298,7 +298,7 @@ sub init {
 
 ################################################################
 
-=pod 
+=pod
 
 =item B<set_parameter()>
 
@@ -360,7 +360,7 @@ sub index_alphabet {
 =item getPrior()
 
 Return prior frequencies. If these were not defined previously,
-estimate them on the basis of equiprrobable residues. 
+estimate them on the basis of equiprrobable residues.
 
 =cut
 sub getPrior() {
@@ -432,8 +432,8 @@ content.
 sub setInfoLogBase {
     my ($self, $info_log_base) = @_;
     unless ((&RSAT::util::IsReal($info_log_base))  && ($info_log_base >= 1)) {
-      &RSAT::error::FatalError("RSAT::matrix->setInfoLogBase()", $info_log_base, 
-			       "iInvalid specification for the info log base", 
+      &RSAT::error::FatalError("RSAT::matrix->setInfoLogBase()", $info_log_base,
+			       "iInvalid specification for the info log base",
 			       "Must be a strictly real number >= 1");
     }
     $info_log_denominator = log($info_log_base);
@@ -962,7 +962,6 @@ A character or string to print before each row of the matrix.
 sub to_patser {
   my ($self, %args) = @_;
   my $to_print = "";
-
   my $output_format = $args{format} || 'tab';
   $output_format = lc($output_format);
 
@@ -978,6 +977,7 @@ sub to_patser {
 
   %supported_types = (profile=>1,
 		      counts=>1,
+		      countRC=>1,
 		      perm_columns => 1,
 		      frequencies=>1,
 		      weights=>1,
@@ -1037,6 +1037,8 @@ sub to_patser {
     } else {
       @matrix = @{$self->{$type}};
     }
+
+    &RSAT::message::Debug("matrix to print", $self->get_attribute("id"), $type, join ", ", @matrix) if ($main::verbose >= 0);
     my @alphabet = $self->getAlphabet();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
@@ -1148,10 +1150,10 @@ sub to_infogibbs{
     my $motif_to_find =  $self->get_attribute("motif_to_find") || "NA";
     my $avg_llr =        $self->get_attribute("avg_llr") || "NA";
     my $avg_ic  =      $self->get_attribute("avg_ic") || "NA";
-    my $llr = $self->get_attribute("llr") || "NA"; 
+    my $llr = $self->get_attribute("llr") || "NA";
 
     $self->calcInformation();
-    my $ic  = $self->get_attribute("ic")|| $self->get_attribute("total.information")  || "NA"; 
+    my $ic  = $self->get_attribute("ic")|| $self->get_attribute("total.information")  || "NA";
     $to_print .="; ".$command ."\n";
     $to_print .="; "."title"."\n";
     $to_print .="; started at                     ". $date;
@@ -1161,7 +1163,7 @@ sub to_infogibbs{
     $to_print .="; sequences                      ". $nb_seq   ."\n";
     $to_print .="; total size in bp               ". $total_size_bp   ."\n";
     $to_print .="; expected motif occurrences     ". $exp_motif_occ   ."\n";
-   
+
     foreach my $l (1..scalar(@alphabet)) {
       my $letter = $alphabet[$l-1];
       my $prior = $prior{$letter} || $prior{uc($letter)};
@@ -1185,7 +1187,7 @@ sub to_infogibbs{
 	$pipe = $args{pipe};
     }
     $self->force_attribute("pipe", $pipe);
-    
+
     ## Set formatting parameters provided in arguments as matrix attribute
     foreach my $key ("sep", "col_width", "decimals") {
 	if (defined($args{$key})) {
@@ -1221,7 +1223,7 @@ sub to_infogibbs{
     ################################################################
     ## Print the matrix
     my @matrix = ();
-    
+
     @matrix = @{$self->{table}};
 
     my $ncol = $self->ncol();
@@ -1235,11 +1237,11 @@ sub to_infogibbs{
 	}
 	$to_print .= $self->_printMatrixRow(uc( $alphabet[$a]), @row) ;
     }
-    
-    
+
+
     ## End of record
     $to_print .=  $matrix_terminator{$output_format}."\n";
-    
+
     return $to_print;
 }
 
@@ -1250,7 +1252,7 @@ sub to_infogibbs{
 
 =item to_jaspar()
 
-Export a matrix in JASPAR format. 
+Export a matrix in JASPAR format.
 
 
 This is space-delimited format with one row per residue, one column
@@ -1288,7 +1290,7 @@ sub to_jaspar {
   my $ncol = $self->ncol();
   my @alphabet = $self->getAlphabet();
   my $max_count = 0;
-  for my $c (1..$ncol) { 
+  for my $c (1..$ncol) {
     $max_count = &RSAT::stats::max($max_count, @{$matrix[$c-1]});
   }
   my $digits = ceil(log($max_count)/log(10));
@@ -1314,7 +1316,7 @@ sub to_jaspar {
 
 =item to_cb(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_char)
 
-Return a string description of the matrix in the same format as Cluster-Buster or TRAP (Vingron's lab). 
+Return a string description of the matrix in the same format as Cluster-Buster or TRAP (Vingron's lab).
 Additional parameters are also exported as comments,when the verbosity is > 0.
 
 Supported parameters:
@@ -1353,13 +1355,13 @@ sub to_cb {
   $to_print .= "/name=".$name." ";
   #information content
   my @information = $self->getInformation();
-  $to_print .= "/info=".sprintf("%.3f",$self->get_attribute("total.information"))." ";   
+  $to_print .= "/info=".sprintf("%.3f",$self->get_attribute("total.information"))." ";
   #gc content
   $self->calcGCcontent();
-  $to_print .= "/gc_content=".sprintf("%.3f",$self->get_attribute("G+C.content.crude.freq"))." "; 
+  $to_print .= "/gc_content=".sprintf("%.3f",$self->get_attribute("G+C.content.crude.freq"))." ";
   #consensus
   $self->calcConsensus();
-  $to_print .= "/consensus=".uc($self->get_attribute("consensus.IUPAC"))." "; 
+  $to_print .= "/consensus=".uc($self->get_attribute("consensus.IUPAC"))." ";
   #size
   $to_print .= "/size=".$self->get_attribute("ncol")." ";
 
@@ -1418,7 +1420,7 @@ sub setWeights {
 
 ################################################################
 
-=pod 
+=pod
 
 =item calcWeights()
 
@@ -1439,7 +1441,7 @@ sub calcWeights {
 
     ## Get or calculate prior residue probabilities
     my %prior = $self->getPrior();
-    
+
     ## get matrix size
     my $nrow = $self->nrow();
     my $ncol = $self->ncol();
@@ -1480,7 +1482,7 @@ sub calcWeights {
 
 =item getInformation()
 
-Return the information content matrix. 
+Return the information content matrix.
 
 =cut
 sub getInformation {
@@ -1509,7 +1511,7 @@ sub setInformation {
 
 ################################################################
 
-=pod 
+=pod
 
 =item calcInformation()
 
@@ -1562,7 +1564,7 @@ sub calcInformation {
     my $ncol = $self->ncol();
 
     ## Calculate information contents
-    my @information = (); ## Information matrix 
+    my @information = (); ## Information matrix
     my @column_information = (); ## Information per column
     my $total_information = 0; ## Total information for the matrix
     for my $c (0..($ncol-1)) {
@@ -1717,7 +1719,7 @@ sub setMarkovModel {
   ## specify priors from the sufix probabilities of the Markov model
   my %bg_suffix_proba = $bg_model->get_attribute("suffix_proba");
   $self->setPrior(%bg_suffix_proba);
-  
+
   ## recalculate the frequencies if necessary
   unless ($self->get_attribute("frequencies_specified")) {
 	$self->calcFrequencies();
@@ -1745,7 +1747,7 @@ sub setCrudeFrequencies {
 
 ################################################################
 
-=pod 
+=pod
 
 =item calcFrequencies()
 
@@ -1783,7 +1785,7 @@ sub calcFrequencies {
 	}
     }
 
-#    &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "residue priors", join(" ", %prior)) 
+#    &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "residue priors", join(" ", %prior))
 #      if ($main::verbose >= 10);
 
     ## pseudo-count
@@ -1828,10 +1830,10 @@ sub calcFrequencies {
 	} else {
 	  $frequencies[$c][$r] = 0;
 	}
-	#	  &RSAT::message::Debug("freq", $r, $c, $pseudo, 
-	#				$col_sum, 
-	#				"a:".$matrix[$c][$r], 
-	#				"f:".$crude_frequencies[$c][$r], 
+	#	  &RSAT::message::Debug("freq", $r, $c, $pseudo,
+	#				$col_sum,
+	#				"a:".$matrix[$c][$r],
+	#				"f:".$crude_frequencies[$c][$r],
 	#				"f':".$frequencies[$c][$r])
 	#	    if ($main::verbose >= 10);
       }
@@ -1842,7 +1844,7 @@ sub calcFrequencies {
 
 ################################################################
 
-=pod 
+=pod
 
 =item calcProbabilities()
 
@@ -1868,7 +1870,7 @@ sub calcProbabilities {
 	&main::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate probabilities for an empty matrix.");
     }
 
-    
+
     ## Get or calculate prior residue probabilities
     my %prior = $self->getPrior();
     if (scalar(keys %prior) <= 0) {
@@ -1882,15 +1884,15 @@ sub calcProbabilities {
 
     ## pseudo-count
     my $pseudo = $self->get_attribute("pseudo");
-    
+
     ## count matrix
     my @matrix = $self->getMatrix();
-    
+
     ## Calculate the frequencies
     my @frequencies = ();
     my @crude_frequencies = ();
 #    my @col_sum = &RSAT::matrix::col_sum(@matrix);
-    
+
     for my $c (0..($ncol-1)) {
 	my $col_sum = 0;
 	for my $r (0..($nrow-1)) {
@@ -1908,11 +1910,11 @@ sub calcProbabilities {
 		$crude_frequencies[$c][$r] = $matrix[$c][$r]/$col_sum;
 	    }
 	    $frequencies[$c][$r] /= ($col_sum + $pseudo);
-	    warn join( "\t", "freq", $r, $c, $pseudo, 
-		       $col_sum, 
-		       "a:".$matrix[$c][$r], 
-		       "f:".$crude_frequencies[$c][$r], 
-		       "f':".$frequencies[$c][$r]), "\n" 
+	    warn join( "\t", "freq", $r, $c, $pseudo,
+		       $col_sum,
+		       "a:".$matrix[$c][$r],
+		       "f:".$crude_frequencies[$c][$r],
+		       "f':".$frequencies[$c][$r]), "\n"
 			   if ($main::verbose >= 10);
 	}
     }
@@ -1928,7 +1930,7 @@ sub calcProbabilities {
 
 =item &calcConsensus($force)
 
-Calculate the consensus. 
+Calculate the consensus.
 
 Caching: if already calculated, do not calculate anymore.
 
@@ -1993,7 +1995,7 @@ sub calcConsensus {
     }
     my $consensus_IUPAC = &main::regular_to_IUPAC($consensus);
 
-    ## Strict consensus 
+    ## Strict consensus
     $self->set_parameter("consensus.strict", $consensus_strict);
     $self->set_parameter("consensus.strict.rc", &RSAT::SeqUtil::ReverseComplement($consensus_strict));
 
@@ -2016,21 +2018,21 @@ sub calcConsensus {
 
 =item &calcConsensus($force)
 
-Calculate the GC content of a matrix. 
+Calculate the GC content of a matrix.
 
 
 =cut
 sub calcGCcontent {
 	my ($self) = @_;
-	
+
 	&RSAT::message::Info(join("\t", "Calculating GC content"))
 	if ($main::verbose >= 5);
-    
+
     my @matrix_types = ("crude.freq","corrected.freq");
-    
+
     foreach my $matrix_type (@matrix_types){
     	my @matrix = ();
-    	
+
     	if ($matrix_type eq "crude.freq"){
     		@matrix = $self->getCrudeFrequencies();
     	} elsif ($matrix_type eq "corrected.freq"){
@@ -2039,11 +2041,11 @@ sub calcGCcontent {
     		&RSAT::message::Warning("No Frequency matrix found. GC content calculation skipped.");
     		last;
     	}
-    	
+
     	my @alphabet = $self->getAlphabet();
       	my $ncol = $self->ncol();
       	my $nrow = $self->nrow();
-      	
+
       	## calculate the sum of each row
 	  	my %row_sums =();
       	foreach my $r (0..($nrow-1)) {
@@ -2055,17 +2057,17 @@ sub calcGCcontent {
 			my $letter = $alphabet[$r];
 			$row_sums{$letter} = ($row_sum/$ncol);
       	}
-      	
+
       	my $residues_content ="";
       	foreach my $residue (sort(keys(%row_sums))){
       		$residues_content .= $residue.":".sprintf("%.4f",$row_sums{$residue})."|";
       	}
       	chop($residues_content);
-     	 
+     
      	 ## Store as parameter
-    	$self->set_parameter("residues.content.".$matrix_type, $residues_content);  	
+    	$self->set_parameter("residues.content.".$matrix_type, $residues_content);
     	$self->set_parameter("G+C.content.".$matrix_type, ($row_sums{g}+$row_sums{c}));
-    }  
+    }
 }
 
 ################################################################
@@ -2097,7 +2099,7 @@ sub _printProfile {
     my $comment_char = "|";
 
 
-    ## Temporarily suppress the pipe 
+    ## Temporarily suppress the pipe
     my $pipe_bk = $self->get_attribute("pipe");
 
     $self->force_attribute("pipe", "");
@@ -2128,8 +2130,8 @@ sub _printProfile {
 	$profile_scale .= "-";
       }
     }
-    $to_print .= $self->_printMatrixRow(";pos", 
-					@alphabet, 
+    $to_print .= $self->_printMatrixRow(";pos",
+					@alphabet,
 					$comment_char,
 					"sum",
 					"max_frq",
@@ -2183,7 +2185,7 @@ sub _printProfile {
 	    $rel_max = sprintf("%5.2f", $max/$sum);
 	}
 	$to_print .= $self->_printMatrixRow($c+1,
-					    @row, 
+					    @row,
 					    $comment_char,
 					    $sum,
 					    $rel_max,
@@ -2208,7 +2210,7 @@ sub _printProfile {
 
 Return a string with the parameter values
 
-=cut 
+=cut
 
 sub _printParameters {
   my ($self, $to_print) = @_;
@@ -2296,12 +2298,17 @@ sub _printMatrixRow {
 #    my $sep="boum";
 
 #    &RSAT::message::Debug("w=".$col_width, "sep='".$sep."'", "pos=".$pos, "decimals=".$decimals, "number_width=".$number_width) if ($main::verbose >= 10);
-    
+
     ## Print the matrix row
     my $pipe = $self->get_attribute("pipe");
     $row_string .= $sep.$pipe if ($pipe);
     for $c (0..($ncol-1)) {
-	my $value = $values[$c];
+	my $value;
+	if (defined($values[$c])) {
+	  $value = $values[$c];
+	} else {
+	  $value = "UNDEF";
+	}
 	if ($col_width) {
 	    my $value_format = "%${number_width}s";
 	    if (&main::IsReal($value)){
@@ -2374,7 +2381,7 @@ sub add_column {
   my $ncol = $self->ncol();
 #  &RSAT::message::Debug("&RSAT::matrix::add_column()", $side, join(",", @col_values)) if ($main::verbose >= 5);
   if (scalar(@col_values) != $nrow) {
-    &RSAT::message::FatalError("&RSAT::matrix:::add_column()", 
+    &RSAT::message::FatalError("&RSAT::matrix:::add_column()",
 			       "invalid number of values",
 			       scalar(@col_values));
   }
@@ -2452,7 +2459,7 @@ sub permute_columns {
 
 ################################################################
 
-=pod 
+=pod
 
 =item col_sum($nrow, $ncol, @table)
 
@@ -2463,7 +2470,7 @@ Return a vector of the same length as the table width.
 
 =cut
 sub col_sum {
-    my ($nrow, $ncol, @table) = @_;   
+    my ($nrow, $ncol, @table) = @_;
 #    die join "\t", $nrow, $ncol, join( " ", @{$matrix[0]});
 
     warn join("\t", "; Calculating sum per column for a table",$nrow, $ncol),"\n"
@@ -2483,7 +2490,7 @@ sub col_sum {
 
 ################################################################
 
-=pod 
+=pod
 
 =item col_max($nrow, $ncol, @table)
 
@@ -2513,7 +2520,7 @@ sub col_max {
 
 ################################################################
 
-=pod 
+=pod
 
 =item col_min($nrow, $ncol, @table)
 
@@ -2547,7 +2554,7 @@ sub col_min {
 
 =item B<seq_proba($sequence)>
 
-Calculate the probability of each segment of an input sequence. 
+Calculate the probability of each segment of an input sequence.
 
 The probability of a segment of sequence of lenghth w is the product of the
 corrected frequencies.
@@ -2593,7 +2600,7 @@ sub seq_proba {
 
 ################################################################
 
-=pod 
+=pod
 
 =item B<segment_proba($segment)>
 
@@ -2606,21 +2613,21 @@ corrected frequencies.
 =cut
 
 sub segment_proba {
-    my ($self, $segment) = @_;    
+    my ($self, $segment) = @_;
     $segment = lc($segment);
     my $seq_len = length($segment);
     my @residue_proba = ();
-    
+
     my $order = $self->get_attribute("bg_markov_order");
     $segment =  lc($segment);
     my $segment_proba = 1;
 
 
-    &RSAT::message::Debug("Segment:", $segment, "Markov:".$order) 
-	if ($main::verbose >= 5);    
+    &RSAT::message::Debug("Segment:", $segment, "Markov:".$order)
+	if ($main::verbose >= 5);
 
     ## for Bernouiili model
-    if ($order == 0) { 
+    if ($order == 0) {
 	for my $c (0..($seq_len-1)) {
 	    my $letter = substr($segment, $c, 1);
 	    if (defined($self->{"alphabet_index"}->{$letter})) {
@@ -2676,11 +2683,11 @@ sub segment_proba {
 	    }
 	    $segment_proba *= $letter_proba;
 	}
-	
+
     }
-    
+
     for my $col (0..$#residue_proba){
-	&RSAT::message::Debug("Proba_residue_M",$col,sprintf("%.6f",$residue_proba[$col])) 
+	&RSAT::message::Debug("Proba_residue_M",$col,sprintf("%.6f",$residue_proba[$col]))
 	    if ($main::verbose >= 5);
     }
     return \@residue_proba,$segment_proba;
@@ -2689,7 +2696,7 @@ sub segment_proba {
 
 ################################################################
 
-=pod 
+=pod
 
 =item B<segment_weight_Bernoulli($segment)>
 
@@ -2698,7 +2705,7 @@ segment must equal the matrix width.
 
 The weight of a segment of sequence of lenghth w is computed as the
 sum of the weights of its residues at the corresponding positions of
-the matrix. This method is thus only valid for Bernoulli models. 
+the matrix. This method is thus only valid for Bernoulli models.
 
 =cut
 
@@ -2724,7 +2731,7 @@ sub segment_weight_Bernoulli {
 	$segment_weight += $letter_weight;
 #	&RSAT::message::Debug("segment_proba", "letter:".$letter, "col:".$c, "row:".$r, "P(letter)=".$letter_proba, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
     }
-    
+
 #    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
     return $segment_weight;
 }
@@ -2736,7 +2743,7 @@ sub segment_weight_Bernoulli {
 =item B<proba_range()>
 
 Return the range (min and max possible values) for a sequence segment
-probability. 
+probability.
 
 The min (max) value is the product of the minimal (maximal) per column
 from the matrix of corrrected frequencies.
@@ -2769,7 +2776,7 @@ sub proba_range {
 	$proba_min *= $col_min;
 	$proba_max *= $col_max;
     }
-    
+
     $self->set_parameter("min(P(S|M))", $proba_min);
     $self->set_parameter("max(P(S|M))", $proba_max);
     $self->set_parameter("proba_range", $proba_max-$proba_min);
@@ -2844,7 +2851,7 @@ sub weight_range {
 #     my $tmp_Wmin = 0;
 #     my $tmp_Wmax = 0;
 #     my ($nrow, $ncol) = $self->size();
-#     my @weights = $self->getWeights();    
+#     my @weights = $self->getWeights();
 
 #     foreach my $c (0..($ncol-1)) {
 # 	my $col_min="NA";
@@ -2931,8 +2938,8 @@ sub add_site() {
   my $score =  $args{score} || 1;
   if ($score <  0) {
     &RSAT::message::Warning("RSAT::matrix::add_site()",
-			    "site", 
-			    $site_seq, 
+			    "site",
+			    $site_seq,
 			    "negative score", $score,
 			    "set to 0"
 			   ) if ($main::verbose >= 5);
@@ -2952,12 +2959,12 @@ sub add_site() {
   foreach my $l (0..$#alphabet) {
     $alphabet{$alphabet[$l]} = $l;
   }
-  
-  &RSAT::message::Debug("RSAT::matrix", $self->get_attribute("name"), 
+
+  &RSAT::message::Debug("RSAT::matrix", $self->get_attribute("name"),
 			"Adding site", $site_seq, $site_id, "len=".scalar(@letters),
-			"alphabet", join(":", @alphabet)), 
+			"alphabet", join(":", @alphabet)),
     if ($main::verbose >= 4);
-  
+
   ## Update the count matrix with the new sequence
   foreach my $c (0..$#letters) {
     if (defined($alphabet{$letters[$c]})) {
@@ -2969,7 +2976,7 @@ sub add_site() {
 	${$self->{table}}[$c][$row] += $score;
       }
     } else {
-      &RSAT::message::Warning("&RSAT::matrix::add_site()", $site_seq, "Unrecognized character at position", $c, $letters[$c]) 
+      &RSAT::message::Warning("&RSAT::matrix::add_site()", $site_seq, "Unrecognized character at position", $c, $letters[$c])
 	if ($main::verbose >= 5);
     }
   }
@@ -2991,10 +2998,10 @@ of any order. The score distribution is computed for the weight
 
 For Bernoulli (Markov order 0), the computation is
 performed using the algorithm described by Bailey (Bioinformatics,
-1999). 
+1999).
 
 For Markov models of higher orders, we extended the algorithm of Bailey and
-the calculation of the theorical distribution is coherent with matrix-scan 
+the calculation of the theorical distribution is coherent with matrix-scan
 scoring system.
 
 Usage:
@@ -3027,7 +3034,7 @@ sub calcTheorScoreDistrib {
 
 =item B<calcTheorScoreDistribBernoulli>
 
-Calculates the theorical distribution of weights probabilities based on 
+Calculates the theorical distribution of weights probabilities based on
 a Bernoulli background model.
 
 =cut
@@ -3097,8 +3104,8 @@ sub calcTheorScoreDistribBernoulli {
       ## get prior frequencies (bg model)
       my $suffix_proba_B = $bg_suffix_proba{$suffix};
 #
-#      &RSAT::message::Debug("suffix_freq_M", $suffix_freq_M, 
-#			    "suffix_proba_B", $suffix_proba_B, 
+#      &RSAT::message::Debug("suffix_freq_M", $suffix_freq_M,
+#			    "suffix_proba_B", $suffix_proba_B,
 #			    "info_log_base", $info_log_base,
 #			    "info_log_denominator", $info_log_denominator) if ($main::verbose >= 5);
 
@@ -3148,9 +3155,9 @@ for my $score (keys %score_proba) {
  #     }
  #   }
 
-#    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", ($c+1)."/".$ncol, 
-#			     "prev scores: ", scalar(keys(%score_proba)), 
-#			     "current scores:", scalar(keys(%current_score_proba)), 
+#    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", ($c+1)."/".$ncol,
+#			     "prev scores: ", scalar(keys(%score_proba)),
+#			     "current scores:", scalar(keys(%current_score_proba)),
 #			    ) if (($main::verbose >= 3) || ($decimals >= 3));
  #   %score_proba = %current_score_proba;
  # }
@@ -3174,9 +3181,9 @@ for my $score (keys %score_proba) {
 
 	  my $distrib_min= &RSAT::stats::min(keys(%score_proba));
 	  my $distrib_max= &RSAT::stats::max(keys(%score_proba));
-	  
+
 	  &RSAT::message::Debug("theor distrib min",$distrib_min,"theor distrib max",$distrib_max) if ($main::verbose >= 5);
-	  
+
 	  my $break_amplif=(10**$decimals);
 	  my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
 	  my $break_max = sprintf("%d", $break_amplif*$distrib_max)+1;
@@ -3212,7 +3219,7 @@ for my $score (keys %score_proba) {
 	  }
 	  $score_proba_cum{$score} = $score_proba_cum;
   }
-  
+
   ## Compute the inverse cumulative distribution
   my $score_inv_cum_proba = 0;
   my %score_inv_cum_proba = ();
@@ -3241,7 +3248,7 @@ for my $score (keys %score_proba) {
       my $score = $sorted_scores_inv[$i];
       $score_proba{$score} = $proba;
       $score_inv_cum_proba{$score} = $inv_cum_proba;
-      &RSAT::message::Debug("Fixing the tail of", $score_type,"distribution for score", 
+      &RSAT::message::Debug("Fixing the tail of", $score_type,"distribution for score",
 			    $i."/".$s, $score, $score_proba{$score}, $score_inv_cum_proba{$score}) if ($main::verbose >= 3);
     }
   }
@@ -3261,7 +3268,7 @@ for my $score (keys %score_proba) {
 
 =item B<calcTheorScoreDistribMarkov>
 
-Calculates the theorical distribution of weights probabilities based on 
+Calculates the theorical distribution of weights probabilities based on
 a background model with Markov order > 0 .
 
 =cut
@@ -3317,13 +3324,13 @@ sub calcTheorScoreDistribMarkov {
     if ($main::verbose >= 3);
   foreach my $initial_prefix (@prefixes) {
     $p++;
-    &RSAT::message::Debug("Computing weight probabilities for prefix", $initial_prefix, $p."/".$prefix_nb) 
+    &RSAT::message::Debug("Computing weight probabilities for prefix", $initial_prefix, $p."/".$prefix_nb)
       if ($main::verbose >= 4);
     $prefixes{$initial_prefix} = 1;
     ## get frequency of the prefix, under matrix model
     ## treat separately each letter of the prefix
     my $prefix_freq_M = 1;
-    foreach my $c (0..$initial_col) {			
+    foreach my $c (0..$initial_col) {
       my $letter = substr($initial_prefix, $c,1);
       my $r = $alphabetNb{$letter};
       $prefix_freq_M *= $scores[$c][$r];
@@ -3425,7 +3432,7 @@ sub calcTheorScoreDistribMarkov {
 	$score_proba{$score} += $distrib_proba{$score}->{$prefix};
       } else {
 	$score_proba{$score} = $distrib_proba{$score}->{$prefix};
-      }			
+      }
       $proba_sum += $distrib_proba{$score}->{$prefix};
     }
   }
@@ -3473,7 +3480,7 @@ sub calcTheorScoreDistribMarkov {
   } else {
     @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
   }
-  
+
   ## Fill in intermediate score values, for which no score was calculated
   ## This prevents from having missing values due to roundings
   my $distrib_min = $sorted_scores[0];
@@ -3525,7 +3532,7 @@ sub calcTheorScoreDistribMarkov {
       my $score = $sorted_scores_inv[$i];
       $score_proba{$score} = $proba;
       $score_inv_cum_proba{$score} = $inv_cum_proba;
-      &RSAT::message::Debug("Fixing the tail of", $score_type,"distribution for score", 
+      &RSAT::message::Debug("Fixing the tail of", $score_type,"distribution for score",
 			    $i."/".$s, $score, $score_proba{$score}, $score_inv_cum_proba{$score}) if ($main::verbose >= 3);
     }
   }
@@ -3663,7 +3670,7 @@ sub makeLogo{
 #    my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
-      &RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path", 
+      &RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path",
 			      $seqlogo_path,
 			      "Please install seqlogo in the recommended location.");
       return;
@@ -3788,7 +3795,10 @@ sub fake_seq_from_matrix {
 
 =item B<reverse_complement>
 
-Compute the reverse complement of the PSSM
+Replace the matrix by its reverse complement.
+
+If require, re-compute the frequency, weight and information content
+matrice.
 
 Usage: $matrix->reverse_complment();
 
@@ -3823,8 +3833,8 @@ sub reverse_complement {
       my $occ = $ori_matrix[$c][$r];
       $rc_matrix[$rc_col][$rc_row] = $ori_matrix[$c][$r];
     }
-    $self->setMatrix ($nrow, $ncol, @rc_matrix);
   }
+  $self->setMatrix ($nrow, $ncol, @rc_matrix);
 
   ## Update the dependent tables
   if (($self->get_attribute("frequencies_specified")) || ($self->get_attribute("crudeFrequencies_specified"))) {
@@ -3833,6 +3843,166 @@ sub reverse_complement {
   $self->calcWeights() if ($self->get_attribute("weights_specified"));
   $self->calcInformation() if ($self->get_attribute("information_specified"));
   $self->calcConsensus() if ($self->get_attribute("consensus_specified"));
+}
+
+=pod
+
+=item I<calcCountRC>
+
+Compute the reverse complement of the count matrix, and
+store it in a separate attribute (table) named countRC.
+
+The reverse complement of the count matrix is used (uder others) for
+displaying matrix alignments.
+
+In principle, the method &calcCountRC() should be
+called only once during the execution of the program. After the first
+computation, the RC matrix can be retrieved multiple times with the
+method &getCountRC().
+
+=cut
+
+sub calcCountRC {
+  my ($self) = @_;
+  my @ori_matrix = $self->getMatrix();
+  my @rc_matrix = ();
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  my @alphabet = $self->getAlphabet();
+
+  ## Index rows by residue
+  my %row = ();
+  foreach my $r (0..$#alphabet) {
+    $row{lc($alphabet[$r])} = $r;
+  }
+
+  ## Reverse complement residues
+  my %rc = ('a'=>'t',
+	   'c'=>'g',
+	   'g'=>'c',
+	   't'=>'a');
+
+  ## reverse each row (residue)
+  foreach my $r (0..($nrow-1)) {
+    my $res = lc($alphabet[$r]);
+    my $rc = $rc{$res};
+    my $rc_row = $row{$rc};
+    foreach my $c (0..($ncol-1)) {
+      my $rc_col= $ncol-1-$c;
+      my $occ = $ori_matrix[$c][$r];
+      $rc_matrix[$rc_col][$rc_row] = $ori_matrix[$c][$r];
+    }
+  }
+  @{$self->{countRC}} = @rc_matrix;
+
+  &RSAT::message::Debug("Computed countRC", $self->get_attribute("id"), join(", ", @rc_matrix)) if ($main::verbose >= 0);
+  $self->force_attribute("countRC_specified", 1);
+}
+
+
+################################################################
+
+=pod
+
+=item getCountRC()
+
+Return the reverse complement of the count matrix.
+
+This is used for displaying matrix alignments.
+
+The first time this method it called, the RC of the count matrix is
+computed with calcCountRC(), and stored in the attribute
+"countRC". After this, the method simply return this attribute.
+
+=cut
+sub getCountRC {
+    my ($self) = @_;
+    unless ($self->get_attribute("countRC_specified")) {
+	$self->calcCountRC();
+    }
+    return @{$self->{countRC}};
+}
+
+
+
+=pod
+
+=item I<calcCrudeFreqRC>
+
+Compute the reverse complement of the crude frequency matrix, and
+store it in a separate attribute (table) named crudeFreqRC.
+
+This is useful for two-strands alignments, where one necessitates both
+the direct and the reverse complementary matrix at each step (shift) of
+the alignment.
+
+In principle, the method &calcCrudeFreqRC() should be
+called only once during the execution of the program. After the first
+computation, the RC matrix can be retrieved multiple times with the
+method &getCrudeFreqRC().
+
+=cut
+
+sub calcCrudeFreqRC {
+  my ($self) = @_;
+  my @ori_matrix =  $self->getCrudeFrequencies();
+  my @rc_matrix = ();
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  my @alphabet = $self->getAlphabet();
+
+  ## Index rows by residue
+  my %row = ();
+  foreach my $r (0..$#alphabet) {
+    $row{lc($alphabet[$r])} = $r;
+  }
+
+  ## Reverse complement residues
+  my %rc = ('a'=>'t',
+	   'c'=>'g',
+	   'g'=>'c',
+	   't'=>'a');
+
+  ## reverse each row (residue)
+  foreach my $r (0..($nrow-1)) {
+    my $res = lc($alphabet[$r]);
+    my $rc = $rc{$res};
+    my $rc_row = $row{$rc};
+    foreach my $c (0..($ncol-1)) {
+      my $rc_col= $ncol-1-$c;
+      my $occ = $ori_matrix[$c][$r];
+      $rc_matrix[$rc_col][$rc_row] = $ori_matrix[$c][$r];
+    }
+  }
+  @{$self->{crudeFreqRC}} = @rc_matrix;
+
+  $self->force_attribute("crudeFreqRC_specified", 1);
+}
+
+
+################################################################
+
+=pod
+
+=item getCrudeFreqRC()
+
+Return the reverse complement of the crude frequency matrix.
+
+This is useful for two-strands alignments, where one necessitates both
+the direct and the reverse complementary matrix at each step (shift) of
+the alignment.
+
+The first time this method it called, the RC of the crude frequency
+matrix is computed with calcCrudeFreqRC(), and stored in the attribute
+"crudeFreqRC". After this, the method simply return this attribute.
+
+=cut
+sub getCrudeFreqRC {
+    my ($self) = @_;
+    unless ($self->get_attribute("crudeFreqRC_specified")) {
+	$self->calcCrudeFreqRC();
+    }
+    return @{$self->{crudeFreqRC}};
 }
 
 =pod
