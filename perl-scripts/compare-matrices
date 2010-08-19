@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.53 2010/08/19 09:36:07 jvanheld Exp $
+# $Id: compare-matrices,v 1.54 2010/08/19 15:55:12 jvanheld Exp $
 #
 ############################################################
 
@@ -274,7 +274,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.53 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.54 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -284,22 +284,25 @@ package main;
 #  $main::in = STDIN;
   $main::out = STDOUT;
 
+  ## Supported metrics for comparing matrices
+  local @supported_metrics = (
+			      "Ncor", ## Normalized coefficient of correlation
+			      "cor", ## Coefficient of correlation
+			      "SSD", ## Euclidian distance
+			      "SW", ## Sandelin-Wasserman similarity
+			      "dEucl", ## Euclidian distance
+			      "NdEucl", ## Normalized Euclidian distance
+			      "NsEucl", ## Euclidian similarity
+			      "dKL", ## Kullback-Leibler distance
+			      "cov", ## Covariance
+			     );
 
   ## Return fields
-  local @supported_return_fields = (
+  local @supported_return_fields = (@supported_metrics, ## Any supported metrics is a valid return field
 				    "matrix_number", ## Number of the matrices in the input files
 				    "matrix_id", ## Identifiers of the matrices
 				    "matrix_name", ## Names of the matrices
 				    "matrix_ac", ## Accession number of the matrices
-				    "Ncor", ## Normalized coefficient of correlation
-				    "cor", ## Coefficient of correlation
-				    "SSD", ## Euclidian distance
-				    "SW", ## Sandelin-Wasserman similarity
-				    "dEucl", ## Euclidian distance
-				    "NdEucl", ## Normalized Euclidian distance
-				    # "NsEucl", ## Euclidian similarity
-				    "dKL", ## Kullback-Leibler distance
-				    "cov", ## Covariance
 				    "width", ## Width of the matrices and the alignment
 				    "strand", ## Direct (D) or Reverse complementary (R) comparison
 				    "direction", ## for backward compatibility only, replaced by "strand".
@@ -871,13 +874,14 @@ package main;
 	  ## Compute Euclidian distance
 	  if ($calc_field{dEucl}) {
 	    $dEucl = sqrt($SSD);
-	    next unless (&CheckThresholdValue("dEucl", $dEucl)); $dEucl{$offset_strand} = $dEucl;
+	    next unless (&CheckThresholdValue("dEucl", $dEucl)); $score{dEucl}{$offset_strand} = $dEucl;
 	    $NdEucl = $dEucl/$w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
-	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); $NdEucl{$offset_strand} = $NdEucl;
+	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); $score{NdEucl}{$offset_strand} = $NdEucl;
 	  }
 
 	  ## Compute Sandelin-Wasserman similarity
 	  $SW = 2*$w - $SSD;
+	  next unless (&CheckThresholdValue("SW", $SW)); $score{SW}{$offset_strand} = $SW;
 
 	  ## Compute Euclidian similarity
 	  if ($calc_field{NsEucl}) {
@@ -929,9 +933,9 @@ package main;
 	  next unless (&CheckThresholdValue("Ncor", $Ncor));
 
 	  ## Index values for sorting
-	  $cov{$offset_strand} = $cov;
-	  $cor{$offset_strand} = $cor;
-	  $Ncor{$offset_strand} = $Ncor;
+	  $score{cov}{$offset_strand} = $cov;
+	  $score{cor}{$offset_strand} = $cor;
+	  $score{Ncor}{$offset_strand} = $Ncor;
 
 	  ## Generate the output line
 	  my @out_fields = ();
@@ -992,28 +996,37 @@ package main;
 
 #      &RSAT::message::Debug("\@output_offset_strand", join(", ", @output_offset_strand)) if ($main::verbose >= 10);
 
-      ## Euclidian distance is sorted in ascending order
       if ($sort_field eq "dEucl") {
-	@sorted_offset_strand = sort {$dEucl{$a} <=> $dEucl{$b}} @output_offset_strand;
+	## Euclidian distance is sorted in ascending order
+	@sorted_offset_strand = sort {$score{dEucl}{$a} <=> $score{dEucl}{$b}} @output_offset_strand;
+
+      } elsif ($sort_field eq "NdEucl") {
+	## Normalized Euclidian distance is sorted in ascending order
+	@sorted_offset_strand = sort {$score{NdEucl}{$a} <=> $score{NdEucl}{$b}} @output_offset_strand;
+
+      } elsif ($sort_field eq "SW") {
+	## SW is sorted in ascending order
+	@sorted_offset_strand = sort {$score{SW}{$a} <=> $score{SW}{$b}} @output_offset_strand;
 
       } elsif ($sort_field eq "NsEucl") {
-	@sorted_offset_strand = sort {$dEucl{$b} <=> $dEucl{$a}} @output_offset_strand;
+	## Normalized Euclidian SIMILARITY is sorted in DECREASING order
+	@sorted_offset_strand = sort {$score{NsEucl}{$b} <=> $score{NsEucl}{$a}} @output_offset_strand;
 
-	## Kullback-Leibler distance is sorted in ascending order
       } elsif ($sort_field eq "dKL") {
-	@sorted_offset_strand = sort {$dKL{$a} <=> $dKL{$b}} @output_offset_strand;
+	## Kullback-Leibler distance is sorted in ascending order
+	@sorted_offset_strand = sort {$score{dKL}{$a} <=> $score{dKL}{$b}} @output_offset_strand;
 
 	## covariance is sorted in descending order
       } elsif ($sort_field eq "cov") {
-	@sorted_offset_strand = sort {$cov{$b} <=> $cov{$a}} @output_offset_strand;
+	@sorted_offset_strand = sort {$score{cov}{$b} <=> $score{cov}{$a}} @output_offset_strand;
 
 	## Correlation is sorted in descending order
       } elsif ($sort_field eq "cor") {
-	@sorted_offset_strand = sort {$cor{$b} <=> $cor{$a}} @output_offset_strand;
+	@sorted_offset_strand = sort {$score{cor}{$b} <=> $score{cor}{$a}} @output_offset_strand;
 
 	## Correlation is sorted in descending order
       } elsif ($sort_field eq "Ncor") {
-	@sorted_offset_strand = sort {$Ncor{$b} <=> $Ncor{$a}} @output_offset_strand;
+	@sorted_offset_strand = sort {$score{Ncor}{$b} <=> $score{Ncor}{$a}} @output_offset_strand;
 
       } else {
 	@sorted_offset_strand = @output_offset_strand;
@@ -1058,6 +1071,14 @@ package main;
 
 	  ## Print a header for the alignment in the tab-delimited file
 	  my $header_row = join ("\t", "Pairwise matrix alignment", $id1, "versus", $id2);
+	  $header_row .= sprintf("; %s=%d", "offset", $offset);
+	  $header_row .= sprintf("; %s=%s", "strand", $strand);
+	  foreach my $metric (@supported_metrics) {
+	    if ($return_field{$metric}) {
+	      my $value = $score{$metric}{$offset_strand};
+	      $header_row .= sprintf("; %s=%7g", $metric, $value);
+	    }
+	  }
 	  print $out_matrices "\n; ", $header_row."\n";
 	  print $out_matrices join ("\t", ";pos", "|", 1..$merged_matrix->ncol()), "\n";
 
@@ -1077,17 +1098,6 @@ package main;
 	    $matrix1_string .= $matrix1_shifted->toString(format=>'tab', type=>"counts");
 	    print $out_matrices $matrix1_string;
 
-	    ## Generate a sequence logo for the HTML output file
-	    my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
-	    $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
-	    my $logo1_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo1_file.".png");
-	    $matrix1_string =~ s|//\n||mg;
-	    print $out_matrices_html "<tr>\n";
-	    print $out_matrices_html "<td>".$desc1."</td>\n";
-	    print $out_matrices_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
-	    print $out_matrices_html "<td><pre>".$matrix1_string."</pre></td>\n";
-	    print $out_matrices_html "</tr>\n";
-
 	    ## Generate a string to display the second matrix in text output file
 	    my $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC");
 	    my $matrix2_string = join("\t", "; ".$desc2,
@@ -1100,10 +1110,21 @@ package main;
 	    print $out_matrices $matrix2_string;
 
 	    ## Generate a sequence logo for the HTML output file
+	    my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
+	    $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+	    my $logo1_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo1_file.".png");
+	    $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+	    print $out_matrices_html "<tr>\n";
+	    print $out_matrices_html "<td>".$desc1."</td>\n";
+	    print $out_matrices_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
+	    print $out_matrices_html "<td><pre>".$matrix1_string."</pre></td>\n";
+	    print $out_matrices_html "</tr>\n";
+
+	    ## Generate a sequence logo for the HTML output file
 	    my $logo2_file = $main::outfile{logo_dir}."/".$matrix2_shifted->get_attribute("id");
 	    $matrix2_shifted->makeLogo($logo2_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
 	    my $logo2_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo2_file.".png");
-	    $matrix2_string =~ s|//\n||mg;
+	    $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
 	    print $out_matrices_html "<tr>\n";
 	    print $out_matrices_html "<td>".$desc2."</td>\n";
 	    print $out_matrices_html "<td><a href='".$logo2_link."'><img border=0 src='".$logo2_link."'></a></td>\n";
