@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.52 2010/08/18 21:04:08 jvanheld Exp $
+# $Id: compare-matrices,v 1.53 2010/08/19 09:36:07 jvanheld Exp $
 #
 ############################################################
 
@@ -29,12 +29,6 @@ return various similarity statistics.
 =over
 
 =item Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
-
-with the help of
-
-=item Gipsi Lima-Mendez <gipsi@bigre.ulb.ac.be>
-
-=item Matthieu Defrance <defrance@bigre.ulb.ac.be>
 
 =back
 
@@ -117,7 +111,6 @@ offset between the two matrices).
 Total length of the alignent between matrices m1 and m2.
 
  W = w1 + w2 - w
-
 
 =item Relative length I<Wr>
 
@@ -281,7 +274,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.52 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.53 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -363,15 +356,14 @@ package main;
   local @matrices1 = ();
   local @matrices2 = ();
 
-  ## input formats
+  ## Input formats
   %supported_input_format = %RSAT::MatrixReader::supported_input_format;
   $supported_input_formats = join ",", sort keys %supported_input_format;
   local $input_format1 = "";
   local $input_format2 = "";
   local $strand = "DR";
   local $distinct = 0;
-  local $triangle = 0;
-
+#  local $triangle = 0;
   local $merging_stat = "mean";
 
   ################################################################
@@ -385,6 +377,13 @@ package main;
   unless ((($infile{file1}) || ($infile{mlist1})) &&
 	  (($infile{file2}) || ($infile{mlist2}))) {
     &RSAT::error::FatalError("You must define two input files, as one combination among options (-file1 or -mfile1) and (-file2 or -mlist2)");
+  }
+
+  ## Single input file (each matrix of the file will be compared to
+  ## each other one).
+  local $single_input_file = 0;
+  if ($infile{file1} eq $infile{file2}) {
+    $single_input_file = 1;
   }
 
   ## Check that the two input formats have been specified
@@ -500,9 +499,15 @@ package main;
   }
 
   if ($infile{file2}){
-    @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
-    &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
-      if ($main::verbose >= 2);
+    if ($single_input_file) {
+      @matrices2 = @matrices1;
+      &RSAT::message::Info("Single input file")
+	if ($main::verbose >= 2);
+    } else {
+      @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
+      &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
+	if ($main::verbose >= 2);
+    }
   } elsif($infile{mlist2}){
     @matrices2 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
   }
@@ -512,7 +517,8 @@ package main;
 
 
   ################################################################
-  ## Compute maximal name lengths for nice display
+  ## Compute maximal lengths of string attributes (id, ac, name) for
+  ## nice display in tab-delimited columns
   local $max_name_len1 = 0;
   local $max_id_len1 = 0;
   local $max_ac_len1 = 0;
@@ -527,59 +533,42 @@ package main;
     my $name_len = length($name);
     $max_name_len1 = $name_len if ($name_len > $max_name_len1);
   }
-  &RSAT::message::Debug("max lengths for matrices 1",
+  &RSAT::message::Debug("max string lengths for matrices 1",
 			"id:".$max_id_len1,
 			"ac:".$max_ac_len1,
 			"name:".$max_name_len1,
-		       ) if ($main::verbose >= 0);
+		       ) if ($main::verbose >= 5);
 
   local $max_name_len2 = 0;
   local $max_id_len2 = 0;
   local $max_ac_len2 = 0;
-  foreach my $matrix (@matrices2) {
-    my $id = $matrix->get_attribute("id") || "<NA>";
-    my $id_len = length($id);
-    $max_id_len2 = $id_len if ($id_len > $max_id_len2);
-    my $ac = $matrix->get_attribute("accession") || "<NA>";
-    my $ac_len = length($ac);
-    $max_ac_len2 = $ac_len if ($ac_len > $max_ac_len2);
-    my $name = $matrix ->get_attribute("name");
-    my $name_len = length($name);
-    $max_name_len2 = $name_len if ($name_len > $max_name_len2);
+  if ($single_input_file) {
+    $max_name_len2 = $max_name_len1;
+    $max_id_len2 = $max_id_len1;
+    $max_ac_len2 = $max_ac_len1;
+  } else {
+    foreach my $matrix (@matrices2) {
+      my $id = $matrix->get_attribute("id") || "<NA>";
+      my $id_len = length($id);
+      $max_id_len2 = $id_len if ($id_len > $max_id_len2);
+      my $ac = $matrix->get_attribute("accession") || "<NA>";
+      my $ac_len = length($ac);
+      $max_ac_len2 = $ac_len if ($ac_len > $max_ac_len2);
+      my $name = $matrix ->get_attribute("name");
+      my $name_len = length($name);
+      $max_name_len2 = $name_len if ($name_len > $max_name_len2);
+    }
   }
 #  &RSAT::message::Debug("max name length for matrices 2", $max_name_len2) if ($main::verbose >= 10);
-
-  ################################################################
-  ## Reverse complements
-  ##
-  ## TEMPORARY: if the comparison is DR, te input file 1 is read
-  ## twice: the first reading is converted to reverse complement, and
-  ## the second reading used for direct "strand". This should be
-  ## changed because it means that the R and D comparisons are
-  ## considered as separate comparisons, and the score ranking applies
-  ## to them separately rather than altogether.
-#   if ($strand =~ /R/) {
-#     &RSAT::message::Info("Computing reverse complement for the matrices of the second file.") if ($main::verbose >= 10);
-#     foreach my $matrix (@matrices2) {
-#       $matrix->reverse_complement();
-#       $matrix->set_attribute("strand", "R");
-#     }
-#     if ($strand eq "DR") {
-#       if ($infile{file2}){
-# 	push @matrices2, &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
-# 	&RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
-# 	  if ($main::verbose >= 2);
-#       } elsif ($infile{mlist2}){
-# 	push @matrices2, &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
-#       }
-#     }
-#   }
 
 
   ################################################################
   ## Compute the required parameters for each matrix
   my $count_m=0;
-  foreach my $matrix (@matrices1, @matrices2) {
+  my @matrices = @matrices1;
+  push @matrices, @matrices2  unless ($single_input_file);
+
+  foreach my $matrix (@matrices) {
       $count_m ++;
       ## Calculate the consensus for each matrix
       $matrix->calcConsensus() if ($return_field{consensus});
@@ -729,7 +718,8 @@ package main;
 
       ## Skip identical matrices if the option -distinct is active
       next if (($main::distinct) && ($id1 eq $id2));
-      next if (($main::triangle) && ($id1 gt $id2));
+#      next if (($main::triangle) && ($id1 gt $id2));
+      next if (($single_input_file) && ($id1 gt $id2)); ## Skip reciprocal comparison for single-input file analysis
 
       ## Get description of the second matrix
       my $name2 = $matrix2-> get_attribute("name");
@@ -1063,7 +1053,7 @@ package main;
 	print $out "\t", $rank{$offset_strand} if ($return_field{rank});
 	print $out "\n";
 	if ($main::outfile{out_matrices}) {
-	  my ($merged_matrix, $matrix1_shifted, $matrix2_shifted,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, stat=>$merging_stat);
+	  my ($merged_matrix, $matrix1_shifted, $matrix2_shifted,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, $strand, stat=>$merging_stat);
 	  my $id_align = $merged_matrix->get_attribute("id") || "alignment";
 
 	  ## Print a header for the alignment in the tab-delimited file
@@ -1084,7 +1074,7 @@ package main;
 				      "shift1=".$matrix1_shifted->get_attribute("shift"),
 				      $matrix1_shifted->get_attribute("consensus.IUPAC"));
 	    $matrix1_string .= "\n";
-	    $matrix1_string .= $matrix1_shifted->toString(format=>'tab');
+	    $matrix1_string .= $matrix1_shifted->toString(format=>'tab', type=>"counts");
 	    print $out_matrices $matrix1_string;
 
 	    ## Generate a sequence logo for the HTML output file
@@ -1099,24 +1089,14 @@ package main;
 	    print $out_matrices_html "</tr>\n";
 
 	    ## Generate a string to display the second matrix in text output file
-	    my $consensus2 = "";
-	    my $type = "";
-	    if ($rc_matrix) {
-	      $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC.rc");
-	      ## Make sure that the RC matrix has been computed
-	      $matrix2_shifted->getCountRC();
-	      $type = "countRC";
-	    } else {
-	      $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC");
-	      $type = "counts";
-	    }
+	    my $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC");
 	    my $matrix2_string = join("\t", "; ".$desc2,
 				      "col=".$matrix2->ncol(),
 				      "strand2=".$strand,
 				      "shift2=".$matrix2_shifted->get_attribute("shift"),
 				      $consensus2);
 	    $matrix2_string .= "\n";
-	    $matrix2_string .= $matrix2_shifted->toString(format=>'tab', type=>$type);
+	    $matrix2_string .= $matrix2_shifted->toString(format=>'tab', type=>"counts");
 	    print $out_matrices $matrix2_string;
 
 	    ## Generate a sequence logo for the HTML output file
@@ -1139,7 +1119,7 @@ package main;
 					    "col=".$merged_matrix->ncol(),
 					    $merged_matrix->get_attribute("consensus.IUPAC"));
 	    $merged_matrix_string .= "\n";
-	    $merged_matrix_string .= $merged_matrix->toString(format=>'tab');
+	    $merged_matrix_string .= $merged_matrix->toString(format=>'tab', type=>"counts");
 	    print $out_matrices $merged_matrix_string;
 
 	    ## Generate a sequence logo for the merged matrix
@@ -1265,6 +1245,19 @@ The second input file containing one or several matrices.
 
 =pod
 
+=item B<-file single_matrix_file>
+
+Use a single matrix file as input. Each matrix of this file is
+compared to each other. This is equivalent to:
+ -file1 single_matrix_file -file2 single_matrix_file
+
+=cut
+    } elsif ($arg eq "-file") {
+      $main::infile{file1} = shift(@arguments);
+      $main::infile{file2} = $main::infile{file1};
+
+=pod
+
 =item B<-mlist1 matrix list>
 
 The fisrt input file contaning a list of matrix files (given as paths)
@@ -1371,19 +1364,6 @@ identifiers, they will be compared.
     } elsif ($arg eq "-distinct") {
       $main::distinct = 1;
 
-=pod
-
-=item	B<-triangle>
-
-Only perform once the comparison between the same pair of matrix.
-
-This option is useful when the program is sused to compare all
-matrices of a given file to all matrices of the same file, to avoid
-comparing matrix A to matrix B and then matrix B to matrix A.
-
-=cut
-    } elsif ($arg eq "-triangle") {
-      $main::triangle = 1;
 
 =pod
 
