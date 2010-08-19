@@ -1038,7 +1038,7 @@ sub to_patser {
       @matrix = @{$self->{$type}};
     }
 
-    &RSAT::message::Debug("matrix to print", $self->get_attribute("id"), $type, join ", ", @matrix) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("matrix to print", $self->get_attribute("id"), $type, join ", ", @matrix) if ($main::verbose >= 10);
     my @alphabet = $self->getAlphabet();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
@@ -3895,7 +3895,7 @@ sub calcCountRC {
   }
   @{$self->{countRC}} = @rc_matrix;
 
-  &RSAT::message::Debug("Computed countRC", $self->get_attribute("id"), join(", ", @rc_matrix)) if ($main::verbose >= 0);
+#  &RSAT::message::Debug("Computed countRC", $self->get_attribute("id"), join(", ", @rc_matrix)) if ($main::verbose >= 10);
   $self->force_attribute("countRC_specified", 1);
 }
 
