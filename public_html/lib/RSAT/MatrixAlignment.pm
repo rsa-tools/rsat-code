@@ -33,13 +33,13 @@ The offset should be provided. The program computes the sum or the
 mean count for each row (residue) and each column (aligned position).
 
 Usage:
-  my $aligned_matrix = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, %args);
+  my $aligned_matrix = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, $strand, %args);
 
 The method can also return the shifted original matrices, which are
 convenient for drawing aligned logos.
 
   my ($aligned_matrix, $shifted_matrix1, $shifted_matrix2) =
-         &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, %args);
+         &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, $strand, %args);
 
 Arguments:
   stat=> mean|sum   compute the mean or the sum of the counts, respectively.
@@ -47,26 +47,37 @@ Arguments:
 =cut 
 
 sub AlignMatrices {
-  my ($matrix1, $matrix2, $offset, %args) = @_;
+  my ($matrix1, $matrix2, $offset, $strand, %args) = @_;
   my $stat = $args{stat} || "sum";
+  my $rc = "";
+  $rc = "_rc" if ($strand eq "R"); ## Suffix added to matrix ID, name and descrption to indicate reverse complement
 
-  my $desc1 = $id1 = $matrix1->get_attribute("id");
-  my $desc2 = $id2 = $matrix2->get_attribute("id");
+  my $id1 = $matrix1->get_attribute("id");
+  my $desc1 = $id1;
+
+  my $id2 = $matrix2->get_attribute("id");
+  my $desc2 = $id2.$rc;
 
   my $name1 = $matrix1->get_attribute("name");
   if (($name1) && ($name1 ne $id1)) {
     $desc1 .= " (".$name1.")";
   }
   my $name2 = $matrix2->get_attribute("name");
+  $name2 .= $rc;
   if (($name2) && ($name2 ne $id2)) {
     $desc2 .= " (".$name2.")";
   }
 
-  &RSAT::message::TimeWarn("Aligning matrices", $desc1, $desc2, "offset=".$offset)
+  &RSAT::message::TimeWarn("Aligning matrices", $desc1, $desc2, "offset=".$offset,  "strand=".$strand)
     if ($main::verbose >= 2);
 
   my @counts1 = $matrix1->getMatrix();
-  my @counts2 = $matrix2->getMatrix();
+  my @counts2;
+  if ($strand eq "R") {
+    @counts2 = $matrix2->getCountRC();
+  } else {
+    @counts2 = $matrix2->getMatrix();
+  }
   my @alphabet = $matrix1->getAlphabet();
 
   my $ncol1 = $matrix1->get_attribute("ncol");
@@ -101,7 +112,7 @@ sub AlignMatrices {
 
   ## Create the alignment matrix
   my $aligned_matrix = new RSAT::matrix();
-  $aligned_matrix->force_attribute("id", $id1."_".$id2."_".$stat),
+  $aligned_matrix->force_attribute("id", $id1."_".$id2.$rc."_".$stat),
   $aligned_matrix->force_attribute("ncol", $ncol);
   $aligned_matrix->setAlphabet_lc(@alphabet);
 #  $aligned_matrix->force_attribute("nrow", scalar(@alphabet));
@@ -123,8 +134,8 @@ sub AlignMatrices {
   $shifted_matrix1->force_attribute("id", $id1."_shift".$shift1);
   $shifted_matrix1->force_attribute("identifier", $id1."_shift".$shift1);
   $shifted_matrix2->set_parameter("shift",$shift2);
-  $shifted_matrix2->force_attribute("id", $id2."_shift".$shift2);
-  $shifted_matrix2->force_attribute("identifier", $id2."_shift".$shift2);
+  $shifted_matrix2->force_attribute("id", $id2.$rc."_shift".$shift2);
+  $shifted_matrix2->force_attribute("identifier", $id2.$rc."_shift".$shift2);
   for my $c (1..$ncol) {
     for my $r (1..$nrow) {
       $c1 = $c - $shift1;
@@ -159,7 +170,7 @@ sub AlignMatrices {
 
 #       &RSAT::message::Debug("alignment", 
 # 			    $id1,
-# 			    $id2,
+# 			    $id2.$rc,
 # 			    "offset=".$offset, 
 # 			    "r=".$r,
 # 			    "c=".$c."/".$ncol,
