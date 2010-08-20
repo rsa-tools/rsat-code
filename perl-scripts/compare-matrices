@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.54 2010/08/19 15:55:12 jvanheld Exp $
+# $Id: compare-matrices,v 1.55 2010/08/20 06:13:44 jvanheld Exp $
 #
 ############################################################
 
@@ -159,14 +159,19 @@ Mean frequency computed over all cells of matrices m1 and m2, respectively.
 =head2 Sum of Squared Distances (SSD)
 
 BEWARE: this metrics is the real SSD, i.e. the simple sum of squared
-distance.
+distance. It is a distance metric, in contrast with the "SSD" defined
+in STAMP, which is converted to a similarity metrics (see
+Sandelin-Wasserman below).
 
  SSD = SUM{i=1->r} SUM{j=1->w} [(f1{i,j} - f2{i,j})^2)]
 
 =head2 Sandelin-Wasserman simliarity (SW)
 
 Also implemented in STAMP (under the name SSD) and TOMTOM (under the
-name Sandelin-Wasserman).
+name Sandelin-Wasserman). This is a distance to similarity conversion
+of the SSD. The conversion is ensured by substracting each squared
+distance to a constant 2 (the max distance between two relative
+frequencies).
 
  SW = SUM{i=1->r} SUM{j=1->w} [2 - (f1{i,j} - f2{i,j})^2) ]
 
@@ -176,12 +181,19 @@ Source: Sandelin A & Wasserman WW (2004) J Mol Biol 338:207-215.
 
  dEucl = sqrt( SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f2{i,j})^2)
 
+Since relative frequencies can take values from 0 to 1, the Euclidian
+distance can take values from 0 to sqrt(2)*w.
+
 =head2 Normalized Euclidian distance (NdEucl)
+
+Euclidian distance normalized by the number of aligned columns
+(I<w>).
 
  NdEucl = 1/w * dEucl
 
-Euclidian distance normalized by the number of aligned columns
-(I<w>). Note that this differs from the definition provided in Pape et
+NdEucl can take values from 0 to sqrt(2).
+
+Note that this differs from the definition provided in Pape et
 al. (2008).
 
 =head2 Normalized Euclidian similarity (NsEucl)
@@ -189,10 +201,13 @@ al. (2008).
 A similarity metrics derived from the normalized Euclidian distance.
 
  NsEucl = (Max(NdEucl) - NdEucl) / Max(NdEucl)
+        = (sqrt(2) - NdEucl) / sqrt(2)
 
 where I<Max(NdEucl)>=sqrt(2) is the maximal possible Euclidian
-distance for the current pair of matrices. This metrics can vary from
-0 to 1.
+distance for the current pair of matrices. The Normalized Euclidian
+similarity can vary from 0 (idential matrices) to 1 (matrices with a
+single residue per column, and those residues systematically differ
+between the two matrices).
 
 =head2 Kullback-Leibler distance (dKL)
 
@@ -207,10 +222,11 @@ As defined in Aerts et al. (2003).
 
  cov = 1/n * SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f1m) * (f2{i,j} - f2m)
 
-Beware : this covariance has nothing to do with the "natural
-covariance" of Pape (which still need to be implemented here).  What
-we compute here is simply the covariance between the counts in the
-aligned cells of the respective matrices.
+Beware : this is the classical covariance defined in statistical
+textbooks. It has nothing to do with the "natural covariance" of Pape
+(which still needs to be implemented here).  What we compute here is
+simply the covariance between the counts in the aligned cells of the
+respective matrices.
 
 =head2 Coefficient of correlation (cor)
 
@@ -274,28 +290,42 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.54 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.55 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
   %main::outfile = ();
 
   $main::verbose = 0;
-#  $main::in = STDIN;
   $main::out = STDOUT;
 
   ## Supported metrics for comparing matrices
   local @supported_metrics = (
 			      "Ncor", ## Normalized coefficient of correlation
 			      "cor", ## Coefficient of correlation
-			      "SSD", ## Euclidian distance
-			      "SW", ## Sandelin-Wasserman similarity
+			      "cov", ## Covariance
 			      "dEucl", ## Euclidian distance
 			      "NdEucl", ## Normalized Euclidian distance
 			      "NsEucl", ## Euclidian similarity
+			      "SSD", ## Euclidian distance
+			      "SW", ## Sandelin-Wasserman similarity
 			      "dKL", ## Kullback-Leibler distance
-			      "cov", ## Covariance
 			     );
+
+
+  ## Supported fields for sorting the matches
+  local %supported_sort_field = ("offset"=>"asc",
+				 "Ncor"=>"desc",
+				 "cor"=>"desc",
+				 "cov"=>"desc",
+				 "dEucl"=>"asc",
+				 "NdEucl"=>"asc",
+				 "NsEucl"=>"desc",
+				 "SSD"=>"asc",
+				 "SW"=>"desc",
+				 "dKL"=>"asc",
+				);
+  local $supported_sort_fields = join (",", keys (%supported_sort_field));
 
   ## Return fields
   local @supported_return_fields = (@supported_metrics, ## Any supported metrics is a valid return field
@@ -375,6 +405,11 @@ package main;
 
   ################################################################
   ## Check argument values
+
+  ## Incompatibilities between output modes
+  if (($return_field{aligned_matrices}) && ($out_format eq "profiles")) {
+    &RSAT::error::FatalError("The output format profiles and the return field aligned matrices are mutually incompatible (output might reach unreasonable size).");
+  }
 
   ## Check that the two input files have been specified
   unless ((($infile{file1}) || ($infile{mlist1})) &&
@@ -607,16 +642,22 @@ package main;
   push (@header, "m1", "m2") if ($return_field{matrix_number});
 #  push (@header, "id1", "id2") if ($return_field{matrix_id});
   if ($return_field{matrix_id}) {
-    push (@header, sprintf("%-${max_id_len1}s", "id1"));
+    my $width  = ${max_id_len1};
+    $width -= 1 if (scalar(@header)==0);
+    push (@header, sprintf("%-${width}s", "id1"));
     push (@header, sprintf("%-${max_id_len2}s", "id2"));
   }
   if ($return_field{matrix_ac}) {
-    push (@header, sprintf("%-${max_ac_len1}s", "ac1"));
+    my $width  = ${max_ac_len1};
+    $width -= 1 if (scalar(@header)==0);
+    push (@header, sprintf("%-${width}s", "ac1"));
     push (@header, sprintf("%-${max_ac_len2}s", "ac2"));
   }
 #  push (@header, "ac1", "ac2") if ($return_field{matrix_ac});
   if ($return_field{matrix_name}) {
-    push (@header, sprintf("%-${max_name_len1}s", "name1"));
+    my $width  = ${max_name_len1};
+    $width -= 1 if (scalar(@header)==0);
+    push (@header, sprintf("%-${width}s", "name1"));
     push (@header, sprintf("%-${max_name_len2}s", "name2"));
   }
   push (@header, "Ncor") if ($return_field{Ncor});
@@ -886,7 +927,7 @@ package main;
 	  ## Compute Euclidian similarity
 	  if ($calc_field{NsEucl}) {
 	    my $maxEucl = sqrt(2);
-	    $NsEucl = ($maxEucl - $dEucl) / $maxEucl;
+	    $NsEucl = ($maxEucl - $NdEucl) / $maxEucl;
 	  }
 
 	  ## Compute Kullback-Leibler distance
@@ -960,8 +1001,8 @@ package main;
 	    $name2 = sprintf("%-${max_name_len2}s", $name2);
 	    push (@out_fields, $name1, $name2);
 	  }
-	  push (@out_fields, sprintf("%.2f", $Ncor)) if ($return_field{Ncor});
-	  push (@out_fields, sprintf("%.2f", $cor)) if ($return_field{cor});
+	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
+	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
 	  push (@out_fields, sprintf("%.2f", $SW)) if ($return_field{SW});
 	  push (@out_fields, sprintf("%.4f", $SSD)) if ($return_field{SSD});
 	  push (@out_fields, sprintf("%.5f", $NdEucl)) if ($return_field{NdEucl});
@@ -993,44 +1034,53 @@ package main;
 
       ## Sort the results
       my @sorted_offset_strand;
+      my $sort_order = $supported_sort_field{$sort_field};
 
-#      &RSAT::message::Debug("\@output_offset_strand", join(", ", @output_offset_strand)) if ($main::verbose >= 10);
-
-      if ($sort_field eq "dEucl") {
-	## Euclidian distance is sorted in ascending order
-	@sorted_offset_strand = sort {$score{dEucl}{$a} <=> $score{dEucl}{$b}} @output_offset_strand;
-
-      } elsif ($sort_field eq "NdEucl") {
-	## Normalized Euclidian distance is sorted in ascending order
-	@sorted_offset_strand = sort {$score{NdEucl}{$a} <=> $score{NdEucl}{$b}} @output_offset_strand;
-
-      } elsif ($sort_field eq "SW") {
-	## SW is sorted in ascending order
-	@sorted_offset_strand = sort {$score{SW}{$a} <=> $score{SW}{$b}} @output_offset_strand;
-
-      } elsif ($sort_field eq "NsEucl") {
-	## Normalized Euclidian SIMILARITY is sorted in DECREASING order
-	@sorted_offset_strand = sort {$score{NsEucl}{$b} <=> $score{NsEucl}{$a}} @output_offset_strand;
-
-      } elsif ($sort_field eq "dKL") {
-	## Kullback-Leibler distance is sorted in ascending order
-	@sorted_offset_strand = sort {$score{dKL}{$a} <=> $score{dKL}{$b}} @output_offset_strand;
-
-	## covariance is sorted in descending order
-      } elsif ($sort_field eq "cov") {
-	@sorted_offset_strand = sort {$score{cov}{$b} <=> $score{cov}{$a}} @output_offset_strand;
-
-	## Correlation is sorted in descending order
-      } elsif ($sort_field eq "cor") {
-	@sorted_offset_strand = sort {$score{cor}{$b} <=> $score{cor}{$a}} @output_offset_strand;
-
-	## Correlation is sorted in descending order
-      } elsif ($sort_field eq "Ncor") {
-	@sorted_offset_strand = sort {$score{Ncor}{$b} <=> $score{Ncor}{$a}} @output_offset_strand;
-
+      if ($sort_field eq "offset") {
+	@sorted_offset_strand = @output_offset_strand; ## No need to sort
+      } elsif ($sort_order eq "asc") {
+	## Sort results in ascending order
+	@sorted_offset_strand = sort {$score{$sort_field}{$a} <=> $score{$sort_field}{$b}} @output_offset_strand;
       } else {
-	@sorted_offset_strand = @output_offset_strand;
+	## Sort results in descending order
+	@sorted_offset_strand = sort {$score{$sort_field}{$b} <=> $score{$sort_field}{$a}} @output_offset_strand;
       }
+
+#       if ($sort_field eq "dEucl") {
+# 	## Euclidian distance is sorted in ascending order
+# 	@sorted_offset_strand = sort {$score{dEucl}{$a} <=> $score{dEucl}{$b}} @output_offset_strand;
+
+#       } elsif ($sort_field eq "NdEucl") {
+# 	## Normalized Euclidian distance is sorted in ascending order
+# 	@sorted_offset_strand = sort {$score{NdEucl}{$a} <=> $score{NdEucl}{$b}} @output_offset_strand;
+
+#       } elsif ($sort_field eq "SW") {
+# 	## SW is sorted in ascending order
+# 	@sorted_offset_strand = sort {$score{SW}{$a} <=> $score{SW}{$b}} @output_offset_strand;
+
+#       } elsif ($sort_field eq "NsEucl") {
+# 	## Normalized Euclidian SIMILARITY is sorted in DECREASING order
+# 	@sorted_offset_strand = sort {$score{NsEucl}{$b} <=> $score{NsEucl}{$a}} @output_offset_strand;
+
+#       } elsif ($sort_field eq "dKL") {
+# 	## Kullback-Leibler distance is sorted in ascending order
+# 	@sorted_offset_strand = sort {$score{dKL}{$a} <=> $score{dKL}{$b}} @output_offset_strand;
+
+# 	## covariance is sorted in descending order
+#       } elsif ($sort_field eq "cov") {
+# 	@sorted_offset_strand = sort {$score{cov}{$b} <=> $score{cov}{$a}} @output_offset_strand;
+
+# 	## Correlation is sorted in descending order
+#       } elsif ($sort_field eq "cor") {
+# 	@sorted_offset_strand = sort {$score{cor}{$b} <=> $score{cor}{$a}} @output_offset_strand;
+
+# 	## Correlation is sorted in descending order
+#       } elsif ($sort_field eq "Ncor") {
+# 	@sorted_offset_strand = sort {$score{Ncor}{$b} <=> $score{Ncor}{$a}} @output_offset_strand;
+
+#       } else {
+# 	@sorted_offset_strand = @output_offset_strand;
+#       }
 
 #      &RSAT::message::Debug("\@sorted_offset_strand", join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
 
@@ -1346,12 +1396,68 @@ Specify the matrix format for the second input file only (requires
 
 =item	B<-o outputfile>
 
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
+Output file name.
+
+Tab-delimited text file containing the primary result (comparison
+score table). In addition, he file name is used as prefix for the text
+and html-formatted matrix alignment files.
+
+Output file name is mandatory for obtaining aligned matrices.
+
+If no alignments are required and no output file is specified, the
+standard output is used.  This allows to use the command within a
+pipe.
 
 =cut
     } elsif ($arg eq "-o") {
       $main::outfile{output} = shift(@arguments);
+
+=item B<-out_format matches | profiles>
+
+=over
+
+=item I<-format matches> (default)
+
+Return matches between any matrix of the file1 and any matrix of
+file2.
+
+This is the typical use of I<compare-matrices>: comparing one or
+several query motifs (e.g. obtained from pattern discovery) with a
+collection of reference motifs (e.f. a database of experimentally
+characterized transcription factor binding motifs, such as JASPAR,
+TRANSFAC, RegulonDB, ...).
+
+For a given pair of matrices (one from file1 and one from file2), the
+program tests all possible offsets, and measures one or several
+matching scores (see section "(Dis)similarity metrics" above). The
+program only returns the sore of the best alignemnt between the two
+matrices. The "best" alignement is the combination of offset and
+strand (with the option -strand DR) that maximizes the default score
+(Ncor). Alternative scores can be used as optimality criteria with the
+option -sort.
+
+=item I<-format profiles>
+
+Return a table with one row for each possible alignment offset between
+two matrices, and various columns indicating the matching parameters
+(offset, strand, aligned width,...), the matching scores, and the
+consensus of the aligned columns of the matrices.
+
+Matching profiles are convenient for drawing the similarity profiles,
+or for analyzing the correlations between various similarity metrics,
+but they are too verbosy for the typical use of I<compare-matrices>
+(detect matches between a query matrix and a database of reference
+matrices). The formats "matches" and "table" are more convenient for
+basic use.
+
+=back
+
+=cut
+    } elsif ($arg eq "-out_format") {
+      $main::out_format = shift(@arguments);
+      &RSAT::error::FatalError($main::out_format, "is not a valid output format. Supported: ".$supported_out_formats) 
+	unless ($supported_out_format{$main::out_format});
+
 
 =pod
 
@@ -1490,13 +1596,41 @@ List of fields to return (only valid for the formats "profiles" and
 
 =item	B<-sort sort_field>
 
-Field to sort the results.
+Field to sort the results. The sorting direction depends on the
+metric: ascending for dissimilarity metrics, decreasing for similarity
+metrics.
 
-Supported: dEucl, NsEucl, dKL, cov, cor, Ncor.
+Supported sort fields:
+
+=over
+
+=item offset, ascending (default for the profile mode)
+
+=item Ncor, decreasing (default for the matching mode)
+
+=item cor, decreasing
+
+=item cov, decreasing
+
+=item SSD, ascending
+
+=item SW, decreasing
+
+=item dEucl, ascending
+
+=item NdEucl, ascending
+
+=item NsEucl, decreasing
+
+=item dKL, ascending
+
+=back
 
 =cut
     } elsif ($arg eq "-sort") {
       $main::sort_field = shift(@arguments);
+      &RSAT::error::FatalError($main::sort_field, "Invalid sorting field. Supported: ".$supported_sort_fields) 
+	unless ($supported_sort_field{$main::sort_field});
 
 =pod
 
@@ -1532,52 +1666,6 @@ Supported threshold fields : rank, dEucl, cor, cov, ali_len, offset
 	unless (&RSAT::util::IsReal($thr_value));
       $uth{$thr_field} = $thr_value;
 
-
-=item B<-out_format matches | profiles>
-
-=over
-
-=item I<-format matches> (default)
-
-Return matches between any matrix of the file1 and any matrix of
-file2.
-
-This is the typical use of I<compare-matrices>: comparing one or
-several query motifs (e.g. obtained from pattern discovery) with a
-collection of reference motifs (e.f. a database of experimentally
-characterized transcription factor binding motifs, such as JASPAR,
-TRANSFAC, RegulonDB, ...).
-
-For a given pair of matrices (one from file1 and one from file2), the
-program tests all possible offsets, and measures one or several
-matching scores (see section "(Dis)similarity metrics" above). The
-program only returns the sore of the best alignemnt between the two
-matrices. The "best" alignement is the combination of offset and
-strand (with the option -strand DR) that maximizes the default score
-(Ncor). Alternative scores can be used as optimality criteria with the
-option -sort.
-
-=item I<-format profiles>
-
-Return a table with one row for each possible alignment offset between
-two matrices, and various columns indicating the matching parameters
-(offset, strand, aligned width,...), the matching scores, and the
-consensus of the aligned columns of the matrices.
-
-Matching profiles are convenient for drawing the similarity profiles,
-or for analyzing the correlations between various similarity metrics,
-but they are too verbosy for the typical use of I<compare-matrices>
-(detect matches between a query matrix and a database of reference
-matrices). The formats "matches" and "table" are more convenient for
-basic use.
-
-=back
-
-=cut
-    } elsif ($arg eq "-out_format") {
-      $main::out_format = shift(@arguments);
-      &RSAT::error::FatalError($main::out_format, "is not a valid output format. Supported: ".$supported_out_formats) 
-	unless ($supported_out_format{$main::out_format});
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
