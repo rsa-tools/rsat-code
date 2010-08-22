@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.30 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: graph-get-clusters,v 1.31 2010/08/22 13:42:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -54,12 +54,17 @@ formats. Default format for the input graph: tab.
 
 =head2 Cluster format
 
-Without -induced option (default) : a two-column file with column corresponding respectively to the node name and to the cluster name.
-With -induced option : a one column file specifying to nodes from which the output graph will be induced.
+Without the option -induced (default) : a two-column file with column
+corresponding respectively to the node name and to the cluster name.
+
+With the option -induced : a one column file specifying to nodes from
+which the output graph will be induced.
 
 =head1 OUTPUT FORMATS
 
-There are three possible output formats: the list of intra-cluster edges (option -return clusters), a contingency table (option -return table) or an annotated graph (option -return graph).
+There are three possible output formats: the list of intra-cluster
+edges (option -return clusters), a contingency table (option -return
+table) or an annotated graph (option -return graph).
 
 =head2 contingency table
 
@@ -438,16 +443,18 @@ package main;
     $cluster_graph->load_from_array(@cluster_graph_array);
     $cluster_graph->set_array_attribute("arcs_attribute",@arcs_attribute);
     $cluster_graph->set_array_attribute("arcs_attribute_header", @arcs_attribute_header);
-     
+
     if ($return_type eq "table") {
-      ## Print cluster names
-      foreach my $cluster (@cluster_list) {
-	print $out "\t$cluster";
-      }
-      print $out "\tsum";
+      ## Header symbol
+      print $out join ("\t", "#node", @cluster_list, "sum"), "\n";
+
+#      ## Print cluster names
+#      foreach my $cluster (@cluster_list) {
+#	print $out "\t$cluster";
+#      }
+#      print $out "\tsum";
       ## Print node name and the number of intra-edge cluster
       for (my $i = 0; $i < scalar(@result); $i++) {
-	print $out "\n";
 	print $out "$nodes_id_name{$i}";
 	my $sum = 0;
 	for (my $j = 0; $j < scalar(@cluster_list); $j++) {
@@ -461,9 +468,9 @@ package main;
 	  print $out "\t$val";
 	}
 	print $out "\t$sum";
+	print $out "\n";
       }
-      print $out "\n";
-      print $out "#Arcs";
+      print $out "; #Arcs";
       foreach my $cluster (@cluster_list) {
 	my $val = ($clusters_edge_nb{$cluster});
 	if (!defined($val)) {
