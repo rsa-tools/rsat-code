@@ -44,7 +44,7 @@ convenient for drawing aligned logos.
 Arguments:
   stat=> mean|sum   compute the mean or the sum of the counts, respectively.
 
-=cut 
+=cut
 
 sub AlignMatrices {
   my ($matrix1, $matrix2, $offset, $strand, %args) = @_;
