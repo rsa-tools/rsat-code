@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.57 2010/08/22 16:37:15 jvanheld Exp $
+# $Id: compare-matrices,v 1.58 2010/08/22 18:26:58 jvanheld Exp $
 #
 ############################################################
 
@@ -306,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.57 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.58 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -474,9 +474,9 @@ package main;
     $uth{rank}=1 unless(defined($uth{rank})); ## Only return the best match for each alignment
 
     ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
-    $lth{cor}=0.6 unless (defined($lth{cor}));
+    $lth{w}=3 unless (defined($lth{w}));
+    $lth{cor}=0.75 unless (defined($lth{cor}));
     $lth{ncor}=0.4 unless (defined($lth{ncor}));
-    $lth{w}=4 unless (defined($lth{w}));
   }
 
   ## Sort order
@@ -573,11 +573,15 @@ package main;
   ################################################################
   ## Compute maximal lengths of string attributes (id, ac, name) for
   ## nice display in tab-delimited columns
+
+  ## Treat the first matrix set
   local $max_name_len1 = 0;
   local $max_id_len1 = 0;
   local $max_ac_len1 = 0;
+  local %matrix_by_id1 = (); ## index matrices by ID
   foreach my $matrix (@matrices1) {
     my $id = $matrix->get_attribute("id") || "<NA>";
+    $matrix_by_id1{$id} = $matrix;
     my $id_len = length($id);
     $max_id_len1 = $id_len if ($id_len > $max_id_len1);
     my $ac = $matrix->get_attribute("accession") || "<NA>";
@@ -593,16 +597,20 @@ package main;
 			"name:".$max_name_len1,
 		       ) if ($main::verbose >= 5);
 
+  ## treat the second matrix set
   local $max_name_len2 = 0;
   local $max_id_len2 = 0;
   local $max_ac_len2 = 0;
+  local %matrix_by_id2 = ();
   if ($single_input_file) {
     $max_name_len2 = $max_name_len1;
     $max_id_len2 = $max_id_len1;
     $max_ac_len2 = $max_ac_len1;
+    %matrix_by_id2 = %matrix_by_id1;
   } else {
     foreach my $matrix (@matrices2) {
       my $id = $matrix->get_attribute("id") || "<NA>";
+      $matrix_by_id2{$id} = $matrix;
       my $id_len = length($id);
       $max_id_len2 = $id_len if ($id_len > $max_id_len2);
       my $ac = $matrix->get_attribute("accession") || "<NA>";
@@ -759,10 +767,6 @@ package main;
     my $id1 = $matrix1->get_attribute("id") || "<NA>";
     my $name1 = $matrix1 ->get_attribute("name");
     my $m2 = 0;
-    my $desc1 = $id1;
-    if (($name1) && ($name1 ne $id1)) {
-      $desc1 .= " ".$name1;
-    }
 
     ## Iterate over matrices of the second list
     foreach my $matrix2 (@matrices2) {
@@ -783,10 +787,6 @@ package main;
 
       ## Get description of the second matrix
       my $name2 = $matrix2-> get_attribute("name");
-      my $desc2 = $id2;
-      if (($name2) && ($name2 ne $id2)) {
-	$desc2 .= " ".$name2;
-      }
       my $w2 = $matrix2->get_attribute("ncol");
       my $nrow2 = $matrix2->get_attribute("nrow");
 
@@ -830,8 +830,8 @@ package main;
 	## Slide matrix2 along matrix1
 	foreach my $offset ($offset_min..$offset_max) {
 	  $compa++;
-	  my $offset_strand = join ("_", $offset, $strand);
-#	  &RSAT::message::Debug("Offset - strand", $id1, $id2, $offset_strand) if ($main::verbose >= 10);
+	  my $compa_id = join (":", $id1, $id2, $offset, $strand);
+#	  &RSAT::message::Debug("Offset - strand", $id1, $id2, $compa_id) if ($main::verbose >= 10);
 
 	  next unless (&CheckThresholdValue("offset", $offset));
 
@@ -931,14 +931,14 @@ package main;
 	  ## Compute Euclidian distance
 	  if ($calc_field{dEucl}) {
 	    $dEucl = sqrt($SSD);
-	    next unless (&CheckThresholdValue("dEucl", $dEucl)); $score{dEucl}{$offset_strand} = $dEucl;
+	    next unless (&CheckThresholdValue("dEucl", $dEucl)); $score{dEucl}{$compa_id} = $dEucl;
 	    $NdEucl = $dEucl/$w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
-	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); $score{NdEucl}{$offset_strand} = $NdEucl;
+	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); $score{NdEucl}{$compa_id} = $NdEucl;
 	  }
 
 	  ## Compute Sandelin-Wasserman similarity
 	  $SW = 2*$w - $SSD;
-	  next unless (&CheckThresholdValue("SW", $SW)); $score{SW}{$offset_strand} = $SW;
+	  next unless (&CheckThresholdValue("SW", $SW)); $score{SW}{$compa_id} = $SW;
 
 	  ## Compute Euclidian similarity
 	  if ($calc_field{NsEucl}) {
@@ -951,7 +951,7 @@ package main;
 	    unless ($dKL eq "Inf") {
 	      $dKL /= 2;
 	      $dKL /= $w if ($w > 0); ## Relativize KL distance with respect to the number of aligned columns
-	      next unless (&CheckThresholdValue("dKL", $dKL)); $dKL{$offset_strand} = $dKL;
+	      next unless (&CheckThresholdValue("dKL", $dKL)); $dKL{$compa_id} = $dKL;
 	      $dKL = sprintf("%.5f", $dKL);
 	    }
 	  }
@@ -991,9 +991,9 @@ package main;
 	  next unless (&CheckThresholdValue("Ncor", $Ncor));
 
 	  ## Index values for sorting
-	  $score{cov}{$offset_strand} = $cov;
-	  $score{cor}{$offset_strand} = $cor;
-	  $score{Ncor}{$offset_strand} = $Ncor;
+	  $score{cov}{$compa_id} = $cov;
+	  $score{cor}{$compa_id} = $cor;
+	  $score{Ncor}{$compa_id} = $Ncor;
 
 	  ## Generate the output line
 	  my @out_fields = ();
@@ -1039,8 +1039,8 @@ package main;
 		sprintf("%-${max_aligned_consensus_len2}s", $consensus2),
 	       ) if ($return_field{consensus});
 
-	  push (@output_offset_strand, $offset_strand);
-	  $out_line{$offset_strand} =  join("\t", @out_fields);
+	  push (@output_offset_strand, $compa_id);
+	  $out_line{$compa_id} =  join("\t", @out_fields);
 	}
 
       }
@@ -1075,9 +1075,9 @@ package main;
       my $max_rank = "NA";
       if ($calc_field{rank}) {
 	my $rank = 0;
-	foreach my $offset_strand (@sorted_offset_strand) {
+	foreach my $compa_id (@sorted_offset_strand) {
 	  $rank++;
-	  $rank{$offset_strand} = $rank;
+	  $rank{$compa_id} = $rank;
 	}
 
 	## Max rank
@@ -1099,15 +1099,15 @@ package main;
 
       ################################################################
       ## Print the output row(s) + the aligned matrices
-      foreach my $offset_strand (@sorted_offset_strand) {
-#	&RSAT::message::Debug("Treating output for offset/strand", $offset_strand) if ($main::verbose >= 10);
-	my ($offset, $strand) = split("_", $offset_strand);
+      foreach my $compa_id (@sorted_offset_strand) {
+#	&RSAT::message::Debug("Treating output for offset/strand", $compa_id) if ($main::verbose >= 10);
+	my ($id1, $id2, $offset, $strand) = split(":", $compa_id);
 	my $rc_matrix = 0;
 	if ($strand eq "R") {
 	  $rc_matrix = 1;
 	}
 
-#	&RSAT::message::Debug("Treating output for offset/strand", $offset_strand, $offset, $strand) if ($main::verbose >= 10);
+#	&RSAT::message::Debug("Treating output for offset/strand", $compa_id, $offset, $strand) if ($main::verbose >= 10);
 
 
 	if ($out_format eq "matches") {
@@ -1118,114 +1118,20 @@ package main;
 	  ## matrix pair but also by offset + strand. This allows to
 	  ## return multiple matches for a single matrix pair (by
 	  ## forcing the upper threshold on rank to be > 1).
-	  my $match_id = join (":", $id1, $id2, $offset, $strand);
-	  $match_score{$match_id} = $score{$sort_field}{$offset_strand};
+#	  my $compa_id = join (":", $id1, $id2, $offset, $strand);
+	  $match_score{$compa_id} = $score{$sort_field}{$compa_id};
 
 	  ## (%match_out_line) because the hash table %out_line must
 	  ## be cleaned for each pairwise comparison.
-	  $match_out_line{$match_id} = $out_line{$offset_strand};
+	  $match_out_line{$compa_id} = $out_line{$compa_id};
 	} else {
 	  ## In profile mode, print the output row for each comparison
 	  ## (motif pair/offset/strand).
-	  print $out  $out_line{$offset_strand};
-	  print $out "\t", $rank{$offset_strand} if ($return_field{rank});
+	  print $out  $out_line{$compa_id};
+	  print $out "\t", $rank{$compa_id} if ($return_field{rank});
 	  print $out "\n";
 	}
 
-	if ($main::outfile{out_matrices}) {
-	  my ($merged_matrix, $matrix1_shifted, $matrix2_shifted,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, $strand, stat=>$merging_stat);
-	  my $id_align = $merged_matrix->get_attribute("id") || "alignment";
-
-	  ## Print a header for the alignment in the tab-delimited file
-	  my $header_row = join ("\t", "Pairwise matrix alignment", $id1, "versus", $id2);
-	  $header_row .= sprintf("; %s=%d", "offset", $offset);
-	  $header_row .= sprintf("; %s=%s", "strand", $strand);
-	  foreach my $metric (@supported_metrics) {
-	    if ($return_field{$metric}) {
-	      my $value = $score{$metric}{$offset_strand};
-	      $header_row .= sprintf("; %s=%7g", $metric, $value);
-	    }
-	  }
-	  print $out_matrices "\n; ", $header_row."\n";
-	  print $out_matrices join ("\t", ";pos", "|", 1..$merged_matrix->ncol()), "\n";
-
-	  ## Open a table in the HTML file
-	  print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
-	  print $out_matrices_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
-
-	  if ($return_field{aligned_matrices}) {
-
-	    ## Generate a string to display the first matrix in text output file
-	    my $matrix1_string = join("\t", "; ".$desc1,
-				      "col=".$matrix1->ncol(),
-				      "strand1=D",
-				      "shift1=".$matrix1_shifted->get_attribute("shift"),
-				      $matrix1_shifted->get_attribute("consensus.IUPAC"));
-	    $matrix1_string .= "\n";
-	    $matrix1_string .= $matrix1_shifted->toString(format=>'tab', type=>"counts");
-	    print $out_matrices $matrix1_string;
-
-	    ## Generate a string to display the second matrix in text output file
-	    my $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC");
-	    my $matrix2_string = join("\t", "; ".$desc2,
-				      "col=".$matrix2->ncol(),
-				      "strand2=".$strand,
-				      "shift2=".$matrix2_shifted->get_attribute("shift"),
-				      $consensus2);
-	    $matrix2_string .= "\n";
-	    $matrix2_string .= $matrix2_shifted->toString(format=>'tab', type=>"counts");
-	    print $out_matrices $matrix2_string;
-
-	    ## Generate a sequence logo for the HTML output file
-	    my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
-	    $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
-	    my $logo1_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo1_file.".png");
-	    $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
-	    print $out_matrices_html "<tr>\n";
-	    print $out_matrices_html "<td>".$desc1."</td>\n";
-	    print $out_matrices_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
-	    print $out_matrices_html "<td><pre>".$matrix1_string."</pre></td>\n";
-	    print $out_matrices_html "</tr>\n";
-
-	    ## Generate a sequence logo for the HTML output file
-	    my $logo2_file = $main::outfile{logo_dir}."/".$matrix2_shifted->get_attribute("id");
-	    $matrix2_shifted->makeLogo($logo2_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
-	    my $logo2_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo2_file.".png");
-	    $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
-	    print $out_matrices_html "<tr>\n";
-	    print $out_matrices_html "<td>".$desc2."</td>\n";
-	    print $out_matrices_html "<td><a href='".$logo2_link."'><img border=0 src='".$logo2_link."'></a></td>\n";
-	    print $out_matrices_html "<td><pre>".$matrix2_string."</pre></td>\n";
-	    print $out_matrices_html "</tr>\n";
-	  }
-
-	  if ($return_field{merged_matrices}) {
-
-	    ## Generate a string for the alignment file
-	    my $merged_matrix_string = join("\t", "; ".$id_align,
-					    "offset=$offset",
-					    "col=".$merged_matrix->ncol(),
-					    $merged_matrix->get_attribute("consensus.IUPAC"));
-	    $merged_matrix_string .= "\n";
-	    $merged_matrix_string .= $merged_matrix->toString(format=>'tab', type=>"counts");
-	    print $out_matrices $merged_matrix_string;
-
-	    ## Generate a sequence logo for the merged matrix
-	    my $logo_file = $main::outfile{logo_dir}."/".$id_align;
-	    $merged_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", 0);
-	    my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
-	    $merged_matrix_string =~ s|//\n||mg;
-	    print $out_matrices_html "<tr>";
-	    print $out_matrices_html "<td>Alignment</td>";
-	    print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
-	    print $out_matrices_html "<td><pre>".$merged_matrix_string."</pre></td>";
-	    print $out_matrices_html "</tr>\n";
-	  }
-
-	  ## Close the alignment table
-	  print $out_matrices_html "</table>\n";
-
-	}			## if
       }				## offset/strand pair
       #      } ## strands
     }				## matrix 2
@@ -1248,12 +1154,19 @@ package main;
 
     ## Print the output rows
     my $rank = 0;
-    foreach my $match_id (@sorted_match_id) {
+    foreach my $compa_id (@sorted_match_id) {
       $rank++;
-      print $out  $match_out_line{$match_id};
+      $rank{$compa_id} = $rank;
+      print $out  $match_out_line{$compa_id};
       print $out "\t", $rank if ($return_field{rank});
       print $out "\n";
     }
+  }
+
+  ################################################################
+  ## Print matrix alignments
+  if ($return_field{aligned_matrices}) {
+    &PrintAlignedMatrices();
   }
 
   ################################################################
@@ -1274,6 +1187,122 @@ package main;
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
 
+
+################################################################
+## Print matrix alignments
+sub PrintAlignedMatrices {
+  &RSAT::message::TimeWarn("Printing matrix alignments") if ($main::verbose >= 2);
+  foreach my $compa_id (@sorted_match_id) {
+    local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
+
+    my $matrix1 = $matrix_by_id1{$id1};
+    my $name1 = $matrix1 ->get_attribute("name");
+    my $desc1 = $id1;
+    if (($name1) && ($name1 ne $id1)) {
+      $desc1 .= " ".$name1;
+    }
+
+    my $matrix2 = $matrix_by_id2{$id2};
+    my $name2 = $matrix2 ->get_attribute("name");
+    my $desc2 = $id2;
+    if (($name2) && ($name2 ne $id2)) {
+      $desc2 .= " ".$name2;
+    }
+
+    my ($merged_matrix, $matrix1_shifted, $matrix2_shifted) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, $strand, stat=>$merging_stat);
+    my $id_align = $merged_matrix->get_attribute("id") || "alignment";
+
+    ## Print a header for the alignment in the tab-delimited file
+    my $header_row = join ("\t", "Pairwise matrix alignment", "rank=".$rank{$compa_id}, $id1, "versus", $id2);
+    $header_row .= sprintf("; %s=%d", "offset", $offset);
+    $header_row .= sprintf("; %s=%s", "strand", $strand);
+    foreach my $metric (@supported_metrics) {
+      if ($return_field{$metric}) {
+	my $value = $score{$metric}{$compa_id};
+	$header_row .= sprintf("; %s=%7g", $metric, $value);
+      }
+    }
+    print $out_matrices "\n; ", $header_row."\n";
+    print $out_matrices join ("\t", ";pos", "|", 1..$merged_matrix->ncol()), "\n";
+
+    ## Open a table in the HTML file
+    print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
+    print $out_matrices_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
+
+    if ($return_field{aligned_matrices}) {
+
+      ## Generate a string to display the first matrix in text output file
+      my $matrix1_string = join("\t", "; ".$desc1,
+				"col=".$matrix1->ncol(),
+				"strand1=D",
+				"shift1=".$matrix1_shifted->get_attribute("shift"),
+				$matrix1_shifted->get_attribute("consensus.IUPAC"));
+      $matrix1_string .= "\n";
+      $matrix1_string .= $matrix1_shifted->toString(format=>'tab', type=>"counts");
+      print $out_matrices $matrix1_string;
+
+      ## Generate a string to display the second matrix in text output file
+      my $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC");
+      my $matrix2_string = join("\t", "; ".$desc2,
+				"col=".$matrix2->ncol(),
+				"strand2=".$strand,
+				"shift2=".$matrix2_shifted->get_attribute("shift"),
+				$consensus2);
+      $matrix2_string .= "\n";
+      $matrix2_string .= $matrix2_shifted->toString(format=>'tab', type=>"counts");
+      print $out_matrices $matrix2_string;
+
+      ## Generate a sequence logo for the HTML output file
+      my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
+      $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+      my $logo1_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo1_file.".png");
+      $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+      print $out_matrices_html "<tr>\n";
+      print $out_matrices_html "<td>".$desc1."</td>\n";
+      print $out_matrices_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
+      print $out_matrices_html "<td><pre>".$matrix1_string."</pre></td>\n";
+      print $out_matrices_html "</tr>\n";
+
+      ## Generate a sequence logo for the HTML output file
+      my $logo2_file = $main::outfile{logo_dir}."/".$matrix2_shifted->get_attribute("id");
+      $matrix2_shifted->makeLogo($logo2_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
+      my $logo2_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo2_file.".png");
+      $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+      print $out_matrices_html "<tr>\n";
+      print $out_matrices_html "<td>".$desc2."</td>\n";
+      print $out_matrices_html "<td><a href='".$logo2_link."'><img border=0 src='".$logo2_link."'></a></td>\n";
+      print $out_matrices_html "<td><pre>".$matrix2_string."</pre></td>\n";
+      print $out_matrices_html "</tr>\n";
+    }
+
+    if ($return_field{merged_matrices}) {
+
+      ## Generate a string for the alignment file
+      my $merged_matrix_string = join("\t", "; ".$id_align,
+				      "offset=$offset",
+				      "col=".$merged_matrix->ncol(),
+				      $merged_matrix->get_attribute("consensus.IUPAC"));
+      $merged_matrix_string .= "\n";
+      $merged_matrix_string .= $merged_matrix->toString(format=>'tab', type=>"counts");
+      print $out_matrices $merged_matrix_string;
+
+      ## Generate a sequence logo for the merged matrix
+      my $logo_file = $main::outfile{logo_dir}."/".$id_align;
+      $merged_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+      my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
+      $merged_matrix_string =~ s|//\n||mg;
+      print $out_matrices_html "<tr>";
+      print $out_matrices_html "<td>Alignment</td>";
+      print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+      print $out_matrices_html "<td><pre>".$merged_matrix_string."</pre></td>";
+      print $out_matrices_html "</tr>\n";
+    }
+
+    ## Close the alignment table
+    print $out_matrices_html "</table>\n";
+
+  }				## if
+}
 
 ################################################################
 ## Display full help message
