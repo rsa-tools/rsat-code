@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.55 2010/08/20 06:13:44 jvanheld Exp $
+# $Id: compare-matrices,v 1.56 2010/08/22 16:00:46 jvanheld Exp $
 #
 ############################################################
 
@@ -211,12 +211,19 @@ between the two matrices).
 
 =head2 Kullback-Leibler distance (dKL)
 
-As defined in Aerts et al. (2003).
+As defined in Aerts et al. (2003). Also called B<Mutual Information>.
 
  dKL = 1/(2w) * SUM{i=1->r} SUM{j=1->w} (
                    f1{i,j}*log(f1{i,j}/f2{i,j})
                    + f2{i,j}*log(f2{i,j}/f1{i,j}))
 
+Note that the KL distance is problematic for matrices containing zero
+values: for example, if f1(i,k)=0 and f2(i,j)=1, we have :
+  KL(i,j) = (0*log(0) + 1*log(1/0)) = 0 + log(Inf) = Inf
+
+One can circumvent this problem by using pseudo-count corrected
+matrices (f'(i,j)), but then the KL distance is strongly dependent on
+the somewhat arbitrary choice of the pseudo-count value.
 
 =head2 Covariance (cov)
 
@@ -236,16 +243,25 @@ respective matrices.
 
 =head2 Normalized correlation (Ncor)
 
-This is the coefficient of correlation, corrected for the relative
-alignment length (I<Wr>).
+This is the coefficient of correlation, normalized by the length of
+the alignment (w) relative to the length of the shorter motif.
 
- Ncor = cor * Wr
+ Ncor = cor * w / min(w1,w2)
 
 This correction is particularly important to avoid selecting spurious
 alignments between short fragments of the flanks of the matrices
-(e.g. single-column alignments). For this reasons, I<Ncor> generall
+(e.g. single-column alignments). For this reasons, I<Ncor> generally
 gives a better estimation of motif similarity than I<cor>, and we
 recommend it as similarity score.
+
+Imposing a too stringent lower threshold on Ncor may however reduce
+the sensitivity, and in particular prevent from detecting matches
+between half-motifs (e.g. in the case of dimeric transcription factor
+recognizing composite motifs).
+
+Note: in previous version (before August 22, 2010), Ncor was defined
+differently: cor*Wr. This was however too stringent, and prevented the
+program to detect matches between a short motif and a larger motif.
 
 =head1 REFERENCES
 
@@ -290,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.55 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.56 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -355,23 +371,15 @@ package main;
   ## Threshold parameters
   local %lth = ();		# lower threshold values
   local %uth = ();		# upper threshold values
-  @supported_thresholds = qw (
-			      Ncor
-			      cor
-			      cov
-			      SSD
-			      SW
-			      dEucl
-			      NdEucl
-			      NsEucl
-			      dKL
-			      offset
-			      w
-			      Wr
-			      rank
-			     );
-  $supported_thresholds = join ",", @supported_thresholds;
-  %supported_threshold = ();
+  local @supported_thresholds = @supported_metrics;
+  push @supported_thresholds, qw(
+				 offset
+				 w
+				 Wr
+				 rank
+				);
+  local $supported_thresholds = join ",", @supported_thresholds;
+  local %supported_threshold = ();
   foreach my $thr (@supported_thresholds) {
     $supported_threshold{lc($thr)} = 1;
   }
@@ -388,6 +396,10 @@ package main;
   ## Matrices
   local @matrices1 = ();
   local @matrices2 = ();
+
+  ## Matches
+  local %match_score = (); ## key = match ID, value = match score (sorting score)
+  local %match_out_line = (); ## key = match ID, value = output row
 
   ## Input formats
   %supported_input_format = %RSAT::MatrixReader::supported_input_format;
@@ -462,9 +474,13 @@ package main;
     $uth{rank}=1 unless(defined($uth{rank})); ## Only return the best match for each alignment
 
     ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
-    $lth{cor}=0.75 unless (defined($lth{cor}));
+    $lth{cor}=0.6 unless (defined($lth{cor}));
     $lth{ncor}=0.4 unless (defined($lth{ncor}));
+    $lth{w}=4 unless (defined($lth{w}));
   }
+
+  ## Sort order
+  my $sort_order = $supported_sort_field{$sort_field};
 
   ## Check that output file is specified if required (for the alignments)
   if ($return_field{aligned_matrices}) {
@@ -710,7 +726,7 @@ package main;
     $description{dKL} = "Kullback-Leibler distance";
     $description{cov} = "Covariance";
     $description{cor} = "Coefficient of correlation";
-    $description{Ncor} = "Aligned fraction corrected correlation. Ncor = cor * Wr";
+    $description{Ncor} = "Normalized correlation. Ncor = cor * w / min(w1,w2)";
     $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
     $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
     $description{rank} = "Rank of the alignment for the current pair of matrices";
@@ -737,7 +753,7 @@ package main;
     &RSAT::message::TimeWarn("File 1", "Analyzing matrix", $m1."/".scalar(@matrices1))  if ($main::verbose >= 3);
 
     ## Get the required information about the first matrix
-    my $ncol1 = $matrix1->get_attribute("ncol");
+    my $w1 = $matrix1->get_attribute("ncol");
     my $nrow1 = $matrix1->get_attribute("nrow");
     my @crude_freq1 = $matrix1->getCrudeFrequencies();
     my $id1 = $matrix1->get_attribute("id") || "<NA>";
@@ -771,7 +787,7 @@ package main;
       if (($name2) && ($name2 ne $id2)) {
 	$desc2 .= " ".$name2;
       }
-      my $ncol2 = $matrix2->get_attribute("ncol");
+      my $w2 = $matrix2->get_attribute("ncol");
       my $nrow2 = $matrix2->get_attribute("nrow");
 
       ## Check that both matrices have the same number of rows
@@ -780,8 +796,8 @@ package main;
       }
 
       ## Compute offsets for sliding one matrix along the other one
-      my $offset_min = 1 - $ncol2;
-      my $offset_max = $ncol1 - 1;
+      my $offset_min = 1 - $w2;
+      my $offset_max = $w1 - 1;
       #      &RSAT::message::Debug("offset range", $offset_min, $offset_max) if ($main::verbose >= 10);
 
       ## Prepare output variables
@@ -820,21 +836,21 @@ package main;
 	  next unless (&CheckThresholdValue("offset", $offset));
 
 	  ## Compute aligned matrix positions
-	  my $end1 = &RSAT::stats::min($ncol1, $ncol2+$offset);
-	  my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$ncol2+1);
+	  my $end1 = &RSAT::stats::min($w1, $w2+$offset);
+	  my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$w2+1);
 	  my $w = $end1-$start1+1;
-	  my $total_len = $ncol1 + $ncol2 - $w;
+	  my $total_len = $w1 + $w2 - $w;
 	  my $Wr = $w / $total_len;
 	  next unless (&CheckThresholdValue("w", $w));
 	  my $start2 = &RSAT::stats::max(1, 1- $offset);
-	  my $end2 = &RSAT::stats::min($start2+$w-1, $ncol2);
+	  my $end2 = &RSAT::stats::min($start2+$w-1, $w2);
 
 	  ## Highlight alignment in consensus
 	  if ($return_field{consensus}) {
 	    $consensus1 = join ("",
 				"."x($start1-1),
 				substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $w),
-				"."x($ncol1-$end1)
+				"."x($w1-$end1)
 			       );
 	    my $consensus_len1 = length($consensus1);
 	    $max_aligned_consensus_len1 = $consensus_len1 if ($consensus_len1 > $max_aligned_consensus_len1);
@@ -842,7 +858,7 @@ package main;
 	    # 	  &RSAT::message::Debug("start1=".$start1,
 	    # 				"consensus.IUPAC=".$matrix1->get_attribute("consensus.IUPAC"),
 	    # 				"w=".$w,
-	    # 				"ncol1=".$ncol1,
+	    # 				"ncol1=".$w1,
 	    # 				"end1=".$end1
 	    # 			       ) if (main::verbose >= 10);
 	    my $consensus2_strand = "";
@@ -854,7 +870,7 @@ package main;
 	    $consensus2 = join ("",
 				"."x($start2-1),
 				substr($consensus2_strand, $start2-1, $w),
-				"."x($ncol2-$end2)
+				"."x($w2-$end2)
 			       );
 	    my $consensus_len2 = length($consensus2);
 	    $max_aligned_consensus_len2 = $consensus_len2 if ($consensus_len2 > $max_aligned_consensus_len2);
@@ -954,7 +970,8 @@ package main;
 	    } else {
 	      $cor = $cov/sqrt($v1*$v2);
 	    }
-	    $Ncor = $cor * $Wr;
+#	    $Ncor = $cor * $Wr;
+	    $Ncor = $cor * $w / &RSAT::stats::min($w1, $w2);
 	    #  	  &RSAT::message::Debug("n=".$n,
 	    # 				"sum_f1=".$sum_f1,
 	    # 				"sum_f2=".$sum_f2,
@@ -1034,7 +1051,6 @@ package main;
 
       ## Sort the results
       my @sorted_offset_strand;
-      my $sort_order = $supported_sort_field{$sort_field};
 
       if ($sort_field eq "offset") {
 	@sorted_offset_strand = @output_offset_strand; ## No need to sort
@@ -1046,45 +1062,13 @@ package main;
 	@sorted_offset_strand = sort {$score{$sort_field}{$b} <=> $score{$sort_field}{$a}} @output_offset_strand;
       }
 
-#       if ($sort_field eq "dEucl") {
-# 	## Euclidian distance is sorted in ascending order
-# 	@sorted_offset_strand = sort {$score{dEucl}{$a} <=> $score{dEucl}{$b}} @output_offset_strand;
-
-#       } elsif ($sort_field eq "NdEucl") {
-# 	## Normalized Euclidian distance is sorted in ascending order
-# 	@sorted_offset_strand = sort {$score{NdEucl}{$a} <=> $score{NdEucl}{$b}} @output_offset_strand;
-
-#       } elsif ($sort_field eq "SW") {
-# 	## SW is sorted in ascending order
-# 	@sorted_offset_strand = sort {$score{SW}{$a} <=> $score{SW}{$b}} @output_offset_strand;
-
-#       } elsif ($sort_field eq "NsEucl") {
-# 	## Normalized Euclidian SIMILARITY is sorted in DECREASING order
-# 	@sorted_offset_strand = sort {$score{NsEucl}{$b} <=> $score{NsEucl}{$a}} @output_offset_strand;
-
-#       } elsif ($sort_field eq "dKL") {
-# 	## Kullback-Leibler distance is sorted in ascending order
-# 	@sorted_offset_strand = sort {$score{dKL}{$a} <=> $score{dKL}{$b}} @output_offset_strand;
-
-# 	## covariance is sorted in descending order
-#       } elsif ($sort_field eq "cov") {
-# 	@sorted_offset_strand = sort {$score{cov}{$b} <=> $score{cov}{$a}} @output_offset_strand;
-
-# 	## Correlation is sorted in descending order
-#       } elsif ($sort_field eq "cor") {
-# 	@sorted_offset_strand = sort {$score{cor}{$b} <=> $score{cor}{$a}} @output_offset_strand;
-
-# 	## Correlation is sorted in descending order
-#       } elsif ($sort_field eq "Ncor") {
-# 	@sorted_offset_strand = sort {$score{Ncor}{$b} <=> $score{Ncor}{$a}} @output_offset_strand;
-
-#       } else {
-# 	@sorted_offset_strand = @output_offset_strand;
-#       }
-
 #      &RSAT::message::Debug("\@sorted_offset_strand", join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
 
-      ## specific treatment for the rank
+
+      ################################################################
+      ## Specific treatment for the rank of the pairwise comparison.
+      ## In mode -return match, this rank is the way to select the
+      ## best matching offset and strand for a give pair of matrices.
       my %rank = ();
       if ($calc_field{rank}) {
 	my $rank = 0;
@@ -1101,7 +1085,6 @@ package main;
       }
 #      &RSAT::message::Debug("\@sorted_offset_strand after rank threshold", join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
 
-
       ################################################################
       ## Print the output row(s) + the aligned matrices
       foreach my $offset_strand (@sorted_offset_strand) {
@@ -1111,10 +1094,31 @@ package main;
 	  $rc_matrix = 1;
 	}
 
+
+	################################################################
+	## In matching mode, index the matrix pair for further sorting
+	## after all matrices have been compared (sorting all matrix
+	## pairs). Note that the results are indexed not only by
+	## matrix pair but also by offset + strand. This allows to
+	## return multiple matches for a single matrix pair (by
+	## forcing the upper threshold on rank to be > 1).
+	if ($out_format eq "matches") {
+	  my $match_id = join (":", $id1, $id2, $offset, $strand);
+	  $match_score{$match_id} = $score{$sort_field}{$offset_strand};
+
+	  ## (%match_out_line) because the hash table %out_line must
+	  ## be cleaned for each pairwise comparison.
+	  $match_out_line{$match_id} = $out_line{$offset_strand};
+	}
+
 #	&RSAT::message::Debug("Printing output for offset/strand", $offset_strand, $offset, $strand) if ($main::verbose >= 10);
+
+	## Print the output row
 	print $out  $out_line{$offset_strand};
 	print $out "\t", $rank{$offset_strand} if ($return_field{rank});
 	print $out "\n";
+
+
 	if ($main::outfile{out_matrices}) {
 	  my ($merged_matrix, $matrix1_shifted, $matrix2_shifted,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, $strand, stat=>$merging_stat);
 	  my $id_align = $merged_matrix->get_attribute("id") || "alignment";
@@ -1215,6 +1219,34 @@ package main;
   }				## matrix 1
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
 
+
+  ################################################################
+  ## Sort all matches and print them out
+  if ($out_format eq "matches") {
+    &RSAT::message::TimeWarn("Printing the matches") if ($main::verbose >= 0);
+
+    ## Print the header
+    push @header, "rank";
+    print $out "#", join("\t", @header), "\n";
+
+    ## Sort the matches
+    if ($sort_order eq "asc") {
+      ## Sort results in ascending order
+      @sorted_match_id = sort {$match_score{$a} <=> $match_score{$b}} keys(%match_score);
+    } else {
+      ## Sort results in descending order
+      @sorted_match_id = sort {$match_score{$b} <=> $match_score{$a}} keys(%match_score);
+    }
+
+    ## Print the output rows
+    my $rank = 0;
+    foreach my $match_id (@sorted_match_id) {
+      $rank++;
+      print $out  $match_out_line{$match_id};
+      print $out "\t", $rank if ($return_field{rank});
+      print $out "\n";
+    }
+  }
 
   ################################################################
   ## Close output stream
