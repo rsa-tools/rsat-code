@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.56 2010/08/22 16:00:46 jvanheld Exp $
+# $Id: compare-matrices,v 1.57 2010/08/22 16:37:15 jvanheld Exp $
 #
 ############################################################
 
@@ -306,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.56 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.57 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -693,7 +693,7 @@ package main;
     push (@header, "offset");
   }
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
-  push (@header, "rank") if ($return_field{rank});
+  push (@header, "rank") if ($return_field{rank}); ## Rank must ne the last column, because it is computed only after all the rows have been formed
 
   ## Print a description of the output fields
   if ($main::verbose >= 1) {
@@ -1045,6 +1045,8 @@ package main;
 
       }
 
+#      &RSAT::message::Debug("\@output_offset_strand", join(", ", @output_offset_strand)) if ($main::verbose >= 10);
+
       ## Before sorting the scores for the matrix pair, check that
       ## at least one offset/strand has passed the thresholds
       next if (scalar(@output_offset_strand) == 0);
@@ -1070,54 +1072,65 @@ package main;
       ## In mode -return match, this rank is the way to select the
       ## best matching offset and strand for a give pair of matrices.
       my %rank = ();
+      my $max_rank = "NA";
       if ($calc_field{rank}) {
 	my $rank = 0;
 	foreach my $offset_strand (@sorted_offset_strand) {
 	  $rank++;
 	  $rank{$offset_strand} = $rank;
 	}
+
+	## Max rank
 	if (defined($uth{rank})) {
-	  @sorted_offset_strand = @sorted_offset_strand[0..($uth{rank}-1)];
+	  $max_rank = &RSAT::stats::min($uth{rank}, scalar(@sorted_offset_strand));
+	  @sorted_offset_strand = @sorted_offset_strand[0..($max_rank-1)];
 	}
+
+	## Min rank
 	if (defined($lth{rank})) {
-	  @sorted_offset_strand = @sorted_offset_strand[($lth{rank}-1)..$#sorted_offset_strand];
+	  if ($lth{rank} >= scalar(@sorted_offset_strand)) {
+	    @sorted_offset_strand = @sorted_offset_strand[($lth{rank}-1)..$#sorted_offset_strand];
+	  } else {
+	    @sorted_offset_strand = ();
+	  }
 	}
       }
-#      &RSAT::message::Debug("\@sorted_offset_strand after rank threshold", join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("\@sorted_offset_strand after rank threshold", $max_rank, join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
 
       ################################################################
       ## Print the output row(s) + the aligned matrices
       foreach my $offset_strand (@sorted_offset_strand) {
+#	&RSAT::message::Debug("Treating output for offset/strand", $offset_strand) if ($main::verbose >= 10);
 	my ($offset, $strand) = split("_", $offset_strand);
 	my $rc_matrix = 0;
 	if ($strand eq "R") {
 	  $rc_matrix = 1;
 	}
 
+#	&RSAT::message::Debug("Treating output for offset/strand", $offset_strand, $offset, $strand) if ($main::verbose >= 10);
 
-	################################################################
-	## In matching mode, index the matrix pair for further sorting
-	## after all matrices have been compared (sorting all matrix
-	## pairs). Note that the results are indexed not only by
-	## matrix pair but also by offset + strand. This allows to
-	## return multiple matches for a single matrix pair (by
-	## forcing the upper threshold on rank to be > 1).
+
 	if ($out_format eq "matches") {
+	  ################################################################
+	  ## In matching mode, index the matrix pair for further sorting
+	  ## after all matrices have been compared (sorting all matrix
+	  ## pairs). Note that the results are indexed not only by
+	  ## matrix pair but also by offset + strand. This allows to
+	  ## return multiple matches for a single matrix pair (by
+	  ## forcing the upper threshold on rank to be > 1).
 	  my $match_id = join (":", $id1, $id2, $offset, $strand);
 	  $match_score{$match_id} = $score{$sort_field}{$offset_strand};
 
 	  ## (%match_out_line) because the hash table %out_line must
 	  ## be cleaned for each pairwise comparison.
 	  $match_out_line{$match_id} = $out_line{$offset_strand};
+	} else {
+	  ## In profile mode, print the output row for each comparison
+	  ## (motif pair/offset/strand).
+	  print $out  $out_line{$offset_strand};
+	  print $out "\t", $rank{$offset_strand} if ($return_field{rank});
+	  print $out "\n";
 	}
-
-#	&RSAT::message::Debug("Printing output for offset/strand", $offset_strand, $offset, $strand) if ($main::verbose >= 10);
-
-	## Print the output row
-	print $out  $out_line{$offset_strand};
-	print $out "\t", $rank{$offset_strand} if ($return_field{rank});
-	print $out "\n";
-
 
 	if ($main::outfile{out_matrices}) {
 	  my ($merged_matrix, $matrix1_shifted, $matrix2_shifted,) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, $strand, stat=>$merging_stat);
@@ -1223,12 +1236,7 @@ package main;
   ################################################################
   ## Sort all matches and print them out
   if ($out_format eq "matches") {
-    &RSAT::message::TimeWarn("Printing the matches") if ($main::verbose >= 0);
-
-    ## Print the header
-    push @header, "rank";
-    print $out "#", join("\t", @header), "\n";
-
+    &RSAT::message::TimeWarn("Printing the matches") if ($main::verbose >= 2);
     ## Sort the matches
     if ($sort_order eq "asc") {
       ## Sort results in ascending order
