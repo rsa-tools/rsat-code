@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.59 2010/08/23 02:08:28 jvanheld Exp $
+# $Id: compare-matrices,v 1.60 2010/08/23 02:48:40 jvanheld Exp $
 #
 ############################################################
 
@@ -306,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.59 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.60 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -1001,7 +1001,7 @@ package main;
 	  if ($return_field{matrix_id}) {
 	    push (@out_fields,
 		  sprintf("%-${max_id_len1}s", $id1),
-		  sprintf("%-${max_id_len1}s", $id1)
+		  sprintf("%-${max_id_len2}s", $id2)
 		 );
 	  }
 	  if ($return_field{matrix_ac}) {
@@ -1042,7 +1042,6 @@ package main;
 	  push (@output_offset_strand, $compa_id);
 	  $out_line{$compa_id} =  join("\t", @out_fields);
 	}
-
       }
 
 #      &RSAT::message::Debug("\@output_offset_strand", join(", ", @output_offset_strand)) if ($main::verbose >= 10);
@@ -1400,10 +1399,16 @@ sub PrintAlignedMatrices {
   ## Open a table in the HTML file
   print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
   foreach my $shifted_matrix (@shifted_matrices) {
+    my $id_name = my $id = $shifted_matrix->get_attribute("id");
+    my $name = $shifted_matrix->get_attribute("name");
+    if ($name ne $id) {
+      $id_name .= " (".$name.")";
+    }
 
     ## Text format
     my $desc = $shifted_matrix->get_attribute("description");
-    my $matrix_string = $desc."\n";
+    my $matrix_string = "; ".$desc."\n";
+
     $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"counts");
     print $out_matrices $matrix_string;
 
@@ -1413,7 +1418,7 @@ sub PrintAlignedMatrices {
     my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
     $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
     print $out_matrices_html "<tr>\n";
-    print $out_matrices_html "<td>; ".$desc."</td>\n";
+    print $out_matrices_html "<td>".$id_name."</td>\n";
     print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
     print $out_matrices_html "<td><pre>".$matrix_string."</pre></td>\n";
     print $out_matrices_html "</tr>\n";
