@@ -1,7 +1,8 @@
 #!/usr/bin/perl -w
+
 ############################################################
 #
-# $Id: chip-motifs,v 1.73 2010/08/18 21:04:32 jvanheld Exp $
+# $Id: chip-motifs,v 1.74 2010/08/23 02:25:51 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +106,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -329,10 +330,9 @@ sub DefaultParameters {
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
 
   ## Matrix comparisons
-  $main::param{matrix_compa_min_cor} = 0.75;
   $main::param{matrix_compa_min_w} = 5;
-  $main::param{matrix_compa_min_Ncor} = 0.3;
-
+  $main::param{matrix_compa_min_cor} = 0.75;
+  $main::param{matrix_compa_min_Ncor} = 0.5;
 
   ## matrix-scan-quick
   $main::param{scan_min_score} = 7.5;
@@ -529,12 +529,15 @@ sub SetOutFileNames {
   ## Clustering of the discovered motifs + comparison with reference motif
   $main::outfile{motifs_discovered} = &OutFileName(".tf", "motifs_discovered");
   $main::outfile{motifs_disco_compa} = &OutFileName(".tab", "motifs_disco_compa");
+  $main::outfile{motifs_disco_compa_html} = &OutFileName(".html", "motifs_disco_compa");
   push @timelog_keys, "motifs_disco_compa";
   $main::outfile{motifs_disco_compa_gml} = &OutFileName(".gml", "motifs_disco_compa");
   $main::outfile{motifs_disco_compa_png} = &OutFileName(".png", "motifs_disco_compa");
-  $main::outfile{motifs_disco_compa_clusters_mcl} = &OutFileName(".mcl", "motifs_disco_compa_clusters");
-  $main::outfile{motifs_disco_compa_clusters_tab} = &OutFileName(".tab", "motifs_disco_compa_clusters");
-  $main::outfile{motifs_disco_compa_clusters_graph} = &OutFileName(".tab", "motifs_disco_compa_clusters_graph");
+  $main::outfile{motifs_disco_clusters_mcl} = &OutFileName(".mcl", "motifs_disco_clusters");
+  $main::outfile{motifs_disco_clusters_tab} = &OutFileName(".tab", "motifs_disco_clusters");
+  $main::outfile{motifs_disco_clusters_graph} = &OutFileName(".tab", "motifs_disco_clusters_graph");
+  $main::outfile{motifs_disco_clusters_graph_gml} = &OutFileName(".gml", "motifs_disco_clusters_graph");
+  $main::outfile{motifs_disco_clusters_graph_png} = &OutFileName(".png", "motifs_disco_clusters_graph");
   $main::outfile{motifs_disco_compa_cluster_intra_degree} = &OutFileName(".tab", "motifs_disco_compa_cluster_intra_degree");
   #    $main::outfile{motifs_disco_ref} = &OutFileName(".tf", "motifs_disco_ref");
 
@@ -549,6 +552,7 @@ sub SetOutFileNames {
 
     ## Comparison betweeen discovered motifs and reference motif
     $main::outfile{"motifs_vs_ref"} = &OutFileName(".tab", "motifs_vs_ref");
+    $main::outfile{"motifs_vs_ref_html"} = &OutFileName(".html", "motifs_vs_ref");
     push @timelog_keys, "motifs_vs_ref";
     $main::outfile{"motifs_vs_ref_gml"} = &OutFileName(".gml", "motifs_vs_ref");
     $main::outfile{"motifs_vs_ref_png"} = &OutFileName(".png", "motifs_vs_ref");
@@ -560,6 +564,7 @@ sub SetOutFileNames {
   if (scalar(@motif_databases) > 0) {
     foreach my $db_name (@motif_databases) {
       $main::outfile{"motifs_vs_db_".$db_name} = &OutFileName(".tab", "motifs_vs_db_".$db_name);
+      $main::outfile{"motifs_vs_db_".$db_name."_html"} = &OutFileName(".html", "motifs_vs_db_".$db_name);
       push @timelog_keys, "motifs_vs_db_".$db_name;
       $main::outfile{"motifs_vs_db_".$db_name."_gml"} = &OutFileName(".gml", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name."_png"} = &OutFileName(".png", "motifs_vs_db_".$db_name);
@@ -1024,10 +1029,10 @@ sub ClusterMotifs {
 
   ## Comparison between discovered matrices, and with the reference motif
   my $cmd = $SCRIPTS."/compare-matrices -v 1";
-  $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};;
-  $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
+  $cmd .= " -format transfac -file ".$main::outfile{motifs_discovered};
+#  $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
 #  $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motif_transfac};
-  $cmd .= " -DR -distinct -triangle";
+  $cmd .= " -DR -distinct";
   $cmd .= " -sort cor";
   $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
@@ -1035,33 +1040,8 @@ sub ClusterMotifs {
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
   $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,NdEucl,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
-  &one_command($cmd, 1);
-
-  ## Use MCL to partition the motif graph into clusters
-  my $mcl_dir = $ENV{mcl_dir};
-  unless ($mcl_dir) {
-    &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
-  }
-  $cmd = "grep -v '^;' ".$main::outfile{motifs_disco_compa}.">".$main::outfile{motifs_disco_compa}.".mcl";
-  $cmd .= "; ".$mcl_dir."/mcl ".$main::outfile{motifs_disco_compa}.".mcl";
-  $cmd .= " -I 1.8 --abc -V all ";
-  $cmd .= " -o ".$main::outfile{motifs_disco_compa_clusters_mcl};
-  $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{motifs_disco_compa_clusters_mcl};
-  $cmd .= " -from mcl -to tab ";
-  $cmd .= " -o ".$main::outfile{motifs_disco_compa_clusters_tab};
-  &one_command($cmd, 1);
-
-  ## Split the motif graph into clusters as defined by MCL, and
-  ## compute the intra-cluster degree (k) and weighted degree (wk) of
-  ## each node
-  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{motifs_disco_compa};
-  $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol 4 -return clusters ";
-  $cmd .= " -clusters ".$main::outfile{motifs_disco_compa_clusters_tab};
-  $cmd .= " -out_format tab -o ".$main::outfile{motifs_disco_compa_clusters_graph};
-  $cmd .= " ; ".$SCRIPTS."/graph-connex-components -v 1";
-  $cmd .= " -i ".$main::outfile{motifs_disco_compa_clusters_graph};
-  $cmd .= " -wcol 3";
-  $cmd .= " -o ".$main::outfile{motifs_disco_compa_cluster_intra_degree};
+  $cmd .= "; text-to-html -i ".$main::outfile{motifs_disco_compa};
+  $cmd .= " -o ".$main::outfile{motifs_disco_compa_html};
   &one_command($cmd, 1);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
@@ -1080,6 +1060,55 @@ sub ClusterMotifs {
   $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
   &one_command($cmd, 1);
 
+  ## Use MCL to partition the motif graph into clusters
+  my $mcl_dir = $ENV{mcl_dir};
+  unless ($mcl_dir) {
+    &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
+  }
+  $cmd = "grep -v '^;' ".$main::outfile{motifs_disco_compa}.">".$main::outfile{motifs_disco_compa}.".mcl";
+  $cmd .= "; ".$mcl_dir."/mcl ".$main::outfile{motifs_disco_compa}.".mcl";
+  $cmd .= " -I 1.8 --abc -V all ";
+  $cmd .= " -o ".$main::outfile{motifs_disco_clusters_mcl};
+  $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{motifs_disco_clusters_mcl};
+  $cmd .= " -from mcl -to tab ";
+  $cmd .= " -o ".$main::outfile{motifs_disco_clusters_tab};
+  &one_command($cmd, 1);
+
+  ## Split the motif graph into clusters as defined by MCL, and
+  ## compute the intra-cluster degree (k) and weighted degree (wk) of
+  ## each node
+  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{motifs_disco_compa};
+  $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol 4 -return clusters ";
+  $cmd .= " -clusters ".$main::outfile{motifs_disco_clusters_tab};
+  $cmd .= " -out_format tab -o ".$main::outfile{motifs_disco_clusters_graph};
+
+  ## Identify graph components and count the intra-component degree of
+  ## each node. Most connected nodes will serve as seeds for motif
+  ## clustering.
+  $cmd .= " ; ".$SCRIPTS."/graph-connex-components -v 1";
+  $cmd .= " -i ".$main::outfile{motifs_disco_clusters_graph};
+  $cmd .= " -wcol 3";
+  $cmd .= " -o ".$main::outfile{motifs_disco_compa_cluster_intra_degree};
+  &one_command($cmd, 1);
+
+  ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
+  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{motifs_disco_clusters_graph};
+  $cmd .= " -ewidth -ecolors fire";
+  $cmd .= " -layout spring";
+  $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
+  $cmd .= " -o ".$main::outfile{motifs_disco_clusters_graph_gml};
+  &one_command($cmd, 1);
+
+  ## Generate a figure of the motif comparison graph
+  $cmd = $SCRIPTS."/display-graph";
+  $cmd .= " -in_format gml -i ".$main::outfile{motifs_disco_clusters_graph_gml};
+  $cmd .= " -ewidth";
+  $cmd .= " -layout none";
+  $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_clusters_graph_png};
+  &one_command($cmd, 1);
+
+
+
 }
 
 
@@ -1093,7 +1122,7 @@ sub MotifsVersusReference {
   $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motif_transfac};;
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
   $cmd .= " -DR";
-  $cmd .= " -sort cor";
+  $cmd .= " -sort Ncor";
   $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
@@ -1101,6 +1130,8 @@ sub MotifsVersusReference {
   $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,width,consensus,aligned_matrices";
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref"};
   $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_ref_matrices"};
+  $cmd .= "; text-to-html -i ".$main::outfile{"motifs_vs_ref"};
+  $cmd .= " -o ".$main::outfile{"motifs_vs_ref_html"};
   &one_command($cmd, 1);
 
   &RSAT::message::TimeWarn("Dicovered versus reference motif", $main::outfile{motifs_vs_ref}) if ($main::verbose >= 2);
@@ -1143,6 +1174,8 @@ sub MotifsVersusDatabase {
     $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,width,consensus,aligned_matrices";
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_db_".$db_name."_matrices"};
+    $cmd .= " ; text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
+    $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_html"};
     &one_command($cmd, 1);
 
     &RSAT::message::TimeWarn("Dicovered versus DB", $main::outfile{motifs_vs_db}) if ($main::verbose >= 2);
@@ -1690,9 +1723,15 @@ sub SynthesisMotifCompa {
   &SyntheticTableAddRow("Motif comparisons",
 			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
 			"motifs", $main::outfile{motifs_discovered},
-			"tab",$main::outfile{motifs_disco_compa},
+			"table (txt)",$main::outfile{motifs_disco_compa},
+			"table (html)",$main::outfile{motifs_disco_compa},
 			"gml",$main::outfile{motifs_disco_compa_gml},
 			"png",$main::outfile{motifs_disco_compa_png},
+			"MCL clusters" ,$main::outfile{motifs_disco_clusters_tab},
+			"intra-cluster degree", $main::outfile{motifs_disco_compa_cluster_intra_degree},
+			"MCL cluster graph (tab)", $main::outfile{motifs_disco_clusters_graph},
+			"MCL cluster graph (gml)", $main::outfile{motifs_disco_clusters_graph_gml},
+			"MCL cluster graph (png)", $main::outfile{motifs_disco_clusters_graph_png},
 		       );
 }
 
@@ -1704,7 +1743,8 @@ sub SynthesisMotifsVersusReference {
   &SyntheticTableAddRow("Motifs versus reference motif",
 			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
 			"Reference motif",$main::infile{ref_motif},
-			"table",$main::outfile{"motifs_vs_ref"},
+			"table (txt)",$main::outfile{"motifs_vs_ref"},
+			"table (html)",$main::outfile{"motifs_vs_ref_html"},
 			"alignments", $main::outfile{"motifs_vs_ref_matrices"},
 			"aligned logos", $main::outfile{"motifs_vs_ref_matrices_html"},
 			"gml",$main::outfile{"motifs_vs_ref_gml"},
@@ -1721,7 +1761,8 @@ sub SynthesisMotifsVersusDatabase {
     &SyntheticTableAddRow("Motifs versus ".$db_name." database",
 			  "<a  href='".$img."'><img height=300 src='".$img."'></a>",
 			  $db_name." DB",$main::infile{"motif_db_".$db_name},
-			  "table",$main::outfile{"motifs_vs_db_".$db_name},
+			  "table (txt)",$main::outfile{"motifs_vs_db_".$db_name},
+			  "table (html)",$main::outfile{"motifs_vs_db_".$db_name."_html"},
 			  "alignments", $main::outfile{"motifs_vs_db_".$db_name."_matrices"},
 			  "aligned logos", $main::outfile{"motifs_vs_db_".$db_name."_matrices_html"},
 			  "gml",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
