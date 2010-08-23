@@ -246,7 +246,7 @@ sub AlignMatricesOneToN {
   ## Parameters for the first matrix (the one on which the other ones
   ## will be aligned)
   my $id1 = $matrix1->get_attribute("id");
-  my $name1 = $matrix1->get_attribute("name");
+  my $name1 = $matrix1->get_attribute("name") || $id1;
   my @counts1 = $matrix1->getMatrix();
   my @alphabet = $matrix1->getAlphabet();
   my $ncol1 = $matrix1->get_attribute("ncol");
@@ -288,6 +288,7 @@ sub AlignMatricesOneToN {
   $shifted_matrix1->setAlphabet_lc(@alphabet);
   $shifted_matrix1->set_parameter("shift",$shift1);
   $shifted_matrix1->force_attribute("id", $id1."_shift".$shift1);
+  $shifted_matrix1->force_attribute("name", $name1);
   $shifted_matrix1->force_attribute("identifier", $id1."_shift".$shift1);
 
   ## Generate the shifted matrix 1
@@ -347,7 +348,7 @@ sub AlignMatricesOneToN {
 
     my $score = $matching_scores[$m];
     my $id2 = $matrix2->get_attribute("id");
-    my $name2 = $matrix2->get_attribute("name");
+    my $name2 = $matrix2->get_attribute("name") || $id2;
     $name2 .= $rc;
 
 
@@ -379,6 +380,7 @@ sub AlignMatricesOneToN {
     #  $shifted_matrix2->force_attribute("nrow", scalar(@alphabet));
     $shifted_matrix2->set_parameter("shift",$shift2);
     $shifted_matrix2->force_attribute("id", $id2.$rc."_shift".$shift2);
+    $shifted_matrix2->force_attribute("name", $name2);
     $shifted_matrix2->force_attribute("identifier", $id2.$rc."_shift".$shift2);
     my @shifted_counts2 = ();
 
