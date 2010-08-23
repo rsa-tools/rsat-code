@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.60 2010/08/23 02:48:40 jvanheld Exp $
+# $Id: compare-matrices,v 1.61 2010/08/23 15:10:25 jvanheld Exp $
 #
 ############################################################
 
@@ -306,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.60 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.61 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -792,7 +792,7 @@ package main;
 
       ## Check that both matrices have the same number of rows
       unless ($nrow2 == $nrow1) {
-	&RSAT::error::FatalError("Input matrices must have the same number of residues rows)", $id1, $nrow1. "rows", $id2, $nrow2." rows");
+	&RSAT::error::FatalError("Input matrices must have the same number of residues (rows).", $id1, $nrow1." rows", $id2, $nrow2." rows");
       }
 
       ## Compute offsets for sliding one matrix along the other one
