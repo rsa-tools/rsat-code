@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.58 2010/08/22 18:26:58 jvanheld Exp $
+# $Id: compare-matrices,v 1.59 2010/08/23 02:08:28 jvanheld Exp $
 #
 ############################################################
 
@@ -306,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.58 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.59 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -474,13 +474,13 @@ package main;
     $uth{rank}=1 unless(defined($uth{rank})); ## Only return the best match for each alignment
 
     ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
-    $lth{w}=3 unless (defined($lth{w}));
+    $lth{w}=5 unless (defined($lth{w}));
     $lth{cor}=0.75 unless (defined($lth{cor}));
-    $lth{ncor}=0.4 unless (defined($lth{ncor}));
+    $lth{ncor}=0.5 unless (defined($lth{ncor}));
   }
 
   ## Sort order
-  my $sort_order = $supported_sort_field{$sort_field};
+  local $sort_order = $supported_sort_field{$sort_field};
 
   ## Check that output file is specified if required (for the alignments)
   if ($return_field{aligned_matrices}) {
@@ -1142,7 +1142,8 @@ package main;
   ################################################################
   ## Sort all matches and print them out
   if ($out_format eq "matches") {
-    &RSAT::message::TimeWarn("Printing the matches") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Sorting matches by", $sort_order, $sort_field) if ($main::verbose >= 2);
+
     ## Sort the matches
     if ($sort_order eq "asc") {
       ## Sort results in ascending order
@@ -1164,10 +1165,18 @@ package main;
   }
 
   ################################################################
-  ## Print matrix alignments
+  ## Pairwise matrix alignments
   if ($return_field{aligned_matrices}) {
-    &PrintAlignedMatrices();
+#    &PairwiseAlignments();
   }
+
+  ################################################################
+  ## One-to-n matrix alignments
+  if ($return_field{aligned_matrices}) {
+    &OneToNAlignments();
+  }
+
+  &RSAT::message::TimeWarn("Closing") if ($main::verbose >= 5);
 
   ################################################################
   ## Close output stream
@@ -1176,8 +1185,8 @@ package main;
   close $main::out if ($main::outfile{output});
   if ($main::outfile{out_matrices}) {
     close $main::out_matrices;
-    print $out_matrices_html "</body>";
-    print $out_matrices_html "</html>";
+    print $main::out_matrices_html "</body>";
+    print $main::out_matrices_html "</html>";
     close $main::out_matrices_html;
   }
   exit(0);
@@ -1190,8 +1199,8 @@ package main;
 
 ################################################################
 ## Print matrix alignments
-sub PrintAlignedMatrices {
-  &RSAT::message::TimeWarn("Printing matrix alignments") if ($main::verbose >= 2);
+sub PairwiseAlignments {
+  &RSAT::message::TimeWarn("Computing pairwise matrix alignments") if ($main::verbose >= 2);
   foreach my $compa_id (@sorted_match_id) {
     local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
 
@@ -1209,7 +1218,7 @@ sub PrintAlignedMatrices {
       $desc2 .= " ".$name2;
     }
 
-    my ($merged_matrix, $matrix1_shifted, $matrix2_shifted) = &RSAT::MatrixAlignment::AlignMatrices($matrix1, $matrix2, $offset, $strand, stat=>$merging_stat);
+    my ($merged_matrix, $matrix1_shifted, $matrix2_shifted) = &RSAT::MatrixAlignment::AlignMatrixPair($matrix1, $matrix2, $offset, $strand, stat=>$merging_stat);
     my $id_align = $merged_matrix->get_attribute("id") || "alignment";
 
     ## Print a header for the alignment in the tab-delimited file
@@ -1302,6 +1311,115 @@ sub PrintAlignedMatrices {
     print $out_matrices_html "</table>\n";
 
   }				## if
+}
+
+################################################################
+## Align matrices by groups, using each matched matrix of the first
+## set as group seed.
+sub OneToNAlignments {
+  &RSAT::message::TimeWarn("Computing one-to-n alignments") if ($main::verbose >= 2);
+  ## Index matches per matrix
+  foreach my $compa_id (@sorted_match_id) {
+    local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
+    push @{$matches_by_matrix1{$id1}}, $compa_id;
+  }
+
+  ## Compute the best matching score per matrix
+  my %best_score1 = ();
+  foreach $id1 (keys(%matches_by_matrix1)) {
+#    &RSAT::message::Debug("Sorting matches per matrix 1", $id1, scalar(@{$matches_by_matrix1{$id1}}), join(", ", @{$matches_by_matrix1{$id1}})) if ($main::verbose >= 10);
+    ## Sort matrix-specific matches
+    if ($sort_order eq "asc") {
+      ## Sort results in ascending order
+      @{$matches_by_matrix1{$id1}} = sort {$match_score{$a} <=> $match_score{$b}} @{$matches_by_matrix1{$id1}};
+    } else {
+      ## Sort results in descending order
+      @{$matches_by_matrix1{$id1}} = sort {$match_score{$b} <=> $match_score{$a}} @{$matches_by_matrix1{$id1}};
+    }
+
+    $best_score1{$id1} = $match_score{@{$matches_by_matrix1{$id1}}[0]};
+  }
+
+  ## Sort matrices by best matching score
+  my @sorted_matrix_ids1 = ();
+
+  ## Sort matrix-specific matches
+  if ($sort_order eq "asc") {
+    ## Sort results in ascending order
+    @sorted_matrix_ids1 = sort {$best_score1{$a} <=> $best_score1{$b}} keys (%best_score1);
+  } else {
+    ## Sort results in descending order
+    @sorted_matrix_ids1 = sort {$best_score1{$b} <=> $best_score1{$a}} keys (%best_score1);
+  }
+
+#  &RSAT::message::Debug("Matrix IDs from set 1, sorted by best matching score", join (", ", @sorted_matrix_ids1)) if ($main::verbose >= 10);
+  my $m1 = 0;
+  my $n1 = scalar(@sorted_matrix_ids1);
+  foreach my $id1 (@sorted_matrix_ids1) {
+    $m1++;
+#    &RSAT::message::Info ("One-to-n alignment for matrix1", $id1,
+#			  "n=".scalar(@{$matches_by_matrix1{$id1}}),
+#			  "best=".@{$matches_by_matrix1{$id1}}[0],
+#			  "score=".$best_score1{$id1}), "\n"
+#			    if ($main::verbose >= 10);
+
+    my $matrix1 = $matrix_by_id1{$id1};
+
+    ## Prepare the list of offsets and strands
+    my @matching_matrices = ();
+    my @matching_offsets = ();
+    my @matching_strands = ();
+    my @matching_scores = ();
+    foreach my $compa_id (@{$matches_by_matrix1{$id1}}) {
+      my ($id1, $id2, $offset, $strand) = split(":", $compa_id);
+      push @matching_matrices, $matrix_by_id2{$id2};
+      push @matching_offsets, $offset;
+      push @matching_strands, $strand;
+      push @matching_scores, $match_score{$compa_id};
+    }
+
+    &RSAT::message::TimeWarn("\tOne-to-n alignment ", $m1."/".$n1, $id1." versus ".scalar(@matching_matrices)." matrices") if ($main::verbose >= 2);
+    my ($merged_matrix, @shifted_matrices) = &RSAT::MatrixAlignment::AlignMatricesOneToN($matrix1, \@matching_matrices, \@matching_offsets, \@matching_strands, \@matching_scores, stat=>$merging_stat);
+    &PrintAlignedMatrices(@shifted_matrices);
+  }
+  &RSAT::message::TimeWarn("Finished one-to-n alignments") if ($main::verbose >= 5);
+}
+
+################################################################
+## Print a set of aligned matrices returned by &RSAT::MatrixAlignment
+sub PrintAlignedMatrices {
+  my (@shifted_matrices) = @_;
+  &RSAT::message::TimeWarn("Printing aligned matrices") if ($main::verbose >= 4);
+
+  my $first_matrix = $shifted_matrices[0];
+  my $id1 = $first_matrix->get_attribute("id");
+  my $header_row = join ("\t", "One-to-n matrix alignment; reference matrix: ".$id1, "; ".scalar(@shifted_matrices)." matrices", "; sort_field=".$sort_field);
+  print $out_matrices "; ", $header_row, "\n";
+  print $out_matrices_html "<h2>", $header_row, "</h2>\n";
+
+  ## Open a table in the HTML file
+  print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
+  foreach my $shifted_matrix (@shifted_matrices) {
+
+    ## Text format
+    my $desc = $shifted_matrix->get_attribute("description");
+    my $matrix_string = $desc."\n";
+    $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"counts");
+    print $out_matrices $matrix_string;
+
+    ## Generate a sequence logo for the HTML output file
+    my $logo_file = $main::outfile{logo_dir}."/".$shifted_matrix->get_attribute("id");
+    $shifted_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
+    my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
+    $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+    print $out_matrices_html "<tr>\n";
+    print $out_matrices_html "<td>; ".$desc."</td>\n";
+    print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+    print $out_matrices_html "<td><pre>".$matrix_string."</pre></td>\n";
+    print $out_matrices_html "</tr>\n";
+  }
+  print $out_matrices ";\n";
+  print $out_matrices_html "</table></p>\n";
 }
 
 ################################################################
@@ -1902,9 +2020,6 @@ matrix of file 2, where each cell indicates the value of the selected
 field for the corresponding pair of matrices.
 
 =back
-
-=back
-
 
 =back
 
