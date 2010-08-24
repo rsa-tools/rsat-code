@@ -370,7 +370,7 @@ sub getPrior() {
     %prior = $self->get_attribute("prior");
   } else {
     if (scalar(keys %prior) <= 0) {
-      &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
+      &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 4);
       my @alphabet = $self->getAlphabet();
       my $alphabet_size = scalar(@alphabet);
       foreach my $letter (@alphabet) {
@@ -396,7 +396,7 @@ where keys are residues and values prior probabilities.
 sub setPrior {
     my ($self, %prior) = @_;
 
-    &RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 3);
+    &RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 4);
     $self->set_array_attribute("prior", %prior);
     $self->force_attribute("prior_specified", 1);
 
@@ -485,7 +485,7 @@ sub setInfoLogBase {
 
 #     } elsif ($some_defined == 0) {
 #       ## Prior proba not defined -> set to equiprobable
-#       &RSAT::message::Warning("Setting prior probabilities to equiprobable") if ($main::verbose >= 3);
+#       &RSAT::message::Warning("Setting prior probabilities to equiprobable") if ($main::verbose >= 4);
 #       my $equi_prior = 1/scalar(@alphabet);
 #       foreach my $residue (@alphabet) {
 # 	$prior{$residue} = $equi_prior;
@@ -1526,7 +1526,7 @@ sub calcInformation {
 
     ## Caching
     if (($self->get_attribute("information_calculated")) && !($force)) {
-	&RSAT::message::Warning("Information already calculated before") if ($main::verbose >= 3);
+	&RSAT::message::Warning("Information already calculated before") if ($main::verbose >= 4);
 	return;
     }
 
@@ -1777,7 +1777,7 @@ sub calcFrequencies {
     ## Get or calculate prior residue probabilities
     my %prior = $self->getPrior();
     if (scalar(keys %prior) <= 0) {
-	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
+	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 4);
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
@@ -1874,7 +1874,7 @@ sub calcProbabilities {
     ## Get or calculate prior residue probabilities
     my %prior = $self->getPrior();
     if (scalar(keys %prior) <= 0) {
-	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
+	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 4);
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
@@ -1942,7 +1942,7 @@ sub calcConsensus {
 
     ## Caching
     if (($self->get_attribute("consensus_calculated")) && !($force)) {
-	warn "Consensus already calculated before\n" if ($main::verbose >= 3);
+	warn "Consensus already calculated before\n" if ($main::verbose >= 4);
 	return;
     }
 
@@ -2838,7 +2838,7 @@ sub weight_range {
   $self->set_parameter("Wmin", $Wmin);
   $self->set_parameter("Wmax", $Wmax);
   $self->set_parameter("Wrange", $Wrange);
-  if ($main::verbose >= 3) {
+  if ($main::verbose >= 4) {
     &RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
     &RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
     &RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
@@ -2882,7 +2882,7 @@ sub weight_range {
 #     $self->set_parameter("Wmin", $tmp_Wmin);
 #     $self->set_parameter("Wmax", $tmp_Wmax);
 #     $self->set_parameter("Wrange", $tmp_Wrange);
-#     if ($main::verbose >= 3) {
+#     if ($main::verbose >= 4) {
 # 	&RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
 # 	&RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
 # 	&RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
@@ -3069,7 +3069,7 @@ sub calcTheorScoreDistribBernoulli {
 			   "Bernoulli model",
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",
-			  ) if ($main::verbose >= 3);
+			  ) if ($main::verbose >= 4);
 
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
@@ -3089,7 +3089,7 @@ sub calcTheorScoreDistribBernoulli {
   ################################################################
   ## Compute the distribution of scores
   for my $c (0..($ncol-1)) {
-    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 4);
     my %current_score_proba = ();
 
     foreach my $suffix (@alphabet) {
@@ -3158,7 +3158,7 @@ for my $score (keys %score_proba) {
 #    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", ($c+1)."/".$ncol,
 #			     "prev scores: ", scalar(keys(%score_proba)),
 #			     "current scores:", scalar(keys(%current_score_proba)),
-#			    ) if (($main::verbose >= 3) || ($decimals >= 3));
+#			    ) if (($main::verbose >= 4) || ($decimals >= 3));
  #   %score_proba = %current_score_proba;
  # }
 
@@ -3249,7 +3249,7 @@ for my $score (keys %score_proba) {
       $score_proba{$score} = $proba;
       $score_inv_cum_proba{$score} = $inv_cum_proba;
       &RSAT::message::Debug("Fixing the tail of", $score_type,"distribution for score",
-			    $i."/".$s, $score, $score_proba{$score}, $score_inv_cum_proba{$score}) if ($main::verbose >= 3);
+			    $i."/".$s, $score, $score_proba{$score}, $score_inv_cum_proba{$score}) if ($main::verbose >= 4);
     }
   }
 
@@ -3301,7 +3301,7 @@ sub calcTheorScoreDistribMarkov {
 			   "Background Markov Model order:".$order,
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",
-			  ) if ($main::verbose >= 3);
+			  ) if ($main::verbose >= 4);
 
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
@@ -3321,7 +3321,7 @@ sub calcTheorScoreDistribMarkov {
   my @prefixes = $bg_model->get_prefixes();
   my $prefix_nb = scalar(@prefixes);
   &RSAT::message::TimeWarn("Computing weight probabilities for all prefixes")
-    if ($main::verbose >= 3);
+    if ($main::verbose >= 4);
   foreach my $initial_prefix (@prefixes) {
     $p++;
     &RSAT::message::Debug("Computing weight probabilities for prefix", $initial_prefix, $p."/".$prefix_nb)
@@ -3364,7 +3364,7 @@ sub calcTheorScoreDistribMarkov {
   ################################################################
   ## Iteration on remaining columns of the matrix
   foreach my $c ($order..($ncol-1)) {
-    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 4);
 
     my @curr_prefix = sort(keys(%prefixes));
     my @previous_scores = (keys(%distrib_proba));
@@ -3533,7 +3533,7 @@ sub calcTheorScoreDistribMarkov {
       $score_proba{$score} = $proba;
       $score_inv_cum_proba{$score} = $inv_cum_proba;
       &RSAT::message::Debug("Fixing the tail of", $score_type,"distribution for score",
-			    $i."/".$s, $score, $score_proba{$score}, $score_inv_cum_proba{$score}) if ($main::verbose >= 3);
+			    $i."/".$s, $score, $score_proba{$score}, $score_inv_cum_proba{$score}) if ($main::verbose >= 4);
     }
   }
 
@@ -3589,7 +3589,7 @@ sub getTheorScoreDistrib {
     $self->calcTheorScoreDistrib($score_type);
   }
 
-  &RSAT::message::Info("Returning distribution", $distrib_key) if ($main::verbose >= 3);
+  &RSAT::message::Info("Returning distribution", $distrib_key) if ($main::verbose >= 4);
   return %{$self->{$distrib_key}};
 }
 
@@ -3700,7 +3700,7 @@ sub makeLogo{
 
     my $logo_file = $logo_basename.".".$logo_format;
     push @logo_files, $logo_file;
-    &RSAT::message::Info("matrix", $self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 3);
+    &RSAT::message::Info("matrix", $self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 4);
     ## Remove the fake sequences, not necessary anymore
     &RSAT::server::DelayedRemoval($fake_seq_file);
 #    unlink ($fake_seq_file); ## The file removal  makes a problem that I don't understand
