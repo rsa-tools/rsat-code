@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.62 2010/08/24 14:04:43 jvanheld Exp $
+# $Id: compare-matrices,v 1.63 2010/08/24 14:54:16 jvanheld Exp $
 #
 ############################################################
 
@@ -306,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -326,6 +326,7 @@ package main;
 			      "SSD", ## Euclidian distance
 			      "SW", ## Sandelin-Wasserman similarity
 			      "dKL", ## Kullback-Leibler distance
+			      "all_metrics", ## all supported metrics
 			     );
 
 
@@ -357,6 +358,7 @@ package main;
 				    "consensus",
 				    "rank",
 				    "aligned_matrices", ## Shifted matrices resulting from the alignments. This requires the option -out_matrices.
+				    "all", ## All supported output fields, including all metrics
 				);
   local %supported_return_field = ();
   foreach my $field (@supported_return_fields) {
@@ -406,6 +408,10 @@ package main;
   $supported_input_formats = join ",", sort keys %supported_input_format;
   local $input_format1 = "";
   local $input_format2 = "";
+
+  local $top1 = 0;
+  local $top2 = 0;
+
   local $strand = "DR";
   local $distinct = 0;
 #  local $triangle = 0;
@@ -422,6 +428,23 @@ package main;
   if (($return_field{aligned_matrices}) && ($out_format eq "profiles")) {
     &RSAT::error::FatalError("The output format profiles and the return field aligned matrices are mutually incompatible (output might reach unreasonable size).");
   }
+
+  ## Compute all metrics
+  if ($return_field{all_metrics}) {
+    foreach my $metric (@supported_metrics) {
+      $return_field{$metric} = 1;
+    }
+    $return_field{all_metrics} = 0;
+  }
+
+  ## Return all fields
+  if ($return_field{all}) {
+    foreach my $field (@supported_return_fields) {
+      $return_field{$field} = 1;
+    }
+    $return_field{all} = 0;
+  }
+
 
   ## Check that the two input files have been specified
   unless ((($infile{file1}) || ($infile{mlist1})) &&
@@ -540,10 +563,10 @@ package main;
 
   ################################################################
   ## Read input matrices
+
+  ## First motif set
   my @matrices1 = ();
-  my @matrices2 = ();
   my @matrix_files1 = ();
-  my @matrix_files2 = ();
   if ($infile{file1}){
     @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
     &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
@@ -552,6 +575,15 @@ package main;
     @matrices1 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist1}), $input_format1);
   }
 
+  ## Select top motifs for the first file
+  if (($main::top1 > 0) && ($main::top1 < scalar(@matrices1))){
+    &RSAT::message::Warning("Selecting ".$main::top1." top motifs among ".scalar(@matrices1)." in file 1");
+    @matrices1 = @matrices1[0..($main::top1-1)];
+  }
+
+  ## Second matrix set
+  my @matrices2 = ();
+  my @matrix_files2 = ();
   if ($infile{file2}){
     if ($single_input_file) {
       @matrices2 = @matrices1;
@@ -565,10 +597,15 @@ package main;
   } elsif($infile{mlist2}){
     @matrices2 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
   }
+  ## Select top motifs for the second file
+  if (($main::top2 > 0) && ($main::top2 < scalar(@matrices2))){
+    &RSAT::message::Warning("Selecting ".$main::top2." top motifs among ".scalar(@matrices2)." in file 2");
+    @matrices2 = @matrices2[0..($main::top2-1)];
+  }
 
-  local $matrix_nb_1 = scalar(@matrices1);
-  local $matrix_nb_2 = scalar(@matrices2);
-
+  local $matrix_nb1 = scalar(@matrices1);
+  local $matrix_nb2 = scalar(@matrices2);
+  &RSAT::message::Info("Comparing ".$matrix_nb1." against ".$matrix_nb2." motifs.") if ($main::verbose >= 2);
 
   ################################################################
   ## Compute maximal lengths of string attributes (id, ac, name) for
@@ -1558,6 +1595,31 @@ options -format1 and -format2).
 
 =pod
 
+=item B<-top1 X>
+
+Only analyze the first X motifs of the first file. This options is
+convenient for quick testing before starting the full analysis.
+
+=cut
+    } elsif ($arg eq "-top1") {
+      $main::top1 = shift(@arguments);
+      &RSAT::error::FatalError($main::top1, "invalid value for the option -top1. Must be a strictly positive Natural number.") unless ((&IsNatural($main::top1)) && ($top1 > 0));
+
+=pod
+
+=item B<-top2 X>
+
+Only analyze the first X motifs of the second file. This options is
+convenient for quick testing before starting the full analysis.
+
+=cut
+    } elsif ($arg eq "-top2") {
+      $main::top2 = shift(@arguments);
+      &RSAT::error::FatalError($main::top2, "invalid value for the option -top2. Must be a strictly positive Natural number.") unless ((&IsNatural($main::top2)) && ($top2 > 0));
+
+
+=pod
+
 =item B<-format1 matrix_format1>
 
 Specify the matrix format for the first input file only (requires
@@ -1892,8 +1954,8 @@ sub Verbose {
     }
 
     print $main::out "; Matrices\n";
-    print $main::out join ("\t", ";", "file1", $matrix_nb_1." matrices", $main::infile{file1}),"\n";
-    print $main::out join ("\t", ";", "file2", $matrix_nb_2." matrices", $main::infile{file2}),"\n";
+    print $main::out join ("\t", ";", "file1", $matrix_nb1." matrices", $main::infile{file1}),"\n";
+    print $main::out join ("\t", ";", "file2", $matrix_nb2." matrices", $main::infile{file2}),"\n";
 #    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
 
     ## Matrices in the first file
