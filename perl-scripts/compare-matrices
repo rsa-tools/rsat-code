@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.61 2010/08/23 15:10:25 jvanheld Exp $
+# $Id: compare-matrices,v 1.62 2010/08/24 14:04:43 jvanheld Exp $
 #
 ############################################################
 
@@ -306,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.61 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -922,7 +922,7 @@ package main;
 		} elsif (($f1 > 0) || ($f2 > 0)) {
 		  ## The KL distance is infinite if one of the values is 0 and the other not !!!
 		  $dKL = "Inf";
-		  &RSAT::message::Warning("The Kullback-Leibler distance is infinite ") if ($main::verbose >= 3);
+		  &RSAT::message::Warning("The Kullback-Leibler distance is infinite ") if ($main::verbose >= 4);
 		}
 	      }
 	    }
