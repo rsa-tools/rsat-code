@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.64 2010/08/25 00:15:11 jvanheld Exp $
+# $Id: compare-matrices,v 1.65 2010/08/25 00:30:52 jvanheld Exp $
 #
 ############################################################
 
@@ -60,11 +60,35 @@ description).
 =head1 OUTPUT FORMATS
 
 By default, the output format is a tab-delimited file with one row per
-matrix comparison, and one column per statistics.
+matrix comparison, and one column per statistics. Depending on the
+requested return fields, I<compare-matrices> can also export a series
+of additional files.
 
-Optionally, I<compare-matrices> can also export tab-delimited file
-with the aligned matrices, and a HTML file displaying the aligned
-logos.
+=over
+
+=item [output_prefix].tab
+
+Tab-delimited text file containing the primary result (comparison
+score table): one column per comparison (match or profile position),
+one row per field (score, matrix descriptor, ...).
+
+=item [output_prefix].html
+
+HTML file presenting the comparison table in a user-friendly way. The
+clickable headers allow to re-order the table according to any column.
+
+=item [output_prefix_alignments.tab]
+
+Tab-delimited text file containing the aligned matrices.
+
+=item [output_prefix_alignments.html]
+
+HTML file presentig the aligned matrices in a user-friendly way:
+motifs are presented as sequence logos.
+
+
+=back
+
 
 =head1 ALGORITHM
 
@@ -306,7 +330,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.65 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -357,7 +381,7 @@ package main;
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "rank",
-				    "aligned_matrices", ## Shifted matrices resulting from the alignments. This requires to specify an output prefix (option -o)
+				    "alignments", ## Shifted matrices resulting from the alignments. This requires to specify an output prefix (option -o)
 				    "all", ## All supported output fields, including all metrics
 				);
   local %supported_return_field = ();
@@ -425,8 +449,8 @@ package main;
   ## Check argument values
 
   ## Incompatibilities between output modes
-  if (($return_field{aligned_matrices}) && ($comparison_mode eq "profiles")) {
-    &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'aligned_matrices' (output might reach unreasonable size).");
+  if (($return_field{alignments}) && ($comparison_mode eq "profiles")) {
+    &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'alignments' (output might reach unreasonable size).");
   }
 
   ## Compute all metrics
@@ -506,10 +530,18 @@ package main;
   local $sort_order = $supported_sort_field{$sort_field};
 
   ## Check that output file is specified if required (for the alignments)
-  if ($return_field{aligned_matrices}) {
-    &RSAT::error::FatalError("The option -return aligned_matrices requires to specify an output prefix (option -o).")
-      unless ($main::outfile{out_matrices});
+
+  if (defined($main::outfile{output_prefix})) {
+    $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
+    $main::outfile{output} = $main::outfile{output_prefix}.".tab";
   }
+  if ($return_field{alignments}) {
+    &RSAT::error::FatalError("The option -return alignments requires to specify an output prefix (option -o).")
+      unless ($main::outfile{output_prefix});
+    $main::outfile{alignments} = $main::outfile{output_prefix}."_alignments.tab";
+    $main::outfile{alignments_html} = $main::outfile{output_prefix}."_alignments.html";
+  }
+
 
   ################################################################
   ## Treat dependencies between fields to compute
@@ -540,23 +572,23 @@ package main;
   ################################################################
   ## Open output stream(s)
   $main::out = &OpenOutputFile($main::outfile{output});
-  if ($main::outfile{out_matrices}) {
-    $main::out_matrices = &OpenOutputFile($main::outfile{out_matrices});
+  if ($main::outfile{alignments}) {
+    $main::out_matrices = &OpenOutputFile($main::outfile{alignments});
 
     ## Open the file for the HTML index of aligned matrices
-    $main::outfile{out_matrices_html} = $main::outfile{out_matrices};
-    $main::outfile{out_matrices_html} =~ s/\.tab$//;
-    $main::outfile{out_matrices_html} .= ".html";
-    $main::out_matrices_html = &OpenOutputFile($main::outfile{out_matrices_html});
+    $main::outfile{alignments_html} = $main::outfile{alignments};
+    $main::outfile{alignments_html} =~ s/\.tab$//;
+    $main::outfile{alignments_html} .= ".html";
+    $main::out_matrices_html = &OpenOutputFile($main::outfile{alignments_html});
     print $main::out_matrices_html "<html>\n";
-    my $title = &RSAT::util::ShortFileName($main::outfile{out_matrices});
+    my $title = &RSAT::util::ShortFileName($main::outfile{alignments});
     $title =~ s/\.tab//;
     print $main::out_matrices_html "<head><title>".$title."</title></head>\n";
     print $main::out_matrices_html "<body>\n";
     print $main::out_matrices_html "<h1>".$title."</h1>\n";
 
     ## Define directory for the logos
-    $main::outfile{logo_dir} = $main::outfile{out_matrices};
+    $main::outfile{logo_dir} = $main::outfile{alignments};
     $main::outfile{logo_dir} =~ s/\.tab$//;
     $main::outfile{logo_dir} .= "_logos";
   }
@@ -1202,13 +1234,13 @@ package main;
 
   ################################################################
   ## Pairwise matrix alignments
-  if ($return_field{aligned_matrices}) {
+  if ($return_field{alignments}) {
 #    &PairwiseAlignments();
   }
 
   ################################################################
   ## One-to-n matrix alignments
-  if ($return_field{aligned_matrices}) {
+  if ($return_field{alignments}) {
     &OneToNAlignments();
   }
 
@@ -1219,7 +1251,7 @@ package main;
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $main::out if ($main::outfile{output});
-  if ($main::outfile{out_matrices}) {
+  if ($main::outfile{alignments}) {
     close $main::out_matrices;
     print $main::out_matrices_html "</body>";
     print $main::out_matrices_html "</html>";
@@ -1274,7 +1306,7 @@ sub PairwiseAlignments {
     print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
     print $out_matrices_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
 
-    if ($return_field{aligned_matrices}) {
+    if ($return_field{alignments}) {
 
       ## Generate a string to display the first matrix in text output file
       my $matrix1_string = join("\t", "; ".$desc1,
@@ -1300,7 +1332,7 @@ sub PairwiseAlignments {
       ## Generate a sequence logo for the HTML output file
       my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
       $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
-      my $logo1_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo1_file.".png");
+      my $logo1_link = &RSAT::util::RelativePath($main::outfile{alignments_html}, $logo1_file.".png");
       $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
       print $out_matrices_html "<tr>\n";
       print $out_matrices_html "<td>".$desc1."</td>\n";
@@ -1311,7 +1343,7 @@ sub PairwiseAlignments {
       ## Generate a sequence logo for the HTML output file
       my $logo2_file = $main::outfile{logo_dir}."/".$matrix2_shifted->get_attribute("id");
       $matrix2_shifted->makeLogo($logo2_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
-      my $logo2_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo2_file.".png");
+      my $logo2_link = &RSAT::util::RelativePath($main::outfile{alignments_html}, $logo2_file.".png");
       $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
       print $out_matrices_html "<tr>\n";
       print $out_matrices_html "<td>".$desc2."</td>\n";
@@ -1334,7 +1366,7 @@ sub PairwiseAlignments {
       ## Generate a sequence logo for the merged matrix
       my $logo_file = $main::outfile{logo_dir}."/".$id_align;
       $merged_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", 0);
-      my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
+      my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_html}, $logo_file.".png");
       $merged_matrix_string =~ s|//\n||mg;
       print $out_matrices_html "<tr>";
       print $out_matrices_html "<td>Alignment</td>";
@@ -1452,7 +1484,7 @@ sub PrintAlignedMatrices {
     ## Generate a sequence logo for the HTML output file
     my $logo_file = $main::outfile{logo_dir}."/".$shifted_matrix->get_attribute("id");
     $shifted_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
-    my $logo_link = &RSAT::util::RelativePath($main::outfile{out_matrices_html}, $logo_file.".png");
+    my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_html}, $logo_file.".png");
     $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
     print $out_matrices_html "<tr>\n";
     print $out_matrices_html "<td>".$id_name."</td>\n";
@@ -1654,37 +1686,13 @@ Prefix for the output files. The output prefix is mandatory for some
 return fields (alignments, graphs, ...).
 
 This prefix will be appended with a series of suffixes for the
-different output types.
-
-=over
-
-=item [output_prefix].tab
-
-Tab-delimited text file containing the primary result (comparison
-score table): one column per comparison (match or profile position),
-one row per field (score, matrix descriptor, ...).
-
-=item [output_prefix].html
-
-HTML file presenting the comparison table in a user-friendly way. The
-clickable headers allow to re-order the table according to any column.
-
-=item [output_prefix_alignments.tab]
-
-Tab-delimited text file containing the aligned matrices.
-
-=item [output_prefix_alignments.html]
-
-HTML file presentig the aligned matrices in a user-friendly way:
-motifs are presented as sequence logos.
-
-
-=back
+different output types (see section OUTPUT FORMATS above for the
+detail).
 
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::outfile{output} = shift(@arguments);
+      $main::outfile{output_prefix} = shift(@arguments);
 
 =item B<-comparison_mode matches | profiles>
 
@@ -2087,6 +2095,9 @@ matrix of file 2, where each cell indicates the value of the selected
 field for the corresponding pair of matrices.
 
 =item I<-return graph>
+
+Export a graph where nodes correspond to input matrices, and edges
+indicate similarities between them.
 
 =back
 
