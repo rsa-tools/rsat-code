@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.171 2010/07/27 16:18:26 jvanheld Exp $
+# $Id: matrix-scan,v 1.172 2010/08/25 14:34:37 rsat Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3158,6 +3158,10 @@ sub QuickScan {
   ################################################################
   ## prepare matrix-scan-quick cmd
   ## do NOT pass the pseudocount
+
+  if ($main::verbose >= 1) {
+    $quick_verbose = 1; ## matrix-scan-quick does not accept verbosity higher than 2
+  }
   my $quick_path = &RSAT::server::GetProgramPath("matrix-scan-quick");
   my $quick_cmd = $quick_path;
   $quick_cmd .= " -i ".$main::infile{input};
@@ -3213,7 +3217,7 @@ sub QuickScan {
   	
   	$quick_cmd .= " -return sites";
   	$quick_cmd .= " -origin ".$main::origin;
-  	$quick_cmd .= " -v ".$main::verbose;
+  	$quick_cmd .= " -v ".$quick_verbose;
   	
   	if (defined($lth_matrix->{$matrix_name}->{score})) {
   		$quick_cmd .= " -t ".$lth_matrix->{$matrix_name}->{score};
