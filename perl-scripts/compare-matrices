@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.63 2010/08/24 14:54:16 jvanheld Exp $
+# $Id: compare-matrices,v 1.64 2010/08/25 00:15:11 jvanheld Exp $
 #
 ############################################################
 
@@ -306,7 +306,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -357,7 +357,7 @@ package main;
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "rank",
-				    "aligned_matrices", ## Shifted matrices resulting from the alignments. This requires the option -out_matrices.
+				    "aligned_matrices", ## Shifted matrices resulting from the alignments. This requires to specify an output prefix (option -o)
 				    "all", ## All supported output fields, including all metrics
 				);
   local %supported_return_field = ();
@@ -386,14 +386,14 @@ package main;
     $supported_threshold{lc($thr)} = 1;
   }
 
-  ## Output formats
-  local $out_format = "matches";
-  local @supported_out_formats = qw(matches profiles);
-  local %supported_out_format = ();
-  foreach my $format (@supported_out_formats) {
-    $supported_out_format{$format} = 1;
+  ## Comparison mode
+  local $comparison_mode = "matches";
+  local @supported_comparison_modes = qw(matches profiles);
+  local %supported_comparison_mode = ();
+  foreach my $format (@supported_comparison_modes) {
+    $supported_comparison_mode{$format} = 1;
   }
-  local $supported_out_formats = join (",", @supported_out_formats);
+  local $supported_comparison_modes = join (",", @supported_comparison_modes);
 
   ## Matrices
   local @matrices1 = ();
@@ -425,8 +425,8 @@ package main;
   ## Check argument values
 
   ## Incompatibilities between output modes
-  if (($return_field{aligned_matrices}) && ($out_format eq "profiles")) {
-    &RSAT::error::FatalError("The output format profiles and the return field aligned matrices are mutually incompatible (output might reach unreasonable size).");
+  if (($return_field{aligned_matrices}) && ($comparison_mode eq "profiles")) {
+    &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'aligned_matrices' (output might reach unreasonable size).");
   }
 
   ## Compute all metrics
@@ -482,12 +482,12 @@ package main;
   }
 
   ## Check return files
-  if ($out_format eq "profiles") {
+  if ($comparison_mode eq "profiles") {
     if (scalar(keys(%return_field)) ==0) {
       &RSAT::error::FatalError("With the profiles format, you must define at least one return field (option -return).",
 			       "\n\tSupported: $supported_return_fields");
     }
-  } if ($out_format eq "matches") {
+  } if ($comparison_mode eq "matches") {
     $return_field{matrix_name} = 1;
     $return_field{strand} = 1;
     $return_field{Ncor} = 1;
@@ -507,7 +507,7 @@ package main;
 
   ## Check that output file is specified if required (for the alignments)
   if ($return_field{aligned_matrices}) {
-    &RSAT::error::FatalError("The option -return aligned_matrices requires to specify an output matrix file (option -out_matrices).")
+    &RSAT::error::FatalError("The option -return aligned_matrices requires to specify an output prefix (option -o).")
       unless ($main::outfile{out_matrices});
   }
 
@@ -1146,7 +1146,7 @@ package main;
 #	&RSAT::message::Debug("Treating output for offset/strand", $compa_id, $offset, $strand) if ($main::verbose >= 10);
 
 
-	if ($out_format eq "matches") {
+	if ($comparison_mode eq "matches") {
 	  ################################################################
 	  ## In matching mode, index the matrix pair for further sorting
 	  ## after all matrices have been compared (sorting all matrix
@@ -1177,7 +1177,7 @@ package main;
 
   ################################################################
   ## Sort all matches and print them out
-  if ($out_format eq "matches") {
+  if ($comparison_mode eq "matches") {
     &RSAT::message::TimeWarn("Sorting matches by", $sort_order, $sort_field) if ($main::verbose >= 2);
 
     ## Sort the matches
@@ -1648,25 +1648,45 @@ Specify the matrix format for the second input file only (requires
 
 =pod
 
-=item	B<-o outputfile>
+=item	B<-o output_prefix>
 
-Output file name.
+Prefix for the output files. The output prefix is mandatory for some
+return fields (alignments, graphs, ...).
+
+This prefix will be appended with a series of suffixes for the
+different output types.
+
+=over
+
+=item [output_prefix].tab
 
 Tab-delimited text file containing the primary result (comparison
-score table). In addition, he file name is used as prefix for the text
-and html-formatted matrix alignment files.
+score table): one column per comparison (match or profile position),
+one row per field (score, matrix descriptor, ...).
 
-Output file name is mandatory for obtaining aligned matrices.
+=item [output_prefix].html
 
-If no alignments are required and no output file is specified, the
-standard output is used.  This allows to use the command within a
-pipe.
+HTML file presenting the comparison table in a user-friendly way. The
+clickable headers allow to re-order the table according to any column.
+
+=item [output_prefix_alignments.tab]
+
+Tab-delimited text file containing the aligned matrices.
+
+=item [output_prefix_alignments.html]
+
+HTML file presentig the aligned matrices in a user-friendly way:
+motifs are presented as sequence logos.
+
+
+=back
+
 
 =cut
     } elsif ($arg eq "-o") {
       $main::outfile{output} = shift(@arguments);
 
-=item B<-out_format matches | profiles>
+=item B<-comparison_mode matches | profiles>
 
 =over
 
@@ -1707,24 +1727,11 @@ basic use.
 =back
 
 =cut
-    } elsif ($arg eq "-out_format") {
-      $main::out_format = shift(@arguments);
-      &RSAT::error::FatalError($main::out_format, "is not a valid output format. Supported: ".$supported_out_formats) 
-	unless ($supported_out_format{$main::out_format});
+    } elsif ($arg eq "-mode") {
+      $main::comparison_mode = shift(@arguments);
+      &RSAT::error::FatalError($main::comparison_mode, "is not a valid comparison mode. Supported: ".$supported_comparison_modes) 
+	unless ($supported_comparison_mode{$main::comparison_mode});
 
-
-=pod
-
-=item	B<-out_matrices out_matrix_file>
-
-File containing the output matrices:
-- shifted matrices used to build the alignments;
-- matrices resulting from pairwise alignments;
-- consensus matrices resulting from multiple alignments.
-
-=cut
-    } elsif ($arg eq "-out_matrices") {
-      $main::outfile{out_matrices} = shift(@arguments);
 
 =pod
 
@@ -2065,26 +2072,21 @@ scanning.
 Pseudo-counts to be added to all matrices.
 
 
-=item B<-out_format table | consensus | alignments>
+=item B<-comparison_mode table | consensus>
 
 =over
 
-=item I<-format alignment>
+=item I<-return clusters>
 
-Same selection of best matching alignments as I<-format matches>, but
-also exports a textual representation of the aligned matrices.
+Cluster motifs (only valid with a single input file).
 
-=item I<-format consensus>
-
-Cluster similar matrices and return one representative matrix for each
-cluster. This option is very convenient for generating non-redundant
-collections of motifs.
-
-=item I<-table field>
+=item I<-return crosstable field>
 
 Export a table with one row per matrix of the file 1, one column per
 matrix of file 2, where each cell indicates the value of the selected
 field for the corresponding pair of matrices.
+
+=item I<-return graph>
 
 =back
 
