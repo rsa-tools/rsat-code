@@ -1114,7 +1114,7 @@ sub ReadNextSequence {
       }
     }
     if ((-e $next_file) && (open NEXT_SEQ, $next_file)) {
-      warn "; Reading file $next_file\n" if ($verbose >= 2);
+      warn "; Reading file $next_file\n" if ($verbose >= 4);
       #### extract the sequence file name without path ####
       if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
 	$seq_id = $2;
@@ -1228,7 +1228,7 @@ sub ReadNextSequence {
 	  $empty_seq_counter++;
 	  $next_id = "unidentified_seq_".$empty_seq_counter;
 	}
-	&RSAT::message::Debug("ReadNextSequence()","ID", $next_id) if ($main::verbose >= 3);
+	&RSAT::message::Debug("ReadNextSequence()","ID", $next_id) if ($main::verbose >= 4);
 
 
 	if ($current_seq_id) {
@@ -1301,7 +1301,7 @@ sub ReadNextSequence {
 	  push @comments, "start position: ".$start_pos;
 	  push @comments, "strand: ".$strand;
 	  push @comments, "contig length: ".$contig_len;
-	  &RSAT::message::Debug($seq_id, @comments) if ($main::verbose >= 3);
+	  &RSAT::message::Debug($seq_id, @comments) if ($main::verbose >= 4);
 
 	  return(&ReturnSequence($desaligned_seq, $seq_id, $mask, @comments));
 	} else {
@@ -1363,14 +1363,14 @@ sub ReadNextSequence {
       } elsif ((/^ACCESSION\s+(\S+)/) ||
 	       (/^LOCUS\s+(\S+)/)) {
 	$seq_id = $1;
-	warn "Sequence ID\t$seq_id\n" if ($verbose >= 2);
+	warn "Sequence ID\t$seq_id\n" if ($verbose >= 4);
 	$sequence = "";
 	chomp;
 	push @comments, $seq_id;
       } elsif (/^DEFINITION\s+/) { ### definition
 	push @comments, "$'";
       } elsif (/^ORIGIN/) {
-	&RSAT::message::Info( "Reading sequence", $seq_id) if ($verbose >= 2);
+	&RSAT::message::Info( "Reading sequence", $seq_id) if ($verbose >= 4);
 	$in_sequence = 1;
       } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
 	$position = $1;
@@ -1681,7 +1681,7 @@ sub all_oligos {
       }
     }
   }
-  &RSAT::message::Info("&all_oligos()", "len", $len, "alphabet", scalar(@alphabet), "oligos", scalar(@oligos)) if ($main::verbose >= 3);
+  &RSAT::message::Info("&all_oligos()", "len", $len, "alphabet", scalar(@alphabet), "oligos", scalar(@oligos)) if ($main::verbose >= 4);
   return @oligos;
 }
 
@@ -1700,7 +1700,7 @@ sub ReadPatterns {
   my $pattern_score = $args{pattern_score};
   my $pattern_seq = $args{pattern_seq};
 
-  &RSAT::messsage::Info("Reading patterns from file $pattern_file") if ($verbose >= 2);
+  &RSAT::messsage::Info("Reading patterns from file $pattern_file") if ($verbose >= 4);
 
   #### single pattern specified on the command line
   if ($pattern_seq) {
