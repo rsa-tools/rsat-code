@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.172 2010/08/25 14:34:37 rsat Exp $
+# $Id: matrix-scan,v 1.173 2010/08/25 14:38:46 rsat Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1543,21 +1543,25 @@ package main;
 
    #### QUICK SCAN #####
    if ($quick_scan) {
-   		## approximate the number of scored segments for eval calculation
-   		my $total_scored = 0;
-   		if ($return_fields{eval}){
-			foreach my $matrix_size (values(%matrix_sizes)){
-     			my $nb_scored = $sum_seq_len - $matrix_size +1; ## nb possible positions
-      			$nb_scored = $nb_scored - $n_residues; ## remove N positions
-      			$nb_scored = $nb_scored * 2 if ($main::both_strands); # dble strands
-      			$total_scored += $nb_scored;
-			}
-			&RSAT::message::Info("Approximated Total scored",$total_scored) if ($main::verbose >= 2);
-   		}
-   	
-      foreach my $matrix (@matrices) {
-		&QuickScan($matrix,"sites",$total_scored);
-      }
+       ## approximate the number of scored segments for eval calculation
+       my $total_scored = 0;
+       if ($return_fields{eval}){
+	   foreach my $matrix_size (values(%matrix_sizes)){
+	       my $nb_scored = $sum_seq_len - $matrix_size +1; ## nb possible positions
+	       $nb_scored = $nb_scored - $n_residues; ## remove N positions
+	       $nb_scored = $nb_scored * 2 if ($main::both_strands); # dble strands
+	       $total_scored += $nb_scored;
+	   }
+	   &RSAT::message::Info("Approximated Total scored",$total_scored) if ($main::verbose >= 2);
+       }
+      
+       my $m = 0;
+       foreach my $matrix (@matrices) {
+	   $m++;
+	   &RSAT::message::TimeWarn("Scanning sequences with matrix-scan-quick, matrix", $m."/".scalar(@matrices), $matrix->get_attribute("id"))
+	       if ($main::verbose >= 2);
+	   &QuickScan($matrix,"sites",$total_scored);
+       }
     } 
 
 
