@@ -235,8 +235,9 @@ which are convenient for drawing aligned logos.
 =cut
 
 sub AlignMatricesOneToN {
-  my ($matrix1,  $matching_matrices_ref, $matching_offsets_ref, $matching_strands_ref, $matching_scores_ref, %args) = @_;
+  my ($matrix1, $matching_compa_ids_ref,  $matching_matrices_ref, $matching_offsets_ref, $matching_strands_ref, $matching_scores_ref, %args) = @_;
   my @shifted_matrices = ();
+  my @matching_compa_ids = @{$matching_compa_ids_ref};
   my @matching_matrices = @{$matching_matrices_ref};
   my @matching_offsets = @{$matching_offsets_ref};
   my @matching_strands = @{$matching_strands_ref};
@@ -340,6 +341,7 @@ sub AlignMatricesOneToN {
 
   my $n2 = scalar(@matching_matrices);
   foreach my $m (0..$#matching_matrices) {
+    my $compa_id = $matching_compa_ids[$m];
     my $matrix2 = $matching_matrices[$m];
     my $offset = $matching_offsets[$m];
     my $strand = $matching_strands[$m];
@@ -375,6 +377,7 @@ sub AlignMatricesOneToN {
     ## computing the aligned matrix, but convenient for visualization
     ## (aligned matrices, aligned logos).
     my $shifted_matrix2 = new RSAT::matrix();
+    $shifted_matrix2->set_attribute("compa_id", $compa_id);
     $shifted_matrix2->force_attribute("ncol", $ncol);
     $shifted_matrix2->setAlphabet_lc(@alphabet);
     #  $shifted_matrix2->force_attribute("nrow", scalar(@alphabet));
