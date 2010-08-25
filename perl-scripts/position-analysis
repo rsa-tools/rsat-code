@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.57 2010/08/11 08:37:35 jvanheld Exp $
+# $Id: position-analysis,v 1.58 2010/08/25 12:55:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -43,7 +43,7 @@ $sequence_number = 0;
 
 $max_seq_length = 0;
 $last = 0; ## max number of sequences to treat (for quick testing)
-$max_graphs = 0; #  maximal number of graphs to export
+$max_graphs = -1; #  maximal number of graphs to export
 
 $nb_possible_pos = 0;
 $sum_seq_length = 0;
@@ -141,7 +141,7 @@ if (defined($lth{'occ'})) {
 
 &CalcExpected();
 
-&CalcChi() if ($return{'chi'});
+&CalcChi() if ($return{chi});
 &RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
 
 &Verbose() if ($main::verbose >= 1);
@@ -152,7 +152,7 @@ if (defined($lth{'occ'})) {
 
 ################################################################
 ### generate XYgraphs
-if ($return{'graph'}) {
+if ($return{graphs}) {
 
     #### directory for storing the graphs
     $rel_dir{graphs}="graphs";
@@ -208,9 +208,11 @@ if ($return{'graph'}) {
     #### generate one graph for each oligo
     my $graphs_done = 0;
     foreach my $oligo_seq (@sorted_keys) {
+      if ($return{chi}) {
 	next unless (&IsReal($pattern{$oligo_seq}->{chi_square}) || ($no_filter_graphs));
+      }
+      $graphs_done++;
 
-	$graphs_done++;
 	if (($max_graphs > 0) && ($graphs_done > $max_graphs)) {
 	    &RSAT::message::Warning("Exported $graphs_done graphs");
 	    last;
@@ -225,7 +227,7 @@ if ($return{'graph'}) {
 	$title2 .= ", class interval=$class_interval";
 	if ($score_column > 0) {
 	  $score = sprintf "score = %.2f", $pattern{$oligo_seq}->{score};
-	} elsif ($return{'chi'}) {
+	} elsif ($return{chi}) {
 	  if (&IsReal($pattern{$oligo_seq}->{chi_square})) {
 	    $score = sprintf "%.2f", $pattern{$oligo_seq}->{chi_square};
 	  } else {
@@ -235,6 +237,7 @@ if ($return{'graph'}) {
 	  $title2 .= "; Eval=".$Eval;
 	  $title2 .= "; sig=".$sig;
 	}
+	&RSAT::message::Debug("Exporting graph for oligo", $oligo_seq, $dir{graphs}."/".$graph_file_name) if ($main::verbose >= 0);
 
 	my $command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
 	$command .= " -lines -xcol 1 -ycol 2,3 -legend ";
@@ -668,13 +671,13 @@ sub CalcChi {
     }
 
 
-    ##	warn join ("\t", $oligo_seq, $pattern{$oligo_seq}->{occ}, ${chi_square{$oligo_seq}}, $low_th{'chi'}), "\n";
+    ##	warn join ("\t", $oligo_seq, $pattern{$oligo_seq}->{occ}, ${chi_square{$oligo_seq}}, $low_th{chi}), "\n";
 
 
     #### check the threshold on chi-square
-    if ((&IsReal($lth{'chi'})) && 
-	($pattern{$oligo_seq}->{chi_square} < $lth{'chi'})) {
-      &RSAT::message::Debug( "Deleted pattern", $oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, "below threshold", $lth{'chi'})
+    if ((&IsReal($lth{chi})) && 
+	($pattern{$oligo_seq}->{chi_square} < $lth{chi})) {
+      &RSAT::message::Debug( "Deleted pattern", $oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, "below threshold", $lth{chi})
 	if ($main::verbose >= 5);
 
       delete $pattern{$oligo_seq};
@@ -834,7 +837,7 @@ OPTIONS
 		supported fields:
 			distrib	occurrences found in each position class
 			exp	expected occurrences for each class
-			graph	a rgaph file per oligont profile
+			graphs	one graph file per oligont profile
 			chi	chi-square value
 			rank	rank of the pattern according to the
 				sorting criterion
@@ -1022,9 +1025,9 @@ sub ReadArguments {
 
 	    ### lower threshold on chi square
 	} elsif ($ARGV[$a] =~ /^-lth_chi/) { 
-	    $lth{'chi'} = $ARGV[$a+1];
-	    $return{'chi'} = 1;
-	    unless (($lth{'chi'} >= 0) && (&IsReal($lth{'chi'}))) {
+	    $lth{chi} = $ARGV[$a+1];
+	    $return{chi} = 1;
+	    unless (($lth{chi} >= 0) && (&IsReal($lth{chi}))) {
 		&RSAT::error::FatalError("Threshold on chi2 must be a positive number") ;
 	    }
 
@@ -1070,13 +1073,13 @@ sub ReadArguments {
 		    $return{'distrib'} = 1;
 
 		} elsif ($field =~ /chi/) {
-		    $return{'chi'} = 1;
+		    $return{chi} = 1;
 
 		} elsif ($field =~ /exp/) {
 		    $return{'exp'} = 1;
 
 		} elsif ($field =~ /graph/) {
-		    $return{'graph'} = 1;
+		    $return{graphs} = 1;
 
 		} elsif ($field =~ /rank/) {
 		    $return{'rank'} = 1;
@@ -1183,7 +1186,7 @@ sub Verbose {
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
     printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
     printf $out "; %-29s\t%d\n", "Oligo length", $oligo_length;
-    printf $out "; %-29s\t%f\n", "Lower threshold on chi", $lth{'chi'} if (&IsReal($lth{'chi'}));
+    printf $out "; %-29s\t%f\n", "Lower threshold on chi", $lth{chi} if (&IsReal($lth{chi}));
     printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $lth{'occ'} if (&IsNatural($lth{'occ'}));
     if ($strands eq "2str") {
 	printf $out "; %-29s\n", "Occurrences counted  on both strands";
@@ -1263,7 +1266,7 @@ sub PrintResult {
 	    @sorted_keys = sort { 
 		$pattern{$b}->{score} <=>  $pattern{$a}->{score}
 	    } keys %pattern;
-	} elsif ($return{'chi'}) {
+	} elsif ($return{chi}) {
 	    @sorted_keys = sort { 
 		$pattern{$b}->{chi_square} <=>  $pattern{$a}->{chi_square}
 	    } keys %pattern;
@@ -1274,24 +1277,24 @@ sub PrintResult {
 	}
     } else {
 	@sorted_keys = sort keys %pattern;
-	&RSAT::message::TimeWarn("Sorted", scalar(@sorted_keys), "patterns") if ($main::verbose >= 2);
     }
+    &RSAT::message::TimeWarn("Sorted", scalar(@sorted_keys), "patterns") if ($main::verbose >= 2);
 
     ## Select top ranking patterns if required
     if (defined($uth{rank})) {
 	my $max_rank = &min(scalar(@sorted_keys), $uth{rank});
 	@sorted_keys = @sorted_keys[0..($max_rank -1)];
 	&RSAT::message::TimeWarn("Retained", scalar(@sorted_keys), "top-raking patterns") if ($main::verbose >= 2);
-    } 
+    }
 
 
-    #### output columns
+    #### Output columns
     @out_col = (); @col_descriptions = ();
     push @out_col, 'seq'; push @col_descriptions, 'pattern sequence';
     push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
     push @out_col, 'occ'; push @col_descriptions, 'pattern occurrences';
     if ($noov) {push @out_col, "over"; push @col_descriptions, 'overlapping occurrences (discarded)';}
-    if ($return{'chi'}) {
+    if ($return{chi}) {
 	push @out_col, "chi2" ; push @col_descriptions, 'observed chi-square';
 	push @out_col, "df" ; push @col_descriptions, 'degrees of freedom';
 	push @out_col, "Pval" ; push @col_descriptions, 'P-value (probability for one word to be a false positive)';
@@ -1325,7 +1328,7 @@ sub PrintResult {
     print $out "#", join("\t", @out_col), "\n";
 
 
-    ### pattern distributions
+    ### Pattern distributions
     my $rank = 0;
     foreach my $oligo_seq (@sorted_keys) {
       $rank++;
@@ -1347,7 +1350,7 @@ sub PrintResult {
       }
 
       ### chi-square value
-      if ($return{'chi'}) {
+      if ($return{chi}) {
 	printf $out "\t%.1f", $pattern{$oligo_seq}->{chi_square};
 	printf $out "\t%d", $pattern{$oligo_seq}->{df};
 	printf $out "\t%.1e", $pattern{$oligo_seq}->{Pval};
