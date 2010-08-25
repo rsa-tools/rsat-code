@@ -85,7 +85,7 @@ sub GetProgramPath {
     }
 
     &RSAT::message::Info("&RSAT::server::GetProgramPath()", "path found", $program_path)
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 4);
     return $program_path;
 }
 
@@ -175,7 +175,7 @@ sub UpdateExecTimeLogFile {
   my $login = getlogin || getpwuid($<) || "Kilroy";
 
   &RSAT::message::TimeWarn("Updating execution time log file", $main::exec_time_log_file)
-    if ($main::verbose >= 3);
+    if ($main::verbose >= 4);
 
   ## Write header of the exec time log file if required
   unless (-e $main::exec_time_log_file) {
@@ -292,7 +292,7 @@ sub ReadConfig {
     } elsif (-e $`."../../RSA.config") {
       $config_file = $`."../../RSA.config";
     }
-    &RSAT::message::Info("RSAT config file", $config_file) if ($main::verbose >= 3);
+    &RSAT::message::Info("RSAT config file", $config_file) if ($main::verbose >= 4);
     if ($config_file) {
       require $config_file;
     } else {

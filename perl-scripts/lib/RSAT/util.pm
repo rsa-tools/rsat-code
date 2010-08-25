@@ -169,7 +169,7 @@ sub StartScript {
     my $command = join (" ", $script_name, @ARGV);
     my $login = getlogin || getpwuid($<) || "Kilroy";
     &RSAT::message::TimeWarn("Updating start script log file", $main::start_time_log_file)
-      if ($main::verbose >= 3);
+      if ($main::verbose >= 4);
 
     ## Write header of the exec time log file if required
     unless (-e $main::start_time_log_file) {
@@ -384,14 +384,14 @@ sub CheckOutDir {
 
     $umask = 0002 unless ($umask);
     umask($umask);
-    if ($main::verbose >= 3) {
+    if ($main::verbose >= 4) {
 	my $wd = `pwd`;
 	warn "; Current directory\t", $wd, "\n";
     }
 
     if ($output_dir) {
 	if (-d $output_dir) {
-	    warn "; Directory $output_dir already exists\n" if ($main::verbose >= 3);
+	    warn "; Directory $output_dir already exists\n" if ($main::verbose >= 4);
 	    return;
 	}
 	warn "; Creating directory $output_dir\n" if ($main::verbose >= 2);
@@ -745,7 +745,7 @@ sub doit {
     ## Verbose
     if (($dry) || ($verbose >= 2)) {
       warn "\n";
-      &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 3);
+      &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 4);
       &RSAT::message::TimeWarn($command);
     }
 
