@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.65 2010/08/25 00:30:52 jvanheld Exp $
+# $Id: compare-matrices,v 1.66 2010/08/25 00:50:42 jvanheld Exp $
 #
 ############################################################
 
@@ -330,7 +330,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.65 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.66 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -529,19 +529,6 @@ package main;
   ## Sort order
   local $sort_order = $supported_sort_field{$sort_field};
 
-  ## Check that output file is specified if required (for the alignments)
-
-  if (defined($main::outfile{output_prefix})) {
-    $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
-    $main::outfile{output} = $main::outfile{output_prefix}.".tab";
-  }
-  if ($return_field{alignments}) {
-    &RSAT::error::FatalError("The option -return alignments requires to specify an output prefix (option -o).")
-      unless ($main::outfile{output_prefix});
-    $main::outfile{alignments} = $main::outfile{output_prefix}."_alignments.tab";
-    $main::outfile{alignments_html} = $main::outfile{output_prefix}."_alignments.html";
-  }
-
 
   ################################################################
   ## Treat dependencies between fields to compute
@@ -571,6 +558,20 @@ package main;
 
   ################################################################
   ## Open output stream(s)
+
+  ## Check that output file is specified if required (for the alignments)
+  if (defined($main::outfile{output_prefix})) {
+    $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
+    $main::outfile{output} = $main::outfile{output_prefix}.".tab";
+    $main::outfile{output_html} = $main::outfile{output_prefix}.".html";
+  }
+  if ($return_field{alignments}) {
+    &RSAT::error::FatalError("The option -return alignments requires to specify an output prefix (option -o).")
+      unless ($main::outfile{output_prefix});
+    $main::outfile{alignments} = $main::outfile{output_prefix}."_alignments.tab";
+    $main::outfile{alignments_html} = $main::outfile{output_prefix}."_alignments.html";
+  }
+
   $main::out = &OpenOutputFile($main::outfile{output});
   if ($main::outfile{alignments}) {
     $main::out_matrices = &OpenOutputFile($main::outfile{alignments});
@@ -1068,23 +1069,21 @@ package main;
 	  my @out_fields = ();
 	  push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
 	  if ($return_field{matrix_id}) {
-	    push (@out_fields,
-		  sprintf("%-${max_id_len1}s", $id1),
-		  sprintf("%-${max_id_len2}s", $id2)
-		 );
+	    push (@out_fields, $id1,$id2);
+#	    push (@out_fields, sprintf("%-${max_id_len1}s", $id1),sprintf("%-${max_id_len2}s", $id2));
 	  }
 	  if ($return_field{matrix_ac}) {
 	    my $ac1 = $matrix1->get_attribute("accession") || "<NA>";
-	    $ac1 = sprintf("%-${max_ac_len1}s", $ac1);
+#	    $ac1 = sprintf("%-${max_ac_len1}s", $ac1);
 	    my $ac2 = $matrix2->get_attribute("accession") || "<NA>";
-	    $ac2 = sprintf("%-${max_ac_len2}s", $ac2);
+#	    $ac2 = sprintf("%-${max_ac_len2}s", $ac2);
 	    push (@out_fields, $ac1, $ac2);
 	  }
 	  if ($return_field{matrix_name}) {
 	    my $name1 = $matrix1->get_attribute("name") || "<NA>";
-	    $name1 = sprintf("%-${max_name_len1}s", $name1);
+#	    $name1 = sprintf("%-${max_name_len1}s", $name1);
 	    my $name2 = $matrix2->get_attribute("name") || "<NA>";
-	    $name2 = sprintf("%-${max_name_len2}s", $name2);
+#	    $name2 = sprintf("%-${max_name_len2}s", $name2);
 	    push (@out_fields, $name1, $name2);
 	  }
 	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
@@ -1250,7 +1249,15 @@ package main;
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-  close $main::out if ($main::outfile{output});
+
+  if ($main::outfile{output}) {
+    close $main::out;
+    my $html_cmd =  "text-to-html -i ".$main::outfile{output};
+    $html_cmd .= " -o ".$main::outfile{output_html};
+    &doit($html_cmd);
+  }
+
+
   if ($main::outfile{alignments}) {
     close $main::out_matrices;
     print $main::out_matrices_html "</body>";
