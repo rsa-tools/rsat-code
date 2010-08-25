@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.66 2010/08/25 00:50:42 jvanheld Exp $
+# $Id: compare-matrices,v 1.67 2010/08/25 01:11:34 jvanheld Exp $
 #
 ############################################################
 
@@ -330,7 +330,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.66 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.67 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -349,7 +349,7 @@ package main;
 			      "NsEucl", ## Euclidian similarity
 			      "SSD", ## Euclidian distance
 			      "SW", ## Sandelin-Wasserman similarity
-			      "dKL", ## Kullback-Leibler distance
+#			      "dKL", ## Kullback-Leibler distance
 			      "all_metrics", ## all supported metrics
 			     );
 
@@ -364,7 +364,7 @@ package main;
 				 "NsEucl"=>"desc",
 				 "SSD"=>"asc",
 				 "SW"=>"desc",
-				 "dKL"=>"asc",
+#				 "dKL"=>"asc",
 				);
   local $supported_sort_fields = join (",", keys (%supported_sort_field));
 
@@ -381,7 +381,7 @@ package main;
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "rank",
-				    "alignments", ## Shifted matrices resulting from the alignments. This requires to specify an output prefix (option -o)
+				    "alignments", ## Shifted matrices resulting from the alignments.
 				    "all", ## All supported output fields, including all metrics
 				);
   local %supported_return_field = ();
@@ -812,7 +812,8 @@ package main;
     my $c = 0;
     foreach my $field (@header) {
       $c++;
-      printf $out ";\t%d\t%-13s\t%s\n", $c, $field, $description{&RSAT::util::trim($field)};
+      $field = &RSAT::util::trim($field);
+      printf $out ";\t%d\t%-13s\t%s\n", $c, $field, $description{$field};
     }
   }
   print $out "#", join("\t", @header), "\n";
@@ -979,7 +980,7 @@ package main;
 
 	      ## Update sum for Euclidian distance
 	      if ($calc_field{SSD}) {
-		$SSD += ($f1 - $f2)**2;
+		$SSD += ($f1 - $f2)**2; $score{SSD}{$compa_id} = $SSD;
 	      }
 
 	      ## Update sum for Kullback-Leibler distance
@@ -1013,7 +1014,7 @@ package main;
 	  ## Compute Euclidian similarity
 	  if ($calc_field{NsEucl}) {
 	    my $maxEucl = sqrt(2);
-	    $NsEucl = ($maxEucl - $NdEucl) / $maxEucl;
+	    $NsEucl = ($maxEucl - $NdEucl) / $maxEucl; $score{NsEucl}{$compa_id} = $NsEucl;
 	  }
 
 	  ## Compute Kullback-Leibler distance
@@ -1021,7 +1022,7 @@ package main;
 	    unless ($dKL eq "Inf") {
 	      $dKL /= 2;
 	      $dKL /= $w if ($w > 0); ## Relativize KL distance with respect to the number of aligned columns
-	      next unless (&CheckThresholdValue("dKL", $dKL)); $dKL{$compa_id} = $dKL;
+	      next unless (&CheckThresholdValue("dKL", $dKL)); $score{dKL}{$compa_id} = $dKL;
 	      $dKL = sprintf("%.5f", $dKL);
 	    }
 	  }
@@ -1234,7 +1235,7 @@ package main;
   ################################################################
   ## Pairwise matrix alignments
   if ($return_field{alignments}) {
-#    &PairwiseAlignments();
+    &PairwiseAlignments();
   }
 
   ################################################################
@@ -1304,6 +1305,7 @@ sub PairwiseAlignments {
       if ($return_field{$metric}) {
 	my $value = $score{$metric}{$compa_id};
 	$header_row .= sprintf("; %s=%7g", $metric, $value);
+#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
       }
     }
     print $out_matrices "\n; ", $header_row."\n";
