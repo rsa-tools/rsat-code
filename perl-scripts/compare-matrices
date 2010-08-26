@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.70 2010/08/26 15:25:21 jvanheld Exp $
+# $Id: compare-matrices,v 1.71 2010/08/26 16:32:54 jvanheld Exp $
 #
 ############################################################
 
@@ -328,7 +328,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.70 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.71 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -1524,9 +1524,10 @@ sub PrintAlignedMatrices {
 #	next if ($metric eq "all_metrics");
 #	if ($return_field{$metric}) {
 	  my $value = $match_score{$compa_id}{$metric};
+	  $value = sprintf("%.3f", $value);
 #	  &RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
-	  $match_scores .= sprintf("; %s=%7g", $metric, $value);
-	  $match_scores_html .= "<td>".sprintf("%4g",$value)."</td>\n";
+	  $match_scores .= "; ".$metric."=".$value;
+	  $match_scores_html .= "<td>".$value."</td>\n";
 	  #	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
 	}
 #      }
