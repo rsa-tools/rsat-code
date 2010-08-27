@@ -134,7 +134,7 @@ neat_java_ws=http://rsat.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphA
 
 ## The java programs on the Web interface are currently supported only at the
 ## ULB server.
-neat_java_host=http://rsat.bigre.ulb.ac.be/
+neat_java_host=http://rsat.ulb.ac.be/
 
 # if forwarding to apache is not activated, indicate the tomcat port
 tomcat_port=
