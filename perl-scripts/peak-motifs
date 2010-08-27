@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.75 2010/08/27 04:51:42 jvanheld Exp $
+# $Id: peak-motifs,v 1.76 2010/08/27 17:31:03 jvanheld Exp $
 #
 ############################################################
 
@@ -106,7 +106,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.75 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -284,7 +284,7 @@ sub DefaultParameters {
   ## Residue  profiles (position-analysis)
   $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
-  $main::param{profiles_strand} = "-2str"; push(@main::param_list, "profiles_strand");
+  $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
   @main::profiles_oligo_lengths = (1,2);
   $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
@@ -1040,7 +1040,7 @@ sub ClusterMotifs {
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,NdEucl,width,consensus";
+  $cmd .= " -return matrix_name,strand,offset,all_metrics,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
   $cmd .= "; text-to-html -i ".$main::outfile{motifs_disco_compa};
   $cmd .= " -o ".$main::outfile{motifs_disco_compa_html};
@@ -1129,7 +1129,7 @@ sub MotifsVersusReference {
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,width,consensus,aligned_matrices";
+  $cmd .= " -return matrix_name,strand,offset,all_metrics,width,consensus,alignments_1ton";
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref_prefix"};
 #  $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_ref_matrices"};
   $cmd .= "; text-to-html -i ".$main::outfile{"motifs_vs_ref"};
@@ -1173,7 +1173,7 @@ sub MotifsVersusDatabase {
     $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
     $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
     $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-    $cmd .= " -return matrix_name,strand,offset,Ncor,cor,SW,width,consensus,aligned_matrices";
+    $cmd .= " -return matrix_name,strand,offset,all_metrics,width,consensus,alignments_1ton";
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
 #    $cmd .= " -out_matrices ".$main::outfile{"motifs_vs_db_".$db_name."_matrices"};
     $cmd .= " ; text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
