@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.71 2010/08/26 16:32:54 jvanheld Exp $
+# $Id: compare-matrices,v 1.72 2010/08/27 04:51:26 jvanheld Exp $
 #
 ############################################################
 
@@ -75,13 +75,24 @@ one row per field (score, matrix descriptor, ...).
 HTML file presenting the comparison table in a user-friendly way. The
 clickable headers allow to re-order the table according to any column.
 
-=item [output_prefix_alignments.tab]
+=item [output_prefix_alignments_pairwise.tab]
 
-Tab-delimited text file containing the aligned matrices.
+Tab-delimited text file containing the shifted matrices resulting from
+pairwise alignments.
 
-=item [output_prefix_alignments.html]
+=item [output_prefix_alignments_pairwise.html]
 
-HTML file presentig the aligned matrices in a user-friendly way:
+HTML file presentig the pairwise alignments in a user-friendly way:
+motifs are presented as sequence logos.
+
+=item [output_prefix_alignments_1ton.tab]
+
+Tab-delimited text file containing the shifted matrices resulting from
+1-to-n alignments.
+
+=item [output_prefix_alignments_1ton.html]
+
+HTML file presentig the 1-to-n alignments in a user-friendly way:
 motifs are presented as sequence logos.
 
 
@@ -313,6 +324,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
+require "RSA2.cgi.lib";
 require "RSA.disco.lib";
 use RSAT::matrix;
 use RSAT::MatrixReader;
@@ -328,7 +340,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.71 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -379,7 +391,9 @@ package main;
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "rank",
-				    "alignments", ## Shifted matrices resulting from the alignments.
+				    "alignments_pairwise", ## Shifted matrices resulting from the pairwise alignments.
+				    "alignments_1ton", ## Shifted matrices resulting from the 1-to-N alignments.
+				    "alignments", ## Shifted matrices resulting from the alignments (pairwise and 1-to-N).
 				    "all", ## All supported output fields, including all metrics
 				);
   local %supported_return_field = ();
@@ -446,17 +460,12 @@ package main;
   ################################################################
   ## Check argument values
 
-  ## Incompatibilities between output modes
-  if (($return_field{alignments}) && ($comparison_mode eq "profiles")) {
-    &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'alignments' (output might reach unreasonable size).");
-  }
-
   ## Compute all metrics
   if ($return_field{all_metrics}) {
     foreach my $metric (@supported_metrics) {
       $return_field{$metric} = 1;
     }
-    $return_field{all_metrics} = 0;
+    delete($return_field{all_metrics});
   }
 
   ## Return all fields
@@ -464,7 +473,21 @@ package main;
     foreach my $field (@supported_return_fields) {
       $return_field{$field} = 1;
     }
-    $return_field{all} = 0;
+    delete($return_field{all});
+    delete($return_field{direction});
+  }
+
+  ## Alignments
+  if ($return_field{alignments}) {
+    $return_field{alignments_pairwise} = 1;
+    $return_field{alignments_1ton} = 1;
+    delete($return_field{alignments});
+  }
+
+  ## Incompatibilities between output modes
+  if ((($return_field{alignments_pairwise}) ||
+      ($return_field{alignments_1ton})) && ($comparison_mode eq "profiles")) {
+    &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'alignments' (output might reach unreasonable size).");
   }
 
 
@@ -563,34 +586,65 @@ package main;
     $main::outfile{output} = $main::outfile{output_prefix}.".tab";
     $main::outfile{output_html} = $main::outfile{output_prefix}.".html";
   }
-  if ($return_field{alignments}) {
+  if (($return_field{alignments_pairwise}) ||
+      ($return_field{alignments_1ton})) {
     &RSAT::error::FatalError("The option -return alignments requires to specify an output prefix (option -o).")
       unless ($main::outfile{output_prefix});
-    $main::outfile{alignments} = $main::outfile{output_prefix}."_alignments.tab";
-    $main::outfile{alignments_html} = $main::outfile{output_prefix}."_alignments.html";
-  }
 
-  $main::out = &OpenOutputFile($main::outfile{output});
-  if ($main::outfile{alignments}) {
-    $main::out_matrices = &OpenOutputFile($main::outfile{alignments});
+    ## Pariwise alignments
+    if ($return_field{alignments_pairwise}) {
+      $main::outfile{alignments_pairwise} = $main::outfile{output_prefix}."_alignments_pairwise.tab";
+      $main::outfile{alignments_pairwise_html} = $main::outfile{output_prefix}."_alignments_pairwise.html";
 
-    ## Open the file for the HTML index of aligned matrices
-    $main::outfile{alignments_html} = $main::outfile{alignments};
-    $main::outfile{alignments_html} =~ s/\.tab$//;
-    $main::outfile{alignments_html} .= ".html";
-    $main::out_matrices_html = &OpenOutputFile($main::outfile{alignments_html});
-    print $main::out_matrices_html "<html>\n";
-    my $title = &RSAT::util::ShortFileName($main::outfile{alignments});
-    $title =~ s/\.tab//;
-    print $main::out_matrices_html "<head><title>".$title."</title></head>\n";
-    print $main::out_matrices_html "<body>\n";
-    print $main::out_matrices_html "<h1>".$title."</h1>\n";
+      ## Text output stream for pairwise alignments
+      $main::alignments_pairwise = &OpenOutputFile($main::outfile{alignments_pairwise});
+
+      ## Open the file for the HTML index of aligned matrices
+      $main::outfile{alignments_pairwise_html} = $main::outfile{alignments_pairwise};
+      $main::outfile{alignments_pairwise_html} =~ s/\.tab$//;
+      $main::outfile{alignments_pairwise_html} .= ".html";
+      $main::alignments_pairwise_html = &OpenOutputFile($main::outfile{alignments_pairwise_html});
+      print $main::alignments_pairwise_html "<html>\n";
+      my $title = "Pairwise alignments";
+#      $title .= " ".&RSAT::util::ShortFileName($main::outfile{alignments_pairwise});
+#      $title =~ s/\.tab//;
+      print $main::alignments_pairwise_html "<head><title>".$title."</title></head>\n";
+#      print $main::alignments_pairwise_html &sorttable_script();
+      print $main::alignments_pairwise_html "<body>\n";
+      print $main::alignments_pairwise_html "<h1>".$title."</h1>\n";
+    }
+
+    ## 1-to-N alignments
+    if ($return_field{alignments_1ton}) {
+      $main::outfile{alignments_1ton} = $main::outfile{output_prefix}."_alignments_1ton.tab";
+      $main::outfile{alignments_1ton_html} = $main::outfile{output_prefix}."_alignments_1ton.html";
+
+      ## Text output stream for 1ton alignments
+      $main::alignments_1ton = &OpenOutputFile($main::outfile{alignments_1ton});
+
+      ## Open the file for the HTML index of aligned matrices
+      $main::outfile{alignments_1ton_html} = $main::outfile{alignments_1ton};
+      $main::outfile{alignments_1ton_html} =~ s/\.tab$//;
+      $main::outfile{alignments_1ton_html} .= ".html";
+      $main::alignments_1ton_html = &OpenOutputFile($main::outfile{alignments_1ton_html});
+      print $main::alignments_1ton_html "<html>\n";
+      my $title = "One-to-n alignments";
+#      $title .= &RSAT::util::ShortFileName($main::outfile{alignments_1ton});
+#      $title =~ s/\.tab//;
+      print $main::alignments_1ton_html "<head><title>".$title."</title></head>\n";
+      print $main::alignments_1ton_html &sorttable_script();
+      print $main::alignments_1ton_html "<body>\n";
+      print $main::alignments_1ton_html "<h1>".$title."</h1>\n";
+    }
 
     ## Define directory for the logos
-    $main::outfile{logo_dir} = $main::outfile{alignments};
+    $main::outfile{logo_dir} = $main::outfile{output}."_alignments";
     $main::outfile{logo_dir} =~ s/\.tab$//;
     $main::outfile{logo_dir} .= "_logos";
-  }
+   }
+
+  $main::out = &OpenOutputFile($main::outfile{output});
+
 
   ################################################################
   ## Read input matrices
@@ -1189,7 +1243,8 @@ package main;
 
 	  ## Store all scores of the match in a separate hash table
 	  ## with a wider scope for furtehr printing in the alignments
-	  if ($return_field{alignments}) {
+	  if (($return_field{alignments_pairwise}) ||
+	      ($return_field{alignments_1ton})) {
 	    foreach my $metric (@supported_metrics) {
 	      if ($return_field{$metric}) {
 		$match_score{$compa_id}{$metric} = $score{$metric}{$compa_id};
@@ -1242,13 +1297,13 @@ package main;
 
   ################################################################
   ## Pairwise matrix alignments
-  if ($return_field{alignments}) {
+  if ($return_field{alignments_pairwise}) {
     &PairwiseAlignments();
   }
 
   ################################################################
   ## One-to-n matrix alignments
-  if ($return_field{alignments}) {
+  if ($return_field{alignments_1ton}) {
     &OneToNAlignments();
   }
 
@@ -1267,12 +1322,20 @@ package main;
   }
 
 
-  if ($main::outfile{alignments}) {
-    close $main::out_matrices;
-    print $main::out_matrices_html "</body>";
-    print $main::out_matrices_html "</html>";
-    close $main::out_matrices_html;
+  if ($main::outfile{alignments_pairwise}) {
+    close $main::alignments_pairwise;
+    print $main::alignments_pairwise_html "</body>";
+    print $main::alignments_pairwise_html "</html>";
+    close $main::alignments_pairwise_html;
   }
+
+  if ($main::outfile{alignments_1ton}) {
+    close $main::alignments_1ton;
+    print $main::alignments_1ton_html "</body>";
+    print $main::alignments_1ton_html "</html>";
+    close $main::alignments_1ton_html;
+  }
+
   exit(0);
 }
 
@@ -1282,7 +1345,7 @@ package main;
 
 
 ################################################################
-## Print matrix alignments
+## Print pairwise matrix alignments
 sub PairwiseAlignments {
   &RSAT::message::TimeWarn("Computing pairwise matrix alignments") if ($main::verbose >= 2);
   foreach my $compa_id (@sorted_match_id) {
@@ -1317,58 +1380,56 @@ sub PairwiseAlignments {
 #	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
       }
     }
-    print $out_matrices "\n; ", $header_row."\n";
-    print $out_matrices join ("\t", ";pos", "|", 1..$merged_matrix->ncol()), "\n";
+    print $alignments_pairwise "\n; ", $header_row."\n";
+    print $alignments_pairwise join ("\t", ";pos", "|", 1..$merged_matrix->ncol()), "\n";
 
     ## Open a table in the HTML file
-    print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
-    print $out_matrices_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
+    print $alignments_pairwise_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
+    print $alignments_pairwise_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
 
-    if ($return_field{alignments}) {
+    ## Generate a string to display the first matrix in text output file
+    my $matrix1_string = join("\t", "; ".$desc1,
+			      "col=".$matrix1->ncol(),
+			      "strand1=D",
+			      "shift1=".$matrix1_shifted->get_attribute("shift"),
+			      $matrix1_shifted->get_attribute("consensus.IUPAC"));
+    $matrix1_string .= "\n";
+    $matrix1_string .= $matrix1_shifted->toString(format=>'tab', type=>"counts");
+    print $alignments_pairwise $matrix1_string;
 
-      ## Generate a string to display the first matrix in text output file
-      my $matrix1_string = join("\t", "; ".$desc1,
-				"col=".$matrix1->ncol(),
-				"strand1=D",
-				"shift1=".$matrix1_shifted->get_attribute("shift"),
-				$matrix1_shifted->get_attribute("consensus.IUPAC"));
-      $matrix1_string .= "\n";
-      $matrix1_string .= $matrix1_shifted->toString(format=>'tab', type=>"counts");
-      print $out_matrices $matrix1_string;
+    ## Generate a string to display the second matrix in text output file
+    my $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC");
+    my $matrix2_string = join("\t", "; ".$desc2,
+			      "col=".$matrix2->ncol(),
+			      "strand2=".$strand,
+			      "shift2=".$matrix2_shifted->get_attribute("shift"),
+			      $consensus2);
+    $matrix2_string .= "\n";
+    $matrix2_string .= $matrix2_shifted->toString(format=>'tab', type=>"counts");
+    print $alignments_pairwise $matrix2_string;
 
-      ## Generate a string to display the second matrix in text output file
-      my $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC");
-      my $matrix2_string = join("\t", "; ".$desc2,
-				"col=".$matrix2->ncol(),
-				"strand2=".$strand,
-				"shift2=".$matrix2_shifted->get_attribute("shift"),
-				$consensus2);
-      $matrix2_string .= "\n";
-      $matrix2_string .= $matrix2_shifted->toString(format=>'tab', type=>"counts");
-      print $out_matrices $matrix2_string;
+    ## Generate a sequence logo for the HTML output file
+    my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
+    $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+    my $logo1_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo1_file.".png");
+    $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+    print $alignments_pairwise_html "<tr>\n";
+    print $alignments_pairwise_html "<td>".$desc1."</td>\n";
+    print $alignments_pairwise_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
+    print $alignments_pairwise_html "<td><pre>".$matrix1_string."</pre></td>\n";
+    print $alignments_pairwise_html "</tr>\n";
 
-      ## Generate a sequence logo for the HTML output file
-      my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
-      $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
-      my $logo1_link = &RSAT::util::RelativePath($main::outfile{alignments_html}, $logo1_file.".png");
-      $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
-      print $out_matrices_html "<tr>\n";
-      print $out_matrices_html "<td>".$desc1."</td>\n";
-      print $out_matrices_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
-      print $out_matrices_html "<td><pre>".$matrix1_string."</pre></td>\n";
-      print $out_matrices_html "</tr>\n";
+    ## Generate a sequence logo for the HTML output file
+    my $logo2_file = $main::outfile{logo_dir}."/".$matrix2_shifted->get_attribute("id");
+    $matrix2_shifted->makeLogo($logo2_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
+    my $logo2_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo2_file.".png");
+    $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+    print $alignments_pairwise_html "<tr>\n";
+    print $alignments_pairwise_html "<td>".$desc2."</td>\n";
+    print $alignments_pairwise_html "<td><a href='".$logo2_link."'><img border=0 src='".$logo2_link."'></a></td>\n";
+    print $alignments_pairwise_html "<td><pre>".$matrix2_string."</pre></td>\n";
+    print $alignments_pairwise_html "</tr>\n";
 
-      ## Generate a sequence logo for the HTML output file
-      my $logo2_file = $main::outfile{logo_dir}."/".$matrix2_shifted->get_attribute("id");
-      $matrix2_shifted->makeLogo($logo2_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
-      my $logo2_link = &RSAT::util::RelativePath($main::outfile{alignments_html}, $logo2_file.".png");
-      $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
-      print $out_matrices_html "<tr>\n";
-      print $out_matrices_html "<td>".$desc2."</td>\n";
-      print $out_matrices_html "<td><a href='".$logo2_link."'><img border=0 src='".$logo2_link."'></a></td>\n";
-      print $out_matrices_html "<td><pre>".$matrix2_string."</pre></td>\n";
-      print $out_matrices_html "</tr>\n";
-    }
 
     if ($return_field{merged_matrices}) {
 
@@ -1379,22 +1440,22 @@ sub PairwiseAlignments {
 				      $merged_matrix->get_attribute("consensus.IUPAC"));
       $merged_matrix_string .= "\n";
       $merged_matrix_string .= $merged_matrix->toString(format=>'tab', type=>"counts");
-      print $out_matrices $merged_matrix_string;
+      print $alignments_pairwise $merged_matrix_string;
 
       ## Generate a sequence logo for the merged matrix
       my $logo_file = $main::outfile{logo_dir}."/".$id_align;
       $merged_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", 0);
-      my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_html}, $logo_file.".png");
+      my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo_file.".png");
       $merged_matrix_string =~ s|//\n||mg;
-      print $out_matrices_html "<tr>";
-      print $out_matrices_html "<td>Alignment</td>";
-      print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
-      print $out_matrices_html "<td><pre>".$merged_matrix_string."</pre></td>";
-      print $out_matrices_html "</tr>\n";
+      print $alignments_pairwise_html "<tr>";
+      print $alignments_pairwise_html "<td>Alignment</td>";
+      print $alignments_pairwise_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+      print $alignments_pairwise_html "<td><pre>".$merged_matrix_string."</pre></td>";
+      print $alignments_pairwise_html "</tr>\n";
     }
 
     ## Close the alignment table
-    print $out_matrices_html "</table>\n";
+    print $alignments_pairwise_html "</table>\n";
 
   }				## if
 }
@@ -1482,11 +1543,11 @@ sub PrintAlignedMatrices {
   my $first_matrix = $shifted_matrices[0];
   my $id1 = $first_matrix->get_attribute("id");
   my $header_row = join ("\t", "One-to-n matrix alignment; reference matrix: ".$id1, "; ".scalar(@shifted_matrices)." matrices", "; sort_field=".$sort_field);
-  print $out_matrices "; ", $header_row, "\n";
-  print $out_matrices_html "<h2>", $header_row, "</h2>\n";
+  print $alignments_1ton "; ", $header_row, "\n";
+  print $alignments_1ton_html "<h2>", $header_row, "</h2>\n";
 
   ## Open a table in the HTML file and print column headers
-  print $out_matrices_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
+  print $alignments_1ton_html "<p><table class='sortable' border='1' cellpadding='5' cellspacing='1'>\n";
   my $html_header = "<th>Matrix name</th>";
   $html_header .= "<th>Aligned logos</th>";
   my @scores_to_print = ();
@@ -1498,7 +1559,7 @@ sub PrintAlignedMatrices {
     }
   }
   $html_header .= "<th>Aligned matrices</th>\n";
-  print $out_matrices_html "<tr>".$html_header."</tr>";
+  print $alignments_1ton_html "<tr>".$html_header."</tr>";
 
   ## Print the result
   my $m=0;
@@ -1537,22 +1598,22 @@ sub PrintAlignedMatrices {
     }
     $matrix_string .= $match_scores."\n";
     $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"counts");
-    print $out_matrices $matrix_string;
+    print $alignments_1ton $matrix_string;
 
     ## Generate a sequence logo for the HTML output file
     my $logo_file = $main::outfile{logo_dir}."/".$shifted_matrix->get_attribute("id");
     $shifted_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
-    my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_html}, $logo_file.".png");
+    my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_1ton_html}, $logo_file.".png");
     $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
-    print $out_matrices_html "<tr>\n";
-    print $out_matrices_html "<td>".$id_name."</td>\n";
-    print $out_matrices_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
-    print $out_matrices_html $match_scores_html;
-    print $out_matrices_html "<td><pre>".$matrix_string."</pre></td>\n";
-    print $out_matrices_html "</tr>\n";
+    print $alignments_1ton_html "<tr>\n";
+    print $alignments_1ton_html "<td>".$id_name."</td>\n";
+    print $alignments_1ton_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+    print $alignments_1ton_html $match_scores_html;
+    print $alignments_1ton_html "<td><pre>".$matrix_string."</pre></td>\n";
+    print $alignments_1ton_html "</tr>\n";
   }
-  print $out_matrices ";\n";
-  print $out_matrices_html "</table></p>\n";
+  print $alignments_1ton ";\n";
+  print $alignments_1ton_html "</table></p>\n";
 }
 
 ################################################################
