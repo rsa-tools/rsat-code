@@ -672,14 +672,14 @@ sub SeqBoxMQ {
   print "<b><a href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
   print $query->popup_menu(-name=>'permutation'.$seq_num,
 			   -Values=>[0,1,2],
-			   -default=>$default{output_format});
+			   -default=>$default{perm});
   print "<BR>\n";
   print"</td>";
   print "<td>";
   print "<BR>\n";
   print "<B><A HREF='help.convert-matrix.html#permutations'>&nbsp;&nbsp;&nbsp;&nbsp;Tag for this data set</A></b>\n";
   print $query->textfield(-name=>'tag'.$seq_num,
-			  -default=>$default{perm},
+			  -default=>$default{'tag'.$seq_num},
 			  -size=>15);
   print"</td>";
   print "</tr></table>";
