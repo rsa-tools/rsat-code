@@ -114,7 +114,7 @@
       <option value='none'> No layout
       <option selected value='spring'>Spring embedding
       <option value='random'> Random
-    </select> (only valid for GML output) <br> "
+    </select><br> "
       );
 
 /*  echo ("
