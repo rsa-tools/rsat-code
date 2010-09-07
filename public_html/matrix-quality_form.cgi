@@ -32,7 +32,6 @@ $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "meme";
 $default{kfold}="0";
-
 $default{permutation1} = "1";
 $default{permutation2} = "1";
 $default{tag1} = "sequence_set1";
