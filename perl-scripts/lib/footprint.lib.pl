@@ -227,7 +227,7 @@ sub GetOutfilePrefix {
 	  || ($outfile{prefix} eq "") ){
 	&RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
     }
-    
+    #die $outfile{prefix};
     if ($sep_genes)
     {
 	if ($query_prefix) {
@@ -244,8 +244,25 @@ sub GetOutfilePrefix {
 	    $local_prefix = join("/", $output_dir, $output_file_prefix);
 		  &RSAT::message::Info("Automatic definition of the output prefix", $local_prefix) if ($main::verbose >= 2);
 	} 
-    }   
-    
+    } 
+    else {
+	#if ($query_prefix) {
+	    my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
+	    my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
+	    if ($bg_model) {
+		$output_dir .= "/".$bg_model;
+		$output_file_prefix .= "_".$bg_model;
+	    }
+	    if ($infer_operons) {
+		$output_dir .= "_operons";
+		$output_file_prefix .= "_operons";
+	    }
+	    $local_prefix = join("/", $output_dir, $output_file_prefix);
+		  &RSAT::message::Info("Automatic definition of the output prefix", $local_prefix) if ($main::verbose >= 2);
+	#} 
+	
+    }
+    #die $local_prefix;
     return ($local_prefix);
 }
 
