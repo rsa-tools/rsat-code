@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.60 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: compare-classes,v 1.61 2010/09/09 18:17:37 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -424,6 +424,8 @@ if ($dot_file) {
     $dot = $graph->to_dot();
     print $dot_handle $dot;
 }
+
+&RSAT::message::TimeWarn("Job done") if ($main::verbose >= 2);
 
 exit(0);
 
@@ -1522,7 +1524,7 @@ sub PrintHeader {
 ## Print the result
 sub PrintResult {
   &RSAT::message::TimeWarn("Printing the result") if ($main::verbose >= 2);
-  
+
   ################################################################
   ## Print one row per association between a reference and a query class
   if (scalar(keys(%return_fields)) >= 1) {
