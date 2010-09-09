@@ -919,7 +919,12 @@ sub OccurrenceSig {
   &IndexOneFile("occ sig", $outfile{occ_sig}) if ($create_index);
   return(0) unless ($task{occ_sig});
   &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 2);
-  &CheckDependency("occ_sig", "purged");
+  if ($main::no_purge){
+      &CheckDependency("occ_sig", "seq");
+  }
+  else {
+      &CheckDependency("occ_sig", "purged");
+  }
   my $cmd = "matrix-scan";
   $cmd .= $ms_parameters;
   $cmd .= " -return distrib,occ_proba,rank -sort_distrib";
