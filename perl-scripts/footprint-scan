@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.38 2010/09/09 00:04:24 amedina Exp $
+# $Id: footprint-scan,v 1.39 2010/09/09 00:36:22 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -531,7 +531,7 @@ crer_pval
   ## Analyze query genes separately or altogether
   if ($sep_genes) {
       
-      $outfile{synthesis} = join( "/", "footprints", $taxon, $organism_name,
+      $outfile{synthesis} = join( "/",$main::outfile{prefix}, "footprints", ($taxon || "org_list"), $organism_name,
 				  join ("_", $matrix_suffix,  $organism_name, $taxon ,"synthesis"));
       $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
       $outfile{synthesis_html} = $outfile{synthesis}.".html";
