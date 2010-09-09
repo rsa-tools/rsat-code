@@ -70,11 +70,60 @@ sub CheckFootprintParameters {
   }
   &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 1);
 
-  ## Check taxon
-  &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
-    unless ($taxon);
-  my @organisms = &CheckTaxon($taxon);
+  ## Check Reference taxon or org_list
+    &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
+	unless ($main::taxon || $main::orglist_file);
+    &RSAT::error::FatalError("-taxon and -org_list option are mutually exclusive")
+	if (($main::taxon) && ($main::orglist_file));
 
+  ## Check option -no_purge and -org_list
+  if ($main::no_purge){
+ &RSAT::error::FatalError("-no_purge option can only be used if -org_list option is active")
+	unless ($main::orglist_file) ;
+  }
+
+  
+#   &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
+#     unless ($taxon);
+
+
+#check if there is is at least one organism for that Taxon
+   my @organisms = &CheckTaxon($taxon) if $main::taxon ;
+
+ ##open orglist
+    if ($main::orglist_file){
+	 ($main::orglist) = &OpenInputFile($main::orglist_file);
+	while (<$main::orglist>) {
+	    chomp();
+	    s/\r/\n/g; ## Suppress Windows-specific carriage return
+	    next if /^;/; ## Comment line
+	    next if /^\#/; ## Header line
+	    next if /^\--/; ## SQL comment line
+	    next unless /\S/; ## Empty line
+	    my ($query_org) = split "\t";
+	    $query_org = &trim($query_org); ## Remove leading and trailing spaces
+	    $main::query_orgs{$query_org}=1;
+	}
+	close $main::orglist if ($main::orglist_file);
+	&RSAT::error::FatalError(join("\t", "The organism file should contain at least one valid organism name.",
+				      $main::orglist_file),
+	    ) unless (%main::query_orgs) ;
+    }
+
+  if(%main::query_orgs){
+      foreach my $org (keys (%main::query_orgs)) {
+	  if ($supported_organism{$org}){
+	      push @ref_organisms, $org;
+	  }
+      }
+  }
+      #print join ("\t",keys (%main::query_orgs));
+  #print join ("\t",(@ref_organisms))."supported";
+  &RSAT::error::FatalError(join("\t", "There is no supported organism in the organism list ",
+				    $main::orglist_file),
+			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
+      ) if (($main::orglist_file) && (scalar(@ref_organisms) == 0));
+  
   ## Check organism
   &RSAT::error::FatalError("You must specify a organism (option -org)")
     unless ($organism_name);
@@ -174,27 +223,30 @@ sub GetQueryPrefix {
 ## If not specified by the user, define it automatically
 ## If genes are to be analyzed separately, also define output prefix automatically
 sub GetOutfilePrefix {
-  if (($sep_genes)
-      || (!defined($outfile{prefix}))
-      || ($outfile{prefix} eq "")) {
-    if ($query_prefix) {
-      my $output_dir = join("/", "footprints", $taxon, $organism_name, $query_prefix);
-      my $output_file_prefix = join ("_", $query_prefix, $organism_name, $taxon);
-      if ($bg_model) {
-	$output_dir .= "/".$bg_model;
-	$output_file_prefix .= "_".$bg_model;
-      }
-      if ($infer_operons) {
-	$output_dir .= "_operons";
-	$output_file_prefix .= "_operons";
-      }
-      $outfile{prefix} = join("/", $output_dir, $output_file_prefix);
-      &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 2);
-    } else {
-      &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
+    if  ( (!defined($main::outfile{prefix}))
+	  || ($outfile{prefix} eq "") ){
+	&RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
     }
-  }
-  return ($outfile{prefix});
+    
+    if ($sep_genes)
+    {
+	if ($query_prefix) {
+	    my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
+	    my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
+	    if ($bg_model) {
+		$output_dir .= "/".$bg_model;
+		$output_file_prefix .= "_".$bg_model;
+	    }
+	    if ($infer_operons) {
+		$output_dir .= "_operons";
+		$output_file_prefix .= "_operons";
+	    }
+	    $local_prefix = join("/", $output_dir, $output_file_prefix);
+		  &RSAT::message::Info("Automatic definition of the output prefix", $local_prefix) if ($main::verbose >= 2);
+	} 
+    }   
+    
+    return ($local_prefix);
 }
 
 
@@ -229,7 +281,7 @@ sub InitOutput {
   }
   $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab"; ##
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta";
-  $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta";
+  $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
 }
 
 
@@ -297,8 +349,37 @@ Reference taxon, in which orthologous genes have to be collected.
 =cut
   } elsif ($arg eq "-taxon") {
     $main::taxon = shift(@arguments);
+  
 
+ ## Organism lis
+=pod
 
+=item	B<-org_list orgnisms_list_file>
+
+This option gives the posibility to analyse a given set of organisms
+instead of a taxon. This way orthologs for a gene are only searched
+on a preselected list of organisms.
+
+The file format is one organisms per line, the comment char is ";"
+
+=cut
+  } elsif ($arg eq "-org_list") {
+    $main::orglist_file = shift(@arguments);
+
+## No Purge
+=pod
+
+=item	B<-no_purge>
+
+This option can only be used combined with the -org_list option, this
+gives the posibility to analyse a given set of sequences managing
+sequence redundancy using a list of "no redundant" organisms.
+
+The file format is one organisms per line, the comment char is ";"
+
+=cut
+  } elsif ($arg eq "-no_purge") {
+    $main::no_purge = 1;
     ## Query gene
 =pod
 
@@ -388,6 +469,7 @@ prefix.
 =cut
   } elsif ($arg eq "-o") {
     $main::outfile{prefix} = shift(@arguments);
+    
 
 
 =pod
@@ -744,7 +826,11 @@ sub GetOrthologs {
   if ($main::tf_ortho_file){
       $cmd .= " -org_list ". $main::tf_ortho_file ;
       &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::tf_ortho_file) if ($main::verbose >= 2);
-  }else{   
+  }elsif ($main::orglist_file){
+      $cmd .= " -org_list ". $main::orglist_file ;
+      &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::orglist_file ) if ($main::verbose >= 2);
+  }
+  else{   
       $cmd .= " -taxon ".$taxon ;
   }
   $cmd .= " -return query_name,query_organism -return ident";
@@ -821,7 +907,11 @@ sub OccurrenceSig {
   $cmd .= $ms_parameters;
   $cmd .= " -return distrib,occ_proba,rank -sort_distrib";
   #  $cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
-  $cmd .= " -i ".$outfile{purged};
+  if ($main::no_purge){
+      $cmd .= " -i ".$outfile{seq};
+  }else{
+      $cmd .= " -i ".$outfile{purged};
+  }
   $cmd .= " -o ".$outfile{occ_sig};
   $cmd .= $occ_sig_opt;
   &one_command($cmd);
