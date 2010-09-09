@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.96 2010/05/30 14:37:06 rsat Exp $
+# $Id: install-organism,v 1.97 2010/09/09 17:37:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -475,20 +475,21 @@ sub IntergenicSegments {
     my @types = ();
     push @types, "gene";
     push @types, "intergenic";
-	    
+
     foreach my $seq_type (@types) {
 	my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}_segments.wc";
 
 	#### draw sequence length distributions
 	&SeqLengthDistribution($seq_file, "wc", $seq_type, 50) if ($task{seq_len_distrib});
-	
+
 	#### compress sequence file
-	$command = "gzip -f $seq_file";
-	&doit($command, $dry_run, $die_on_error, $verbose);
+	if (-e $seq_file) {
+	  $command = "gzip -f $seq_file";
+	  &doit($command, $dry_run, $die_on_error, $verbose);
+	}
 
 	#### purge sequences
 	&PurgeSequences($seq_file) if ($purged_frequencies);
-	
     }
 
     chdir $dir{main};
