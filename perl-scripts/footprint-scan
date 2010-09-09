@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.37 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: footprint-scan,v 1.38 2010/09/09 00:04:24 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -309,7 +309,7 @@ package main;
   local $occ_sig_graph_opt = "";
   local $scan_opt = "";
   local $map_opt = "";
-
+  $main::no_purge=0;
 
   #$bg_format="oligo";
 
@@ -1053,7 +1053,8 @@ sub RunFootprintScan {
 ################################################################
 ## Initialize output directory + output files
     local $query_prefix = &GetQueryPrefix(); ## Automatic name for the query gene file
-    $outfile{prefix} = &GetOutfilePrefix();
+    local $outfile{prefix} = &GetOutfilePrefix();
+    #die $outfile{prefix} ;
     &InitOutput();
 
 ## Output files for matrix-scan
@@ -1102,7 +1103,7 @@ sub RunFootprintScan {
 
 ################################################################
 ## Purge sequences
-    &PurgeOrthoSeq();
+    &PurgeOrthoSeq() unless  ($main::no_purge) ;
 
 ################################################################
 ## Scan the promoters of one group of orhtologous genes with one
