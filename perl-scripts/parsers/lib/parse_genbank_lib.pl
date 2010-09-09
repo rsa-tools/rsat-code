@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.41 2010/05/29 17:38:47 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.42 2010/09/09 15:44:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -1401,7 +1401,7 @@ sub ExtractCrossReferencesForFeature {
 
       #### accept GI as synonym
       $feature->push_attribute("names", $gi);
-      $feature->set_attribute("GI", $gi);
+      $feature->force_attribute("GI", $gi);
 
     } elsif ($xref =~ /GeneID:/) {
       $GeneID = $';  ##'
