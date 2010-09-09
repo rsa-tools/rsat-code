@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.39 2010/05/30 06:03:38 jvanheld Exp $
+# $Id: footprint-discovery,v 1.40 2010/09/09 01:24:23 amedina Exp $
 #
 ############################################################
 
@@ -183,7 +183,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -295,7 +295,7 @@ sub RunFootprintDisco {
   ################################################################
   ## Initialize output directory + output files
   local $query_prefix = &GetQueryPrefix();
-  $outfile{prefix} = &GetOutfilePrefix();
+  local $outfile{prefix} = &GetOutfilePrefix();
 #  $outfile{prefix} .= "_".$bg_model;
   &InitOutput();
 
