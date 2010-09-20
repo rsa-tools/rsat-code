@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.38 2010/05/30 14:37:37 rsat Exp $
+# $Id: install_genomes.mk,v 1.39 2010/09/20 20:39:45 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -158,6 +158,12 @@ FUNGI= ${NCBI_FUNGI} ${OTHER_FUNGI}
 list_fungi:
 	@echo "Fungi"
 	@echo "${FUNGI}"
+
+### Pare fungal genomes from NCBI
+parse_ncbi_fungi:
+	@for fungus in ${NCBI_FUNGI}; do				\
+		${MAKE} install_one_fungus FUNGUS=$${fungus} INSTALL_TASK=parse,config;	\
+	done
 
 ### Install all fungi genomes on RSAT
 install_all_fungi:
