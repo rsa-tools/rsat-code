@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.23 2010/05/19 09:36:19 rsat Exp $
+# $Id: server.mk,v 1.24 2010/09/20 20:50:49 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -32,12 +32,12 @@ MAMAZE = jvanheld@164.15.109.52:rsa-tools
 MERLIN = jvanheld@merlin.bigre.ulb.ac.be:rsa-tools
 #FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
 CCG = jvanheld@kayab.ccg.unam.mx:rsa-tools
-PORTPIN = rsat@portpin.univ-mrs.fr:rsa-tools
+TAGC = jvanheld@139.124.66.43:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
 MILLIWAYS=jvanheld@milliways.bi.up.ac.za:rsa-tools
-MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${TORONTO} ${CCG}  ${PORTPIN}
-LOG_SERVERS= ${LIV} ${TORONTO} ${CCG} ${MILLIWAYS} ${RSAT_SERVER}  ${PORTPIN}
+MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${TORONTO} ${CCG} 
+LOG_SERVERS= ${LIV} ${CCG} ${MILLIWAYS} ${RSAT_SERVER} ${TORONTO} 
 
 ################################################################
 ## distribution
@@ -109,10 +109,12 @@ rsync_archives:
 #### from mirrors to brol
 ################################################################
 rsync_logs:
+	rsync -ruptvl -e 'ssh -p 24222'  jvanheld@139.124.66.43:rsa-tools/logs/log-file_* logs/
 	@for mirror in ${LOG_SERVERS} ; do					\
 		echo "${RSYNC} $${mirror}/logs/log-file_* logs/" ;	\
 		${RSYNC} $${mirror}/logs/log-file_* logs/ ;		\
 	done
+
 
 rsync_config:
 	@for mirror in ${MIRROR_SERVERS} ; do \
