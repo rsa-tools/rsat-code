@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.49 2010/02/27 00:31:15 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.50 2010/09/24 07:36:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -148,22 +148,29 @@ print <<EndText;
   http://rsat.ulb.ac.be/rsat/</A>
   </TD>
 
+  <td>
+  <A HREF="http://192.168.3.239/rsat/" target="_top">
+  <B>Brussels (2) - Belgium</B><BR>
+  <IMG SRC="images/Atomium_icon_80.png" HEIGHT=80 BORDER=0><BR>
+  http://192.168.3.239/rsat/</A>
+  </TD>
+
   <TD ALIGN=CENTER>
   <A HREF="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
   <B>Cuernavaca - Mexico</B><BR>
   <IMG SRC="images/zapata.jpg" HEIGHT=80 BORDER=0><BR>
   http://embnet.ccg.unam.mx/rsa-tools/</A>
   </TD>
-  
+
+</tr>
+<tr>
+
   <TD ALIGN=CENTER>
   <A HREF="http://liv.bmc.uu.se/rsa-tools/" target="_top">
   <B>Uppsala - Sweden</B><BR>
   <IMG SRC="images/uppsala_lcb.jpg" HEIGHT=80 BORDER=0><BR>
   http://liv.bmc.uu.se/rsa-tools/</A>
   </TD>
-
-</tr>
-<tr>
 
   <td align=center>
   <a href='http://tagc.univ-mrs.fr/rsa-tools/' target='_top'>
@@ -191,16 +198,15 @@ print <<EndText;
   </TD>
 
 
+</tr><tr>
+
+
   <td align=center>
   <a href="http://www.bi.up.ac.za/rsa-tools/" target="_top">
   <B>Pretoria - South-Africa</b><br>
   <img src="images/pretoria_icon.jpg" height=80 border=0><br>
   http://www.bi.up.ac.za/rsa-tools/</a>
   </td>
-
-</tr><tr>
-
-  <td></td>
 
   <td align=center>
   <A HREF="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
