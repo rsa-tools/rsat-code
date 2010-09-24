@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.50 2010/09/24 07:36:25 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.51 2010/09/24 16:30:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -26,13 +26,13 @@ print $query->start_html(-class => "info",
                              		-media => 'screen' });
 
 print "<blockquote>";
-  
+
 print <<EndText;
 
 <table class = 'title' cellpadding=10 width = 100%>
     <tr>
-    
-    
+
+
     <td align=center valign = top>
     <a href="http://www.bigre.ulb.ac.be" target=_blank>
     <img src="images/bigre_logo.png" alt="BiGRE lab" border=1 height=75>
@@ -41,12 +41,12 @@ print <<EndText;
     BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
     </font>
     </td>
-    
+
     <td align=center>
     <H1>Regulatory Sequence Analysis Tools</H1>
     </td>
-    
-    
+
+
     <td align=center valign = top width="160">
     <a target=_blank href="http://embnet.ccg.unam.mx/">
     <img src="images/ccg_logo_lr.jpg" alt="CCG" border=0  width=75></a>
@@ -54,45 +54,45 @@ print <<EndText;
     <font color="#006600" size=-2>Laboratorio de Biologia Computacional<br>UNAM/CCG
     </FONT>
     </TD>
-    
+
     </TR>
     </TABLE>
     <div class = 'serverlist'>
-    
+
     <table border=0 cellspacing=3 cellpadding=7>
     <TR>
     <TD><A HREF="tool_map.html"><B>
     Tool Map</B></A></TD>
-    
+
     <TD><A HREF="intro.html"><B>
     Introduction</B></A></TD>
-    
+
     <TD><A HREF="http://www.bigre.ulb.ac.be/forums/"><B>
     Forum</B></A><font color='red'> (New)</font></TD>
-    
+
     <TD><A HREF="tutorials/tutorials.html"><B>
     Tutorials</B></A></TD>
-    
+
     <TD><A HREF="publications.html"><B>
     Publications</B></A></TD>
-    
+
     <TD><A HREF="credits.html"><B>
     Credits</B></A></TD>
-    
+
     <TD><A HREF="data/"><B>
     Data</B></A></TD>
-    
+
     <TD><A HREF="links.html"><B>
     Links</B></A></TD>
-    
+
     <TD><A HREF="distrib/index.html"><B>
     Download</B></A></TD>
-    
+
     </tr>
     </table>
     </div>
-    
-    <table  cellpadding=10> 
+
+    <table  cellpadding=10>
     <tr >
     <td>
     <P>
@@ -101,36 +101,36 @@ print <<EndText;
     (<B>RSAT</B>). This web site provides a series of modular computer
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.
-    
+
     <ul>
      <li> <font color='red'>Check the latest news in </font> <a
     href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our forum </b></a></li>
 
 	<li> Stay Tuned !! RSS feed to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
-    
+
 
     <li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li>
 	</ul>
 
     <P> This website is free and open to all users.
-   </p> 
+   </p>
 </td>
 
-    
+
     <td>
     <table class='title' cellpadding=0 cellspacing=0><tr><td align = 'center'>
     <h3>Warnings<br><br>
-   
+
     <a href=warnings.html>Vertebrate genomes</a>
-    
+
     </h3>
     </table>
     </td>
-    
+
     </tr>
     </table>
-    
-    
+
+
 <hr  align='left'></hr>
 <div id = 'serverlist'>
 <table class='serverlist'>
@@ -149,10 +149,10 @@ print <<EndText;
   </TD>
 
   <td>
-  <A HREF="http://192.168.3.239/rsat/" target="_top">
+  <A HREF="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
   <B>Brussels (2) - Belgium</B><BR>
   <IMG SRC="images/Atomium_icon_80.png" HEIGHT=80 BORDER=0><BR>
-  http://192.168.3.239/rsat/</A>
+  http://wwwsup.scmbb.ulb.ac.be/rsat/</A>
   </TD>
 
   <TD ALIGN=CENTER>
