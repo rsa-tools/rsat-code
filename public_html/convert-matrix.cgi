@@ -5,6 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 #require "cgi-lib.pl";
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+
 #### redirect error log to a file
 #BEGIN {
 #    $ERR_LOG = "/dev/null";
@@ -14,6 +15,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #	|| die "Unable to redirect log\n";
 #    carpout(*LOG);
 #}
+
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
@@ -49,8 +51,8 @@ if ($query->param('matrix')) {
 } else {
     &RSAT::error::FatalError('You did not enter any data in the matrix box');
 }
-push @result_files, ("input file",$matrix_file);
-push @result_files, ("result file",$result_file);
+push @result_files, ("Input file",$matrix_file);
+push @result_files, ("Result file",$result_file);
 
 ################################################################
 ## Compute reverse complement
@@ -210,13 +212,15 @@ if ($query->param('output') eq "display") {
   print '</PRE>';
   close(RESULT);
 
-  ## Prepare tab-delimited matrices with only the counts for piping the result
+  ################################################################
+  ## Prepare tab-delimited matrices with only the counts f the first
+  ## matrix, for piping the result to other programs
   local $tab_matrices = $result_file.".tab";
-  local $command = $SCRIPTS."/convert-matrix -i $result_file -from ".$output_format." -to tab -top 1 -return counts -o $tab_matrices";
+  local $command = $SCRIPTS."/convert-matrix -v 0 -i  $matrix_file -from ".$input_format." -to tab -top 1 -return counts -o $tab_matrices";
   system $command;
   print "<pre><b>Tab conversion:</b> $command</pre>" if ($ENV{rsat_echo} >= 1);
 #  local $matrix_content = `$command`;
-  push @result_files, ("tab matrices", $tab_matrices);
+  push @result_files, ("Tab matrices", $tab_matrices);
 
   &PrintURLTable(@result_files);
   &PipingForm();
@@ -284,26 +288,6 @@ sub PipingForm {
 </form>
 </td>
 
-<td valign=bottom align=center>
-<form method="post" target='_blank' action="http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi">
-<input type="hidden" name="query" value="$matrix_content">
-<input type="hidden" name="DIST" value="pearson">
-<input type="submit" value="TOMTOM">
-</form>
-Compare a single matrix to a motif database.
-</td>
-</tr>
-
-<td valign=bottom align=center>
-<form method="post" target='_blank' action="http://meme.nbcr.net/meme/cgi-bin/tomtom.cgi">
-<input type="hidden" name="query" value="$matrix_content">
-<input type="hidden" name"target_db" value="JASPAR_CORE">
-<input type="hidden" name="DIST" value="pearson">
-<input type="submit" value="TOMTOM">
-</form>
-Compare a single matrix to a motif database.
-</td>
-</tr>
 
 </table>
 End_of_form
