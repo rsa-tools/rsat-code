@@ -286,7 +286,7 @@ Compare a single matrix to a motif database.
 </table>
 End_of_form
 
-  print "<pre>", $matrix_content, "</pre>";
+#  print "<pre>", $matrix_content, "</pre>";
   $title = $query->param('title');
 
 }
