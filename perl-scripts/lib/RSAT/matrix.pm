@@ -640,8 +640,9 @@ Output matrix format.
 
 =item all other arguments
 
-All other arguments are passed to the appropriate method (to_patser,
-to_MotifSampler, to_TRANSFAC), depending on the chosen output format.
+All other arguments are passed to the appropriate method (to_tab,
+to_MotifSampler, to_TRANSFAC, ...), depending on the chosen output
+format.
 
 =back
 
@@ -653,8 +654,9 @@ sub toString {
     $output_format =~ s|^tf$|transfac|;
 
     $output_format = lc($output_format);
-    if (($output_format eq "patser") || ($output_format eq "tab")) {
-      return $self->to_patser(%args);
+    if (($output_format eq "tab")
+	|| ($output_format eq "patser")) {
+      return $self->to_tab(%args);
     } elsif ($output_format eq "jaspar") {
       return $self->to_jaspar(%args);
 #    } elsif (lc($output_format) eq "motifsampler") {
@@ -925,7 +927,7 @@ sub to_consensus {
   $string .= join ("", "ln(expected frequency) = ", $ln_E_value,
 		   "   ", "expected frequency = ", $E_value , "\n");
 
-  my $counts = $self->to_patser(type=>"counts", col_width=>4);
+  my $counts = $self->to_tab(type=>"counts", col_width=>4);
   $counts =~ tr/a-z/A-Z/;
   $string .= $counts;
 
@@ -942,7 +944,8 @@ sub to_consensus {
 
 =pod
 
-=item to_patser(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_char)
+=item to_tab(sep=>$sep, col_width=>$col_width, type=>$type,
+             comment_char=>$comment_char, no_comment=>0|1)
 
 Return a string description of the matrix in the same format as Jerry
 Hertz programs. Additional parameters are also exported as comments,
@@ -952,14 +955,27 @@ Supported parameters:
 
 =over
 
+=item sep
+
+Column separator (by default, the tab character)
+
+=item col_width
+
+Column width (white spaces are used to ensure constant spacing)
+
 =item comment_char
 
 A character or string to print before each row of the matrix.
 
+=item no_comment
+
+Do not export the comment chars (header, margins). This is useful for
+the piping buttons when the option -link is used in convert-matrix.
+
 =back
 
 =cut
-sub to_patser {
+sub to_tab {
   my ($self, %args) = @_;
   my $to_print = "";
   my $output_format = $args{format} || 'tab';
@@ -1044,7 +1060,8 @@ sub to_patser {
     my $nrow = $self->nrow();
 
       ## Header of the matrix
-      if ($self->get_attribute("header")) {
+      if (($self->get_attribute("header")) 
+	  && (!$args{no_comment})){
 	$to_print .= ";\n";
 	$to_print .= "; Matrix type: $type\n";
 	if (($col_width) && ($col_width < 6)) {
@@ -1077,7 +1094,8 @@ sub to_patser {
 
       ################################################################
       ##Print column statistics
-      if ($self->get_attribute("margins")) {
+      if (($self->get_attribute("margins")) 
+	  && (!$args{no_comment})) {
 	$prefix_letter = substr($type, 0, 1);
 	$to_print .= $self->_printSeparator($ncol, $to_print);
 
@@ -4017,7 +4035,8 @@ sub link_button_TOMTOM {
 #    $self->force_attribute("margins", 0);
     my $matrix_content = $self->toString(sep=>"\t",
 					 type=>"counts",
-					 format=>'patser',
+					 format=>'tab',
+					 no_comment=>1
 					);
     $matrix_content =~ s|//||g; ## Suppress record separator
     $matrix_content =~ s|^;.*\n||g; ## Suppress comments
