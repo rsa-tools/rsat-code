@@ -21,6 +21,7 @@ $command = $SCRIPTS."/convert-matrix";
 $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
 $ENV{rsat_echo} = 1;
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -44,11 +45,12 @@ if ($query->param('matrix')) {
     print MAT $query->param('matrix');
     close MAT;
     &DelayedRemoval($matrix_file);
-    
     $parameters .= " -i $matrix_file";
 } else {
     &RSAT::error::FatalError('You did not enter any data in the matrix box');
 }
+push @result_files, ("input file",$matrix_file);
+push @result_files, ("result file",$result_file);
 
 ################################################################
 ## Compute reverse complement
@@ -151,6 +153,8 @@ foreach my $stat qw (counts frequencies weights info consensus parameters profil
     push @return_fields, $stat;
     if ($stat eq "logo"){
       $parameters .= " -logo_format png,pdf ";
+      $parameters .= " -logo_file ".$result_file."_logo";
+
       # seqlogo options
       if ($query->param("error_bar")){
 	$parameters .= " -logo_opt '-e' ";
@@ -175,7 +179,6 @@ if ($output_format eq 'tab') {
     $parameters .= " -return counts";
 }
 $parameters .= " -o ".$result_file;
-$parameters .= " -logo_file ".$result_file."_logo";
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
@@ -207,6 +210,15 @@ if ($query->param('output') eq "display") {
   print '</PRE>';
   close(RESULT);
 
+  ## Prepare tab-delimited matrices with only the counts for piping the result
+  local $tab_matrices = $result_file.".tab";
+  local $command = $SCRIPTS."/convert-matrix -i $result_file -from ".$output_format." -to tab -top 1 -return counts -o $tab_matrices";
+  system $command;
+  print "<pre><b>Tab conversion:</b> $command</pre>" if ($ENV{rsat_echo} >= 1);
+#  local $matrix_content = `$command`;
+  push @result_files, ("tab matrices", $tab_matrices);
+
+  &PrintURLTable(@result_files);
   &PipingForm();
 
     print "<HR SIZE = 3>";
@@ -222,8 +234,7 @@ exit(0);
 
 ### prepare data for piping
 sub PipingForm {
-  local $command = $SCRIPTS."/convert-matrix -i $result_file -from tab -to tab -top 1 -return counts";
-  local $matrix_content = `$command`;
+  local $matrix_content = `cat $tab_matrices`;
   $matrix_content =~ s|//\n||gm;
   $matrix_content =~ s|;.*\n||gm;
 #  print "<pre>".$command."</pre>";
@@ -276,6 +287,17 @@ sub PipingForm {
 <td valign=bottom align=center>
 <form method="post" target='_blank' action="http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi">
 <input type="hidden" name="query" value="$matrix_content">
+<input type="hidden" name="DIST" value="pearson">
+<input type="submit" value="TOMTOM">
+</form>
+Compare a single matrix to a motif database.
+</td>
+</tr>
+
+<td valign=bottom align=center>
+<form method="post" target='_blank' action="http://meme.nbcr.net/meme/cgi-bin/tomtom.cgi">
+<input type="hidden" name="query" value="$matrix_content">
+<input type="hidden" name"target_db" value="JASPAR_CORE">
 <input type="hidden" name="DIST" value="pearson">
 <input type="submit" value="TOMTOM">
 </form>
