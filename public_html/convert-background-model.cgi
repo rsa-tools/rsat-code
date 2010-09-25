@@ -20,6 +20,8 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-background-model -v 1 ";
 $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
+@result_files = ();
+push @result_files, ("Result file",$result_file);
 
 ## Draw a heat map for the transition table
 my $draw_heatmap = 0;
@@ -166,13 +168,14 @@ if ($query->param('output') eq "display") {
     if ($draw_heatmap) {
       my $heatmap_file = "${tmp_file_name}_heatmap";
       my $command2 = "draw-heatmap -i $mirror_file";
-
       $command2 = "cut -f 1-5 ".$mirror_file; 
       $command2 .= "| ${SCRIPTS}/draw-heatmap -min 0 -max 1 ";
       $command2 .= " -out_format png";
       $command2 .= " -col_width 50 ";
       $command2 .= " -o ".${TMP}."/".$heatmap_file.".png";
 #      $command2 .= " -html ".${TMP}."/".$heatmap_file.".html";
+      push @result_files, ("Heatmap", $heatmap_file.".png");
+
       print "<pre>command: $command2<p>\n</pre>" if ($ENV{rsat_echo} >= 1);
       `$command2`;
       print "<center><a href = \"$WWW_TMP/${heatmap_file}.png\"><img src=\"$WWW_TMP/${heatmap_file}.png\"></a>";
@@ -180,9 +183,10 @@ if ($query->param('output') eq "display") {
       &DelayedRemoval("$TMP/${heatmap_file}.html");
     }
 
+    &PrintURLTable(@result_files);
 
     print "<HR SIZE = 3>";
-    
+
 } elsif ($query->param('output') =~ /server/i) {
     &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
