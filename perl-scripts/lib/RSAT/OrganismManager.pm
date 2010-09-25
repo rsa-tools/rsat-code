@@ -23,7 +23,7 @@ use RSAT::TreeNode;
 ## Class variables
 
 ## Fields for supported organisms
-our @supported_org_fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format source);
+our @supported_org_fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format source nb);
 
 ## Name of the table containing the list of supported organisms
 our $organism_table_name = "supported_organisms.tab";
@@ -260,7 +260,9 @@ sub supported_organism_table {
   }
 
   ## Add fields for each organism
+  my $n = 0;
   foreach my $org (@selected_organisms) {
+    $n++;
     $main::supported_organism{$org}->{'ID'} = $org;
     my @values = ();
     foreach my $field (@fields) {
@@ -271,6 +273,8 @@ sub supported_organism_table {
 	  $value =~ s|\/+|\/|g;
 	}
 	push @values, $value;
+      } elsif ($field eq "nb") {
+	push @values, $n;
       } else {
 	push @values, $null;
 	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
