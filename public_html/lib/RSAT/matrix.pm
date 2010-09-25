@@ -4038,12 +4038,21 @@ sub link_button_TOMTOM {
 					 format=>'tab',
 					 no_comment=>1
 					);
+    $matrix_content =~ s|//\n||mg; ## Suppress record separator
     $matrix_content =~ s|//||g; ## Suppress record separator
+    $matrix_content =~ s/\t\|//g; ## Suppress record separator
     $matrix_content =~ s|^;.*\n||g; ## Suppress comments
-    my $button = "<form method='post' target='_blank' action='http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi'>";
-    $button .= "<input type='hidden' name='query' value='${matrix_content}'>";
-    $button .= "<input type='hidden' name='DIST' value='pearson'>";
-    $button .= "<input type='hidden' name='target_db' value='JASPAR_CORE_2008'>";
+
+    my $meme_version = "current";
+    my $tomtom_URL="http://meme.nbcr.net/meme/cgi-bin/tomtom.cgi";
+    my $target_db = "transfac";
+    if ($meme_version eq "4") {
+      $tomtom_URL="http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi";
+    }
+    my $button = "<form method='post' target='_blank' action='".$tomtom_URL."'>";
+    $button .= "<input type='hidden' name='query' value='".$matrix_content."'>";
+#    $button .= "<input type='hidden' name='DIST' value='pearson'>";
+#    $button .= "<input type='hidden' name='target_db' value='".$target_db."'>";
     $button .= "<input type='submit' value='TOMTOM'>";
     $button .= "</form>\n";
     return $button;
