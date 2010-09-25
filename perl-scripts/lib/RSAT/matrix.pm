@@ -4043,7 +4043,7 @@ sub link_button_TOMTOM {
     $matrix_content =~ s/\t\|//g; ## Suppress record separator
     $matrix_content =~ s|^;.*\n||g; ## Suppress comments
 
-    my $meme_version = "current";
+    my $meme_version = "4";
     my $tomtom_URL="http://meme.nbcr.net/meme/cgi-bin/tomtom.cgi";
     my $target_db = "transfac";
     if ($meme_version eq "4") {
