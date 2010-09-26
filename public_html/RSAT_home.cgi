@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.51 2010/09/24 16:30:13 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.52 2010/09/26 06:34:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -95,18 +95,22 @@ print <<EndText;
     <table  cellpadding=10>
     <tr >
     <td>
-    <P>
 
-    Welcome to <b>Regulatory Sequence Analysis Tools</b>
+    <p>Welcome to <b>Regulatory Sequence Analysis Tools</b>
     (<B>RSAT</B>). This web site provides a series of modular computer
     programs specifically designed for the detection of regulatory
-    signals in non-coding sequences.
+    signals in non-coding sequences.</p>
 
     <ul>
-     <li> <font color='red'>Check the latest news in </font> <a
-    href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our forum </b></a></li>
 
-	<li> Stay Tuned !! RSS feed to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
+     <p><li><font color="red">New !</font> <a target='_top' href='http://rsat.bigre.ulb.ac.be/rsat/tutorial_ECCB_2010/'>Supporting
+     material</a> of the 3rd Tutorial presented at </a> of <a target='_blank' href='http://www.eccb10.org/'>ECCB
+     2010</a> (Sunday Sept 26).</li></p>
+
+     <p><li> <font color='red'>Check the latest news in </font> <a
+    href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our forum </b></a></li></p>
+
+	<p><li> Stay Tuned !! RSS feed to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
 
 
     <li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li>
