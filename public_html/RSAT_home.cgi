@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.52 2010/09/26 06:34:06 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.53 2010/09/26 06:36:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -186,22 +186,11 @@ print <<EndText;
 
 <!--
   <td align=center>
-  <A HREF="http://crfb.univ-mrs.fr/rsaTools/" target="_top">
-  <B>Marseille CRBF - France</B><BR>
-  <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
-  http://crfb.univ-mrs.fr/rsaTools/</a>
-<br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
-  </TD>
--->
-
-  <td align=center>
   <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
   <B>Toronto - Canada</B><BR>
   <IMG SRC="images/toronto.jpg" HEIGHT=80 BORDER=0><BR>
   http://rsat.ccb.sickkids.ca/</A>
   </TD>
-
-
 </tr><tr>
 
 
@@ -220,6 +209,9 @@ print <<EndText;
   </td>
 
   <td></td>
+
+-->
+
 
 <!--
 </tr><tr>
