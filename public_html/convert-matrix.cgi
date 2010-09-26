@@ -216,7 +216,7 @@ if ($query->param('output') eq "display") {
   ## Prepare tab-delimited matrices with only the counts f the first
   ## matrix, for piping the result to other programs
   local $tab_matrices = $result_file.".tab";
-  local $command = $SCRIPTS."/convert-matrix -v 0 -i  $matrix_file -from ".$input_format." -to tab -top 1 -return counts -o $tab_matrices";
+  local $command = $SCRIPTS."/convert-matrix -v 0 -i  $matrix_file -from ".$input_format." -to tab  -return counts -o $tab_matrices";
   system $command;
   print "<pre><b>Tab conversion:</b> $command</pre>" if ($ENV{rsat_echo} >= 1);
 #  local $matrix_content = `$command`;
