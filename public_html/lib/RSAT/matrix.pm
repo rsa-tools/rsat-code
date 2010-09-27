@@ -671,10 +671,95 @@ sub toString {
       return $self->to_consensus(%args);
     } elsif ($output_format eq "infogibbs") {
       return $self->to_infogibbs(%args);
+    } elsif ($output_format eq "tomtom") {
+      return $self->to_tomtom(%args);
     }else {
       &RSAT::error::FatalError($output_format, "Invalid output format for a matrix");
     }
 }
+
+=pod
+
+=item to_tomtom()
+
+Convert the matrix into a string that can be read by TOMTOM form
+(version >= 4.4).
+
+=cut
+sub to_tomtom {
+    my ($self, %args) = @_;
+    my $to_print = "";
+
+    $to_print .= "MEME version 4.4
+
+ALPHABET= ACGT
+
+strands: + -
+
+Background letter frequencies (from web form):
+A 0.25000 C 0.25000 G 0.25000 T 0.25000 
+
+MOTIF VDTCACGTGANMWTW
+
+letter-probability matrix: alength= 4 w= 15 nsites= 16 E= 0
+  0.426471	  0.308824	  0.250000	  0.014706
+  0.544118	  0.073529	  0.250000	  0.132353
+  0.014706	  0.250000	  0.073529	  0.661765
+  0.014706	  0.955882	  0.014706	  0.014706
+  0.941176	  0.000000	  0.000000	  0.000000
+  0.000000	  0.882353	  0.000000	  0.058824
+  0.058824	  0.000000	  0.882353	  0.000000
+  0.000000	  0.000000	  0.000000	  0.941176
+  0.000000	  0.000000	  0.941176	  0.000000
+  0.647059	  0.176471	  0.000000	  0.117647
+  0.352941	  0.294118	  0.176471	  0.117647
+  0.529412	  0.294118	  0.000000	  0.117647
+  0.352941	  0.000000	  0.000000	  0.588235
+  0.058824	  0.117647	  0.117647	  0.647059
+  0.470588	  0.000000	  0.000000	  0.470588
+";
+    return($to_print);
+}
+
+
+=pod
+
+=item I<link_button_TOMTOM>
+
+Return a HTML form for sending the matrix to TOMTOM.
+
+=cut
+sub link_button_TOMTOM {
+    my ($self) = @_;
+#    $self->force_attribute("margins", 0);
+    my $matrix_content = $self->toString(sep=>"\t",
+					 type=>"counts",
+					 format=>'tab',
+					 no_comment=>1
+					);
+    $matrix_content =~ s|//\n||mg; ## Suppress record separator
+    $matrix_content =~ s|//||g; ## Suppress record separator
+    $matrix_content =~ s/\t\|//g; ## Suppress record separator
+    $matrix_content =~ s|^;.*\n||g; ## Suppress comments
+
+#    my $tomtom_URL="http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi";
+    my $tomtom_URL="http://meme.nbcr.net/meme/cgi-bin/tomtom.cgi";
+#    my $tomtom_URL = "http://vm2.ucsd.edu:8080/meme/cgi-bin/tomtom.cgi";
+
+    my $target_db = "transfac";
+    my $name = $self->get_attribute("name") ||  $self->get_attribute("AC") || $self->get_attribute("accession")
+      || $self->get_attribute("identifier") || $self->get_attribute("id");
+    my $button = "<form method='post' target='_blank' action='".$tomtom_URL."'>";
+    $button .= "<input type='hidden' name='query_name' value='".$name."'>";
+    $button .= "<input type='hidden' name='query' value='".$matrix_content."'>";
+#    $button .= "<input type='hidden' name='DIST' value='pearson'>";
+#    $button .= "<input type='hidden' name='target_db' value='".$target_db."'>";
+    $button .= "<input type='submit' value='TOMTOM'>";
+    $button .= "</form>\n";
+    return $button;
+}
+
+
 
 ################################################################
 
@@ -4023,40 +4108,6 @@ sub getCrudeFreqRC {
     return @{$self->{crudeFreqRC}};
 }
 
-=pod
-
-=item I<link_button_TOMTOM>
-
-Return a HTML form for sending the matrix to TOMTOM.
-
-=cut
-sub link_button_TOMTOM {
-    my ($self) = @_;
-#    $self->force_attribute("margins", 0);
-    my $matrix_content = $self->toString(sep=>"\t",
-					 type=>"counts",
-					 format=>'tab',
-					 no_comment=>1
-					);
-    $matrix_content =~ s|//\n||mg; ## Suppress record separator
-    $matrix_content =~ s|//||g; ## Suppress record separator
-    $matrix_content =~ s/\t\|//g; ## Suppress record separator
-    $matrix_content =~ s|^;.*\n||g; ## Suppress comments
-
-    my $meme_version = "4";
-    my $tomtom_URL="http://meme.nbcr.net/meme/cgi-bin/tomtom.cgi";
-    my $target_db = "transfac";
-    if ($meme_version eq "4") {
-      $tomtom_URL="http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi";
-    }
-    my $button = "<form method='post' target='_blank' action='".$tomtom_URL."'>";
-    $button .= "<input type='hidden' name='query' value='".$matrix_content."'>";
-#    $button .= "<input type='hidden' name='DIST' value='pearson'>";
-#    $button .= "<input type='hidden' name='target_db' value='".$target_db."'>";
-    $button .= "<input type='submit' value='TOMTOM'>";
-    $button .= "</form>\n";
-    return $button;
-}
 
 
 
