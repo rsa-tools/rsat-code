@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.45 2010/08/09 23:42:11 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.46 2010/09/27 20:40:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -202,7 +202,7 @@ package main;
     $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
     $outfile{count_matrices_tf} = $outfile{output}."_count_matrices.tf"; ## Count matrices in transfac format
     $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
-    $outfile{links} = $outfile{output}."_count_matriceslinks.txt";
+    $outfile{links} = $outfile{output}."_count_matrices_links.txt";
     $outfile{logo_basename} = $outfile{output}."_count_matrices_logo";
     $outfile{gibbs_matrices} = $outfile{output}."_gibbs_matrices.txt";
 
