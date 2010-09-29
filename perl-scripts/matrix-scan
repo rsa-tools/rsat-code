@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.173 2010/08/25 14:38:46 rsat Exp $
+# $Id: matrix-scan,v 1.174 2010/09/29 05:39:46 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -4495,6 +4495,19 @@ __END__
 =back
 
 =head1 WISH LIST
+
+=head2 automatic pseudo-count
+
+Automatically define a matrix-specific pseudo-count as the square root
+of the number of sites used to train the matrix (the sum per column in
+the residue count matrix).
+
+This idea was propsed by Geert Thijs (PhD thesis) as an empirical way
+to choose the pseudo-count. This rule makes sense, since the relative
+impact of the pseudo-count decreases when the number of sites
+increases. The square root makes sense because it is proportional to
+the standard deviation of a Poisson sampling (the variance of the
+Poisson distribution equals its mean).
 
 =head2 Hit table
 
