@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.72 2010/08/27 04:51:26 jvanheld Exp $
+# $Id: compare-matrices,v 1.73 2010/09/29 05:39:01 jvanheld Exp $
 #
 ############################################################
 
@@ -296,6 +296,36 @@ Note: in previous version (before August 22, 2010), Ncor was defined
 differently: cor*Wr. This was however too stringent, and prevented the
 program to detect matches between a short motif and a larger motif.
 
+=head2 Correlation of the information content (Icor)
+
+Pearson's correlation computed on the information content matrices
+(I1, I2) rather than on the frequencies.
+
+ Icov = 1/n * SUM{i=1->r} SUM{j=1->w} (I1{i,j} - f1m) * (I2{i,j} - f2m)
+ Iv1 = 1/n * SUM{i=1->r} SUM{j=1->w} (I1{i,j} - f1m)^2
+ Iv2 = 1/n * SUM{i=1->r} SUM{j=1->w} (I2{i,j} - f2m)^2
+ cor = Icov/ sqrt(Iv1*Iv2)
+
+The I<Icor> score fixes a weakness of the I<cor> score and all
+other other metrics above, which only take into account the residue
+frequencies whilst ignoring the background frequencies.
+
+A typical manifestation of this problem is that the I<cor> score
+occasionally returns alignements between non-informative pieces of the
+matrices , which appear flat on the aligned logos. The reason why
+uninformative columns may have a good correlation is that, if both
+matrices have the same compositional bias (for example 30%A, 20%C,
+20%G and 30%T), they will be correlated. Consequently, the columns
+reflecting the background will contribute to increase the correlation
+coefficient.
+
+The information content corrects this bias by relativizing the matrix
+frequencies with respect to the background residue probaiblities.
+
+ I{i,j} = f{i,j} log (f{i,j}/p{j})
+
+where I<p{j}> is the prior probability of residue I<j>.
+
 =head1 REFERENCES
 
 Distances between PSSMs have been treated in many ways. The most
@@ -340,7 +370,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -354,6 +384,8 @@ package main;
 			      "Ncor", ## Normalized coefficient of correlation
 			      "cor", ## Coefficient of correlation
 			      "cov", ## Covariance
+			      "Icor", ## Correlation between information content matrices
+			      "NIcor", ## Normalized correlation between information content matrices
 			      "dEucl", ## Euclidian distance
 			      "NdEucl", ## Normalized Euclidian distance
 			      "NsEucl", ## Euclidian similarity
@@ -369,6 +401,8 @@ package main;
 				 "Ncor"=>"desc",
 				 "cor"=>"desc",
 				 "cov"=>"desc",
+				 "Icor",
+				 "NIcor",
 				 "dEucl"=>"asc",
 				 "NdEucl"=>"asc",
 				 "NsEucl"=>"desc",
@@ -536,13 +570,17 @@ package main;
     $return_field{matrix_name} = 1;
     $return_field{strand} = 1;
     $return_field{Ncor} = 1;
+    $return_field{Icor} = 1;
+    $return_field{NIcor} = 1;
     $return_field{consensus} = 1;
 
-    $sort_field = "Ncor";
+#    $sort_field = "Ncor";
+    $sort_field = "Icor";
     $uth{rank}=1 unless(defined($uth{rank})); ## Only return the best match for each alignment
 
     ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
     $lth{w}=5 unless (defined($lth{w}));
+    $lth{Icor}=0.75 unless (defined($lth{Icor}));
     $lth{cor}=0.75 unless (defined($lth{cor}));
     $lth{ncor}=0.5 unless (defined($lth{ncor}));
   }
@@ -570,6 +608,7 @@ package main;
 
 
   ## Some fields must be computed as intermediate results for other fields
+  $calc_field{Icor} = 1 if ($calc_field{NIcor});
   $calc_field{cor} = 1 if ($calc_field{Ncor});
   $calc_field{cov} = 1 if ($calc_field{cor});
   $calc_field{NdEucl} = 1 if ($calc_field{NsEucl});
@@ -806,6 +845,8 @@ package main;
     push (@header, sprintf("%-${width}s", "name1"));
     push (@header, sprintf("%-${max_name_len2}s", "name2"));
   }
+  push (@header, "Icor") if ($return_field{Icor});
+  push (@header, "NIcor") if ($return_field{NIcor});
   push (@header, "Ncor") if ($return_field{Ncor});
   push (@header, "cor") if ($return_field{cor});
   push (@header, "SW") if ($return_field{SW});
@@ -855,8 +896,10 @@ package main;
     $description{NsEucl} = "relative Euclidian similarity. NsEucl = (max(dEucl) - dEucl)/max(dEucl)";
     $description{dKL} = "Kullback-Leibler distance";
     $description{cov} = "Covariance";
-    $description{cor} = "Coefficient of correlation";
+    $description{cor} = "Pearson coefficient of correlation between frequency matrices";
     $description{Ncor} = "Normalized correlation. Ncor = cor * w / min(w1,w2)";
+    $description{Icor} = "Pearson correlation between the information content matrices. ";
+    $description{NIcor} = "Normalized Pearson correlation between the information content matrices. NIcor = Icor * w / min(w1,w2)";
     $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
     $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
     $description{rank} = "Rank of the alignment for the current pair of matrices";
@@ -887,6 +930,13 @@ package main;
     my $w1 = $matrix1->get_attribute("ncol");
     my $nrow1 = $matrix1->get_attribute("nrow");
     my @crude_freq1 = $matrix1->getCrudeFrequencies();
+
+    ## Get the information content matrix if required
+    my @info1;
+    if ($return_field{Icor}) {
+      @info1 = $matrix1->getInformation();
+    }
+
     my $id1 = $matrix1->get_attribute("id") || "<NA>";
     my $name1 = $matrix1 ->get_attribute("name");
     my $m2 = 0;
@@ -926,7 +976,9 @@ package main;
       ## Prepare output variables
       my %cov = ();	    ## Covariances as a function of the offset
       my %cor = ();		## Correlations
-      my %Ncor = ();		## Correlations
+      my %Ncor = ();		## Normalized correlations
+      my %Icor = (); ## Correlations between information content
+      my %NIcor = (); ## Normalized correlations between information content
       my %SW = ();		## Euclidian distances
       my %SSD = ();		## Euclidian distances
       my %NdEucl = ();	## Euclidian distances
@@ -940,14 +992,20 @@ package main;
 
       ## Test one or both strands
       foreach my $strand (@strands) {
-	## Get the crude frequencies (all the metrix rely on crude
-	## frequencies, i.e. relative frequencies NOT corrected by the
-	## pseudo-weight)
+	## Get the crude frequencies (the metrics rely on crude
+	## frequencies, i.e. relative frequencies, NOT corrected by
+	## the pseudo-weight)
 	my @crude_freq2;
 	if ($strand eq "D") {
 	  @crude_freq2 = $matrix2->getCrudeFrequencies();
 	} else {
 	  @crude_freq2 = $matrix2->getCrudeFreqRC();
+	}
+
+	## Get the information content matrix if required
+	my @info2;
+	if ($return_field{Icor}) {
+	  @info2 = $matrix2->getInformation();
 	}
 
 	## Slide matrix2 along matrix1
@@ -999,7 +1057,8 @@ package main;
 	    $max_aligned_consensus_len2 = $consensus_len2 if ($consensus_len2 > $max_aligned_consensus_len2);
 	  }
 
-	  ## Compute the Euclidian distance between the matrices
+	  ################################################################
+	  ## Compute the (dis)similarity between the matrices
 	  my $SSD = 0;
 	  my $SW = 0;
 	  my $NdEucl = 0;
@@ -1009,11 +1068,19 @@ package main;
 	  my $cov = 0;
 	  my $cor = 0;
 	  my $Ncor = 0;
+	  my $Icor = 0;
+	  my $NIcor = 0;
 	  my $sum_f1 = 0;
 	  my $sum_f2 = 0;
 	  my $sum_f1f2 = 0;
 	  my $sum_sq_f1 = 0;
 	  my $sum_sq_f2 = 0;
+
+	  my $sum_i1 = 0;
+	  my $sum_i2 = 0;
+	  my $sum_i1i2 = 0;
+	  my $sum_sq_i1 = 0;
+	  my $sum_sq_i2 = 0;
 	  foreach my $pos (1..$w) {
 	    my $col1 = $start1+$pos-1;
 	    my $col2 = $start2+$pos-1;
@@ -1028,6 +1095,17 @@ package main;
 		$sum_sq_f1 += $f1**2;
 		$sum_sq_f2 += $f2**2;
 		$sum_f1f2 += $f1*$f2;
+	      }
+
+	      ## Update sums for Icor
+	      if ($calc_field{Icor}) {
+		my $i1 = $info1[$col1-1][$r];
+		my $i2 = $info2[$col2-1][$r];
+		$sum_i1 += $i1;
+		$sum_i2 += $i2;
+		$sum_sq_i1 += $i1**2;
+		$sum_sq_i2 += $i2**2;
+		$sum_i1i2 += $i1*$i2;
 	      }
 
 	      ## Update sum for Euclidian distance
@@ -1080,13 +1158,12 @@ package main;
 	  }
 
 	  ## Compute coefficient of correlation
-	  my $n = 0;	    ## Number of matrix cells in the alignment
-	  my $v1 = 0;		## Variance of the first matrix
-	  my $v2 = 0;		## Variance of the second matrix
+	  my $n = $nrow1*$w;	    ## Number of matrix cells in the alignment
+#	  my $v1 = 0;		## Variance of the first matrix
+#	  my $v2 = 0;		## Variance of the second matrix
 	  if (($calc_field{cov}) || ($calc_field{cor})) {
-	    $n = $nrow1*$w;
-	    $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2;
-	    $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2;
+	    my $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2; ## Variance of the first matrix
+	    my $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2; ## Variance of the second matrix
 	    $cov = $sum_f1f2/$n - $sum_f1*$sum_f2/($n**2); ## Warning : this covariance has nothing to do with the "natural covariance" of Pape
 	    if ($cov == 0) {
 	      $cor = 0;
@@ -1118,6 +1195,39 @@ package main;
 	  $score{cor}{$compa_id} = $cor;
 	  $score{Ncor}{$compa_id} = $Ncor;
 
+
+	  ## Compute information correlation
+	  if ($calc_field{Icor}) {
+	    $iv1 = $sum_sq_i1/$n - ($sum_i1/$n)**2;
+	    $iv2 = $sum_sq_i2/$n - ($sum_i2/$n)**2;
+	    $icov = $sum_i1i2/$n - $sum_i1*$sum_i2/($n**2); ## Warning : this covariance has nothing to do with the "natural covariance" of Pape
+	    if ($icov == 0) {
+	      $Icor = 0;
+	    } else {
+	      $Icor = $icov/sqrt($iv1*$iv2);
+	    }
+#	    $NIcor = $Icor * $Wr;
+	    $NIcor = $Icor * $w / &RSAT::stats::min($w1, $w2);
+	    #  	  &RSAT::message::Debug("n=".$n,
+	    # 				"sum_i1=".$sum_i1,
+	    # 				"sum_i2=".$sum_i2,
+	    # 				"sum_sq_i1=".$sum_sq_i1,
+	    # 				"sum_sq_i2=".$sum_sq_i2,
+	    # 				"iv1=".$iv1,
+	    # 				"iv2=".$iv2,
+	    # 				"icov=".$icov,
+	    # 				"Icor=".$Icor,
+	    # 				"NIcor=".$NIcor,
+	    # 			       ) if ($main::verbose >= 10);
+	  }
+	  ## Check thresholds on covariance, correlation and normalized correlation
+	  next unless (&CheckThresholdValue("Icor", $Icor));
+	  next unless (&CheckThresholdValue("NIcor", $NIcor));
+
+	  ## Index values for sorting
+	  $score{Icor}{$compa_id} = $Icor;
+	  $score{NIcor}{$compa_id} = $NIcor;
+
 	  ## Generate the output line
 	  my @out_fields = ();
 	  push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
@@ -1139,6 +1249,8 @@ package main;
 #	    $name2 = sprintf("%-${max_name_len2}s", $name2);
 	    push (@out_fields, $name1, $name2);
 	  }
+	  push (@out_fields, sprintf("%.3f", $Icor)) if ($return_field{Icor});
+	  push (@out_fields, sprintf("%.3f", $NIcor)) if ($return_field{NIcor});
 	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
 	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
 	  push (@out_fields, sprintf("%.2f", $SW)) if ($return_field{SW});
@@ -1365,7 +1477,14 @@ sub PairwiseAlignments {
       $desc2 .= " ".$name2;
     }
 
-    my ($merged_matrix, $matrix1_shifted, $matrix2_shifted) = &RSAT::MatrixAlignment::AlignMatrixPair($matrix1, $matrix2, $offset, $strand, stat=>$merging_stat);
+    my $type = "count";
+    if ($return_field{Icor}) {
+      $type = "info";
+    }
+    my ($merged_matrix, $matrix1_shifted, $matrix2_shifted) = 
+      &RSAT::MatrixAlignment::AlignMatrixPair($matrix1, $matrix2, $offset, $strand, 
+					      stat=>$merging_stat,
+					      type=>$type);
     my $id_align = $merged_matrix->get_attribute("id") || "alignment";
 
     ## Print a header for the alignment in the tab-delimited file
@@ -1528,7 +1647,20 @@ sub OneToNAlignments {
     }
 
     &RSAT::message::TimeWarn("\tOne-to-n alignment ", $m1."/".$n1, $id1." versus ".scalar(@matching_matrices)." matrices") if ($main::verbose >= 2);
-    my ($merged_matrix, @shifted_matrices) = &RSAT::MatrixAlignment::AlignMatricesOneToN($matrix1, \@matching_compa_ids, \@matching_matrices, \@matching_offsets, \@matching_strands, \@matching_scores, stat=>$merging_stat);
+    my $type = "count";
+    if ($return_field{Icor}) {
+      $type = "info";
+    }
+    my ($merged_matrix, @shifted_matrices) = 
+      &RSAT::MatrixAlignment::AlignMatricesOneToN($matrix1, 
+						  \@matching_compa_ids,
+						  \@matching_matrices,
+						  \@matching_offsets,
+						  \@matching_strands,
+						  \@matching_scores,
+						  stat=>$merging_stat,
+						  type=>$type,
+						 );
     &PrintAlignedMatrices(@shifted_matrices);
   }
   &RSAT::message::TimeWarn("Finished one-to-n alignments") if ($main::verbose >= 5);
@@ -1597,7 +1729,16 @@ sub PrintAlignedMatrices {
       $match_scores_html = "<td></td>\n" x scalar(@scores_to_print);
     }
     $matrix_string .= $match_scores."\n";
-    $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"counts");
+
+    if ($return_field{Icor}) {
+      $shifted_matrix->calcInformation();
+      $matrix_string .= $shifted_matrix->toString(col_width=>6,
+					decimals=>2,
+					type=>"information",
+					format=>"tab");
+    } else {
+      $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"count", colwidth=>6, decimals=>0);
+    }
     print $alignments_1ton $matrix_string;
 
     ## Generate a sequence logo for the HTML output file
@@ -1814,7 +1955,7 @@ detail).
     } elsif ($arg eq "-o") {
       $main::outfile{output_prefix} = shift(@arguments);
 
-=item B<-comparison_mode matches | profiles>
+=item B<-mode matches | profiles>
 
 =over
 
@@ -1969,6 +2110,102 @@ matrix_name. Maintained for backward compatibility.
 List of fields to return (only valid for the formats "profiles" and
 "matches").
 
+Supported return fields:
+
+=over
+
+=item I<offset>
+
+ascending (default for the profile mode)
+
+=item I<Ncor>
+
+decreasing (default for the matching mode)
+
+=item I<cor>
+
+decreasing
+
+=item I<cov>
+
+decreasing
+
+=item I<SSD>
+
+ascending
+
+=item I<SW>
+
+decreasing
+
+=item I<dEucl>
+
+ascending
+
+=item I<NdEucl>
+
+ascending
+
+=item I<NsEucl>
+
+decreasing
+
+=item I<dKL>
+
+ascending
+
+=item I<matrix_number>
+
+Number of the matrices in the input files
+
+=item I<matrix_id>
+
+Identifiers of the matrices
+
+=item I<matrix_name>
+
+Names of the matrices
+
+=item I<matrix_ac>
+
+=item I<width>
+
+Width of the matrices and the alignment
+
+=item I<strand>
+
+Direct (D) or Reverse complementary (R) comparison
+
+=item I<offset>
+
+Offset between the positions of the first and second matrix
+
+=item I<pos>
+
+Relative positions the aligned matrices (start, end, strand, width)
+
+=item I<consensus>
+
+=item I<rank>
+
+=item I<alignments_pairwise>
+
+Shifted matrices resulting from the pairwise alignments.
+
+=item I<alignments_1ton>
+
+Shifted matrices resulting from the 1-to-N alignments.
+
+=item I<alignments>
+
+Shifted matrices resulting from the alignments (pairwise and 1-to-N).
+
+=item I<all>
+
+All supported output fields, including all metrics.
+
+=back
+
 =cut
     } elsif ($arg eq "-return") {
       my $fields_to_return = shift(@arguments);
@@ -1993,25 +2230,45 @@ Supported sort fields:
 
 =over
 
-=item offset, ascending (default for the profile mode)
+=item I<offset>
 
-=item Ncor, decreasing (default for the matching mode)
+ascending (default for the profile mode)
 
-=item cor, decreasing
+=item I<Ncor>
 
-=item cov, decreasing
+decreasing (default for the matching mode)
 
-=item SSD, ascending
+=item I<cor>
 
-=item SW, decreasing
+decreasing
 
-=item dEucl, ascending
+=item I<cov>
 
-=item NdEucl, ascending
+decreasing
 
-=item NsEucl, decreasing
+=item I<SSD>
 
-=item dKL, ascending
+ascending
+
+=item I<SW>
+
+decreasing
+
+=item I<dEucl>
+
+ascending
+
+=item I<NdEucl>
+
+ascending
+
+=item I<NsEucl>
+
+decreasing
+
+=item I<dKL>
+
+ascending
 
 =back
 
