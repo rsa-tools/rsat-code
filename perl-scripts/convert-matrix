@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.120 2010/06/28 23:44:25 jvanheld Exp $
+# $Id: convert-matrix,v 1.121 2010/09/29 05:41:24 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1422,7 +1422,7 @@ sub ExportMatrix {
   ## Calculate frequency matrix
   if ($return_fields{frequencies}) {
     $matrix->calcFrequencies();
-    print $out_handle $matrix->toString(col_width=>($decimals+4), 
+    print $out_handle $matrix->toString(col_width=>($decimals+4),
 					decimals=>$decimals, 
 					type=>"frequencies",
 					format=>$output_format);
@@ -1448,8 +1448,8 @@ sub ExportMatrix {
   ## Calculate information content matrix
   if ($return_fields{info}) {
     $matrix->calcInformation();
-    print $out_handle $matrix->toString(col_width=>($decimals+4), 
-					decimals=>$decimals, 
+    print $out_handle $matrix->toString(col_width=>($decimals+4),
+					decimals=>$decimals,
 					type=>"information",
 					format=>$output_format);
   }

@@ -338,7 +338,6 @@ sub AlignMatricesOneToN {
 
 #  &RSAT::message::Debug("Shifted matrix 0","\n".$shifted_matrix1->toString(format=>'tab', type=>"counts")) if ($main::verbose >= 10);
 
-
   my $n2 = scalar(@matching_matrices);
   foreach my $m (0..$#matching_matrices) {
     my $compa_id = $matching_compa_ids[$m];
