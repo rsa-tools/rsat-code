@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: chip-motifs,v 1.76 2010/08/27 17:31:03 jvanheld Exp $
+# $Id: chip-motifs,v 1.77 2010/09/30 22:24:07 jvanheld Exp $
 #
 ############################################################
 
@@ -106,7 +106,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1726,9 +1726,9 @@ sub SynthesisMotifCompa {
 			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
 			"motifs", $main::outfile{motifs_discovered},
 			"table (txt)",$main::outfile{motifs_disco_compa},
-			"table (html)",$main::outfile{motifs_disco_compa},
-			"gml",$main::outfile{motifs_disco_compa_gml},
-			"png",$main::outfile{motifs_disco_compa_png},
+			"table (html)",$main::outfile{motifs_disco_compa_html},
+			"gml (for CytoScape)",$main::outfile{motifs_disco_compa_gml},
+			"png (low resolution)",$main::outfile{motifs_disco_compa_png},
 			"MCL clusters" ,$main::outfile{motifs_disco_clusters_tab},
 			"intra-cluster degree", $main::outfile{motifs_disco_compa_cluster_intra_degree},
 			"MCL cluster graph (tab)", $main::outfile{motifs_disco_clusters_graph},
@@ -1749,8 +1749,8 @@ sub SynthesisMotifsVersusReference {
 			"table (html)",$main::outfile{"motifs_vs_ref_html"},
 			"alignments", $main::outfile{"motifs_vs_ref_matrices"},
 			"aligned logos", $main::outfile{"motifs_vs_ref_matrices_html"},
-			"gml",$main::outfile{"motifs_vs_ref_gml"},
-			"png",$main::outfile{"motifs_vs_ref_png"},
+			"gml (for CytoScape)",$main::outfile{"motifs_vs_ref_gml"},
+			"png (low resolution)",$main::outfile{"motifs_vs_ref_png"},
 		       );
 }
 
@@ -1767,8 +1767,8 @@ sub SynthesisMotifsVersusDatabase {
 			  "table (html)",$main::outfile{"motifs_vs_db_".$db_name."_html"},
 			  "alignments", $main::outfile{"motifs_vs_db_".$db_name."_matrices"},
 			  "aligned logos", $main::outfile{"motifs_vs_db_".$db_name."_matrices_html"},
-			  "gml",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
-			  "png",$main::outfile{"motifs_vs_db_".$db_name."_png"},
+			  "gml (for CytoScape)",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
+			  "png (low resolution)",$main::outfile{"motifs_vs_db_".$db_name."_png"},
 			 );
   }
 }
