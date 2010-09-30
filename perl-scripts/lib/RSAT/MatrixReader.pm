@@ -35,6 +35,7 @@ formats.
 			   'clustal'=>1,
 			   'cluster-buster'=>1,
 			   'consensus'=>1,
+			   'sequences'=>1,
 			   'feature'=>1,
 			   'gibbs'=> 1,
 			   'infogibbs'=>1,
@@ -48,7 +49,7 @@ formats.
 			   'transfac'=>1,
 			   'uniprobe'=>1,
 			  );
-$supported_input_formats = join ",", keys %supported_input_formats;
+$supported_input_formats = join ",", sort(keys %supported_input_formats);
 
 ################################################################
 
@@ -115,6 +116,8 @@ sub readFromFile {
 	@matrices = _readFromMEMEFile($file);
     } elsif ($format eq "feature") {
 	@matrices = _readFromFeatureFile($file);
+      } elsif ($format eq "sequences") {
+	@matrices = _readFromSeq($file, %args);
     } else {
 	&main::FatalError("&RSAT::matrix::readFromFile", "Invalid format for reading matrix\t$format");
     }
@@ -293,11 +296,6 @@ sub _readFromTRANSFACFile {
 
   ## open input stream
   my ($in, $dir) = &main::OpenInputFile($file);
-#  my $in = STDIN;
-#  if ($file) {
-#    open INPUT, $file;
-#    $in = INPUT;
-#  }
   my $current_matrix_nb = 0;
   my @matrices = ();
   my $matrix;
@@ -1875,11 +1873,6 @@ sub _readFromMEMEFile {
 
   ## open input stream
   my ($in, $dir) = &main::OpenInputFile($file);
-#  my $in = STDIN;
-#  if ($file) {
-#    open INPUT, $file;
-#    $in = INPUT;
-#  }
   my @matrices = ();
   my $current_matrix_nb = 0;
   my $matrix;
@@ -1967,7 +1960,51 @@ sub _readFromMEMEFile {
 #  return $matrices[0];
 }
 
+
+=pod
+
+=item _readFromSeq($file)
+
+Read a matrix from a sequence file containing the pre-aligned sites.
+The method just reads the sequences and counts the residue frequencies
+at each position.
+
+=cut
+
+sub _readFromSeq {
+  my ($file, %args) = @_;
+  &RSAT::message::Info("Reading matrix from feature file\t", $file) if ($main::verbose >= 3);
+  my $seq_format = $args{seq_format} || "fasta";
+
+  ## open input stream
+  my ($in, $dir) = &main::OpenInputFile($file);
+  my @alphabet =  ("A", "C", "G", "T");
+
+  my $matrix = new RSAT::matrix();
+  $matrix->init();
+  $matrix->set_parameter("matrix.nb", 1);
+  $matrix->set_attribute("name", $matrix_name);
+#      $matrix->set_attribute("id", $matrix_id);
+  $matrix->setAlphabet_lc(@alphabet);
+#      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
+#  $matrices{$matrix_name} = $matrix;
+
+  my $site_nb = 0;
+  while ((($site_seq, $site_id, @comments) = &main::ReadNextSequence($in, $seq_format, $dir)) &&
+	 (($site_seq) || ($site_id))) {
+    $site_nb++;
+#    &RSAT::message::Debug("Adding sequence to matrix", $site_nb, $site_seq, $site_id) if ($main::verbose >= 10);
+    if ($site_nb == 1) {
+      $matrix->set_attribute("ncol", length($site_seq));
+    }
+    $matrix->add_site(lc($site_seq), id=>$site_id, score=>1);
+  }
+  close $in if ($file);
+  return ($matrix);
+}
+
 ################################################################
+
 =pod
 
 =item _readFromFeatureFile($file)
@@ -1993,11 +2030,6 @@ sub _readFromFeatureFile {
 
   ## open input stream
   my ($in, $dir) = &main::OpenInputFile($file);
-#  my $in = STDIN;
-#  if ($file) {
-#    open INPUT, $file;
-#    $in = INPUT;
-#  }
   my @matrices = (); 
   my %matrices = (); ## Matrices are indexed by name
   my @alphabet =  ("A", "C", "G", "T");
