@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.73 2010/09/29 05:39:01 jvanheld Exp $
+# $Id: compare-matrices,v 1.74 2010/10/01 10:15:46 jvanheld Exp $
 #
 ############################################################
 
@@ -370,7 +370,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -727,9 +727,29 @@ package main;
     @matrices2 = @matrices2[0..($main::top2-1)];
   }
 
+  my @matrices = @matrices1;
+  push @matrices, @matrices2  unless ($single_input_file);
+
   local $matrix_nb1 = scalar(@matrices1);
   local $matrix_nb2 = scalar(@matrices2);
   &RSAT::message::Info("Comparing ".$matrix_nb1." against ".$matrix_nb2." motifs.") if ($main::verbose >= 2);
+
+
+
+  ################################################################
+  ## Load background model file
+  local $bg_model;
+  if ($main::infile{bg}) {
+    $bg_model = new RSAT::MarkovModel();
+    &RSAT::message::TimeWarn("Loading background model from ".$bg_format." file", $main::infile{bg}) if ($main::verbose >= 0);
+    $bg_model->load_from_file($main::infile{bg}, $bg_format);
+    $bg_model->check_missing_transitions();
+    my %prior = $bg_model->get_attribute("suffix_proba");
+
+    foreach my $matrix (@matrices) {
+      $matrix->setMarkovModel($bg_model);
+    }
+  }
 
   ################################################################
   ## Compute maximal lengths of string attributes (id, ac, name) for
@@ -788,9 +808,6 @@ package main;
   ################################################################
   ## Compute the required parameters for each matrix
   my $count_m=0;
-  my @matrices = @matrices1;
-  push @matrices, @matrices2  unless ($single_input_file);
-
   foreach my $matrix (@matrices) {
       $count_m ++;
       ## Calculate the consensus for each matrix
@@ -1871,6 +1888,72 @@ The reverse complement is computed for this set of matrices.
     } elsif ($arg eq "-mlist2") {
       $main::infile{mlist2} = shift(@arguments);
 
+
+=pod
+
+=item B<-format1 matrix_format1>
+
+Specify the matrix format for the first input file only (requires
+-format2).
+
+=cut
+    } elsif ($arg eq "-format1") {
+      $input_format1 = shift(@arguments);
+      unless ($supported_input_format{$input_format1}) {
+	&RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+      }
+
+      ## Background model file
+
+=pod
+
+=item B<-bgfile background_file>
+
+Background model file.
+
+=cut
+    } elsif ($arg eq "-bgfile") {
+      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "file"));
+      $main::bg_method = "file";
+      $main::infile{bg} = shift(@arguments);
+
+      ## Background model format
+
+=pod
+
+=item B<-bg_format format>
+
+Format for the background model file.
+
+Supported formats: all the input formats supported by
+convert-background-model.
+
+=cut
+    } elsif ($arg eq "-bg_format") {
+      $main::bg_format = lc(shift(@arguments));
+
+      ## Check background input format
+      &RSAT::error::FatalError($main::bg_format,
+			       "Invalid input format.",
+			       "Supported: ", $RSAT::MarkovModel::supported_input_formats)
+	unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_format});
+
+
+
+=pod
+
+=item B<-format2 matrix_format2>
+
+Specify the matrix format for the second input file only (requires
+-format1).
+
+=cut
+    } elsif ($arg eq "-format2") {
+      $input_format2 = shift(@arguments);
+      unless ($supported_input_format{$input_format2}) {
+	&RSAT::error::FatalError("$input_format2\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+      }
+
 =pod
 
 =item B<-format matrix_format>
@@ -1910,34 +1993,6 @@ convenient for quick testing before starting the full analysis.
       $main::top2 = shift(@arguments);
       &RSAT::error::FatalError($main::top2, "invalid value for the option -top2. Must be a strictly positive Natural number.") unless ((&IsNatural($main::top2)) && ($top2 > 0));
 
-
-=pod
-
-=item B<-format1 matrix_format1>
-
-Specify the matrix format for the first input file only (requires
--format2).
-
-=cut
-    } elsif ($arg eq "-format1") {
-      $input_format1 = shift(@arguments);
-      unless ($supported_input_format{$input_format1}) {
-	&RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
-      }
-
-=pod
-
-=item B<-format2 matrix_format2>
-
-Specify the matrix format for the second input file only (requires
--format1).
-
-=cut
-    } elsif ($arg eq "-format2") {
-      $input_format2 = shift(@arguments);
-      unless ($supported_input_format{$input_format2}) {
-	&RSAT::error::FatalError("$input_format2\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
-      }
 
 =pod
 
