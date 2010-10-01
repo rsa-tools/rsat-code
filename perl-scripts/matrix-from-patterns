@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.46 2010/09/27 20:40:34 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.47 2010/10/01 17:01:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -132,7 +132,7 @@ package main;
     local $asmb_subst = 1;
     local $max_asmb_size = 50;
     local $max_asmb_nb = 5;
-    local $asmb_maxpat = 100;
+    local $asmb_toppat = 100;
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
@@ -239,7 +239,7 @@ package main;
       $assembly_cmd .= " ".$strands;
       $assembly_cmd .= " -maxfl ".$asmb_maxfl;
       $assembly_cmd .= " -subst ".$asmb_subst;
-      $assembly_cmd .= " -maxpat ".$asmb_maxpat;
+      $assembly_cmd .= " -toppat ".$asmb_toppat;
       $assembly_cmd .= " -max_asmb_size ".$max_asmb_size;
       $assembly_cmd .= " -max_asmb_nb ".$max_asmb_nb;
       $assembly_cmd .= " -o ".$outfile{assembly};
