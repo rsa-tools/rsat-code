@@ -909,6 +909,57 @@ sub GetBackgroundModel {
 }
 
 ################################################################
+## MatrixDBcheckBox (ex: Jaspar)
+
+sub MatrixDBcheckBox {
+
+	## load the file containing the path to the databases
+	my $mat_db = $ENV{RSAT}."/data/motif_databases/db_matrix_files.tab" ;
+	open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
+   	while (my $line = <MAT_DB>) {
+   		next if ($line =~ /^;/);
+   		next if ($line =~ /^#/);
+   		my @mat_line = split (/\t/,$line);
+   		if ($mat_line[0] eq $default{compare_motif_database}) {
+   			print $query->checkbox(-name=>$mat_line[0],
+		       	-checked=>"checked",
+		       	-label=>$mat_line[3]); 
+		       	} else {
+		       	print $query->checkbox(-name=>$mat_line[0],
+		       	-checked=>"",
+		       	-label=>$mat_line[3]); 
+		       	}
+		print "<br/>"
+   		}
+    close MAT_DB;
+
+}
+
+################################################################
+## GetMatrixDBfromBox (ex: Jaspar)
+
+sub GetMatrixDBfromBox {
+
+	my $mat_db_params ="";
+	
+	## load the file containing the path to the databases
+	my $mat_db = $ENV{RSAT}."/data/motif_databases/db_matrix_files.tab" ;
+	open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
+   	while (my $line = <MAT_DB>) {
+   		next if ($line =~ /^;/);
+   		next if ($line =~ /^#/);
+   		my @mat_line = split (/\t/,$line);
+   		if ($query->param($mat_line[0]) =~ /on/){
+   			$mat_db_params .= " -motif_db $mat_line[0] transfac $ENV{RSAT}/data/motif_databases/$mat_line[2]";
+   			}
+   		}
+    close MAT_DB;
+	
+	return($mat_db_params);
+}
+
+
+################################################################
 ## Print HTML header
 sub html_header {
   my $sorttable = shift;
