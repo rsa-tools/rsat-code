@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.174 2010/09/29 05:39:46 jvanheld Exp $
+# $Id: matrix-scan,v 1.175 2010/10/01 10:16:45 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -809,7 +809,7 @@ package main;
   }
   $bg_model->set_attribute("n_treatment", $n_treatment);
   if (defined($bg_pseudo)){
-  	$bg_model->force_attribute("bg_pseudo", $bg_pseudo);
+    $bg_model->force_attribute("bg_pseudo", $bg_pseudo);
   }
 
 
