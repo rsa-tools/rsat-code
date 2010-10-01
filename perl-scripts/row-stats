@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: row-stats,v 1.11 2010/06/20 15:36:01 jvanheld Exp $
+# $Id: row-stats,v 1.12 2010/10/01 12:01:17 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:37:27 jvanheld>
 #
@@ -24,7 +24,8 @@ local $in = STDIN;
 local $out = STDOUT;
 local $number_format = "%g";
 local $sort = 0;
-local $stats_before = 0;
+local $before = 0;
+local $after = -1;
 
 &ReadArguments();
 
@@ -61,7 +62,12 @@ while (<$in>) {
 
     ## Treat header line
     if (/^#/) {
-	if ($stats_before) {
+	if($after >= 0) {
+	    my @header_fields = split "\t", $_;
+	    splice (@header_fields, $after,0, "min", "max", "sum", "avg");
+	    $header_line = join ("\t", @header_fields);
+	    $header_line = "#".$header_line;
+	} elsif ($before) {
 	    s/^#//;
 	    $header_line = join ("\t",
 				 "#min",
@@ -112,13 +118,17 @@ while (<$in>) {
 	$sum = sprintf "${number_format}", &checked_sum(@values);
 	$avg = sprintf "${number_format}", &checked_avg(@values);
     }
-    if ($stats_before) {
+
+    if ($after >= 0) {
+	my @all_values = split "\t", $to_print;
+	splice (@all_values, $after, 0, $min, $max, $sum, $avg);
+	$to_print = join ("\t", @all_values);
+    } elsif ($before) {
       $to_print = join ("\t", $min, $max, $sum, $avg, $to_print);
-      $to_print .= "\n";
     } else {
       $to_print = join ("\t", $to_print, $min, $max, $sum, $avg);
-      $to_print .= "\n";
     }
+    $to_print .= "\n";
 
 
     if ($sort) {
@@ -197,9 +207,13 @@ OPTIONS
 		A range of columns can be specified by:
 			-ycol #-#
 	-before
-		add the stat columns before the input line (by
+		Add the stat columns before the input line (by
          	default, they are added at the end of each input
          	line).
+
+	-after #
+		Insert the stat columns after the specificed column
+		number.
 
 INPUT FORMAT
 
@@ -229,15 +243,16 @@ sub PrintOptions {
   print HELP <<End_short_help;
 row-stats options
 ----------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--i	input file
--o	output file
--v	verbose
--nf	number format (e.g. '%7.4f')
--sort	sort lines by decreasing value of the row sum
--col	data columns
--before	add stat columns before rather than afte the input line
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-nf		number format (e.g. '%7.4f')
+-sort		sort lines by decreasing value of the row sum
+-col		data columns
+-before		add stat columns before rather than afte the input line
+-after #	insert stat columns after the specified column number
 End_short_help
   close HELP;
   exit;
@@ -283,7 +298,13 @@ sub ReadArguments {
 
       #### add info before the input line
     } elsif ($ARGV[$a] eq "-before") {
-	$stats_before = 1;
+	$before = 1;
+
+      #### insert info after the specified column number
+    } elsif ($ARGV[$a] eq "-after") {
+	$after = $ARGV[$a+1];
+	&RSAT::error::FatalError($after, "Invalid value for insert column. Should be a Natural number") 
+	    unless (&IsNatural($after));
 
     } elsif ($ARGV[$a] eq "-col") {
       $col_string = $ARGV[$a+1];
