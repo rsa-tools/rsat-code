@@ -22,7 +22,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ############################################ configuration
 $command = "$ENV{RSAT}/perl-scripts/chip-motifs";
 $output_directory = sprintf "chip-motifs.%s", &AlphaDate();
-$output_prefix = "ChIP-seq_analysis_";
+$output_prefix = "ChIP-motifs";
 $output_path = "$TMP/$output_directory";
 $output_path =~ s|\/\/|\/|g;
 `mkdir -p $output_path`;
@@ -34,7 +34,7 @@ $output_path =~ s|\/\/|\/|g;
 $query = new CGI;
 
 ### print the result page
-&RSA_header("chip-seq_analysis result", "results");
+&RSA_header("chip-motifs result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
 ### update log file
@@ -54,56 +54,90 @@ if ($query->param('title')){
 ### peak sequences file
 ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, "$output_path/$output_prefix" . "peak_seq", 1);
 
-### control sequences file
-($control_sequence_file, $control_sequence_format) = &MultiGetSequenceFile(2, "$output_path/$output_prefix" . "ctl_seq", 0);
+$parameters .= "-i $sequence_file ";
 
-#print "<pre>sequence_file: [$control_sequence_file]\n</pre>" if ($ENV{rsat_echo} >=1);
-
-### peak only or peak+control analysis ?
-if ($control_sequence_file eq '') {
-    $analysis = 'peaks';
-    $parameters .= "-i $sequence_file";
-} else {
-    $analysis = 'peaks+control';
-    $parameters .= "-i $sequence_file -ctl $control_sequence_file";
-}
 
 ### tasks
 @tasks = ("purge", "seqlen", "profiles", "synthesis");
+push(@tasks, "positions");
 
-if ($analysis eq "peaks") {
-    if ($query->param('oligo-analysis') =~ /on/) {
+ if ($query->param('oligo-analysis') =~ /on/) {
         push(@tasks, "oligos");
-        #$oligo_length = $query->param('oligo_length');
-        #$oligo_length = $query->param('oligo_length');
-        #&FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
-        #$parameters .= "-l $oligo_length";
+        my $oligo_params = "";
+        foreach my $i (6..8){
+        	if ($query->param('oligo_length'.$i) =~ /on/){
+        		$oligo_params .= " -l ".$i;
+        	}
+        }
+        &FatalError("Select at least one oligo size for oligo-analysis") if ($oligo_params eq "");
+        $parameters .= $oligo_params;
     }
-    if ($query->param('dyad-analysis') =~ /on/) {
+    
+ if ($query->param('dyad-analysis') =~ /on/) {
         push(@tasks, "dyads");
     }
     if ($query->param('local-word-analysis') =~ /on/) {
         push(@tasks, "local_words");
     }
-} else {
-    push(@tasks, "oligos-diff");
+
+### task specific parameters
+if (&IsNatural($query->param('markov'))) {
+	$parameters .= " -max_markov ".$query->param('markov')." -min_markov ".$query->param('markov');
 }
 
-push(@tasks, "positions");
-push(@tasks, "word_compa");
-push(@tasks, "motif_compa");
+### restrict the input dataset
+if ($query->param('top_sequences')){
+	if (&IsNatural($query->param('top_sequences'))) {
+		$parameters .= " -top_peaks ".$query->param('top_sequences');
+	} else {
+		 &FatalError("Number of top peaks is incorrect");
+	}	
+}
+
+if ($query->param('max_seq_len')){
+	if (&IsNatural($query->param('max_seq_len'))) {
+		$parameters .= "  -max_seq_len ".$query->param('max_seq_len')*2; ## here the program needs the length of the fragments, so x2
+	} else {
+		 &FatalError("Incorrect maximal sequence length. Check your parameters for data restriction");
+	}	
+}
+
+### Continue the workflow
 
 ## motif databases
-$parameters .= " -motif_db JASPAR transfac $ENV{RSAT}/data/motif_databases/JASPAR/jaspar_matrices.tf ";
+ if ($query->param('compare_motif_db') =~ /on/) {
+        push(@tasks, "motif_compa");
+        
+        ## load the files containing the databases
+        my $mat_db_params = &GetMatrixDBfromBox();
+       $parameters .= $mat_db_params;
+        
+        ## personal motifs
+        if ($query->param('ref_motif')) {
+        	    ## Upload user-specified background file
+    			my $refmotif_file = ${TMP}/$output_path/$output_prefix."ref_motifs.tf";
+    			my $upload_refmotif = $query->param('ref_motif');
+    			if ($upload_refmotif) {
+      			
+     			 my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
+      			open FILE, ">$refmotif_file" ||
+							&cgiError("Cannot store reference motif file in temp dir.");
+      			while (<$upload_refmotif>) {
+					print FILE;
+      			}
+     			 close FILE;
+      	$parameters .= " -ref_motif PERSONAL_MOTIFS transfac ".${TMP}/$output_path/$output_prefix."ref_motifs.tf";
+    } else {
+      &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
+    }
+        	
+        }
+    }
+
 
 
 ### add -task
 $parameters .= " -task " . join(",", @tasks);
-
-### task specific parameters
-if (&IsNatural($query->param('markov_order'))) {
-  #$param .= " -markov ".$query->param('markov_order');
-}
 
 ### output directory
 $parameters .= " -outdir $output_path";
@@ -115,13 +149,13 @@ $parameters .= " -prefix $output_prefix";
 $parameters .= " -v 1";
 
 ### other default parmaters (to integrate above later)
-$parameters .= " -2str -noov -minol 5 -maxol 8 -max_markov -2 -min_markov -3 -img_format png ";
+$parameters .= " -2str -noov -img_format png ";
 		
 
 
 
 ############################################ display or send result
-$index_file = $output_directory."/".$output_prefix."synthesis.html";
+$index_file = $output_directory."/".$output_prefix."synthesis2.html";
 my $mail_title = join (" ", "[RSAT]", "chip-motifs", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 #&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
