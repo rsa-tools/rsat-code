@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.74 2010/10/01 10:15:46 jvanheld Exp $
+# $Id: compare-matrices,v 1.75 2010/10/01 10:25:26 jvanheld Exp $
 #
 ############################################################
 
@@ -370,7 +370,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.75 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -381,11 +381,11 @@ package main;
 
   ## Supported metrics for comparing matrices
   local @supported_metrics = (
+			      "NIcor", ## Normalized correlation between information content matrices
+			      "Icor", ## Correlation between information content matrices
 			      "Ncor", ## Normalized coefficient of correlation
 			      "cor", ## Coefficient of correlation
 			      "cov", ## Covariance
-			      "Icor", ## Correlation between information content matrices
-			      "NIcor", ## Normalized correlation between information content matrices
 			      "dEucl", ## Euclidian distance
 			      "NdEucl", ## Normalized Euclidian distance
 			      "NsEucl", ## Euclidian similarity
@@ -862,8 +862,8 @@ package main;
     push (@header, sprintf("%-${width}s", "name1"));
     push (@header, sprintf("%-${max_name_len2}s", "name2"));
   }
-  push (@header, "Icor") if ($return_field{Icor});
   push (@header, "NIcor") if ($return_field{NIcor});
+  push (@header, "Icor") if ($return_field{Icor});
   push (@header, "Ncor") if ($return_field{Ncor});
   push (@header, "cor") if ($return_field{cor});
   push (@header, "SW") if ($return_field{SW});
@@ -1266,8 +1266,8 @@ package main;
 #	    $name2 = sprintf("%-${max_name_len2}s", $name2);
 	    push (@out_fields, $name1, $name2);
 	  }
-	  push (@out_fields, sprintf("%.3f", $Icor)) if ($return_field{Icor});
 	  push (@out_fields, sprintf("%.3f", $NIcor)) if ($return_field{NIcor});
+	  push (@out_fields, sprintf("%.3f", $Icor)) if ($return_field{Icor});
 	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
 	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
 	  push (@out_fields, sprintf("%.2f", $SW)) if ($return_field{SW});
