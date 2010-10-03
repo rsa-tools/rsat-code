@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.58 2010/08/25 12:55:18 jvanheld Exp $
+# $Id: position-analysis,v 1.59 2010/10/03 23:35:39 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -237,7 +237,7 @@ if ($return{graphs}) {
 	  $title2 .= "; Eval=".$Eval;
 	  $title2 .= "; sig=".$sig;
 	}
-	&RSAT::message::Debug("Exporting graph for oligo", $oligo_seq, $dir{graphs}."/".$graph_file_name) if ($main::verbose >= 0);
+	&RSAT::message::Debug("Exporting graph for oligo", $oligo_seq, $dir{graphs}."/".$graph_file_name) if ($main::verbose >= 5);
 
 	my $command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
 	$command .= " -lines -xcol 1 -ycol 2,3 -legend ";
