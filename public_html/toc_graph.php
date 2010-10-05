@@ -16,7 +16,7 @@
 
 <div id='content' class='graph'>
 
-<h2><img src='images/neat_logo_small.png' /><a href='NeAT_home.html' target='tools'>Network Analysis Tools</a></h2>
+<h2><img src='images/neat_logo_small.png' /><a href='NeAT_home.php' target='tools'>Network Analysis Tools</a></h2>
 
 
 <div class='menu'>
