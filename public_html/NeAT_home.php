@@ -98,7 +98,7 @@ the power law and other myths in network biology</b>. <br>Mol. BioSyst., 2009,
 
 <p><li>Four articles explaining <b><i>how to use
   <a target='_top' href='$WWW_RSA'>RSAT</a> and
-  <a target='_top' href='$WWW_RSA/index_neat.html/'>NeAT</a> 
+  <a target='_top' href='$WWW_RSA/index_neat.html'>NeAT</a> 
   </i></b> in <a target='_top'
   href='http://www.nature.com/nprot/journal/v3/n10/index.html'><b>Nature
   Protocols</b></a> (Sept 2008)
