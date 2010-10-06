@@ -777,18 +777,18 @@ sub to_text {
 	}
       }
 
-      ## Treat the thickStart and thickEnd attributes
+    
+     ## Transform the coordinates into zero-based
+     my $start_1_based = $self->get_attribute("start");
+     $self->force_attribute("start",$start_1_based-1); ## only the fist base is shifted
+    }
+          ## Treat the thickStart and thickEnd attributes
       unless (defined($self->get_attribute("thickStart"))) {
 	$self->set_attribute("thickStart",$self->get_attribute("start"));
       }
       unless (defined($self->get_attribute("thickEnd"))) {
 	$self->set_attribute("thickEnd",$self->get_attribute("end"));
       }
-    
-     ## Transform the coordinates into zero-based
-     my $start_1_based = $self->get_attribute("start");
-     $self->force_attribute("start",$start_1_based-1); ## only the fist base is shifted
-    }
 
 
     if ($out_format eq "fasta") {
@@ -913,7 +913,7 @@ sub header {
 	$track_name = $main::infile{input};
       }
       $header .= "track name='".$track_name."' description='".$track_name."' visibility=3 itemRgb='On' use_score=1\n";
-      $header .= "browser dense ORegAnno\n";
+      $header .= "browser dense RSAT\n";
       $header .= "browser dense \n";
     } else {
       $header .= $comment_char{$out_format};
