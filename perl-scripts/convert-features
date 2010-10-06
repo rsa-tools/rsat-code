@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.23 2010/10/06 16:02:10 morgane Exp $
+# $Id: convert-features,v 1.24 2010/10/06 16:03:07 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -272,7 +272,7 @@ CONVERSION TO GENOMIC COORDINATES
 	-coord option enables to trasnform the relative coordinates of the file to convert
 		into absolute coordinates. This is very useful when working on genomic projects, to display the results
 		on genome browsers (eg. UCSC).
-		The coord file should be a BED file containing the genomic coordinates of fragments of interests.
+		The coord file should be a BED file (zero-based) containing the genomic coordinates of fragments of interests.
 		The file to convert contain features with coordinates relative to these fragments (eg: from matrix-scan).
 	
 	-origin [start|end] should be provided. This refer to the origin of relative coordinates in the file to convert.
