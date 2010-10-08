@@ -119,19 +119,18 @@ if ($query->param('max_seq_len')){
         
         ## personal motifs
         if ($query->param('ref_motif')) {
-        	    ## Upload user-specified background file (transfac format only)
-    			my $refmotif_file = ${TMP}/$output_path/$output_prefix."ref_motifs.tf";
-    			my $upload_refmotif = $query->param('ref_motif');
-    			if ($upload_refmotif) {
-      			
-     			 my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
-      			open FILE, ">$refmotif_file" ||
-							&cgiError("Cannot store reference motif file in temp dir.");
-      			while (<$upload_refmotif>) {
-					print FILE;
-      			}
-     			 close FILE;
-      	$parameters .= " -ref_motif PERSONAL_MOTIFS transfac ".${TMP}/$output_path/$output_prefix."ref_motifs.tf";
+	    my $refmotif_file = ${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
+	    my $upload_refmotif = $query->param('ref_motif');
+	    if ($upload_refmotif) {
+		
+		my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
+		open FILE, ">$refmotif_file" ||
+		    &cgiError("Cannot store reference motif file in temp dir.");
+		while (<$upload_refmotif>) {
+		    print FILE;
+		}
+		close FILE;
+		$parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
     } else {
       &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
     }
