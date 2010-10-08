@@ -58,26 +58,33 @@ $parameters .= "-i $sequence_file ";
 
 
 ### tasks
+
+## default
 @tasks = ("purge", "seqlen", "profiles", "synthesis");
-push(@tasks, "positions");
+
+## motif-disco
+my $oligo_params = "";
+foreach my $i (6..8){
+	if ($query->param('oligo_length'.$i) =~ /on/){
+		$oligo_params .= " -l ".$i;
+		}
+	}
+$parameters .= $oligo_params;
 
  if ($query->param('oligo-analysis') =~ /on/) {
         push(@tasks, "oligos");
-        my $oligo_params = "";
-        foreach my $i (6..8){
-        	if ($query->param('oligo_length'.$i) =~ /on/){
-        		$oligo_params .= " -l ".$i;
-        	}
-        }
         &FatalError("Select at least one oligo size for oligo-analysis") if ($oligo_params eq "");
-        $parameters .= $oligo_params;
     }
     
  if ($query->param('dyad-analysis') =~ /on/) {
         push(@tasks, "dyads");
     }
-    if ($query->param('local-word-analysis') =~ /on/) {
+ if ($query->param('local-word-analysis') =~ /on/) {
         push(@tasks, "local_words");
+        &FatalError("Select at least one oligo size for local-word-analysis") if ($oligo_params eq "");
+    }
+ if ($query->param('position-analysis') =~ /on/) {
+        push(@tasks, "positions");
     }
 
 ### task specific parameters
@@ -102,19 +109,17 @@ if ($query->param('max_seq_len')){
 	}	
 }
 
-### Continue the workflow
-
 ## motif databases
  if ($query->param('compare_motif_db') =~ /on/) {
         push(@tasks, "motif_compa");
         
         ## load the files containing the databases
         my $mat_db_params = &GetMatrixDBfromBox();
-       $parameters .= $mat_db_params;
+        $parameters .= $mat_db_params;
         
         ## personal motifs
         if ($query->param('ref_motif')) {
-        	    ## Upload user-specified background file
+        	    ## Upload user-specified background file (transfac format only)
     			my $refmotif_file = ${TMP}/$output_path/$output_prefix."ref_motifs.tf";
     			my $upload_refmotif = $query->param('ref_motif');
     			if ($upload_refmotif) {
@@ -133,8 +138,22 @@ if ($query->param('max_seq_len')){
         	
         }
     }
-
-
+ 
+## search motifs (matrix-scan-quick)
+ if ($query->param('matrix-scan-quick') =~ /on/) {
+        push(@tasks, "sites");
+        
+        ## HERE need to add the pval and markov order for the background model for matrix-scan-quick
+        
+ }
+ 
+ ## HERE finish the BED custom track parameters + task
+ ## UCSC custom track
+ #if ($query->param('bed_custom_track') =~ /on/) {
+ #       push(@tasks, "?");
+ #      
+ #       
+ #}
 
 ### add -task
 $parameters .= " -task " . join(",", @tasks);
@@ -148,7 +167,7 @@ $parameters .= " -prefix $output_prefix";
 ### verbosity
 $parameters .= " -v 1";
 
-### other default parmaters (to integrate above later)
+### other default parmaters
 $parameters .= " -2str -noov -img_format png ";
 		
 
