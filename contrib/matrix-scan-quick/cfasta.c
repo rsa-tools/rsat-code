@@ -45,10 +45,14 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
     // read header
     char c;
     int i = 0;
+    int short_name_found = 0;
     do 
     {
         c = fasta_reader_getc(reader);
-        if (i < 1024 && c!= EOF && c != '\n' && c != '\t' && c != ' ' && c != '\r' && c != '>')
+        if ((c == '\t' || c == ' ' || c == '\r') && i > 0)
+            short_name_found = 1;
+        if (!short_name_found && i < 1024 && \
+            c!= EOF && c != '\n' && c != '\t' && c != ' ' && c != '\r' && c != '>')
             seq->name[i++] = c;
     } while (c != EOF && c != '\n');
     seq->name[i] = '\0';
