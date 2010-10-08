@@ -31,6 +31,7 @@ $default{oligo_length6}="checked";
 $default{oligo_length7}="checked";
 $default{oligo-analysis}="checked";
 $default{dyad-analysis}="checked";
+$default{position-analysis}="checked";
 $default{'local-word-analysis'}="checked";
 $default{compare_motif_db}="checked";
 $default{title}="title for this dataset";
@@ -39,7 +40,6 @@ $default{top_sequences}="";
 
 ## motif database
 $default{compare_motif_database}="jaspar_core_vertebrates";
-
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -63,129 +63,25 @@ print "<p><font color=red><b>Warning, this is still a prototype version</b></fon
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
-
-
 ## demo description
 print $default{demo_descr1};
-print $default{demo_descr2};
 
 print $query->start_multipart_form(-action=>"chip-motifs.cgi");
 
+################# Peak sequences
+ &Panel1();
+################# Restriction of data
+ &Panel2();
 
+################# Motif discovery parameters
+ &Panel3();
+ 
+################# Database comparison
+ &Panel4();
 
-## here is the content of the first panel
-print "<fieldset>
-<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>";
-	  &Panel1();
-print "</fieldset><p/>";
-
-################################################################
-#### Change  parameters
-
-print '
-<br/>
-<div>';
-print '
-<div class="menu_heading_closed" onclick="toggleMenu(\'96\')" id="heading96"> <b>Customize the analysis (comparison with motif databases, output as UCSC custom track...)</b> </div>
-<div id="menu96" class="menu_collapsible">';
-	
-
-#### Tasks
-
-##
-print "<fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Compare motifs </a></b></legend>";
-
-#
-### compare motifs
-#
-print $query->checkbox(-name=>'compare_motif_db',
-		       -checked=>$default{compare_motif_db},
-		       -label=>'');  
-print "&nbsp;<b>Compare discovered motifs with known motifs from databases</b> <a href=''>[compare-matrices]</a>\n";
-
-print "<p/> ";
-print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
-
-## load the various databases that can be compared against
-  &MatrixDBcheckBox();
-
-print "<p/> ";
-print "<a href=''><b>Add known reference motifs or your own motif database:</b></a><br/>";
-print $query->filefield(-name=>'ref_motif',
-			-size=>10);
-print "(matrices should be in <b>Transfac format</b>)";
-print "</fieldset><p/>";
-#
-### matrix-scan
-#
-print "<fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Locate motifs </a></b></legend>";
-print $query->checkbox(-name=>'matrix-scan-quick',
-		       -checked=>$default{matrix-scan-quick},
-		       -label=>'');  
-print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href='help.matrix-scan.html'>[matrix-scan]</a>\n";
-
-print "<br/>";
-
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.matrix-scan.html'>Background model: Markov order</A>&nbsp;</B>\n";
-	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='markov-scan'>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>0</option>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='2'>1</option>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>2</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
-    
-print "<br/>";
-
-### threshold (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.matrix-scan.html'>Upper threshold on P-value</A>&nbsp;</B>\n";
-print  $query->textfield(-name=>'uth_pval',
-							      -default=>$default{uth_pval},
-							      -size=>4);
-print "<br/>";	
-
-
-
-print "</fieldset><p/>";
-#
-### logo
-#
-print "<fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Visualize motifs </a></b></legend>";
-
-
-print $query->checkbox(-name=>'matrix-scan-quick',
-		       -checked=>$default{matrix-scan-quick},
-		       -label=>'');  
-print "&nbsp;<b>Visualize on UCSC genome browser</b> <a href='help.matrix-scan.html'></a>\n";
-print "<br/>";
-
-
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html'>BED file with peak coordinates</A>&nbsp;</B>\n";
-print $query->filefield(-name=>'bed_file',
-			-size=>10);
-
-### threshold (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html'>Assembly version (UCSC)</A>&nbsp;</B>\n";
-print  $query->textfield(-name=>'assembly',
-							      -default=>$default{assembly},
-							      -size=>10);
-print "<br/>";	
-
-print "<br/>
-</fieldset><p/>";
-
-#########
-print '	
-</div>
-</div>
-<p class="clear"></p>';
-
-#print "<hr>";
-
-
+################# sites and visualization
+ &Panel5();
+ 
 ################################################################
 ### send results by email only
 print "<p>\n";
@@ -238,6 +134,8 @@ exit(0);
 
 sub Panel1 {
 
+print "<fieldset>
+<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>";
 print "<B>Title</B>\n";
 print $query->textfield(-name=>'title',
 			-default=>$default{title},
@@ -248,16 +146,48 @@ print "<p/>\n";
 &MultiSequenceChoice("Peak sequences",1);
 
 print '
-<b><font style="font-size:80%"><a href=""> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b><p/> 
+<b><font style="font-size:80%"><a href=""> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b> 
+</br>';
+print "</fieldset><p/>";
+}
 
-</br>
-<div>
+##########################################
+sub Panel2 {
+print '	
+<p class="clear"></p>
+<div class="menu_heading_closed" onclick="toggleMenu(\'101\')" id="heading101"><b>Reduce input peak sequences </b> </div>
+<div id="menu101" class="menu_collapsible">';
+	
+print "<p/><fieldset>
+<legend><b><a href='help.chip-motifs.html#tasks'>Restrict the input dataset  </a></b></legend>";
 
-<div class="menu_heading_closed" onclick="toggleMenu(\'95\')" id="heading95"><b>Change motif discovery parameters </b> </div>
-<div id="menu95" class="menu_collapsible">';
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html#thresholds'>Number of top sequences to retain </A>&nbsp;</B>\n";
+print  $query->textfield(-name=>'top_sequences',
+							      -default=>$default{top_sequences},
+							      -size=>3);
+
+print "<br/>";	
+
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html#thresholds'>Cut peak sequences:</A> +/- &nbsp;</B>\n";
+print  $query->textfield(-name=>'max_seq_len',
+							      -default=>$default{max_seq_len},
+							      -size=>3);
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B>bp around the center of each peak </b>\n";
+
+
+print "</fieldset><p/>";
+print '</div>
+</div>
+<p class="clear"></p>';
+}
+
+##########################################
+sub Panel3 {
+print '
+<div class="menu_heading_closed" onclick="toggleMenu(\'102\')" id="heading102"><b>Change motif discovery parameters </b> </div>
+<div id="menu102" class="menu_collapsible">';
 	
 
-################# Motif discovery single input
 print "<p/><fieldset>
 <legend><b><a href='help.chip-motifs.html#tasks'>Discover motifs </a></b></legend>";
 
@@ -297,6 +227,15 @@ print $query->checkbox(-name=>'local-word-analysis',
 		       -checked=>$default{'local-word-analysis'},
 		       -label=>'');  
 print "&nbsp;<b>Discover words with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
+print "<br/>";
+
+#
+### position-analysis
+#
+print $query->checkbox(-name=>'position-analysis',
+		       -checked=>$default{position-analysis},
+		       -label=>'');  
+print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
 print "<br/>";
 
 
@@ -350,37 +289,127 @@ print "<br/>";
 #print "<br/>";			 
 print "</fieldset><p/>";
 
-
-################# Restriction of data
 print '	
-</div>
-</div>
-<p class="clear"></p>
-<div class="menu_heading_closed" onclick="toggleMenu(\'93\')" id="heading93"><b>Reduce input peak sequences (top peaks, ...) </b> </div>
-<div id="menu93" class="menu_collapsible">';
+</div></div>';
+
+}
+
+##########################################
+sub Panel4 {
+print '
+<br/>
+<div>';
+print '
+<div class="menu_heading_closed" onclick="toggleMenu(\'103\')" id="heading103"> <b>Compare discovered motifs with databases (e.g. against Jaspar)</b> </div>
+<div id="menu103" class="menu_collapsible">';
 	
 
-print "<p/><fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Restrict the input dataset  </a></b></legend>";
+#### Tasks
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html#thresholds'>Number of top sequences to retain </A>&nbsp;</B>\n";
-print  $query->textfield(-name=>'top_sequences',
-							      -default=>$default{top_sequences},
-							      -size=>3);
+##
+print "<fieldset>
+<legend><b><a href='help.chip-motifs.html#tasks'>Compare motifs </a></b></legend>";
 
-print "<br/>";	
+#
+### compare motifs
+#
+print $query->checkbox(-name=>'compare_motif_db',
+		       -checked=>$default{compare_motif_db},
+		       -label=>'');  
+print "&nbsp;<b>Compare discovered motifs with known motifs from databases</b> <a href=''>[compare-matrices]</a>\n";
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html#thresholds'>Cut peak sequences:</A> +/- &nbsp;</B>\n";
-print  $query->textfield(-name=>'max_seq_len',
-							      -default=>$default{max_seq_len},
-							      -size=>3);
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B>bp around the center of each peak </b>\n";
+print "<p/> ";
+print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
 
+## load the various databases that can be compared against
+  &MatrixDBcheckBox();
 
+print "<p/> ";
+print "<a href=''><b>Add known reference motifs or your own motif database:</b></a><br/>";
+print $query->filefield(-name=>'ref_motif',
+			-size=>10);
+print "(matrices should be in <b>Transfac format</b>)";
 print "</fieldset><p/>";
-print '</div>
+
+print '	
+</div>
 </div>
 <p class="clear"></p>';
 }
 
 ##########################################
+ sub Panel5  {
+print '
+<div class="menu_heading_closed" onclick="toggleMenu(\'104\')" id="heading104"> <b>Locate motifs and export as UCSC custom track</b> </div>
+<div id="menu104" class="menu_collapsible">';
+
+
+
+#
+### matrix-scan
+#
+print "<fieldset>
+<legend><b><a href='help.chip-motifs.html#tasks'>Locate motifs </a></b></legend>";
+print $query->checkbox(-name=>'matrix-scan-quick',
+		       -checked=>$default{matrix-scan-quick},
+		       -label=>'');  
+print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href='help.matrix-scan.html'>[matrix-scan]</a>\n";
+
+print "<br/>";
+
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.matrix-scan.html'>Background model: Markov order</A>&nbsp;</B>\n";
+	$oligoPopup = "";
+    $oligoPopup .=  "<SELECT NAME='markov-scan'>\n";
+	$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>0</option>\n";
+	$oligoPopup .=  "<OPTION  SELECTED VALUE='2'>1</option>\n";
+	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>2</option>\n";
+    $oligoPopup .=  "</SELECT>";
+    print $oligoPopup;
+    
+print "<br/>";
+
+### threshold (common to all programs)
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.matrix-scan.html'>Upper threshold on P-value</A>&nbsp;</B>\n";
+print  $query->textfield(-name=>'uth_pval',
+							      -default=>$default{uth_pval},
+							      -size=>4);
+print "<br/>";	
+
+
+
+print "</fieldset><p/>";
+#
+### UCSC custom track
+#
+print "<fieldset>
+<legend><b><a href='help.chip-motifs.html#tasks'>Visualize motifs </a></b></legend>";
+
+
+print $query->checkbox(-name=>'bed_custom_track',
+		       -checked=>$default{matrix-scan-quick},
+		       -label=>'');  
+print "&nbsp;<b>Visualize on UCSC genome browser</b> <a href='help.matrix-scan.html'></a>\n";
+print "<br/>";
+
+
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html'>BED file with peak coordinates</A>&nbsp;</B>\n";
+print $query->filefield(-name=>'bed_file',
+			-size=>10);
+
+### threshold (common to all programs)
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html'>Assembly version (UCSC)</A>&nbsp;</B>\n";
+print  $query->textfield(-name=>'assembly',
+							      -default=>$default{assembly},
+							      -size=>10);
+print "<br/>";	
+
+print "<br/>
+</fieldset><p/>";
+
+#########
+print '	
+</div>
+</div>
+<p class="clear"></p>';
+
+ }
