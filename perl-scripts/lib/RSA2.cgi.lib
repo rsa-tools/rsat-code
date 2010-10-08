@@ -279,7 +279,7 @@ sub SequenceChoice {
     $sequenceChoiceString .=  "<BR>\n";
 
     ### option to upload the sequence file from the client machine 
-    $sequenceChoiceString .=  "Or select a file to upload<BR>\n";
+    $sequenceChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
     $sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
 						-default=>'',
 						-size=>45,
@@ -338,7 +338,7 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  "<BR>\n";
     
     ### option to upload the sequence file from the client machine 
-    $sequenceChoiceString .=  "Or select a file to upload<BR>\n";
+    $sequenceChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
     $sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file'.$seq_num,
 						-default=>'',
 						-size=>45,
@@ -940,7 +940,7 @@ sub MatrixDBcheckBox {
 
 sub GetMatrixDBfromBox {
 
-	my $mat_db_params ="";
+	my $loaded_params ="";
 	
 	## load the file containing the path to the databases
 	my $mat_db = $ENV{RSAT}."/data/motif_databases/db_matrix_files.tab" ;
@@ -954,8 +954,9 @@ sub GetMatrixDBfromBox {
    			}
    		}
     close MAT_DB;
+
 	
-	return($mat_db_params);
+	return($loaded_params);
 }
 
 
