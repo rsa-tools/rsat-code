@@ -78,6 +78,8 @@ print "<p>Program developed by <a target='_top' href='http://www.ccg.unam.mx/ccg
 print " <a target='_top' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</A>,\n";
 print "and <a target='_top' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</A>.</p>\n";
 print "</center>\n";
+print "<b>Citation</b>: Medina-Rivera, A., Abreu-Goodger, C., Salgado-Osorio, H., Collado-Vides, J. and van Helden, J. (2010). Empirical and theoretical evaluation of transcription factor binding motifs. Nucleic Acids Res. 2010 Oct 4. [Epub ahead of print] <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/20923783'>[Pubmed 20923783]</a> <a target='_blank' href='http://nar.oxfordjournals.org/content/early/2010/10/04/nar.gkq710.full.pdf'>[Full text]</a>.";
+
 
 ## demo description
 print $default{demo_descr};
