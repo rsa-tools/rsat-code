@@ -1592,7 +1592,7 @@ sub footprint_discovery {
 	    $result .= $errline;
 	}
     }
-    
+    $stderr = &error_handling($stderr, 1);
     close HIS_OUT;
     close HIS_ERR;
 
@@ -2326,6 +2326,7 @@ sub xygraph {
     system $command;
     my $result = `cat $tmp_outfile`;
     my $stderr = `$command 2>&1 1>/dev/null`;
+    $stderr = &error_handling($stderr, 1);
     if ($stderr) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
@@ -3294,6 +3295,7 @@ sub convert_graph {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 
     }
+    $stderr = &error_handling($stderr, 1);
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"convert-graph",output_choice=>$output_choice);
 
@@ -3588,6 +3590,8 @@ sub display_graph {
     
     my $result = `cat $tmp_outfile`;
     my $stderr = `$command 2>&1 1>/dev/null`;
+    $stderr = &error_handling($stderr, 1);
+
     if ($stderr) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
@@ -3718,6 +3722,8 @@ sub draw_heatmap {
     }
     my $result = `cat $tmp_outfile`;
     my $stderr = `$command 2>&1 1>/dev/null`;
+    $stderr = &error_handling($stderr, 1);
+
     if ($stderr) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
@@ -4012,6 +4018,7 @@ sub graph_topology {
     system $command;
     my $result = `cat $tmp_outfile`;
     my $stderr = `$command 2>&1 1>/dev/null`;
+    $stderr = &error_handling($stderr, 1);
     if ($stderr) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 
@@ -4118,6 +4125,7 @@ sub graph_cluster_membership {
     my $command = $self->graph_cluster_membership_cmd(%args);
     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
+    $stderr = &error_handling($stderr, 1);
     if ($stderr != "" && $stderr !~ /INFO/ && $stderr !~ /WARNING/) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
@@ -4138,7 +4146,7 @@ sub graph_cluster_membership {
     print COMMENTS_OUT $stderr;
     close COMMENTS_OUT;
     
-    
+
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"graph-cluster-membership",output_choice=>$output_choice);
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
@@ -4237,6 +4245,8 @@ sub compare_graphs {
     my $command = $self->compare_graphs_cmd(%args);
     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
+    $stderr = &error_handling($stderr, 1);
+
     if ($stderr =~ /Warning/) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
