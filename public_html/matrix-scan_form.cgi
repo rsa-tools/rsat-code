@@ -144,10 +144,9 @@ foreach $key (keys %default) {
 ### head
 print "<center>";
 print "Scan a DNA sequence with a profile matrix<br>\n";
-print "<b>Citation</b>: <a href='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A>, <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Derance</a> and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</a> (2008).<br> Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
 print "</p>";
-
 print "</CENTER>";
+print "<b>Citation</b>: <a href='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A>, <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Defrance</a> and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</a> (2008). Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
 
 ## demo description
 print $default{demo_descr1};
