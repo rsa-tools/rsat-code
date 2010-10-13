@@ -4226,7 +4226,7 @@ sub graph_cluster_membership_cmd {
 sub compare_graphs {
     ## In order to recuperate the statistics calculated
     ## by compare-graphs, I place all the standard error
-    ## in a separate file but. However the computation is
+    ## in a separate file but. Indeed the computation is
     ## blocked if the standard error contains the word "Error" 
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -5016,6 +5016,8 @@ sub run_WS_command {
   close HIS_OUT;
   close HIS_ERR;
 
+  $stderr = &error_handling($stderr, 1);
+
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
   }
@@ -5091,6 +5093,35 @@ sub UpdateLogFileWS {
   } else {
     die "Cannot write the webservice LOG file to $log_file, check permission\n";
   }
+}
+
+########################################################################################################################
+## This function handle the error verbosity
+## This can be very useful as the majority of the functions die on any error (even if this error is a stupid warning)
+ 
+sub error_handling {
+  my $stderr = shift;
+  my $verbosity = shift;
+  my $result = "";
+  if ($verbosity == 0) {
+    $result = "";
+  } elsif ($verbosity == 1) {
+    my @stderrcp = split /\n/, $stderr;
+    my @resultcp = ();
+    for (my $i = 0; $i < scalar (@stderrcp); $i++) {
+      my $line = $stderrcp[$i];
+      if ($line =~ /deprecated/) {
+        $i++;
+      } else {
+        push @resultcp, $line;
+      }
+    }      
+    $result = join "\n", @resultcp;
+
+  } else {
+    $result = $stderr;
+  }
+  return $result;
 }
 
 1;
