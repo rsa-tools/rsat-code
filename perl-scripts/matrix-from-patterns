@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.48 2010/10/15 11:18:16 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.49 2010/10/15 11:21:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -245,7 +245,7 @@ package main;
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
       &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      die "Top pattern number\t", $top_pattern_nb;
+#      die "Top pattern number\t", $top_pattern_nb;
     }
 
     ################################################################
