@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.47 2010/10/01 17:01:11 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.48 2010/10/15 11:18:16 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -132,7 +132,7 @@ package main;
     local $asmb_subst = 1;
     local $max_asmb_size = 50;
     local $max_asmb_nb = 5;
-    local $asmb_toppat = 100;
+    local $top_pattern_nb = 100;
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
@@ -239,12 +239,13 @@ package main;
       $assembly_cmd .= " ".$strands;
       $assembly_cmd .= " -maxfl ".$asmb_maxfl;
       $assembly_cmd .= " -subst ".$asmb_subst;
-      $assembly_cmd .= " -toppat ".$asmb_toppat;
+      $assembly_cmd .= " -toppat ".$top_pattern_nb;
       $assembly_cmd .= " -max_asmb_size ".$max_asmb_size;
       $assembly_cmd .= " -max_asmb_nb ".$max_asmb_nb;
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
       &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      die "Top pattern number\t", $top_pattern_nb;
     }
 
     ################################################################
@@ -430,22 +431,20 @@ dyad-analysis.
 	  $infile{patterns} = shift(@arguments);
 
 
-	    ## Assembly file
-
 =pod
 
-=item B<-asmb assembly_file>
+=item B<-toppat #>
 
-Assembly file. As an alternative to the pattern file, the patterns can
-be provided in the form of the result of pattern-assembly.
+Max number of patterns to assemble. This argument is pased to
+I<pattern-assembly>.
 
 =cut
-	} elsif ($arg eq "-asmb") {
-	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
-	    if (defined($infile{patterns}));
-	  $infile{assembly} = shift(@arguments);
 
-	  ## Max number of assemblies
+	} elsif ($arg eq "-toppat") {
+	  $main::top_pattern_nb = shift (@arguments);
+	  &RSAT::error::FatalError($top_pattern_nb, "is not a valid value for option -top_pattern_nb (should be Natural number).")
+	    unless (&IsNatural($max_asmb_nb));
+#	    $max_pattern_nb = 0;
 
 =pod
 
@@ -484,6 +483,20 @@ number of substitutions.
 	    unless (&IsNatural($max_asmb_nb));
 
 
+	    ## Assembly file
+
+=pod
+
+=item B<-asmb assembly_file>
+
+Assembly file. As an alternative to the pattern file, the patterns can
+be provided in the form of the result of pattern-assembly.
+
+=cut
+	} elsif ($arg eq "-asmb") {
+	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
+	    if (defined($infile{patterns}));
+	  $infile{assembly} = shift(@arguments);
 
 
 	    ## Strands
