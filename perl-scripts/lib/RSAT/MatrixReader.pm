@@ -759,7 +759,7 @@ sub _readFromInfoGibbsFile {
 	my $residue = lc(shift @fields);
 
 	## skip the | between residue and numbers
-	shift @fields unless &main::IsReal($fields[0]);
+	shift @fields unless &RSAT::util::IsReal($fields[0]);
 	$matrix->addIndexedRow($residue, @fields);
       }
     }
@@ -1381,7 +1381,7 @@ sub _readFromConsensusFile {
 	$residue =~ s/\s*\|//;
 
 	## skip the | between residue and numbers
-	shift @fields unless &main::IsReal($fields[0]);
+	shift @fields unless &RSAT::util::IsReal($fields[0]);
 	$matrix->addIndexedRow($residue, @fields);
 
 
@@ -1428,9 +1428,9 @@ sub _readFromConsensusFile {
   }
   close $in if ($file);
 
-  &RSAT::message::Debug("matrices read", scalar(@matrices)) if ($main::verbose >= 0);
+  &RSAT::message::Debug("matrices read", scalar(@matrices)) if ($main::verbose >= 3);
 
-  &RSAT::message::Debug("matrices after sorting", scalar(@matrices)) if ($main::verbose >= 0);
+  &RSAT::message::Debug("matrices after sorting", scalar(@matrices)) if ($main::verbose >= 3);
 
   return @matrices;
 }
@@ -1448,18 +1448,13 @@ sub _readFromAssemblyFile {
   &RSAT::message::Info ("Reading matrix from pattern-assembly file", $file) if ($main::verbose >= 3);
 
   ## open input stream
-#  my $in = STDIN;
   my ($in, $dir) = &main::OpenInputFile($file);
-#  if ($file) {
-#    open INPUT, $file;
-#    $in = INPUT;
-#  }
+
   my $current_matrix_nb = 0;
   my @matrices = ();
   my $matrix;
   my $command = "";
 
-#  my %prior = ();
   my $l = 0;
   while (my $line = <$in>) {
     $l++;
@@ -1519,7 +1514,7 @@ sub _readFromAssemblyFile {
       my $pattern_id = $pattern."|";
       $pattern =~ s/\./n/g;
       $pattern_rc =~ s/\./n/g;
-     &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
+      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
       $matrix->add_site(lc($pattern), score=>$score, id=>$pattern_id, max_score=>1);
 
       ## New site from a single-strand assembly
@@ -1549,6 +1544,10 @@ Create a matrix from an isolated pattern string.
 =cut
 sub _from_isolated {
   my ($pattern, $pattern_rc, $score, @matrices) = @_;
+  unless (&RSAT::util::IsReal($score)) {
+    &RSAT::message::Warning($score, "is not a valid score value for pattern", $pattern) if ($main::verbose >= 4);
+    $score = 1;
+  }
   my $pattern_id = $pattern;
   $pattern =~ s/\./n/g;
   if ($pattern_rc) {
@@ -1651,7 +1650,7 @@ sub _readFromTabFile {
 	my $residue = lc(shift @fields);
 
 	## skip the | between residue and numbers
-	shift @fields unless &main::IsReal($fields[0]);
+	shift @fields unless &RSAT::util::IsReal($fields[0]);
 	$matrix->addIndexedRow($residue, @fields);
       }
     }
