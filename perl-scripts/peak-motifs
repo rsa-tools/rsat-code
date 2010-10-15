@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.79 2010/10/03 23:36:40 jvanheld Exp $
+# $Id: peak-motifs,v 1.80 2010/10/15 11:43:09 jvanheld Exp $
 #
 ############################################################
 
@@ -106,7 +106,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.79 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.80 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -140,15 +140,15 @@ package main;
 		      "local_words",
 
 		      "oligo_diff",
-
-		      "ref_motifs",
 		      "merge_words",
 
+		      "ref_motifs",
+
 		      "merge_motifs",
-		      "cluster_motifs",
+#		      "cluster_motifs",
 		      "motifs_vs_ref",
 		      "motifs_vs_db",
-		      "motif_compa",
+#		      "motif_compa",
 
 		      "scan",
 
@@ -212,11 +212,11 @@ package main;
     &RefMotif() if ($task{ref_motifs});
   }
 
-  &WordsVersusWords() if ($task{merge_words});
+  &MergeWords() if ($task{merge_words});
 
   &MergeMotifs() if ($task{merge_motifs});
 
-  &ClusterMotifs() if ($task{cluster_motifs});
+#  &ClusterMotifs() if ($task{cluster_motifs});
 
   &MotifsVersusReference() if ((defined($main::infile{ref_motifs}))
 			       && ($task{motifs_vs_ref}));
@@ -326,6 +326,7 @@ sub DefaultParameters {
   $main::param{local_words_window} = 50; ## Class interval
 
   ## matrix-from-patterns
+  $main::param{asmb_toppat} = $main::param{patterns_max_rank}; push(@main::param_list, "asmb_toppat");
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
 
   ## Matrix comparisons
@@ -777,7 +778,7 @@ sub OligoAnalysis {
       $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &one_command($cmd, 1);
-#      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
     }
   }
 }
@@ -805,7 +806,7 @@ sub OligoDiff {
     #    $cmd .= " -pseudo 0.01";
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1);
-#    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
   }
 }
 
@@ -830,7 +831,7 @@ sub DyadAnalysis {
   $cmd .= " | perl -pe 's/n\\{0\\}//g'"; ## Suppress zero spacings for merging with oligos
   $cmd .= " >".$main::outfile{dyads};
   &one_command($cmd, 1);
-#  &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads");
+  &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads");
 }
 
 ################################################################
@@ -859,7 +860,7 @@ sub PositionAnalysis {
     $cmd .= " -origin center ";
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1);
-#    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type);
   }
 }
 
@@ -897,7 +898,7 @@ sub LocalWords {
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " > ".$main::outfile{$pattern_type};
       &one_command($cmd, 1);
-#      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
     }
   }
 }
@@ -945,10 +946,12 @@ sub RefMotif {
 ################################################################
 ## Compare the significance of words (oligos, dyads) discovered by
 ## the different approaches
-sub WordsVersusWords {
+sub MergeWords {
   my $cmd = $SCRIPTS."/compare-scores -v 1 ";
   my $file_nb = 0;
   foreach my $pattern_type (@pattern_types) {
+    &RSAT::message::Debug("Merging words of type", $pattern_type) if ($main::verbose >= 5);
+    next if ($pattern_type eq "merged_words"); ## avoid recycling the merged words from a previous run in the compilation
     my $pattern_file = $main::outfile{$pattern_type};
     if (-e $pattern_file) {
       my $sig_col;
@@ -969,6 +972,7 @@ sub WordsVersusWords {
 	next;
       }
       $cmd .= " -sc".$file_nb." ".$sig_col;
+      $cmd .= " -suppress ".$main::dir{output}."/"."results/".$pattern_type."/";
       #    &RSAT::message::Debug($file_nb, $pattern_type, $sig_col, "\n", $pattern_file) if ($main::verbose >= 5);
     } else {
       &RSAT::message::Warning("Missing pattern file", $pattern_type, $pattern_file);
@@ -976,7 +980,6 @@ sub WordsVersusWords {
   }
   $cmd .= " -ic 2 -lc";
   $cmd .= " -null .";
-  $cmd .= " -suppress ".$main::dir{output}."/";
   $cmd .= " -suppress ".$main::param{prefix}."_";
   $cmd .= " -suppress '\.tab'";
   $cmd .= " | ".$SCRIPTS."/row-stats -after 1 -sort ";
@@ -1002,6 +1005,9 @@ sub WordsVersusWords {
   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
 
   &RSAT::message::TimeWarn("Word comparison table", $main::outfile{merged_words}) if ($main::verbose >= 2);
+
+  die "HELLO";
+
 }
 
 
@@ -1232,6 +1238,7 @@ sub MatrixFromPatterns {
   $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -pl ".$pattern_file;
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
+  $cmd .= " -toppat ".$main::param{asmb_toppat};
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
   if ($pattern_type eq "dyads") {
     $cmd .= " -subst 0";
@@ -1403,7 +1410,7 @@ sub Synthesis {
   &SynthesisWordCompa();
 
   ## Motif comparison
-  &SynthesisMotifCompa();
+#  &SynthesisMotifCompa();
 
   ## Comparison between discovered motifs and reference motif
   &SynthesisMotifsVersusReference() if (defined($main::infile{ref_motifs}));
@@ -2207,27 +2214,15 @@ local-words). A heatmap is also exported to provide a graphical
 representation of the significance of each word (row) for each
 algorthm (column).
 
-=item I<motif_compa>
 
-Motifs are compared in three ways.
+=item I<motifs_vs_ref>
 
-=over
+Compare each discovered motif to the reference motifs.
 
-=item I<Discovered versus discovered (task cluster_motifs)>
-
-Perform pairwise comparisons between all motifs (matrices) discovered
-by the different algorithms, to assess their consistency.
-
-=item I<Discovered versus reference>
-
-Compare each discovered motif to the reference motif.
-
-=item I<Discovered versus database (task motifs_vs_db)>
+=item I<motifs_vs_db>
 
 Compare each discovered motif to a database of known motifs
 (e.g. Jaspar, TRANSFAC, RegulonDB, UniProbe, ...)
-
-=back
 
 =item I<timelog>
 
@@ -2476,7 +2471,7 @@ sub CheckArguments {
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
    $task{merge_motifs} = 1;
-   $task{cluster_motifs} = 1;
+#   $task{cluster_motifs} = 1;
    $task{motifs_vs_ref} = 1 if (defined($main::infile{ref_motifs}));
    $task{motifs_vs_db} = 1 if (scalar(@motif_databases) > 0);
   }
