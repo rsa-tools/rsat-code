@@ -211,13 +211,12 @@ usage:
 
 =cut
 sub BestMatch {
-    my ($seq1, $seq2) = @_;
+    my ($seq1, $seq2, %args) = @_;
     my $len1 = length($seq1);
     my $len2 = length($seq2);
     my $min_offset = -$len2+1;
     my $max_offset = $len1 -1;
     my $n_offsets = $max_offset - $min_offset + 1;
-
     my $best_matches = -1;
     my $best_weight = -1;
     my $best_proba = -1;
@@ -537,10 +536,13 @@ sub Delete {
 }
 
 
-#### replaces the multipliers within a sequence
-#### eg: atgn(3)gta is transformed to atgnnngta
-#### usage
-####   $exp_seq = &ExpandSeq($seq);
+################################################################
+## Replace the multipliers within a sequence.
+##
+## Example: atgn(3)gta is transformed to atgnnngta
+##
+## Usage
+##   $exp_seq = &ExpandSeq($seq);
 sub ExpandSeq {
     local($seq) = $_[0];
     local($exp_seq) = "";
@@ -1700,7 +1702,7 @@ sub ReadPatterns {
   my $pattern_score = $args{pattern_score};
   my $pattern_seq = $args{pattern_seq};
 
-  &RSAT::messsage::Info("Reading patterns from file $pattern_file") if ($verbose >= 4);
+  &RSAT::message::Info("Reading patterns from file $pattern_file") if ($verbose >= 4);
 
   #### single pattern specified on the command line
   if ($pattern_seq) {
@@ -1755,7 +1757,7 @@ sub ReadPatterns {
 	unless (&IsReal($pattern_score)) {
 	  if (lc($pattern_score) eq "inf") {
 	    unless ($args{inf_scores}) {
-	      $pattern_score = 999; ## Arbitrary value for significance scores extending over the precision limit
+	      $pattern_score = 350; ## Arbitrary value for significance scores extending over the precision limit
 	    }
 	  } else {
 	    $pattern_score = 1;
