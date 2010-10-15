@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: chip-motifs,v 1.80 2010/10/15 11:43:09 jvanheld Exp $
+# $Id: chip-motifs,v 1.81 2010/10/15 14:04:18 jvanheld Exp $
 #
 ############################################################
 
@@ -106,7 +106,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.80 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -778,7 +778,7 @@ sub OligoAnalysis {
       $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &one_command($cmd, 1);
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
     }
   }
 }
@@ -806,7 +806,7 @@ sub OligoDiff {
     #    $cmd .= " -pseudo 0.01";
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1);
-    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
   }
 }
 
@@ -831,7 +831,7 @@ sub DyadAnalysis {
   $cmd .= " | perl -pe 's/n\\{0\\}//g'"; ## Suppress zero spacings for merging with oligos
   $cmd .= " >".$main::outfile{dyads};
   &one_command($cmd, 1);
-  &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads");
+  &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads", 0);
 }
 
 ################################################################
@@ -860,7 +860,7 @@ sub PositionAnalysis {
     $cmd .= " -origin center ";
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1);
-    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type, 0);
   }
 }
 
@@ -898,7 +898,7 @@ sub LocalWords {
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " > ".$main::outfile{$pattern_type};
       &one_command($cmd, 1);
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
     }
   }
 }
@@ -978,7 +978,8 @@ sub MergeWords {
       &RSAT::message::Warning("Missing pattern file", $pattern_type, $pattern_file);
     }
   }
-  $cmd .= " -ic 2 -lc";
+  $cmd .= " -ic 1";
+  $cmd .= " -lc";
   $cmd .= " -null .";
   $cmd .= " -suppress ".$main::param{prefix}."_";
   $cmd .= " -suppress '\.tab'";
@@ -1002,11 +1003,9 @@ sub MergeWords {
 
   ## Extract position-specific column matrices
   my $pattern_type = "merged_words";
-  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);
 
   &RSAT::message::TimeWarn("Word comparison table", $main::outfile{merged_words}) if ($main::verbose >= 2);
-
-  die "HELLO";
 
 }
 
@@ -1231,7 +1230,7 @@ sub MotifsVersusDatabase {
 ################################################################
 ## Convert Word assemblies into PSSMs
 sub MatrixFromPatterns {
-  my ($pattern_file, $pssm_file, $pattern_type) = @_;
+  my ($pattern_file, $pssm_file, $pattern_type, $score_column) = @_;
 
   &RSAT::message::TimeWarn("\n;\tMatrix from patterns", $pattern_type) if ($verbose >= 1);
   my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
@@ -1240,6 +1239,7 @@ sub MatrixFromPatterns {
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
   $cmd .= " -toppat ".$main::param{asmb_toppat};
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
+  $cmd .= " -sc ".$score_column if ($score_column > 0);
   if ($pattern_type eq "dyads") {
     $cmd .= " -subst 0";
   } else {
