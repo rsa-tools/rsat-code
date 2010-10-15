@@ -3039,6 +3039,12 @@ sub add_site() {
   my ($self, $site_seq, %args) = @_;
   my $site_id = $args{id} || $site_seq;
   my $score =  $args{score} || 1;
+
+  unless (&RSAT::util::IsReal($score)) {
+    &RSAT::message::Warning($score, "is not a valid score value for site", $site_seq, "score set to 1") if ($main::verbose >= 4);
+    $score = 1;
+  }
+
   if ($score <  0) {
     &RSAT::message::Warning("RSAT::matrix::add_site()",
 			    "site",
