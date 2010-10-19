@@ -23,7 +23,12 @@
   # demo
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-     $default_organisms = "dsba/dsmi/dspd/spo/sce";
+     # Comment: in higher KEGG versions, the three other yeast species are no longer available as KGML files
+     if($kgmlVersion < 50.0){
+        $default_organisms = "dsba/dsmi/dspd/spo/sce";
+     }else{
+        $default_organisms = "spo/sce";
+     }
   }else if ($demo == 2){
      $default_organisms = "reference";
      $default_excludedcompounds = "C01371/C06058/C01872/C15521/C02403/C00722/C01372/C01706/C06015/C00069C00226/C00339/C00432/C02525/C02893/C03130/C03485/C03491/C01813/C01891/C00947/C00709/C02019/C02146/C00071/C00538/C00609/C01928/C00193/C00287/C01629/C01016/C02434/C01883/C03317/C02391/C00060/C00161/C00347/C00539/C00706/C00893/C01609/C01664/C02136/C02196/C02311/C02324/C02580/C05360/C00972/C03096/C03252/C03547/C00241/C00484/C01658/C01976/C02058/C01663/C02179/C02244/C16072/C00726/C01887/C16073/C01812/C01318/C03122/C00045/C00405/C00151/C01021/C01076/C03253/C05167/C06699/C06700/C02847/C02853/C03135/C03148/C04245/C03523/C04313/C05710/C06378/C02850/C16116/C00737/C00991/C01370/C01547/C01599/C01383/C00030/C00028/C00050/C01815/C02148/C02169/C02285/C00162/C00638/C01229/C02403/C03395/C03547/C04215/C04340/C05102/C05996/C00377/C06479/C15506/C15507/C00370/C00012/C00098/C00107/C00316/C01960/C02179/C01579/C02790/C00420/C01923/C00182/C00403/C02056/C00017/C00046/C00066/C00240/C00731/C00960/C02447/C03638/C03880/C01396/C01522/C02073/C02211/C02342/C02521/C03959/C05156/C05157/C00039/C00271/C00434/C00578/C00871/C02128/C02270/C02374/C02410/C02840/C03310/C03484/C03959/C04395/C04249/C00718/C01003/C02707/C01356/C00678/C00865/C05005/C01915/C07305/C02843/C03129/C01939/C03667/C06061/C00174/C01373/C00701/C06708/C05426/C10905/C11349/C03376/C03377";
@@ -38,9 +43,15 @@
   </h2>
   <br>");
   if($demo == 1){
-  	demo("To demonstrate the KEGG network provider, we are constructing the metabolic network from five yeast species:<br>
-  	dsba (Saccharomyces bayanus), dsmi (Saccharomyces mikatae), dspd (Saccharomyces paradoxus), spo (Schizosaccharomyces pombe)
-  	 and sce (Saccharomyces cerevisiae).");
+     # Comment: in higher KEGG versions, the three other yeast species are no longer available as KGML files
+    if($kgmlVersion > 50.0){
+        demo("To demonstrate the KEGG network provider, we are constructing the metabolic network from two yeast species:<br>
+        spo (Schizosaccharomyces pombe) and sce (Saccharomyces cerevisiae).");
+    }else{
+        demo("To demonstrate the KEGG network provider, we are constructing the metabolic network from five yeast species:<br>
+        dsba (Saccharomyces bayanus), dsmi (Saccharomyces mikatae), dspd (Saccharomyces paradoxus), spo (Schizosaccharomyces pombe)
+        and sce (Saccharomyces cerevisiae).");
+    }
    }else if($demo == 2){
    demo("We demonstrate how the KEGG network provider can be used to
    filter the KEGG network. KEGG LIGAND contains many problematic entries, such as
@@ -58,7 +69,7 @@
   <tr><td>
          Enter full species names as given in KEGG or KEGG abbreviations for organisms, separated by '/' in text field below.<br>
          Example 1: eco/ecp/ecs<br>
-         Example 2: Saccharomyces cerevisiae/Saccharomyces bayanus/spo<br>
+         Example 2: Aspergillus flavus/Aspergillus niger/afm<br>
          Example 3: reference<br>
          <a href='data/KEGG/Kegg_organisms_list.txt'><b>Click here for the full list of KEGG organism names and abbreviations</b></a>
   </td></tr>
