@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.123 2010/10/19 21:42:38 jvanheld Exp $
+# $Id: convert-matrix,v 1.124 2010/10/19 21:43:35 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -156,7 +156,7 @@ if ($logo_file_base) {
   if ($dir) {
     $logo_dir = $dir;
     $logo_file_base = $short_file_name;
-    &RSAT::message::Debug("Logo file name decomposed", "logo_dir=".$logo_dir, "logo_file_base=".$logo_file_base) if ($main::verbose >= 0);
+    &RSAT::message::Debug("Logo file name decomposed", "logo_dir=".$logo_dir, "logo_file_base=".$logo_file_base) if ($main::verbose >= 5);
   }
 }
 
