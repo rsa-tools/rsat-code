@@ -3716,7 +3716,7 @@ Usage:
 
 =cut
 sub makeLogo{
-  my ($self,$logo_basename,$logo_formats,$logo_dir, $logo_options, $rev_compl) = @_;
+  my ($self,$logo_basename,$logo_formats,$logo_options, $rev_compl) = @_;
 
   ## We need an ID -> if not defined, use the consensus
   my $ac = $self->get_attribute("accession");
@@ -3727,9 +3727,19 @@ sub makeLogo{
     $self->force_attribute("id", $id);
   }
 
-  unless ($logo_basename) {
+
+  ## Make sure that logo basename is defined and that it does not include the directories
+  if ($logo_basename) {
+    my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_basename); 
+#    &RSAT::message::Debug("RSAT::matrix::makeLogo()", "basename decomposition", $logo_basename, $dir, $short_file_name) if ($main::verbose >= 5);
+    $logo_basename = $short_file_name;
+    if ($dir) {
+      $logo_dir = $dir;
+    }
+  } else {
     $logo_basename = $accession || $id;
   }
+  
 
   my $ncol = $self->ncol();
 
@@ -3742,10 +3752,9 @@ sub makeLogo{
   }
 
   ## Create a file with fake sequences having the same residue composition as the matrix
-  my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($logo_dir, $rev_compl);
+  my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($rev_compl);
 
-  &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file)
-    if ($main::verbose >= 5);
+#  &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
 
   ## Logo title indicates matrix ID, name
   my $logo_title = &RSAT::util::ShortFileName($id);
@@ -3786,8 +3795,9 @@ sub makeLogo{
     }
 
     ## Prepare the seqlogo command
-    my $logo_cmd = $seqlogo_path;
-    $logo_cmd.= " -f ".$fake_seq_file;
+    my $logo_cmd = "cd ".$logo_dir;
+    $logo_cmd .= "; ".$seqlogo_path;
+    $logo_cmd .= " -f ".$fake_seq_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
     $logo_cmd .= " -x '".$logo_info."'";
@@ -3828,11 +3838,10 @@ sub makeLogo{
 ## flexible, see http://biodev.hgen.pitt.edu/enologos/).
 ##
 sub fake_seq_from_matrix {
-  my ($self,$seq_dir, $rev_compl) = @_;
-  &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "dir=".$seq_dir, "rev_compl=".$rev_compl) if ($main::verbose >= 5);
+  my ($self,$rev_compl) = @_;
+  &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "rev_compl=".$rev_compl) if ($main::verbose >= 5);
 
   my $null_residue = "n"; ##  to fill up sequences for matrices having columns with different number of residues
-
   my $nb_col = $self->ncol();
   my $nb_row = $self->nrow();
   @matrix = @{$self->{table}};
@@ -3843,9 +3852,6 @@ sub fake_seq_from_matrix {
   my @null_residues = ();
   for my $i (0..$#col_sum) {
     $null_residues[$i] = $max_col_sum - $col_sum[$i];
-#    if ($null_residues[$i] > 0) {
-#      &RSAT::message::Warning("The sums of counts per column must all be equal in order to make logo.");
-#    }
   }
   my $seq_number = $max_col_sum;
 
@@ -3856,7 +3862,6 @@ sub fake_seq_from_matrix {
     my $i=0;
     my $null_residue_nb = $max_col_sum; ## counter for the null residues in the current column
     foreach my $letter ($self->getAlphabet()) {
-      ##    foreach my $letter ("A","C","G","T") {
       my $counts = &RSAT::util::round($matrix[$c][$i]); ## round the number in order to support matrices with decimal values
       $null_residue_nb -= $counts;
       $letters_at_column[$c] .= $letter x $counts;
@@ -3890,11 +3895,6 @@ sub fake_seq_from_matrix {
   my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
-#  my $current_id = 0;
-#  foreach my $current_seq (@seqs) {
-#      $current_id++;
-#      &main::PrintNextSequence($seq_handle, "fasta", 0, $current_seq, $current_id);
-#  }
 #  &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 5);
   return ($tmp_seq_file,$seq_number);
 }
