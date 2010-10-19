@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.81 2010/10/15 14:04:18 jvanheld Exp $
+# $Id: peak-motifs,v 1.82 2010/10/19 21:06:42 jvanheld Exp $
 #
 ############################################################
 
@@ -106,7 +106,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.82 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1919,10 +1919,14 @@ specified length around the sequence center (from -msl/2 to +msl/2).
 
 =cut
     } elsif ($arg eq "-max_seq_len") {
-      $main::param{max_seq_len} = shift(@arguments);
-      &RSAT::error::FatalError($main::param{max_seq_len}, "is not a valid value for max sequence length. Should be a strictly positive Natural number.")
-	unless ((&IsNatural($main::param{max_seq_len})) && ($main::param{max_seq_len} > 0));
-
+      my $max_seq_len = shift(@arguments);
+      &RSAT::error::FatalError($max_seq_len, "is not a valid value for max sequence length. Should be a Natural number.")
+	unless ((&IsNatural($max_seq_len)));
+      if ($max_seq_len > 0) {
+	$main::param{max_seq_len} = $max_seq_len;
+      } else {
+	&RSAT::message::Info("Max seq len = 0 interpreted as no limit") if ($main::verbose >= 2);
+      }
 
 =pod
 
@@ -1941,10 +1945,14 @@ large sequence sets.
 
 =cut
     } elsif ($arg eq "-top_peaks") {
-      $main::param{top_peaks} = shift(@arguments);
-      &RSAT::error::FatalError($main::param{top_peaks}, "is not a valid value for the number of top peaks. Should be a strictly positive Natural number.")
-	unless ((&IsNatural($main::param{top_peaks})) && ($main::param{top_peaks} > 0));
-
+      my $top_peaks = shift(@arguments);
+      &RSAT::error::FatalError($top_peaks, "is not a valid value for max sequence length. Should be a Natural number.")
+	unless ((&IsNatural($top_peaks)));
+      if ($top_peaks > 0) {
+	$main::param{top_peaks} = $top_peaks;
+      } else {
+	&RSAT::message::Info("Top peak number = 0 interpreted as no limit") if ($main::verbose >= 2);
+      }
 
 =pod
 
