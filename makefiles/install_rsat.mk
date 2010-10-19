@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.18 2010/07/24 10:43:20 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.19 2010/10/19 23:00:11 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -372,7 +372,7 @@ install_gnuplot:
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${RSAT}/app_sources/MEME
-MEME_VERSION=4.3.0
+MEME_VERSION=4.4.0
 MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
 MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
 MEME_DISTRIB_DIR=${MEME_BASE_DIR}/meme_${MEME_VERSION}
@@ -402,7 +402,7 @@ install_meme:
 
 ################################################################
 ## Install the graph-based clustering algorithm MCL
-MCL_BASE_DIR=${RSAT}/app_source/mcl
+MCL_BASE_DIR=${RSAT}/app_sources/mcl
 MCL_VERSION=09-308
 MCL_ARCHIVE=mcl-${MCL_VERSION}.tar.gz
 MCL_URL=http://www.micans.org/mcl/src/${MCL_ARCHIVE}
@@ -433,7 +433,7 @@ install_mcl:
 
 ################################################################
 ## Install the graph-based clustering algorithm RNSC
-RNSC_BASE_DIR=${RSAT}/app_source/rnsc
+RNSC_BASE_DIR=${RSAT}/app_sources/rnsc
 RNSC_VERSION=09-308
 RNSC_ARCHIVE=rnsc.zip
 RNSC_URL=http://www.cs.utoronto.ca/~juris/data/rnsc/rnsc.zip
