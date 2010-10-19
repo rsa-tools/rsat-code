@@ -3718,6 +3718,7 @@ Usage:
 sub makeLogo{
   my ($self,$logo_basename,$logo_formats,$logo_options, $rev_compl) = @_;
 
+
   ## We need an ID -> if not defined, use the consensus
   my $ac = $self->get_attribute("accession");
   my $id = $self->get_attribute("id");
@@ -3730,8 +3731,8 @@ sub makeLogo{
 
   ## Make sure that logo basename is defined and that it does not include the directories
   if ($logo_basename) {
-    my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_basename); 
-#    &RSAT::message::Debug("RSAT::matrix::makeLogo()", "basename decomposition", $logo_basename, $dir, $short_file_name) if ($main::verbose >= 5);
+    my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_basename);
+    &RSAT::message::Debug("RSAT::matrix::makeLogo()", "basename=".$logo_basename, "dir=".$dir, "short_file_name=".$short_file_name) if ($main::verbose >= 5);
     $logo_basename = $short_file_name;
     if ($dir) {
       $logo_dir = $dir;
@@ -3739,7 +3740,7 @@ sub makeLogo{
   } else {
     $logo_basename = $accession || $id;
   }
-  
+  &RSAT::message::Debug("RSAT::matrix::makeLogo()", "basename=".$logo_basename, "logo_dir=".$logo_dir) if ($main::verbose >= 5);
 
   my $ncol = $self->ncol();
 
