@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.122 2010/10/19 21:04:00 jvanheld Exp $
+# $Id: convert-matrix,v 1.123 2010/10/19 21:42:38 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -150,6 +150,15 @@ if (scalar(@matrix_files > 1)) {
   &RSAT::message::Info(scalar(@matrix_files)." input matrix files") if ($main::verbose >= 2);
 }
 
+## Decompose logo file name into dirname and basename
+if ($logo_file_base) {
+  my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_file_base);
+  if ($dir) {
+    $logo_dir = $dir;
+    $logo_file_base = $short_file_name;
+    &RSAT::message::Debug("Logo file name decomposed", "logo_dir=".$logo_dir, "logo_file_base=".$logo_file_base) if ($main::verbose >= 0);
+  }
+}
 
 ################################################################
 ## Check output parameters
@@ -352,6 +361,7 @@ foreach my $matrix (@matrices) {
 
   ## Generate logo
   if (($return_fields{logo}) && ($seqlogo_path)) {
+
     unless ($logo_dir) {
       if ($outfile{output}) {
 	$logo_dir = dirname($outfile{output});
