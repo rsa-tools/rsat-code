@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.121 2010/09/29 05:41:24 jvanheld Exp $
+# $Id: convert-matrix,v 1.122 2010/10/19 21:04:00 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -366,20 +366,21 @@ foreach my $matrix (@matrices) {
     ## Create logo directory if required
     &RSAT::util::CheckOutDir($logo_dir);
 
-    my $logo_file;
+    my $logo_file = $logo_dir."/";
     if ($logo_file_base) {
-      $logo_file = $logo_file_base."_m".$m;
+      $logo_file .= $logo_file_base."_m".$m;
     } else {
       my $id = $matrix->get_attribute("id");
       my $ac = $matrix->get_attribute("accession");
-      $logo_file = $logo_dir."/";
       $logo_file .= $ac || $id;
       $logo_file .= "_logo";
     }
     #	$logo_file =~ s/\.\w+$//;
-    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
+#    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
+    $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0); ## Generate the logo image
     $matrix->set_attribute("logo_file" => $logo_file);
-    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
+#    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
+    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1);	## Generate logo image for the reverse complementary motif
     $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
 
     ## Index the logos in a HTML table

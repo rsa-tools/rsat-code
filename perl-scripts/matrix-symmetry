@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.18 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: matrix-symmetry,v 1.19 2010/10/19 21:04:00 jvanheld Exp $
 #
 ############################################################
 
@@ -155,7 +155,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
     local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     $seqlogo_path = &trim($seqlogo_path);
@@ -531,10 +531,11 @@ package main;
 	    ## Generate logo
 	    if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir)) {
 
-		my $logo_file=$logo_dir.$matrix->get_attribute("name")."_logo";
+		my $logo_file = $logo_dir.$matrix->get_attribute("name")."_logo";
 		#	$logo_file =~ s/\.\w+$//;
 		$matrix->set_attribute("logo_file" => $logo_file);
-		$matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
+#		$matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
+		$matrix->makeLogo($logo_file,\@logo_formats,$logo_opt);
 
 		print STDOUT "\n";
 	    }
