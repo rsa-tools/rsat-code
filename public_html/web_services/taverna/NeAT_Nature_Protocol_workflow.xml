@@ -247,7 +247,7 @@
   <s:processor name="convert_classes">
     <s:description>Interconversions between different formats of cluster files.</s:description>
     <s:arbitrarywsdl>
-      <s:wsdl>http://rsat.bigre.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
       <s:operation>convert_classes</s:operation>
     </s:arbitrarywsdl>
   </s:processor>
@@ -255,14 +255,14 @@
     <s:description>Compare two class files(the query file and the reference file). Each class of the query file is compared to each class of the reference file.
 The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone.</s:description>
     <s:arbitrarywsdl>
-      <s:wsdl>http://rsat.bigre.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
       <s:operation>compare_classes</s:operation>
     </s:arbitrarywsdl>
   </s:processor>
   <s:processor name="mcl">
     <s:description>Clustering via Stijn van Dongen MCL algorithm</s:description>
     <s:arbitrarywsdl>
-      <s:wsdl>http://rsat.bigre.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
       <s:operation>mcl</s:operation>
     </s:arbitrarywsdl>
   </s:processor>
