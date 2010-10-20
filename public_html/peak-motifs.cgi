@@ -60,7 +60,7 @@ $parameters .= "-i $sequence_file ";
 ### tasks
 
 ## default
-@tasks = ("purge", "seqlen", "profiles", "synthesis");
+@tasks = ("purge", "seqlen", "composition", "synthesis");
 
 ## motif-disco
 my $oligo_params = "";
@@ -173,7 +173,7 @@ $parameters .= " -2str -noov -img_format png ";
 
 
 ############################################ display or send result
-$index_file = $output_directory."/".$output_prefix."synthesis2.html";
+$index_file = $output_directory."/".$output_prefix."_synthesis2.html";
 my $mail_title = join (" ", "[RSAT]", "chip-motifs", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 #&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
