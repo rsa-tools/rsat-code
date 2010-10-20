@@ -950,7 +950,7 @@ sub GetMatrixDBfromBox {
    		next if ($line =~ /^#/);
    		my @mat_line = split (/\t/,$line);
    		if ($query->param($mat_line[0]) =~ /on/){
-   			$mat_db_params .= " -motif_db $mat_line[0] transfac $ENV{RSAT}/data/motif_databases/$mat_line[2]";
+   			$loaded_params .= " -motif_db $mat_line[0] transfac $ENV{RSAT}/data/motif_databases/$mat_line[2]";
    			}
    		}
     close MAT_DB;

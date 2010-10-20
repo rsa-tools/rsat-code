@@ -140,7 +140,7 @@ if ($query->param('max_seq_len')){
  
 ## search motifs (matrix-scan-quick)
  if ($query->param('matrix-scan-quick') =~ /on/) {
-        push(@tasks, "scan");
+       # push(@tasks, "scan");
         
         ## HERE need to add the pval and markov order for the background model for matrix-scan-quick
         
@@ -164,7 +164,7 @@ $parameters .= " -outdir $output_path";
 $parameters .= " -prefix $output_prefix";
 
 ### verbosity
-$parameters .= " -v 1";
+#$parameters .= " -v 1";
 
 ### other default parmaters
 $parameters .= " -2str -noov -img_format png ";
@@ -173,7 +173,7 @@ $parameters .= " -2str -noov -img_format png ";
 
 
 ############################################ display or send result
-$index_file = $output_directory."/".$output_prefix."_synthesis2.html";
+$index_file = $output_directory."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "chip-motifs", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 #&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
