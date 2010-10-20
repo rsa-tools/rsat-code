@@ -43,7 +43,8 @@ ARGUMENTS
                               use --window=none to search without window
                               EXAMPLE: --window=20 (window of length 20)
         --windowgroup=#       count oligomers in fixed window of length #, 2#, ...
-                              EXAMPLE: --windowgroup=20 (use a window of length 20, 40, 60, ...)
+                              only valid when the --center option is used
+                              EXAMPLE: --center=0 --windowgroup=20 (use a window of length 20, 40, 60, ...)
         --right=#             use right bound position as reference
                               position #. This should be used when dealing with 
                               upstream sequences.
@@ -116,7 +117,7 @@ STATISTICS
 
 '''        
 
-VERSION = '20100426'
+VERSION = '20101020'
 USAGE = '''local-word-analysis -l OLIGOMER_LENGTH [-i inputfile]
                 [-o outputfile] 
                 [--max parameter #][--min parameter #]
@@ -254,7 +255,10 @@ def main(args, options):
         return pager(doc)
 
     if options.l == None:
-        parser.error("options -l is required. You must provide at least an oligomer length")
+        parser.error("option -l is required. You must provide at least an oligomer length")
+
+    if options.center == None and options.window_group != None:
+        parser.error("option --windowgroup requires --center")
 
     timer = tab.Timer()
     spacing = ( int(options.spacing.split(':')[0]), int(options.spacing.split(':')[1]) )
@@ -350,10 +354,12 @@ def main(args, options):
               'window' : options.window,
               'window_group' : options.window_group,
               'dyad' : options.dyad,
+              'center' : options.center
               }
     params.update(thresholds)
 
     start_time = time.localtime()
+
     ##
     #
     # Run
