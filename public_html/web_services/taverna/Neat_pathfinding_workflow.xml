@@ -4,7 +4,7 @@
   <s:processor name="metabolicgraphconstruction">
     <s:description>Construct a metabolic graph from KEGG KGML files.</s:description>
     <s:arbitrarywsdl>
-      <s:wsdl>http://rsat.bigre.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl</s:wsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl</s:wsdl>
       <s:operation>metabolicgraphconstruction</s:operation>
     </s:arbitrarywsdl>
   </s:processor>
@@ -109,7 +109,7 @@
   <s:processor name="pathfinding">
     <s:description>Enumerate the k shortest paths between a set of source nodes and a set of target nodes in weighted graphs.</s:description>
     <s:arbitrarywsdl>
-      <s:wsdl>http://rsat.bigre.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl</s:wsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl</s:wsdl>
       <s:operation>pathfinding</s:operation>
     </s:arbitrarywsdl>
   </s:processor>
