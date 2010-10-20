@@ -19,7 +19,8 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/matrix-distrib -v 1";
 $tmp_file_name = sprintf "matrix-distrib.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
+#$result_file = "$TMP/$tmp_file_name.res";
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -42,6 +43,7 @@ open MAT, "> $matrix_file";
 print MAT $query->param('matrix');
 close MAT;
 &DelayedRemoval($matrix_file);
+push (@result_files, "input matrix",$matrix_file);
 
 $parameters .= " -m $matrix_file";
 
@@ -141,10 +143,11 @@ if (($query->param('output') =~ /display/i) ||
   open RESULT, "$command $parameters |";
 
   ### open the sequence file on the server
-  $sequence_file = "$TMP/$tmp_file_name.res";
-  if (open MIRROR, ">$sequence_file") {
+  $distrib_file = "$TMP/$tmp_file_name.res";
+  push (@result_files, "distribution table", $distrib_file);
+  if (open MIRROR, ">$distrib_file") {
     $mirror = 1;
-    &DelayedRemoval($sequence_file);
+    &DelayedRemoval($distrib_file);
   }
 
   print "<PRE>";
@@ -174,19 +177,25 @@ if (($query->param('output') =~ /display/i) ||
   unless($error_found){
     my $XYgraph_command = "$SCRIPTS/XYgraph";
 
-    my $graph_file1 = "$tmp_file_name"."_1.png";
+    my $plot_format = "png";
+    my $graph_file1 = "$tmp_file_name"."_1.".${plot_format};
     my $figure = "$TMP/$graph_file1";
-    my $command2 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights' -title2 'Score probability' -xcol 1 -ycol 2 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'frequency' -format png";
+    my $command2 = "$XYgraph_command -i $distrib_file -o $figure -title1 'Distribution of weights' -title2 'Score probability' -xcol 1 -ycol 2 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'frequency' -format ".${plot_format};
     `$command2`;
     print "<center><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
     &DelayedRemoval("$TMP/$graph_file1");
+    push (@result_files, "Weight distrib plot", $graph_file1);
 
-    my $graph_file2 = "$tmp_file_name"."_2.png";
+    my $graph_file2 = "$tmp_file_name"."_2.".${plot_format};
     $figure = "$TMP/$graph_file2";
-    my $command3 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights  (log scale)' -title2 'Score probability and P-value' -xcol 1 -ycol 2,4 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'Frequency (log scale)' -format png -ylog -ymax 1 -ymin 0";
+    my $command3 = "$XYgraph_command -i $distrib_file -o $figure -title1 'Distribution of weights  (log scale)' -title2 'Score probability and P-value' -xcol 1 -ycol 2,4 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'Frequency (log scale)' -format ${plot_format} -ylog -ymax 1 -ymin 0";
     `$command3`;
     print "<a href = \"$WWW_TMP/$graph_file2\"><IMG SRC=\"$WWW_TMP/$graph_file2\" width='200'></a></CENTER><P>\n";
     &DelayedRemoval("$TMP/$graph_file2");
+    push (@result_files, "P-value distrib plot", $graph_file2);
+
+    ## Links to the result files
+    &PrintURLTable(@result_files);
 
     ### prepare data for piping
     &PipingForm();
@@ -218,7 +227,7 @@ sub PipingForm {
   <TD>
 <FORM METHOD="POST" ACTION="XYgraph_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
-<INPUT type="hidden" NAME="XYgraph_file" VALUE="$sequence_file">
+<INPUT type="hidden" NAME="XYgraph_file" VALUE="$distrib_file">
 <INPUT type="hidden" NAME="xleg1" VALUE="weight">
 <INPUT type="hidden" NAME="yleg1" VALUE="frequency">
 <INPUT type="hidden" NAME="lines" VALUE="on">
