@@ -111,7 +111,7 @@ if ($query->param('max_seq_len')){
 
 ## motif databases
  if ($query->param('compare_motif_db') =~ /on/) {
-        push(@tasks, "motif_compa");
+        push(@tasks, "motifs_vs_db");
         
         ## load the files containing the databases
         my $mat_db_params = &GetMatrixDBfromBox();
@@ -140,7 +140,7 @@ if ($query->param('max_seq_len')){
  
 ## search motifs (matrix-scan-quick)
  if ($query->param('matrix-scan-quick') =~ /on/) {
-        push(@tasks, "sites");
+        push(@tasks, "scan");
         
         ## HERE need to add the pval and markov order for the background model for matrix-scan-quick
         
