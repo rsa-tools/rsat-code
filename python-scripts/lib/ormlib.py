@@ -5,11 +5,8 @@ ormlib
 :DESC:
 ORM library
 
-:TODO:
--load oligo 2str (check if it is correct)
-- f += F.get(word, 0.0) * x
--upper threshold n_win ?
--BUG count_tree Ntab end of seq (PARTIAL FIX WHEN spacing=(1:1) )
+:BUG:
+count_tree Ntab end of seq (PARTIAL FIX WHEN spacing=(1:1) )
 
 :HELP:
 H -> hash table key=oligonucleotide value=list of occurrence position
@@ -318,6 +315,7 @@ class Extractor:
     def run(self):
         l = self.l
         params = self.params
+
         if len(l) < params['occ'][0] or len(l) > params['occ'][1] :
             return []    
 
@@ -328,6 +326,28 @@ class Extractor:
             self.__next(a,b,obsOcc)
     
         # FIXED SIZE
+        elif params['window_group'] and params['center'] != None:
+            window_l = params['window_group']
+            center = params['center']
+            while True:
+                a = center - window_l / 2
+                b = center + window_l / 2
+                obsOcc = bisect.bisect_right(l, b) - bisect.bisect_left(l, a)
+                self.__next(a,b,obsOcc)
+                window_l *= 2
+                a = center - window_l / 2
+                b = center + window_l / 2
+                if window_l > self.location[1] - self.location[0]:
+                    break
+        
+        # elif params['window_group']:
+        #     window_l = params['window_group']
+        #     for a in range(self.location[0], self.location[1]-window_l+1+1, window_l):
+        #         for b in range(a+window_l-1, self.location[1]+1, window_l):
+        #             print (a,b)
+        #             obsOcc = bisect.bisect_right(l, b) - bisect.bisect_left(l, a)
+        #             self.__next(a,b,obsOcc)
+
         elif params['window'] != 'variable' and params['window'] != 'none':
             window_with = int(params['window'])
             for a in range(self.location[0], self.location[1]-window_with+1+1, window_with):
@@ -335,12 +355,6 @@ class Extractor:
                 obsOcc = bisect.bisect_right(l, b) - bisect.bisect_left(l, a)
                 self.__next(a,b,obsOcc)
 
-        elif params['window_group']:
-            window_l = params['window_group']
-            for a in range(self.location[0], self.location[1]-window_l+1+1, window_l):
-                for b in range(a+window_l-1, self.location[1]+1, window_l):
-                    obsOcc = bisect.bisect_right(l, b) - bisect.bisect_left(l, a)
-                    self.__next(a,b,obsOcc)
 
         # SLICES
         elif params['window'] == 'variable':
