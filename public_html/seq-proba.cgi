@@ -18,6 +18,7 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/seq-proba -v 1";
 $tmp_file_name = sprintf "seq-proba.%s", &AlphaDate();
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -51,35 +52,37 @@ if ($bg_method eq "bgfile") {
   my $background_model = $query->param("background");
   my $markov_order = $query->param('markov_order');
   my $oligo_length = $markov_order + 1;
-  $bg_file = &ExpectedFreqFile($organism_name,
-			       $oligo_length, $background_model,
-			       noov=>$noov, str=>"-1str");
-  $parameters .= " -bgfile ".$bg_file;
+  $bgfile = &ExpectedFreqFile($organism_name,
+			      $oligo_length, $background_model,
+			      noov=>$noov, str=>"-1str");
+  $parameters .= " -bgfile ".$bgfile;
 
-  } elsif ($bg_method =~ /upload/i) {
-    ## Upload user-specified background file
-    my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
-    my $upload_bgfile = $query->param('upload_bgfile');
-    if ($upload_bgfile) {
-      if ($upload_bgfile =~ /\.gz$/) {
-	$bgfile .= ".gz";
-      }
-      my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
-      open BGFILE, ">$bgfile" ||
-	&cgiError("Cannot store background file in temp dir.");
-      while (<$upload_bgfile>) {
-	print BGFILE;
-      }
-      close BGFILE;
-      $parameters .= " -bgfile $bgfile";
-      $parameters .= " -bg_format ".$query->param('bg_format');
-    } else {
-      &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+} elsif ($bg_method =~ /upload/i) {
+  ## Upload user-specified background file
+  $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  my $upload_bgfile = $query->param('upload_bgfile');
+  if ($upload_bgfile) {
+    if ($upload_bgfile =~ /\.gz$/) {
+      $bgfile .= ".gz";
     }
-		
+    my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+    open BGFILE, ">$bgfile" ||
+      &cgiError("Cannot store background file in temp dir.");
+    while (<$upload_bgfile>) {
+      print BGFILE;
+    }
+    close BGFILE;
+    $parameters .= " -bgfile $bgfile";
+    $parameters .= " -bg_format ".$query->param('bg_format');
   } else {
-    &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+    &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
+		
+} else {
+  &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+}
+push @result_files, ("Background file",$bgfile);
+
 
 ## Return fields
 @return_fields = qw(id proba_b log_proba len seq detail);
@@ -101,11 +104,14 @@ if (($query->param('output') =~ /display/i) ||
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
+    push @result_files, ("Result file",$result_file);
     open RESULT, "$command $parameters |";
 
     ### Print result on the web page
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, true);
+
+    &PrintURLTable(@result_files);
     close(RESULT);
 
 #} elsif 
