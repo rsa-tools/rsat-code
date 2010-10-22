@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: chip-motifs,v 1.83 2010/10/20 00:57:55 jvanheld Exp $
+# $Id: chip-motifs,v 1.84 2010/10/22 13:02:04 jvanheld Exp $
 #
 ############################################################
 
@@ -13,7 +13,7 @@
 
 =head1 NAME
 
-chip-motifs
+peak-motifs
 
 =head1 VERSION
 
@@ -30,7 +30,7 @@ ChIP-PET) peak sequences.
 
 =item Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
 
-Conception and implementation of the work flow.
+unConception and implementation of the work flow.
 
 =item Morgane Thomas-Chollier <thomas-c@molgen.mpg.de>
 
@@ -38,16 +38,18 @@ Conception of the work flow + implementation of Web interface.
 
 =item Matthieu Defrance <defrance@ccg.unam.mx>
 
-Algorithms used in the work flow (local-word-analysis).
+Implementation of the efficient algorithms used in the work flow
+(I<local-word-analysis>, I<count-words>, I<matrix-scan-quick>).
 
 =item Olivier Sand <oly@bigre.ulb.ac.be> for the Web services
 
 Web services.
 
-=item Carl Herrmann <carl.herrmann@univmed.fr> and Denis Thieffry <thieffry@tagc.univ-mrs.fr>
+=item Carl Herrmann <carl.herrmann@univmed.fr> and Denis Thieffry
+<thieffry@tagc.univ-mrs.fr>
 
-Definition of optimal conditions of utilzation. Motif comparisons and
-clustering.
+Analyis of the case studies. Definition of optimal conditions of
+utilzation. Motif comparisons and clustering.
 
 =back
 
@@ -58,7 +60,7 @@ Pattern discovery
 
 =head1 USAGE
 
-chip-motifs [-i inputfile] [-o outputfile] [-v #] [...]
+peak-motifs [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -102,12 +104,14 @@ package main;
   ## Initialize parameters
   local $start_time = &RSAT::util::StartScript();
 
+  local $die_on_error = 1;
+
   ## Check that the RSAT paths of the programs required for the script are specified
   $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.83 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.84 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -125,6 +129,7 @@ package main;
 
   ## Pattern types (oligos, positions, local-word-analysis,... with the oligo length suffix)
   @pattern_types = ();
+  @patterns_to_merge = ();
   @timelog_keys = ();
 
 
@@ -144,6 +149,7 @@ package main;
 		      "oligo_diff",
 		      "merge_words",
 
+		      "meme_bg",
 		      "meme",
 
 		      "merge_motifs",
@@ -217,6 +223,7 @@ package main;
   &LocalWords() if ($task{local_words});
   &MergeWords() if ($task{merge_words});
 
+  &CalcMemeBackground() if ($task{meme_bg});
   &RunMEME() if ($task{meme});
 
   &MergeMotifs() if ($task{merge_motifs});
@@ -326,13 +333,13 @@ sub DefaultParameters {
   ## position-analysis
   $main::param{positions_ci} = 50; ## Class interval
   $main::param{positions_min_occ} = 1; ## Min number of occurrences
+  $main::param{positions_max_graphs} = 20; push(@main::param_list, "positions_max_graphs");
 
   ## local-word-analysis
 #  $main::param{local_words_heuristic} = "slices"; ## Heuristic
   $main::param{local_words_window} = 50; ## Class interval
+  $main::param{local_words_windowgroup} = 50; ## Class interval for centered windows of increasing sizes
 
-  ## Options for MEME background model
-  $main::param{meme_markov}=3; ## Markov order for MEME
 
   ## matrix-from-patterns
   $main::param{asmb_toppat} = $main::param{patterns_max_rank}; push(@main::param_list, "asmb_toppat");
@@ -351,42 +358,15 @@ sub DefaultParameters {
   $main::param{meme_text} = ""; push @MEME_options, "text";	## Ouptut format = text
   $main::param{meme_dna} = ""; push @MEME_options, "dna"; ## Sequence type == dna
   $main::param{meme_mod} = "anr"; push @MEME_options, "mod"; ## Accept any number of occurrences per sequence
-  $main::param{meme_minw} = 8; push @MEME_options, "minw"; ## Minimal motif width
-  $main::param{meme_maxw}=12; push @MEME_options, "maxw"; ## Maximal motif width
-  $main::param{meme_nmotifs}=$main::param{matrix_nmotifs}; push @MEME_options, "nmotifs"; ## Number of motifs
-  $main::param{meme_evt}=1; push @MEME_options, "evt"; ## upper threshold on E-value
+  $main::param{meme_minw} = 12; push @MEME_options, "minw"; ## Minimal motif width
+  $main::param{meme_maxw} = 12; push @MEME_options, "maxw"; ## Maximal motif width
+  $main::param{meme_nmotifs} = $main::param{matrix_nmotifs}; push @MEME_options, "nmotifs"; ## Number of motifs
+  $main::param{meme_evt} = 1; push @MEME_options, "evt"; ## upper threshold on E-value
+  $main::param{meme_maxsize} = 10000000; push @MEME_options, "maxsize"; ## maximum size for the sequence set
 
-}
+  ## Options for MEME background model
+  $main::param{bg_meme_markov} = 3; ## Markov order for MEME
 
-################################################################
-## Concatenate the options for MEME and compute the suffix
-sub CalcMemeOptions {
-  $meme_options = ""; ## Must be a global variable
-  $meme_suffix = ""; ## Must be a global variable
-
-  ## input file
-  $meme_options .= " ".$main::outfile{"test_purged"};
-
-  ## strands
-  $meme_suffix .= $main::param{strand};
-  unless ($main::param{strand} eq "-1str") {
-    $meme_options .= " -revcomp";
-  }
-
-  ## If bacgrkound sequences have been specified, check that
-  ## background model file exists.
-#  if ($main::param{meme_bg_file}) {
-#    $meme_options .= " -bfile ".$main::param{meme_bg_file};
-#  }
-
-
-  foreach my $option (@MEME_options) {
-    &RSAT::message::Debug("adding meme option", $option, $main::param{"meme_".$option});
-    $meme_options .= " -".$option." ".$main::param{"meme_".$option};
-    unless ($option eq "bfile") {
-      $meme_suffix .= "_".$option.$main::param{"meme_".$option};
-    }
-  }
 }
 
 ################################################################
@@ -492,9 +472,6 @@ sub SetOutFileNames {
 		       "file=".$main::param{scan_bg_file}
 		      ) if ($main::verbose >= 2);
 
-  ################################################################
-  ## Background model for MEME
-  $main::param{meme_bg_file} = &OutFileName("results/meme", ".txt", "meme_bg_file");
 
   ################################################################
   ## Pattern discovery results
@@ -505,6 +482,7 @@ sub SetOutFileNames {
       $pattern_type = 'oligo_diff_'.$len.'nt';
       $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$len."nt");
       push @pattern_types, $pattern_type;
+      push @patterns_to_merge, $pattern_type;
     }
   } else {
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
@@ -517,6 +495,7 @@ sub SetOutFileNames {
 	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
 						     $len."nt", "vs_ctrl");
 	push @pattern_types, $pattern_type;
+	push @patterns_to_merge, $pattern_type;
 
       } else {
 	################################################################
@@ -531,14 +510,22 @@ sub SetOutFileNames {
 	  $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
 						       $len."nt", "mkv".$markov);
 	  push @pattern_types, $pattern_type;
+	  push @patterns_to_merge, $pattern_type;
+
+
+	  ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
+	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
+						       $len."nt", "vs_ctrl");
+
 
 	  ## local-word-analysis
 	  $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
 	  $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "local_words".$main::param{strand}.$main::param{disco_noov},
-						       $len."nt", "wind".$main::param{local_words_window},
+						       $len."nt", "windgroup".$main::param{local_words_windowgroup},
 						       #						     $main::param{local_words_heuristic},
 						       "mkv".$markov);
 	  push @pattern_types, $pattern_type;
+	  push @patterns_to_merge, $pattern_type;
 	}
       }
 
@@ -547,18 +534,27 @@ sub SetOutFileNames {
       $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
 						   $len."nt", "ci".$main::param{positions_ci});
       push @pattern_types, $pattern_type;
+      push @patterns_to_merge, $pattern_type;
     }
 
     ## dyad-analysis
-    $main::outfile{dyads} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
+    $pattern_type = "dyads";
+    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
 					 "3nt_sp0-20_bg_monads");
-    push @pattern_types, "dyads";
+
+    ### TEMPORARY BUG
+    $main::outfile{$pattern_type} = &OutFileName("results/positions_7nt", ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
+					 "3nt_sp0-20_bg_monads");
+    push @pattern_types, $pattern_type;
+#    push @patterns_to_merge, $pattern_type;
   }
 
-  ## Output file for MEME
-  &CalcMemeOptions();
+  ## Output files for MEME
+  $main::outfile{meme_bg_file} = &OutFileName("results/meme", ".txt", "meme_bg_mkv".$main::param{bg_meme_markov});
+  &CalcMemeOptions(); ## this also computes the suffix of the meme output file
   $main::outfile{meme} = &OutFileName("results/meme", ".txt", "meme_".$meme_suffix);
   $main::outfile{meme_tf} = &OutFileName("results/meme", ".tf", "meme_".$meme_suffix);
+  $main::outfile{meme_logos} = &OutFileName("results/meme", "", "meme_".$meme_suffix."_logos");
 
   ## Comparison between significance of the discovered patterns
   $pattern_type = "merged_words";
@@ -770,7 +766,7 @@ sub CompositionProfiles {
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
     $cmd .= " -return chi,sig,distrib,graphs,rank";
-    #    $cmd .= " -max_graphs ".$main::param{profiles_max_graphs};
+    $cmd .= " -max_graphs ".$main::param{profiles_max_graphs} if ($main::param{profiles_max_graphs}  > 0);
     $cmd .= " ".$main::param{profiles_strand};
     $cmd .= " ".$main::param{profiles_noov};
     $cmd .= " -seqtype dna";
@@ -916,6 +912,7 @@ sub PositionAnalysis {
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
+    $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1);
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type, 0);
@@ -926,7 +923,8 @@ sub PositionAnalysis {
 ################################################################
 ## Run local-word-analysis on the test set
 sub LocalWords {
-  my $center_pos = &RSAT::util::round($main::param{local_words_window}/2);
+#  my $center_pos = &RSAT::util::round($main::param{local_words_window}/2);
+  my $center_pos = 0;
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
       ## Convert negative markov orders relative to the oligo length
@@ -948,11 +946,12 @@ sub LocalWords {
       }
       $cmd .= " --overlap" if ($main::param{disco_noov} eq "ovlp");
       $cmd .= " --center=".$center_pos;
-      $cmd .= " --window=".$main::param{local_words_window};
+      $cmd .= " --windowgroup=".$main::param{local_words_windowgroup};
+#      $cmd .= " --window=".$main::param{local_words_window};
 #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
       #  $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
-      $cmd .= " --markov ".$markov;
+#      $cmd .= " --markov ".$markov;
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " > ".$main::outfile{$pattern_type};
       &one_command($cmd, 1);
@@ -961,42 +960,85 @@ sub LocalWords {
   }
 }
 
+
+################################################################
+## Concatenate the options for MEME and compute the suffix
+sub CalcMemeOptions {
+  $meme_options = ""; ## Must be a global variable
+  $meme_suffix = ""; ## Must be a global variable
+
+  ## input file
+  $meme_options .= " ".$main::outfile{"test_purged"};
+
+  ## strands
+  $meme_suffix .= $main::param{strand};
+  unless ($main::param{strand} eq "-1str") {
+    $meme_options .= " -revcomp";
+  }
+
+  ## If bacgrkound sequences have been specified, check that
+  ## background model file exists.
+  if ($main::outfile{meme_bg_file}) {
+    $meme_options .= " -bfile ".$main::outfile{meme_bg_file};
+  }
+
+
+  foreach my $option (@MEME_options) {
+#    &RSAT::message::Debug("adding meme option", $option, $main::param{"meme_".$option}) if ($main::verbose >= 10);
+    $meme_options .= " -".$option." ".$main::param{"meme_".$option};
+    unless ($option eq "bfile") {
+      $meme_suffix .= "_".$option.$main::param{"meme_".$option};
+    }
+  }
+}
+
+################################################################
+## Compute background for MEME
+sub CalcMemeBackground {
+  my $fasta_get_markov_cmd = "cat ".$main::outfile{"test_purged"}." | ";
+  $fasta_get_markov_cmd .= &RSAT::server::GetProgramPath("fasta-get-markov", $die_on_error);
+  $fasta_get_markov_cmd .= " -m ".$main::param{bg_meme_markov};
+  $fasta_get_markov_cmd .= " > ".$main::outfile{meme_bg_file};
+  &one_command($fasta_get_markov_cmd);
+}
+
+
 ################################################################
 ## Run MEME
 sub RunMEME {
   my $die_on_error = 0;
   my $meme_cmd = &RSAT::server::GetProgramPath("meme", $die_on_error);
+  my $command = "";
 
   ################################################################
   ## MEME does not accept sequences shorter than 8
   ## However, peas are usually smaller than 8bp -> we skip this conversion
 #  my $min_seq_len = &max(8, $main::param{meme_minw});
-#  $meme_command = "convert-seq ";
-#  $meme_command .= " -from fasta -to fasta -skip_short ".$min_seq_len;
-#  $meme_command .= " -i ".$main::outfile{"test_purged"};
-#  $meme_command .= " -o ".$main::outfile{"test_purged_noshort"};
+#  $command = "convert-seq ";
+#  $command .= " -from fasta -to fasta -skip_short ".$min_seq_len;
+#  $command .= " -i ".$main::outfile{"test_purged"};
+#  $command .= " -o ".$main::outfile{"test_purged_noshort"};
 
 
-  my $meme_command = $meme_cmd;
-  $meme_command .= " ".$meme_options;
-  $meme_command .= " > ".$main::outfile{meme};
+  $command .= $meme_cmd;
+  $command .= " ".$meme_options;
+  $command .= " > ".$main::outfile{meme};
 #  unless (($batch) || ($verbose >= 3)) {
 #    ## Redirect verbosity to a log file
-#    $meme_command = "(".$meme_command.") >& meme_log.txt";
+#    $command = "(".$command.") >& meme_log.txt";
 #  }
+  &one_command($command);
 
   ## Convert the matrix
-  $meme_command .= "; ";
-  $meme_command .= $SCRIPTS."/convert-matrix -i ".$main::outfile{meme};
-  $meme_command .= " -from meme";
-  $meme_command .= " -to transfac";
-  $meme_command .= " -return counts,parameters,logo";
-  $meme_command .= " -o ".$main::outfile{meme_tf};
-
-  &RSAT::message::Debug($meme_command);
+  $command = $SCRIPTS."/convert-matrix -i ".$main::outfile{meme};
+  $command .= " -from meme";
+  $command .= " -to transfac";
+  $command .= " -return counts,parameters,logo";
+  $command .= " -logo_file ".$main::outfile{meme_logos};
+  $command .= " -o ".$main::outfile{meme_tf};
 
   ## Run the command
-  &one_command($meme_command);
+  &one_command($command);
 }
 
 ################################################################
@@ -1045,7 +1087,7 @@ sub RefMotif {
 sub MergeWords {
   my $cmd = $SCRIPTS."/compare-scores -v 1 ";
   my $file_nb = 0;
-  foreach my $pattern_type (@pattern_types) {
+  foreach my $pattern_type (@patterns_to_merge) {
     &RSAT::message::Debug("Merging words of type", $pattern_type) if ($main::verbose >= 5);
     next if ($pattern_type eq "merged_words"); ## avoid recycling the merged words from a previous run in the compilation
     my $pattern_file = $main::outfile{$pattern_type};
@@ -1327,8 +1369,7 @@ sub MotifsVersusDatabase {
 ## Convert Word assemblies into PSSMs
 sub MatrixFromPatterns {
   my ($pattern_file, $pssm_file, $pattern_type, $score_column) = @_;
-
-  &RSAT::message::TimeWarn("\n;\tMatrix from patterns", $pattern_type) if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Matrix from patterns", $pattern_type) if ($verbose >= 3);
   my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
   $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -pl ".$pattern_file;
@@ -1469,7 +1510,7 @@ sub Synthesis {
   ## HTML Header and title
   print $syn "<html>\n";
   print $syn "<head>\n";
-  print $syn "<title>chip-motifs ".$main::param{title}."</title>\n";
+  print $syn "<title>peak-motifs ".$main::param{title}."</title>\n";
 
   ## Page styles
   print $syn "<style type='text/css'>\n";
@@ -1479,11 +1520,11 @@ sub Synthesis {
 
   print $syn "</head>\n";
   print $syn "<body>\n";
-  print $syn "<h1>Result: chip-motifs ".$main::param{title}."</h1>\n";
+  print $syn "<h1>Result: peak-motifs ".$main::param{title}."</h1>\n";
 
   ## Print the command line
   print $syn "<pre>";
-  print $syn "<b>Command:</b>  chip-motifs ";
+  print $syn "<b>Command:</b>  peak-motifs ";
   &PrintArguments($syn);
   print $syn "</pre>";
 
@@ -1770,12 +1811,15 @@ sub SynthesisPatternDisco {
       my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
       my $start_format="";
       my $end_format="";
-      if ($pattern_info[$logo_nb]->{score}>10) {
-	$start_format .= "<b>";
-	$end_format .= "</b>";
-	if ($pattern_info[$logo_nb]->{score}>300) {
-	  $start_format .= "<font color='red'>";
-	  $end_format = "</font>".$end_format;
+      my $score = $pattern_info[$logo_nb]->{score};
+      if (&IsReal($score)) {
+	if ($score >10) {
+	  $start_format .= '<b>';
+	  $end_format .= '</b>';
+	  if ($score >= 75) {
+	    $start_format .= "<font color='red'>";
+	    $end_format = "</font>".$end_format;
+	  }
 	}
       }
       &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
@@ -2218,7 +2262,7 @@ Residue profiles may reveal composition biases in the neighborhood of
 the peak sequences. Dinucleotide profiles can reveal (for example) an
 enrichment in CpG island.
 
-Note that I<chip-motifs> also runs I<position-analysis> with
+Note that I<peak-motifs> also runs I<position-analysis> with
 larger oligonucleotide length (see option -l) to detect motifs on the
 basis of positionally biased oligonucleotides (see task B<positions>).
 
@@ -2260,7 +2304,7 @@ variable content (van Helden et al., 2000). Spaced motifs are typical
 of certain classes of transcription factors forming homo- or
 heterodimers.
 
-By default, chip-motifs analyzes pairs of trinucleotides with
+By default, peak-motifs analyzes pairs of trinucleotides with
 any spacing between 0 and 20.
 
 The expected frequency of each dyad is estimated as the product of its
@@ -2279,7 +2323,7 @@ poly-adenylation signals in downstream sequences (van Helden et al.,
 centred on the ChIP-seq peaks. For ChIP-seq analysis, the reference
 position is the center of each sequence.
 
-Note that I<chip-motifs> also uses I<position-analysis> for the
+Note that I<peak-motifs> also uses I<position-analysis> for the
 task B<composition>, in order to detect compositional biases (residues,
 dinucleotides) in the test sequence set.
 
@@ -2478,7 +2522,7 @@ of self-overlap, which violates the hypothesis of independence of
 successive occurrences underlying the binomial significance test
 (oligo-analysis, dyad-analysis).
 
-<I>Beware</I>: the options -noov and -ovlp only apply to pattern discovery,
+B<Beware>: the options -noov and -ovlp only apply to pattern discovery,
 and not to compositional profiles. Dinucleotide frequencies are always
 computed with the option -ovlp (count all occurrences), to avoid weird
 effect. Since those compositin profiles further serve to estimate the
@@ -2620,7 +2664,7 @@ sub CheckArguments {
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; chip-motifs ";
+    print $main::out "; peak-motifs ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
 
@@ -2654,7 +2698,7 @@ sub Verbose {
 
 =head1 REFERENCES
 
-The program I<chip-motifs> combines a series of tried-and-tested
+The program I<peak-motifs> combines a series of tried-and-tested
 programs which have been detailed in the following publications.
 
 =over
@@ -2733,6 +2777,20 @@ Add a task to run Weeder on the peak sequences.
 =item B<meme_bg>
 
 Compute a background model for MEME.
+
+=item B<all_oligos>
+
+Run oligo-analysis without any threshold in order to produce a plot of
+observed versus expected occurrences for all the
+oligonucleotides. This analysis is performed with the option
+-two_tails, which detects both under- and over-represented patterns.
+
+=item B<full HTML report>
+
+- link to the directories for each algorithm/task
+
+- link from the result page to the link table returned by
+  position-analysis (file *_graph_index.html).
 
 =back
 
