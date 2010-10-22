@@ -1811,10 +1811,10 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -uth Pval 0.00025";
   $pssm_command .= " -bginput -markov 0";
   $pssm_command .= " -o ".$TMP."/".$pssm_prefix;
-  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
   ## Run the command
   system "$pssm_command";
+  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
   push @result_files, ('significance matrices', $sig_matrix_file);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
   push @result_files, ('final matrices (tranfac format)', $pssm_file_tf);
@@ -1936,7 +1936,9 @@ sub display_matrices_web {
   if ($no_convert) {
     $out_matrix_file = $in_matrix_file;
   } else {
+#    $out_matrix_file = ${TMP}."/".$matrix_prefix."_converted.tab";
     $out_matrix_file = ${TMP}."/".$matrix_prefix."_converted.tab";
+
     my $cmd = "$ENV{RSAT}/perl-scripts/convert-matrix -v 1 ";
     $cmd .= " -i ".$in_matrix_file;
     $cmd .= " -from ".$in_format;
