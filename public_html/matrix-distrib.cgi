@@ -162,12 +162,12 @@ if (($query->param('output') =~ /display/i) ||
   close RESULT;
   close MIRROR if ($mirror);
 
-  if ($query->param('output') =~ /server/i) {
-    $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-    print ("The result is available at the following URL: ", "\n<br>",
-	   "<a href=${result_URL}>${result_URL}</a>",
-	   "<p>\n");
-  }
+#   if ($query->param('output') =~ /server/i) {
+#     $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
+#     print ("The result is available at the following URL: ", "\n<br>",
+# 	   "<a href=${result_URL}>${result_URL}</a>",
+# 	   "<p>\n");
+#   }
   print "<hr/>";
   if (($error_found)&&($query->param('output') =~ /server/i)) {
     &RSAT::error::FatalError("Error has occured, check output file.");
@@ -175,21 +175,41 @@ if (($query->param('output') =~ /display/i) ||
 
   ## prepare figures
   unless($error_found){
-    my $XYgraph_command = "$SCRIPTS/XYgraph";
-
     my $plot_format = "png";
+    my $XYgraph_command = "$SCRIPTS/XYgraph";
     my $graph_file1 = "$tmp_file_name"."_1.".${plot_format};
     my $figure = "$TMP/$graph_file1";
-    my $command2 = "$XYgraph_command -i $distrib_file -o $figure -title1 'Distribution of weights' -title2 'Score probability' -xcol 1 -ycol 2 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'frequency' -format ".${plot_format};
-    `$command2`;
+    my $command2 = "$XYgraph_command";
+    $command2 .= " -i $distrib_file";
+    $command2 .= " -title1 'Distribution of weights'";
+    $command2 .= " -title2 'Score probability'";
+    $command2 .= " -xcol 1 -ycol 2 -legend -lines -pointsize 1";
+    $command2 .= " -xleg1 'weight'";
+    $command2 .= " -yleg1 'frequency'";
+    $command2 .= " -format ".${plot_format};
+    $command2 .= " -o $figure";
+    print "<PRE>command2: $command2<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+    system($command2);
     print "<center><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
     &DelayedRemoval("$TMP/$graph_file1");
     push (@result_files, "Weight distrib plot", $graph_file1);
 
     my $graph_file2 = "$tmp_file_name"."_2.".${plot_format};
     $figure = "$TMP/$graph_file2";
-    my $command3 = "$XYgraph_command -i $distrib_file -o $figure -title1 'Distribution of weights  (log scale)' -title2 'Score probability and P-value' -xcol 1 -ycol 2,4 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'Frequency (log scale)' -format ${plot_format} -ylog -ymax 1 -ymin 0";
-    `$command3`;
+    my $command3 = "$XYgraph_command";
+    $command3 .= " -i $distrib_file";
+    $command3 .= " -title1 'Distribution of weights  (log scale)'";
+    $command3 .= " -title2 'Score probability and P-value'";
+    $command3 .= " -xcol 1";
+    $command3 .= " -ycol 2,4";
+    $command3 .= " -legend";
+    $command3 .= " -lines";
+    $command3 .= " -pointsize 1 -ylog -ymax 1 -ymin 0";
+    $command3 .= " -xleg1 'weight' -yleg1 'Frequency (log scale)'";
+    $command3 .= " -format ${plot_format}";
+    $command3 .= " -o $figure";
+    print "<PRE>command3: $command3<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+    system($command3);
     print "<a href = \"$WWW_TMP/$graph_file2\"><IMG SRC=\"$WWW_TMP/$graph_file2\" width='200'></a></CENTER><P>\n";
     &DelayedRemoval("$TMP/$graph_file2");
     push (@result_files, "P-value distrib plot", $graph_file2);
