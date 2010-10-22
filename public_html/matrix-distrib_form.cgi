@@ -39,7 +39,7 @@ $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{markov_order} = "0";
+$default{markov_order} = "1";
 $default{organism} = "Saccharomyces cerevisiae";
 
 
