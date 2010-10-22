@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+
 #### redirect error log to a file
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
@@ -90,13 +91,13 @@ if ($query->param('side') eq 'under-represented') {
 ### prevent overlapping matches of the same pattern
 if ($query->param('noov')) {
   $parameters .= " -noov";
-} 
+}
 
 ### verbose
 $parameters .= " -v 1 ";
 
 ### quick count mode
-#$parameters .= " -quick_if_possible ";
+$parameters .= " -quick_if_possible ";
 
 #### sequence type
 $parameters .= " -seqtype ".$query->param("sequence_type");
