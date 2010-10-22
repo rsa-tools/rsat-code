@@ -394,10 +394,10 @@ sub CheckOutDir {
 	    warn "; Directory $output_dir already exists\n" if ($main::verbose >= 4);
 	    return;
 	}
-	warn "; Creating directory $output_dir\n" if ($main::verbose >= 2);
+	warn "; Creating directory $output_dir\n" if ($main::verbose >= 3);
 	mkdir ($output_dir, 0755);
 	unless (-d $output_dir) {
-	    warn "Creating directory with all parents $output_dir\n" if ($main::verbose >= 2);
+	    warn "Creating directory with all parents $output_dir\n" if ($main::verbose >= 3);
 	    system "mkdir -p $output_dir"; ## create output directory with all parents
 	}
 	unless (-d $output_dir) {
@@ -442,10 +442,10 @@ sub OpenInputFile {
 	    }
 	}
 	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
-	    warn "; Uncompressing .gz file\n" if ($main::verbose >= 2);
+	    warn "; Uncompressing .gz file\n" if ($main::verbose >= 4);
 	    $filename = "gunzip -c $filename |";
 				  } elsif ($filename =~ /\.Z$/) { ### gzip file -> decompress it on the fly
-				      warn "; Uncompressing .Z file\n" if ($main::verbose >= 2);
+				      warn "; Uncompressing .Z file\n" if ($main::verbose >= 4);
 				      $filename = "uncompress -c $filename |";
 								}
 	open (my $input_fh, $filename) || 
