@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.85 2010/10/24 07:03:40 jvanheld Exp $
+# $Id: peak-motifs,v 1.86 2010/10/24 07:08:23 jvanheld Exp $
 #
 ############################################################
 
@@ -110,7 +110,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.85 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.86 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -754,7 +754,7 @@ sub CompositionProfiles {
     &one_command($cmd, 1,$main::outfile{$ol."nt_".$seq_type."_freq"}."_time.txt");
 
     ## Convert background model in INCLUSIVE format for matrix-scan-quick
-    $cmd = "; ".$SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+    $cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_inclusive"};
 
@@ -1164,7 +1164,7 @@ sub MergeMotifs {
 
   ## Initialize the motif file with the reference motif if provided
 #  if (defined($main::infile{ref_motifs})) {
-#    $cmd = "; cp -f";
+#    $cmd = "cp -f";
 #    $cmd .= " ".$main::outfile{ref_motifs_transfac};
 #    $cmd .= " ".$main::outfile{motifs_discovered};
 #  }
