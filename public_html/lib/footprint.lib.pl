@@ -35,13 +35,24 @@ local $all_genes = 0;         ## Analyze all the genes of the query organism
 ## further batch processing
 ##
 ## Usage: 
-##   &one_command($cmd, $print_out);
+##   &one_command($cmd, $print_out, $time_file);
 ##
 ## If the variable $print_out is set to 1, the command is printed to
 ## the output file $main::out.
 ##
+## If the variable $time_file is specified, the execution time is
+## measured and stored in this file.
+##
 sub one_command {
-  my ($cmd, $print_out) = @_;
+  my ($cmd, $print_out, $time_file) = @_;
+
+  if ($time_file) {
+    $cmd = " time (".$cmd.") >& ".$time_file;
+##    open TIME, ">>".$time_file;
+#    print TIME $cmd, "\n";
+#    close TIME;
+  }
+
   if ($main::batch) {
     if ($main::batch_cmd =~/\S/) {
       $main::batch_cmd .= " ; $cmd";
