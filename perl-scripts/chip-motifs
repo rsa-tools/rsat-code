@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: chip-motifs,v 1.84 2010/10/22 13:02:04 jvanheld Exp $
+# $Id: chip-motifs,v 1.85 2010/10/24 07:03:40 jvanheld Exp $
 #
 ############################################################
 
@@ -94,7 +94,6 @@ require "RSA.disco.lib";
 require "footprint.lib.pl";
 use RSAT::util;
 
-
 ################################################################
 ## Main package
 package main;
@@ -111,7 +110,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.84 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.85 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -130,6 +129,14 @@ package main;
   ## Pattern types (oligos, positions, local-word-analysis,... with the oligo length suffix)
   @pattern_types = ();
   @patterns_to_merge = ();
+
+  ## This is a bit tricky: I first called "timelog" the time
+  ## measurements taken from RSAT programs. Then I implemented a
+  ## systematic way to measure the exectution time of a task with the
+  ## Unix time command, which allows me to apply to third-party
+  ## algorithms as well. I should see later if I suppress all the
+  ## timelog stuff.
+  @timetable_keys = ();
   @timelog_keys = ();
 
 
@@ -238,7 +245,10 @@ package main;
 
   &ScanSequences() if ($task{scan});
 
-  &TimeLog() if ($task{timelog});
+  if ($task{timelog}) {
+    &TimeLog();
+    &TimeTable();
+  }
 
   &Synthesis() if ($task{synthesis});
 
@@ -360,7 +370,7 @@ sub DefaultParameters {
   $main::param{meme_mod} = "anr"; push @MEME_options, "mod"; ## Accept any number of occurrences per sequence
   $main::param{meme_minw} = 12; push @MEME_options, "minw"; ## Minimal motif width
   $main::param{meme_maxw} = 12; push @MEME_options, "maxw"; ## Maximal motif width
-  $main::param{meme_nmotifs} = $main::param{matrix_nmotifs}; push @MEME_options, "nmotifs"; ## Number of motifs
+  $main::param{meme_nmotifs} = 1; push @MEME_options, "nmotifs"; ## Number of motifs
   $main::param{meme_evt} = 1; push @MEME_options, "evt"; ## upper threshold on E-value
   $main::param{meme_maxsize} = 10000000; push @MEME_options, "maxsize"; ## maximum size for the sequence set
 
@@ -549,13 +559,6 @@ sub SetOutFileNames {
 #    push @patterns_to_merge, $pattern_type;
   }
 
-  ## Output files for MEME
-  $main::outfile{meme_bg_file} = &OutFileName("results/meme", ".txt", "meme_bg_mkv".$main::param{bg_meme_markov});
-  &CalcMemeOptions(); ## this also computes the suffix of the meme output file
-  $main::outfile{meme} = &OutFileName("results/meme", ".txt", "meme_".$meme_suffix);
-  $main::outfile{meme_tf} = &OutFileName("results/meme", ".tf", "meme_".$meme_suffix);
-  $main::outfile{meme_logos} = &OutFileName("results/meme", "", "meme_".$meme_suffix."_logos");
-
   ## Comparison between significance of the discovered patterns
   $pattern_type = "merged_words";
   $main::outfile{merged_words} = &OutFileName("results/".$pattern_type, ".tab", "merged_words");
@@ -568,7 +571,6 @@ sub SetOutFileNames {
 
   ## Conversion from patterns to matrices + logos
   foreach my $pattern_type (@pattern_types) {
-    push @timelog_keys, $pattern_type;
     $main::outfile{$pattern_type.'_pssm'} = $main::outfile{$pattern_type};
     $main::outfile{$pattern_type.'_pssm'} =~ s/\.tab$//;
     $main::outfile{$pattern_type.'_pssm'} .= "_pssm";
@@ -588,8 +590,19 @@ sub SetOutFileNames {
 	$main::outfile{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb."_rc.".$main::param{img_format};
     }
 
+    push @timelog_keys, $pattern_type;
+    push @timetable_keys, $pattern_type;
+    push @timetable_keys, $pattern_type."_pssm";
   }
 
+
+  ## Output files for MEME
+  $main::outfile{meme_bg_file} = &OutFileName("results/meme", ".txt", "meme_bg_mkv".$main::param{bg_meme_markov});
+  &CalcMemeOptions(); ## this also computes the suffix of the meme output file
+  $main::outfile{meme} = &OutFileName("results/meme", ".txt", "meme_".$meme_suffix);
+  $main::outfile{meme_tf} = &OutFileName("results/meme", ".tf", "meme_".$meme_suffix);
+  $main::outfile{meme_logos} = &OutFileName("results/meme", "", "meme_".$meme_suffix."_logos");
+  push @timetable_keys, "meme";
 
   ## Clustering of the discovered motifs + comparison with reference motif
   $main::outfile{motifs_discovered} = &OutFileName("results/discovered_motifs", ".tf", "motifs_discovered");
@@ -738,9 +751,10 @@ sub CompositionProfiles {
     $cmd .= " -1str";
     $cmd .= " ".$main::param{profiles_noov} if ($main::param{profiles_noov} eq "-noov"); ## The option -ovlp is not supported by count-words
     $cmd .= " > ".$main::outfile{$ol."nt_".$seq_type."_freq"};
+    &one_command($cmd, 1,$main::outfile{$ol."nt_".$seq_type."_freq"}."_time.txt");
 
     ## Convert background model in INCLUSIVE format for matrix-scan-quick
-    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+    $cmd = "; ".$SCRIPTS."/convert-background-model -from oligos -to inclusive ";
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_inclusive"};
 
@@ -776,7 +790,7 @@ sub CompositionProfiles {
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles"};
-    &one_command($cmd, 1);
+    &one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_profiles"}."_time.txt");
 
     ## Draw the XY graph with composition profiles
     my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
@@ -831,7 +845,7 @@ sub OligoAnalysis {
 #      }
       $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
-      &one_command($cmd, 1);
+      &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
     }
   }
@@ -859,7 +873,7 @@ sub OligoDiff {
     #    $cmd .= " -seqtype dna";
     #    $cmd .= " -pseudo 0.01";
     $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd, 1);
+    &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
   }
 }
@@ -884,7 +898,7 @@ sub DyadAnalysis {
   $cmd .= " -pseudo 0.01";
   $cmd .= " | perl -pe 's/n\\{0\\}//g'"; ## Suppress zero spacings for merging with oligos
   $cmd .= " >".$main::outfile{dyads};
-  &one_command($cmd, 1);
+  &one_command($cmd, 1, $main::outfile{dyads}."_time.txt");
   &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads", 0);
 }
 
@@ -914,7 +928,7 @@ sub PositionAnalysis {
     $cmd .= " -origin center ";
     $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd, 1);
+    &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type, 0);
   }
 }
@@ -954,7 +968,7 @@ sub LocalWords {
 #      $cmd .= " --markov ".$markov;
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " > ".$main::outfile{$pattern_type};
-      &one_command($cmd, 1);
+      &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
     }
   }
@@ -995,11 +1009,11 @@ sub CalcMemeOptions {
 ################################################################
 ## Compute background for MEME
 sub CalcMemeBackground {
-  my $fasta_get_markov_cmd = "cat ".$main::outfile{"test_purged"}." | ";
-  $fasta_get_markov_cmd .= &RSAT::server::GetProgramPath("fasta-get-markov", $die_on_error);
-  $fasta_get_markov_cmd .= " -m ".$main::param{bg_meme_markov};
-  $fasta_get_markov_cmd .= " > ".$main::outfile{meme_bg_file};
-  &one_command($fasta_get_markov_cmd);
+  my $cmd = "cat ".$main::outfile{"test_purged"}." | ";
+  $cmd .= &RSAT::server::GetProgramPath("fasta-get-markov", $die_on_error);
+  $cmd .= " -m ".$main::param{bg_meme_markov};
+  $cmd .= " > ".$main::outfile{meme_bg_file};
+  &one_command($cmd, 1, $main::outfile{meme_bg_file}."_time.txt");
 }
 
 
@@ -1008,37 +1022,31 @@ sub CalcMemeBackground {
 sub RunMEME {
   my $die_on_error = 0;
   my $meme_cmd = &RSAT::server::GetProgramPath("meme", $die_on_error);
-  my $command = "";
+  my $cmd = "";
 
   ################################################################
   ## MEME does not accept sequences shorter than 8
   ## However, peas are usually smaller than 8bp -> we skip this conversion
 #  my $min_seq_len = &max(8, $main::param{meme_minw});
-#  $command = "convert-seq ";
-#  $command .= " -from fasta -to fasta -skip_short ".$min_seq_len;
-#  $command .= " -i ".$main::outfile{"test_purged"};
-#  $command .= " -o ".$main::outfile{"test_purged_noshort"};
+#  $cmd = "convert-seq ";
+#  $cmd .= " -from fasta -to fasta -skip_short ".$min_seq_len;
+#  $cmd .= " -i ".$main::outfile{"test_purged"};
+#  $cmd .= " -o ".$main::outfile{"test_purged_noshort"};
 
-
-  $command .= $meme_cmd;
-  $command .= " ".$meme_options;
-  $command .= " > ".$main::outfile{meme};
-#  unless (($batch) || ($verbose >= 3)) {
-#    ## Redirect verbosity to a log file
-#    $command = "(".$command.") >& meme_log.txt";
-#  }
-  &one_command($command);
+  ## Run the MEME command
+  $cmd .= $meme_cmd;
+  $cmd .= " ".$meme_options;
+  $cmd .= " > ".$main::outfile{meme};
+  &one_command($cmd, 1, $main::outfile{meme}."_time.txt");
 
   ## Convert the matrix
-  $command = $SCRIPTS."/convert-matrix -i ".$main::outfile{meme};
-  $command .= " -from meme";
-  $command .= " -to transfac";
-  $command .= " -return counts,parameters,logo";
-  $command .= " -logo_file ".$main::outfile{meme_logos};
-  $command .= " -o ".$main::outfile{meme_tf};
-
-  ## Run the command
-  &one_command($command);
+  $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{meme};
+  $cmd .= " -from meme";
+  $cmd .= " -to transfac";
+  $cmd .= " -return counts,parameters,logo";
+  $cmd .= " -logo_file ".$main::outfile{meme_logos};
+  $cmd .= " -o ".$main::outfile{meme_tf};
+  &one_command($cmd);
 }
 
 ################################################################
@@ -1123,7 +1131,7 @@ sub MergeWords {
   $cmd .= " -suppress '\.tab'";
   $cmd .= " | ".$SCRIPTS."/row-stats -after 1 -sort ";
   $cmd .= " -o ".$main::outfile{merged_words};
-  &one_command($cmd, 1);
+  &one_command($cmd, 1, $main::outfile{merged_words}."_time.txt");
 
   ## Generate a HTML format of the table (convenient for sorting the
   ## words according to different columns)
@@ -1144,7 +1152,6 @@ sub MergeWords {
   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);
 
   &RSAT::message::TimeWarn("Word comparison table", $main::outfile{merged_words}) if ($main::verbose >= 2);
-
 }
 
 
@@ -1343,7 +1350,7 @@ sub MotifsVersusDatabase {
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " ; text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_html"};
-    &one_command($cmd, 1);
+    &one_command($cmd, 1, $main::outfile{"motifs_vs_db_".$db_name}."_time.txt");
 
     &RSAT::message::TimeWarn("Dicovered versus DB", $main::outfile{motifs_vs_db}) if ($main::verbose >= 2);
 
@@ -1387,7 +1394,7 @@ sub MatrixFromPatterns {
   $cmd .= " -collect_method matrix-scan-quick";
   $cmd .= " -logo";
   $cmd .= " -o ".$pssm_file;
-  &one_command($cmd, 1);
+  &one_command($cmd, 1, $pssm_file."_time.txt");
 }
 
 
@@ -1409,7 +1416,7 @@ sub ScanSequences {
       $cmd .= " -origin center -return sites";
       $cmd .= " -t ".$main::param{scan_min_score};
       $cmd .= " >".$main::outfile{$pattern_type.'_pssm_sites'};
-      &one_command($cmd, 1);
+      &one_command($cmd, 1, $main::outfile{$pattern_type.'_pssm_sites'}."_time.txt");
 
       ## Compute the positional distribution of sites
       $cmd = "awk '{print \(\$6\+\$5\)/2}'";
@@ -1435,7 +1442,37 @@ sub ScanSequences {
 
 
 ################################################################
-## Generate a file summarizing the time spent in the different tasks
+## Generate a table summarizing the time spent in the different tasks
+## on the basis of the unix "time" command.
+sub TimeTable {
+  my $timetable = &OpenOutputFile($main::outfile{timetable});
+  foreach my $key (@timetable_keys) {
+    my $file = $main::outfile{$key}."_time.txt";
+    my $time = "NA";
+    if (-e $file) {
+      my ($in) = &OpenInputFile($file);
+      while (<$in>) {
+	if (/real\s+(\S+)/) {
+	  $time = $1;
+	  if ($time =~ /^(\d+)m(\d+)\.(\d+)s$/) {
+	    my $minutes = $1;
+	    my $seconds = $2;
+	    my $millisecs = $3;
+	    $time = $minutes*60 + $seconds + $millisecs/1000;
+	  }
+	}
+      }
+    } else {
+      &RSAT::message::Warning("Missing time file", $file);
+    }
+    print $timetable $key, "\t", $time, "\n";
+  }
+  &RSAT::message::TimeWarn("Time table file", $main::outfile{timetable}) if ($main::verbose >= 1);
+}
+
+################################################################
+## Generate a table summarizing the time spent in the different tasks
+## on the basis of the time report in RSAT programs.
 sub TimeLog {
   my $timelog = &OpenOutputFile($main::outfile{timelog});
 
@@ -1564,7 +1601,8 @@ sub Synthesis {
  		       );
   &SyntheticTableAddRow("Time log",
 			"",
- 			"txt"=>$main::outfile{timelog},
+ 			"time table"=>$main::outfile{timetable},
+ 			"time log"=>$main::outfile{timelog},
  			"html"=>$main::outfile{timelog_html},
  		       );
 
@@ -2612,6 +2650,7 @@ sub CheckArguments {
   $main::outfile{log} = &OutFileName("reports", ".txt", "log");
   $main::outfile{timelog} = &OutFileName("reports", ".txt", "timelog");
   $main::outfile{timelog_html} = &OutFileName("reports", ".html", "timelog");
+  $main::outfile{timetable} = &OutFileName("reports", ".txt", "timetable");
 
   ## Synthesis file 
   $main::outfile{synthesis} = &OutFileName("", ".html", "synthesis");
@@ -2658,7 +2697,7 @@ sub CheckArguments {
   foreach my $task (@supported_tasks) {
    push (@tasks, $task) if $task{$task};
   }
-  &RSAT::message::Info("; Tasks: ", join (",", @tasks)) if ($main::verbose >= 1);
+  &RSAT::message::Info("Tasks: ", join (",", @tasks)) if ($main::verbose >= 1);
 }
 
 ################################################################
