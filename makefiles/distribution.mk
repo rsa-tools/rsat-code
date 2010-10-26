@@ -19,6 +19,10 @@ TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default
 TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar 
 
 ################################################################
+## All the tasks for publishing the new version
+all: clean_emacs_bk tar_archive clean_distrib_site publish
+
+################################################################
 ## Generate the Manuals and tutorials
 manuals:
 	(cd doc/manuals; make fullclean; make install_guide; make rsat_tutorial; make neat_tutorial; make web_server_guide; make tex_clean)
@@ -45,13 +49,15 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
 TAR_ROOT=..
-DISTRIB_FILES=rsa-tools/perl-scripts	\
-	rsa-tools/RSA.config.default	\
-	rsa-tools/RSA.config.default	\
-	rsa-tools/makefiles		\
-	rsa-tools/doc/manuals/*.pdf	\
-	rsa-tools/python-scripts 	\
-	rsa-tools/contrib/count-words  	\
+DISTRIB_FILES=rsa-tools/perl-scripts		\
+	rsa-tools/RSA.config.default		\
+	rsa-tools/RSA.config.default		\
+	rsa-tools/makefiles			\
+	rsa-tools/doc/manuals/*.pdf		\
+	rsa-tools/python-scripts 		\
+	rsa-tools/contrib/count-words  		\
+	rsa-tools/contrib/matrix-scan-quick  	\
+	rsa-tools/ws_clients		  	\
 	rsa-tools/contrib/info-gibbs
 
 _fill_archive:
