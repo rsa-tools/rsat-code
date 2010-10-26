@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.76 2010/10/19 21:04:00 jvanheld Exp $
+# $Id: compare-matrices,v 1.77 2010/10/26 22:33:55 jvanheld Exp $
 #
 ############################################################
 
@@ -370,7 +370,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -624,6 +624,11 @@ package main;
     $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
     $main::outfile{output} = $main::outfile{output_prefix}.".tab";
     $main::outfile{output_html} = $main::outfile{output_prefix}.".html";
+
+    ## Create output dir if required
+    my $basename;
+    ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{output_prefix});
+    &RSAT::util::CheckOutDir($dir{output});
   }
   if (($return_field{alignments_pairwise}) ||
       ($return_field{alignments_1ton})) {
