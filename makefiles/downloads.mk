@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.36 2009/11/02 05:36:36 rsat Exp $
+# $Id: downloads.mk,v 1.37 2010/10/26 23:18:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -515,7 +515,8 @@ goa_ebi:
 ################################################################
 ## JASPAR
 
-JASPAR=http://jaspar.cgb.ki.se/DOWNLOAD/
+#JASPAR=http://jaspar.cgb.ki.se/DOWNLOAD/
+JASPAR=http://jaspar.genereg.net/html/DOWNLOAD/
 jaspar:
 	@mkdir -p logs
 	@echo "${DATE}	updating dir	${JASPAR}" 
