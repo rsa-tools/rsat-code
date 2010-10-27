@@ -20,9 +20,9 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ############################################ configuration
-$command = "$ENV{RSAT}/perl-scripts/chip-motifs";
-$output_directory = sprintf "chip-motifs.%s", &AlphaDate();
-$output_prefix = "ChIP-motifs";
+$command = "$ENV{RSAT}/perl-scripts/peak-motifs";
+$output_directory = sprintf "peak-motifs.%s", &AlphaDate();
+$output_prefix = "peak-motifs";
 $output_path = "$TMP/$output_directory";
 $output_path =~ s|\/\/|\/|g;
 `mkdir -p $output_path`;
@@ -34,7 +34,7 @@ $output_path =~ s|\/\/|\/|g;
 $query = new CGI;
 
 ### print the result page
-&RSA_header("chip-motifs result", "results");
+&RSA_header("peak-motifs result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
 ### update log file
@@ -174,7 +174,7 @@ $parameters .= " -2str -noov -img_format png ";
 
 ############################################ display or send result
 $index_file = $output_directory."/".$output_prefix."_synthesis.html";
-my $mail_title = join (" ", "[RSAT]", "chip-motifs", &AlphaDate());
+my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 #&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
 # $debug = "$command $parameters 2> $TMP/log.txt";
