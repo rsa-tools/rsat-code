@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-#### this cgi script fills the HTML form for the program chip-motifs
+#### this cgi script fills the HTML form for the program peak-motifs
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -56,7 +56,7 @@ foreach $key (keys %default) {
 
 ################################################################
 ### header
-&RSA_header("ChIP-motifs", "form");
+&RSA_header("peak-motifs", "form");
 print "<CENTER>";
 print "Pipeline for discovering motifs in ChIP-seq peak sequences.<P>\n";
 print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
@@ -66,7 +66,7 @@ print "<BLOCKQUOTE>\n";
 ## demo description
 print $default{demo_descr1};
 
-print $query->start_multipart_form(-action=>"chip-motifs.cgi");
+print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 
 ################# Peak sequences
  &Panel1();
@@ -103,8 +103,8 @@ In this demonstration, we .....<p/>
 The program will return ...
 </blockquote>";
 
-print $query->start_multipart_form(-action=>"chip-motifs_form.cgi");
-$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
+print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
+$demo_seq=`cat demo_files/peak-motifs_demo.fa`;
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
@@ -118,7 +118,7 @@ print $query->end_form;
 
 
 
-print "<TD><B><A HREF='help.chip-motifs.html'>[MANUAL]</A></B></TD>\n";
+print "<TD><B><A HREF='help.peak-motifs.html'>[MANUAL]</A></B></TD>\n";
 print "<TD><B><A HREF='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
@@ -159,16 +159,16 @@ print '
 <div id="menu101" class="menu_collapsible">';
 	
 print "<p/><fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Restrict the input dataset  </a></b></legend>";
+<legend><b><a href='help.peak-motifs.html#tasks'>Restrict the input dataset  </a></b></legend>";
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html#thresholds'>Number of top sequences to retain </A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html#thresholds'>Number of top sequences to retain </A>&nbsp;</B>\n";
 print  $query->textfield(-name=>'top_sequences',
 							      -default=>$default{top_sequences},
 							      -size=>3);
 
 print "<br/>";	
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html#thresholds'>Cut peak sequences:</A> +/- &nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html#thresholds'>Cut peak sequences:</A> +/- &nbsp;</B>\n";
 print  $query->textfield(-name=>'max_seq_len',
 							      -default=>$default{max_seq_len},
 							      -size=>3);
@@ -189,7 +189,7 @@ print '
 	
 
 print "<p/><fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Discover motifs </a></b></legend>";
+<legend><b><a href='help.peak-motifs.html#tasks'>Discover motifs </a></b></legend>";
 
 #
 ### oligo analysis
@@ -308,7 +308,7 @@ print '
 
 ##
 print "<fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Compare motifs </a></b></legend>";
+<legend><b><a href='help.peak-motifs.html#tasks'>Compare motifs </a></b></legend>";
 
 #
 ### compare motifs
@@ -349,7 +349,7 @@ print '
 ### matrix-scan
 #
 print "<fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Locate motifs </a></b></legend>";
+<legend><b><a href='help.peak-motifs.html#tasks'>Locate motifs </a></b></legend>";
 print $query->checkbox(-name=>'matrix-scan-quick',
 		       -checked=>$default{matrix-scan-quick},
 		       -label=>'');  
@@ -382,7 +382,7 @@ print "</fieldset><p/>";
 ### UCSC custom track
 #
 print "<fieldset>
-<legend><b><a href='help.chip-motifs.html#tasks'>Visualize motifs </a></b></legend>";
+<legend><b><a href='help.peak-motifs.html#tasks'>Visualize motifs </a></b></legend>";
 
 
 print $query->checkbox(-name=>'bed_custom_track',
@@ -392,12 +392,12 @@ print "&nbsp;<b>Visualize on UCSC genome browser</b> <a href='help.matrix-scan.h
 print "<br/>";
 
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html'>BED file with peak coordinates</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html'>BED file with peak coordinates</A>&nbsp;</B>\n";
 print $query->filefield(-name=>'bed_file',
 			-size=>10);
 
 ### threshold (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.chip-motifs.html'>Assembly version (UCSC)</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html'>Assembly version (UCSC)</A>&nbsp;</B>\n";
 print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
