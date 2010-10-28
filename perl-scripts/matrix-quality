@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.121 2010/08/16 02:47:40 jvanheld Exp $
+# $Id: matrix-quality,v 1.122 2010/10/28 17:30:48 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -436,7 +436,7 @@ package main;
     $image_formats = join ",", @image_formats; ## For the logo
     &RSAT::message::Info("Image formats for graphs: ".join (",", sort(@image_formats))) if ($main::verbose >= 2);
 
-    ## Lofo formats : png is default
+    ## Logo formats : png is default
     unless (scalar(@logo_formats)>0) {
       push (@logo_formats,"png");
     }
