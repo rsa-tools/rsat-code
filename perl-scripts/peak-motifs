@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.86 2010/10/24 07:08:23 jvanheld Exp $
+# $Id: peak-motifs,v 1.87 2010/10/28 04:10:19 rsat Exp $
 #
 ############################################################
 
@@ -110,7 +110,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.86 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.87 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1216,7 +1216,7 @@ sub ClusterMotifs {
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
   $cmd .= " -return matrix_name,strand,offset,all_metrics,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
-  $cmd .= "; text-to-html -i ".$main::outfile{motifs_disco_compa};
+  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{motifs_disco_compa};
   $cmd .= " -o ".$main::outfile{motifs_disco_compa_html};
   &one_command($cmd, 1);
 
@@ -1305,7 +1305,7 @@ sub MotifsVersusReference {
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
   $cmd .= " -return matrix_name,strand,offset,all_metrics,width,consensus,alignments_1ton";
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref_prefix"};
-  $cmd .= "; text-to-html -i ".$main::outfile{"motifs_vs_ref"};
+  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_ref"};
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref_html"};
   &one_command($cmd, 1);
 
@@ -1348,7 +1348,7 @@ sub MotifsVersusDatabase {
     $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
     $cmd .= " -return matrix_name,strand,offset,all_metrics,width,consensus,alignments_1ton";
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
-    $cmd .= " ; text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
+    $cmd .= " ; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_html"};
     &one_command($cmd, 1, $main::outfile{"motifs_vs_db_".$db_name}."_time.txt");
 
