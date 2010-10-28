@@ -940,23 +940,21 @@ sub MatrixDBcheckBox {
 
 sub GetMatrixDBfromBox {
 
-	my $loaded_params ="";
+    my $loaded_params ="";
 	
-	## load the file containing the path to the databases
-	my $mat_db = $ENV{RSAT}."/data/motif_databases/db_matrix_files.tab" ;
-	open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
-   	while (my $line = <MAT_DB>) {
-   		next if ($line =~ /^;/);
-   		next if ($line =~ /^#/);
-   		my @mat_line = split (/\t/,$line);
-   		if ($query->param($mat_line[0]) =~ /on/){
-   			$loaded_params .= " -motif_db $mat_line[0] transfac $ENV{RSAT}/data/motif_databases/$mat_line[2]";
-   			}
-   		}
+    ## load the file containing the path to the databases
+    my $mat_db = $ENV{RSAT}."/data/motif_databases/db_matrix_files.tab" ;
+    open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
+    while (my $line = <MAT_DB>) {
+	next if ($line =~ /^;/);
+	next if ($line =~ /^#/);
+	my @mat_line = split (/\t/,$line);
+	if ($query->param($mat_line[0]) =~ /on/){
+	    $loaded_params .= " -motif_db $mat_line[0] transfac $ENV{RSAT}/data/motif_databases/$mat_line[2]";
+	}
+    }
     close MAT_DB;
-
-	
-	return($loaded_params);
+    return($loaded_params);
 }
 
 
