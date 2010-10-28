@@ -19,8 +19,10 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+
 ############################################ configuration
 $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
+#$command = "$SCRIPTS/peak-motifs";
 $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
 $output_prefix = "peak-motifs";
 $output_path = "$TMP/$output_directory";
@@ -65,94 +67,93 @@ $parameters .= "-i $sequence_file ";
 ## motif-disco
 my $oligo_params = "";
 foreach my $i (6..8){
-	if ($query->param('oligo_length'.$i) =~ /on/){
-		$oligo_params .= " -l ".$i;
-		}
-	}
+    if ($query->param('oligo_length'.$i) =~ /on/){
+	$oligo_params .= " -l ".$i;
+    }
+}
 $parameters .= $oligo_params;
 
- if ($query->param('oligo-analysis') =~ /on/) {
-        push(@tasks, "oligos");
-        &FatalError("Select at least one oligo size for oligo-analysis") if ($oligo_params eq "");
-    }
-    
- if ($query->param('dyad-analysis') =~ /on/) {
-        push(@tasks, "dyads");
-    }
- if ($query->param('local-word-analysis') =~ /on/) {
-        push(@tasks, "local_words");
-        &FatalError("Select at least one oligo size for local-word-analysis") if ($oligo_params eq "");
-    }
- if ($query->param('position-analysis') =~ /on/) {
-        push(@tasks, "positions");
-    }
+if ($query->param('oligo-analysis') =~ /on/) {
+    push(@tasks, "oligos");
+    &FatalError("Select at least one oligo size for oligo-analysis") if ($oligo_params eq "");
+}
+
+if ($query->param('dyad-analysis') =~ /on/) {
+    push(@tasks, "dyads");
+}
+if ($query->param('local-word-analysis') =~ /on/) {
+    push(@tasks, "local_words");
+    &FatalError("Select at least one oligo size for local-word-analysis") if ($oligo_params eq "");
+}
+if ($query->param('position-analysis') =~ /on/) {
+    push(@tasks, "positions");
+}
 
 ### task specific parameters
 if (&IsNatural($query->param('markov'))) {
-	$parameters .= " -max_markov ".$query->param('markov')." -min_markov ".$query->param('markov');
+    $parameters .= " -max_markov ".$query->param('markov')." -min_markov ".$query->param('markov');
 }
 
 ### restrict the input dataset
 if ($query->param('top_sequences')){
-	if (&IsNatural($query->param('top_sequences'))) {
-		$parameters .= " -top_peaks ".$query->param('top_sequences');
-	} else {
-		 &FatalError("Number of top peaks is incorrect");
-	}	
+    if (&IsNatural($query->param('top_sequences'))) {
+	$parameters .= " -top_peaks ".$query->param('top_sequences');
+    } else {
+	&FatalError("Number of top peaks is incorrect");
+    }	
 }
 
 if ($query->param('max_seq_len')){
-	if (&IsNatural($query->param('max_seq_len'))) {
-		$parameters .= "  -max_seq_len ".$query->param('max_seq_len')*2; ## here the program needs the length of the fragments, so x2
-	} else {
-		 &FatalError("Incorrect maximal sequence length. Check your parameters for data restriction");
-	}	
+    if (&IsNatural($query->param('max_seq_len'))) {
+	$parameters .= "  -max_seq_len ".$query->param('max_seq_len')*2; ## here the program needs the length of the fragments, so x2
+    } else {
+	&FatalError("Incorrect maximal sequence length. Check your parameters for data restriction");
+    }	
 }
 
 ## motif databases
- if ($query->param('compare_motif_db') =~ /on/) {
-        push(@tasks, "motifs_vs_db");
+if ($query->param('compare_motif_db') =~ /on/) {
+    push(@tasks, "motifs_vs_db");
+    
+    ## load the files containing the databases
+    my $mat_db_params = &GetMatrixDBfromBox();
+    $parameters .= $mat_db_params;
         
-        ## load the files containing the databases
-        my $mat_db_params = &GetMatrixDBfromBox();
-        $parameters .= $mat_db_params;
-        
-        ## personal motifs
-        if ($query->param('ref_motif')) {
-	    my $refmotif_file = ${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
-	    my $upload_refmotif = $query->param('ref_motif');
-	    if ($upload_refmotif) {
-		
-		my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
-		open FILE, ">$refmotif_file" ||
-		    &cgiError("Cannot store reference motif file in temp dir.");
-		while (<$upload_refmotif>) {
-		    print FILE;
-		}
-		close FILE;
-		$parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
-    } else {
-      &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
+    ## personal motifs
+    if ($query->param('ref_motif')) {
+	my $refmotif_file = ${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
+	my $upload_refmotif = $query->param('ref_motif');
+	if ($upload_refmotif) {
+	    
+	    my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
+	    open FILE, ">$refmotif_file" ||
+		&cgiError("Cannot store reference motif file in temp dir.");
+	    while (<$upload_refmotif>) {
+		print FILE;
+	    }
+	    close FILE;
+	    $parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
+	} else {
+	    &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
+	}
     }
-        	
-        }
-    }
+}
  
 ## search motifs (matrix-scan-quick)
- if ($query->param('matrix-scan-quick') =~ /on/) {
-       # push(@tasks, "scan");
-        
-        ## HERE need to add the pval and markov order for the background model for matrix-scan-quick
-        
- }
- 
- ## HERE finish the BED custom track parameters + task
- ## UCSC custom track
- #if ($query->param('bed_custom_track') =~ /on/) {
- #       push(@tasks, "?");
- #      
- #       
- #}
+if ($query->param('matrix-scan-quick') =~ /on/) {
+    # push(@tasks, "scan");
+    
+    ## HERE need to add the pval and markov order for the background model for matrix-scan-quick
+    
+}
+
+## HERE finish the BED custom track parameters + task
+## UCSC custom track
+#if ($query->param('bed_custom_track') =~ /on/) {
+#       push(@tasks, "?");
+#      
+#       
+#}
 
 ### add -task
 $parameters .= " -task " . join(",", @tasks);
