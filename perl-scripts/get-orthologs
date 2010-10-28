@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.49 2010/09/07 23:25:26 amedina Exp $
+# $Id: get-orthologs,v 1.50 2010/10/28 21:41:50 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -234,7 +234,7 @@ package main;
     ## Reference taxon or org_list
     &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
 	unless ($main::ref_taxon || $main::orglist_file);
-    &RSAT::error::FatalError("-taxon and -org_list option are mutually exclusive")
+    &RSAT::error::FatalError("Options -taxon and -org_list option are mutually exclusive")
 	if (($main::ref_taxon) && ($main::orglist_file));
     
     ##open orglist
@@ -399,87 +399,88 @@ package main;
     my $query_org_dir = $supported_organism{$main::query_organism}->{'data'};
     my $query_org_blast_dir = join("/", $query_org_dir, "blast_hits");
     foreach my $ref_organism (@main::ref_organisms) {
-	my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
-	my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
-	&RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Reference organism", $ref_organism) if ($main::verbose >= 2);
+      my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
+      my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
+      &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 3);
 
-	## Check if the BLAST file exists and read it
-	my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
-	#my ($hits)=&readBLAST($blast_file,\@main::blast_columns);
-	my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query_id",\%is_query);
-#	print &Dumper($hits) if ($main::verbose >= 0); # DEBUG
+      ## Check if the BLAST file exists and read it
+      my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
+      #my ($hits)=&readBLAST($blast_file,\@main::blast_columns);
+      my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query_id",\%is_query);
+      #	print &Dumper($hits) if ($main::verbose >= 0); # DEBUG
 
-	my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
-	# my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
-	my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
+      my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
+      # my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
+      my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
 
-	################################################################
-	# Let us define Reciprocal Best hits (RBH) as a relationship inferred
-	# from a single blast file, in contrast with Bidirectionnal Bests Hits
-	# (BBH), which is inferred from blast files in both direction (genome
-	# A against genome B, and B against A).
-	################################################################
+      ################################################################
+      # Let us define Reciprocal Best hits (RBH) as a relationship inferred
+      # from a single blast file, in contrast with Bidirectionnal Bests Hits
+      # (BBH), which is inferred from blast files in both direction (genome
+      # A against genome B, and B against A).
+      ################################################################
 
-	## my (%rbh) = &GetReciprocalBestHits(\%hits);
-	## This option (NOT IMPLEMENTED YET) may be obsolete as it is
-	## included in genome-blast.pl -task bbh
-	#	my (%bbh)=&GetBidirectionalBesthits(\%hits,\%rev_hits);
+      ## my (%rbh) = &GetReciprocalBestHits(\%hits);
+      ## This option (NOT IMPLEMENTED YET) may be obsolete as it is
+      ## included in genome-blast.pl -task bbh
+      #	my (%bbh)=&GetBidirectionalBesthits(\%hits,\%rev_hits);
 
-	################################################################
-	## Get bidirectional hits
-	foreach my $query_gene (keys (%is_query)) {
-	    &RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 3);
-	    if ($hits->{$query_gene}) {
-		foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
-		    &RSAT::message::Warning(join("\t", "ref gene", $ref_gene)) if ($main::verbose >= 3);
-		    if ($rev_hits->{$ref_gene}->{$query_gene}){
-			my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
-			my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
-			my $hit_info = join("\t",
-					    $fwd_hit->{ref_id},
-					    $ref_organism,
-					    $fwd_hit->{query_id},
-#				  $main::query_organism,
-					    );
+      ################################################################
+      ## Get bidirectional hits
+      foreach my $query_gene (keys (%is_query)) {
+	&RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 3);
+	if ($hits->{$query_gene}) {
+	  foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
+	    &RSAT::message::Warning(join("\t", "ref gene", $ref_gene)) if ($main::verbose >= 3);
+	    if ($rev_hits->{$ref_gene}->{$query_gene}) {
+	      my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
+	      my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
+	      my $hit_info = join("\t",
+				  $fwd_hit->{ref_id},
+				  $ref_organism,
+				  $fwd_hit->{query_id},
+				  #				  $main::query_organism,
+				 );
 
-			## Additional output fields (specified with the option -return)
-			if (scalar(@output_fields) > 0) {
-			    ## add fields for the fwd hit
-#			  $hit_info .= "\tFWD";
-			    foreach my $field (@output_fields) {
-				$hit_info .= "\t";
-				if ($field eq "query_name"){
-				  $hit_info .= $is_query{$query_gene};
-				}elsif($field eq "ref_name"){
-				  $hit_info .= &getName($ref_gene,$ref_organism); ## TEMP
-				}else{
-				  $hit_info .= $fwd_hit->{$field};
-				}
-#		  &RSAT::message::Debug("Adding output field", $field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 0);
-			    }
+	      ## Additional output fields (specified with the option -return)
+	      if (scalar(@output_fields) > 0) {
+		## add fields for the fwd hit
+		#			  $hit_info .= "\tFWD";
+		foreach my $field (@output_fields) {
+		  $hit_info .= "\t";
+		  if ($field eq "query_name") {
+		    $hit_info .= $is_query{$query_gene};
+		  } elsif ($field eq "ref_name") {
+		    $hit_info .= &getName($ref_gene,$ref_organism); ## TEMP
+		  } else {
+		    $hit_info .= $fwd_hit->{$field};
+		  }
+		  #		  &RSAT::message::Debug("Adding output field", $field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 0);
+		}
 
-			    ## add fields for the rev hit
-#			  $hit_info .= "\tREV";
-#			  foreach my $field (@output_fields) {
-#			      $hit_info .= "\t";
-#			      $hit_info .= $rev_hit->{$field};
-#		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
-#			  }
-			}
-			################
-			# put all hit info in a hash
-			$bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
+		## add fields for the rev hit
+		#			  $hit_info .= "\tREV";
+		#			  foreach my $field (@output_fields) {
+		#			      $hit_info .= "\t";
+		#			      $hit_info .= $rev_hit->{$field};
+		#		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
+		#			  }
+	      }
+	      ################
+	      # put all hit info in a hash
+	      $bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
 
-			&RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 3);
-			push @bidirect_hits, $hit_info;
-		    } else {
-			&RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 3);
-		    }
-		}  
+	      &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 3);
+	      push @bidirect_hits, $hit_info;
 	    } else {
-		&RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 3);
+	      &RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 3);
 	    }
+	  }  
+	} else {
+	  &RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 3);
 	}
+      }
     }
 
     ################################################################
@@ -528,45 +529,45 @@ package main;
 	  }
 	}
 	# get info about the results
-	$nb_hits_info .= "; Query gene ".$is_query{$query_gene}." $query_gene\n";
 	my $genomes_with_hit = scalar keys %{$bbh->{$query_gene}};
 	my $searched_genomes= scalar(@main::ref_organisms);
 	my $rate = sprintf("%.2f",100 * $genomes_with_hit/$searched_genomes);
-	$nb_hits_info .= join("\t",";",$nb_hits,"hits found in",$genomes_with_hit." organisms among ".$searched_genomes."  (".$rate."\%)\n");
+	$nb_hits_info .= join ("\t", "; Query gene", $is_query{$query_gene}, $query_gene,
+			     $nb_hits,"hits in",$genomes_with_hit." organisms among ".$searched_genomes."  (".$rate."\%)\n") if ($main::verbose >= 3);
       }
       ## Report number of hits
       print $out $nb_hits_info if ($return_format{stats});
     }
 
-#     ## Return a  table with one row per quey gnee and one column per target organism
-#     if ($return_format{table}) {
-#       print $out "; Hit table", "\n" if ($main::verbose >= 1);
+    #     ## Return a  table with one row per quey gnee and one column per target organism
+    #     if ($return_format{table}) {
+    #       print $out "; Hit table", "\n" if ($main::verbose >= 1);
 
-#       ## Header line
-#       my $header =  join("\t", "query", @ordered_ref_organisms);
-#       print $out "#", $header, "\n";
-#       foreach my $query_gene (keys (%is_query)) {
-# 	my $nb_hits=0;
-# 	my @hits = ();
-# 	foreach my $org (@ordered_ref_organisms) {
-# 	  if ($bbh->{$query_gene}->{$org}) {
-# 	    my @current_hits = ();
-# 	    foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
-# 	      push @current_hits, $bbh->{$query_gene}->{$org}->{$hit};
-# 	      die $bbh->{$query_gene}->{$org}->{$hit}, "HELLO\n";
-# 	    }
-# 	    push @hits, join ";", @current_hits;
-# 	  } else {
-# 	    push @hits, $null;
-# 	  }
-# 	}
-# 	print $out join ("\t", $query_gene, @hits), "\n";
-#       }
-#     }
+    #       ## Header line
+    #       my $header =  join("\t", "query", @ordered_ref_organisms);
+    #       print $out "#", $header, "\n";
+    #       foreach my $query_gene (keys (%is_query)) {
+    # 	my $nb_hits=0;
+    # 	my @hits = ();
+    # 	foreach my $org (@ordered_ref_organisms) {
+    # 	  if ($bbh->{$query_gene}->{$org}) {
+    # 	    my @current_hits = ();
+    # 	    foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
+    # 	      push @current_hits, $bbh->{$query_gene}->{$org}->{$hit};
+    # 	      die $bbh->{$query_gene}->{$org}->{$hit}, "HELLO\n";
+    # 	    }
+    # 	    push @hits, join ";", @current_hits;
+    # 	  } else {
+    # 	    push @hits, $null;
+    # 	  }
+    # 	}
+    # 	print $out join ("\t", $query_gene, @hits), "\n";
+    #       }
+    #     }
 
 
     ## Report missing BLAST files (useful for RSAT Admin)
-    if ($warn_missing_blast_files){
+    if ($warn_missing_blast_files) {
       if (scalar(@main::missing_blast_files) > 0) {
 	print $out "; Missing BLAST files\n";
 	foreach my $file (@main::missing_blast_files) {
@@ -577,25 +578,25 @@ package main;
 
     ## Report genomes having BLAST files but no hit found 
     foreach my $org (@ref_organisms) {
-	unless ($genome_hits{$org}){
-	    push @genome_no_hits, $org;
+      unless ($genome_hits{$org}) {
+	push @genome_no_hits, $org;
       }
     }
     if (scalar(@genome_no_hits) > 0) {
-	print $out "; No hits found in the following genomes :\n";
-	my $i = 0;
-	foreach my $org (sort {$a cmp $b} @genome_no_hits) {
-	    $i++;
-	    print $out join("\t", ";", $i, $org), "\n";
-	}
+      print $out "; No hits found in the following genomes :\n";
+      my $i = 0;
+      foreach my $org (sort {$a cmp $b} @genome_no_hits) {
+	$i++;
+	print $out join("\t", ";", $i, $org), "\n";
+      }
     }
     
     ## Report unknown query genes
     if (scalar(@main::unknown_query_genes) > 0) {
-	print $out "; Unknown query genes\n";
-	foreach my $gene (@main::unknown_query_genes) {
-	    print $out ";\t", $gene, "\n";
-	}
+      print $out "; Unknown query genes\n";
+      foreach my $gene (@main::unknown_query_genes) {
+	print $out ";\t", $gene, "\n";
+      }
     }
 
     ################################################################
@@ -605,7 +606,7 @@ package main;
     close $main::out if ($main::outfile{output});
 
     exit(0);
-}
+  }
 
 ################################################################
 ################### subroutine definition ######################
@@ -686,7 +687,7 @@ sub select_hits{
     return(0);
   }
 
-  &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 3);
   &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 3);
 
   ## ##############################################################
@@ -702,7 +703,7 @@ sub select_hits{
   if ($main::query_filter) {
     $input_cmd .= "grep -E '".$main::query_filter."' |";
   }
-  &RSAT::message::Debug($input_cmd) if ($main::verbose >= 2);
+  &RSAT::message::Debug($input_cmd) if ($main::verbose >= 3);
 
   open HIT_HANDLE, $input_cmd;
   #    my ($hit_handle) = &OpenInputFile($blast_file);
@@ -784,11 +785,10 @@ sub select_hits{
 			       ));
     }
   }
-  close HIT_HANDLE;	
-  #    close $hit_handle;	
+  close HIT_HANDLE;
+  #    close $hit_handle;
   &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 2);
   return($hits);
-
 }
 
 ################################################################
@@ -1086,11 +1086,12 @@ obtain the correct results by inactivating the grep filter.
 
 =item B<-org_list>
 
-This option gives the posibility to analyse a given set of organisms
-instead of a taxon. This way orthologs for a gene are only searched on
-a preselected list of organisms.
+This option gives the posibility to specify a set of reference
+organisms rather than a taxon. Orthologs will only be searched in the
+organisms belonging to the given list.
 
-The file format is one organisms per line, the comment char is ";"
+File format: each row should contain the identifier of one
+organism. Lines starting with a semicolumn are ignored.
 
 =cut
 
