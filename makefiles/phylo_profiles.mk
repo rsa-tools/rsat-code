@@ -218,6 +218,7 @@ profiles_evalue:
 ################################################################
 ## Pairwise comparisons between each gene pair 
 COMPA=${PROFILES}_compa
+SIG_COL=`grep -P '^;\t\d+\tsig' results/profiles/Escherichia_coli_K12/Bacteria_depth5/profiles_Escherichia_coli_K12_vs_Bacteria_eval_1e-10_ident30_len50_compa.tab | cut -f 2`
 compa:
 	grep -v '^;' ${BBH}.tab | grep -v '^#' \
 		| awk '{print $$2"\t"$$3"\t"$$4}' \
@@ -230,9 +231,6 @@ compa:
 	@echo ${COMPA}.tab
 	@text-to-html -i ${COMPA}.tab -o ${COMPA}.html
 	@echo ${COMPA}.html
-
-SIG_COL=`grep -P '^;\t\d+\tsig' results/profiles/Escherichia_coli_K12/Bacteria_depth5/profiles_Escherichia_coli_K12_vs_Bacteria_eval_1e-10_ident30_len50_compa.tab | cut -f 2`
-it:
 	convert-graph -i ${COMPA}.tab -from tab -to gml -scol 3 -tcol 4 \
 		-wcol ${SIG_COL} -ewidth -ecolors fire \
 		-o ${COMPA}.gml 
