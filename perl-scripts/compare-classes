@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.61 2010/09/09 18:17:37 jvanheld Exp $
+# $Id: compare-classes,v 1.62 2010/10/29 11:16:06 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -300,39 +300,41 @@ $nb_query_classes = scalar(keys %query_classes);
 
 ## Read ref class names
 if ($infile{rnames}) {
-    &RSAT::message::TimeWarn("Reading reference names\t".$infile{rnames}) if ($main::verbose >= 2);
-    my ($in) = &OpenInputFile($infile{rnames});
-    while (<$in>) {
-	chomp();
-	next if (/^--/);
-	next if (/^;/);
-	next unless (/^\S/);
-	my @fields = split '\t';
-	my $id = $fields[0];
-	my $name = $fields[1];
-	if (defined($ref_classes{$id})) {
-	    $ref_classes{$id}->force_attribute("name",$name);
-	}
+  &RSAT::message::TimeWarn("Reading reference names\t".$infile{rnames}) if ($main::verbose >= 2);
+  my ($in) = &OpenInputFile($infile{rnames});
+  while (<$in>) {
+    chomp();
+    next if (/^--/);
+    next if (/^;/);
+    next unless (/^\S/);
+    my @fields = split '\t';
+    my $id = $fields[0];
+    my $name = $fields[1];
+    if (defined($ref_classes{$id})) {
+      $ref_classes{$id}->force_attribute("name",$name);
     }
+  }
+  $return_fields{rname} = 1;
 }
 
 ## Read query class names
 if ($infile{qnames}) {
-    &RSAT::message::TimeWarn("Reading query names\t".$infile{qnames}) if ($main::verbose >= 2);
-    my ($in) = &OpenInputFile($infile{qnames});
-    while (<$in>) {
-	chomp;
-	next if (/^--/);
-	next if (/^;/);
-	next unless (/^\S/);
-	my @fields = split '\t';
-	my $id = $fields[0];
-	my $name = $fields[1];
-#	warn join ("\t", ";query class", $id, $name), "\n" if ($main::verbose >= 10);
-	if (defined($query_classes{$id})) {
-	    $query_classes{$id}->force_attribute("name",$name);
-	}
+  &RSAT::message::TimeWarn("Reading query names\t".$infile{qnames}) if ($main::verbose >= 2);
+  my ($in) = &OpenInputFile($infile{qnames});
+  while (<$in>) {
+    chomp;
+    next if (/^--/);
+    next if (/^;/);
+    next unless (/^\S/);
+    my @fields = split '\t';
+    my $id = $fields[0];
+    my $name = $fields[1];
+    #	warn join ("\t", ";query class", $id, $name), "\n" if ($main::verbose >= 10);
+    if (defined($query_classes{$id})) {
+      $query_classes{$id}->force_attribute("name",$name);
     }
+  }
+  $return_fields{qname} = 1;
 }
 
 &FilterClasses();
@@ -818,168 +820,168 @@ End_short_help
 ################################################################
 ## Read arguments
 sub ReadArguments {
-    foreach my $a (0..$#ARGV) {
-	
-        ### verbose
-        if ($ARGV[$a] eq "-v") {
-            if (&IsNatural($ARGV[$a+1])) {
-                $verbose = $ARGV[$a+1];
-            } else {
-                $verbose = 1;
-            }
-	    
-            ### detailed help
-        } elsif ($ARGV[$a] eq "-h") {
-            &PrintHelp();
-	    
-            ### list of options
-        } elsif ($ARGV[$a] eq "-help") {
-            &PrintOptions();
-	    
-            ### query file
-        } elsif ($ARGV[$a] eq "-q") {
-            $infile{query_classes} = $ARGV[$a+1];
-	    
-            ### reference class names
-        } elsif ($ARGV[$a] eq "-rnames") {
-            $infile{rnames} = $ARGV[$a+1];
-	    
-            ### query class names
-        } elsif ($ARGV[$a] eq "-qnames") {
-            $infile{qnames} = $ARGV[$a+1];
-	    
-            ### reference file
-        } elsif ($ARGV[$a] eq "-r") {
-            $infile{ref_classes} = $ARGV[$a+1];
-	    
-            ### catalog
-        } elsif ($ARGV[$a] eq "-cat") {
-            $catalog = $ARGV[$a+1];
-	    unless ($supported_catalogs{$catalog}) {
-		&RSAT::error::FatalError("$catalog is not a valid catalog. Supported: $supported_catalogs");
-	    }
-	    
-	    #### null value
-	} elsif ($ARGV[$a] eq "-null") {	    
-	    $null =$ARGV[$a+1];
-	    
-	    #### logarithm base
-	} elsif ($ARGV[$a] eq "-base") {	    
-	    $base =$ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", $base, "Invalid logarithm base:  must be a stricktly positive real number.")) 
-		unless ((&RSAT::util::IsReal($base)) && ($base > 0));
-	    
-	    #### organism
-	} elsif ($ARGV[$a] eq "-org") {	    
-	    $organism_name =$ARGV[$a+1];
-	    &CheckOrganismName($organism_name);
-	    
-            ### input file (both reference and query)
-        } elsif ($ARGV[$a] eq "-i") {
-            $infile{ref_classes} = $ARGV[$a+1];
-            $infile{query_classes} = $ARGV[$a+1];
-            $infile{input} = $ARGV[$a+1];
+  foreach my $a (0..$#ARGV) {
 
-            ### Score column
-        } elsif ($ARGV[$a] eq "-sc") {
-	    $score_col = $ARGV[$a+1];
-	    unless ((&IsNatural($score_col)) && ($score_col >= 1)) {
-		&RSAT::error::FatalError( join("\t", $score_col, "Invalid score column: must be an integer >= 1"));
-	    }
-	    
-            ### replacement
-        } elsif ($ARGV[$a] eq "-rep") {
-            $replacement = 1;
+    ### verbose
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
 
-            ### symmetric (for binomial distrib only)
-        } elsif ($ARGV[$a] eq "-sym") {
-            $symmetric = 1;
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
 
-            ### output file
-        } elsif ($ARGV[$a] eq "-o") {
-            $outfile{output} = $ARGV[$a+1];
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
 
-            ### sort key
-        } elsif ($ARGV[$a] eq "-sort") {
-            $sort_key = $ARGV[$a+1];
-            unless ($supported_sort_fields{$sort_key}) {
-                &RSAT::error::FatalError (join("\t", $sort_key, "Invalid sort key. Supported:", $supported_sort_fields));
-            }
+      ### query file
+    } elsif ($ARGV[$a] eq "-q") {
+      $infile{query_classes} = $ARGV[$a+1];
 
-            ### export a distance matrix
-        } elsif ($ARGV[$a] eq "-matrix") {
-	    $matrix_key = $ARGV[$a+1];
-            push @matrix_keys, $matrix_key;
-            unless ($supported_matrix_fields{$matrix_key}) {
-                &RSAT::error::FatalError (join("\t", $matrix_key, "Invalid matrix key. Supported:", $supported_matrix_fields));
-            }
+      ### reference class names
+    } elsif ($ARGV[$a] eq "-rnames") {
+      $infile{rnames} = $ARGV[$a+1];
 
-	    $calc_fields{$calc_groups{$matrix_key}} = 1;
+      ### query class names
+    } elsif ($ARGV[$a] eq "-qnames") {
+      $infile{qnames} = $ARGV[$a+1];
 
-	    #### margins
-	} elsif ($ARGV[$a] eq "-margins") {	    
-	    $margins = 1;
+      ### reference file
+    } elsif ($ARGV[$a] eq "-r") {
+      $infile{ref_classes} = $ARGV[$a+1];
 
-            ### dot file
-        } elsif ($ARGV[$a] eq "-dot") {
-            $dot_file = $ARGV[$a+1];
+      ### catalog
+    } elsif ($ARGV[$a] eq "-cat") {
+      $catalog = $ARGV[$a+1];
+      unless ($supported_catalogs{$catalog}) {
+	&RSAT::error::FatalError("$catalog is not a valid catalog. Supported: $supported_catalogs");
+      }
 
-            ### gml file
-        } elsif ($ARGV[$a] eq "-gml") {
-            $gml_file = $ARGV[$a+1];
+      #### null value
+    } elsif ($ARGV[$a] eq "-null") {
+      $null =$ARGV[$a+1];
 
-            ### prevent to compare each class with itself
-        } elsif ($ARGV[$a] eq "-distinct") {
-            $distinct = 1;
+      #### logarithm base
+    } elsif ($ARGV[$a] eq "-base") {
+      $base =$ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t", $base, "Invalid logarithm base:  must be a stricktly positive real number.")) 
+	unless ((&RSAT::util::IsReal($base)) && ($base > 0));
 
-            ### do not perform reciprocal comparisons
-        } elsif ($ARGV[$a] eq "-triangle") {
-            $triangle = 1;
+      #### organism
+    } elsif ($ARGV[$a] eq "-org") {
+      $organism_name =$ARGV[$a+1];
+      &CheckOrganismName($organism_name);
 
-            ### population size
-        } elsif ($ARGV[$a] eq "-pop") {
-            $population_size = $ARGV[$a+1];
-            unless (&IsNatural($population_size)) {
-                &RSAT::error::FatalError("Population size must be a natural number");
-            }
-            unless ($population_size > 0) {
-                &RSAT::error::FatalError("Population size must be strictly positive.");
-            }
+      ### input file (both reference and query)
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{ref_classes} = $ARGV[$a+1];
+      $infile{query_classes} = $ARGV[$a+1];
+      $infile{input} = $ARGV[$a+1];
 
-            #### threshold values
-        } elsif ($ARGV[$a] eq "-lth") {
-            my $field = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", $field, "Invalid threshold field. Supported:", $supported_threshold_fields))
-		unless ($supported_threshold_fields{$field});
-            my $value = $ARGV[$a+2];
-            $lth{$field} = $value;
-        } elsif ($ARGV[$a] eq "-uth") {
-            my $field = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", $field, "Invalid threshold field. Supported:", $supported_threshold_fields))
-		unless ($supported_threshold_fields{$field});
-            my $value = $ARGV[$a+2];
-            $uth{$field} = $value;
+      ### Score column
+    } elsif ($ARGV[$a] eq "-sc") {
+      $score_col = $ARGV[$a+1];
+      unless ((&IsNatural($score_col)) && ($score_col >= 1)) {
+	&RSAT::error::FatalError( join("\t", $score_col, "Invalid score column: must be an integer >= 1"));
+      }
 
-            #### return fields
-        } elsif ($ARGV[$a] eq "-return") {
-            chomp($ARGV[$a+1]);
-            my @fields_to_return = split ",", $ARGV[$a+1];
-            foreach $field (@fields_to_return) {
-                if ($supported_return_fields{$field}) {
-                    $return_fields{$field} = 1;
-                } else {
-                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
-		}
-	    }
+      ### replacement
+    } elsif ($ARGV[$a] eq "-rep") {
+      $replacement = 1;
 
-	    #### multi-testing correction
-	} elsif ($ARGV[$a] eq "-multi_cor") {
-	    $multi_cor = $ARGV[$a+1];
-	    unless ($supported_multi_cor{$multi_cor}) {
-		&RSAT::error::FatalError(join("\t", $multi_cor, "Invalid multi-testing correction. Supported:", $supported_multi_cor));
-	    }
-        }
+      ### symmetric (for binomial distrib only)
+    } elsif ($ARGV[$a] eq "-sym") {
+      $symmetric = 1;
+
+      ### output file
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+
+      ### sort key
+    } elsif ($ARGV[$a] eq "-sort") {
+      $sort_key = $ARGV[$a+1];
+      unless ($supported_sort_fields{$sort_key}) {
+	&RSAT::error::FatalError (join("\t", $sort_key, "Invalid sort key. Supported:", $supported_sort_fields));
+      }
+
+      ### export a distance matrix
+    } elsif ($ARGV[$a] eq "-matrix") {
+      $matrix_key = $ARGV[$a+1];
+      push @matrix_keys, $matrix_key;
+      unless ($supported_matrix_fields{$matrix_key}) {
+	&RSAT::error::FatalError (join("\t", $matrix_key, "Invalid matrix key. Supported:", $supported_matrix_fields));
+      }
+
+      $calc_fields{$calc_groups{$matrix_key}} = 1;
+
+      #### margins
+    } elsif ($ARGV[$a] eq "-margins") {
+      $margins = 1;
+
+      ### dot file
+    } elsif ($ARGV[$a] eq "-dot") {
+      $dot_file = $ARGV[$a+1];
+
+      ### gml file
+    } elsif ($ARGV[$a] eq "-gml") {
+      $gml_file = $ARGV[$a+1];
+
+      ### prevent to compare each class with itself
+    } elsif ($ARGV[$a] eq "-distinct") {
+      $distinct = 1;
+
+      ### do not perform reciprocal comparisons
+    } elsif ($ARGV[$a] eq "-triangle") {
+      $triangle = 1;
+
+      ### population size
+    } elsif ($ARGV[$a] eq "-pop") {
+      $population_size = $ARGV[$a+1];
+      unless (&IsNatural($population_size)) {
+	&RSAT::error::FatalError("Population size must be a natural number");
+      }
+      unless ($population_size > 0) {
+	&RSAT::error::FatalError("Population size must be strictly positive.");
+      }
+
+      #### threshold values
+    } elsif ($ARGV[$a] eq "-lth") {
+      my $field = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t", $field, "Invalid threshold field. Supported:", $supported_threshold_fields))
+	unless ($supported_threshold_fields{$field});
+      my $value = $ARGV[$a+2];
+      $lth{$field} = $value;
+    } elsif ($ARGV[$a] eq "-uth") {
+      my $field = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t", $field, "Invalid threshold field. Supported:", $supported_threshold_fields))
+	unless ($supported_threshold_fields{$field});
+      my $value = $ARGV[$a+2];
+      $uth{$field} = $value;
+
+      #### return fields
+    } elsif ($ARGV[$a] eq "-return") {
+      chomp($ARGV[$a+1]);
+      my @fields_to_return = split ",", $ARGV[$a+1];
+      foreach $field (@fields_to_return) {
+	if ($supported_return_fields{$field}) {
+	  $return_fields{$field} = 1;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+	}
+      }
+
+      #### multi-testing correction
+    } elsif ($ARGV[$a] eq "-multi_cor") {
+      $multi_cor = $ARGV[$a+1];
+      unless ($supported_multi_cor{$multi_cor}) {
+	&RSAT::error::FatalError(join("\t", $multi_cor, "Invalid multi-testing correction. Supported:", $supported_multi_cor));
+      }
     }
+  }
 }
 
 ################################################################
@@ -1212,7 +1214,7 @@ sub CompareClasses {
 	}
       }
 
-      ## ##############################################################	
+      ## ##############################################################
       ## Calculate frequencies
       if ($calc_fields{freq}) {
 	warn "; calculating frequencies for ", $compa_key, "\n" if ($verbose >= 5);
@@ -1220,7 +1222,7 @@ sub CompareClasses {
 	my $n_r = $ref_classes{$r}->get_size();	### number of elements in the reference class
 	#		my $c = $QR; ### number of common elements
 
-		
+
 	$current_compa{'F(R)'} = $n_r/$population_size;
 	$current_compa{'F(Q)'} = $n_q/$population_size;
 
@@ -1272,7 +1274,7 @@ sub CompareClasses {
 	    - (1-$current_compa{'F(R)'})*log(1-$current_compa{'F(R)'})/$log_base;
 
 	}
-		
+
 	## Join entropy
 	if (($current_compa{'F(QR)'} <= 0) || ($current_compa{'F(QR)'} >= 1)) {
 	  $contrib{'F(QR)'} = 0;
@@ -1300,7 +1302,7 @@ sub CompareClasses {
 
 	$current_compa{'H(Q,R)'} = 
 	  ($contrib{'F(QR)'} + $contrib{'F(Q!R)'} + $contrib{'F(R!Q)'} + $contrib{'F(!Q!R)'})/$log_base;
-		
+
 	$current_compa{'dH(Q,R)'} = 
 	  $current_compa{'H(Q,R)'} - $current_compa{'H(Q)'}/2 - $current_compa{'H(R)'}/2;
 
@@ -1430,11 +1432,15 @@ sub CompareClasses {
 ## Print the header
 sub PrintHeader {
   if (scalar(keys(%return_fields)) >= 1) {
-    
+
     #### header
     my @header_fields = ();
     push @header_fields, ("ref","query");
-    
+
+    ## Names
+    push @header_fields, ("rname") if ($return_fields{rname});
+    push @header_fields, ("qname") if ($return_fields{qname});
+
     ## Occurrence counts
     if ($return_fields{occ}) {
       push @header_fields, "R";
@@ -1445,7 +1451,7 @@ sub PrintHeader {
       push @header_fields, "Q!R";
       push @header_fields, "!Q!R";
     }
-    
+
     ## Frequencies
     if ($return_fields{freq}) {
       push @header_fields, 'F(R)' ;
@@ -1582,26 +1588,37 @@ sub PrintOneComparison {
   }
 
   #### reference family name
-  my $r_text = $r;
-  my $rname =  $ref_classes{$r}->get_attribute("name");
-  if ($rname ne $r) {
-    ## Add class name to class ID
-    $r_text .= ":".$rname; 
-  }
-  warn join( "\t", ";ref class", $r, $r_text), "\n" if ($main::verbose >= 10);
+#  my $r_text = $r;
+#  my $rname =  $ref_classes{$r}->get_attribute("name");
+#  if ($rname ne $r) {
+#    ## Add class name to class ID
+#    $r_text .= ":".$rname; 
+#  }
+#  warn join( "\t", ";ref class", $r, $r_text), "\n" if ($main::verbose >= 10);
 
   #### query family name
-  my $q_text = $q;
-  my $qname =  $query_classes{$q}->get_attribute("name");
-  if ($qname ne $q) {
-    ## Replace class ID by class name
-    $q_text .= ":".$qname;
-  }
+#  my $q_text = $q;
+#  my $qname =  $query_classes{$q}->get_attribute("name");
+#  if ($qname ne $q) {
+#    ## Replace class ID by class name
+#    $q_text .= ":".$qname;
+#  }
 #  warn join( "\t", ";query class", $q, $q_text), "\n" if ($main::verbose >= 10);
 
-  print $out join "\t", ($r_text,
-			 $q_text);
+#  print $out join "\t", ($r_text, $q_text);
 
+  ## Reference and query IDs
+  print $out join "\t", ($r, $q);
+
+  ## Names 
+  if ($return_fields{rname}) {
+    my $rname =  $query_classes{$r}->get_attribute("name") || $r;
+    print $out "\t", $rname;
+  }
+  if ($return_fields{qname}) {
+    my $qname =  $query_classes{$q}->get_attribute("name") || $q;
+    print $out "\t", $qname;
+  }
 
   ## Occurrence counts
   if ($return_fields{occ}) {
