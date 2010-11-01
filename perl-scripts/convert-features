@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.24 2010/10/06 16:03:07 morgane Exp $
+# $Id: convert-features,v 1.25 2010/11/01 14:17:36 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -163,6 +163,7 @@ sub convert_coords {
 		my $new_start ="";
 		my $new_end ="";
 		
+		if ($chr_strand eq "+") {
 		### START origine
 		if ($origin eq "start") {
 			
@@ -183,6 +184,32 @@ sub convert_coords {
 			$new_end   = $coord{$seq_name} -> {'end'} + $end + 1 ;
 			## start
 			$new_start = $new_end - $feat_length;
+		}
+		} else {
+			### START origine
+		if ($origin eq "start") {
+			
+			## length
+			my $feat_length = $end - $start +1;
+			## start
+			$new_end = $coord{$seq_name} -> {'end'} - $start + 1;
+			## end
+			$new_start = $new_end - $feat_length + 1 ;
+			#&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand);
+			
+
+		### END origin
+		} elsif ($origin eq "end") {
+			&RSAT::message::Warning("check your results, this combination of parameters has not been verified extensively !");
+			## length
+			my $feat_length = abs($end - $start);
+			## end
+			$new_start   = $coord{$seq_name} -> {'start'} - $start - 1 ;
+			## start
+			$new_end = $new_start + $feat_length;
+		}
+			
+			
 		}
 		
 		## strand
