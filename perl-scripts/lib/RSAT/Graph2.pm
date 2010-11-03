@@ -2621,24 +2621,31 @@ sub layout_spring_embedding_new {
   my $nodes_nb = scalar keys %nodes_name_id;
   my $layout_size = 1000;
   my $outfile = $main::outfile{output};
-  my (%nodes_dx, %nodes_dy, %edges_len);
-  my $fav_length = 10;
+  my (@nodes_dx, @nodes_dy, @edges_len, @xpos, @ypos);
+  my $fav_length = 50;
   my $range = 10;
   my $iterations = 1000;
+  # 0 filling xpos and ypos arrays
+  foreach my $id (keys %nodes_id_xpos) {
+    $xpos[$id] = $id;
+    $ypos[$id] = $id;
+  }
+
+  
   # 1 calcul sur les arcs (attraction des noeuds connectes)
   for (my $cpt = 0; $cpt < $iterations; $cpt++) {
-    &RSAT::message::Info("Spring embedding iteration $cpt") if ($main::verbose >= 3 && $cpt%1 == 0);
+    &RSAT::message::Info("Spring embedding iteration $cpt") if ($main::verbose >= 3 && $cpt%10 == 0);
 
     for (my $source_id = 0; $source_id < scalar(@out_neighbours); $source_id++) {
       next if (!defined ($out_neighbours[$source_id]));
       
       my @id_out_neighbours = @{$out_neighbours[$source_id]};
-      my $source_x = $nodes_id_xpos{$source_id};
-      my $source_y = $nodes_id_ypos{$source_id};
+      my $source_x = $xpos[$source_id];
+      my $source_y = $ypos[$source_id];
       for (my $j = 0; $j < scalar(@id_out_neighbours); $j++) {
         my $target_id = $id_out_neighbours[$j];
-        my $target_x = $nodes_id_xpos{$target_id};
-        my $target_y = $nodes_id_ypos{$target_id};
+        my $target_x = $xpos[$target_id];
+        my $target_y = $ypos[$target_id];
         my $vx = $target_x - $source_x;
         my $vy = $target_y - $source_y;
         my $len = sqrt($vx * $vx + $vy * $vy);
@@ -2646,56 +2653,49 @@ sub layout_spring_embedding_new {
         my $f = ($fav_length - $len) / ($len * 3);
         my $dx = $f * $vx;
         my $dy = $f * $vy;
-        $nodes_dx{$source_id} += -1*$dx;
-        $nodes_dy{$source_id} += -1*$dy; 
-        $nodes_dx{$target_id} += $dx;
-        $nodes_dy{$target_id} += $dy; 
+        $nodes_dx[$source_id] += -1*$dx;
+        $nodes_dy[$source_id] += -1*$dy; 
+        $nodes_dx[$target_id] += $dx;
+        $nodes_dy[$target_id] += $dy; 
       }
     }
     # 2 calcul sur les noeuds (repulsion des noeuds trop proches)
-    foreach my $node1_id (keys %nodes_id_xpos) {
-      my $dx = 0;
-      my $dy = 0;
-      my $node1_x = $nodes_id_xpos{$node1_id};
-      my $node1_y = $nodes_id_ypos{$node1_id}; 
-#       print "###\n";
-      foreach my $node2_id (keys %nodes_id_xpos) {
-        
-        my $node2_x = $nodes_id_xpos{$node2_id};
-        my $node2_y = $nodes_id_ypos{$node2_id};
-        next if ($node1_id == $node2_id);
-        my $vx = $node1_x - $node2_x;
-        my $vy = $node1_y - $node2_y;
-        my $len = $vx * $vx + $vy * $vy;
-        if ($len == 0) {
-          $dx += rand();
-	  $dy += rand();
-# 	  print "$nodes_id_name{$node1_id} et $nodes_id_name{$node2_id} se repoussent\n";
-# 	  print "le dx de $nodes_id_name{$node1_id} est de $dx\n";
-        } else {
-        
-	  $dx += $vx / $len;
-	  $dy += $vy / $len;
-# 	  print "VAL ".($vx / $len);
-# 	  print "\n";
-
-	  
+#     if ($cpt > $iterations - $iterations/10) {
+#       if ($cpt % 10 == 0) {
+      foreach my $node1_id (keys %nodes_id_xpos) {
+        my $dx = 0;
+        my $dy = 0;
+        my $node1_x = $xpos[$node1_id];
+        my $node1_y = $ypos[$node1_id]; 
+        foreach my $node2_id (keys %nodes_id_xpos) {
+          my $node2_x = $xpos[$node2_id];
+          my $node2_y = $ypos[$node2_id];
+          next if ($node1_id == $node2_id);
+          my $vx = $node1_x - $node2_x;
+          my $vy = $node1_y - $node2_y;
+          my $len = $vx * $vx + $vy * $vy;
+          if ($len == 0) {
+            $dx += rand();
+	    $dy += rand();
+          } else {
+  	    $dx += $vx / $len;
+	    $dy += $vy / $len;
+          }
+        }
+        my $dlen = $dx * $dx + $dy * $dy;
+        if ($dlen > 0) {
+          $dlen = sqrt($dlen) / 2;
+          $nodes_dx[$node1_id] += $dx / $dlen;
+          $nodes_dy[$node1_id] += $dy / $dlen;
         }
       }
-      my $dlen = $dx * $dx + $dy * $dy;
-#       print "DLEN $dlen"."\n";
-      if ($dlen > 0) {
-        $dlen = sqrt($dlen) / 2;
-        $nodes_dx{$node1_id} += $dx / $dlen;
-        $nodes_dy{$node1_id} += $dy / $dlen;
-      }
-    }
+#     }
     # 3 position effective
     foreach my $node_id (keys %nodes_id_xpos) {
-      my $node_x = $nodes_id_xpos{$node_id};
-      my $node_y = $nodes_id_ypos{$node_id};
-      my $node_dx = $nodes_dx{$node_id};
-      my $node_dy = $nodes_dy{$node_id};
+      my $node_x = $xpos[$node_id];
+      my $node_y = $ypos[$node_id];
+      my $node_dx = $nodes_dx[$node_id];
+      my $node_dy = $nodes_dy[$node_id];
 #       print "NODE DY $node_dy\n";
       $node_x += &RSAT::stats::max(-5, &RSAT::stats::min(5, $node_dx));
 #        print "TESTMAX ".&RSAT::stats::max(-5, &RSAT::stats::min(5, $node_dx));
@@ -2711,12 +2711,16 @@ sub layout_spring_embedding_new {
       } elsif ($node_y > $y_size) {
         $node_y = $y_size;
       }
-      $nodes_dx{$node_id} /= 2;
-      $nodes_dy{$node_id} /= 2;
-      $nodes_id_xpos{$node_id} = $node_x;
-      $nodes_id_ypos{$node_id} = $node_y;
+      $nodes_dx[$node_id] /= 2;
+      $nodes_dy[$node_id] /= 2;
+      $xpos[$node_id] = $node_x;
+      $ypos[$node_id] = $node_y;
 
     }
+    foreach my $id (keys %nodes_id_xpos) {
+      $nodes_id_xpos{$id} = $xpos[$id];
+      $nodes_id_ypos{$id} = $ypos[$id];
+    }    
 #     print "ITERATION $cpt\n";
 #     foreach my $node_id (keys %nodes_id_xpos) {
 #       print join "\t", $nodes_id_name{$node_id}, $nodes_id_xpos{$node_id}, $nodes_id_ypos{$node_id}, $nodes_dx{$node_id}, $nodes_dy{$node_id};
@@ -3318,7 +3322,7 @@ sub get_diagram_size {
   my $nb_nodes = -1;
 
   ## If not specified, graph size increases with the squared root of
-  ## the node number (thus, area increase proportional to node number)
+  ## the node number (thus, area increase proportionally to the node number)
 
   ## X size
   if ($self->get_attribute("x_size")) {
@@ -3334,7 +3338,7 @@ sub get_diagram_size {
     ################################################################
     %nodes_name_id = $self->get_attribute("nodes_name_id");
     $nb_nodes = scalar(keys(%nodes_name_id));
-    $x_size = sprintf("%d", 400+250*sqrt($nb_nodes));
+    $x_size = sprintf("%d", 400+100*sqrt($nb_nodes));
   }
 
   ## Y size
