@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.40 2010/09/09 01:24:23 amedina Exp $
+# $Id: footprint-discovery,v 1.41 2010/11/04 20:48:53 amedina Exp $
 #
 ############################################################
 
@@ -183,7 +183,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.41 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -221,7 +221,7 @@ package main;
   local @query_genes = ();	## list of query genes
   local $infer_operons = 0;     ## Infer operon leader genes
   local $dist_thr = 55;	        ## Distance threshold for operon inference
-  local $sep_genes = 0;	        ## Analyze each gene separately
+  $main::sep_genes = 0;	        ## Analyze each gene separately
   local $promoter = "ortho";    ## Alternatively: leader when the option "infer operons" is active
 #  local $all_genes = 0;         ## Analyze all the genes of the query organism
 #  local $max_genes = undef;     ## Analyze a restricted number of genes
@@ -249,7 +249,7 @@ package main;
 
   ################################################################
   ## Analyze query genes separately or altogether
-  if ($sep_genes) {
+  if ($main::sep_genes) {
     my $g = 0;
     my $gene_nb = scalar(@query_genes);
     foreach my $current_gene (@query_genes) {
