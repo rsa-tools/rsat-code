@@ -239,7 +239,7 @@ sub GetOutfilePrefix {
 	&RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
     }
     #die $outfile{prefix};
-    if ($sep_genes)
+    if ($main::sep_genes)
     {
 	if ($query_prefix) {
 	    my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
@@ -787,7 +787,7 @@ sub OpenIndex {
   print $index "<blockquote>";
   print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
   &IndexOneFile("log", $outfile{log});
-  &IndexOneFile("input", $infile{genes}) if (($infile{genes}) && !($sep_genes));
+  &IndexOneFile("input", $infile{genes}) if (($infile{genes}) && !($main::sep_genes));
 }
 
 ################################################################
@@ -840,7 +840,36 @@ sub ComputeFilterDyads {
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
 }
-
+################################################################
+## Detect all matrix hits  in promoters of query genes for scan filtering
+sub ComputeFilterScan {
+    my ($matrix_format2, @matrix_files2)=@_;
+    &RSAT::message::TimeWarn("Computing filter hits", $outfile{filter_scan}) if ($main::verbose >= 2);
+    &CheckDependency("filter", "query_seq");
+    my $cmd = "$SCRIPTS/matrix-scan -v 1 -return sites,pval,rank -uth pval " .$main::filter_pval;
+    $cmd .= " -uth rank 1 ";
+    $cmd .= " -i ".$outfile{query_seq};
+    foreach my $file (@matrix_files2) {
+	&RSAT::error::FatalError("Matrix file $file does not exist.Matrix file is mandatory.")  unless (-e $file ) ;
+	$cmd .= " -m ".$file;
+    }
+    $cmd .= " -bgfile ".$main::filter_bgfile ; 
+    $cmd .= " -matrix_format ".$matrix_format2;
+    $cmd .= " ".$strands;
+    #$cmd .= " ".$noov;
+    $cmd .= " -o ".$outfile{filter_scan};
+    &one_command($cmd) if ($task{filter_scan});
+    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    &IndexOneFile("filter scan", $outfile{filter_scan}) if ($create_index);
+    my $filterg=`grep -v ";" $outfile{filter_scan}  | grep -v "#" | cut -f1`;
+    chomp($filterg);
+    $outfile{genes}= $outfile{prefix}."_filter_query_genes.tab";
+    $filter_genes = &OpenOutputFile($outfile{genes});
+    print  $filter_genes $filterg;
+    &RSAT::message::Info("Filter genes  ", $outfile{genes} ) if ($main::verbose >= 1);  
+    &IndexOneFile("filter genes", $outfile{genes}) if ($create_index);
+    $main::skip_gene=1 unless ($filterg=~/\w/);
+}
 ################################################################
 ## Identify ortholog genes
 sub GetOrthologs {
