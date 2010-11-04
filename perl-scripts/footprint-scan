@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.39 2010/09/09 00:36:22 amedina Exp $
+# $Id: footprint-scan,v 1.40 2010/11/04 20:47:19 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -287,7 +287,7 @@ package main;
   local @query_genes = ();	## list of query genes
   local $infer_operons = 0;     ## Infer operon leader genes
   local $dist_thr = 55;	        ## Distance threshold for operon inference
-  local $sep_genes = 0;	        ## Analyze each gene separately
+  $main::sep_genes = 0;	        ## Analyze each gene separately
   local $max_genes = undef;     ## Analyze a restricted number of genes
   local $query_prefix;
 
@@ -310,7 +310,8 @@ package main;
   local $scan_opt = "";
   local $map_opt = "";
   $main::no_purge=0;
-
+  $main::filter=0;
+  $main::filter_pval=0;
   #$bg_format="oligo";
 
   ## Local definition of threshold parameters passed to matrix-scan
@@ -420,7 +421,8 @@ crer_pval
   
 
   ## Supported-tasks added to those of footprint.lib.pl
-  $supported_task{occ_sig} = 1;
+  $supported_task{occ_sig} = 1; 
+  $supported_task{filter_scan} = 1;
   $supported_task{occ_sig_graph} = 1;
   $supported_task{scan} = 1;
   $supported_task{map} = 1;
@@ -456,7 +458,7 @@ crer_pval
       if (defined($markov)) {
 	  $ms_parameters .= " -markov ".$markov;
       } else {
-	  &RSAT::error::FatalError("The option -bginput requires o specify a Markov model (option -markov)");
+	  &RSAT::error::FatalError("The option -bginput requires to specify a Markov model (option -markov)");
       } 
   } elsif ($bg_method eq "window") {
       $ms_parameters .= " -window ". $main::window_size ." " ;
@@ -485,9 +487,16 @@ crer_pval
   
   ## Sequence format
   $ms_parameters .= " -seq_format fasta";
+  
+  ##Filter
+  if ($main::filter){
+      $main::filter_pval=1e-4 unless ($main::filter_pval);
+  }  
+  &RSAT::error::FatalError("You must use the option -filter in order to set -filter_pval") if ($main::filter_pval && !$main::filter);
+  &RSAT::error::FatalError("You must specify a bgfile for the filter task") if ($main::filter && !$main::filter_bgfile);
 
   ## Thresholds
-  foreach my $key (keys(%lth)) {
+    foreach my $key (keys(%lth)) {
       $ms_parameters .= " -lth ".$key." ".$lth{$key};
   }
   foreach my $key (keys(%uth)) {
@@ -529,7 +538,7 @@ crer_pval
 
   ################################################################
   ## Analyze query genes separately or altogether
-  if ($sep_genes) {
+  if ($main::sep_genes) {
       
       $outfile{synthesis} = join( "/",$main::outfile{prefix}, "footprints", ($taxon || "org_list"), $organism_name,
 				  join ("_", $matrix_suffix,  $organism_name, $taxon ,"synthesis"));
@@ -820,6 +829,7 @@ This option is incompatible with the option -bgfile.
 		if defined($infile{bg});
 =pod
 
+
 =item B<-window>
 
 Size of the sliding window for the background model calculation.
@@ -881,7 +891,44 @@ sqrt(L)/(L+sqrt(L))
 	    $main::bg_pseudo_user_specified = 1;
 
 =pod
-    
+
+=item B<-filter>
+
+Filter TF-interactions that are not present on the query organism.
+The option -filter_pval can be used to set the threshold for the detected sites.
+
+
+=cut
+	} elsif ($arg eq "-filter") {
+	    $main::filter = 1;
+=pod
+
+=item B<-filter_bgfile>
+
+Background model file for the scanning of query sequences for filtering,.
+
+
+
+=cut
+	} elsif ($arg eq "-filter_bgfile") {
+    	    $main::filter_bgfile= shift(@arguments);
+
+	  
+=pod
+=item B<-filter_pval>
+
+Set the threshold to filter out TF-interactions that are not present on the query organism.
+
+
+
+=cut
+	} elsif ($arg eq "-filter_pval") {
+    	    $main::filter_pval= shift(@arguments);
+
+	     &RSAT::error::FatalError($main::filter_pval, "Invalid value for filter_pval. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($main::filter_pval));
+=pod
+  
 =item B<-occ_sig_opt>    
 
 Additional options passed to matrix-scan for the test of
@@ -1050,7 +1097,7 @@ sub RunFootprintScan {
     local $genes = "";
 
 
-################################################################
+ ################################################################
 ## Initialize output directory + output files
     local $query_prefix = &GetQueryPrefix(); ## Automatic name for the query gene file
     local $outfile{prefix} = &GetOutfilePrefix();
@@ -1058,6 +1105,7 @@ sub RunFootprintScan {
     &InitOutput();
 
 ## Output files for matrix-scan
+    $outfile{filter_scan} = $outfile{prefix}."_filter_scan.tab";
     $outfile{matrix_prefix} = $outfile{prefix}."_".$matrix_suffix;
     $outfile{occ_sig} = $outfile{matrix_prefix}."_occ_sig.tab";
     $outfile{occ_freq_graph} = $outfile{matrix_prefix}."_occ_freq.".$plot_format;
@@ -1068,6 +1116,7 @@ sub RunFootprintScan {
 ################################################################
 ## Open file to the HTML index
     &OpenIndex() if ($create_index);
+ 
 
 ################################################################
 ## Print query genes in the gene file
@@ -1076,10 +1125,23 @@ sub RunFootprintScan {
     }
     &IndexOneFile("genes", $outfile{genes}) if ($create_index);
 
+ ## Retrieve promoters of the query organism 
+    if ($main::filter) {
+	&RetrieveQueryPromoters() ;
+
+	&ComputeFilterScan($matrix_format,@matrix_files);
+    }
+   
+
 ################################################################
 ## Print verbose
     &Verbose() if ($verbose);
+   
 
+    if ($main::filter && $main::skip_gene) {
+	&RSAT::message::Info("No genes remained after filtering  ", $outfile{genes} ) if ($main::verbose >= 0);  
+	return;	
+    }
 ################################################################
 ## Identify ortholog genes
     &GetOrthologs();
@@ -1130,6 +1192,7 @@ sub RunFootprintScan {
 ## Close output stream
     close $out if ($outfile{log});
     close $genes if ($outfile{genes});
+    close $filter_genes if ($outfile{genes} && $main::filter);
     if ($create_index) {
 	print $index "</table>\n";
 	print $index "</blockquote>";
