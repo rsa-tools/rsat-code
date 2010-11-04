@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.175 2010/10/01 10:16:45 jvanheld Exp $
+# $Id: matrix-scan,v 1.176 2010/11/04 14:23:19 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -394,7 +394,7 @@ package main;
   local %lth_file = ();       # threshold values in the mth file
   local %uth_file = ();       # threshold values in the mth file
  
-  @supported_thresholds = qw ( 
+  @supported_thresholds = qw (
 			      score
 			      normw
 			      pval
@@ -2000,10 +2000,11 @@ matrix-scan options
 -lth/uth param # : lower/upper threshold on some parameters
 
 		Supported thresholds fields for the matches: score, pval,
-		sig, normw, proba_M, proba_B, rank, crer_sig, crer_pval, crer_sites, crer_size
+		sig, normw, proba_M, proba_B, rank, crer_sig, crer_pval, crer_sites, crer_size, rank, rank_pm
 
 		Supported thresholds fields for score distributions: occ, occ_sum,
 		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
+
 -mth		matrix-specific threshold file
 -crer_ids	Assign one separate feature ID per CRER. 
 -sort_distrib	sort score distributions by decreasing values of significance. 
