@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.176 2010/11/04 14:23:19 jvanheld Exp $
+# $Id: matrix-scan,v 1.177 2010/11/05 09:18:41 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -340,14 +340,14 @@ package main;
   #    $n_containing_regions = 0;
   local $n_residues = 0;
 
-  ## Sequence properties found dring the parsing of genomic
+  ## Sequence properties found during the parsing of genomic
   ## coordinates (for multi-sequence file, only the last sequence is
   ## retained)
-  local $seq_org = "Undef_organism";
-  local $seq_chrom  ="Undef_chrom";
-  local $seq_start = 1;
-  local $seq_end = 0;
-  local $seq_strand = "DR";
+  local $ref_org = "Undef_organism";
+  local $ref_chrom  ="Undef_chrom";
+  local $ref_start = 1;
+  local $ref_end = 0;
+  local $ref_strand = "DR";
   local $genome_format = "Unknown";
   local $browser_url = "";
 
@@ -1164,30 +1164,39 @@ package main;
     $sequence_number++;
     my $seq_len = length($current_seq);
     $sum_seq_len += $seq_len;
-    
 
     ## Calculate the offset
     local $orig_pos = 0; ## $orig_pos is local because it has to be passed to subroutines for CRER positions
+    local $ref_strand = "D"; ## Strand of the sequence relative to the
+			     ## reference (chromosome) for genomic
+			     ## coordinates. if this strand is R, all
+			     ## matches have to be reversed.
     if ($origin eq "end") {
       $orig_pos = $seq_len + $main::offset + 1;
     } elsif ($origin eq "start") {
       $orig_pos = $main::offset;
     } elsif ($origin eq "genomic") {
-      ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand, $genome_format, $browser_url) = &parse_genomic_coordinates($seq_id, @seq_comments);
-      $orig_pos = -$seq_start +1 + $main::offset;
-      $seq_id = $seq_chrom;
-    }
+      ($ref_org, $ref_chrom, $ref_start, $ref_end, $ref_strand, $genome_format, $browser_url) = &parse_genomic_coordinates($seq_id, @seq_comments);
+      if ($ref_strand eq "D") {
+	$orig_pos = -$ref_start +1 + $main::offset;
+      } elsif ($ref_strand eq "R") {
+	$orig_pos = -$ref_end +1 + $main::offset;
+      } else {
+	&RSAT::error::FatalError("Invalid strand specification for genomic coordinates");
+      }
+      $seq_id = $ref_chrom;
 
-#     $orig_pos = 0;
-#     if (($main::origin <  0) || ($main::origin eq "-0")) {
-#       $orig_pos = $seq_len + $main::origin + 1; 
-#     } else {
-#       $orig_pos = $main::origin;
-#     }
+      &RSAT::message::Debug("Reference for genomic coordinates", 
+			    "start=".$ref_start,
+			    "end=".$ref_end,
+			    "strand=".$ref_strand,
+			    "orig_pos=".$orig_pos,
+			   ) if ($main::verbose >+ 0);
+    }
 
     ################################################################
     ## Report sequence limits
-    &PrintSequenceLimits($seq_id, $seq_len, $orig_pos) if ($return_fields{limits});
+    &PrintSequenceLimits($seq_id, $seq_len, $orig_pos, $ref_strand) if ($return_fields{limits});
 
     ################################################################
     ## Calculate background model from the current sequence
@@ -1277,7 +1286,7 @@ package main;
 	  my $ncol = $matrix->{ncol};
 	  next if ($seq_len - $pos +1 < $ncol);
 	  my $segment = substr($current_seq, $pos-1, $ncol);
-	  
+
 	  ## window bg model : method 2: excluding scored segment in bg model calculation
 	  if (($main::markov >= 0) && 
 	      ($bg_method ne "input") &&
@@ -1286,7 +1295,7 @@ package main;
 	    if ($pos == 1) {
 	      $bg_model->calc_from_seq(substr($current_seq,$ncol,($main::window - $ncol))); 
 	      &RSAT::message::Debug("bg initialisation : ", Dumper($bg_model->{transition_absolute_count})) if ($main::verbose >= 5);
-    
+
 	      ## update bg model
 	    } else { 
 	      ## left side of the scored segment
@@ -1296,14 +1305,13 @@ package main;
 		&RSAT::message::Debug("added word", $added_word,"begins at" ,$pos - ($markov + 2) ) if ($main::verbose >= 3);
 		$bg_model->one_word_update($added_word, "add",$pos - ($markov + 2));
 	      }
-	      &RSAT::message::Debug( "pos", $pos,"> window/2", $main::window/2,  "condition",$pos + $main::window, "<=","seq_len", $seq_len ) if ($main::verbose >= 10);	 
+	      &RSAT::message::Debug( "pos", $pos,"> window/2", $main::window/2,  "condition",$pos + $main::window, "<=","seq_len", $seq_len ) if ($main::verbose >= 10);
 
 	      ## make the window slides
 	      if (($main::window > 0) &&
 		  (floor($pos + $ncol/2) > floor($main::window/2) + 1) && ##  condition where matrix is exactly centered on the window
-		  (($window_offset + 1) + $main::window <= $seq_len)) {	## continue updating until the window covers the last portion of the sequence		  	 
-		    	 
-		&RSAT::message::Debug("Sliding the window, offset is ", $window_offset) if ($main::verbose >= 5);	    	
+		  (($window_offset + 1) + $main::window <= $seq_len)) {	## continue updating until the window covers the last portion of the sequence
+		&RSAT::message::Debug("Sliding the window, offset is ", $window_offset) if ($main::verbose >= 5);
 		my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
 		my $deleted_word = substr($current_seq, $window_offset, $markov+1);
 		unless ($added_word eq $deleted_word){ ## No need to update if added word equald deleted word
@@ -1314,7 +1322,7 @@ package main;
 		}
 		$window_offset++;
 	      }
-    		
+
 	      ## right side of the scored segment
 	      ## here words are deleted
 	      if ($seq_len - ($pos + $ncol -1 ) >= $markov ) { ## end of sequence : do not delete words on the right side, if the word is not as long as markov +1
@@ -1352,18 +1360,16 @@ package main;
 	  if ($bg_method eq "window") {
 	      $matrix->setMarkovModel($bg_model);
 	  }
-	  &score_segment($segment, $matrix, $seq_id, $pos, $orig_pos, $bg_model,"D");
+	  &score_segment($segment, $matrix, $seq_id, $pos, $orig_pos, $ref_strand, $bg_model,"D");
 	  if ($main::both_strands) {
 	    if ($bg_method eq "window") {
 	      ### If bg_method is "window"  the bg is calculated on the reverse complement 
 	      my $bg_reverse = $bg_model->reverse_bg();
 	      $matrix->setMarkovModel($bg_reverse);
-	      &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, $orig_pos, $bg_reverse,"R");
+	      &score_segment(&ReverseComplement($segment),$matrix, $seq_id, $pos, $orig_pos, $ref_strand, $bg_reverse,"R");
 	    }else {
-	      
-	      &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, $orig_pos, $bg_model, "R");				    
+	      &score_segment(&ReverseComplement($segment),$matrix, $seq_id, $pos, $orig_pos, $ref_strand, $bg_model, "R");
 	    }
-	    
 	  }
 	}
 
@@ -1392,7 +1398,6 @@ package main;
 	if ($pos == $crer_seed){
 	  foreach my $seed_pos (0..($pos-1)){
 	    $crer_sum_hits[$seed_pos]=0;
-	    
 	    foreach my $matrix (keys(%crer_seed_hits)){
 	      if (defined($crer_seed_hits{$matrix}->{"D"}->[$seed_pos])){
 		$crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"D"}->[$seed_pos];
@@ -1401,9 +1406,9 @@ package main;
 		}
 	      }
 	      #&RSAT::message::Debug("First seed:", "seed position",$seed_pos,"hits",$crer_sum_hits[$seed_pos]);
-      			}
-      		}
-      		
+	    }
+	  }
+
 	  ##get the last hit position (for first seed, the last hit may not be on the right end of the array)
 	  for (my $k=($pos-1) ;  $k >= 0 ;  $k--){
 	    if ($crer_sum_hits[$k] != 0){
@@ -1886,7 +1891,7 @@ package main;
     if ($origin eq "genomic") {
       printf $main::out "; %-21s\t%s\n", "Genomic coordinate format", $genome_format;
       #      if ($sequence_number == 1) {
-      printf $main::out "; %-21s\t%s\n", "Organism", $seq_org;
+      printf $main::out "; %-21s\t%s\n", "Organism", $ref_org;
       printf $main::out "; %-21s\t%s\n", "Browser URL", $browser_url;
       #      }
     }
@@ -3337,7 +3342,7 @@ thresholds. Return value is 1 if the segment passed the thresholds.
 
 =cut
 sub score_segment {
-  my ($segment, $matrix, $seq_id, $pos, $orig_pos, $bg_model, $strand) = @_;
+  my ($segment, $matrix, $seq_id, $pos, $orig_pos, $ref_strand, $bg_model, $strand) = @_;
   my $ncol = $matrix->{ncol};
   my $matrix_name = $matrix->get_attribute("name");
 
@@ -3356,7 +3361,7 @@ sub score_segment {
   my $sig = $null;
   my $Wmin =$null;
   my $Wmax =$null;
-  
+
   my ($ref_residue_proba_M, $proba_M) = $matrix->segment_proba($segment);
   my ($ref_residue_proba_B, $proba_B)= $bg_model->segment_proba($segment);
   my @residue_proba_M = @$ref_residue_proba_M;
@@ -3564,8 +3569,23 @@ sub score_segment {
 
 
     ## Calculate start and end position
-    my $start_pos = $pos - $orig_pos;
-    my $end_pos = $start_pos + $ncol -1;
+    my $start_pos;
+    my $end_pos;
+    if ($ref_strand eq "R") {
+      $end_pos = -$pos - $orig_pos;
+      $start_pos = $end_pos - $ncol + 1;
+      &RSAT::message::Warning("Reversing site",
+			      "ref_strand=".$ref_strand,
+			      "pos=".$pos,
+			      "orig_pos=".$orig_pos,
+			      "start_pos=".$start_pos,
+			      "end_pos=".$end_pos,
+			     ) if ($main::verbose >= 10);
+#      die "HELLO";
+    } else {
+      $start_pos = $pos - $orig_pos;
+      $end_pos = $start_pos + $ncol - 1;
+    }
     $match->force_attribute('seq_name', $seq_id);
     $match->force_attribute('ft_type', 'site');
     $match->force_attribute('feature_name', $matrix->get_attribute('name'));
@@ -3719,19 +3739,18 @@ Calculate the score of the crer
   sub score_crer {
     my ($last_hit, $seq_id, $sub_window_end,$pos,$crer_seed) = @_;
     my $hit_p = $uth{pval} || $lth{pval};
-     
+
     my @strands = ();
     push @strands,"D";
     push @strands,"R" if ($main::both_strands);
-     
-     
+
     ## initiate sum of hits with hit of last position
     my $hit_sum = $crer_sum_hits[$last_hit];
     return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
-     
+
     &RSAT::message::Debug("CRER: last position",$pos,"relative to seed window", $last_hit) if ($main::verbose >= 10);
     my $first_matrix_name;
-     
+
     ## initiate other sums with hit of last position
     my $weight_sum = 0;
     my $pval_prod = 1;
@@ -4046,52 +4065,66 @@ sub check_distrib_thresholds {
 ################################################################
 ## Print the start and end positions of the sequence
 sub PrintSequenceLimits {
-    my ($seq_id, $seq_len, $orig_pos) = @_;
+  my ($seq_id, $seq_len, $orig_pos, $ref_strand) = @_;
 
+  $ref_strand = "DR" unless ($ref_strand);
+
+  my $seq_start;
+  my $seq_end;
+
+  if ($ref_strand eq "R") {
+    $seq_end = 1 - $orig_pos;
+    $seq_start = $seq_end - $seq_len + 1;
+  } else {
+    $seq_start = 1-$orig_pos;
+#    $seq_end = $seq_len-$orig_pos;
+    $seq_end = $seq_start + $seq_len -1;
+  }
+
+  print $main::out join ("\t", 
+			 $seq_id,
+			 "limit",
+			 "START_END",
+			 $ref_strand,
+			 $seq_start,
+			 $seq_end,
+			 ".",
+			 0
+			);
+  if ($return_fields{pval}) {
+    print "\t";
     print $main::out join ("\t", 
-			   $seq_id,
-			   "limit",
-			   "START_END",
-			   "DR",
-			   1-$orig_pos,
-			   $seq_len-$orig_pos,
-			   ".",
-			   0
-			  );
-	if ($return_fields{pval}){
-		print "\t";
-		print $main::out join ("\t", 
-		0,
-		0,
-		0);
-	}
-	if ($return_fields{eval}){
-		print "\t";
-		print $main::out join ("\t", 
-		0);
-	}
-	print $main::out "\n";
+			   0,
+			   0,
+			   0);
+  }
+  if ($return_fields{eval}) {
+    print "\t";
+    print $main::out join ("\t", 
+			   0);
+  }
+  print $main::out "\n";
 
-#     print $main::out join ("\t", 
-# 			   $seq_id,
-# 			   "limit",
-# 			   "SEQ_START",
-# 			   "DR",
-# 			   1-$orig_pos,
-# 			   1-$orig_pos,
-# 			   ".",
-# 			   0,
-# 			  ), "\n";
-#     print $main::out join ("\t", 
-# 			   $seq_id,
-# 			   "limit",
-# 			   "SEQ_END",
-# 			   "DR",
-# 			   $seq_len-$orig_pos,
-# 			   $seq_len-$orig_pos,
-# 			   ".",
-# 			   0,
-# 			  ), "\n";
+  #     print $main::out join ("\t", 
+  # 			   $seq_id,
+  # 			   "limit",
+  # 			   "SEQ_START",
+  # 			   "DR",
+  # 			   1-$orig_pos,
+  # 			   1-$orig_pos,
+  # 			   ".",
+  # 			   0,
+  # 			  ), "\n";
+  #     print $main::out join ("\t", 
+  # 			   $seq_id,
+  # 			   "limit",
+  # 			   "SEQ_END",
+  # 			   "DR",
+  # 			   $seq_len-$orig_pos,
+  # 			   $seq_len-$orig_pos,
+  # 			   ".",
+  # 			   0,
+  # 			  ), "\n";
 }
 
 
