@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: reverse-complement,v 1.10 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: reverse-complement,v 1.11 2010/11/05 09:19:00 jvanheld Exp $
 #
 ############################################################
 
@@ -37,8 +37,8 @@ reverse-complement [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
-Each row of the input file is considered to contained one input
-sequence or a pattern.
+Any input format supported by I<convert-seq>. For details, type 
+ convert-seq -h
 
 The standard degenerate nucleotide code of the IUPAC-IUB commission
 is supported. The pattern sequence should thus only contain the
@@ -56,27 +56,27 @@ following characters:
 	V	= all except T
 	N	= any nucleotide
 
-Upper and lower case are considered equivalent.
-The multiplier (ex: A{5} = AAAAA,  T{5,10} = any combination of 5 to 10 
-Ts) can be used, but in this case the input sequence must be embraced 
-in single quotes (ex: 'CCCN{8}GGG'). 
+Upper and lower case are considered equivalent.  The multiplier (ex:
+A{5} = AAAAA, T{5,10} = any combination of 5 to 10 Ts) can be used,
+but in this case the input sequence must be embraced in single quotes
+(ex: 'CCCN{8}GGG').
 
 Alternatively to the degenerate code, brackets can be used 
 (ex: [AG] means A or G).
 
 =head1 EXAMPLES
 
- echo GATAAG | reverse-complement
+ echo GATAAG | reverse-complement -in_format raw
     Returns GTTATC
 
- echo TTTRTT  | reverse-complement 
+ echo TTTRTT  | reverse-complement -in_format raw
     returns AAYAAA
 
- echo 'GAT[TA]A' | reverse-complement 
+ echo 'GAT[TA]A' | reverse-complement -in_format raw
     returns T[TA]ATC
 
- echo 'cccn{8,10}aaa' | reverse-complement -lc
-    Returns tttn{8,10}ggg";
+ echo 'cccn{8,10}aaa' | reverse-complement -in_format raw -lc
+    returns tttn{8,10}ggg
 
 =cut
 
@@ -111,9 +111,15 @@ package main;
     local $to_lower = 0;
     local $to_upper = 0;
 
+    local $in_format = "fasta";
+    local $out_format = "fasta";
+    local $line_width = 60;
+
     ################################################################
     ## Read argument values
     &ReadArguments();
+
+    $line_width = 0 unless ($out_format eq "fasta");
 
     ################################################################
     ## Check argument values
@@ -125,18 +131,21 @@ package main;
     ################################################################
     ## Read input
     ($in) = &OpenInputFile($infile{input});
-    while (my $direct = <$in>) {
-      chomp($direct);
-      my $rc = &ReverseComplement($direct);
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+	   (($current_seq ne "") || ($current_id ne ""))) {
+      my $rc = &ReverseComplement($current_seq);
       if ($to_lower) {
 	$rc =~ tr/A-Z/a-z/;
       } elsif ($to_upper) {
 	$rc =~ tr/a-z/A-Z/;
       }
+      my $rc_id = $current_id."_rc";
       if ($add) {
-	  print $out $direct, $sep;
+	&PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
+#	print $out $direct, $sep;
       }
-      print $out $rc, "\n";
+      &PrintNextSequence($out, $out_format, $line_width, $rc, $rc_id);
+#      print $out $rc, "\n";
     }
     close $in if ($infile{input});
 
@@ -177,8 +186,8 @@ sub ReadArguments {
     my $arg;
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
     while (scalar(@arguments) >= 1) {
-      $arg = shift (@arguments);
-	## Verbosity
+	$arg = shift (@arguments);
+	
 =pod
 
 =head1 OPTIONS
@@ -197,7 +206,6 @@ Level of verbosity (detail in the warning messages during execution)
 		$main::verbose = 1;
 	    }
 
-	    ## Help message
 =pod
 
 =item B<-h>
@@ -208,7 +216,7 @@ Display full help message
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
 
-	    ## List of options
+
 =pod
 
 =item B<-help>
@@ -219,7 +227,7 @@ Same as -h
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
-	    ## Input file
+
 =pod
 
 =item B<-i inputfile>
@@ -231,7 +239,7 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-i") {
 	    $infile{input} = shift(@arguments);
 
-	    ## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -243,7 +251,34 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $outfile{output} = shift(@arguments);
 
-	    ## Convert to lowercases
+
+=pod
+
+=item B<-in_format input_format>
+
+Input sequence format. Can be any input format supported by
+I<convert-seq>.
+
+Default: fasta.
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $in_format = lc(shift(@arguments));
+
+=pod
+
+=item B<-out_format output_format>
+
+Output sequence format. Can be any output format supported by
+I<convert-seq>.
+
+Default: fasta.
+
+=cut
+	} elsif ($arg eq "-out_format") {
+	    $out_format = lc(shift(@arguments));
+
+
 =pod
 
 =item	B<-lc>
@@ -254,7 +289,7 @@ Export sequences in lowercases.
 	} elsif ($arg eq "-lc") {
 	    $to_lower = 1;
 
-	    ## Convert to lowercases
+
 =pod
 
 =item	B<-uc>
@@ -265,7 +300,7 @@ Export sequences in uppercases.
 	} elsif ($arg eq "-uc") {
 	    $to_upper = 1;
 
-	    ## Add the reverse complement besides the direct sequence
+
 =pod
 
 =item	B<-add>
@@ -279,7 +314,7 @@ input. The result is a tab-delimited file with 2 columns:
 	} elsif ($arg eq "-add") {
 	    $add = 1;
 
-	    ## Separator
+
 =pod
 
 =item	B<-sep>
@@ -341,12 +376,7 @@ __END__
 
 =head2 convert-seq
 
-The curent version of I<reverse-complement> does not support the fasta
-format, but a fasta file can be converted to the format 'multi', in
-order to obtain 1 row per sequence, which is the input format for
-I<reverse-complement>.
-
-This solution is not perfect though, since the IDs are lost. In a
-future version, all the RSAT sequence formats will be supported.
+I<convert-seq> includes an option -addrc that adds the reverse
+complement.
 
 =cut
