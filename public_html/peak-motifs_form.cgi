@@ -103,6 +103,8 @@ In this demonstration, we .....<p/>
 The program will return ...
 </blockquote>";
 
+#print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
+#$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
 $demo_seq=`cat demo_files/peak-motifs_demo.fa`;
 print "<TD><B>";
