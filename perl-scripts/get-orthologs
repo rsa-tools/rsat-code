@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.50 2010/10/28 21:41:50 jvanheld Exp $
+# $Id: get-orthologs,v 1.51 2010/11/06 07:45:35 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -398,8 +398,10 @@ package main;
     ## Identify BLAST matches
     my $query_org_dir = $supported_organism{$main::query_organism}->{'data'};
     my $query_org_blast_dir = join("/", $query_org_dir, "blast_hits");
+    my $r = 0;
     foreach my $ref_organism (@main::ref_organisms) {
-      &RSAT::message::TimeWarn("Reference organism", $ref_organism) if ($main::verbose >= 2);
+      $r++;
+      &RSAT::message::TimeWarn("Reference organism", $r."/".scalar(@main::ref_organisms), $ref_organism) if ($main::verbose >= 2);
       my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
       my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
       &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 3);
@@ -533,7 +535,7 @@ package main;
 	my $searched_genomes= scalar(@main::ref_organisms);
 	my $rate = sprintf("%.2f",100 * $genomes_with_hit/$searched_genomes);
 	$nb_hits_info .= join ("\t", "; Query gene", $is_query{$query_gene}, $query_gene,
-			     $nb_hits,"hits in",$genomes_with_hit." organisms among ".$searched_genomes."  (".$rate."\%)\n") if ($main::verbose >= 3);
+			     $nb_hits,"hits in",$genomes_with_hit." organisms among ".$searched_genomes."  (".$rate."\%)\n") if ($main::verbose >= 0);
       }
       ## Report number of hits
       print $out $nb_hits_info if ($return_format{stats});
@@ -986,9 +988,9 @@ organism.
 
 The option -return can be used to specify additional output fields. 
 
-Supported fields: 
+Supported fields:
 
-=over 
+=over
 
 =over
 
@@ -1003,6 +1005,14 @@ Name of the reference (target) organism
 =item  query_id
 
 ID of the query gene
+
+=item  query_name
+
+Common name of the query gene
+
+=item  ref_name
+
+Common name of the gene found in the reference genome.
 
 =item  query_organism
 
