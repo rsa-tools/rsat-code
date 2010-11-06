@@ -22,9 +22,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ############################################ configuration
 $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
-#$command = "$SCRIPTS/peak-motifs";
 $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
 $output_prefix = "peak-motifs";
+
 $output_path = "$TMP/$output_directory";
 $output_path =~ s|\/\/|\/|g;
 `mkdir -p $output_path`;
