@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.62 2010/10/29 11:16:06 jvanheld Exp $
+# $Id: compare-classes,v 1.63 2010/11/09 11:40:54 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -77,7 +77,7 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
     'rDPbits'=>'dotprod',
     'DPbits'=>'dotprod',
     'sqrt_dp'=>'dotprod',
-    'prodrts'=>'dotprod',
+#    'prodrts'=>'dotprod',
 
     'P_val'=>'proba',
     'E_val'=>'proba',
@@ -263,7 +263,7 @@ if ($main::verbose >= 2) {
     &RSAT::message::Info(join("\t", "Fields to calculate", join("; ", sort(keys(%calc_fields))))); 
     &RSAT::message::Info(join("\t", "Fields to return", join("; ", sort(keys(%return_fields)))));
 }
-    
+
 ################################################################
 ## Define whether the comparisons should be stored in memory until the
 ## end of the comparisons.  Storing all comparisons can cause memory
@@ -286,16 +286,19 @@ $out = &OpenOutputFile($outfile{output});
 
 ## Reference classes
 %ref_classes = &ReadClasses($infile{ref_classes},0,"",1,1,2, $score_col);
-$nb_ref_classes = scalar(keys %ref_classes);
+@ref_classes = sort {$ref_classes{$b}->get_size() <=> $ref_classes{$a}->get_size()} keys %ref_classes;
+$nb_ref_classes = scalar(@ref_classes);
 &RSAT::message::Info((join("\t", "Reference classes", $nb_ref_classes))) if ($main::verbose >= 2);
 
 ## Query classes
 if ($infile{input}) {
     %query_classes = %ref_classes;
+    @query_classes = @ref_classes;
 } else {
     %query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col);
+    @query_classes = sort {$query_classes{$b}->get_size() <=> $query_classes{$a}->get_size()} keys %query_classes;
 }
-$nb_query_classes = scalar(keys %query_classes);
+$nb_query_classes = scalar(@query_classes);
 &RSAT::message::Info((join("\t", "Query classes", $nb_query_classes))) if ($main::verbose >= 2);
 
 ## Read ref class names
@@ -341,21 +344,21 @@ if ($infile{qnames}) {
 
 
 ################################################################
-#### unless specified, calculate population size from the lists of
-#### reference and query members
+## Unless specified, calculate population size from the lists of
+## reference and query members.
 
 &RSAT::message::TimeWarn("Indexing class members") if ($main::verbose >= 2);
-foreach my $r (keys %ref_classes) {
-    foreach $m ( $ref_classes{$r}->get_members()) {
-	$member_index{$m}++;
-	$ref_member_index{$m}++;
-    }
+foreach my $r (@ref_classes) {
+  foreach $m ($ref_classes{$r}->get_members()) {
+    $member_index{$m}++;
+    $ref_member_index{$m}++;
+  }
 }
-foreach my $q (keys %query_classes) {
-    foreach $m ( $query_classes{$q}->get_members()) {
-	$member_index{$m}++;
-	$query_member_index{$m}++;
-    }
+foreach my $q (@query_classes) {
+  foreach $m ( $query_classes{$q}->get_members()) {
+    $member_index{$m}++;
+    $query_member_index{$m}++;
+  }
 }
 
 #    die keys %member_index;
@@ -371,14 +374,14 @@ local $nb_compa_formula;
 if ($infile{ref_classes} eq $infile{query_classes}) {
   if ($distinct) {
     $nb_compa = $nb_ref_classes * ($nb_query_classes-1)/2;
-    $nb_compa_formula = "nc=rn*(nq-1)/2";
+    $nb_compa_formula = "nc=nr*(nq-1)/2";
   } else {
     $nb_compa = $nb_ref_classes * ($nb_query_classes+1)/2;
-    $nb_compa_formula = "nc=rn*(nq+1)/2";
+    $nb_compa_formula = "nc=nr*(nq+1)/2";
   }
 } else {
   $nb_compa = $nb_ref_classes * $nb_query_classes;
-  $nb_compa_formula = "rn*nq";
+  $nb_compa_formula = "nr*nq";
 }
 
 ################################################################
@@ -996,23 +999,43 @@ sub Verbose {
         }
     }
 
+#     ## Number of query classes and elements per class
+#     printf $out "; %-29s\t%d\n", "Query classes (nq)", $nb_query_classes;
+#     if ($verbose >= 2) {
+# 	foreach my $f (@query_classes) {
+# 	    printf $out ";\t%d\t%s\n", $query_classes{$f}->get_size(), $query_classes{$f}->get_attribute("name");
+# 	}
+#     }
     ## Number of query classes and elements per class
     printf $out "; %-29s\t%d\n", "Query classes (nq)", $nb_query_classes;
-    if ($verbose >= 2) {
-	foreach my $f (keys %query_classes) {
-	    printf $out ";\t%d\t%s\n", $query_classes{$f}->get_size(), $query_classes{$f}->get_attribute("name");
+    if ($verbose >= 1) {
+      for my $i (0..$#query_classes) {
+	if ($i >= 100) {
+	  print $out  ";\t...\t...",scalar(@query_classes)-100," more query classes\n";
+	  last;
+	} else {
+	  my $key = @query_classes[$i];
+	  printf $out ";\t%d\t%d\t%s\n", $i+1, $query_classes{$key}->get_size(), $query_classes{$key}->get_attribute("name");
 	}
+      }
     }
 
+    ## Number of reference classes and elements per class
     printf $out "; %-29s\t%d\n", "Reference classes (nr)", $nb_ref_classes;
-    if ($verbose >= 2) {
-	foreach my $f (keys %ref_classes) {
-	    printf $out ";\t%d\t%s\n", $ref_classes{$f}->get_size(), $ref_classes{$f}->get_attribute("name");
+    if ($verbose >= 1) {
+      for my $i (0..$#ref_classes) {
+	if ($i >= 100) {
+	  print $out  ";\t...\t...",scalar(@ref_classes)-100," more reference classes\n";
+	  last;
+	} else {
+	  my $key = @ref_classes[$i];
+	  printf $out ";\t%d\t%d\t%s\n", $i+1, $ref_classes{$key}->get_size(), $ref_classes{$key}->get_attribute("name");
 	}
+      }
     }
 
-    printf $out "; %-29s\t%d\n", "Elements  in ref classes (nr)", scalar (keys(%ref_member_index));
-    printf $out "; %-29s\t%d\n", "Elements in query classes (nq)", scalar (keys(%query_member_index));
+    printf $out "; %-29s\t%d\n", "Elements  in ref classes", scalar (keys(%ref_member_index));
+    printf $out "; %-29s\t%d\n", "Elements in query classes", scalar (keys(%query_member_index));
     printf $out "; %-29s\t%d\n", "Elements in query+ref classes", scalar (keys(%member_index));
     printf $out "; %-29s\t%d\n", "Population size", $population_size;
     printf $out "; %-29s\t%d\n", "Comparisons (".$nb_compa_formula.")", $nb_compa;
@@ -1056,21 +1079,21 @@ sub Verbose {
 ################################################################
 #### compare reference and query classes
 sub CompareClasses {
-  my $reference_classes = scalar(keys(%ref_classes));
+#  my $reference_classes = scalar(ref_classes));
   my $rn = 0;
 
   &RSAT::message::TimeWarn("Comparing classes") if ($main::verbose >= 2);
 
-  foreach my $r (keys %ref_classes) {
+  foreach my $r (@ref_classes) {
     $rn++;
     my %ref_member = ();
     my %not_query = ();
 
     if ($main::verbose >= 2) {
       if ($rn % 10== 1) {
-	&RSAT::message::TimeWarn("Treating reference class" ,$rn, "of", $reference_classes , $r);
+	&RSAT::message::TimeWarn("Treating reference class" ,$rn, "of", $nb_ref_classes , $r);
 	if ($rn % 100== 1) {
-	  &RSAT::message::psWarn("Treating reference class" ,$rn, "of", $reference_classes , $r);
+	  &RSAT::message::psWarn("Treating reference class" ,$rn, "of", $nb_ref_classes , $r);
 	}
       }
     }
@@ -1092,7 +1115,7 @@ sub CompareClasses {
     }
 
     #### query classes
-    foreach my $q (keys %query_classes) {
+    foreach my $q (@query_classes) {
 
       &RSAT::message::TimeWarn("Treating query class $q") if ($main::verbose >= 4);
       next if (($distinct) && ($r eq $q));
@@ -1167,7 +1190,7 @@ sub CompareClasses {
       ## Calculate dot product (use only the common  elements)
       if ($calc_fields{dotprod}) {
 	  my $dp = 0;
-	  my $prodrts = 0;
+#	  my $prodrts = 0;
 	  my %ref_scores = $ref_classes{$r}->get_attribute("scores");
 	  my %query_scores =$query_classes{$q}->get_attribute("scores");
 
@@ -1176,12 +1199,12 @@ sub CompareClasses {
 	      my $q_score = $query_scores{$element};
 	      my $dp_element = $r_score*$q_score;
 	      $dp += $dp_element;
-	      $prodrts += sqrt($dp_element);
+#	      $prodrts += sqrt($dp_element);
 	  }
 
 #	  &RSAT::message::Debug($dp, $prodrts) if ($main::verbose >= 10);
 	  $current_compa{dotprod} = $dp;
-	  $current_compa{prodrts} = $prodrts;
+#	  $current_compa{prodrts} = $prodrts;
 
 	  ## Check threshold on dot product
 	  if ((defined($lth{'dotprod'})) &&
@@ -1193,7 +1216,7 @@ sub CompareClasses {
 	      next;
 	  }
 	  undef $dp;
-	  undef $prodrts;
+#	  undef $prodrts;
       }
 
       ################################################################
@@ -1476,7 +1499,7 @@ sub PrintHeader {
       push @header_fields, "DPbits" ;
       push @header_fields, "rDPbits" ;
       push @header_fields, "sqrt_dp" ;
-      push @header_fields, "prodrts" ;
+#      push @header_fields, "prodrts" ;
     }
 
     ## Probabilities
@@ -1660,7 +1683,7 @@ sub PrintOneComparison {
       printf $out "\t-Inf";
     }
     printf $out "\t%7g", sqrt($current_compa{dotprod});
-    printf $out "\t%7g", $current_compa{prodrts};
+#    printf $out "\t%7g", $current_compa{prodrts};
   }
 
   ## Probabilities
@@ -1840,12 +1863,12 @@ sub PrintOneMatrix {
 	&CalcMargins($matrix_key);
     }
 
-    my @query_classes = sort keys %query_classes;
-    my @ref_classes = sort keys %ref_classes;
+#    my @query_classes = sort keys %query_classes;
+#    my @ref_classes = sort keys %ref_classes;
 
     ## Print the matrix type
     print $out "; Matrix", "\t", $matrix_key, "\n" if ($main::verbose >= 1);
-    
+
     ## Print the matrix header
     my $header = "#$matrix_key Q\R";
     if ($infile{qnames}) {
@@ -1939,8 +1962,8 @@ sub CalcMargins {
 
     &RSAT::message::TimeWarn("Calculating margins for key\t".$margin_key) if ($main::verbose >= 0);
 
-    my @query_classes = sort keys %query_classes;
-    my @ref_classes = sort keys %ref_classes;
+#    my @query_classes = sort keys %query_classes;
+#    my @ref_classes = sort keys %ref_classes;
 
     ## Calculate counts and sums
     foreach my $q (@query_classes) {
@@ -2023,7 +2046,7 @@ sub DescribeFields {
     $field_description{'DPbits'}  = "Log2 of the dot product";
     $field_description{'rDPbits'}  = "rDPbits = round(DPbits). The log2 of the dot product is rounded to obtain an integer value";
     $field_description{'sqrt_dp'}  = "Square root of the dot product";
-    $field_description{'prodrts'}  = "Sum of the sqrt of products. This is a sort of dot product but the sqrt of each pairwise product is taken before summing.";
+#    $field_description{'prodrts'}  = "Sum of the sqrt of products. This is a sort of dot product but the sqrt of each pairwise product is taken before summing.";
     $field_description{'E(QR)'}  = "Expected number of elements in the intersection";
     $field_description{'P_val'}  = "P-value of the intersection, calculated witht he hypergeometric function. Pval = P(X >= QR). ";
 #	$field_description{'mtest'}  = "Correction for the multi-testing.";
@@ -2051,7 +2074,7 @@ sub FilterClasses {
   ## Lower threshold on query classes
   if (defined($lth{Q})) {
     &RSAT::message::TimeWarn("Applying threshold on number of members for query classes") if ($main::verbose >= 2);
-    foreach my $q  (keys %query_classes) {
+    foreach my $q  (@query_classes) {
       my $members = scalar($query_classes{$q}->get_members());
       if ($members < $lth{Q}) {
 	delete($query_classes{$q});
@@ -2062,7 +2085,7 @@ sub FilterClasses {
   ## Upper threshold on query classes
   if (defined($uth{Q})) {
     &RSAT::message::TimeWarn("Applying threshold on number of members for query classes") if ($main::verbose >= 2);
-    foreach my $q  (keys %query_classes) {
+    foreach my $q  (@query_classes) {
       my $members = scalar($query_classes{$q}->get_members());
       if ($members > $uth{Q}) {
 	delete($query_classes{$q});
@@ -2070,14 +2093,15 @@ sub FilterClasses {
     }
   }
 
-  ## Report number of remaining query classes
-  $nb_query_classes = scalar(keys %query_classes);
+  ## Update lists of query classes after filtering
+  @query_classes = sort {$query_classes{$b}->get_size() <=> $query_classes{$a}->get_size()} keys %query_classes;
+  $nb_query_classes = scalar(@query_classes);
   &RSAT::message::Info((join("\t", "Query classes after filtering", $nb_query_classes))) if ($main::verbose >= 2);
 
   ## Lower threshold on ref classes
   if (defined($lth{R})) {
     &RSAT::message::TimeWarn("Applying threshold on number of members for ref classes") if ($main::verbose >= 2);
-    foreach my $r  (keys %ref_classes) {
+    foreach my $r  (@ref_classes) {
       my $members = scalar($ref_classes{$r}->get_members());
       if ($members < $lth{R}) {
 	delete($ref_classes{$r});
@@ -2088,7 +2112,7 @@ sub FilterClasses {
   ## Upper threshold on ref classes
   if (defined($uth{R})) {
     &RSAT::message::TimeWarn("Applying threshold on number of members for ref classes") if ($main::verbose >= 2);
-    foreach my $r  (keys %ref_classes) {
+    foreach my $r  (@ref_classes) {
       my $members = scalar($ref_classes{$r}->get_members());
       if ($members > $uth{R}) {
 	delete($ref_classes{$r});
@@ -2096,7 +2120,12 @@ sub FilterClasses {
     }
   }
 
-  ## Report number of remaining ref classes
-  $nb_ref_classes = scalar(keys %ref_classes);
+  ## Update lists of ref classes after filtering
+  @ref_classes = sort {$ref_classes{$b}->get_size() <=> $ref_classes{$a}->get_size()} keys %ref_classes;
+  $nb_ref_classes = scalar(@ref_classes);
   &RSAT::message::Info((join("\t", "Reference classes after filtering", $nb_ref_classes))) if ($main::verbose >= 2);
+
+#  ## Report number of remaining ref classes
+#  $nb_ref_classes = scalar(@ref_classes);
+#  &RSAT::message::Info((join("\t", "Reference classes after filtering", $nb_ref_classes))) if ($main::verbose >= 2);
 }
