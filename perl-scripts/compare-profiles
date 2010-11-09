@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.25 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: compare-profiles,v 1.26 2010/11/09 11:41:14 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1457,18 +1457,25 @@ __END__
 
 =over 4
 
-=item B<Pellegrini 1999>
+=item B<Original publication>
 
 Pellegrini, M., Marcotte, E.M., Thompson, M.J., Eisenberg, D. and
 Yeates, T.O. (1999) Assigning protein functions by comparative genome
 analysis: protein phylogenetic profiles. Proc Natl Acad Sci U S A, 96,
 4285-4288.
 
-=item B<Bowers 2004>
+=item B<Comparison between profile triplets using mutual information>
 
 Bowers, P.M., Cokus, S.J., Eisenberg, D. and Yeates, T.O. (2004) Use
 of logic relationships to decipher protein network
 organization. Science, 306, 2246-2249.
+
+
+=item B<Assessment of metrics for comparing phylogenetic profiles>
+
+Ferrer, L., Dale, J. M., and Karp, P. D. (2010). A systematic study of
+genome context methods: calibration, normalization and
+combination. BMC Bioinformatics, 11, 493.
 
 =back
 
