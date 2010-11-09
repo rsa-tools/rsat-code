@@ -605,8 +605,8 @@ performed.
 
 =item operons
 
-Infer operons (using I<infer-operons>. This option should be used only
-for Bacteria.
+Infer operons (using I<infer-operons>. This option should be used only for
+Bacteria.
 
 =item query_seq
 
