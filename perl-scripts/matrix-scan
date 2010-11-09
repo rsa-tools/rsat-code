@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.178 2010/11/09 11:40:19 jvanheld Exp $
+# $Id: matrix-scan,v 1.179 2010/11/09 11:48:53 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1193,7 +1193,7 @@ package main;
 			    "end=".$ref_end,
 			    "strand=".$ref_strand,
 			    "orig_pos=".$orig_pos,
-			   ) if ($main::verbose >+ 0);
+			   ) if ($main::verbose >= 10);
     }
 
     ################################################################
