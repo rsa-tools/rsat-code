@@ -7,7 +7,6 @@ unless ($ENV{RSAT}) {
     $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
 #    $ENV{RSAT} = join(";","ENV", keys(%ENV));
 }
-#$ENV{RSAT} = "/cobelix/jvanheld/rsa-tools";
 
 ################################################################
 ## Return the path of a program.
@@ -251,10 +250,12 @@ sub DelayedRemoval {
 
 package main;
 
-# ################################################################
-# ## Read props file
+################################################################
+## Read props file
 sub ReadProperties {
   if ($0 =~ /([^(\/)]+)$/) {
+
+      ## Identify the property file
     my $property_file = $`."../RSAT_config.props"; #`
     unless (-e $property_file) {
       $property_file = $`."../RSAT_config_default.props"; #`
@@ -262,6 +263,8 @@ sub ReadProperties {
 			      "Missing file: $ENV{RSAT}/RSAT_config.props",
 			      "Please contact the system administrator.");
     }
+
+    ## Load the properties
     if (-e $property_file) {
       my ($props) = &RSAT::util::OpenInputFile($property_file);
       while (<$props>) {
@@ -283,7 +286,11 @@ sub ReadProperties {
 
 
 ################################################################
-## Read Perl config files
+## Read Perl config files.
+##
+##  WARNING: This was the old way to treat the configuration. The config is
+## now read from the propery file RSAT_config.props. This piece of code should
+## be supopressed but I firts have to check that everything works fine.
 sub ReadConfig {
   if ($0 =~ /([^(\/)]+)$/) {
     my $config_file;
@@ -351,7 +358,7 @@ sub InitRSAT {
   umask 0022;
 
   &ReadProperties();
-  &ReadConfig();
+#  &ReadConfig();
   &LoadLocalOrganisms();
 
   ## Directories
