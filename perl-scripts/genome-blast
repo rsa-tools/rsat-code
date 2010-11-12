@@ -1,7 +1,8 @@
 #!/usr/bin/perl -w
+
 ############################################################
 #
-# $Id: genome-blast,v 1.19 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: genome-blast,v 1.20 2010/11/12 22:09:35 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
