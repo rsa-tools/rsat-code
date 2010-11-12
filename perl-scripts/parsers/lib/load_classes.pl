@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: load_classes.pl,v 1.3 2005/04/25 08:11:54 jvanheld Exp $
+# $Id: load_classes.pl,v 1.4 2010/11/12 22:08:38 rsat Exp $
 #
 # Time-stamp: <2003-07-10 12:08:29 jvanheld>
 #
@@ -19,7 +19,7 @@ no strict "vars";
 
 
 #### load all class files
-$class_dir = $main::RSA."/perl-scripts/parsers/classes/*.pl";
+$class_dir = $ENV{RSAT}."/perl-scripts/parsers/classes/*.pl";
 my @class_files = glob($class_dir);
 
 if ((defined($main::verbose)) && ($main::verbose >= 3)){
