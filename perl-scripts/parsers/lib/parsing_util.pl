@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.26 2008/09/08 16:02:19 rsat Exp $
+# $Id: parsing_util.pl,v 1.27 2010/11/12 22:09:23 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -250,11 +250,7 @@ sub ParseKeggFile {
 		    my $entry_organism = $fields[2];
 		    $gene_args{type} = $entry_type;
 		    $gene_args{organism} = $entry_organism;
-#		    if ($main::rsa) {
-			$current_id = $entry_id;
-#		    } else {
-#			$current_id = $entry_organism."_".$entry_id;
-#		    }
+		    $current_id = $entry_id;
 		    warn "gene\t$current_id\n" if ($verbose >= 4);
 		    $current_id =~ s/\s+/ /g;
 		    $current_id =~ s/\s/_/g;
