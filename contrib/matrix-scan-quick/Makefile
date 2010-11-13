@@ -13,7 +13,7 @@ compile: $(OBJS)
 
 %.o: %.c
 	$(CC) -c $(CCFLAGS) $<
-	
+
 clean:
 	rm -f *.o $(APP)
 
