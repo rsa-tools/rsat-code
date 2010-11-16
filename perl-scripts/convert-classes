@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.16 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: convert-classes,v 1.17 2010/11/16 15:03:14 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -292,7 +292,7 @@ Two column file specifying the labels of the members of the classification given
 
 =item B<-from input_format>
 
-Input format. Supported: tab, mcl, profiles
+Input format. Supported: tab, mcl, profiles, mcode, rnsc
 
 =cut
 	} elsif ($arg eq "-from") {
