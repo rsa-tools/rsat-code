@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.39 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: purge-sequence,v 1.40 2010/11/16 18:39:27 amedina Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -75,8 +75,9 @@ if ($inputfile) {
 }
 
 #### create a temp file to filter out non-conform lines 
-$tmp_file = "tmp_".$basename.".fasta";
-
+$tmp_file = "mktemp tmp_".$basename.".fasta.XXXXXX";
+$tmp_file= `$tmp_file`;
+chomp($tmp_file);
 #$command = "cd $TMP ; ";
 $command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file -noempty ";
 $command .= " -mask_short ".$mask_short if ($mask_short);
