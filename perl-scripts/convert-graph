@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.60 2010/10/29 11:16:19 jvanheld Exp $
+# $Id: convert-graph,v 1.61 2010/11/16 15:03:14 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -589,7 +589,7 @@ node changes, only the first defined will be taken into account.
 
 Column containing the X position of the target node (no default)
 
-A node can only have X position. If in the file, the position of the
+A node can only have one X position. If in the file, the position of the
 node changes, only the first defined will be taken into account.
 
 =cut
@@ -605,7 +605,7 @@ node changes, only the first defined will be taken into account.
 
 Column containing the Y position of the source node (no default)
 
-A node can only have Y position. If in the file, the position of the
+A node can only have one Y position. If in the file, the position of the
 node changes, only the first defined will be taken into account.
 
 =cut
