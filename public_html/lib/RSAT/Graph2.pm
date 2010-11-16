@@ -455,6 +455,174 @@ sub create_random_graph {
   my $req_source_nodes = $req_nodes;
   my $req_target_nodes = $req_nodes;
   my @labels = @{$weights_ref}; 
+  my @degree = ();
+  my $iterations_max = 10;
+  my %nodeset = ();
+  my @random_weights = 0 .. $req_edges-1;
+  @random_weights = &shuffle(@random_weights);
+  
+  $node_prefix = "" if (!defined($node_prefix));
+  $edge_prefix = "" if (!defined($egde_prefix));
+   
+
+  # creation of the list of nodes
+  if (scalar @nodes > 0) {
+    if (scalar(@nodes) < $req_nodes) {
+      &RSAT::error::FatalError("\t","More requested nodes than available nodes", "requested", $req_nodes, "available", scalar @nodes);
+    } elsif (!$column) {
+      @source_nodes = @nodes;
+      @target_nodes = @nodes;
+    }
+  } else {
+    for (my $i = 1; $i <= $req_nodes; $i++) {
+      my $node_id = $node_prefix."n".$i;
+      push @source_nodes, $node_id;
+      push @target_nodes, $node_id;
+      push @nodes, $node_id;
+    }
+  }
+  
+  my $source_number = scalar @source_nodes;
+  my $target_number = scalar @target_nodes;
+  my $node_number = scalar @nodes;
+  
+  if ($column) {
+    $req_source_nodes = scalar(@source_nodes);
+    $req_target_nodes = scalar(@target_nodes);
+  }
+  
+  for (my $i = 0; $i < scalar @nodes; $i++) {
+    $nodeset{$nodes[$i]}++;
+    $degree{$i} = 0;
+  }
+  
+
+  ## Computation of the maximum number of edges
+  if (!$duplicated) {
+    if (!$directed && !$self_loops) {
+      $max_arc_number = ($req_nodes*($req_nodes-1))/2;
+    } elsif ($directed && $self_loops) {
+      $max_arc_number = ($req_nodes*$req_nodes);
+    } elsif ($directed && !$self_loops) {
+      $max_arc_number = ($req_nodes*($req_nodes-1));
+    } elsif (!$directed && $self_loops) {
+      $max_arc_number = ($req_nodes*($req_nodes+1))/2;
+    }
+  }
+  if ($max_arc_number < $req_edges) {
+    &RSAT::error::FatalError("\t","More requested edges than possible edges", "requested", $req_edges, "available", $max_arc_number);
+  }
+  my %not_0_nodes = %nodeset;
+  my $iteration_cpt = 0;
+  while (scalar keys %not_0_nodes > 0 && $iteration_cpt < $iterations_max) {
+    %not_0_nodes = %nodeset;
+    %degree = ();
+    for (my $i = 0; $i < $req_edges; $i++) {
+      my $source_id = int(rand()*$source_number);
+      my $target_id = int(rand()*$target_number);
+      my $key = join " ", $source_id, $target_id;
+      $degree{$source_id} = 0 if (!exists $degree{$source_id});
+      $degree{$target_id} = 0 if (!exists $degree{$target_id});
+    
+    
+      while ((!$self_loops && ($source_id == $target_id)) || (!$duplicated && ($seen_edge{$key})) || ($max_degree > 0 && (($degree{$source_id}+1 > $max_degree) || ($degree{$target_id}+1 > $max_degree)))) {
+        $source_id = int(rand()*$source_number);
+        $target_id = int(rand()*$target_number);
+        $key = join " ", $source_id, $target_id;
+        
+      }
+#       print "$key\n";
+      my $source = $source_nodes[$source_id];
+      my $target = $target_nodes[$target_id];
+      my $rev_key = join " ", $target_id, $source_id;
+      $seen_edge{$key}++;
+      $seen_edge{$rev_key}++ if (!$directed);
+      $label =  join "_", $source, $target;
+      if ($mean ne 'null' && $sd ne 'null' && $normal) {
+        $label = &gaussian_rand();
+        $label = ($label * $sd) + $mean;
+      } elsif (!$normal) {
+        my $weight = $labels[$random_weights[$i]];
+#       $weight = $label if (!defined $weight);
+        if (&RSAT::util::IsReal($arcs_to_shuffle[$i][2]) || $main::weight_col) {
+	  $label = $weight;
+        }
+      }
+      $degree{$source_id}++;
+      $degree{$target_id}++;
+      delete $not_0_nodes{$source};
+      delete $not_0_nodes{$target};
+      $rdm_graph_array[$i][0] = $source;
+      $rdm_graph_array[$i][1] = $target;
+      $rdm_graph_array[$i][2] = $label;
+      $rdm_graph_array[$i][3] = "#000088";
+      $rdm_graph_array[$i][4] = "#000088";
+      $rdm_graph_array[$i][5] = "#000044";
+    }
+    $iteration_cpt++;
+    last if (!$single);
+  }
+  if ($iteration_cpt == $iterations_max && scalar keys %not_0_nodes > 0 && $single) {
+    	  &RSAT::message::Warning(join "\t", "Could not produce a graph with no nodes of degree 0", scalar keys %not_0_nodes, "nodes with degree 0 remaining") if ($main::verbose >= 2);
+  }
+  $rdm_graph->load_from_array(@rdm_graph_array);
+  ## MAY BE ERRONEOUS
+  if (scalar(keys(%graph_node)) < $req_nodes) {
+    my %rdm_nodes_id_name = $rdm_graph->get_attribute("nodes_id_name");
+    my %rdm_nodes_name_id = $rdm_graph->get_attribute("nodes_name_id");
+    my %rdm_nodes_label = $rdm_graph->get_attribute("nodes_label");
+    my %rdm_nodes_color = $rdm_graph->get_attribute("nodes_color");
+    my $node_id = scalar(keys(%rdm_nodes_name_id));
+    foreach my $node (@nodes) {
+      if (!exists($graph_node{$node})) {
+	my $node_color = $self::default_node_color;
+	my $node_label = $node;
+	$rdm_nodes_name_id{$node} = $node_id;
+	$rdm_nodes_id_name{$node_id} = $node;
+	$rdm_nodes_label{$node_id} = $node_label;
+	$rdm_nodes_color{$node_id} = $node_color;
+	$node_id++;
+      }
+    }
+    $rdm_graph->set_hash_attribute("nodes_id_name", %rdm_nodes_id_name);
+    $rdm_graph->set_hash_attribute("nodes_name_id", %rdm_nodes_name_id);
+    $rdm_graph->set_hash_attribute("nodes_label", %rdm_nodes_label);
+    $rdm_graph->set_hash_attribute("nodes_color", %rdm_nodes_color);
+  }
+  return ($rdm_graph);
+}
+
+
+
+
+sub create_random_graph_old {
+  my ($self,
+      $nodes_ref,
+      $req_nodes,
+      $req_edges,
+      $self_loops,
+      $duplicated,
+      $directed,
+      $max_degree,
+      $single,
+      $mean,
+      $sd,
+      $normal,
+      $column,
+      $weights_ref,
+      $source_nodes_ref,
+      $target_nodes_ref,
+      $node_prefix,
+      $edge_prefix) = @_;
+  my $rdm_graph = new RSAT::Graph2();
+  my @rdm_graph_array = ();
+  my $max_arc_number = 10000000;
+  my @nodes = @{$nodes_ref};
+  my @source_nodes = @{$source_nodes_ref};
+  my @target_nodes = @{$target_nodes_ref};
+  my $req_source_nodes = $req_nodes;
+  my $req_target_nodes = $req_nodes;
+  my @labels = @{$weights_ref}; 
   $node_prefix = "" if (!defined($node_prefix));
   $edge_prefix = "" if (!defined($egde_prefix));
 
@@ -637,7 +805,6 @@ sub create_random_graph {
   }
   return ($rdm_graph);
 }
-
 
 
 ################################################################
@@ -1497,6 +1664,7 @@ sub read_from_table {
       if (defined($source_xpos_col)) {
         if (defined($linecp[$source_xpos_col-1])) {
           $array[$cpt][6] = $linecp[$source_xpos_col-1];
+     
         } else {
           &RSAT::message::Warning("No valid X position for source node in column $source_xpos_col on line $line_nb");# if ($main::verbose >= 1);
         }
@@ -2605,7 +2773,6 @@ Adapted by Jacques van Helden from a java simple graph demo
 =cut
 
 
-
 sub layout_spring_embedding_new {
   my ($self) = @_;
   $self->layout_random(%args);
@@ -2614,27 +2781,22 @@ sub layout_spring_embedding_new {
   my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
   my @in_neighbours = $self->get_attribute("in_neighbours");
   my ($x_size, $y_size) = $self->get_diagram_size(%args);
-
-  
   my @out_neighbours = $self->get_attribute("out_neighbours");
-
   my $nodes_nb = scalar keys %nodes_name_id;
-  my $layout_size = 1000;
   my $outfile = $main::outfile{output};
-  my (@nodes_dx, @nodes_dy, @edges_len, @xpos, @ypos);
-  my $fav_length = 50;
-  my $range = 10;
+  my (@nodes_dx, @nodes_dy, @edges_len, @xpos, @ypos, @x, @y);
+  my $fav_length = 100;
   my $iterations = 1000;
   # 0 filling xpos and ypos arrays
   foreach my $id (keys %nodes_id_xpos) {
-    $xpos[$id] = $id;
-    $ypos[$id] = $id;
+    $xpos[$id] = $nodes_id_xpos{$id};
+    $ypos[$id] = $nodes_id_ypos{$id};
+    $xpos[$id] =  $id*10;
+    $ypos[$id] =  $id*10;
   }
-
-  
   # 1 calcul sur les arcs (attraction des noeuds connectes)
   for (my $cpt = 0; $cpt < $iterations; $cpt++) {
-    &RSAT::message::Info("Spring embedding iteration $cpt") if ($main::verbose >= 3 && $cpt%10 == 0);
+    &RSAT::message::Info("Spring embedding iteration $cpt") if ($main::verbose >= 3 && $cpt%100 == 0);
 
     for (my $source_id = 0; $source_id < scalar(@out_neighbours); $source_id++) {
       next if (!defined ($out_neighbours[$source_id]));
@@ -2659,47 +2821,44 @@ sub layout_spring_embedding_new {
         $nodes_dy[$target_id] += $dy; 
       }
     }
-    # 2 calcul sur les noeuds (repulsion des noeuds trop proches)
-#     if ($cpt > $iterations - $iterations/10) {
-#       if ($cpt % 10 == 0) {
-      foreach my $node1_id (keys %nodes_id_xpos) {
-        my $dx = 0;
-        my $dy = 0;
-        my $node1_x = $xpos[$node1_id];
-        my $node1_y = $ypos[$node1_id]; 
-        foreach my $node2_id (keys %nodes_id_xpos) {
-          my $node2_x = $xpos[$node2_id];
-          my $node2_y = $ypos[$node2_id];
-          next if ($node1_id == $node2_id);
-          my $vx = $node1_x - $node2_x;
-          my $vy = $node1_y - $node2_y;
-          my $len = $vx * $vx + $vy * $vy;
-          if ($len == 0) {
-            $dx += rand();
-	    $dy += rand();
-          } else {
-  	    $dx += $vx / $len;
-	    $dy += $vy / $len;
-          }
-        }
-        my $dlen = $dx * $dx + $dy * $dy;
-        if ($dlen > 0) {
-          $dlen = sqrt($dlen) / 2;
-          $nodes_dx[$node1_id] += $dx / $dlen;
-          $nodes_dy[$node1_id] += $dy / $dlen;
+    # 2 calcul sur les noeuds (repulsion des noeuds proches)
+    foreach my $node1_id (sort keys %nodes_id_xpos) {
+      my $dx = 0;
+      my $dy = 0;
+      my $node1_x = $xpos[$node1_id];
+      my $node1_y = $ypos[$node1_id]; 
+      foreach my $node2_id (sort keys %nodes_id_xpos) {
+        my $node2_x = $xpos[$node2_id];
+        my $node2_y = $ypos[$node2_id];
+        next if ($node1_id == $node2_id);
+        my $vx = $node1_x - $node2_x;
+        my $vy = $node1_y - $node2_y;
+        my $len = $vx * $vx + $vy * $vy;
+#         print "$node1_id $node2_id LEN $len\n";
+        if ($len == 0) {
+          $dx += rand();
+	  $dy += rand();
+        } else {
+  	  $dx += $vx / $len;
+	  $dy += $vy / $len;
         }
       }
-#     }
+      
+      my $dlen = $dx * $dx + $dy * $dy;
+#       print "DLEN $dlen\n";
+      if ($dlen > 0) {
+        $dlen = sqrt($dlen) / 2;
+        $nodes_dx[$node1_id] += $dx / $dlen;
+        $nodes_dy[$node1_id] += $dy / $dlen;
+      }
+    }
     # 3 position effective
-    foreach my $node_id (keys %nodes_id_xpos) {
+    foreach my $node_id (sort keys %nodes_id_xpos) {
       my $node_x = $xpos[$node_id];
       my $node_y = $ypos[$node_id];
       my $node_dx = $nodes_dx[$node_id];
       my $node_dy = $nodes_dy[$node_id];
-#       print "NODE DY $node_dy\n";
       $node_x += &RSAT::stats::max(-5, &RSAT::stats::min(5, $node_dx));
-#        print "TESTMAX ".&RSAT::stats::max(-5, &RSAT::stats::min(5, $node_dx));
-#        print "\n";
       $node_y += &RSAT::stats::max(-5, &RSAT::stats::min(5, $node_dy));
       if ($node_x < 0) {
         $node_x = 0;
@@ -2715,22 +2874,19 @@ sub layout_spring_embedding_new {
       $nodes_dy[$node_id] /= 2;
       $xpos[$node_id] = $node_x;
       $ypos[$node_id] = $node_y;
-
+      print "CPT $cpt ID $node_id node XPOS $xpos[$node_id] node YPOS $ypos[$node_id]\n";
     }
-    foreach my $id (keys %nodes_id_xpos) {
-      $nodes_id_xpos{$id} = $xpos[$id];
-      $nodes_id_ypos{$id} = $ypos[$id];
-    }    
-#     print "ITERATION $cpt\n";
-#     foreach my $node_id (keys %nodes_id_xpos) {
-#       print join "\t", $nodes_id_name{$node_id}, $nodes_id_xpos{$node_id}, $nodes_id_ypos{$node_id}, $nodes_dx{$node_id}, $nodes_dy{$node_id};
-#       print "\n";
-#     }
-#     print "##########\n";
+#     exit(0) if ($cpt == 100);
+   
   }
+  foreach my $id (keys %nodes_id_xpos) {
+    $nodes_id_xpos{$id} = $xpos[$id];
+    $nodes_id_ypos{$id} = $ypos[$id];
+  } 
   $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
   $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
 }
+
 
 =pod
 
@@ -3333,12 +3489,12 @@ sub get_diagram_size {
     ## Compute number of nodes.
     ################################################################
     ## SYLVAIN, DO WE REALLY NEED TO TRANSFER A ID/NAME HASH JUST TO
-    ## GET THE NUMBER OF NODES OF THE GRAPH OBJECT ? THIS SEEMS VER
+    ## GET THE NUMBER OF NODES OF THE GRAPH OBJECT ? THIS SEEMS VERY
     ## INEFFICIENT.
     ################################################################
     %nodes_name_id = $self->get_attribute("nodes_name_id");
     $nb_nodes = scalar(keys(%nodes_name_id));
-    $x_size = sprintf("%d", 400+100*sqrt($nb_nodes));
+    $x_size = sprintf("%d", 400+150*sqrt($nb_nodes));
   }
 
   ## Y size
@@ -3462,8 +3618,10 @@ sub to_gml {
         my $label = $nodes_label{$id};
 	my $w = 1 + length($label)*$letter_width; ## label width
 	my $h = 16; ## label height
-	my $x = $nodes_id_xpos{$id} || $id*10;
-	my $y = $nodes_id_ypos{$id} || $id*10;
+	my $x = $nodes_id_xpos{$id};
+	$x = $id*10 if (!defined $x);
+	my $y = $nodes_id_ypos{$id};
+	$y = $id*10 if (!defined $y);
 	my $box_color = $nodes_color{$id} || "#0000EE"; ## color for the box around the node
 	my $box_fill_color = "#EEEEEE"; ## color for the box around the node
 	$gml .= "\t"."node\n";
