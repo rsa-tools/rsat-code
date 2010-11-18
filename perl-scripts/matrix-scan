@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.179 2010/11/09 11:48:53 jvanheld Exp $
+# $Id: matrix-scan,v 1.180 2010/11/18 13:42:30 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -470,7 +470,7 @@ package main;
 				  'bg_residues'=>1,
 				  'weight_limits'=>1,
 				  'crer'=>1,
-				  'occ_proba'=>1,
+				 # 'occ_proba'=>1,
 				  'matrix'=>1,
 				  'freq_matrix'=>1,
 				  'weight_matrix'=>1,
@@ -3066,7 +3066,7 @@ sub Verbose {
 sub CheckQuickScan { 
   ## check that a sequence has been provided
   unless ($main::infile{input}) {
-    &RSAT::message::Warning("Quick scan mode requires to specify an input file") if (($main::verbose >= 1) || ($quick_scan));
+    &RSAT::message::Warning("Quick scan mode requires to specify an input file") if (($main::verbose >= 2) || ($quick_scan));
     return(0);
   }
 
@@ -3116,8 +3116,8 @@ sub QuickScan {
   
   ## extract each matrix into a separate file 
   ## (matrix-scan-quick works with one matrix at a time, in tab format)
-  my $tmp_file_name = sprintf "matrix-scan-single-matrix.%s", &AlphaDate();
-  my $tmp_matrix_file =  $TMP."/".$tmp_file_name.".tab";
+  my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-scan-single-matrix_".&AlphaDate());
+  my $tmp_matrix_file =  $tmp_file_name.".tab";
   my $matrix_handle = &OpenOutputFile($tmp_matrix_file);
   print $matrix_handle $matrix->toString(sep=>"\t",
 							   type=>"counts",
@@ -3134,8 +3134,8 @@ sub QuickScan {
     ## background format should be Inclusive (=motifsampler)
     if (defined($main::infile{bg})) {
       if ($bg_in_format ne "motifsampler") {
-	my $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
-	my $tmp_bg_file =  $TMP."/".$tmp_file_name.".ms";
+  	my $tmp_file_name = &RSAT::util::make_temp_file("","convert-background-model_".&AlphaDate());
+  	my $tmp_bg_file =  $tmp_file_name.".tab";
 	my $convert_bg_cmd = 
 	  $SCRIPTS."/convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$tmp_bg_file." -bg_pseudo ".$bg_model->get_attribute("bg_pseudo"); 
 	&RSAT::message::Debug("Converting background to motifsampler format:", $convert_bg_cmd) if ($main::verbose >= 3);
@@ -3193,7 +3193,7 @@ sub QuickScan {
   if ($scan_mode eq "distrib") {
     $quick_cmd .= " -return distrib";
 
-    &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 2);
     open QUICK, "$quick_cmd |";
     ## columns are:
     ## score	occ	co	cco	ccdf
@@ -3229,7 +3229,7 @@ sub QuickScan {
   	
   	$quick_cmd .= " -return sites";
   	$quick_cmd .= " -origin ".$main::origin;
-  	$quick_cmd .= " -v ".$quick_verbose;
+  	$quick_cmd .= " -v ".$quick_verbose if ($main::verbose >= 1);
   	
   	if (defined($lth_matrix->{$matrix_name}->{score})) {
   		$quick_cmd .= " -t ".$lth_matrix->{$matrix_name}->{score};
@@ -3239,8 +3239,8 @@ sub QuickScan {
   	## PVAL calculation
   	if ($return_fields{pval}){
   		## calculate distibution of score
-  		my $tmp_file_name = sprintf "matrix-distrib.%s", &AlphaDate();
-		my $tmp_distrib_file =  $TMP."/".$tmp_file_name.".tab";
+  		my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-distrib_".&AlphaDate());
+  		my $tmp_distrib_file =  $tmp_file_name.".tab";
 		my $matrix_distrib_cmd = $SCRIPTS."/matrix-distrib ";
 		$matrix_distrib_cmd .= " -m ".$matrix_quick_file;
 		$matrix_distrib_cmd .= " -matrix_format tab";
