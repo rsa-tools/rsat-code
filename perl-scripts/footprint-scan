@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.40 2010/11/04 20:47:19 amedina Exp $
+# $Id: footprint-scan,v 1.41 2010/11/23 23:34:52 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.41 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -915,6 +915,7 @@ Background model file for the scanning of query sequences for filtering,.
 
 	  
 =pod
+
 =item B<-filter_pval>
 
 Set the threshold to filter out TF-interactions that are not present on the query organism.
@@ -928,7 +929,7 @@ Set the threshold to filter out TF-interactions that are not present on the quer
 	     &RSAT::error::FatalError($main::filter_pval, "Invalid value for filter_pval. Should be a real number. ") 
 	unless (&RSAT::util::IsReal($main::filter_pval));
 =pod
-  
+
 =item B<-occ_sig_opt>    
 
 Additional options passed to matrix-scan for the test of
@@ -1055,6 +1056,80 @@ quotes, and can thus not contain any quote.
     my $new_map_opt = shift(@arguments);
 
 $map_opt .= " ".$new_map_opt;
+
+=pod 
+
+=item Wish B<-crer>
+
+Return Cis-Regulatory elements Enriched-Regions (CRER).
+
+            Calculate the statistical significance of the number of hits in
+            windows of variable sizes. The number of hits is the sum of
+            matches above a predefined threshold set on hits p-values, for
+            all matrices and on both strands (if -2str). The maximum size
+            for a CRER is defined by the option -crer_max.
+
+            The prior probability to find an instance of the motif is the
+            same for all matrices, and corresponds to the chosen pval
+            threshold. Within a region of maximal CRER size, subwindows are
+            defined between each hits, and the observed number of matches in
+            a subwindow is the sum of hits above the threshold. The
+            significance of the observed number of matches in a subwindow is
+            estimated by calculating a P-value using the binomial
+            distribution (Aerts et al., 2003).
+
+
+
+=cut
+	} elsif ($arg eq "-crer") {
+    	    $main::crer= shift(@arguments);
+
+	     &RSAT::error::FatalError($main::filter_pval, "Invalid value for filter_pval. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($main::filter_pval));
+
+=pod
+
+=item Wish  B<-lth_crer_size>
+
+Minimal CRER size in bps
+
+=cut
+	} elsif ($arg eq "-lth_crer_size") {
+    	    $main::lth_crer_size= shift(@arguments);
+
+	     &RSAT::error::FatalError($main::lth_crer_size, "Invalid value for filter_pval. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($main::lth_crer_size));
+
+
+=pod
+ 
+=item Wish  B<-crer_pval>
+
+Pval cutoff for selecting CRERs
+
+=cut
+	} elsif ($arg eq "-crer_pval") {
+    	    $main::crer_pval= shift(@arguments);
+
+	     &RSAT::error::FatalError($main::crer_pval, "Invalid value for filter_pval. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($main::crer_pval));
+
+
+=pod
+
+=item B<-uth_crer_size>
+
+Maximal CRER size in bps
+
+=cut
+	} elsif ($arg eq "-uth_crer_size") {
+    	    $main::uth_crer_size= shift(@arguments);
+
+	     &RSAT::error::FatalError($main::uth_crer_size, "Invalid value for filter_pval. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($main::uth_crer_size));
+
+
+
 
 } else {
     &FatalError(join("\t", "Invalid option", $arg));
