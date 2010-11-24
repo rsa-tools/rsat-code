@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.40 2010/11/16 18:39:27 amedina Exp $
+# $Id: purge-sequence,v 1.41 2010/11/24 03:39:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -49,37 +49,41 @@ $die_on_error = 1;
 $dir{execution} = `pwd`;
 chomp $dir{execution};
 
+## Define the name of the output file
 if ($outputfile) {
-    $basename{out} = `basename ${outputfile}`;
-    $dirname{out} = `dirname ${outputfile}`;
-    chomp $dirname{out};
-    chdir $dirname{out};
-    $dir{output} = `pwd`;
-    chomp($dir{output});
+  $basename{out} = `basename ${outputfile}`;
+  $dirname{out} = `dirname ${outputfile}`;
+  chomp $dirname{out};
+  chdir $dirname{out};
+  $dir{output} = `pwd`;
+  chomp($dir{output});
 }
 
 chdir($dir{execution});
 
+## Define the name of the input file
 if ($inputfile) {
-    $basename = `basename ${inputfile}`;
-    chomp $basename;
-    $dirname = `dirname ${inputfile}`;
-    chomp $dirname;
-    chdir $dirname;
-    $dir{input} = `pwd`;
-    chomp($dir{input});
-#    warn join "\t", $dirname, $dir{input}, $basename, "\n"
+  $basename = `basename ${inputfile}`;
+  chomp $basename;
+  $dirname = `dirname ${inputfile}`;
+  chomp $dirname;
+  chdir $dirname;
+  $dir{input} = `pwd`;
+  chomp($dir{input});
+  #    warn join "\t", $dirname, $dir{input}, $basename, "\n"
 } else {
-    $dirname = ".";
-    $basename = $start_time;
+  $dirname = ".";
+  $basename = $start_time;
 }
+&RSAT::message::Debug("Input dir and file", $dirname, $basename) if ($main::verbose >= 5);
 
 #### create a temp file to filter out non-conform lines 
-$tmp_file = "mktemp tmp_".$basename.".fasta.XXXXXX";
-$tmp_file= `$tmp_file`;
-chomp($tmp_file);
+#$tmp_file = `mktemp tmp_".$basename.".fasta.XXXXXX`;
+#$tmp_file= `$tmp_file`;
+#chomp($tmp_file);
 #$command = "cd $TMP ; ";
-$command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file -noempty ";
+$tmp_file = &RSAT::util::make_temp_file($TMP, "purge");
+$command = " $convert_seq_command -from $in_format -to fasta -o $tmp_file -noempty ";
 $command .= " -mask_short ".$mask_short if ($mask_short);
 $command .= " -mask non-dna " if ($dna);
 $command .= " -i $dir{input}/$basename" if ($inputfile);
