@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.24 2010/09/20 20:50:49 rsat Exp $
+# $Id: server.mk,v 1.25 2010/11/24 02:14:34 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -27,7 +27,8 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
 ################################################################
 # Mirrors
-RSAT_SERVER = rsat@rsat.ulb.ac.be:rsa-tools
+BIGRE = rsat@rsat.ulb.ac.be:rsa-tools
+BIGRE2 = rsat@wwwsup.scmbb.ulb.ac.be:rsa-tools
 MAMAZE = jvanheld@164.15.109.52:rsa-tools
 MERLIN = jvanheld@merlin.bigre.ulb.ac.be:rsa-tools
 #FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
@@ -37,7 +38,7 @@ LIV = jvanheld@liv.bmc.uu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
 MILLIWAYS=jvanheld@milliways.bi.up.ac.za:rsa-tools
 MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${TORONTO} ${CCG} 
-LOG_SERVERS= ${LIV} ${CCG} ${MILLIWAYS} ${RSAT_SERVER} ${TORONTO} 
+LOG_SERVERS= ${BIGRE2} ${LIV} ${CCG} ${MILLIWAYS} ${BIGRE} ${TORONTO} 
 
 ################################################################
 ## distribution
