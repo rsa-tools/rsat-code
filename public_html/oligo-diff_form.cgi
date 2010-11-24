@@ -32,6 +32,8 @@ $default{noov} = "checked";
 $default{strand} = "both strands";
 $default{purge} = 'checked';
 
+&MatrixFromPatterns_defaults();
+
 ### print the form ###
 &RSA_header("oligo-diff", 'form');
 print "<CENTER>";
@@ -193,6 +195,9 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 			)
 		);
 
+#### Convert patterns to matrix
+&MatrixFromPatterns_print_form();
+
 ### send results by email or display on the browser
 print "<HR width=550 align=left>\n";
 &SelectOutput();
@@ -219,6 +224,7 @@ print "<TD><B>";
 print $query->hidden(-name=>'test_seq',-default=>$demo_ctrl_seq);
 print $query->hidden(-name=>'ctrl_seq',-default=>$demo_test_seq);
 print $query->hidden(-name=>'side',-default=>'both');
+#print $query->hidden(-name=>'to_matrix',-default=>'0');
 print $query->hidden(-name=>'ratio',-default=>'none');
 print $query->hidden(-name=>'oligo_len',-default=>'5');
 print $query->submit(-label=>"DEMO");
