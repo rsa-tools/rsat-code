@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.152 2010/08/09 09:50:19 jvanheld Exp $
+# $Id: oligo-analysis,v 1.153 2010/11/24 03:40:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.152 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.153 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -212,6 +212,7 @@ $out = &OpenOutputFile($outputfile);
 ## Count oligo occurrences
 &CountOligos();
 
+@alphabet = &alphabet($seq_type, $zeroocc);
 
 ################################################################
 ### Pre-defined frequency tables for background frequency calibration
@@ -313,7 +314,7 @@ if ($return{'table'}) {
 
   #    &MatchingSeqThreshold() if (defined($lth{mseq}));
 
-  &NbPossibleOligo();
+  $nb_possible_oligos = &NbPossibleOligos(scalar(@alphabet), $oligo_length, $seq_type, $strands, $one_var_position);
   &CalcOverlapCoefficient();	# if ($return{'ovlp'});
 
   if ($return{'exp_freq'}) {
@@ -812,7 +813,6 @@ sub CalcSubWordFrequencies {
 # 		    $sub_occ_2str[$w]{$subseq} = $sub_occ_2str[$w]{$rc} = $sub_word[$w]{$subseq}->{occ} + $sub_word[$w]{$rc}->{occ};
 # 		}
 # 	    }
-
 # 	    foreach $subseq (keys %{$sub_occ_2str[$w]}) {
 # 		$sub_word[$w]{$subseq}->{occ} = $sub_occ_2str[$w]{$subseq};
 # 	    }
@@ -822,16 +822,16 @@ sub CalcSubWordFrequencies {
 
     ## Report subword occurrences ad frequencies
     if ($verbose >= 4) {
-	for $w (1..$oligo_length-1) {
-	    foreach $pattern_seq (sort keys %{$sub_word[$w]}) {
-		&RSAT::message::Debug( ";",
-				       "subword_freq",
-				       $w,
-				       $occ_sum[$w],
-				       $pattern_seq,
-				       sprintf("%15.13f", $sub_word[$w]{$pattern_seq}->{obs_freq}));
-	    }
+      for $w (1..$oligo_length-1) {
+	foreach $pattern_seq (sort keys %{$sub_word[$w]}) {
+	  &RSAT::message::Debug( ";",
+				 "subword_freq",
+				 $w,
+				 $occ_sum[$w],
+				 $pattern_seq,
+				 sprintf("%15.13f", $sub_word[$w]{$pattern_seq}->{obs_freq}));
 	}
+      }
     }
 }
 
@@ -879,22 +879,22 @@ sub CalcFrequencies {
 ################################################################
 ### residue frequencies from input sequences
 sub CalcAlphabet {
-    %residue_proba = ();
-    &RSAT::message::TimeWarn("Calculating residue frequencies from input sequences") if ($verbose >= 2);
+  %residue_proba = ();
+  &RSAT::message::TimeWarn("Calculating residue frequencies from input sequences") if ($verbose >= 2);
 
+  foreach $key (sort keys %residue_occ) {
+    $residue_total += $residue_occ{$key};
+  }
+  if ($residue_total > 0) {
     foreach $key (sort keys %residue_occ) {
-	$residue_total += $residue_occ{$key};
+      if ($sum_rc) {
+	$residue_proba{$key} = ($residue_occ{$key} + $residue_occ{lc(SmartRC($key))})/(2*$residue_total);
+      } else {
+	$residue_proba{$key} = $residue_occ{$key}/$residue_total;
+      }
     }
-    if ($residue_total > 0) {
-	foreach $key (sort keys %residue_occ) {
-	    if ($sum_rc) {
-		$residue_proba{$key} = ($residue_occ{$key} + $residue_occ{lc(SmartRC($key))})/(2*$residue_total);
-	    } else {
-		$residue_proba{$key} = $residue_occ{$key}/$residue_total;
-	    }
-	}
-    }
-    return %residue_proba;
+  }
+  return %residue_proba;
 }
 
 
@@ -936,30 +936,6 @@ sub Degenerate {
   }
 }
 
-
-################################################################
-#### calculate number of possible oligomers
-sub NbPossibleOligo {
-  @alphabet = &alphabet();
-  $alphabet_size = scalar(@alphabet);
-  $nb_possible_oligos = $alphabet_size**$oligo_length;
-
-  if ($seq_type eq "DNA") {
-    if ($one_var_position) {
-      $nb_possible_oligos = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);
-    }
-    if ($sum_rc) {
-      if ($oligo_length%2 == 0) {
-	### take into account the fact that palindromes have not to be grouped by pairs
-	$nb_possible_palindroms = $alphabet_size**($oligo_length/2);
-      } else {
-	$nb_possible_palindroms = 0;
-      }
-      $nb_possible_oligos -= ($nb_possible_oligos - $nb_possible_palindroms)/2;
-    }
-  }
-  &RSAT::message::Info("nb_possible_oligos", $nb_possible_oligos) if ($main::verbose >= 2);
-}
 
 ################################################################
 #### Expected oligomer frequencies
@@ -1029,7 +1005,7 @@ sub CalcExpected {
     ## into 2 sub-oligos)
   } elsif ($method eq "lexicon") {
     my $l  = 1;
-    foreach $pattern_seq (&alphabet()) {
+    foreach $pattern_seq (@alphabet) {
       $sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{obs_freq};
     }
     for $l (2..$oligo_length - 1) {
@@ -3146,9 +3122,13 @@ sub CalibrateSetFromSingleSequence {
 }
 
 
+
 ################################################################
 ## Return the alphabet (list of possible letters/residues)
 sub alphabet {
+  my ($seq_type, $zeroocc) = @_;
+  my @alphabet = ();
+  $seq_type = $seq_type || "DNA"; ## Default value if not defined
   if ($zeroocc) {
     if ($seq_type eq "DNA") {
       @alphabet = @dna_alphabet;
@@ -3161,3 +3141,4 @@ sub alphabet {
   &RSAT::message::Info("Alphabet", join(',', @alphabet)) if ($main::verbose >= 2);
   return(@alphabet);
 }
+
