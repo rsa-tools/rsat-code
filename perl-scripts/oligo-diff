@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.17 2010/11/24 01:50:35 jvanheld Exp $
+# $Id: oligo-diff,v 1.18 2010/11/24 02:21:09 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     $SCRIPTS=$ENV{RSAT}."/perl-scripts";
     $BIN=$ENV{RSAT}."/bin";
 #    $program_version = "0.00";
@@ -193,7 +193,7 @@ package main;
     &CountWordsOneSet($infile{ctrl}, "ctl");
 
     ## Report the number of patterns found in any of the two input files
-    local $stats = sprintf("; %-29s\t%d\n", "Oligos found in either file", scalar(keys(%patterns))) if ($main::verbose >= 1);
+    local $stats = sprintf(";\t%d\t%s\n", scalar(keys(%patterns)), "found in either file") if ($main::verbose >= 1);
 
     ## Compute word sums
     foreach my $oligo (keys %patterns) {
@@ -792,7 +792,7 @@ sub Verbose {
     printf $out ";\tOligo length\t%d\n", $oligo_len;
     print $out &PrintThresholdValues();
 
-    printf $out ";\tPossible distinct oligos\t%d\n", $distinct_oligos;
+    printf $out "; Possible distinct oligos\t%d\n", $distinct_oligos;
     print $out $stats;
 
 
