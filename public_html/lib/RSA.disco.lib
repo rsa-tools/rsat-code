@@ -346,6 +346,7 @@ sub ThresholdSuffix {
 ## Check thresholds on all parameters for a given parameter
 sub CheckThresholds {
   my ($key) = @_;
+  my $stats = "";
   my $lth = "NA";
   if (defined($main::lth{$key})) {
     $lth = $main::lth{$key};
@@ -356,8 +357,9 @@ sub CheckThresholds {
     $uth = $main::uth{$key};
   }
 
-  &CheckLowerThresholds($key);
-  &CheckUpperThresholds($key);
+  $stats .= &CheckLowerThresholds($key);
+
+  $stats .= &CheckUpperThresholds($key);
 
   ## Update the pattern list
   @patterns = sort(keys(%patterns));
@@ -366,12 +368,15 @@ sub CheckThresholds {
 			   "uth=".$uth,
 			   "remaining patterns", scalar(@patterns),
 			  ) if ($main::verbose >= 2);
+
+  return($stats);
 }
 
 ################################################################
 ## Check lower thresholds on all patterns for a given parameter
 sub CheckLowerThresholds {
   my ($key) = @_;
+  my $stats;
   if (defined($main::lth{$key})) {
     &RSAT::message::TimeWarn("Lower threshold on $key\t$main::lth{$key}") if ($main::verbose >= 3);
     foreach $pattern_seq (keys %main::patterns) {
@@ -381,17 +386,23 @@ sub CheckLowerThresholds {
       }
       ## Check threshold
       elsif ($main::patterns{$pattern_seq}->{$key} < $main::lth{$key}) {
-	#&RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 0);
+	#&RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 10);
 	delete $main::patterns{$pattern_seq};
       }
     }
+
+    ## Report number of remaining patterns
+    $stats .= sprintf(";\t%d\t%s\t%s\t%s\n", scalar(keys(%main::patterns)), "passed lower threshold", $key, $lth{$key});
   }
+
+  return($stats);
 }
 
 ################################################################
 ## Check upper thresholds on all patterns for a given parameter
 sub CheckUpperThresholds {
   my ($key) = @_;
+  my $stats;
   if (defined($main::uth{$key})) {
     &RSAT::message::TimeWarn("Upper threshold on $key\t$main::uth{$key}") if ($main::verbose >= 3);
     foreach $pattern_seq (keys %main::patterns) {
@@ -405,7 +416,12 @@ sub CheckUpperThresholds {
 	delete $main::patterns{$pattern_seq};
       }
     }
+
+    ## Report number of remaining patterns
+    $stats .= sprintf(";\t%d\t%s\t%s\t%s\n", scalar(keys(%main::patterns)), "passed upper threshold", $key, $uth{$key});
   }
+
+  return($stats);
 }
 
 
