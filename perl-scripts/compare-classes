@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.63 2010/11/09 11:40:54 jvanheld Exp $
+# $Id: compare-classes,v 1.64 2010/11/24 02:22:11 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1007,10 +1007,12 @@ sub Verbose {
 # 	}
 #     }
     ## Number of query classes and elements per class
+    my $max_classes_to_display = 50;
     printf $out "; %-29s\t%d\n", "Query classes (nq)", $nb_query_classes;
     if ($verbose >= 1) {
+      printf $out ";\t%s\t%s\t%s\n", "nb", "size", "name";
       for my $i (0..$#query_classes) {
-	if ($i >= 100) {
+	if ($i >= $max_classes_to_display) {
 	  print $out  ";\t...\t...",scalar(@query_classes)-100," more query classes\n";
 	  last;
 	} else {
@@ -1023,8 +1025,9 @@ sub Verbose {
     ## Number of reference classes and elements per class
     printf $out "; %-29s\t%d\n", "Reference classes (nr)", $nb_ref_classes;
     if ($verbose >= 1) {
+      printf $out ";\t%s\t%s\t%s\n", "nb", "size", "name";
       for my $i (0..$#ref_classes) {
-	if ($i >= 100) {
+	if ($i >= $max_classes_to_display) {
 	  print $out  ";\t...\t...",scalar(@ref_classes)-100," more reference classes\n";
 	  last;
 	} else {
