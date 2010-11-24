@@ -291,6 +291,41 @@ sub CountWords {
   return(%patterns);
 }
 
+
+
+################################################################
+#### calculate number of possible oligomers
+sub NbPossibleOligos {
+  my ($alphabet_size, $oligo_length, $seq_type, $strand, $one_var_position) = @_;
+#  @alphabet = &alphabet($seq_type, $zeroocc);
+#  my $alphabet_size = scalar(@alphabet);
+  my $nb_possible_oligos = $alphabet_size**$oligo_length;
+
+  if (lc($seq_type) eq "dna") {
+    if ($one_var_position) {
+      $nb_possible_oligos = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);
+    }
+    if ($strand eq "-2str") {
+      if ($oligo_length%2 == 0) {
+	### take into account the fact that palindromes have not to be grouped by pairs
+	$nb_possible_palindroms = $alphabet_size**($oligo_length/2);
+      } else {
+	$nb_possible_palindroms = 0;
+      }
+      $nb_possible_oligos -= ($nb_possible_oligos - $nb_possible_palindroms)/2;
+    }
+  }
+  &RSAT::message::Info("nb_possible_oligos=".$nb_possible_oligos,
+		       "alphabet:".$alphabet_size,
+		       "oligo_length:".$oligo_length,
+		       "seq_type:".$seq_type,
+		       "strands:".$strand,
+		       "one_var_pos:".$one_var_position,
+		      ) if ($main::verbose >= 2);
+  return($nb_possible_oligos);
+}
+
+
 ################################################################
 ## Print threshold values for verbosity
 sub PrintThresholdValues {
@@ -358,7 +393,6 @@ sub CheckThresholds {
   }
 
   $stats .= &CheckLowerThresholds($key);
-
   $stats .= &CheckUpperThresholds($key);
 
   ## Update the pattern list
@@ -376,7 +410,7 @@ sub CheckThresholds {
 ## Check lower thresholds on all patterns for a given parameter
 sub CheckLowerThresholds {
   my ($key) = @_;
-  my $stats;
+  my $stats = "";;
   if (defined($main::lth{$key})) {
     &RSAT::message::TimeWarn("Lower threshold on $key\t$main::lth{$key}") if ($main::verbose >= 3);
     foreach $pattern_seq (keys %main::patterns) {
@@ -402,7 +436,7 @@ sub CheckLowerThresholds {
 ## Check upper thresholds on all patterns for a given parameter
 sub CheckUpperThresholds {
   my ($key) = @_;
-  my $stats;
+  my $stats = "";
   if (defined($main::uth{$key})) {
     &RSAT::message::TimeWarn("Upper threshold on $key\t$main::uth{$key}") if ($main::verbose >= 3);
     foreach $pattern_seq (keys %main::patterns) {
@@ -412,7 +446,7 @@ sub CheckUpperThresholds {
       }
       ## Check threshold
       elsif ($main::patterns{$pattern_seq}->{$key} > $main::uth{$key}) {
-	#	      &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 0);
+	#	      &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 10);
 	delete $main::patterns{$pattern_seq};
       }
     }
