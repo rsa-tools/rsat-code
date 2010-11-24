@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.18 2010/11/24 02:21:09 jvanheld Exp $
+# $Id: oligo-diff,v 1.19 2010/11/24 03:41:12 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    local $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     $SCRIPTS=$ENV{RSAT}."/perl-scripts";
     $BIN=$ENV{RSAT}."/bin";
 #    $program_version = "0.00";
@@ -125,8 +125,8 @@ package main;
 
     ## Counting mode
     %patterns = ();
-    $oligo_len = 0;
-    $strand = "-1str";
+    $oligo_length = 0;
+    $strands = "-1str";
     $overlap_mode = "-noov";
     $occ_sum_test = 0;
     $occ_sum_ctrl = 0;
@@ -157,7 +157,7 @@ package main;
     }
 
     ## oligonucleotide length
-    unless ($oligo_len) {
+    unless ($oligo_length) {
       &RSAT::error::FatalError("You must define the oligonucleotide length (option -l)");
     }
 
@@ -292,12 +292,11 @@ package main;
       my $m = $patterns{$oligo}->{occ_sum};
       my $n = $occ_sum;
       my $k = $occ_sum_test;
-#      &RSAT::message::Debug($oligo, "m=".$m) if ($main::verbose >= 0);
+#      &RSAT::message::Debug($oligo, "m=".$m) if ($main::verbose >= 5);
       $patterns{$oligo}->{exp_tst} = $m * $occ_sum_test/$occ_sum;
       $patterns{$oligo}->{exp_ctl} = $m * $occ_sum_ctrl/$occ_sum;
       my $from;
       my $to;
-
 
       ## Occurrence significance (P-value, E-value, sig)
       if ($occ_tst >= $patterns{$oligo}->{exp_tst}) {
@@ -400,7 +399,7 @@ package main;
 
     ## Header
     my $header = join ("\t", @output_fields);
-    if ($oligo_len > 3) {
+    if ($oligo_length > 3) {
       $header =~s/\tid\t/\tidentifier\t/;
     }
     print $out "#", $header, "\n";
@@ -627,15 +626,15 @@ occurrences.
 =pod
 
 
-=item B<-l oligo_len>
+=item B<-l oligo_length>
 
 Oligonucleotide length.
 
 =cut
     } elsif ($arg eq "-l") {
-      $main::oligo_len = shift(@arguments);
-      &RSAT::error::FatalError($main::oligo_len, "Invalid value for oligonucleotide length. Must be a strictrly positive Natural number. ")
-	unless ((&IsNatural($main::oligo_len)) && ($oligo_len > 0));
+      $main::oligo_length = shift(@arguments);
+      &RSAT::error::FatalError($main::oligo_length, "Invalid value for oligonucleotide length. Must be a strictrly positive Natural number. ")
+	unless ((&IsNatural($main::oligo_length)) && ($oligo_length > 0));
 
 
 =pod
@@ -648,7 +647,7 @@ Alternative option: -2str
 
 =cut
     } elsif ($arg eq "-1str") {
-      $main::strand = "-1str";
+      $main::strands = "-1str";
 
 =pod
 
@@ -664,7 +663,7 @@ Alternative option: -1str
 
 =cut
     } elsif ($arg eq "-2str") {
-      $main::strand = "-2str";
+      $main::strands = "-2str";
 
 
 =pod
@@ -783,16 +782,16 @@ sub Verbose {
     } else {
       print $out ";\tAdmit overlapping occurrences\n";
     }
-    if ($strand eq "-2str") {
+    if ($strands eq "-2str") {
       print $out ";\tBoth strands (sum pairs of reverse complements)\n";
     } else {
-      print $out ";\tSingle strand\n";
+      print $out ";\tSingle strands\n";
     }
 
-    printf $out ";\tOligo length\t%d\n", $oligo_len;
+    printf $out ";\tOligo length\t%d\n", $oligo_length;
     print $out &PrintThresholdValues();
 
-    printf $out "; Possible distinct oligos\t%d\n", $distinct_oligos;
+    printf $out "; Possible distinct oligos\t%d\n", &NbPossibleOligos(4, $oligo_length, "dna", $strands, 0);
     print $out $stats;
 
 
@@ -807,6 +806,13 @@ sub Verbose {
 ## Count word occurrences in an input file
 sub CountWordsOneSet {
   my ($file, $file_type) = @_;
+
+  ## Define a temporary input file
+  my $tmp_input_file  = &RSAT::util::make_temp_file("", "oligo_diff_");
+  $tmp_input_file .= "_input.fa";
+  &RSAT::message::Debug("Temporary input file", $tmp_input_file) if ($main::verbose >= 5);
+
+  ## Manage uncompression, which is not supported by count-words
   my $cmd = "";
   if ($file =~ /.gz$/) {
     $cmd = "gunzip -d ".$file;
@@ -814,23 +820,23 @@ sub CountWordsOneSet {
     $cmd = "cat ".$file;
   }
 
+  ## Purge the sequences if required
   if ($purge) {
-    $cmd .= " | ".$SCRIPTS."/purge-sequence -mis 0 -ml 20 ".$main::strand;
+    $cmd .= " | ".$SCRIPTS."/purge-sequence -mis 0 -ml 20 ".$main::strands;
   }
-  
-   my $tmp_input_file  = &RSAT::util::make_temp_file("", "oligo_diff_");
-   $tmp_input_file .= "_input.fa";
-  
-  `$cmd > $tmp_input_file`;
-   &RSAT::server::DelayedRemoval($tmp_input_file);
-  
+  &RSAT::message::Debug("Cleaning command", $cmd) if ($main::verbose >= 5);
+
+  ## Uncompress/purge the sequences
+  &doit("$cmd > $tmp_input_file");
+  &RSAT::server::DelayedRemoval($tmp_input_file);
+
+  ## Count word occurrences
+  &RSAT::message::TimeWarn("Counting words", $cmd) if ($main::verbose >= 2);
   $cmd = $main::count_words_cmd;
   $cmd .= " -i ".$tmp_input_file;
-  $cmd .= " -l ".$main::oligo_len;
-  $cmd .= " ".$main::strand;
+  $cmd .= " -l ".$main::oligo_length;
+  $cmd .= " ".$main::strands;
   $cmd .= " ".$main::overlap_mode if ($overlap_mode eq "-noov");
-
-  &RSAT::message::TimeWarn("Counting words", $cmd) if ($main::verbose >= 2);
 
   ## Read the counts and update the main oligo count hash table
   open OLIGOS, "$cmd |";
