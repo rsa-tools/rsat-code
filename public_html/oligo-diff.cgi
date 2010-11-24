@@ -40,30 +40,31 @@ $parameters = " -v 1";
 #### Test sequence set
 $upload_test_seq = $query->param('upload_test_seq');
 if ($upload_test_seq) {
-    $tmp_test_seq = "${TMP}/${tmp_file_name}_upload_test_seq.fasta";
-    $upload_test_seq = $query->param('upload_test_seq');
-    if ($upload_test_seq) {
-	if ($upload_file =~ /\.gz$/) {
-	    $tmp_test_seq .= ".gz";
-	}
-	$type = $query->uploadInfo($upload_test_seq)->{'Content-Type'};
-	open TEST_SEQ, ">$tmp_test_seq" ||
-	  &cgiError("Cannot store query feature file in temp dir.");
-	while (<$upload_test_seq>) {
-	    print TEST_SEQ;
-	}
-	close TEST_SEQ;
+  $tmp_test_seq = "${TMP}/${tmp_file_name}_upload_test_seq.fasta";
+  $upload_test_seq = $query->param('upload_test_seq');
+  if ($upload_test_seq) {
+    if ($upload_file =~ /\.gz$/) {
+      $tmp_test_seq .= ".gz";
     }
-}elsif ($query->param('test_seq') =~/\S/) {
-    $tmp_test_seq = "${TMP}/${tmp_file_name}_pasted_test_seq.fasta";
-    open TEST_SEQ, "> $tmp_test_seq";
-    print TEST_SEQ $query->param('test_seq');
+    $type = $query->uploadInfo($upload_test_seq)->{'Content-Type'};
+    open TEST_SEQ, ">$tmp_test_seq" ||
+      &cgiError("Cannot store query feature file in temp dir.");
+    while (<$upload_test_seq>) {
+      print TEST_SEQ;
+    }
     close TEST_SEQ;
-    &DelayedRemoval($tmp_test_seq);
-}else {
-    &FatalError ("Please select the test sequence file on your hard drive with the Browse button or paste sequences in the text area");
+  }
+} elsif ($query->param('test_seq') =~/\S/) {
+  $tmp_test_seq = "${TMP}/${tmp_file_name}_pasted_test_seq.fasta";
+  open TEST_SEQ, "> $tmp_test_seq";
+  print TEST_SEQ $query->param('test_seq');
+  close TEST_SEQ;
+  &DelayedRemoval($tmp_test_seq);
+} else {
+  &FatalError ("Please select the test sequence file on your hard drive with the Browse button or paste sequences in the text area");
 }
 $parameters .= " -test $tmp_test_seq";
+push @result_files, ("test sequences",$tmp_test_seq);
 
 ################################################################
 #### Second sequence set
@@ -94,6 +95,7 @@ if ($upload_ctrl_seq) {
     &FatalError ("Please select the second sequence file on your hard drive with the Browse button or paste sequences in the text area");
 }
 $parameters .= " -ctrl $tmp_ctrl_seq";
+push @result_files, ("control sequences",$tmp_ctrl_seq);
 
 ### purge or not
 if ($query->param('purge')) {
@@ -139,8 +141,9 @@ print "<PRE>command: $command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 if ($query->param('output') =~ /display/i) {
     &PipingWarning();
 
-    ### execute the command ###
+    ### Execute the command
     $result_file = "$TMP/${tmp_file_name}.res";
+    push @result_files, ("oligos", $result_file);
     open RESULT, "$command |";
 
     ### Print result on the web page
@@ -184,6 +187,8 @@ if ($query->param('output') =~ /display/i) {
 
 	## Convert pattern-assembly result into PSSM
 	if ($query->param('to_matrix')) {
+	  local $sequence_file = $tmp_test_seq;
+	  local $sequence_format = "fasta";
 	  &MatrixFromPatterns_run();
 	}
       }
