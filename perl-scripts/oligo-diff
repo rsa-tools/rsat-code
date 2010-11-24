@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.16 2010/07/22 09:26:34 morgane Exp $
+# $Id: oligo-diff,v 1.17 2010/11/24 01:50:35 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     $SCRIPTS=$ENV{RSAT}."/perl-scripts";
     $BIN=$ENV{RSAT}."/bin";
 #    $program_version = "0.00";
@@ -192,6 +192,9 @@ package main;
     &CountWordsOneSet($infile{test}, "tst");
     &CountWordsOneSet($infile{ctrl}, "ctl");
 
+    ## Report the number of patterns found in any of the two input files
+    local $stats = sprintf("; %-29s\t%d\n", "Oligos found in either file", scalar(keys(%patterns))) if ($main::verbose >= 1);
+
     ## Compute word sums
     foreach my $oligo (keys %patterns) {
 
@@ -227,15 +230,22 @@ package main;
       ## it means that we want for at least one of the file to contain
       ## that number of occurrences
       $lth{"max_occ"} = $lth{occ};
-      &CheckLowerThresholds("max_occ");
+      $stats .= &CheckLowerThresholds("max_occ");
       delete($lth{max_occ});
-      &RSAT::message::TimeWarn("Lower threshold on occurrences", scalar(keys(%patterns))) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Applied lower threshold on occurrences", $lth{occ}, "remaining patterns",scalar(keys(%patterns))) if ($main::verbose >= 2);
+
+#       ## Report the number of remaining patterns
+#       $stats .= sprintf(";\t%s\t%d\t%s\t%d\n", "Lower threshold on occ", $lth{occ}, "remaining oligos", scalar(keys(%patterns))) if ($main::verbose >= 1);
+
     }
     if (defined($uth{occ})) {
       $uth{"max_occ"} = $uth{occ};
-      &CheckUpperThresholds("max_occ");
+      $stats .= &CheckUpperThresholds("max_occ");
       delete($uth{max_occ});
-      &RSAT::message::TimeWarn("Upper threshold on occurrences", scalar(keys(%patterns))) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Applied upper threshold on occurrences", $uth{occ}, "remaining patterns",scalar(keys(%patterns))) if ($main::verbose >= 2);
+
+#       ## Report the number of remaining patterns
+#       $stats .= sprintf(";\t%s\t%d\t%s\t%d\n", "Upper threshold on occ", $uth{occ}, "remaining oligos", scalar(keys(%patterns))) if ($main::verbose >= 1);
     }
 
     ## Compute hypergeometric significance
@@ -345,9 +355,13 @@ package main;
 			       "ratio=".$ratio,
 			      ) if ($main::verbose >= 4);
     }
-    &CheckThresholds("occ_sig");
-    &CheckThresholds("occ_P");
-    &CheckThresholds("occ_E");
+
+    $stats .= &CheckThresholds("occ_sig");
+
+    $stats .= &CheckThresholds("occ_P");
+
+    $stats .= &CheckThresholds("occ_E");
+
 
     ################################################################
     ## Print verbose
@@ -776,9 +790,11 @@ sub Verbose {
     }
 
     printf $out ";\tOligo length\t%d\n", $oligo_len;
-    printf $out ";\tDistinct oligos\t%d\n", $distinct_oligos;
-
     print $out &PrintThresholdValues();
+
+    printf $out ";\tPossible distinct oligos\t%d\n", $distinct_oligos;
+    print $out $stats;
+
 
     print $out "; Total oligonucleotide sums\n";
     printf $out ";\tTest file\t%d\n", $main::occ_sum_test;
