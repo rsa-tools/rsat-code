@@ -78,7 +78,7 @@
   <input type='checkbox' name='directed' value='on' />&nbsp;<B><a href = 'help.random_graph.html#directed'>Directed graph</a></B><br>
   <table><tr>
   <B><td><a href = 'help.random_graph.html#random_type'>Randomization type</a></B>&nbsp;<select name='random_type'>
-  <option $default_random_type value = 'scratch'> from scratch
+  <option $default_random_type value = 'scratch'> Erdos-Renyi from scratch
   <option $demo_random_type value = 'ER'> Erdos-Renyi randomization (ER)
   <option value = 'node_degree'> Node degree conservation
   <option value = 'node_degree_distrib'> Node degree distribution conservation 
