@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.20 2010/11/12 22:09:35 rsat Exp $
+# $Id: genome-blast,v 1.21 2010/11/25 12:25:40 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -260,6 +260,8 @@ local @query_taxons = ();
 local @db_taxons = ();
 
 local $reciprocal = 0;
+
+local $blast_dir = $ENV{blast_dir};
 
 ## Options for the command &doit()
 local $dry = 0;
@@ -780,7 +782,7 @@ sub Verbose {
 sub FormatDB {
     &RSAT::message::TimeWarn(join ("\t","Formatting DB for organism", $db_organism)) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{blast_db}); 
-    my $command = "formatdb -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
+    my $command = "$blast_dir/formatdb -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
     &doit($command, $dry, $die_on_error, $main::verbose);
     &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*")) if ($main::verbose >= 2);
 }
@@ -799,7 +801,7 @@ sub BlastAndRank {
     &RSAT::util::CheckOutDir($dir{blast_result}); 
 
     ## Run the blastall command
-    my $blast_command="blastall -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001";
+    my $blast_command="$blast_dir/blastall -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001";
     &RSAT::message::TimeWarn(join("\t", "Running blastall", $blast_command)) if ($main::verbose >= 1);
 
     # Print the blast output table (useful for debugging)
