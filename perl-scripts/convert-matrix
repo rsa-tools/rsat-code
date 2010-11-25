@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.124 2010/10/19 21:43:35 jvanheld Exp $
+# $Id: convert-matrix,v 1.125 2010/11/25 16:17:55 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -301,6 +301,7 @@ if (scalar(@matrix_files >= 1)) {
 }
 
 
+
 ## Check that there is at least one input matrix
 if (scalar(@matrices) < 1) {
   &RSAT::message::Warning("Input file contained not a single matrix");
@@ -387,8 +388,8 @@ foreach my $matrix (@matrices) {
     }
     #	$logo_file =~ s/\.\w+$//;
 #    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
-    $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0); ## Generate the logo image
-    $matrix->set_attribute("logo_file" => $logo_file);
+     $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0); ## Generate the logo image
+     $matrix->set_attribute("logo_file" => $logo_file);
 #    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
     $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1);	## Generate logo image for the reverse complementary motif
     $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
@@ -857,7 +858,7 @@ INPUT/OUTPUT FORMATS
         InfoGibbs is a gibbs sampler based on the optimization of the
         information content of the matrix (rather than the weight of
         the sampled segments). InfoGibbs is currently under
-        development in the RSAT team (Grégory Gathy, unpublished).
+        development in the RSAT team (Grï¿½gory Gathy, unpublished).
 
     cluster-buster (input/output)
 	cluster-buster output file (usual extention .cb), which can be
