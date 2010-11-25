@@ -47,6 +47,8 @@ RSAT=[your_path_to_rsat]/rsa-tools
 ## complementary to RSAT (patser, consensus, ...).
 RSAT_BIN=[your_path_to_rsat]/rsa-tools/bin
 
+
+
 ## Directory for storing temporary file (for stand-alone scripts + web server + web services)
 rsat_tmp=[your_path_to_rsat]/rsa-tools/public_html/tmp
 
@@ -158,6 +160,10 @@ mcl_dir=[your_path_to_rsat]/rsa-tools/bin
 ## RNSC , graph-based clustering algorithm developed by Andrew King and Igor
 ## Jurisica, and integrated in the NeAT suite.
 rnsc_dir=[your_path_to_rsat]/rsa-tools/bin
+
+## BLAST
+blast_dir=[your_path_to_blast]
+
 
 ## REA, k-shortest path finding program by Jimenez and Marzal. 
 ## Used for the path finding algorithms in the NeAT suite.
