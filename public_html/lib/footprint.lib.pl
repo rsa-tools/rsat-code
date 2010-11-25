@@ -950,7 +950,7 @@ sub PurgeOrthoSeq {
   $cmd .= " -o ".$outfile{purged_notclean};
   &one_command($cmd);
   
-  my $cmd = "$SCRIPTS/convert-seq";
+  $cmd = "$SCRIPTS/convert-seq";
   $cmd .= " -i ".$outfile{purged_notclean}; ;
   $cmd .= " -mask non-dna ";
   $cmd .= " -from fasta ";
