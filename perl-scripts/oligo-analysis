@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.153 2010/11/24 03:40:32 jvanheld Exp $
+# $Id: oligo-analysis,v 1.154 2010/11/25 05:04:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.153 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.154 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -270,6 +270,8 @@ if ($background_model eq "equi") {
     close $alpha;
 }
 
+
+
 ################################################################
 ## Normalize alphabet (sum must be 1)
 if (($alphabet) && ($background_model ne "bernoulli")) {
@@ -323,6 +325,15 @@ if ($return{'table'}) {
   }
 
 
+  ## Group patterns per pair of reverse complements
+  if ($sum_rc) {
+    if ($group_rc) {
+      &GroupRC();
+    } else {
+      &UngroupRC();
+    }
+  }
+
   ## Check some thresholds before calculating other scores
   &CheckThresholds("exp_freq") if ($return{'exp_freq'}); ## Check thresholds on expected frequencies
   &CheckThresholds("occ") if ($return{occ}); ## Check thresholds on occurrences
@@ -336,15 +347,16 @@ if ($return{'table'}) {
   &CalcRatio() if ($return{'ratio'});
   &CalcProba() if ($return{'proba'}) ;
 
-  ## I don't remember why I moved RC grouping after all computations
-  ## This seems rather inefficient
-  if ($sum_rc) {
-    if ($group_rc) {
-      &GroupRC();
-    } else {
-      &UngroupRC();
-    }
-  }
+#   ## I don't remember why I moved RC grouping after all computations
+#   ## This seems rather inefficient
+#   if ($sum_rc) {
+#     if ($group_rc) {
+#       &GroupRC();
+#     } else {
+#       &UngroupRC();
+#     }
+#   }
+
   &PrintResult();
 }
 
@@ -395,6 +407,32 @@ sub CountOligos {
 
   if ($quick_count) {
     %patterns = &CountWords();
+
+    ## count-words does not inform us about te number and length of
+    ## the sequences, we do it separately
+    if (($main::verbose >= 1) && ($infile{input})) {
+      my $cmd = $SCRIPTS."/sequence-lengths -i ".$infile{input};
+      open SEQLEN,  "$cmd |";
+      while (<SEQLEN>) {
+	next unless (/\S/);
+	next if (/^;/);
+	next if (/^#/);
+	$sequence_number++;
+	chomp;
+	my ($current_id, $seq_length) = split("\t");
+	$id_list[$sequence_number] = $current_id;
+	$seq_length[$sequence_number] = $seq_length;
+	$sum_seq_length += $seq_length[$sequence_number];
+	&RSAT::message::Debug( $sequence_number, $current_id, $seq_length, $sum_seq_length) if ($main::verbose >= 5);
+      }
+      close(SEQLEN);
+    } else {
+      $sequence_number = "NA (quick mode)";
+      $sum_seq_length = "NA (quick mode)";
+    }
+    $discarded_occurrences = "NA (quick mode)";
+    $discarded_residues = "NA (quick mode)";
+    $nb_possible_pos = "NA (quick mode)";
 
   } else {
 
@@ -602,7 +640,8 @@ sub CountOligos {
 	delete $patterns{$pattern_seq};
       }
     }
-    $nb_possible_pos -= $discarded_occurrences;
+    $nb_possible_pos -= $discarded_occurrences if (&IsNatural($nb_possible_pos));
+
     foreach $letter (keys %residue_occ) {
       if ((($seq_type eq "DNA") && ($letter =~ /[^atcg]/i)) ||
 	  (($seq_type eq "protein") && ($letter =~ /[^acdefghiklmnpqrstvwxy]/i))) {
@@ -1225,128 +1264,128 @@ sub CalcLikelihood {
 sub CalcProba {
   &RSAT::message::TimeWarn("Computing probabilities") if ($main::verbose >= 2);
 
-    #### converts threshold on occurence significance index into a
-    #### threshold on occurrence probability
-#    if (defined($lth{occ_sig})) {
-#	$uth{occ_P} = exp(-$lth{occ_sig}*log(10))/$nb_possible_oligos;
-#    }
+  #### converts threshold on occurence significance index into a
+  #### threshold on occurrence probability
+  #    if (defined($lth{occ_sig})) {
+  #	$uth{occ_P} = exp(-$lth{occ_sig}*log(10))/$nb_possible_oligos;
+  #    }
 
-    #### converts threshold on mseq significance index into a
-    #### threshold on mseq probability
-    if (defined($lth{ms_sig})) {
-	$uth{ms_P} = exp(-$lth{ms_sig}*log(10))/$nb_possible_oligos;
+  #### converts threshold on mseq significance index into a
+  #### threshold on mseq probability
+  if (defined($lth{ms_sig})) {
+    $uth{ms_P} = exp(-$lth{ms_sig}*log(10))/$nb_possible_oligos;
+  }
+
+  ### calculate oligo probabilities
+  foreach $pattern_seq (sort keys %patterns) {
+    warn sprintf("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n",
+		 $patterns{$pattern_seq}->{occ},
+		 $patterns{$pattern_seq}->{'exp_occ'},
+		 $patterns{$pattern_seq}->{'exp_freq'},
+		 $patterns{$pattern_seq}->{notforb}
+		) if ($verbose >= 4);
+
+    if ($patterns{$pattern_seq}->{'exp_freq'} <= 0) {
+      &Warning(join "\t", "Cannot calculate probability for pattern", $pattern_seq,
+	       "Invalid expected frequency",
+	       $patterns{$pattern_seq}->{'exp_freq'});
+      $patterns{$pattern_seq}->{'exp_occ'} = "NA";
+      next;
     }
 
-    ### calculate oligo probabilities
-    foreach $pattern_seq (sort keys %patterns) {
-	warn sprintf("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n",
-		     $patterns{$pattern_seq}->{occ},
-		     $patterns{$pattern_seq}->{'exp_occ'},
-		     $patterns{$pattern_seq}->{'exp_freq'},
-		     $patterns{$pattern_seq}->{notforb}
-		     ) if ($verbose >= 4);
+    ## Select the left or right tail of the theoretical distribution
+    if (($tail eq "left") ||
+	(($tail eq "two") &&  ($patterns{$pattern_seq}->{occ} < $patterns{$pattern_seq}->{'exp_occ'}))) {
+      ## Left tail
+      $occ_from = 0;
+      $occ_to = $patterns{$pattern_seq}->{occ};
+      $patterns{$pattern_seq}->{tail} = "left";
+    } else {
+      ## Right tail
+      $occ_from = $patterns{$pattern_seq}->{occ};
+      #	    $occ_to = $patterns{$pattern_seq}->{notforb};
+      $occ_to = $sum_occurrences;
+      $patterns{$pattern_seq}->{tail} = "right";
+    }
 
-	if ($patterns{$pattern_seq}->{'exp_freq'} <= 0) {
-	    &Warning(join "\t", "Cannot calculate probability for pattern", $pattern_seq,
-		     "Invalid expected frequency",
-		     $patterns{$pattern_seq}->{'exp_freq'});
-	    $patterns{$pattern_seq}->{'exp_occ'} = "NA";
-	    next;
-	}
-
-	## Select the left or right tail of the theoretical distribution
-	if (($tail eq "left") ||
-	    (($tail eq "two") &&  ($patterns{$pattern_seq}->{occ} < $patterns{$pattern_seq}->{'exp_occ'}))) {
-	    ## Left tail
-	    $occ_from = 0;
-	    $occ_to = $patterns{$pattern_seq}->{occ};
-	    $patterns{$pattern_seq}->{tail} = "left";
-	} else {
-	    ## Right tail
-	    $occ_from = $patterns{$pattern_seq}->{occ};
-#	    $occ_to = $patterns{$pattern_seq}->{notforb};
-	    $occ_to = $sum_occurrences;
-	    $patterns{$pattern_seq}->{tail} = "right";
-	}
-
-	if ($method =~ /calibration/i) {
-	    if ($patterns{$pattern_seq}->{'exp_occ'} < $patterns{$pattern_seq}->{'exp_var'}) {
-		#### Fit a negative binomial
-		($p, $k, $patterns{$pattern_seq}->{occ_P}) = &sum_of_negbin2($patterns{$pattern_seq}->{'exp_occ'},
-									       $patterns{$pattern_seq}->{'exp_var'},
-									       $occ_from,
-									       $occ_to);
-		$patterns{$pattern_seq}->{fitted} = "negbin";
-	    } else {
-		#### Fit a Poisson
-		$patterns{$pattern_seq}->{occ_P} = &sum_of_poisson($patterns{$pattern_seq}->{'exp_occ'},
+    if ($method =~ /calibration/i) {
+      if ($patterns{$pattern_seq}->{'exp_occ'} < $patterns{$pattern_seq}->{'exp_var'}) {
+	#### Fit a negative binomial
+	($p, $k, $patterns{$pattern_seq}->{occ_P}) = &sum_of_negbin2($patterns{$pattern_seq}->{'exp_occ'},
+								     $patterns{$pattern_seq}->{'exp_var'},
 								     $occ_from,
 								     $occ_to);
-		$patterns{$pattern_seq}->{fitted} = "Poisson";
-	    }
-	} else {
-	    $patterns{$pattern_seq}->{occ_P} = &sum_of_binomials($patterns{$pattern_seq}->{'exp_freq'},
-								 $sum_occurrences,
-								 $occ_from,
-								 $occ_to);
-#	    &RSAT::message::Debug($pattern_seq,
-#				  $patterns{$pattern_seq}->{'exp_freq'},
-#				  $patterns{$pattern_seq}->{forbocc},
-#				  $patterns{$pattern_seq}->{notforb},
-#				  $occ_from,
-#				  $occ_to,
-#				  $patterns{$pattern_seq}->{occ_P}
-#				 ) if ($main::verbose >= 10);
-	}
-
-	## Count the number of tests
-	$main::nb_tested_patterns++;
-
-#	#### check thresholds on occurrence probability ####
-#	&CheckPatternThresholds("occ_P", $pattern_seq);
-#	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
-
-	#### check thresholds on occurrence probability ####
-#	&CheckPatternThresholds("occ_sig", $pattern_seq);
-#	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
-
-	#### matching seq probability
-	if ($return{'mseq'}) {
-	    ### probability of the observed number of matching sequences ####
-	    $avg_mseq_proba = $patterns{$pattern_seq}->{exp_ms}/$sequence_number;
-	    $patterns{$pattern_seq}->{ms_P} = &binomial_boe($avg_mseq_proba, $sequence_number, $patterns{$pattern_seq}->{mseq});
-
-	    #### check threshold on mseq probability ####
-	    if ($patterns{$pattern_seq}->{ms_P} > $uth{ms_P}) {
-		delete $patterns{$pattern_seq};
-		next;
-	    }
-
-	    ### Significance index for number of matching sequences
-	    if ($nb_possible_oligos > 0) {
-		$patterns{$pattern_seq}->{ms_E} = $nb_possible_oligos*$patterns{$pattern_seq}->{ms_P};
-		if ($patterns{$pattern_seq}->{ms_P} > 0) {
-		    $patterns{$pattern_seq}->{ms_sig} = -log($patterns{$pattern_seq}->{ms_E})/log(10);
-		} else {
-		    $patterns{$pattern_seq}->{ms_sig} = $MAX_SIG;
-		}
-	    }
-	}
+	$patterns{$pattern_seq}->{fitted} = "negbin";
+      } else {
+	#### Fit a Poisson
+	$patterns{$pattern_seq}->{occ_P} = &sum_of_poisson($patterns{$pattern_seq}->{'exp_occ'},
+							   $occ_from,
+							   $occ_to);
+	$patterns{$pattern_seq}->{fitted} = "Poisson";
+      }
+    } else {
+      $patterns{$pattern_seq}->{occ_P} = &sum_of_binomials($patterns{$pattern_seq}->{'exp_freq'},
+							   $sum_occurrences,
+							   $occ_from,
+							   $occ_to);
+      #	    &RSAT::message::Debug($pattern_seq,
+      #				  $patterns{$pattern_seq}->{'exp_freq'},
+      #				  $patterns{$pattern_seq}->{forbocc},
+      #				  $patterns{$pattern_seq}->{notforb},
+      #				  $occ_from,
+      #				  $occ_to,
+      #				  $patterns{$pattern_seq}->{occ_P}
+      #				 ) if ($main::verbose >= 10);
     }
 
+    ## Count the number of tests
+    $main::nb_tested_patterns++;
 
-    ## Corrections or multi-testing
-    &MultiTestCorrections($main::nb_tested_patterns, %patterns);
+    #	#### check thresholds on occurrence probability ####
+    #	&CheckPatternThresholds("occ_P", $pattern_seq);
+    #	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
 
-    #### threshold filtering ####
-    &CheckThresholds("occ_P");
-    &CheckThresholds("occ_E");
-    &CheckThresholds("occ_sig");
-    &CheckThresholds("ms_P");
-    &CheckThresholds("ms_E");
-    &CheckThresholds("ms_sig");
+    #### check thresholds on occurrence probability ####
+    #	&CheckPatternThresholds("occ_sig", $pattern_seq);
+    #	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
 
-} ### CalcProba
+    #### matching seq probability
+    if ($return{'mseq'}) {
+      ### probability of the observed number of matching sequences ####
+      $avg_mseq_proba = $patterns{$pattern_seq}->{exp_ms}/$sequence_number;
+      $patterns{$pattern_seq}->{ms_P} = &binomial_boe($avg_mseq_proba, $sequence_number, $patterns{$pattern_seq}->{mseq});
+
+      #### check threshold on mseq probability ####
+      if ($patterns{$pattern_seq}->{ms_P} > $uth{ms_P}) {
+	delete $patterns{$pattern_seq};
+	next;
+      }
+
+      ### Significance index for number of matching sequences
+      if ($nb_possible_oligos > 0) {
+	$patterns{$pattern_seq}->{ms_E} = $nb_possible_oligos*$patterns{$pattern_seq}->{ms_P};
+	if ($patterns{$pattern_seq}->{ms_P} > 0) {
+	  $patterns{$pattern_seq}->{ms_sig} = -log($patterns{$pattern_seq}->{ms_E})/log(10);
+	} else {
+	  $patterns{$pattern_seq}->{ms_sig} = $MAX_SIG;
+	}
+      }
+    }
+  }
+
+
+  ## Corrections or multi-testing
+  &MultiTestCorrections($main::nb_tested_patterns, %patterns);
+
+  #### threshold filtering ####
+  &CheckThresholds("occ_P");
+  &CheckThresholds("occ_E");
+  &CheckThresholds("occ_sig");
+  &CheckThresholds("ms_P");
+  &CheckThresholds("ms_E");
+  &CheckThresholds("ms_sig");
+
+}				### CalcProba
 
 
 ################################################################
@@ -1573,10 +1612,10 @@ sub Verbose {
 	    printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
 	    printf $out "; %-29s\t%s\n", "Masked characters", $mask if ($mask);
 	    if ($seq_type eq "DNA") {
-		printf $out "; %-29s\t%d\t%s\n", "discarded residues", $discarded_residues, " (other letters than ACGT)";
-		printf $out "; %-29s\t%d\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain discarded residues)";
+		printf $out "; %-29s\t%s\t%s\n", "discarded residues", $discarded_residues, " (other letters than ACGT)";
+		printf $out "; %-29s\t%s\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain discarded residues)";
 	    }
-	    printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
+	    printf $out "; %-29s\t%s\n", "nb possible positions", $nb_possible_pos;
 	    printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
 	    if ($noov eq "-noov") {
 		printf $out "; %-29s\t%s\n", "total overlapping occurrences", $sum_overlaps;
