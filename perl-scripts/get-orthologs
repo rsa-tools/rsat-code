@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.51 2010/11/06 07:45:35 jvanheld Exp $
+# $Id: get-orthologs,v 1.52 2010/11/26 15:07:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -282,7 +282,7 @@ package main;
 				    $main::ref_taxon),
 			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
 			      ) if ($main::ref_taxon) ;
-       &RSAT::error::FatalError(join("\t", "There is no  supported organism in the orgnisms list",
+       &RSAT::error::FatalError(join("\t", "There is no supported organism in the organisms list",
 				    $main::orglist_file),
 			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
 			      ) if ($main::orglist_file) ;
