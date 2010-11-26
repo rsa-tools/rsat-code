@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.19 2010/10/19 23:00:11 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.20 2010/11/26 14:08:38 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -462,3 +462,65 @@ install_rnsc:
 	@echo "	export PATH=${RNSC_BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH ${RNSC_BIN_DIR}:\$$PATH"
+
+################################################################
+## Install the BLAST 32 linux
+BLAST_BASE_DIR=${RSAT}/app_sources/blast
+BLAST_LINUX_ARCHIVE=blast-*-ia32-linux.tar.gz
+BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
+BLAST_BIN_DIR=${RSAT}/bin
+BLAST_SOURCE_DIR=blast_latest
+download_blast_linux:
+	@mkdir -p ${BLAST_BASE_DIR}
+	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_LINUX_ARCHIVE}"
+	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_LINUX_ARCHIVE}; rm -r ${BLAST_SOURCE_DIR};mv ${BLAST_LINUX_ARCHIVE} ..;mv blast-*  ${BLAST_SOURCE_DIR})
+	@echo ${BLAST_BASE_DIR}
+
+install_blast_linux:
+	@mkdir -p ${BLAST_BIN_DIR}
+	(cd ${BLAST_BIN_DIR}; \
+	ln -fs ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall blastall; \
+	ln -fs ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb formatdb; \
+	)
+	@echo "Please edit the RSAT configuration file"
+	@echo "	${RSAT}/RSAT_config.props"
+	@echo "and copy-paste the following line to specify the BLAST bin pathway"
+	@echo "	blast_dir=${BLAST_BIN_DIR}"
+	@echo "This will allow RSAT programs to idenfity BLAST path on this server."
+	@echo
+	@echo "You can also add the BLAST bin directory in your path."
+	@echo "If your shell is bash"
+	@echo "	export PATH=${BLAST_BIN_DIR}:\$$PATH"
+	@echo "If your shell is csh or tcsh"
+	@echo "	setenv PATH ${BLAST_BIN_DIR}:\$$PATH"
+
+################################################################
+## Install the BLAST 32 MAC
+BLAST_BASE_DIR=${RSAT}/app_sources/blast
+BLAST_MAC_ARCHIVE=blast-*-universal-macosx.tar.gz
+BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
+BLAST_BIN_DIR=${RSAT}/bin
+BLAST_SOURCE_DIR=blast_latest
+download_blast_mac:
+	@mkdir -p ${BLAST_BASE_DIR}
+	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_MAC_ARCHIVE}"
+	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_MAC_ARCHIVE}; rm -r ${BLAST_SOURCE_DIR};mv ${BLAST_MAC_ARCHIVE} ..;mv blast-*  ${BLAST_SOURCE_DIR})
+	@echo ${BLAST_BASE_DIR}
+
+install_blast_mac:
+	@mkdir -p ${BLAST_BIN_DIR}
+	(cd ${BLAST_BIN_DIR}; \
+	ln -fs ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall blastall; \
+	ln -fs ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb formatdb; \
+	)
+	@echo "Please edit the RSAT configuration file"
+	@echo "	${RSAT}/RSAT_config.props"
+	@echo "and copy-paste the following line to specify the BLAST bin pathway"
+	@echo "	blast_dir=${BLAST_BIN_DIR}"
+	@echo "This will allow RSAT programs to idenfity BLAST path on this server."
+	@echo
+	@echo "You can also add the BLAST bin directory in your path."
+	@echo "If your shell is bash"
+	@echo "	export PATH=${BLAST_BIN_DIR}:\$$PATH"
+	@echo "If your shell is csh or tcsh"
+	@echo "	setenv PATH ${BLAST_BIN_DIR}:\$$PATH"
