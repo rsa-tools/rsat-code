@@ -383,7 +383,7 @@ Reference taxon, in which orthologous genes have to be collected.
  ## Organism lis
 =pod
 
-=item	B<-org_list orgnisms_list_file>
+=item	B<-org_list organisms_list_file>
 
 This option gives the posibility to analyse a given set of organisms
 instead of a taxon. This way orthologs for a gene are only searched
