@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.25 2010/11/24 02:14:34 rsat Exp $
+# $Id: server.mk,v 1.26 2010/11/27 16:26:10 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -134,97 +134,6 @@ from_cifn:
 		${RSYNC} jvanheld@${CCG}:rsa-tools/$${folder}/* ./$${folder} ; \
 	done
 
-SRC=perl-scripts
-COMPIL=compil/
-PROGRAMS=	\
-	oligo-analysis	\
-	retrieve-seq	\
-	dyad-analysis	\
-	dna-pattern	\
-	orf-info
-LIBRARIES=\
-	RSA.stat.lib 	\
-#	RSA.classes	\
-#	RSA.seq.lib	\
-#	RSA.cgi.lib	\
-#	RSA.lib 	
-compile:
-	@mkdir -p ${COMPIL}/lib
-	@mkdir -p ${COMPIL}/bin
-	@(cd  ${COMPIL}/bin; ln -fs ../lib)
-	@cp -f config/default.config ${COMPIL}/RSA.config
-
-	@for lb in ${LIBRARIES}; do \
-		echo "compiling library $${lb}"; \
-		cp -f ${SRC}/lib/$${lb} ${COMPIL}/lib/$${lb}.pl ; \
-		(cd ${COMPIL}/lib; pwd; perlcc $${lb}.pl && rm -f $${lb}.pl); \
-	done
-
-	@for pgm in ${PROGRAMS}; do \
-		echo "compiling program $${pgm}"; \
-		cp -f ${SRC}/$${pgm} ${COMPIL}/bin/$${pgm}.pl ; \
-		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
-	dgone
-
-# #### Obsolete
-# #### Instal the GD library
-# GD_DISTRIB_DIR=stein.cshl.org/WWW/software/GD/
-# GD_DISTRIB= http://${GD_DISTRIB_DIR}/GD.pm.tar.gz
-# get_gd:
-# 	mkdir -p lib-sources
-# 	(cd lib-sources; \
-# 	${WGET} ${GD_DISTRIB})
-
-
-# GD_VERSION=2.06
-# uncompress_gd:
-# 	(cd lib-sources/${GD_DISTRIB_DIR};		\
-# 	gunzip -c GD.pm.tar.gz | tar -xpf - ;		\
-
-# install_gd:
-# 	(cd lib-sources/${GD_DISTRIB_DIR}/GD-${GD_VERSION} ;	\
-# 	perl Makefile.PL INSTALLDIRS=site			\
-# 		INSTALLSITELIB=${RSA}/extlib			\
-# 		INSTALLSITEARCH=${RSA}/extlib/arch ;		\
-# 	make ;							\
-# 	make install ;						\
-# 	)
-
-################################################################
-#### Install programs from third parties
-APP_DIR=${RSA}/applications
-PROGRAM=consensus
-PROGRAM_DIR=${APP_DIR}/${PROGRAM}
-PROGRAM_ARCHIVE=`ls -1t ${RSA}/app-sources/${PROGRAM}* | head -1`
-uncompress_program:
-	@echo installing ${PROGRAM_ARCHIVE} in dir ${PROGRAM_DIR}
-	@mkdir -p ${PROGRAM_DIR}
-	(cd  ${PROGRAM_DIR} ;		\
-	gunzip -c ${PROGRAM_ARCHIVE} | tar -xvf - )
-
-INSTALLED_PROGRAM=`ls -1t ${APP_DIR}/${PROGRAM}/${PROGRAM}*`
-install_program:
-	(cd ${PROGRAM_DIR}; make ${INSTALL_OPT})
-	(cd bin; ln -fs ${INSTALLED_PROGRAM} ./${PROGRAM})
-
-install_patser:
-	${MAKE} uncompress_program PROGRAM=patser
-	${MAKE} install_program PROGRAM=patser
-
-install_consensus:
-	${MAKE} uncompress_program PROGRAM=consensus
-	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
-
-GIBBS_DIR=${APP_DIR}/gibbs/gibbs9_95
-install_gibbs:
-	${MAKE} uncompress_program PROGRAM=gibbs
-	(cd ${GIBBS_DIR}; ./compile)
-	(cd bin; ln -fs ${GIBBS_DIR}/gibbs ./gibbs)
-
-install_ext_apps:
-	${MAKE} install_consensus
-	${MAKE} install_patser
-	${MAKE} install_gibbs
 
 ################################################################
 #### clean temporary directory
