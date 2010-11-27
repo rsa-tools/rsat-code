@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.41 2010/11/04 20:48:53 amedina Exp $
+# $Id: footprint-discovery,v 1.42 2010/11/27 13:45:58 jvanheld Exp $
 #
 ############################################################
 
@@ -48,23 +48,39 @@ footprint-discovery [-i inputfile] -o [output_prefix] \
      [-v #] [...]
 
 
-=head2 EXAMPLES
+=head1 EXAMPLES
 
-=head2 single-gene footprint discovery
+=head2 Single-gene footprint discovery
 
 Discover conserved motifs in the promoters of the orthologs of lexA in
 Enterobacteriales.
 
- footprint-discovery  -v 1 -index -org Escherichia_coli_K12 -taxon Enterobacteriales \
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter -index \
 		-to_matrix -bg_model taxfreq -q lexA
 
-=head2 footprint discovery for all genes of a genome
+=head2 Analysis of a few genes
+
+Discover conserved motifs in the promoters of the orthologs of lexA in
+Enterobacteriales.
+
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
+		-return occ,proba,rank -filter -index \
+		-to_matrix -bg_model taxfreq \
+                -sep_genes -q lexA -q recA -q uvrA
+
+Note the option -sep_genes indicating that the genes have to be
+analyzed separately rather than grouped.
+
+The genes can also be specified in a file with the option -genes.
+
+=head2 Footprint discovery applied iteratively to each gene of a genome
 
 Iterate footprint discovery for each gene separately.
 
- footprint-discovery  -v 1 -index -org Escherichia_coli_K12 -taxon Enterobacteriales \
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter -index \
 		-to_matrix -bg_model taxfreq -all_genes -sep_genes
@@ -138,6 +154,8 @@ discovery for the prediction of bacterial cis-regulatory elements
 
 =item dyad-analysis
 
+=item footprint-scan
+
 =back
 
 =head1 WISH LIST
@@ -183,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.41 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -227,7 +245,6 @@ package main;
 #  local $max_genes = undef;     ## Analyze a restricted number of genes
 
 #  local $supported_organism;
-
 
   local $map_format = "png";	## Image format
 
@@ -295,7 +312,7 @@ sub RunFootprintDisco {
   ################################################################
   ## Initialize output directory + output files
   local $query_prefix = &GetQueryPrefix();
-  local $outfile{prefix} = &GetOutfilePrefix();
+  local $outfile{prefix} = &GetOutfilePrefix($query_prefix);
 #  $outfile{prefix} .= "_".$bg_model;
   &InitOutput();
 
