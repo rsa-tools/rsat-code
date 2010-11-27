@@ -234,47 +234,60 @@ sub GetQueryPrefix {
 ## If not specified by the user, define it automatically
 ## If genes are to be analyzed separately, also define output prefix automatically
 sub GetOutfilePrefix {
-    if  ( (!defined($main::outfile{prefix}))
-	  || ($outfile{prefix} eq "") ){
-	&RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
+  my ($query_prefix) = @_;
+  my $current_prefix = "";
+
+  if ( (!defined($main::outfile{prefix}))
+       || ($outfile{prefix} eq "") ) {
+    $outfile{prefix} = ".";
+#    &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
+  }
+  ## die $outfile{prefix};
+
+
+  ## Gene-wise prefix
+  if ($main::sep_genes) {
+    if ($query_prefix) {
+      my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
+      my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
+      if ($bg_model) {
+	$output_dir .= "/".$bg_model;
+	$output_file_prefix .= "_".$bg_model;
+      }
+      if ($infer_operons) {
+	$output_dir .= "_operons";
+	$output_file_prefix .= "_operons";
+      }
+      $current_prefix = join("/", $output_dir, $output_file_prefix);
+      &RSAT::message::Info("Automatic definition of the output prefix", $current_prefix) if ($main::verbose >= 2);
     }
-    #die $outfile{prefix};
-    if ($main::sep_genes)
-    {
-	if ($query_prefix) {
-	    my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
-	    my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
-	    if ($bg_model) {
-		$output_dir .= "/".$bg_model;
-		$output_file_prefix .= "_".$bg_model;
-	    }
-	    if ($infer_operons) {
-		$output_dir .= "_operons";
-		$output_file_prefix .= "_operons";
-	    }
-	    $local_prefix = join("/", $output_dir, $output_file_prefix);
-		  &RSAT::message::Info("Automatic definition of the output prefix", $local_prefix) if ($main::verbose >= 2);
-	} 
-    } 
-    else {
-	#if ($query_prefix) {
-	    my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
-	    my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
-	    if ($bg_model) {
-		$output_dir .= "/".$bg_model;
-		$output_file_prefix .= "_".$bg_model;
-	    }
-	    if ($infer_operons) {
-		$output_dir .= "_operons";
-		$output_file_prefix .= "_operons";
-	    }
-	    $local_prefix = join("/", $output_dir, $output_file_prefix);
-		  &RSAT::message::Info("Automatic definition of the output prefix", $local_prefix) if ($main::verbose >= 2);
-	#} 
-	
+
+    ## Prefix for multiple-gene analysis
+  } else {
+    #if ($query_prefix) {
+    my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
+    my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
+    if ($bg_model) {
+      $output_dir .= "/".$bg_model;
+      $output_file_prefix .= "_".$bg_model;
     }
-    #die $local_prefix;
-    return ($local_prefix);
+    if ($infer_operons) {
+      $output_dir .= "_operons";
+      $output_file_prefix .= "_operons";
+    }
+    $current_prefix = join("/", $output_dir, $output_file_prefix);
+    &RSAT::message::Info("Automatic definition of the output prefix", $current_prefix) if ($main::verbose >= 2);
+    #}
+  }
+
+  #die $current_prefix;
+
+#  &RSAT::message::Info("GetOutfilePrefix", 
+#		       "query_prefix", $query_prefix,
+#		       "outfile{prefix}", $outfile{prefix},
+#		       "current_prefix", $current_prefix;
+#		      ) if ($main::verbose >= 5);
+  return ($current_prefix);
 }
 
 
@@ -590,7 +603,7 @@ on the prior execution of some other tasks in the workflow. Selecting
 tasks before their prerequisite tasks have been completed will provoke
 fatal errors.
 
-Avilable Tasks:
+B<Supported tasks:>
 
 =over
 
@@ -599,35 +612,35 @@ I<footprint-scan>).
 
 =over
 
-=item all
+=item I<all>
 
 Run all supported tasks. If no task is specified, all tasks are
 performed.
 
-=item operons
+=item I<operons>
 
 Infer operons (using I<infer-operons>. This option should be used only for
 Bacteria.
 
-=item query_seq
+=item I<query_seq>
 
 Retrieve upstream sequence of the query genes (using I<retrieve-seq>).
 
-=item orthologs
+=item I<orthologs>
 
 Identify theorthologs of the query genes in the selected taxon (using
 I<get-orthologs>).
 
-=item ortho_seq
+=item I<ortho_seq>
 
 Retrieve upstream sequences of the orthologs (using
 I<retrieve-seq-multigenome>).
 
-=item purge
+=item I<purge>
 
 Purge upstream sequences of the orthologs (using I<purge-seq>).
 
-=item synthesis
+=item I<synthesis>
 
 Generate synthetic tables with links to the results.
 
@@ -637,23 +650,23 @@ Generate synthetic tables with links to the results.
 
 =over
 
-=item filter_dyads
+=item I<filter_dyads>
 
 Detect all dyads present with at elast one occurrence in the upstream
 sequence of the query gene (using I<dyad-analysis>). Those dyads will
 be used as filter if the option I<-filter> has been specifed.
 
-=item dyads
+=item I<dyads>
 
 Detect significantly over-represented in upstream sequences of
 orhtologs (using I<dyad-analysis>).
 
-=item map
+=item I<map>
 
 Draw feature maps showing the location of over-represented dyads in
 upstream sequences of promoters (using I<feature-map>).
 
-=item index
+=item I<index>
 
 Generate an index file for each gene separately. The index file is in
 the gene-specific directory, it is complementary to the general index
@@ -665,13 +678,13 @@ file generated with the task "synthesis".
 
 =over
 
-=item occ_sig
+=item I<occ_sig>
 
 Compute the significance of number of matrix hit occurrences as a
 function of the weight score (I<using matrix-scan> and
 I<matrix-scan-quick>).
 
-=item occ_sig_graph
+=item I<occ_sig_graph>
 
 Generate graphs showing the distributions of occurrences and their
 significances, as a function of the weight score (using >XYgraph>).
@@ -681,7 +694,7 @@ significances, as a function of the weight score (using >XYgraph>).
 Scan upstream sequences to detect hits above a given threshold (using
 I<matrix-scan>).
 
-=item map
+=item I<map>
 
 Draw the feature map of the hits (using I<feature-mp>).
 
