@@ -236,7 +236,7 @@ print $query->checkbox(-name=>'sort',
 
 print "<HR width=550 align=left>\n";
 
-print "<font color=red><B>Warning!</B> position-analysis is time-consuming. We recommend email output.</font><BR>\n";
+print "<font color=red><B>Warning!</B> position-analysis is time-consuming. If the result is not displayed after 5 minutes, try email output.</font><BR>\n";
 
 
 ### send results by email or display on the browser
