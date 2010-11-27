@@ -73,67 +73,67 @@ sub CheckFootprintParameters {
 
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
-  if ((scalar(keys(%task)) == 0) || ($task{all})){
+  if ((scalar(keys(%task)) == 0) || ($task{all})) {
     foreach my $task (keys %supported_task) {
-#      &RSAT::message::Debug("Auto adding task", $task);
+      #      &RSAT::message::Debug("Auto adding task", $task);
       $task{$task} = 1;
     }
   }
   &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 1);
 
   ## Check Reference taxon or org_list
-    &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
-	unless ($main::taxon || $main::orglist_file);
-    &RSAT::error::FatalError("-taxon and -org_list option are mutually exclusive")
-	if (($main::taxon) && ($main::orglist_file));
+  &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
+    unless ($main::taxon || $main::orglist_file);
+  &RSAT::error::FatalError("-taxon and -org_list option are mutually exclusive")
+    if (($main::taxon) && ($main::orglist_file));
 
   ## Check option -no_purge and -org_list
-  if ($main::no_purge){
- &RSAT::error::FatalError("-no_purge option can only be used if -org_list option is active")
-	unless ($main::orglist_file) ;
+  if ($main::no_purge) {
+    &RSAT::error::FatalError("-no_purge option can only be used if -org_list option is active")
+      unless ($main::orglist_file) ;
   }
 
   
-#   &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
-#     unless ($taxon);
+  #   &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
+  #     unless ($taxon);
 
 
-#check if there is is at least one organism for that Taxon
-   my @organisms = &CheckTaxon($taxon) if $main::taxon ;
+  #check if there is is at least one organism for that Taxon
+  my @organisms = &CheckTaxon($taxon) if $main::taxon ;
 
- ##open orglist
-    if ($main::orglist_file){
-	 ($main::orglist) = &OpenInputFile($main::orglist_file);
-	while (<$main::orglist>) {
-	    chomp();
-	    s/\r/\n/g; ## Suppress Windows-specific carriage return
-	    next if /^;/; ## Comment line
-	    next if /^\#/; ## Header line
-	    next if /^\--/; ## SQL comment line
-	    next unless /\S/; ## Empty line
-	    my ($query_org) = split "\t";
-	    $query_org = &trim($query_org); ## Remove leading and trailing spaces
-	    $main::query_orgs{$query_org}=1;
-	}
-	close $main::orglist if ($main::orglist_file);
-	&RSAT::error::FatalError(join("\t", "The organism file should contain at least one valid organism name.",
-				      $main::orglist_file),
-	    ) unless (%main::query_orgs) ;
+  ##open orglist
+  if ($main::orglist_file) {
+    ($main::orglist) = &OpenInputFile($main::orglist_file);
+    while (<$main::orglist>) {
+      chomp();
+      s/\r/\n/g;	  ## Suppress Windows-specific carriage return
+      next if /^;/;		## Comment line
+      next if /^\#/;		## Header line
+      next if /^\--/;		## SQL comment line
+      next unless /\S/;		## Empty line
+      my ($query_org) = split "\t";
+      $query_org = &trim($query_org); ## Remove leading and trailing spaces
+      $main::query_orgs{$query_org}=1;
     }
-
-  if(%main::query_orgs){
-      foreach my $org (keys (%main::query_orgs)) {
-	  if ($supported_organism{$org}){
-	      push @ref_organisms, $org;
-	  }
-      }
+    close $main::orglist if ($main::orglist_file);
+    &RSAT::error::FatalError(join("\t", "The organism file should contain at least one valid organism name.",
+				  $main::orglist_file),
+			    ) unless (%main::query_orgs) ;
   }
-      #print join ("\t",keys (%main::query_orgs));
+
+  if (%main::query_orgs) {
+    foreach my $org (keys (%main::query_orgs)) {
+      if ($supported_organism{$org}) {
+	push @ref_organisms, $org;
+      }
+    }
+  }
+  #print join ("\t",keys (%main::query_orgs));
   #print join ("\t",(@ref_organisms))."supported";
   &RSAT::error::FatalError(join("\t", "There is no supported organism in the organism list ",
-				    $main::orglist_file),
-			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
-      ) if (($main::orglist_file) && (scalar(@ref_organisms) == 0));
+				$main::orglist_file),
+			   "Use the command supported-organisms -format full to obtain the supported taxonomy."
+			  ) if (($main::orglist_file) && (scalar(@ref_organisms) == 0));
   
   ## Check organism
   &RSAT::error::FatalError("You must specify a organism (option -org)")
@@ -156,10 +156,10 @@ sub CheckFootprintParameters {
   if ($infile{genes}) {
     my ($in) = &OpenInputFile($infile{genes});
     while (<$in>) {
-      next if (/^--/); ## Skip mysql-type comment lines
-      next if (/^;/); ## Skip comment lines
-      next if (/^#/); ## Skip header lines
-      next unless (/\S/); ## Skip empty lines
+      next if (/^--/);		## Skip mysql-type comment lines
+      next if (/^;/);		## Skip comment lines
+      next if (/^#/);		## Skip header lines
+      next unless (/\S/);	## Skip empty lines
       chomp;
       my @fields = split /\s+/;
       my $query = shift @fields;
@@ -178,8 +178,8 @@ sub CheckFootprintParameters {
   }
 
   ## Get maximum number of genes if limited
-  if ($max_genes){
-    if (scalar(@query_genes)>$max_genes){
+  if ($max_genes) {
+    if (scalar(@query_genes)>$max_genes) {
       &RSAT::message::Warning("The analysis has been limited to the first ", $max_genes,"genes");
       @query_genes= splice(@query_genes,0,$max_genes);
       &RSAT::message::Warning(join("\t","Query genes:",@query_genes)) if ($main::verbose >= 2);
@@ -884,6 +884,7 @@ sub ComputeFilterScan {
     &IndexOneFile("filter genes", $outfile{genes}) if ($create_index);
     $main::skip_gene=1 unless ($filterg=~/\w/);
 }
+
 ################################################################
 ## Identify ortholog genes
 sub GetOrthologs {
@@ -894,15 +895,14 @@ sub GetOrthologs {
   my $cmd = "$SCRIPTS/get-orthologs";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -org ".$organism_name;
-  if ($main::tf_ortho_file){
-      $cmd .= " -org_list ". $main::tf_ortho_file ;
-      &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::tf_ortho_file) if ($main::verbose >= 2);
-  }elsif ($main::orglist_file){
-      $cmd .= " -org_list ". $main::orglist_file ;
-      &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::orglist_file ) if ($main::verbose >= 2);
-  }
-  else{   
-      $cmd .= " -taxon ".$taxon ;
+  if ($main::tf_ortho_file) {
+    $cmd .= " -org_list ". $main::tf_ortho_file ;
+    &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::tf_ortho_file) if ($main::verbose >= 2);
+  } elsif ($main::orglist_file) {
+    $cmd .= " -org_list ". $main::orglist_file ;
+    &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::orglist_file ) if ($main::verbose >= 2);
+  } else {
+    $cmd .= " -taxon ".$taxon ;
   }
   $cmd .= " -return query_name,query_organism -return ident";
   $cmd .= " -uth rank 1";	## BBH criterion
