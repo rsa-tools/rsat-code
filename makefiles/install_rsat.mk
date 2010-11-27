@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.20 2010/11/26 14:08:38 rsat Exp $
+# $Id: install_rsat.mk,v 1.21 2010/11/27 10:05:32 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -23,92 +23,10 @@ RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
-################################################################
-#
-# Servers
-
-CIFN = jvanheld@embnet.cifn.unam.mx:rsa-tools/
-PAULUS = jvanheld@paulus.ulb.ac.be:rsa-tools/
-UPPSALA = jvanheld@bioinformatics.bmc.uu.se:rsa-tools
-LIV = jvanheld@liv.bmc.uu.se:rsa-tools
-RSAT_SERVER = jvanheld@164.15.61.35:${RSAT}
-MEDICEL = root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
-SERVERS = ${CIFN} ${UPPSALA} ${LIV}
-
-#SERVER=${RSAT_SERVER}
-SERVER=${UPPSALA}
 
 ################################################################
-#### from brol to servers
-################################################################
-DIR=perl-scripts
-DIRS=perl-scripts public_html doc
-rsync_servers:
-	for server in ${SERVERS} ; do					\
-		${MAKE} rsync_server SERVER=$${server} DIR=$${dir} ;	\
-	done
-
-rsync_server:
-	@for dir in ${DIRS}; do							\
-		${MAKE} rsync_dir  SERVER=${SERVER} DIR=$${dir} ;	\
-	done
-
-rsync_dir:
-	echo "Synchronizing dir ${DIR} to server ${SERVER}"
-	${RSYNC}  ${OPT} --exclude data --exclude tmp --exclude logs --exclude perl-scripts/lib/arch --exclude qd.pl ${DIR} ${SERVER}/
-
-RSYNC_DATA_CMD=${RSYNC} --exclude 'Mus_musculus*' --exclude 'Homo_sapiens*' public_html/data ${SERVER}/public_html/ 
-rsync_data:
-	@for server in ${SERVERS} ; do					\
-		${MAKE} rsync_data_one_server SERVER=$${server} ;	\
-	done
-
-rsync_data_one_server:
-	@echo "Synchronizing data to server ${SERVER}" 
-	@echo ${RSYNC_DATA_CMD} ;			
-	${RSYNC_DATA_CMD};				
-
-
-ORGS=Saccharomyces_cerevisiae Escherichia_coli_K12 Bacillus_subtilis
-medicel:
-	${RSYNC} config/medicel.config ${MEDICEL}/config/
-	${RSYNC} doc/*.pdf ${MEDICEL}/doc/
-	rsync ${SSH} -ruptvL distrib/* ${MEDICEL}/perl-scripts
-	for org in ${ORGS}; do				\
-		${RSYNC} data/$${org} ${MEDICEL}/data/;	\
-	done
-
-rsync_archives:
-	@for server in ${SERVERS} ; do				\
-		${RSYNC} archives/* $${server}/archives/ ;	\
-	done
-
-################################################################
-#### from servers to brol
-################################################################
-rsync_logs:
-	@for server in ${SERVERS} ; do					\
-		echo "${RSYNC} $${server}/logs/log-file_* logs/" ;	\
-		${RSYNC} $${server}/logs/log-file_* logs/ ;		\
-	done
-
-rsync_config:
-	@for server in ${SERVERS} ; do \
-		${RSYNC} $${server}/config/*.config config/ ;\
-	done
-
-FOLDERS=data pdf_files
-from_ucmb:
-	@for folder in ${FOLDERS}; do \
-		${RSYNC} jvanheld@${PAULUS}:rsa-tools/$${folder} . ; \
-	done
-
-FOLDERS=data 
-from_cifn:
-	@for folder in ${FOLDERS}; do \
-		${RSYNC} jvanheld@${CIFN}:rsa-tools/$${folder}/* ./$${folder} ; \
-	done
-
+## Obsolete: compile some perl scripts to binaries.  This was a test and the
+## results were not very good, the compiled programs were unstable.
 SRC=perl-scripts
 COMPIL=compil/
 PROGRAMS=	\
@@ -140,68 +58,6 @@ compile:
 		cp -f ${SRC}/$${pgm} ${COMPIL}/bin/$${pgm}.pl ; \
 		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
 	dgone
-
-BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -u | grep -v bacteria | xargs `
-BACT=Mycoplasma_genitalium
-
-list_bacteria:
-	@echo "Bacteria to install"
-	@echo ${BACTERIA}
-
-TASK=install_one_bacteria
-iterate_all_bacteria:
-	@for bact in ${BACTERIA}; do				\
-		${MAKE} ${TASK} BACT=$${bact} ;	\
-	done
-
-install_all_bacteria:
-	${MAKE} iterate_all_bacteria TASK=install_one_bacteria
-
-install_one_bacteria:
-	@echo
-	@echo "${DATE}	Installing bacteria ${BACT}"
-	@${MAKE} install_organism ORGANISM=${BACT}		\
-		ORGANISM_DIR=${NCBI_DIR}/Bacteria/${BACT}
-
-
-
-#ORGANISM=Plasmodium_falciparum
-ORGANISM=Homo_sapiens
-ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
-INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
-install_organism:
-	@echo "install log	${INSTALL_LOG}"
-	echo "Parsing organism ${ORGANISM}" 
-	install-organism -v ${V}								\
-		-org ${ORGANISM}							\
-		-task  ${INSTALL_TASK}
-
-POMBE_DIR=/win/databases/downloads/ftp.sanger.ac.uk/pub/yeast/Pombe/CONTIGS/
-install_pombe:
-	echo "Parsing organism Schizosaccharomyces pombe" ;
-#	parse-embl.pl -i ${POMBE_DIR} -org 'Schizosaccharomyces pombe' -v ${V}
-	install-organism -v ${V}											\
-		-org Schizosaccharomyces_pombe									\
-		-features ${RSAT}/data/Schizosaccharomyces_pombe/genome/Gene_Schizosaccharomyces_pombe.tab	\
-		-genome ${RSAT}/data/genome/Contigs_Schizosaccharomyces_pombe.txt				\
-		-format filelist										\
-		-source genbank											\
-		-step config -step start_stop -step ncf -step oligos -step dyads;
-
-################################################################
-#### parse a genome from the genbank genome release
-ORGANISM=Plasmodium_faciparum
-#ORGANISM=Homo_sapiens
-ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
-PARSE_COMMAND=parse-genbank.pl -v ${V} -i ${ORGANISM_DIR} ${OPT}
-parse_organism:
-	${PARSE_COMMAND}
-
-parse_one_bacteria:
-	${MAKE} parse_organism ORGANISM=${BACT} NCBI_DIR=${NCBI_DIR}/Bacteria ${OPT}
-
-parse_all_bacteria:
-	${MAKE} iterate_all_bacteria TASK=parse_one_bacteria
 
 ################################################################
 #### installation of the GD graphical library
