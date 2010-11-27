@@ -95,8 +95,7 @@ print "<BR>\n";
 print "<br/>";
 print "<A HREF='help.convert-background-model.html#item__2ddecimals__23'><B>decimals</B></A>\n";
 print $query->popup_menu(-name=>'decimals',
-			 -Values=>['0',
-				   '1','2','3'],
+			 -Values=>[1..12],
 			 -default=>$default{decimals});
 
 ################################################################
