@@ -56,24 +56,24 @@ $parameters .= " -i $sequence_file -format $sequence_format";
 
 ### return matching positions
 if ($query->param('match_positions')) {
-    $parameters .= " -return sites";
+  $parameters .= " -return sites";
 
-    ### origin ###
-    if ($query->param('origin') =~ /end/i) {
-	$parameters .= " -origin -0";
-    }
-    
-    #### flanking residues for the matching sequences
-    if ($query->param('flanking') =~ /^\d+$/) {
-	$parameters .= " -N ".$query->param('flanking');
-    }
+  ### origin ###
+  if ($query->param('origin') =~ /end/i) {
+    $parameters .= " -origin -0";
+  }
 
-    #### match format
-    if ($query->param('match_format') eq "fasta") {
-	$parameters .= " -match_format fasta";
-    }
-    
-} 
+  #### flanking residues for the matching sequences
+  if ($query->param('flanking') =~ /^\d+$/) {
+    $parameters .= " -N ".$query->param('flanking');
+  }
+
+  #### match format
+  if ($query->param('match_format') eq "fasta") {
+    $parameters .= " -match_format fasta";
+  }
+
+}
 
 ### return sequence limits
 if ($query->param('limits')) {
@@ -84,31 +84,31 @@ if ($query->param('limits')) {
 if ($query->param('notacgt')) {
   $parameters .= " -return notacgt";
 }
-  
+
 
 ### return match count ###
 if ($query->param('counts')) {
-    $parameters .= " -return counts";
-    if (($query->param('threshold') =~ /^\d+$/) && 
-	($query->param('threshold') > 0)) {
-	$parameters .= " -th ".$query->param('threshold');
-    }
-} 
+  $parameters .= " -return counts";
+  if (($query->param('threshold') =~ /^\d+$/) &&
+      ($query->param('threshold') > 0)) {
+    $parameters .= " -th ".$query->param('threshold');
+  }
+}
 
 ### return match scores
 if ($query->param('scores')) {
-    $parameters .= " -return scores";
-} 
+  $parameters .= " -return scores";
+}
 
 ### return match rank
 if ($query->param('rank')) {
     $parameters .= " -return rank";
-} 
+}
 
 ### Sort matches
 if ($query->param('sort')) {
     $parameters .= " -sort";
-} 
+}
 
 ### return match count table
 if ($query->param('table')) {
@@ -123,7 +123,7 @@ if ($query->param('table')) {
 if ($query->param('stats')) {
   $parameters .= " -return stats";
 }
-  
+
 ### prevent overlapping matches
 if (lc($query->param('noov')) eq "on") {
   $parameters .= " -noov";
@@ -147,25 +147,23 @@ if ($query->param('subst') =~ /^\d+$/) {
 
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
-    
-    ### execute the command ###
-    &PipingWarning() if ($query->param('match_positions'));
-    
-    $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$command $parameters |";
-    print "<PRE>$command $parameters </b>" if ($ENV{rsat_echo});
-  
-    ### Print the result on Web page
-    print "<H4>Result</H4>";
-    &PrintHtmlTable(RESULT, $result_file, 1);
-    close RESULT;
-    &PipingForm if ($query->param('match_positions'));
-    print "<HR SIZE = 3>";
 
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+  ### execute the command ###
+  &PipingWarning() if ($query->param('match_positions'));
+
+  $result_file = "$TMP/$tmp_file_name.res";
+  open RESULT, "$command $parameters |";
+  print "<PRE>$command $parameters </b>" if ($ENV{rsat_echo});
+
+  ### Print the result on Web page
+  print "<H4>Result</H4>";
+  &PrintHtmlTable(RESULT, $result_file, 1);
+  close RESULT;
+  &PipingForm if ($query->param('match_positions'));
+  print "<HR SIZE = 3>";
+
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+  &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
 print $query->end_html;
@@ -174,11 +172,10 @@ print $query->end_html;
 exit(0);
 
 sub PipingForm {
-
     ### prepare data for piping
     $title = $query->param("title");
     $title =~ s/\"/\'/g;
-    print <<End_of_form;    
+    print <<End_of_form;
     <TABLE class='nextstep'>
 <TR>
   <TD>

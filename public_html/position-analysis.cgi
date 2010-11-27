@@ -181,12 +181,10 @@ if ($query->param('output') =~ /display/i) {
 	    close(CLUSTERS);
 	}
     }
-    
+
     &PipingForm();
     print '<HR SIZE=3>';
-  
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
+
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
 }

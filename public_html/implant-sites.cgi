@@ -112,8 +112,7 @@ if ($query->param('output') eq "display") {
     &DelayedRemoval($result_file);
 
     print "<hr size=\"3\">";
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }

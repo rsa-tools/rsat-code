@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.28 2009/03/13 03:30:59 rsat Exp $
+# $Id: patser.cgi,v 1.29 2010/11/27 16:30:56 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -103,9 +103,7 @@ if ($query->param('output') eq "display") {
     }
 
     print "<HR SIZE = 3>";
-    
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $patser_parameters", $query->param('user_email'));
+
 } else {
     &EmailTheResult("$command $patser_parameters", $query->param('user_email'));
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.34 2010/06/30 12:20:09 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.35 2010/11/27 16:30:56 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -186,8 +186,6 @@ if ($query->param('output') eq "display") {
 
   print "<HR SIZE = 3>";
 
-#} elsif ($query->param('output') =~ /server/i) {
-  #&ServerOutput("$command ", $query->param('user_email'));
 } else {
   &EmailTheResult("$command ", $query->param('user_email'));
 }
