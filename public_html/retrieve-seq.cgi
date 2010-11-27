@@ -211,8 +211,6 @@ if (($query->param('output') =~ /display/i) ||
 
     print "<HR SIZE = 3>";
 
-#} elsif 
-#    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }

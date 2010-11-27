@@ -125,33 +125,9 @@ if (($query->param('output') =~ /display/i) ||
     &PipingFormForSequence();
     print "<HR SIZE = 3>";
 
-#} elsif 
-#    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
-
-# ### execute the command ###
-# if ($query->param('output') eq "display") {
-#     ### Print the result on Web page
-#     open RESULT, "$command $parameters  & |";
-    
-#     print "<PRE>$command $parameters</PRE> " if ($ENV{rsat_echo} >= 1);
-    
-#     &PipingWarning();
-#     print "<PRE>";
-#     while (<RESULT>) {
-# 	print "$_";
-#     }
-#     print "</PRE>";
-#     close RESULT;
-#     print "<HR SIZE = 3>";
-# } elsif ($query->param('output') =~ /server/i) {
-#     &ServerOutput("$command $parameters", $query->param('user_email'));
-# } else {
-#     &EmailTheResult( "$command $parameters", , $query->param('user_email'));
-# }
-# print $query->end_html;
 
 exit(0);
 
