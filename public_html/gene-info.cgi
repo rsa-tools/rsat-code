@@ -42,7 +42,7 @@ if ( $query->param('queries') =~ /\S/) {
     $parameters .= " -i $TMP/$tmp_file_name";
 } else {
     &cgiError("You should enter at least one query in the box\n");
-}  
+}
 
 ################################################################
 ### feature type
