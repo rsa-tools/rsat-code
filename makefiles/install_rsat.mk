@@ -1,88 +1,32 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.21 2010/11/27 10:05:32 rsat Exp $
+# $Id: install_rsat.mk,v 1.22 2010/11/27 10:10:40 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
 ############################################################
 
-GENBANK_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genbank/genomes
-NCBI_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genomes
-include ${RSAT}/makefiles/util.mk
-V=1
-DATE = `date +%Y%m%d_%H%M%S`
 
+################################################################
+## This makefile serves to download and compile some C programs developed by
+## third parties, and which are required for the Web site (e.g. RNSC, MCL) or
+## can optionnally be used in some work flows (e.g. peak-motifs,
+## cluster-motifs).
+
+include ${RSAT}/makefiles/util.mk
+MAKEFILE=${RSAT}/makefiles/install_rsat.mk
+V=1
 
 #################################################################
-# programs
+# Programs used for downloading and sycnrhonizing
 
 WGET = wget -np -rNL 
-MAKEFILE=${RSAT}/makefiles/install_rsat.mk
-MAKE=nice -n 19 make -s -f ${MAKEFILE}
+#MAKE=nice -n 19 make -s -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
 
-################################################################
-## Obsolete: compile some perl scripts to binaries.  This was a test and the
-## results were not very good, the compiled programs were unstable.
-SRC=perl-scripts
-COMPIL=compil/
-PROGRAMS=	\
-	oligo-analysis	\
-	retrieve-seq	\
-	dyad-analysis	\
-	dna-pattern	\
-	orf-info
-LIBRARIES=\
-	RSA.stat.lib 	\
-#	RSA.classes	\
-#	RSA.seq.lib	\
-#	RSA.cgi.lib	\
-#	RSA.lib 	
-compile:
-	@mkdir -p ${COMPIL}/lib
-	@mkdir -p ${COMPIL}/bin
-	@(cd  ${COMPIL}/bin; ln -fs ../lib)
-	@cp -f config/default.config ${COMPIL}/RSA.config
-
-	@for lb in ${LIBRARIES}; do \
-		echo "compiling library $${lb}"; \
-		cp -f ${SRC}/lib/$${lb} ${COMPIL}/lib/$${lb}.pl ; \
-		(cd ${COMPIL}/lib; pwd; perlcc $${lb}.pl && rm -f $${lb}.pl); \
-	done
-
-	@for pgm in ${PROGRAMS}; do \
-		echo "compiling program $${pgm}"; \
-		cp -f ${SRC}/$${pgm} ${COMPIL}/bin/$${pgm}.pl ; \
-		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
-	dgone
-
-################################################################
-#### installation of the GD graphical library
-#### (obsolete)
-GD_DISTRIB_DIR=stein.cshl.org/WWW/software/GD/
-GD_DISTRIB= http://${GD_DISTRIB_DIR}/GD.pm.tar.gz
-get_gd:
-	mkdir -p lib-sources
-	(cd lib-sources; \
-	${WGET} ${GD_DISTRIB})
-
-
-GD_VERSION=2.06
-uncompress_gd:
-	(cd lib-sources/${GD_DISTRIB_DIR};		\
-	gunzip -c GD.pm.tar.gz | tar -xpf - ;		\
-
-install_gd:
-	(cd lib-sources/${GD_DISTRIB_DIR}/GD-${GD_VERSION} ;	\
-	perl Makefile.PL INSTALLDIRS=site			\
-		INSTALLSITELIB=${RSAT}/extlib			\
-		INSTALLSITEARCH=${RSAT}/extlib/arch ;		\
-	make ;							\
-	make install ;						\
-	)
 
 ################################################################
 ## Generic call for installing a program. This tag is called with
@@ -380,3 +324,39 @@ install_blast_mac:
 	@echo "	export PATH=${BLAST_BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH ${BLAST_BIN_DIR}:\$$PATH"
+
+################################################################
+## Obsolete: compile some perl scripts to binaries.  This was a test and the
+## results were not very good, the compiled programs were unstable.
+SRC=perl-scripts
+COMPIL=compil/
+PROGRAMS=	\
+	oligo-analysis	\
+	retrieve-seq	\
+	dyad-analysis	\
+	dna-pattern	\
+	orf-info
+LIBRARIES=\
+	RSA.stat.lib 	\
+#	RSA.classes	\
+#	RSA.seq.lib	\
+#	RSA.cgi.lib	\
+#	RSA.lib 	
+compile:
+	@mkdir -p ${COMPIL}/lib
+	@mkdir -p ${COMPIL}/bin
+	@(cd  ${COMPIL}/bin; ln -fs ../lib)
+	@cp -f config/default.config ${COMPIL}/RSA.config
+
+	@for lb in ${LIBRARIES}; do \
+		echo "compiling library $${lb}"; \
+		cp -f ${SRC}/lib/$${lb} ${COMPIL}/lib/$${lb}.pl ; \
+		(cd ${COMPIL}/lib; pwd; perlcc $${lb}.pl && rm -f $${lb}.pl); \
+	done
+
+	@for pgm in ${PROGRAMS}; do \
+		echo "compiling program $${pgm}"; \
+		cp -f ${SRC}/$${pgm} ${COMPIL}/bin/$${pgm}.pl ; \
+		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
+	dgone
+
