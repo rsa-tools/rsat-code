@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.88 2010/11/27 22:24:12 jvanheld Exp $
+# $Id: peak-motifs,v 1.89 2010/11/27 22:58:45 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.88 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.89 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -631,12 +631,20 @@ sub SetOutFileNames {
   push @timetable_keys, "meme";
 
   ## Clustering of the discovered motifs + comparison with reference motif
+  ## Merged motifs
   $main::outfile{motifs_discovered} = &OutFileName("results/discovered_motifs", ".tf", "motifs_discovered");
+
+  ## Table with the list of separated motifs
+  ($main::outfile{motifs_sep}, $main::dir{motifs_sep}) = &OutFileName("results/discovered_motifs", ".tab", "motifs_discovered_list");
+
+  ## Comparisons between discovered motifs
   $main::outfile{motifs_disco_compa} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa");
   $main::outfile{motifs_disco_compa_html} = &OutFileName("results/discovered_motifs", ".html", "motifs_disco_compa");
   push @timelog_keys, "motifs_disco_compa";
   $main::outfile{motifs_disco_compa_gml} = &OutFileName("results/discovered_motifs", ".gml", "motifs_disco_compa");
   $main::outfile{motifs_disco_compa_png} = &OutFileName("results/discovered_motifs", ".png", "motifs_disco_compa");
+
+  ## Motif clustering
   $main::outfile{motifs_disco_clusters_mcl} = &OutFileName("results/discovered_motifs", ".mcl", "motifs_disco_clusters");
   $main::outfile{motifs_disco_clusters_tab} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_clusters");
   $main::outfile{motifs_disco_clusters_graph} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_clusters_graph");
@@ -645,8 +653,6 @@ sub SetOutFileNames {
   $main::outfile{motifs_disco_compa_cluster_intra_degree} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa_cluster_intra_degree");
   #    $main::outfile{motifs_disco_ref} = &OutFileName("results/discovered_motifs", ".tf", "motifs_disco_ref");
 
-  ## Separate analysis of each discovered motif
-  ($main::outfile{motifs_separated}, $main::dir{motifs_separated}) = &OutFileName("results/discovered_motifs_separated", ".tab", "motifs_discovered_separated");
 
   if (defined($main::infile{ref_motifs})) {
     ## Motif(s) considered as reference for the testing set
@@ -1243,6 +1249,10 @@ sub SeparateMotifs {
     $id_digits = POSIX::ceil(log(scalar(@matrices))/log(10));
   }
 
+  ## Create a table with the lists of motifs
+  my $motif_table = &OpenOutputFile($main::outfile{motifs_sep});
+
+  ## Store each motif in a separate directory and file
   foreach my $motif (@motifs) {
     $m++;
 
@@ -1258,20 +1268,32 @@ sub SeparateMotifs {
     }
 
     my $motif_dir = "results/discovered_motifs_sep/".$motif_id;
-    $main::outfile{"motif".$m} = &OutFileName($motif_dir, ".tf", $motif_id);
+    ($main::outfile{"motif_".$motif_id}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
 
     ## Print the motif in transfac format
-    $current_out = &OpenOutputFile($main::outfile{"motif".$m});
+    $current_out = &OpenOutputFile($main::outfile{"motif_".$motif_id});
     print $current_out $motif->toString(sep=>"\t",
 					type=>"counts",
 					format=>"transfac",
 				       );
     close($current_out);
 
+    print $motif_table join("\t", $m, $motif_id, $subdir), "\n";
 
-    &RSAT::message::Debug("&SeparateMotifs()", "motif", $m, $motif_id, $main::outfile{"motif".$m});
+    ## Draw the motif logo
+    $main::outfile{"motif_".$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
+    my $cmd = $SCRIPTS."/convert-matrix -v 0";
+    $cmd .= " -i ".$main::outfile{"motif_".$motif_id};
+    $cmd .= " -from transfac -to tab";
+    $cmd .= " -return counts,logo";
+    $cmd .= " -o ".$main::outfile{"motif_".$motif_id."_tab"};
+    &one_command($cmd, 1);
+
+#    &RSAT::message::Debug("&SeparateMotifs()", "motif", $m, $motif_id, $main::outfile{"motif_".$motif_id}) if ($main::verbose >= 10);
   }
+  close $motif_table;
 
+  &RSAT::message::Info("Motif table",$main::outfile{motifs_sep}) if ($main::verbose >= 0);
 }
 
 ################################################################
