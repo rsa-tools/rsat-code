@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.39 2010/05/20 07:01:03 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.40 2010/11/27 16:32:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -245,8 +245,6 @@ if ($query->param('output') eq "display") {
   &PrintURLTable(@result_files);
   &OligoDyadPipingForm();
 
-} elsif ($query->param('output') =~ /server/i) {
-  &ServerOutput("$command", $query->param('user_email'));
 } else {
   &EmailTheResult("$command", $query->param('user_email'));
 }

@@ -169,15 +169,11 @@ $parameters .= " -prefix $output_prefix";
 
 ### other default parmaters
 $parameters .= " -2str -noov -img_format png ";
-		
-
-
 
 ############################################ display or send result
 $index_file = $output_directory."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
-#&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
 # $debug = "$command $parameters 2> $TMP/log.txt";
 # print $debug;
 # `$debug`;

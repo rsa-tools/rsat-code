@@ -145,8 +145,7 @@ if ($query->param('output') eq "display") {
     &PipingForm();
 
     print "<HR SIZE = 3>";
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+
 } else { 
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
