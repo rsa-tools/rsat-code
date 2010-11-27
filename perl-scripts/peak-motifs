@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.87 2010/10/28 04:10:19 rsat Exp $
+# $Id: peak-motifs,v 1.88 2010/11/27 22:24:12 jvanheld Exp $
 #
 ############################################################
 
@@ -93,6 +93,7 @@ require "RSA.lib";
 require "RSA.disco.lib";
 require "footprint.lib.pl";
 use RSAT::util;
+use RSAT::MatrixReader;
 
 ################################################################
 ## Main package
@@ -110,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.87 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.88 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -160,6 +161,7 @@ package main;
 		      "meme",
 
 		      "merge_motifs",
+		      "separate_motifs",
 #		      "cluster_motifs",
 		      "motifs_vs_ref",
 		      "motifs_vs_db",
@@ -234,6 +236,8 @@ package main;
   &RunMEME() if ($task{meme});
 
   &MergeMotifs() if ($task{merge_motifs});
+
+  &SeparateMotifs() if ($task{separate_motifs});
 
 #  &ClusterMotifs() if ($task{cluster_motifs});
 
@@ -383,15 +387,37 @@ sub DefaultParameters {
 ## Define one output file name by concatenating arguments
 sub OutFileName {
   my ($subdir, $extension, @name_elements) = @_;
-
   my $dir = $main::dir{output};
   if ($subdir) {
-    $dir = join ("/", $main::dir{output}, $subdir);
-    &RSAT::util::CheckOutDir($dir);
+    #    $dir = join ("/", $main::dir{output}, $subdir);
+#    &RSAT::util::CheckOutDir($dir);
+    $dir = &CheckSubDir($subdir);
   }
-  my $out_file_name = join("/", $dir, join ("_", $main::param{prefix}, @name_elements));
-  $out_file_name .= $extension;
-  return($out_file_name);
+  my $out_file_name = $dir;
+  if (scalar(@name_elements) > 0) {
+    $out_file_name .= "/";
+    $out_file_name .= join ("_", $main::param{prefix}, @name_elements);
+    if ($extension) {
+      $out_file_name .= $extension;
+    }
+  }
+  if (wantarray) {
+    return ($out_file_name, $dir);
+  } else {
+    return ($out_file_name);
+}
+
+}
+
+################################################################
+## Define the name of an output directory by concatenating arguments
+sub CheckSubDir {
+  my ($subdir) = @_;
+  my $dir = $main::dir{output};
+  $dir = join ("/", $main::dir{output}, $subdir);
+  &RSAT::util::CheckOutDir($dir);
+
+  return($dir);
 }
 
 ################################################################
@@ -619,6 +645,8 @@ sub SetOutFileNames {
   $main::outfile{motifs_disco_compa_cluster_intra_degree} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa_cluster_intra_degree");
   #    $main::outfile{motifs_disco_ref} = &OutFileName("results/discovered_motifs", ".tf", "motifs_disco_ref");
 
+  ## Separate analysis of each discovered motif
+  ($main::outfile{motifs_separated}, $main::dir{motifs_separated}) = &OutFileName("results/discovered_motifs_separated", ".tab", "motifs_discovered_separated");
 
   if (defined($main::infile{ref_motifs})) {
     ## Motif(s) considered as reference for the testing set
@@ -1158,6 +1186,7 @@ sub MergeWords {
 ################################################################
 ## Merge all discoverd motifs in a single file
 sub MergeMotifs {
+  &RSAT::message::TimeWarn("Merging discovered motifs") if ($main::verbose >= 1);
 
   ## Remove previous versions of the merged motif file
   my $cmd = "rm -f ".$main::outfile{motifs_discovered};
@@ -1195,6 +1224,54 @@ sub MergeMotifs {
   &one_command($cmd, 1);
 
   &RSAT::message::TimeWarn("Merged discovered motifs", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
+}
+
+################################################################
+## Split the discovered motifs in separate files in order to analyze
+## them separately. One separate directory is created for each motif.
+sub SeparateMotifs {
+  &RSAT::message::TimeWarn("Splitting discovered motifs in separate files") if ($main::verbose >= 1);
+
+  my @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
+  my $motif_nb = scalar(@motifs);
+  &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 0);
+  my $m = 0;
+
+  ## Number of digits for the counter of split matrix files
+  my $id_digits;
+  if ($split_out_files) {
+    $id_digits = POSIX::ceil(log(scalar(@matrices))/log(10));
+  }
+
+  foreach my $motif (@motifs) {
+    $m++;
+
+    ## Get the motif ID or, if not defined, create an ID
+    my $motif_id = $motif->get_attribute("id");
+    unless ($motif_id) {
+      ## Use the same number of digits for all matrices so that the
+      ## alphabetical order ot the splitted files corresponds to the
+      ## numerical order of the matrices.
+      my $id_nb = sprintf "%${id_digits}s", $m;
+      $id_nb =~ s/ /0/g;
+      $motif_id = "discomotif_".$id_nb;
+    }
+
+    my $motif_dir = "results/discovered_motifs_sep/".$motif_id;
+    $main::outfile{"motif".$m} = &OutFileName($motif_dir, ".tf", $motif_id);
+
+    ## Print the motif in transfac format
+    $current_out = &OpenOutputFile($main::outfile{"motif".$m});
+    print $current_out $motif->toString(sep=>"\t",
+					type=>"counts",
+					format=>"transfac",
+				       );
+    close($current_out);
+
+
+    &RSAT::message::Debug("&SeparateMotifs()", "motif", $m, $motif_id, $main::outfile{"motif".$m});
+  }
+
 }
 
 ################################################################
@@ -1282,8 +1359,6 @@ sub ClusterMotifs {
   $cmd .= " -layout none";
   $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_clusters_graph_png};
   &one_command($cmd, 1);
-
-
 
 }
 
@@ -1793,8 +1868,8 @@ sub SynthesisRefMotif {
     &SyntheticTableAddRow("Reference motif",
 			  $logo_table,
 #			  $main::param{ref_motifs_format}, &RSAT::util::RelativePath($main::outfile{synthesis}, $main::infile{ref_motifs}),
-			  "tf",$main::outfile{ref_motifs_transfac},
-			  "tab",$main::outfile{ref_motifs_tab},
+			  "transfac format",$main::outfile{ref_motifs_transfac},
+			  "tab format",$main::outfile{ref_motifs_tab},
 			 );
   }
 }
@@ -1894,9 +1969,9 @@ sub SynthesisPatternDisco {
 			  $pattern_table,
 			  $pattern_type,$main::outfile{$pattern_type},
 			  "assembly",$main::outfile{$pattern_type.'_asmb'},
-			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-			  "matrices .tab",$main::outfile{$pattern_type.'_pssm_counts'},
-			  "matrices .tf",$main::outfile{$pattern_type.'_pssm_tf'},
+			  "sig matrices",$main::outfile{$pattern_type.'_pssm_sig'},
+			  "matrices - tab format",$main::outfile{$pattern_type.'_pssm_counts'},
+			  "matrices - transfac format",$main::outfile{$pattern_type.'_pssm_tf'},
 			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
 			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
 			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
@@ -2658,10 +2733,11 @@ sub CheckArguments {
 
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
-   $task{merge_motifs} = 1;
-#   $task{cluster_motifs} = 1;
-   $task{motifs_vs_ref} = 1 if (defined($main::infile{ref_motifs}));
-   $task{motifs_vs_db} = 1 if (scalar(@motif_databases) > 0);
+    $task{merge_motifs} = 1;
+    #   $task{cluster_motifs} = 1;
+    $task{separate_motifs} = 1;
+    $task{motifs_vs_ref} = 1 if (defined($main::infile{ref_motifs}));
+    $task{motifs_vs_db} = 1 if (scalar(@motif_databases) > 0);
   }
 
   ## Check that reference motif has been specified if required
