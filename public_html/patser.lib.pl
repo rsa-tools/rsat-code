@@ -231,7 +231,7 @@ sub DisplayPatserOptions {
     print $query->checkbox(-name=>'vertically_print',
 			   -label=>' print the weight matrix',
 			   -checked=>$default{vertically_print});
-    print "</a>";
+    print "</a>\n</br>";
 }
 
 
