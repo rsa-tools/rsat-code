@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.22 2010/11/27 10:10:40 rsat Exp $
+# $Id: install_rsat.mk,v 1.23 2010/11/27 16:26:27 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -26,6 +26,22 @@ RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
+
+################################################################
+## Install the applications developed by third-parties and which are required
+## or useful for RSAT.
+install_ext_apps:
+	${MAKE} install_consensus
+	${MAKE} download_patser install_patser
+	${MAKE} install_gibbs
+	${MAKE} download_mcl install_mcl
+	${MAKE} download_gs install_gs
+	${MAKE} download_gnuplot install_gnuplot
+	${MAKE} download_seqlogo install_seqlogo
+	${MAKE} download_rnsc install_rnsc
+	${MAKE} download_meme install_meme
+	${MAKE} download_blast_linux install_blast_linux
+	${MAKE} download_blast_mac install_blast_mac
 
 
 ################################################################
@@ -60,11 +76,6 @@ install_gibbs:
 	${MAKE} uncompress_program PROGRAM=gibbs
 	(cd ${GIBBS_DIR}; ./compile; cd ${GIBBS_DIR}/code; make clean)
 	(cd bin; ln -fs ${GIBBS_DIR}/gibbs ./gibbs)
-
-install_ext_apps:
-	${MAKE} install_consensus
-	${MAKE} install_patser
-	${MAKE} install_gibbs
 
 ################################################################
 ## Install the BioPerl library
@@ -103,7 +114,7 @@ PATSER_TAR=${PATSER_VERSION}.tar.gz
 PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus/
 PATSER_DIR=ext/patser/${PATSER_VERSION}
 PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
-get_patser:
+download_patser:
 	@mkdir -p ${PATSER_DIR}
 	@echo "Getting patser using ${WGET}"
 	(cd ${PATSER_DIR}; ${WGET} -nv ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
@@ -123,7 +134,7 @@ install_patser:
 SEQLOGO_URL=http://weblogo.berkeley.edu/release
 SEQLOGO_TAR=weblogo.2.8.2.tar.gz
 SEQLOGO_DIR=${RSAT}/ext/seqlogo
-get_seqlogo:
+download_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
 	@echo "Getting seqlogo using ${WGET}"
 	(cd ${SEQLOGO_DIR}; ${WGET} -nv ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
@@ -141,7 +152,7 @@ install_seqlogo:
 GS_URL=http://ghostscript.com/releases/
 GS_TAR=ghostscript-8.64.tar.gz
 GS_DIR=${RSAT}/ext/ghostscript
-get_gs:
+download_gs:
 	@mkdir -p ${GS_DIR}
 	@echo "Getting gs using ${WGET}"
 	(cd ${GS_DIR}; ${WGET} -nv ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
@@ -159,7 +170,7 @@ GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/4.2.6/
 GNUPLOT_VER=gnuplot-4.2.5
 GNUPLOT_TAR=${GNUPLOT_VER}.tar.gz
 GNUPLOT_DIR=${RSAT}/ext/gnuplot
-get_gnuplot:
+download_gnuplot:
 	@mkdir -p ${GNUPLOT_DIR}
 	@echo "Getting gnuplot using ${WGET}"
 	(cd ${GNUPLOT_DIR}; ${WGET} -nv ${GNUPLOT_URL}/${GNUPLOT_TAR}; tar -xpzf ${GNUPLOT_TAR})
@@ -342,7 +353,7 @@ LIBRARIES=\
 #	RSA.seq.lib	\
 #	RSA.cgi.lib	\
 #	RSA.lib 	
-compile:
+compile_perl_scripts:
 	@mkdir -p ${COMPIL}/lib
 	@mkdir -p ${COMPIL}/bin
 	@(cd  ${COMPIL}/bin; ln -fs ../lib)
