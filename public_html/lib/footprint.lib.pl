@@ -79,7 +79,7 @@ sub CheckFootprintParameters {
       $task{$task} = 1;
     }
   }
-  &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 1);
+  &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 2);
 
   ## Check Reference taxon or org_list
   &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
