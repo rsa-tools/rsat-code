@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.180 2010/11/18 13:42:30 morgane Exp $
+# $Id: matrix-scan,v 1.181 2010/11/27 16:36:20 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -116,11 +116,11 @@ between two probabilities:
 
 where
 
-=item I<proba_M = P(S|M)>: 
+=item I<proba_M = P(S|M)>:
 
 The probability to generate the sequence segment given the matrix.
 
-=item I<proba_B = P(S|B)>: 
+=item I<proba_B = P(S|B)>:
 
 The probability to generate the sequence segment given the background
 model.
@@ -327,7 +327,7 @@ package main;
   $id_as_name = 0;		# Use identifier as matrix name
   $ac_as_name = 0;		# Use accession number as matrix name
   $markov = -1;	## To make the distinction with 0, which is a valid value for the markov order
-  $window = -1; 
+  $window = -1;
   $bg_method = "";
   $null = "NA";
   $infinite = "999"; ## String to print for infinite values (e.g. when the eval < e-300, it i rounded to 0, thus the significance is infinite)
@@ -368,7 +368,7 @@ package main;
   local $sort_distrib = 0;
   local $batch = 0;
   local $cluster = 0;
-  
+
   ## CRM (Cis Regulatory element Enriched Region => CRER)
   local $crer_seed_init = 100;
   local %crer_seed_weights = ();
@@ -382,10 +382,10 @@ package main;
   local %crer_per_seq = ();
   local $warnings ="";
   local $crer_ids = 0;
-  
+
   #    local $in = STDIN;
   #    local $out = STDOUT;
-    
+
   ## Threshold parameters
   local %lth = ();		# lower threshold values for all matrices
   local %uth = ();		# upper threshold values for all matrices
@@ -393,7 +393,7 @@ package main;
   local %uth_matrix = ();       # matrix-specific upper threshold values
   local %lth_file = ();       # threshold values in the mth file
   local %uth_file = ();       # threshold values in the mth file
- 
+
   @supported_thresholds = qw (
 			      score
 			      normw
@@ -434,9 +434,9 @@ package main;
 			      pval=>1,	## site-wie P-value
 			      rank=>1,	## site-wise ranking
 			      normw=>1, ## Normalized weight
-			      
+			
 			      proba_bm =>1, ## individual P_M and P_B proba
-			      
+			
 			      eval=>1, ## pval * nb tests, only possible with matrix-scan-quick
 
 			      limits=>1, ## Sequence limits (for drawing feature maps)
@@ -458,8 +458,8 @@ package main;
   $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
   local %return_fields = ();		## Fields to return
   local %calc_fields = ();		## Fields to calculate
-  
-  
+
+
   ## Return field not supported by the quick scan mode
   local %quick_forbidden_field = (
 				  'rank'=>1,
@@ -477,7 +477,7 @@ package main;
 				  'bg_model'=>1,
 				 );
   $quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
-  
+
   local %sequence_scores = ();
   local %matches_per_seq = ();
 
@@ -498,7 +498,7 @@ package main;
   &RSAT::error::FatalError("You must specify the method for background estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
 
   &RSAT::error::FatalError("Options -consensus_name, -id_as_name aned -ac_as_name are mutually exclusive")
-	if ($consensus_name + $id_as_name + $ac_as_name > 1);	
+	if ($consensus_name + $id_as_name + $ac_as_name > 1);
 
   #################################################################
   ## Batch option
@@ -513,31 +513,31 @@ package main;
 
   		&Verbose() if ($main::verbose);
   		&runInBatch();
-  
+
   		close $main::out;
-  	
+
     	## Clean some temporary files
     	if ($main::outfile{output_raw}) {
     		my $clean_partial_cmd = "rm -f $main::outfile{output_raw}";
     		&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
     	}
-    	
-    	## Remove sequence files    
+
+    	## Remove sequence files
     	if (scalar(@temp_fasta_files) > 0) {
     		my $clean_partial_cmd = "rm -f ";
     		$clean_partial_cmd .= join (" ", @temp_fasta_files);
     		&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
     	}
-    	## Remove individual result files    
+    	## Remove individual result files
     	if (scalar(@temp_output_files) > 0) {
     		my $clean_partial_cmd = "rm -f ";
     		$clean_partial_cmd .= join (" ", @temp_output_files);
     		&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
     	}
-    	
+
   		exit(0);
   }
-  
+
   ################################################################
   ## Load the matrix-specific threshols if specified
   if ($infile{matrix_thresholds}) {
@@ -556,19 +556,19 @@ package main;
       unless ($supported_threshold{$thr_field}) {
 	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
       }
-      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
 	unless (&RSAT::util::IsReal($thr_value));
       $matrix_thr{$matrix_name} = 1;
       $matrix_thr_val->{$matrix_name}->{$thr_field}->{$thr_param} = $thr_value; ## For the verbosity
       if ($thr_param eq 'lth'){
 	#$lth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
 	$lth_file{$thr_field} = $thr_value;
-	
+
       }elsif ($thr_param eq 'uth'){
 	#$uth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
 	$uth_file{$thr_field} = $thr_value;
       } else {
-	&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.") 
+	&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.")
       }
     }
     close $mthr;
@@ -583,7 +583,7 @@ package main;
   }
 
   #########################################
-  
+
   ## eval incompatible with slow mode
   if (($return_fields{eval})&&(!$quick_scan)){
   	&RSAT::error::FatalError("Computation of Evalue is only possible with the -quick mode");
@@ -621,7 +621,7 @@ package main;
   		$crer_seed_init = $uth{crer_size};
   	}
   }
-  
+
   ## calculation of pval with adaptative model requires a threhold to limit computing time
    if ($bg_method eq "window"){
    	if ($return_fields{crer}){
@@ -640,7 +640,7 @@ package main;
    		}
    	}
    }
- 
+
 
   ## Calculate only once the denominator for the logarithms
   local $log_base = log($base);
@@ -654,12 +654,12 @@ package main;
     $return_fields{sites} = 1;
   }
 
- if ((defined($uth{normw})) || (defined($lth{normw})) || 
+ if ((defined($uth{normw})) || (defined($lth{normw})) ||
  	  (defined($uth_file{normw})) || (defined($lth_file{normw}))) {
     $return_fields{normw} = 1;
   }
 
-  if ((defined($uth{pval})) || (defined($lth{pval})) || 
+  if ((defined($uth{pval})) || (defined($lth{pval})) ||
   	  (defined($uth_file{pval})) || (defined($lth_file{pval}))) {
     $return_fields{pval} = 1;
   }
@@ -697,7 +697,7 @@ package main;
 	my ($matrix_name, $score, $occ, $occ_cum, $inv_cum, $freq_inv_cum) = split "\t";
 	$exp_score_distrib->{$matrix_name}->{$score}->{occ_prior} = $freq_inv_cum;
 #	&RSAT::message::Debug("Loading bg distrib", $matrix_name, $score,
-#			      $exp_score_distrib->{$matrix_name}->{$score}->{occ_prior}) 
+#			      $exp_score_distrib->{$matrix_name}->{$score}->{occ_prior})
 #	  if ($main::verbose >= 10);
       }
       close $in;
@@ -726,16 +726,16 @@ package main;
       $calc_fields{p_score} = 1;
   }
 
- 
+
   if ($return_fields{crer}){
       $calc_fields{sites} = 1;
       $calc_fields{pval} = 1;
   }
-  
+
   if ($return_fields{eval}){
   	$return_fields{pval}=1;
   }
-  
+
   ## Ensure that all the fields to return are calculated
   foreach my $field (keys(%return_fields)) {
     $calc_fields{$field} = 1;
@@ -744,7 +744,7 @@ package main;
   ## to keep as last to be sure it is not overriden
   if ($quick_scan) {
   		$calc_fields{sites} = 0; #do not calculate sites if matrix-scan-quick is supported
-  		$calc_fields{pval} = 0; #pval is already calculated by matrix-scan-quick 
+  		$calc_fields{pval} = 0; #pval is already calculated by matrix-scan-quick
   	}
 
   ## ##############################################################
@@ -780,8 +780,8 @@ package main;
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
   }
-  
- 
+
+
 
   ################################################################
   ## Check that there is at least one input matrix file
@@ -815,7 +815,7 @@ package main;
 
   if ($infile{bg}) {
     ## Read background model from a file
-    &RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
+    &RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg}))
       if ($main::verbose >= 2);
     $bg_model->load_from_file($infile{bg}, $bg_in_format);
     $bg_model->check_missing_transitions();
@@ -824,13 +824,13 @@ package main;
   } elsif ($main::markov >= 0) {
     $bg_model->set_attribute("order", $main::markov);
     if (($main::window >= 0) && ($main::window < $main::markov+1)) {
-      &RSAT::error::FatalError(join("", 
+      &RSAT::error::FatalError(join("",
 				    "Window size (",
 				    $main::window,
 				    ") must be larger than Markov order + 1 (",
 				    $main::markov."+1)."));
     }
-    
+
     	## bg window : calculate bg pseudo frequency
     	if ($bg_method ne "input") {
     		unless ($bg_pseudo_user_specified) {
@@ -849,7 +849,7 @@ package main;
       unless ($main::infile{input}) {
 	&RSAT::error::FatalError("The option -bg_input requires to specify an input file (STDIN is not supported with this option.");
       }
-       
+
       ## use count-words to calculate bginput
       my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_");
       $tmp_bg_file .= "_MotifSampler.txt";
@@ -865,11 +865,11 @@ package main;
       &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 3);
       &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
       &RSAT::server::DelayedRemoval($tmp_bg_file);
-      $bg_quick_file = $tmp_bg_file;	
-      
+      $bg_quick_file = $tmp_bg_file;
+
     $bg_model->load_from_file($tmp_bg_file, "motifsampler");
     $bg_model->check_missing_transitions();
-      
+
     }
   } else {
     &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
@@ -904,7 +904,7 @@ package main;
 	  $matrix->calcConsensus();
 	  my $consensus = $matrix->get_attribute("consensus.IUPAC");
 	  if ($consensus) {
-	    &RSAT::message::Warning("Using consensus as name", $consensus) 
+	    &RSAT::message::Warning("Using consensus as name", $consensus)
 	      if ($main::verbose >= 3);
 	    $matrix->force_attribute("name", $consensus);
 	  }
@@ -938,7 +938,7 @@ package main;
 	my $matrix_width = $matrix->ncol();
 	my $markov_order = $bg_model->get_attribute("order");
 	if ($matrix_width < $markov_order + 1) {
-	  &RSAT::error::FatalError(join (" ", 
+	  &RSAT::error::FatalError(join (" ",
 					  "Markov order (".$markov_order.")",
 					  "is too large for matrix",
 					  $matrix->get_attribute("name"),
@@ -954,12 +954,12 @@ package main;
 # 	unless ($bg_method eq "window") {
 # 		## Set the matrix prior
 # 		$matrix->setPrior(%prior);
-# 		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
+# 		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"),
 # 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
 # 		## Calculate min and max weight values
 # 		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
-# 		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
-# 					      $matrix->get_attribute("name"), 
+# 		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
+# 					      $matrix->get_attribute("name"),
 # 					      $Wmin, $Wmax, $Wrange,
 # 					     )) if ($main::verbose >= 3);
 # 	}
@@ -967,12 +967,12 @@ package main;
 	unless ($bg_method eq "window") {
 		## Set the matrix prior
 		$matrix->setMarkovModel($bg_model);
-		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
+		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"),
 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
 		## Calculate min and max weight values
 		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
-		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
-					      $matrix->get_attribute("name"), 
+		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
+					      $matrix->get_attribute("name"),
 					      $Wmin, $Wmax, $Wrange,
 					     )) if ($main::verbose >= 3);
 
@@ -982,15 +982,15 @@ package main;
 
 	push @matrices, $matrix;
 	$matrix_sizes{$matrix->get_attribute("name")} = $matrix->get_attribute("ncol");
-	&RSAT::message::TimeWarn("Read matrix", 
-				 scalar(@matrices), 
+	&RSAT::message::TimeWarn("Read matrix",
+				 scalar(@matrices),
 				 $matrix->get_attribute("name"),
 				 $matrix->get_attribute("file")
 				) if ($main::verbose >= 3);
       }
     }
-  } 
-  
+  }
+
 
   ################################################################
   ## Assign generic thresholds to each matrix This is done before
@@ -1035,9 +1035,9 @@ package main;
   	}
   }
   }
-  
-  
-  
+
+
+
   ## get shortest matrix size
   my @sorted_array = sort {$a <=> $b} (values(%matrix_sizes));
   local $shortest_matrix_size;
@@ -1095,9 +1095,9 @@ package main;
        if ($return_fields{eval}) {
        	print $out "\t", "eval";
        }
-      
+
 	  print $out "\t", "p_score" if (defined($uth{pval})&&($return_fields{p_score}));
-      
+
       if ($return_fields{weight_limits}){
 	  print $out "\t", "Wmin";
 	  print $out "\t", "Wmax";
@@ -1113,10 +1113,10 @@ package main;
       print $out "\trank_pm" if ($return_fields{rank});
       print $out "\n";
   }
-  
+
        ## Print header
   if ($return_fields{crer}) {
-  	 print $out "#", join ("\t", 
+  	 print $out "#", join ("\t",
 			  "seq_id",
 			  "ft_type",
 			  "ft_name",
@@ -1137,7 +1137,7 @@ package main;
   ################################################################
   ##### Scan the sequences
   &RSAT::message::TimeWarn("Scaning sequences with", scalar(@matrices), "matrices") if ($main::verbose >= 2);
-    
+
   my ($in, $input_dir) = &OpenInputFile($main::infile{input});
   local($current_seq, $seq_id);
   while ((($current_seq, $seq_id, @seq_comments) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
@@ -1152,7 +1152,7 @@ package main;
     $sequence_scores->{$seq_id}->{matches} = 0;
     $sequence_scores->{$seq_id}->{weight_sum} = 0;
     $sequence_scores->{$seq_id}->{sig_sum} = 0;
-    
+
 
     ## Count the number of N residues and increment the corresponding counter
     my $n_seq = $current_seq;
@@ -1188,7 +1188,7 @@ package main;
       }
       $seq_id = $ref_chrom;
 
-      &RSAT::message::Debug("Reference for genomic coordinates", 
+      &RSAT::message::Debug("Reference for genomic coordinates",
 			    "start=".$ref_start,
 			    "end=".$ref_end,
 			    "strand=".$ref_strand,
@@ -1202,7 +1202,7 @@ package main;
 
     ################################################################
     ## Calculate background model from the current sequence
-    ## BG adpatative 
+    ## BG adpatative
     ## method 1 : include scored segment in bg model calculation : initialisation step
     my $window_offset = 0;
     if (($main::markov >= 0) && ($bg_method ne "input")) {
@@ -1231,14 +1231,14 @@ package main;
 
     ### CRER detection
     $nb_of_binom_tests{$seq_id} = 0 if ($return_fields{crer});
-    our $crer_seed = $main::crer_seed_init if ($return_fields{crer}); 
+    our $crer_seed = $main::crer_seed_init if ($return_fields{crer});
     ## change $seed to sequence length if $seed size exceed seq length
     if ($return_fields{crer}){
       if ($seq_len < $crer_seed){
 	$main::warnings .= "; sequence $seq_id : CRER max size ($crer_seed) exceeds sequence length ($seq_len). Max CRER size is switched to sequence length.\n";
-	$crer_seed = $seq_len - $shortest_matrix_size; 
+	$crer_seed = $seq_len - $shortest_matrix_size;
       }
-      
+
       ## adapt seed to that final crer size does not exceed the desired crer_size
       $crer_seed = $crer_seed - $longest_matrix_size;
       &RSAT::message::Debug("sequence",$seq_id,"CRER seed length:", $crer_seed) if ($main::verbose >= 5);
@@ -1262,13 +1262,13 @@ package main;
       for my $pos (1..$seq_len) {
 
       	## bg window : method 1 :update model if required, model does include the scores segment.
-	if (($main::markov >= 0) && 
+	if (($main::markov >= 0) &&
 	    ($bg_method ne "input") &&
 	    ($bg_include_seg) &&
 	    ($pos > $main::window/2) &&	## condition where matrix is not exactly centered on the window, as same bg for all matrices
-	    ## ($pos + $main::window <= $seq_len))  ## old condition which seems incorrect 
+	    ## ($pos + $main::window <= $seq_len))  ## old condition which seems incorrect
 	    ##  => miss window/2 last nucleotides in the calculation of bg model, replaced with following line
-	    (($window_offset + 1) + $main::window <= $seq_len)) { ## continue updating until the window covers the last portion of the sequence		  	 
+	    (($window_offset + 1) + $main::window <= $seq_len)) { ## continue updating until the window covers the last portion of the sequence		  	
 
 	  my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
 	  my $deleted_word = substr($current_seq, $window_offset, $markov+1);
@@ -1290,16 +1290,16 @@ package main;
 	  my $segment = substr($current_seq, $pos-1, $ncol);
 
 	  ## window bg model : method 2: excluding scored segment in bg model calculation
-	  if (($main::markov >= 0) && 
+	  if (($main::markov >= 0) &&
 	      ($bg_method ne "input") &&
 	      (!$bg_include_seg)) {
 	    ## initial bg model is calculated starting after the first segment
 	    if ($pos == 1) {
-	      $bg_model->calc_from_seq(substr($current_seq,$ncol,($main::window - $ncol))); 
+	      $bg_model->calc_from_seq(substr($current_seq,$ncol,($main::window - $ncol)));
 	      &RSAT::message::Debug("bg initialisation : ", Dumper($bg_model->{transition_absolute_count})) if ($main::verbose >= 5);
 
 	      ## update bg model
-	    } else { 
+	    } else {
 	      ## left side of the scored segment
 	      ## here words are added
 	      if ($pos >= $markov+2) { ## do not add words on the left side, if the word is not as long as markov+1
@@ -1365,7 +1365,7 @@ package main;
 	  &score_segment($segment, $matrix, $seq_id, $pos, $orig_pos, $ref_strand, $bg_model,"D");
 	  if ($main::both_strands) {
 	    if ($bg_method eq "window") {
-	      ### If bg_method is "window"  the bg is calculated on the reverse complement 
+	      ### If bg_method is "window"  the bg is calculated on the reverse complement
 	      my $bg_reverse = $bg_model->reverse_bg();
 	      $matrix->setMarkovModel($bg_reverse);
 	      &score_segment(&ReverseComplement($segment),$matrix, $seq_id, $pos, $orig_pos, $ref_strand, $bg_reverse,"R");
@@ -1375,9 +1375,9 @@ package main;
 	  }
 	}
 
-   ############################# 
-   ## CRER search 
-   if ($return_fields{crer}){ 
+   #############################
+   ## CRER search
+   if ($return_fields{crer}){
 	my %last_hits = ();
     if ($pos >= $crer_seed) {
     	&RSAT::message::Debug("position: ", $pos) if ($main::verbose >= 10);
@@ -1417,11 +1417,11 @@ package main;
 	      $last_hits{$k} = $pos - ($crer_seed - $k) +1; ## store last hit + corresponding absolute position
 	      #&RSAT::message::Debug("First seed:", "hit in position", $pos - ($crer_seed - $k) +1,"position relative to seed", $k) if ($main::verbose >= 10);
 	    }
-      		}  	
+      		}
 	  ## only update each border of the seed
 	} else {
 	  $last_hits{($crer_seed - 1)} = $pos; ## only one last hit in the array
-	  
+	
 	  shift(@crer_sum_hits);## remove left entry
 	  my $last_hits = 0;
 	  foreach my $matrix (keys(%crer_seed_hits)){
@@ -1434,25 +1434,25 @@ package main;
 	  }
 	  push(@crer_sum_hits,$last_hits); ## add right entry
      }
-     
+
 	## calculate crer
 	foreach my $last_hit (sort {$b <=> $a} (keys(%last_hits))){
 	  ## get subwindow end absolute position
 	  my $sub_window_end = $last_hits{$last_hit};
 	  &score_crer($last_hit,$seq_id,$sub_window_end,$pos,$crer_seed);
      	}
-      } 
-      } 
-   
-      } 
+      }
+      }
+
+      }
     }
-    
+
   	################################################################
     ## Rank CRERs
     if (($return_fields{crer})  && (defined(@{$crer_per_seq{$seq_id}}))) {
     	&RSAT::message::TimeWarn( "Returning individual crer for sequence", $seq_id)
 	  if ($main::verbose >= 3);
-		
+
 	my @ranked_crers = @{$crer_per_seq{$seq_id}};
 	if (scalar(@ranked_crers) <= 0) {
 	  &RSAT::message::Info("No crer in sequence",
@@ -1467,7 +1467,7 @@ package main;
 	    sort {$b->get_attribute('crer_sig') <=> $a->get_attribute('crer_sig')}
 	      @ranked_crers;
       	}
-      	
+
       	################################################################
       	## Return the crer
       	my $rank = 0;
@@ -1503,7 +1503,7 @@ package main;
 	if ($calc_fields{pval}) {
 	  ## Sort matches by significance
 	  @ranked_matches =
-	    sort {$b->get_attribute('sig') <=> $a->get_attribute('sig')} 
+	    sort {$b->get_attribute('sig') <=> $a->get_attribute('sig')}
 	      @ranked_matches;
 	} else {
 	  ## Sort matches by weight score
@@ -1539,7 +1539,7 @@ package main;
 #	next if ((defined($lth_matrix->{$matrix_name}->{rank})&&($rank < $lth_matrix->{$matrix_name}->{rank}))
 #		 ||(defined($lth{rank}->{"all_matrices"})&&($rank < $lth{rank}->{"all_matrices"})));
 	&print_match($match);
-	
+
 	last if (($uth_matrix->{$matrix_name}->{rank})&&($rank >= $uth_matrix->{$matrix_name}->{rank}));
 #	last if ((defined($uth{rank}->{$matrix_name})&&($rank >= $uth{rank}->{$matrix_name}))
 #	||(defined($uth{rank}->{"all_matrices"})&&($rank >= $uth{rank}->{"all_matrices"})));
@@ -1561,7 +1561,7 @@ package main;
 	   }
 	   &RSAT::message::Info("Approximated Total scored",$total_scored) if ($main::verbose >= 2);
        }
-      
+
        my $m = 0;
        foreach my $matrix (@matrices) {
 	   $m++;
@@ -1569,7 +1569,7 @@ package main;
 	       if ($main::verbose >= 2);
 	   &QuickScan($matrix,"sites",$total_scored);
        }
-    } 
+    }
 
 
   ################################################################
@@ -1596,7 +1596,7 @@ package main;
 
 
   close $in if ($main::infile{input});
-  
+
 
   ################################################################
   ## Print additional information
@@ -1632,7 +1632,7 @@ package main;
     my $m = 0;
     foreach my $matrix (@matrices) {
       $m++;
-      print $out join ("\t", ";", 
+      print $out join ("\t", ";",
 		       $m,
 		       sprintf("%-${max_name_len}s", $matrix->get_attribute("name")),
 		       $matrix->get_attribute("ncol"),
@@ -1657,7 +1657,7 @@ package main;
   my $m = 0;
   if ($return_fields{matrix}) {
     foreach my $matrix (@matrices) {
-    	$m++; 
+    	$m++;
     	#print $out "//\n" if ($m >= 1);
       print $out ";\n; Count matrix\t", $matrix->get_attribute("name"), "\n";
       print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"counts",format=>"tab", comment_string=>";");
@@ -1667,7 +1667,7 @@ package main;
   ## Return frequency matrices
   if ($return_fields{freq_matrix}) {
     foreach my $matrix (@matrices) {
-      $m++; 
+      $m++;
       #print $out "//\n" if ($m >= 1);
       print $out ";\n; Frequency matrix\t", $matrix->get_attribute("name"), "\n";
       print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"frequencies",format=>"tab", comment_string=>";");
@@ -1677,7 +1677,7 @@ package main;
   ## Return weight matrices
   if ($return_fields{weight_matrix}) {
     foreach my $matrix (@matrices) {
-      $m++; 
+      $m++;
       #print $out "//\n" if ($m >= 1);
       print $out ";\n; Weight matrix\t", $matrix->get_attribute("name"), "\n";
       print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"weights", format=>"tab", comment_string=>";");
@@ -1757,8 +1757,8 @@ package main;
     my $nb_of_tests = 0;
     if ($return_fields{occ_proba}) {
 
-      ## Calculate expected number of occurrences with a score >= x 
-      &RSAT::message::TimeWarn("Calculating expected inverse cumulative distribution.") 
+      ## Calculate expected number of occurrences with a score >= x
+      &RSAT::message::TimeWarn("Calculating expected inverse cumulative distribution.")
 	if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
@@ -1784,7 +1784,7 @@ package main;
 	  }
 	  $score_distrib->{$matrix_name}->{$score}->{occ_prior} = $prior;
 	  if ($prior eq $null) {
-	  	
+	
 	    $score_distrib->{$matrix_name}->{$score}->{exp_occ} = $null;
 	  } else {
 	    $score_distrib->{$matrix_name}->{$score}->{exp_occ} = $prior * $n;
@@ -1794,7 +1794,7 @@ package main;
       &check_distrib_thresholds('exp_occ');
 
       ## Calculate significance of the number of motif occurrences
-      &RSAT::message::TimeWarn("Calculating probabilities for the score distribution.") 
+      &RSAT::message::TimeWarn("Calculating probabilities for the score distribution.")
 	if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
@@ -1816,8 +1816,8 @@ package main;
 	  $score_distrib->{$matrix_name}->{$score}->{occ_prior} = $hit_p;
 
 	  if ($hit_p eq $null) {
-	    &RSAT::message::Warning("No prior defined for matrix", $matrix->get_attribute("name"), 
-				    "score", $score, 
+	    &RSAT::message::Warning("No prior defined for matrix", $matrix->get_attribute("name"),
+				    "score", $score,
 				    "in background score distribution file");
 	    $score_distrib->{$matrix_name}->{$score}->{exp_occ} = $null;
 	    $score_distrib->{$matrix_name}->{$score}->{occ_pval} = $null;
@@ -1840,7 +1840,7 @@ package main;
 	    if (($s % 50) == 0) {
 	      &RSAT::message::psWarn("Calculated significance for matrix", , $matrix_name, "score", $s) ;
 	    } else {
-	      &RSAT::message::Debug("Calculated significance", $matrix_name, $score, 
+	      &RSAT::message::Debug("Calculated significance", $matrix_name, $score,
 				    $x, $hit_p, $score_distrib->{$matrix_name}->{$score}->{occ_pval})
 	    }
 	  }
@@ -1887,7 +1887,7 @@ package main;
   ################################################################
   ###### Finish verbose
   if ($main::verbose >= 1) {
-	 
+	
     ## Sequence statistics
     printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
     if ($origin eq "genomic") {
@@ -1917,14 +1917,14 @@ package main;
       $m++;
       $total_matches += $matrix->get_attribute("matches");
       $total_scored += $matrix->get_attribute("scored");
-      print $main::out join ("\t", ";", 
+      print $main::out join ("\t", ";",
 			     $m,
 			     sprintf("%-15s", $matrix->get_attribute("name")),
 			     sprintf("%d", $matrix->get_attribute("matches")),
 			     sprintf("%d", $matrix->get_attribute("scored")),
 			    ), "\n";
     }
-    print $main::out join ("\t", ";", 
+    print $main::out join ("\t", ";",
 			   "",
 			   sprintf("%-15s", "TOTAL"),
 			   $total_matches,
@@ -1958,7 +1958,7 @@ package main;
 
 
 ################################################################
-#### display full help message 
+#### display full help message
 sub PrintHelp {
     system "pod2text -c $0 ";
     exit()
@@ -2013,8 +2013,8 @@ matrix-scan options
 		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
 
 -mth		matrix-specific threshold file
--crer_ids	Assign one separate feature ID per CRER. 
--sort_distrib	sort score distributions by decreasing values of significance. 
+-crer_ids	Assign one separate feature ID per CRER.
+-sort_distrib	sort score distributions by decreasing values of significance.
 -bg_distrib	File specifying the background score distribution for option -return occ_proba.
 -base #		Base for the logarithms (Default: exp(1))
 -recursive 	Run matrix-scan separately for each sequence.
@@ -2038,7 +2038,7 @@ End_short_help
 # }
 
 ################################################################
-#### Read arguments 
+#### Read arguments
 sub ReadArguments {
   my $arg = "";
   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
@@ -2143,17 +2143,17 @@ Calculate background model from the input sequence set.
 
 =item B<-markov>
 
-Order of the markov chain for the background model. 
+Order of the markov chain for the background model.
 
-This option is incompatible with the option -bgfile. 
+This option is incompatible with the option -bgfile.
 
 =cut
     } elsif ($arg eq "-markov") {
       $main::markov = shift(@arguments);
       $main::bg_method = "input";
-      &RSAT::error::FatalError("Markov order must be a natural number.") 
+      &RSAT::error::FatalError("Markov order must be a natural number.")
 	unless &RSAT::util::IsNatural($main::markov);
-      &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+      &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.")
 	if (defined($infile{bg}));
 
 
@@ -2161,7 +2161,7 @@ This option is incompatible with the option -bgfile.
 
 =item B<-window>
 
-Size of the sliding window for the background model calculation. 
+Size of the sliding window for the background model calculation.
 When this option is specified, the matrix pseudo-count is equally distributed.
 
 =cut
@@ -2169,7 +2169,7 @@ When this option is specified, the matrix pseudo-count is equally distributed.
       &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "window"));
       $main::bg_method = "window";
       $main::window = shift(@arguments);
-      &RSAT::error::FatalError("Window size must be a natural number.") 
+      &RSAT::error::FatalError("Window size must be a natural number.")
 	unless &RSAT::util::IsNatural($main::window);
 
       ## Matrix file
@@ -2178,7 +2178,7 @@ When this option is specified, the matrix pseudo-count is equally distributed.
 
 =item B<-m matrixfile>
 
-Matrix file. 
+Matrix file.
 
 This argument can be used iteratively to scan the sequence with
 multiple matrices.
@@ -2260,7 +2260,7 @@ Matrix list.
 
 Indicate a file containing a list of matrices to be used for scanning
 the region. This facilitates the scanning of a sequence with a library
-of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC). 
+of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC).
 
 Format: the matrix list file is a text file. The first word of each
 row is suppose to indicate a file name. Any further information on the
@@ -2278,7 +2278,7 @@ same row is ignored.
 
 =item B<-matrix_format matrix_format>
 
-Matrix format. 
+Matrix format.
 
 =cut
     } elsif ($arg eq "-matrix_format") {
@@ -2378,7 +2378,7 @@ allows to use the command within a pipe.
 =item B<-pseudo pseudo_counts>
 
 
-Pseudo-count for the matrix (default: 1). 
+Pseudo-count for the matrix (default: 1).
 
 The pseudo-count reflects the possibility that residues that were not
 (yet) observed in the model might however be valid for future
@@ -2388,7 +2388,7 @@ residue frequencies.
 =cut
     } elsif ($arg eq "-pseudo") {
       $main::pseudo_counts = shift(@arguments);
-      &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
+      &RSAT::error::FatalError(join("\t", $main::pseudo_counts,
 				    "Invalid value for a pseudo-weight. Must be a positive real number."))
 	unless ((&RSAT::util::IsReal($main::pseudo_counts) )
 		&& ($main::pseudo_counts >= 0));
@@ -2428,7 +2428,7 @@ calculated from the length (L) of the sequence following this formula:
 
   sqrt(L)/(L+sqrt(L))
 
-For -bgfile, default value is 0.01. 
+For -bgfile, default value is 0.01.
 
 In other cases, if the length (L) of the training sequence is known
 (e.g. all promoters for the considered organism), the value can be set
@@ -2497,7 +2497,7 @@ with the option -offset.
 
 Add an offset to site positions. The offset value must be an Integer
 number (positive, null or negative). This option allows to select an
-arbitrary position as origin. 
+arbitrary position as origin.
 
 Example: the option I<-offset -100> can be used to specify the
 transcription start site (TSS) as origin, in a collection of promoter
@@ -2551,7 +2551,7 @@ decimals).
 
     } elsif ($arg eq "-decimals") {
       $decimals = shift @arguments;
-      &RSAT::error::FatalError("decimals should be a positive integer") 
+      &RSAT::error::FatalError("decimals should be a positive integer")
 	unless ((&IsNatural($decimals)) && ($decimals >= 0));
 
       ## Thresholds
@@ -2562,7 +2562,7 @@ decimals).
 
 =item	B<-uth param upper_threshold>
 
-Threshold on some parameter (-lth: lower, -uth: upper threshold). 
+Threshold on some parameter (-lth: lower, -uth: upper threshold).
 
 Supported threshold fields for the matches : score pval sig normw proba_M proba_B rank crer_sig crer_pval crer_sites crer_size
 
@@ -2577,7 +2577,7 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
       unless ($supported_threshold{$thr_field}) {
 	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
       }
-      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
 	unless (&RSAT::util::IsReal($thr_value));
       $lth{$thr_field} = $thr_value;
 
@@ -2588,7 +2588,7 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
       unless ($supported_threshold{$thr_field}) {
 	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
       }
-      &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ") 
+      &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ")
 	unless (&RSAT::util::IsReal($thr_value));
       $uth{$thr_field} = $thr_value;
 
@@ -2598,7 +2598,7 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
 
 =item B<-mth matrix_threshold_file>
 
-Matrix-specific thresholds. 
+Matrix-specific thresholds.
 
 Specify a file containing a list of thresholds to be used for scanning
 the region. This enables to use distinct thresholds for each input
@@ -2607,9 +2607,9 @@ matrix.
 Format: the list of thresholds is a text file with four columns
 (separated by spaces or tabulations) indicating the following fields.
  1.  matrix name
- 2. threshold parameter (uth or lth), 
- 3. threshold field 
- 4. threshold value.  
+ 2. threshold parameter (uth or lth),
+ 3. threshold field
+ 4. threshold value.
 
 The same list of fields is supported as for the options -lth and
 -uth. Various threshold fields and parameters (uth and lth) can be
@@ -2663,7 +2663,7 @@ single-strand search for DNA sequences.
 
 =item B<-return return_fields>
 
-List of fields to return. 
+List of fields to return.
 
 Supported fields:
  sites,pval,seq_scores,p_score,rank,normw,limits,weight_limits,
@@ -2700,7 +2700,7 @@ probability under the background model P(S|B).
 
 =item B<p_score:> return the p_score
 
-This score is given by -log(Pval(w)/Pval_tresh). Where Pval(w) is the P-value of the 
+This score is given by -log(Pval(w)/Pval_tresh). Where Pval(w) is the P-value of the
 wheight and Pval_tresh the threshold on P-value given by the user.
 
 =item B<rank:> Rank.
@@ -2732,12 +2732,12 @@ Note that Wmin and Wmax are approximated using a Bernoulli model, for
 reasons of commputational efficiency.
 
 
-=item B<limits:> limits (start, end) of the input sequences. 
+=item B<limits:> limits (start, end) of the input sequences.
 
 This is useful for drawing feature maps with sequences of different
 lengths.
 
-=item B<weight_limits:> Wmin and Wmax. 
+=item B<weight_limits:> Wmin and Wmax.
 
 For each site, returns the minimal and maximal weight. This is useful
 with adaptative background models.
@@ -2760,7 +2760,7 @@ above the threshold. The significance of the observed number of
 matches in a subwindow is estimated by calculating a P-value using the
 binomial distribution (Aerts et al., 2003).
 
-Example of CRER search: 
+Example of CRER search:
 
  -return crer -uth pval 0.0001 -lth crer_size 20 -uth crer_size 200
 
@@ -2938,7 +2938,7 @@ Number of sequences to be analyzed by job (= on each node of the cluster)
       $cluster = shift(@arguments);
       # set minimum sequences to be analyzed to 1
       $cluster =1 if ($cluster eq "");
-      &RSAT::error::FatalError("# sequences for the cluster must be a natural number.") 
+      &RSAT::error::FatalError("# sequences for the cluster must be a natural number.")
 	unless &RSAT::util::IsNatural($cluster)&&($cluster > 0);
 
     } else {
@@ -3063,7 +3063,7 @@ sub Verbose {
 ##
 ## Usage:
 ##  my $quick_scan = &CheckQuickScan();
-sub CheckQuickScan { 
+sub CheckQuickScan {
   ## check that a sequence has been provided
   unless ($main::infile{input}) {
     &RSAT::message::Warning("Quick scan mode requires to specify an input file") if (($main::verbose >= 2) || ($quick_scan));
@@ -3097,7 +3097,7 @@ sub CheckQuickScan {
     &RSAT::message::Warning("matrix-scan-quick is not installed. Will use the slower version instead.");
     return(0);
   }
-  	
+
   ## If all checks are OK, return 1
   return(1);
 }
@@ -3113,16 +3113,16 @@ sub QuickScan {
   ## Matrix
   my $matrix_name = $matrix->get_attribute("name");
   $matrix->force_attribute("pseudo","0"); ##pseudocounts not added here
-  
-  ## extract each matrix into a separate file 
+
+  ## extract each matrix into a separate file
   ## (matrix-scan-quick works with one matrix at a time, in tab format)
   my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-scan-single-matrix_".&AlphaDate());
   my $tmp_matrix_file =  $tmp_file_name.".tab";
   my $matrix_handle = &OpenOutputFile($tmp_matrix_file);
   print $matrix_handle $matrix->toString(sep=>"\t",
-							   type=>"counts",
-							   format=>"tab",
-							  );
+					 type=>"counts",
+					 format=>"tab",
+					);
   close $matrix_handle;
   &RSAT::server::DelayedRemoval($tmp_matrix_file);
   &RSAT::message::TimeWarn("Exported partial matrix to file", $tmp_matrix_file) if ($main::verbose >= 2);
@@ -3136,8 +3136,8 @@ sub QuickScan {
       if ($bg_in_format ne "motifsampler") {
   	my $tmp_file_name = &RSAT::util::make_temp_file("","convert-background-model_".&AlphaDate());
   	my $tmp_bg_file =  $tmp_file_name.".tab";
-	my $convert_bg_cmd = 
-	  $SCRIPTS."/convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$tmp_bg_file." -bg_pseudo ".$bg_model->get_attribute("bg_pseudo"); 
+	my $convert_bg_cmd =
+	  $SCRIPTS."/convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$tmp_bg_file." -bg_pseudo ".$bg_model->get_attribute("bg_pseudo");
 	&RSAT::message::Debug("Converting background to motifsampler format:", $convert_bg_cmd) if ($main::verbose >= 3);
 	&doit($convert_bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
 	&RSAT::server::DelayedRemoval($tmp_bg_file);
@@ -3152,7 +3152,7 @@ sub QuickScan {
       my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_");
       $tmp_bg_file .= "_MotifSampler.txt";
       my $oligo_len = $main::markov+1;
-      my $count_words_cmd = &RSAT::server::GetProgramPath("count-words",1);# die if cound-words not found
+      my $count_words_cmd = &RSAT::server::GetProgramPath("count-words",1); # die if cound-words not found
 
       my $bg_cmd = $count_words_cmd;
       $bg_cmd .= " -i ".$main::infile{input};
@@ -3163,17 +3163,16 @@ sub QuickScan {
       &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 3);
       &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
       &RSAT::server::DelayedRemoval($tmp_bg_file);
-      $bg_quick_file = $tmp_bg_file;	
+      $bg_quick_file = $tmp_bg_file;
     }
   }
 
   ################################################################
   ## prepare matrix-scan-quick cmd
   ## do NOT pass the pseudocount
-
-  if ($main::verbose >= 1) {
-    $quick_verbose = 1; ## matrix-scan-quick does not accept verbosity higher than 2
-  }
+  #  if ($main::verbose >= 1) {
+  $quick_verbose = 1; ## matrix-scan-quick does not accept verbosity higher than 2
+  #  }
   my $quick_path = &RSAT::server::GetProgramPath("matrix-scan-quick");
   my $quick_cmd = $quick_path;
   $quick_cmd .= " -i ".$main::infile{input};
@@ -3205,13 +3204,13 @@ sub QuickScan {
       next unless (/\S/);		## Skip empty lines
       chomp();
       my ($score,$occ,$occ_cum,$inv_cum,$ccdf) = split ("\t");
-      #       &RSAT::message::Debug($l, $score, 
+      #       &RSAT::message::Debug($l, $score,
       # 			    "occ=".$occ,
       # 			    "occ_sum=".$occ_sum,
       # 			    "inv_cum=".$inv_cum,
       # 			    "ccdf=".$ccdf
       # 	  ) if ($main::verbose >= 0);
-      ## filter out the scores for which occ == 0	  
+      ## filter out the scores for which occ == 0	
       next if ($occ == 0);
       $score = sprintf ("%.${decimals}f",$score);
       $score_distrib->{$matrix_name}->{$score}->{occ}=$occ;
@@ -3223,59 +3222,57 @@ sub QuickScan {
     $cum_sum{$matrix_name}=$score_distrib->{$matrix_name}->{$sorted_scores[0]}->{inv_cum};
     $matrix->{matches} = $cum_sum{$matrix_name};
     $matrix->{scored} = $matrix->{matches};
-  
-   ## Scan mode = sites
-  } elsif 	($scan_mode eq "sites") {
-  	
-  	$quick_cmd .= " -return sites";
-  	$quick_cmd .= " -origin ".$main::origin;
-  	$quick_cmd .= " -v ".$quick_verbose if ($main::verbose >= 1);
-  	
-  	if (defined($lth_matrix->{$matrix_name}->{score})) {
-  		$quick_cmd .= " -t ".$lth_matrix->{$matrix_name}->{score};
-  	}
-  	
-  	#################################
-  	## PVAL calculation
-  	if ($return_fields{pval}){
-  		## calculate distibution of score
-  		my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-distrib_".&AlphaDate());
-  		my $tmp_distrib_file =  $tmp_file_name.".tab";
-		my $matrix_distrib_cmd = $SCRIPTS."/matrix-distrib ";
-		$matrix_distrib_cmd .= " -m ".$matrix_quick_file;
-		$matrix_distrib_cmd .= " -matrix_format tab";
-		$matrix_distrib_cmd .= " -pseudo ".$pseudo_counts;
-		$matrix_distrib_cmd .= " -bgfile ".$bg_quick_file;
-		$matrix_distrib_cmd .= " -bg_pseudo 0"; ## bg_pseudo already included in the bgfile
-		$matrix_distrib_cmd .= " -bg_format MotifSampler";
-		$matrix_distrib_cmd .= " -decimals ".$decimals;
-		$matrix_distrib_cmd .= " -o ".$tmp_distrib_file;
-    
-		&RSAT::message::Debug("Calculating matrix distribution",$matrix_distrib_cmd) if ($main::verbose >= 3);
-    	&doit($matrix_distrib_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
-    	&RSAT::server::DelayedRemoval($tmp_distrib_file);
-  	
-  		## load the distrib file as option to matrix-scan-quick
-  		$quick_cmd .= " -distrib ".$tmp_distrib_file;
-  		
-  		## threshold
-  		if (defined($uth_matrix->{$matrix_name}->{pval})) {
-  			$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
-  		}
-  	}
-  	
-  	#################################
-  	## run matrix-scan-quick
-  	&RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 1);
+
+    ## Scan mode = sites
+  } elsif ($scan_mode eq "sites") {
+    $quick_cmd .= " -return sites";
+    $quick_cmd .= " -origin ".$main::origin;
+    $quick_cmd .= " -v ".$quick_verbose if ($main::verbose >= 1);
+    if (defined($lth_matrix->{$matrix_name}->{score})) {
+      $quick_cmd .= " -t ".$lth_matrix->{$matrix_name}->{score};
+    }
+
+    #################################
+    ## PVAL calculation
+    if ($return_fields{pval}) {
+      ## calculate distibution of score
+      my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-distrib_".&AlphaDate());
+      my $tmp_distrib_file =  $tmp_file_name.".tab";
+      my $matrix_distrib_cmd = $SCRIPTS."/matrix-distrib ";
+      $matrix_distrib_cmd .= " -m ".$matrix_quick_file;
+      $matrix_distrib_cmd .= " -matrix_format tab";
+      $matrix_distrib_cmd .= " -pseudo ".$pseudo_counts;
+      $matrix_distrib_cmd .= " -bgfile ".$bg_quick_file;
+      $matrix_distrib_cmd .= " -bg_pseudo 0"; ## bg_pseudo already included in the bgfile
+      $matrix_distrib_cmd .= " -bg_format MotifSampler";
+      $matrix_distrib_cmd .= " -decimals ".$decimals;
+      $matrix_distrib_cmd .= " -o ".$tmp_distrib_file;
+
+      &RSAT::message::Debug("Calculating matrix distribution",$matrix_distrib_cmd) if ($main::verbose >= 3);
+      &doit($matrix_distrib_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
+      &RSAT::server::DelayedRemoval($tmp_distrib_file);
+
+      ## load the distrib file as option to matrix-scan-quick
+      $quick_cmd .= " -distrib ".$tmp_distrib_file;
+
+      ## threshold
+      if (defined($uth_matrix->{$matrix_name}->{pval})) {
+	$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
+      }
+    }
+
+    #################################
+    ## run matrix-scan-quick
+    &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 1);
     open QUICK, "$quick_cmd |";
-  	my $l=0;
-  	my $comments="";
+    my $l=0;
+    my $comments="";
     while (<QUICK>) {
-    	next if (/^#/);
-    	if (/^;/) {
-    		$comments.=$_;
-    		next;
-    	}
+      next if (/^#/);
+      if (/^;/) {
+	$comments.=$_;
+	next;
+      }
       $l++;
       my @line = split (/\t/,$_);
       my $seq_id = $line[0];
@@ -3284,7 +3281,7 @@ sub QuickScan {
       ## Update statistics
       $matrix->{matches}++;
       $sequence_scores->{$seq_id}->{matches}++;
-    
+
       $match->force_attribute('ft_type', 'site');
       $match->force_attribute('feature_name', $matrix->get_attribute('name'));
       $match->force_attribute('strand',$line[3]);
@@ -3296,24 +3293,24 @@ sub QuickScan {
       $sequence_scores->{$seq_id}->{weight_sum} += $score;
       $sequence_scores->{$seq_id}->{sig_sum} = 0;
       $match->force_attribute('score',$score);
-    
-     if ($return_fields{pval}) {
+
+      if ($return_fields{pval}) {
      	my $pval_value = $line[8];
      	chomp($pval_value);
      	$pval = sprintf("%.1e", $pval_value);
       	$match->force_attribute('pval',$pval);
        	my $ln_pval = sprintf("%.3f", log($pval_value));
-	   	my $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
-	   	$match->force_attribute('ln_pval',$ln_pval);
+	my $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
+	$match->force_attribute('ln_pval',$ln_pval);
       	$match->force_attribute('sig',$sig);
       	$sequence_scores->{$seq_id}->{sig_sum}+= $sig;
-      	
-      	if ($return_fields{eval}){
-      		my $eval = $pval_value * $total_scored;
-      		$match->force_attribute('eval',$eval);
+
+      	if ($return_fields{eval}) {
+	  my $eval = $pval_value * $total_scored;
+	  $match->force_attribute('eval',$eval);
       	}
-    }
-	&print_match($match);
+      }
+      &print_match($match);
     }
   }
 }
@@ -3372,8 +3369,8 @@ sub score_segment {
   &RSAT::error::FatalError(join("\t", "matrix-scan::score_segment",
 				"Error in residue proba calculation ", $segment,
 				"\nsize of background array:", scalar(@residue_proba_B),
-				"\nsize of matrix array:", scalar(@residue_proba_M)))  
-    if (scalar(@residue_proba_M) != scalar(@residue_proba_B)); 
+				"\nsize of matrix array:", scalar(@residue_proba_M)))
+    if (scalar(@residue_proba_M) != scalar(@residue_proba_B));
 
   my $segment_weight = log($proba_M/$proba_B)/$log_base;
   $score = sprintf("%.${decimals}f", $segment_weight);
@@ -3386,15 +3383,15 @@ sub score_segment {
   #
   #      my $residue_weight = log($proba_R_M/$proba_R_B)/$log_base;
   #      $residue_weight = sprintf("%.${decimals}f", $residue_weight);
-  #      
+  #
   #      $score += $residue_weight;
   #      $score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
   #      $score = sprintf("%.${decimals}f",$score);
   #
   #  }
-  
+
   my %prior = $bg_model->get_attribute("suffix_proba");
-  
+
   if (($proba_M > 0) && ($proba_B > 0)) {
     if ($calc_fields{normw}) {
       if ($bg_method eq "window") {
@@ -3412,14 +3409,14 @@ sub score_segment {
 	$pval_value = ${$main::pval{$matrix}}{$score};
 	$pval = sprintf("%.1e", $pval_value);
 	#	      $uth{pval} = 0.1;#,"\n";
-	      
+	
 	####computing p_scores
 	# 	      if (defined($uth{pval})){
 	if ($calc_fields{p_score}) {
 	  $p_score = &p_score($uth{pval},$pval_value);
 	  $p_score = sprintf("%.${decimals}f",$p_score);
 	}
-	      
+	
 	if ($pval_value > 0) {
 	  $ln_pval = sprintf("%.3f", log($pval_value));
 	  $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
@@ -3445,11 +3442,11 @@ sub score_segment {
     #      my $score = sprintf("%.${decimals}f", $score);
     $score_distrib->{$matrix_name}->{$score}->{occ}++;
   }
-  #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
+  #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand,
   #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
 
   ## For CRER search
-  my $is_hit = 1; 
+  my $is_hit = 1;
   if ($return_fields{crer}) {
     #push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
     #push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
@@ -3469,10 +3466,10 @@ sub score_segment {
       push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},0) if ($calc_fields{normw});
     }
   }
-  
+
   ## switch to allow the calculation of pval for window bg model. Requires a lot of computing time !!!
   my $calc_window_pval = 1;
-  
+
   ## Perform the threshold filtering only after having added the score to the disribution
   unless (&check_thresholds("proba_m", $proba_M,$matrix_name)) {
     return(0) ; $calc_window_pval = 0;
@@ -3499,7 +3496,7 @@ sub score_segment {
     return(0) ; $calc_window_pval = 0;
   }
 
-  
+
 
   # &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
 
@@ -3511,18 +3508,18 @@ sub score_segment {
   ############################################################
   ### computing p-val distribution for sliding windows only for
   ### those matches above the minimal defined threshold
-  ############################################################   
+  ############################################################
   if (($bg_method eq "window")&&(($return_fields{pval})||($return_fields{weight_limits}))&&($calc_window_pval)) { ## the p-val distrib only if necessary
       $matrix->calcTheorScoreDistrib("weights");
       my %current_weight_distrib = $matrix->getTheorScoreDistrib("weights"); ## needed to have the list of exact possible scores
       my %current_pval_distrib = $matrix->getTheorScoreDistrib("weights", "inv_cum");
-      
+
        if ($return_fields{weight_limits}){
       	$matrix->weight_range();
       	$Wmin = $matrix->{Wmin};
       	$Wmax= $matrix->{Wmax};
        }
-      
+
       if (($proba_M > 0) && ($proba_B > 0)) {
 	  if ($calc_fields{pval}) {
 	      if (defined($current_weight_distrib{$score})) {
@@ -3549,7 +3546,7 @@ sub score_segment {
 	      }
 	  }
       }
-      
+
   }
 
 
@@ -3670,7 +3667,7 @@ Print the matching site.
 sub print_match {
     my ($match) = @_;
 
-    print $out join ("\t", 
+    print $out join ("\t",
 		     $match->get_attribute('seq_name'),
 		     $match->get_attribute('ft_type'),
 		     $match->get_attribute('feature_name'),
@@ -3686,14 +3683,14 @@ sub print_match {
       print $out "\t", $match->get_attribute('ln_pval');
       print $out "\t", $match->get_attribute('sig');
     }
-    
+
     if ($return_fields{proba_bm}){
 		print $out "\t",    sprintf("%.1e\t%.1e",
 			     $match->get_attribute('proba_M'),
 			     $match->get_attribute('proba_B'),
 			     );
-	}  
-    
+	}
+
     if ($return_fields{eval}) {
     	 print $out "\t", $match->get_attribute('eval');
     }
@@ -3735,7 +3732,7 @@ sub print_match {
 
 =item B<score_crer>
 
-Calculate the score of the crer 
+Calculate the score of the crer
 
 =cut
   sub score_crer {
@@ -3756,7 +3753,7 @@ Calculate the score of the crer
     ## initiate other sums with hit of last position
     my $weight_sum = 0;
     my $pval_prod = 1;
-    my $normw_sum = 0 if ($calc_fields{normw}); 
+    my $normw_sum = 0 if ($calc_fields{normw});
     foreach my $matrix (keys(%crer_seed_hits)) {
       $first_matrix_name = $matrix;
       foreach my $strand (@strands) {
@@ -3768,22 +3765,22 @@ Calculate the score of the crer
 	$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit] if (($calc_fields{normw}) &&(defined($crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit])));
       }
     }
-	
+
     ## Define sub-windows inside the seed CRER : each window is bordered by the last hit (position from right) and each left limit
     ## is a previous hit.
-    ## process each sub-window 
+    ## process each sub-window
     for (my $k=($last_hit-1) ;  $k >= 0 ;  $k--) {
       next if ($crer_sum_hits[$k] == 0);
-     	
-      my $sub_window_length = $last_hit - $k + 1;   
+
+      my $sub_window_length = $last_hit - $k + 1;
       #&RSAT::message::Debug("subwindow length",$sub_window_length) if ($main::verbose >= 10);
-     	
+
       ## update sums
       $hit_sum += $crer_sum_hits[$k];
- 
+
       unless (&check_thresholds("crer_size", $sub_window_length,$first_matrix_name)) {
 	next;
-      }	
+      }
 
       foreach my $matrix (keys(%crer_seed_hits)) {
 	foreach my $strand (@strands) {
@@ -3810,18 +3807,18 @@ Calculate the score of the crer
 	my @seed_positions = @{$crer_seed_weights{$matrix}->{"D"}};
 	my $length;
 	if ($pos == $crer_seed) { ## first seed
-	  $length = $last_hit - $k + 1;   	
+	  $length = $last_hit - $k + 1;
 	}
 	if ($#seed_positions < $k) { ## last position is before $k
 	  next;
 	}
 	if ($#seed_positions <= $last_hit) {
-	  $length = $#seed_positions - $k + 1;				
+	  $length = $#seed_positions - $k + 1;
 	}
 	$n += $length;
       }
       $n *= 2 if ($main::both_strands);
-  	
+
       my $crer_pval = &sum_of_binomials($hit_p, ## prior probabilty
 					$n,	## Number of trials
 					$hit_sum, ## Min number of successes
@@ -3829,24 +3826,24 @@ Calculate the score of the crer
 				       );
       $nb_of_binom_tests{$seq_id}++;
       $sum_binom_tests++;
-	    
+	
       my $crer_sig = "Inf";
       if ($crer_pval > 0) {
 	$crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
       }
-	    
+	
       unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {
 	next;
       }
       unless (&check_thresholds("crer_sig", $crer_sig,$first_matrix_name)) {
 	next;
       }
- 
+
       ##prepare output (ft format)
       my $strand_binon = "D";
       $strand_binon = "DR" if ($main::both_strands);
 
-      ## calculate start and end positions  	
+      ## calculate start and end positions
       my $start_pos = ($sub_window_end - ($last_hit - $k)) - $orig_pos;
       my $end_pos = $sub_window_end + $longest_matrix_size -1 - $orig_pos;
 
@@ -3908,7 +3905,7 @@ Print the CRER.
 sub print_crer {
     my ($crer) = @_;
 
-    print $out join ("\t", 
+    print $out join ("\t",
 		     $crer->get_attribute('seq_name'),
 		     $crer->get_attribute('ft_type'),
 		     $crer->get_attribute('feature_name'),
@@ -3935,7 +3932,7 @@ sub print_crer {
 
     undef $crer;
 }
-  
+
 # ################################################################
 # =pod
 
@@ -3947,7 +3944,7 @@ sub print_crer {
 # sub print_match {
 #     my ($match) = @_;
 
-#     print $out join ("\t", 
+#     print $out join ("\t",
 # 		     $match->get_attribute('seq_name'),
 # 		     $match->get_attribute('ft_type'),
 # 		     $match->get_attribute('feature_name'),
@@ -3972,7 +3969,7 @@ sub print_crer {
 # #				 $proba_M,
 # #				 $proba_B,
 # #				)
-    
+
 #     print $out "\t", $match->get_attribute('normw') if ($return_fields{normw});
 #     print $out "\t", $match->get_attribute('rank') if ($return_fields{rank});
 #     print $out "\n";
@@ -3989,12 +3986,12 @@ Check the lower and upper threshold for a given hit.
 sub check_thresholds {
     my ($key, $value,$matrix_name) = @_;
 
-    if ((defined($lth_matrix->{$matrix_name}->{$key})) && 
+    if ((defined($lth_matrix->{$matrix_name}->{$key})) &&
 	(($value eq $null) || ($value < $lth_matrix->{$matrix_name}->{$key}))
 	) {
 	return 0;
     }
-    if ((defined($uth_matrix->{$matrix_name}->{$key})) && 
+    if ((defined($uth_matrix->{$matrix_name}->{$key})) &&
 	(($value eq $null) || ($value > $uth_matrix->{$matrix_name}->{$key}))
 	) {
 	return 0;
@@ -4020,22 +4017,22 @@ sub check_distrib_thresholds {
 
   ## Check lower thresholds
   if (defined($lth{$key})) {
-    &RSAT::message::TimeWarn("Checking lower threshold on score distibution", 
+    &RSAT::message::TimeWarn("Checking lower threshold on score distibution",
 			     $key, $lth{$key}) if ($main::verbose >= 2);
     foreach my $matrix (@matrices) {
       my $matrix_name = $matrix->get_attribute("name");
       my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
       &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
       foreach my $score (@sorted_scores) {
-	if (($score_distrib->{$matrix_name}->{$score}->{$key} eq $null) || 
+	if (($score_distrib->{$matrix_name}->{$score}->{$key} eq $null) ||
 	    ($score_distrib->{$matrix_name}->{$score}->{$key} < $lth{$key})) {
-	  &RSAT::message::Info("Deleting distribution item", $matrix_name, $score, 
+	  &RSAT::message::Info("Deleting distribution item", $matrix_name, $score,
 			       $key, $score_distrib->{$matrix_name}->{$score}->{$key},
 			       ' < lth', $lth{$key}) if ($main::verbose >= 5);
 	  delete($score_distrib->{$matrix_name}->{$score});
 	}
       }
-      &RSAT::message::Info("Remaining distribution items", $matrix_name, 
+      &RSAT::message::Info("Remaining distribution items", $matrix_name,
 			  scalar(keys %{$score_distrib->{$matrix_name}})) if ($main::verbose >= 2);
     }
   }
@@ -4049,15 +4046,15 @@ sub check_distrib_thresholds {
       my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
       &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
       foreach my $score (@sorted_scores) {
-	if (($score_distrib->{$matrix_name}->{$score}->{$key} eq $null) || 
+	if (($score_distrib->{$matrix_name}->{$score}->{$key} eq $null) ||
 	    ($score_distrib->{$matrix_name}->{$score}->{$key} > $uth{$key})) {
-	  &RSAT::message::Info("Deleting distribution item", $matrix_name, $score, 
+	  &RSAT::message::Info("Deleting distribution item", $matrix_name, $score,
 			       $key, $score_distrib->{$matrix_name}->{$score}->{$key},
 			       ' > uth', $uth{$key}) if ($main::verbose >= 5);
 	  delete($score_distrib->{$matrix_name}->{$score});
 	}
       }
-      &RSAT::message::Info("Remaining distribution items", $matrix_name, 
+      &RSAT::message::Info("Remaining distribution items", $matrix_name,
 			   scalar(keys %{$score_distrib->{$matrix_name}})) if ($main::verbose >= 2);
     }
   }
@@ -4083,7 +4080,7 @@ sub PrintSequenceLimits {
     $seq_end = $seq_start + $seq_len -1;
   }
 
-  print $main::out join ("\t", 
+  print $main::out join ("\t",
 			 $seq_id,
 			 "limit",
 			 "START_END",
@@ -4095,19 +4092,19 @@ sub PrintSequenceLimits {
 			);
   if ($return_fields{pval}) {
     print "\t";
-    print $main::out join ("\t", 
+    print $main::out join ("\t",
 			   0,
 			   0,
 			   0);
   }
   if ($return_fields{eval}) {
     print "\t";
-    print $main::out join ("\t", 
+    print $main::out join ("\t",
 			   0);
   }
   print $main::out "\n";
 
-  #     print $main::out join ("\t", 
+  #     print $main::out join ("\t",
   # 			   $seq_id,
   # 			   "limit",
   # 			   "SEQ_START",
@@ -4117,7 +4114,7 @@ sub PrintSequenceLimits {
   # 			   ".",
   # 			   0,
   # 			  ), "\n";
-  #     print $main::out join ("\t", 
+  #     print $main::out join ("\t",
   # 			   $seq_id,
   # 			   "limit",
   # 			   "SEQ_END",
@@ -4212,7 +4209,7 @@ sub PrintScoreDistrib {
       if ($return_fields{occ_proba}) {
 	my $occ_prior = $null;
 	my $exp_occ = $null;
-	if ((defined($score_distrib->{$matrix_name}->{$score}->{occ_prior})) && 
+	if ((defined($score_distrib->{$matrix_name}->{$score}->{occ_prior})) &&
 	    ($score_distrib->{$matrix_name}->{$score}->{occ_prior} ne $null)) {
 	  $distrib_prior = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{occ_prior});
 	  $exp_occ = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{exp_occ});
@@ -4239,7 +4236,7 @@ sub PrintScoreDistrib {
 	  $occ_sig = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{occ_sig});
 	}
 
-	print $out "\t", join ("\t", 
+	print $out "\t", join ("\t",
 			       $distrib_prior,
 			       $exp_occ,
 			       $occ_pval,
@@ -4256,7 +4253,7 @@ sub PrintScoreDistrib {
 ################################################################
 ## Run matrix-scan in batch mode
 sub runInBatch {
-  &RSAT::message::Info("Batch: running matrix-scan for each sequence separately") 
+  &RSAT::message::Info("Batch: running matrix-scan for each sequence separately")
     if ($main::verbose >= 1);
   local($current_seq, $seq_id);
   my $seq_total;
@@ -4272,7 +4269,7 @@ sub runInBatch {
       $seq_total++;
     }
     close $in;
-    &RSAT::message::Info("Total number of sequences to analyse: $seq_total ") 
+    &RSAT::message::Info("Total number of sequences to analyse: $seq_total ")
       if ($main::verbose >= 2);
   }
 
@@ -4289,7 +4286,7 @@ sub runInBatch {
 
     ## Store the sequence in a temporary file (fasta format)
     $main::outfile{"seq".$sequence_number} = "seq".$sequence_number."_".$seq_id.".".$seq_format;
-    push (@temp_fasta_files, $main::outfile{"seq".$sequence_number});		
+    push (@temp_fasta_files, $main::outfile{"seq".$sequence_number});
     $seq_handle = &OpenOutputFile($main::outfile{"seq".$sequence_number});
     &PrintNextSequence($seq_handle, $seq_format,60,$current_seq,$seq_id);
     close $seq_handle;
@@ -4397,10 +4394,10 @@ sub runInBatch {
 	$cluster_cmd="";
       }
     } else {
-      &RSAT::message::TimeWarn("Executing $job_prefix for seq #$sequence_number $seq_id ") 
+      &RSAT::message::TimeWarn("Executing $job_prefix for seq #$sequence_number $seq_id ")
 	if ($main::verbose >= 2);
       ## Execute the command
-      &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);	
+      &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
     }
   }
 
@@ -4412,10 +4409,10 @@ sub runInBatch {
   }
 
   ## Merge results
-  &RSAT::message::TimeWarn("Merge matrix-scan results of each separate sequence") 
+  &RSAT::message::TimeWarn("Merge matrix-scan results of each separate sequence")
     if ($main::verbose >= 2);
 
-  ## Put all individual results in one file 
+  ## Put all individual results in one file
   $main::outfile{output_raw} = $main::outfile{output}.".raw";
   if (scalar(@temp_output_files) > 0) {
     my $merge_cmd = "cat ";
@@ -4425,20 +4422,20 @@ sub runInBatch {
   }
 
   ## Extract the names of the fields returned
-  open (SYSTEM, "grep -m 1 '^#' $main::outfile{output_raw} |");	
+  open (SYSTEM, "grep -m 1 '^#' $main::outfile{output_raw} |");
   my $header = <SYSTEM>;
   close (SYSTEM);
   print $main::out $header;
 
-  ## Extract the sites from the merged file    
-  ## could add a sort in the command 
+  ## Extract the sites from the merged file
+  ## could add a sort in the command
   open (SYSTEM, "grep -v '^;' $main::outfile{output_raw} | grep -v '^#' | ");
   while (<SYSTEM>) {
     print $main::out $_;
   }
   close (SYSTEM);
 
-  ## Keep the verbosity lines in a log file    
+  ## Keep the verbosity lines in a log file
   $main::outfile{output_log} = $main::outfile{output}.".log";
   my $log_cmd = "grep '^;' $main::outfile{output_raw} > $main::outfile{output_log} ";
   &doit($log_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
@@ -4464,11 +4461,11 @@ sub areJobsDone {
   #	 		my $finished = 0;
   #	 		while ($finished == 0){
   #	 			sleep 30;
-  #	 			open (SYSTEM, "qstat | grep $user|grep $job_prefix | wc -l|");	
+  #	 			open (SYSTEM, "qstat | grep $user|grep $job_prefix | wc -l|");
   # 				my $job_running = <SYSTEM>;
   #				close (SYSTEM);
   #				chomp($job_running);
-  #				&RSAT::message::TimeWarn("Still $job_running jobs running... ") 
+  #				&RSAT::message::TimeWarn("Still $job_running jobs running... ")
   # 				if ($main::verbose >= 4);
   #				$finished=1 if ($job_running == 0);
   #			}
@@ -4505,7 +4502,7 @@ sub areJobsDone {
 	}
       }
     }
-    &RSAT::message::TimeWarn("Still ".($finished-$current_status)."jobs running...") 
+    &RSAT::message::TimeWarn("Still ".($finished-$current_status)."jobs running...")
       if ($main::verbose >= 2);
   }
   return (1);
@@ -4513,7 +4510,7 @@ sub areJobsDone {
 
 
 __END__
-    
+
 =pod
 
 =back
@@ -4641,15 +4638,15 @@ significant overlap.
 # 	  }
 # 	}
 #       }
-      
+
 #       if ($return_fields{distrib}) {
 # 	#      my $score = sprintf("%.${decimals}f", $score);
 # 	$score_distrib->{$matrix_name}->{$score}->{occ}++;
 #       }
-#       #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
+#       #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand,
 #       #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
-      
-      
+
+
 #       ## Perform the threshold filtering only after having added the score to the disribution
 #       next unless (&check_thresholds("proba_m", $proba_M));
 #       next unless (&check_thresholds("proba_b", $proba_B));
@@ -4665,7 +4662,7 @@ significant overlap.
 #       #    return(0) unless (&check_thresholds("info", $info));
 
 #       $matrix->{matches}++;
-      
+
 #       ## Update sequence-wise scores
 #       if ($return_fields{seq_scores}) {
 # 	$sequence_scores->{$seq_id}->{matches}++;
