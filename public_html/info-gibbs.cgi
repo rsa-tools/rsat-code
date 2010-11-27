@@ -48,19 +48,34 @@ $query = new CGI;
 #
 $parameters = '';
 
+<<<<<<< info-gibbs.cgi
+
+## Scan single or both strands
+$add_rc = 0;
+=======
 ### sequence file ####
 ($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
 $parameters .= "-i $sequence_file";
 push @result_files, ("input sequence",$sequence_file);
 
 #### strand
+>>>>>>> 1.17
 if (lc($query->param("add_rc")) eq "on") {
+<<<<<<< info-gibbs.cgi
+#    $add_rc = 1;
+#    $convert_seq_options .= "-addrc ";
+=======
     $add_rc = 1;
+>>>>>>> 1.17
     $parameters .= ' --strand=+-';
 } else {
-    $add_rc = 0;
     $parameters .= ' --strand=+';
 }
+
+## sequence file
+($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>$add_rc);
+$parameters .= "-i $sequence_file";
+push @result_files, ("input sequence",$sequence_file);
 
 ### matrix length
 if (&IsNatural($query->param('length'))) {
@@ -186,8 +201,7 @@ if ($query->param('output') eq "display") {
     &PipingForm();
 
     print "<hr size=\"3\">";
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
@@ -265,5 +279,4 @@ Compare a single matrix to a motif database.
 </tr>
 </table>
 End_of_form
-  
 }

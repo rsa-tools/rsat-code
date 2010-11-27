@@ -114,8 +114,6 @@ if (($query->param('output') =~ /display/i) ||
     &PrintURLTable(@result_files);
     close(RESULT);
 
-#} elsif 
-#    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }

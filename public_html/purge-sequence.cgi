@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.9 2008/06/04 08:02:59 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.10 2010/11/27 16:30:56 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -125,8 +125,6 @@ if (($query->param('output') =~ /display/i) ||
 
     print "<hr size = 3>";
 
-#} elsif ($query->param('output') =~ /server/i) {
-#    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
