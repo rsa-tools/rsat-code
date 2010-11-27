@@ -155,20 +155,14 @@ sub get_all_descendents{
 
 sub get_node_descendents{
   my ($self, $node_id, $order, $type, $max_depth, $max_leaves) = @_;
-#   my $self =shift;
-#   my $node_id=shift;
-#   my $order=shift;
-#   my $type=shift; # all, leave, node
-#   my $max_depth=shift;
-#   my $max_leaves=shift;
-#  &RSAT::message::Info("RSAT::Tree", $self, "Getting node descendents", $node_id, $order, $type) if ($main::verbose >= 4);
+#  &RSAT::message::Info("RSAT::Tree", $self, "Getting node descendents", $node_id, $order, $type) if ($main::verbose >= 0);
   if ($node_id){
     my $node = $self->get_node_by_id($node_id);
 #    &RSAT::message::Debug("RSAT::Tree", $node_id, "node", $node) if ($main::verbose >= 10);
     my (@descendents) = $node->get_all_descendents($order,$type,$max_depth,$max_leaves);
     return ($node,@descendents);
   }else{
-    die("No valid node id !");
+    &RSAT::error::FatalError("&RSAT::Tree::get_node_descendents() was called without specifying \$node_id");
   }
 }
 
