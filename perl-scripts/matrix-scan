@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.181 2010/11/27 16:36:20 jvanheld Exp $
+# $Id: matrix-scan,v 1.182 2010/11/28 02:14:58 rsat Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3580,7 +3580,6 @@ sub score_segment {
 			      "start_pos=".$start_pos,
 			      "end_pos=".$end_pos,
 			     ) if ($main::verbose >= 10);
-#      die "HELLO";
     } else {
       $start_pos = $pos - $orig_pos;
       $end_pos = $start_pos + $ncol - 1;

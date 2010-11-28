@@ -139,8 +139,6 @@ $parameters .= " -o ".$file_prefix;
 ## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
-&RSAT::error::FatalError("HELLO");
-
 $index_file = $result_subdir."/".$query_prefix."_index.html";
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);

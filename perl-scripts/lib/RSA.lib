@@ -737,7 +737,6 @@ sub ListSupportedOrganisms_old {
 
   foreach my $key (keys %main::supported_organism) {
       $names{$key} = $main::supported_organism{$key}->{'name'};
-#      print "HELLO $key\t",$main::supported_organism{$key}->{'name'}, "\t", $names{$key}, "\n";;
   }
   @sorted_names = sort values %names;
   @sorted_keys = sort keys %supported_organism;

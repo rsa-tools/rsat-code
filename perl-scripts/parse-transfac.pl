@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.13 2010/04/17 03:04:32 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.14 2010/11/28 02:14:58 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -431,8 +431,6 @@ sub ReadArguments {
 	    ### transpro
 	} elsif ($ARGV[$a] eq "-transpro") {
 	    $main::parse_transpro = 1;
-
-#	    warn join("\t", "HELLO", $parse_transpro, $main::parse_transpro), "\n";
 
 	}
 	

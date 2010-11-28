@@ -1487,7 +1487,6 @@ sub parse_genomic_coordinates {
 			"start:".$seq_start,
 			"end:".$seq_end,
 			"strand:".$seq_strand) if ($main::verbose >= 4);
-#  die "HELLO\n";
 
   if ($genome_format eq "UCSC") {
     $seq_org =~ s/\_.*//;

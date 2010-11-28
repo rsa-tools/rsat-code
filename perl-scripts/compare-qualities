@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-qualities,v 1.9 2010/08/17 02:20:27 amedina Exp $
+# $Id: compare-qualities,v 1.10 2010/11/28 02:14:58 rsat Exp $
 #
 ############################################################
 
@@ -126,7 +126,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
     
     %main::infile = ();
@@ -931,7 +931,6 @@ sub auc_calc {
 				my $fpr = calc_fpr($curve,$X_col,$per);
 				&RSAT::message::Debug("FPR at Sensititivity" , $per, "=", $fpr) if ($main::verbose >=3);
 				if (($dist eq  $main::cv_colname ) && $per == 0.5 ){
-				  #  die "HELLO  $per  $fpr\n  ";
 				    $fpr_ms_cv=$fpr;
 				}
 				if (($dist eq  'matrix_sites' ) && $per == 0.5 ){
