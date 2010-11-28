@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.50 2010/10/15 14:02:51 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.51 2010/11/28 03:52:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -299,19 +299,24 @@ package main;
     ## Generate motif logos
     if (($return_fields{logo}) || ($return_fields{links})) {
       &RSAT::message::TimeWarn("Generating logos and links") if ($main::verbose >= 2);
+
+#      &RSAT::message::Debug("current directory", `pwd`) if ($main::verbose >= 10);
+
       my $logo_link_cmd = $SCRIPTS."/convert-matrix -v 1";
       $logo_link_cmd .= " -i ". $outfile{count_matrices};
       $logo_link_cmd .= " -from tab -to tab";
       $logo_link_cmd .= " -return counts";
       $logo_link_cmd .= " -return sites" if ($return_fields{sites});
+      $logo_link_cmd .= " -return links" if ($return_fields{links});
       if ($return_fields{logo}) {
-	$logo_link_cmd .= " -return logo -logo_format png,pdf ";
+	$logo_link_cmd .= " -return logo -logo_format png,pdf";
 	$logo_link_cmd .= " -logo_file ".$outfile{logo_basename};
       }
-      $logo_link_cmd .= " -return links" if ($return_fields{links});
       $logo_link_cmd .= " -o ".$outfile{links};
       print $log "; sites -> count matrices\n", $logo_link_cmd, "\n";
       &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+
     }
 
 
