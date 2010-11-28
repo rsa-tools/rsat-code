@@ -3796,7 +3796,9 @@ sub makeLogo{
     }
 
     ## Prepare the seqlogo command
-    my $logo_cmd = $seqlogo_path;
+#    my $logo_cmd = $seqlogo_path;
+    my $logo_cmd = "cd ".$logo_dir;
+    $logo_cmd .= "; ".$seqlogo_path;
     $logo_cmd .= " -f ".$fake_seq_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
@@ -3804,7 +3806,8 @@ sub makeLogo{
     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
 #    $logo_cmd .= " -e -M";
     $logo_cmd .= " ".$logo_options;
-    $logo_cmd .= " -o "."$logo_dir/". $logo_basename;
+    $logo_cmd .= " -o ". $logo_basename;
+#    $logo_cmd .= " -o "."$logo_dir/". $logo_basename;
     $logo_cmd .= " -t '".$logo_title."'";
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
