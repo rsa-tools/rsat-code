@@ -3812,6 +3812,14 @@ sub makeLogo{
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
 
+
+#     &RSAT::message::Debug("logo_dir=".$logo_dir,
+# 			  "\n\tseqlogo_path=".$seqlogo_path,
+# 			  "\n\tfake_seq_file=".$fake_seq_file,
+# 			  "\n\tpwd=".`pwd`,
+# 			  "logo_cmd=".$logo_cmd,
+# 			 ) if ($main::verbose >= 10);
+
     ## Run seqlogo with specific parameters for the &doit() procedure
     my $logo_dry = 0;
     my $logo_die = 0;
@@ -3895,10 +3903,13 @@ sub fake_seq_from_matrix {
   &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
 
   ## create a temporary sequence file which will be deleted after logo creation
-  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
+  my $tmp_seq_file = &RSAT::util::make_temp_file($main::TMP, $self->get_attribute("id"));
+
+#  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
 #  &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 5);
+  close $seq_handle;
   return ($tmp_seq_file,$seq_number);
 }
 
