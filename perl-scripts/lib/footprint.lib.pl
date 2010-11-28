@@ -259,11 +259,11 @@ sub GetOutfilePrefix {
 	$output_file_prefix .= "_operons";
       }
       $current_prefix = join("/", $output_dir, $output_file_prefix);
-      &RSAT::message::Info("Automatic definition of the output prefix", $current_prefix) if ($main::verbose >= 2);
     }
 
     ## Prefix for multiple-gene analysis
   } else {
+
     #if ($query_prefix) {
     my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
     my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
@@ -276,9 +276,9 @@ sub GetOutfilePrefix {
       $output_file_prefix .= "_operons";
     }
     $current_prefix = join("/", $output_dir, $output_file_prefix);
-    &RSAT::message::Info("Automatic definition of the output prefix", $current_prefix) if ($main::verbose >= 2);
     #}
   }
+  &RSAT::message::Info("Automatic definition of the output prefix", $current_prefix) if ($main::verbose >= 2);
 
   #die $current_prefix;
 
