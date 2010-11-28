@@ -1141,7 +1141,7 @@ sub SaveCommand {
 ##
 ## Note: this task is now treated in &EmailTheResult().
 sub ServerOutput {
-  &RSAT::error::FatalError("HELLO");
+
     #### redirect the task to email output
     &EmailTheResult(@_);
 }

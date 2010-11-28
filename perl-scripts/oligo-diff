@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.19 2010/11/24 03:41:12 jvanheld Exp $
+# $Id: oligo-diff,v 1.20 2010/11/28 02:14:58 rsat Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    local $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    local $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     $SCRIPTS=$ENV{RSAT}."/perl-scripts";
     $BIN=$ENV{RSAT}."/bin";
 #    $program_version = "0.00";
@@ -282,7 +282,6 @@ package main;
 	  $ratio = 0;
 	} else {
 	  $ratio = "NA";
-	  die "HELLO";
 	}
       }
       $patterns{$oligo}->{ratio} = $ratio;

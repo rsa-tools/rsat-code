@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-location.pl,v 1.11 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: parse-location.pl,v 1.12 2010/11/28 02:14:58 rsat Exp $
 #
 # Time-stamp: <2002-06-06 14:06:08 jvanheld>
 #
@@ -44,7 +44,6 @@ while (<$in>) {
     my @lefts = ();
     my @rights = ();
 
-#    print join ("\t", "HELLO", $orf_id, $#exons + 1, $location);
     foreach my $e (0..$#exons) {
 	my $exon = $exons[$e];
   	my @limits = split "-", $exon;

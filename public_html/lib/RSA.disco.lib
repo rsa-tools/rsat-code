@@ -261,7 +261,6 @@ sub CountWords {
 #      $oligo{$monad1}->{occ} += $occ;
 #      $oligo{$monad2}->{occ} += $occ;
 #      $sum_oligo_count += $occ;
-      #	&RSAT::message::Debug("HELLO",  $monad1, $spacing, $monad2, $occ, $dyad_occ_sum{$spacing}) if ($main::verbose >= 5);
     }
   }
 

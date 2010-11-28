@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.64 2010/11/24 02:22:11 jvanheld Exp $
+# $Id: compare-classes,v 1.65 2010/11/28 02:14:57 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1421,7 +1421,6 @@ sub CompareClasses {
 	foreach my $key (qw(P_val E_val sig)) {
 	  if ((defined($lth{$key})) &&
 	      ($current_compa{$key}< $lth{$key})) {
-#	    &RSAT::message::Debug("HELLO", $key, $compa_key, $current_compa{$key}, $lth{$key}) if ($main::verbose >= 0);
 	    $proba_ok = 0;;
 	  } 
 	  if ((defined($uth{$key})) &&

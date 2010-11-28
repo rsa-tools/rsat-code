@@ -36,7 +36,6 @@ $query = new CGI;
 print "<PRE>\n";
 $result = `$print_env_command`;
 print $result;
-print "Hello\n";
 print "</PRE>\n";
 
 print $query->end_html;

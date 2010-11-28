@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.12 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: calibrate-oligos,v 1.13 2010/11/28 02:14:57 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -577,8 +577,6 @@ sub CalculateStatistics {
 #			 @counts, 
 #			 @expected,
 			 ), "\n";
-#	die "HELLO" if ($pattern_count == 2);
-
     }
 
     &CloseVerbose();
