@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.90 2010/11/28 03:53:10 jvanheld Exp $
+# $Id: peak-motifs,v 1.91 2010/11/28 08:45:54 jvanheld Exp $
 #
 ############################################################
 
@@ -111,13 +111,14 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.90 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.91 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
   @main::param_list = ();
 
   %main::dir = ();
+  @main::outdir = (); ## Directories to report in the log file
   %main::infile = ();
   %main::outfile = ();
 
@@ -212,10 +213,6 @@ package main;
   ## Open output stream
   $main::out = &OpenOutputFile($main::outfile{log});
 
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose);
-
   foreach my $seq_type (@seq_types) {
     &PurgeSeq($seq_type) if ($task{purge});
     &SequenceLengths($seq_type) if ($task{seqlen});
@@ -254,6 +251,7 @@ package main;
 			      && ($task{motifs_vs_db}));
 
   &ScanSequences() if ($task{scan});
+
 
   if ($task{timelog}) {
     &TimeLog();
@@ -1428,10 +1426,23 @@ sub ReadMotifTable {
     push @motif_dirs, $motif_dir;
     push @motif_files, $motif_file;
 
+    ################################################################
     ## Index motif-specific files for post-processing and synthesis
-#    $main::dir{$motif_id} = $motif_dir;
-    $main::outfile{$motif_id} = $motif_file;
 
+    ## Comparisons betwen discoverd and reference motifs
+    $main::dir{$motif_id} = $motif_dir; push @outdir, $motif_id;
+    $main::outfile{$motif_id} = $motif_file;
+    $main::outfile{$motif_id."_vs_ref_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_ref");
+    $main::outfile{$motif_id."_vs_ref"} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_ref");
+    $main::outfile{$motif_id."_vs_ref_html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_ref");
+
+
+    ## Comparisons betwen discoverd and motif databases
+    foreach my $db_name (@motif_databases) {
+      $main::outfile{$motif_id."_vs_db_".$db_name."_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_db_".$db_name);
+      $main::outfile{$motif_id."_vs_db_".$db_name} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_db_".$db_name);
+      $main::outfile{$motif_id."_vs_db_".$db_name."html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_db_".$db_name);
+    }
 #    &RSAT::message::Debug("Indexed motif", $motif_nb, $motif_id, $motif_dir, $motif_file) if ($main::verbose >= 10);
   }
   close ($in);
@@ -1453,10 +1464,6 @@ sub MotifsVersusReference {
     my $motif_dir = $motif_dirs[$i];
     my $motif_file = $motif_files[$i];
     &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 0);
-
-    $main::outfile{$motif_id."_vs_ref_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_ref");
-    $main::outfile{$motif_id."_vs_ref"} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_ref");
-    $main::outfile{$motif_id."_vs_ref_html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_ref");
 
     ## Compare one discovered motif with the reference motif
     my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
@@ -1519,10 +1526,6 @@ sub MotifsVersusDatabase {
       my $motif_dir = $motif_dirs[$i];
       my $motif_file = $motif_files[$i];
       &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 0);
-
-      $main::outfile{$motif_id."_vs_db_".$db_name."_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_db_".$db_name);
-      $main::outfile{$motif_id."_vs_db_".$db_name} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_db_".$db_name);
-      $main::outfile{$motif_id."_vs_db_".$db_name."html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_db_".$db_name);
 
       ## Compare one discovered motif with the reference motif
       my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
@@ -1732,6 +1735,34 @@ sub TimeLog {
   &RSAT::message::TimeWarn("Time log html", $main::outfile{timelog_html}) if ($main::verbose >= 1);
 }
 
+
+################################################################
+## Print the HTML header with styles etc
+sub PrintHtmlFileHedaer {
+  my ($handle) = @_;
+
+  ## HTML Header and title
+  print $handle "<html>\n";
+  print $handle "<head>\n";
+  print $handle "<title>peak-motifs ".$main::param{title}."</title>\n";
+
+  ## Page styles
+  print $handle "<style type='text/css'>\n";
+  print $handle `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+  print $handle "</style>\n";
+#  print $handle "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
+
+  print $handle "</head>\n";
+  print $handle "<body>\n";
+  print $handle "<h1>Result: peak-motifs ".$main::param{title}."</h1>\n";
+
+  ## Print the command line
+  print $handle "<pre>";
+  print $handle "<b>Command:</b>  peak-motifs ";
+  &PrintArguments($handle);
+  print $handle "</pre>";
+}
+
 ################################################################
 ## Generate a synthetic table summarizing the main results with links
 ## to the iriginal result files.
@@ -1740,26 +1771,7 @@ sub Synthesis {
   local $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
 
-  ## HTML Header and title
-  print $syn "<html>\n";
-  print $syn "<head>\n";
-  print $syn "<title>peak-motifs ".$main::param{title}."</title>\n";
-
-  ## Page styles
-  print $syn "<style type='text/css'>\n";
-  print $syn `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
-  print $syn "</style>\n";
-#  print $syn "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
-
-  print $syn "</head>\n";
-  print $syn "<body>\n";
-  print $syn "<h1>Result: peak-motifs ".$main::param{title}."</h1>\n";
-
-  ## Print the command line
-  print $syn "<pre>";
-  print $syn "<b>Command:</b>  peak-motifs ";
-  &PrintArguments($syn);
-  print $syn "</pre>";
+  &PrintHtmlFileHedaer($syn);
 
   ## Header of the synthetic table
   print $syn "<h2>Synthetic report</h2>";
@@ -1794,6 +1806,7 @@ sub Synthesis {
   &SyntheticTableAddRow("Parameters and files",
 			"",
  			"txt"=>$main::outfile{log},
+ 			"html"=>$main::outfile{links},
  		       );
   &SyntheticTableAddRow("Time log",
 			"",
@@ -1812,20 +1825,19 @@ sub Synthesis {
 #  print $syn `cat $main::outfile{log}`;
 #  print $syn "</pre>";
 
+
+  ################################################################
+  ## Report the list if input/output files. This has to be done at the
+  ## end of the process, since it includes a list of discovered motifs
+  ## is not known before having run the motif discovery algorithms.
+  &ReportParamsAndFiles();# if ($main::verbose >= 1);
+
   ## End of the HTML file
   print $syn "</body>\n";
   print $syn "</html>\n";
   close $syn;
   &RSAT::message::TimeWarn("Synthetic report", $main::outfile{synthesis}) if ($main::verbose >= 1);
 }
-
-# ################################################################
-# ## Compute a file path relative to the synthesis file
-# sub RelativePath {
-#   my ($file) = @_;
-#   my ($link, $shared_path) = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-#   return $link;
-# }
 
 ################################################################
 ## Add a row to the syhnthetic table
@@ -1842,8 +1854,8 @@ sub SyntheticTableAddRow {
     $file = shift(@files);
     if (-e $file) {
       &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
-      $file = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-      print $syn "<a href='".$file."'>[".$key."]</a><br>\n";
+      my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+      print $syn "<a href='".$link."'>[".$key."]</a><br>\n";
     } else {
       print $syn "<font color='red'>[".$key."]</font><br>\n";
     }
@@ -2828,6 +2840,7 @@ sub CheckArguments {
   ## Output directory
   if ($main::dir{output}) {
     &RSAT::util::CheckOutDir($main::dir{output});
+    push @outdir, "output";
   } else {
     &FatalError("You must define the output directory (option -outdir)");
   }
@@ -2844,6 +2857,7 @@ sub CheckArguments {
 
   ## Log files
   $main::outfile{log} = &OutFileName("reports", ".txt", "log");
+  $main::outfile{links} = &OutFileName("reports", ".html", "links");
   $main::outfile{timelog} = &OutFileName("reports", ".txt", "timelog");
   $main::outfile{timelog_html} = &OutFileName("reports", ".html", "timelog");
   $main::outfile{timetable} = &OutFileName("reports", ".txt", "timetable");
@@ -2898,36 +2912,91 @@ sub CheckArguments {
 }
 
 ################################################################
-## Verbose message
-sub Verbose {
-    print $main::out "; peak-motifs ";
-    &PrintArguments($main::out);
-    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+## Report parameters and input/output files.
+##
+## This has to be executed after the processing because the verbose
+## includes a list of all result files, and the motif list depend on
+## the number of motifs returned by the different algorithms.
+sub ReportParamsAndFiles {
 
-    ## Parameter values
-    print $main::out "; Parameter values\n";
-    foreach my $param_name (@param_list) {
-      print $main::out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
+  ## Open HTML file for links
+  my $links = &OpenOutputFile($main::outfile{links});
+  &PrintHtmlFileHedaer($links);
+
+  sub PrintFileLink {
+    my ($key, $file) = @_;
+    ## HTML output with links
+    print ($links "<tr>\n");
+    print ($links "<td>", $key, "</td>\n");
+    print ($links "<td>\n");
+    if (-e $file) {
+      &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
+      my $link = &RSAT::util::RelativePath($main::outfile{links}, $file);
+      print $links "<a href='".$link."'>".$file."</a><br>\n";
+    } else {
+      print $links "<font color='red'>".$file."</font><br>\n";
     }
+    print ($links "</td>\n");
+    print ($links "</tr>\n");
+  }
 
-    ## Input file(s)
-    if (defined(%main::infile)) {
-	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	  printf $main::out ";\t%-22s\t%s\n", $key, $value;
-	}
+  ## Read the list of directories and files for the discovered motifs
+  &ReadMotifTable();
+
+  print $links "<p><table class='sortable'>\n";
+
+  print $main::out "; peak-motifs ";
+  &PrintArguments($main::out);
+  printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+
+  ## Parameter values
+  print $main::out "; Parameter values\n";
+  foreach my $param_name (@param_list) {
+    print $main::out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
+  }
+
+  print $out &PrintThresholdValues();
+
+  ## Input file(s)
+  if (defined(%main::infile)) {
+    print $main::out "; Input files\n";
+    print $links "<tr><th colspan=2>","Input files","</th></tr>";
+
+#    while (my ($key,$file) = each %main::infile) {
+    foreach my $key (sort keys  %main::infile) {
+      my $file = $main::infile{$key};
+      printf $main::out ";\t%-22s\t%s\n", $key, $file; ## Text output
+      &PrintFileLink($key, $file); ## HTML output
     }
+  }
 
-    print $out &PrintThresholdValues();
-
-    ## Output files
-    if (defined(%main::outfile)) {
-	print $main::out "; Output files\n";
-	foreach my $key (sort keys  %main::outfile) {
-	  $value = $main::outfile{$key};
-	  printf $main::out ";\t%-30s\t%s\n", $key, $value;
-	}
+  ## Directories
+  if (scalar(@outdir) > 0) {
+    print $main::out "; Directories\n";
+    print $links "<tr><th colspan=2>","Directories","</th></tr>";
+    foreach my $key (@outdir) {
+      my $dir = $main::dir{$key};
+      printf $main::out ";\t%-30s\t%s\n", $key, $dir; ## Text output
+      &PrintFileLink($key, $dir); ## HTML output
     }
+  }
+
+  ## Output files
+  if (defined(%main::outfile)) {
+    print $main::out "; Output files\n";
+    print $links "<tr><th colspan=2>","Output files","</th></tr>";
+    foreach my $key (sort keys  %main::outfile) {
+      my $file = $main::outfile{$key};
+      printf $main::out ";\t%-30s\t%s\n", $key, $file; ## Text output
+      &PrintFileLink($key, $file); ## HTML output
+    }
+  }
+
+  ## Close the links file
+  print $links "</table>\n";
+  print $links "</body>";
+  print $links "</html>";
+  close $links;
 }
 
 =pod
