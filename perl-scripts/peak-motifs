@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.91 2010/11/28 08:45:54 jvanheld Exp $
+# $Id: peak-motifs,v 1.92 2010/11/28 14:18:09 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.91 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -161,8 +161,8 @@ package main;
 		      "meme_bg",
 		      "meme",
 
-		      "merge_motifs",
-		      "separate_motifs",
+#		      "merge_motifs",
+		      "collect_disco_motifs",
 #		      "cluster_motifs",
 		      "motifs_vs_ref",
 		      "motifs_vs_db",
@@ -238,9 +238,9 @@ package main;
   &CalcMemeBackground() if ($task{meme_bg});
   &RunMEME() if ($task{meme});
 
-  &MergeMotifs() if ($task{merge_motifs});
+  &MergeMotifs() if (($task{collect_disco_motifs}) || ($task{merge_motifs}));
 
-  &SeparateMotifs() if ($task{separate_motifs});
+  &SplitMotifs() if ($task{collect_disco_motifs});
 
 #  &ClusterMotifs() if ($task{cluster_motifs});
 
@@ -1253,7 +1253,7 @@ sub MergeMotifs {
 ################################################################
 ## Split the discovered motifs in separate files in order to analyze
 ## them separately. One separate directory is created for each motif.
-sub SeparateMotifs {
+sub SplitMotifs {
   &RSAT::message::TimeWarn("Splitting discovered motifs in separate files") if ($main::verbose >= 1);
 
   my @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
@@ -1311,7 +1311,7 @@ sub SeparateMotifs {
     $cmd .= " -o ".$main::outfile{$motif_id."_tab"};
     &one_command($cmd, 1);
 
-#    &RSAT::message::Debug("&SeparateMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id}) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("&SplitMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id}) if ($main::verbose >= 10);
   }
   close $motif_table;
 
@@ -1409,7 +1409,7 @@ sub ClusterMotifs {
 
 ################################################################
 ## Read the list of discovered motifs (produced by the method
-## &SeparateMotifs()) and index them. This is required for several
+## &SplitMotifs()) and index them. This is required for several
 ## post-processing methods.
 sub ReadMotifTable {
   my ($in) = &OpenInputFile($main::outfile{motifs_discovered_table});
@@ -2870,7 +2870,7 @@ sub CheckArguments {
   if ($task{motif_compa}) {
     $task{merge_motifs} = 1;
     #   $task{cluster_motifs} = 1;
-    $task{separate_motifs} = 1;
+    $task{collect_disco_motifs} = 1;
     $task{motifs_vs_ref} = 1 if (defined($main::infile{ref_motifs}));
     $task{motifs_vs_db} = 1 if (scalar(@motif_databases) > 0);
   }
