@@ -157,12 +157,6 @@ while ($current_line = <$in>) {
 	    }
 	}
 	print $out join ("\t", $current_line, $descr, $synonyms), "\n";
-#	warn join "\t", "HELLO", $current_line, $query, $orf_id, $descr, "\n";
-#	if ($columns[$ORF_column+1] =~ /(y[a-p][rl]\S+)/i) {
-#	    $ORF_id = $1;
-#	}
-#    } elsif ($current_line =~ /(y[a-p][rl]\S+)/i) {
-#	$ORF_id = $1;
     }
 #    print $out "$current_line\t";
 #    print $out "$function{uc($ORF_id)}\n";

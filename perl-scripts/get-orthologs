@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.52 2010/11/26 15:07:49 rsat Exp $
+# $Id: get-orthologs,v 1.53 2010/11/28 02:14:58 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -556,7 +556,6 @@ package main;
     # 	    my @current_hits = ();
     # 	    foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
     # 	      push @current_hits, $bbh->{$query_gene}->{$org}->{$hit};
-    # 	      die $bbh->{$query_gene}->{$org}->{$hit}, "HELLO\n";
     # 	    }
     # 	    push @hits, join ";", @current_hits;
     # 	  } else {
