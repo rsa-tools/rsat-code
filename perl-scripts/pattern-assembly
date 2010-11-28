@@ -184,7 +184,6 @@ sub AssembleFragments {
     }
     
     #    local($assembled) = $prefix.$word1.$suffix;
-    #print "hello\t$word1\t$word2\toff=$offset\tpre=$prefix\tover=$over_word\tsuf=$suffix\n";
     local($assembled) = $prefix.$over_word.$suffix;
     return $assembled;
 }

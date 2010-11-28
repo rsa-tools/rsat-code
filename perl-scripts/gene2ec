@@ -99,8 +99,6 @@ while (<$in>) {
     my $orf_id = $orf_id{uc($query)};
     if ($orf_id) {
 
-#	warn join "\t", "HELLO", $orf_id, @{$ecs{$orf_id}}, "\n";
-
 	print $out ("; Query $query\t$orf_id\n") if ($verbose >=2);
 	$query{uc($orf_id)} = 1;
 	if ($#{$ecs{$orf_id}} >= 0) {

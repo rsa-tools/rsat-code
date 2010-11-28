@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: split-matrix,v 1.8 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: split-matrix,v 1.9 2010/11/28 02:14:58 rsat Exp $
 #
 ############################################################
 
@@ -24,8 +24,7 @@ matrix media.
 
 =head1 AUTHORS
 
-Alejandra Medina-Rivera
-amedinan@lcg.unam.mx
+Alejandra Medina-Rivera <amedinan@lcg.unam.mx>
 
 =head1 CATEGORY
 
@@ -91,7 +90,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $decimals = 1;
@@ -139,7 +138,7 @@ package main;
 	"information"=>1,
 	);
     $supported_split_options = join ",", sort keys %supported_return_type;
-  #  die "HELLO";
+
 ## input formats
     %supported_input_format = %RSAT::MatrixReader::supported_input_format;
     $supported_input_formats = join ",", sort keys %supported_input_format;
@@ -548,7 +547,7 @@ This arguments is passed to matrix-scan and matrix-distrib.
 
 	  $main::decimals = shift(@arguments);
 	  &RSAT::error::FatalError("The number of decimals must be a natural number")
-                   unless &IsNatural($main::decimals); die 'Hello';
+                   unless &IsNatural($main::decimals);
 
    ## Output file
 =pod
