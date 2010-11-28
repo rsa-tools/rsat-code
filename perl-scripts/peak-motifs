@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.89 2010/11/27 22:58:45 jvanheld Exp $
+# $Id: peak-motifs,v 1.90 2010/11/28 03:53:10 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.89 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.90 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -189,6 +189,12 @@ package main;
 
   local $meme_options = "";
   local $meme_suffix = "";
+
+  ## Those variables need to be global for motif post-processing and indexing
+  local @motif_ids;
+  local @motif_dirs;
+  local @motif_files;
+  local $motif_nb;
 
   ################################################################
   ## Set default parameters
@@ -380,6 +386,20 @@ sub DefaultParameters {
 
   ## Options for MEME background model
   $main::param{bg_meme_markov} = 3; ## Markov order for MEME
+
+
+
+  ################################################################
+  ## Options used for motif comparison
+  my $motif_compa_options =  ""; 
+  $motif_compa_options .= " -DR";
+  $motif_compa_options .= " -sort Ncor";
+  $motif_compa_options .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
+  $motif_compa_options .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
+  $motif_compa_options .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
+  $motif_compa_options .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
+  $motif_compa_options .= " -return matrix_name,all_metrics,width,strand,offset,consensus,alignments_1ton";
+  $main::param{motif_compa_options} = $motif_compa_options;
 
 }
 
@@ -635,7 +655,7 @@ sub SetOutFileNames {
   $main::outfile{motifs_discovered} = &OutFileName("results/discovered_motifs", ".tf", "motifs_discovered");
 
   ## Table with the list of separated motifs
-  ($main::outfile{motifs_sep}, $main::dir{motifs_sep}) = &OutFileName("results/discovered_motifs", ".tab", "motifs_discovered_list");
+  $main::outfile{motifs_discovered_table} = &OutFileName("results/discovered_motifs", ".tab", "motifs_discovered_table");
 
   ## Comparisons between discovered motifs
   $main::outfile{motifs_disco_compa} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa");
@@ -1250,7 +1270,11 @@ sub SeparateMotifs {
   }
 
   ## Create a table with the lists of motifs
-  my $motif_table = &OpenOutputFile($main::outfile{motifs_sep});
+  my $motif_table = &OpenOutputFile($main::outfile{motifs_discovered_table});
+
+  ## Print the header of the motif table
+  print $motif_table join("\t", "#nb", "identifier", "directory", "file"), "\n";
+
 
   ## Store each motif in a separate directory and file
   foreach my $motif (@motifs) {
@@ -1267,33 +1291,33 @@ sub SeparateMotifs {
       $motif_id = "discomotif_".$id_nb;
     }
 
-    my $motif_dir = "results/discovered_motifs_sep/".$motif_id;
-    ($main::outfile{"motif_".$motif_id}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
+    my $motif_dir = "results/discovered_motifs/".$motif_id;
+    ($main::outfile{$motif_id}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
 
     ## Print the motif in transfac format
-    $current_out = &OpenOutputFile($main::outfile{"motif_".$motif_id});
+    $current_out = &OpenOutputFile($main::outfile{$motif_id});
     print $current_out $motif->toString(sep=>"\t",
 					type=>"counts",
 					format=>"transfac",
 				       );
     close($current_out);
 
-    print $motif_table join("\t", $m, $motif_id, $subdir), "\n";
+    print $motif_table join("\t", $m, $motif_id, $subdir, $main::outfile{$motif_id}), "\n";
 
-    ## Draw the motif logo
-    $main::outfile{"motif_".$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
+    ## Create logos (forward and reverse complementary) for each discovered motif
+    $main::outfile{$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
     my $cmd = $SCRIPTS."/convert-matrix -v 0";
-    $cmd .= " -i ".$main::outfile{"motif_".$motif_id};
+    $cmd .= " -i ".$main::outfile{$motif_id};
     $cmd .= " -from transfac -to tab";
     $cmd .= " -return counts,logo";
-    $cmd .= " -o ".$main::outfile{"motif_".$motif_id."_tab"};
+    $cmd .= " -o ".$main::outfile{$motif_id."_tab"};
     &one_command($cmd, 1);
 
-#    &RSAT::message::Debug("&SeparateMotifs()", "motif", $m, $motif_id, $main::outfile{"motif_".$motif_id}) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("&SeparateMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id}) if ($main::verbose >= 10);
   }
   close $motif_table;
 
-  &RSAT::message::Info("Motif table",$main::outfile{motifs_sep}) if ($main::verbose >= 0);
+  &RSAT::message::Info("Motif table",$main::outfile{motifs_discovered_table}) if ($main::verbose >= 0);
 }
 
 ################################################################
@@ -1386,21 +1410,73 @@ sub ClusterMotifs {
 
 
 ################################################################
+## Read the list of discovered motifs (produced by the method
+## &SeparateMotifs()) and index them. This is required for several
+## post-processing methods.
+sub ReadMotifTable {
+  my ($in) = &OpenInputFile($main::outfile{motifs_discovered_table});
+  my $motif_id;
+  my $motif_dir;
+  my $motif_file;
+  while (<$in>) {
+    next unless (/\S/); # Skip empty lines
+    next if (/^;/); # skip comment lines
+    next if (/^#/); # skip header line
+    chomp();
+    ($motif_nb, $motif_id, $motif_dir, $motif_file) = split("\t");
+    push @motif_ids, $motif_id;
+    push @motif_dirs, $motif_dir;
+    push @motif_files, $motif_file;
+
+    ## Index motif-specific files for post-processing and synthesis
+#    $main::dir{$motif_id} = $motif_dir;
+    $main::outfile{$motif_id} = $motif_file;
+
+#    &RSAT::message::Debug("Indexed motif", $motif_nb, $motif_id, $motif_dir, $motif_file) if ($main::verbose >= 10);
+  }
+  close ($in);
+}
+
+################################################################
 ## Compare discovered motifs to the referencemotif 
 sub MotifsVersusReference {
   &RSAT::message::TimeWarn("Comparing discovered motifs with reference motif") if ($main::verbose >= 1);
 
-  ## Comparison between discovered matrices, and with the reference motif
+  ################################################################
+  ## Compare separately each discovered motif to reference motif(s)
+  &ReadMotifTable();
+
+  my $motif_nb = scalar(@motif_ids);
+  foreach my $i (0..$#motif_ids) {
+    my $m = $i+1;
+    my $motif_id = $motif_ids[$i];
+    my $motif_dir = $motif_dirs[$i];
+    my $motif_file = $motif_files[$i];
+    &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 0);
+
+    $main::outfile{$motif_id."_vs_ref_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_ref");
+    $main::outfile{$motif_id."_vs_ref"} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_ref");
+    $main::outfile{$motif_id."_vs_ref_html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_ref");
+
+    ## Compare one discovered motif with the reference motif
+    my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
+    $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id};
+    $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
+    $cmd .= $main::param{motif_compa_options};
+    $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_prefix"};
+    $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id."_vs_ref"};
+    $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_html"};
+    &one_command($cmd, 1);
+  }
+
+  return(); #TEMP
+
+  ################################################################
+  ## Compare all matrices to the reference motif
   my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
-  $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motifs_transfac};;
+  $cmd .= $main::param{motif_compa_options};
+  $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motifs_transfac};
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
-  $cmd .= " -DR";
-  $cmd .= " -sort Ncor";
-  $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
-  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
-  $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
-  $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,strand,offset,all_metrics,width,consensus,alignments_1ton";
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref_prefix"};
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_ref"};
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref_html"};
@@ -1424,6 +1500,7 @@ sub MotifsVersusReference {
   $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_ref_png"};
   &one_command($cmd, 1);
 
+
 }
 
 ################################################################
@@ -1432,18 +1509,40 @@ sub MotifsVersusDatabase {
   foreach my $db_name (@motif_databases) {
     &RSAT::message::TimeWarn("Comparing discovered motifs with database", $db_name) if ($main::verbose >= 1);
 
-    ## Comparison between discovered matrices, and with the reference motif
+    ################################################################
+    ## Compare separately each discovered motif to reference motif(s)
+    &ReadMotifTable();
+    my $motif_nb = scalar(@motif_ids);
+    foreach my $i (0..$#motif_ids) {
+      my $m = $i+1;
+      my $motif_id = $motif_ids[$i];
+      my $motif_dir = $motif_dirs[$i];
+      my $motif_file = $motif_files[$i];
+      &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 0);
+
+      $main::outfile{$motif_id."_vs_db_".$db_name."_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_db_".$db_name);
+      $main::outfile{$motif_id."_vs_db_".$db_name} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_db_".$db_name);
+      $main::outfile{$motif_id."_vs_db_".$db_name."html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_db_".$db_name);
+
+      ## Compare one discovered motif with the reference motif
+      my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
+      $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id};
+      $cmd .= " -format2 ".$main::motif_db_format{$db_name};
+      $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
+      $cmd .= $main::param{motif_compa_options};
+      $cmd .= " -o ".$main::outfile{$motif_id."_vs_db_".$db_name."_prefix"};
+      $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id."_vs_db_".$db_name};
+      $cmd .= " -o ".$main::outfile{$motif_id."_vs_db_".$db_name."html"};
+      &one_command($cmd, 1);
+    }
+
+    ################################################################
+    ## Comparison between all discovered matrices and the database
     my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
     $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};
     $cmd .= " -format2 ".$main::motif_db_format{$db_name};
     $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
-    $cmd .= " -DR";
-    $cmd .= " -sort cor";
-    $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
-    $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
-    $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
-    $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-    $cmd .= " -return matrix_name,strand,offset,all_metrics,width,consensus,alignments_1ton";
+    $cmd .= $main::param{motif_compa_options};
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " ; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_html"};
