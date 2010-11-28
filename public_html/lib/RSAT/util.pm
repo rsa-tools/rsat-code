@@ -625,6 +625,13 @@ sub hex2rgb {
 sub make_temp_file {
   my ($tmp_dir, $tmp_prefix) = @_;
 
+#   &RSAT::message::Debug("&RSAT::util::make_temp_file()", 
+# 			"\n\ttmp_dir=".$tmp_dir,
+# 			"\n\ttmp_prefix=".$tmp_prefix,
+# 		       ) if ($main::verbose >= 10);
+
+  my $prefix_dir = "";
+
   ## Check $tmp_dir and $tmp_prefix
   if ($tmp_prefix) {
     ($prefix_dir, $tmp_prefix) = &SplitFileName($tmp_prefix);
@@ -646,6 +653,14 @@ sub make_temp_file {
 
   ## Ensure that everyone can read the temporary file
   system("chmod a+r $temp_file");
+
+#   &RSAT::message::Debug("&RSAT::util::make_temp_file()", 
+# 			"\n\ttmp_dir=".$tmp_dir,
+# 			"\n\ttmp_prefix=".$tmp_prefix,
+# 			"\n\tprefix_dir=".$prefix_dir,
+# 			"\n\ttemp_file=".$temp_file,
+# 		       ) if ($main::verbose >= 10);
+
   return ($temp_file);
 }
 
