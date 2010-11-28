@@ -53,9 +53,9 @@ $result_dir = $tmp_file_name;
 `rm -f $result_dir; mkdir -p $result_dir; chmod 777 $result_dir`;
 
 &RSAT::message::Info("Temporary file</br>", $tmp_file_name, 
-			 "<p>\nResult dir<br>", $result_dir, 
-			 "<p>\nResult subdir<br>", $result_subdir, 
-			 "<p>File prefix<br>", $file_prefix);
+		     "<p>\nResult dir<br>", $result_dir, 
+		     "<p>\nResult subdir<br>", $result_subdir, 
+		     "<p>File prefix<br>", $file_prefix) if ($ENV{rsat_echo} >= 2);
 
 #####################
 #Title specification
