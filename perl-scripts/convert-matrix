@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.125 2010/11/25 16:17:55 rsat Exp $
+# $Id: convert-matrix,v 1.126 2010/11/28 03:51:59 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -21,6 +21,7 @@ use RSAT::matrix;
 use RSAT::MatrixReader;
 use File::Basename;
 use Data::Dumper;
+use POSIX;
 
 #### initialise parameters ####
 local $start_time = &RSAT::util::StartScript();
@@ -412,6 +413,13 @@ if ($sort_key) {
 ## Print the matrices
 $m = 0;
 &RSAT::message::TimeWarn("Exporting ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
+
+## Number of digits for the counter of split matrix files
+my $id_digits;
+if ($split_out_files) {
+  $id_digits = POSIX::ceil(log(scalar(@matrices))/log(10));
+}
+
 foreach my $matrix (@matrices) {
   $m++;
   last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
@@ -423,7 +431,15 @@ foreach my $matrix (@matrices) {
     my $output_prefix = $outfile{output};
     $output_prefix =~ '|\.tab$ ||';
     $output_prefix =~ '|\.txt$ ||';
-    $outfile{'matrix_'.$m} = $output_prefix.$m.".".$output_format;
+
+    ## Use the same number of digits for all matrices so that the
+    ## alphabetical order ot the splitted files corresponds to the
+    ## numerical order of the matrices.
+    my $id_nb = sprintf "%${id_digits}s", $m;
+    $id_nb =~ s/ /0/g;
+    $id .= $id_nb;
+
+    $outfile{'matrix_'.$m} = $output_prefix.$id_nb.".".$output_format;
     $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
     print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}), "\n";
 
@@ -1420,7 +1436,7 @@ sub ExportMatrix {
 
   foreach my $key (keys(%force_attribute)) {
     my $value = $force_attribute{$key};
-    $matrix->force_attribute($key, $value);	
+    $matrix->force_attribute($key, $value);
   }
 
   ## Print the counts matrix
