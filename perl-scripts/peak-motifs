@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.92 2010/11/28 14:18:09 jvanheld Exp $
+# $Id: peak-motifs,v 1.93 2010/11/29 08:37:57 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -161,8 +161,9 @@ package main;
 		      "meme_bg",
 		      "meme",
 
-#		      "merge_motifs",
-		      "collect_disco_motifs",
+		      "merge_motifs",
+		      "split_motifs",
+		      "collect_motifs",
 #		      "cluster_motifs",
 		      "motifs_vs_ref",
 		      "motifs_vs_db",
@@ -238,9 +239,9 @@ package main;
   &CalcMemeBackground() if ($task{meme_bg});
   &RunMEME() if ($task{meme});
 
-  &MergeMotifs() if (($task{collect_disco_motifs}) || ($task{merge_motifs}));
+  &MergeMotifs() if ($task{merge_motifs});
 
-  &SplitMotifs() if ($task{collect_disco_motifs});
+  &SplitMotifs() if ($task{collect_motifs});
 
 #  &ClusterMotifs() if ($task{cluster_motifs});
 
@@ -1261,11 +1262,6 @@ sub SplitMotifs {
   &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 0);
   my $m = 0;
 
-  ## Number of digits for the counter of split matrix files
-  my $id_digits;
-  if ($split_out_files) {
-    $id_digits = POSIX::ceil(log(scalar(@matrices))/log(10));
-  }
 
   ## Create a table with the lists of motifs
   my $motif_table = &OpenOutputFile($main::outfile{motifs_discovered_table});
@@ -1273,45 +1269,53 @@ sub SplitMotifs {
   ## Print the header of the motif table
   print $motif_table join("\t", "#nb", "identifier", "directory", "file"), "\n";
 
+  if (scalar(@motifs) == 0) {
+    print $motif_table "; NO MOTIF FOUND\n";
+    &RSAT::message::Warning("No motif found") if ($main::verbose >= 0);
+  } else {
+    ## Number of digits for the counter of split matrix files
+    my $id_digits;
+    $id_digits = POSIX::ceil(log(scalar(@motifs))/log(10));
 
-  ## Store each motif in a separate directory and file
-  foreach my $motif (@motifs) {
-    $m++;
+    ## Store each motif in a separate directory and file
+    foreach my $motif (@motifs) {
+      $m++;
 
-    ## Get the motif ID or, if not defined, create an ID
-    my $motif_id = $motif->get_attribute("id");
-    unless ($motif_id) {
-      ## Use the same number of digits for all matrices so that the
-      ## alphabetical order ot the splitted files corresponds to the
-      ## numerical order of the matrices.
-      my $id_nb = sprintf "%${id_digits}s", $m;
-      $id_nb =~ s/ /0/g;
-      $motif_id = "discomotif_".$id_nb;
+      ## Get the motif ID or, if not defined, create an ID
+      my $motif_id = $motif->get_attribute("id");
+      unless ($motif_id) {
+	## Use the same number of digits for all matrices so that the
+	## alphabetical order ot the splitted files corresponds to the
+	## numerical order of the matrices.
+	my $id_nb = sprintf "%${id_digits}s", $m;
+	$id_nb =~ s/ /0/g;
+	$motif_id = "discomotif_".$id_nb;
+      }
+
+      my $motif_dir = "results/discovered_motifs/".$motif_id;
+      ($main::outfile{$motif_id}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
+
+      ## Print the motif in transfac format
+      $current_out = &OpenOutputFile($main::outfile{$motif_id});
+      print $current_out $motif->toString(sep=>"\t",
+					  type=>"counts",
+					  format=>"transfac",
+					 );
+      close($current_out);
+
+      print $motif_table join("\t", $m, $motif_id, $subdir, $main::outfile{$motif_id}), "\n";
+
+      ## Create logos (forward and reverse complementary) for each discovered motif
+      $main::outfile{$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
+      my $cmd = $SCRIPTS."/convert-matrix -v 0";
+      $cmd .= " -i ".$main::outfile{$motif_id};
+      $cmd .= " -from transfac -to tab";
+      $cmd .= " -return counts,logo";
+      $cmd .= " -o ".$main::outfile{$motif_id."_tab"};
+      &one_command($cmd, 1);
+
+      #    &RSAT::message::Debug("&SplitMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id}) if ($main::verbose >= 10);
     }
-
-    my $motif_dir = "results/discovered_motifs/".$motif_id;
-    ($main::outfile{$motif_id}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
-
-    ## Print the motif in transfac format
-    $current_out = &OpenOutputFile($main::outfile{$motif_id});
-    print $current_out $motif->toString(sep=>"\t",
-					type=>"counts",
-					format=>"transfac",
-				       );
-    close($current_out);
-
-    print $motif_table join("\t", $m, $motif_id, $subdir, $main::outfile{$motif_id}), "\n";
-
-    ## Create logos (forward and reverse complementary) for each discovered motif
-    $main::outfile{$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
-    my $cmd = $SCRIPTS."/convert-matrix -v 0";
-    $cmd .= " -i ".$main::outfile{$motif_id};
-    $cmd .= " -from transfac -to tab";
-    $cmd .= " -return counts,logo";
-    $cmd .= " -o ".$main::outfile{$motif_id."_tab"};
-    &one_command($cmd, 1);
-
-#    &RSAT::message::Debug("&SplitMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id}) if ($main::verbose >= 10);
   }
   close $motif_table;
 
@@ -2870,9 +2874,15 @@ sub CheckArguments {
   if ($task{motif_compa}) {
     $task{merge_motifs} = 1;
     #   $task{cluster_motifs} = 1;
-    $task{collect_disco_motifs} = 1;
+    $task{collect_motifs} = 1;
     $task{motifs_vs_ref} = 1 if (defined($main::infile{ref_motifs}));
     $task{motifs_vs_db} = 1 if (scalar(@motif_databases) > 0);
+  }
+
+  ## collect_motifs includes merge_motifs and split_motifs
+  if ($task{collect_motifs}) {
+    $task{merge_motifs} = 1;
+    $task{split_motifs} = 1;
   }
 
   ## Check that reference motif has been specified if required
@@ -2905,6 +2915,7 @@ sub CheckArguments {
     delete($task{motifs_vs_ref}) unless (defined($main::infile{ref_motifs}));
     delete($task{motifs_vs_db}) unless (scalar(@motif_databases) > 0);
   }
+
   foreach my $task (@supported_tasks) {
    push (@tasks, $task) if $task{$task};
   }
@@ -2920,7 +2931,7 @@ sub CheckArguments {
 sub ReportParamsAndFiles {
 
   ## Open HTML file for links
-  my $links = &OpenOutputFile($main::outfile{links});
+  local $links = &OpenOutputFile($main::outfile{links});
   &PrintHtmlFileHedaer($links);
 
   sub PrintFileLink {
