@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.46 2010/05/19 09:36:19 rsat Exp $
+# $Id: mirror.mk,v 1.47 2010/11/29 07:45:25 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -57,6 +57,7 @@ genomes_to_server:
 	${RSYNC} ${EXCLUDED_FILES} public_html/data/genomes ${SERVER}/public_html/data/
 	${RSYNC}  public_html/data/supported*.tab ${SERVER}/public_html/data/
 	${RSYNC}  public_html/data/supported*.pl ${SERVER}/public_html/data/
+	${RSYNC} ${EXCLUDED_FILES} public_html/data/taxon_frequencies ${SERVER}/public_html/data/
 
 doc_to_server:
 	${MAKE} dir_to_server DIR=doc
