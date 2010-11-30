@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.53 2010/11/28 02:14:58 rsat Exp $
+# $Id: get-orthologs,v 1.54 2010/11/30 08:17:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -258,7 +258,7 @@ package main;
     }
      
 
-    ## Select all supported organisms beloging to the reference taxon or included on the org_list
+    ## Select all supported organisms belonging to the reference taxon or included on the org_list
     foreach my $org (keys (%supported_organism)) {
 	if(%main::query_orgs){
 	    if ($main::query_orgs{$org}){
