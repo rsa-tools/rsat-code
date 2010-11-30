@@ -30,8 +30,8 @@ foreach my $task (@supported_tasks) {
 %task = ();
 $supported_tasks = join (",", @supported_tasks);
 local $all_genes = 0;         ## Analyze all the genes of the query organism
-local $create_index = 1; ## The index is now (from 2010/11/29) always created. Still to be checked in footprint-scan.
-
+#local $create_index = 1; ## The index is now (from 2010/11/29) always created. Still to be checked in footprint-scan.
+ $main::create_index = 1;
 ################################################################
 ## Treat one command, by either executing it, or concatenating it for
 ## further batch processing
