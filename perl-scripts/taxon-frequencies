@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.40 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.41 2010/11/30 08:17:40 jvanheld Exp $
 #
 ############################################################
 
@@ -102,6 +102,7 @@ BEGIN {
 }
 require "RSA.lib";
 require RSAT::Tree;
+require "footprint.lib.pl";
 
 ################################################################
 ## Main package
@@ -143,12 +144,6 @@ package main;
 		   'upstream-noorf-rm'=>1
 		  );
 
-  ################################################################
-  ## Read argument values
-  &ReadArguments();
-
-  ################################################################
-  ## Check argument values
 
   ## Lists for iterating on parameters
   my @pattern_types = ();
@@ -158,6 +153,19 @@ package main;
   my @noov = ();
   my @background_models = ();
 
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Options -org_list and -install are not compatible
+  if ($orglist_file && $install) {
+    &RSAT::error::FatalError("Options -org_list and -install are mutually incompatible.");
+  }
+
+  ## Background model parameters
   if ($all_models) {
     @pattern_types = qw(oligo dyad);
     @oligo_lengths = 1..8;
@@ -175,16 +183,22 @@ package main;
   }
 
   ################################################################
-  ## Taxa
-
   ## Load the taxonomical tree of organisms supported in RSAT
   local $tree = new RSAT::Tree();
   my @supported_organisms = sort keys (%supported_organism);
   $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
 
+
+  ################################################################
+  ## Taxa
+
   ## Select the taxa to be analyzed
   if ($all_taxa) {
     @taxa = $tree->node_names();
+
+  } elsif ($main::orglist_file) {
+    @taxa = ("org_list");
+
   } else {
     &RSAT::error::FatalError("You must specify at lest one taxon (option -taxon) or select all taxa (option -all_taxa)") 
       if (scalar(@taxa) == 0);
@@ -201,6 +215,7 @@ package main;
       @taxa = @sub_taxa;
     }
   }
+
   &RSAT::message::Info("Computing taxon-frequencies for", scalar(@taxa),"taxa") if ($main::verbose >= 1);
   if ($main::verbose >= 3) {
     my $t = 0;
@@ -210,14 +225,21 @@ package main;
     }
   }
 
-  ## Iterate taxa
+  ################################################################
+  ## For each query taxon (or organism list), collect the organisms
+  ## and compute background models(s).
+
   my $t = 0;
   my $nb_taxa = scalar(@taxa);
   foreach  $taxon (@taxa) {
     $t++;
 
     ## Check taxon and collect organisms
-    @organisms = $tree->get_node_descendents_names($taxon, "DFS", "leaf");
+    if ($main::orglist_file) {
+      @organisms = &ReadOrganismsFromFile($main::orglist_file);
+    } else {
+      @organisms = $tree->get_node_descendents_names($taxon, "DFS", "leaf");
+    }
 
     ## TEMPORARY FIX: the current implementation of
     ## &RSAT::Tree::get_node_descendents() includes the nodes in the
@@ -674,12 +696,36 @@ Example:
 
 taxon-frequencies -v 1 -taxon Bacteria -taxon Fungi -sub_taxa [...]
 
+
+Alternatively, reference organisms can be specified with the option
+-org_list.
+
+
 =cut
 	} elsif ($arg eq "-taxon") {
 	  if ($main::all_taxa) {
 	    &RSAT::error::FatalError("Options -taxon and -all_taxa are mutually incompatible");
 	  }
 	  push @main::taxa, shift(@arguments);
+    &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if ($main::orglist_file);
+
+
+=head2 -org_list
+
+Build background models from a user-specified file containing a list
+of organisms.
+
+File format: the first word of each line is used as organism ID. Any
+subsequent text is ignored. The comment char is ";".
+
+This option is incompatible with the option "-taxon".
+
+=cut
+  } elsif ($arg eq "-org_list") {
+    $main::orglist_file = shift(@arguments);
+    &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if (scalar(@main::taxa) >= 1);
+
+
 
 	    ## Output directory
 =pod
@@ -992,15 +1038,5 @@ third parties pattern detection programs (MEME, MotifSampler).
 
 =head1 WISH LIST
 
-=head2 -org_list
-
-An option to build a model from a file with a list of organisms.
-
-Typically, one can give as input the file resulting from get-ortholog.
-
-If a file contains several times the same organism, this organisms
-should have a different weight.
-
-Another possibility: weight organisms as a function of sequence sizes.
 
 =cut
