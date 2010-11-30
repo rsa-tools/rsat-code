@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.21 2010/11/25 12:25:40 rsat Exp $
+# $Id: genome-blast,v 1.22 2010/11/30 14:35:29 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -262,6 +262,7 @@ local @db_taxons = ();
 local $reciprocal = 0;
 
 local $blast_dir = $ENV{blast_dir};
+local $rsat_dir = $ENV{RSAT};
 
 ## Options for the command &doit()
 local $dry = 0;
@@ -446,7 +447,7 @@ sub iterate_blast {
 	    }
 
 	    if ($batch) {
-		my $batch_command = "genome-blast";
+		my $batch_command = "$rsat_dir/perl-scripts/genome-blast";
 		$batch_command .= " -q ".$query_organism;
 		$batch_command .= " -db ".$db_organism;
 
