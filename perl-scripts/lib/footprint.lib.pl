@@ -2,6 +2,7 @@
 ## Library for functions shared by footprint detection programs
 ## - footprint-discovery
 ## - footprint-scan
+## - get-orthologs
 
 ## Options for the &doit() command;
 local $dry = 0; ## Do not run the command, just echo them as warning
@@ -29,6 +30,7 @@ foreach my $task (@supported_tasks) {
 %task = ();
 $supported_tasks = join (",", @supported_tasks);
 local $all_genes = 0;         ## Analyze all the genes of the query organism
+local $create_index = 1; ## The index is now (from 2010/11/29) always created. Still to be checked in footprint-scan.
 
 ################################################################
 ## Treat one command, by either executing it, or concatenating it for
@@ -65,6 +67,77 @@ sub one_command {
   }
 }
 
+################################################################
+## Read a list of organisms from a file, and select those supported on
+## the RSAT server (issue a warning for non-supported organisms).
+sub ReadOrganismsFromFile {
+  ($main::orglist) = &OpenInputFile($main::orglist_file);
+  my @organisms = ();
+  while (<$main::orglist>) {
+    chomp();
+    s/\r/\n/g;		  ## Suppress Windows-specific carriage return
+    next if /^;/;		## Comment line
+    next if /^\#/;		## Header line
+    next if /^\--/;		## SQL comment line
+    next unless /\S/;		## Empty line
+    my ($org_from_list) = split /\s/;
+    $org_from_list = &trim($org_from_list); ## Remove leading and trailing spaces
+    push @main::org_from_lists, $org_from_list;	## We need a list to report the results in the same order as the org file.
+    $main::org_from_lists{$org_from_list} = 1; ## The hash table is convenient for checking which organism is part of the list
+  }
+  close $main::orglist if ($main::orglist_file);
+  if (scalar(@org_from_lists) > 0) {
+    &RSAT::message::Info(scalar(@org_from_lists), "organisms specified in file", $main::orglist_file) if ($main::verbose >= 1);
+  } else {
+    &RSAT::error::FatalError("The organism file does not contain any valid organism name.", $main::orglist_file);
+  }
+
+  ## Select only the supported organisms in the input list
+  foreach my $org (@org_from_lists) {
+    if ($supported_organism{$org}) {
+      push @organisms, $org;
+    } else {
+      &RSAT::message::Warning("Organism", $org, "is not supported on this RSAT server");
+    }
+  }
+
+  &RSAT::error::FatalError("There is no supported organism in the organism list", $main::orglist_file,
+			   "\nUse the RSAT command supported-organisms to obtain the list of supported organisms."
+			  )  if (scalar(@organisms) == 0);
+  return(@organisms);
+}
+
+################################################################
+## Select reference organisms, either from a taxon (if the option
+## -taxon has been used) or from a user-specified list (option
+## -org_list).
+sub SelectReferenceOrganisms {
+
+  my @ref_organisms = ();
+
+  ## Check reference taxon or org_list
+  &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
+    unless ($main::taxon || $main::orglist_file);
+
+  &RSAT::error::FatalError("-taxon and -org_list option are mutually exclusive")
+    if (($main::taxon) && ($main::orglist_file));
+
+  ################################################################
+  ## Read the list reference organisms from a user-specified file
+  if ($main::orglist_file) {
+    @ref_organisms = &ReadOrganismsFromFile($main::orglist_file);
+  } else {
+    #check if there is is at least one organism for that Taxon
+    @ref_organisms = &CheckTaxon($taxon) if $main::taxon;
+
+    ## Check option -no_purge and -org_list
+    if ($main::no_purge) {
+      &RSAT::error::FatalError("-no_purge option can only be used if -org_list option is active (not with -taxon).");
+    }
+  }
+
+  return @ref_organisms;
+}
 
 ################################################################
 ## Check all parameters required for footprint analysis (discovery or
@@ -81,62 +154,13 @@ sub CheckFootprintParameters {
   }
   &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 2);
 
-  ## Check Reference taxon or org_list
-  &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
-    unless ($main::taxon || $main::orglist_file);
-  &RSAT::error::FatalError("-taxon and -org_list option are mutually exclusive")
-    if (($main::taxon) && ($main::orglist_file));
+  ################################################################
+  ## Check reference organisms (taxon or org list)
+  my @ref_organisms = &SelectReferenceOrganisms();
 
-  ## Check option -no_purge and -org_list
-  if ($main::no_purge) {
-    &RSAT::error::FatalError("-no_purge option can only be used if -org_list option is active")
-      unless ($main::orglist_file) ;
-  }
-
-  
-  #   &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
-  #     unless ($taxon);
-
-
-  #check if there is is at least one organism for that Taxon
-  my @organisms = &CheckTaxon($taxon) if $main::taxon ;
-
-  ##open orglist
-  if ($main::orglist_file) {
-    ($main::orglist) = &OpenInputFile($main::orglist_file);
-    while (<$main::orglist>) {
-      chomp();
-      s/\r/\n/g;	  ## Suppress Windows-specific carriage return
-      next if /^;/;		## Comment line
-      next if /^\#/;		## Header line
-      next if /^\--/;		## SQL comment line
-      next unless /\S/;		## Empty line
-      my ($query_org) = split "\t";
-      $query_org = &trim($query_org); ## Remove leading and trailing spaces
-      $main::query_orgs{$query_org}=1;
-    }
-    close $main::orglist if ($main::orglist_file);
-    &RSAT::error::FatalError(join("\t", "The organism file should contain at least one valid organism name.",
-				  $main::orglist_file),
-			    ) unless (%main::query_orgs) ;
-  }
-
-  if (%main::query_orgs) {
-    foreach my $org (keys (%main::query_orgs)) {
-      if ($supported_organism{$org}) {
-	push @ref_organisms, $org;
-      }
-    }
-  }
-  #print join ("\t",keys (%main::query_orgs));
-  #print join ("\t",(@ref_organisms))."supported";
-  &RSAT::error::FatalError(join("\t", "There is no supported organism in the organism list ",
-				$main::orglist_file),
-			   "Use the command supported-organisms -format full to obtain the supported taxonomy."
-			  ) if (($main::orglist_file) && (scalar(@ref_organisms) == 0));
-  
-  ## Check organism
-  &RSAT::error::FatalError("You must specify a organism (option -org)")
+  ################################################################
+  ## Check query organism
+  &RSAT::error::FatalError("You must specify a query organism (option -org)")
     unless ($organism_name);
   $organism = new RSAT::organism();
   $organism->check_name($organism_name);
@@ -152,7 +176,6 @@ sub CheckFootprintParameters {
       &RSAT::error::FatalError("Organism", $organism_name, "is not supported");
     }
   }
-
   if ($infile{genes}) {
     my ($in) = &OpenInputFile($infile{genes});
     while (<$in>) {
@@ -210,17 +233,18 @@ sub CheckDependency {
 }
 
 ################################################################
-## Define a query prefix for the title of the feature map and for
-## automatic output file specification
+## Define a query prefix that will be used as title for the feature
+## map and as prefix for the automatic specificationof output files
+## (will be used by &getOutfilePrefix()).
 sub GetQueryPrefix {
   my $query_prefix;
   if (scalar(@current_query_genes) == 1) {
     $query_prefix = $current_query_genes[0];
   } elsif (scalar(@current_query_genes) <= 10) {
     $query_prefix = join "_", @current_query_genes;
-  } elsif ($outfile{prefix}) {
-    $query_prefix = `basename $outfile{prefix}`;
-    chomp($query_prefix);
+#  } elsif ($outfile{prefix}) {
+#    $query_prefix = `basename $outfile{prefix}`;
+#    chomp($query_prefix);
   } elsif ($infile{genes}) {
     $query_prefix = `basename $infile{genes} .tab`;
   }
@@ -230,16 +254,30 @@ sub GetQueryPrefix {
 
 
 ################################################################
-## Output prefix is mandatory
-## If not specified by the user, define it automatically
-## If genes are to be analyzed separately, also define output prefix automatically
+## Get the prefix for all the output file. 
+##
+## It includes the output directory and the prefix of the output
+## files.
+##
+## This prefix can either be specified by the user, or computed
+## automatically on the basis of the taxon, query organism and query
+## gene(s).
+##
+## If genes are analyzed separately, the result of each gene is saved
+## in a separate directory.
+##
 sub GetOutfilePrefix {
-  my ($query_prefix) = @_;
+#  my ($query_prefix) = @_;
+
+  ## Compute a file prefix depending on the name(s) of the uery
+  ## gene(s).
+  my $query_prefix = &GetQueryPrefix();
+
   my $current_prefix = "";
 
   if ( (!defined($main::outfile{prefix}))
        || ($outfile{prefix} eq "") ) {
-    $outfile{prefix} = ".";
+    $outfile{prefix} = "footprints";
 #    &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
   }
   ## die $outfile{prefix};
@@ -248,7 +286,7 @@ sub GetOutfilePrefix {
   ## Gene-wise prefix
   if ($main::sep_genes) {
     if ($query_prefix) {
-      my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
+      my $output_dir = join("/",$main::outfile{prefix}, ($taxon||"org_list"), $organism_name, $query_prefix);
       my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
       if ($bg_model) {
 	$output_dir .= "/".$bg_model;
@@ -287,7 +325,7 @@ sub GetOutfilePrefix {
 #		       "outfile{prefix}", $outfile{prefix},
 #		       "current_prefix", $current_prefix;
 #		      ) if ($main::verbose >= 5);
-  return ($current_prefix);
+  return ($current_prefix, $query_prefix);
 }
 
 
@@ -353,7 +391,7 @@ Level of verbosity (detail in the warning messages during execution)
 
 =item B<-h>
 
-Display full help message
+Display full help message.
 
 =cut
   } elsif ($arg eq "-h") {
@@ -388,25 +426,31 @@ Query organism, to which the query genes belong.
 
 Reference taxon, in which orthologous genes have to be collected.
 
+Alternatively, reference organisms can be specified with the option
+-org_list.
+
 =cut
   } elsif ($arg eq "-taxon") {
     $main::taxon = shift(@arguments);
-  
+    &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if ($main::orglist_file);
 
- ## Organism lis
+
 =pod
 
 =item	B<-org_list organisms_list_file>
 
-This option gives the posibility to analyse a given set of organisms
-instead of a taxon. This way orthologs for a gene are only searched
-on a preselected list of organisms.
+This option gives the posibility to analyse a user-specified set of
+reference organisms rather than a full taxon.
 
-The file format is one organisms per line, the comment char is ";"
+File format: the first word of each line is used as organism ID. Any
+subsequent text is ignored. The comment char is ";".
+
+This option is incompatible with the option "-taxon".
 
 =cut
   } elsif ($arg eq "-org_list") {
     $main::orglist_file = shift(@arguments);
+    &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if ($main::taxon);
 
 ## No Purge
 =pod
@@ -501,18 +545,18 @@ testing).
 	    ## Output prefix
 =pod
 
-=item	B<-o output_prefix>
+=item	B<-o output_dir>
 
-Prefix for the output files.
+Main output directory. Note that the results will be dispatched in
+various sub-diretcories, defined according to the taxon, query
+organism and query gene name.
 
-If the prefix is not specified, the program can guess a default
-prefix.
+If the main output dir is not specified, the program automatically
+sets it to "footprints".
 
 =cut
   } elsif ($arg eq "-o") {
     $main::outfile{prefix} = shift(@arguments);
-    
-
 
 =pod
 
@@ -640,9 +684,25 @@ I<retrieve-seq-multigenome>).
 
 Purge upstream sequences of the orthologs (using I<purge-seq>).
 
+
+=item I<index>
+
+Generate an HTML index with links to the result files. This option is
+used for the web interface, but can also be convenient to index
+results, especially when several genes or taxa are analyzed (options
+-genes, -all_genes, -all_taxa).
+
+With the option -sep_genes, one index is generated for each gene
+separately. An index summarizing the results for all genes can be
+generated using the option -synthesis.
+
 =item I<synthesis>
 
-Generate synthetic tables with links to the results.
+(still to be implemented)
+
+Generate a HTML table with links to the individual result files. The
+table contains one row per query gene, one column by output type
+(sequences, dyads, maps, ...).
 
 =back
 
@@ -732,18 +792,12 @@ Supported: any format supported by the program feature-map.
 
 =item B<-index>
 
-Generate an HTML index with links to the result files. This option is
-used for the web interface, but can also be convenient to index
-results, especially when several genes or taxa are analyzed (options
--genes, -all_genes, -all_taxa). 
-
-With the option -sep_genes, one index is generated for each gene
-separately. An index summarizing the results for all genes can be
-generated using the option -synthesis.
+Deprecated, replaced by the task "index".
 
 =cut
   } elsif ($arg eq "-index") {
     $main::create_index = 1;
+    &RSAT::message::Warning("Option -index is deprecated, indexes are now always created.");
 
     ## Create a tab-delimited file and a HTML Index for all the results
 =pod
@@ -804,6 +858,41 @@ sub OpenIndex {
   &IndexOneFile("input", $infile{genes}) if (($infile{genes}) && !($main::sep_genes));
 }
 
+
+################################################################
+## Add one file to the index file
+sub IndexOneFile {
+  my ($name, $file, %args) = @_;
+  my $short_file = `basename $file`;
+  print $index "<tr valign=top>\n";
+
+  if (-e $file) {
+    print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
+  } else {
+    print $index "<td>", $name, "</td>\n<td><font color='red'>".$short_file."</font></td>\n";
+  }
+  if ($args{image}) {
+    #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
+    print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
+  }
+  print $index ("</tr>\n\n");
+}
+
+
+# ################################################################
+# ## Add one file to the index file
+# sub IndexOneFile {
+#   my ($name, $file, %args) = @_;
+#   $short_file = `basename $file`;
+#   print $index "<tr valign=top>\n";
+#   print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
+#   if ($args{image}) {
+#     #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
+#     print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
+#   }
+#   print $index ("</tr>\n\n");
+# }
+
 ################################################################
 ## Predict operon leader genes of the query genes
 sub InferQueryOperons {
@@ -822,19 +911,21 @@ sub InferQueryOperons {
 ################################################################
 ## Retrieve promoters of the query organism
 sub RetrieveQueryPromoters {
-  &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($main::verbose >= 2);
-  my $cmd = "$SCRIPTS/retrieve-seq ";
-  $cmd .= " -org ".$organism_name;
-  if ($infer_operons) {
-    &CheckDependency("query_seq", "leader_qgenes");
-    $cmd .= " -i ".$outfile{leader_qgenes};
-  } else {
-    &CheckDependency("query_seq", "genes");
-    $cmd .= " -i ".$outfile{genes};
+  if ($task{query_seq}) {
+    &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($main::verbose >= 2);
+    my $cmd = "$SCRIPTS/retrieve-seq ";
+    $cmd .= " -org ".$organism_name;
+    if ($infer_operons) {
+      &CheckDependency("query_seq", "leader_qgenes");
+      $cmd .= " -i ".$outfile{leader_qgenes};
+    } else {
+      &CheckDependency("query_seq", "genes");
+      $cmd .= " -i ".$outfile{genes};
+    }
+    $cmd .= " -noorf";
+    $cmd .= " -o ".$outfile{query_seq};
+    &one_command($cmd);
   }
-  $cmd .= " -noorf";
-  $cmd .= " -o ".$outfile{query_seq};
-  &one_command($cmd) if ($task{query_seq});
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   &IndexOneFile("query sequence", $outfile{query_seq}) if ($create_index);
 }
@@ -842,18 +933,21 @@ sub RetrieveQueryPromoters {
 ################################################################
 ## Detect all dyads in promoters of query genes for dyad filtering
 sub ComputeFilterDyads {
-  &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($main::verbose >= 2);
-  &CheckDependency("filter", "query_seq");
-  my $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
-  $cmd .= " -i ".$outfile{query_seq};
-  $cmd .= " -l 3 -sp 0-20";
-  $cmd .= " ".$strands;
-  $cmd .= " ".$noov;
-  $cmd .= " -o ".$outfile{filter_dyads};
-  &one_command($cmd) if ($task{filter_dyads});
-  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  if ($task{filter_dyads}) {
+    &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($main::verbose >= 2);
+    &CheckDependency("filter", "query_seq");
+    my $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
+    $cmd .= " -i ".$outfile{query_seq};
+    $cmd .= " -l 3 -sp 0-20";
+    $cmd .= " ".$strands;
+    $cmd .= " ".$noov;
+    $cmd .= " -o ".$outfile{filter_dyads};
+    &one_command($cmd);
+    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  }
   &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
 }
+
 ################################################################
 ## Detect all matrix hits  in promoters of query genes for scan filtering
 sub ComputeFilterScan {
