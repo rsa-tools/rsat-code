@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.42 2010/11/27 13:45:58 jvanheld Exp $
+# $Id: footprint-discovery,v 1.43 2010/11/30 08:35:37 jvanheld Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -214,7 +214,6 @@ package main;
   local $dyad_return_fields = "occ,proba,rank";	## Default return fields for dyad-analysis
   local @dyad_return_fields = (); ## User-specified return fields for dyad-analysis
 
-  local $create_index = 0; ## Create an HTML file with index to the other result files
   local %index_list = (); ## List of index files (there can be several indexes with the option -sep_genes)
   local $verbose = 0;		## Verbosity
   local $noov = "-noov";     ## Treatment of self-overlapping patterns
@@ -281,6 +280,8 @@ package main;
     &RunFootprintDisco(@query_genes);
   }
 
+
+
   ################################################################
   ## Report the index files
   if ($create_index) {
@@ -311,8 +312,8 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Initialize output directory + output files
-  local $query_prefix = &GetQueryPrefix();
-  local $outfile{prefix} = &GetOutfilePrefix($query_prefix);
+  #  local $query_prefix = &GetQueryPrefix();
+  local ($outfile{prefix}, $query_prefix) = &GetOutfilePrefix($query_prefix);
 #  $outfile{prefix} .= "_".$bg_model;
   &InitOutput();
 
@@ -342,6 +343,16 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Parameters for dyad-analysis
+
+  ## TO DO (JvH 2010/11/29)
+  ##
+  ## If the option -org_list has been specified and the bg_model is
+  ## taxfreq, compute the list-specific frequencies with the program
+  ## taxon-frequencies -org_list org_list_file.
+  ##
+  ## If the option -taxon is used and the taxon frequencies are not
+  ## pre-installed, compute them before porocessing and store them in
+  ## the result directory.
 
   ## Background model file for dyad-analysis
   if ($bg_model eq "taxfreq") {
@@ -404,91 +415,96 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
-  &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
-  &CheckDependency("dyads", "purged");
-  $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
-  $cmd .= " -return ".$dyad_return_fields;
-  if ($bg_model eq "taxfreq") {
-    $cmd .= " -expfreq ".$infile{bg_model} ;
-  } elsif ($bg_model eq "monads") {
-    $cmd .= " -bg monads" ;
-  }
-  if (!$nofilter) {
-    $cmd .= " -accept ".$outfile{filter_dyads};
-  }
-  foreach my $field (sort keys %lth) {
+  if ($task{dyads}) {
+    &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
+    &CheckDependency("dyads", "purged");
+    $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
+    $cmd .= " -return ".$dyad_return_fields;
+    if ($bg_model eq "taxfreq") {
+      $cmd .= " -expfreq ".$infile{bg_model} ;
+    } elsif ($bg_model eq "monads") {
+      $cmd .= " -bg monads" ;
+    }
+    if (!$nofilter) {
+      $cmd .= " -accept ".$outfile{filter_dyads};
+    }
+    foreach my $field (sort keys %lth) {
     $cmd .= " -lth ".$field." ".$lth{$field};
   }
-  foreach my $field (sort keys %uth) {
-    $cmd .= " -uth ".$field." ".$uth{$field};
+    foreach my $field (sort keys %uth) {
+      $cmd .= " -uth ".$field." ".$uth{$field};
+    }
+    $cmd .= " -i ".$outfile{purged};
+    $cmd .= " -l 3 -sp 0-20";
+    $cmd .= " ".$strands;
+    $cmd .= " ".$noov;
+    $cmd .= " -sort";
+    $cmd .= " -o ".$outfile{dyads};
+    &one_command($cmd);
+
+    ## Generate a HTML table with the discovered dyads
+    &CheckDependency("dyads_html", "dyads");
+    $cmd = "$SCRIPTS/text-to-html";
+    $cmd .= " -i ".$outfile{dyads};
+    $cmd .= " -font variable -chunk 1000";
+    $cmd .= " -o ".$outfile{dyads_html};
+    &one_command($cmd);
+
+    ################################################################
+    ## Assemble significant dyads
+    &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
+    &CheckDependency("asmb", "dyads");
+    $cmd = "$SCRIPTS/pattern-assembly -v 1";
+    $cmd .= " -i ".$outfile{dyads};
+    $cmd .= " -subst 0 -maxfl 1 -toppat 50";
+    $cmd .= " -o ".$outfile{asmb};
+    &one_command($cmd);
+
+    ################################################################
+    ## Convert assembled dyads into a position-specific scoring matrix
+    if ($to_matrix) {
+      &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 2);
+      &CheckDependency("pssm", "asmb");
+      &CheckDependency("pssm", "seq");
+      $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
+      $cmd .= " -seq ".$outfile{seq};
+      $cmd .= " -asmb ".$outfile{asmb};
+      $cmd .= " -format fasta";
+      $cmd .= " -uth Pval 0.00025";
+      $cmd .= " -bginput -markov 0";
+      $cmd .= " ".$strands;
+      $cmd .= " -logo";
+      $cmd .= " -o ".$outfile{pssm_prefix};
+      &one_command($cmd);
+      &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM}) if ($create_index);
+      &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM}) if ($create_index);
+    }
   }
-  $cmd .= " -i ".$outfile{purged};
-  $cmd .= " -l 3 -sp 0-20";
-  $cmd .= " ".$strands;
-  $cmd .= " ".$noov;
-  $cmd .= " -sort";
-  $cmd .= " -o ".$outfile{dyads};
-  &one_command($cmd) if ($task{dyads});
   &IndexOneFile("dyads", $outfile{dyads}) if ($create_index);
-
-  ## Generate a HTML table with the discovered dyads
-  &CheckDependency("dyads_html", "dyads");
-  $cmd = "$SCRIPTS/text-to-html";
-  $cmd .= " -i ".$outfile{dyads};
-  $cmd .= " -font variable -chunk 1000";
-  $cmd .= " -o ".$outfile{dyads_html};
-  &one_command($cmd) if ($task{dyads});
   &IndexOneFile("dyads [htm]", $outfile{dyads_html}) if ($create_index);
-
-  ################################################################
-  ## Assemble significant dyads
-  &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
-  &CheckDependency("asmb", "dyads");
-  $cmd = "$SCRIPTS/pattern-assembly -v 1";
-  $cmd .= " -i ".$outfile{dyads};
-  $cmd .= " -subst 0 -maxfl 1 -toppat 50";
-  $cmd .= " -o ".$outfile{asmb};
-  &one_command($cmd) if ($task{dyads});
   &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
-  my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
-  &CheckDependency("map", "dyads");
-  &CheckDependency("map", "seq");
-  &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 2);
-  $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0 -N 4";
-  $cmd .= " -pl ".$outfile{dyads};
-  $cmd .= " -format fasta -i ".$outfile{seq};
-  $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
-  $cmd .= " | $SCRIPTS/feature-map";
-  $cmd .= " -title '".$map_title."'";
-  $cmd .= " -format ".$map_format;
-  $cmd .= " -scalebar -legend";
-  $cmd .= " -scorethick";
-  $cmd .= " -o ".$outfile{map};
-  &one_command($cmd) if ($task{map});
+  if ($task{map}) {
+    my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
+    &CheckDependency("map", "dyads");
+    &CheckDependency("map", "seq");
+    &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 2);
+    $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0 -N 4";
+    $cmd .= " -pl ".$outfile{dyads};
+    $cmd .= " -format fasta -i ".$outfile{seq};
+    $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
+    $cmd .= " | $SCRIPTS/feature-map";
+    $cmd .= " -title '".$map_title."'";
+    $cmd .= " -format ".$map_format;
+    $cmd .= " -scalebar -legend";
+    $cmd .= " -scorethick";
+    $cmd .= " -o ".$outfile{map};
+    &one_command($cmd);
+  }
   &IndexOneFile("feature map", $outfile{map}, image=>1) if ($create_index);
 
-  ################################################################
-  ## Convert assembled dyads into a position-specific scoring matrix
-  if ($to_matrix) {
-    &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 2);
-    &CheckDependency("pssm", "asmb");
-    &CheckDependency("pssm", "seq");
-    $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
-    $cmd .= " -seq ".$outfile{seq};
-    $cmd .= " -asmb ".$outfile{asmb};
-    $cmd .= " -format fasta";
-    $cmd .= " -uth Pval 0.00025";
-    $cmd .= " -bginput -markov 0";
-    $cmd .= " ".$strands;
-    $cmd .= " -logo";
-    $cmd .= " -o ".$outfile{pssm_prefix};
-    &one_command($cmd);
-    &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM}) if ($create_index);
-    &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM}) if ($create_index);
-  }
 
   ################################################################
   ## Send the command to a batch queue (e.g. PC cluster)
@@ -513,21 +529,6 @@ sub RunFootprintDisco {
     close $index;
   }
 
-}
-
-
-################################################################
-## Add one file to the index file
-sub IndexOneFile {
-  my ($name, $file, %args) = @_;
-  $short_file = `basename $file`;
-  print $index "<tr valign=top>\n";
-  print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
-  if ($args{image}) {
-    #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
-    print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
-  }
-  print $index ("</tr>\n\n");
 }
 
 ################################################################
@@ -708,7 +709,11 @@ sub Verbose {
   $header_verbose .= sprintf "; %-22s\t%s\n", "Program version", $program_version;
   $header_verbose .= sprintf "; %-22s\t%s", "Working directory", `pwd`;
   $header_verbose .= sprintf "; %-22s\t%s\n", "Query organism", $organism_name;
-  $header_verbose .= sprintf "; %-22s\t%s\n", "Reference taxon", $taxon;
+  if($main::orglist_file) {
+    $header_verbose .= sprintf "; %-22s\t%s\n", "Organism list", $orglist_file;
+  } else {
+    $header_verbose .= sprintf "; %-22s\t%s\n", "Reference taxon", $taxon;
+  }
   $header_verbose .= sprintf "; %s\n", "Promoters from predicted operon leader genes" if ($infer_operons);
   if (scalar(@current_query_genes) == 1) {
     $header_verbose .= sprintf "; %-22s\t%s\n", "Query gene", $current_query_genes[0];
