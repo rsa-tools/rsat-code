@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.42 2010/11/27 13:46:21 jvanheld Exp $
+# $Id: footprint-scan,v 1.43 2010/11/30 08:17:34 jvanheld Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -1174,8 +1174,8 @@ sub RunFootprintScan {
 
  ################################################################
 ## Initialize output directory + output files
-    local $query_prefix = &GetQueryPrefix(); ## Automatic name for the query gene file
-    local $outfile{prefix} = &GetOutfilePrefix($query_prefix);
+#    local $query_prefix = &GetQueryPrefix(); ## Automatic name for the query gene file
+    local ($outfile{prefix}, $query_prefix) = &GetOutfilePrefix($query_prefix);
     #die $outfile{prefix} ;
     &InitOutput();
 
@@ -1275,20 +1275,6 @@ sub RunFootprintScan {
 	print $index "</body>";
 	print $index "</html>";
 	close $index;
-    }
-
-################################################################
-## Add one file to the index file
-    sub IndexOneFile {
-	my ($name, $file, %args) = @_;
-	$short_file = `basename $file`;
-	print $index "<tr valign=top>\n";
-	print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
-	if ($args{image}) {
-	    #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
-	    print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
-	}
-	print $index ("</tr>\n\n");
     }
 
 
