@@ -29,9 +29,16 @@ foreach my $task (@supported_tasks) {
 }
 %task = ();
 $supported_tasks = join (",", @supported_tasks);
-local $all_genes = 0;         ## Analyze all the genes of the query organism
-#local $create_index = 1; ## The index is now (from 2010/11/29) always created. Still to be checked in footprint-scan.
- $main::create_index = 1;
+$main::all_genes = 0;         ## Analyze all the genes of the query organism
+
+$main::create_index = 1; ## The index is now (from 2010/11/29) always created. Still to be checked in footprint-scan.
+
+%main::infile = (); ## input files
+%main::outfile = (); ## output files
+%main::dir = (); ## output directories
+$dir{output_root} = "footprints"; ## Default root output directory. Can be changed with the optiojn -o
+
+
 ################################################################
 ## Treat one command, by either executing it, or concatenating it for
 ## further batch processing
@@ -236,102 +243,81 @@ sub CheckDependency {
 ## Define a query prefix that will be used as title for the feature
 ## map and as prefix for the automatic specificationof output files
 ## (will be used by &getOutfilePrefix()).
-sub GetQueryPrefix {
-  my $query_prefix;
+sub GetQuerySubdir {
+  my $query_subdir;
   if (scalar(@current_query_genes) == 1) {
-    $query_prefix = $current_query_genes[0];
+    $query_subdir = $current_query_genes[0];
   } elsif (scalar(@current_query_genes) <= 10) {
-    $query_prefix = join "_", @current_query_genes;
+    $query_subdir = join "_", @current_query_genes;
 #  } elsif ($outfile{prefix}) {
-#    $query_prefix = `basename $outfile{prefix}`;
-#    chomp($query_prefix);
+#    $query_subdir = `basename $outfile{prefix}`;
+#    chomp($query_subdir);
   } elsif ($infile{genes}) {
-    $query_prefix = `basename $infile{genes} .tab`;
-  }
-  &RSAT::message::Info("Query prefix", join("","'", $query_prefix, "'")) if ($main::verbose >= 2);
-  return ($query_prefix);
-}
-
-
-################################################################
-## Get the prefix for all the output file. 
-##
-## It includes the output directory and the prefix of the output
-## files.
-##
-## This prefix can either be specified by the user, or computed
-## automatically on the basis of the taxon, query organism and query
-## gene(s).
-##
-## If genes are analyzed separately, the result of each gene is saved
-## in a separate directory.
-##
-sub GetOutfilePrefix {
-#  my ($query_prefix) = @_;
-
-  ## Compute a file prefix depending on the name(s) of the uery
-  ## gene(s).
-  my $query_prefix = &GetQueryPrefix();
-
-  my $current_prefix = "";
-
-  if ( (!defined($main::outfile{prefix}))
-       || ($outfile{prefix} eq "") ) {
-    $outfile{prefix} = "footprints";
-#    &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
-  }
-  ## die $outfile{prefix};
-
-
-  ## Gene-wise prefix
-  if ($main::sep_genes) {
-    if ($query_prefix) {
-      my $output_dir = join("/",$main::outfile{prefix}, ($taxon||"org_list"), $organism_name, $query_prefix);
-      my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
-      if ($bg_model) {
-	$output_dir .= "/".$bg_model;
-	$output_file_prefix .= "_".$bg_model;
-      }
-      if ($infer_operons) {
-	$output_dir .= "_operons";
-	$output_file_prefix .= "_operons";
-      }
-      $current_prefix = join("/", $output_dir, $output_file_prefix);
-    }
-
-    ## Prefix for multiple-gene analysis
+    $query_subdir = `basename $infile{genes} .tab`;
   } else {
-
-    #if ($query_prefix) {
-    my $output_dir = join("/",$main::outfile{prefix}, "footprints", ($taxon||"org_list"), $organism_name, $query_prefix);
-    my $output_file_prefix = join ("_", $query_prefix, $organism_name, ($taxon||"org_list") );
-    if ($bg_model) {
-      $output_dir .= "/".$bg_model;
-      $output_file_prefix .= "_".$bg_model;
-    }
-    if ($infer_operons) {
-      $output_dir .= "_operons";
-      $output_file_prefix .= "_operons";
-    }
-    $current_prefix = join("/", $output_dir, $output_file_prefix);
-    #}
+    $query_subdir = "multiple_genes";
   }
-  &RSAT::message::Info("Automatic definition of the output prefix", $current_prefix) if ($main::verbose >= 2);
+  &RSAT::message::Info("&GetQuerySubdir()", join("","'", $query_subdir, "'")) if ($main::verbose >= 0);
 
-  #die $current_prefix;
-
-#  &RSAT::message::Info("GetOutfilePrefix", 
-#		       "query_prefix", $query_prefix,
-#		       "outfile{prefix}", $outfile{prefix},
-#		       "current_prefix", $current_prefix;
-#		      ) if ($main::verbose >= 5);
-  return ($current_prefix, $query_prefix);
+  $dir{query_subdir} = $query_subdir; ## Index the query subdir, which will also serve for the main index
+  return ($query_subdir);
 }
 
 
 ################################################################
-## Initialize output directory + output files
-sub InitOutput {
+## Define the result sub-directories and the prefix for all output
+## files for a given query (separated queries are dealt successively
+## by this function).
+##
+## The query-specific prefix ($main::outfile{prefix}) is computed
+## automatically on the basis of the taxon, query organism, background
+## model and query gene(s).
+##
+## If several genes are analyzed separately (option -sep_genes), the
+## result is saved in a separate directory for each gene.
+##
+## This routine creates the query-specific sub-directory if required.
+sub GetOutfilePrefix {
+
+  ## Create the query-specific sub-directory
+  my $query_subdir = &GetQuerySubdir();
+  $dir{output_per_query} = join("/",$main::dir{output_root}, ($taxon||"org_list"), $organism_name, $query_subdir);
+  &RSAT::util::CheckOutDir($dir{output_per_query});
+
+  ## Compute a query-specific file prefix including the main parameters
+  my $query_prefix = $query_subdir;
+  $query_prefix .= "_";
+  $query_prefix .= join ("_", $organism_name, ($taxon||"org_list"));
+  if ($bg_model) {
+     $query_prefix .= "_".$bg_model;
+   }
+   if ($infer_operons) {
+     $query_prefix .= "_operons";
+   }
+  $outfile{prefix} = join("/", $dir{output_per_query}, $query_prefix);
+  &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 2);
+
+  &RSAT::message::Info("&GetOutfilePrefix()", 
+  		       "query_prefix", $query_prefix,
+  		       "dir{output_per_query}", $dir{output_per_query},
+  		       "outfile{prefix}", $outfile{prefix},
+  		      ) if ($main::verbose >= 0);
+}
+
+
+################################################################
+## Initialize a query-specific output directory.
+##
+## The root output directory is either defined by the user (option -o)
+## or set to the default value "footprints".
+##
+##
+## The output root directory can either be specified by the user, or takes the default value "footprints".
+##
+##
+sub InitQueryOutput {
+
+  &GetOutfilePrefix();
 
   ## Create output directory if required
   $dir{output} = `dirname $outfile{prefix}`;
@@ -545,18 +531,19 @@ testing).
 	    ## Output prefix
 =pod
 
-=item	B<-o output_dir>
+=item	B<-o output_root_dir>
 
-Main output directory. Note that the results will be dispatched in
-various sub-diretcories, defined according to the taxon, query
-organism and query gene name.
+Main output directory. The results will be dispatched in
+sub-directories, defined according to the taxon, query organism and
+query gene name(s).
 
 If the main output dir is not specified, the program automatically
 sets it to "footprints".
 
 =cut
   } elsif ($arg eq "-o") {
-    $main::outfile{prefix} = shift(@arguments);
+#    $main::outfile{prefix} = shift(@arguments);
+    $main::dir{output_root} =  shift(@arguments);
 
 =pod
 
@@ -835,6 +822,7 @@ result files.
 ## Open file for the HTML index
 sub OpenIndex {
   $outfile{index} = $outfile{prefix}."_index.html";
+  my $query_prefix = $dir{query_subdir};
   $index_list{$query_prefix} = $outfile{index};
   $index = &OpenOutputFile($outfile{index});
   print $index "<html>\n";
