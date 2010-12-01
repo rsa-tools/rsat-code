@@ -18,3 +18,5 @@ jaspar_core_urochordates	tf	JASPAR/jaspar_core_urochordates_2009_10.tf	 JASPAR c
 jaspar_pbm_mouse	tf	JASPAR/jaspar_pbm_mouse_2009_10.tf	JASPAR PBM (UNIPROBE) Mouse	2009_10
 jaspar_pbm-homeo_mouse	tf	JASPAR/jaspar_pbm-homeo_mouse_2009_10.tf	JASPAR PBM (UNIPROBE) Homeo Mouse	2009_10
 jaspar_pbm-hlh_nematode	tf	JASPAR/jaspar_pbm-hlh_nematode_2009_10.tf	JASPAR PBM (UNIPROBE) HLH Nematode	2009_10
+DMMPMM_drosophila	tf	DMMPMM_drosophila/dmmpmm_PCM.tf	Drosophila DMMPMM (http://line.imb.ac.ru/DMMPMM/)	2010_11
+IDMMPMM_drosophila	tf	DMMPMM_drosophila/idmmpmm_PCM.tf	Drosophila IDMMPMM (http://line.imb.ac.ru/DMMPMM/)	2010_11
