@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.43 2010/11/30 08:17:34 jvanheld Exp $
+# $Id: footprint-scan,v 1.44 2010/12/01 09:28:36 jvanheld Exp $
 #
 ############################################################
 
@@ -267,11 +267,8 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
-
-  %main::infile = ();
-  %main::outfile = ();
 
   $main::verbose = 0;
   #$main::in = STDIN;
@@ -1164,125 +1161,119 @@ sub Verbose {
 ################################################################
 ## Run footprint scan flow chart for one or several query genes
 sub RunFootprintScan {
-    local (@current_query_genes) = @_;
+  local (@current_query_genes) = @_;
 
-    local $start_time = &RSAT::util::StartScript();
-    local $batch_cmd = "";
-    local $out = "";
-    local $genes = "";
+  local $start_time = &RSAT::util::StartScript();
+  local $batch_cmd = "";
+  local $out = "";
+  local $genes = "";
 
 
- ################################################################
-## Initialize output directory + output files
-#    local $query_prefix = &GetQueryPrefix(); ## Automatic name for the query gene file
-    local ($outfile{prefix}, $query_prefix) = &GetOutfilePrefix($query_prefix);
-    #die $outfile{prefix} ;
-    &InitOutput();
+  ################################################################
+  ## Initialize output directory + output files
+  &InitQueryOutput();
 
-## Output files for matrix-scan
-    $outfile{filter_scan} = $outfile{prefix}."_filter_scan.tab";
-    $outfile{matrix_prefix} = $outfile{prefix}."_".$matrix_suffix;
-    $outfile{occ_sig} = $outfile{matrix_prefix}."_occ_sig.tab";
-    $outfile{occ_freq_graph} = $outfile{matrix_prefix}."_occ_freq.".$plot_format;
-    $outfile{occ_sig_graph} = $outfile{matrix_prefix}."_occ_sig.".$plot_format;
-    $outfile{sites} = $outfile{matrix_prefix}."_sites.tab";
-    $outfile{map} = $outfile{matrix_prefix}."_sites.".$map_format;
+  ## Output files for matrix-scan
+  $outfile{filter_scan} = $outfile{prefix}."_filter_scan.tab";
+  $outfile{matrix_prefix} = $outfile{prefix}."_".$matrix_suffix;
+  $outfile{occ_sig} = $outfile{matrix_prefix}."_occ_sig.tab";
+  $outfile{occ_freq_graph} = $outfile{matrix_prefix}."_occ_freq.".$plot_format;
+  $outfile{occ_sig_graph} = $outfile{matrix_prefix}."_occ_sig.".$plot_format;
+  $outfile{sites} = $outfile{matrix_prefix}."_sites.tab";
+  $outfile{map} = $outfile{matrix_prefix}."_sites.".$map_format;
 
-################################################################
-## Open file to the HTML index
-    &OpenIndex() if ($create_index);
- 
+  ################################################################
+  ## Open file to the HTML index
+  &OpenIndex() if ($create_index);
 
-################################################################
-## Print query genes in the gene file
-    foreach my $gene (@current_query_genes) {
-	print $genes $gene, "\t", $organism_name, "\n";
-    }
-    &IndexOneFile("genes", $outfile{genes}) if ($create_index);
+  ################################################################
+  ## Print query genes in the gene file
+  foreach my $gene (@current_query_genes) {
+    print $genes $gene, "\t", $organism_name, "\n";
+  }
+  &IndexOneFile("genes", $outfile{genes}) if ($create_index);
 
- ## Retrieve promoters of the query organism 
-    if ($main::filter) {
-	&RetrieveQueryPromoters() ;
+  ## Retrieve promoters of the query organism 
+  if ($main::filter) {
+    &RetrieveQueryPromoters();
+    &ComputeFilterScan($matrix_format,@matrix_files);
+  }
 
-	&ComputeFilterScan($matrix_format,@matrix_files);
-    }
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($verbose);
    
 
-################################################################
-## Print verbose
-    &Verbose() if ($verbose);
-   
+  if ($main::filter && $main::skip_gene) {
+    &RSAT::message::Info("No genes remained after filtering  ", $outfile{genes} ) if ($main::verbose >= 0);  
+    return;	
+  }
+  ################################################################
+  ## Identify ortholog genes
+  &GetOrthologs();
 
-    if ($main::filter && $main::skip_gene) {
-	&RSAT::message::Info("No genes remained after filtering  ", $outfile{genes} ) if ($main::verbose >= 0);  
-	return;	
-    }
-################################################################
-## Identify ortholog genes
-    &GetOrthologs();
+  ## only for the $tf option
+  if ($main::tf && !($main::tf_ortho_file) ) {
+    $main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";	   
+    $org_column =qq@grep -v "#" $outfile{orthologs} |grep -v ";"| cut -f2 >$main::tf_ortho_file @;
+    system ($org_column);
+    &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ") 
+      if ($main::verbose>=1);
+  }
 
-    ## only for the $tf option
-    if ($main::tf && !($main::tf_ortho_file) ){
-	$main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";	   
-	$org_column =qq@grep -v "#" $outfile{orthologs} |grep -v ";"| cut -f2 >$main::tf_ortho_file @;
-	system ($org_column);
-	&RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ") 
-	    if ($main::verbose>=1);
-    }
+  ################################################################
+  ## Predict operon leader genes for the orthologous genes
+  &InferOrthoOperons() if ($infer_operons);
 
-################################################################
-## Predict operon leader genes for the orthologous genes
-    &InferOrthoOperons() if ($infer_operons);
+  ################################################################
+  ## Retrieve sequences from orthologs
+  &RetrieveOrthoSeq();
 
-################################################################
-## Retrieve sequences from orthologs
-    &RetrieveOrthoSeq();
+  ################################################################
+  ## Purge sequences
+  &PurgeOrthoSeq() unless  ($main::no_purge) ;
 
-################################################################
-## Purge sequences
-    &PurgeOrthoSeq() unless  ($main::no_purge) ;
+  ################################################################
+  ## Scan the promoters of one group of orhtologous genes with one
+  ## position-specific scoring matrix
 
-################################################################
-## Scan the promoters of one group of orhtologous genes with one
-## position-specific scoring matrix
+  ## Estimate over-representation in hits for all threshold values
+  &OccurrenceSig();
+  &OccurrenceSigGraph();
+  &GetTopSig() if (($task{synthesis}) && !($batch));
+  #&OccurrenceSigGraph();
+  ## Scan sequences to detect hits
+  &OrthoScan();
+  &OrthoMap();
 
-## Estimate over-representation in hits for all threshold values
-    &OccurrenceSig();
-    &OccurrenceSigGraph();
-    &GetTopSig() if (($task{synthesis}) && !($batch));
-    #&OccurrenceSigGraph();
-## Scan sequences to detect hits
-    &OrthoScan();
-    &OrthoMap();
+  ################################################################
+  ## Finish verbose
+  if ($verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+  }
 
-################################################################
-## Finish verbose
-    if ($verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $out "; Job started $start_time\n";
-	print $out "; Job done    $done_time\n";
-    }
-
-################################################################
-## Close output stream
-    close $out if ($outfile{log});
-    close $genes if ($outfile{genes});
-    close $filter_genes if ($outfile{genes} && $main::filter);
-    if ($create_index) {
-	print $index "</table>\n";
-	print $index "</blockquote>";
-	print $index "<hr size=2 color='#000088'>";
-	print $index "</body>";
-	print $index "</html>";
-	close $index;
-    }
+  ################################################################
+  ## Close output stream
+  close $out if ($outfile{log});
+  close $genes if ($outfile{genes});
+  close $filter_genes if ($outfile{genes} && $main::filter);
+  if ($create_index) {
+    print $index "</table>\n";
+    print $index "</blockquote>";
+    print $index "<hr size=2 color='#000088'>";
+    print $index "</body>";
+    print $index "</html>";
+    close $index;
+  }
 
 
-################################################################
-## Send the command to a batch queue (e.g. PC cluster)
-    if ($batch) {
-	&doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
-    }
+  ################################################################
+  ## Send the command to a batch queue (e.g. PC cluster)
+  if ($batch) {
+    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  }
 
 }
 
