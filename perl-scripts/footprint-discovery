@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.43 2010/11/30 08:35:37 jvanheld Exp $
+# $Id: footprint-discovery,v 1.44 2010/12/01 09:28:36 jvanheld Exp $
 #
 ############################################################
 
@@ -201,11 +201,8 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
-
-  %main::infile = ();
-  %main::outfile = ();
 
   local $skip = 0;
   local $last = 0;
@@ -280,8 +277,6 @@ package main;
     &RunFootprintDisco(@query_genes);
   }
 
-
-
   ################################################################
   ## Report the index files
   if ($create_index) {
@@ -312,10 +307,8 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Initialize output directory + output files
-  #  local $query_prefix = &GetQueryPrefix();
-  local ($outfile{prefix}, $query_prefix) = &GetOutfilePrefix($query_prefix);
-#  $outfile{prefix} .= "_".$bg_model;
-  &InitOutput();
+
+  &InitQueryOutput();
 
   ## Output files for dyad-analysis
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
@@ -338,7 +331,7 @@ sub RunFootprintDisco {
   }
 
   ################################################################
-  ## Open file to the HTML index
+  ## Open the file to store the HTML index
   &OpenIndex() if ($create_index);
 
   ################################################################
@@ -356,15 +349,22 @@ sub RunFootprintDisco {
 
   ## Background model file for dyad-analysis
   if ($bg_model eq "taxfreq") {
-    $infile{bg_model} = &ExpectedFreqFile($taxon,
-					  3,
-					  # spacing ? 0-20
-					  "upstream-noorf",
-					  str=>$strands,
-					  noov=>$noov,
-					  type=>"dyad",
-					  warn=>1,
-					  taxon=>1);
+    if ($orglist_file) {
+      die "HELLO";
+      $infile{bg_model} = "";
+    } elsif ($taxon) {
+      $infile{bg_model} = &ExpectedFreqFile($taxon,
+					    3,
+					    # spacing ? 0-20
+					    "upstream-noorf",
+					    str=>$strands,
+					    noov=>$noov,
+					    type=>"dyad",
+					    warn=>1,
+					    taxon=>1);
+    } else {
+      &RSAT::error::FatalError("Background model cannot be selected because neither taxon nor organism list has been specified.");
+    }
   }
 
 
