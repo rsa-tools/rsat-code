@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.45 2010/12/02 08:25:28 jvanheld Exp $
+# $Id: footprint-scan,v 1.46 2010/12/02 08:35:02 jvanheld Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -283,10 +283,12 @@ package main;
   local $organism_name;		## Query organism
   local @query_genes = ();	## list of query genes
   local $infer_operons = 0;     ## Infer operon leader genes
-  local $dist_thr = 55;	        ## Distance threshold for operon inference
   $main::sep_genes = 0;	        ## Analyze each gene separately
-  local $max_genes = undef;     ## Analyze a restricted number of genes
-  local $query_prefix;
+#  local $max_genes = undef;     ## Analyze a restricted number of genes
+#  local $query_prefix;
+
+  local $skip_gene = 0;
+  local %top_sig_row = ();
 
   ## Matrix scanning parameters
   local @matrix_files = ();
@@ -317,101 +319,101 @@ package main;
   local %lth = ();		# lower threshold values
   local %uth = ();		# upper threshold values
   @supported_thresholds = qw (
-score
-normw
-pval
-ln_pval			   
-sig
-proba_m
-proba_b
-rank
-rank_pm
-occ
-occ_cum
-inv_cum
-exp_occ
-occ_pval
-occ_eval
-occ_sig
-occ_sig_rank
-crer_size
-crer_sites
-crer_sig
-crer_pval
-);
+			      score
+			      normw
+			      pval
+			      ln_pval			   
+			      sig
+			      proba_m
+			      proba_b
+			      rank
+			      rank_pm
+			      occ
+			      occ_cum
+			      inv_cum
+			      exp_occ
+			      occ_pval
+			      occ_eval
+			      occ_sig
+			      occ_sig_rank
+			      crer_size
+			      crer_sites
+			      crer_sig
+			      crer_pval
+			     );
   my $supported_thresholds = join ",", @supported_thresholds;
   %main::supported_threshold = ();
   
   foreach my $thr (@supported_thresholds) {
-     # if($thr eq 'score'){print "ahhhh$thr-\n";}
-      $main::supported_threshold{$thr} = 1;
+    # if($thr eq 'score'){print "ahhhh$thr-\n";}
+    $main::supported_threshold{$thr} = 1;
   }
   
   ###############
   #XYgraph options
-  
-  @supported_graph_occ_options =  qw(
--i
--o
--format
--v
--title1
--title2
--xleg1
--xleg2
--yleg1
--yleg2
--xmax
--ymax
--xmin
--ymin
--same_limits
--min
--max
--xgstep1
--ygstep1
--gstep1
--xgstep2
--ygstep2
--gstep2
--xsize
--ysize
--size
--pointsize
--columns
--rows
--xcol
--ycol
--xlog
--ylog 
--log 
--lines
--line
--header
--legend	
--histo
--fhisto
--hbox
--tbox
--bg
--mono
--symbols
--htmap
--lc
--colors
--export_colors
--gp
--vline
--hline
-);
-  
+  ## ALEJANDRA: THIS LIST IS NOT USED ANYWHERE ELSE IN THE CODE, PLEASE CHECK IF IT IS STILL REQUIRED
+  #   @supported_graph_occ_options =  qw(
+  # 				     -i
+  # 				     -o
+  # 				     -format
+  # 				     -v
+  # 				     -title1
+  # 				     -title2
+  # 				     -xleg1
+  # 				     -xleg2
+  # 				     -yleg1
+  # 				     -yleg2
+  # 				     -xmax
+  # 				     -ymax
+  # 				     -xmin
+  # 				     -ymin
+  # 				     -same_limits
+  # 				     -min
+  # 				     -max
+  # 				     -xgstep1
+  # 				     -ygstep1
+  # 				     -gstep1
+  # 				     -xgstep2
+  # 				     -ygstep2
+  # 				     -gstep2
+  # 				     -xsize
+  # 				     -ysize
+  # 				     -size
+  # 				     -pointsize
+  # 				     -columns
+  # 				     -rows
+  # 				     -xcol
+  # 				     -ycol
+  # 				     -xlog
+  # 				     -ylog 
+  # 				     -log 
+  # 				     -lines
+  # 				     -line
+  # 				     -header
+  # 				     -legend	
+  # 				     -histo
+  # 				     -fhisto
+  # 				     -hbox
+  # 				     -tbox
+  # 				     -bg
+  # 				     -mono
+  # 				     -symbols
+  # 				     -htmap
+  # 				     -lc
+  # 				     -colors
+  # 				     -export_colors
+  # 				     -gp
+  # 				     -vline
+  # 				     -hline
+  # 				    );
+
   my $supported_graph_thresholds = join ",", @supported_graph_thresholds;
   %main::supported_graph_threshold = ();
-  
+
   foreach my $thrg (@supported_graph_thresholds) {
-      $main::supported_graph_threshold{$thrg} = 1;
+    $main::supported_graph_threshold{$thrg} = 1;
   }
-  
+
   ## info_lines Ocurrence Significance graph
   ## by default lines are not drawn 
   $main::draw_info_lines=0;
@@ -461,7 +463,7 @@ crer_pval
   if (defined($main::infile{bg})) {
       $ms_parameters .= " -bgfile ".$main::infile{bg};
       if(defined($main::bg_format)){
-	  $ms_prameters .= " -bg_format ".$main::bg_format;
+	$ms_parameters .= " -bg_format ".$main::bg_format;
       }
   } elsif ($bg_method eq "input") {
       $ms_parameters .= " -bginput ";
@@ -888,7 +890,7 @@ In other cases, if the length (L) of the training sequence is known
 manually by using the option -bg_pseudo. In such case, the background
 pseudo-frequency might be set, as suggested by Thijs et al., to the
 following value:
-    
+
 sqrt(L)/(L+sqrt(L))
 
 
@@ -898,7 +900,9 @@ sqrt(L)/(L+sqrt(L))
 	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
 					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
 		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
-	    $main::bg_pseudo_user_specified = 1;
+
+	    ## ALEJANDRA: this variable is not mentioned anywhere else in the code, I comment it. Please check
+	    #	    $main::bg_pseudo_user_specified = 1;
 
 =pod
 
@@ -1092,7 +1096,9 @@ Return Cis-Regulatory elements Enriched-Regions (CRER).
 
 =cut
 	} elsif ($arg eq "-crer") {
-    	    $main::crer= shift(@arguments);
+
+	  ## ALEJANDRA= THIS VARIABLE IS NOT USED ANYWEHERE ELSE IN THE CODE, PLEASE CHECK IF IT IS STILL REQUIRED
+#	  $main::crer= shift(@arguments);
 
 	     &RSAT::error::FatalError($main::filter_pval, "Invalid value for filter_pval. Should be a real number. ") 
 	unless (&RSAT::util::IsReal($main::filter_pval));
@@ -1215,11 +1221,10 @@ sub RunFootprintScan {
   ################################################################
   ## Print verbose
   &Verbose() if ($verbose);
-   
 
   if ($main::filter && $main::skip_gene) {
     &RSAT::message::Info("No genes remained after filtering  ", $outfile{genes} ) if ($main::verbose >= 0);  
-    return;	
+    return;
   }
   ################################################################
   ## Identify ortholog genes
@@ -1271,7 +1276,6 @@ sub RunFootprintScan {
   ## Close output stream
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
-  close $filter_genes if ($outfile{genes} && $main::filter);
   if ($create_index) {
     print $index "</table>\n";
     print $index "</blockquote>";
