@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.44 2010/12/01 09:28:36 jvanheld Exp $
+# $Id: footprint-scan,v 1.45 2010/12/02 08:25:28 jvanheld Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -415,16 +415,29 @@ crer_pval
   ## info_lines Ocurrence Significance graph
   ## by default lines are not drawn 
   $main::draw_info_lines=0;
-  
 
   ## Supported-tasks added to those of footprint.lib.pl
-  $supported_task{occ_sig} = 1; 
-  $supported_task{filter_scan} = 1;
-  $supported_task{occ_sig_graph} = 1;
-  $supported_task{scan} = 1;
-  $supported_task{map} = 1;
-  $supported_task{synthesis} = 1;
-  $supported_tasks = join (",", keys %supported_task);
+
+  ## Supported tasks
+  @supported_tasks = qw(
+			all
+			operons
+			query_seq
+			orthologs
+			ortho_seq
+			purge
+			occ_sig
+			filter_scan
+			occ_sig_graph
+			scan
+			map
+			synthesis
+		       );
+  $supported_tasks = join (",", @supported_tasks);
+  %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
 
   ################################################################
   ## Read argument values
