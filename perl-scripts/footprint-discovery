@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.44 2010/12/01 09:28:36 jvanheld Exp $
+# $Id: footprint-discovery,v 1.45 2010/12/02 08:24:39 jvanheld Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -221,13 +221,26 @@ package main;
   local %uth = (rank=>50);	    ## Upper thresholds
   local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
 
-  ## Add the supported tasks specific for this program (other tasks
-  ## have been defined in the library)
-  $supported_task{filter_dyads} = 1;
-  $supported_task{dyads} = 1;
-  $supported_task{map} = 1;
-  $supported_task{index} = 1;
-#  $supported_tasks = join (",", keys %supported_task);
+
+  ## Supported tasks
+  @supported_tasks = qw(
+			all
+			bg_model
+			operons
+			query_seq
+			filter_dyads
+			orthologs
+			ortho_seq
+			purge
+			dyads
+			map
+			index
+		       );
+  $supported_tasks = join (",", @supported_tasks);
+  %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
 
   ## Parameters for promoter retrieval
   local $taxon;			## Reference taxon
@@ -257,8 +270,70 @@ package main;
   ################################################################
   ## Check argument values
 
+  if ($task{bg_model}) {
+    unless ($orglist_file) {
+      $task{bg_model} = 0;
+      &RSAT::message::Warning("Task bg_model is only required with the option -org_list") if ($main::verbose >= 1);
+    }
+  }
+
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
+
+
+  ################################################################
+  ## Parameters for dyad-analysis
+
+  ## Return fields for dyad-analysis
+  if (scalar(@dyad_return_fields) > 0) {
+    $dyad_return_fields = join ",", @dyad_return_fields;
+  }
+
+  ## TO DO (JvH 2010/11/29)
+  ##
+  ## If the option -org_list has been specified and the bg_model is
+  ## taxfreq, compute the list-specific frequencies with the program
+  ## taxon-frequencies -org_list org_list_file.
+  ##
+  ## If the option -taxon is used and the taxon frequencies are not
+  ## pre-installed, compute them before porocessing and store them in
+  ## the result directory.
+
+  ## Background model file for dyad-analysis
+  if ($bg_model eq "taxfreq") {
+    if ($orglist_file) {
+      &RSAT::message::TimeWarn("Computing background model for organism list") if ($main::verbose >= 1);
+
+      ## Store the background model in the parent directory of the query sub-directories
+      $dir{bg_model} = join("/",$main::dir{output_root}, "org_list");
+      &RSAT::util::CheckOutDir($dir{bg_model});
+
+      ## Background model file
+      $infile{bg_model} = $dir{bg_model}."/";
+      $infile{bg_model} .= "dyads_3nt_sp0-20_upstream-noorf_org_list".$noov.$strands.".freq";
+
+      if ($task{bg_model}) {
+	my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3";
+	$cmd .= " -org_list ".$orglist_file;
+	$cmd .= " > ".$infile{bg_model};
+	&doit($cmd);
+      }
+
+    } elsif ($taxon) {
+      $infile{bg_model} = &ExpectedFreqFile($taxon,
+					    3,
+					    # spacing ? 0-20
+					    "upstream-noorf",
+					    str=>$strands,
+					    noov=>$noov,
+					    type=>"dyad",
+					    warn=>1,
+					    taxon=>1);
+    } else {
+      &RSAT::error::FatalError("Background model cannot be selected because neither taxon nor organism list has been specified.");
+    }
+    &RSAT::message::Info("Background model file", $infile{bg_model}) if ($main::verbose >= 0);
+  }
 
   ################################################################
   ## Analyze query genes separately or altogether
@@ -308,7 +383,7 @@ sub RunFootprintDisco {
   ################################################################
   ## Initialize output directory + output files
 
-  &InitQueryOutput();
+  local $query_prefix = &InitQueryOutput();
 
   ## Output files for dyad-analysis
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
@@ -333,46 +408,6 @@ sub RunFootprintDisco {
   ################################################################
   ## Open the file to store the HTML index
   &OpenIndex() if ($create_index);
-
-  ################################################################
-  ## Parameters for dyad-analysis
-
-  ## TO DO (JvH 2010/11/29)
-  ##
-  ## If the option -org_list has been specified and the bg_model is
-  ## taxfreq, compute the list-specific frequencies with the program
-  ## taxon-frequencies -org_list org_list_file.
-  ##
-  ## If the option -taxon is used and the taxon frequencies are not
-  ## pre-installed, compute them before porocessing and store them in
-  ## the result directory.
-
-  ## Background model file for dyad-analysis
-  if ($bg_model eq "taxfreq") {
-    if ($orglist_file) {
-      die "HELLO";
-      $infile{bg_model} = "";
-    } elsif ($taxon) {
-      $infile{bg_model} = &ExpectedFreqFile($taxon,
-					    3,
-					    # spacing ? 0-20
-					    "upstream-noorf",
-					    str=>$strands,
-					    noov=>$noov,
-					    type=>"dyad",
-					    warn=>1,
-					    taxon=>1);
-    } else {
-      &RSAT::error::FatalError("Background model cannot be selected because neither taxon nor organism list has been specified.");
-    }
-  }
-
-
-  ################################################################
-  ## Return fields for dyad-analysis
-  if (scalar(@dyad_return_fields) > 0) {
-    $dyad_return_fields = join ",", @dyad_return_fields;
-  }
 
   ################################################################
   ## Print query genes in the gene file
@@ -420,11 +455,13 @@ sub RunFootprintDisco {
     &CheckDependency("dyads", "purged");
     $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
     $cmd .= " -return ".$dyad_return_fields;
-    if ($bg_model eq "taxfreq") {
-      $cmd .= " -expfreq ".$infile{bg_model} ;
-    } elsif ($bg_model eq "monads") {
+    ## Backgroun model
+    if ($bg_model eq "monads") {
       $cmd .= " -bg monads" ;
+    } elsif ($bg_model eq "taxfreq") {
+      $cmd .= " -expfreq ".$infile{bg_model} ;
     }
+    ## dyad filtering (only accept dyads found in the promoter of the query gene(s)
     if (!$nofilter) {
       $cmd .= " -accept ".$outfile{filter_dyads};
     }

@@ -11,26 +11,8 @@ local $die_on_error = 1;
 local $job_prefix = "footprint_disco";
 local $cmd;
 
-@supported_tasks = qw(
-		      all
-		      operons
-		      query_seq
-		      filter_dyads
-		      orthologs
-		      ortho_seq
-		      purge
-		      dyads
-		      map
-		     );
-
-%supported_task = ();
-foreach my $task (@supported_tasks) {
-  $supported_task{$task} = 1;
-}
 %task = ();
-$supported_tasks = join (",", @supported_tasks);
 $main::all_genes = 0;         ## Analyze all the genes of the query organism
-
 $main::create_index = 1; ## The index is now (from 2010/11/29) always created. Still to be checked in footprint-scan.
 
 %main::infile = (); ## input files
@@ -147,8 +129,8 @@ sub SelectReferenceOrganisms {
 }
 
 ################################################################
-## Check all parameters required for footprint analysis (discovery or
-## scanning).
+## Check all parameters required for footprint analysis
+## (footprint-discovery or footprint-scan).
 sub CheckFootprintParameters {
 
   ## If all tasks are requested or if no task is defined, execute all
@@ -288,12 +270,14 @@ sub GetOutfilePrefix {
   my $query_prefix = $query_subdir;
   $query_prefix .= "_";
   $query_prefix .= join ("_", $organism_name, ($taxon||"org_list"));
-  if ($bg_model) {
-     $query_prefix .= "_".$bg_model;
-   }
-   if ($infer_operons) {
-     $query_prefix .= "_operons";
-   }
+
+  ## We don't want the bg model in the query prefix, because it is only a parameter for the dyads file (not for the sequences)
+  #  if ($bg_model) {
+  #    $query_prefix .= "_".$bg_model;
+  #  }
+  if ($infer_operons) {
+    $query_prefix .= "_operons";
+  }
   $outfile{prefix} = join("/", $dir{output_per_query}, $query_prefix);
   &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 2);
 
@@ -302,6 +286,8 @@ sub GetOutfilePrefix {
   		       "dir{output_per_query}", $dir{output_per_query},
   		       "outfile{prefix}", $outfile{prefix},
   		      ) if ($main::verbose >= 0);
+
+  return ($query_prefix);
 }
 
 
@@ -317,7 +303,7 @@ sub GetOutfilePrefix {
 ##
 sub InitQueryOutput {
 
-  &GetOutfilePrefix();
+  my $query_prefix = &GetOutfilePrefix();
 
   ## Create output directory if required
   $dir{output} = `dirname $outfile{prefix}`;
@@ -348,6 +334,8 @@ sub InitQueryOutput {
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta"; 
   $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
+
+  return($query_prefix);
 }
 
 
