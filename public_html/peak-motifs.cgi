@@ -62,7 +62,7 @@ $parameters .= "-i $sequence_file ";
 ### tasks
 
 ## default
-@tasks = ("purge", "seqlen", "composition", "collect_motifs", "synthesis");
+@tasks = ("purge", "seqlen", "composition", "merge_words", "collect_motifs", "synthesis");
 
 ## motif-disco
 my $oligo_params = "";
