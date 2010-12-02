@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.46 2010/12/02 08:35:02 jvanheld Exp $
+# $Id: footprint-scan,v 1.47 2010/12/02 23:08:55 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -275,6 +275,7 @@ package main;
   $main::out = STDOUT;
 
   local $no_die = 1; ## Don't die when a problem occurs
+  local $die_on_error = 1;
   local $skip = 0;
   local $last = 0;
   $main::window_size=50; #default length of window size based on bacterial genome size
@@ -286,7 +287,7 @@ package main;
   $main::sep_genes = 0;	        ## Analyze each gene separately
 #  local $max_genes = undef;     ## Analyze a restricted number of genes
 #  local $query_prefix;
-
+  $main::crer=0; ## Wish, when set to one, look for CRER over-representation 
   local $skip_gene = 0;
   local %top_sig_row = ();
 
@@ -294,7 +295,7 @@ package main;
   local @matrix_files = ();
   local $strands = "-2str"; ## Strands for pattern matching
   local $pseudo = 1;
-  local $bg_pseudo = 0.05;
+  $main::bg_pseudo = 0.05;
   local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
   #local $matrix_dir="data/matrices";
   #local $matrix_file = $matrix_dir."/PHO4_matrix.tab";
@@ -312,7 +313,7 @@ package main;
   $main::filter=0;
   $main::filter_pval=0;
   #$bg_format="oligo";
-
+  $main::footprint_scan=1;
   ## Local definition of threshold parameters passed to matrix-scan
   ## used to check if the options passed to matrix-scna are correct
 
@@ -349,64 +350,7 @@ package main;
     $main::supported_threshold{$thr} = 1;
   }
   
-  ###############
-  #XYgraph options
-  ## ALEJANDRA: THIS LIST IS NOT USED ANYWHERE ELSE IN THE CODE, PLEASE CHECK IF IT IS STILL REQUIRED
-  #   @supported_graph_occ_options =  qw(
-  # 				     -i
-  # 				     -o
-  # 				     -format
-  # 				     -v
-  # 				     -title1
-  # 				     -title2
-  # 				     -xleg1
-  # 				     -xleg2
-  # 				     -yleg1
-  # 				     -yleg2
-  # 				     -xmax
-  # 				     -ymax
-  # 				     -xmin
-  # 				     -ymin
-  # 				     -same_limits
-  # 				     -min
-  # 				     -max
-  # 				     -xgstep1
-  # 				     -ygstep1
-  # 				     -gstep1
-  # 				     -xgstep2
-  # 				     -ygstep2
-  # 				     -gstep2
-  # 				     -xsize
-  # 				     -ysize
-  # 				     -size
-  # 				     -pointsize
-  # 				     -columns
-  # 				     -rows
-  # 				     -xcol
-  # 				     -ycol
-  # 				     -xlog
-  # 				     -ylog 
-  # 				     -log 
-  # 				     -lines
-  # 				     -line
-  # 				     -header
-  # 				     -legend	
-  # 				     -histo
-  # 				     -fhisto
-  # 				     -hbox
-  # 				     -tbox
-  # 				     -bg
-  # 				     -mono
-  # 				     -symbols
-  # 				     -htmap
-  # 				     -lc
-  # 				     -colors
-  # 				     -export_colors
-  # 				     -gp
-  # 				     -vline
-  # 				     -hline
-  # 				    );
-
+  
   my $supported_graph_thresholds = join ",", @supported_graph_thresholds;
   %main::supported_graph_threshold = ();
 
@@ -525,7 +469,7 @@ package main;
   $ms_parameters .= " -pseudo ".$pseudo;
 
   ## Pseudo-frequency for the background model
-  $ms_parameters .= " -bg_pseudo ".$bg_pseudo;
+  $ms_parameters .= " -bg_pseudo ".$main::bg_pseudo;
 
   ################################################################
   ## If -tf is used analyze this gene independently
@@ -552,8 +496,12 @@ package main;
   ## Analyze query genes separately or altogether
   if ($main::sep_genes) {
       
-      $outfile{synthesis} = join( "/",$main::outfile{prefix}, "footprints", ($taxon || "org_list"), $organism_name,
-				  join ("_", $matrix_suffix,  $organism_name, $taxon ,"synthesis"));
+      # $outfile{synthesis} = join( "/",$main::outfile{prefix}, "footprints", ($taxon || "org_list"), $organism_name,
+      #			  join ("_", $matrix_suffix,  $organism_name, $taxon ,"synthesis"));
+     
+      $outfile{synthesis} = $outfile{prefix}."_"."synthesis"; 
+      
+      #die "Synthesis". $outfile{synthesis};
       $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
       $outfile{synthesis_html} = $outfile{synthesis}.".html";
       my $g = 0;
@@ -901,9 +849,7 @@ sqrt(L)/(L+sqrt(L))
 					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
 		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
 
-	    ## ALEJANDRA: this variable is not mentioned anywhere else in the code, I comment it. Please check
-	    #	    $main::bg_pseudo_user_specified = 1;
-
+	  
 =pod
 
 =item B<-filter>
@@ -1097,8 +1043,8 @@ Return Cis-Regulatory elements Enriched-Regions (CRER).
 =cut
 	} elsif ($arg eq "-crer") {
 
-	  ## ALEJANDRA= THIS VARIABLE IS NOT USED ANYWEHERE ELSE IN THE CODE, PLEASE CHECK IF IT IS STILL REQUIRED
-#	  $main::crer= shift(@arguments);
+	 
+	  $main::crer=1 ;
 
 	     &RSAT::error::FatalError($main::filter_pval, "Invalid value for filter_pval. Should be a real number. ") 
 	unless (&RSAT::util::IsReal($main::filter_pval));
