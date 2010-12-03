@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.47 2010/12/02 23:08:55 amedina Exp $
+# $Id: footprint-scan,v 1.48 2010/12/03 04:27:16 jvanheld Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -285,9 +285,7 @@ package main;
   local @query_genes = ();	## list of query genes
   local $infer_operons = 0;     ## Infer operon leader genes
   $main::sep_genes = 0;	        ## Analyze each gene separately
-#  local $max_genes = undef;     ## Analyze a restricted number of genes
-#  local $query_prefix;
-  $main::crer=0; ## Wish, when set to one, look for CRER over-representation 
+  $main::crer=0; ## ON THE WISH LIST: when set to one, look for CRER over-representation
   local $skip_gene = 0;
   local %top_sig_row = ();
 
@@ -313,7 +311,7 @@ package main;
   $main::filter=0;
   $main::filter_pval=0;
   #$bg_format="oligo";
-  $main::footprint_scan=1;
+#  $main::footprint_scan=1;
   ## Local definition of threshold parameters passed to matrix-scan
   ## used to check if the options passed to matrix-scna are correct
 
@@ -611,13 +609,11 @@ package main;
 
   ################################################################
   ## Report the index files
-  if ($create_index) {
-      if ($main::verbose >= 2) {
-	  print ("; Index files\n");
-	  foreach my $key (sort keys %index_list) {
-	      print join ("\t", ";", $key, $index_list{$key}), "\n";
-	  }
-      }
+  if ($main::verbose >= 2) {
+    print ("; Index files\n");
+    foreach my $key (sort keys %index_list) {
+      print join ("\t", ";", $key, $index_list{$key}), "\n";
+    }
   }
 
   exit(0);
@@ -1149,14 +1145,14 @@ sub RunFootprintScan {
 
   ################################################################
   ## Open file to the HTML index
-  &OpenIndex() if ($create_index);
+  &OpenIndex("footprint-scan");
 
   ################################################################
   ## Print query genes in the gene file
   foreach my $gene (@current_query_genes) {
     print $genes $gene, "\t", $organism_name, "\n";
   }
-  &IndexOneFile("genes", $outfile{genes}) if ($create_index);
+  &IndexOneFile("genes", $outfile{genes});
 
   ## Retrieve promoters of the query organism 
   if ($main::filter) {
@@ -1222,15 +1218,12 @@ sub RunFootprintScan {
   ## Close output stream
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
-  if ($create_index) {
-    print $index "</table>\n";
-    print $index "</blockquote>";
-    print $index "<hr size=2 color='#000088'>";
-    print $index "</body>";
-    print $index "</html>";
-    close $index;
-  }
-
+  print $index "</table>\n";
+  print $index "</blockquote>";
+  print $index "<hr size=2 color='#000088'>";
+  print $index "</body>";
+  print $index "</html>";
+  close $index;
 
   ################################################################
   ## Send the command to a batch queue (e.g. PC cluster)

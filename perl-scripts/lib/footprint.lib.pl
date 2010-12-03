@@ -4,20 +4,25 @@
 ## - footprint-scan
 ## - get-orthologs
 
+require "RSA2.cgi.lib";		## For sortable HTML tables
+
 ## Options for the &doit() command;
-local $dry = 0; ## Do not run the command, just echo them as warning
+local $dry = 0;	  ## Do not run the command, just echo them as warning
 local $batch = 0;		## Run the processes on a PC cluster
 local $die_on_error = 1;
 local $job_prefix = "footprint_disco";
 local $cmd;
 
+
+local $dist_thr = 55;	    ## Distance threshold for operon inference
+
 %task = ();
-$main::all_genes = 0;         ## Analyze all the genes of the query organism
+$main::all_genes = 0;	## Analyze all the genes of the query organism
 $main::create_index = 1; ## The index is now (from 2010/11/29) always created. Still to be checked in footprint-scan.
 
-%main::infile = (); ## input files
-%main::outfile = (); ## output files
-%main::dir = (); ## output directories
+%main::infile = ();		## input files
+%main::outfile = ();		## output files
+%main::dir = ();		## output directories
 $dir{output_root} = "footprints"; ## Default root output directory. Can be changed with the optiojn -o
 
 
@@ -39,9 +44,9 @@ sub one_command {
 
   if ($time_file) {
     $cmd = " time (".$cmd.") >& ".$time_file;
-##    open TIME, ">>".$time_file;
-#    print TIME $cmd, "\n";
-#    close TIME;
+    ##    open TIME, ">>".$time_file;
+    #    print TIME $cmd, "\n";
+    #    close TIME;
   }
 
   if ($main::batch) {
@@ -133,6 +138,7 @@ sub SelectReferenceOrganisms {
 ## (footprint-discovery or footprint-scan).
 sub CheckFootprintParameters {
 
+  ################################################################
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
@@ -180,7 +186,6 @@ sub CheckFootprintParameters {
     close $in;
   }
 
-
   ################################################################
   ## Check query genes
   if (scalar(@query_genes) ==0) {
@@ -189,6 +194,7 @@ sub CheckFootprintParameters {
     &RSAT::message::Info("Number of query genes", scalar(@query_genes)) if ($main::verbose >= 2);
   }
 
+  ################################################################
   ## Get maximum number of genes if limited
   if ($max_genes) {
     if (scalar(@query_genes)>$max_genes) {
@@ -211,7 +217,7 @@ sub CheckDependency {
 
   foreach my $type (@files_types) {
     my $file = $outfile{$type};
-    if ((-e $file) || (-e $file.".gz")){
+    if ((-e $file) || (-e $file.".gz")) {
       &RSAT::message::Info("Checked existence of ", $type, "file required for task", $task, "file", $file)
 	if ($main::verbose >= 3);
       return(1);
@@ -225,24 +231,24 @@ sub CheckDependency {
 ## Define a query prefix that will be used as title for the feature
 ## map and as prefix for the automatic specificationof output files
 ## (will be used by &getOutfilePrefix()).
-sub GetQuerySubdir {
-  my $query_subdir;
+sub GetQueryPrefix {
+  my $query_prefix;
   if (scalar(@current_query_genes) == 1) {
-    $query_subdir = $current_query_genes[0];
+    $query_prefix = $current_query_genes[0];
   } elsif (scalar(@current_query_genes) <= 10) {
-    $query_subdir = join "_", @current_query_genes;
-#  } elsif ($outfile{prefix}) {
-#    $query_subdir = `basename $outfile{prefix}`;
-#    chomp($query_subdir);
+    $query_prefix = join "_", @current_query_genes;
+    #  } elsif ($outfile{prefix}) {
+    #    $query_prefix = `basename $outfile{prefix}`;
+    #    chomp($query_prefix);
   } elsif ($infile{genes}) {
-    $query_subdir = `basename $infile{genes} .tab`;
+    $query_prefix = `basename $infile{genes} .tab`;
   } else {
-    $query_subdir = "multiple_genes";
+    $query_prefix = "multiple_genes";
   }
-  &RSAT::message::Info("&GetQuerySubdir()", join("","'", $query_subdir, "'")) if ($main::verbose >= 0);
+  &RSAT::message::Info("&GetQueryPrefix()", join("","'", $query_prefix, "'")) if ($main::verbose >= 5);
 
-  $dir{query_subdir} = $query_subdir; ## Index the query subdir, which will also serve for the main index
-  return ($query_subdir);
+  $dir{query_prefix} = $query_prefix; ## Index the query subdir, which will also serve for the main index
+  return ($query_prefix);
 }
 
 
@@ -262,32 +268,32 @@ sub GetQuerySubdir {
 sub GetOutfilePrefix {
 
   ## Create the query-specific sub-directory
-  my $query_subdir = &GetQuerySubdir();
-  $dir{output_per_query} = join("/",$main::dir{output_root}, ($taxon||"org_list"), $organism_name, $query_subdir);
+  my $query_prefix = &GetQueryPrefix();
+  $dir{output_per_query} = join("/",$main::dir{output_root}, ($taxon||"org_list"), $organism_name, $query_prefix);
   &RSAT::util::CheckOutDir($dir{output_per_query});
 
   ## Compute a query-specific file prefix including the main parameters
-  my $query_prefix = $query_subdir;
-  $query_prefix .= "_";
-  $query_prefix .= join ("_", $organism_name, ($taxon||"org_list"));
+  my $outfile_prefix = $query_prefix;
+  $outfile_prefix .= "_";
+  $outfile_prefix .= join ("_", $organism_name, ($taxon||"org_list"));
 
   ## We don't want the bg model in the query prefix, because it is only a parameter for the dyads file (not for the sequences)
   #  if ($bg_model) {
-  #    $query_prefix .= "_".$bg_model;
+  #    $outfile_prefix .= "_".$bg_model;
   #  }
   if ($infer_operons) {
-    $query_prefix .= "_operons";
+    $outfile_prefix .= "_operons";
   }
-  $outfile{prefix} = join("/", $dir{output_per_query}, $query_prefix);
+  $outfile{prefix} = join("/", $dir{output_per_query}, $outfile_prefix);
   &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 2);
 
   &RSAT::message::Info("&GetOutfilePrefix()", 
-  		       "query_prefix", $query_prefix,
+  		       "query_prefix", $outfile_prefix,
   		       "dir{output_per_query}", $dir{output_per_query},
   		       "outfile{prefix}", $outfile{prefix},
-  		      ) if ($main::verbose >= 0);
+  		      ) if ($main::verbose >= 5);
 
-  return ($query_prefix);
+  return ($outfile_prefix, $query_prefix);
 }
 
 
@@ -303,7 +309,7 @@ sub GetOutfilePrefix {
 ##
 sub InitQueryOutput {
 
-  my $query_prefix = &GetOutfilePrefix();
+  my ($outfile_prefix, $query_prefix) = &GetOutfilePrefix();
 
   ## Create output directory if required
   $dir{output} = `dirname $outfile{prefix}`;
@@ -335,7 +341,7 @@ sub InitQueryOutput {
   $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
 
-  return($query_prefix);
+  return($outfile_prefix, $query_prefix);
 }
 
 
@@ -809,32 +815,26 @@ result files.
 ################################################################
 ## Open file for the HTML index
 sub OpenIndex {
+  my ($program_name) = @_;
   $outfile{index} = $outfile{prefix}."_index.html";
-  my $query_prefix = $dir{query_subdir};
-  $index_list{$query_prefix} = $outfile{index};
+  my $outfile_prefix = $dir{query_prefix};
+  $index_list{$outfile_prefix} = $outfile{index};
   $index = &OpenOutputFile($outfile{index});
   print $index "<html>\n";
-  $html_title =$query_prefix." " ;
-  $html_title .= $taxon." " if $taxon;
-  $html_title .= $organism_name." " if $organism_name;
-  $html_title .= $bg_model if $bg_model ;
-  $html_title .= "Adaptive BG model, window size ".$window_size if $window_size;
+  $html_title = $outfile_prefix;
+  $html_title .= " ".$taxon." " if ($taxon);
+  $html_title .= " ".$organism_name if ($organism_name);
+  $html_title .= " ".$bg_model if ($bg_model);
+  $html_title .= "Adaptive BG model, window size ".$window_size if ($window_size);
   print $index "<head><title>", $html_title , "</title></head>\n" ;
   print $index "<body>\n";
   print $index "<hr size=4 color='#000088'>";
-  if ( $main::footprint_scan){
-      print $index "<h1 align=center>Footprint Scan result</h1>"  ;}
-  else {
-      print $index "<h1 align=center>Footprint discovery result</h1>"
-  }
-  $html_title2 =$query_prefix." " ;
-  $html_title2 .= $taxon." " if $taxon; 
-  if ($main::footprint_scan){
-      $html_title2 .=join (" ", "<i>".$organism_name."</i>");
-  }
-  else {
-      $html_title2 .=join (" ", "<i>".$organism_name."</i>", $bg_model);
-  }
+
+  print $index "<h1 align=center>",$program_name, " result</h1>"  ;
+  $html_title2 = "<i>".$organism_name."</i>";
+  $html_title2 .= " ".$bg_model unless ($program_name eq "footprint-scan");
+  $html_title2 .= " ".$query_prefix;
+  $html_title2 .= "; ".$taxon if $taxon;
   print $index "<h2 align=center>",$html_title2 , "</h2>\n";
   print $index "<hr size=2 color='#000088'>";
   print $index "<blockquote>";
@@ -845,38 +845,69 @@ sub OpenIndex {
 
 
 ################################################################
+## Main index. This is a HTML table with links to the query-specific
+## results: one row per query, one column per output type.
+sub OpenMainIndex {
+  &RSAT::util::CheckOutDir($dir{output_root});
+  $outfile{main_index} = $dir{output_root}."/"."result_index.html";
+  my $main_index = &OpenOutputFile($outfile{main_index});
+  print $main_index "<html>\n";
+  $html_title = "footprint-discovery";
+  $html_title .= " ".$taxon if ($taxon);
+  $html_title .= " ".$organism_name if ($organism_name);
+  $html_title .= " ".$bg_model if ($bg_model);
+  print $main_index "<head><title>", $html_title , "</title></head>\n" ;
+  print $main_index &sorttable_script();
+  print $main_index "<body>\n";
+  print $main_index "<h1>", $html_title, "</h1\n";
+  print $main_index "<p><b>Command:</b> footprint-discovery";
+  print $main_index &PrintArguments();
+  print $main_index "</p>\n";
+
+  ## Open the index table
+  print $main_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
+#  print $main_index "<table cellspacing=0 cellpadding=3 border=0>\n";
+  print $main_index "<tr>\n";
+  print $main_index "<th>","Query","</th>\n";
+  print $main_index "<th>","Top dyad","</th>\n";
+  print $main_index "<th>","Max sig","</th>\n";
+  print $main_index "<th>","Nb dyads","</th>\n";
+  print $main_index "</tr>\n";
+
+  return ($main_index);
+}
+
+
+################################################################
 ## Add one file to the index file
 sub IndexOneFile {
   my ($name, $file, %args) = @_;
   my $short_file = `basename $file`;
   print $index "<tr valign=top>\n";
+  print $index "<td>", $name, "<td>",  &LinkOneFile($outfile{index}, $file, $short_file), "</td>\n";
 
-  if (-e $file) {
-    print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
-  } else {
-    print $index "<td>", $name, "</td>\n<td><font color='red'>".$short_file."</font></td>\n";
-  }
   if ($args{image}) {
-    #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
     print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
   }
   print $index ("</tr>\n\n");
 }
 
 
-# ################################################################
-# ## Add one file to the index file
-# sub IndexOneFile {
-#   my ($name, $file, %args) = @_;
-#   $short_file = `basename $file`;
-#   print $index "<tr valign=top>\n";
-#   print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
-#   if ($args{image}) {
-#     #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
-#     print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
-#   }
-#   print $index ("</tr>\n\n");
-# }
+################################################################
+## Return a HTML link from an index file to a target file
+sub LinkOneFile {
+  my ($from_file, $to_file, $text) = @_;
+  my $path = "";
+  my $link = "";
+  if (-e ($to_file)) {
+    $path = &RSAT::util::RelativePath($from_file, $to_file);
+    $link = join ("",  "<a href='",$path, "'>", $text, "</a>");
+  } else {
+    $link = join ("",  "<font color='red'>", $text, "</font>");
+  }
+  return $link;
+}
+
 
 ################################################################
 ## Predict operon leader genes of the query genes
@@ -889,7 +920,7 @@ sub InferQueryOperons {
   $cmd .= " -uth interg_dist ".$dist_thr;
   &one_command($cmd) if ($task{operons});
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  &IndexOneFile("leader query genes", $outfile{leader_qgenes}) if ($create_index);
+  &IndexOneFile("leader query genes", $outfile{leader_qgenes});
 }
 
 
@@ -911,8 +942,7 @@ sub RetrieveQueryPromoters {
     $cmd .= " -o ".$outfile{query_seq};
     &one_command($cmd);
   }
-  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  &IndexOneFile("query sequence", $outfile{query_seq}) if ($create_index);
+  &IndexOneFile("query sequence", $outfile{query_seq});
 }
 
 ################################################################
@@ -930,7 +960,7 @@ sub ComputeFilterDyads {
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
-  &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
+  &IndexOneFile("filter dyads", $outfile{filter_dyads});
 }
 
 ################################################################
@@ -953,76 +983,81 @@ sub ComputeFilterScan {
     $cmd .= " -o ".$outfile{filter_scan};
     &one_command($cmd) if ($task{filter_scan});
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-    &IndexOneFile("filter scan", $outfile{filter_scan}) if ($create_index);
+    &IndexOneFile("filter scan", $outfile{filter_scan});
+
     my $filterg=`grep -v ";" $outfile{filter_scan}  | grep -v "#" | cut -f1`;
     chomp($filterg);
     $outfile{genes}= $outfile{prefix}."_filter_query_genes.tab";
     $filter_genes = &OpenOutputFile($outfile{genes});
     print  $filter_genes $filterg;
+    close $filter_genes if ($outfile{genes} && $main::filter);
     &RSAT::message::Info("Filter genes  ", $outfile{genes} ) if ($main::verbose >= 1);  
-    &IndexOneFile("filter genes", $outfile{genes}) if ($create_index);
+    &IndexOneFile("filter genes", $outfile{genes});
     $main::skip_gene=1 unless ($filterg=~/\w/);
 }
 
 ################################################################
 ## Identify ortholog genes
 sub GetOrthologs {
-  &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
-  return(0) unless ($task{orthologs});
-  &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 2);
-  &CheckDependency("orthologs", "genes");
-  my $cmd = "$SCRIPTS/get-orthologs";
-  $cmd .= " -i ".$outfile{genes};
-  $cmd .= " -org ".$organism_name;
-  if ($main::tf_ortho_file) {
-    $cmd .= " -org_list ". $main::tf_ortho_file ;
-    &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::tf_ortho_file) if ($main::verbose >= 2);
-  } elsif ($main::orglist_file) {
-    $cmd .= " -org_list ". $main::orglist_file ;
-    &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::orglist_file ) if ($main::verbose >= 2);
-  } else {
-    $cmd .= " -taxon ".$taxon ;
+  if ($task{orthologs}) {
+    &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 2);
+    &CheckDependency("orthologs", "genes");
+    my $cmd = "$SCRIPTS/get-orthologs";
+    $cmd .= " -i ".$outfile{genes};
+    $cmd .= " -org ".$organism_name;
+    if ($main::tf_ortho_file) {
+      $cmd .= " -org_list ". $main::tf_ortho_file ;
+      &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::tf_ortho_file) if ($main::verbose >= 2);
+    } elsif ($main::orglist_file) {
+      $cmd .= " -org_list ". $main::orglist_file ;
+      &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::orglist_file ) if ($main::verbose >= 2);
+    } else {
+      $cmd .= " -taxon ".$taxon ;
+    }
+    $cmd .= " -return query_name,query_organism -return ident";
+    $cmd .= " -uth rank 1";	## BBH criterion
+    $cmd .= " -lth ali_len 50";
+    $cmd .= " -uth e_value 1e-05";
+    $cmd .= " -return e_value";
+    $cmd .= " -only_blast";	## only use genome having blast files
+    $cmd .= " -o ".$outfile{orthologs};
+    &one_command($cmd);
+    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    &IndexOneFile("orthologs", $outfile{orthologs});
   }
-  $cmd .= " -return query_name,query_organism -return ident";
-  $cmd .= " -uth rank 1";	## BBH criterion
-  $cmd .= " -lth ali_len 50";
-  $cmd .= " -uth e_value 1e-05";
-  $cmd .= " -return e_value";
-  $cmd .= " -only_blast";	## only use genome having blast files
-  $cmd .= " -o ".$outfile{orthologs};
-  &one_command($cmd);
-  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 }
 
 ################################################################
 ## Predict operon leader genes for the orthologous genes
 sub InferOrthoOperons {
-  &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
-  return(0) unless ($task{operons});
-  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 2);
-  &CheckDependency("operons", "orthologs");
-  my $cmd = "$SCRIPTS/get-leader-multigenome ";
-  $cmd .= " -i ".$outfile{orthologs};
-  $cmd .= " -o ".$outfile{bbh};
-  $cmd .= " -uth interg_dist ".$dist_thr;
-  &one_command($cmd);
+  if  ($task{operons}) {
+    &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 2);
+    &CheckDependency("operons", "orthologs");
+    my $cmd = "$SCRIPTS/get-leader-multigenome ";
+    $cmd .= " -i ".$outfile{orthologs};
+    $cmd .= " -o ".$outfile{bbh};
+    $cmd .= " -uth interg_dist ".$dist_thr;
+    &one_command($cmd) ;
+  }
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  &IndexOneFile("leader genes", $outfile{bbh});
 }
 
 
 ################################################################
 ## Retrieve sequences from orthologs
 sub RetrieveOrthoSeq {
-  &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
-  return(0) unless ($task{ortho_seq});
-  &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 2);
-  &CheckDependency("ortho_seq", "bbh");
-  my $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
-  $cmd .= " -i ".$outfile{bbh};
-  $cmd .= " -noorf";
-  $cmd .= " -o ".$outfile{seq};
-  &one_command($cmd);
-  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  if ($task{ortho_seq}) {
+    &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 2);
+    &CheckDependency("ortho_seq", "bbh");
+    my $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
+    $cmd .= " -i ".$outfile{bbh};
+    $cmd .= " -noorf";
+    $cmd .= " -o ".$outfile{seq};
+    &one_command($cmd);
+    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  }
+  &IndexOneFile("$promoter sequences", $outfile{seq});
 }
 
 
@@ -1030,29 +1065,27 @@ sub RetrieveOrthoSeq {
 ################################################################
 ## Purge sequences
 sub PurgeOrthoSeq {
-  &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
-  return(0) unless ($task{purge});
-  &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 2);
-  &CheckDependency("purge", "seq");
-  my $cmd = "$SCRIPTS/purge-sequence";
-  $cmd .= " -nodie" if ($main::die_on_error == 0);
-  $cmd .= " -i ".$outfile{seq};
-  $cmd .= " -ml 30 -mis 0 -mask_short 30";
-  $cmd .= " ".$strands;
-  $cmd .= " -o ".$outfile{purged_notclean};
-  &one_command($cmd);
-  
-  $cmd = "$SCRIPTS/convert-seq";
-  $cmd .= " -i ".$outfile{purged_notclean}; ;
-  $cmd .= " -mask non-dna ";
-  $cmd .= " -from fasta ";
-  $cmd .= " -to fasta ";
-  $cmd .= " -dna ";
-  $cmd .= " -o ". $outfile{purged} ;
-  &one_command($cmd);
-  
+  if ($task{purge}) {
+    &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 2);
+    &CheckDependency("purge", "seq");
+    my $cmd = "$SCRIPTS/purge-sequence";
+    $cmd .= " -nodie" if ($main::die_on_error == 0);
+    $cmd .= " -i ".$outfile{seq};
+    $cmd .= " -ml 30 -mis 0 -mask_short 30";
+    $cmd .= " ".$strands;
+    $cmd .= " -o ".$outfile{purged_notclean};
+    &one_command($cmd);
 
-
+    $cmd = "$SCRIPTS/convert-seq";
+    $cmd .= " -i ".$outfile{purged_notclean}; ;
+    $cmd .= " -mask non-dna ";
+    $cmd .= " -from fasta ";
+    $cmd .= " -to fasta ";
+    $cmd .= " -dna ";
+    $cmd .= " -o ". $outfile{purged} ;
+    &one_command($cmd);
+  }
+  &IndexOneFile("purged sequences", $outfile{purged});
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 }
 
@@ -1061,84 +1094,82 @@ sub PurgeOrthoSeq {
 ################################################################
 ## Detect over-representation of matching occurrecnes (hits) of the motif
 sub OccurrenceSig {
-  &IndexOneFile("occ sig", $outfile{occ_sig}) if ($create_index);
-  return(0) unless ($task{occ_sig});
-  &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 2);
-  if ($main::no_purge){
+  if ($task{occ_sig}) {
+    &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 2);
+    if ($main::no_purge){
       &CheckDependency("occ_sig", "seq");
-  }
-  else {
+    }
+    else {
       &CheckDependency("occ_sig", "purged");
-  }
-  my $cmd = "matrix-scan";
-  $cmd .= $ms_parameters;
-  $cmd .= " -return distrib,occ_proba,rank -sort_distrib";
-  #  $cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
-  if ($main::no_purge){
+    }
+    my $cmd = "matrix-scan";
+    $cmd .= $ms_parameters;
+    $cmd .= " -return distrib,occ_proba,rank -sort_distrib";
+    #  $cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
+    if ($main::no_purge){
       $cmd .= " -i ".$outfile{seq};
-  }else{
+    }else{
       $cmd .= " -i ".$outfile{purged};
+    }
+    $cmd .= " -o ".$outfile{occ_sig};
+    $cmd .= $occ_sig_opt;
+    &one_command($cmd);
   }
-  $cmd .= " -o ".$outfile{occ_sig};
-  $cmd .= $occ_sig_opt;
-  &one_command($cmd);
+  &IndexOneFile("occ sig", $outfile{occ_sig});
 }
 
 ################################################################
 ## Draw a graph with occurrence significance profiles
 sub OccurrenceSigGraph {
-  &IndexOneFile("occ freq graph", $outfile{occ_freq_graph}) if ($create_index);
-  &IndexOneFile("occ sig graph", $outfile{occ_sig_graph}) if ($create_index);
-
-  return(0) unless ($task{occ_sig_graph});
-
-  &RSAT::message::TimeWarn("Graph with over-representation of hits", $outfile{occ_freq_graph}) if ($main::verbose >= 2);
-  &CheckDependency("occ_sig_graph", "occ_sig");
+  if ($task{occ_sig_graph}) {
+    &RSAT::message::TimeWarn("Graph with over-representation of hits", $outfile{occ_freq_graph}) if ($main::verbose >= 2);
+    &CheckDependency("occ_sig_graph", "occ_sig");
 
 
-  ## Occ frequency graph
-  my $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
-  $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800 -xgstep1 1 -xgstep2 0.5";
-  $cmd .= " -ycol 5,8 -yleg1 'Hit numbers' -ylog 10";
-  $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
-  $cmd .= " -lines -legend ";
-  $cmd .= " -format ".$plot_format;
-  $cmd .= " -o ".$outfile{occ_freq_graph};
+    ## Occ frequency graph
+    my $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
+    $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800 -xgstep1 1 -xgstep2 0.5";
+    $cmd .= " -ycol 5,8 -yleg1 'Hit numbers' -ylog 10";
+    $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
+    $cmd .= " -lines -legend ";
+    $cmd .= " -format ".$plot_format;
+    $cmd .= " -o ".$outfile{occ_freq_graph};
 
-  &one_command($cmd);
+    &one_command($cmd);
 
-  
-  ## Occ significance graph
-  $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
-  $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800  -xgstep1 1 -xgstep2 0.5";
-  $cmd .= " -ycol 11 -yleg1 'Binomial significance of hits'";
-  $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
-  $cmd .= " -lines -legend ";
-  $cmd .= " -format ".$plot_format;
-  $cmd .= " -o ".$outfile{occ_sig_graph};
-  
-  ##  info lines
-  if ($main::draw_info_lines){
-      
+    ## Occ significance graph
+    $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
+    $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800  -xgstep1 1 -xgstep2 0.5";
+    $cmd .= " -ycol 11 -yleg1 'Binomial significance of hits'";
+    $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
+    $cmd .= " -lines -legend ";
+    $cmd .= " -format ".$plot_format;
+    $cmd .= " -o ".$outfile{occ_sig_graph};
+
+    ##  info lines
+    if ($main::draw_info_lines) {
       $cmd .= " -hline violet 0 "; #line showing the significance zero line.
       $cmd .= " -vline violet 0 " ; # line showing the score zero value 
-      
+
       #Calculate the positive score wirh maximal significance
       my $tab="\t";
       my $new_line="\n"; 
       my $top_sig_cmd = "grep -v '^;' $outfile{occ_sig} | grep -v '^#' | perl -ane 'if(\$F[1]>0) {print join(\"\t\",\@F).\"\n\" }' | head -n 1";
       my $top_sig_pos_score_row = `$top_sig_cmd`;
       if ($top_sig_pos_score_row) {
-	  my @fields = split "\t", $top_sig_pos_score_row;
-	  my $sig_max = $fields[1];
-	  $cmd .= " -vline red ". $sig_max   ;       
-   
-      } 
+	my @fields = split "\t", $top_sig_pos_score_row;
+	my $sig_max = $fields[1];
+	$cmd .= " -vline red ". $sig_max;
+      }
+    }
+
+    ## options added  from comand line
+    $cmd .= " ".$occ_sig_graph_opt;
+    &one_command($cmd);
   }
-  
-  ## options added  from comand line
-  $cmd .= " ".$occ_sig_graph_opt;
-  &one_command($cmd);
+  &IndexOneFile("occ freq graph", $outfile{occ_freq_graph});
+  &IndexOneFile("occ sig graph", $outfile{occ_sig_graph});
+
 }
 
 ################################################################
@@ -1169,39 +1200,41 @@ sub GetTopSig {
 ################################################################
 ## Scan sequences with PSSM to locate sites
 sub OrthoScan {
-  &IndexOneFile("sites", $outfile{sites}) if ($create_index);
-  return(0) unless ($task{scan});
-  &RSAT::message::TimeWarn("Scannig sequences to detect sites", $outfile{sites}) if ($main::verbose >= 2);
-  &CheckDependency("scan", "seq");
-  my $cmd = "matrix-scan";
-  $cmd .= $ms_parameters;
-  $cmd .= " -return limits,sites,rank";
-  $cmd .= " -i ".$outfile{seq};
-  $cmd .= " -o ".$outfile{sites};
-  $cmd .= " ".$scan_opt;
-  &one_command($cmd);
+  if ($task{scan}) {
+    &RSAT::message::TimeWarn("Scannig sequences to detect sites", $outfile{sites}) if ($main::verbose >= 2);
+    &CheckDependency("scan", "seq");
+    my $cmd = "matrix-scan";
+    $cmd .= $ms_parameters;
+    $cmd .= " -return limits,sites,rank";
+    $cmd .= " -i ".$outfile{seq};
+    $cmd .= " -o ".$outfile{sites};
+    $cmd .= " ".$scan_opt;
+    &one_command($cmd);
+  }
+  &IndexOneFile("sites", $outfile{sites});
 }
 
 ################################################################
 ## Draw a feature map with the detected sites
 sub OrthoMap {
-  &IndexOneFile("map", $outfile{map}) if ($create_index);
-  return(0) unless ($task{map});
-  &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 2);
-  &CheckDependency("map", "sites");
-  my $cmd = "feature-map -i ".$outfile{sites};
-  $cmd .= " -scalebar -legend";
-  $cmd .= " -xsize 800 -scorethick -minscore 0";
-  if ($taxon){ 
+  if ($task{map}) {
+    &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 2);
+    &CheckDependency("map", "sites");
+    my $cmd = "feature-map -i ".$outfile{sites};
+    $cmd .= " -scalebar -legend";
+    $cmd .= " -xsize 800 -scorethick -minscore 0";
+    if ($taxon) { 
       $cmd .= " -title 'matrix hits in ".$taxon." promoters'";
+    }
+    else {
+      $cmd .= " -title 'matrix hits in promoters'";
+    }
+    $cmd .= " -format ".$map_format;
+    $cmd .= " -o ".$outfile{map};
+    $cmd .= " ".$map_opt;
+    &one_command($cmd);
   }
-  else {
-       $cmd .= " -title 'matrix hits in promoters'";
-  }
-  $cmd .= " -format ".$map_format;
-  $cmd .= " -o ".$outfile{map};
-  $cmd .= " ".$map_opt;
-  &one_command($cmd);
+  &IndexOneFile("map", $outfile{map});
 }
 
 
