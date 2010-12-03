@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.93 2010/11/29 08:37:57 jvanheld Exp $
+# $Id: peak-motifs,v 1.94 2010/12/03 01:33:30 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.94 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -597,9 +597,6 @@ sub SetOutFileNames {
     $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
 					 "3nt_sp0-20_bg_monads");
 
-    ### TEMPORARY BUG
-    $main::outfile{$pattern_type} = &OutFileName("results/positions_7nt", ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
-					 "3nt_sp0-20_bg_monads");
     push @pattern_types, $pattern_type;
 #    push @patterns_to_merge, $pattern_type;
   }
@@ -1230,15 +1227,15 @@ sub MergeMotifs {
   foreach my $pattern_type (@pattern_types) {
     my $matrix_file = $main::outfile{$pattern_type.'_pssm_tf'};
 
-    unless (-e $matrix_file) {
-      ## TEMPORARY: ensure conversion for data sets of previous versions
-      my $convert_cmd = " ; ".$SCRIPTS."/convert-matrix";
-      $convert_cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
-      $convert_cmd .= " -from tab -to transfac -return counts,consensus";
-      $convert_cmd .= " -prefix $pattern_type";
-      $convert_cmd .= " -o ".$matrix_file;
-      &one_command($convert_cmd, 1);
-   }
+#    unless (-e $matrix_file) {
+#      ## TEMPORARY: ensure conversion for data sets of previous versions
+#      my $convert_cmd = $SCRIPTS."/convert-matrix";
+#      $convert_cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
+#      $convert_cmd .= " -from tab -to transfac -return counts,consensus";
+#      $convert_cmd .= " -prefix $pattern_type";
+#      $convert_cmd .= " -o ".$matrix_file;
+#      &one_command($convert_cmd, 1);
+#   }
 
     if (-e $matrix_file) {
       $cmd .= "; cat ".$matrix_file." >> ".$main::outfile{motifs_discovered};
