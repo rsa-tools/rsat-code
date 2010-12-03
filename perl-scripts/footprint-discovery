@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.45 2010/12/02 08:24:39 jvanheld Exp $
+# $Id: footprint-discovery,v 1.46 2010/12/03 03:58:21 jvanheld Exp $
 #
 ############################################################
 
@@ -57,7 +57,7 @@ Enterobacteriales.
 
  footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
-		-return occ,proba,rank -filter -index \
+		-return occ,proba,rank -filter  \
 		-to_matrix -bg_model taxfreq -q lexA
 
 =head2 Analysis of a few genes
@@ -67,7 +67,7 @@ Enterobacteriales.
 
  footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
-		-return occ,proba,rank -filter -index \
+		-return occ,proba,rank -filter  \
 		-to_matrix -bg_model taxfreq \
                 -sep_genes -q lexA -q recA -q uvrA
 
@@ -82,7 +82,7 @@ Iterate footprint discovery for each gene separately.
 
  footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
-		-return occ,proba,rank -filter -index \
+		-return occ,proba,rank -filter \
 		-to_matrix -bg_model taxfreq -all_genes -sep_genes
 
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -220,7 +220,7 @@ package main;
   local %lth = (occ=>1,occ_sig=>0); ## Lower thresholds
   local %uth = (rank=>50);	    ## Upper thresholds
   local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
-
+  local $start_time = &RSAT::util::StartScript();
 
   ## Supported tasks
   @supported_tasks = qw(
@@ -241,6 +241,20 @@ package main;
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
   }
+
+
+  ## Supported bg_models
+  @supported_bg_models = qw(
+			    monads
+			    taxfreq
+			    org_list
+			   );
+  $supported_bg_models = join (",", @supported_bg_models);
+  %supported_bg_model = ();
+  foreach my $bg_model (@supported_bg_models) {
+    $supported_bg_model{$bg_model} = 1;
+  }
+
 
   ## Parameters for promoter retrieval
   local $taxon;			## Reference taxon
@@ -270,16 +284,10 @@ package main;
   ################################################################
   ## Check argument values
 
-  if ($task{bg_model}) {
-    unless ($orglist_file) {
-      $task{bg_model} = 0;
-      &RSAT::message::Warning("Task bg_model is only required with the option -org_list") if ($main::verbose >= 1);
-    }
-  }
-
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
+  local $main_index = &OpenMainIndex();
 
   ################################################################
   ## Parameters for dyad-analysis
@@ -289,48 +297,72 @@ package main;
     $dyad_return_fields = join ",", @dyad_return_fields;
   }
 
-  ## TO DO (JvH 2010/11/29)
-  ##
-  ## If the option -org_list has been specified and the bg_model is
-  ## taxfreq, compute the list-specific frequencies with the program
-  ## taxon-frequencies -org_list org_list_file.
-  ##
-  ## If the option -taxon is used and the taxon frequencies are not
-  ## pre-installed, compute them before porocessing and store them in
-  ## the result directory.
 
   ## Background model file for dyad-analysis
-  if ($bg_model eq "taxfreq") {
-    if ($orglist_file) {
-      &RSAT::message::TimeWarn("Computing background model for organism list") if ($main::verbose >= 1);
+  if ($bg_model eq "org_list") {
+
+    ## Check that the list of organisms has been specified
+    &RSAT::error::FatalError("The option '-bg_model org_list' requires to specify a list of organisms with the option '-org_list org_list_file'")
+      unless ($orglist_file);
+
+    ## If the option -org_list has been specified and the bg_model is
+    ## taxfreq, compute the list-specific frequencies with the program
+    ## taxon-frequencies -org_list org_list_file.
+    &RSAT::message::TimeWarn("Computing background model for organism list") if ($main::verbose >= 1);
+
+    ## Store the background model in the parent directory of the query sub-directories
+    $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", "org_list");
+    &RSAT::util::CheckOutDir($dir{bg_model});
+
+    ## Background model file
+    $infile{bg_model} = $dir{bg_model}."/";
+    $infile{bg_model} .= "dyads_3nt_sp0-20_upstream-noorf_org_list".$noov.$strands.".freq";
+    if ($task{bg_model}) {
+      my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3";
+      $cmd .= " -org_list ".$orglist_file;
+      $cmd .= " > ".$infile{bg_model};
+      &doit($cmd);
+    }
+
+  } elsif ($bg_model eq "taxfreq") {
+    ## Check that the taxon has been specified
+    &RSAT::error::FatalError("The option '-bg_model taxfreq' requires to specify a taxon with the option '-taxon'")
+      unless ($taxon);
+
+    ## Identify the server-installed taxon-specific background model file
+    $infile{bg_model} = &ExpectedFreqFile($taxon,
+					  3,
+					  # spacing ? 0-20
+					  "upstream-noorf",
+					  str=>$strands,
+					  noov=>$noov,
+					  type=>"dyad",
+					  warn=>1,
+					  taxon=>1);
+
+    ## If the required the taxon frequencies are not pre-installed,
+    ## compute them before porocessing and store them in the result
+    ## directory.
+    unless ((-e $infile{bg_model}) ||
+	    (-e ($infile{bg_model}.".gz"))) {
 
       ## Store the background model in the parent directory of the query sub-directories
-      $dir{bg_model} = join("/",$main::dir{output_root}, "org_list");
+      $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
       &RSAT::util::CheckOutDir($dir{bg_model});
 
-      ## Background model file
-      $infile{bg_model} = $dir{bg_model}."/";
-      $infile{bg_model} .= "dyads_3nt_sp0-20_upstream-noorf_org_list".$noov.$strands.".freq";
-
+      &RSAT::message::Warning("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
+      my ($local_bg_file) = &ShortFileName($infile{bg_model});
+      $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
       if ($task{bg_model}) {
 	my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3";
-	$cmd .= " -org_list ".$orglist_file;
+	$cmd .= " -taxon ".$taxon;
 	$cmd .= " > ".$infile{bg_model};
 	&doit($cmd);
       }
+      &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
 
-    } elsif ($taxon) {
-      $infile{bg_model} = &ExpectedFreqFile($taxon,
-					    3,
-					    # spacing ? 0-20
-					    "upstream-noorf",
-					    str=>$strands,
-					    noov=>$noov,
-					    type=>"dyad",
-					    warn=>1,
-					    taxon=>1);
     } else {
-      &RSAT::error::FatalError("Background model cannot be selected because neither taxon nor organism list has been specified.");
+      &RSAT::error::FatalError($bg_model, "Invalid background model. Supported: ", $supported_bg_models) unless ($supported_bg_model{$bg_model});
     }
     &RSAT::message::Info("Background model file", $infile{bg_model}) if ($main::verbose >= 0);
   }
@@ -354,14 +386,23 @@ package main;
 
   ################################################################
   ## Report the index files
-  if ($create_index) {
-    if ($main::verbose >= 2) {
-      print ("; Index files\n");
-      foreach my $key (sort keys %index_list) {
+  if ($main::verbose >= 2) {
+    print ("; Index files\n");
+    foreach my $key (sort keys %index_list) {
 	print join ("\t", ";", $key, $index_list{$key}), "\n";
       }
-    }
+    print join ("\t", ";", "Main Table", $outfile{main_index}), "\n";
   }
+
+
+  ## Close the main index stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main_index "</table>\n";
+  print $main_index "<p><pre>", $exec_time, "</pre></p>\n";
+  print $main_index "</body>\n";
+  print $main_index "</html>\n";
+  close ($main_index);
+
   exit(0);
 }
 
@@ -375,7 +416,7 @@ package main;
 sub RunFootprintDisco {
   local (@current_query_genes) = @_;
 
-  local $start_time = &RSAT::util::StartScript();
+  local $query_start_time = &RSAT::util::AlphaDate();
   local $batch_cmd = "";
   local $out = "";
   local $genes = "";
@@ -383,7 +424,7 @@ sub RunFootprintDisco {
   ################################################################
   ## Initialize output directory + output files
 
-  local $query_prefix = &InitQueryOutput();
+  local ($outfile_prefix, $query_prefix) = &InitQueryOutput();
 
   ## Output files for dyad-analysis
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
@@ -407,14 +448,14 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Open the file to store the HTML index
-  &OpenIndex() if ($create_index);
+  &OpenIndex();
 
   ################################################################
   ## Print query genes in the gene file
   foreach my $gene (@current_query_genes) {
     print $genes $gene, "\t", $organism_name, "\n";
   }
-  &IndexOneFile("genes", $outfile{genes}) if ($create_index);
+  &IndexOneFile("genes", $outfile{genes});
 
   ################################################################
   ## Print verbose
@@ -513,18 +554,18 @@ sub RunFootprintDisco {
       $cmd .= " -logo";
       $cmd .= " -o ".$outfile{pssm_prefix};
       &one_command($cmd);
-      &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM}) if ($create_index);
-      &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM}) if ($create_index);
+      &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM});
+      &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM});
     }
   }
-  &IndexOneFile("dyads", $outfile{dyads}) if ($create_index);
-  &IndexOneFile("dyads [htm]", $outfile{dyads_html}) if ($create_index);
-  &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
+  &IndexOneFile("dyads", $outfile{dyads});
+  &IndexOneFile("dyads [htm]", $outfile{dyads_html});
+  &IndexOneFile("assembled dyads", $outfile{asmb});
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
   if ($task{map}) {
-    my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
+    my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
     &CheckDependency("map", "dyads");
     &CheckDependency("map", "seq");
     &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 2);
@@ -540,7 +581,7 @@ sub RunFootprintDisco {
     $cmd .= " -o ".$outfile{map};
     &one_command($cmd);
   }
-  &IndexOneFile("feature map", $outfile{map}, image=>1) if ($create_index);
+  &IndexOneFile("feature map", $outfile{map}, image=>1);
 
 
   ################################################################
@@ -550,22 +591,99 @@ sub RunFootprintDisco {
   }
 
   ################################################################
-  ## Close output streams
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-  print $main::out $exec_time if ($main::verbose >= 1);
+  ## Close query-specific output streams
+  my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
+  print $main::out $query_exec_time if ($main::verbose >= 1);
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
 
-  ## Terminate the index file
-  if ($create_index) {
-    print $index "</table>\n";
-    print $index "</blockquote>";
-    print $index "<hr size=2 color='#000088'>";
-    print $index "</body>";
-    print $index "</html>";
-    close $index;
+  ## Close the index file
+  print $index "</table>\n";
+  print $index "</blockquote>";
+  print $index "<hr size=2 color='#000088'>";
+  print $index "</body>";
+  print $index "</html>";
+  close $index;
+
+  ################################################################
+  ## Update the main index
+  print $main_index "<tr>\n";
+
+  ## Link to the query-specific index file
+#  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
+  print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
+
+  ## Report the significant dyads
+  my $top_id = "";
+  my $top_sig = "NA";
+  my $dyad_nb = 0;
+  local %header_col = ();
+
+  if (-e $outfile{dyads}) {
+    &RSAT::message::Info("Indexing dyads", $query_prefix, $outfile{dyads}) if ($main::verbose >= 4);
+    my ($dyads) = &OpenInputFile($outfile{dyads});
+
+    while (<$dyads>) {
+      next if (/^;/); ## Skip comments
+      next unless (/\S/); ## Skip empty lines
+      chomp;
+
+
+      ## Read the header to idenfify occ_sig column
+      if (/^#/) {
+	s/^#//;
+	my @header_fields = split "\t";
+	for my $h (0..$#header_fields) {
+	  $header_fields[$h] = &RSAT::util::trim($header_fields[$h]);
+	  $header_col{$header_fields[$h]} = $h;
+	  #	&RSAT::message::Debug("header", $h, "'".$header_fields[$h]."'", $header_col{$header_fields[$h]}) if ($main::verbose >= 10);
+	}
+	next;
+      }
+
+      $dyad_nb++;
+
+      ## Report top significance
+      if ($dyad_nb == 1) {
+	my @fields = split "\t";
+	$top_id = $fields[$header_col{"identifier"}];
+	$top_sig = $fields[$header_col{"occ_sig"}];
+	#      &RSAT::message::Debug("top_id", $top_id, "top_sig", $top_sig, ) if ($main::verbose >= 10);
+      }
+    }
+    close $dyads;
   }
 
+  print $main_index "<td><tt>", $top_id, "</tt></td>\n";
+  print $main_index "<td>", $top_sig, "</td>\n";
+  print $main_index "<td>", $dyad_nb, "<td>";
+
+  print $main_index "</tr>\n";
+}
+
+
+################################################################
+## Return a HTML link from an index file to a target file
+sub LinkOneFile {
+  my ($from_file, $to_file, $text) = @_;
+  my $path = "";
+  my $link = "";
+  if (-e ($to_file)) {
+    $path = &RSAT::util::RelativePath($from_file, $to_file);
+    $link = join ("",  "<a href='",$path, "'>", $text, "</a>");
+  } else {
+    $link = join ("",  "<font color='red'>", $text, "</font>");
+  }
+
+  &RSAT::message::Debug(join ("\n\t",
+			      "&LinkOneFile()", "from=".$from_file,
+			      `pwd`,
+			      "to = ".$to_file,
+			      "text = ".$text,
+			      "path = ".$path,
+			      "link = ".$link,
+			     )) if ($main::verbose >= 0);
+  return $link;
 }
 
 ################################################################
@@ -667,25 +785,40 @@ is large and if there are many assemblies.
 
 
 	    ## Background model
-
 =pod
 
-=item B<-bg_model taxfreq|monads>
+=item B<-bg_model taxfreq|org_list|monads>
 
 Allow the user to choose among alternative background model (see Janky
 & van Helden, 2008).
 
+Supported background model types:
+
 =over
+
+
+=item I<monads>
+
+Expected dyad frequencies are estimated by taking the product of the
+monad frequencies observed in the input sequence set. Example:
+
+   F_exp(CAGn{10}GTA) = F_obs(CAG) * F_obs(GTA)
 
 =item I<taxfreq>
 
-Taxon-wide background model, computed by counting dyad frequencies in
-all the promoters of all the genes of the reference taxon.
+Only valid in combination with the option -taxon.
 
-=item I<monad>
+Expected dyad frequencies are computed by summing the frequencies of
+all dyads in the non-coding upstream sequences of all genes for all
+the organisms of the reference taxon.
 
-Expected dyad frequencies are the product of monad frequencies
-observed in the input sequences.
+=item I<org_list>
+
+Only valid in combination with the option -org_list.
+
+Expected dyad frequencies are computed by summing the frequencies of
+all dyads in the non-coding upstream sequences of all genes for each
+organism of user-specified list.
 
 =back
 
@@ -781,13 +914,11 @@ sub Verbose {
   print $out $header_verbose;
 
 
-  if ($main::create_index) {
-    $header_verbose =~ s/^; //;
-    $header_verbose =~ s/\n; /\n/gm;
-    print $index "<pre>";
-    print $index $header_verbose;
-    print $index "</pre>";
-  }
+  $header_verbose =~ s/^; //;
+  $header_verbose =~ s/\n; /\n/gm;
+  print $index "<pre>";
+  print $index $header_verbose;
+  print $index "</pre>";
 }
 
 
