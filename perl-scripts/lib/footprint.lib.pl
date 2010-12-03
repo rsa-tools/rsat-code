@@ -322,6 +322,7 @@ sub InitQueryOutput {
 
   ## File for storing the list of query gene names
   $outfile{genes} = $outfile{prefix}."_query_genes.tab";
+  #$outfile{genes_info} = $outfile{prefix}."_query_genes_info.tab";
   $genes = &OpenOutputFile($outfile{genes});
 
   ## Specify other file names
@@ -876,7 +877,50 @@ sub OpenMainIndex {
 
   return ($main_index);
 }
+################################################################
+## Main index for footprint-scan. This is a HTML table with links to the query-specific
+## results: one row per query, one column per output type.
+sub OpenSynthesisFilesScan {
+  &RSAT::util::CheckOutDir($dir{output_root});
+  $outfile{synthesis} = $dir{output_root}."/"."result_synthesis";
+  $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
+  $outfile{synthesis_html} = $outfile{synthesis}.".html";
 
+  my $synthesis_index = &OpenOutputFile($outfile{synthesis_html} ); 
+  my $synthesis_table = &OpenOutputFile($outfile{synthesis_tab});
+
+  return ($synthesis_index, $synthesis_table)  ;
+}
+sub HeaderSynthesisFilesScan {
+    ($synthesis_index, $synthesis_table, $occ_one_gene_file) =@_;
+    $occ_sig_header = `grep '^#' $occ_one_gene_file`;
+    chomp $occ_sig_header;
+    $occ_sig_header =~ s/occ_sig_rank/gene_rank/;
+    $occ_sig_header =~ s/^#//;
+    print $synthesis_table join("\t", "#gene", $occ_sig_header,"name","descr","upstr_neighb_name","file"), "\n";
+
+    print $synthesis_index "<html>\n";
+    $html_title = "footprint-scan";
+    $html_title .= " ".$taxon if ($taxon);
+    $html_title .= " ".$organism_name if ($organism_name);
+    $html_title .= " ".$bg_model if ($bg_model);
+    print $synthesis_index "<head><title>", $html_title , "</title></head>\n" ;
+    print $synthesis_index &sorttable_script();
+    print $synthesis_index "<body>\n";
+    print $synthesis_index "<h1>", $html_title, "</h1\n";
+    print $synthesis_index "<p><b>Command:</b> footprint-scan";
+    print $synthesis_index &PrintArguments();
+    print $synthesis_index "</p>\n";
+    
+    ## Open the index table
+    print $synthesis_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
+    print $synthesis_index "<tr>\n";
+     my $html_sep="<\/th>\n<th>";
+    $occ_sig_header=~s/\t/$html_sep/g;
+    my $header_index=join("</th> \n <th>", "<th>gene", $occ_sig_header, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", "name","descr","upstr_neighb_name</th>"), "\n"; 
+    print $synthesis_index $header_index;
+    print $synthesis_index "</tr>\n";
+}
 
 ################################################################
 ## Add one file to the index file
@@ -1187,9 +1231,10 @@ sub GetTopSig {
 #    &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
 
     ## Index occ sig files for the synthetic table
-    $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig});
+    $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
     $occ_freq_graph_file{$current_gene} = $outfile{occ_freq_graph} if (-e $outfile{occ_freq_graph});
     $occ_sig_graph_file{$current_gene} = $outfile{occ_sig_graph} if (-e $outfile{occ_sig_graph});
+    $gene_list{$current_gene} = $outfile{genes} if (-e $outfile{genes} )
   }
 
   ## Index scan files for the synthetic table
