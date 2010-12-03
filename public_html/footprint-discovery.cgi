@@ -25,12 +25,13 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-$parameters = " -v 1 -index ";
+$parameters = " -v 1 -task all";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
 my $max_genes = 100;
 my $max_genename_size = 12;
+
 ################################################################
 #### Compute the query prefix
 my $query_prefix = "footprints";
@@ -92,9 +93,17 @@ $tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism, $query_pre
 $result_subdir = $tmp_file_name;
 $result_dir = $TMP."/".$result_subdir;
 $result_dir =~ s|\/\/|\/|g;
-`mkdir -p $result_dir`;
-$file_prefix = $result_dir."/".$query_prefix;
-$query_file = $file_prefix."_genes";
+&RSAT::util::CheckOutDir($result_dir);
+#`mkdir -p $result_dir`;
+#$file_prefix = $result_dir."/".$query_prefix;
+$query_file = $result_dir."/".$query_prefix."_genes";
+
+# &RSAT::message::Debug("tmp_file_name=".$tmp_file_name,
+# 		      "<br>result_subdir=".$result_subdir,
+# 		      "<br>result_dir=".$result_dir,
+# #		      "<br>file_prefix=".$file_prefix,
+# 		      "<br>query_file=".$query_file,
+# 		     ) if ($main::verbose >= 10);
 
 ################################################################
 ## Prepare a file on the server with the query genes
@@ -134,14 +143,15 @@ $bg_model = $query->param('bg_model');
 $parameters .= " -bg_model ".$bg_model;
 
 ## Output prefix
-$parameters .= " -o ".$file_prefix;
+$parameters .= " -o ".$result_dir;
 
 ## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
-$index_file = $result_subdir."/".$query_prefix."_index.html";
+$index_file = $result_subdir."/result_index.html";
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
-&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
+my $log_file = $result_subdir."/server_log.txt";
+&EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, title=>$mail_title);
 
 print $query->end_html();
 
