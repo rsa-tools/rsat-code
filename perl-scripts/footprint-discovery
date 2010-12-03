@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.46 2010/12/03 03:58:21 jvanheld Exp $
+# $Id: footprint-discovery,v 1.47 2010/12/03 04:13:00 jvanheld Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -661,30 +661,6 @@ sub RunFootprintDisco {
   print $main_index "</tr>\n";
 }
 
-
-################################################################
-## Return a HTML link from an index file to a target file
-sub LinkOneFile {
-  my ($from_file, $to_file, $text) = @_;
-  my $path = "";
-  my $link = "";
-  if (-e ($to_file)) {
-    $path = &RSAT::util::RelativePath($from_file, $to_file);
-    $link = join ("",  "<a href='",$path, "'>", $text, "</a>");
-  } else {
-    $link = join ("",  "<font color='red'>", $text, "</font>");
-  }
-
-  &RSAT::message::Debug(join ("\n\t",
-			      "&LinkOneFile()", "from=".$from_file,
-			      `pwd`,
-			      "to = ".$to_file,
-			      "text = ".$text,
-			      "path = ".$path,
-			      "link = ".$link,
-			     )) if ($main::verbose >= 0);
-  return $link;
-}
 
 ################################################################
 ## Display full help message 
