@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.48 2010/12/03 04:27:16 jvanheld Exp $
+# $Id: footprint-scan,v 1.49 2010/12/03 22:59:52 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.49 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -391,10 +391,10 @@ package main;
   ## Check argument values
 
   #### Organism
-  &RSAT::OrganismManager::check_name($organism_name);
-  my $organism = new RSAT::organism();
-  $organism->set_attribute("name", $organism_name);
-  $organism->check_name($organism_name);
+ #  &RSAT::OrganismManager::check_name($organism_name);
+#   my $organism = new RSAT::organism();
+#   $organism->set_attribute("name", $organism_name);
+#   $organism->check_name($organism_name);
 
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
@@ -494,14 +494,11 @@ package main;
   ## Analyze query genes separately or altogether
   if ($main::sep_genes) {
       
-      # $outfile{synthesis} = join( "/",$main::outfile{prefix}, "footprints", ($taxon || "org_list"), $organism_name,
-      #			  join ("_", $matrix_suffix,  $organism_name, $taxon ,"synthesis"));
-     
-      $outfile{synthesis} = $outfile{prefix}."_"."synthesis"; 
-      
-      #die "Synthesis". $outfile{synthesis};
-      $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
-      $outfile{synthesis_html} = $outfile{synthesis}.".html";
+      if ($task{synthesis}){
+	  ($synthesis_index, $synthesis_table) = &OpenSynthesisFilesScan ;
+	  &RSAT::message::Info("Synthesis files: "," Index ". $outfile{synthesis_html} . " Table  ". $outfile{synthesis_tab} );
+      }
+
       my $g = 0;
       my $gene_nb = scalar(@query_genes);
       local $current_gene;
@@ -533,8 +530,6 @@ package main;
       ## Create the synthetic table
       if ($task{synthesis}) {
 
-	  ## Open the file for the synthetic table
-	  my ($syn) = &OpenOutputFile($outfile{synthesis_tab});
 	  my $syn_dir = `dirname $outfile{synthesis_tab}`;
 	  chomp($syn_dir);
 	  my $img_hight=120;
@@ -542,54 +537,74 @@ package main;
 	  my $occ_sig_header = "";
 	  foreach my $gene (sort {$top_sig{$b} <=> $top_sig{$a}} keys %top_sig) {
 	      $g++;
+	      
+	      my $gene_info= `(add-gene-info -i $gene_list{$gene} -org $organism_name -info name,descr,upstr_neighb_name | grep -v "^;")`;
+	      chomp ($gene_info);
+	     
+	      my @gene_info=split(/\t+/,$gene_info);
+	      shift @gene_info;  
+	      shift @gene_info;
 
+	      my $gene_info_line=join ("\t",@gene_info); #### Line containing the information about the current gene for the table
+	      my $gene_info_html_line=join ("</td> \n <td>",@gene_info);
+	      $gene_info_html_line="<td>".$gene_info_html_line." </td>";  #### Line containing the information about the current gene for the tablhtml index
+
+
+	      ##############
+	      ##Table
 	      ## Grep the header for the synthesis
-	      unless ($occ_sig_header) {
-		  $occ_sig_header = `grep '^#' $occ_sig_file{$gene}`;
-		  chomp $occ_sig_header;
-		  $occ_sig_header =~ s/occ_sig_rank/gene_rank/;
-		  $occ_sig_header =~ s/^#//;
-		  print $syn join("\t", "#gene", $occ_sig_header, "file"), "\n";
+	      unless ($occ_sig_header){
+		  &HeaderSynthesisFilesScan($synthesis_index, $synthesis_table,$occ_sig_file{$gene});
+		  $occ_sig_header=1;
 	      }
+	      
+	      ## Print the table
+	      print $synthesis_table join("\t", $gene, $top_sig_row{$gene}, $g,$gene_info_line,  $occ_sig_file{$gene} ), "\n";
 
-	      ## Compute a HTML link
-	      my $links = "";
+	      ## print HTML 
+	      print $synthesis_index "<tr>\n"; 
+	      my $sig_line=$top_sig_row{$gene};
+	      my $html_sep="<\/td>\n<td>";
+	      $sig_line =~ s/\t/$html_sep/g;
+	      #die $sig_line;
+	      print $synthesis_index "<td>".$gene.$html_sep. $sig_line.$html_sep. $g."</td>";
+
+
+	      my $links = ""; 
+	     
 	      if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
 		  my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
-		  $links .= join("", " <a href='", $file, "'>[sig]</a>");
+		  #$links .= join("", " <a href='", $file, "'>[sig]</a>");
+		  print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>";
 	      }
 	      if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
-#	if (-e $occ_sig_graph_file{$gene}) {
 		  my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
-		  $links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>");
-		  $links .= join("", " <a href='", $file, "'>[sigplot]</a>");
-		  #$links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'>[sigplot]</a>");
+		  #$links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>");
+		  #$links .= join("", " <a href='", $file, "'>[sigplot]</a>");
+		 ## #$links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'>[sigplot]</a>");
+		  print $synthesis_index  "<td>".join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
+		  print $synthesis_index   join("", " <a href='", $file, "'>[sigplot]</a>")." </td>";
+;
 	      }
 	      if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
-#	if (-e $occ_freq_graph_file{$gene}) {
 		  my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
-		  $links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'>[freqplot]</a>");
+		  #$links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'>[freqplot]</a>");
+		  print $synthesis_index  "<td>".join("", " <a href='", $file, "'>",,"<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
+		  print $synthesis_index   join("", " <a href='", $file, "'>[freqplot]</a>")." </td>";
 	      }
 	      if ((defined($map_file{$gene})) && (-e $map_file{$gene})) {
-#	if (-e $map_file{$gene}) {
 		  my $file = $map_file{$gene}; $file =~ s|${syn_dir}/||g;
-		  $links .= join("", " <a href='", $file, "'>[map]</a>");
+		 # $links .= join("", " <a href='", $file, "'>[map]</a>");
+		  print $synthesis_index "<td>".join("", " <a href='", $file, "'>[map]</a>")."</td>";
 	      }
-
+	      print $synthesis_index   $gene_info_html_line;
 #	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
-
-
-	      ## Print the table
-	      print $syn join("\t", $gene, $top_sig_row{$gene}, $g, $links), "\n";
+	      
+	      print $synthesis_index "<tr>\n";
+	      
 	  }
-
-	  ## Generate the HTML table
-	  my $html_cmd = "add-gene-info -org ".$organism_name;
-	  $html_cmd .= " -i ".$outfile{synthesis_tab};
-	  $html_cmd .= " -info name,descr,upstr_neighb_name";
-	  $html_cmd .= " | text-to-html -chunk 7000 -font variable";
-	  $html_cmd .= " -o ".$outfile{synthesis_html};
-	  &doit($html_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	 
+	  
       }
 
   } else {
@@ -605,8 +620,12 @@ package main;
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
   print $main::out $exec_time if ($main::verbose >= 1);
   close $main::out if ($main::outfile{output});
-
-
+  print $synthesis_index "</table>\n";
+  print $synthesis_index "<p><pre>", $exec_time, "</pre></p>\n";
+  print $synthesis_index "</body>\n";
+  print $synthesis_index "</html>\n";
+  close ($synthesis_index);
+  
   ################################################################
   ## Report the index files
   if ($main::verbose >= 2) {
@@ -1132,7 +1151,7 @@ sub RunFootprintScan {
 
   ################################################################
   ## Initialize output directory + output files
-  &InitQueryOutput();
+  local ($outfile_prefix, $query_prefix)= &InitQueryOutput();
 
   ## Output files for matrix-scan
   $outfile{filter_scan} = $outfile{prefix}."_filter_scan.tab";
