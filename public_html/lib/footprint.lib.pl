@@ -822,10 +822,19 @@ sub OpenIndex {
   print $index "<head><title>", $html_title , "</title></head>\n" ;
   print $index "<body>\n";
   print $index "<hr size=4 color='#000088'>";
-  print $index "<h1 align=center>Footprint discovery result</h1>";
+  if ( $main::footprint_scan){
+      print $index "<h1 align=center>Footprint Scan result</h1>"  ;}
+  else {
+      print $index "<h1 align=center>Footprint discovery result</h1>"
+  }
   $html_title2 =$query_prefix." " ;
-  $html_title2 .= $taxon." " if $taxon;
-  $html_title2 .=join (" ", "<i>".$organism_name."</i>", $bg_model);
+  $html_title2 .= $taxon." " if $taxon; 
+  if ($main::footprint_scan){
+      $html_title2 .=join (" ", "<i>".$organism_name."</i>");
+  }
+  else {
+      $html_title2 .=join (" ", "<i>".$organism_name."</i>", $bg_model);
+  }
   print $index "<h2 align=center>",$html_title2 , "</h2>\n";
   print $index "<hr size=2 color='#000088'>";
   print $index "<blockquote>";
@@ -1183,7 +1192,12 @@ sub OrthoMap {
   my $cmd = "feature-map -i ".$outfile{sites};
   $cmd .= " -scalebar -legend";
   $cmd .= " -xsize 800 -scorethick -minscore 0";
-  $cmd .= " -title 'matrix hits in ".$taxon." promoters'";
+  if ($taxon){ 
+      $cmd .= " -title 'matrix hits in ".$taxon." promoters'";
+  }
+  else {
+       $cmd .= " -title 'matrix hits in promoters'";
+  }
   $cmd .= " -format ".$map_format;
   $cmd .= " -o ".$outfile{map};
   $cmd .= " ".$map_opt;
