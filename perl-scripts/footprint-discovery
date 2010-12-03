@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.47 2010/12/03 04:13:00 jvanheld Exp $
+# $Id: footprint-discovery,v 1.48 2010/12/03 04:27:16 jvanheld Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -448,7 +448,7 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Open the file to store the HTML index
-  &OpenIndex();
+  &OpenIndex("footprint-discovery");
 
   ################################################################
   ## Print query genes in the gene file
