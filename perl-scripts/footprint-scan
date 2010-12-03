@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.49 2010/12/03 22:59:52 amedina Exp $
+# $Id: footprint-scan,v 1.50 2010/12/03 23:38:16 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.49 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.50 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -546,8 +546,8 @@ package main;
 	      shift @gene_info;
 
 	      my $gene_info_line=join ("\t",@gene_info); #### Line containing the information about the current gene for the table
-	      my $gene_info_html_line=join ("</td> \n <td>",@gene_info);
-	      $gene_info_html_line="<td>".$gene_info_html_line." </td>";  #### Line containing the information about the current gene for the tablhtml index
+	      my $gene_info_html_line=join ("</td>\n<td>",@gene_info);
+	      $gene_info_html_line="<td>".$gene_info_html_line."</td>";  #### Line containing the information about the current gene for the tablhtml index
 
 
 	      ##############
@@ -565,8 +565,7 @@ package main;
 	      print $synthesis_index "<tr>\n"; 
 	      my $sig_line=$top_sig_row{$gene};
 	      my $html_sep="<\/td>\n<td>";
-	      $sig_line =~ s/\t/$html_sep/g;
-	      #die $sig_line;
+	      $sig_line =~ s/\t+/$html_sep/g;
 	      print $synthesis_index "<td>".$gene.$html_sep. $sig_line.$html_sep. $g."</td>";
 
 
@@ -574,33 +573,27 @@ package main;
 	     
 	      if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
 		  my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
-		  #$links .= join("", " <a href='", $file, "'>[sig]</a>");
-		  print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>";
+		  print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>"."\n";
 	      }
 	      if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
 		  my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
-		  #$links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>");
-		  #$links .= join("", " <a href='", $file, "'>[sigplot]</a>");
-		 ## #$links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'>[sigplot]</a>");
 		  print $synthesis_index  "<td>".join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
-		  print $synthesis_index   join("", " <a href='", $file, "'>[sigplot]</a>")." </td>";
-;
+		  print $synthesis_index   join("", " <a href='", $file, "'>[sigplot]</a>")." </td>"."\n";
+
 	      }
 	      if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
 		  my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
-		  #$links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'>[freqplot]</a>");
 		  print $synthesis_index  "<td>".join("", " <a href='", $file, "'>",,"<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
-		  print $synthesis_index   join("", " <a href='", $file, "'>[freqplot]</a>")." </td>";
+		  print $synthesis_index   join("", " <a href='", $file, "'>[freqplot]</a>")." </td>"."\n";
 	      }
 	      if ((defined($map_file{$gene})) && (-e $map_file{$gene})) {
 		  my $file = $map_file{$gene}; $file =~ s|${syn_dir}/||g;
-		 # $links .= join("", " <a href='", $file, "'>[map]</a>");
-		  print $synthesis_index "<td>".join("", " <a href='", $file, "'>[map]</a>")."</td>";
+		  print $synthesis_index "<td>".join("", " <a href='", $file, "'>[map]</a>")."</td>"."\n";
 	      }
 	      print $synthesis_index   $gene_info_html_line;
 #	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
 	      
-	      print $synthesis_index "<tr>\n";
+	      print $synthesis_index "</tr>\n";
 	      
 	  }
 	 
