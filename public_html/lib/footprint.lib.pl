@@ -918,7 +918,8 @@ sub HeaderSynthesisFilesScan {
     print $synthesis_index "<tr>\n";
      my $html_sep="<\/th>\n<th>";
     $occ_sig_header=~s/\t/$html_sep/g;
-    my $header_index=join("</th> \n <th>", "<th>gene", $occ_sig_header, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", "name","descr","upstr_neighb_name</th>"), "\n"; 
+    my $header_index=join("</th>\n<th>", "<th>gene", $occ_sig_header, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", "name","descr","upstr_neighb_name</th>");
+    $header_index .= "\n"; 
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";
 }
