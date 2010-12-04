@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.96 2010/12/04 06:21:30 jvanheld Exp $
+# $Id: peak-motifs,v 1.97 2010/12/04 19:09:05 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.96 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.97 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1776,11 +1776,6 @@ sub PrintHtmlFileHedaer {
   print $handle "<body>\n";
   print $handle "<h1>Result: peak-motifs ".$main::param{title}."</h1>\n";
 
-  ## Print the command line
-  print $handle "<pre>";
-  print $handle "<b>Command:</b>  peak-motifs ";
-  &PrintArguments($handle);
-  print $handle "</pre>";
 }
 
 
@@ -1823,10 +1818,19 @@ sub SynthesisByMotif {
 ## Generate a HTML report with summarizing the main results with
 ## links to the iriginal result files.
 sub Synthesis {
+
+  ## Create a directory to store the arrow icons
+  $main::dir{images_html} = $dir{output}."/images_html";
+  &RSAT::util::CheckOutDir($main::dir{images_html});
+  my $cmd = "rsync -ruptvl ";
+  $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/arrow*.gif ";
+  $cmd .= " ".$main::dir{images_html};
+  &one_command($cmd, 1);
+
+  ## Open the HTML file
   local $syn = &OpenOutputFile($main::outfile{synthesis});
   local $synthesis_path = `dirname $main::outfile{synthesis}`;
   local $menu_nb = 100;
-
   chomp($synthesis_path);
 
   &PrintHtmlFileHedaer($syn);
@@ -1846,11 +1850,11 @@ sub Synthesis {
   print $syn &close_menu_heading();
 
   ## Discovered motifs (by motif)
-#  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>");
+  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs</h3>");
   print $syn "<table class='sortable'>\n";
   &SynthesisByMotif();
   print $syn "</table><p>\n";
-#  print $syn &close_menu_heading();
+  print $syn &close_menu_heading();
 
   ## Discovered motifs (by algorithm)
   print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>");
@@ -3005,6 +3009,13 @@ sub CheckArguments {
 ## includes a list of all result files, and the motif list depend on
 ## the number of motifs returned by the different algorithms.
 sub ReportParamsAndFiles {
+
+
+  ## Print the command line
+  print $syn "<pre>";
+  print $syn "<b>Command:</b>  peak-motifs ";
+  &PrintArguments($syn);
+  print $syn "</pre>";
 
   ## Open HTML file for links
   local $links = &OpenOutputFile($main::outfile{links});
