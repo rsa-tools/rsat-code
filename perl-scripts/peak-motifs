@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.95 2010/12/04 05:49:49 jvanheld Exp $
+# $Id: peak-motifs,v 1.96 2010/12/04 06:21:30 jvanheld Exp $
 #
 ############################################################
 
@@ -30,16 +30,17 @@ ChIP-PET) peak sequences.
 
 =item Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
 
-unConception and implementation of the work flow.
+Conception and implementation of the work flow + testing.
 
 =item Morgane Thomas-Chollier <thomas-c@molgen.mpg.de>
 
-Conception of the work flow + implementation of Web interface.
+Conception of the work flow + implementation of Web interface +
+testing.
 
 =item Matthieu Defrance <defrance@ccg.unam.mx>
 
 Implementation of the efficient algorithms used in the work flow
-(I<local-word-analysis>, I<count-words>, I<matrix-scan-quick>).
+(I<count-words>, I<matrix-scan-quick>, I<local-word-analysis>).
 
 =item Olivier Sand <oly@bigre.ulb.ac.be> for the Web services
 
@@ -111,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.96 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1248,15 +1249,23 @@ sub MergeMotifs {
   &RSAT::message::TimeWarn("Merged discovered motifs", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
 }
 
+
+################################################################
+## Load the discovered motifs from the .tf file
+sub ReadDiscoveredMotifs {
+  my @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
+  my $motif_nb = scalar(@motifs);
+  &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 0);
+  return @motifs;
+}
+
 ################################################################
 ## Split the discovered motifs in separate files in order to analyze
 ## them separately. One separate directory is created for each motif.
 sub SplitMotifs {
   &RSAT::message::TimeWarn("Splitting discovered motifs in separate files") if ($main::verbose >= 1);
 
-  my @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
-  my $motif_nb = scalar(@motifs);
-  &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 0);
+  my @motifs = &ReadDiscoveredMotifs();
   my $m = 0;
 
   ## Create a table with the lists of motifs
@@ -1757,8 +1766,8 @@ sub PrintHtmlFileHedaer {
 #  print $handle "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
 
   ## Java scripts
+  print $handle sorttable_script();
 #  print $handle  &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
-#  print $handle  &java_script_from_file($ENV{RSAT}."/public_html/RSAT_tabs.js");
   print $handle &java_script_from_file($ENV{RSAT}."/public_html/RSAT_menu.js");
 
   print $handle "</head>\n";
@@ -1774,9 +1783,45 @@ sub PrintHtmlFileHedaer {
   print $handle "</pre>";
 }
 
+
+
 ################################################################
-## Generate a synthetic table summarizing the main results with links
-## to the iriginal result files.
+## Generate a HTML table summarizing the results for each discovered
+## motif. this table is inserted in the synthetic report.
+sub SynthesisByMotif {
+  my @motifs = &ReadDiscoveredMotifs();
+
+  ## Load background model for computing the consensus
+  &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 0);
+  my $bg_model = new RSAT::MarkovModel();
+  $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
+
+  ## Header of the motif table
+  print $syn "<p><table class=\"sortable\">\n";
+  print $syn "<tr>\n";
+  print $syn "<th>", "nb","</th>\n";
+  print $syn "<th>", "name","</th>\n";
+  print $syn "<th>", "consensus.IUPAC","</th>\n";
+  print $syn "<th>", "consensus.IUPAC.rc","</th>\n";
+  print $syn "</tr>\n";
+
+  for my $m (1..scalar(@motifs)) {
+    my $matrix = $motifs[$m-1];
+    $matrix->setMarkovModel($bg_model);
+    $matrix->calcConsensus();
+    print $syn "<tr>\n";
+    print $syn "<td>", $m,"</td>\n";
+    print $syn "<td>", $matrix->get_attribute("name"),"</td>\n";
+    print $syn "<td>", $matrix->get_attribute("consensus.IUPAC"),"</td>\n";
+    print $syn "<td>", $matrix->get_attribute("consensus.IUPAC.rc"),"</td>\n";
+    print $syn "</tr>\n";
+  }
+  print $syn "</table>\n";
+}
+
+################################################################
+## Generate a HTML report with summarizing the main results with
+## links to the iriginal result files.
 sub Synthesis {
   local $syn = &OpenOutputFile($main::outfile{synthesis});
   local $synthesis_path = `dirname $main::outfile{synthesis}`;
@@ -1800,7 +1845,14 @@ sub Synthesis {
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
 
-  ## Discovered motifs by algorithms
+  ## Discovered motifs (by motif)
+#  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>");
+  print $syn "<table class='sortable'>\n";
+  &SynthesisByMotif();
+  print $syn "</table><p>\n";
+#  print $syn &close_menu_heading();
+
+  ## Discovered motifs (by algorithm)
   print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>");
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Pattern discovery");
@@ -1809,7 +1861,6 @@ sub Synthesis {
   }
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
-
 
   ## Word comparison
   print $syn &open_menu_heading($menu_nb++, "<h3>Motif comparisons</h3>");
