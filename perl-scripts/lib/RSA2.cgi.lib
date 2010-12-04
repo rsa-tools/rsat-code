@@ -1020,7 +1020,7 @@ sub java_script_from_file {
 sub open_menu_heading {
   my ($nb, $text) = @_;
   my $string = "<div class=\"menu_heading_closed\" onclick=\"toggleMenu('".$nb."')\" id=\"heading".$nb."\">\n";
-  $string .= $text;
+  $string .= $text."</div>";
   $string .= "<div id=\"menu".$nb."\" class=\"menu_collapsible\"><p/><fieldset>";
   return ($string);
 }
