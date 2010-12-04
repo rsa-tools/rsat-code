@@ -184,6 +184,7 @@ sub RSA_header {
 #  print &html_header();
   print $query->header();
   print sorttable_script();
+
   ### print the header of the result page
   print $query->start_html(-title=>"RSA-tools : $title",
 			   -class => "$css_body_class",
@@ -195,7 +196,7 @@ sub RSA_header {
                                     { -type => 'text/javascript',
                                       -src      => 'RSAT_tabs.js'
                                     }
-                                 ],                                 
+                                 ],
 			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen' });
@@ -991,12 +992,49 @@ sub close_table_html {
 
 
 ################################################################
-## Print a little java script produce a sortable HTML table
+## Print a java script produce a sortable HTML table
 sub sorttable_script {
   my $script = $ENV{RSAT}."/perl-scripts/lib/sorttable.js";
   return `cat $script`;
 }
 
+################################################################
+## Include a java script from a .js file in a HTML file.  This is
+## useful for producing result files that can be moved without loosing
+## the script.
+sub java_script_from_file {
+  my ($script_file) = @_;
+  my $script_string = "<script type=\"text/javascript\">\n";
+  $script_string .= "<!-- \n";
+  $script_string .= `cat $script_file`;
+  $script_string .= "// -->\n";
+  $script_string .= "</script>\n";
+  return $script_string;
+}
+
+
+################################################################
+## Insert HTML tags to open a menu heading
+##
+## Usage:  print $out &open_menu_heading($nb, $text);
+sub open_menu_heading {
+  my ($nb, $text) = @_;
+  my $string = "<div class=\"menu_heading_closed\" onclick=\"toggleMenu('".$nb."')\" id=\"heading".$nb."\">\n";
+  $string .= $text;
+  $string .= "<div id=\"menu".$nb."\" class=\"menu_collapsible\"><p/><fieldset>";
+  return ($string);
+}
+
+################################################################
+## Insert HTML tags to close a menu heading
+##
+## Usage:  print $out &close_menu_heading($nb, $text);
+sub close_menu_heading {
+  my $string =  "</fieldset><p/></div>";
+  $string .= "</div>\n";
+  $string .= "<p class=\"clear\"></p>";
+  return($string);
+}
 
 ################################################################
 #### Print a text table in html format
