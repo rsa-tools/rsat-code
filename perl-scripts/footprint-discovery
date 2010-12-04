@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.48 2010/12/03 04:27:16 jvanheld Exp $
+# $Id: footprint-discovery,v 1.49 2010/12/04 03:29:11 rsat Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.49 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -369,19 +369,21 @@ package main;
 
   ################################################################
   ## Analyze query genes separately or altogether
+  local $q = 0;
   if ($main::sep_genes) {
-    my $g = 0;
-    my $gene_nb = scalar(@query_genes);
+    local $query_nb = scalar(@query_genes);
     foreach my $current_gene (@query_genes) {
-      $g++;
-      &RSAT::message::TimeWarn("Analyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
-      next if (($skip > 0) && ($g <= $skip));
-      last if (($last > 0) && ($g >= $last));
+      $q++;
+      &RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
+      next if (($skip > 0) && ($q <= $skip));
+      last if (($last > 0) && ($q >= $last));
       &RunFootprintDisco($current_gene);
     }
   } else {
-    &RSAT::message::TimeWarn("Analyzing a group of ",scalar(@query_genes)," genes", join(";", @query_genes)) if ($main::verbose >= 1);
-    &RunFootprintDisco(@query_genes);
+      $q = 1;
+      $query_nb = 1;
+      &RSAT::message::TimeWarn("Analyzing a group of ",scalar(@query_genes)," genes", join(";", @query_genes)) if ($main::verbose >= 1);
+      &RunFootprintDisco(@query_genes);
   }
 
   ################################################################
@@ -608,7 +610,7 @@ sub RunFootprintDisco {
   ################################################################
   ## Update the main index
   print $main_index "<tr>\n";
-
+  print $main_index "<td>", $q, "</td>\n";
   ## Link to the query-specific index file
 #  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
   print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
