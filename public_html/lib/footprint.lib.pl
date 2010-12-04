@@ -869,6 +869,7 @@ sub OpenMainIndex {
   print $main_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
 #  print $main_index "<table cellspacing=0 cellpadding=3 border=0>\n";
   print $main_index "<tr>\n";
+  print $main_index "<th>","Query nb","</th>\n";
   print $main_index "<th>","Query","</th>\n";
   print $main_index "<th>","Top dyad","</th>\n";
   print $main_index "<th>","Max sig","</th>\n";
@@ -1067,8 +1068,8 @@ sub GetOrthologs {
     $cmd .= " -o ".$outfile{orthologs};
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-    &IndexOneFile("orthologs", $outfile{orthologs});
   }
+  &IndexOneFile("orthologs", $outfile{orthologs});
 }
 
 ################################################################
