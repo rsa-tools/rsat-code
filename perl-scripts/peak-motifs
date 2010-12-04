@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.94 2010/12/03 01:33:30 jvanheld Exp $
+# $Id: peak-motifs,v 1.95 2010/12/04 05:49:49 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.94 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -241,7 +241,7 @@ package main;
 
   &MergeMotifs() if ($task{merge_motifs});
 
-  &SplitMotifs() if ($task{collect_motifs});
+  &SplitMotifs() if ($task{split_motifs});
 
 #  &ClusterMotifs() if ($task{cluster_motifs});
 
@@ -498,7 +498,7 @@ sub SetOutFileNames {
       ## oligo frequencies in the sequence set
       $main::outfile{$ol."nt_".$seq_type."_freq"} = &OutFileName("results/composition", ".tab", $seq_type."_freq"."-1str".$main::param{profiles_noov},$ol."nt");
       push @timelog_keys, $ol."nt_".$seq_type."_freq";
-      $main::outfile{$ol."nt_".$seq_type."_transit"} = &OutFileName("results/composition", ".tab", $seq_type."_transitions"."-1str".$main::param{profiles_noov},$ol."nt");
+      $main::outfile{$ol."nt_".$seq_type."_transitions"} = &OutFileName("results/composition", ".tab", $seq_type."_transitions"."-1str".$main::param{profiles_noov},$ol."nt");
       $main::outfile{$ol."nt_".$seq_type."_inclusive"} = &OutFileName("results/composition", ".txt", $seq_type."_inclusive"."-1str".$main::param{profiles_noov},$ol."nt");
       $main::outfile{$ol."nt_".$seq_type."_heatmap"} = &OutFileName("results/composition", ".".$main::param{img_format}, $seq_type."_heatmap"."-1str".$main::param{profiles_noov},$ol."nt");
       ## HTML index to the individual oligonucleotide profiles
@@ -811,8 +811,8 @@ sub CompositionProfiles {
     ## Convert background model to transition table and draw the heatmap of transition probabilities
     $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
-    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transit"};
-    $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol."nt_".$seq_type."_transit"};
+    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
+    $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
     $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
     &one_command($cmd, 1);
@@ -1259,7 +1259,6 @@ sub SplitMotifs {
   &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 0);
   my $m = 0;
 
-
   ## Create a table with the lists of motifs
   my $motif_table = &OpenOutputFile($main::outfile{motifs_discovered_table});
 
@@ -1413,6 +1412,10 @@ sub ClusterMotifs {
 ## &SplitMotifs()) and index them. This is required for several
 ## post-processing methods.
 sub ReadMotifTable {
+  unless (-e $main::outfile{motifs_discovered_table}) {
+    &RSAT::message::Warning("Discovered motif table does not exist", $main::outfile{motifs_discovered_table});
+    return;
+  }
   my ($in) = &OpenInputFile($main::outfile{motifs_discovered_table});
   my $motif_id;
   my $motif_dir;
@@ -1753,7 +1756,14 @@ sub PrintHtmlFileHedaer {
   print $handle "</style>\n";
 #  print $handle "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
 
+  ## Java scripts
+#  print $handle  &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
+#  print $handle  &java_script_from_file($ENV{RSAT}."/public_html/RSAT_tabs.js");
+  print $handle &java_script_from_file($ENV{RSAT}."/public_html/RSAT_menu.js");
+
   print $handle "</head>\n";
+
+  ## Start HTML body
   print $handle "<body>\n";
   print $handle "<h1>Result: peak-motifs ".$main::param{title}."</h1>\n";
 
@@ -1770,27 +1780,41 @@ sub PrintHtmlFileHedaer {
 sub Synthesis {
   local $syn = &OpenOutputFile($main::outfile{synthesis});
   local $synthesis_path = `dirname $main::outfile{synthesis}`;
+  local $menu_nb = 100;
+
   chomp($synthesis_path);
 
   &PrintHtmlFileHedaer($syn);
 
   ## Header of the synthetic table
-  print $syn "<h2>Synthetic report</h2>";
+  print $syn &open_menu_heading($menu_nb++, "<h3>Sequence composition</h3>");
   print $syn "<p><table class='sortable'>\n";
-
   &SynthesisSequenceComposition();
+  print $syn "</table><p>\n";
+  print $syn &close_menu_heading();
 
-  ## Reference motif
+  ## Reference motifs
+  print $syn &open_menu_heading($menu_nb++, "<h3>Reference motifs</h3>");
+  print $syn "<p><table class='sortable'>\n";
   &SynthesisRefMotif();
+  print $syn "</table><p>\n";
+  print $syn &close_menu_heading();
 
-  ## Header line
+  ## Discovered motifs by algorithms
+  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>");
+  print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Pattern discovery");
-
   foreach my $pattern_type (@pattern_types) {
     &SynthesisPatternDisco($pattern_type);
   }
+  print $syn "</table><p>\n";
+  print $syn &close_menu_heading();
+
 
   ## Word comparison
+  print $syn &open_menu_heading($menu_nb++, "<h3>Motif comparisons</h3>");
+  print $syn "<table class='sortable'>\n";
+
   &SynthesisWordCompa();
 
   ## Motif comparison
@@ -1801,8 +1825,12 @@ sub Synthesis {
 
   ## Comparison between discovered motifs and database(s)
   &SynthesisMotifsVersusDatabase() if (scalar(@motif_databases) > 0);
+  print $syn "</table><p>\n";
+  print $syn &close_menu_heading();
 
-  ## Log file
+  ## Log files
+  print $syn &open_menu_heading($menu_nb++, "<h3>Logs and result files</h3>");
+  print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Log files");
   &SyntheticTableAddRow("Parameters and files",
 			"",
@@ -1955,7 +1983,7 @@ sub SynthesisSequenceComposition {
       &SyntheticTableAddRow($ol."nt composition",
 			    $table,
 			    $ol."nt freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
-			    $ol."nt transitions",$main::outfile{$ol."nt_".$seq_type."_transit"},
+			    $ol."nt transitions",$main::outfile{$ol."nt_".$seq_type."_transitions"},
 			    "inclusive bg model",$main::outfile{$ol."nt_".$seq_type."_inclusive"},
 			    "profile table",$main::outfile{$ol."nt_".$seq_type."_profiles"},
 			    "individual profiles",$main::outfile{$ol."nt_".$seq_type."_profiles_index"},
@@ -2015,9 +2043,9 @@ sub SynthesisRefMotif {
 ## Where pattern type can be oligos, dyads, local_words, oligo-diff
 sub SynthesisPatternDisco {
   my ($pattern_type) = @_;
+  &RSAT::message::TimeWarn("Synthesis for pattern type", $pattern_type) if ($main::verbose >= 2);
 
   if (-e $main::outfile{$pattern_type.'_asmb'}) {
-
     ## Synthesize results of pattern assembly (assembly consensus + sig scores)
     my ($asmb) = &OpenInputFile($main::outfile{$pattern_type.'_asmb'});
     my $pattern_nb = 0;
@@ -2082,7 +2110,7 @@ sub SynthesisPatternDisco {
 	$pattern_table .= $start_format;
 	$pattern_table .= "</td>\n";
       } elsif ($main::verbose >= 1) {
-	&RSAT::message::Warning("Cannot find logo", $logo_file);
+	&RSAT::message::Warning("Cannot find logo", $logo_file) if ($main::verbose >= 3);
       }
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
@@ -2092,7 +2120,7 @@ sub SynthesisPatternDisco {
 	$pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
 	$pattern_table .= "</td>\n";
       } elsif ($main::verbose >= 1) {
-	&RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc);
+	&RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc) if ($main::verbose >= 3);
       }
       #    $pattern_table .= "<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>";
       $pattern_table .= "</tr>\n";
