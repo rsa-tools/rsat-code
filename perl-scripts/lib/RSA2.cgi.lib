@@ -1016,12 +1016,25 @@ sub java_script_from_file {
 ################################################################
 ## Insert HTML tags to open a menu heading
 ##
-## Usage:  print $out &open_menu_heading($nb, $text);
+## Usage:  print $out &open_menu_heading($nb, $text, $closed);
+##
+## Parameters:
+##   $nb : a unique number identifying the menu heading in the HTML page.
+##   $text: the text to be displayed in the menu heading. This text can contain HTML tags.
+##          example: "<h3>My title</h3>"
+##   $closed: a flag indicating if the menu should be open (0) or
+##          closed (1) the first time the HTML is loaded in the browser.
 sub open_menu_heading {
-  my ($nb, $text) = @_;
-  my $string = "<div class=\"menu_heading_closed\" onclick=\"toggleMenu('".$nb."')\" id=\"heading".$nb."\">\n";
+  my ($nb, $text, $closed) = @_;
+  my $status = "open";
+  my $display = "menu_collapsible_display";
+  if ($closed) {
+    $status = "closed";
+    $display = "menu_collapsible";
+  }
+  my $string = "<div class=\"menu_heading_".$status."\" onclick=\"toggleMenu('".$nb."')\" id=\"heading".$nb."\">\n";
   $string .= $text."</div>";
-  $string .= "<div id=\"menu".$nb."\" class=\"menu_collapsible\"><p/><fieldset>";
+  $string .= "<div id=\"menu".$nb."\" class=\"".$display."\"><p/><fieldset>";
   return ($string);
 }
 
