@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.97 2010/12/04 19:09:05 jvanheld Exp $
+# $Id: peak-motifs,v 1.98 2010/12/05 03:43:12 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.97 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1836,28 +1836,30 @@ sub Synthesis {
   &PrintHtmlFileHedaer($syn);
 
   ## Header of the synthetic table
-  print $syn &open_menu_heading($menu_nb++, "<h3>Sequence composition</h3>");
+  print $syn &open_menu_heading($menu_nb++, "<h3>Sequence composition</h3>", 0);
   print $syn "<p><table class='sortable'>\n";
   &SynthesisSequenceComposition();
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
 
   ## Reference motifs
-  print $syn &open_menu_heading($menu_nb++, "<h3>Reference motifs</h3>");
-  print $syn "<p><table class='sortable'>\n";
-  &SynthesisRefMotif();
-  print $syn "</table><p>\n";
-  print $syn &close_menu_heading();
+  if (defined($main::infile{ref_motifs})) {
+    print $syn &open_menu_heading($menu_nb++, "<h3>Reference motifs</h3>", 0);
+    print $syn "<p><table class='sortable'>\n";
+    &SynthesisRefMotif();
+    print $syn "</table><p>\n";
+    print $syn &close_menu_heading();
+  }
 
   ## Discovered motifs (by motif)
-  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs</h3>");
+  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs</h3>", 0);
   print $syn "<table class='sortable'>\n";
   &SynthesisByMotif();
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
 
   ## Discovered motifs (by algorithm)
-  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>");
+  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>", 1);
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Pattern discovery");
   foreach my $pattern_type (@pattern_types) {
@@ -1866,13 +1868,14 @@ sub Synthesis {
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
 
-  ## Word comparison
-  print $syn &open_menu_heading($menu_nb++, "<h3>Motif comparisons</h3>");
+  ## Motif comparisons
+  print $syn &open_menu_heading($menu_nb++, "<h3>Motif comparisons</h3>", 0);
   print $syn "<table class='sortable'>\n";
 
+  ## Word comparisons
   &SynthesisWordCompa();
 
-  ## Motif comparison
+  ## Comparison between discovered motifs
 #  &SynthesisMotifCompa();
 
   ## Comparison between discovered motifs and reference motif
@@ -1884,7 +1887,7 @@ sub Synthesis {
   print $syn &close_menu_heading();
 
   ## Log files
-  print $syn &open_menu_heading($menu_nb++, "<h3>Logs and result files</h3>");
+  print $syn &open_menu_heading($menu_nb++, "<h3>Logs and result files</h3>", 1);
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Log files");
   &SyntheticTableAddRow("Parameters and files",
@@ -1898,23 +1901,16 @@ sub Synthesis {
  			"time log"=>$main::outfile{timelog},
  			"html"=>$main::outfile{timelog_html},
  		       );
-
-
   ## Close the synthetic table
   print $syn "</table></p>\n";
-
-  ## Log file
-#  print $syn "<h2>Log</h2>";
-#  print $syn "<pre>";
-#  print $syn `cat $main::outfile{log}`;
-#  print $syn "</pre>";
-
 
   ################################################################
   ## Report the list if input/output files. This has to be done at the
   ## end of the process, since it includes a list of discovered motifs
   ## is not known before having run the motif discovery algorithms.
   &ReportParamsAndFiles();# if ($main::verbose >= 1);
+
+  print $syn &close_menu_heading();
 
   ## End of the HTML file
   print $syn "</body>\n";
@@ -2050,45 +2046,43 @@ sub SynthesisSequenceComposition {
 ################################################################
 ## Add the reference motif to the report
 sub SynthesisRefMotif {
-  if (defined($main::infile{ref_motifs})) {
-    &SyntheticTableAddHeaderRow("Reference motif(s)");
+  &SyntheticTableAddHeaderRow("Reference motif(s)");
 
-    my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
+  my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
 
-    ## get the names of all reference logo files
-    my @logo_files = glob($main::outfile{ref_motifs_logo}."_m*.".$main::param{img_format});
-    @logo_files = grep {!/_rc\./} @logo_files;
-    #    my @logo_files = glob($main::outfile{ref_motifs_logo}."_m\d+.".$main::param{img_format});
+  ## get the names of all reference logo files
+  my @logo_files = glob($main::outfile{ref_motifs_logo}."_m*.".$main::param{img_format});
+  @logo_files = grep {!/_rc\./} @logo_files;
+  #    my @logo_files = glob($main::outfile{ref_motifs_logo}."_m\d+.".$main::param{img_format});
 
-    ## Prepare a table with the logos
-    for my $i (1..scalar(@logo_files)) {
-      $logo_table .= "<tr>\n";
-      $logo_table .= "<td>Ref motif ".$i."</td>\n";
-      my $logo_file = $main::outfile{ref_motifs_logo}."_m".$i.".".$main::param{img_format};
-      my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
-      if (-e $logo_file) {
-	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
-	$logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-      } elsif ($main::verbose >= 1) {
-	&RSAT::message::Warning("Cannot find reference logo", $logo_file);
-      }
-      if (-e $logo_file_rc) {
-	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
-	$logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-      } elsif ($main::verbose >= 1) {
-	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
-      }
-      $logo_table .= "</tr>\n";
+  ## Prepare a table with the logos
+  for my $i (1..scalar(@logo_files)) {
+    $logo_table .= "<tr>\n";
+    $logo_table .= "<td>Ref motif ".$i."</td>\n";
+    my $logo_file = $main::outfile{ref_motifs_logo}."_m".$i.".".$main::param{img_format};
+    my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
+    if (-e $logo_file) {
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
+      $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+    } elsif ($main::verbose >= 1) {
+      &RSAT::message::Warning("Cannot find reference logo", $logo_file);
     }
-    $logo_table .= "</table>\n";
-
-    &SyntheticTableAddRow("Reference motif",
-			  $logo_table,
-#			  $main::param{ref_motifs_format}, &RSAT::util::RelativePath($main::outfile{synthesis}, $main::infile{ref_motifs}),
-			  "transfac format",$main::outfile{ref_motifs_transfac},
-			  "tab format",$main::outfile{ref_motifs_tab},
-			 );
+    if (-e $logo_file_rc) {
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
+      $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+    } elsif ($main::verbose >= 1) {
+      &RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
+    }
+    $logo_table .= "</tr>\n";
   }
+  $logo_table .= "</table>\n";
+
+  &SyntheticTableAddRow("Reference motif",
+			$logo_table,
+			#			  $main::param{ref_motifs_format}, &RSAT::util::RelativePath($main::outfile{synthesis}, $main::infile{ref_motifs}),
+			"transfac format",$main::outfile{ref_motifs_transfac},
+			"tab format",$main::outfile{ref_motifs_tab},
+		       );
 }
 
 ################################################################
