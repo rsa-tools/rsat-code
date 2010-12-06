@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.98 2010/12/05 03:43:12 jvanheld Exp $
+# $Id: peak-motifs,v 1.99 2010/12/06 07:26:17 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -196,6 +196,7 @@ package main;
   ## Those variables need to be global for motif post-processing and indexing
   local @motif_ids;
   local @motif_dirs;
+  local @motif_prefixes;
   local @motif_files;
   local $motif_nb;
 
@@ -623,9 +624,9 @@ sub SetOutFileNames {
     $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_counts'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_tf'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.tf";
-    $main::outfile{$pattern_type.'_pssm_sites'} = $main::outfile{$pattern_type.'_pssm'}."_sites.tab";
-    $main::outfile{$pattern_type.'_pssm_site_distrib'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib.tab";
-    $main::outfile{$pattern_type.'_pssm_site_distrib_graph'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib".$main::param{img_format};
+#    $main::outfile{$pattern_type.'_pssm_sites'} = $main::outfile{$pattern_type.'_pssm'}."_sites.tab";
+#    $main::outfile{$pattern_type.'_pssm_site_distrib'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib.tab";
+#    $main::outfile{$pattern_type.'_pssm_site_distrib_graph'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib".$main::param{img_format};
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
       $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb} =
 	$main::outfile{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb.".".$main::param{img_format};
@@ -693,7 +694,7 @@ sub SetOutFileNames {
   ## Comparison between discovered motifs and database(s)
   if (scalar(@motif_databases) > 0) {
     foreach my $db_name (@motif_databases) {
-      $main::outfile{"motifs_vs_db_".$db_name."_prefix"} = &OutFileName("results/discovered_vs_db", "", "motifs_vs_db_".$db_name);
+      $main::outfile{"motifs_vs_db_".$db_name.'_prefix'} = &OutFileName("results/discovered_vs_db", "", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name} = &OutFileName("results/discovered_vs_db", ".tab", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name."_html"} = &OutFileName("results/discovered_vs_db", ".html", "motifs_vs_db_".$db_name);
       push @timelog_keys, "motifs_vs_db_".$db_name;
@@ -1255,7 +1256,7 @@ sub MergeMotifs {
 sub ReadDiscoveredMotifs {
   my @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
   my $motif_nb = scalar(@motifs);
-  &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 0);
+  &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
   return @motifs;
 }
 
@@ -1272,11 +1273,11 @@ sub SplitMotifs {
   my $motif_table = &OpenOutputFile($main::outfile{motifs_discovered_table});
 
   ## Print the header of the motif table
-  print $motif_table join("\t", "#nb", "identifier", "directory", "file"), "\n";
+  print $motif_table join("\t", "#nb", "identifier", "directory", "prefix", "transfac_format_file"), "\n";
 
   if (scalar(@motifs) == 0) {
     print $motif_table "; NO MOTIF FOUND\n";
-    &RSAT::message::Warning("No motif found") if ($main::verbose >= 0);
+    &RSAT::message::Warning("No motif found") if ($main::verbose >= 1);
   } else {
     ## Number of digits for the counter of split matrix files
     my $id_digits;
@@ -1298,33 +1299,34 @@ sub SplitMotifs {
       }
 
       my $motif_dir = "results/discovered_motifs/".$motif_id;
-      ($main::outfile{$motif_id}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
+      ($main::outfile{$motif_id.'_tf'}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
+      $main::outfile{$motif_id.'_prefix'} = &OutFileName($motif_dir, "", $motif_id);
 
       ## Print the motif in transfac format
-      $current_out = &OpenOutputFile($main::outfile{$motif_id});
+      $current_out = &OpenOutputFile($main::outfile{$motif_id.'_tf'});
       print $current_out $motif->toString(sep=>"\t",
 					  type=>"counts",
 					  format=>"transfac",
 					 );
       close($current_out);
 
-      print $motif_table join("\t", $m, $motif_id, $subdir, $main::outfile{$motif_id}), "\n";
+      print $motif_table join("\t", $m, $motif_id, $subdir, $main::outfile{$motif_id.'_prefix'}, $main::outfile{$motif_id.'_tf'}), "\n";
 
       ## Create logos (forward and reverse complementary) for each discovered motif
       $main::outfile{$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
       my $cmd = $SCRIPTS."/convert-matrix -v 0";
-      $cmd .= " -i ".$main::outfile{$motif_id};
+      $cmd .= " -i ".$main::outfile{$motif_id.'_tf'};
       $cmd .= " -from transfac -to tab";
       $cmd .= " -return counts,logo";
       $cmd .= " -o ".$main::outfile{$motif_id."_tab"};
       &one_command($cmd, 1);
 
-      #    &RSAT::message::Debug("&SplitMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id}) if ($main::verbose >= 10);
+      #    &RSAT::message::Debug("&SplitMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id.'_tf'}) if ($main::verbose >= 10);
     }
   }
   close $motif_table;
 
-  &RSAT::message::Info("Motif table",$main::outfile{motifs_discovered_table}) if ($main::verbose >= 0);
+  &RSAT::message::Info("Motif table",$main::outfile{motifs_discovered_table}) if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -1434,17 +1436,28 @@ sub ReadMotifTable {
     next if (/^;/); # skip comment lines
     next if (/^#/); # skip header line
     chomp();
-    ($motif_nb, $motif_id, $motif_dir, $motif_file) = split("\t");
+    ($motif_nb, $motif_id, $motif_dir, $motif_prefix, $motif_file) = split("\t");
     push @motif_ids, $motif_id;
     push @motif_dirs, $motif_dir;
+    push @motif_prefixes, $motif_prefix;
     push @motif_files, $motif_file;
 
     ################################################################
     ## Index motif-specific files for post-processing and synthesis
 
-    ## Comparisons betwen discoverd and reference motifs
     $main::dir{$motif_id} = $motif_dir; push @outdir, $motif_id;
-    $main::outfile{$motif_id} = $motif_file;
+    $main::outfile{$motif_id.'_tf'} = $motif_file;
+    $main::outfile{$motif_id.'_prefix'} = $motif_prefix;
+    $main::outfile{$motif_id."_tab"} = $main::outfile{$motif_id.'_prefix'}.".tab";
+    $main::outfile{$motif_id.'_pssm_sites'} = $main::outfile{$motif_id.'_prefix'}."_sites.tab";
+    $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::outfile{$motif_id.'_prefix'}."_site_distrib.tab";
+    $main::outfile{$motif_id.'_pssm_site_distrib_graph'} = $main::outfile{$motif_id.'_prefix'}."_site_distrib".$main::param{img_format};
+
+#    &RSAT::message::Debug("\n\ttab", $main::outfile{$motif_id."_tab"},
+#			  "\n\tsites", $main::outfile{$motif_id.'_pssm_sites'},
+#			 ) if ($main::verbose >= 10);
+
+    ## Comparisons betwen discoverd and reference motifs
     $main::outfile{$motif_id."_vs_ref_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_ref");
     $main::outfile{$motif_id."_vs_ref"} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_ref");
     $main::outfile{$motif_id."_vs_ref_html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_ref");
@@ -1452,9 +1465,9 @@ sub ReadMotifTable {
 
     ## Comparisons betwen discoverd and motif databases
     foreach my $db_name (@motif_databases) {
-      $main::outfile{$motif_id."_vs_db_".$db_name."_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_db_".$db_name);
-      $main::outfile{$motif_id."_vs_db_".$db_name} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_db_".$db_name);
-      $main::outfile{$motif_id."_vs_db_".$db_name."html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_db_".$db_name);
+      $main::outfile{$motif_id.'_vs_db_'.$db_name.'_prefix'} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id.'_vs_db_'.$db_name);
+      $main::outfile{$motif_id.'_vs_db_'.$db_name} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id.'_vs_db_'.$db_name);
+      $main::outfile{$motif_id.'_vs_db_'.$db_name."html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id.'_vs_db_'.$db_name);
     }
 #    &RSAT::message::Debug("Indexed motif", $motif_nb, $motif_id, $motif_dir, $motif_file) if ($main::verbose >= 10);
   }
@@ -1468,19 +1481,18 @@ sub MotifsVersusReference {
 
   ################################################################
   ## Compare separately each discovered motif to reference motif(s)
-  &ReadMotifTable();
-
+  &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
   my $motif_nb = scalar(@motif_ids);
   foreach my $i (0..$#motif_ids) {
     my $m = $i+1;
     my $motif_id = $motif_ids[$i];
     my $motif_dir = $motif_dirs[$i];
     my $motif_file = $motif_files[$i];
-    &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 0);
+    &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
 
     ## Compare one discovered motif with the reference motif
     my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
-    $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id};
+    $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id.'_tf'};
     $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
     $cmd .= $main::param{motif_compa_options};
     $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_prefix"};
@@ -1489,7 +1501,11 @@ sub MotifsVersusReference {
     &one_command($cmd, 1);
   }
 
-  return(); #TEMP
+  ################################################################
+  ## TO DO: the all motifs against ref is redundant (comparisons are
+  ## performed twice), but the result is used for drawing the ref
+  ## versus discovered graph. The comparison table and graph should be
+  ## recollected from the individual motif comparisons.
 
   ################################################################
   ## Compare all matrices to the reference motif
@@ -1531,26 +1547,32 @@ sub MotifsVersusDatabase {
 
     ################################################################
     ## Compare separately each discovered motif to reference motif(s)
-    &ReadMotifTable();
+    &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
     my $motif_nb = scalar(@motif_ids);
     foreach my $i (0..$#motif_ids) {
       my $m = $i+1;
       my $motif_id = $motif_ids[$i];
       my $motif_dir = $motif_dirs[$i];
       my $motif_file = $motif_files[$i];
-      &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 0);
+      &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
 
       ## Compare one discovered motif with the reference motif
       my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
-      $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id};
+      $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id.'_tf'};
       $cmd .= " -format2 ".$main::motif_db_format{$db_name};
       $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
       $cmd .= $main::param{motif_compa_options};
-      $cmd .= " -o ".$main::outfile{$motif_id."_vs_db_".$db_name."_prefix"};
-      $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id."_vs_db_".$db_name};
-      $cmd .= " -o ".$main::outfile{$motif_id."_vs_db_".$db_name."html"};
+      $cmd .= " -o ".$main::outfile{$motif_id.'_vs_db_'.$db_name.'_prefix'};
+      $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id.'_vs_db_'.$db_name};
+      $cmd .= " -o ".$main::outfile{$motif_id.'_vs_db_'.$db_name."html"};
       &one_command($cmd, 1);
     }
+
+    ################################################################
+    ## TO DO: the all motifs against db is redundant (comparisons are
+    ## performed twice), but the result is used for drawing the db
+    ## versus discovered graph. The comparison table and graph should be
+    ## recollected from the individual motif comparisons.
 
     ################################################################
     ## Comparison between all discovered matrices and the database
@@ -1610,47 +1632,104 @@ sub MatrixFromPatterns {
 }
 
 
+
+
 ################################################################
-## Scan peak sequences with the discovered motif
-##
-## BEWARE: THIS IS NOT YET WORKING, BECAUSE matrix-scan-quick ONLY
-## USES THE FIRST MATRIX OF EACH FILE.
+## Scan peak sequences with each discovered motif. Draw a positional
+## profile of motif instances + assess the significance of the number
+## of hits for each possible weight threshold value.
 sub ScanSequences {
   $main::param{scan_min_score} = 7.5;
   &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 1);
-#  foreach my $seq_type (@seq_types) {
-    foreach my $pattern_type (@pattern_types) {
-      my $cmd = $BIN."/matrix-scan-quick -v 1";
-      $cmd .= " -i ".$infile{test_seq};
-      $cmd .= " -m ".$main::outfile{$pattern_type.'_pssm_counts'};
-      $cmd .= " -bgfile ".$main::param{scan_bg_file};
-      $cmd .= " ".$main::param{scan_strands};
-      $cmd .= " -origin center -return sites";
-      $cmd .= " -t ".$main::param{scan_min_score};
-      $cmd .= " >".$main::outfile{$pattern_type.'_pssm_sites'};
-      &one_command($cmd, 1, $main::outfile{$pattern_type.'_pssm_sites'}."_time.txt");
 
-      ## Compute the positional distribution of sites
-      $cmd = "awk '{print \(\$6\+\$5\)/2}'";
-      $cmd .= " ".$main::outfile{$pattern_type.'_pssm_sites'};
-      $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
-      $cmd .= " -ci ".$main::param{profiles_ci};
-      $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_site_distrib'};
-      &one_command($cmd, 1);
 
-      ## Draw the graph of predicted site positions
-      $cmd = $SCRIPTS."/XYgraph";
-      $cmd .= " -format ".$main::param{img_format};
-      $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_site_distrib'};
-      $cmd .= " -lines -xcol 3 -ycol 4";
-      $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
-      $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak center'";
-      $cmd .= " -title1 'Predicted sites : $pattern_type'";
-      $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_site_distrib_graph'};
-      &one_command($cmd, 1);
-    }
-#  }
+  &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
+  my $motif_nb = scalar(@motif_ids);
+  foreach my $i (0..$#motif_ids) {
+    my $m = $i+1;
+    my $motif_id = $motif_ids[$i];
+    my $motif_dir = $motif_dirs[$i];
+#    my $motif_file = $motif_files[$i];
+
+    &RSAT::message::Debug("Scanning sequences with motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
+
+    my $cmd = $BIN."/matrix-scan-quick -v 1";
+    $cmd .= " -i ".$infile{test_seq};
+    $cmd .= " -m ".$main::outfile{$motif_id."_tab"};
+    $cmd .= " -bgfile ".$main::param{scan_bg_file};
+    $cmd .= " ".$main::param{scan_strands};
+    $cmd .= " -origin center -return sites";
+    $cmd .= " -t ".$main::param{scan_min_score};
+    $cmd .= " >".$main::outfile{$motif_id.'_pssm_sites'};
+    &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
+
+    ## Compute the positional distribution of sites
+    $cmd = "awk '{print \(\$6\+\$5\)/2}'";
+    $cmd .= " ".$main::outfile{$motif_id.'_pssm_sites'};
+    $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
+    $cmd .= " -ci ".$main::param{profiles_ci};
+    $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib'};
+    &one_command($cmd, 1);
+
+    ## Draw the graph of predicted site positions
+    $cmd = $SCRIPTS."/XYgraph";
+    $cmd .= " -format ".$main::param{img_format};
+    $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
+    $cmd .= " -lines -xcol 3 -ycol 4";
+    $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
+    $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak center'";
+    $cmd .= " -title1 'Predicted sites : $motif_id'";
+    $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
+    &one_command($cmd, 1);
+
+    ## TO DO
+    ## Compute the significance of motif occurrences for each weight value
+    &RSAT::message::TimeWarn("Estimating significance of motif hits: NOT YET IMPLEMENTED") if ($main::verbose >= 2);
+  }
 }
+
+
+# ################################################################
+# ## Scan peak sequences with the discovered motif
+# ##
+# ## BEWARE: THIS IS NOT YET WORKING, BECAUSE matrix-scan-quick ONLY
+# ## USES THE FIRST MATRIX OF EACH FILE.
+# sub old_ScanSequences {
+#   $main::param{scan_min_score} = 7.5;
+#   &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 1);
+# #  foreach my $seq_type (@seq_types) {
+#     foreach my $pattern_type (@pattern_types) {
+#       my $cmd = $BIN."/matrix-scan-quick -v 1";
+#       $cmd .= " -i ".$infile{test_seq};
+#       $cmd .= " -m ".$main::outfile{$pattern_type.'_pssm_counts'};
+#       $cmd .= " -bgfile ".$main::param{scan_bg_file};
+#       $cmd .= " ".$main::param{scan_strands};
+#       $cmd .= " -origin center -return sites";
+#       $cmd .= " -t ".$main::param{scan_min_score};
+#       $cmd .= " >".$main::outfile{$pattern_type.'_pssm_sites'};
+#       &one_command($cmd, 1, $main::outfile{$pattern_type.'_pssm_sites'}."_time.txt");
+
+#       ## Compute the positional distribution of sites
+#       $cmd = "awk '{print \(\$6\+\$5\)/2}'";
+#       $cmd .= " ".$main::outfile{$pattern_type.'_pssm_sites'};
+#       $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
+#       $cmd .= " -ci ".$main::param{profiles_ci};
+#       $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_site_distrib'};
+#       &one_command($cmd, 1);
+
+#       ## Draw the graph of predicted site positions
+#       $cmd = $SCRIPTS."/XYgraph";
+#       $cmd .= " -format ".$main::param{img_format};
+#       $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_site_distrib'};
+#       $cmd .= " -lines -xcol 3 -ycol 4";
+#       $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
+#       $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak center'";
+#       $cmd .= " -title1 'Predicted sites : $pattern_type'";
+#       $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_site_distrib_graph'};
+#       &one_command($cmd, 1);
+#     }
+# #  }
+# }
 
 
 ################################################################
@@ -1787,7 +1866,7 @@ sub SynthesisByMotif {
   my @motifs = &ReadDiscoveredMotifs();
 
   ## Load background model for computing the consensus
-  &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 0);
+  &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 2);
   my $bg_model = new RSAT::MarkovModel();
   $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
 
@@ -1886,6 +1965,12 @@ sub Synthesis {
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
 
+  ################################################################
+  ## Report the list if input/output files. This has to be done at the
+  ## end of the process, since it includes a list of discovered motifs
+  ## is not known before having run the motif discovery algorithms.
+  &ReportParamsAndFiles();# if ($main::verbose >= 1);
+
   ## Log files
   print $syn &open_menu_heading($menu_nb++, "<h3>Logs and result files</h3>", 1);
   print $syn "<table class='sortable'>\n";
@@ -1903,12 +1988,6 @@ sub Synthesis {
  		       );
   ## Close the synthetic table
   print $syn "</table></p>\n";
-
-  ################################################################
-  ## Report the list if input/output files. This has to be done at the
-  ## end of the process, since it includes a list of discovered motifs
-  ## is not known before having run the motif discovery algorithms.
-  &ReportParamsAndFiles();# if ($main::verbose >= 1);
 
   print $syn &close_menu_heading();
 
@@ -1932,8 +2011,8 @@ sub SyntheticTableAddRow {
   while ($key = shift (@files)){
     last unless $key;
     $file = shift(@files);
+#    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 5);
     if (-e $file) {
-      &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
       my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn "<a href='".$link."'>[".$key."]</a><br>\n";
     } else {
@@ -2152,8 +2231,10 @@ sub SynthesisPatternDisco {
 	$pattern_table .= "<td align='right'>";
 	$pattern_table .= $start_format;
 	$pattern_table .= "$asmb_or_isol";
+	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
 	$pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
 	$pattern_table .= "&nbsp;"x5;
+	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
 	$pattern_table .= $pattern_info[$logo_nb]->{word};
 	$pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
 	$pattern_table .= $start_format;
@@ -2165,6 +2246,7 @@ sub SynthesisPatternDisco {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
 	$pattern_table .= "<td align='left'>";
 	$pattern_table .= $start_format;
+	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
 	$pattern_table .= $pattern_info[$logo_nb]->{rc_word};
 	$pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
 	$pattern_table .= "</td>\n";
@@ -2183,9 +2265,9 @@ sub SynthesisPatternDisco {
 			  "sig matrices",$main::outfile{$pattern_type.'_pssm_sig'},
 			  "matrices - tab format",$main::outfile{$pattern_type.'_pssm_counts'},
 			  "matrices - transfac format",$main::outfile{$pattern_type.'_pssm_tf'},
-			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
-			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
-			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
+#			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
+#			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
+#			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
 			 );
   } else {
     &SyntheticTableAddRow($pattern_type,
@@ -2194,9 +2276,9 @@ sub SynthesisPatternDisco {
 			  "assembly",$main::outfile{$pattern_type.'_asmb'},
 			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
 			  "matrices",$main::outfile{$pattern_type.'_pssm_counts'},
-			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
-			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
-			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
+#			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
+#			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
+#			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
 			 );
   }
 }
