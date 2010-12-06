@@ -850,7 +850,12 @@ sub OpenIndex {
 ## results: one row per query, one column per output type.
 sub OpenMainIndex {
   &RSAT::util::CheckOutDir($dir{output_root});
-  $outfile{main_index} = $dir{output_root}."/"."result_index.html";
+  $outfile{main_index} = join ("/", $dir{output_root}, join("_", ($taxon||"org_list"),$organism_name, 
+							    "bg", $bg_model, "result_index.html"));
+
+
+  &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
+
   my $main_index = &OpenOutputFile($outfile{main_index});
   print $main_index "<html>\n";
   $html_title = "footprint-discovery";
