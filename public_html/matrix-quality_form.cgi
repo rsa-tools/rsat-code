@@ -138,7 +138,7 @@ my %bg_params =(
     );
 &GetBackgroundModel(\%bg_params);
 
-print "<br/>Note: Only Bernoulli models are supported. Higher-order Markov models are converted into Markov 0 (Bernoulli).";
+#print "<br/>Note: Only Bernoulli models are supported. Higher-order Markov models are converted into Markov 0 (Bernoulli).";
 print "</fieldset><p/>";
 
 
