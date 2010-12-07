@@ -20,3 +20,4 @@ jaspar_pbm-homeo_mouse	tf	JASPAR/jaspar_pbm-homeo_mouse_2009_10.tf	JASPAR PBM (U
 jaspar_pbm-hlh_nematode	tf	JASPAR/jaspar_pbm-hlh_nematode_2009_10.tf	JASPAR PBM (UNIPROBE) HLH Nematode	2009_10
 DMMPMM_drosophila	tf	DMMPMM_drosophila/dmmpmm_PCM.tf	Drosophila DMMPMM (http://line.imb.ac.ru/DMMPMM/)	2010_11
 IDMMPMM_drosophila	tf	DMMPMM_drosophila/idmmpmm_PCM.tf	Drosophila IDMMPMM (http://line.imb.ac.ru/DMMPMM/)	2010_11
+regulonDB	tf	REGULONDB/regulonDB_dec2010.tf	RegulonDB prokaryotes	2010_12
