@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.26 2010/08/17 23:54:08 jvanheld Exp $
+# $Id: display-graph,v 1.27 2010/12/08 13:08:48 rsat Exp $
 #
 ############################################################
 
@@ -657,13 +657,13 @@ Name of the output file.
 sub Verbose {
     print STDOUT "; display-graph ";
     &PrintArguments(STDOUT);
-    if (defined(%main::infile)) {
+    if ((%main::infile)) {
 	print STDOUT "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print STDOUT ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if ((%main::outfile)) {
 	print STDOUT "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print STDOUT ";\t$key\t$value\n";
