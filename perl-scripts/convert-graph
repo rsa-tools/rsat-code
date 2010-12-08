@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.61 2010/11/16 15:03:14 rsat Exp $
+# $Id: convert-graph,v 1.62 2010/12/08 13:08:48 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -823,13 +823,13 @@ With this option, each pathway of the pathway file will be considered separately
 sub Verbose {
     print $main::verbose_out "; convert-graph ";
     &PrintArguments($main::verbose_out);
-    if (defined(%main::infile)) {
+    if ((%main::infile)) {
 	print $main::verbose_out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::verbose_out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if ((%main::outfile)) {
 	print $main::verbose_out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::verbose_out ";\t$key\t$value\n";
