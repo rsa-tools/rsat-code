@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.99 2010/12/06 07:26:17 jvanheld Exp $
+# $Id: peak-motifs,v 1.100 2010/12/08 05:12:26 rsat Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -145,37 +145,41 @@ package main;
 
   ################################################################
   ## Supported tasks
-  @supported_tasks = ("all",
-		      "purge",
-		      "seqlen",
-		      "composition",
-		      "ref_motifs",
+  @default_tasks = ("purge",
+		    "seqlen",
+		    "composition",
+		    "ref_motifs",
+		    
+		    ## Pattern discovery algorithms
+		    "oligos",
+		    "dyads",
+		    "positions",
+		    "local_words",
+		    "oligo_diff",
+		    "merge_words",
 
-		      ## Pattern discovery algorithms
-		      "oligos",
-		      "dyads",
-		      "positions",
-		      "local_words",
-		      "oligo_diff",
-		      "merge_words",
-
-		      "meme_bg",
-		      "meme",
-
-		      "merge_motifs",
-		      "split_motifs",
-		      "collect_motifs",
+		    "merge_motifs",
+		    "split_motifs",
+		    "collect_motifs",
 #		      "cluster_motifs",
-		      "motifs_vs_ref",
-		      "motifs_vs_db",
+		    "motifs_vs_ref",
+		    "motifs_vs_db",
 #		      "motif_compa",
+		    
+		    "scan",
+		    
+		    "timelog",
+		    "synthesis",
+		    );
 
-		      "scan",
-
-		      "timelog",
-		      "synthesis",
-		      "clean_seq",
-		     );
+  ## Extra tasks are only executed on explicit demand of the user
+  @extra_tasks = ("all",
+		  "clean_seq",
+		  "meme_bg",
+		  "meme");
+  
+  ## All the supported tasks
+  @supported_tasks = (@default_tasks, @extra_tasks);
 
   my @future_tasks = qw(
 			to_bed
@@ -2632,13 +2636,13 @@ on the prior execution of some other tasks in the workflow. Selecting
 tasks before their prerequisite tasks have been completed will provoke
 fatal errors.
 
-I<Avilable Tasks.>
+B<Default tasks>
 
 =over
 
 =item I<all> (default)
 
-Run all supported tasks.
+Run all the default tasks.
 
 =item I<purge>
 
@@ -2788,13 +2792,35 @@ Generate a log file summarizing the time spent in the different tasks.
 Generate the HTML file providing a synthesis of the results and
 pointing towards the individual result files.
 
+=back
+
+B<Extra tasks>
+
+A few extra tasks are available, which are not executed by default. Those
+tasks are executed only when they are explicitly invoked with the option
+I<-task>, they are not called with the option "-task all".
+
+=over
+
 =item I<clean_seq>
 
 Delete the purged sequence files after the analysis, in order to save
 space.
 
-This task is executed only when it is called explicitly. It is not
-part of the tasks running with the option "-task all".
+
+=item I<meme_bg>
+
+Compute meme background model from the input sequences.
+
+=item I<meme>
+
+Run the motif discovery program MEME on the input sequecnes. 
+
+B<Beware>: the complexity of MEME is quadratic: the comuting time increases as
+the square of sequence size. It is thus not recommended to use MEME for data
+sets exceeding 1Mb. If the input set contains many peaks, the option -task
+meme can be combined with a restriction on the number of top peaks to be
+considered (e.g. -top_peaks 500).
 
 =back
 
@@ -3057,9 +3083,12 @@ sub CheckArguments {
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
-    %task = %supported_task;
-    delete($task{all});
-    delete($task{clean_seq});
+      foreach my $task (@default_tasks) {
+	  $task{$task} = 1;
+      }
+#    %task = %supported_task;
+#    delete($task{all});
+#    delete($task{clean_seq});
     if (defined($main::infile{ctrl_seq})) {
       delete($task{oligos});
       delete($task{dyads});
