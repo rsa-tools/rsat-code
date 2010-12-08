@@ -47,7 +47,7 @@ foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-} 
+}
 
 
 ################################################################
@@ -136,49 +136,45 @@ exit(0);
 
 sub Panel1 {
 
-print "<fieldset>
-<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>";
-print "<B>Title</B>\n";
-print $query->textfield(-name=>'title',
-			-default=>$default{title},
-			-size=>15);
+  print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
+  print "<B>Title</B>\n";
+  print $query->textfield(-name=>'title',
+			  -default=>$default{title},
+			  -size=>15);
 
-print "<p/>\n";
+  print "<p/>\n";
 
-&MultiSequenceChoice("Peak sequences",1);
+  &MultiSequenceChoice("Peak sequences",1);
 
-print '
-<b><font style="font-size:80%"><a href=""> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b> 
-</br>';
-print "</fieldset><p/>";
+  print '<b><font style="font-size:80%"><a href=""> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b></br>';
+  print "</fieldset><p/>";
 }
 
 ##########################################
 sub Panel2 {
-print '	
-<p class="clear"></p>
-<div class="menu_heading_closed" onclick="toggleMenu(\'101\')" id="heading101"><b>Reduce input peak sequences </b> </div>
-<div id="menu101" class="menu_collapsible">';
-	
-print "<p/><fieldset>
-<legend><b><a href='help.peak-motifs.html#tasks'>Restrict the input dataset  </a></b></legend>";
+  print "<p class=\"clear\"></p>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>Reduce input peak sequences </b> </div>\n";
+  print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html#thresholds'>Number of top sequences to retain </A>&nbsp;</B>\n";
-print  $query->textfield(-name=>'top_sequences',
-							      -default=>$default{top_sequences},
-							      -size=>3);
+  print "<p/><fieldset>\n";
+  print "<legend><b><a href='help.peak-motifs.html#tasks'>Restrict the input dataset  </a></b></legend>\n";
 
-print "<br/>";	
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html#thresholds'>Number of top sequences to retain </A>&nbsp;</B>\n";
+  print  $query->textfield(-name=>'top_sequences',
+			   -default=>$default{top_sequences},
+			   -size=>3);
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html#thresholds'>Cut peak sequences:</A> +/- &nbsp;</B>\n";
-print  $query->textfield(-name=>'max_seq_len',
-							      -default=>$default{max_seq_len},
-							      -size=>3);
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B>bp around the center of each peak </b>\n";
+  print "<br/>";
+
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html#thresholds'>Cut peak sequences:</A> +/- &nbsp;</B>\n";
+  print  $query->textfield(-name=>'max_seq_len',
+			   -default=>$default{max_seq_len},
+			   -size=>3);
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<B>bp around the center of each peak </b>\n";
 
 
-print "</fieldset><p/>";
-print '</div>
+  print "</fieldset><p/>";
+  print '</div>
 </div>
 <p class="clear"></p>';
 }
@@ -188,7 +184,6 @@ sub Panel3 {
 print '
 <div class="menu_heading_closed" onclick="toggleMenu(\'102\')" id="heading102"><b>Change motif discovery parameters </b> </div>
 <div id="menu102" class="menu_collapsible">';
-	
 
 print "<p/><fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Discover motifs </a></b></legend>";
