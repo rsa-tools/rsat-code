@@ -148,6 +148,10 @@ if ($query->param('scanopt2') ){
 }
 $parameters .= " -scanopt ".$tag2." ".$scanopt2   if ( $sequence_file2 && $scanopt2 ) ;
 
+################################################################
+  ## Markov order
+  my $markov_order = $query->param('markov_order');
+  &RSAT::error::FatalError("Markov model should be a Natural number") unless &IsNatural($markov_order);
 
 
 ################################################################
@@ -160,7 +164,8 @@ if ($bg_method eq "from_matrix") {
   local $organism_name = $query->param("organism");
   local $noov = "ovlp";
   local $background_model = $query->param("background");
-  local $oligo_length = 1;
+  #local $oligo_length = 1;
+  local $oligo_length = $markov_order + 1;
   $bg_file = &ExpectedFreqFile($organism_name,
 			       $oligo_length, $background_model,
 			       noov=>$noov, str=>"-1str");

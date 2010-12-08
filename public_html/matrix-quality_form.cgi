@@ -45,7 +45,7 @@ $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
 $default{organism}="Escherichia_coli_K12";
 #$default{html_title}="";
-
+$default{markov_order} = "0";
 
 
 ### replace defaults by parameters from the cgi call, if defined
