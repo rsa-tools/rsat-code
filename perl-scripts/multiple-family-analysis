@@ -6,7 +6,7 @@ die "multiple-family-analysis has been renamed gene-cluster-motifs, please use t
 
 # ############################################################
 # #
-# # $Id: multiple-family-analysis,v 1.294 2010/10/19 21:05:38 jvanheld Exp $
+# # $Id: multiple-family-analysis,v 1.295 2010/12/08 04:54:19 rsat Exp $
 # #
 # # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 # #
@@ -40,7 +40,7 @@ die "multiple-family-analysis has been renamed gene-cluster-motifs, please use t
 # {
 
 #   local $start_time = &RSAT::util::StartScript();
-#   local $program_version = do { my @r = (q$Revision: 1.294 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#   local $program_version = do { my @r = (q$Revision: 1.295 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 #   ## Paths of the programs called by multiple-family-analysis
 #   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -3098,9 +3098,9 @@ die "multiple-family-analysis has been renamed gene-cluster-motifs, please use t
 # ################################################################
 # ## Check MEME path
 # sub check_meme_path {
-#   $meme_dir = $ENV{meme_dir};
+#   $meme_dir = $ENV{MEME_DIRECTORY};
 #   unless ($meme_dir) {
-#     &RSAT::error::FatalError("The variable meme_dir is not defined. Please check the RSAT config file ".$ENV{RSAT}."/RSAT_config.props");
+#     &RSAT::error::FatalError("The variable MEME_DIRECTORY is not defined. Please check the RSAT config file ".$ENV{RSAT}."/RSAT_config.props");
 #   }
 #   $fasta_get_markov = $meme_dir."/fasta-get-markov";
 # #  $meme_cmd = $meme_dir."/meme";
