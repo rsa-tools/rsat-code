@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.65 2010/11/28 02:14:57 rsat Exp $
+# $Id: compare-classes,v 1.66 2010/12/08 13:08:48 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -992,7 +992,7 @@ sub ReadArguments {
 sub Verbose {
     print $out "; compare-classes ";
     &PrintArguments($out);
-    if (defined(%infile)) {
+    if ((%infile)) {
         print $out "; Input files\n";
         while (($key,$value) = each %infile) {
             print $out ";\t$key\t$value\n";
@@ -1070,7 +1070,7 @@ sub Verbose {
 	print $out "; matrix\t", join ";", @matrix_keys, "\n";
     }
 
-    if (defined(%outfile)) {
+    if ((%outfile)) {
         print $out "; Output files\n";
         while (($key,$value) = each %outfile) {
             print $out ";\t$key\t$value\n";

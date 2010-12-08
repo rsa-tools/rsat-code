@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.56 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: compare-graphs,v 1.57 2010/12/08 13:08:48 rsat Exp $
 #
 ############################################################
 
@@ -1117,13 +1117,13 @@ sub Verbose {
     }
     print $this_out "; compare-graphs ";
     &PrintArguments($this_out);
-    if (defined(%main::infile)) {
+    if ((%main::infile)) {
 	print $this_out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $this_out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if ((%main::outfile)) {
 	print $this_out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $this_out ";\t$key\t$value\n";
