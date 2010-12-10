@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.38 2010/11/16 15:03:14 rsat Exp $
+# $Id: random-graph,v 1.39 2010/12/10 09:53:23 rsat Exp $
 #
 ############################################################
 
@@ -728,13 +728,13 @@ Allows self loops (by default, self loops are not allowed). For a real Erdos-Ren
 sub Verbose {
     print $main::verbose_out "; random-graph ";
     &PrintArguments($main::verbose_out);
-    if (defined(%main::infile)) {
+    if ((%main::infile)) {
 	print $main::verbose_out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::verbose_out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if ((%main::outfile)) {
 	print $main::verbose_out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::verbose_out ";\t$key\t$value\n";
