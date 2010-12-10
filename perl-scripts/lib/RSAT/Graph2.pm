@@ -455,7 +455,8 @@ sub create_random_graph {
   my $req_source_nodes = $req_nodes;
   my $req_target_nodes = $req_nodes;
   my @labels = @{$weights_ref}; 
-  my @degree = ();
+  my %degree = ();
+  my %seen_edge = ();
   my $iterations_max = 10;
   my %nodeset = ();
   my @random_weights = 0 .. $req_edges-1;
@@ -515,6 +516,7 @@ sub create_random_graph {
   my %not_0_nodes = %nodeset;
   my $iteration_cpt = 0;
   while (scalar keys %not_0_nodes > 0 && $iteration_cpt < $iterations_max) {
+    
     %not_0_nodes = %nodeset;
     %degree = ();
     for (my $i = 0; $i < $req_edges; $i++) {
