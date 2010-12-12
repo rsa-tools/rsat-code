@@ -291,44 +291,41 @@ print '
 
 }
 
-##########################################
+################################################################
+## Comparisons with motif databases
 sub Panel4 {
-print '
+  print '
 <br/>
 <div>';
-print '
-<div class="menu_heading_closed" onclick="toggleMenu(\'103\')" id="heading103"> <b>Compare discovered motifs with databases (e.g. against Jaspar)</b> </div>
+  print '
+<div class="menu_heading_closed" onclick="toggleMenu(\'103\')" id="heading103">
+<b>Compare discovered motifs with databases (e.g. against Jaspar) or custom reference motifs</b></div>
 <div id="menu103" class="menu_collapsible">';
-	
 
-#### Tasks
+  ## Tasks
+  print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Compare motifs </a></b></legend>";
 
-##
-print "<fieldset>
-<legend><b><a href='help.peak-motifs.html#tasks'>Compare motifs </a></b></legend>";
+  ### compare motifs
+#  print $query->checkbox(-name=>'compare_motif_db',
+#			 -checked=>$default{compare_motif_db},
+#			 -label=>'');
+#  print "&nbsp;<b>Compare discovered motifs with known motifs from databases</b> <a href=''>[compare-matrices]</a>\n";
 
-#
-### compare motifs
-#
-print $query->checkbox(-name=>'compare_motif_db',
-		       -checked=>$default{compare_motif_db},
-		       -label=>'');  
-print "&nbsp;<b>Compare discovered motifs with known motifs from databases</b> <a href=''>[compare-matrices]</a>\n";
+  print "<p/> ";
+#  print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
+  print "<a href=''><b>Compare discovered motifs with known motifs from databases</b></a><br/>";
 
-print "<p/> ";
-print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
-
-## load the various databases that can be compared against
+  ## load the various databases that can be compared against
   &MatrixDBcheckBox();
 
-print "<p/> ";
-print "<a href=''><b>Add known reference motifs or your own motif database:</b></a><br/>";
-print $query->filefield(-name=>'ref_motif',
+  print "<p/> ";
+  print "<a href=''><b>Add known reference motifs or your own motif database:</b></a><br/>";
+  print $query->filefield(-name=>'ref_motif',
 			-size=>10);
-print "(matrices should be in <b>Transfac format</b>)";
-print "</fieldset><p/>";
+  print "(matrices should be in <b>Transfac format</b>)";
+  print "</fieldset><p/>";
 
-print '	
+  print '
 </div>
 </div>
 <p class="clear"></p>';
