@@ -89,7 +89,7 @@ if ($query->param('uploaded_file')) {
 #	push @gene_selection, $_;
     }
     close QUERY;
-    
+
 } else {
     my $gene_selection = $query->param('gene_selection');
     $gene_selection =~ s/\r/\n/g;
@@ -143,6 +143,15 @@ if ($query->param('sequence_type')) {
 	$type = $sequence_position;
     } elsif ($sequence_type eq 'gene') {
 	$feattype = 'gene';
+	$type = 'feature';
+    } elsif ($sequence_type eq 'transcript') {
+	$feattype = 'transcript';
+	$type = 'feature';
+    } elsif ($sequence_type eq 'mRNA') {
+	$feattype = 'mrna';
+	$type = 'feature';
+    } elsif ($sequence_type eq 'CDS') {
+	$feattype = 'cds';
 	$type = 'feature';
     } elsif ($sequence_type eq 'intron') {
 	$feattype = 'intron';
@@ -336,7 +345,7 @@ sub Retrieve {
 
     ## Send the request to the server
     my $som = $soap->retrieve_ensembl_seq({'request' => \%args});
-    
+
     ## get the ticket
     my $results = $som->get_response();
 

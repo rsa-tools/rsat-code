@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.76 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.77 2010/12/12 16:59:28 oly Exp $
 #
 # Time-stamp
 #
@@ -40,6 +40,7 @@ package main;
   local $verbose = 0;
   local $feattype = "mrna";    # other values: gene, intron, exon, cds and utr
   local %supported_feattype = ("gene"=>1,
+			       "transcript"=>1,
 			       "mrna"=>1,
 			       "cds"=>1,
 			       "intron"=>1,
@@ -646,7 +647,7 @@ sub Main {
   unless ($description) {
       $description = "no description";
   }
-  
+
   my $rsat_strand;
   if ($strand == 1) {
     $rsat_strand = "D";
@@ -661,29 +662,31 @@ sub Main {
   }
 
   if ($feattype eq "gene") {
-      my $sequence;
-      my $fasta_header;
-      my $size;
-      if ($type eq "feature") {
-	  $sequence = &GetSequence($gene_start, $gene_end);
-	  $size = $gene_end - $gene_start + 1;
-	  if ($label eq 'query') {
-	    $fasta_header = ">$query $header_org$gene_id-$gene_name\t$gene_id; size: $size; location: $chromosome_name $gene_start $gene_end $rsat_strand";
-	  } else {
-	    $fasta_header = ">$header_org$gene_id-$gene_name\t$gene_id; size: $size; location: $chromosome_name $gene_start $gene_end $rsat_strand";
-	  }
-	} else {
-	  my ($left, $right) = &GetLimits($gene_id, $gene_start, $gene_end);
+    my $sequence;
+    my $fasta_header;
+    my $size;
 
-	  # Get sequence (repeat masked or not)
-	  $sequence = &GetSequence($left, $right);
-	  $size = $new_to - $new_from + 1;
-	  if ($label eq 'query') {
-	    $fasta_header = ">$query $header_org$gene_id-$gene_name\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
-	  } else {
-	    $fasta_header = ">$header_org$gene_id-$gene_name\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
-	  }
+    # Output complete gene sequence
+    if ($type eq "feature") {
+      $sequence = &GetSequence($gene_start, $gene_end);
+      $size = $gene_end - $gene_start + 1;
+      if ($label eq 'query') {
+	$fasta_header = ">$query $header_org$gene_id-$gene_name\t$gene_id; size: $size; location: $chromosome_name $gene_start $gene_end $rsat_strand";
+      } else {
+	$fasta_header = ">$header_org$gene_id-$gene_name\t$gene_id; size: $size; location: $chromosome_name $gene_start $gene_end $rsat_strand";
       }
+
+    } else { # Output upstream or downstream sequence
+      my ($left, $right) = &GetLimits($gene_id, $gene_start, $gene_end);
+      # Get sequence (repeat masked or not)
+      $sequence = &GetSequence($left, $right);
+      $size = $new_to - $new_from + 1;
+      if ($label eq 'query') {
+	$fasta_header = ">$query $header_org$gene_id-$gene_name\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+      } else {
+	$fasta_header = ">$header_org$gene_id-$gene_name\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+      }
+    }
 
     &PrintSequence ($sequence, $fasta_header);
 
@@ -707,390 +710,531 @@ sub Main {
     %seq_limits = ();
 
     foreach my $transcript(@transcripts) {
-	my $transcript_id = $transcript->display_id();
-	my $transcript_start = $transcript->start();
-	my $transcript_end = $transcript->end();
+      my $transcript_id = $transcript->display_id();
+      my $transcript_start = $transcript->start();
+      my $transcript_end = $transcript->end();
 
-	if ($main::verbose >= 3) {
-	  &RSAT::message::Info ("Transcript:");
-	  &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
-	  &RSAT::message::Info (join("\t", $transcript_id, $transcript_start, $transcript_end));
-	}
+      if ($main::verbose >= 3) {
+	&RSAT::message::Info ("Transcript:");
+	&RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+	&RSAT::message::Info (join("\t", $transcript_id, $transcript_start, $transcript_end));
+      }
 
-	# Find all transcripts minimal limits
-	if ($strand == 1 && $transcript_start > $three_primest_start) {
-	    $three_primest_id = $transcript_id;
-	    $three_primest_start = $transcript_start;
-	} elsif ($strand == -1 && $transcript_end < $three_primest_start) {
-	    $three_primest_id = $transcript_id;
-	    $three_primest_start = $transcript_end;
-	}
-	if ($strand == 1 && $transcript_end < $five_primest_end) {
-	    $five_primest_id = $transcript_id;
-	    $five_primest_end = $transcript_end;
-	} elsif ($strand == -1 && $transcript_start > $five_primest_end) {
-	    $five_primest_id = $transcript_id;
-	    $five_primest_end = $transcript_start;
-	}
+      # Find all transcripts minimal limits
+      if ($strand == 1 && $transcript_start > $three_primest_start) {
+	$three_primest_id = $transcript_id;
+	$three_primest_start = $transcript_start;
+      } elsif ($strand == -1 && $transcript_end < $three_primest_start) {
+	$three_primest_id = $transcript_id;
+	$three_primest_start = $transcript_end;
+      }
+      if ($strand == 1 && $transcript_end < $five_primest_end) {
+	$five_primest_id = $transcript_id;
+	$five_primest_end = $transcript_end;
+      } elsif ($strand == -1 && $transcript_start > $five_primest_end) {
+	$five_primest_id = $transcript_id;
+	$five_primest_end = $transcript_start;
+      }
 
-	if ($feattype eq 'mrna' && $all_transcripts) {
+      if ($feattype eq 'transcript' && $all_transcripts) {
+	# Output complete transcript sequence
+	if ($type eq "feature") {
+	  $seq_limits{$transcript_id} = [$transcript_start, $transcript_end];
+
+	  unless ($uniq_seqs) {
+	    $sequence = &GetSequence($transcript_start, $transcript_end);
+	    $size = $transcript_end - $transcript_start + 1;
+	    if ($label eq 'query') {
+	      $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id\t$gene_id-$transcript_id; size: $size; location: $chromosome_name $transcript_start $transcript_end $rsat_strand";
+	    } else {
+	      $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id\t$gene_id-$transcript_id; size: $size; location: $chromosome_name $transcript_start $transcript_end $rsat_strand";
+	    }
+	    &PrintSequence ($sequence, $fasta_header);
+	  }
+
+	} else { # Output upstream or downstream sequence
 	  my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $transcript_start, $transcript_end);
 
 	  $seq_limits{$transcript_id} = [$left, $right];
 
-	    unless ($uniq_seqs) {
-		# Output sequence
-		$sequence = &GetSequence($left, $right);
-		my $size = $new_to - $new_from + 1;
-		my $fasta_header;
-		if ($label eq 'query') {
-		  $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
-		} else {
-		  $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
-		}
-
-		&PrintSequence ($sequence, $fasta_header);
-	    }
-	}
-
-	# Introns
-	if ($feattype eq "intron") {
-	    my $i = 0; # index for introns since they don't have an id in ensembl
-	    my $intron1;
-	    my $intron1_id;
-	    my $start1;
-	    my $end1;
-	    if ($strand == 1) {
-		$start1 = $transcript_end;
+	  unless ($uniq_seqs) {
+	    $sequence = &GetSequence($left, $right);
+	    my $size = $new_to - $new_from + 1;
+	    my $fasta_header;
+	    if ($label eq 'query') {
+	      $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 	    } else {
-		$end1 = $transcript_start;
+	      $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 	    }
-
-	    foreach my $intron (@{$transcript->get_all_Introns()}) {
-		$i++;
-		my $intron_start = $intron->start();
-		my $intron_end = $intron->end();
-		my $intron_id = $transcript_id."-".$i;
-
-		if ($main::verbose >= 3) {
-		  &RSAT::message::Info ("Intron:");
-		  &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
-		  &RSAT::message::Info (join("\t", $intron_id, $intron_start, $intron_end));
-		}
-
-		if ($first_intron) {
-		    if ($strand == 1) {
-			if ($intron->start() < $start1) {
-			    $intron1 = $intron;
-			    $intron1_id = $transcript_id."-".$i;
-			    $start1 = $intron->start();
-			    $end1 = $intron->end();
-			}
-		    } else {
-			if ($intron->end() > $end1) {
-			    $intron1 = $intron;
-			    $intron1_id = $transcript_id."-".$i;
-			    $start1 = $intron->start();
-			    $end1 = $intron->end();
-			}
-		    }
-		}
-
-		unless ($first_intron) {
-
-		    $seq_limits{$intron_id} = [$intron_start, $intron_end];
-
-		    unless ($uniq_seqs) {
-			$sequence = &GetSequence($intron->start(), $intron->end());
-			my $size = ($intron->end() - $intron->start()) + 1;
-
-			my $fasta_header;
-			if ($label eq 'query') {
-			  $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand";
-			} else {
-			  $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand";
-			}
-
-			&PrintSequence ($sequence, $fasta_header);
-		    }
-		}
-	    }
-
-	    if ($first_intron && $i != 0) {
-	      if ($main::verbose >= 3) {
-		&RSAT::message::Info ("First intron:");
-		&RSAT::message::Info (join("\t", "# ID", "Start", "End"));
-		&RSAT::message::Info (join("\t", $intron1_id, $start1, $end1));
-	      }
-
-		$seq_limits{$intron1_id} = [$start1, $end1];
-
-		unless ($uniq_seqs) {
-		    $sequence = &GetSequence($start1, $end1);
-		    my $size = ($end1 - $start1) + 1;
-
-		    my $fasta_header;
-		    if ($label eq 'query') {
-		      $fasta_header = ">$query $header_org$gene_id-$gene_name-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand";
-		    } else {
-		      $fasta_header = ">$header_org$gene_id-$gene_name-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand";
-		    }
-
-		    &PrintSequence ($sequence, $fasta_header);
-		}
-	    }
-
-	    if ($i == 0) {
-		&RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no intron");
-	    }
-	}
-
-	my $coding_region_start = $transcript->coding_region_start();
-	my $coding_region_end = $transcript->coding_region_end();
-
-	if (($coding_region_start) && ($coding_region_end)) {
-	  if ($main::verbose >= 3) {
-	    &RSAT::message::Info ("Coding region start: $coding_region_start") ;
-	    &RSAT::message::Info ("Coding region end: $coding_region_end");
+	    &PrintSequence ($sequence, $fasta_header);
 	  }
-	} else {
-	    &RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no coding region") unless ($feattype eq "mrna");
 	}
-
-	# Exons
-	if ($feattype eq "exon") {
-	    foreach my $exon (@{$transcript->get_all_Exons()}) {
-		my $exon_id = $exon->stable_id();
-		my $exon_start = $exon->start();
-		my $exon_end = $exon->end();
-
-		if ($main::verbose >= 3) {
-		  &RSAT::message::Info ("Exon");
-		  &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
-		  &RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end));
-		}
-		if (($non_coding) && ($coding_region_start) && ($coding_region_end) ) {
-		    if ($coding_region_start > $exon_start && $coding_region_start < $exon_end) {
-
-			$seq_limits{$exon_id} = [$exon_start, $coding_region_start - 1];
-
-			unless ($uniq_seqs) {
-			    $sequence = &GetSequence($exon->start(), $coding_region_start - 1);
-			    my $non_coding_exon_right = $coding_region_start - 1;
-			    my $size = $coding_region_start - $exon->start();
-
-			    my $fasta_header;
-			    if ($label eq 'query') {
-			      $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand";
-			    } else {
-			      $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand";
-			    }
-
-			    &PrintSequence ($sequence, $fasta_header);
-			}
-		    } elsif ($coding_region_end < $exon_end && $coding_region_end > $exon_start) {
-
-			$seq_limits{$exon_id} = [$coding_region_end + 1, $exon_end];
-
-			unless ($uniq_seqs) {
-			    $sequence = &GetSequence($coding_region_end + 1, $exon_end);
-			    my $non_coding_exon_left = $coding_region_end + 1;
-			    my $size = $exon->end() - $coding_region_end;
-
-			    my $fasta_header;
-			    if ($label eq 'query') {
-			      $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand";
-			    } else {
-			      $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand";
-			    }
-
-			    &PrintSequence ($sequence, $fasta_header);
-			}
-
-		    } elsif ($coding_region_start > $exon_end) {
-
-			$seq_limits{$exon_id} = [$exon_start, $exon_end];
-
-			unless ($uniq_seqs) {
-			    $sequence = &GetSequence($exon->start(), $exon->end());
-			    my $size = ($exon->end() - $exon->start()) + 1;
-
-			    my $fasta_header;
-			    if ($label eq 'query') {
-			      $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
-			    } else {
-			      $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
-			    }
-
-			    &PrintSequence ($sequence, $fasta_header);
-			}
-
-		    } elsif ($coding_region_end < $exon_start) {
-
-			$seq_limits{$exon_id} = [$exon_start, $exon_end];
-
-			unless ($uniq_seqs) {
-			    $sequence = &GetSequence($exon->start(), $exon->end());
-			    my $size = ($exon->end() - $exon->start()) + 1;
-
-			    my $fasta_header;
-			    if ($label eq 'query') {
-			      $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
-			    } else {
-			      $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
-			    }
-
-			    &PrintSequence ($sequence, $fasta_header);
-			}
-		    }
-		} else {
-
-		    $seq_limits{$exon_id} = [$exon_start, $exon_end];
-
-		    unless ($uniq_seqs) {
-			$sequence = &GetSequence($exon->start(), $exon->end());
-			my $size = ($exon->end() - $exon->start()) + 1;
-
-			my $fasta_header;
-			if ($label eq 'query') {
-			  $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
-			} else {
-			  $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
-			}
-
-			&PrintSequence ($sequence, $fasta_header);
-		    }
-		}
-	    }
-	}
-
-	# UTR
-	if (($feattype eq "utr") && ($coding_region_start) && ($coding_region_end)) {
-	    my $utr5_start;
-	    my $utr5_end;
-	    my $utr3_start;
-	    my $utr3_end;
-	    my $utr5_flag = 0;
-	    my $utr3_flag = 0;
-	    if ($strand == 1) {
-		$utr5_start = $transcript_start;
-		$utr5_end = $coding_region_start - 1;
-		unless ($transcript_start == $coding_region_start) {
-		    $utr5_flag = 1;
-		}
-		$utr3_start = $coding_region_end + 1;
-		$utr3_end = $transcript_end;
-		unless ($transcript_end == $coding_region_end) {
-		    $utr3_flag = 1;
-		}
-	    } else {
-		unless ($transcript_start == $coding_region_start) {
-		    $utr3_flag = 1;
-		}
-		$utr3_start = $transcript_start;
-		$utr3_end = $coding_region_start - 1;
-		unless ($transcript_end == $coding_region_end) {
-		    $utr5_flag = 1;
-		}
-		$utr5_start = $coding_region_end + 1;
-		$utr5_end = $transcript_end;
-	    }
-
-	    my $utr5_id = $transcript_id."-5prime_UTR";
-	    my $utr3_id = $transcript_id."-3prime_UTR";
-
-	    if (($utr5_flag == 1) && (($utr eq 'all') || ($utr eq '5prime'))) {
-		$seq_limits{$utr5_id} = [$utr5_start, $utr5_end];
-	    }
-	    if (($utr3_flag == 1) && (($utr eq 'all') || ($utr eq '3prime'))) {
-		$seq_limits{$utr3_id} = [$utr3_start, $utr3_end];
-	    }
-
-	    unless ($uniq_seqs) {
-		if (($utr5_flag == 1) && (($utr eq 'all') || ($utr eq '5prime'))) {
-		    $utr5_sequence = &GetSequence($utr5_start, $utr5_end);
-		    my $utr5_size = $utr5_end - $utr5_start + 1;
-
-		    my $utr5_fasta_header;
-		    if ($label eq 'query') {
-		      $utr5_fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand";
-		    } else {
-		      $utr5_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand";
-		    }
-
-		    &PrintSequence ($utr5_sequence, $utr5_fasta_header);
-		}
-		if (($utr3_flag == 1) && (($utr eq 'all') || ($utr eq '3prime'))) {
-		    $utr3_sequence = &GetSequence($utr3_start, $utr3_end);
-		    my $utr3_size = $utr3_end - $utr3_start + 1;
-
-		    my $utr3_fasta_header;
-		    if ($label eq 'query') {
-		      $utr3_fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand";
-		    } else {
-		      $utr3_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand";
-		    }
-
-		    &PrintSequence ($utr3_sequence, $utr3_fasta_header);
-		}
-	    }
-	}
-
-	# CDS
-	if (($feattype eq 'cds') && ($coding_region_start) && ($coding_region_end)) {
-	    my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $coding_region_start, $coding_region_end);
-	    my $cds_id = $transcript->translation()->stable_id();
-
-	    $seq_limits{$cds_id} = [$left, $right];
-
-	    unless ($uniq_seqs) {
-		# Output sequence
-		$sequence = &GetSequence($left, $right);
-		my $size = $new_to - $new_from + 1;
-
-		my $fasta_header;
-		if ($label eq 'query') {
-		  $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
-		} else {
-		  $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
-		}
-
-		&PrintSequence ($sequence, $fasta_header);
-	    }
-	}
-    }
-
-    if ($feattype eq 'mrna' && !$all_transcripts) {
-
-      if ($main::verbose >= 3) {
-	&RSAT::message::Info ("Three_primest transcript start: $three_primest_start");
-	&RSAT::message::Info ("Five_primest transcript end: $five_primest_end");
       }
 
-	my $ref_transcript;
+      if ($feattype eq 'mrna' && $all_transcripts) {
 
+	# Output complete mRNA sequence (introns removed)
+	if ($type eq "feature") {
+	  my $mrna_sequence = '';
+	  my $mrna_size = 0;
+
+	  foreach my $exon (@{$transcript->get_all_Exons()}) {
+	    my $exon_id = $exon->stable_id();
+	    my $exon_start = $exon->start();
+	    my $exon_end = $exon->end();
+
+	    if ($main::verbose >= 3) {
+	      &RSAT::message::Info ("Exon");
+	      &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+	      &RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end));
+	    }
+
+	    $seq_limits{$exon_id} = [$exon_start,$exon_end];
+	    $sequence = &GetSequence($exon_start, $exon_end);
+	    my $size = $exon_end - $exon_start + 1;
+	    $mrna_size = $mrna_size + $size;
+	    if ($strand == 1) {
+	      $mrna_sequence = $mrna_sequence.$sequence;
+	    } else {
+	      $mrna_sequence = $sequence.$mrna_sequence;
+	    }
+	  }
+
+	  unless ($uniq_seqs) {
+	    if ($label eq 'query') {
+	      $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-mRNA\t$gene_id-$transcript_id-mRNA; size: $mrna_size; location: $chromosome_name $transcript_start $transcript_end $rsat_strand";
+	    } else {
+	      $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-mRNA\t$gene_id-$transcript_id-mRNA; size: $mrna_size; location: $chromosome_name $transcript_start $transcript_end $rsat_strand";
+	    }
+	    &PrintSequence ($mrna_sequence, $fasta_header);
+	  }
+
+	} else { # Output upqtream or downstream sequence
+	  my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $transcript_start, $transcript_end);
+
+	  $seq_limits{$transcript_id} = [$left, $right];
+
+	  unless ($uniq_seqs) {
+	    # Output upstream or downstream sequence
+	    $sequence = &GetSequence($left, $right);
+	    my $size = $new_to - $new_from + 1;
+	    my $fasta_header;
+	    if ($label eq 'query') {
+	      $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	    } else {
+	      $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	    }
+	    &PrintSequence ($sequence, $fasta_header);
+	  }
+	}
+      }
+
+      # Introns
+      if ($feattype eq "intron") {
+	my $i = 0; # index for introns since they don't have an id in ensembl
+	my $intron1;
+	my $intron1_id;
+	my $start1;
+	my $end1;
 	if ($strand == 1) {
-	    if ($five_primest_end <= $three_primest_start) {
-		&RSAT::message::Warning ("Gene $gene_id has disjoint alternative transcripts; Retrieve sequences relative to each alternative transcript (-alltranscripts)");
-	    } else {
-		my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $three_primest_start, $five_primest_end);
-	    }
+	  $start1 = $transcript_end;
 	} else {
-	    if ($three_primest_start <= $five_primest_end) {
-		&RSAT::message::Warning ("Gene $gene_id has disjoint alternative transcripts; Retrieve sequences relative to each alternative transcript (-alltranscripts)");
-	    } else {
-		my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $five_primest_end, $three_primest_start);
-	    }
+	  $end1 = $transcript_start;
 	}
 
-	unless (($strand == 1 && $five_primest_end <= $three_primest_start) || ($strand == -1 && $three_primest_start <= $five_primest_end)) {
-	    # Output sequence
+	foreach my $intron (@{$transcript->get_all_Introns()}) {
+	  $i++;
+	  my $intron_start = $intron->start();
+	  my $intron_end = $intron->end();
+	  my $intron_id = $transcript_id."-".$i;
+
+	  if ($main::verbose >= 3) {
+	    &RSAT::message::Info ("Intron:");
+	    &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+	    &RSAT::message::Info (join("\t", $intron_id, $intron_start, $intron_end));
+	  }
+
+	  if ($first_intron) {
+	    if ($strand == 1) {
+	      if ($intron->start() < $start1) {
+		$intron1 = $intron;
+		$intron1_id = $transcript_id."-".$i;
+		$start1 = $intron->start();
+		$end1 = $intron->end();
+	      }
+	    } else {
+	      if ($intron->end() > $end1) {
+		$intron1 = $intron;
+		$intron1_id = $transcript_id."-".$i;
+		$start1 = $intron->start();
+		$end1 = $intron->end();
+	      }
+	    }
+	  }
+
+	  unless ($first_intron) {
+
+	    $seq_limits{$intron_id} = [$intron_start, $intron_end];
+
+	    unless ($uniq_seqs) {
+	      $sequence = &GetSequence($intron->start(), $intron->end());
+	      my $size = ($intron->end() - $intron->start()) + 1;
+
+	      my $fasta_header;
+	      if ($label eq 'query') {
+		$fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand";
+	      } else {
+		$fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand";
+	      }
+
+	      &PrintSequence ($sequence, $fasta_header);
+	    }
+	  }
+	}
+
+	if ($first_intron && $i != 0) {
+	  if ($main::verbose >= 3) {
+	    &RSAT::message::Info ("First intron:");
+	    &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+	    &RSAT::message::Info (join("\t", $intron1_id, $start1, $end1));
+	  }
+
+	  $seq_limits{$intron1_id} = [$start1, $end1];
+
+	  unless ($uniq_seqs) {
+	    $sequence = &GetSequence($start1, $end1);
+	    my $size = ($end1 - $start1) + 1;
+
+	    my $fasta_header;
+	    if ($label eq 'query') {
+	      $fasta_header = ">$query $header_org$gene_id-$gene_name-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand";
+	    } else {
+	      $fasta_header = ">$header_org$gene_id-$gene_name-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand";
+	    }
+	    &PrintSequence ($sequence, $fasta_header);
+	  }
+	}
+
+	if ($i == 0) {
+	  &RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no intron");
+	}
+      }
+
+      my $coding_region_start = $transcript->coding_region_start();
+      my $coding_region_end = $transcript->coding_region_end();
+
+      if (($coding_region_start) && ($coding_region_end)) {
+	if ($main::verbose >= 3) {
+	  &RSAT::message::Info ("Coding region start: $coding_region_start") ;
+	  &RSAT::message::Info ("Coding region end: $coding_region_end");
+	}
+      } else {
+	&RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no coding region") unless ($feattype eq "mrna");
+      }
+
+      # Exons
+      if ($feattype eq "exon") {
+	foreach my $exon (@{$transcript->get_all_Exons()}) {
+	  my $exon_id = $exon->stable_id();
+	  my $exon_start = $exon->start();
+	  my $exon_end = $exon->end();
+
+	  if ($main::verbose >= 3) {
+	    &RSAT::message::Info ("Exon");
+	    &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+	    &RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end));
+	  }
+
+	  if (($non_coding) && ($coding_region_start) && ($coding_region_end) ) {
+	    if ($coding_region_start > $exon_start && $coding_region_start < $exon_end) {
+
+	      $seq_limits{$exon_id} = [$exon_start, $coding_region_start - 1];
+
+	      unless ($uniq_seqs) {
+		$sequence = &GetSequence($exon_start, $coding_region_start - 1);
+		my $non_coding_exon_right = $coding_region_start - 1;
+		my $size = $coding_region_start - $exon_start;
+
+		my $fasta_header;
+		if ($label eq 'query') {
+		  $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand";
+		} else {
+		  $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand";
+		}
+		&PrintSequence ($sequence, $fasta_header);
+	      }
+	    } elsif ($coding_region_end < $exon_end && $coding_region_end > $exon_start) {
+
+	      $seq_limits{$exon_id} = [$coding_region_end + 1, $exon_end];
+
+	      unless ($uniq_seqs) {
+		$sequence = &GetSequence($coding_region_end + 1, $exon_end);
+		my $non_coding_exon_left = $coding_region_end + 1;
+		my $size = $exon->end() - $coding_region_end;
+
+		my $fasta_header;
+		if ($label eq 'query') {
+		  $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand";
+		} else {
+		  $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand";
+		}
+		&PrintSequence ($sequence, $fasta_header);
+	      }
+
+	    } elsif ($coding_region_start > $exon_end) {
+
+	      $seq_limits{$exon_id} = [$exon_start, $exon_end];
+
+	      unless ($uniq_seqs) {
+		$sequence = &GetSequence($exon_start, $exon_end);
+		my $size = ($exon_end - $exon_start) + 1;
+
+		my $fasta_header;
+		if ($label eq 'query') {
+		  $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+		} else {
+		  $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+		}
+		&PrintSequence ($sequence, $fasta_header);
+	      }
+
+	    } elsif ($coding_region_end < $exon_start) {
+
+	      $seq_limits{$exon_id} = [$exon_start, $exon_end];
+
+	      unless ($uniq_seqs) {
+		$sequence = &GetSequence($exon_start, $exon_end);
+		my $size = ($exon_end - $exon_start) + 1;
+
+		my $fasta_header;
+		if ($label eq 'query') {
+		  $fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+		} else {
+		  $fasta_header = ">$header_org$gene_id-$gene_name-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+		}
+		&PrintSequence ($sequence, $fasta_header);
+	      }
+	    }
+	  } else {
+
+	    $seq_limits{$exon_id} = [$exon_start, $exon_end];
+
+	    unless ($uniq_seqs) {
+	      $sequence = &GetSequence($exon_start, $exon_end);
+	      my $size = ($exon_end - $exon_start) + 1;
+
+	      my $fasta_header;
+	      if ($label eq 'query') {
+		$fasta_header = ">$query $header_org$gene_id-$gene_name-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+	      } else {
+		$fasta_header = ">$header_org$gene_id-$gene_name-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+	      }
+	      &PrintSequence ($sequence, $fasta_header);
+	    }
+	  }
+	}
+      }
+
+      # UTR
+      if (($feattype eq "utr") && ($coding_region_start) && ($coding_region_end)) {
+	my $utr5_start;
+	my $utr5_end;
+	my $utr3_start;
+	my $utr3_end;
+	my $utr5_flag = 0;
+	my $utr3_flag = 0;
+	if ($strand == 1) {
+	  $utr5_start = $transcript_start;
+	  $utr5_end = $coding_region_start - 1;
+	  unless ($transcript_start == $coding_region_start) {
+	    $utr5_flag = 1;
+	  }
+	  $utr3_start = $coding_region_end + 1;
+	  $utr3_end = $transcript_end;
+	  unless ($transcript_end == $coding_region_end) {
+	    $utr3_flag = 1;
+	  }
+	} else {
+	  unless ($transcript_start == $coding_region_start) {
+	    $utr3_flag = 1;
+	  }
+	  $utr3_start = $transcript_start;
+	  $utr3_end = $coding_region_start - 1;
+	  unless ($transcript_end == $coding_region_end) {
+	    $utr5_flag = 1;
+	  }
+	  $utr5_start = $coding_region_end + 1;
+	  $utr5_end = $transcript_end;
+	}
+
+	my $utr5_id = $transcript_id."-5prime_UTR";
+	my $utr3_id = $transcript_id."-3prime_UTR";
+
+	if (($utr5_flag == 1) && (($utr eq 'all') || ($utr eq '5prime'))) {
+	  $seq_limits{$utr5_id} = [$utr5_start, $utr5_end];
+	}
+	if (($utr3_flag == 1) && (($utr eq 'all') || ($utr eq '3prime'))) {
+	  $seq_limits{$utr3_id} = [$utr3_start, $utr3_end];
+	}
+
+	unless ($uniq_seqs) {
+	  if (($utr5_flag == 1) && (($utr eq 'all') || ($utr eq '5prime'))) {
+	    $utr5_sequence = &GetSequence($utr5_start, $utr5_end);
+	    my $utr5_size = $utr5_end - $utr5_start + 1;
+
+	    my $utr5_fasta_header;
+	    if ($label eq 'query') {
+	      $utr5_fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand";
+	    } else {
+	      $utr5_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand";
+	    }
+	    &PrintSequence ($utr5_sequence, $utr5_fasta_header);
+	  }
+	  if (($utr3_flag == 1) && (($utr eq 'all') || ($utr eq '3prime'))) {
+	    $utr3_sequence = &GetSequence($utr3_start, $utr3_end);
+	    my $utr3_size = $utr3_end - $utr3_start + 1;
+
+	    my $utr3_fasta_header;
+	    if ($label eq 'query') {
+	      $utr3_fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand";
+	    } else {
+	      $utr3_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand";
+	    }
+	    &PrintSequence ($utr3_sequence, $utr3_fasta_header);
+	  }
+	}
+      }
+
+      # CDS
+      if (($feattype eq 'cds') && ($coding_region_start) && ($coding_region_end)) {
+	my $cds_id = $transcript->translation()->stable_id();
+
+	# Output complete CDS sequence
+	if ($type eq "feature") {
+	  my $cds_sequence = '';
+	  my $cds_size = 0;
+	  foreach my $exon (@{$transcript->get_all_Exons()}) {
+	    my $exon_id = $exon->stable_id();
+	    my $exon_start = $exon->start();
+	    my $exon_end = $exon->end();
+
+	    if ($main::verbose >= 3) {
+	      &RSAT::message::Info ("Exon");
+	      &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+	      &RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end));
+	    }
+
+	    if ($coding_region_start > $exon_start && $coding_region_start <= $exon_end) {
+	      if ($coding_region_end > $exon_end) {
+		$seq_limits{$exon_id} = [$coding_region_start,$exon_end];
+		$sequence = &GetSequence($coding_region_start,$exon_end);
+		my $size = $exon_end - $coding_region_start + 1;
+		$cds_size = $cds_size + $size;
+	      } else {
+		$seq_limits{$exon_id} = [$coding_region_start,$coding_region_end];
+		$sequence = &GetSequence($coding_region_start,$coding_region_end);
+		my $size = $coding_region_end - $coding_region_start + 1;
+		$cds_size = $cds_size + $size;
+	      }
+	      if ($strand == 1) {
+		$cds_sequence = $cds_sequence.$sequence;
+	      } else {
+		$cds_sequence = $sequence.$cds_sequence;
+	      }
+
+	    } elsif ($coding_region_end < $exon_end && $coding_region_end >= $exon_start) {
+	      if ($coding_region_start < $exon_start) {
+		$seq_limits{$exon_id} = [$exon_start,$coding_region_end];
+		$sequence = &GetSequence($exon_start, $coding_region_end);
+		my $size = $coding_region_end - $exon_start + 1;
+		$cds_size = $cds_size + $size;
+#		} else {
+#		$seq_limits{$exon_id} = [$coding_region_start,$coding_region_end];
+#		$sequence = &GetSequence($coding_region_start, $coding_region_end);
+	      }
+	      if ($strand == 1) {
+		$cds_sequence = $cds_sequence.$sequence;
+	      } else {
+		$cds_sequence = $sequence.$cds_sequence;
+	      }
+
+	    } elsif ($coding_region_start <= $exon_start && $coding_region_end >= $exon_end) {
+	      $seq_limits{$exon_id} = [$exon_start,$exon_end];
+	      $sequence = &GetSequence($exon_start, $exon_end);
+	      my $size = $exon_end - $exon_start + 1;
+	      $cds_size = $cds_size + $size;
+	      if ($strand == 1) {
+		$cds_sequence = $cds_sequence.$sequence;
+	      } else {
+		$cds_sequence = $sequence.$cds_sequence;
+	      }
+	    }
+	  }
+
+	  unless ($uniq_seqs) {
+	    if ($label eq 'query') {
+	      $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; size: $cds_size; location: $chromosome_name $coding_region_start $coding_region_end $rsat_strand";
+	    } else {
+	      $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; size: $cds_size; location: $chromosome_name $coding_region_start $coding_region_end $rsat_strand";
+	    }
+	    &PrintSequence ($cds_sequence, $fasta_header);
+	  }
+
+	} else { # Output upstream or downstream sequence
+	  my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $coding_region_start, $coding_region_end);
+	  $seq_limits{$cds_id} = [$left, $right];
+
+	  unless ($uniq_seqs) {
+	    # Output upstream or downstream sequence
+	    $sequence = &GetSequence($left, $right);
+	    my $size = $new_to - $new_from + 1;
+
+	    my $fasta_header;
+	    if ($label eq 'query') {
+	      $fasta_header = ">$query $header_org$gene_id-$gene_name-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	    } else {
+	      $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	    }
+	    &PrintSequence ($sequence, $fasta_header);
+	  }
+	}
+      }
+
+      if ($feattype eq 'transcript' && !$all_transcripts) {
+	# Output complete transcript sequence
+	if ($type eq 'feature') {
+	  &RSAT::message::Warning ("To get the sequence covering all transcripts of a gene, use -feattype gene");
+
+	} else { # Output upstream or downstream sequence
+	  if ($main::verbose >= 3) {
+	    &RSAT::message::Info ("Three_primest transcript start: $three_primest_start");
+	    &RSAT::message::Info ("Five_primest transcript end: $five_primest_end");
+	  }
+
+	  my $ref_transcript;
+
+	  if ($strand == 1) {
+	    if ($five_primest_end <= $three_primest_start) {
+	      &RSAT::message::Warning ("Gene $gene_id has disjoint alternative transcripts; Retrieve sequences relative to each alternative transcript (-alltranscripts)");
+	    } else {
+	      my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $three_primest_start, $five_primest_end);
+	    }
+	  } else {
+	    if ($three_primest_start <= $five_primest_end) {
+	      &RSAT::message::Warning ("Gene $gene_id has disjoint alternative transcripts; Retrieve sequences relative to each alternative transcript (-alltranscripts)");
+	    } else {
+	      my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $five_primest_end, $three_primest_start);
+	    }
+	  }
+
+	  unless (($strand == 1 && $five_primest_end <= $three_primest_start) || ($strand == -1 && $three_primest_start <= $five_primest_end)) {
+	    # Output upstream or downstream sequence
 	    $sequence = &GetSequence($left, $right);
 	    my $size = $new_to - $new_from + 1;
 	    if ($type eq "upstream") {
-		$ref_transcript = $three_primest_id;
+	      $ref_transcript = $three_primest_id;
 	    } else {
-		$ref_transcript = $five_primest_id;
+	      $ref_transcript = $five_primest_id;
 	    }
 
 	    my $fasta_header;
@@ -1099,59 +1243,106 @@ sub Main {
 	    } else {
 	      $fasta_header = ">$header_org$gene_id-$gene_name-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 	    }
-
 	    &PrintSequence ($sequence, $fasta_header);
+	  }
 	}
+      }
+
+      if ($feattype eq 'mrna' && !$all_transcripts) {
+	# Output complete mRNA sequence
+	if ($type eq 'feature') {
+	  &RSAT::message::Warning ("The option to get the sequence covering all mRNAs of a gene is not implemented yet");
+
+	} else { # Output upstream or downstream sequence (same as for transcript)
+	  if ($main::verbose >= 3) {
+	    &RSAT::message::Info ("Three_primest transcript start: $three_primest_start");
+	    &RSAT::message::Info ("Five_primest transcript end: $five_primest_end");
+	  }
+
+	  my $ref_transcript;
+
+	  if ($strand == 1) {
+	    if ($five_primest_end <= $three_primest_start) {
+	      &RSAT::message::Warning ("Gene $gene_id has disjoint alternative transcripts; Retrieve sequences relative to each alternative transcript (-alltranscripts)");
+	    } else {
+	      my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $three_primest_start, $five_primest_end);
+	    }
+	  } else {
+	    if ($three_primest_start <= $five_primest_end) {
+	      &RSAT::message::Warning ("Gene $gene_id has disjoint alternative transcripts; Retrieve sequences relative to each alternative transcript (-alltranscripts)");
+	    } else {
+	      my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $five_primest_end, $three_primest_start);
+	    }
+	  }
+
+	  unless (($strand == 1 && $five_primest_end <= $three_primest_start) || ($strand == -1 && $three_primest_start <= $five_primest_end)) {
+	    # Output upstream or downstream sequence
+	    $sequence = &GetSequence($left, $right);
+	    my $size = $new_to - $new_from + 1;
+	    if ($type eq "upstream") {
+	      $ref_transcript = $three_primest_id;
+	    } else {
+	      $ref_transcript = $five_primest_id;
+	    }
+
+	    my $fasta_header;
+	    if ($label eq 'query') {
+	      $fasta_header = ">$query $header_org$gene_id-$gene_name-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	    } else {
+	      $fasta_header = ">$header_org$gene_id-$gene_name-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	    }
+	    &PrintSequence ($sequence, $fasta_header);
+	  }
+	}
+      }
+    }
+
+    ## Unique sequences
+    if ($uniq_seqs && %seq_limits) {
+      # Sort retrieved sequences by left limits
+      my @ordered_seqs;
+      foreach $value (sort {$seq_limits{$a}[0] <=> $seq_limits{$b}[0] } keys %seq_limits) {
+	push @ordered_seqs, $value;
+      }
+
+      # Initialisation
+      $new_seq_index = 1;
+      %new_seq_limits = ();
+      $new_seq_limits{$new_seq_index} = [$seq_limits{$ordered_seqs[0]}[0], $seq_limits{$ordered_seqs[0]}[1]];
+
+      # Search unique sequences
+      foreach $seq (@ordered_seqs) {
+	if ($seq_limits{$seq}[0] <= $new_seq_limits{$new_seq_index}[1] + 1) {
+	  if ($seq_limits{$seq}[1] > $new_seq_limits{$new_seq_index}[1]) {
+	    $new_seq_limits{$new_seq_index}[1] = $seq_limits{$seq}[1];
+	  }
+	} else {
+	  $new_seq_index++;
+	  $new_seq_limits{$new_seq_index} = [$seq_limits{$seq}[0], $seq_limits{$seq}[1]];
+	}
+      }
+
+      # print Dumper(\%new_seq_limits);
+
+      # Get and print unique sequences
+      foreach $value (keys(%new_seq_limits)) {
+	$sequence = &GetSequence($new_seq_limits{$value}[0], $new_seq_limits{$value}[1]);
+	$size = $new_seq_limits{$value}[1] - $new_seq_limits{$value}[0] + 1;
+	unless ($feattype eq 'transcript' || $feattype eq 'mrna' || $feattype eq 'cds') {
+	  $type = '';
+	}
+
+	my $fasta_header;
+	if ($label eq 'query') {
+	  $fasta_header = ">$query $header_org$gene_id-$gene_name-$value\t$gene_id-$value; $feattype $type unique sequence; size: $size; location: $chromosome_name $new_seq_limits{$value}[0] $new_seq_limits{$value}[1] $rsat_strand";
+	} else {
+	  $fasta_header = ">$header_org$gene_id-$gene_name-$value\t$gene_id-$value; $feattype $type unique sequence; size: $size; location: $chromosome_name $new_seq_limits{$value}[0] $new_seq_limits{$value}[1] $rsat_strand";
+	}
+	&PrintSequence ($sequence, $fasta_header);
+      }
+#      }
     }
   }
-
-  ## Unique seqs
-  if ($uniq_seqs && %seq_limits) {
-	  # Sort retrieved sequences by left limits
-	  my @ordered_seqs;
-	  foreach $value (sort {$seq_limits{$a}[0] <=> $seq_limits{$b}[0] } keys %seq_limits) {
-	      push @ordered_seqs, $value;
-	  }
-
-	  # Initialisation
-	  $new_seq_index = 1;
-	  %new_seq_limits = ();
-	  $new_seq_limits{$new_seq_index} = [$seq_limits{$ordered_seqs[0]}[0], $seq_limits{$ordered_seqs[0]}[1]];
-
-	  # Seaarch unique sequences
-	  foreach $seq (@ordered_seqs) {
-	      if ($seq_limits{$seq}[0] <= $new_seq_limits{$new_seq_index}[1] + 1) {
-		  if ($seq_limits{$seq}[1] > $new_seq_limits{$new_seq_index}[1]) {
-		      $new_seq_limits{$new_seq_index}[1] = $seq_limits{$seq}[1];
-		  }
-	      } else {
-		  $new_seq_index++;
-		  $new_seq_limits{$new_seq_index} = [$seq_limits{$seq}[0], $seq_limits{$seq}[1]];
-	      }
-	  }
-
-	  # print Dumper(\%new_seq_limits);
-
-	  # Get and print unique sequences
-	  foreach $value (keys(%new_seq_limits)) {
-	      $sequence = &GetSequence($new_seq_limits{$value}[0], $new_seq_limits{$value}[1]);
-	      $size = $new_seq_limits{$value}[1] - $new_seq_limits{$value}[0] + 1;
-	      unless ($feattype eq 'mrna' || $feattype eq 'cds') {
-		  $type = '';
-	      }
-
-	      my $fasta_header;
-	      if ($label eq 'query') {
-		$fasta_header = ">$query $header_org$gene_id-$gene_name-$value\t$gene_id-$value; $feattype $type unique sequence; size: $size; location: $chromosome_name $new_seq_limits{$value}[0] $new_seq_limits{$value}[1] $rsat_strand";
-	      } else {
-		$fasta_header = ">$header_org$gene_id-$gene_name-$value\t$gene_id-$value; $feattype $type unique sequence; size: $size; location: $chromosome_name $new_seq_limits{$value}[0] $new_seq_limits{$value}[1] $rsat_strand";
-	      }
-
-	      &PrintSequence ($sequence, $fasta_header);
-	  }
-#      }
-  }
-
 }
 ################################################################
 #### Calculate left and right limits
@@ -1770,6 +1961,7 @@ OPTIONS
 		Currently supported sequence types
 			upstream (default)
 			downstream
+                        feature
 
 	-q query
 		The query should be an EnsEMBL gene identifier (eg 'ENSG00000177799').
@@ -1848,7 +2040,7 @@ OPTIONS
 
         -label label_type
 	       Information used as sequence label in the fasta header. 
-	       
+
 	       Supported label types: 
 
 	       -label query 
@@ -1870,7 +2062,7 @@ retrieve-ensembl-seq options
 -ensemblhost    address of ensembl database server (default is EBI server)
 -dbname         name of ensembl db
 -feattype	accepted feature types. Supported: $supported_feattypes
--type		upstream | downstream | orf | random
+-type		upstream | downstream | feature
 -q		query
 -i              query file
 -all		returns all genomic upstream regions
