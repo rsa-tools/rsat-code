@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.101 2010/12/12 05:46:09 jvanheld Exp $
+# $Id: peak-motifs,v 1.102 2010/12/12 05:52:02 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.101 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.102 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1362,7 +1362,7 @@ sub SplitMotifs {
 sub ClusterMotifs {
 
   ## Comparison between discovered matrices, and with the reference motif
-  my $cmd = $SCRIPTS."/compare-matrices -v 1 -mode matches";
+  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
   $cmd .= " -format transfac -file ".$main::outfile{motifs_discovered};
 #  $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
 #  $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
@@ -1517,7 +1517,7 @@ sub MotifsVersusReference {
     &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
 
     ## Compare one discovered motif with the reference motif
-    my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
+    my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
     $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id.'_tf'};
     $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
     $cmd .= $main::param{motif_compa_options};
@@ -1535,7 +1535,7 @@ sub MotifsVersusReference {
 
   ################################################################
   ## Compare all matrices to the reference motif
-  my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
+  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
   $cmd .= $main::param{motif_compa_options};
   $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motifs_transfac};
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
@@ -1583,7 +1583,7 @@ sub MotifsVersusDatabase {
       &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
 
       ## Compare one discovered motif with the reference motif
-      my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
+      my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
       $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id.'_tf'};
       $cmd .= " -format2 ".$main::motif_db_format{$db_name};
       $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
@@ -1602,7 +1602,7 @@ sub MotifsVersusDatabase {
 
     ################################################################
     ## Comparison between all discovered matrices and the database
-    my $cmd = $SCRIPTS."/compare-matrices -v 2 -mode matches";
+    my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
     $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};
     $cmd .= " -format2 ".$main::motif_db_format{$db_name};
     $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
