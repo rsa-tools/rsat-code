@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.77 2010/10/26 22:33:55 jvanheld Exp $
+# $Id: compare-matrices,v 1.78 2010/12/12 05:51:31 jvanheld Exp $
 #
 ############################################################
 
@@ -370,7 +370,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.78 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -746,7 +746,7 @@ package main;
   local $bg_model;
   if ($main::infile{bg}) {
     $bg_model = new RSAT::MarkovModel();
-    &RSAT::message::TimeWarn("Loading background model from ".$bg_format." file", $main::infile{bg}) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Loading background model from ".$bg_format." file", $main::infile{bg}) if ($main::verbose >= 2);
     $bg_model->load_from_file($main::infile{bg}, $bg_format);
     $bg_model->check_missing_transitions();
     my %prior = $bg_model->get_attribute("suffix_proba");
