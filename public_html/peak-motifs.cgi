@@ -111,40 +111,43 @@ if ($query->param('max_seq_len')){
     }	
 }
 
-## motif databases
-if ($query->param('compare_motif_db') =~ /on/) {
-    push(@tasks, "motifs_vs_db");
-    
-    ## load the files containing the databases
-    my $mat_db_params = &GetMatrixDBfromBox();
-    $parameters .= $mat_db_params;
-        
-    ## personal motifs
-    if ($query->param('ref_motif')) {
-	my $refmotif_file = ${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
-	my $upload_refmotif = $query->param('ref_motif');
-	if ($upload_refmotif) {
-	    
-	    my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
-	    open FILE, ">$refmotif_file" ||
-		&cgiError("Cannot store reference motif file in temp dir.");
-	    while (<$upload_refmotif>) {
-		print FILE;
-	    }
-	    close FILE;
-	    $parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
-	} else {
-	    &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
-	}
-    }
+################################################################
+## Motif databases supported on the RSAT Web site
+#if ($query->param('compare_motif_db') =~ /on/) {
+#    push(@tasks, "motifs_vs_db");
+
+## load the files containing the databases
+my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
+if (scalar(@selected_db) > 0) {
+  $parameters .= $mat_db_params;
+  push(@tasks, "motifs_vs_db");
 }
- 
-## search motifs (matrix-scan-quick)
+
+################################################################
+## Custom reference motifs
+if ($query->param('ref_motif')) {
+  my $refmotif_file = ${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
+  my $upload_refmotif = $query->param('ref_motif');
+  if ($upload_refmotif) {
+    my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
+    open FILE, ">$refmotif_file" ||
+      &cgiError("Cannot store reference motif file in temp dir.");
+    while (<$upload_refmotif>) {
+      print FILE;
+    }
+    close FILE;
+    $parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
+  } else {
+    &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
+  }
+}
+
+################################################################
+## Scan sequences to search motif occurrences (matrix-scan-quick).
 if ($query->param('matrix-scan-quick') =~ /on/) {
     # push(@tasks, "scan");
-    
+
     ## HERE need to add the pval and markov order for the background model for matrix-scan-quick
-    
 }
 
 ## HERE finish the BED custom track parameters + task
