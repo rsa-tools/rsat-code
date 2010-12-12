@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.100 2010/12/08 05:12:26 rsat Exp $
+# $Id: peak-motifs,v 1.101 2010/12/12 05:46:09 jvanheld Exp $
 #
 ############################################################
 
@@ -21,7 +21,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Pipeline for discoering motifs from ChIP-seq (or ChIP-chip, or
+Pipeline for discovering motifs from ChIP-seq (or ChIP-chip, or
 ChIP-PET) peak sequences.
 
 =head1 AUTHORS
@@ -49,8 +49,8 @@ Web services.
 =item Carl Herrmann <carl.herrmann@univmed.fr> and Denis Thieffry
 <thieffry@tagc.univ-mrs.fr>
 
-Analyis of the case studies. Definition of optimal conditions of
-utilzation. Motif comparisons and clustering.
+Analysis of the case studies. Definition of optimal conditions of
+utilization. Motif comparisons and clustering.
 
 =back
 
@@ -104,7 +104,6 @@ package main;
   ################################################################
   ## Initialize parameters
   local $start_time = &RSAT::util::StartScript();
-
   local $die_on_error = 1;
 
   ## Check that the RSAT paths of the programs required for the script are specified
@@ -112,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.101 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -204,6 +203,11 @@ package main;
   local @motif_files;
   local $motif_nb;
 
+  local $progressive_synthesis = 1;
+  local $syn;
+  local $synthesis_path;
+  local $menu_nb = 100;
+
   ################################################################
   ## Set default parameters
   &DefaultParameters();
@@ -220,33 +224,41 @@ package main;
   ## Open output stream
   $main::out = &OpenOutputFile($main::outfile{log});
 
+  &OpenSynthesis() if ($progressive_synthesis);
+
+  ## Sequence composition
   foreach my $seq_type (@seq_types) {
     &PurgeSeq($seq_type) if ($task{purge});
     &SequenceLengths($seq_type) if ($task{seqlen});
     &CompositionProfiles($seq_type) if ($task{composition});
   }
+  &SynthesisSequenceComposition() if ($progressive_synthesis);
 
-
+  ## Control sequences
   if ($main::infile{ctrl_seq}) {
     &ComputeBgModels($main::infile{ctrl_seq});
     &OligoDiff() if ($task{oligo_diff});
   }
 
+  ## Reference motifs
   if (defined($main::infile{ref_motifs})) {
     &RefMotif() if ($task{ref_motifs});
   }
+  &SynthesisRefMotif() if ($progressive_synthesis);
 
+  ## Run motif discovery algorithms
   &OligoAnalysis() if ($task{oligos});
   &DyadAnalysis() if ($task{dyads});
   &PositionAnalysis() if ($task{positions});
   &LocalWords() if ($task{local_words});
   &MergeWords() if ($task{merge_words});
-
   &CalcMemeBackground() if ($task{meme_bg});
   &RunMEME() if ($task{meme});
-
   &MergeMotifs() if ($task{merge_motifs});
 
+  &SynthesisMotifsByAlgo() if ($progressive_synthesis);
+
+  ## Motif-wise analysis
   &SplitMotifs() if ($task{split_motifs});
 
 #  &ClusterMotifs() if ($task{cluster_motifs});
@@ -259,11 +271,15 @@ package main;
 
   &ScanSequences() if ($task{scan});
 
+  &SynthesisByMotif() if ($progressive_synthesis);
+  &SynthesisMotifCompa() if ($progressive_synthesis);
+
 
   if ($task{timelog}) {
     &TimeLog();
     &TimeTable();
   }
+  &SynthesisParamsAndFiles() if ($progressive_synthesis);
 
   &Synthesis() if ($task{synthesis});
 
@@ -575,8 +591,8 @@ sub SetOutFileNames {
 
 
 	  ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
-	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
-						       $len."nt", "vs_ctrl");
+#	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
+#						       $len."nt", "vs_ctrl");
 
 
 	  ## local-word-analysis
@@ -1113,6 +1129,7 @@ sub RefMotif {
   my $cmd = "rsync -ruptL ";
   $cmd .= " ".$main::infile{ref_motifs};
   $cmd .= " ".$main::outfile{ref_motifs};
+  $cmd .= " >& /dev/null";
   &one_command($cmd, 1);
 
   ## Convert the reference motif to TRANSFAC format, because this
@@ -1258,9 +1275,14 @@ sub MergeMotifs {
 ################################################################
 ## Load the discovered motifs from the .tf file
 sub ReadDiscoveredMotifs {
-  my @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
-  my $motif_nb = scalar(@motifs);
-  &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
+  my @motifs = ();
+  if (-e $main::outfile{motifs_discovered}) {
+    @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
+    my $motif_nb = scalar(@motifs);
+    &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
+  } else {
+    &RSAT::message::Warning("Discovered motif file does not exist",  $main::outfile{motifs_discovered});
+  }
   return @motifs;
 }
 
@@ -1867,6 +1889,8 @@ sub PrintHtmlFileHedaer {
 ## Generate a HTML table summarizing the results for each discovered
 ## motif. this table is inserted in the synthetic report.
 sub SynthesisByMotif {
+  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs</h3>", 0);
+  print $syn "<table class='sortable'>\n";
   my @motifs = &ReadDiscoveredMotifs();
 
   ## Load background model for computing the consensus
@@ -1895,13 +1919,14 @@ sub SynthesisByMotif {
     print $syn "</tr>\n";
   }
   print $syn "</table>\n";
+  print $syn "</table><p>\n";
+  print $syn &close_menu_heading();
 }
 
-################################################################
-## Generate a HTML report with summarizing the main results with
-## links to the iriginal result files.
-sub Synthesis {
 
+################################################################
+## Open the HTML page for the synthesis
+sub OpenSynthesis {
   ## Create a directory to store the arrow icons
   $main::dir{images_html} = $dir{output}."/images_html";
   &RSAT::util::CheckOutDir($main::dir{images_html});
@@ -1911,47 +1936,17 @@ sub Synthesis {
   &one_command($cmd, 1);
 
   ## Open the HTML file
-  local $syn = &OpenOutputFile($main::outfile{synthesis});
-  local $synthesis_path = `dirname $main::outfile{synthesis}`;
-  local $menu_nb = 100;
+  $syn = &OpenOutputFile($main::outfile{synthesis});
+  $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
 
   &PrintHtmlFileHedaer($syn);
+}
 
-  ## Header of the synthetic table
-  print $syn &open_menu_heading($menu_nb++, "<h3>Sequence composition</h3>", 0);
-  print $syn "<p><table class='sortable'>\n";
-  &SynthesisSequenceComposition();
-  print $syn "</table><p>\n";
-  print $syn &close_menu_heading();
 
-  ## Reference motifs
-  if (defined($main::infile{ref_motifs})) {
-    print $syn &open_menu_heading($menu_nb++, "<h3>Reference motifs</h3>", 0);
-    print $syn "<p><table class='sortable'>\n";
-    &SynthesisRefMotif();
-    print $syn "</table><p>\n";
-    print $syn &close_menu_heading();
-  }
-
-  ## Discovered motifs (by motif)
-  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs</h3>", 0);
-  print $syn "<table class='sortable'>\n";
-  &SynthesisByMotif();
-  print $syn "</table><p>\n";
-  print $syn &close_menu_heading();
-
-  ## Discovered motifs (by algorithm)
-  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>", 1);
-  print $syn "<table class='sortable'>\n";
-  &SyntheticTableAddHeaderRow("Pattern discovery");
-  foreach my $pattern_type (@pattern_types) {
-    &SynthesisPatternDisco($pattern_type);
-  }
-  print $syn "</table><p>\n";
-  print $syn &close_menu_heading();
-
-  ## Motif comparisons
+################################################################
+## Report results of motif comparisons
+sub SynthesisMotifCompa {
   print $syn &open_menu_heading($menu_nb++, "<h3>Motif comparisons</h3>", 0);
   print $syn "<table class='sortable'>\n";
 
@@ -1959,7 +1954,7 @@ sub Synthesis {
   &SynthesisWordCompa();
 
   ## Comparison between discovered motifs
-#  &SynthesisMotifCompa();
+#  &SynthesisMotifsVsMotifs();
 
   ## Comparison between discovered motifs and reference motif
   &SynthesisMotifsVersusReference() if (defined($main::infile{ref_motifs}));
@@ -1968,13 +1963,13 @@ sub Synthesis {
   &SynthesisMotifsVersusDatabase() if (scalar(@motif_databases) > 0);
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
+}
 
-  ################################################################
-  ## Report the list if input/output files. This has to be done at the
-  ## end of the process, since it includes a list of discovered motifs
-  ## is not known before having run the motif discovery algorithms.
-  &ReportParamsAndFiles();# if ($main::verbose >= 1);
-
+################################################################
+## Report the list if input/output files. This has to be done at the
+## end of the process, since it includes a list of discovered motifs
+## is not known before having run the motif discovery algorithms.
+sub SynthesisParamsAndFiles {
   ## Log files
   print $syn &open_menu_heading($menu_nb++, "<h3>Logs and result files</h3>", 1);
   print $syn "<table class='sortable'>\n";
@@ -1992,8 +1987,36 @@ sub Synthesis {
  		       );
   ## Close the synthetic table
   print $syn "</table></p>\n";
-
   print $syn &close_menu_heading();
+
+  &ReportParamsAndFiles();# if ($main::verbose >= 1);
+}
+
+
+################################################################
+## Generate a HTML report with summarizing the main results with
+## links to the iriginal result files.
+sub Synthesis {
+
+  &OpenSynthesis() unless ($progressive_synthesis);
+
+  ## Header of the synthetic table
+  &SynthesisSequenceComposition() unless ($progressive_synthesis);
+
+  ## Reference motifs
+  &SynthesisRefMotif() unless ($progressive_synthesis);
+
+  ## Discovered motifs (by algorithm)
+  &SynthesisMotifsByAlgo() unless ($progressive_synthesis);
+
+  ## Discovered motifs (by motif)
+  &SynthesisByMotif() unless ($progressive_synthesis);
+
+  ## Motif comparisons
+  &SynthesisMotifCompa() unless ($progressive_synthesis);
+
+  ## Parameters and files
+  &SynthesisParamsAndFiles() unless ($progressive_synthesis);
 
   ## End of the HTML file
   print $syn "</body>\n";
@@ -2042,6 +2065,9 @@ sub SyntheticTableAddHeaderRow {
 ################################################################
 ## Add sequence composition on the synthetic report
 sub SynthesisSequenceComposition {
+  print $syn &open_menu_heading($menu_nb++, "<h3>Sequence composition</h3>", 0);
+  print $syn "<p><table class='sortable'>\n";
+
   foreach my $seq_type (@seq_types) {
 
     ## Header line
@@ -2124,48 +2150,70 @@ sub SynthesisSequenceComposition {
 			   );
     }
   }
+  print $syn "</table><p>\n";
+  print $syn &close_menu_heading();
 }
 
 ################################################################
 ## Add the reference motif to the report
 sub SynthesisRefMotif {
-  &SyntheticTableAddHeaderRow("Reference motif(s)");
+  if (defined($main::infile{ref_motifs})) {
+    print $syn &open_menu_heading($menu_nb++, "<h3>Reference motifs</h3>", 0);
+    print $syn "<p><table class='sortable'>\n";
+    &SyntheticTableAddHeaderRow("Reference motif(s)");
 
-  my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
+    my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
 
-  ## get the names of all reference logo files
-  my @logo_files = glob($main::outfile{ref_motifs_logo}."_m*.".$main::param{img_format});
-  @logo_files = grep {!/_rc\./} @logo_files;
-  #    my @logo_files = glob($main::outfile{ref_motifs_logo}."_m\d+.".$main::param{img_format});
+    ## get the names of all reference logo files
+    my @logo_files = glob($main::outfile{ref_motifs_logo}."_m*.".$main::param{img_format});
+    @logo_files = grep {!/_rc\./} @logo_files;
+    #    my @logo_files = glob($main::outfile{ref_motifs_logo}."_m\d+.".$main::param{img_format});
 
-  ## Prepare a table with the logos
-  for my $i (1..scalar(@logo_files)) {
-    $logo_table .= "<tr>\n";
-    $logo_table .= "<td>Ref motif ".$i."</td>\n";
-    my $logo_file = $main::outfile{ref_motifs_logo}."_m".$i.".".$main::param{img_format};
-    my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
-    if (-e $logo_file) {
-      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
-      $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-    } elsif ($main::verbose >= 1) {
-      &RSAT::message::Warning("Cannot find reference logo", $logo_file);
+    ## Prepare a table with the logos
+    for my $i (1..scalar(@logo_files)) {
+      $logo_table .= "<tr>\n";
+      $logo_table .= "<td>Ref motif ".$i."</td>\n";
+      my $logo_file = $main::outfile{ref_motifs_logo}."_m".$i.".".$main::param{img_format};
+      my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
+      if (-e $logo_file) {
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
+	$logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+      } elsif ($main::verbose >= 1) {
+	&RSAT::message::Warning("Cannot find reference logo", $logo_file);
+      }
+      if (-e $logo_file_rc) {
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
+	$logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+      } elsif ($main::verbose >= 1) {
+	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
+      }
+      $logo_table .= "</tr>\n";
     }
-    if (-e $logo_file_rc) {
-      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
-      $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-    } elsif ($main::verbose >= 1) {
-      &RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
-    }
-    $logo_table .= "</tr>\n";
+    $logo_table .= "</table>\n";
+
+    &SyntheticTableAddRow("Reference motif",
+			  $logo_table,
+			  #			  $main::param{ref_motifs_format}, &RSAT::util::RelativePath($main::outfile{synthesis}, $main::infile{ref_motifs}),
+			  "transfac format",$main::outfile{ref_motifs_transfac},
+			  "tab format",$main::outfile{ref_motifs_tab},
+			 );
   }
-  $logo_table .= "</table>\n";
+  print $syn "</table><p>\n";
+  print $syn &close_menu_heading();
+}
 
-  &SyntheticTableAddRow("Reference motif",
-			$logo_table,
-			#			  $main::param{ref_motifs_format}, &RSAT::util::RelativePath($main::outfile{synthesis}, $main::infile{ref_motifs}),
-			"transfac format",$main::outfile{ref_motifs_transfac},
-			"tab format",$main::outfile{ref_motifs_tab},
-		       );
+
+################################################################
+## Report discovered motifs by algorithms
+sub SynthesisMotifsByAlgo {
+  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>", 1);
+  print $syn "<table class='sortable'>\n";
+  &SyntheticTableAddHeaderRow("Pattern discovery");
+  foreach my $pattern_type (@pattern_types) {
+    &SynthesisPatternDisco($pattern_type);
+  }
+  print $syn "</table><p>\n";
+  print $syn &close_menu_heading();
 }
 
 ################################################################
@@ -2301,7 +2349,7 @@ sub SynthesisWordCompa {
 
 ################################################################
 ## Synthesis of motif comparisons
-sub SynthesisMotifCompa {
+sub SynthesisMotifsVsMotifs {
   my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{motifs_disco_compa_png});
   &SyntheticTableAddRow("Motif comparisons",
 			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
@@ -2418,7 +2466,7 @@ Same as -h
 
 Test peak sequence file (mandatory).
 
-For single-set analysis, this file contains the peak seuences of the
+For single-set analysis, this file contains the peak sequences of the
 unique set.  For test versus control analysis, it contains the test
 sequences.
 
@@ -2490,7 +2538,7 @@ the highest scoring peaks. In some cases, the top-scoring peaks might
 contain a higher density of binding sites, allowing to detect motifs
 with a higher significance.
 
-This option can alos be convenient for performing quick tests,
+This option can also be convenient for performing quick tests,
 parameter selection and debugging before running the full analysis of
 large sequence sets.
 
@@ -2524,6 +2572,9 @@ Each discovered motif can be compared to the reference motif, in order
 to evaluate its correspondence with the binding motif of the factor of
 interest.
 
+Reference motifs should be provided in TRANSFAC format (see
+I<convert-matrix> for interconversions between matrix formats).
+
 =cut
     } elsif ($arg eq "-ref_motifs") {
       $main::infile{ref_motifs} = shift(@arguments);
@@ -2547,7 +2598,7 @@ The option requires three arguments:
 
  - file containing the DB motifs
 
-The option can be called iteratively on the ame command line in order
+The option can be called iteratively on the same command line in order
 to compare discovered motifs with several databases.
 
 Examples:
@@ -2754,7 +2805,7 @@ estimator of the prior probability of this word in the window.
 After our first trials, this program gives excellent results in
 ChIP-seq datasets, because its senstivitity increases with large
 number of sequences (several hundreds/thousands), and its background
-model is more stringent than for programs computing the globl
+model is more stringent than for programs computing the global
 over-representation (oligo-analysis, dyad-analysis).
 
 =item I<merge_words>
@@ -2814,13 +2865,13 @@ Compute meme background model from the input sequences.
 
 =item I<meme>
 
-Run the motif discovery program MEME on the input sequecnes. 
+Run the motif discovery program MEME on the input sequences.
 
-B<Beware>: the complexity of MEME is quadratic: the comuting time increases as
-the square of sequence size. It is thus not recommended to use MEME for data
-sets exceeding 1Mb. If the input set contains many peaks, the option -task
-meme can be combined with a restriction on the number of top peaks to be
-considered (e.g. -top_peaks 500).
+B<Beware>: the complexity of MEME is quadratic: the computing time
+increases as the square of sequence size. It is thus not recommended
+to use MEME for data sets exceeding 1Mb. If the input set contains
+many peaks, the option -task meme can be combined with a restriction
+on the number of top peaks to be considered (e.g. -top_peaks 500).
 
 =back
 
@@ -2889,9 +2940,8 @@ of oligonucleotide lengths.
 
 =item B<-markov>
 
-Order of the Markov model used to estimatd
-expected oligonucleotide frequencies for I<oligo-analysis> and
-I<local-word-analysis>.
+Order of the Markov model used to estimate expected oligonucleotide
+frequencies for I<oligo-analysis> and I<local-word-analysis>.
 
 Higher order Markov models are more stringent, lower order are more
 sensitive, but tend to return a large number of false positives.
@@ -3050,7 +3100,7 @@ sub CheckArguments {
 
   ## Synthesis file 
   $main::outfile{synthesis} = &OutFileName("", ".html", "synthesis");
-
+  $progressive_synthesis = 0 unless ($task{synthesis});
 
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
@@ -3280,11 +3330,7 @@ cluster them in order to extract a consensus motif.
 
 Add a task to run Weeder on the peak sequences.
 
- weederlauncher.out input orgnism large S M T5
-
-=item B<meme_bg>
-
-Compute a background model for MEME.
+ weederlauncher.out input organism large S M T5
 
 =item B<all_oligos>
 
