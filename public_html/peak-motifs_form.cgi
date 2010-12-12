@@ -29,10 +29,10 @@ $default{uth_pval} = "1e-4";
 $default{assembly} = "";
 $default{oligo_length6}="checked";
 $default{oligo_length7}="checked";
-$default{oligo-analysis}="checked";
-$default{dyad-analysis}="checked";
-$default{position-analysis}="checked";
-$default{'local-word-analysis'}="checked";
+$default{"oligo-analysis"}="checked";
+$default{"dyad-analysis"}="";
+$default{"position-analysis"}="checked";
+$default{'local-word-analysis'}="";
 $default{compare_motif_db}="checked";
 $default{title}="title for this dataset";
 $default{max_seq_len}="";
@@ -192,7 +192,7 @@ print "<p/><fieldset>
 ### oligo analysis
 #
 print $query->checkbox(-name=>'oligo-analysis',
-		       -checked=>$default{oligo-analysis},
+		       -checked=>$default{"oligo-analysis"},
 		       -label=>'');  
 print "&nbsp;<b>Discover over-represented words</b> <a href='help.oligo-analysis.html'> [oligo-analysis]</a>\n";
 print "<br/>";
@@ -202,7 +202,7 @@ print "<br/>";
 ### dyad-analysis
 #   
 print $query->checkbox(-name=>'dyad-analysis',
-		       -checked=>$default{dyad-analysis},
+		       -checked=>$default{"dyad-analysis"},
 		       -label=>''); 
 print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
 
@@ -230,7 +230,7 @@ print "<br/>";
 ### position-analysis
 #
 print $query->checkbox(-name=>'position-analysis',
-		       -checked=>$default{position-analysis},
+		       -checked=>$default{"position-analysis"},
 		       -label=>'');  
 print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
 print "<br/>";
