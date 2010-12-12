@@ -51,7 +51,7 @@ foreach $key (keys %default) {
 
 ### head
 print "<CENTER>";
-print "Returns upstream, downstream, intronic, exonic, UTR or gene sequences for a list of genes from the EnsEMBL database. <P>\n";
+print "Returns upstream, downstream, intronic, exonic, UTR, transcript, mRNA, CDS or gene sequences for a list of genes from the EnsEMBL database. <P>\n";
 #print "Programm developed by <A HREF='mailto:oly\@bigre.ulb.ac.be (Olivier Sand)'>Olivier Sand</A> with the help of <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A><P>";
 print "Program developed by <script type='text/javascript'><!--
 var v2=\"FZ4BZ3EE5SS8KRHNM48\";var v7=unescape(\"%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D\");var v5=v2.length;var v1=\"\";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href=\"javascript:void(0)\" onclick=\"window.location=\\'mail\\u0074o\\u003a'+v1+'?subject='+'\\'\">'+'Olivier Sand<\\/a>');
@@ -220,7 +220,7 @@ print "<TD class='left'>\n";
 #### Sequence to retrieve
 print "<B><A HREF='help.retrieve-ensembl-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
 print $query->popup_menu(-name=>'sequence_type',
-			  -values=>['upstream/downstream','gene','intron','first intron','exon','non-coding exon','UTRs', '5prime UTR', '3prime UTR'],
+			  -values=>['upstream/downstream','gene','transcript','mRNA','CDS','intron','first intron','exon','non-coding exon','UTRs', '5prime UTR', '3prime UTR'],
 			  -default=>$default{sequence_type});
 print "<BR/>\n";
 
