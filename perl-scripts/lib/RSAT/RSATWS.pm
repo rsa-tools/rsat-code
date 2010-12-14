@@ -4883,14 +4883,16 @@ sub random_graph {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/random_graph-input-graph.XXXXXXXXXX`;
-   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
-   print TMP_IN $input_graph;
-   close TMP_IN;
-   $tmp_input =~ s/\'//g;
-   $tmp_input =~ s/\"//g;
-   chomp $tmp_input;
-   $command .= " -i '".$tmp_input."'";
+   if ($input_graph ne "") {
+     my $tmp_input = `mktemp $TMP/random_graph-input-graph.XXXXXXXXXX`;
+     open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+     print TMP_IN $input_graph;
+     close TMP_IN;
+     $tmp_input =~ s/\'//g;
+     $tmp_input =~ s/\"//g;
+     chomp $tmp_input;
+     $command .= " -i '".$tmp_input."'";
+    }
   }
   if ($args{nodefile}) {
    my $nodefile = $args{nodefile};
