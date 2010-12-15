@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.18 2009/12/14 08:42:57 jvanheld Exp $
+# $Id: consensus.cgi,v 1.19 2010/12/15 09:32:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -149,12 +149,9 @@ if ($query->param('output') eq "display") {
 
     system "$convert_matrix_command -i $result_file -o $matrix_file";
 
-    
     &DelayedRemoval($result_file);
     &DelayedRemoval($matrix_file);
 
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
 }
