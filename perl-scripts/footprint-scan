@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.50 2010/12/03 23:38:16 amedina Exp $
+# $Id: footprint-scan,v 1.51 2010/12/15 09:24:00 rsat Exp $
 #
 ############################################################
 
@@ -165,7 +165,7 @@ their parameters.
 
  footprint-scan -v 2  -org Escherichia_coli_K12 \
     -taxon Enterobacteriales -q sodA -q lexA -q araC \
-    -bgfile ${RSAT}/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -bgfile ${RSAT}/public_html/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
     -m RegulonDB_matrices_transfac_format.txt \
     -matrix_format transfac \
     -matrix_suffix RegulonDB \
@@ -173,7 +173,7 @@ their parameters.
 
  footprint-scan -v 2  -org Escherichia_coli_K12 \
     -taxon Enterobacteriales -q sodA  \
-    -bgfile ${RSAT}/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -bgfile ${RSAT}/public_html/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
     -m RegulonDB_matrices.tab \
     -matrix_format tab \
     -matrix_suffix RegulonDB \
@@ -198,7 +198,7 @@ respective orthologous sequences.
 
  footprint-scan -v 2  -org Escherichia_coli_K12 \
     -taxon Enterobacteriales -all_genes \
-    -bgfile ${RSAT}/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -bgfile ${RSAT}/public_html/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
     -m MetJ_Regulon_matrix.tab \
     -matrix_format tab \
     -matrix_suffix RegulonDB \
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.50 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.51 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;

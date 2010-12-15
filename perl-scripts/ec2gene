@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 ### initialization
-$ec_file = "$ENV{RSAT}/data/enzymes/enzymes.tab";
+$ec_file = "$ENV{RSAT}/public_html/data/enzymes/enzymes.tab";
 $col{'ec'} = 6;
 $col{'gene'} = 3;
 $col{'org'} = 4;

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-broad-mit,v 1.7 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: parse-broad-mit,v 1.8 2010/12/15 09:24:58 rsat Exp $
 #
 ############################################################
 
@@ -88,7 +88,7 @@ The program delivers
 =back
 
 To install it in RSAT, the user must place all the files in the
-directory $RSAT/data/genomes/organism_name/genome/, then add the
+directory $RSAT/public_html/data/genomes/organism_name/genome/, then add the
 organism.tab file, and use the install-organism command.
 
 =cut
@@ -111,7 +111,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
