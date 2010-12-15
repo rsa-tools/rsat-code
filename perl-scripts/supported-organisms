@@ -50,15 +50,15 @@ my $taxon = "";
 ## Perl-script-based loading to the tab-delimited text file-based
 ## loding.  In principe this piece of code should run only once per
 ## server, and then be suppressed.
-# unless (-e $ENV{RSAT}."/data/supported_organisms.tab") {
+# unless (-e $ENV{RSAT}."/public_html/data/supported_organisms.tab") {
 #   &RSAT::message::Warning("supported_organisms.tab is missing, regenerating from the .pl files");
 #   ## Load organisms from the (obsolete) Perl file supported_organisms.pl
-#   my $perl_organisms = $ENV{RSAT}."/data/supported_organisms.pl";
+#   my $perl_organisms = $ENV{RSAT}."/public_html/data/supported_organisms.pl";
 #   if (-e $perl_organisms) { 
 #     &RSAT::message::Warning("Loading organisms from file", $perl_organisms);
 #    require $perl_organisms;
 #   }
-#   my $perl_organisms_ensembl = $ENV{RSAT}."/data/supported_mammals.pl";
+#   my $perl_organisms_ensembl = $ENV{RSAT}."/public_html/data/supported_mammals.pl";
 #   if (-e $perl_organisms_ensembl) {
 #     &RSAT::message::Warning("Loading organisms from file", $perl_organisms_ensembl);
 #     require $perl_organisms_ensembl;

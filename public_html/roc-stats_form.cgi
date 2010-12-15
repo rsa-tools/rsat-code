@@ -230,7 +230,7 @@ my $demo_data=`grep -v "^;" $ENV{RSAT}/public_html/demo_files/roc-stats_demo_reg
 # 0.15	pos
 # 0.05	neg
 # ";
-#print "$ENV{RSAT}/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab\n<BR>".$demo_data;
+#print "$ENV{RSAT}/public_html/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab\n<BR>".$demo_data;
 print "<TD><B>";
 print $query->hidden(-name=>'data',-default=>$demo_data);
 print $query->hidden(-name=>'sc_col',-default=>'3');

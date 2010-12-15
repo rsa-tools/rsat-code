@@ -78,7 +78,7 @@ $start_time = &RSAT::util::StartScript();
 $ORF_column = 1;
 
 #### initialise parameters ####
-#$ORF_function_file = "$ENV{RSAT}/data/yeast/genome/MIPS.orf_function";
+#$ORF_function_file = "$ENV{RSAT}/public_html/data/yeast/genome/MIPS.orf_function";
 
 
 #### read arguments ####

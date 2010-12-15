@@ -6,7 +6,7 @@ require "RSA.lib";
 
 
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 $seq_oligofreq_command = "$SCRIPTS/seq_oligofreq";
 
@@ -137,7 +137,7 @@ while (&NextSequence) {
 close $in;
 
 #### expected frequencies ####
-$freq_file = "$ENV{RSAT}/data/yeast/oligo-frequencies//$oligo_length.freq";
+$freq_file = "$ENV{RSAT}/public_html/data/yeast/oligo-frequencies//$oligo_length.freq";
 
 unless (open EXPECTED, $freq_file) {
   print "	cannot open frequency file\n";

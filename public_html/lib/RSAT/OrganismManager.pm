@@ -130,7 +130,7 @@ sub load_supported_organisms {
 #   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $organism_full_name;
 
 #   ## Data directory
-#   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $ENV{RSAT}."/data/genomes/".$org;
+#   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $ENV{RSAT}."/public_html/data/genomes/".$org;
 
 #   ## Update date
 #   my $now = `date '+%Y/%m/%d %H:%M:%S'`;
@@ -172,10 +172,10 @@ directory, upstream length, ...).
 =cut
 sub export_supported_organisms {
   my ($organism_table, @fields) = @_;
-  $organism_table = $organism_table || $ENV{RSAT}."/data/supported_organisms.tab";
+  $organism_table = $organism_table || $ENV{RSAT}."/public_html/data/supported_organisms.tab";
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table);
   print $table_handle &supported_organism_table("header", 1, @fields);
-  &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/data/supported_organisms.pl") if ($main::verbose >= 3);
+  &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/public_html/data/supported_organisms.pl") if ($main::verbose >= 3);
   &RSAT::message::Info("Exported supported organisms", $organism_table) if ($main::verbose >= 1);
 }
 
