@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.53 2010/09/26 06:36:14 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.54 2010/12/15 09:31:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -103,7 +103,7 @@ print <<EndText;
 
     <ul>
 
-     <p><li><font color="red">New !</font> <a target='_top' href='http://rsat.bigre.ulb.ac.be/rsat/tutorial_ECCB_2010/'>Supporting
+     <p><li><font color="red">New !</font> <a target='_top' href='http://rsat.ulb.ac.be/rsat/tutorial_ECCB_2010/'>Supporting
      material</a> of the 3rd Tutorial presented at </a> of <a target='_blank' href='http://www.eccb10.org/'>ECCB
      2010</a> (Sunday Sept 26).</li></p>
 
