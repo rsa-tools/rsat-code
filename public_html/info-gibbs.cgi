@@ -135,7 +135,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
 
   ################################################################
   ## Convert the background model because info-gibbs requires bg in MotifSampler (inclusive) format
-  #$exp_freq_file = "$ENV{RSAT}/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
+  #$exp_freq_file = "$ENV{RSAT}/public_html/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
   $exp_freq_file = &ExpectedFreqFile($organism, $oligo_length, $background, type=>$oligotype, noov=>$overlap, str=>$strand, taxon=>$taxon);
   $convert_bg_cmd = "$SCRIPTS/convert-background-model -from oligo-analysis -to MotifSampler -i $exp_freq_file -o ${TMP}/$tmp_file_name.bg";
   print "<pre>$convert_bg_cmd</pre>" if ($ENV{rsat_echo} >=1);

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.99 2010/11/12 21:41:28 rsat Exp $
+# $Id: install-organism,v 1.100 2010/12/15 09:26:17 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -15,7 +15,7 @@ require RSAT::util;
 
 ## initialisation
 
-$config_table = $ENV{RSAT}."/data/supported_organisms.tab";
+$config_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
 @masking_modes = (""); ## by default, use no masking
 @oligo_lengths=(6,1,2,3,4,5,7,8);
 $verbose = 0;
@@ -154,7 +154,7 @@ if ($dir{install}) {
     $dir{install} = $supported_organism{$organism_short_name}->{'data'};
     &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 1);
 } else {
-    $dir{install} = $ENV{RSAT}."/data/genomes/".$organism_short_name;
+    $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
     &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 1);
 }
 
@@ -322,7 +322,7 @@ sub UpdateConfigPerl {
   if ($local_config) {
     $config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
   } else {
-    $config_to_update = "$ENV{RSAT}/data/supported_organisms.pl";
+    $config_to_update = "$ENV{RSAT}/public_html/data/supported_organisms.pl";
   }
 
   ## Check if the organism was already installed before
@@ -445,7 +445,7 @@ sub CreatePhylogeny {
 	$taxonomy =~ s|\)|_|g; ## this character cannot be used for a directory name
 	$taxonomy =~ s|\,|.|g; ## Not fatal, but usually not found in folder names.
 	$taxonomy =~ s|\:|.|g; ## Not fatal, but usually not found in folder names.
-	$dir{taxonomy} = $ENV{RSAT}."/data/phylogeny/".$taxonomy;
+	$dir{taxonomy} = $ENV{RSAT}."/public_html/data/phylogeny/".$taxonomy;
 	$dir{taxonomy} =~ s|//|/|g;
 	my ($org_dir) = &ShortFileName($dir{install});
 	&RSAT::util::CheckOutDir($dir{taxonomy});
@@ -929,7 +929,7 @@ OPTIONS
 		genome to be installed.
 
 		By default, the organism configuration file is 
-			   \$RSAT/data/genomes/supported_organisms.pl
+	      	\$RSAT/public_html/data/genomes/supported_organisms.pl
 
 	-local
 		Absolute path of a RSA local config file.
@@ -940,7 +940,7 @@ OPTIONS
 
 		In addition to the organisms installed by the RSAT
 		system administrator (found in
-		$ENV{RSAT}/data/supported_organisms.tab), users can
+		$ENV{RSAT}/public_html/data/supported_organisms.tab), users can
 		install some organisms locally.
 
 		For this, the user must first define an environment

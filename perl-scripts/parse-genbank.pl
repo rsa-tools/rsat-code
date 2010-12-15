@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.63 2010/09/09 14:37:03 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.64 2010/12/15 09:24:58 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -225,7 +225,7 @@ package main;
 	    $dir{output} = $parsed_data."/refseq/".$ext."/".$delivery_date;
 	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 2);
 	} else {
-	    $dir{output} = "$ENV{RSAT}/data/genomes/".$org."/genome";
+	    $dir{output} = "$ENV{RSAT}/public_html/data/genomes/".$org."/genome";
 	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 2);
 	}
     }

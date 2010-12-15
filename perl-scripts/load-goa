@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.18 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: load-goa,v 1.19 2010/12/15 09:24:41 rsat Exp $
 #
 ############################################################
 
@@ -140,7 +140,7 @@ package main;
 	#loading organism      
 	my $organism = &load_organism($organism_name);
 	($main::in) = &OpenInputFile($main::infile{input});
-	my $godir = $ENV{RSAT}."/data/genomes/".$organism_name."/go";
+	my $godir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/go";
 	if ($outputfile eq "") { 
 	    system("mkdir $godir");
 	    $main::outfile{output} = $godir."/".$organism_name."_go.tab";
@@ -459,7 +459,7 @@ sub taxid_search() {
     keys %main::supported_organism;
     my @supported_organisms = keys %main::supported_organism;
     foreach my $organism (@supported_organisms) {
-	my $file = $ENV{RSAT}."/data/genomes/".$organism."/genome/organism.tab";
+	my $file = $ENV{RSAT}."/public_html/data/genomes/".$organism."/genome/organism.tab";
 	my $taxid =  `cat $file | grep -v '^-' | grep '[0-9]' | cut -f 1`;
 	chomp($taxid);
 	$rep->add_value($taxid, $organism);
@@ -516,7 +516,7 @@ sub load_organism() {
     &RSAT::message::psWarn("Loading organism", $organism_name) if ($main::verbose >= 2);
     my $organism_name = $_[0];
     my $organism = new RSAT::organism();
-    my $cdsfile = $ENV{"RSAT"}."/data/genomes/".$organism_name."/genome/cds.tab";
+    my $cdsfile = $ENV{"RSAT"}."/public_html/data/genomes/".$organism_name."/genome/cds.tab";
     if (-e $cdsfile) {
 	$organism->check_name($organism_name);
 	$organism->set_attribute("name", $organism_name);

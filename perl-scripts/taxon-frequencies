@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.41 2010/11/30 08:17:40 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.42 2010/12/15 09:23:28 rsat Exp $
 #
 ############################################################
 
@@ -758,7 +758,7 @@ Incompatible with the option -o and -install.
 
 Automatically specify the name of the output file and save the result
 in the $RSAT directory. This requires to have write permissions on the
-$RSAT/data directory.
+$RSAT/public_html/data directory.
 
 Incompatible with the option -o and -dir.
 

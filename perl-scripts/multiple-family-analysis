@@ -6,7 +6,7 @@ die "multiple-family-analysis has been renamed gene-cluster-motifs, please use t
 
 # ############################################################
 # #
-# # $Id: multiple-family-analysis,v 1.295 2010/12/08 04:54:19 rsat Exp $
+# # $Id: multiple-family-analysis,v 1.296 2010/12/15 09:25:55 rsat Exp $
 # #
 # # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 # #
@@ -40,7 +40,7 @@ die "multiple-family-analysis has been renamed gene-cluster-motifs, please use t
 # {
 
 #   local $start_time = &RSAT::util::StartScript();
-#   local $program_version = do { my @r = (q$Revision: 1.295 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#   local $program_version = do { my @r = (q$Revision: 1.296 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 #   ## Paths of the programs called by multiple-family-analysis
 #   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -3369,7 +3369,7 @@ die "multiple-family-analysis has been renamed gene-cluster-motifs, please use t
 # 	my $matrix_file = $matrix_prefix."_count_matrices.tf";
 # 	if (-e $matrix_file) {
 # 	  my $compa_prefix = $matrix_prefix."_vs_jaspar";
-# 	  &MotifsVsDB($matrix_file, "transfac", $ENV{RSAT}."/data/motif_databases/JASPAR/jaspar_matrices.tf", "transfac", $compa_prefix);
+# 	  &MotifsVsDB($matrix_file, "transfac", $ENV{RSAT}."/public_html/data/motif_databases/JASPAR/jaspar_matrices.tf", "transfac", $compa_prefix);
 # 	} else {
 # 	  &RSAT::message::Warning("Motif versus DB", $matrix_type, "Matrix file does not exist", $matrix_file);
 # 	}

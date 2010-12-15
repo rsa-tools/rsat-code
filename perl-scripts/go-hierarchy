@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.20 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: go-hierarchy,v 1.21 2010/12/15 09:25:56 rsat Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
      $main::verbose = 0;
 #    $main::in = STDIN;
      $main::out = STDOUT;
-     $infile{inputfile} = $ENV{RSAT}."/data/go/go.obo";
+     $infile{inputfile} = $ENV{RSAT}."/public_html/data/go/go.obo";
 
     ################################################################
     ## Read argument values
@@ -132,7 +132,7 @@ package main;
       ##  Check whether organism is available in RSAT
       $organism->check_name($organism_name);
       my $rsa = $ENV{RSAT};
-      $goafile = $ENV{RSAT}."/data/genomes/".$organism_name."/go/".$organism_name."_go.tab";
+      $goafile = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/go/".$organism_name."_go.tab";
       ##  Check whether there is a go file available for this organism
       if (!-e $goafile || -z $goafile) {
         &FatalError(join("\t", "File $goafile does not exist"));
@@ -543,7 +543,7 @@ Same as -h
 
 This file must be in the obo format. 
 If no obo input file is specified, the program will look for the default obo file, 
-which is located in <I>$RSAT/data/go/go.obo
+which is located in <I>$RSAT/public_html/data/go/go.obo
 
 This file must be regularly updated from the gene ontology website <I>http://www.geneontology.org/
 
