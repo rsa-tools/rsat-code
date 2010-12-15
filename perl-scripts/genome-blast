@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.22 2010/11/30 14:35:29 rsat Exp $
+# $Id: genome-blast,v 1.23 2010/12/15 09:26:40 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -619,9 +619,9 @@ taxon organism. This option is useless when dbtaxon == qtaxon.
 Specify the ourput directory. 
 
 By default, blast results are exported in the RSAT genome directory
-($RSAT/data/genomes), but for this you need to have write access to that
-directory. If this is not the case, the output can be redirected to another
-directory of your choice.
+($RSAT/public_html/data/genomes), but for this you need to have write access
+to that directory. If this is not the case, the output can be redirected to
+another directory of your choice.
 
 =cut
  	} elsif ($ARGV[$a] eq "-outdir") {

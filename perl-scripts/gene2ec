@@ -23,7 +23,7 @@ $col{'gene'} = 0;
 
 #### EC file
 $ec_file = $supported_organism{$organism_name}->{'data'}."/genome/cds_ec_number.tab";
-#$ec_file = "$ENV{RSAT}/data/${organism_name}/genome/cds_EC_number_${organism_name}.tab";
+#$ec_file = "$ENV{RSAT}/public_html/data/${organism_name}/genome/cds_EC_number_${organism_name}.tab";
 &RSAT::error::FatalError("EC file does not exist for organism $organism_name\t$ec_file\n")
     unless (-e $ec_file);
 

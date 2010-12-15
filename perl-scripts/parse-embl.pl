@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.25 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.26 2010/12/15 09:24:58 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -358,7 +358,7 @@ package main;
 	#### default output directory
 	$export_subdir = "embl";
 	$dir{output} = "$parsed_data/$export_subdir/$delivery_date/$org";
-#	$dir{output} = "$ENV{RSAT}/data/embl_genomes/$org/genome";
+#	$dir{output} = "$ENV{RSAT}/public_html/data/embl_genomes/$org/genome";
 	warn "; Auto selection of output dir\t$dir{output}\n" if ($main::verbose >= 1);
     }
     &CheckOutputDir($dir{output});
