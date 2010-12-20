@@ -197,6 +197,7 @@ print $query->popup_menu(-name=>'strands',
 print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html#origin'><B>Origin</B></A>\n";
 print $query->popup_menu(-name=>'origin',
 			 -Values=>['start',
+				   'center',
 				   'end',
 				   'genomic'],
 			 -default=>$default{origin});

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.183 2010/12/15 09:21:53 rsat Exp $
+# $Id: matrix-scan,v 1.184 2010/12/20 16:05:48 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -355,7 +355,7 @@ package main;
   local $both_strands = 1;
   local $sum_seq_len = 0;
   local $origin = "start";
-  local %supported_origin = ('start'=>1, 'end'=>1, 'genomic'=>1);
+  local %supported_origin = ('start'=>1, 'center'=>1, 'end'=>1, 'genomic'=>1);
   local $supported_origins = join (",", keys (%supported_origin));
   local $offset = 0;
   local $pseudo_counts = 1;
@@ -1173,6 +1173,8 @@ package main;
 			     ## matches have to be reversed.
     if ($origin eq "end") {
       $orig_pos = $seq_len + $main::offset + 1;
+    } elsif ($origin eq "center") {
+      $orig_pos = &round(($seq_len+1)/2) + $main::offset;
     } elsif ($origin eq "start") {
       $orig_pos = $main::offset;
     } elsif ($origin eq "genomic") {
