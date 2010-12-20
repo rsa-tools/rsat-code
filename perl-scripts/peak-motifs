@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.102 2010/12/12 05:52:02 jvanheld Exp $
+# $Id: peak-motifs,v 1.103 2010/12/20 15:04:21 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.102 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -323,8 +323,10 @@ sub DefaultParameters {
 
   ## Formats
   $main::param{seq_format} = "fasta"; push(@main::param_list, "seq_format");
-  $main::param{img_format} = "pdf"; push(@main::param_list, "img_format");
+#  $main::param{img_format} = "pdf"; push(@main::param_list, "img_format");
   $main::param{img_format} = "png"; push(@main::param_list, "img_format");
+  $main::param{img_border} = 1; ## Border for the images in the synthetic table (generally blue because linked to the image file)
+  $main::param{logo_table_height} = 50; ## Height for displaying logos in the synthetic tables
 
   ## Motif formats
   $main::param{ref_motifs_format} = "transfac"; push(@main::param_list, "ref_motifs_format");
@@ -701,7 +703,7 @@ sub SetOutFileNames {
     $main::outfile{"ref_motifs_enriched"} = &OutFileName("data/ref_motifs", "tab", "ref_motifs_enriched");
 
     ## Comparison betweeen discovered motifs and reference motif
-    $main::outfile{"motifs_vs_ref_prefix"} = &OutFileName("results/discovered_vs_ref", "", "motifs_vs_ref");
+    $main::prefix{"motifs_vs_ref_prefix"} = &OutFileName("results/discovered_vs_ref", "", "motifs_vs_ref");
     $main::outfile{"motifs_vs_ref"} = &OutFileName("results/discovered_vs_ref", ".tab", "motifs_vs_ref");
     $main::outfile{"motifs_vs_ref_html"} = &OutFileName("results/discovered_vs_ref", ".html", "motifs_vs_ref");
     push @timelog_keys, "motifs_vs_ref";
@@ -714,7 +716,7 @@ sub SetOutFileNames {
   ## Comparison between discovered motifs and database(s)
   if (scalar(@motif_databases) > 0) {
     foreach my $db_name (@motif_databases) {
-      $main::outfile{"motifs_vs_db_".$db_name.'_prefix'} = &OutFileName("results/discovered_vs_db", "", "motifs_vs_db_".$db_name);
+      $main::prefix{"motifs_vs_db_".$db_name."_prefix"} = &OutFileName("results/discovered_vs_db", "", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name} = &OutFileName("results/discovered_vs_db", ".tab", "motifs_vs_db_".$db_name);
       $main::outfile{"motifs_vs_db_".$db_name."_html"} = &OutFileName("results/discovered_vs_db", ".html", "motifs_vs_db_".$db_name);
       push @timelog_keys, "motifs_vs_db_".$db_name;
@@ -1273,17 +1275,80 @@ sub MergeMotifs {
 
 
 ################################################################
-## Load the discovered motifs from the .tf file
+## Load the discovered motifs from the merged .tf file
 sub ReadDiscoveredMotifs {
   my @motifs = ();
   if (-e $main::outfile{motifs_discovered}) {
     @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
     my $motif_nb = scalar(@motifs);
+
+    foreach my $matrix (@motifs) {
+      my $motif_id = $matrix->get_attribute("id");
+      &SetFileNamesForMotif($motif_id);
+    }
+
     &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
   } else {
     &RSAT::message::Warning("Discovered motif file does not exist",  $main::outfile{motifs_discovered});
   }
   return @motifs;
+}
+
+
+################################################################
+## Specify the names of all fiels associated to one discovered motif
+## and index those file names for post-processing and synthesis.
+sub SetFileNamesForMotif {
+  my ($motif_id) = @_;
+
+  my $motif_dir = $dir{output}."/results/discovered_motifs/".$motif_id;
+
+
+  ## Prefix for motif files
+  $main::prefix{$motif_id."_prefix"} = &OutFileName($motif_dir, "", $motif_id);
+
+  ## Output file for the motif (transfac format)
+  ($main::outfile{$motif_id.'_tf'}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
+#  $main::outfile{$motif_id.'_tf'} = $motif_file;
+  #      &RSAT::message::Debug("motif subdir", $motif_id, $subdir) if ($main::verbose >= 5);
+
+
+  ## Only index once the output directories because this routine may be
+  ## called several times (by &SplitMotifs() and &ReadMotifTable()).
+  unless (defined($main::dir{$motif_id})) {
+    $main::dir{$motif_id} = $motif_dir; push @outdir, $motif_id;
+    $main::dir{$motif_id.'_subdir'} = $subdir
+  }
+#  $main::prefix{$motif_id."_prefix"} = $motif_prefix;
+
+#  $main::outfile{$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
+
+  ## Tab-delimited matrix file
+  $main::outfile{$motif_id."_tab"} = $main::prefix{$motif_id."_prefix"}.".tab";
+
+  ## Sequence logos
+  $main::prefix{$motif_id."_logo"} = $main::prefix{$motif_id."_prefix"}."_logo";
+  $main::outfile{$motif_id."_logo"} = $main::prefix{$motif_id."_logo"}.".".$main::param{img_format};
+  $main::prefix{$motif_id."_logo_rc"} = $main::prefix{$motif_id."_prefix"}."_logo_rc";
+  $main::outfile{$motif_id."_logo_rc"} = $main::prefix{$motif_id."_logo_rc"}.".".$main::param{img_format};
+#  $main::outfile{$motif_id."_logo_rc"} = $main::prefix{$motif_id."_prefix"}."_logo_rc";
+
+  ## Predicted sites (sequence scanning)
+  $main::outfile{$motif_id.'_pssm_sites'} = $main::prefix{$motif_id."_prefix"}."_sites.tab";
+  $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.tab";
+  $main::outfile{$motif_id.'_pssm_site_distrib_graph'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.".$main::param{img_format};
+
+  ## Comparisons betwen discoverd and reference motifs
+  $main::pretix{$motif_id."_vs_ref_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_ref");
+  $main::outfile{$motif_id."_vs_ref"} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_ref");
+  $main::outfile{$motif_id."_vs_ref_html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_ref");
+
+  ## Comparisons betwen discoverd and motif databases
+  foreach my $db_name (@motif_databases) {
+    $main::prefix{$motif_id.'_vs_db_'.$db_name."_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id.'_vs_db_'.$db_name);
+    $main::outfile{$motif_id.'_vs_db_'.$db_name} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id.'_vs_db_'.$db_name);
+    $main::outfile{$motif_id.'_vs_db_'.$db_name."html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id.'_vs_db_'.$db_name);
+  }
 }
 
 ################################################################
@@ -1312,7 +1377,6 @@ sub SplitMotifs {
     ## Store each motif in a separate directory and file
     foreach my $motif (@motifs) {
       $m++;
-
       ## Get the motif ID or, if not defined, create an ID
       my $motif_id = $motif->get_attribute("id");
       unless ($motif_id) {
@@ -1324,9 +1388,8 @@ sub SplitMotifs {
 	$motif_id = "discomotif_".$id_nb;
       }
 
-      my $motif_dir = "results/discovered_motifs/".$motif_id;
-      ($main::outfile{$motif_id.'_tf'}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
-      $main::outfile{$motif_id.'_prefix'} = &OutFileName($motif_dir, "", $motif_id);
+      ## Define all the file names for the current motif
+      &SetFileNamesForMotif($motif_id);
 
       ## Print the motif in transfac format
       $current_out = &OpenOutputFile($main::outfile{$motif_id.'_tf'});
@@ -1336,17 +1399,15 @@ sub SplitMotifs {
 					 );
       close($current_out);
 
-      print $motif_table join("\t", $m, $motif_id, $subdir, $main::outfile{$motif_id.'_prefix'}, $main::outfile{$motif_id.'_tf'}), "\n";
+      print $motif_table join("\t", $m, $motif_id, $subdir, $main::prefix{$motif_id."_prefix"}, $main::outfile{$motif_id.'_tf'}), "\n";
 
-      ## Create logos (forward and reverse complementary) for each discovered motif
-      $main::outfile{$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
+      ## Convert the motif to a tab-delimited file
       my $cmd = $SCRIPTS."/convert-matrix -v 0";
       $cmd .= " -i ".$main::outfile{$motif_id.'_tf'};
       $cmd .= " -from transfac -to tab";
-      $cmd .= " -return counts,logo";
+      $cmd .= " -return counts";
       $cmd .= " -o ".$main::outfile{$motif_id."_tab"};
       &one_command($cmd, 1);
-
       #    &RSAT::message::Debug("&SplitMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id.'_tf'}) if ($main::verbose >= 10);
     }
   }
@@ -1454,9 +1515,9 @@ sub ReadMotifTable {
     return;
   }
   my ($in) = &OpenInputFile($main::outfile{motifs_discovered_table});
-  my $motif_id;
-  my $motif_dir;
-  my $motif_file;
+  local $motif_id;
+  local $motif_dir;
+  local $motif_file;
   while (<$in>) {
     next unless (/\S/); # Skip empty lines
     next if (/^;/); # skip comment lines
@@ -1468,33 +1529,7 @@ sub ReadMotifTable {
     push @motif_prefixes, $motif_prefix;
     push @motif_files, $motif_file;
 
-    ################################################################
-    ## Index motif-specific files for post-processing and synthesis
-
-    $main::dir{$motif_id} = $motif_dir; push @outdir, $motif_id;
-    $main::outfile{$motif_id.'_tf'} = $motif_file;
-    $main::outfile{$motif_id.'_prefix'} = $motif_prefix;
-    $main::outfile{$motif_id."_tab"} = $main::outfile{$motif_id.'_prefix'}.".tab";
-    $main::outfile{$motif_id.'_pssm_sites'} = $main::outfile{$motif_id.'_prefix'}."_sites.tab";
-    $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::outfile{$motif_id.'_prefix'}."_site_distrib.tab";
-    $main::outfile{$motif_id.'_pssm_site_distrib_graph'} = $main::outfile{$motif_id.'_prefix'}."_site_distrib".$main::param{img_format};
-
-#    &RSAT::message::Debug("\n\ttab", $main::outfile{$motif_id."_tab"},
-#			  "\n\tsites", $main::outfile{$motif_id.'_pssm_sites'},
-#			 ) if ($main::verbose >= 10);
-
-    ## Comparisons betwen discoverd and reference motifs
-    $main::outfile{$motif_id."_vs_ref_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_ref");
-    $main::outfile{$motif_id."_vs_ref"} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id."_vs_ref");
-    $main::outfile{$motif_id."_vs_ref_html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id."_vs_ref");
-
-
-    ## Comparisons betwen discoverd and motif databases
-    foreach my $db_name (@motif_databases) {
-      $main::outfile{$motif_id.'_vs_db_'.$db_name.'_prefix'} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id.'_vs_db_'.$db_name);
-      $main::outfile{$motif_id.'_vs_db_'.$db_name} = &OutFileName("results/discovered_motifs/".$motif_id, ".tab", $motif_id.'_vs_db_'.$db_name);
-      $main::outfile{$motif_id.'_vs_db_'.$db_name."html"} = &OutFileName("results/discovered_motifs/".$motif_id, ".html", $motif_id.'_vs_db_'.$db_name);
-    }
+    &SetFileNamesForMotif($motif_id);
 #    &RSAT::message::Debug("Indexed motif", $motif_nb, $motif_id, $motif_dir, $motif_file) if ($main::verbose >= 10);
   }
   close ($in);
@@ -1521,7 +1556,7 @@ sub MotifsVersusReference {
     $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id.'_tf'};
     $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
     $cmd .= $main::param{motif_compa_options};
-    $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_prefix"};
+    $cmd .= " -o ".$main::prefix{$motif_id."_vs_ref_prefix"};
     $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id."_vs_ref"};
     $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_html"};
     &one_command($cmd, 1);
@@ -1539,7 +1574,7 @@ sub MotifsVersusReference {
   $cmd .= $main::param{motif_compa_options};
   $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motifs_transfac};
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
-  $cmd .= " -o ".$main::outfile{"motifs_vs_ref_prefix"};
+  $cmd .= " -o ".$main::prefix{"motifs_vs_ref_prefix"};
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_ref"};
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref_html"};
   &one_command($cmd, 1);
@@ -1561,8 +1596,6 @@ sub MotifsVersusReference {
   $cmd .= " -layout none";
   $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_ref_png"};
   &one_command($cmd, 1);
-
-
 }
 
 ################################################################
@@ -1588,7 +1621,7 @@ sub MotifsVersusDatabase {
       $cmd .= " -format2 ".$main::motif_db_format{$db_name};
       $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
       $cmd .= $main::param{motif_compa_options};
-      $cmd .= " -o ".$main::outfile{$motif_id.'_vs_db_'.$db_name.'_prefix'};
+      $cmd .= " -o ".$main::prefix{$motif_id.'_vs_db_'.$db_name."_prefix"};
       $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id.'_vs_db_'.$db_name};
       $cmd .= " -o ".$main::outfile{$motif_id.'_vs_db_'.$db_name."html"};
       &one_command($cmd, 1);
@@ -1883,6 +1916,59 @@ sub PrintHtmlFileHedaer {
 
 }
 
+################################################################
+## Colorize a consensus with same colors as sequence logos
+sub ColorConsensus {
+  my ($consensus, %args) = @_;
+  my $color_consensus = "";
+  my %color = (
+	       ## Nucleotides
+	       A=>'#00CC00',
+	       C=>'#0000DD',
+	       G=>'#FFBB00',
+	       T=>'#DD0000',
+
+	       other=>'#888888',
+	      );
+
+
+  if ($args{iupac}) {
+    ## Two-nucleotide IUPAC
+#    $color{K} = '#FF6600';
+#    $color{W} = '#BB8800';
+#    $color{R} = '#88BB00';
+#    $color{S} = '#6688DD';
+#    $color{Y} = '#880088';
+
+    $color{K} = '#CC5500';
+    $color{W} = '#884400';
+    $color{R} = '#666600';
+    $color{S} = '#4466BB';
+    $color{Y} = '#660066';
+  }
+
+  ## Case-insensitive coloring
+  foreach my $letter (keys %color) {
+    $color{lc($letter)} = $color{$letter};
+  }
+
+  $color_consensus = "<b>"if ($args{bold});
+  foreach my $l (0..length($consensus)) {
+    my $letter = substr($consensus, $l, 1);
+    my $color;
+    if (defined($color{$letter})) {
+      $color = $color{$letter};
+    } else {
+      $color = $color{other};
+    }
+    $color_consensus .= "<font color='".$color."'>";
+    $color_consensus .= $letter;
+    $color_consensus .= "</font>";
+  }
+  $color_consensus .= "</b>"if ($args{bold});
+  return $color_consensus;
+}
+
 
 
 ################################################################
@@ -1891,32 +1977,161 @@ sub PrintHtmlFileHedaer {
 sub SynthesisByMotif {
   print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs</h3>", 0);
   print $syn "<table class='sortable'>\n";
+
+  &ReadMotifTable();
+
   my @motifs = &ReadDiscoveredMotifs();
 
-  ## Load background model for computing the consensus
+  ## Load background model for computing the consensus and logo of each motif
   &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 2);
-  my $bg_model = new RSAT::MarkovModel();
+  local $bg_model = new RSAT::MarkovModel();
   $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
 
   ## Header of the motif table
-  print $syn "<p><table class=\"sortable\">\n";
-  print $syn "<tr>\n";
-  print $syn "<th>", "nb","</th>\n";
-  print $syn "<th>", "name","</th>\n";
-  print $syn "<th>", "consensus.IUPAC","</th>\n";
-  print $syn "<th>", "consensus.IUPAC.rc","</th>\n";
-  print $syn "</tr>\n";
+#   print $syn "<p><table class=\"sortable\">\n";
+#   print $syn "<tr>\n";
+#   print $syn "<th>", "nb","</th>\n";
+#   print $syn "<th>", "name","</th>\n";
+#   print $syn "<th>", "consensus.IUPAC","</th>\n";
+#   print $syn "<th>", "consensus.IUPAC.rc","</th>\n";
+#   print $syn "<th>", "Logo","</th>\n";
+#   print $syn "<th>", "Logo RC","</th>\n";
+#   print $syn "</tr>\n";
 
-  for my $m (1..scalar(@motifs)) {
+
+  ## Options for generating logos
+  my $logo_opt = "";
+
+  my $motif_nb = scalar(@motifs);
+  for my $m (1..$motif_nb) {
     my $matrix = $motifs[$m-1];
+    my $motif_id = $matrix->get_attribute("id");
+    &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $motif_id) if ($main::verbose >= 2);
     $matrix->setMarkovModel($bg_model);
+
+    ## We compute the consensus and logos here with the same background model as used for sequence scanning
     $matrix->calcConsensus();
+    my $consensus = $matrix->get_attribute("consensus.IUPAC");
+    $consensus = &ColorConsensus($consensus, bold=>1, iupac=>0);
+    my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
+    $consensus_rc = &ColorConsensus($consensus_rc,bold=>1, iupac=>0);
+
+    ## Compute matrix logos
+#    $matrix->makeLogo($main::prefix{$motif_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
+#    $matrix->makeLogo($main::prefix{$motif_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the logo image
+
     print $syn "<tr>\n";
-    print $syn "<td>", $m,"</td>\n";
+    print $syn "<td> Motif ", $m,"</td>\n";
     print $syn "<td>", $matrix->get_attribute("name"),"</td>\n";
-    print $syn "<td>", $matrix->get_attribute("consensus.IUPAC"),"</td>\n";
-    print $syn "<td>", $matrix->get_attribute("consensus.IUPAC.rc"),"</td>\n";
+    print $syn "<td>", $consensus,"</td>\n";
+    print $syn "<td>", $consensus_rc,"</td>\n";
+    #    my $logo_link = $main::outfile{$motif_id."_logo"}.".".$main::param{img_format};
+
+    ## Sequence logo
+    my $file = $main::outfile{$motif_id."_logo"};
+    if (-e $file) {
+      my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+      print $syn "<td align='right'>", "<a href='", $logo_link, "'>","<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height}, "' src='",$logo_link,"'>","</a>","</td>\n";
+    } else {
+      print $syn "<font color='red'>No logo</font>","</td>\n";
+    }
+
+    ## Sequence logo, reverse complementary
+    $file = $main::outfile{$motif_id."_logo_rc"};
+    if (-e $file) {
+      my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+      print $syn "<td align='left'>", "<a href='", $logo_link, "'>","<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height}, "' src='",$logo_link,"'>","</a>","</td>\n";
+    } else {
+      print $syn "<font color='red'>No logo</font>","</td>\n";
+    }
+
     print $syn "</tr>\n";
+
+    ## Motif comparison results
+    print $syn "<tr><td colspan='6'><table>\n";
+
+    my @match_fields = qw(name2 strand w Wr Ncor consensus1 consensus2);
+    foreach my $db_name (@motif_databases) {
+
+      ## Read the DB matches for the current motif
+      my $file = $main::outfile{$motif_id.'_vs_db_'.$db_name};
+      if (-e $file) {
+	my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+	my ($db_compa) = &OpenInputFile($file);
+	my %col_index = ();
+
+	## Print the header of the DB mactch table
+	my $db_match_table ="<table>\n";
+	$db_match_table .= "<tr>\n";
+	foreach my $field (@match_fields) {
+	  $db_match_table .= "<th>".$field."</th>\n";
+	}
+	$db_match_table .= "</tr>\n";
+	my $match_nb = 0;
+	my $max_match_nb = 3; ## Max number of matches to display in the synthetic table. 
+
+	while (<$db_compa>) {
+	  chomp();
+	  next unless (/\S/);
+	  next if (/^;/);
+	  if (/^#/) {
+	    ## Parse the column contents
+	    my @header_fields = split("\t");
+	    for my $h (0..$#header_fields) {
+	      my $field = $header_fields[$h];
+	      $col_index{$field} = $h;
+	    }
+	    next;
+	  }
+
+	  ## Only report the three first matches
+	  $match_nb++;
+	  next if ($match_nb > $max_match_nb);
+
+	  ## Add a row to the DB match table
+	  $db_match_table .= "<tr>\n";
+	  my @fields = split("\t");
+#	  &RSAT::message::Debug("DB matches", join ("; ", @fields)) if ($main::verbose >= 10);
+
+	  my @values = ();
+	  foreach my $field (@match_fields) {
+	    my $column = $col_index{$field};
+	    my $value = $fields[$column] || "NA";
+	    if ($field =~ /^consensus/) {
+	      $value = &ColorConsensus($value, bold=>1, iupac=>0);
+	    }
+	    $db_match_table .= "<td>".$value."</td>\n";
+#	    &RSAT::message::Debug("DB matches", $db_name, $match_nb, $field, "col=".$column, "value=".$value, $file) if ($main::verbose >= 10);
+	  }
+	  $db_match_table .= "</tr>\n";
+
+	}
+
+	## Report number of matches
+	$db_match_table .= "<tr>\n";
+	$db_match_table .= "<td colspan=5>Total maches= ".$match_nb;
+	if ($match_nb > $max_match_nb) {
+	  my $more_matches = $match_nb -$max_match_nb;
+	  $db_match_table .= " (".$more_matches." more)";
+	}
+	$db_match_table .= "</td>\n";
+	$db_match_table .= "</tr>\n";
+	$db_match_table .="</table>\n";
+
+	## Print the top matches + link to the complete file
+	print $syn "<tr>\n";
+	print $syn "<td valign='top'>", $db_name, "</td>\n";
+	print $syn "<td valign='top'>", $db_match_table, "</td>\n";
+	print $syn "</tr>\n";
+      }  else {
+	print $syn "<tr>\n";
+	print $syn "<td>", $db_name, "</td>\n";
+	print $syn "<td>", "<font color='red'>File not found</font>", "</td>\n";
+	print $syn "</tr>\n";
+      }
+
+    }
+    print $syn "</table></td></tr>\n";
   }
   print $syn "</table>\n";
   print $syn "</table><p>\n";
@@ -2123,7 +2338,7 @@ sub SynthesisSequenceComposition {
     $seq_stats .= "<br>\nMean length: ".$mean_peak_len." bp";
     $seq_stats .= "<br>\nMax length: ".$max_peak_len." bp";
     &SyntheticTableAddRow($seq_stats,
-			  "<a  href='".$img."'><img height=150 src='".$img."'></a>",
+			  "<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
 			  "converted",$main::outfile{$seq_type."_converted"},
 			  "purged",$main::outfile{$seq_type."_purged"},
 			  "lengths",$main::outfile{$seq_type."_seqlen"},
@@ -2136,9 +2351,9 @@ sub SynthesisSequenceComposition {
     for my $ol (@profiles_oligo_lengths) {
       my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
-      $table .= "<td>Transition frequencies<br><a  href='".$img."'><img width=200 src='".$img."'></a></td>";
+      $table .= "<td>Transition frequencies<br><a  href='".$img."'><img '".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
-      $table .= "<td>Position profile<br><a  href='".$img."'><img height=150 src='".$img."'></a></td>";
+      $table .= "<td>Position profile<br><a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a></td>";
       $table .= "</tr></table>";
       &SyntheticTableAddRow($ol."nt composition",
 			    $table,
@@ -2177,13 +2392,13 @@ sub SynthesisRefMotif {
       my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
       if (-e $logo_file) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
-	$logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+	$logo_table .= "<td align='right'><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
       } elsif ($main::verbose >= 1) {
 	&RSAT::message::Warning("Cannot find reference logo", $logo_file);
       }
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
-	$logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+	$logo_table .= "<td align='left'><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
       } elsif ($main::verbose >= 1) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
       }
@@ -2288,7 +2503,7 @@ sub SynthesisPatternDisco {
 	$pattern_table .= "&nbsp;"x5;
 	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
 	$pattern_table .= $pattern_info[$logo_nb]->{word};
-	$pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
+	$pattern_table .= "<br><a  href='".$img."'><img  border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
 	$pattern_table .= $start_format;
 	$pattern_table .= "</td>\n";
       } elsif ($main::verbose >= 1) {
@@ -2300,7 +2515,7 @@ sub SynthesisPatternDisco {
 	$pattern_table .= $start_format;
 	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
 	$pattern_table .= $pattern_info[$logo_nb]->{rc_word};
-	$pattern_table .= "<br><a  href='".$img."'><img height=70 src='".$img."'></a>";
+	$pattern_table .= "<br><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
 	$pattern_table .= "</td>\n";
       } elsif ($main::verbose >= 1) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc) if ($main::verbose >= 3);
@@ -2340,7 +2555,7 @@ sub SynthesisPatternDisco {
 sub SynthesisWordCompa {
   my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{merged_words_heatmap});
   &SyntheticTableAddRow("Word comparisons",
-			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
+			"<a  href='".$img."'><img border='".$param{img_border}."' height=150 src='".$img."'></a>",
 			"tab",$main::outfile{merged_words},
 			"html",$main::outfile{merged_words_html},
 			"heatmap",$main::outfile{merged_words_heatmap},
@@ -2352,7 +2567,7 @@ sub SynthesisWordCompa {
 sub SynthesisMotifsVsMotifs {
   my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{motifs_disco_compa_png});
   &SyntheticTableAddRow("Motif comparisons",
-			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
+			"<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
 			"motifs", $main::outfile{motifs_discovered},
 			"table (txt)",$main::outfile{motifs_disco_compa},
 			"table (html)",$main::outfile{motifs_disco_compa_html},
@@ -2372,7 +2587,7 @@ sub SynthesisMotifsVersusReference {
   &SyntheticTableAddHeaderRow("Discovered motifs versus reference motif");
   my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_ref_png"});
   &SyntheticTableAddRow("Motifs versus reference motif",
-			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
+			"<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
 			"Reference motif",$main::infile{ref_motifs},
 			"table (txt)",$main::outfile{"motifs_vs_ref"},
 			"table (html)",$main::outfile{"motifs_vs_ref_html"},
@@ -2390,7 +2605,7 @@ sub SynthesisMotifsVersusDatabase {
   foreach my $db_name (@motif_databases) {
     my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_db_".$db_name."_png"});
     &SyntheticTableAddRow("Motifs versus ".$db_name." database",
-			  "<a  href='".$img."'><img height=300 src='".$img."'></a>",
+			  "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
 			  $db_name." DB",$main::infile{"motif_db_".$db_name},
 			  "table (txt)",$main::outfile{"motifs_vs_db_".$db_name},
 			  "table (html)",$main::outfile{"motifs_vs_db_".$db_name."_html"},
@@ -3157,6 +3372,28 @@ sub CheckArguments {
   &RSAT::message::Info("Tasks: ", join (",", @tasks)) if ($main::verbose >= 1);
 }
 
+
+################################################################
+## Print a table row with link to a file (if it exists, otherwise
+## print the file name in red).
+sub PrintFileLink {
+  my ($key, $file) = @_;
+
+  ## HTML output with links
+  print ($links "<tr>\n");
+  print ($links "<td>", $key, "</td>\n");
+  print ($links "<td>\n");
+  if (-e $file) {
+    &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
+    my $link = &RSAT::util::RelativePath($main::outfile{links}, $file);
+    print $links "<a href='".$link."'>".$file."</a><br>\n";
+  } else {
+    print $links "<font color='red'>".$file."</font><br>\n";
+  }
+  print ($links "</td>\n");
+  print ($links "</tr>\n");
+}
+
 ################################################################
 ## Report parameters and input/output files.
 ##
@@ -3175,23 +3412,6 @@ sub ReportParamsAndFiles {
   ## Open HTML file for links
   local $links = &OpenOutputFile($main::outfile{links});
   &PrintHtmlFileHedaer($links);
-
-  sub PrintFileLink {
-    my ($key, $file) = @_;
-    ## HTML output with links
-    print ($links "<tr>\n");
-    print ($links "<td>", $key, "</td>\n");
-    print ($links "<td>\n");
-    if (-e $file) {
-      &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
-      my $link = &RSAT::util::RelativePath($main::outfile{links}, $file);
-      print $links "<a href='".$link."'>".$file."</a><br>\n";
-    } else {
-      print $links "<font color='red'>".$file."</font><br>\n";
-    }
-    print ($links "</td>\n");
-    print ($links "</tr>\n");
-  }
 
   ## Read the list of directories and files for the discovered motifs
   &ReadMotifTable();
