@@ -124,6 +124,7 @@ print "<fieldset>
 print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html#origin'><B>Sequence Origin</B></A>\n";
 print $query->popup_menu(-name=>'origin',
 			 -Values=>['start',
+				   'center',
 				   'end'],
 			 -default=>$default{origin});
 print "<br/>";
