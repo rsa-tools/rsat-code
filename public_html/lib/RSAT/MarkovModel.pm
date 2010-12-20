@@ -464,7 +464,7 @@ sub load_from_file_MotifSampler {
 	@prefixes = &RSAT::SeqUtil::all_possible_oligos($order);
       }
       &RSAT::message::Info("Markov order", $order, scalar(@prefixes)." prefixes")
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 4);
 
     } elsif (/^#snf/i) {
       ## Single nucleotide frequencies
