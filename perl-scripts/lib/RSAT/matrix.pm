@@ -3712,7 +3712,7 @@ Return the logo from the matrix
 
 Usage:
 
-  my @logo_files = $matrix->makeLogo($logo_basename,\@logo_formats,$logo_dir, $logo_opt, $rev_compl);
+  my @logo_files = $matrix->makeLogo($logo_basename,\@logo_formats, $logo_opt, $rev_compl);
 
 =cut
 sub makeLogo{
