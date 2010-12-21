@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.100 2010/12/15 09:26:17 rsat Exp $
+# $Id: install-organism,v 1.101 2010/12/21 22:16:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -1060,7 +1060,7 @@ OPTIONS
 
 SEE ALSO
 
-    donwload-organisms
+    download-organisms
 
         The program I<install-organism> performs all the formatting
 	and calibration tasks for importing genomes from the reference
