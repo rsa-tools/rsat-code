@@ -44,6 +44,7 @@ $default{links}="checked";
 $default{max_profile}=10;
 $default{decimals}=1;
 $default{rc} = "";
+$default{multiply} = 1;
 $default{perm} = 0;
 $default{pseudo_prior} = "pseudo_prior";
 $checked{$default{pseudo_prior}} = "CHECKED";
@@ -166,6 +167,14 @@ print $query->checkbox(-name=>"rc",
 		       -checked=>$default{rc},
 		       -label=>'');
 print "<B><A HREF='help.convert-matrix.html#rc'>Compute reverse complement</A></b>\n";
+
+#### Multiply counts
+print "<BR>\n";
+print "<B><A HREF='help.convert-matrix.html#multiply'>Multiply counts</A></b>\n";
+print $query->textfield(-name=>'multiply',
+			-default=>$default{multiply},
+			-size=>2);
+print " (convert frequency matrices into count matrices)\n";
 
 #### permutations
 print "<BR>\n";
