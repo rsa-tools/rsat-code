@@ -72,6 +72,12 @@ if ($query->param('pseudo_distribution') eq "equi_pseudo") {
 }
 
 ################################################################
+## Multiply
+if (&IsInteger($query->param('multiply'))) {
+    $parameters .= " -multiply ".$query->param('multiply');
+}
+
+################################################################
 ## decimals
 if (&IsInteger($query->param('decimals'))) {
     $parameters .= " -decimals ".$query->param('decimals');
