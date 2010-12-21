@@ -63,7 +63,8 @@ You can test the correct installation of the C programs with the
 following command.
 
 \begin{lstlisting}
-random-seq -l 1000 -a a:t 0.4 c:g 0.1 | count-words -l 2 -v 1 -2str
+  random-seq -l 1000 -a a:t 0.4 c:g 0.1 \
+    | count-words -l 2 -v 1 -2str -i /dev/stdin
 \end{lstlisting}
 
 The first program (\program{random-seq}) is a Perl script, which
