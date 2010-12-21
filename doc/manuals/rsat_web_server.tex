@@ -1,3 +1,4 @@
+
 %\documentclass{book}
 \documentclass[12pt,a4paper, twoside]{scrreprt} % KOMA-class Neukam and Kohm, scrbook alternatively
 %\documentstyle[makeidx]{book}
@@ -104,6 +105,7 @@ ScriptAlias /rsa-tools/ /home/myaccount/rsa-tools/public_html/
 \begin{verbatim}
 <Directory "/home/myaccount/rsa-tools/public_html/">
    AllowOverride None
+   AddHandler cgi-script .cgi
    Options ExecCGI Indexes
    Order allow,deny
    Allow from all
