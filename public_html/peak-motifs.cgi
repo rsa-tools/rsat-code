@@ -26,7 +26,7 @@ $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
 $output_prefix = "peak-motifs";
 
 ## We need to create the output directory before starting matrix-quality  for uploading the input sequences and reference motifs
-$output_path = "$TMP/$output_directory";
+$output_path = $TMP."/".$output_directory;
 $output_path =~ s|\/\/|\/|g;
 system("mkdir -p $output_path");
 # $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/perl-scripts" . ":$ENV{RSAT}/python-scripts";
@@ -59,7 +59,7 @@ if ($query->param('title')){
 }
 
 ### peak sequences file
-($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, "$output_path/$output_prefix" . "peak_seq", 1);
+($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $output_path."/".$output_prefix."peak_seq", 1);
 
 $parameters .= "-i $sequence_file ";
 
@@ -131,7 +131,7 @@ if (scalar(@selected_db) > 0) {
 ################################################################
 ## Custom reference motifs
 if ($query->param('ref_motif')) {
-  my $refmotif_file = $output_path."/".$output_prefix."ref_motifs.tf";
+  my $refmotif_file = $output_path."/".$output_prefix."_ref_motifs.tf";
 
   $upload_refmotif = $query->param('ref_motif');
   if ($upload_refmotif) {
@@ -142,7 +142,7 @@ if ($query->param('ref_motif')) {
     open REF, ">$refmotif_file" ||
       &cgiError("Cannot store sequence file in temp dir.");
     while (<$upload_refmotif>) {
-#      print "UPLOADING\t", $_;
+#      print "<br>UPLOADING REF MOTIFS \t", $_;
       print REF;
     }
     close REF;
