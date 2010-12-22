@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.79 2010/12/22 06:03:19 jvanheld Exp $
+# $Id: compare-matrices,v 1.80 2010/12/22 06:07:32 jvanheld Exp $
 #
 ############################################################
 
@@ -381,7 +381,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.79 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.80 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -926,7 +926,7 @@ package main;
     $description{w2} = "Width of the second matrix";
     $description{w} = "Alignment length (number of overlapping columns between matrix 1 and matrix 2, as a function of the offset)";
     $description{W} = "Total alignment length (overlapping + non-overlapping columns). W = w1 + w2 - w";
-    $description{Wr} = "Relative alignment length (overlap divided by the toal alignemnt length). Wr = w/W";
+    $description{Wr} = "Relative alignment length (overlap divided by the total alignemnt length). Wr = w/W";
     $description{start1} = "Start position of the alignment in matrix 1";
     $description{end1} = "End position of the alignment in matrix 1";
     $description{start2} = "Start position of the alignment in matrix 2";
