@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.78 2010/12/12 05:51:31 jvanheld Exp $
+# $Id: compare-matrices,v 1.79 2010/12/22 06:03:19 jvanheld Exp $
 #
 ############################################################
 
@@ -276,10 +276,15 @@ respective matrices.
 
 =head2 Normalized correlation (Ncor)
 
-This is the coefficient of correlation, normalized by the length of
-the alignment (w) relative to the length of the shorter motif.
+The normalized correlation prevents matches covering only a small
+fraction of the matrix (e.g. matches between the last column of the
+query matrix and the first column of the reference matrix, or matches
+of a very small motif against a large one).
 
- Ncor = cor * w / min(w1,w2)
+The normalization factor is the relative length (Wr), i.e. the number
+of aligned columns divided by the total columns of the alignment.
+
+Ncor = cor * Wr
 
 This correction is particularly important to avoid selecting spurious
 alignments between short fragments of the flanks of the matrices
@@ -292,9 +297,15 @@ the sensitivity, and in particular prevent from detecting matches
 between half-motifs (e.g. in the case of dimeric transcription factor
 recognizing composite motifs).
 
-Note: in previous version (before August 22, 2010), Ncor was defined
-differently: cor*Wr. This was however too stringent, and prevented the
-program to detect matches between a short motif and a larger motif.
+=head3 Note
+
+An alternative would be to use as normalizing factor the length of the
+alignment (w) relative to the length of the shorter motif.
+
+ Ncor = cor * w / min(w1,w2)
+
+This however tends to favour matches between very short motifs (4-5
+residues) which cover only a fraction of the query motif.
 
 =head2 Correlation of the information content (Icor)
 
@@ -370,7 +381,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.78 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.79 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -382,6 +393,7 @@ package main;
   ## Supported metrics for comparing matrices
   local @supported_metrics = (
 			      "NIcor", ## Normalized correlation between information content matrices
+#			      "NWcor", ## Normalized correlation between weight matrices
 			      "Icor", ## Correlation between information content matrices
 			      "Ncor", ## Normalized coefficient of correlation
 			      "cor", ## Coefficient of correlation
@@ -403,6 +415,7 @@ package main;
 				 "cov"=>"desc",
 				 "Icor",
 				 "NIcor",
+#				 "NWcor",
 				 "dEucl"=>"asc",
 				 "NdEucl"=>"asc",
 				 "NsEucl"=>"desc",
@@ -572,6 +585,7 @@ package main;
     $return_field{Ncor} = 1;
     $return_field{Icor} = 1;
     $return_field{NIcor} = 1;
+#    $return_field{NWcor} = 1;
     $return_field{consensus} = 1;
 
 #    $sort_field = "Ncor";
@@ -609,6 +623,7 @@ package main;
 
   ## Some fields must be computed as intermediate results for other fields
   $calc_field{Icor} = 1 if ($calc_field{NIcor});
+  $calc_field{Wcor} = 1 if ($calc_field{NWcor});
   $calc_field{cor} = 1 if ($calc_field{Ncor});
   $calc_field{cov} = 1 if ($calc_field{cor});
   $calc_field{NdEucl} = 1 if ($calc_field{NsEucl});
@@ -869,6 +884,8 @@ package main;
   }
   push (@header, "NIcor") if ($return_field{NIcor});
   push (@header, "Icor") if ($return_field{Icor});
+  push (@header, "NWcor") if ($return_field{NWcor});
+  push (@header, "Wcor") if ($return_field{Wcor});
   push (@header, "Ncor") if ($return_field{Ncor});
   push (@header, "cor") if ($return_field{cor});
   push (@header, "SW") if ($return_field{SW});
@@ -890,6 +907,9 @@ package main;
 
   ## Print a description of the output fields
   if ($main::verbose >= 1) {
+    #	  my $norm_factor_descr =  "w/min(w1, w2)";
+    my $norm_factor_descr =  "Wr";
+
     my %description = ();
     $description{compa} = "number of comparison";
     $description{m1} = "matrix number in file 1";
@@ -919,9 +939,11 @@ package main;
     $description{dKL} = "Kullback-Leibler distance";
     $description{cov} = "Covariance";
     $description{cor} = "Pearson coefficient of correlation between frequency matrices";
-    $description{Ncor} = "Normalized correlation. Ncor = cor * w / min(w1,w2)";
+    $description{Ncor} = "Normalized correlation. Ncor = cor * ".$norm_factor_descr;
     $description{Icor} = "Pearson correlation between the information content matrices. ";
-    $description{NIcor} = "Normalized Pearson correlation between the information content matrices. NIcor = Icor * w / min(w1,w2)";
+    $description{NIcor} = "Normalized Pearson correlation between the information content matrices. NIcor = Icor * ".$norm_factor_descr;
+    $description{Wcor} = "Pearson correlation between the information content matrices. ";
+    $description{NWcor} = "Normalized Pearson correlation between the information content matrices. NWcor = Wcor * ".$norm_factor_descr;
     $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
     $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
     $description{rank} = "Rank of the alignment for the current pair of matrices";
@@ -957,6 +979,12 @@ package main;
     my @info1;
     if ($return_field{Icor}) {
       @info1 = $matrix1->getInformation();
+    }
+
+    ## Get the weight matrix if required
+    my @weight1;
+    if ($return_field{Wcor}) {
+      @weight1 = $matrix1->getWeights();
     }
 
     my $id1 = $matrix1->get_attribute("id") || "<NA>";
@@ -1001,6 +1029,8 @@ package main;
       my %Ncor = ();		## Normalized correlations
       my %Icor = (); ## Correlations between information content
       my %NIcor = (); ## Normalized correlations between information content
+      my %Wcor = (); ## Correlations between weights
+      my %NWcor = (); ## Normalized correlations between weights
       my %SW = ();		## Euclidian distances
       my %SSD = ();		## Euclidian distances
       my %NdEucl = ();	## Euclidian distances
@@ -1030,6 +1060,12 @@ package main;
 	  @info2 = $matrix2->getInformation();
 	}
 
+	## Get the weight matrix if required
+	my @weight2;
+	if ($return_field{Wcor}) {
+	  @weight2 = $matrix2->getWeights();
+	}
+
 	## Slide matrix2 along matrix1
 	foreach my $offset ($offset_min..$offset_max) {
 	  $compa++;
@@ -1047,6 +1083,8 @@ package main;
 	  next unless (&CheckThresholdValue("w", $w));
 	  my $start2 = &RSAT::stats::max(1, 1- $offset);
 	  my $end2 = &RSAT::stats::min($start2+$w-1, $w2);
+#	  my $norm_factor = $w/&RSAT::stats::min($w1, $w2)
+	  my $norm_factor = $Wr;
 
 	  ## Highlight alignment in consensus
 	  if ($return_field{consensus}) {
@@ -1092,6 +1130,8 @@ package main;
 	  my $Ncor = 0;
 	  my $Icor = 0;
 	  my $NIcor = 0;
+	  my $Wcor = 0;
+	  my $NWcor = 0;
 	  my $sum_f1 = 0;
 	  my $sum_f2 = 0;
 	  my $sum_f1f2 = 0;
@@ -1128,6 +1168,18 @@ package main;
 		$sum_sq_i1 += $i1**2;
 		$sum_sq_i2 += $i2**2;
 		$sum_i1i2 += $i1*$i2;
+	      }
+
+	      ## Update sums for Wcor
+	      if ($calc_field{Wcor}) {
+		my $wght1 = $weight1[$col1-1][$r];
+#		die "HELLO", $wght1;
+		my $wght2 = $weight2[$col2-1][$r];
+		$sum_wght1 += $wght1;
+		$sum_wght2 += $wght2;
+		$sum_sq_wght1 += $wght1**2;
+		$sum_sq_wght2 += $wght2**2;
+		$sum_wght1wght2 += $wght1*$wght2;
 	      }
 
 	      ## Update sum for Euclidian distance
@@ -1193,7 +1245,7 @@ package main;
 	      $cor = $cov/sqrt($v1*$v2);
 	    }
 #	    $Ncor = $cor * $Wr;
-	    $Ncor = $cor * $w / &RSAT::stats::min($w1, $w2);
+	    $Ncor = $cor * $norm_factor;
 	    #  	  &RSAT::message::Debug("n=".$n,
 	    # 				"sum_f1=".$sum_f1,
 	    # 				"sum_f2=".$sum_f2,
@@ -1222,29 +1274,35 @@ package main;
 	  if ($calc_field{Icor}) {
 	    $iv1 = $sum_sq_i1/$n - ($sum_i1/$n)**2;
 	    $iv2 = $sum_sq_i2/$n - ($sum_i2/$n)**2;
-	    $icov = $sum_i1i2/$n - $sum_i1*$sum_i2/($n**2); ## Warning : this covariance has nothing to do with the "natural covariance" of Pape
+	    $icov = $sum_i1i2/$n - $sum_i1*$sum_i2/($n**2);
 	    if ($icov == 0) {
 	      $Icor = 0;
 	    } else {
 	      $Icor = $icov/sqrt($iv1*$iv2);
 	    }
-#	    $NIcor = $Icor * $Wr;
-	    $NIcor = $Icor * $w / &RSAT::stats::min($w1, $w2);
-	    #  	  &RSAT::message::Debug("n=".$n,
-	    # 				"sum_i1=".$sum_i1,
-	    # 				"sum_i2=".$sum_i2,
-	    # 				"sum_sq_i1=".$sum_sq_i1,
-	    # 				"sum_sq_i2=".$sum_sq_i2,
-	    # 				"iv1=".$iv1,
-	    # 				"iv2=".$iv2,
-	    # 				"icov=".$icov,
-	    # 				"Icor=".$Icor,
-	    # 				"NIcor=".$NIcor,
-	    # 			       ) if ($main::verbose >= 10);
+	    $NIcor = $Icor *$norm_factor;
 	  }
-	  ## Check thresholds on covariance, correlation and normalized correlation
+
+	  ## Check thresholds on information correlation
 	  next unless (&CheckThresholdValue("Icor", $Icor));
 	  next unless (&CheckThresholdValue("NIcor", $NIcor));
+
+	  ## Compute weight correlation
+	  if ($calc_field{Wcor}) {
+	    $wghtv1 = $sum_sq_wght1/$n - ($sum_wght1/$n)**2;
+	    $wghtv2 = $sum_sq_wght2/$n - ($sum_wght2/$n)**2;
+	    $icov = $sum_wght1wght2/$n - $sum_wght1*$sum_wght2/($n**2);
+	    if ($icov == 0) {
+	      $Wcor = 0;
+	    } else {
+	      $Wcor = $icov/sqrt($wghtv1*$wghtv2);
+	    }
+	    $NWcor = $Wcor *$norm_factor;
+	  }
+
+	  ## Check thresholds on weight correlation
+	  next unless (&CheckThresholdValue("Wcor", $Wcor));
+	  next unless (&CheckThresholdValue("NWcor", $NWcor));
 
 	  ## Index values for sorting
 	  $score{Icor}{$compa_id} = $Icor;
