@@ -29,11 +29,15 @@
   
   if ($_FILES['graph_file']['name'] != "") {
     $graph_file = uploadFile('graph_file');
+    
   } else if ($_REQUEST['pipe_graph_file'] != "")  {
     $graph_file = $_REQUEST['pipe_graph_file'];
+    
   }
+
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
+
   $mean = $_REQUEST['mean'];
   $sd = $_REQUEST['stddev'];
   $nodes = $_REQUEST['nodes'];
@@ -145,7 +149,20 @@
 
     # Execute the command
 #    echo "<pre>";
-    $echoed = $client->random_graph($parameters);
+
+    try {
+      $echoed = $client->random_graph($parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+    } 
+
+
+
+    
 #    echo "</pre>";
     $response =  $echoed->response;
     $command = $response->command;
