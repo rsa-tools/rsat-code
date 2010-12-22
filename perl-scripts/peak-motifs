@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.106 2010/12/22 05:07:17 jvanheld Exp $
+# $Id: peak-motifs,v 1.107 2010/12/22 06:08:05 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.106 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.107 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1994,7 +1994,7 @@ sub ColorConsensus {
 sub SynthesisOneMotifComparison {
   ## Read the DB matches for the current motif
   my ($db_name, $file) = @_;
-  my @match_fields = qw(name2 strand w Wr Ncor consensus1 consensus2);
+  my @match_fields = qw(name2 id2 strand w Wr cor Ncor consensus1 consensus2);
   my ($db_compa) = &OpenInputFile($file);
   my %col_index = ();
 
