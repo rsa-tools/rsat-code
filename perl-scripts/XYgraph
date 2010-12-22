@@ -1702,8 +1702,8 @@ XYgraph options
 -colors		colorfile
 -export_colors	export a color file
 -gp		gnuplot additional commands
--vline          vertical line       
--hline          horozontal line
+-vline color #  vertical line at position #
+-hline color #   horizontal line at position #
 End_of_options
     close SHORTHELP;
 }
