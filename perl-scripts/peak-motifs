@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.105 2010/12/22 04:40:08 jvanheld Exp $
+# $Id: peak-motifs,v 1.106 2010/12/22 05:07:17 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.105 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.106 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1198,7 +1198,7 @@ sub MergeWords {
       $cmd .= " -suppress ".$main::dir{output}."/"."results/".$pattern_type."/";
       #    &RSAT::message::Debug($file_nb, $pattern_type, $sig_col, "\n", $pattern_file) if ($main::verbose >= 5);
     } else {
-      &RSAT::message::Warning("Missing pattern file", $pattern_type, $pattern_file);
+      &RSAT::message::Warning("Missing pattern file", $pattern_type, $pattern_file) if ($main::verbose >= 2);
     }
   }
   $cmd .= " -ic 1";
