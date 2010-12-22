@@ -3047,6 +3047,11 @@ sub layout_spring_embedding {
   my $nb_nodes = scalar(@node_names);
   my $nb_arcs = scalar(@arcs);
 
+  if ($nb_nodes <= 1) {
+    &RSAT::message::Warning("There is one node at most in this network. No layout will be computed.");
+    return();
+  }
+
   &RSAT::message::TimeWarn("Starting spring embedding",
 			   sprintf("\n\t%-22s%d", "nodes",$nb_nodes),
 			   sprintf("\n\t%-22s%d", "arcs",$nb_arcs),
