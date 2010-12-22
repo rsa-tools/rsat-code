@@ -159,7 +159,7 @@ if ($query->param('ref_motif')) {
 #  close FILE;
 #  #    $parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
   $parameters .= " -ref_motifs ".$refmotif_file;
-  push(@tasks, "motifs_vs_ref");
+  push(@tasks, "ref_motifs,motifs_vs_ref");
   #  } else {
   #    &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
   #  }
