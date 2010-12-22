@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.107 2010/12/22 06:08:05 jvanheld Exp $
+# $Id: peak-motifs,v 1.108 2010/12/22 07:19:16 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.107 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1267,7 +1267,7 @@ sub MergeMotifs {
     if (-e $matrix_file) {
       $cmd .= "; cat ".$matrix_file." >> ".$main::outfile{motifs_discovered};
     } else {
-      &RSAT::message::Warning("Missing matrix file", $pattern_type, $matrix_file);
+      &RSAT::message::Warning("Missing matrix file", $pattern_type, $matrix_file) if ($main::verbose >= 2);
     }
   }
   &one_command($cmd, 1);
@@ -2017,9 +2017,10 @@ sub SynthesisOneMotifComparison {
 
     ## Parse the column contents
     if (/^#/) {
+      s/^#//;
       my @header_fields = split("\t");
       for my $h (0..$#header_fields) {
-	my $field = $header_fields[$h];
+	my $field = &RSAT::util::trim($header_fields[$h]);
 	$col_index{$field} = $h;
       }
       next;
@@ -2035,10 +2036,13 @@ sub SynthesisOneMotifComparison {
     #&RSAT::message::Debug("DB matches", join ("; ", @fields)) if ($main::verbose >= 10);
     my @values = ();
     foreach my $field (@match_fields) {
-      my $column = $col_index{$field};
-      my $value = $fields[$column] || "NA";
-      if ($field =~ /^consensus/) {
-	$value = &ColorConsensus($value, bold=>1, iupac=>$main::param{iupac_coloring});
+      my $value = "NA";
+      if (defined($col_index{$field})) {
+	my $column = $col_index{$field};
+	$value = $fields[$column];
+	if ($field =~ /^consensus/) {
+	  $value = &ColorConsensus($value, bold=>1, iupac=>$main::param{iupac_coloring});
+	}
       }
       $db_match_table .= "<td>".$value."</td>\n";
       #&RSAT::message::Debug("DB matches", $db_name, $match_nb, $field, "col=".$column, "value=".$value, $file) if ($main::verbose >= 10);
@@ -2126,7 +2130,7 @@ sub SynthesisByMotif {
 	     "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height}, 
 	     "' src='",$logo_link,"'>","</a>","</td>\n");
     } else {
-      print $syn "<font color='red'>No logo</font>","</td>\n";
+      print $syn "<td><font color='red'>No logo</font>","</td>\n";
     }
 
     ## Sequence logo, reverse complementary
