@@ -53,13 +53,18 @@ foreach $key (keys %default) {
 ################################################################
 ### print the form ###
 
-
 ################################################################
 ### header
 &RSA_header("peak-motifs", "form");
 print "<CENTER>";
-print "Pipeline for discovering motifs in ChIP-seq peak sequences.<P>\n";
-#print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
+print "Pipeline for discovering motifs in massive ChIP-seq peak sequences.<P>\n";
+print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
+print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/defrance/'>Matthieu Defrance</a><sup>ci</sup>\n";
+print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/oly/'>Olivier Sand</a><sup>i</sup>\n";
+print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>\n";
+print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
@@ -115,7 +120,7 @@ $descr1 .= "</blockquote>";
 #$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
 $demo_seq=`cat demo_files/peak-motifs_demo.fa`;
-print "<TD><B>";
+print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
@@ -128,8 +133,8 @@ print $query->end_form;
 
 
 
-print "<TD><B><A HREF='help.peak-motifs.html'>[MANUAL]</A></B></TD>\n";
-print "<TD><B><A HREF='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</A></B></TD>\n";
+print "<td><b><a href='help.peak-motifs.html'>[MANUAL]</a></B></TD>\n";
+print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
@@ -145,7 +150,7 @@ exit(0);
 sub Panel1 {
 
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
-  print "<B>Title</B>\n";
+  print "<b>Title</B>\n";
   print $query->textfield(-name=>'title',
 			  -default=>$default{title},
 			  -size=>15);
@@ -167,18 +172,18 @@ sub Panel2 {
   print "<p/><fieldset>\n";
   print "<legend><b><a href='help.peak-motifs.html#tasks'>Restrict the input dataset  </a></b></legend>\n";
 
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html#thresholds'>Number of top sequences to retain </A>&nbsp;</B>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html#thresholds'>Number of top sequences to retain </a>&nbsp;</B>\n";
   print  $query->textfield(-name=>'top_sequences',
 			   -default=>$default{top_sequences},
 			   -size=>3);
 
   print "<br/>";
 
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html#thresholds'>Cut peak sequences:</A> +/- &nbsp;</B>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html#thresholds'>Cut peak sequences:</a> +/- &nbsp;</B>\n";
   print  $query->textfield(-name=>'max_seq_len',
 			   -default=>$default{max_seq_len},
 			   -size=>3);
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<B>bp around the center of each peak </b>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b>bp around the center of each peak </b>\n";
 
 
   print "</fieldset><p/>";
@@ -216,7 +221,7 @@ print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dy
 
 print "<br/>";	
 ### dyad sizes and spacer
-#print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</A>&nbsp;</B>\n";
+#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</a>&nbsp;</B>\n";
 #	$oligoPopup = "";
 #    $oligoPopup .=  "<SELECT NAME='dyad-option'>\n";
 #	$oligoPopup .=  "<OPTION  VALUE='4'>4 {0,20} 4</option>\n";
@@ -244,7 +249,7 @@ print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-w
 print "<br/>";
 
 
-#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.local-word-analysis.html#window_width'>Fixed window of width</A>&nbsp;</B>\n";
+#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.local-word-analysis.html#window_width'>Fixed window of width</a>&nbsp;</B>\n";
 #	$oligoPopup = "";
 #    $oligoPopup .=  "<SELECT NAME='orm_window'>\n";
 #	$oligoPopup .=  "<OPTION VALUE='50'>50</option>\n";
@@ -259,7 +264,7 @@ print "<br/>";
 ### markov  order (common to all programs)
 print "<br/> <b>Common options for above programs</b> <br/>";
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html#oligo_length'>Oligomer length</a>&nbsp;</B>\n";
 
 print $query->checkbox(-name=>'oligo_length6',
 		       -checked=>$default{oligo_length6},
@@ -276,7 +281,7 @@ print "&nbsp;"x2;
 
 print "<br/>";
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html'>Background model: Markov order</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html'>Background model: Markov order</a>&nbsp;</B>\n";
  	$oligoPopup = "";
     $oligoPopup .=  "<SELECT NAME='markov'>\n";
 	$oligoPopup .=  "<OPTION  SELECTED VALUE='-2'>oligo length -2 </option>\n";
@@ -287,7 +292,7 @@ print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html'>Background 
 print "<br/>";
 
 ### threshold (common to all programs)
-#print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html#thresholds'>Lower threshold on significance</A>&nbsp;</B>\n";
+#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html#thresholds'>Lower threshold on significance</a>&nbsp;</B>\n";
 #print  $query->textfield(-name=>'lth_occ_sig',
 #							      -default=>$default{lth_occ_sig},
 #							      -size=>3);
@@ -359,7 +364,7 @@ print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href=
 
 print "<br/>";
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.matrix-scan.html'>Background model: Markov order</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.matrix-scan.html'>Background model: Markov order</a>&nbsp;</B>\n";
 	$oligoPopup = "";
     $oligoPopup .=  "<SELECT NAME='markov-scan'>\n";
 	$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>0</option>\n";
@@ -371,7 +376,7 @@ print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.matrix-scan.html'>Background mod
 print "<br/>";
 
 ### threshold (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.matrix-scan.html'>Upper threshold on P-value</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.matrix-scan.html'>Upper threshold on P-value</a>&nbsp;</B>\n";
 print  $query->textfield(-name=>'uth_pval',
 							      -default=>$default{uth_pval},
 							      -size=>4);
@@ -394,12 +399,12 @@ print "&nbsp;<b>Visualize on UCSC genome browser</b> <a href='help.matrix-scan.h
 print "<br/>";
 
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html'>BED file with peak coordinates</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>BED file with peak coordinates</a>&nbsp;</B>\n";
 print $query->filefield(-name=>'bed_file',
 			-size=>10);
 
 ### threshold (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.peak-motifs.html'>Assembly version (UCSC)</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>Assembly version (UCSC)</a>&nbsp;</B>\n";
 print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
