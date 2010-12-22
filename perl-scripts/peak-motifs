@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.109 2010/12/22 07:39:19 jvanheld Exp $
+# $Id: peak-motifs,v 1.110 2010/12/22 16:47:17 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -286,7 +286,7 @@ package main;
   &CleanSequences() if ($task{clean_seq});
 
   if ($main::verbose >= 1) {
-    &TimeWarn("Log file", $main::outfile{log});
+    &TimeWarn("Log file", $main::outfile{log}) if ($main::verbose >= 2);
   }
 
   ################################################################
@@ -319,7 +319,7 @@ sub PrintOptions {
 ################################################################
 ## Set parameter values for all the programs
 sub DefaultParameters {
-  &RSAT::message::TimeWarn("\n; Setting default parameter values") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\n; Setting default parameter values") if ($main::verbose >= 2);
 
   ## Formats
   $main::param{seq_format} = "fasta"; push(@main::param_list, "seq_format");
@@ -389,9 +389,35 @@ sub DefaultParameters {
   $main::param{asmb_toppat} = $main::param{patterns_max_rank}; push(@main::param_list, "asmb_toppat");
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
 
-  ## matrix-scan-quick
-  $main::param{scan_min_score} = 7.5;
+  ## BG model building
+  $main::param{scan_markov_order} = 1; ## Used for computing the background model in inclusive format (required by matrix-scan-quick).
+
+
+  ################################################################
+  ## matrix-scan options
   $main::param{scan_strands} = "-2str";
+  $main::param{scan_pseudo} = 1;
+  $main::param{scan_decimals} = 1;
+  $main::param{scan_bg_pseudo} =  0.01;
+
+  ## Concatenate scanning options for matrix-scan
+  $main::param{scan_options} = " -pseudo ".$main::param{scan_pseudo};
+  $main::param{scan_options} .= " ".$main::param{scan_strands};
+  $main::param{scan_options} .= " -decimals ".$main::param{scan_decimals};
+  $main::param{scan_options} .= " -bg_pseudo ".$main::param{scan_bg_pseudo};
+  $main::param{scan_options} .= " -n score"; ##  Assign a score to the sequence fragments containing masked/undefined nucleotides (N)
+
+  ## Options used for site scanning but not for enrichment analysis
+  $main::param{scan_min_score} = 7.5;
+  $main::param{scan_sites_options} = " -lth score ".$main::param{scan_min_score};
+  $main::param{scan_sites_options} .= " -origin center -return sites";
+
+  ## Options used for enrichment in matrix hits but not for site detection
+  $main::param{scan_enrich_min_score} = 0;
+  $main::param{scan_enrich_markov} = 2;
+  $main::param{scan_enrich_options} = " -lth score ".$main::param{scan_enrich_min_score};
+  $main::param{scan_enrich_options} .= " -bginput -markov ".$main::param{scan_enrich_markov};
+
 
   ## Default MEME options
   $main::param{meme_text} = ""; push @MEME_options, "text";	## Ouptut format = text
@@ -543,7 +569,6 @@ sub SetOutFileNames {
 
   ################################################################
   ## Background model for matrix scanning
-  $main::param{scan_markov_order} = 1;
   my $scan_bg_ol = $main::param{scan_markov_order}+1;
   $main::param{scan_bg_file} = $main::outfile{$scan_bg_ol."nt_test_inclusive"};
   &RSAT::message::Info("Background model file",
@@ -634,8 +659,8 @@ sub SetOutFileNames {
   $main::outfile{merged_words_heatmap} = &OutFileName("results/".$pattern_type, ".png", "merged_words_heatmap");
   push @pattern_types, $pattern_type;
 
-  &RSAT::message::Info("Pattern types", join (",", @pattern_types)) if ($main::verbose >= 1);
-  &RSAT::message::Info("Sequence types", join (",", @seq_types)) if ($main::verbose >= 1);
+  &RSAT::message::Info("Pattern types", join (",", @pattern_types)) if ($main::verbose >= 2);
+  &RSAT::message::Info("Sequence types", join (",", @seq_types)) if ($main::verbose >= 2);
 
   ## Conversion from patterns to matrices + logos
   foreach my $pattern_type (@pattern_types) {
@@ -740,7 +765,7 @@ sub PurgeSeq {
   ## Convert sequences to standard fasta format, mask non-DNA seqences
   ## selectd top peaks if required, and truncate sequences to max
   ## length if specified.
-  &RSAT::message::TimeWarn("Converting sequences", $seq_type, $seq_file) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Converting sequences", $seq_type, $seq_file) if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/convert-seq";
   $cmd .= " -i ".$seq_file;
   $cmd .= " -from ".$main::param{seq_format};
@@ -768,7 +793,7 @@ sub PurgeSeq {
   &one_command($cmd, 1);
 
   ## Purge sequences (mask redundant fragments)
-  &RSAT::message::TimeWarn("Purging sequences", $seq_type, $main::outfile{$seq_type."_converted"}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Purging sequences", $seq_type, $main::outfile{$seq_type."_converted"}) if ($main::verbose >= 2);
   $cmd = "$SCRIPTS/purge-sequence -dna";
   $cmd .= " -i ".$main::outfile{$seq_type."_converted"};
   $cmd .= " -ml ".$main::param{purge_match_length};
@@ -782,7 +807,7 @@ sub PurgeSeq {
 ## Compute sequence lengths
 sub SequenceLengths {
   my ($seq_type) = @_;
-  &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/sequence-lengths";
 #  $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
   $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
@@ -850,7 +875,7 @@ sub CompositionProfiles {
   for my $ol (@profiles_oligo_lengths) {
 
     ## Compute positional profiles
-    &RSAT::message::TimeWarn("Computing composition profiles", $ol."nt") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Computing composition profiles", $ol."nt") if ($main::verbose >= 2);
     my $cmd =$SCRIPTS."/position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -format fasta";
@@ -901,7 +926,7 @@ sub OligoAnalysis {
       ## Convert negative markov orders relative to the oligo length
       $markov += $len if ($markov < 0);
       my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
-      &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 2);
       my $cmd = $SCRIPTS."/oligo-analysis -v 1";
       $cmd .= " -quick";
       $cmd .= " -i ".$main::outfile{"test_purged"};
@@ -932,7 +957,7 @@ sub OligoAnalysis {
 sub OligoDiff {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'oligo_diff_'.$len.'nt';
-    &RSAT::message::TimeWarn("Running oligo-diff", $len."nt") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Running oligo-diff", $len."nt") if ($main::verbose >= 2);
     my $cmd = $SCRIPTS."/oligo-diff -v 2";
     $cmd .= " -test ".$main::outfile{"test_purged"};
     $cmd .= " -ctrl ".$main::outfile{"ctrl_purged"};
@@ -958,7 +983,7 @@ sub OligoDiff {
 ################################################################
 ## Run dyad-analysis on the test set
 sub DyadAnalysis {
-  &RSAT::message::TimeWarn("Running dyad-analysis") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Running dyad-analysis") if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/dyad-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"test_purged"};
   $cmd .= " -quick";
@@ -984,7 +1009,7 @@ sub DyadAnalysis {
 sub PositionAnalysis {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'positions_'.$len.'nt';
-    &RSAT::message::TimeWarn("\n Running position-analysis", $len."nt") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\n Running position-analysis", $len."nt") if ($main::verbose >= 2);
     my $cmd = $SCRIPTS."/position-analysis -v 2";
     $cmd .= " -i ".$main::outfile{"test_purged"};
     $cmd .= " -format fasta";
@@ -1020,7 +1045,7 @@ sub LocalWords {
       ## Convert negative markov orders relative to the oligo length
       $markov += $len if ($markov < 0);
       my $pattern_type = 'local_words_'.$len.'nt'.'_mkv'.$markov;
-      &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 2);
       my $cmd = $PYTHON."/local-word-analysis -v 3";
       $cmd .= " -i ".$main::outfile{"test_purged"};
       #  $cmd .= " -format fasta";
@@ -1235,7 +1260,7 @@ sub MergeWords {
 ################################################################
 ## Merge all discoverd motifs in a single file
 sub MergeMotifs {
-  &RSAT::message::TimeWarn("Merging discovered motifs") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Merging discovered motifs") if ($main::verbose >= 2);
 
   ## Remove previous versions of the merged motif file
   my $cmd = "rm -f ".$main::outfile{motifs_discovered};
@@ -1335,6 +1360,10 @@ sub SetFileNamesForMotif {
   $main::outfile{$motif_id."_logo_rc"} = $main::prefix{$motif_id."_logo_rc"}.".".$main::param{img_format};
 #  $main::outfile{$motif_id."_logo_rc"} = $main::prefix{$motif_id."_prefix"}."_logo_rc";
 
+  ## Enrichment in binding sites
+  $main::outfile{$motif_id.'_pssm_enrichment'} = $main::prefix{$motif_id."_prefix"}."_scan_mkv".$main::param{scan_enrich_markov}."_enrichment.tab";
+  $main::outfile{$motif_id.'_pssm_enrichment_png'} = $main::prefix{$motif_id."_prefix"}."_scan_mkv".$main::param{scan_enrich_markov}."_enrichment.png";
+
   ## Predicted sites (sequence scanning)
   $main::outfile{$motif_id.'_pssm_sites'} = $main::prefix{$motif_id."_prefix"}."_sites.tab";
   $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.tab";
@@ -1357,7 +1386,7 @@ sub SetFileNamesForMotif {
 ## Split the discovered motifs in separate files in order to analyze
 ## them separately. One separate directory is created for each motif.
 sub SplitMotifs {
-  &RSAT::message::TimeWarn("Splitting discovered motifs in separate files") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Splitting discovered motifs in separate files") if ($main::verbose >= 2);
 
   my @motifs = &ReadDiscoveredMotifs();
   my $m = 0;
@@ -1370,7 +1399,7 @@ sub SplitMotifs {
 
   if (scalar(@motifs) == 0) {
     print $motif_table "; NO MOTIF FOUND\n";
-    &RSAT::message::Warning("No motif found") if ($main::verbose >= 1);
+    &RSAT::message::Warning("No motif found") if ($main::verbose >= 2);
   } else {
     ## Number of digits for the counter of split matrix files
     my $id_digits;
@@ -1545,7 +1574,7 @@ sub MotifsVersusReference {
   &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
   my $motif_nb = scalar(@motif_ids);
 
-  &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with reference motif(s)") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with reference motif(s)") if ($main::verbose >= 2);
 
   foreach my $i (0..$#motif_ids) {
     my $m = $i+1;
@@ -1610,7 +1639,7 @@ sub MotifsVersusDatabase {
     &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
     my $motif_nb = scalar(@motif_ids);
 
-    &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with database", $db_name) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with database", $db_name) if ($main::verbose >= 2);
     foreach my $i (0..$#motif_ids) {
       my $m = $i+1;
       my $motif_id = $motif_ids[$i];
@@ -1695,15 +1724,49 @@ sub MatrixFromPatterns {
 
 
 
+################################################################
+## Compute the profile of enrichment of the input peaks in hits
+## for a given matrix (reference or discovered motif)
+sub MotifEnrichment {
+  my ($seq_file, $matrix_file, $out_file, $graph_file) = @_;
+
+  ## Compute the significance of enrichment in matrix hits
+  $cmd = $SCRIPTS."/matrix-scan -v 3";
+  $cmd .= " -quick";	   ## TO DO : CHECK IF THIS AFFECTS THE RESULT
+  $cmd .= " -seq_format fasta -i ".$seq_file;
+  $cmd .= " -matrix_format transfac -m ".$matrix_file;
+  #    $cmd .= " -bg_format inclusive -bgfile ".$main::param{scan_bg_file};
+  $cmd .= " ".$main::param{scan_options};
+  $cmd .= " ".$main::param{scan_enrich_options};
+  $cmd .= " -return distrib -return occ_proba";
+  #    $cmd .= " -lth occ_sig 0  -uth occ_sig_rank 1";
+  $cmd .= " -o ".$out_file;
+  #    &one_command($cmd, 1);
+  &one_command($cmd, 1, $out_file."_time.txt");
+
+  ## Draw a XY plot of enrichment in matrix hits
+  $cmd = $SCRIPTS."/XYgraph ";
+  $cmd .= " -i ".$out_file;
+  $cmd .= " -xcol 2 -xleg1 'Weight score'";
+  $cmd .= " -xmin ".$main::param{scan_enrich_min_score};
+  $cmd .= " -xsize 800 -xgstep1 5 -xgstep2 1";
+  $cmd .= " -hline red 100";
+  $cmd .= " -hline violet 0";
+  $cmd .= " -vline violet 5";
+  $cmd .= " -ycol 11 -yleg1 'Binomial significance of hit number'";
+  $cmd .= " -ysize 400";
+  $cmd .= " -lines";
+  $cmd .= " -o ".$graph_file;
+  &one_command($cmd, 1);
+}
 
 ################################################################
 ## Scan peak sequences with each discovered motif. Draw a positional
 ## profile of motif instances + assess the significance of the number
 ## of hits for each possible weight threshold value.
 sub ScanSequences {
-  $main::param{scan_min_score} = 7.5;
-  &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 1);
 
+  &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
 
   &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
   my $motif_nb = scalar(@motif_ids);
@@ -1715,16 +1778,25 @@ sub ScanSequences {
 
     &RSAT::message::Debug("Scanning sequences with motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
 
+
+    &MotifEnrichment($infile{test_seq}, $main::outfile{$motif_id."_tf"},
+		     $main::outfile{$motif_id.'_pssm_enrichment'},
+		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
+
+
+    ## TEMPORARY: DEBUGGING
+    next;
+#    die "HELLO";
+
     ## Scan with matrix-scan, option -quick
     my $cmd = $SCRIPTS."/matrix-scan -quick -v 1";
-    $cmd .= " -i ".$infile{test_seq};
+    $cmd .= " -seq_format fasta -i ".$infile{test_seq};
     $cmd .= " -matrix_format transfac -m ".$main::outfile{$motif_id."_tf"};
     $cmd .= " -bg_format inclusive -bgfile ".$main::param{scan_bg_file};
-    $cmd .= " ".$main::param{scan_strands};
-    $cmd .= " -origin center -return sites";
-    $cmd .= " -lth score ".$main::param{scan_min_score};
+    $cmd .= " ".$main::param{scan_options};
+    $cmd .= " ".$main::param{scan_sites_options};
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites'};
-#    &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
+    &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
 
 #     ## Direct scan with matrix-scan-quick
 #     my $cmd = $BIN."/matrix-scan-quick -v 1";
@@ -1746,7 +1818,7 @@ sub ScanSequences {
     $cmd .= " -ci ".$main::param{profiles_ci};
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     &one_command($cmd, 1);
-#    die "HELLO";
+
 
 
     ## Draw the graph of predicted site positions
@@ -1774,7 +1846,7 @@ sub ScanSequences {
 # ## USES THE FIRST MATRIX OF EACH FILE.
 # sub old_ScanSequences {
 #   $main::param{scan_min_score} = 7.5;
-#   &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 1);
+#   &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
 # #  foreach my $seq_type (@seq_types) {
 #     foreach my $pattern_type (@pattern_types) {
 #       my $cmd = $BIN."/matrix-scan-quick -v 1";
@@ -1836,7 +1908,7 @@ sub TimeTable {
     }
     print $timetable $key, "\t", $time, "\n";
   }
-  &RSAT::message::TimeWarn("Time table file", $main::outfile{timetable}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Time table file", $main::outfile{timetable}) if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -1894,7 +1966,7 @@ sub TimeLog {
   }
   #}
   close $timelog;
-  &RSAT::message::TimeWarn("Time log file", $main::outfile{timelog}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Time log file", $main::outfile{timelog}) if ($main::verbose >= 2);
 
   ## Create a HMTL version of the timelog table
   my $cmd = $SCRIPTS."/text-to-html";
@@ -1902,7 +1974,7 @@ sub TimeLog {
   $cmd .= " -i ".$main::outfile{timelog};
   $cmd .= " -o ".$main::outfile{timelog_html};
   &one_command($cmd, 1);
-  &RSAT::message::TimeWarn("Time log html", $main::outfile{timelog_html}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Time log html", $main::outfile{timelog_html}) if ($main::verbose >= 2);
 }
 
 
@@ -2100,7 +2172,7 @@ sub SynthesisByMotif {
   for my $m (1..$motif_nb) {
     my $matrix = $motifs[$m-1];
     my $motif_id = $matrix->get_attribute("id");
-    &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $motif_id) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $motif_id) if ($main::verbose >= 3);
     $matrix->setMarkovModel($bg_model);
 
     ## We compute the consensus and logos here with the same background model as used for sequence scanning
@@ -2144,6 +2216,9 @@ sub SynthesisByMotif {
     } else {
       print $syn "<font color='red'>No logo</font>","</td>\n";
     }
+    &PrintFileLinks("Enrichment distrib", $main::outfile{$motif_id.'_pssm_enrichment'},
+		    "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
+		   );
 
     print $syn "</tr>\n";
 
@@ -2266,7 +2341,7 @@ sub SynthesisParamsAndFiles {
   print $syn "</table></p>\n";
   print $syn &close_menu_heading();
 
-  &ReportParamsAndFiles();# if ($main::verbose >= 1);
+  &ReportParamsAndFiles();
 }
 
 
@@ -2299,7 +2374,7 @@ sub Synthesis {
   print $syn "</body>\n";
   print $syn "</html>\n";
   close $syn;
-  &RSAT::message::TimeWarn("Synthetic report", $main::outfile{synthesis}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Synthetic report", $main::outfile{synthesis}) if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -2462,13 +2537,13 @@ sub SynthesisRefMotif {
       if (-e $logo_file) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
 	$logo_table .= "<td align='right'><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
-      } elsif ($main::verbose >= 1) {
+      } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reference logo", $logo_file);
       }
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
 	$logo_table .= "<td align='left'><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
-      } elsif ($main::verbose >= 1) {
+      } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
       }
       $logo_table .= "</tr>\n";
@@ -2490,6 +2565,7 @@ sub SynthesisRefMotif {
 ################################################################
 ## Report discovered motifs by algorithms
 sub SynthesisMotifsByAlgo {
+  &RSAT::message::TimeWarn("Synthesis per motif disdovery algorithm") if ($main::verbose >= 2);
   print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>", 1);
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Pattern discovery");
@@ -2507,7 +2583,7 @@ sub SynthesisMotifsByAlgo {
 ## Where pattern type can be oligos, dyads, local_words, oligo-diff
 sub SynthesisPatternDisco {
   my ($pattern_type) = @_;
-  &RSAT::message::TimeWarn("Synthesis for pattern type", $pattern_type) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Synthesis for pattern type", $pattern_type) if ($main::verbose >= 3);
 
   if (-e $main::outfile{$pattern_type.'_asmb'}) {
     ## Synthesize results of pattern assembly (assembly consensus + sig scores)
@@ -2575,7 +2651,7 @@ sub SynthesisPatternDisco {
 	$pattern_table .= "<br><a  href='".$img."'><img  border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
 	$pattern_table .= $start_format;
 	$pattern_table .= "</td>\n";
-      } elsif ($main::verbose >= 1) {
+      } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find logo", $logo_file) if ($main::verbose >= 3);
       }
       if (-e $logo_file_rc) {
@@ -2586,7 +2662,7 @@ sub SynthesisPatternDisco {
 	$pattern_table .= $pattern_info[$logo_nb]->{rc_word};
 	$pattern_table .= "<br><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
 	$pattern_table .= "</td>\n";
-      } elsif ($main::verbose >= 1) {
+      } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc) if ($main::verbose >= 3);
       }
       #    $pattern_table .= "<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>";
@@ -2691,7 +2767,7 @@ sub SynthesisMotifsVersusDatabase {
 ## Delete purged sequence files after analysis has been completed.
 sub CleanSequences {
   foreach my $seq_type (@seq_types) {
-    &RSAT::message::TimeWarn("Cleaning sequences", $seq_type) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Cleaning sequences", $seq_type) if ($main::verbose >= 2);
     &one_command("rm -f ".$main::outfile{$seq_type."_purged"}, 1);
   }
 }
@@ -2700,7 +2776,7 @@ sub CleanSequences {
 ################################################################
 ## Read arguments 
 sub ReadArguments {
-  &RSAT::message::TimeWarn("Reading arguments") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Reading arguments") if ($main::verbose >= 2);
   my $arg;
   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
   while (scalar(@arguments) >= 1) {
@@ -3439,7 +3515,7 @@ sub CheckArguments {
   foreach my $task (@supported_tasks) {
    push (@tasks, $task) if $task{$task};
   }
-  &RSAT::message::Info("Tasks: ", join (",", @tasks)) if ($main::verbose >= 1);
+  &RSAT::message::Info("Tasks: ", join (",", @tasks)) if ($main::verbose >= 2);
 }
 
 
