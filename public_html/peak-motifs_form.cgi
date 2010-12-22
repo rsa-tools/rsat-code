@@ -335,7 +335,7 @@ sub Panel4 {
   print "<a href=''><b>Add known reference motifs or your own motif database:</b></a><br/>";
   print $query->filefield(-name=>'ref_motif',
 			-size=>10);
-  print "(matrices should be in <b>Transfac format</b>)";
+  print "Matrices should be in <b>Transfac format</b> (other formats can be converted with a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
   print "</fieldset><p/>";
 
   print '
