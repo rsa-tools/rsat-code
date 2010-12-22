@@ -538,10 +538,18 @@ XX
 //
 ";
 
-$descr="<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>In this demonstration, we will analyse
-the promoter of Drosophila melanogaster even-skipped gene (eve). We will scan the 5500 bp sequence upstream the transcription start site with
-matrices representing the binding specificity of 12 transcription factors known to regulate eve. These matrices were built from
-binding sites annotated in the <a target=_blank href='http://www.oreganno.org'>ORegAnno</a> database by Jean-Valery Turatsinze.<p/>";
+$descr = "<H4>Comment on the demonstration example : </H4>";
+
+$descr .= "<blockquote class ='demo'>";
+
+$descr .= "In this demonstration, we will analyse the promoter of
+<i>Drosophila melanogaster</i> even-skipped gene (<i>eve</i>). We will scan the 5500
+bp sequence upstream the transcription start site with matrices
+representing the binding specificity of 12 transcription factors known
+to regulate <i>eve</i>. These matrices were built from binding sites
+annotated in the <a target=_blank
+href='http://www.oreganno.org'>ORegAnno</a> database by Jean-Valery
+Turatsinze.<p/>";
 
 ## demo 1
 print "<TD><B>";
@@ -590,7 +598,7 @@ print $query->submit(-label=>"DEMO 2 (CRERs)");
 print "</B></TD>\n";
 print $query->end_form;
 
-## demo3: detect over-representation of hits for PSSMs
+## demo3: detect enrichment of hits for PSSMs
 print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr3',-default=>$descr."The program will return matrices for which the total number of hits in the input sequences is higher than expected by chance.</blockquote>");
@@ -610,7 +618,7 @@ print $query->hidden(-name=>'origin',-default=>'genomic');
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->hidden(-name=>'uth_occ_sig_rank',-default=>1);
 print $query->hidden(-name=>'lth_occ_score',-default=>5);
-print $query->submit(-label=>"DEMO 3 (over-representation)");
+print $query->submit(-label=>"DEMO 3 (enrichment)");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -1053,7 +1061,7 @@ sub ReturnTable {
 							    -size=>5)
 					 ]),
 
-			      $query->th({-colspan=>3,-align=>left},["Over-representation"
+			      $query->th({-colspan=>3,-align=>left},["Enrichment"
 								    ]),
 
 				### Threshold on exp_occ
@@ -1189,7 +1197,7 @@ sub ReturnTable {
 			<A HREF='help.matrix-scan.html#return_fields'>CRERs <BR/> (Cis-Regulatory element <BR>Enriched Regions)</A> </th>",
 		      "<th bgcolor='#F6E6CA'>
   			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_occ' $checked{analysis_occ}><BR/>
-  			<A HREF='help.matrix-scan.html#return_fields'>Over-representation of hits<br>in the whole input sequence set</A></th> ",
+  			<A HREF='help.matrix-scan.html#return_fields'>Enrichment of hits<br>in the whole input sequence set</A></th> ",
 		      "</tr>",
 		      "<tr align='left' valign='top'><td><b>Fields to <BR/> return</b></td>",
 		      "<td bgcolor='#CCCCCC'>$boxes_matches</td>",
