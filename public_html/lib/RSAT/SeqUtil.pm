@@ -95,7 +95,7 @@ sub all_possible_oligos {
       }
     }
   }
-  &RSAT::message::Info("&all_possible_oligos()", "len", $len, "alphabet", scalar(@alphabet), "oligos", scalar(@oligos)) if ($main::verbose >= 3);
+  &RSAT::message::Info("&all_possible_oligos()", "len", $len, "alphabet", scalar(@alphabet), "oligos", scalar(@oligos)) if ($main::verbose >= 4);
   return @oligos;
 }
 
