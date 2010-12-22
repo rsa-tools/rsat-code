@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.104 2010/12/21 22:16:40 jvanheld Exp $
+# $Id: peak-motifs,v 1.105 2010/12/22 04:40:08 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.104 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.105 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1540,12 +1540,13 @@ sub ReadMotifTable {
 ################################################################
 ## Compare discovered motifs to the referencemotif 
 sub MotifsVersusReference {
-  &RSAT::message::TimeWarn("Comparing discovered motifs with reference motif(s)") if ($main::verbose >= 1);
-
   ################################################################
   ## Compare separately each discovered motif to reference motif(s)
   &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
   my $motif_nb = scalar(@motif_ids);
+
+  &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with reference motif(s)") if ($main::verbose >= 1);
+
   foreach my $i (0..$#motif_ids) {
     my $m = $i+1;
     my $motif_id = $motif_ids[$i];
@@ -1604,12 +1605,12 @@ sub MotifsVersusReference {
 ## Compare discovered motifs to the motif database
 sub MotifsVersusDatabase {
   foreach my $db_name (@motif_databases) {
-    &RSAT::message::TimeWarn("Comparing discovered motifs with database", $db_name) if ($main::verbose >= 1);
-
     ################################################################
     ## Compare separately each discovered motif to reference motif(s)
     &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
     my $motif_nb = scalar(@motif_ids);
+
+    &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with database", $db_name) if ($main::verbose >= 1);
     foreach my $i (0..$#motif_ids) {
       my $m = $i+1;
       my $motif_id = $motif_ids[$i];
@@ -1627,8 +1628,6 @@ sub MotifsVersusDatabase {
       $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id.'_vs_db_'.$db_name};
       $cmd .= " -o ".$main::outfile{$motif_id.'_vs_db_'.$db_name."_html"};
       &one_command($cmd, 1);
-
-#      die "BOUM";
     }
 
     ################################################################
