@@ -59,7 +59,7 @@ foreach $key (keys %default) {
 &RSA_header("peak-motifs", "form");
 print "<CENTER>";
 print "Pipeline for discovering motifs in ChIP-seq peak sequences.<P>\n";
-print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
+#print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
@@ -98,10 +98,18 @@ print $query->end_form;
 ################################################################
 ### data for the demo single
 
-my $descr1="<H4>Comment on the demonstration example 1 : </H4><blockquote class ='demo'>
-In this demonstration, we .....<p/>
-The program will return ...
-</blockquote>";
+my $descr1 = "<H4>Comment on the demonstration example 1 :</H4>\n";
+$descr1 .= "<blockquote class ='demo'>";
+
+$descr1 .= "In this demonstration, we apply time- and memory-efficient
+motif discovery algorithms to discover over-represented motifs in a
+set of 1370 peak regions bound by the mouse transcription factor Otc4
+(Chen et al., 2008)</p>\n";
+
+$descr1 .= "Discovered motifs are compared to JASPAR vertebrate
+motifs, and sequences are scanned to predict binding sites.</p>\n";
+
+$descr1 .= "</blockquote>";
 
 #print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
 #$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
@@ -111,7 +119,7 @@ print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
-print $query->hidden(-name=>'title',-default=>'Oct4_Chen2008');
+print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar');
 print $query->hidden(-name=>'max_seq_len',-default=>'250');
 print $query->hidden(-name=>'top_sequences',-default=>'5000');
 print $query->submit(-label=>"DEMO 1");
