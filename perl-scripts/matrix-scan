@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.184 2010/12/20 16:05:48 jvanheld Exp $
+# $Id: matrix-scan,v 1.185 2010/12/22 14:03:04 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -302,6 +302,7 @@ package main;
   ################################################################
   #### initialize parameters
   local $top_matrices = 0;
+  local $top_seq = 0;
   local $start_time = &RSAT::util::StartScript();
   local $decimals=1;
   local $base = exp(1);
@@ -330,7 +331,7 @@ package main;
   $window = -1;
   $bg_method = "";
   $null = "NA";
-  $infinite = "999"; ## String to print for infinite values (e.g. when the eval < e-300, it i rounded to 0, thus the significance is infinite)
+  $infinite = "350"; ## String to print for infinite values (e.g. when the eval < e-300, it i rounded to 0, thus the significance is infinite)
 
   $bg_in_format = "oligo-analysis";
   $bg_out_format = "tables";
@@ -677,10 +678,10 @@ package main;
   if ($return_fields{occ_proba}) {
     $return_fields{distrib} = 1;
     $calc_fields{pval} = 1;
-
 #     &RSAT::error::FatalError("The option -return score_distrib requires a background score distribution (-bg_distrib)")
 #       unless ($infile{bg_distrib});
-	################################################################
+
+    ################################################################
     ## Load the background score distribution
     if ($infile{bg_distrib}) {
       my ($in, $input_dir) = &OpenInputFile($infile{bg_distrib});
@@ -743,9 +744,8 @@ package main;
 
   ## to keep as last to be sure it is not overriden
   if ($quick_scan) {
-  		$calc_fields{sites} = 0; #do not calculate sites if matrix-scan-quick is supported
-  		$calc_fields{pval} = 0; #pval is already calculated by matrix-scan-quick
-  	}
+    $calc_fields{sites} = 0; #do not calculate sites if matrix-scan-quick is supported
+  }
 
   ## ##############################################################
   ## Create a new object for each match
@@ -831,13 +831,13 @@ package main;
 				    $main::markov."+1)."));
     }
 
-    	## bg window : calculate bg pseudo frequency
-    	if ($bg_method ne "input") {
-    		unless ($bg_pseudo_user_specified) {
-     			$main::bg_pseudo = sqrt($main::window)/(sqrt($main::window) + $main::window);
-     			&RSAT::message::Debug("window length: ", $main::window,"bg pseudo-frequency calculated:",$main::bg_pseudo) if ($main::verbose >= 3);
-      		}
-    	}
+    ## bg window : calculate bg pseudo frequency
+    if ($bg_method ne "input") {
+      unless ($bg_pseudo_user_specified) {
+	$main::bg_pseudo = sqrt($main::window)/(sqrt($main::window) + $main::window);
+	&RSAT::message::Debug("window length: ", $main::window,"bg pseudo-frequency calculated:",$main::bg_pseudo) if ($main::verbose >= 5);
+      }
+    }
 
     ## TO DO: read the sequences once to determine prior frequencies, in
     ## order to set the pseudo-weight distribution
@@ -862,7 +862,7 @@ package main;
       $bg_cmd .= " | ".$SCRIPTS."/convert-background-model -from oligos -to MotifSampler";
       $bg_cmd .= " -o ".$tmp_bg_file;
       $bg_cmd .= " -bg_pseudo ".$bg_model->get_attribute("bg_pseudo");
-      &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 3);
+      &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 5);
       &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
       &RSAT::server::DelayedRemoval($tmp_bg_file);
       $bg_quick_file = $tmp_bg_file;
@@ -881,7 +881,7 @@ package main;
   ## Set prior matrix frequencies from the bg model and calculate
   ## derived statistics
   my %prior = $bg_model->get_attribute("suffix_proba");
-  &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 3);
+  &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 4);
   my %matrix_sizes = ();
   foreach my $matrix_file (@matrix_files) {
     my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
@@ -905,7 +905,7 @@ package main;
 	  my $consensus = $matrix->get_attribute("consensus.IUPAC");
 	  if ($consensus) {
 	    &RSAT::message::Warning("Using consensus as name", $consensus)
-	      if ($main::verbose >= 3);
+	      if ($main::verbose >= 4);
 	    $matrix->force_attribute("name", $consensus);
 	  }
 	} elsif ($id_as_name) {
@@ -955,27 +955,26 @@ package main;
 # 		## Set the matrix prior
 # 		$matrix->setPrior(%prior);
 # 		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"),
-# 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
+# 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 5);
 # 		## Calculate min and max weight values
 # 		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
 # 		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
 # 					      $matrix->get_attribute("name"),
 # 					      $Wmin, $Wmax, $Wrange,
-# 					     )) if ($main::verbose >= 3);
+# 					     )) if ($main::verbose >= 5);
 # 	}
 
 	unless ($bg_method eq "window") {
-		## Set the matrix prior
-		$matrix->setMarkovModel($bg_model);
-		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"),
-					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
-		## Calculate min and max weight values
-		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
-		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
-					      $matrix->get_attribute("name"),
-					      $Wmin, $Wmax, $Wrange,
-					     )) if ($main::verbose >= 3);
-
+	  ## Set the matrix prior
+	  $matrix->setMarkovModel($bg_model);
+	  &RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"),
+					%prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 4);
+	  ## Calculate min and max weight values
+	  my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
+	  &RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
+					$matrix->get_attribute("name"),
+					$Wmin, $Wmax, $Wrange,
+				       )) if ($main::verbose >= 4);
 	}
 
 
@@ -986,7 +985,7 @@ package main;
 				 scalar(@matrices),
 				 $matrix->get_attribute("name"),
 				 $matrix->get_attribute("file")
-				) if ($main::verbose >= 3);
+				) if ($main::verbose >= 4);
       }
     }
   }
@@ -1136,71 +1135,37 @@ package main;
 
   ################################################################
   ##### Scan the sequences
-  &RSAT::message::TimeWarn("Scaning sequences with", scalar(@matrices), "matrices") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Scanning sequences with", scalar(@matrices), "matrices") if ($main::verbose >= 2);
 
   my ($in, $input_dir) = &OpenInputFile($main::infile{input});
   local($current_seq, $seq_id);
+
   while ((($current_seq, $seq_id, @seq_comments) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	 (($current_seq ne "") || ($seq_id ne ""))) {
+
+    ## Sequence length
+    $current_seq = lc($current_seq);
+    my $seq_len = length($current_seq);
+    $sum_seq_len += $seq_len;
+
+    ## Update sequence number
+    $sequence_number++;
+
+    ## Top sequences
+    if (($top_seq > 0) && ($sequence_number > $top_seq)) {
+      &RSAT::message::Info("Stopped after $top_seq sequences") if ($main::verbose >= 2);
+      last;
+    }
 
     ## If the rank is required, it is calculated for each input sequence independently
   #  local @matches = (); ## Only used whe the rank of the site is required
  #   local %matches_per_matrix = ();
 
     ## Initialize sequence scores
-    $sequence_scores->{$seq_id}->{length} = length($current_seq);
+    $sequence_scores->{$seq_id}->{length} = $seq_len;
     $sequence_scores->{$seq_id}->{matches} = 0;
     $sequence_scores->{$seq_id}->{weight_sum} = 0;
     $sequence_scores->{$seq_id}->{sig_sum} = 0;
-
-
-    ## Count the number of N residues and increment the corresponding counter
-    my $n_seq = $current_seq;
-    $n_seq =~ s/[^N]//gi;
-    $n_residues += length($n_seq);
-
-    ## Sequence length
-    $current_seq = lc($current_seq);
-    $sequence_number++;
-    my $seq_len = length($current_seq);
-    $sum_seq_len += $seq_len;
-
-    ## Calculate the offset
-    local $orig_pos = 0; ## $orig_pos is local because it has to be passed to subroutines for CRER positions
-    local $ref_strand = "D"; ## Strand of the sequence relative to the
-			     ## reference (chromosome) for genomic
-			     ## coordinates. if this strand is R, all
-			     ## matches have to be reversed.
-    if ($origin eq "end") {
-      $orig_pos = $seq_len + $main::offset + 1;
-    } elsif ($origin eq "center") {
-      $orig_pos = &round(($seq_len+1)/2) + $main::offset;
-    } elsif ($origin eq "start") {
-      $orig_pos = $main::offset;
-    } elsif ($origin eq "genomic") {
-      ($ref_org, $ref_chrom, $ref_start, $ref_end, $ref_strand, $genome_format, $browser_url) = &parse_genomic_coordinates($seq_id, @seq_comments);
-      if ((defined($ref_strand)) && ($ref_strand eq "D")) {
-	$orig_pos = -$ref_start +1 + $main::offset;
-#      } elsif ($ref_strand eq "R") {
-      } else {
-	$ref_strand = "DR";
-	$orig_pos = -$ref_end +1 + $main::offset;
-#      } else {
-#	&RSAT::error::FatalError($ref_strand, "Invalid strand specification for genomic coordinates");
-      }
-      $seq_id = $ref_chrom;
-
-      &RSAT::message::Debug("Reference for genomic coordinates",
-			    "start=".$ref_start,
-			    "end=".$ref_end,
-			    "strand=".$ref_strand,
-			    "orig_pos=".$orig_pos,
-			   ) if ($main::verbose >= 10);
-    }
-
-    ################################################################
-    ## Report sequence limits
-    &PrintSequenceLimits($seq_id, $seq_len, $orig_pos, $ref_strand) if ($return_fields{limits});
 
     ################################################################
     ## Calculate background model from the current sequence
@@ -1231,7 +1196,8 @@ package main;
     }
 
 
-    ### CRER detection
+    ################################################################
+    ### Initialize variables for CRER detection
     $nb_of_binom_tests{$seq_id} = 0 if ($return_fields{crer});
     our $crer_seed = $main::crer_seed_init if ($return_fields{crer});
     ## change $seed to sequence length if $seed size exceed seq length
@@ -1241,7 +1207,7 @@ package main;
 	$crer_seed = $seq_len - $shortest_matrix_size;
       }
 
-      ## adapt seed to that final crer size does not exceed the desired crer_size
+      ## adapt seed to that final CRER size does not exceed the desired crer_size
       $crer_seed = $crer_seed - $longest_matrix_size;
       &RSAT::message::Debug("sequence",$seq_id,"CRER seed length:", $crer_seed) if ($main::verbose >= 5);
       ## reinitialise CRER windows for each sequence
@@ -1253,9 +1219,16 @@ package main;
 
     ################################################################
     ## Detect sites
-    &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id,  "with ".scalar(@matrices)." PSSM")
-      if ($main::verbose >= 3);
-    &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 2) && (($sequence_number % 50) == 0));
+    &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,
+			     $seq_id,"len=".$seq_len, 
+			     "orig=".$origin, "offset=".$offset,
+			     $seq_id,  "with ".scalar(@matrices)." PSSM")
+      if (($main::verbose >= 4) || (($main::verbose >= 3) && (($sequence_number % 10) == 1)));
+    &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,
+			   $seq_id,"len=".$seq_len, 
+			   "orig=".$origin, "offset=".$offset,
+			   $seq_id) 
+      if (($main::verbose >= 4) && (($sequence_number % 100) == 1));
 
 
     if ($calc_fields{sites}) {
@@ -1306,7 +1279,7 @@ package main;
 	      ## here words are added
 	      if ($pos >= $markov+2) { ## do not add words on the left side, if the word is not as long as markov+1
 		my $added_word = substr($current_seq, $pos - ($markov + 2), $markov+1);
-		&RSAT::message::Debug("added word", $added_word,"begins at" ,$pos - ($markov + 2) ) if ($main::verbose >= 3);
+		&RSAT::message::Debug("added word", $added_word,"begins at" ,$pos - ($markov + 2) ) if ($main::verbose >= 5);
 		$bg_model->one_word_update($added_word, "add",$pos - ($markov + 2));
 	      }
 	      &RSAT::message::Debug( "pos", $pos,"> window/2", $main::window/2,  "condition",$pos + $main::window, "<=","seq_len", $seq_len ) if ($main::verbose >= 10);
@@ -1331,7 +1304,7 @@ package main;
 	      ## here words are deleted
 	      if ($seq_len - ($pos + $ncol -1 ) >= $markov ) { ## end of sequence : do not delete words on the right side, if the word is not as long as markov +1
 		my $deleted_word = substr($current_seq, ($pos + $ncol -1) -1 , $markov+1);
-		&RSAT::message::Debug("deleted word", $deleted_word,"begins at" ,($pos + $ncol -1) -1) if ($main::verbose >= 3);
+		&RSAT::message::Debug("deleted word", $deleted_word,"begins at" ,($pos + $ncol -1) -1) if ($main::verbose >= 5);
 		$bg_model->one_word_update($deleted_word, "delete",($pos + $ncol -1) -1);
 	      }
 	     $bg_model->counts_to_transitions();
@@ -1452,18 +1425,18 @@ package main;
   	################################################################
     ## Rank CRERs
     if (($return_fields{crer})  && (defined(@{$crer_per_seq{$seq_id}}))) {
-    	&RSAT::message::TimeWarn( "Returning individual crer for sequence", $seq_id)
-	  if ($main::verbose >= 3);
+    	&RSAT::message::TimeWarn( "Returning individual CRER for sequence", $seq_id)
+	  if ($main::verbose >= 4);
 
 	my @ranked_crers = @{$crer_per_seq{$seq_id}};
 	if (scalar(@ranked_crers) <= 0) {
-	  &RSAT::message::Info("No crer in sequence",
+	  &RSAT::message::Info("No CRER in sequence",
 			       $seq_id,
-			      ) if ($main::verbose >= 3);
+			      ) if ($main::verbose >= 4);
 	  next;
       		}
       	if ($calc_fields{rank}) {
-	  &RSAT::message::TimeWarn("Sorting crer for sequence", $seq_id) if ($main::verbose >= 3);
+	  &RSAT::message::TimeWarn("Sorting CRER for sequence", $seq_id) if ($main::verbose >= 5);
 	  ## Sort CRERs by crer_sig
 	  @ranked_crers =
 	    sort {$b->get_attribute('crer_sig') <=> $a->get_attribute('crer_sig')}
@@ -1471,7 +1444,7 @@ package main;
       	}
 
       	################################################################
-      	## Return the crer
+      	## Return the CRER
       	my $rank = 0;
       	foreach my $crer (@ranked_crers) {
 
@@ -1489,7 +1462,7 @@ package main;
 
     if (($return_fields{sites})  && (defined(@{$matches_per_seq{$seq_id}}))) {
       &RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id)
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 4);
 
       ################################################################
       ## Sort the matches
@@ -1497,11 +1470,11 @@ package main;
       if (scalar(@ranked_matches) <= 0) {
 	&RSAT::message::Info("No match in sequence",
 			     $seq_id,
-			    ) if ($main::verbose >= 3);
+			    ) if ($main::verbose >= 4);
 	next;
       }
       if ($calc_fields{rank}) {
-	&RSAT::message::TimeWarn("Sorting matches for sequence", $seq_id) if ($main::verbose >= 3);
+	&RSAT::message::TimeWarn("Sorting matches for sequence", $seq_id) if ($main::verbose >= 4);
 	if ($calc_fields{pval}) {
 	  ## Sort matches by significance
 	  @ranked_matches =
@@ -1551,7 +1524,7 @@ package main;
 
 
    #### QUICK SCAN #####
-   if ($quick_scan) {
+   if (($return_fields{sites}) && ($quick_scan)) {
        ## approximate the number of scored segments for eval calculation
        my $total_scored = 0;
        if ($return_fields{eval}){
@@ -1700,7 +1673,7 @@ package main;
     ## use matrix-scan-quick to calculate the observed distrib:
     if ($quick_scan) {
       foreach my $matrix (@matrices) {
-		&QuickScan($matrix,"distrib");
+	&QuickScan($matrix,"distrib");
       }
     } else {
       ################################################################
@@ -1711,7 +1684,7 @@ package main;
 	$cum_sum{$matrix_name} = 0;
 
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
 
 	foreach my $score (@sorted_scores) {
 	  unless (defined($score_distrib->{$matrix_name}->{$score}->{occ})) {
@@ -1731,7 +1704,7 @@ package main;
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
 	foreach my $score (@sorted_scores) {
 	  my $occ = $score_distrib->{$matrix_name}->{$score}->{occ};
 	  my $occ_cum = $score_distrib->{$matrix_name}->{$score}->{occ_cum};
@@ -1766,30 +1739,29 @@ package main;
 	my $matrix_name = $matrix->get_attribute("name");
 	my $n = $matrix->{scored};
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
 	foreach my $score (@sorted_scores) {
 	  my $x = $score_distrib->{$matrix_name}->{$score}->{inv_cum} || 0;
 
-	  my $prior = $null;
+	  my $site_pval = $null;
 	  if ($infile{bg_distrib}) {
 	    if (defined($exp_score_distrib->{$matrix_name}->{$score}->{occ_prior})) {
 	      ## Take the prior from the backround file
-	      $prior  = $exp_score_distrib->{$matrix_name}->{$score}->{occ_prior};
+	      $site_pval  = $exp_score_distrib->{$matrix_name}->{$score}->{occ_prior};
 	      &RSAT::message::Debug("Estimating prior from bg_distrib file",
-				    $matrix_name, $score, $prior) if ($main::verbose >= 5);
+				    $matrix_name, $score, $site_pval) if ($main::verbose >= 5);
 	    } else {
 	      &RSAT::message::Warning("The  bg distrib file does not contain prior probability for matrix",
 				      $matrix_name, "with score", $score) if ($main::verbose >= 1);
 	    }
 	  } else {
-	    $prior = ${$main::pval{$matrix}}{$score};
+	    $site_pval = ${$main::pval{$matrix}}{$score};
 	  }
-	  $score_distrib->{$matrix_name}->{$score}->{occ_prior} = $prior;
-	  if ($prior eq $null) {
-	
+	  $score_distrib->{$matrix_name}->{$score}->{occ_prior} = $site_pval;
+	  if ($site_pval eq $null) {
 	    $score_distrib->{$matrix_name}->{$score}->{exp_occ} = $null;
 	  } else {
-	    $score_distrib->{$matrix_name}->{$score}->{exp_occ} = $prior * $n;
+	    $score_distrib->{$matrix_name}->{$score}->{exp_occ} = $site_pval * $n;
 	  }
 	}
       }
@@ -1802,7 +1774,7 @@ package main;
 	my $matrix_name = $matrix->get_attribute("name");
 	my $n = $matrix->{scored};
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-	&RSAT::message::TimeWarn("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	&RSAT::message::TimeWarn("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
 	my $s = 0;
 	foreach my $score (@sorted_scores) {
 	  $s++;
@@ -1838,7 +1810,7 @@ package main;
 					    );
 	    $nb_of_tests++;
 	  }
-	  if ($main::verbose >= 3) {
+	  if ($main::verbose >= 4) {
 	    if (($s % 50) == 0) {
 	      &RSAT::message::psWarn("Calculated significance for matrix", , $matrix_name, "score", $s) ;
 	    } else {
@@ -1861,7 +1833,7 @@ package main;
     foreach my $matrix (@matrices) {
       my $matrix_name = $matrix->get_attribute("name");
       my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
       foreach my $score (@sorted_scores) {
 	my $occ_eval = $null;
 	my $occ_sig = $null;
@@ -1989,6 +1961,7 @@ matrix-scan options
 -mlist		list of matrices
 -matrix_format  format of the matrix (supported: tab(default), meme, consensus,MotifSampler)
 -top_matrices #	only scan with the top # matrices per matrix file
+-top_seq #	only scan the top # sequences
 -consensus_name use the motif (degenerate) consensus as matrix name.
 -id_as_name     use the matrix identifier as matrix name (for TRANSFAC format).
 -ac_as_name     use the matrix accession number as matrix name (for TRANSFAC format).
@@ -2210,6 +2183,20 @@ are used for scanning the sequences.
       &RSAT::error::FatalError("$main::top_matrices. Invalid top_matrices, should be an Integer number.")
 	unless (&RSAT::util::IsInteger($main::top_matrices));
       #	    $main::infile{matrix} = shift(@arguments);
+
+=pod
+
+=item B<-top_seq #>
+
+Only scan with the top # sequences. This option allows to perform
+quick tests or to scan only a given number of sequences at the top of
+the input file (e.g. for collection of ChIP-seq peaks).
+
+=cut
+    } elsif ($arg eq "-top_seq") {
+      $main::top_seq = shift(@arguments);
+      &RSAT::error::FatalError("$main::top_seq. Invalid top_seq, should be an Integer number.")
+	unless (&RSAT::util::IsInteger($main::top_seq));
 
       ## Use consensus as matrix name
 
@@ -3107,9 +3094,10 @@ sub CheckQuickScan {
 ################################################################
 ## Use matrix-scan-quick (developed by Matthieu Defrance) to scan the sequences
 sub QuickScan {
-  my $matrix = shift;
-  my $scan_mode = shift;
-  my $total_scored = shift;
+  my ($matrix, $scan_mode, $total_scored) = @_;
+
+
+  &RSAT::message::TimeWarn("Scanning with matrix-scan-quick", "mode=".$scan_mode) if ($main::verbose >= 2);
 
   ################################
   ## Matrix
@@ -3127,7 +3115,7 @@ sub QuickScan {
 					);
   close $matrix_handle;
   &RSAT::server::DelayedRemoval($tmp_matrix_file);
-  &RSAT::message::TimeWarn("Exported partial matrix to file", $tmp_matrix_file) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Exported partial matrix to file", $tmp_matrix_file) if ($main::verbose >= 3);
   $matrix_quick_file = $tmp_matrix_file;
 
   ################################
@@ -3215,10 +3203,10 @@ sub QuickScan {
       ## filter out the scores for which occ == 0	
       next if ($occ == 0);
       $score = sprintf ("%.${decimals}f",$score);
+      $score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
       $score_distrib->{$matrix_name}->{$score}->{occ}=$occ;
       $score_distrib->{$matrix_name}->{$score}->{occ_cum}=$occ_cum;
       $score_distrib->{$matrix_name}->{$score}->{inv_cum} = $inv_cum;
-      $score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
     }
     my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
     $cum_sum{$matrix_name}=$score_distrib->{$matrix_name}->{$sorted_scores[0]}->{inv_cum};
@@ -3733,7 +3721,7 @@ sub print_match {
 
 =item B<score_crer>
 
-Calculate the score of the crer
+Calculate the score of the CRER
 
 =cut
   sub score_crer {
@@ -4023,7 +4011,7 @@ sub check_distrib_thresholds {
     foreach my $matrix (@matrices) {
       my $matrix_name = $matrix->get_attribute("name");
       my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
       foreach my $score (@sorted_scores) {
 	if (($score_distrib->{$matrix_name}->{$score}->{$key} eq $null) ||
 	    ($score_distrib->{$matrix_name}->{$score}->{$key} < $lth{$key})) {
@@ -4045,7 +4033,7 @@ sub check_distrib_thresholds {
     foreach my $matrix (@matrices) {
       my $matrix_name = $matrix->get_attribute("name");
       my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
       foreach my $score (@sorted_scores) {
 	if (($score_distrib->{$matrix_name}->{$score}->{$key} eq $null) ||
 	    ($score_distrib->{$matrix_name}->{$score}->{$key} > $uth{$key})) {
@@ -4156,15 +4144,18 @@ sub PrintScoreDistrib {
   &RSAT::message::TimeWarn("Printing score distributions") if ($main::verbose >= 2);
   foreach my $matrix (@matrices) {
     my $matrix_name = $matrix->get_attribute("name");
-    my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+    &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
 
-    &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
 
+    my @sorted_scores = ();
     if (($return_fields{occ_proba}) && ($sort_distrib)) {
       @sorted_scores =  sort {
 	$score_distrib->{$matrix_name}->{$a}->{occ_pval} <=> $score_distrib->{$matrix_name}->{$b}->{occ_pval}
       } keys %{$score_distrib->{$matrix_name}};
-      &RSAT::message::Info("Sorting distribution by occ_pval") if ($main::verbose >= 4);
+      &RSAT::message::Info("Sorted distribution by occ_pval") if ($main::verbose >= 4);
+    } else {
+      @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+      &RSAT::message::Info("Sorted distribution by weight score") if ($main::verbose >= 4);
     }
 
     #	@sorted_scores = sort {$a <=> $b} keys(%{$pval{$matrix}});
