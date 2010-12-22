@@ -48,9 +48,13 @@ $parameters = "";
 
 ### title
 if ($query->param('title')){
-	my $title = $query->param('title');
-	$title =~ s/\s+/_/g;
-	$parameters .= " -title $title ";
+  my $title = $query->param('title');
+
+  ## Suppress characters that may cause problems when used in file names
+  $title =~ s/\s+/_/g;
+  $title =~ s/\//_/g;
+  $title =~ s/:/_/g;
+  $parameters .= " -title '".$title."' ";
 }
 
 ### peak sequences file
@@ -127,19 +131,37 @@ if (scalar(@selected_db) > 0) {
 ## Custom reference motifs
 if ($query->param('ref_motif')) {
   my $refmotif_file = ${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
-  my $upload_refmotif = $query->param('ref_motif');
+
+  $upload_refmotif = $query->param('ref_motif');
   if ($upload_refmotif) {
     my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
-    open FILE, ">$refmotif_file" ||
-      &cgiError("Cannot store reference motif file in temp dir.");
-    while (<$upload_refmotif>) {
-      print FILE;
+    if ($upload_refmotif =~ /\.gz$/) {
+      $refmotif_file .= ".gz";
     }
-    close FILE;
-    $parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
-  } else {
-    &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
+    open REF, ">$refmotif_file" ||
+      &cgiError("Cannot store sequence file in temp dir.");
+    while (<$upload_refmotif>) {
+#      print "UPLOADING\t", $_;
+      print REF;
+    }
+    close REF;
   }
+
+#  my $upload_refmotif = $query->param('ref_motif');
+#  #  if ($upload_refmotif) {
+#  my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
+#  open FILE, ">$refmotif_file" ||
+#    &cgiError("Cannot store reference motif file in temp dir.");
+#  while (<$upload_refmotif>) {
+#    print FILE;
+#  }
+#  close FILE;
+#  #    $parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
+  $parameters .= " -ref_motifs ".$refmotif_file;
+  push(@tasks, "motifs_vs_ref");
+  #  } else {
+  #    &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
+  #  }
 }
 
 ################################################################
