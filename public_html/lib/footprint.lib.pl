@@ -990,7 +990,9 @@ sub RetrieveQueryPromoters {
       $cmd .= " -i ".$outfile{genes};
     }
     $cmd .= " -noorf";
+    $cmd .= " -feattype misc_RNA,cds,trna,rrna";
     $cmd .= " -o ".$outfile{query_seq};
+    &RSAT::message::Info("Retrieve seq command", $cmd) if ($main::verbose >= 5);
     &one_command($cmd);
   }
   &IndexOneFile("query sequence", $outfile{query_seq});
