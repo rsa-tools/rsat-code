@@ -286,7 +286,7 @@ sub oligos_to_frequency_table {
   my $order =  $pattern_len -1 ;	## Use the first pattern to calculate model order
   $self->force_attribute("order", $order); 
   &RSAT::message::Info("Converting oligos into frequency tables", $pattern_nb." patterns", "length", $pattern_len, "order", $order) 
-   if ($main::verbose >= 3);
+   if ($main::verbose >= 4);
 
   foreach my $pattern_seq (@patterns) {
     my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
@@ -319,7 +319,7 @@ transition. Oligos are obtained by concatenating each prefix with each suffix
 =cut
 sub transitions_to_oligo_frequencies {
   my ($self) = @_;
-  &RSAT::message::Info("Converting transitions into oligo frequencies") if ($main::verbose >= 3);
+  &RSAT::message::Info("Converting transitions into oligo frequencies") if ($main::verbose >= 4);
   my %patterns = ();
   my @prefix = sort($self->get_prefixes());
   my @suffix = sort($self->get_suffixes());
@@ -402,7 +402,7 @@ sub load_from_file_meme {
 
   $order = $max_order;
   $self->force_attribute("order", $order);
-  &RSAT::message::Info("Loading Markov model of order", $order) if ($main::verbose >= 3);
+  &RSAT::message::Info("Loading Markov model of order", $order) if ($main::verbose >= 4);
 
   ## Calculate alphabet from expected frequency keys
   foreach my $pattern_seq (keys %freq) {
@@ -468,7 +468,7 @@ sub load_from_file_MotifSampler {
 
     } elsif (/^#snf/i) {
       ## Single nucleotide frequencies
-      &RSAT::message::Info("Reading single nucleotide probabilities") if ($main::verbose >= 3);
+      &RSAT::message::Info("Reading single nucleotide probabilities") if ($main::verbose >= 4);
       my $line = (<$in>);
       chomp($line);
       my @probas = split (/\s+/, $line);
@@ -483,7 +483,7 @@ sub load_from_file_MotifSampler {
 
     } elsif (/^#oligo frequency/i) {
       ## Prefix probabilities
-      &RSAT::message::Info("Reading prefix probabilities") if ($main::verbose >= 3);
+      &RSAT::message::Info("Reading prefix probabilities") if ($main::verbose >= 4);
       foreach my $prefix (@prefixes) {
 	my $proba = (<$in>);
 	chomp($proba);
@@ -651,7 +651,7 @@ frequencies.
 sub calc_prefix_suffix_sums {
   my ($self) = @_;
 
-  &RSAT::message::Info("Computing sums of oligo frequencies per prefix and suffix") if ($main::verbose >= 3);
+  &RSAT::message::Info("Computing sums of oligo frequencies per prefix and suffix") if ($main::verbose >= 4);
 
   &RSAT::message::TimeWarn("Computing prefix and suffix sums") if ($main::verbose >= 4);
   my %prefix_sum = ();
@@ -731,7 +731,7 @@ sub add_pseudo_freq {
   &RSAT::message::Info("Adding pseudo frequencies",
 		       scalar(@suffixes), "suffixes",
 		       scalar(@prefixes), "prefixes",
-		       ) if ($main::verbose >= 3);
+		       ) if ($main::verbose >= 4);
 
   ## Calculate sums of prefixes and suffixes for uncorrected oligo frequencies
   $self->calc_prefix_suffix_sums();
@@ -806,7 +806,7 @@ suffixes given the prefix) is 1.
 sub normalize_transition_frequencies {
   my ($self, %args) = @_;
 
-  &RSAT::message::TimeWarn(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 3);
+  &RSAT::message::TimeWarn(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 4);
 
   ## Add pseudo-counts to oligo-frequencies counts. This has to be done after the computation of prefix counts
   unless ($args{no_pseudo}) {
@@ -846,7 +846,7 @@ sub normalize_transition_frequencies {
 	$missing_transitions++;
 	#		&RSAT::message::Warning(join(" ",
 	#					     "No transition between prefix",$prefix, 
-	#					     "and suffix", $suffix)) if ($main::verbose >= 3);
+	#					     "and suffix", $suffix)) if ($main::verbose >= 4);
       }
 
       ## I prefer to call the corrected transition frequencies
@@ -930,7 +930,7 @@ sub normalize_transition_frequencies {
 #  &RSAT::message::TimeWarn(join("\t", 
 #				"Normalized background model", 
 #				"prefixes: ".$p,
-#				"transitions: ".$s)) if ($main::verbose >= 3);
+#				"transitions: ".$s)) if ($main::verbose >= 4);
 }
 
 
@@ -954,7 +954,7 @@ sub check_missing_transitions {
 		$missing_transitions++;
 		&RSAT::message::Warning(join(" ",
 					     "No transition between prefix",$prefix, 
-					     "and suffix", $suffix)) if ($main::verbose >= 3);
+					     "and suffix", $suffix)) if ($main::verbose >= 4);
 	    };
 	}
     }
@@ -983,7 +983,7 @@ sub check_transition_alphabet {
 
     my $seq_type = $self->get_attribute("seq_type") || "dna";
     my %accepted_residues = &RSAT::SeqUtil::get_accepted_residues($seq_type);
-    &RSAT::message::Info("Accepted residues", $seq_type, %accepted_residues) if ($main::verbose >= 3);
+    &RSAT::message::Info("Accepted residues", $seq_type, %accepted_residues) if ($main::verbose >= 4);
 
     my $accepted_expression = join ('', '^[', sort(keys(%accepted_residues)), ']*$');
 
@@ -1022,14 +1022,14 @@ sub check_transition_alphabet {
     if (scalar(keys(%suppressed_prefixes)) > 0) {
       $self->set_array_attribute("prefixes", sort(keys(%checked_prefixes)));
       &RSAT::message::Info("Suppressed", scalar(keys(%suppressed_prefixes)),"prefixes, incompatible with sequence type", $seq_type)
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 4);
       &RSAT::message::Debug("Checked prefixes", join (",", $self->get_prefixes()),
 			   ) if ($main::verbose >= 5);
     }
     if (scalar(keys(%suppressed_suffixes)) > 0) {
       $self->set_array_attribute("suffixes", sort(keys(%checked_suffixes)));
       &RSAT::message::Info("Suppressed", scalar(keys(%suppressed_suffixes)),"suffixes, incompatible with sequence type", $seq_type)
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 4);
     }
 }
 
@@ -1456,7 +1456,7 @@ sub to_prefix_suffix_table {
     my $row_name_len = &RSAT::stats::max(5,$self->get_attribute("order"));
 
     &RSAT::message::Debug("prefix/suffix table","type", 
-			    $type) if ($main::verbose >= 3);
+			    $type) if ($main::verbose >= 4);
 
     ## Print header
     $string .= join ("\t", "#pr\\suf",
@@ -1851,7 +1851,7 @@ sub average_strands {
  # $self->normalize_transition_frequencies(no_pseudo=>1);
 
   &RSAT::message::Info(join("\t", "MarkovModel", "Averaging transition frequencies on both strands."))
-    if ($main::verbose >= 3);
+    if ($main::verbose >= 4);
 
   ## Get (supposedly strand-sensitive) oligo frequencies from the
   ## transition matrix
