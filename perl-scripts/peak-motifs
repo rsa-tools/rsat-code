@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.108 2010/12/22 07:19:16 jvanheld Exp $
+# $Id: peak-motifs,v 1.109 2010/12/22 07:39:19 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1832,7 +1832,7 @@ sub TimeTable {
 	}
       }
     } else {
-      &RSAT::message::Warning("Missing time file", $file);
+      &RSAT::message::Warning("Missing time file", $file) if ($main::verbose >= 2);
     }
     print $timetable $key, "\t", $time, "\n";
   }
