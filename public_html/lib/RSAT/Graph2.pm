@@ -3047,11 +3047,6 @@ sub layout_spring_embedding {
   my $nb_nodes = scalar(@node_names);
   my $nb_arcs = scalar(@arcs);
 
-  if ($nb_nodes <= 1) {
-    &RSAT::message::Warning("There is one node at most in this network. No layout will be computed.");
-    return();
-  }
-
   &RSAT::message::TimeWarn("Starting spring embedding",
 			   sprintf("\n\t%-22s%d", "nodes",$nb_nodes),
 			   sprintf("\n\t%-22s%d", "arcs",$nb_arcs),
@@ -3081,7 +3076,7 @@ sub layout_spring_embedding {
   $min_weight = 999999999 unless (&RSAT::util::IsReal($min_weight));
   my @arc_weight = ();
   my $max_label_len = 0;
-  for my $i (0..$#arcs) {
+  for (my $i = 0; $i < $nb_arcs; $i++) {
     my $source = $arcs[$i][0];
     my $target = $arcs[$i][1];
     my $label  = $arcs[$i][2];
@@ -3114,7 +3109,7 @@ sub layout_spring_embedding {
  			   "max_w=".$max_weight, 
  			   "min_w=".$min_weight, 
 			  ) if ($main::verbose >= 1);
-      for my $i (0..$#arcs) {
+      for (my $i = 0; $i < $nb_arcs; $i++) {
 	my $source = $arcs[$i][0];
 	my $target = $arcs[$i][1];
 	my $weight = $weight{$source}{$target};
@@ -3131,7 +3126,7 @@ sub layout_spring_embedding {
       }
     } else {
       &RSAT::message::Info("Non-weighted spring embedding") if ($main::verbose >= 1);
-      for my $i (0..$#arcs) {
+      for (my $i = 0; $i < $nb_arcs; $i++) {
 	my $source = $arcs[$i][0];
 	my $target = $arcs[$i][1];
 	$arc_index{$source}{$target} = $default_arc_len;
@@ -3175,7 +3170,7 @@ sub layout_spring_embedding {
     ## Iterate over all arcs to compute spring forces (attraction and
     ## repulsion) according to Hooke's law
     &RSAT::message::TimeWarn("Hooke's forces (spring)", "iter=".$iter."/".$max_iter) if ($main::verbose >= 3);
-    for my $i (0..$#arcs) {
+    for (my $i = 0; $i < $nb_arcs; $i++) { 
 
       ## Source node
       my $name1 = $arcs[$i][0];
@@ -3366,7 +3361,7 @@ sub layout_spring_embedding {
     }
 
     ## Apply moves to all nodes
-    for my $n (0..$#node_names) {
+    for (my $n = 0; $n < $nb_nodes; $n++) {
       my $name = $node_names[$n];
       my $id = $nodes_name_id{$name};
       my $x_move = $x_force{$id};
@@ -3423,7 +3418,7 @@ sub layout_spring_embedding {
 
     ## SUPPRESSED BECAUSE USELESS AFTER THE PREVIOUS CHECK ON GRAPH LIMITS
 #     ## Center and scale
-    if ($resize) {
+    if ($resize && $nb_nodes > 0) {
       my $x_min = $nodes_id_xpos{$node_ids[0]};
       my $y_min = $nodes_id_ypos{$node_ids[0]};
       my $x_max = $nodes_id_xpos{$node_ids[0]};
