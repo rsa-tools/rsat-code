@@ -3418,7 +3418,7 @@ sub layout_spring_embedding {
 
     ## SUPPRESSED BECAUSE USELESS AFTER THE PREVIOUS CHECK ON GRAPH LIMITS
 #     ## Center and scale
-    if ($resize && $nb_nodes > 0) {
+    if ($resize && $nb_nodes > 1) {
       my $x_min = $nodes_id_xpos{$node_ids[0]};
       my $y_min = $nodes_id_ypos{$node_ids[0]};
       my $x_max = $nodes_id_xpos{$node_ids[0]};
