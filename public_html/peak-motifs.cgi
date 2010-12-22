@@ -25,9 +25,10 @@ $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
 $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
 $output_prefix = "peak-motifs";
 
+## We need to create the output directory before starting matrix-quality  for uploading the input sequences and reference motifs
 $output_path = "$TMP/$output_directory";
 $output_path =~ s|\/\/|\/|g;
-`mkdir -p $output_path`;
+system("mkdir -p $output_path");
 # $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/perl-scripts" . ":$ENV{RSAT}/python-scripts";
 # $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/bin";
 
@@ -130,7 +131,7 @@ if (scalar(@selected_db) > 0) {
 ################################################################
 ## Custom reference motifs
 if ($query->param('ref_motif')) {
-  my $refmotif_file = ${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
+  my $refmotif_file = $output_path."/".$output_prefix."ref_motifs.tf";
 
   $upload_refmotif = $query->param('ref_motif');
   if ($upload_refmotif) {
@@ -191,7 +192,7 @@ $parameters .= " -outdir $output_path";
 $parameters .= " -prefix $output_prefix";
 
 ### verbosity
-#$parameters .= " -v 1";
+$parameters .= " -v 1";
 
 ### other default parmaters
 $parameters .= " -2str -noov -img_format png ";
