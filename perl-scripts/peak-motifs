@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.110 2010/12/22 16:47:17 jvanheld Exp $
+# $Id: peak-motifs,v 1.111 2010/12/26 05:33:18 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1778,17 +1778,10 @@ sub ScanSequences {
 
     &RSAT::message::Debug("Scanning sequences with motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
 
+    ################################################################
+    ## Predict site positions
 
-    &MotifEnrichment($infile{test_seq}, $main::outfile{$motif_id."_tf"},
-		     $main::outfile{$motif_id.'_pssm_enrichment'},
-		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
-
-
-    ## TEMPORARY: DEBUGGING
-    next;
-#    die "HELLO";
-
-    ## Scan with matrix-scan, option -quick
+    ## Site prediction with matrix-scan (option -quick)
     my $cmd = $SCRIPTS."/matrix-scan -quick -v 1";
     $cmd .= " -seq_format fasta -i ".$infile{test_seq};
     $cmd .= " -matrix_format transfac -m ".$main::outfile{$motif_id."_tf"};
@@ -1819,8 +1812,6 @@ sub ScanSequences {
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     &one_command($cmd, 1);
 
-
-
     ## Draw the graph of predicted site positions
     $cmd = $SCRIPTS."/XYgraph";
     $cmd .= " -format ".$main::param{img_format};
@@ -1832,9 +1823,11 @@ sub ScanSequences {
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
     &one_command($cmd, 1);
 
-    ## TO DO
-    ## Compute the significance of motif occurrences for each weight value
-    &RSAT::message::TimeWarn("Estimating significance of motif hits: NOT YET IMPLEMENTED") if ($main::verbose >= 2);
+    ################################################################
+    ## Analyze motif enrichment
+    &MotifEnrichment($infile{test_seq}, $main::outfile{$motif_id."_tf"},
+		     $main::outfile{$motif_id.'_pssm_enrichment'},
+		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
   }
 }
 
@@ -2216,7 +2209,10 @@ sub SynthesisByMotif {
     } else {
       print $syn "<font color='red'>No logo</font>","</td>\n";
     }
-    &PrintFileLinks("Enrichment distrib", $main::outfile{$motif_id.'_pssm_enrichment'},
+    &PrintFileLinks("Sites",$main::outfile{$motif_id.'_pssm_sites'},
+		    "Site position distrib.",$main::outfile{$motif_id.'_pssm_site_distrib'},
+		    "site position profiles",$main::outfile{$motif_id.'_pssm_site_distrib_graph'},
+		    "Enrichment distrib", $main::outfile{$motif_id.'_pssm_enrichment'},
 		    "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
 		   );
 
@@ -2565,7 +2561,7 @@ sub SynthesisRefMotif {
 ################################################################
 ## Report discovered motifs by algorithms
 sub SynthesisMotifsByAlgo {
-  &RSAT::message::TimeWarn("Synthesis per motif disdovery algorithm") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Synthesis per motif discovery algorithm") if ($main::verbose >= 2);
   print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>", 1);
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Pattern discovery");
