@@ -903,29 +903,32 @@ sub ReadClasses {
     my %family = ();
     my ($fam) = &OpenInputFile($family_file);
 
-    my $line = 0;
+    my $l = 0;
     while (<$fam>) {
-	$line++;
-	if (($main::verbose >= 2) && ($line % 2000 ==0)) {
-	  &RSAT::message::TimeWarn( "Read", $line, "lines from family file",$family_file);
-	  if ($line % 10000 == 0) {
-	    &RSAT::message::psWarn( "Read", $line, "lines from family file",$family_file);
+      s/\r/\n/g; ## Suppress Windows-specific carriage return characters, which are toxic to Unix systems
+      my @lines = split (/\n/, $_);
+      foreach my $line (@lines) {
+	$l++;
+	if (($main::verbose >= 2) && ($l % 2000 ==0)) {
+	  &RSAT::message::TimeWarn( "Read", $l, "lines from family file",$family_file);
+	  if ($l % 10000 == 0) {
+	    &RSAT::message::psWarn( "Read", $l, "lines from family file",$family_file);
 	  }
 	}
-	next if (/^--/);
-	next if (/^;/);
-	next if (/^\#/);
-	next unless (/\S/);
-	chomp;
-	s/\r$//;
-	my @fields = split /\t/;
-	
+	next if ($line =~ /^--/);
+	next if ($line =~ /^;/);
+	next if ($line =~ /^\#/);
+	next unless ($line =~ /\S/);
+	chomp($line);
+#	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+	my @fields = split /\t/, $line;
+
 	### family member
 	$member_name = &trim(uc($fields[$member_column -1]));
 	unless ($member_name =~ /\S/) {
 	  &RSAT::message::Warning("Error family file", 
 				  $family_file,  "line", 
-				  $line, "member not specified") if ($main::verbose >= 1);
+				  $l, "member not specified") if ($main::verbose >= 1);
 	  next;
 	}
 
@@ -934,73 +937,74 @@ sub ReadClasses {
 	unless ($family_name) {
 	  &RSAT::message::Warning("Error family file", 
 				  $family_file,  "line", 
-				  $line, "family not specified") if ($main::verbose >= 1);
-	    next;
+				  $l, "family not specified") if ($main::verbose >= 1);
+	  next;
 	}
 
 	## Substitute problematic characters
 	unless ($no_subst) {
-	    $subst_char = ".";
-	    $family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
-	    $family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
-	    $family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
-	    $family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
-	    $family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
+	  $subst_char = ".";
+	  $family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
+	  $family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
+	  $family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
+	  $family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
+	  $family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
 	}
 
 	#### create a new family if required
 	unless ($family{$family_name}) {
-	    $family{$family_name} = new RSAT::Family(name=>$family_name);
+	  $family{$family_name} = new RSAT::Family(name=>$family_name);
 	}
 
 	################################################################
-	### identify the gene on the basis of its name
+	## Identify the gene on the basis of its name
 	my $member_key = "";
 	if (($get_orf_id) && ($organism)) {
-	    ### identify the gene on the basis of its name
-	    my $feature = $organism->get_feature_for_name($member_name);
-	    if ($feature) {
-		$member_key = $feature->get_attribute("id");
-	    } else {
-		&RSAT::message::Warning(join ("\t", "organism", $organism->get_attribute("name"), 
-					      "has no feature with name", $member_name));
-	    }
-#	    $member_key = $orf_id{$member_name};
+	  ### identify the gene on the basis of its name
+	  my $feature = $organism->get_feature_for_name($member_name);
+	  if ($feature) {
+	    $member_key = $feature->get_attribute("id");
+	  } else {
+	    &RSAT::message::Warning(join ("\t", "organism", $organism->get_attribute("name"), 
+					  "has no feature with name", $member_name));
+	  }
+	  #	    $member_key = $orf_id{$member_name};
 	} else {
-	    $member_key = $member_name;
+	  $member_key = $member_name;
 	}
-
+	
 	if ($member_key) {
-	    if ($score_column) {
-		### score
-		local $score = &trim($fields[$score_column - 1]);
-		unless (&IsReal($score)) {
-		    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
-						  "family file", $family_file,  
-						  "line", $line,
-						  "member", $member_name,
-						  "family", $family_name,
-						  ));
-		}
-		$family{$family_name}->new_member($member_key, 0, score=>$score);
-#		&RSAT::message::Debug("member score", $family_name, $member_name, $score) if ($main::verbose >= 10);
-	    } else {
-		$family{$family_name}->new_member($member_key);
+	  if ($score_column) {
+	    ### score
+	    local $score = &trim($fields[$score_column - 1]);
+	    unless (&IsReal($score)) {
+	      &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
+					    "family file", $family_file,  
+					    "line", $l,
+					    "member", $member_name,
+					  "family", $family_name,
+					   ));
 	    }
-	    &RSAT::message::Warning( join ("\t",  ";", $family_name,
-					   $member_name,
-					   $member_key,
-					   $name{$id}) ) if ($main::verbose >= 5);
-#	    &RSAT::message::Debug("Scores", $family_name, $family{$family_name}->get_attribute("scores")) if ($main::verbose >= 10);
+	    $family{$family_name}->new_member($member_key, 0, score=>$score);
+	    #		&RSAT::message::Debug("member score", $family_name, $member_name, $score) if ($main::verbose >= 10);
+	  } else {
+	    $family{$family_name}->new_member($member_key);
+	  }
+	  &RSAT::message::Warning( join ("\t",  ";", $family_name,
+					 $member_name,
+					 $member_key,
+					 $name{$id}) ) if ($main::verbose >= 5);
+	  #	    &RSAT::message::Debug("Scores", $family_name, $family{$family_name}->get_attribute("scores")) if ($main::verbose >= 10);
 	} else {
-	    &RSAT::message::Warning ($member_name." unknown gene name");
+	  &RSAT::message::Warning ($member_name." unknown gene name");
 	}
+      }
     }
     close $fam if ($family_file);
 
 
     return %family;
-}
+  }
 
 
 # ################################################################
