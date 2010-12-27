@@ -70,10 +70,10 @@ echo("<a href='help.convert_graph.html#formats'><B>Input format</B></a>");
 
 if (!$pipe) {
   echo("&nbsp;<select name='in_format'>
-         <option selected value = 'tab'>Tab-delimited
-	 <option value = 'adj_matrix'>Adjacency matrix
+         <option selected value = 'tab'>tab-delimited
+	 <option value = 'adj_matrix'>adjacency matrix
 	 <option value = 'gml'>GML
-	 <option value = 'path'>Path(s)
+	 <option value = 'path'>path(s)
    </select><br>");
  } else {
   echo ": $graph_format<br>";
@@ -150,7 +150,7 @@ echo("<B><a href = 'help.convert_graph.html#formats'>Output format</a></B>&nbsp;
 echo ("<option value = 'tab'>tab-delimited
 <option selected value = 'gml'>GML
 <option value = 'dot'>DOT
-<option value = 'adj_matrix'>Adjacency matrix</select><br>");
+<option value = 'adj_matrix'>adjacency matrix</select><br>");
 
 
 ## Layout
