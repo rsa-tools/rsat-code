@@ -80,8 +80,8 @@
   } else {
     $sig_column = 0; ## If proba is not computed, the graph will have no weight column
   }
-  if ($_REQUEST['jac'] == 'on') {
-    array_push($return, "jac");
+  if ($_REQUEST['jac_sim'] == 'on') {
+    array_push($return, "jac_sim");
   }  
   if ($_REQUEST['entropy'] == 'on') {
     array_push($return, "entropy");
