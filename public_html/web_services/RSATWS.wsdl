@@ -530,6 +530,273 @@ Disable the detection of overlapping matches for self-overlapping patterns (ex T
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="OligoDiffRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation oligo_diff.</xsd:documentation>
+        </xsd:annotation>
+       	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type.
+Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Verbosity.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="test" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input test sequence in fasta format. You need to supply either this parameter or the next one (tmp_test_infile).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_test_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input test sequence on the server. You need to supply either this parameter or the previous one (test).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="control" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input control sequence in fasta format. You need to supply either this parameter or the next one (tmp_control_infile).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_control_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input control sequence on the server. You need to supply either this parameter or the previous one (control).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="side" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Side of the significance test (values: test, ctrl, both). In practice, the side is converted into a threshold on the ratio test/control occurences.
+	      test: only tests over-representation in the test sequences. This is converted into a lower threshold of 1 for the test/control ratio
+	      both: test over-representation in eitherr the test or the control set
+	      ctrl: only tests over-representation in the control sequences. This is converted into a upper thrshold of 1 for the test/control ratio.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="nopurge" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Do not purge input sequences before counting oligonucleotide occurences if value = 1.
+Input sequences are purged by default, as this is highly recommended since redundant sequence fragments bias the overrepresentation statistics and create false positives</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="length" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligomer length.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="noov" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>No overlapping of oligos allowed if value = 1.
+Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="str" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold on some parameters. Format=list of'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Upper threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="PeakMotifsRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation chip_motifs.</xsd:documentation>
+        </xsd:annotation>
+       	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type.
+Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Verbosity.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="test" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input test peak sequence in fasta format. You need to supply either this parameter or the next one (tmp_test_infile).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_test_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input test peak sequence on the server. You need to supply either this parameter or the previous one (test).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="control" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input control peak sequence in fasta format. You can supply either this parameter or the next one (tmp_control_infile) or none.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_control_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input control peak sequence on the server. You can supply either this parameter or the previous one (control) or none.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_seq_length" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximal sequence length.
+Larger sequences  are truncated  at the specified length around the sequence center (from -value/2 to value/2)</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_motif_number" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximal number of motifs (matrices) to return for pattern discovery algorithms.
+Note the distinction between the maximal number of motifs (matrices) and the maximum number of patterns (words, dyads): a motif generally corresponds to mutually overlapping several patterns (dyads, words).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="ref_motif" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Reference motif.
+In some cases, we already dispose of a reference motif, for example the motif annotated in some transcription factor database (e.g. RegulonDB, Jaspar, TRANSFAC) for the transcription factor of interest. These annotations may come from low-throughput experiments, and rely on a poor number of sites, but the reference motif may nevertheless be informative, because it is based on several independent studies.
+Each discovered motif can be compared to the reference motif, in order to evaluate its correspondence with the binding motif of the factor of interest.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="top_peaks" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Restrict the analysis to the N peaks at the top of the input sequence file. Some peak calling programs return the peaks sorted by
+score. In such case, the -top_peaks option allows to restrict the analysis to the highest scoring peaks. In some cases, the top-scoring peaks might contain a higher density of binding sites,
+allowing to detect motifs with a higher significance.
+This option can also be convenient for performing quick tests, parameter selection and debugging before running the full analysis of large sequence sets.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="length" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligonucleotide length for word-counting approaches (oligo-analysis, position-analysis, local-word-analysis, oligo-diff).
+In our experience, optimal results are obtained with hexanucleotides and heptanucleotides.
+Note: the monad length used for dyad-analysis is not affected by those options. Instead it is fixed to 3. Indeed, dyad-analysis can detect larger motifs by sampling various spacings between the two trinucleotide monads.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="min_length" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Minimal oligonucleotide length. Use in combination with the next option (max_length).
+If those options are used, the program iterates over the specified range of oligonucleotide lengths.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_length" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximal oligonucleotide length. Use in combination with the previous option (min_length).
+If those options are used, the program iterates over the specified range of oligonucleotide lengths.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="markov" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Order of the Markov model used to estimatd expected oligonucleotide frequencies for oligo-analysis and local-word-analysis.
+Higher order Markov models are more stringent, lower order are more sensitive, but tend to return a large number of false positives.
+Markov models can be specified with either a positive or a negative value. Positive value indicate the length of the prefix in the transition matrix. Negative value indicate the order of the Markov model relative to the oligonucleotide length. For example, the option -markov -2 gives a model of order m=k-2 (thus, an order 5 for heptanucleotides, an order 4 for hexanucleotides).
+The optimal Markov order depends on the number of sequences in the test set. Since ChIP-seq data typically contain hundreds to thoursands of peaks, high Markov orders are generally good, because they are stringent and still sensitive enough. In our experience, motifs are well detected with the most stringent Markov order (-markov -2).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="min_markov" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Minimal value for markov order. Use in combination with the next option (max_markov).
+If those options are used, the program iterates over the specified range of markov orders.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_markov" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximal value for markov order. Use in combination with the previous option (min_markov).
+If those options are used, the program iterates over the specified range of markov orders.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="noov" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>No overlapping of oligos allowed if value = 1.
+Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="class_int" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Class interval for position-analysis. The width of the position classes, in number of bases (default: 20)</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="str" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="output_dir" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Output directory.
+The result files and index files produced by the different programs will be stored in this directory.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="output_prefix" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Prefix for the output files.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="graph_title" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Title displayed on top of the graphs.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="image_format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Image format.
+All the formats supported by XYgraph can be used.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="task" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a subset of tasks to be executed.
+By default, the program runs all necessary tasks. However, in some cases, it can be useful to select one or several tasks to be executed separately.
+Beware: task selection requires expertise, because most tasks depends on the prior execution of some other tasks in the workflow. Selecting tasks before their prerequisite tasks have been completed will provoke fatal errors.
+Available Tasks:
+		all (default): Run all supported tasks.
+		purge: Purge input sequences (test set and, if specified, control set) to mask redundant fragments before applying pattern discovery algorithms. Sequence purging is necessary because redundant fragments would violate the hypothesis of independence underlying the binomial significance test, resulting in a large number of false positive patterns.
+		seqlen: Compute sequence lengths and their distribution. Sequence lengths are useful for the negative control (selection of random genome fragments). Sequence length distribution is informative to get an idea about the variability of peak lengths.
+		profiles: Compute compositional profiles, i.e. distributions of residues and dinucleotide frequencies per position (using position-analysis).
+            Residue profiles may reveal composition biases in the neighborhood of the peak sequences. Dinucleotide profiles can reveal (for example) an enrichment in CpG island.
+            Note that chip-seq-analysis also runs position-analysis with larger oligonucleotide length (see option -l) to detect motifs on the basis of positionally biased oligonucleotides (see task positions).
+		ref_motif: This task combines various operations.
+		Formating of the reference motif
+                    Perform various format conversion for the reference motif (compute parameters, consensus, logo).
+		Motif enrichment
+                    Generate an enriched motif by scanning the peak sequence set with the reference motif.
+		Motif comparison
+                    Compare all discovered motifs with the reference motif.
+	        oligos: Run oligo-analysis to detect over-represented oligonucleotides of a given length (k, specified with option -l) in the test set (van Helden et al., 1998). Prior frequencies of oligonucleotides are taken from Markov model of order m (see option -markov) estimated from the test set sequences themselves.
+		dyads: Run dyad-analysis to detect over-represented dyads, i.e. pairs of short oligonucleotides (monads) spaced by a region of fixed width but variable content (van Helden et al., 2000). Spaced motifs are typical of certain classes of transcription factors forming homo- or heterodimers. By default, chip-seq-analysis analyzes pairs of trinucleotides with any spacing between 0 and 20. The expected frequency of each dyad is estimated as the product of its monad frequencies in the input sequences (option -bg monads of dyad-analysis).
+		positions: Run position-analysis to detect oligonucleotides showing a positional bias, i.e. have a non-homogeneous distribution in the peak sequence set.
+            This method was initially developed to analyze termination and poly-adenylation signals in downstream sequences (van Helden et al., 2001), and it turns out to be very efficient for detecting motifs centred on the ChIP-seq peaks. For ChIP-seq analysis, the reference position is the center of each sequence.
+            Note that chip-seq-analysis also uses position-analysis for the task profiles, in order to detect compositional biases (residues, dinucleotides) in the test sequence set.
+		local_words: Run local-word-analysis to detect locally over-represented oligonucleotides and dyads.
+            The program local-word-analysis (Matthieu Defrance,unpublished) tests the over-representation of each possible word (oligo, dyad) in positional windows in the input sequence set.
+            Two types of background models are supported: (i) Markov model of order m estimated locally (within the window under consideration; (ii) the frequency observed for a word in the whole sequence set is used as estimator of the prior probability of this word in the window.
+            After our first trials, this program gives excellent results in ChIP-seq datasets, because its senstivitity increases with large number of sequences (several hundreds/thousands), and its background model is more stringent than for programs computing the global over-representation (oligo-analysis, dyad-analysis).
+		word_compa: Compare the words (oligos-dyads) discovered by the different algorithms in order to assess their consistency. Draw a heatmap showing the significance estiamted for each word (row) by each algorthm (column).
+		motif_compa: Motifs are compared in three ways.
+		    Discovered versus discovered (task cluster_motifs)
+                    Perform pairwise comparisons between all motifs (matrices) discovered by the different algorithms, to assess their consistency.
+		    Discovered versus reference
+                    Compare each discovered motif to the reference motif.
+		    Discovered versus database (task motifs_vs_db)
+                    Compare each discovered motif to a database of known motifs (e.g. Jaspar, TRANSFAC, RegulonDB, UniProbe, ...)
+		timelog: Generate a log file summarizing the time spent in the different tasks.
+		synthesis: Generate the HTML file providing a synthesis of the results and pointing towards the individual result files.
+		clean_seq: Delete the purged sequence files after the analysis, in order to save space. This task is executed only when it is called explicitly. It is not part of the tasks running with the option "-task all".</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="DyadAnalysisRequest">
         <xsd:annotation>
 	  <xsd:documentation>Parameters for the operation dyad_analysis.</xsd:documentation>
@@ -645,6 +912,173 @@ This is the function of the option -zeroocc.</xsd:documentation>
 	  <xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	    <xsd:annotation>
 	      <xsd:documentation>Upper threshold on some parameter. Format=list of 'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="PositionAnalysisRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation position_analysis.</xsd:documentation>
+        </xsd:annotation>
+       	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type.
+Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Verbosity.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sequence" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="length" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligomer length.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="seq_type" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Sequence type (values: dna, any).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="last" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Stop after a given number of sequences (for quick testing).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="mask" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Mask lower or uppercases by replacing the selected case by N (values: lower, upper).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="noov" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>No overlapping of oligos allowed if value = 1.
+Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="str" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="class_int" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Class interval. The width of the position classes, in number of bases (default: 20)</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="origin" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Reference for computing positions. The value should be chosen according to the sequence type (start, for downstream sequences; end, for promoter sequences; center, for ChIP-seq peaks).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="offset" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Add an offset to site position (positive or negative integer). Allows to select an arbitrary position as origin.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="group_rc" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>group reverse complement pairs if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sort" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Sort oligomers according to the bias in distribution profile if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Fields to return. Several fields can be entered, comma separated (values: distrib, for occurences found in each position class; exp, for expected occurences in each class; graph, for a graph file per oligo profile; chi, for chi-square value; rank).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth_chi" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold on chi2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth_sig" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold on significance.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth_occ" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold on the number of occurences.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="uth_rank" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Upper threshold on rank.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_graphs" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum number of graphs to export.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="pattern" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>A selection of patterns you want the analysis to be restricted to. Newline separated. A score can be associated to each pattern with the option score_column</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_pattern_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input patterns on the server. You need to supply either this parameter or the previous one (pattern).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="score_column" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>The column containing a score value for each pattern supplied with options pattern or tmp_pattern_infile. Only valid in combination with one of these options.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="min_pos" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Minimal position to take into account for the chi2 computation. This value must be a multiple of the class interval.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_pos" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximal position to take into account for the chi2 computation. This value must be a multiple of the class interval.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="no_check" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Do not check the applicability condition on the chi2 if set to 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="no_filter" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Do not discard oligos which do not fit the condition of applicability. Instead, mark them by including the chi2 value between curly brackets if set to 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="image_format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Image format passed to XYgraph.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="title" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Title for the index table and position profile plots.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -3448,7 +3882,67 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="OligoDiffResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="PeakMotifsResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="DyadAnalysisResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="PositionAnalysisResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
@@ -4315,6 +4809,38 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="oligo_diff">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:OligoDiffRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="oligo_diffResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:OligoDiffResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="peak_motifs">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:PeakMotifsRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="peak_motifsResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:PeakMotifsResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="dyad_analysis">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4327,6 +4853,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:DyadAnalysisResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="position_analysis">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:PositionAnalysisRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="position_analysisResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:PositionAnalysisResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
@@ -5001,12 +5543,36 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:oligo_analysisResponse"/>
   </message>
 
+  <message name="oligo_diffRequest">
+    <part name="parameters" element="tns:oligo_diff"/>
+  </message>
+
+  <message name="oligo_diffResponse">
+    <part name="output" element="tns:oligo_diffResponse"/>
+  </message>
+
+  <message name="peak_motifsRequest">
+    <part name="parameters" element="tns:peak_motifs"/>
+  </message>
+
+  <message name="peak_motifsResponse">
+    <part name="output" element="tns:peak_motifsResponse"/>
+  </message>
+
   <message name="dyad_analysisRequest">
     <part name="parameters" element="tns:dyad_analysis"/>
   </message>
 
   <message name="dyad_analysisResponse">
     <part name="output" element="tns:dyad_analysisResponse"/>
+  </message>
+
+  <message name="position_analysisRequest">
+    <part name="parameters" element="tns:position_analysis"/>
+  </message>
+
+  <message name="position_analysisResponse">
+    <part name="output" element="tns:position_analysisResponse"/>
   </message>
 
   <message name="pattern_assemblyRequest">
@@ -5350,10 +5916,25 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <input name="OligoAnalysisRequest" message="tns:oligo_analysisRequest"/>
       <output name="OligoAnalysisResponse" message="tns:oligo_analysisResponse"/>
     </operation>
+    <operation name="oligo_diff">
+      <documentation>Compare oligonucleotide occurrences between two input sequence files (test and control), and return oligos that are significantly enriched in one of the files respective to the other one.</documentation>
+      <input name="OligoDiffRequest" message="tns:oligo_diffRequest"/>
+      <output name="OligoDiffResponse" message="tns:oligo_diffResponse"/>
+    </operation>
+    <operation name="peak_motifs">
+      <documentation>Pipeline for discovering motifs from ChIP-seq (or ChIP-chip) peak sequences.</documentation>
+      <input name="PeakMotifsRequest" message="tns:peak_motifsRequest"/>
+      <output name="PeakMotifsResponse" message="tns:peak_motifsResponse"/>
+    </operation>
     <operation name="dyad_analysis">
       <documentation>Analysis of the statistical significance of all the spaced dyads of a given size in a sequence. Commonly used to detect over-represented spaced dyads in a set of promoter sequences.</documentation>
       <input name="DyadAnalysisRequest" message="tns:dyad_analysisRequest"/>
       <output name="DyadAnalysisResponse" message="tns:dyad_analysisResponse"/>
+    </operation>
+    <operation name="position_analysis">
+      <documentation>Calculates the positional distribution of oligonucleotides in a set of sequences, and detects those which significantly discard from a homogeneous distribution.</documentation>
+      <input name="PositionAnalysisRequest" message="tns:position_analysisRequest"/>
+      <output name="PositionAnalysisResponse" message="tns:position_analysisResponse"/>
     </operation>
     <operation name="pattern_assembly">
       <documentation>Assemble a set of oligonucleotides or dyads into groups of overlapping patterns (assemblies).</documentation>
@@ -5604,12 +6185,39 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <soap:body use="literal" />
       </output>
     </operation>
+    <operation name="oligo_diff">
+      <soap:operation soapAction=""/>
+      <input name="OligoDiffRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="OligoDiffResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
+    <operation name="peak_motifs">
+      <soap:operation soapAction=""/>
+      <input name="PeakMotifsRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="PeakMotifsResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
     <operation name="dyad_analysis">
       <soap:operation soapAction=""/>
       <input name="DyadAnalysisRequest">
         <soap:body use="literal" />
       </input>
       <output name="DyadAnalysisResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
+    <operation name="position_analysis">
+      <soap:operation soapAction=""/>
+      <input name="PositionAnalysisRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="PositionAnalysisResponse">
         <soap:body use="literal" />
       </output>
     </operation>
