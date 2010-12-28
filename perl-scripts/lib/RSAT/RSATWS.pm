@@ -792,6 +792,389 @@ sub oligo_analysis {
 }
 
 ##########
+sub oligo_diff {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+
+    if ($args{"test"}) {
+	my $test = $args{"test"};
+	chomp $test;
+	$tmp_test_infile = `mktemp $TMP/oligo-diff.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_test_infile or die "cannot open temp file ".$tmp_test_infile."\n";
+	print TMP_IN $test;
+	close TMP_IN;
+    } elsif ($args{"tmp_test_infile"}) {
+	$tmp_test_infile = $args{"tmp_test_infile"};
+    }
+    chomp $tmp_test_infile;
+
+    if ($args{"control"}) {
+	my $control = $args{"control"};
+	chomp $control;
+	$tmp_control_infile = `mktemp $TMP/oligo-diff.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_control_infile or die "cannot open temp file ".$tmp_control_infile."\n";
+	print TMP_IN $control;
+	close TMP_IN;
+    } elsif ($args{"tmp_control_infile"}) {
+	$tmp_control_infile = $args{"tmp_control_infile"};
+    }
+    chomp $tmp_control_infile;
+
+    my $verbosity = $args{'verbosity'};
+    my $side = $args{"side"};
+    my $length = $args{"length"};
+    my $nopurge = $args{"nopurge"};
+    my $noov = $args{"noov"};
+    my $str = $args{"str"};
+
+    ## List of lower thresholds
+    my $lth_ref = $args{"lth"};
+    my $lth = "";
+    if ($lth_ref =~ /ARRAY/) {
+      my @lth = @{$lth_ref};
+      foreach $lt (@lth) {
+	$lt =~s/\'//g;
+	$lt =~s/\"//g;
+	@_lt = split / /, $lt;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+      }
+    } elsif ($lth_ref) {
+	@_lt = split / /, $lth_ref;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+    }
+
+    ## List of upper thresholds
+    my $uth_ref = $args{"uth"};
+    my $uth = "";
+    if ($uth_ref =~ /ARRAY/) {
+      my @uth = @{$uth_ref};
+      foreach $ut (@uth) {
+	$ut =~s/\'//g;
+	$ut =~s/\"//g;
+	@_ut = split / /, $ut;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+      }
+    } elsif ($uth_ref) {
+	@_ut = split / /, $uth_ref;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+    }
+
+    my $command = "$SCRIPTS/oligo-diff";
+
+    if ($verbosity) {
+      $verbosity =~ s/\'//g;
+      $verbosity =~ s/\"//g;
+      $command .= " -v '".$verbosity."'";
+    }
+
+    if ($side) {
+      $side =~ s/\'//g;
+      $side =~ s/\"//g;
+      $command .= " -side '".$side."'";
+    }
+
+    if ($nopurge == 1) {
+      $command .= " -nopurge";
+    }
+
+    if ($noov == 1) {
+      $command .= " -noov";
+    }
+
+    if ($str =~ /\d/) {
+	if ($str == 1 || $str == 2) {
+	    $command .= " -".$str."str";
+	} else {
+	    die "str value must be 1 or 2";
+	}
+    }
+
+    if ($lth) {
+      $command .= $lth;
+    }
+
+    if ($uth) {
+      $command .= $uth;
+    }
+
+    if ($length) {
+	$length =~ s/\'//g;
+	$length =~ s/\"//g;
+	$command .= " -l '".$length."'";
+    }
+
+    $command .= " -test '".$tmp_test_infile."'";
+    $command .= " -ctrl '".$tmp_control_infile."'";
+
+    &run_WS_command($command, $output_choice, "oligo-diff", ".tab");
+}
+
+##########
+sub peak_motifs {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+
+    my $command = $self->peak_motifs_cmd(%args);
+
+    local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+    my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+    my @outlines = <HIS_OUT>;    # Read till EOF.
+    my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+
+    my $result = join('', @outlines);
+    my $stderr;
+
+    foreach my $errline(@errlines) {
+	## Some errors and RSAT warnings are not considered as fatal errors
+	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
+	    $stderr .= $errline;
+	}
+	## RSAT warnings are added at the end of results
+	if ($errline =~'WARNING') {
+	    $result .= $errline;
+	}
+    }
+    $stderr = &error_handling($stderr, 1);
+    close HIS_OUT;
+    close HIS_ERR;
+
+#    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+#    my $result = `$command`;
+    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(peak_motifs.XXXXXXXXXX, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+
+    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command,
+					       'client' => $result});
+    }
+}
+
+sub peak_motifs_cmd {
+    my ($self, %args) =@_;
+    if ($args{"test"}) {
+	my $test = $args{"test"};
+	chomp $test;
+	$tmp_test_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_test_infile or die "cannot open temp file ".$tmp_test_infile."\n";
+	print TMP_IN $test;
+	close TMP_IN;
+    } elsif ($args{"tmp_test_infile"}) {
+	$tmp_test_infile = $args{"tmp_test_infile"};
+    }
+    chomp $tmp_test_infile;
+
+    if ($args{"control"}) {
+	my $control = $args{"control"};
+	chomp $control;
+	$tmp_control_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_control_infile or die "cannot open temp file ".$tmp_control_infile."\n";
+	print TMP_IN $control;
+	close TMP_IN;
+    } elsif ($args{"tmp_control_infile"}) {
+	$tmp_control_infile = $args{"tmp_control_infile"};
+    }
+    chomp $tmp_control_infile;
+
+    my $verbosity = $args{'verbosity'};
+    my $max_seq_length = $args{"max_seq_length"};
+    my $max_motif_number = $args{"max_motif_number"};
+    my $ref_motif = $args{"ref_motif"};
+    my $top_peaks = $args{"top_peaks"};
+    my $length = $args{"length"};
+    my $min_length = $args{"min_length"};
+    my $max_length = $args{"max_length"};
+    my $markov = $args{"markov"};
+    my $min_markov = $args{"min_markov"};
+    my $max_markov = $args{"max_markov"};
+    my $noov = $args{"noov"};
+    my $str = $args{"str"};
+    my $class_int = $args{"class_int"};
+
+    ## List of motif database files
+#    my $motif_db_ref = $args{"motif_db"};
+#    my $motif_db = "";
+#    if ($motif_db_ref =~ /ARRAY/) {
+#       my @motif_db = @{$motif_db_ref};
+#       foreach $db (@motif_db) {
+# 	$db =~s/\'//g;
+# 	$db =~s/\"//g;
+# 	@_db = split / /, $db;
+
+# 	$tmp_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+# 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
+# 	print TMP_IN $_db[2];
+# 	close TMP_IN;
+
+# 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
+#       }
+#     } elsif ($motif_db_ref) {
+# 	@_db = split / /, $motif_db_ref;
+
+# 	$tmp_motif_infile = `mktemp $TMP/chip-motifs.XXXXXXXXXX`;
+# 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
+# 	print TMP_IN $_db[2];
+# 	close TMP_IN;
+
+# 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
+#     }
+
+    my $output_dir = $args{"output_dir"};
+    my $output_prefix = $args{"output_prefix"};
+    my $graph_title = $args{"graph_title"};
+    my $image_format = $args{"image_format"};
+    my $task = $args{"task"};
+
+    my $command = "$SCRIPTS/peak-motifs";
+
+    if ($verbosity) {
+      $verbosity =~ s/\'//g;
+      $verbosity =~ s/\"//g;
+      $command .= " -v '".$verbosity."'";
+    }
+
+    if ($max_seq_length) {
+	$max_seq_length =~ s/\'//g;
+	$max_seq_length =~ s/\"//g;
+	$command .= " -max_seq_len '".$max_seq_length."'";
+    }
+
+    if ($ref_motif) {
+      $ref_motif =~ s/\'//g;
+      $ref_motif =~ s/\"//g;
+      $command .= " -ref_motif '".$ref_motif."'";
+    }
+
+    if ($noov == 1) {
+      $command .= " -noov";
+    }
+
+    if ($str =~ /\d/) {
+	if ($str == 1 || $str == 2) {
+	    $command .= " -".$str."str";
+	} else {
+	    die "str value must be 1 or 2";
+	}
+    }
+
+#    if ($motif_db) {
+#      $command .= $motif_db;
+#    }
+
+    if ($output_dir) {
+	$output_dir =~ s/\'//g;
+	$output_dir =~ s/\"//g;
+	$command .= " -outdir '".$output_dir."'";
+    }
+
+    if ($output_prefix) {
+	$output_prefix =~ s/\'//g;
+	$output_prefix =~ s/\"//g;
+	$command .= " -prefix '".$output_prefix."'";
+    }
+
+    if ($graph_title) {
+	$graph_title =~ s/\'//g;
+	$graph_title =~ s/\"//g;
+	$command .= " -title '".$graph_title."'";
+    }
+
+    if ($image_format) {
+	$image_format =~ s/\'//g;
+	$image_format =~ s/\"//g;
+	$command .= " -img_format '".$image_format."'";
+    }
+
+    if ($task) {
+	$task =~ s/\'//g;
+	$task =~ s/\"//g;
+	$command .= " -task '".$task."'";
+    }
+
+    if ($max_motif_number) {
+	$max_motif_number =~ s/\'//g;
+	$max_motif_number =~ s/\"//g;
+	$command .= " -nmotifs '".$max_motif_number."'";
+    }
+
+    if ($top_peaks) {
+	$top_peaks =~ s/\'//g;
+	$top_peaks =~ s/\"//g;
+	$command .= " -top_peaks '".$top_peaks."'";
+    }
+
+    if ($length) {
+	$length =~ s/\'//g;
+	$length =~ s/\"//g;
+	$command .= " -l '".$length."'";
+    }
+
+    if ($min_length) {
+	$min_length =~ s/\'//g;
+	$min_length =~ s/\"//g;
+	$command .= " -minol '".$min_length."'";
+    }
+
+    if ($max_length) {
+	$max_length =~ s/\'//g;
+	$max_length =~ s/\"//g;
+	$command .= " -maxol '".$max_length."'";
+    }
+
+    if ($markov) {
+	$markov =~ s/\'//g;
+	$markov =~ s/\"//g;
+	$command .= " -markov '".$markov."'";
+    }
+
+    if ($min_markov) {
+	$min_markov =~ s/\'//g;
+	$min_makov =~ s/\"//g;
+	$command .= " -min_markov '".$min_markov."'";
+    }
+
+    if ($max_markov) {
+	$max_markov =~ s/\'//g;
+	$max_markov =~ s/\"//g;
+	$command .= " -max_markov '".$max_markov."'";
+    }
+
+    if ($class_int =~ /\d/) {
+	$class_int =~ s/\'//g;
+	$class_int =~ s/\"//g;
+	$command .= " -ci '".$class_int."'";
+    }
+
+    $command .= " -i '".$tmp_test_infile."'";
+    $command .= " -ctrl '".$tmp_control_infile."'";
+
+    return $command;
+#    &run_WS_command($command, $output_choice, "peak-motifs", ".tab");
+}
+
+##########
 sub dyad_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -946,6 +1329,218 @@ sub dyad_analysis {
     $command .= " -i '".$tmp_infile."'";
 
     &run_WS_command($command, $output_choice, "dyad-analysis", ".tab");
+}
+
+##########
+sub position_analysis {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    if ($args{"sequence"}) {
+	my $sequence = $args{"sequence"};
+	chomp $sequence;
+	$tmp_infile = `mktemp $TMP/position.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $sequence;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+    }
+    chomp $tmp_infile;
+    my $verbosity = $args{'verbosity'};
+    my $format = $args{"format"};
+    my $length = $args{"length"};
+    my $seq_type = $args{"seq_type"};
+    my $last = $args{"last"};
+    my $mask = $args{"mask"};
+    my $noov = $args{"noov"};
+    my $str = $args{"str"};
+    my $class_int = $args{"class_int"};
+    my $origin = $args{"origin"};
+    my $offset = $args{"offset"};
+    my $group_rc = $args{"group_rc"};
+    my $sort = $args{"sort"};
+    my $return = $args{"return"};
+    my $lth_chi = $args{"lth_chi"};
+    my $lth_sig = $args{"lth_sig"};
+    my $lth_occ = $args{"lth_occ"};
+    my $uth_rank = $args{"uth_rank"};
+    my $max_graphs = $args{'max_graphs'};
+
+    if ($args{"pattern"}) {
+	my $pattern = $args{"pattern"};
+	chomp $pattern;
+	$tmp_pattern_infile = `mktemp $TMP/position.XXXXXXXXXX`;
+	open TMP_PATT_IN, ">".$tmp_pattern_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_PATT_IN $pattern;
+	close TMP_PATT_IN;
+    } elsif ($args{"tmp_pattern_infile"}) {
+	$tmp_pattern_infile = $args{"tmp_pattern_infile"};
+    }
+    chomp $tmp_pattern_infile;
+
+    my $score_column = $args{'score_column'};
+    my $min_pos = $args{'min_pos'};
+    my $max_pos = $args{'max_pos'};
+    my $no_check = $args{'no_check'};
+    my $no_filter = $args{'no_filter'};
+    my $image_format = $args{'image_format'};
+    my $title = $args{'title'};
+
+    my $command = "$SCRIPTS/position-analysis";
+
+    if ($verbosity) {
+      $verbosity =~ s/\'//g;
+      $verbosity =~ s/\"//g;
+      $command .= " -v '".$verbosity."'";
+    }
+
+    if ($format) {
+      $format =~ s/\'//g;
+      $format =~ s/\"//g;
+      $command .= " -format '".$format."'";
+    }
+
+    if ($seq_type) {
+      $seq_type =~ s/\'//g;
+      $seq_type =~ s/\"//g;
+      $command .= " -seqtype '".$seq_type."'";
+    }
+
+    if ($last =~ /\d/) {
+      $last =~ s/\'//g;
+      $last =~ s/\"//g;
+      $command .= " -last '".$last."'";
+    }
+
+    if ($mask) {
+      $mask =~ s/\'//g;
+      $mask =~ s/\"//g;
+      $command .= " -mask '".$mask."'";
+    }
+
+    if ($noov == 1) {
+      $command .= " -noov";
+    }
+
+    if ($str =~ /\d/) {
+	if ($str == 1 || $str == 2) {
+	    $command .= " -".$str."str";
+	} else {
+	    die "str value must be 1 or 2";
+	}
+    }
+
+    if ($group_rc == 1) {
+      $command .= " -grouprc";
+    } elsif ($group_rc == 0) {
+      $command .= " -nogrouprc";
+    }
+
+    if ($sort == 1) {
+      $command .= " -sort";
+    }
+
+    if ($origin) {
+      $origin =~ s/\'//g;
+      $origin =~ s/\"//g;
+      $command .= " -origin '".$origin."'";
+    }
+
+    if ($offset =~ /\d/) {
+      $offset =~ s/\'//g;
+      $offset =~ s/\"//g;
+      $command .= " -offset '".$offset."'";
+    }
+
+    if ($lth_chi =~ /\d/) {
+      $lth_chi =~ s/\'//g;
+      $lth_chi =~ s/\"//g;
+      $command .= " -lth_chi '".$lth_chi."'";
+    }
+
+    if ($lth_sig =~ /\d/) {
+      $lth_sig =~ s/\'//g;
+      $lth_sig =~ s/\"//g;
+      $command .= " -lth_sig '".$lth_sig."'";
+    }
+
+    if ($lth_occ =~ /\d/) {
+      $lth_occ =~ s/\'//g;
+      $lth_occ =~ s/\"//g;
+      $command .= " -lth_occ '".$lth_occ."'";
+    }
+
+    if ($uth_rank =~ /\d/) {
+      $uth_rank =~ s/\'//g;
+      $uth_rank =~ s/\"//g;
+      $command .= " -uth_rank '".$uth_rank."'";
+    }
+
+    if ($max_graphs =~ /\d/) {
+      $max_graphs =~ s/\'//g;
+      $max_graphs =~ s/\"//g;
+      $command .= " -max_graphs '".$max_graphs."'";
+    }
+
+    if ($class_int =~ /\d/) {
+	$class_int =~ s/\'//g;
+	$class_int =~ s/\"//g;
+	$command .= " -ci '".$class_int."'";
+    }
+
+    if ($length) {
+	$length =~ s/\'//g;
+	$length =~ s/\"//g;
+	$command .= " -l '".$length."'";
+    }
+
+    if ($score_column =~ /\d/) {
+	$score_column =~ s/\'//g;
+	$score_column =~ s/\"//g;
+	$command .= " -sc '".$score_column."'";
+    }
+
+    if ($min_pos =~ /\d/) {
+	$min_pos =~ s/\'//g;
+	$min_pos =~ s/\"//g;
+	$command .= " -minpos '".$min_pos."'";
+    }
+
+    if ($max_pos =~ /\d/) {
+	$max_pos =~ s/\'//g;
+	$max_pos =~ s/\"//g;
+	$command .= " -maxpos '".$max_pos."'";
+    }
+
+    if ($no_check == 1) {
+      $command .= " -nocheck";
+    }
+
+    if ($no_filter == 1) {
+      $command .= " -nofilter";
+    }
+
+    if ($image_format) {
+      $image_format =~ s/\'//g;
+      $image_format =~ s/\"//g;
+      $command .= " -img_format '".$image_format."'";
+    }
+
+    if ($title) {
+      $title =~ s/\'//g;
+      $title =~ s/\"//g;
+      $command .= " -title '".$title."'";
+    }
+
+    $command .= " -i '".$tmp_infile."'";
+
+    $command .= " -pl '".$tmp_pattern_infile."'";
+
+    &run_WS_command($command, $output_choice, "position-analysis", ".tab");
 }
 
 ##########
@@ -1617,7 +2212,7 @@ sub footprint_discovery {
 					       'client' => $result});
     } elsif ($output_choice eq 'both') {
 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $command, 
+					       'command' => $command,
 					       'client' => $result});
     }
 }
@@ -1635,7 +2230,6 @@ sub footprint_discovery_cmd {
 	$tmp_infile = $args{"tmp_infile"};
     }
 
-
     ## List of query genes
     my $query_ref = $args{"query"};
     my $query = "";
@@ -1649,11 +2243,10 @@ sub footprint_discovery_cmd {
 	$query .= join "' -q '", @query;
 	$query .= "'";
     } elsif ($query_ref) {
-    $query = " -q '";;
-    $query .= $query_ref;
-    $query .= "'";
-}
-
+      $query = " -q '";;
+      $query .= $query_ref;
+      $query .= "'";
+    }
 
     my $verbosity = $args{"verbosity"};
     my $all_genes = $args{"all_genes"};
@@ -1742,7 +2335,6 @@ sub footprint_discovery_cmd {
       $organism =~ s/\"//g;
       $command .= " -org '".$organism."'";
     }
-
 
     if ($taxon) {
       $taxon =~ s/\'//g;
@@ -1990,14 +2582,11 @@ sub text_to_html {
   if ($args{no_sort}) {
       $command .= " -no_sort";
   }
-  
-  
+
   &run_WS_command($command, $output_choice, "text-to-html", ".html");
 }
 
-
 ##########
-
 sub roc_stats{
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2055,9 +2644,9 @@ sub classfreq {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-  
+
   my $command = "$SCRIPTS/classfreq -v 1";
-  
+
   if ($args{col}) {
    my $col = $args{col};
    $col =~ s/\'//g;
@@ -2110,8 +2699,6 @@ sub classfreq {
 }
 
 ##########
-
-
 sub convert_classes {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2119,10 +2706,10 @@ sub convert_classes {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-  
+
   my $command = "$SCRIPTS/convert-classes";
   my $extension = undef;
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -2200,9 +2787,9 @@ sub contingency_stats {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-  
+
   my $command = "$SCRIPTS/contingency-stats -v 1";
-  
+
   if ($args{return}) {
    my $return = $args{return};
    $return =~ s/\'//g;
@@ -2262,9 +2849,9 @@ sub contingency_table {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-  
+
   my $command = "$SCRIPTS/contingency-table ";
-  
+
   if ($args{null}) {
    my $null = $args{null};
    $null =~ s/\'//g;
@@ -2503,7 +3090,7 @@ sub convert_seq {
     }
 
     $command .= " -i '".$tmp_infile."'";
-    
+
     &run_WS_command($command, $output_choice, "convert-seq");
 }
 
@@ -3317,9 +3904,9 @@ sub convert_graph {
 
 sub convert_graph_cmd {
   my ($self, %args) =@_;
-  
+
   my $command = "$SCRIPTS/convert-graph ";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -3418,9 +4005,9 @@ sub alter_graph {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  
+
   my $command = "$SCRIPTS/alter-graph";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -3465,7 +4052,7 @@ sub alter_graph {
    $rm_edges =~ s/\'//g;
    $rm_edges =~ s/\'//g;
    $command .= " -rm_edges $rm_edges";
-  }  
+  }
   if ($args{wcol}) {
    my $wcol = $args{wcol};
    $wcol =~ s/\'//g;
@@ -3505,6 +4092,8 @@ sub alter_graph {
   my $extension = $args{outformat} || "tab";
   &run_WS_command($command, $output_choice, "alter-graph", ".$extension");
 }
+
+
 ##########
 sub graph_cliques {
   my ($self, $args_ref) = @_;
@@ -3513,9 +4102,9 @@ sub graph_cliques {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  
+
   my $command = "$SCRIPTS/graph-cliques";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -3559,7 +4148,7 @@ sub graph_cliques {
    $command .= " -i '".$tmp_input."'";
   }
 
-    
+
   &run_WS_command($command, $output_choice, "graph-clique", ".tab");
 }
 ##########
@@ -3583,11 +4172,9 @@ sub display_graph {
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     close TMP_OUT;
     $command .= " -o $tmp_outfile";
-    
+
     system $command;
-    
-    
-    
+
     my $result = `cat $tmp_outfile`;
     my $stderr = `$command 2>&1 1>/dev/null`;
     $stderr = &error_handling($stderr, 1);
@@ -3609,14 +4196,14 @@ sub display_graph {
 					       'command' => $command, 
 					       'client' => $result});
     }
-     
 }
+
 
 sub display_graph_cmd {
   my ($self, %args) =@_;
-  
+
   my $command = "$SCRIPTS/display-graph";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -3685,18 +4272,16 @@ sub display_graph_cmd {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  
+
   return $command;
 }
 
 
-
-######################
 ##########
 sub draw_heatmap {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
-    
+
     open TEMP, ">/home/rsat/rsa-tools/public_html/tmp/newtest";
     print TEMP join ("", %args);
 
@@ -3741,14 +4326,14 @@ sub draw_heatmap {
 					       'command' => $command, 
 					       'client' => $result});
     }
-     
+
 }
 
 sub draw_heatmap_cmd {
   my ($self, %args) = @_;
-  
+
   my $command = "$SCRIPTS/draw-heatmap";
-  
+
   if ($args{no_text}) {
    $command .= " -notext";
   }
@@ -3803,12 +4388,9 @@ sub draw_heatmap_cmd {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  
+
   return $command;
 }
-
-
-
 
 
 ##########
@@ -3844,14 +4426,14 @@ sub draw_heatmap_cmd {
 # }
 
 sub graph_get_clusters {
-  
+
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
   my $output_choice = $args{"output"};
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  
+
   my $command = "$SCRIPTS/graph-get-clusters ";
   if ($args{informat}) {
    my $in_format = $args{informat};
@@ -3926,8 +4508,6 @@ sub graph_get_clusters {
 }
 
 
-
-
 sub graph_node_degree {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3936,7 +4516,7 @@ sub graph_node_degree {
     $output_choice = 'both';
   }
   my $command = "$SCRIPTS/graph-node-degree";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -4040,7 +4620,6 @@ sub graph_topology {
 }
 
 
-
 sub graph_topology_cmd {
   my ($self, %args) = @_;
   my $output_choice = $args{"output"};
@@ -4048,7 +4627,7 @@ sub graph_topology_cmd {
     $output_choice = 'both';
   }
   my $command = "$SCRIPTS/graph-topology";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -4134,7 +4713,7 @@ sub graph_cluster_membership {
     my $prefix = $tmp_outfile;
     my $tmp_comments = $prefix.".tab.comments";
     $tmp_outfile = $prefix.".tab";
-    
+
     system("rm $tmp_outfile");
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
@@ -4145,7 +4724,7 @@ sub graph_cluster_membership {
     open COMMENTS_OUT, ">".$tmp_comments or die "cannot open temp file ".$tmp_comments."\n";
     print COMMENTS_OUT $stderr;
     close COMMENTS_OUT;
-    
+
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"graph-cluster-membership",output_choice=>$output_choice);
     if ($output_choice eq 'server') {
@@ -4163,9 +4742,9 @@ sub graph_cluster_membership {
 
 sub graph_cluster_membership_cmd {
   my ($self, %args) =@_;
-  
+
   my $command = "$SCRIPTS/graph-cluster-membership";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -4255,7 +4834,7 @@ sub compare_graphs {
     my $extension = $args{outformat} || "tab";
     $tmp_outfile .= ".$extension";
     system ("rm $tmp_outfile");
-    
+
     my $tmp_comments = $tmp_outfile.".comments";
     # Print the results
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
@@ -4266,8 +4845,8 @@ sub compare_graphs {
     print COMMENTS_OUT $stderr;
     close COMMENTS_OUT;
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"compare-graphs",output_choice=>$output_choice);
-    
-    
+
+
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
 					       'server' => $tmp_outfile});
@@ -4279,14 +4858,14 @@ sub compare_graphs {
 					       'command' => $command, 
 					       'client' => $result});
     }
-    
+
 }
 
 sub compare_graphs_cmd {
   my ($self, %args) =@_;
-  
+
   my $command = "$SCRIPTS/compare-graphs -v 1 ";
-  
+
   if ($args{Qinformat}) {
    my $Qin_format = $args{Qinformat};
    $Qin_format =~ s/\'//g;
@@ -4388,9 +4967,9 @@ sub graph_neighbours {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  
+
   my $command = "$SCRIPTS/graph-neighbours";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -4465,8 +5044,6 @@ sub graph_neighbours {
   &run_WS_command($command, $output_choice, "graph-neighbours", ".tab");
 }
 
-
-
 ##########
 sub rnsc {
     my ($self, $args_ref) = @_;
@@ -4475,18 +5052,18 @@ sub rnsc {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-    
+
     my $command = $self->rnsc_cmd(%args);
     my $tmp_outfile = `mktemp $TMP/rnsc-out.XXXXXXXXXX`;
     chomp $tmp_outfile;
     $tmp_logfile = $tmp_outfile.".log";
-    
+
     $command .= " -o $tmp_outfile > $tmp_logfile";
 #     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
     system("$command");
     $result = `cat $tmp_outfile`;
-    
+
 #     if ($stderr) {
 # 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #     }
@@ -4494,7 +5071,7 @@ sub rnsc {
     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
-    
+
 
     &UpdateLogFileWS(command=>$command,
 		     tmp_outfile=>$tmp_outfile,
@@ -4557,7 +5134,7 @@ sub rnsc_cmd {
    chomp $tmp_input;
    $command .= " -g '".$tmp_input."'";
   }
-  
+
   if ($args{max_clust}) {
    my $max_clust = $args{max_clust};
    $max_clust =~ s/\'//g;
@@ -4609,13 +5186,6 @@ sub rnsc_cmd {
   return $command;
 }
 
-
-
-
-
-
-
-
 =pod
 
 =item B<mcl>
@@ -4639,7 +5209,7 @@ sub mcl {
     my $stderr = `$command 2>&1 1>/dev/null`;
     system("$command");
     $result = `cat $tmp_outfile`;
-    
+
 #     if ($stderr) {
 # 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #     }
@@ -4713,8 +5283,8 @@ sub mcl_cmd {
    $tmp_input =~ s/\"//g;
    chomp $tmp_input;
    $command .= " '".$tmp_input."'";
-  }  
-  
+  }
+
   if ($args{inflation}) {
    my $inflation = $args{inflation};
    $inflation =~ s/\'//g;
@@ -4731,7 +5301,7 @@ sub parse_psi_xml {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  
+
   my $command = "$SCRIPTS/parse-psi-xml";
   if ($args{channels}) {
    my $channelList = $args{channels};
@@ -4775,8 +5345,6 @@ sub parse_psi_xml {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-
-
   &run_WS_command($command, $output_choice, "parse-psi-xml", ".tab");
 }
 ##########
@@ -4787,9 +5355,9 @@ sub random_graph {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  
+
   my $command = "$SCRIPTS/random-graph";
-  
+
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
@@ -4972,7 +5540,7 @@ sub run_WS_command {
 		   tmp_outfile=>$tmp_outfile,
 		   method_name=>$method_name,
 		   output_choice=>$output_choice);
-  
+
   if ($output_choice =~ /(\S+\@\S+)/) {
       ## Execute the command and send the result URL by email
       my $email_address = $output_choice;
@@ -5057,7 +5625,7 @@ sub run_WS_command {
 ## Run the command on the server and send an email when the task is done
 sub email_command {
     my ($command, $email_address, $tmp_outfile, $title, $result_URL, $delay) = @_;
-    
+
     my $email_message = "Your result is available at the following URL:\n\t$result_URL";
     $email_message .= "\nThe result file will remain there for $delay.";
 
@@ -5108,9 +5676,9 @@ sub UpdateLogFileWS {
 }
 
 ########################################################################################################################
-## This function handle the error verbosity
+## This function handles the error verbosity
 ## This can be very useful as the majority of the functions die on any error (even if this error is a stupid warning)
- 
+
 sub error_handling {
   my $stderr = shift;
   my $verbosity = shift;
@@ -5127,7 +5695,7 @@ sub error_handling {
       } else {
         push @resultcp, $line;
       }
-    }      
+    }
     $result = join "\n", @resultcp;
 
   } else {
