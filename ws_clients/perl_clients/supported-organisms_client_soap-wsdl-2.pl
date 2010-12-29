@@ -27,10 +27,10 @@ my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 
 ## Retrieve-seq parameters
 my $taxon='Saccharomycetales';
-#BOF my $return='ID,taxonomy';
+my $return='ID,taxonomy';
 my %args = (
 	    'taxon' => $taxon,
-##BOF	    'return'=>$return
+	    'return'=>$return
 	    );
 
 ## Send the request to the server
