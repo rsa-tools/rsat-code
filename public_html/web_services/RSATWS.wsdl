@@ -676,26 +676,26 @@ allowing to detect motifs with a higher significance.
 This option can also be convenient for performing quick tests, parameter selection and debugging before running the full analysis of large sequence sets.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="length" type="xsd:int" minOccurs="1">
+	  <xsd:element name="length" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Oligonucleotide length for word-counting approaches (oligo-analysis, position-analysis, local-word-analysis, oligo-diff).
 In our experience, optimal results are obtained with hexanucleotides and heptanucleotides.
 Note: the monad length used for dyad-analysis is not affected by those options. Instead it is fixed to 3. Indeed, dyad-analysis can detect larger motifs by sampling various spacings between the two trinucleotide monads.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="min_length" type="xsd:int" minOccurs="1">
+	  <xsd:element name="min_length" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Minimal oligonucleotide length. Use in combination with the next option (max_length).
 If those options are used, the program iterates over the specified range of oligonucleotide lengths.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="max_length" type="xsd:int" minOccurs="1">
+	  <xsd:element name="max_length" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Maximal oligonucleotide length. Use in combination with the previous option (min_length).
 If those options are used, the program iterates over the specified range of oligonucleotide lengths.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="markov" type="xsd:int" minOccurs="1">
+	  <xsd:element name="markov" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Order of the Markov model used to estimatd expected oligonucleotide frequencies for oligo-analysis and local-word-analysis.
 Higher order Markov models are more stringent, lower order are more sensitive, but tend to return a large number of false positives.
@@ -703,13 +703,13 @@ Markov models can be specified with either a positive or a negative value. Posit
 The optimal Markov order depends on the number of sequences in the test set. Since ChIP-seq data typically contain hundreds to thoursands of peaks, high Markov orders are generally good, because they are stringent and still sensitive enough. In our experience, motifs are well detected with the most stringent Markov order (-markov -2).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="min_markov" type="xsd:int" minOccurs="1">
+	  <xsd:element name="min_markov" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Minimal value for markov order. Use in combination with the next option (max_markov).
 If those options are used, the program iterates over the specified range of markov orders.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="max_markov" type="xsd:int" minOccurs="1">
+	  <xsd:element name="max_markov" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Maximal value for markov order. Use in combination with the previous option (min_markov).
 If those options are used, the program iterates over the specified range of markov orders.</xsd:documentation>
@@ -729,17 +729,6 @@ Disable the detection of overlapping matches for self-overlapping patterns (ex T
 	  <xsd:element name="str" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
-	    </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="output_dir" type="xsd:string" minOccurs="1">
-	    <xsd:annotation>
-	      <xsd:documentation>Output directory.
-The result files and index files produced by the different programs will be stored in this directory.</xsd:documentation>
-	    </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="output_prefix" type="xsd:string" minOccurs="0">
-	    <xsd:annotation>
-	      <xsd:documentation>Prefix for the output files.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="graph_title" type="xsd:string" minOccurs="0">
