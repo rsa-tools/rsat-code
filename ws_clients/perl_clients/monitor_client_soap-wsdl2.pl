@@ -6,7 +6,7 @@ use lib 'RSATWS';
 use MyInterfaces::RSATWebServices::RSATWSPortType;
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 
 ## Service call
 my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
