@@ -924,38 +924,54 @@ sub peak_motifs {
 
     my $command = $self->peak_motifs_cmd(%args);
 
-    local(*HIS_IN, *HIS_OUT, *HIS_ERR);
-    my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
-    my @outlines = <HIS_OUT>;    # Read till EOF.
-    my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+#    my $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
+    my $date = `date`;
+    chomp $date;
+    $date =~s| |-|g;
+    my $output_directory = sprintf "peak-motifs.%s", $date;
+    my $output_prefix = "peak-motifs";
+    my $output_path = $TMP."/".$output_directory;
+    $output_path =~ s|\/\/|\/|g;
+    system("mkdir -p $output_path");
 
-    my $result = join('', @outlines);
-    my $stderr;
+    $command .= " -outdir '".$output_path."'";
+    $command .= " -prefix '".$output_prefix."'";
 
-    foreach my $errline(@errlines) {
+#    local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+#    my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+#    my @outlines = <HIS_OUT>;    # Read till EOF.
+#    my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+
+#    my $result = join('', @outlines);
+#    my $stderr;
+
+#    foreach my $errline(@errlines) {
 	## Some errors and RSAT warnings are not considered as fatal errors
-	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
-	    $stderr .= $errline;
-	}
+#	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
+#	    $stderr .= $errline;
+#	}
 	## RSAT warnings are added at the end of results
-	if ($errline =~'WARNING') {
-	    $result .= $errline;
-	}
-    }
-    $stderr = &error_handling($stderr, 1);
-    close HIS_OUT;
-    close HIS_ERR;
+#	if ($errline =~'WARNING') {
+#	    $result .= $errline;
+#	}
+#    }
+#    $stderr = &error_handling($stderr, 1);
+#    close HIS_OUT;
+#    close HIS_ERR;
 
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-    }
-#    my $result = `$command`;
-    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(peak_motifs.XXXXXXXXXX, DIR => $TMP);
-    print $TMP_OUT $result;
-    close $TMP_OUT;
+    system($command);
+
+##    my $stderr = `$command 2>&1 1>/dev/null`;
+#    if ($stderr) {
+#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+#    }
+##    my $result = `$command`;
+##    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(peak_motifs.XXXXXXXXXX, DIR => $TMP);
+##    print $TMP_OUT $result;
+##    close $TMP_OUT;
+    my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
     $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+##    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
 
@@ -964,11 +980,11 @@ sub peak_motifs {
 					       'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
 	return SOAP::Data->name('response' => {'command' => $command,
-					       'client' => $result});
+					       'client' => $tmp_outfile});
     } elsif ($output_choice eq 'both') {
 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
 					       'command' => $command,
-					       'client' => $result});
+					       'client' => $tmp_outfile});
     }
 }
 
@@ -1041,8 +1057,8 @@ sub peak_motifs_cmd {
 # 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
 #     }
 
-    my $output_dir = $args{"output_dir"};
-    my $output_prefix = $args{"output_prefix"};
+#    my $output_dir = $args{"output_dir"};
+#    my $output_prefix = $args{"output_prefix"};
     my $graph_title = $args{"graph_title"};
     my $image_format = $args{"image_format"};
     my $task = $args{"task"};
@@ -1082,18 +1098,6 @@ sub peak_motifs_cmd {
 #    if ($motif_db) {
 #      $command .= $motif_db;
 #    }
-
-    if ($output_dir) {
-	$output_dir =~ s/\'//g;
-	$output_dir =~ s/\"//g;
-	$command .= " -outdir '".$output_dir."'";
-    }
-
-    if ($output_prefix) {
-	$output_prefix =~ s/\'//g;
-	$output_prefix =~ s/\"//g;
-	$command .= " -prefix '".$output_prefix."'";
-    }
 
     if ($graph_title) {
 	$graph_title =~ s/\'//g;
@@ -1168,7 +1172,10 @@ sub peak_motifs_cmd {
     }
 
     $command .= " -i '".$tmp_test_infile."'";
-    $command .= " -ctrl '".$tmp_control_infile."'";
+
+    if ($tmp_control_infile) {
+        $command .= " -ctrl '".$tmp_control_infile."'";
+    }
 
     return $command;
 #    &run_WS_command($command, $output_choice, "peak-motifs", ".tab");
