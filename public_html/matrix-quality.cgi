@@ -114,6 +114,10 @@ if ($query->param('tag1') ){
 $parameters .= " -seq ". $tag1 ." ".$sequence_file1 ;
 $parameters .= " -seq_format ". $sequence_format1 ;
 
+if (lc($query->param('nwd')) eq "on") {
+  $parameters .= " -nwd ". $tag1 ;
+}
+
 
 
 ($sequence_file2) = &MultiGetSequenceFile(2,$result_dir."sequence2.input", 0);
