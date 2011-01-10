@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.123 2011/01/10 18:54:29 amedina Exp $
+# $Id: matrix-quality,v 1.124 2011/01/10 21:10:37 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2442,8 +2442,8 @@ sub Calculate_NWD {
 	    ){ 
 	    next;
 	}else{
-	    my $round_case_pval=sprintf("%.6f", $case_pval );  ## Round pval to 4 decimals so it is possible now to calculate the diference of score at one given pvalue 
-	    my $round_base_pval=sprintf("%.6f", $base_pval );
+	    my $round_case_pval=sprintf("%.4f", $case_pval );  ## Round pval to 4 decimals so it is possible now to calculate the diference of score at one given pvalue 
+	    my $round_base_pval=sprintf("%.4f", $base_pval );
 	    push(@{$p_val_score_case{$round_case_pval}}, $score);
 	    push(@{$p_val_score_base{$round_base_pval}}, $score);
 	    &RSAT::message::Debug("Line point",$score,$round_case_pval,$round_base_pval) if ($main::verbose >= 10);
