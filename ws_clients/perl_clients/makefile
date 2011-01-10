@@ -5,10 +5,15 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefile
 
-SERVER=rsat.ulb.ac.be
-#SERVER=localhost
+SERVER=http://rsat.ulb.ac.be/rsat
+#SERVER=http://liv.bmc.uu.se/rsa-tools
+#SERVER=http://tagc.univ-mrs.fr/rsa-tools
+#SERVER=http://embnet.ccg.unam.mx/rsa-tools
+#SERVER=http://localhost/rsat
 stubb:
-	./wsdl2perl.pl -b RSATWS http://${SERVER}/rsat/web_services/RSATWS.wsdl
+	@echo "Generating stubb for server	${SERVER}"
+	./wsdl2perl.pl -b RSATWS ${SERVER}/web_services/RSATWS.wsdl
+	@echo "Generated stubb for server	${SERVER}"
 
 
 test:
