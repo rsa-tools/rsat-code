@@ -682,6 +682,14 @@ sub SeqBoxMQ {
   print $query->textfield(-name=>'tag'.$seq_num,
 			  -default=>$default{'tag'.$seq_num},
 			  -size=>15);
+  if ($seq_num == 1){
+      print "<p></p>";
+      print $query->checkbox(-name=>'nwd',
+  		       -checked=>$default{nwd},
+			     -label=>'');
+      print "&nbsp;Calculate NWD";
+      #print ("<INPUT TYPE='radio' NAME='nwd' VALUE='nwd' $checked{'nwd'}>","Calculate NWD");
+  }
   print"</td>";
   print "</tr></table>";
 
