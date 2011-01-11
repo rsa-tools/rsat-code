@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.51 2010/12/04 04:12:12 rsat Exp $
+# $Id: footprint-discovery,v 1.52 2011/01/11 23:33:26 amedina Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.51 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.52 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -221,7 +221,7 @@ package main;
   local %uth = (rank=>50);	    ## Upper thresholds
   local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
   local $start_time = &RSAT::util::StartScript();
-
+  $main::orthologs_list_file=0;
   ## Supported tasks
   @supported_tasks = qw(
 			all
@@ -296,9 +296,12 @@ package main;
   if (scalar(@dyad_return_fields) > 0) {
     $dyad_return_fields = join ",", @dyad_return_fields;
   }
-
+  
+  ##Bg model for orthologs_list is monad
+  $bg_model = "monad" if  $main::orthologs_list_file ;
 
   ## Background model file for dyad-analysis
+ 
   if ($bg_model eq "org_list") {
 
     ## Check that the list of organisms has been specified
