@@ -120,7 +120,7 @@
 /*  echo ("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input formats except GML)</a></B><br>");*/
 
-  echo ("<input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.display_graph.html#ewidth'>Edge width proportional to the weight of the edges</a></B><br>
+  echo ("<input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.display_graph.html#ewidth'>Edge width proportional to weight</a></B><br>
 
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
