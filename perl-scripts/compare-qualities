@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-qualities,v 1.10 2010/11/28 02:14:58 rsat Exp $
+# $Id: compare-qualities,v 1.11 2011/01/11 17:17:45 amedina Exp $
 #
 ############################################################
 
@@ -126,7 +126,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
     
     %main::infile = ();
@@ -170,12 +170,7 @@ package main;
     @main::image_formats = ();
     %main::matrices=();
     
-    ###############
-    ##Options for a future NWD curve calculation
-    #$main::case_dist="allup-noorf"; # score distribution for matrices to be analized.
-    #$main::base_dist="theor"; # score distribution correponding to the control case.
-    #$main::xmin=-0.29;
-
+    
     $main::image_format="jpg";
    
    
@@ -350,70 +345,6 @@ package main;
     
 
 
-####################
-#NWD graphs process still in evaluation    
-# #####################
-#     ## Read and process for the graph the matrix quality files.
-#     my %NWD_curves_comparison=();
-#     my $all_keys=();
-    
-#     &RSAT::message::Info ("Reading matrix-quality socore distribution output files") 
-# 	if ($main::verbose >=0);
-#     foreach my  $mtx_name (keys %mqfiles){
-# 	my $mq_file= $main::mqfiles{$mtx_name};
-
-# 	&RSAT::message::Info ("Reding File ", $mq_file  ) if ($main::verbose >= 1) ;	
-# 	my $width= $widths{$mtx_name};
-	
-	
-#        	&RSAT::message::Info ("Matrix Width", $mtx_name ,$width )  if ($main::verbose >= 2);
-
-# 	#@{$NWD_curve{$mtx_name}} = 
-# 	&Calculate_NWD($mtx_name, $mq_file, $width);	
-#     }
-    
-#     ################################################################
-#     ## Print verbose
-#     &Verbose() if ($main::verbose);
-
-
-#     ################################################################
-#     ## Print output table, for XY-graph
-    
-#     &PrintTable();
-
-    
-#     ################################################################
-#     ## Execute the command
-#     my $image_format="jpg";
-#     my $out_fig = $out_file_name;
-#     my $ymin=0;
-#     my $ymax=-6;
-#     my $ystep=1;
-#     my @cols= keys (%main::matrices) ;
-#     my $ycols="";
-#     foreach my $i (2 .. $#cols+2){
-# 	$ycols.=" -ycol ".$i;
-#     }
-#     my $xmax=0.7;
-    
-#     #print "$out_fig"; <STDIN>;
-#     $out_fig =~ s/tab/$image_format/;
-#     $XY_command = "XYgraph -i ".$out_file_name;
-#     $XY_command .= " -o ". $out_fig;
-#     $XY_command .= " -ymin ". $ymin ;
-#     $XY_command .= " -xcol 1 " ;
-# #   $XY_command .= " -ystep ". $ystep;
-#     $XY_command .= " -ymax ". $ymax;
-#     #$XY_command .= " -xmin ". $xmin;
-#     #$XY_command .= " -xmax ". $xmax;
-#     $XY_command .= " -lines ";
-#     $XY_command .= $ycols;
-#     #$XY_command .= " -".;
-#     $XY_command .= " -ylog ";
-   
-#     print($XY_command."\n");
-#     system ($XY_command);
 
 
     ################################################################
@@ -715,100 +646,7 @@ sub  GetInfoForTable{
 }
 
 
-################################################################
-## Read matrix quality file and calculate the NWD curve
 
-sub Calculate_NWD {
-    my ($matrix_file, $mq_file)= @_; 
-    my $dists;
-    &RSAT::message::Info ("Open file", $matrix_name, $mq_file )  if ($main::verbose >= 2);    
-    #($dists)=&OpenInputFile( $mq_file ) || &RSAT::error::FatalError(" Can't open inputfile ", $mq_file) ;
-    $file=  &OpenInputFile($mq_file) || &RSAT::error::FatalError(" Can't open inputfile ", $mq_file) ;
-    local $head=1;
-    my $case_col;
-    my $base_col;
-    my $j=0;
-    my $point=0;
-    my %p_val_score_case=();
-    my %p_val_score_base=();
-
-    while (<$file>){	
-	next if (/'^;'/);		# skip comment lines
-	#print "ahhhh" ;<STDIN>;
-	next if (/'^--'/);	# skip mysql-type comment lines
-#	next if (/\S/);	# skip empty lines this desn't work, I dont know why
-
-	if ($head && (/^#/)){
-	    $head=0;	    
-	    #print "header ".$_."\n" ; #<STDIN>;
-	    my @head = split/\t+/;
-	    foreach my $i (@head) {
-		if ( ($i eq $base_dist) && !$base_col ){
-		    $base_col= $j ;		    
-		}
-		elsif ( ($i eq $case_dist) && !$case_col ){
-		    $case_col= $j ;			
-		}		
-		$j++;
-		last if($case_col && $base_col);
-	    }
-	    &RSAT::message::Debug("Case column",$case_dist,"#",$case_col) if ($main::verbose >= 5);
-	    &RSAT::message::Debug("Base column",$base_dist,"#",$base_col) if ($main::verbose >= 5);
-	    next;
-	}
-	next if (/'^#'/ ) ;		# skip coments once the header has been saved	
-	
-	@line = split /\t+/ ;
-	
-	my $score = $line[0];
-	my $case_pval= $line[$case_col] ;
-	my $base_pval= $line [$base_col] ;
-	#my @scores=($case_score,$base_score);
-
-     
-	if (($case_pval =~ /NUL/) 
-	    || ($base_pval =~ /NUL/)
-	    # || ($case_score != /\d/) 
-	    # || ($base_score != /\d/ )
-	    ){ 
-	    next;
-	}else{
-	    push(@{$p_val_score_case{$case_pval}},$score);
-	    push(@{$p_val_score_base{$base_pval}},$score);
-	    &RSAT::message::Debug("Line point",$score,$case_pval,$base_pval) if ($main::verbose >= 15);
-	}
-
-    }
-    
-    #<STDIN>;   
-    my @pvals_list =  (keys(%p_val_score_case),keys(%p_val_score_base));
-    
-    #print join(" ",@pvals_list);<STDIN>;
-    #print $#pvals_list;<STDIN>;
-    
-    foreach my $pval (@pvals_list){
-
-	next unless $p_val_score_case{$pval};
-	next unless $p_val_score_base{$pval};
-	&RSAT::message::Debug("Intersection of score value on Pval ",$pval) if ($main::verbose >= 10);
-	#print $pval."\n";<STDIN>;
-       	my $NWD="";
-	my $case_max_score= &RSAT::stats::max(@{$p_val_score_case{$pval}});
-	my $base_max_score= &RSAT::stats::max(@{$p_val_score_base{$pval}});
-	$NWD = ($case_max_score - $base_max_score) / $width ;
-
-	$main::key_diferences_results{$pval}{$matrix_name}=$NWD if ($NWD);
-
-	&RSAT::message::Debug("Score diference ",$matrix_name,"Pval", $pval," $case_max_score - $base_max_score  $width " ,$main::key_diferences_results{$pval}{$matrix_name}=$NWD) if ($main::verbose >= 10);
-	#<STDIN>;
-	
-    }	
-    
-    &RSAT::message::Info("Total number of evaluated Pvalue point", length(keys(%main::key_diferences_results)) );
- 
-
-    
-}
 ################################################################
 #Print output table with all the calculated score diferences
 
