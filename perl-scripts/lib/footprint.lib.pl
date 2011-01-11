@@ -149,9 +149,14 @@ sub CheckFootprintParameters {
   }
   &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 2);
 
+  ##############################################################
+  ## If orthologs_list is specified omit the tasks that are not longer necesary
+  ## Omit: orthologs
+  $task{orthologs} = 0 if $main::orthologs_list_file ;
+
   ################################################################
   ## Check reference organisms (taxon or org list)
-  my @ref_organisms = &SelectReferenceOrganisms();
+  my @ref_organisms = &SelectReferenceOrganisms() unless  $main::orthologs_list_file ;
 
   ################################################################
   ## Check query organism
@@ -185,11 +190,19 @@ sub CheckFootprintParameters {
     }
     close $in;
   }
-
+  if ( $main::orthologs_list_file) { 
+      my $genes=`grep -v "#" $main::orthologs_list_file | grep -v ";" | cut -f1 | sort -u`;
+      chomp($genes);
+      my @fields = split (/\s+/,$genes);
+      push @query_genes, @fields;
+  }
+  
+  &RSAT::message::Info("Genes analyzed taken from orthologs_list file",join(" ", @query_genes)) if ( ($main::verbose >= 0) && ($main::orthologs_list_file) );
+  
   ################################################################
   ## Check query genes
   if (scalar(@query_genes) ==0) {
-    &RSAT::error::FatalError("You must specify at least one query gene (options -q or -i)");
+    &RSAT::error::FatalError("You must specify at least one query gene (options -q , -i or -orthologs_list)");
   } else {
     &RSAT::message::Info("Number of query genes", scalar(@query_genes)) if ($main::verbose >= 2);
   }
@@ -269,13 +282,24 @@ sub GetOutfilePrefix {
 
   ## Create the query-specific sub-directory
   my $query_prefix = &GetQueryPrefix();
-  $dir{output_per_query} = join("/",$main::dir{output_root}, ($taxon||"org_list"), $organism_name, $query_prefix);
+   my $used_orgs="";
+  if ($taxon){
+      $used_orgs=$taxon;
+  }
+  elsif ($main::orglist_file){
+      $used_orgs="org_list";
+  }
+  elsif ($main::orthologs_list_file){
+      $used_orgs="orthologs_list";
+  }
+ 
+  $dir{output_per_query} = join("/",$main::dir{output_root}, $used_orgs, $organism_name, $query_prefix);
   &RSAT::util::CheckOutDir($dir{output_per_query});
 
   ## Compute a query-specific file prefix including the main parameters
   my $outfile_prefix = $query_prefix;
   $outfile_prefix .= "_";
-  $outfile_prefix .= join ("_", $organism_name, ($taxon||"org_list"));
+  $outfile_prefix .= join ("_", $organism_name,$used_orgs );
 
   ## We don't want the bg model in the query prefix, because it is only a parameter for the dyads file (not for the sequences)
   #  if ($bg_model) {
@@ -415,7 +439,7 @@ Alternatively, reference organisms can be specified with the option
     $main::taxon = shift(@arguments);
     &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if ($main::orglist_file);
 
-
+## Organism List
 =pod
 
 =item	B<-org_list organisms_list_file>
@@ -431,7 +455,7 @@ This option is incompatible with the option "-taxon".
 =cut
   } elsif ($arg eq "-org_list") {
     $main::orglist_file = shift(@arguments);
-    &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if ($main::taxon);
+    &RSAT::error::FatalError("Options -taxon, -org_list and -orthologs_list are mutually incompatible") if ($main::taxon || $main::orthologs_list_file);
 
 ## No Purge
 =pod
@@ -447,6 +471,33 @@ The file format is one organisms per line, the comment char is ";"
 =cut
   } elsif ($arg eq "-no_purge") {
     $main::no_purge = 1;
+
+     ## Orthologs List
+=pod
+
+=item	B<-orthologs_list file>
+
+This option gives the posibility to analyse a user-specified set of
+orthologs for specific reference organisms instead of using the BBH set of orthologs provided by RSAT.
+
+The query genes included here will be the ones analyzed by the program.
+
+File format: Tab delimited file with three columns. 
+
+  ID of the query gene (in the query organism)
+  ID of the reference gene 
+  ID of the reference organism
+
+Further columns will be ignored.
+The comment char is ";".
+
+This option is incompatible with the option "-taxon", and "-bg_model taxfreq" option.
+
+=cut
+  } elsif ($arg eq "-orthologs_list") {
+    $main::orthologs_list_file = shift(@arguments);
+    &RSAT::error::FatalError("Options -taxon, org_list and -orthologs_list are mutually incompatible") if ($main::taxon || $main::orglist_file);
+
     ## Query gene
 =pod
 
@@ -1076,6 +1127,18 @@ sub GetOrthologs {
     $cmd .= " -o ".$outfile{orthologs};
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  }
+  elsif ($main::orthologs_list_file){
+      #here introduce addaptation for the file so it can be used on next steps
+      my $genes=`cut -f1 $outfile{genes} |xargs`;
+      chomp($genes);
+      $genes=~s/\s+/\|/g;
+      my $orthologs=`egrep "$genes" $main::orthologs_list_file | perl -ane 'print "\$F[1]\t\$F[2]\t\$F[0]\t$organism_name\n"' `;
+      my $out= &OpenOutputFile($outfile{orthologs});
+      print $out $orthologs; 
+      close $out;
+      &RSAT::message::Info("Orthologs for gene(s)",$genes, "specified by the user can be found in " , $outfile{orthologs}) if ($main::verbose >= 0);
+      #die"HELLO";
   }
   &IndexOneFile("orthologs", $outfile{orthologs});
 }
