@@ -47,8 +47,8 @@ sub permute {
     for my $i (0..$#array) {
 	my $rand = int(rand($n-$i));
 	push @permuted, splice(@array, $rand, 1);
-	warn join("\t", "RSAT::stats::permute", "i=".$i, "rand=".$rand, $#array, $#permuted), "\n" if ($main::verbose >= 10);
-    }    
+	warn join("\t", "RSAT::stats::permute", $i, "rand=".$rand, $#array, $#permuted), "\n" if ($main::verbose >= 10);
+    }
     return @permuted;
 }
 
