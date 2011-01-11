@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.66 2010/12/08 13:08:48 rsat Exp $
+# $Id: compare-classes,v 1.67 2011/01/11 16:00:13 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -307,6 +307,7 @@ if ($infile{rnames}) {
   my ($in) = &OpenInputFile($infile{rnames});
   while (<$in>) {
     chomp();
+    s/\r//g; ## Suppress Windows-specific carriage return characters, which are toxic to Unix systems
     next if (/^--/);
     next if (/^;/);
     next unless (/^\S/);
@@ -325,7 +326,8 @@ if ($infile{qnames}) {
   &RSAT::message::TimeWarn("Reading query names\t".$infile{qnames}) if ($main::verbose >= 2);
   my ($in) = &OpenInputFile($infile{qnames});
   while (<$in>) {
-    chomp;
+    chomp();
+    s/\r//g; ## Suppress Windows-specific carriage return characters, which are toxic to Unix systems
     next if (/^--/);
     next if (/^;/);
     next unless (/^\S/);
