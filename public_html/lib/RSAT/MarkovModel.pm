@@ -1894,8 +1894,8 @@ sub average_strands {
 }
 
 
-################################################################
-=pod 
+
+=pod
 
 =item B<segment_proba($segment)>
 
@@ -1903,114 +1903,131 @@ Calculate the probability of a segment of sequence. The sequence segment must
 by larger than the Markov order + 1.
 
 =cut
-
 sub segment_proba {
-    my ($self, $segment, $return_detail) = @_;
-    my $detail = "";
-    my $seq_len = length($segment);
-    my $order = $self->get_attribute("order");
-    $segment =  lc($segment);
-    my @residue_proba = ();
+  my ($self, $segment, $return_detail) = @_;
+  my $detail = "";
+  my $seq_len = length($segment);
+  my $order = $self->get_attribute("order");
+  $segment =  lc($segment);
+  my @residue_proba = ();
 
-    &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
-	if ($seq_len < $order + 1);
+  &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
+    if ($seq_len < $order + 1);
 
-    my $prefix = substr($segment,0,$order);
-    my $segment_proba = 1;
-    my $c = 0;
-    if ($order > 0) { ## treatment of prefix for higher Markov order only
-	if (defined($self->{prefix_proba}->{$prefix})) {
-	    $segment_proba = $self->{prefix_proba}->{$prefix};
-	    push @residue_proba, $self->{prefix_proba}->{$prefix};
-	    if ($return_detail) {		
-		$detail_line = join("\t",
-#				     "offset:".$c,
-				     "i=".($c+1),
-				    "P(".$prefix.")", sprintf("%5g", $self->{prefix_proba}->{$prefix}),
-				    "P(S)", sprintf("%5g",$self->{prefix_proba}->{$prefix}),
-				    $prefix.uc($suffix),
-				    $prefix.uc($suffix)
-		    );
-		$detail .= $detail_line."\n";
-		&RSAT::message::Info($detail_line) if ($main::verbose >= 4);
-	    }
+  ## Header for the detail line
+  $detail = join("\t",
+		 "#i",
+		 "P(r|pre)",
+		 "p",
+		 "pre.R",
+		 "S_1..i",
+		 "P(S_1..i)",
+		);
+  $detail .= "\n";
 
-	    ## prefix contains n
-	} elsif ($self->get_attribute("n_treatment") eq "score") {
-	    my $prefix_proba = 1;
-	    ## treat each letter of the prefix separately
-	    foreach my $i (1..length($prefix)) {
-		my $residue = substr($prefix,$i-1,1);
-		## non-N residues
-		if (defined($self->{suffix_proba}->{$residue})) {
-		    $prefix_proba *= $self->{suffix_proba}->{$residue};
-		} ## for N residues proba value is 1 =>doesn't affect $prefix_proba
-	    }
-	    $segment_proba = $prefix_proba;
-	    push @residue_proba, $prefix_proba;
-	    #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
-	} else {
-	    &RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
-				     "Invalid prefix for the selected sequence type", $prefix);
-	}
-    }
-    for $c ($order..($seq_len-1)) {
-	my $residue_proba = 0;
-	my $suffix = substr($segment, $c, 1);
-	my $prefix = substr($segment,($c-$order),$order);
-	if (defined($self->{transitions}->{$prefix}->{$suffix})) {
-	    $residue_proba = $self->{transitions}->{$prefix}->{$suffix};
-	    push @residue_proba, $residue_proba;
-	    if ($residue_proba <= 0) {
-		&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
-					      "null transition between prefix ", $prefix, " and suffix", $suffix));
-	    }
-	} elsif ($self->get_attribute("n_treatment") eq "score") {
-	    if (defined($self->{suffix_proba}->{$suffix})) {
-		$residue_proba = $self->{suffix_proba}->{$suffix};
-		push @residue_proba, $residue_proba;
-	    } else {
-		$residue_proba = 1;
-		push @residue_proba, $residue_proba;
-	    }
-	    #	    &RSAT::message::Debug("Ignoring undefined transition", $prefix, $suffix, "proba set to 1") if ($main::verbose >= 10);
-	} else { 
-	    &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
-					  "undefined transition between prefix ", 
-					  $prefix, "and suffix", 
-					  $suffix));
-	}
+  my $prefix = substr($segment,0,$order);
+  my $segment_proba = 1;
+  my $c = 0;
 
-	$segment_proba *= $residue_proba;
-
-	$detail_line =join("\t",
-#			  "offset:".$c,
-			  "i=".($c+1),
-			  "P(".$suffix."|".$prefix.")", sprintf("%5g", $residue_proba),
-			  "P(S)", sprintf("%5g", $segment_proba),
-			  $prefix.uc($suffix),
-			  substr($segment,0,$c+1));
+  ################################################################
+  ## Prefix probability (only required Markov orders > 0)
+  if ($order > 0) { 
+    if (defined($self->{prefix_proba}->{$prefix})) {
+      $segment_proba = $self->{prefix_proba}->{$prefix};
+      push @residue_proba, $self->{prefix_proba}->{$prefix};
+      if ($return_detail) {
+	$detail_line = join("\t",
+			    ($c+1),
+			    "P(".$prefix.")", 
+			    sprintf("%5g", $self->{prefix_proba}->{$prefix}),
+			    $prefix.uc($suffix),
+			    $prefix.uc($suffix),
+			    sprintf("%5g",$self->{prefix_proba}->{$prefix}),
+			   );
 	$detail .= $detail_line."\n";
-
 	&RSAT::message::Info($detail_line) if ($main::verbose >= 4);
-	#	&RSAT::message::Info("segment_proba", 
-	#			      "prefix=".$word, 
-	#			      "prefix=".$prefix, 
-	#			      "suffix:".$suffix, 
-	#			      "offset:".$c, 
-	#			      "P(letter)=".$residue_proba, 
-	#			      "P(S)=".$segment_proba) if ($main::verbose >= 4);
+      }
+
+      ################################################################
+      ## Treat the particular case where the prefix contains N
+    } elsif ($self->get_attribute("n_treatment") eq "score") {
+      my $prefix_proba = 1;
+      ## treat each letter of the prefix separately
+      foreach my $i (1..length($prefix)) {
+	my $residue = substr($prefix,$i-1,1);
+	## non-N residues
+	if (defined($self->{suffix_proba}->{$residue})) {
+	  $prefix_proba *= $self->{suffix_proba}->{$residue};
+	} ## for N residues proba value is 1 =>doesn't affect $prefix_proba
+      }
+      $segment_proba = $prefix_proba;
+      push @residue_proba, $prefix_proba;
+      #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
+    } else {
+      &RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
+			       "Invalid prefix for the selected sequence type", $prefix);
     }
+  }
+
+
+  ################################################################
+  ## Iterate over residues for computing conditional probabilities
+  for $c ($order..($seq_len-1)) {
+    my $residue_proba = 0;
+    my $suffix = substr($segment, $c, 1);
+    my $prefix = substr($segment,($c-$order),$order);
+    if (defined($self->{transitions}->{$prefix}->{$suffix})) {
+      $residue_proba = $self->{transitions}->{$prefix}->{$suffix};
+      push @residue_proba, $residue_proba;
+      if ($residue_proba <= 0) {
+	&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+				      "null transition between prefix ", $prefix, " and suffix", $suffix));
+      }
+    } elsif ($self->get_attribute("n_treatment") eq "score") {
+      if (defined($self->{suffix_proba}->{$suffix})) {
+	$residue_proba = $self->{suffix_proba}->{$suffix};
+	push @residue_proba, $residue_proba;
+      } else {
+	$residue_proba = 1;
+	push @residue_proba, $residue_proba;
+      }
+      #	    &RSAT::message::Debug("Ignoring undefined transition", $prefix, $suffix, "proba set to 1") if ($main::verbose >= 10);
+    } else { 
+      &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+				    "undefined transition between prefix ", 
+				    $prefix, "and suffix", 
+				    $suffix));
+    }
+
+    $segment_proba *= $residue_proba;
+    $detail_line =join("\t",
+		       ($c+1),
+		       "P(".$suffix."|".$prefix.")", 
+		       sprintf("%5g", $residue_proba),
+		       $prefix.uc($suffix),
+		       substr($segment,0,$c+1),
+		       sprintf("%5g", $segment_proba),
+		      );
+    $detail .= $detail_line."\n";
+
+    &RSAT::message::Info($detail_line) if ($main::verbose >= 4);
+    #	&RSAT::message::Info("segment_proba", 
+    #			      "prefix=".$word, 
+    #			      "prefix=".$prefix, 
+    #			      "suffix:".$suffix, 
+    #			      "offset:".$c, 
+    #			      "P(letter)=".$residue_proba, 
+    #			      "P(S)=".$segment_proba) if ($main::verbose >= 4);
+  }
     
-    for my $col (0..$#residue_proba){
-	&RSAT::message::Debug("Proba_residue_B",$col,sprintf("%.6f",$residue_proba[$col])) 
-	    if ($main::verbose >= 5);
-    }
-    return (\@residue_proba, $segment_proba, $detail);
+  for my $col (0..$#residue_proba) {
+    &RSAT::message::Debug("Proba_residue_B",$col,sprintf("%.6f",$residue_proba[$col])) 
+      if ($main::verbose >= 5);
+  }
+  return (\@residue_proba, $segment_proba, $detail);
 }
 
 
-################################################################
 =pod
 
 =item B<reverse_bg>
