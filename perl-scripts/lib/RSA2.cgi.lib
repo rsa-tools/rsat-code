@@ -1529,17 +1529,6 @@ sub PipingFormForSequence {
     </td>
 
     <td align=center>
-        <FORM METHOD="POST" ACTION="matrix-scan-quick_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="matrix-scan-quick (matrices)">
-	</FORM>	<b><font color=red>New !</font></b>
-	Position-specific scoring matrices
-    </td>
-
-    <td align=center>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
