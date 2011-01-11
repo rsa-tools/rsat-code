@@ -316,6 +316,19 @@ sub MultiSequenceChoice {
     #$sequenceChoiceString .=  "<UL>\n";
     my $sequence_file = "";
     
+    if ($sequence_file = $query->param(sequence_file)) {
+    ### sequence file is already on the server machine 
+    ### (piped from a previous script)
+    $sequence_url = $sequence_file;
+    $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+    $sequenceChoiceString .=  "<a href=$sequence_url>";
+    $sequenceChoiceString .=  " transferred from previous query<BR>\n";
+    $sequenceChoiceString .=  "</a>";
+    $sequence_format = $query->param(sequence_format);
+    $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
+    $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
+  	} else {
+    
     #### sequence format (pop-up menu)
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     $sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
@@ -346,7 +359,7 @@ sub MultiSequenceChoice {
 						-maxlength=>200);
     $sequenceChoiceString .=  "<BR>\n";
     
-    
+    }
     
     
     print($sequenceChoiceString);
@@ -1492,6 +1505,18 @@ sub PipingFormForSequence {
 	Regular expressions and IUPAC search.
     </td>
 
+    <td align=center>
+        <FORM METHOD="POST" ACTION="matrix-scan-quick_form.cgi">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="submit" value="matrix-scan-quick (matrices)">
+	</FORM>
+	<b><font color=red>New !</font></b>
+	Position-specific scoring matrices
+    </td>
+    
     <td align=center>
         <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
