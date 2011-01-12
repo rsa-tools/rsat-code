@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.119 2011/01/12 11:06:37 jvanheld Exp $
+# $Id: peak-motifs,v 1.120 2011/01/12 11:17:40 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.119 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.120 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2015,14 +2015,13 @@ sub PrintHtmlFileHedaer {
   ## Reserve space for result TOC in the beginning of the form
   $header .=  "<div id='Menu_space'>\n";
 
-
-  ## Link to the archive
-  if ((-e $main::outfile{archive}) || ($task{archive})) {
-    my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
-    my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
-    $header .=  "<p><b>All results (.zip): </b>\n";
-    $header .=  "<a href='".$link."'>".$archive_short."</a></p>\n";
-  }
+#   ## Link to the archive
+#   if ((-e $main::outfile{archive}) || ($task{archive})) {
+#     my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
+#     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
+#     $header .=  "<p><b>All results (.zip): </b>\n";
+#     $header .=  "<a href='".$link."'>".$archive_short."</a></p>\n";
+#   }
 
   $header .=  "</div>\n";
 
@@ -2038,6 +2037,12 @@ sub ResultTOC {
 
   $result_toc .=  "<div id='Menu'>\n";
   $result_toc .=  "<h3>Results</h3>\n";
+
+  if ((-e $main::outfile{archive}) || ($task{archive})) {
+    my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
+    my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
+    $result_toc .=  "<a href='".$link."'>All results (".$archive_short.")</a></p>\n";
+  }
 
   $result_toc .=  "<a href='#seq_composition'>Sequence composition & statistics </a><br/>";
   $result_toc .=  "<a href='#ref_motifs'>Reference motifs</a><br/>" if (defined($main::infile{ref_motifs}));
@@ -2427,10 +2432,10 @@ sub Synthesis {
   &SynthesisRefMotif() unless ($progressive_synthesis);
 
   ## Discovered motifs (by algorithm)
-#  &SynthesisMotifsByAlgo() unless ($progressive_synthesis);
+  &SynthesisMotifsByAlgo() unless ($progressive_synthesis);
 
   ## Discovered motifs (by motif)
-#  &SynthesisByMotif() unless ($progressive_synthesis);
+  &SynthesisByMotif() unless ($progressive_synthesis);
 
   ## Motif comparisons
   &SynthesisMotifCompa() unless ($progressive_synthesis);
