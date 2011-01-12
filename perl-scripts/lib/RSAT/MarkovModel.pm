@@ -204,7 +204,7 @@ converted to lowercases.
 sub load_from_file_oligos {
   my ($self, $bg_file, $dyad_conversion) = @_;
 
-  &RSAT::message::TimeWarn("Loading Markov model from oligo file $bg_file") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Loading Markov model from oligo file $bg_file") if ($main::verbose >= 4);
 
   my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
 
@@ -243,7 +243,7 @@ sub load_from_file_oligos {
   my $strand = $self->get_attribute("strand") || "undef";
   if ($strand eq "insensitive") {
     &RSAT::message::Info("Processing reverse palindrome frequencies", "strand", $strand) 
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 4);
     foreach my $oligo_seq (sort (keys(%patterns))) {
       my $pattern_freq =  $patterns{$oligo_seq}->{exp_freq};
       my $oligo_rc  = lc(&RSAT::SeqUtil::ReverseComplement($oligo_seq));
@@ -373,7 +373,7 @@ converted to lowercases.
 sub load_from_file_meme {
   my ($self, $bg_file) = @_;
 
-  &RSAT::message::TimeWarn("Loading Markov model from MEME background file $bg_file") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Loading Markov model from MEME background file $bg_file") if ($main::verbose >= 4);
 
   #    my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
 
@@ -443,7 +443,7 @@ Markov model from a background sequence.
 sub load_from_file_MotifSampler {
   my ($self, $bg_file) = @_;
 
-  &RSAT::message::TimeWarn("Loading Markov model from MotifSampler file $bg_file") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Loading Markov model from MotifSampler file $bg_file") if ($main::verbose >= 4);
 
   my @prefixes = ();
   my @suffixes = qw(a c g t);
@@ -960,10 +960,10 @@ sub check_missing_transitions {
     }
     $self->force_attribute("missing_transitions", $missing_transitions);
     if ($missing_transitions > 0) {
-	&RSAT::message::Warning(join(" ", $missing_transitions,
-				     "missing transitions in the transition matrix.",
-				     "Over-fitting risk.You should better sequences or a lower order Markov model. ")) if
-					 ($main::verbose >= 2);
+      &RSAT::message::Warning(join(" ", $missing_transitions,
+				   "missing transitions in the transition matrix.",
+				   "Over-fitting risk.You should better sequences or a lower order Markov model. ")) if
+				     ($main::verbose >= 2);
     }
 }
 
@@ -1053,14 +1053,14 @@ sub calc_from_seq {
   my $previous_words = $self->get_attribute("training_words") || 0;
 
   if ($args{add}) {
-    &RSAT::message::TimeWarn(join(" ", 
+    &RSAT::message::TimeWarn(join(" ",
 				  "Updating markov model (order ".$order.")",
-				  "by adding sequence of length", $seq_len)) if ($main::verbose >= 2);
+				  "by adding sequence of length", $seq_len)) if ($main::verbose >= 4);
 
   } else {
     $self->set_hash_attribute("oligo_counts",()); ## contains the words occurences, not frequencies
     $self->force_attribute("oligo_counts_defined", 1);
-    if ($main::verbose >= 2) {
+    if ($main::verbose >= 4) {
       &RSAT::message::TimeWarn(join(" ", 
 				    "Calculating markov model (order ".$order.")",
 				    "from sequence of length", $seq_len));
@@ -1591,7 +1591,7 @@ sub to_string_oligos {
 
 
   &RSAT::message::Info("Exporting Markov model", "order", $order, "strand", $strand) 
-    if ($main::verbose >= 2);
+    if ($main::verbose >= 4);
 
   ## Compute oligomer frequencies from the prefix prior proba + transition proba
   my %patterns = $self->transitions_to_oligo_frequencies();
