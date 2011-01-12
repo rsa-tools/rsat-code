@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.115 2011/01/12 08:26:49 jvanheld Exp $
+# $Id: peak-motifs,v 1.116 2011/01/12 10:12:03 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.115 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.116 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1998,15 +1998,22 @@ sub PrintHtmlFileHedaer {
   print $handle sorttable_script();
 #  print $handle  &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
   print $handle &java_script_from_file($ENV{RSAT}."/public_html/RSAT_menu.js");
-
   print $handle "</head>\n";
 
   ## Start HTML body
   print $handle "<body>\n";
-  print $handle "<h1>Result: peak-motifs ".$main::param{title}."</h1>\n";
+  if (defined($ENV{rsat_www})) {
+    print $handle "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - peak-motifs result</h1>\n";
+  } else {
+    print $handle "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - peak-motifs result</h1>\n";
+  }
+  print $handle "<h3 style='text-align:center;'>Analysis: ";
+  print $handle $main::param{title}." (";
+  print $handle &RSAT::util::Date();
+  print $handle ")</h3>\n";
 
   ## Link to the archive
-  if (-e $main::outfile{archive}) {
+  if ((-e $main::outfile{archive}) || ($task{archive})) {
     my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
     print $handle "<p><b>All data and results (zip archive): </b>\n";
@@ -2348,12 +2355,10 @@ sub SynthesisParamsAndFiles {
 ## Generate a compressed archive with all the results
 sub Archive {
   my ($remove_first, $to_archive) = @_;
-
   &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
 
-#  my $archive = &RSAT::util::ShortFileName($main::outfile{archive});
+  $to_archive = $main::dir{output} unless $to_archive;
   my $archive = $main::outfile{archive};
-  my $to_archive = $main::dir{output} unless $to_archive;
   my $cmd = "(";
 #  my $cmd = "(cd $main::dir{output}";
 
