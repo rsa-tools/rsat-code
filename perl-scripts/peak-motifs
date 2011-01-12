@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.111 2010/12/26 05:33:18 jvanheld Exp $
+# $Id: peak-motifs,v 1.112 2011/01/12 08:03:09 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.112 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -148,7 +148,7 @@ package main;
 		    "seqlen",
 		    "composition",
 		    "ref_motifs",
-		    
+
 		    ## Pattern discovery algorithms
 		    "oligos",
 		    "dyads",
@@ -164,11 +164,12 @@ package main;
 		    "motifs_vs_ref",
 		    "motifs_vs_db",
 #		      "motif_compa",
-		    
+
 		    "scan",
-		    
+
 		    "timelog",
 		    "synthesis",
+		    "archive",
 		    );
 
   ## Extra tasks are only executed on explicit demand of the user
@@ -281,12 +282,18 @@ package main;
   }
   &SynthesisParamsAndFiles() if ($progressive_synthesis);
 
+  ## Archiving has to be done before synthesis in order to enable
+  ## liking the archive file in the HTML synthesis. However, the
+  ## archive has to be updated after the synthesus, in order to
+  ## onclude the HTML synthesis file.
+  &Archive(1) if ($task{archive});
+
   &Synthesis() if ($task{synthesis});
 
   &CleanSequences() if ($task{clean_seq});
 
   if ($main::verbose >= 1) {
-    &TimeWarn("Log file", $main::outfile{log}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Log file", $main::outfile{log}) if ($main::verbose >= 2);
   }
 
   ################################################################
@@ -1314,7 +1321,7 @@ sub ReadDiscoveredMotifs {
       &SetFileNamesForMotif($motif_id);
     }
 
-    &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
+    &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 3);
   } else {
     &RSAT::message::Warning("Discovered motif file does not exist",  $main::outfile{motifs_discovered});
   }
@@ -1998,6 +2005,12 @@ sub PrintHtmlFileHedaer {
   print $handle "<body>\n";
   print $handle "<h1>Result: peak-motifs ".$main::param{title}."</h1>\n";
 
+  ## Link to the archive
+  my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
+  my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
+  print $handle "<p><b>All data and results (zip archive): </b>\n";
+  print $handle "<a href='".$link."'>".$archive_short."</a></p>\n";
+
 }
 
 ################################################################
@@ -2142,20 +2155,9 @@ sub SynthesisByMotif {
   my @motifs = &ReadDiscoveredMotifs();
 
   ## Load background model for computing the consensus and logo of each motif
-  &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 2);
+  &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
   local $bg_model = new RSAT::MarkovModel();
   $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
-
-  ## Header of the motif table
-#   print $syn "<p><table class=\"sortable\">\n";
-#   print $syn "<tr>\n";
-#   print $syn "<th>", "nb","</th>\n";
-#   print $syn "<th>", "name","</th>\n";
-#   print $syn "<th>", "consensus.IUPAC","</th>\n";
-#   print $syn "<th>", "consensus.IUPAC.rc","</th>\n";
-#   print $syn "<th>", "Logo","</th>\n";
-#   print $syn "<th>", "Logo RC","</th>\n";
-#   print $syn "</tr>\n";
 
 
   ## Options for generating logos
@@ -2342,9 +2344,34 @@ sub SynthesisParamsAndFiles {
 
 
 ################################################################
+## Generate a compressed archive with all the results
+sub Archive {
+  my ($remove_first, $to_archive) = @_;
+
+  &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
+
+#  my $archive = &RSAT::util::ShortFileName($main::outfile{archive});
+  my $archive = $main::outfile{archive};
+  my $to_archive = $main::dir{output} unless $to_archive;
+  my $cmd = "(";
+#  my $cmd = "(cd $main::dir{output}";
+
+  ## Delete previous version of the archive to avoid including the old archive in the new one
+  $cmd .= "rm -f ".$archive if ($remove_first);
+
+  ## Archive all data and results
+  $cmd .= "; zip --recurse-paths --symlinks --quiet ".$archive." ".$to_archive.")";
+  &one_command($cmd, 1);
+
+  &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
+}
+
+
+################################################################
 ## Generate a HTML report with summarizing the main results with
 ## links to the iriginal result files.
 sub Synthesis {
+  &RSAT::message::TimeWarn("\n; Generating HTML synthesis") if ($main::verbose >= 2);
 
   &OpenSynthesis() unless ($progressive_synthesis);
 
@@ -2370,6 +2397,10 @@ sub Synthesis {
   print $syn "</body>\n";
   print $syn "</html>\n";
   close $syn;
+
+  ## Add the HTML synthesis report to the archive
+  &Archive(0, $main::outfile{synthesis}) if ($task{archive});
+
   &RSAT::message::TimeWarn("Synthetic report", $main::outfile{synthesis}) if ($main::verbose >= 2);
 }
 
@@ -3454,8 +3485,9 @@ sub CheckArguments {
   $main::outfile{timelog} = &OutFileName("reports", ".txt", "timelog");
   $main::outfile{timelog_html} = &OutFileName("reports", ".html", "timelog");
   $main::outfile{timetable} = &OutFileName("reports", ".txt", "timetable");
+  $main::outfile{archive} = &OutFileName("", ".zip", "archive");
 
-  ## Synthesis file 
+  ## Synthesis file
   $main::outfile{synthesis} = &OutFileName("", ".html", "synthesis");
   $progressive_synthesis = 0 unless ($task{synthesis});
 
@@ -3701,12 +3733,25 @@ observed versus expected occurrences for all the
 oligonucleotides. This analysis is performed with the option
 -two_tails, which detects both under- and over-represented patterns.
 
-=item B<full HTML report>
-
-- link to the directories for each algorithm/task
+=item B<in the full HTML report>
 
 - link from the result page to the link table returned by
   position-analysis (file *_graph_index.html).
+
+=item B<-discovery oligos|dyads|positions|local-words|meme>
+
+Specify the software tool(s) that will be used for pattern discovery.
+
+Several algorithms can be specified either by using the option
+iteratively:
+
+  -disco oligos -disco dyads
+
+or by entering a comma-separated list of algorithms:
+
+  -disco oligos,dyads
+
+Default: oligos,positions
 
 =back
 
