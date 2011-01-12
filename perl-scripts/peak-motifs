@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.114 2011/01/12 08:25:00 jvanheld Exp $
+# $Id: peak-motifs,v 1.115 2011/01/12 08:26:49 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.115 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2006,7 +2006,7 @@ sub PrintHtmlFileHedaer {
   print $handle "<h1>Result: peak-motifs ".$main::param{title}."</h1>\n";
 
   ## Link to the archive
-  if ($e $main::outfile{archive}) {
+  if (-e $main::outfile{archive}) {
     my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
     print $handle "<p><b>All data and results (zip archive): </b>\n";
