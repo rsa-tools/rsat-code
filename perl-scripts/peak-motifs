@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.118 2011/01/12 11:01:58 jvanheld Exp $
+# $Id: peak-motifs,v 1.119 2011/01/12 11:06:37 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.118 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.119 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2400,7 +2400,7 @@ sub Archive {
   my $cmd = "";
 
   ## Delete previous version of the archive to avoid including the old archive in the new one
-  $cmd .= "rm -f ".$archive if ($remove_first)." ; ";
+  $cmd .= "rm -f ".$archive.";" if ($remove_first);
 
   ## Archive all data and results
   my $archive = $main::outfile{archive};
