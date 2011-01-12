@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.117 2011/01/12 10:46:35 jvanheld Exp $
+# $Id: peak-motifs,v 1.118 2011/01/12 11:01:58 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.117 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.118 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2397,16 +2397,15 @@ sub Archive {
   my ($remove_first, $to_archive) = @_;
   &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
 
-  $to_archive = $main::dir{output} unless $to_archive;
-  my $archive = $main::outfile{archive};
-  my $cmd = "(";
-#  my $cmd = "(cd $main::dir{output}";
+  my $cmd = "";
 
   ## Delete previous version of the archive to avoid including the old archive in the new one
-  $cmd .= "rm -f ".$archive if ($remove_first);
+  $cmd .= "rm -f ".$archive if ($remove_first)." ; ";
 
   ## Archive all data and results
-  $cmd .= "; zip -ryq ".$archive." ".$to_archive.")";
+  my $archive = $main::outfile{archive};
+  $to_archive = $main::dir{output} unless $to_archive;
+  $cmd .= "zip -ryq ".$archive." ".$to_archive;
   &one_command($cmd, 1);
 
   &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
