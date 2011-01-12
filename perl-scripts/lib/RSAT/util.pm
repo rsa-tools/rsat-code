@@ -154,6 +154,26 @@ sub AlphaDate {
 }
 
 
+################################################################
+
+=pod
+
+=item Date
+
+Returns a date in human-readable way.
+
+Usage: my $date = &RSAT::util::Date();
+
+=cut
+sub Date {
+    my $my_date = "";
+    my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
+    $my_date = sprintf("%02d/%02d/%04d", $day, $month+1, 1900+$year);
+#    $my_date = `date +%Y_%m_%d.%H%M%S`;
+    chomp $my_date;
+    return $my_date;
+}
+
 
 ################################################################
 ## Update the start log file
