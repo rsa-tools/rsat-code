@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.116 2011/01/12 10:12:03 jvanheld Exp $
+# $Id: peak-motifs,v 1.117 2011/01/12 10:46:35 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.116 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.117 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1981,44 +1981,84 @@ sub TimeLog {
 ################################################################
 ## Print the HTML header with styles etc
 sub PrintHtmlFileHedaer {
-  my ($handle) = @_;
+  my $header = "";
 
   ## HTML Header and title
-  print $handle "<html>\n";
-  print $handle "<head>\n";
-  print $handle "<title>peak-motifs ".$main::param{title}."</title>\n";
+  $header .=  "<html>\n";
+  $header .=  "<head>\n";
+  $header .=  "<title>peak-motifs ".$main::param{title}."</title>\n";
 
   ## Page styles
-  print $handle "<style type='text/css'>\n";
-  print $handle `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
-  print $handle "</style>\n";
-#  print $handle "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
+  $header .=  "<style type='text/css'>\n";
+  $header .=  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+  $header .=  "</style>\n";
+#  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
 
   ## Java scripts
-  print $handle sorttable_script();
-#  print $handle  &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
-  print $handle &java_script_from_file($ENV{RSAT}."/public_html/RSAT_menu.js");
-  print $handle "</head>\n";
+  $header .=  sorttable_script();
+#  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
+  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/RSAT_menu.js");
+  $header .=  "</head>\n";
 
   ## Start HTML body
-  print $handle "<body>\n";
+  $header .=  "<body>\n";
   if (defined($ENV{rsat_www})) {
-    print $handle "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - peak-motifs result</h1>\n";
+    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - peak-motifs result</h1>\n";
   } else {
-    print $handle "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - peak-motifs result</h1>\n";
+    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - peak-motifs result</h1>\n";
   }
-  print $handle "<h3 style='text-align:center;'>Analysis: ";
-  print $handle $main::param{title}." (";
-  print $handle &RSAT::util::Date();
-  print $handle ")</h3>\n";
+  $header .=  "<h3 style='text-align:center;'>Analysis: ";
+  $header .=  $main::param{title}." (";
+  $header .=  &RSAT::util::Date();
+  $header .=  ")</h3>\n";
+
+  ## Reserve space for result TOC in the beginning of the form
+  $header .=  "<div id='Menu_space'>\n";
+
 
   ## Link to the archive
   if ((-e $main::outfile{archive}) || ($task{archive})) {
     my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
-    print $handle "<p><b>All data and results (zip archive): </b>\n";
-    print $handle "<a href='".$link."'>".$archive_short."</a></p>\n";
+    $header .=  "<p><b>All results (.zip): </b>\n";
+    $header .=  "<a href='".$link."'>".$archive_short."</a></p>\n";
   }
+
+  $header .=  "</div>\n";
+
+  return($header);
+}
+
+
+################################################################
+## Generate a HTML table of content of the results with links to the
+## different parts
+sub ResultTOC {
+  my $result_toc = "";
+
+  $result_toc .=  "<div id='Menu'>\n";
+  $result_toc .=  "<h3>Results</h3>\n";
+
+  $result_toc .=  "<a href='#seq_composition'>Sequence composition & statistics </a><br/>";
+  $result_toc .=  "<a href='#ref_motifs'>Reference motifs</a><br/>" if (defined($main::infile{ref_motifs}));
+  $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm)</a><br/>";
+  $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs</a><br/>";
+  $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
+  $result_toc .=  "<a href='#logs'>Logs & Commands</a><br/>";
+#     <a href="">Discovered motifs (7)</a>
+#       <ul>
+# 	<li>Motif 1: <a href="">[matrix]</a> <a href="">[BED file (UCSC track)] </a></li>
+# 		<li>Motif 2: <a href="">[matrix]</a> <a href="">[BED file (UCSC track)]</a></li>
+# 		<li>Motif 3: <a href="">[matrix]</a> <a href="">[BED file (UCSC track)]</a></li>
+# 		<li>Motif 4: <a href="">[matrix]</a> <a href="">[BED file (UCSC track)]</a></li>
+# 		<li>Motif 5: <a href="">[matrix]</a> <a href="">[BED file (UCSC track)]</a></li>
+# 		<li>Motif 6: <a href="">[matrix]</a> <a href="">[BED file (UCSC track)]</a></li>
+# 		<li>Motif 7: <a href="">[matrix]</a> <a href="">[BED file (UCSC track)]</a></li>
+# 		</ul>
+# 	<a href="http://royrosenow.com/" title="Sketches, illustrations, and Voodoo Bob">Motif comparison</a><br />
+# 	<a href="http://swankyal.com/" title="A swanky weblog">Logs & Command</a><br />
+# </div>
+  return($result_toc);
 }
 
 ################################################################
@@ -2155,7 +2195,7 @@ sub SynthesisOneMotifComparison {
 ## Generate a HTML table summarizing the results for each discovered
 ## motif. this table is inserted in the synthetic report.
 sub SynthesisByMotif {
-  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs</h3>", 0);
+  print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'><h3>Discovered motifs</h3>", 0);
   print $syn "<table class='sortable'>\n";
 
   &ReadMotifTable();
@@ -2298,14 +2338,14 @@ sub OpenSynthesis {
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
 
-  &PrintHtmlFileHedaer($syn);
+  print $syn &PrintHtmlFileHedaer();
 }
 
 
 ################################################################
 ## Report results of motif comparisons
 sub SynthesisMotifCompa {
-  print $syn &open_menu_heading($menu_nb++, "<h3>Motif comparisons</h3>", 0);
+  print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'><h3>Motif comparisons</h3>", 0);
   print $syn "<table class='sortable'>\n";
 
   ## Word comparisons
@@ -2329,7 +2369,7 @@ sub SynthesisMotifCompa {
 ## is not known before having run the motif discovery algorithms.
 sub SynthesisParamsAndFiles {
   ## Log files
-  print $syn &open_menu_heading($menu_nb++, "<h3>Logs and result files</h3>", 1);
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'><h3>Logs and result files</h3>", 1);
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Log files");
   &SyntheticTableAddRow("Parameters and files",
@@ -2388,10 +2428,10 @@ sub Synthesis {
   &SynthesisRefMotif() unless ($progressive_synthesis);
 
   ## Discovered motifs (by algorithm)
-  &SynthesisMotifsByAlgo() unless ($progressive_synthesis);
+#  &SynthesisMotifsByAlgo() unless ($progressive_synthesis);
 
   ## Discovered motifs (by motif)
-  &SynthesisByMotif() unless ($progressive_synthesis);
+#  &SynthesisByMotif() unless ($progressive_synthesis);
 
   ## Motif comparisons
   &SynthesisMotifCompa() unless ($progressive_synthesis);
@@ -2400,6 +2440,7 @@ sub Synthesis {
   &SynthesisParamsAndFiles() unless ($progressive_synthesis);
 
   ## End of the HTML file
+  print $syn &ResultTOC();
   print $syn "</body>\n";
   print $syn "</html>\n";
   close $syn;
@@ -2457,7 +2498,7 @@ sub SyntheticTableAddHeaderRow {
 ################################################################
 ## Add sequence composition on the synthetic report
 sub SynthesisSequenceComposition {
-  print $syn &open_menu_heading($menu_nb++, "<h3>Sequence composition</h3>", 0);
+  print $syn &open_menu_heading($menu_nb++, "<a name='seq_composition'><h3>Sequence composition</h3>", 0);
   print $syn "<p><table class='sortable'>\n";
 
   foreach my $seq_type (@seq_types) {
@@ -2550,7 +2591,7 @@ sub SynthesisSequenceComposition {
 ## Add the reference motif to the report
 sub SynthesisRefMotif {
   if (defined($main::infile{ref_motifs})) {
-    print $syn &open_menu_heading($menu_nb++, "<h3>Reference motifs</h3>", 0);
+    print $syn &open_menu_heading($menu_nb++, "<a name='ref_motifs'><h3>Reference motifs</h3>", 0);
     print $syn "<p><table class='sortable'>\n";
     &SyntheticTableAddHeaderRow("Reference motif(s)");
 
@@ -2599,7 +2640,7 @@ sub SynthesisRefMotif {
 ## Report discovered motifs by algorithms
 sub SynthesisMotifsByAlgo {
   &RSAT::message::TimeWarn("Synthesis per motif discovery algorithm") if ($main::verbose >= 2);
-  print $syn &open_menu_heading($menu_nb++, "<h3>Discovered motifs (by algorithm)</h3>", 1);
+  print $syn &open_menu_heading($menu_nb++, "<a name='motifs_by_algo'><h3>Discovered motifs (by algorithm)</h3>", 1);
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Pattern discovery");
   foreach my $pattern_type (@pattern_types) {
