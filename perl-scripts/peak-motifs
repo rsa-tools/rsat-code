@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.113 2011/01/12 08:20:05 jvanheld Exp $
+# $Id: peak-motifs,v 1.114 2011/01/12 08:25:00 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2361,7 +2361,7 @@ sub Archive {
   $cmd .= "rm -f ".$archive if ($remove_first);
 
   ## Archive all data and results
-  $cmd .= "; zip --recurse-paths --symlinks --quiet ".$archive." ".$to_archive.")";
+  $cmd .= "; zip -ryq ".$archive." ".$to_archive.")";
   &one_command($cmd, 1);
 
   &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
