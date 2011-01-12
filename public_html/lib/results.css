@@ -12,6 +12,39 @@ body {
 /*       background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;*/
 }
 
+
+/* div for menu */
+
+#Menu_space {
+	margin-top:120px;
+	margin-bottom:300px;
+}
+
+#Menu {
+	position:absolute;
+	top:120px;
+	left:50%;
+	width:300px;
+	margin-left: -150px;
+	padding:10px;
+	background-color:#eee;
+	border:1px dashed #999;
+	line-height:17px;
+	font-size: 110%;
+	voice-family: "\"}\"";
+	voice-family:inherit;
+	}
+
+#Menu h3 {
+	margin:0;
+	text-align:center;
+	padding-bottom:5px;
+}
+
+#Menu ul {
+	list-style-type:none;
+}
+
 /* Links  */
 
 A:link,A:visited {
@@ -193,9 +226,11 @@ table.resultlink td, table.resultlink th {
 .menu_collapsible {
 	display: none;
 	margin-bottom: 10px;
+	margin-left: 80px;
 }
 
 .menu_collapsible_display {
    display: block;
    margin-bottom: 10px;
+   margin-left: 80px;
 }
