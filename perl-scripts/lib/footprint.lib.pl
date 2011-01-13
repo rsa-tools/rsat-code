@@ -309,7 +309,7 @@ sub GetOutfilePrefix {
     $outfile_prefix .= "_operons";
   }
   $outfile{prefix} = join("/", $dir{output_per_query}, $outfile_prefix);
-  &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 2);
+  &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 4);
 
   &RSAT::message::Info("&GetOutfilePrefix()", 
   		       "query_prefix", $outfile_prefix,
@@ -897,12 +897,22 @@ sub OpenIndex {
 
 
 ################################################################
+## Compute a prefix for the "main" files (index for all queries, list
+## of dyad files, ...)
+sub MainPrefix {
+  $outfile{main_prefix} = join("_", ($taxon||"org_list"),$organism_name,
+			       "bg", $bg_model);
+  return $outfile{main_prefix};
+}
+
+################################################################
 ## Main index. This is a HTML table with links to the query-specific
 ## results: one row per query, one column per output type.
 sub OpenMainIndex {
   &RSAT::util::CheckOutDir($dir{output_root});
-  $outfile{main_index} = join ("/", $dir{output_root}, join("_", ($taxon||"org_list"),$organism_name, 
-							    "bg", $bg_model, "result_index.html"));
+
+  my $main_prefix = &MainPrefix();
+  $outfile{main_index} = $dir{output_root}."/".$main_prefix."_result_index.html";
 
 
   &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
