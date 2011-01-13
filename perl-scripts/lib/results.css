@@ -24,7 +24,7 @@ body {
 	position:absolute;
 	top:120px;
 	left:50%;
-	width:300px;
+	width:400px;
 	margin-left: -150px;
 	padding:10px;
 	background-color:#eee;
@@ -33,6 +33,7 @@ body {
 	font-size: 110%;
 	voice-family: "\"}\"";
 	voice-family:inherit;
+	text-align:left;
 	}
 
 #Menu h3 {
