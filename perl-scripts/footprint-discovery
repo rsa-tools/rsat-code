@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.52 2011/01/11 23:33:26 amedina Exp $
+# $Id: footprint-discovery,v 1.53 2011/01/13 12:13:05 jvanheld Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.52 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.53 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -234,6 +234,7 @@ package main;
 			purge
 			dyads
 			map
+			network
 			index
 		       );
   $supported_tasks = join (",", @supported_tasks);
@@ -276,6 +277,10 @@ package main;
   local $die_on_error = 1;
   local $batch = 0;
   local $dry = 0;
+
+
+  ## File index
+  local %main_index = ();
 
   ################################################################
   ## Read argument values
@@ -396,7 +401,12 @@ package main;
   }
 
   ################################################################
-  ## Report the index files
+  ## Generate co-regulation network by comparing gene-wise footprints
+  &CoregulationNetwork() if ($task{network});
+
+
+  ################################################################
+  ## Give a warning to report the gene-specific and main index files
   if ($main::verbose >= 2) {
     print ("; Index files\n");
     foreach my $key (sort keys %index_list) {
@@ -422,6 +432,11 @@ package main;
 ################################################################
 
 
+sub DyadSuffix {
+  my $dyad_suffix = "_".$promoter."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
+  return($dyad_suffix);
+}
+
 ################################################################
 ## Run footprint discovery flow chart for one or several query genes
 sub RunFootprintDisco {
@@ -439,7 +454,9 @@ sub RunFootprintDisco {
 
   ## Output files for dyad-analysis
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
-  $outfile{dyad_prefix} = $outfile{prefix}."_".$promoter."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
+
+  my $dyad_suffix = &DyadSuffix();
+  $outfile{dyad_prefix} = $outfile{prefix}.$dyad_suffix;
   $outfile{dyads} = $outfile{dyad_prefix}.".tab";
   $outfile{dyads_html} = $outfile{dyad_prefix}.".html";
   $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
@@ -449,6 +466,11 @@ sub RunFootprintDisco {
     $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.txt";
     $outfile{count_PSSM} = $outfile{pssm_prefix}."_count_matrices.txt";
   }
+
+
+  ################################################################
+  ## Index files for the main index
+  $main_index{$query_prefix}{dyads} = $outfile{dyads};
 
   ## Report all outfile names
   if ($main::verbose >= 5) {
@@ -502,76 +524,7 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
-  if ($task{dyads}) {
-    &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
-    &CheckDependency("dyads", "purged");
-    $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
-    $cmd .= " -return ".$dyad_return_fields;
-    ## Backgroun model
-    if ($bg_model eq "monads") {
-      $cmd .= " -bg monads" ;
-    } elsif ($bg_model eq "taxfreq") {
-      $cmd .= " -expfreq ".$infile{bg_model} ;
-    }
-    ## dyad filtering (only accept dyads found in the promoter of the query gene(s)
-    if (!$nofilter) {
-      $cmd .= " -accept ".$outfile{filter_dyads};
-    }
-    foreach my $field (sort keys %lth) {
-    $cmd .= " -lth ".$field." ".$lth{$field};
-  }
-    foreach my $field (sort keys %uth) {
-      $cmd .= " -uth ".$field." ".$uth{$field};
-    }
-    $cmd .= " -i ".$outfile{purged};
-    $cmd .= " -l 3 -sp 0-20";
-    $cmd .= " ".$strands;
-    $cmd .= " ".$noov;
-    $cmd .= " -sort";
-    $cmd .= " -o ".$outfile{dyads};
-    &one_command($cmd);
-
-    ## Generate a HTML table with the discovered dyads
-    &CheckDependency("dyads_html", "dyads");
-    $cmd = "$SCRIPTS/text-to-html";
-    $cmd .= " -i ".$outfile{dyads};
-    $cmd .= " -font variable -chunk 1000";
-    $cmd .= " -o ".$outfile{dyads_html};
-    &one_command($cmd);
-
-    ################################################################
-    ## Assemble significant dyads
-    &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
-    &CheckDependency("asmb", "dyads");
-    $cmd = "$SCRIPTS/pattern-assembly -v 1";
-    $cmd .= " -i ".$outfile{dyads};
-    $cmd .= " -subst 0 -maxfl 1 -toppat 50";
-    $cmd .= " -o ".$outfile{asmb};
-    &one_command($cmd);
-
-    ################################################################
-    ## Convert assembled dyads into a position-specific scoring matrix
-    if ($to_matrix) {
-      &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 2);
-      &CheckDependency("pssm", "asmb");
-      &CheckDependency("pssm", "seq");
-      $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
-      $cmd .= " -seq ".$outfile{seq};
-      $cmd .= " -asmb ".$outfile{asmb};
-      $cmd .= " -format fasta";
-      $cmd .= " -uth Pval 0.00025";
-      $cmd .= " -bginput -markov 0";
-      $cmd .= " ".$strands;
-      $cmd .= " -logo";
-      $cmd .= " -o ".$outfile{pssm_prefix};
-      &one_command($cmd);
-      &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM});
-      &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM});
-    }
-  }
-  &IndexOneFile("dyads", $outfile{dyads});
-  &IndexOneFile("dyads [htm]", $outfile{dyads_html});
-  &IndexOneFile("assembled dyads", $outfile{asmb});
+  &DyadAnalysis();
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
@@ -906,6 +859,173 @@ sub Verbose {
   print $index "<pre>";
   print $index $header_verbose;
   print $index "</pre>";
+}
+
+
+################################################################
+## Run dyad-analysis
+sub DyadAnalysis {
+  if ($task{dyads}) {
+    &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
+    &CheckDependency("dyads", "purged");
+    $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
+    $cmd .= " -return ".$dyad_return_fields;
+    ## Backgroun model
+    if ($bg_model eq "monads") {
+      $cmd .= " -bg monads" ;
+    } elsif ($bg_model eq "taxfreq") {
+      $cmd .= " -expfreq ".$infile{bg_model} ;
+    }
+    ## dyad filtering (only accept dyads found in the promoter of the query gene(s)
+    if (!$nofilter) {
+      $cmd .= " -accept ".$outfile{filter_dyads};
+    }
+    foreach my $field (sort keys %lth) {
+    $cmd .= " -lth ".$field." ".$lth{$field};
+  }
+    foreach my $field (sort keys %uth) {
+      $cmd .= " -uth ".$field." ".$uth{$field};
+    }
+    $cmd .= " -i ".$outfile{purged};
+    $cmd .= " -l 3 -sp 0-20";
+    $cmd .= " ".$strands;
+    $cmd .= " ".$noov;
+    $cmd .= " -sort";
+    $cmd .= " -o ".$outfile{dyads};
+    &one_command($cmd);
+
+    ## Generate a HTML table with the discovered dyads
+    &CheckDependency("dyads_html", "dyads");
+    $cmd = "$SCRIPTS/text-to-html";
+    $cmd .= " -i ".$outfile{dyads};
+    $cmd .= " -font variable -chunk 1000";
+    $cmd .= " -o ".$outfile{dyads_html};
+    &one_command($cmd);
+
+    ################################################################
+    ## Assemble significant dyads
+    &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
+    &CheckDependency("asmb", "dyads");
+    $cmd = "$SCRIPTS/pattern-assembly -v 1";
+    $cmd .= " -i ".$outfile{dyads};
+    $cmd .= " -subst 0 -maxfl 1 -toppat 50";
+    $cmd .= " -o ".$outfile{asmb};
+    &one_command($cmd);
+
+    ################################################################
+    ## Convert assembled dyads into a position-specific scoring matrix
+    if ($to_matrix) {
+      &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 2);
+      &CheckDependency("pssm", "asmb");
+      &CheckDependency("pssm", "seq");
+      $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
+      $cmd .= " -seq ".$outfile{seq};
+      $cmd .= " -asmb ".$outfile{asmb};
+      $cmd .= " -format fasta";
+      $cmd .= " -uth Pval 0.00025";
+      $cmd .= " -bginput -markov 0";
+      $cmd .= " ".$strands;
+      $cmd .= " -logo";
+      $cmd .= " -o ".$outfile{pssm_prefix};
+      &one_command($cmd);
+      &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM});
+      &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM});
+    }
+  }
+  &IndexOneFile("dyads", $outfile{dyads});
+  &IndexOneFile("dyads [htm]", $outfile{dyads_html});
+  &IndexOneFile("assembled dyads", $outfile{asmb});
+}
+
+################################################################
+## Generate co-regulation network by comparing gene-wise footprints
+sub CoregulationNetwork {
+  my $main_prefix = &MainPrefix();
+  my $dyad_suffix = &DyadSuffix();
+
+  ## Create a directory for the inferred co-reglation network
+  $dir{network} = $dir{output_root}."/network";
+  &RSAT::util::CheckOutDir($dir{network});
+  &RSAT::message::TimeWarn("Network directory", $dir{network}) if ($main::verbose >= 0);
+
+
+  ## Write a list of dyad files
+  $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt";
+  my $out= &OpenOutputFile($outfile{dyad_file_list});
+  foreach my $query_prefix (sort keys %main_index) {
+    print $out $main_index{$query_prefix}{dyads}, "\n";
+  }
+  &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 0);
+
+  ## Compare significance scores between all the gene-wise dyad files
+  $outfile{dyad_sig_classes} .= $dir{network}."/".$main_prefix."_dyad_sig_classes.tab";
+  my $compare_scores_cmd = "compare-scores -v 1";
+  $compare_scores_cmd .= " -filelist ".$outfile{dyad_file_list};
+  $compare_scores_cmd .= " -sc 8 -null .";
+  $compare_scores_cmd .= " -basename";
+  $compare_scores_cmd .= " -suppress ".$main_prefix;
+  $compare_scores_cmd .= " -suppress ".$dyad_suffix.".tab";
+  $compare_scores_cmd .= " -suppress _".$organism_name."_".$taxon;
+  $compare_scores_cmd .= " -format classes";
+  $compare_scores_cmd .= " | add-gene-info";
+  $compare_scores_cmd .= " -col 2";
+  $compare_scores_cmd .= " -org ".$organism_name;
+  $compare_scores_cmd .= " -info name,id";
+  $compare_scores_cmd .= " -o ".$outfile{dyad_sig_classes};
+  &doit($compare_scores_cmd);
+  &RSAT::message::TimeWarn("Dyad sig classes", $outfile{dyad_sig_classes}) if ($main::verbose >= 0);
+
+  ## Build the network by comparing dyads between genes
+  $outfile{gene_pairs} .= $dir{network}."/".$main_prefix."_gene_pairs.tab";
+  my $compare_classes_cmd = 'awk \'{print $1"\t"$4"\t"$3}\' '.$outfile{dyad_sig_classes};
+  $compare_classes_cmd .=  " | compare-classes -v 1";
+  $compare_classes_cmd .= " -i /dev/stdin";
+  $compare_classes_cmd .= " -triangle -distinct";
+  $compare_classes_cmd .= " -return rank,occ,freq,proba,jac_sim,dotprod,entropy";
+  $compare_classes_cmd .= " -sort dotprod";
+  $compare_classes_cmd .= " -sc 3";
+  $compare_classes_cmd .= " -lth dotprod 2 -lth QR 2 -lth Q 2 -lth R 2";
+  $compare_classes_cmd .= " -o ".$outfile{gene_pairs};
+  &doit($compare_classes_cmd);
+  &RSAT::message::TimeWarn("Gene pairs", $outfile{gene_pairs}) if ($main::verbose >= 0);
+
+  ## Add columns with gene names and IDs
+  $outfile{gene_pairs_names} .= $dir{network}."/".$main_prefix."_gene_pairs_names.tab";
+  my $cc_gene_info_cmd = "add-gene-info";
+  $cc_gene_info_cmd .= " -i ".$outfile{gene_pairs};
+  $cc_gene_info_cmd .= " -col 1 -col 2";
+  $cc_gene_info_cmd .= " -org ".$organism_name;
+  $cc_gene_info_cmd .= " -info name,id";
+  $cc_gene_info_cmd .= " -o ".$outfile{gene_pairs_names};
+  &doit($cc_gene_info_cmd);
+  &RSAT::message::TimeWarn("Gene pairs (with names)", $outfile{gene_pairs_names}) if ($main::verbose >= 0);
+
+  ## Identify score column
+  my $score = "DPbits";
+  my $score_column = 21;
+  my ($in) = &OpenInputFile($outfile{gene_pairs});
+  while (<$in>) {
+    print "TEST\t".$_;
+    if (/^;\t(\d+)\t${score}\s+/) {
+      $score_column = $1;
+    }
+  }
+  close $in;
+
+  ## Convert the compare-classes result into a graph
+  $outfile{gene_pairs_gml} .= $dir{network}."/".$main_prefix."_gene_pairs_".$score.".gml";
+  my $convert_graph_cmd = "convert-graph";
+  $convert_graph_cmd .= " -scol 1 -tcol 2";
+  $convert_graph_cmd .= " -wcol ".$score_column;
+  $convert_graph_cmd .= " -from tab -to gml";
+  $convert_graph_cmd .= " -ewidth -ecolors fire";
+  $convert_graph_cmd .= " -i ".$outfile{gene_pairs};
+  $convert_graph_cmd .= " -o ".$outfile{gene_pairs_gml};
+  &doit($convert_graph_cmd);
+  &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 0);
+
+
+  
 }
 
 
