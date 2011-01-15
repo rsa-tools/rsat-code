@@ -449,7 +449,7 @@ sub GetSequenceFile {
     }
     my $converted_seq_file = $sequence_file.".".$required_format;
     my $convert_seq_command = "$SCRIPTS/convert-seq ";
-    $convert_seq_command .= " -i $sequence_file -o $converted_seq_file ";
+    $convert_seq_command .= " -i ".$sequence_file;
     $convert_seq_command .= " -from  $sequence_format -to $required_format ";
 
     ## Add reverse complement
@@ -466,6 +466,8 @@ sub GetSequenceFile {
     if ($skip_short) {
       $convert_seq_command .= " -skip_short ".$skip_short;
     }
+
+    $convert_seq_command .= " -o ".$converted_seq_file;
 
     ## Execute the sequence conversion
     system($convert_seq_command);
