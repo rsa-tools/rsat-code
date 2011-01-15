@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.53 2011/01/13 12:13:05 jvanheld Exp $
+# $Id: footprint-discovery,v 1.54 2011/01/15 06:02:41 jvanheld Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.53 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.54 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -267,7 +267,6 @@ package main;
   local $promoter = "ortho";    ## Alternatively: leader when the option "infer operons" is active
 #  local $all_genes = 0;         ## Analyze all the genes of the query organism
 #  local $max_genes = undef;     ## Analyze a restricted number of genes
-
 #  local $supported_organism;
 
   local $map_format = "png";	## Image format
@@ -301,12 +300,11 @@ package main;
   if (scalar(@dyad_return_fields) > 0) {
     $dyad_return_fields = join ",", @dyad_return_fields;
   }
-  
+
   ##Bg model for orthologs_list is monad
   $bg_model = "monad" if  $main::orthologs_list_file ;
 
   ## Background model file for dyad-analysis
- 
   if ($bg_model eq "org_list") {
 
     ## Check that the list of organisms has been specified
@@ -372,7 +370,7 @@ package main;
     } else {
       &RSAT::error::FatalError($bg_model, "Invalid background model. Supported: ", $supported_bg_models) unless ($supported_bg_model{$bg_model});
     }
-    &RSAT::message::Info("Background model file", $infile{bg_model}) if ($main::verbose >= 0);
+    &RSAT::message::Info("Background model file", $infile{bg_model}) if ($main::verbose >= 3);
   }
 
   ################################################################
@@ -409,9 +407,15 @@ package main;
   ## Give a warning to report the gene-specific and main index files
   if ($main::verbose >= 2) {
     print ("; Index files\n");
+    my $i = 0;
     foreach my $key (sort keys %index_list) {
-	print join ("\t", ";", $key, $index_list{$key}), "\n";
+      $i++;
+      print join ("\t", ";", $key, $index_list{$key}), "\n";
+      if ($i > 10) {
+	print join ("\t", "; ... skipping other gene-wise index files"), "\n";
+	last;
       }
+    }
     print join ("\t", ";", "Main Table", $outfile{main_index}), "\n";
   }
 
@@ -419,6 +423,19 @@ package main;
   ## Close the main index stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
   print $main_index "</table>\n";
+
+
+  print $main_index "<h2>File index</h2>\n";
+  print $main_index "<p><table>\n";
+  foreach my $key (@to_index) {
+    print $main_index "<tr>\n";
+    print $main_index "<td>".$key."</td>\n";
+    my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
+    print $main_index "<td>".$link."</td>\n";
+    print $main_index "</tr>\n";
+  }
+  print $main_index "</table></p>\n";
+
   print $main_index "<p><pre>", $exec_time, "</pre></p>\n";
   print $main_index "</body>\n";
   print $main_index "</html>\n";
@@ -430,7 +447,6 @@ package main;
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
-
 
 sub DyadSuffix {
   my $dyad_suffix = "_".$promoter."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
@@ -946,20 +962,26 @@ sub CoregulationNetwork {
   ## Create a directory for the inferred co-reglation network
   $dir{network} = $dir{output_root}."/network";
   &RSAT::util::CheckOutDir($dir{network});
-  &RSAT::message::TimeWarn("Network directory", $dir{network}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Network directory", $dir{network}) if ($main::verbose >= 2);
 
-
+  ################################################################
   ## Write a list of dyad files
   $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt";
   my $out= &OpenOutputFile($outfile{dyad_file_list});
   foreach my $query_prefix (sort keys %main_index) {
     print $out $main_index{$query_prefix}{dyads}, "\n";
   }
-  &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 2);
+  push @to_index, "dyad_file_list";
 
-  ## Compare significance scores between all the gene-wise dyad files
+  ################################################################
+  ## Generate a dyad significance profiles.  Instead of a table with 1
+  ## row per gene and 1 column per dyad, we generate a file in format
+  ## "class": first column indicates the dyad, second column the gene,
+  ## third column the score. We add two columns with primary gene name
+  ## and ID, because the query gene list may contain synonyms.
   $outfile{dyad_sig_classes} .= $dir{network}."/".$main_prefix."_dyad_sig_classes.tab";
-  my $compare_scores_cmd = "compare-scores -v 1";
+  my $compare_scores_cmd = "compare-scores -v 0";
   $compare_scores_cmd .= " -filelist ".$outfile{dyad_file_list};
   $compare_scores_cmd .= " -sc 8 -null .";
   $compare_scores_cmd .= " -basename";
@@ -973,9 +995,12 @@ sub CoregulationNetwork {
   $compare_scores_cmd .= " -info name,id";
   $compare_scores_cmd .= " -o ".$outfile{dyad_sig_classes};
   &doit($compare_scores_cmd);
-  &RSAT::message::TimeWarn("Dyad sig classes", $outfile{dyad_sig_classes}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Dyad sig classes", $outfile{dyad_sig_classes}) if ($main::verbose >= 2);
+  push @to_index, "dyad_sig_classes";
 
-  ## Build the network by comparing dyads between genes
+  ################################################################
+  ## Build the network by comparing dyads score profiles between each
+  ## pair of genes
   $outfile{gene_pairs} .= $dir{network}."/".$main_prefix."_gene_pairs.tab";
   my $compare_classes_cmd = 'awk \'{print $1"\t"$4"\t"$3}\' '.$outfile{dyad_sig_classes};
   $compare_classes_cmd .=  " | compare-classes -v 1";
@@ -987,8 +1012,10 @@ sub CoregulationNetwork {
   $compare_classes_cmd .= " -lth dotprod 2 -lth QR 2 -lth Q 2 -lth R 2";
   $compare_classes_cmd .= " -o ".$outfile{gene_pairs};
   &doit($compare_classes_cmd);
-  &RSAT::message::TimeWarn("Gene pairs", $outfile{gene_pairs}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Gene pairs", $outfile{gene_pairs}) if ($main::verbose >= 2);
+  push @to_index, "gene_pairs";
 
+  ################################################################
   ## Add columns with gene names and IDs
   $outfile{gene_pairs_names} .= $dir{network}."/".$main_prefix."_gene_pairs_names.tab";
   my $cc_gene_info_cmd = "add-gene-info";
@@ -998,21 +1025,24 @@ sub CoregulationNetwork {
   $cc_gene_info_cmd .= " -info name,id";
   $cc_gene_info_cmd .= " -o ".$outfile{gene_pairs_names};
   &doit($cc_gene_info_cmd);
-  &RSAT::message::TimeWarn("Gene pairs (with names)", $outfile{gene_pairs_names}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Gene pairs (with names)", $outfile{gene_pairs_names}) if ($main::verbose >= 2);
+  push @to_index, "gene_pairs_names";
+
+  ################################################################
+  ## Convert the compare-classes result into a graph
 
   ## Identify score column
   my $score = "DPbits";
   my $score_column = 21;
   my ($in) = &OpenInputFile($outfile{gene_pairs});
   while (<$in>) {
-    print "TEST\t".$_;
     if (/^;\t(\d+)\t${score}\s+/) {
       $score_column = $1;
     }
   }
   close $in;
 
-  ## Convert the compare-classes result into a graph
+  ## Run the graph conversion
   $outfile{gene_pairs_gml} .= $dir{network}."/".$main_prefix."_gene_pairs_".$score.".gml";
   my $convert_graph_cmd = "convert-graph";
   $convert_graph_cmd .= " -scol 1 -tcol 2";
@@ -1022,10 +1052,24 @@ sub CoregulationNetwork {
   $convert_graph_cmd .= " -i ".$outfile{gene_pairs};
   $convert_graph_cmd .= " -o ".$outfile{gene_pairs_gml};
   &doit($convert_graph_cmd);
-  &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 2);
+  push @to_index, "gene_pairs_gml";
 
 
-  
+  ################################################################
+  ## Get the neighborhood of each gene in the co-regulation network
+  $outfile{gene_neighbours} .= $dir{network}."/".$main_prefix."_gene_neighbours.tab";
+  my $gn_cmd = "graph-neighbours -v 1";
+  $gn_cmd .= " -self";
+#  $gn_cmd .= " -seed $gene";
+  $gn_cmd .= " -all";
+  $gn_cmd .= " -in_format gml";
+  $gn_cmd .= " -i ".$outfile{gene_pairs_gml};
+  $gn_cmd .= " -o ".$outfile{gene_neighbours};
+  &doit($gn_cmd);
+  &RSAT::message::TimeWarn("Gene neighbours", $outfile{gene_neighbours}) if ($main::verbose >= 2);
+  push @to_index, "gene_neighbours";
+
 }
 
 
