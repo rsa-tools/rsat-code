@@ -29,7 +29,7 @@ $default{expected} = 2.0;
 $default{motifs} = 1;
 $default{nrun} = 5;
 $default{iter} = 1000;
-$default{add_rc} = "checked";
+$default{two_strands} = "checked";
 $default{bg_order} = 3;
 $default{background} = "upstream-noorf";
 $default{bg_level} = "organism";
@@ -60,8 +60,8 @@ print $query->start_multipart_form(-action=>"info-gibbs.cgi");
 &DisplaySequenceChoice;
 
 ### add reverse complement strand
-print $query->checkbox(-name=>'add_rc',
-		       -checked=>$default{add_rc},
+print $query->checkbox(-name=>'two_strands',
+		       -checked=>$default{two_strands},
 		       -label=>'');
 print "<a href=\"help.info-gibbs.html#strand\">search both strands</a>\n";
 
