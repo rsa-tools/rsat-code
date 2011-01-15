@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.22 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: graph-neighbours,v 1.23 2011/01/15 06:31:25 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -118,7 +118,7 @@ package main;
     ################################################################
     ## Check argument values
     if ($stats && $steps != 1) {
-      &RSAT::error::FatalError("-stats option cannot be used with number of step > 1")
+      &RSAT::error::FatalError("-stats option cannot be used with number of steps > 1")
     }
     if ($stats && $self_included == 1) {
       &RSAT::error::FatalError("-stats option cannot be used with -self option")
@@ -505,7 +505,7 @@ allows to use the command within a pipe.
 
 =item	B<-stats>
 
-Only valid when the number of step is equal to 1. 
+Only valid when the number of steps is equal to 1. 
 The output file is presented differently, with one line for each seed node.
 
 
