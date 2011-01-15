@@ -48,58 +48,46 @@ $query = new CGI;
 #
 $parameters = '';
 
-<<<<<<< info-gibbs.cgi
-
 ## Scan single or both strands
-$add_rc = 0;
-=======
-### sequence file ####
-($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
-$parameters .= "-i $sequence_file";
-push @result_files, ("input sequence",$sequence_file);
+$strand="-1str";
 
 #### strand
->>>>>>> 1.17
-if (lc($query->param("add_rc")) eq "on") {
-<<<<<<< info-gibbs.cgi
-#    $add_rc = 1;
-#    $convert_seq_options .= "-addrc ";
-=======
-    $add_rc = 1;
->>>>>>> 1.17
-    $parameters .= ' --strand=+-';
+if (lc($query->param("two_strands")) eq "on") {
+  $strand="-2str";
+  $parameters .= ' --strand=+-';
 } else {
-    $parameters .= ' --strand=+';
+  $parameters .= ' --strand=+';
 }
 
+
 ## sequence file
-($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>$add_rc);
-$parameters .= "-i $sequence_file";
+($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
+$parameters .= " -i ".$sequence_file;
 push @result_files, ("input sequence",$sequence_file);
 
 ### matrix length
 if (&IsNatural($query->param('length'))) {
-    $parameters .= ' -w ' . $query->param('length')." ";
+    $parameters .= ' -w ' . $query->param('length');
 }
 
 ### expected number of matches
 # if (&IsNatural($query->param('expected'))) {
-#     $parameters .= '--words='.$query->param('expected')." ";
+#     $parameters .= ' --words='.$query->param('expected');
 # }
 
 if (&IsNatural($query->param('expected'))) {
-    $parameters .= '--mean_sps='.$query->param('expected')." ";
+    $parameters .= ' --mean_sps='.$query->param('expected');
 }
 
 if (&IsNatural($query->param('iter'))) {
-    $parameters .= '--iter='.$query->param('iter')." ";
+    $parameters .= ' --iter='.$query->param('iter');
 }
 if (&IsNatural($query->param('nrun'))) {
-    $parameters .= '--nrun='.$query->param('nrun')." ";
+    $parameters .= ' --nrun='.$query->param('nrun');
 }
 
 if (&IsNatural($query->param('motifs'))) {
-    $parameters .= '--motifs='.$query->param('motifs')." ";
+    $parameters .= ' --motifs='.$query->param('motifs');
 }
 
 if ($query->param('freq_estimate') =~ /background/i) {
