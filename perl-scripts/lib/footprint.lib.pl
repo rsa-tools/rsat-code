@@ -1011,6 +1011,7 @@ sub LinkOneFile {
   my ($from_file, $to_file, $text) = @_;
   my $path = "";
   my $link = "";
+  $text = $text || $to_file;
   if (-e ($to_file)) {
     $path = &RSAT::util::RelativePath($from_file, $to_file);
     $link = join ("",  "<a href='",$path, "'>", $text, "</a>");
