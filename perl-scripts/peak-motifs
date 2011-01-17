@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.120 2011/01/12 11:17:40 jvanheld Exp $
+# $Id: peak-motifs,v 1.121 2011/01/17 10:35:23 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.120 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.121 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2200,7 +2200,7 @@ sub SynthesisOneMotifComparison {
 ## Generate a HTML table summarizing the results for each discovered
 ## motif. this table is inserted in the synthetic report.
 sub SynthesisByMotif {
-  print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'><h3>Discovered motifs</h3>", 0);
+  print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs</h3>", 0);
   print $syn "<table class='sortable'>\n";
 
   &ReadMotifTable();
@@ -2264,12 +2264,15 @@ sub SynthesisByMotif {
     } else {
       print $syn "<font color='red'>No logo</font>","</td>\n";
     }
-    &PrintFileLinks("Sites",$main::outfile{$motif_id.'_pssm_sites'},
-		    "Site position distrib.",$main::outfile{$motif_id.'_pssm_site_distrib'},
-		    "site position profiles",$main::outfile{$motif_id.'_pssm_site_distrib_graph'},
-		    "Enrichment distrib", $main::outfile{$motif_id.'_pssm_enrichment'},
-		    "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
-		   );
+
+    if ($task{scan}) {
+      &PrintFileLinks("Sites",$main::outfile{$motif_id.'_pssm_sites'},
+		      "Site position distrib.",$main::outfile{$motif_id.'_pssm_site_distrib'},
+		      "site position profiles",$main::outfile{$motif_id.'_pssm_site_distrib_graph'},
+		      "Enrichment distrib", $main::outfile{$motif_id.'_pssm_enrichment'},
+		      "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
+		     );
+    }
 
     print $syn "</tr>\n";
 
@@ -2350,7 +2353,7 @@ sub OpenSynthesis {
 ################################################################
 ## Report results of motif comparisons
 sub SynthesisMotifCompa {
-  print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'><h3>Motif comparisons</h3>", 0);
+  print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'></a><h3>Motif comparisons</h3>", 0);
   print $syn "<table class='sortable'>\n";
 
   ## Word comparisons
@@ -2373,8 +2376,9 @@ sub SynthesisMotifCompa {
 ## end of the process, since it includes a list of discovered motifs
 ## is not known before having run the motif discovery algorithms.
 sub SynthesisParamsAndFiles {
+
   ## Log files
-  print $syn &open_menu_heading($menu_nb++, "<a name='logs'><h3>Logs and result files</h3>", 1);
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Logs and result files</h3>", 1);
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Log files");
   &SyntheticTableAddRow("Parameters and files",
@@ -2405,7 +2409,7 @@ sub Archive {
   my $cmd = "";
 
   ## Delete previous version of the archive to avoid including the old archive in the new one
-  $cmd .= "rm -f ".$archive.";" if ($remove_first);
+  $cmd .= "rm -f ".$main::outfile{archive}."; " if ($remove_first);
 
   ## Archive all data and results
   my $archive = $main::outfile{archive};
@@ -2502,7 +2506,7 @@ sub SyntheticTableAddHeaderRow {
 ################################################################
 ## Add sequence composition on the synthetic report
 sub SynthesisSequenceComposition {
-  print $syn &open_menu_heading($menu_nb++, "<a name='seq_composition'><h3>Sequence composition</h3>", 0);
+  print $syn &open_menu_heading($menu_nb++, "<a name='seq_composition'></a><h3>Sequence composition</h3>", 0);
   print $syn "<p><table class='sortable'>\n";
 
   foreach my $seq_type (@seq_types) {
@@ -2595,7 +2599,7 @@ sub SynthesisSequenceComposition {
 ## Add the reference motif to the report
 sub SynthesisRefMotif {
   if (defined($main::infile{ref_motifs})) {
-    print $syn &open_menu_heading($menu_nb++, "<a name='ref_motifs'><h3>Reference motifs</h3>", 0);
+    print $syn &open_menu_heading($menu_nb++, "<a name='ref_motifs'></a><h3>Reference motifs</h3>", 0);
     print $syn "<p><table class='sortable'>\n";
     &SyntheticTableAddHeaderRow("Reference motif(s)");
 
@@ -2644,7 +2648,7 @@ sub SynthesisRefMotif {
 ## Report discovered motifs by algorithms
 sub SynthesisMotifsByAlgo {
   &RSAT::message::TimeWarn("Synthesis per motif discovery algorithm") if ($main::verbose >= 2);
-  print $syn &open_menu_heading($menu_nb++, "<a name='motifs_by_algo'><h3>Discovered motifs (by algorithm)</h3>", 1);
+  print $syn &open_menu_heading($menu_nb++, "<a name='motifs_by_algo'></a><h3>Discovered motifs (by algorithm)</h3>", 1);
   print $syn "<table class='sortable'>\n";
   &SyntheticTableAddHeaderRow("Pattern discovery");
   foreach my $pattern_type (@pattern_types) {
@@ -3627,11 +3631,10 @@ sub PrintFileLink {
 ## the number of motifs returned by the different algorithms.
 sub ReportParamsAndFiles {
 
-
   ## Print the command line
   print $syn "<pre>";
   print $syn "<b>Command:</b>  peak-motifs ";
-  &PrintArguments($syn);
+  &PrintArguments($syn, 1);
   print $syn "</pre>";
 
   ## Open HTML file for links
@@ -3644,7 +3647,7 @@ sub ReportParamsAndFiles {
   print $links "<p><table class='sortable'>\n";
 
   print $main::out "; peak-motifs ";
-  &PrintArguments($main::out);
+  &PrintArguments($main::out, 1);
   printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
 
   ## Parameter values

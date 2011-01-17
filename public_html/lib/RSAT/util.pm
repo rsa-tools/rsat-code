@@ -824,7 +824,7 @@ print the command-line arguments
 
 =cut
 sub PrintArguments {
-  my ($local_out) = @_;
+  my ($local_out, $hide_RSAT_path) = @_;
   my $argument_string = "";
   foreach my $a (@main::ARGV) {
     if (($a =~ /\s+/)  ||
@@ -836,6 +836,11 @@ sub PrintArguments {
     }
   }
   print $local_out $argument_string, "\n" if ($local_out);
+
+  if ($hide_RSAT_path) {
+    $argument_string = &hide_RSAT_path($argument_string);
+  }
+
   return $argument_string;
 }
 
