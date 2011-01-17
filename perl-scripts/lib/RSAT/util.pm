@@ -381,6 +381,20 @@ sub RelativePath {
   }
 }
 
+=pod 
+
+=item hide_RSAT_path()
+
+Hide the full RSAT path to avoid exposing it on the Web server
+interface. The full path is replaced by $RSAT.
+
+=cut
+sub hide_RSAT_path {
+  my ($string) = @_;
+  $string =~ s|$ENV{RSAT}\/+|\$RSAT\/|g; ## Avoid providing the full path of the RSAT package
+  return $string;
+}
+
 
 ################################################################
 
