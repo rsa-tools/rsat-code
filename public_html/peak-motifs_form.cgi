@@ -40,6 +40,7 @@ $default{top_sequences}="";
 
 ## motif database
 $default{compare_motif_database}="jaspar_core_vertebrates";
+$default{perso_motif_name}="title for this collection";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -332,10 +333,21 @@ sub Panel4 {
   &MatrixDBcheckBox();
 
   print "<p/> ";
-  print "<a href=''><b>Add known reference motifs or your own motif database:</b></a><br/>";
+  print "<a href=''><b>Add your own motif database:</b></a><br/>";
+  print  $query->textfield(-name=>'perso_motif_name',
+			   -default=>$default{perso_motif_name},
+			   -size=>20);
+  print $query->filefield(-name=>'perso_motif',
+			-size=>10);
+  print "Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
+ ##
+ print"</p>";
+   print "<a href=''><b>Add known reference motifs for this experiment:</b></a><br/>";
   print $query->filefield(-name=>'ref_motif',
 			-size=>10);
-  print "Matrices should be in <b>Transfac format</b> (other formats can be converted with a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
+  print "Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
+ 
+ 
   print "</fieldset><p/>";
 
   print '

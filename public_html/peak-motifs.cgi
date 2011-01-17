@@ -129,6 +129,43 @@ if (scalar(@selected_db) > 0) {
 }
 
 ################################################################
+## Custom collection motifs (not reference)
+if ($query->param('perso_motif')) {
+  my $persomotif_file = $output_path."/".$output_prefix."_perso_motif.tf";
+
+  $upload_persomotif = $query->param('perso_motif');
+  if ($upload_persomotif) {
+    my $type = $query->uploadInfo($upload_persomotif)->{'Content-Type'};
+    if ($upload_persomotif =~ /\.gz$/) {
+      $refmotif_file .= ".gz";
+    }
+    open REF, ">$persomotif_file" ||
+      &cgiError("Cannot store sequence file in temp dir.");
+    while (<$upload_persomotif>) {
+#      print "<br>UPLOADING REF MOTIFS \t", $_;
+      print REF;
+    }
+    close REF;
+  }
+  
+  ### name
+    my $dbname_perso="";
+if ($query->param('perso_motif_name')){
+  $dbname_perso = $query->param('perso_motif_name');
+
+  ## Suppress characters that may cause problems when used in file names
+  $dbname_perso =~ s/\s+/_/g;
+  $dbname_perso =~ s/\//_/g;
+  $dbname_perso =~ s/:/_/g;
+
+  } else {
+  	$dbname_perso = "personnal_collection";
+  }
+  $parameters .= " -motif_db ".$dbname_perso." tf ".$persomotif_file;
+  push(@tasks, "motifs_vs_db");
+}
+
+################################################################
 ## Custom reference motifs
 if ($query->param('ref_motif')) {
   my $refmotif_file = $output_path."/".$output_prefix."_ref_motifs.tf";
