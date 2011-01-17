@@ -7,6 +7,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.disco.lib";
 require "RSA2.cgi.lib";
+require "footprint.lib.pl";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/footprint-discovery";
@@ -25,12 +26,23 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-$parameters = " -v 1 -task all";
+$parameters = " -v 1";
+
+################################################################
+## Tasks: some tasks are not supported on the Web interface:
+##
+## -task network because it requires too much computation if a user
+##   introduces all the genes of an organism with the option -sep_genes
+##   (required for network inference)
+##
+## -task operon because the option has not been introduced in the Web
+##   form (could be fixed some day).
+$parameters .= " -task bg_model,query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,map,index";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
 my $max_genes = 100;
-my $max_genename_size = 12;
+#my $max_genename_size = 12;
 
 ################################################################
 #### Compute the query prefix
@@ -42,13 +54,13 @@ if ($query->param('queries') =~ /\S/) {
     $l++;
     $line =~ s/^\s+//;
     my @fields = split /\s+/, $line;
-    if ($fields[0] =~ /^>[actg]+$/i){ # Avoid fasta sequences
-      &cgiError("Fasta sequences are not valid as input. Please use gene identifiers (eg: YFL021W) or gene names (eg: GAL4, NIL1).<P>\n");
-    }elsif ($fields[0] =~ /^[actg]+$/i){
-      &cgiError("Sequences format are not valid as input. Please use gene identifiers (eg: YFL021W) or gene names (eg: GAL4, NIL1).<P>\n");      
-    }elsif(length($fields[0])>= $max_genename_size){ # put a threshold on the size of the gene name
-      &cgiError("The name of the gene is too long and nay not be valid.<P>\n");
-    }
+#    if ($fields[0] =~ /^>[actg]+$/i){ # Avoid fasta sequences
+#      &cgiError("Fasta sequences are not valid as input. Please use gene identifiers (eg: YFL021W) or gene names (eg: GAL4, NIL1).<P>\n");
+#    }elsif ($fields[0] =~ /^[actg]+$/i){
+#      &cgiError("Sequences format are not valid as input. Please use gene identifiers (eg: YFL021W) or gene names (eg: GAL4, NIL1).<P>\n");      
+#    }elsif(length($fields[0])>= $max_genename_size){ # put a threshold on the size of the gene name
+#      &cgiError("The name of the gene is too long and nay not be valid.<P>\n");
+#    }
     push @query_genes,  $fields[0];
   }
 
@@ -69,19 +81,19 @@ if ($query->param('queries') =~ /\S/) {
 
 ################################################################
 #### organism
-my $organism = "";
-unless ($organism = $query->param('organism')) {
+local $organism_name = "";
+unless ($organism_name = $query->param('organism')) {
     &cgiError("You should specify a query organism");
 }
-unless (defined(%{$supported_organism{$organism}})) {
+unless (defined(%{$supported_organism{$organism_name}})) {
     &cgiError("Organism $org is not supported on this site");
 }
-$parameters .= " -org $organism";
+$parameters .= " -org $organism_name";
 
 
 ################################################################
 #### Taxon
-my $taxon = "";
+local $taxon = "";
 unless ($taxon = $query->param('taxon')) {
     &cgiError("You should specify a taxon");
 }
@@ -89,7 +101,7 @@ $parameters .= " -taxon $taxon";
 
 ################################################################
 ## File prefix
-$tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism, $query_prefix, &AlphaDate());
+$tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism_name, $query_prefix, &AlphaDate());
 $result_subdir = $tmp_file_name;
 $result_dir = $TMP."/".$result_subdir;
 $result_dir =~ s|\/\/|\/|g;
@@ -139,7 +151,7 @@ if ($query->param('to_matrix')) {
 }
 
 ## Background model
-$bg_model = $query->param('bg_model');
+local $bg_model = $query->param('bg_model');
 $parameters .= " -bg_model ".$bg_model;
 
 ## Output prefix
@@ -148,8 +160,10 @@ $parameters .= " -o ".$result_dir;
 ## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
-$index_file = $result_subdir."/result_index.html";
-my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
+$index_file = $result_subdir."/";
+$index_file .= &MainIndexFileName();
+#$index_file .= join("_", $taxon, $organism_name, "bg", $bg_model, "result_index.html");
+my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism_name, &AlphaDate());
 my $log_file = $result_subdir."/server_log.txt";
 &EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, title=>$mail_title);
 
@@ -178,7 +192,7 @@ sub PipingForm {
 <tr>
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
-<INPUT type="hidden" NAME="organism" VALUE="$organism">
+<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 <INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
 <INPUT type="hidden" NAME="seq_label" VALUE="gene identifier + organism + gene name">
 <INPUT type="hidden" NAME="genes" VALUE="selection">

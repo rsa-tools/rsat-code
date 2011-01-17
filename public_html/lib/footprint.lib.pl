@@ -906,14 +906,23 @@ sub MainPrefix {
 }
 
 ################################################################
+## Compute the name of the main index file. This function is called by
+## the perl script footprint-discovery, but also y the CGI script
+## footprint-discovery.cgi in the Web interface. The goal of the
+## function is to ensure consistency between the index file names.
+sub MainIndexFileName {
+  my $main_prefix = &MainPrefix();
+  $outfile{main_index_file} = $main_prefix."_result_index.html";
+  return($outfile{main_index_file});
+}
+
+################################################################
 ## Main index. This is a HTML table with links to the query-specific
 ## results: one row per query, one column per output type.
 sub OpenMainIndex {
   &RSAT::util::CheckOutDir($dir{output_root});
 
-  my $main_prefix = &MainPrefix();
-  $outfile{main_index} = $dir{output_root}."/".$main_prefix."_result_index.html";
-
+  $outfile{main_index} = $dir{output_root}."/".&MainIndexFileName();
 
   &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
 
@@ -928,7 +937,8 @@ sub OpenMainIndex {
   print $main_index "<body>\n";
   print $main_index "<h1>", $html_title, "</h1\n";
   print $main_index "<p><b>Command:</b> footprint-discovery";
-  print $main_index &PrintArguments();
+  $arguments =  &RSAT::util::hide_RSAT_path(&PrintArguments());
+  print $main_index $arguments;
   print $main_index "</p>\n";
 
   ## Open the index table
