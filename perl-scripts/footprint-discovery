@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.54 2011/01/15 06:02:41 jvanheld Exp $
+# $Id: footprint-discovery,v 1.55 2011/01/17 06:45:05 jvanheld Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.54 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.55 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -401,7 +401,6 @@ package main;
   ################################################################
   ## Generate co-regulation network by comparing gene-wise footprints
   &CoregulationNetwork() if ($task{network});
-
 
   ################################################################
   ## Give a warning to report the gene-specific and main index files
