@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.122 2011/01/18 01:20:15 jvanheld Exp $
+# $Id: peak-motifs,v 1.123 2011/01/18 16:54:55 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.122 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.123 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1373,6 +1373,7 @@ sub SetFileNamesForMotif {
 
   ## Predicted sites (sequence scanning)
   $main::outfile{$motif_id.'_pssm_sites'} = $main::prefix{$motif_id."_prefix"}."_sites.tab";
+  $main::outfile{$motif_id.'_pssm_sites_genomic'} = $main::prefix{$motif_id."_prefix"}."_sites_genomic.bed";
   $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.tab";
   $main::outfile{$motif_id.'_pssm_site_distrib_graph'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.".$main::param{img_format};
 
@@ -1809,6 +1810,32 @@ sub ScanSequences {
 #     $cmd .= " >".$main::outfile{$motif_id.'_pssm_sites'};
 #     &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
 
+
+    ## Compute the genomic coordinates
+    if ($main::infile{coord}) {
+      &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 0);
+      $cmd = $SCRIPTS."/convert-features";
+      $cmd .= " -from ft -i ".$main::outfile{$motif_id.'_pssm_sites'};
+      $cmd .= " -coord ".$main::infile{coord};
+      $cmd .= " -to bed -o ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
+      &one_command($cmd,1);
+    }
+
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    next;
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
+
+    ################################################################
     ## Compute the positional distribution of sites
     $cmd = "grep -v '^;'";
     $cmd .= " ".$main::outfile{$motif_id.'_pssm_sites'};
@@ -2916,6 +2943,21 @@ sequences.
 =cut
     } elsif ($arg eq "-i") {
       $main::infile{test_seq} = shift(@arguments);
+
+=pod
+
+=item B<-coord peak_coordinate_file>
+
+Enter a file providing the coordinates of each peak in bed format.
+
+When a coordinate file is provided, predicted site coordinates
+(relative to peak center) are also converted to genomic coordinates
+(in the form of a bed file), which can be uploaded to the UCSC genome
+browser as an annotation track.
+
+=cut
+    } elsif ($arg eq "-coord") {
+      $main::infile{coord} = shift(@arguments);
 
 =pod
 
