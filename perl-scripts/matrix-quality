@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.125 2011/01/18 18:23:59 amedina Exp $
+# $Id: matrix-quality,v 1.126 2011/01/18 19:55:18 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -280,7 +280,7 @@ package main;
     $no_cv = 0; # Inactivate the leave-one-out test and all the related outputs
     $noicon = 0; # Inactivate the generation of icons (small version of the graphs for galleries)
     $cv_rm_twins = 1; ## Exclude twin sites in the cross-validation procedure.
-    $pseudo_counts = 1;
+    $main::pseudo_counts = 1;
     $bg_format = "oligos";
     $bg_model = new RSAT::MarkovModel();
 
@@ -2416,17 +2416,17 @@ sub Calculate_NWD {
 	    #print "header ".$_."\n" ; <STDIN>;
 	    my @head = split/\t+/;
 	    foreach my $i (@head) {
-		if ( ($i eq $base_dist) && !$base_col ){
+		if ( ($i =~/$base_dist/) && !$base_col ){
 		    $base_col= $j ;		    
 		}
-		elsif ( ($i eq $case_dist) && !$case_col ){
+		elsif ( ($i =~/$case_dist/) && !$case_col ){
 		    $case_col= $j ;			
 		}		
 		$j++;
 		last if($case_col && $base_col);
 	    }
 	    &RSAT::message::Debug("Case column",$case_dist,"#",$case_col) if ($main::verbose >= 10);
-	    &RSAT::message::Debug("Base column",$base_dist,"#",$base_col) if ($main::verbose >= 10);
+	    &RSAT::message::Debug("Base column",$base_dist,"#",$base_col) if ($main::verbose >=10);
 	    next;
 	}
 	next if (/'^#'/ ) ;		# skip coments once the header has been saved	
@@ -2444,8 +2444,8 @@ sub Calculate_NWD {
 	    ){ 
 	    next;
 	}else{
-	    my $round_case_pval=sprintf("%.4f", $case_pval );  ## Round pval to 4 decimals so it is possible now to calculate the diference of score at one given pvalue 
-	    my $round_base_pval=sprintf("%.4f", $base_pval );
+	    $round_case_pval=sprintf("%.1e", $case_pval);	    
+	    my $round_base_pval= $base_pval ;
 	    push(@{$p_val_score_case{$round_case_pval}}, $score);
 	    push(@{$p_val_score_base{$round_base_pval}}, $score);
 	    &RSAT::message::Debug("Line point",$score,$round_case_pval,$round_base_pval) if ($main::verbose >= 10);
