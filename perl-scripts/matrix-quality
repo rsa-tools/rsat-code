@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.126 2011/01/18 19:55:18 amedina Exp $
+# $Id: matrix-quality,v 1.127 2011/01/18 22:07:03 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2406,6 +2406,9 @@ sub Calculate_NWD {
     my %p_val_score_case=();
     my %p_val_score_base=();
     print $main::out_nwd join ("\t",";Pvalue","score_". $base_dist,"score_".$case_dist,"NWD")."\n";
+
+    my %sort_pval;
+
     while (<$dist_file>){
 	#print $_ ; <STDIN>;
 	next if (/'^;'/);		# skip comment lines
@@ -2445,7 +2448,8 @@ sub Calculate_NWD {
 	    next;
 	}else{
 	    $round_case_pval=sprintf("%.1e", $case_pval);	    
-	    my $round_base_pval= $base_pval ;
+	    my $round_base_pval= $base_pval ; 
+	    $sort_pval{$round_case_pval}=$case_pval;
 	    push(@{$p_val_score_case{$round_case_pval}}, $score);
 	    push(@{$p_val_score_base{$round_base_pval}}, $score);
 	    &RSAT::message::Debug("Line point",$score,$round_case_pval,$round_base_pval) if ($main::verbose >= 10);
@@ -2455,11 +2459,11 @@ sub Calculate_NWD {
 
     my @pvals_list =  (keys(%p_val_score_case),keys(%p_val_score_base));
     
-    #print join(" ",@pvals_list);<STDIN>;
-    #print $#pvals_list;<STDIN>;
+
     %hashTemp = map { $_ => 1 } @pvals_list;
     @pvals_list = sort keys %hashTemp;
-    #print $#pvals_list; <STDIN>;
+
+    %hash_print;
     foreach my $pval (sort {$b cmp $a}(@pvals_list)){
 	next unless $p_val_score_case{$pval};
 	next unless $p_val_score_base{$pval};
@@ -2472,15 +2476,16 @@ sub Calculate_NWD {
 	$NWD = ($case_max_score - $base_max_score) / $m_width ;
 
 	$main::key_diferences_results{$pval}{$matrix_name}=$NWD if ($NWD);
-
-	&RSAT::message::Debug("Score diference ",$matrix_name,"Pval", $pval," $case_max_score - $base_max_score  $m_width " ,$main::key_diferences_results{$pval}{$matrix_name}=$NWD) if ($main::verbose >= 10); 
-	print $main::out_nwd join ("\t",$pval,$base_max_score ,$case_max_score,$NWD)."\n";
 	
+	&RSAT::message::Debug("Score diference ",$matrix_name,"Pval", $pval," $case_max_score - $base_max_score  $m_width " ,$main::key_diferences_results{$pval}{$matrix_name}=$NWD) if ($main::verbose >= 10); 
+	
+	$hash_print{$pval}=join ("\t",$pval,$base_max_score ,$case_max_score,$NWD)."\n"
     }	
-    
-    &RSAT::message::Info("Total number of evaluated Pvalue point", length(keys(%main::key_diferences_results)) );
- 
-
+   
+    foreach my $pval ( sort {$sort_pval{$b} <=> $sort_pval{$a}}  keys %sort_pval ){
+	next unless $hash_print{$pval};
+	print $main::out_nwd $hash_print{$pval} ;
+    }
     
 }
 ###############
