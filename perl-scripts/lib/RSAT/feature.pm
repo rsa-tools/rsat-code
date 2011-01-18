@@ -697,13 +697,13 @@ sub parse_from_row {
   if ($in_format eq "dnapat") {
     $self->force_attribute("type", "dnapat");
   }
-  
+
   ## bed format: convert to 1-based coordinates
   if ($in_format eq "bed") {
      $start_0_based = $self->get_attribute("start");
      $self->force_attribute("start",$start_0_based+1); ## only the fist base is shifted
   }
-  
+
   ## parsed row
   &RSAT::message::Info(join("\t",
 			    "Parsed new feature",
@@ -756,133 +756,135 @@ specified format.
 
 =cut
 sub to_text {
-    my ($self, $out_format, $null) = @_;
-    $null = "" unless (defined($null));
+  my ($self, $out_format, $null) = @_;
+  $null = "" unless (defined($null));
 
-    ## For the BED format
-    if ($out_format eq "bed") {
+  ## For the BED format
+  if ($out_format eq "bed") {
 
-      ## suppress SEQ_START et SEQ_END (temporary fix for UCSC genome browser)
-      my $ft_type = $self->get_attribute("ft_type");
-      if ($self->get_attribute("ft_type") eq "limit") {
-	if ($self->get_attribute("feature_name") eq "START_END") {
-	  my $seq_name = $self->get_attribute("seq_name");
-	  my $seq_start = $self->get_attribute("start");
-	  my $seq_end = $self->get_attribute("end");
-	  my $string = "browser position ".${seq_name}.":".${seq_start}."-".${seq_end}."\n";
-	  return($string);
-	} else {
-	  &RSAT::message::Warning("Skipping feature", $self->get_attribute("feature_name"), "for BED compatibility") if ($main::verbose >= 2);
-	  return();
+    ## suppress seq start and end features (temporary fix for UCSC genome browser)
+    my $ft_type = $self->get_attribute("ft_type");
+    if ($self->get_attribute("ft_type") eq "limit") {
+      if ($self->get_attribute("feature_name") eq "START_END") {
+	my $seq_name = $self->get_attribute("seq_name");
+	my $seq_start = $self->get_attribute("start");
+	my $seq_end = $self->get_attribute("end");
+	my $string = "browser position ".${seq_name}.":".${seq_start}."-".${seq_end}."\n";
+	return($string);
+      } else {
+	&RSAT::message::Warning("Skipping feature", $self->get_attribute("feature_name"), "for BED compatibility") if ($main::verbose >= 2);
+	return();
+      }
+    }
+
+    ## Transform the coordinates into zero-based
+    my $start_1_based = $self->get_attribute("start");
+    $self->force_attribute("start",$start_1_based-1); ## only the fist base is shifted
+  }
+
+  ## Treat the thickStart and thickEnd attributes
+  unless (defined($self->get_attribute("thickStart"))) {
+    $self->set_attribute("thickStart",$self->get_attribute("start"));
+  }
+  unless (defined($self->get_attribute("thickEnd"))) {
+    $self->set_attribute("thickEnd",$self->get_attribute("end"));
+  }
+
+  ## Fasta format
+  if ($out_format eq "fasta") {
+    return $self->to_fasta();
+  }
+
+
+  ## tab-delimited column files
+  my @cols = @{$columns{$out_format}};
+
+
+  ## Index column number by contents
+  my ${col_index} = ();
+  foreach my $c (0..$#cols) {
+    $col_index{$cols[$c]} = $c;
+  }
+
+  ## Select the fields
+  my @fields = ();
+  foreach my $c (0..$#cols) {
+    $attr = $cols[$c];
+    $field_value = $self->get_attribute($attr);
+    unless ($field_value) {
+      if (defined($default{$attr})) {
+	$field_value = $default{$attr};
+      } elsif ($attr eq "source") {
+	$field_value = $main::input_format;
+      } else {
+	$field_value = $null;
+      }
+    }
+    $fields[$c] =  $field_value;
+    #      &RSAT::message::Debug("field", $c, sprintf("%-15s", $attr), $fields[$c])if ($main::verbose >= 10);
+  }
+
+  ################################################################
+  ## Format-specific attributes
+
+  ## Collect attributes for gff and gff3 formats
+  if ($out_format =~ /gff/) {
+    #       unless ($self->get_attribute("gene")) {
+    # 	if ($self->get_attribute("feature_name")) {
+    # 	  $self->set_attribute("gene", $self->get_attribute("feature_name"));
+    # 	}
+    #       }
+
+    my @attributes = ();
+    my %attributes = ();	## Index for further tests
+    foreach $attr (@gff3_attributes) {
+      my $value = "";
+      $attributes{$attr} =  $value; ## index for further tests
+      if (defined($self->get_attribute($attr))) {
+	$value = $self->get_attribute($attr);
+	push @attributes, $attr."=".$value;
+	&RSAT::message::Debug("export attribute", $attr, $value) if ($main::verbose >= 3);
+      } else {
+	&RSAT::message::Debug("feature", $self->get_attribute("ID"), "undefined gff3 attribute", $attr) if ($main::verbose >= 3);
+      }
+    }
+
+    ## If no info has been found, use the description field as note
+    if (scalar(@attributes) == 0) {
+      my $description = $self->get_attribute("description");
+      if ($description) {
+	if ($out_format =~ /gff/) {
+	  push @attributes, "Note=".$description;
 	}
       }
-
-    
-     ## Transform the coordinates into zero-based
-     my $start_1_based = $self->get_attribute("start");
-     $self->force_attribute("start",$start_1_based-1); ## only the fist base is shifted
-    }
-          ## Treat the thickStart and thickEnd attributes
-      unless (defined($self->get_attribute("thickStart"))) {
-	$self->set_attribute("thickStart",$self->get_attribute("start"));
-      }
-      unless (defined($self->get_attribute("thickEnd"))) {
-	$self->set_attribute("thickEnd",$self->get_attribute("end"));
-      }
-
-
-    if ($out_format eq "fasta") {
-      return $self->to_fasta();
     }
 
-    my @cols = @{$columns{$out_format}};
+    ## Concatenate the attributes in a string
+    my $attribute = join ";", @attributes;
+    $fields[$col_index{attribute}] = $attribute;
+  }
 
+  ## Format-specific treatment for the strand
+  my @strands = @{$strands{$out_format}};
+  my $strand = $self->get_attribute("strand") || $default{strand};
+  my $f = $col_index{"strand"};
+  if ($strand) {
+    $s = $strand_index{$strand};
+  }
+  $fields[$f] = $strands[$s];
+  #    &RSAT::message::Debug( "strand", $strand, "f=$f", 
+  #			   "index:".join(";", %strand_index),
+  #			   $strand_index{$strand},
+  #			   "format:".join(";", @strands), 
+  #			   "s=".$s, $strands[$s], "field=$fields[$f]") if ($main::verbose >= 10);
 
-    ## Index column number by contents
-    my ${col_index} = ();
-    foreach my $c (0..$#cols) {
-	$col_index{$cols[$c]} = $c;
-    }
+  ## Generate the row to be printed
+  my $row = join ("\t", @fields);
+  $row .= "\n";
 
-    ## Select the fields
-    my @fields = ();
-    foreach my $c (0..$#cols) {
-      $attr = $cols[$c];
-      $field_value = $self->get_attribute($attr);
-      unless ($field_value) {
-	if (defined($default{$attr})) {
-	  $field_value = $default{$attr};
-	} elsif ($attr eq "source") {
-	  $field_value = $main::input_format;
-	} else {
-	  $field_value = $null;
-	}
-      }
-      $fields[$c] =  $field_value;
-#      &RSAT::message::Debug("field", $c, sprintf("%-15s", $attr), $fields[$c])if ($main::verbose >= 10);
-    }
+  #    &RSAT::message::Debig ("printing in format ", $out_format, $row) if ($main::verbose >= 10);
 
-    ################################################################
-    ## Format-specific attributes
-
-    ## Collect attributes for gff and gff3 formats
-    if ($out_format =~ /gff/) {
-#       unless ($self->get_attribute("gene")) {
-# 	if ($self->get_attribute("feature_name")) {
-# 	  $self->set_attribute("gene", $self->get_attribute("feature_name"));
-# 	}
-#       }
-
-      my @attributes = ();
-      my %attributes = (); ## Index for further tests
-      foreach $attr (@gff3_attributes) {
-	my $value = "";
-	$attributes{$attr} =  $value; ## index for further tests
-	if (defined($self->get_attribute($attr))) {
-	  $value = $self->get_attribute($attr);
-	  push @attributes, $attr."=".$value;
-	  &RSAT::message::Debug("export attribute", $attr, $value) if ($main::verbose >= 3);
-	} else {
-	  &RSAT::message::Debug("feature", $self->get_attribute("ID"), "undefined gff3 attribute", $attr) if ($main::verbose >= 3);
-	}
-      }
-
-      ## If no info has been found, use the description field as note
-      if (scalar(@attributes) == 0) {
-	my $description = $self->get_attribute("description");
-	if ($description) {
-	  if ($out_format =~ /gff/) {
-	    push @attributes, "Note=".$description;
-	  }
-	}
-      }
-
-      ## Concatenate the attributes in a string
-      my $attribute = join ";", @attributes;
-      $fields[$col_index{attribute}] = $attribute;
-    }
-
-    ## Format-specific treatment for the strand
-    my @strands = @{$strands{$out_format}};
-    my $strand = $self->get_attribute("strand") || $default{strand};
-    my $f = $col_index{"strand"};
-    if ($strand) {
-	$s = $strand_index{$strand};
-    }
-    $fields[$f] = $strands[$s];
-#    &RSAT::message::Debug( "strand", $strand, "f=$f", 
-#			   "index:".join(";", %strand_index),
-#			   $strand_index{$strand},
-#			   "format:".join(";", @strands), 
-#			   "s=".$s, $strands[$s], "field=$fields[$f]") if ($main::verbose >= 10);
-
-    ## Generate the row to be printed
-    my $row = join ("\t", @fields);
-    $row .= "\n";
-
-#    &RSAT::message::Debig ("printing in format ", $out_format, $row) if ($main::verbose >= 10);
-
-    return($row);
+  return($row);
 }
 
 ################################################################
