@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.123 2011/01/18 16:54:55 jvanheld Exp $
+# $Id: peak-motifs,v 1.124 2011/01/18 22:22:25 jvanheld Exp $
 #
 ############################################################
 
@@ -57,7 +57,7 @@ utilization. Motif comparisons and clustering.
 
 =head1 CATEGORY
 
-Pattern discovery
+Motif discovery
 
 =head1 USAGE
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.123 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.124 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -148,15 +148,8 @@ package main;
 		    "seqlen",
 		    "composition",
 		    "ref_motifs",
-
-		    ## Pattern discovery algorithms
-		    "oligos",
-		    "dyads",
-		    "positions",
-		    "local_words",
-		    "oligo_diff",
+		    "disco",
 		    "merge_words",
-
 		    "merge_motifs",
 		    "split_motifs",
 		    "collect_motifs",
@@ -177,23 +170,46 @@ package main;
 		  "clean_seq",
 		  "meme_bg",
 		  "meme");
-  
+
   ## All the supported tasks
   @supported_tasks = (@default_tasks, @extra_tasks);
-
-  my @future_tasks = qw(
-			to_bed
-		       );
   $supported_tasks = join ",", @supported_tasks;
   %supported_task = ();
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
   }
-  %task = ();			## List of tasks to be executed
+  %task = ();  ## List of tasks to be executed
 
+
+  ################################################################
+  ## Supported motif discovery algorithms
+  @default_discos = ("oligos",
+		     "positions",
+		    );
+
+  ## Extra tasks are only executed on explicit demand of the user
+  @extra_discos = ("dyads",
+		   "local_words",
+		   "oligo_diff",
+		   "merged_words",
+		   "meme");
+
+  ## All the supported motif discovery algorithms
+  @supported_discos = (@default_discos, @extra_discos);
+  $supported_discos = join ",", @supported_discos;
+
+  %supported_disco = ();
+  foreach my $disco (@supported_discos) {
+    $supported_disco{$disco} = 1;
+  }
+  %disco = (); ## List of motif discovery algorithms to run
+
+
+  ## Motif databases
   @motif_databases = ();
   @motif_db_format = ();
 
+  ## Options for meme software
   local $meme_options = "";
   local $meme_suffix = "";
 
@@ -253,9 +269,17 @@ package main;
   &PositionAnalysis() if ($task{positions});
   &LocalWords() if ($task{local_words});
   &MergeWords() if ($task{merge_words});
+
+  ## Extract position-specific scoring matrices from the merged words
+  if ($disco{merged_words}) {
+      my $pattern_type = "merged_words";
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);     
+  }
+
   &CalcMemeBackground() if ($task{meme_bg});
   &RunMEME() if ($task{meme});
   &MergeMotifs() if ($task{merge_motifs});
+
 
   &SynthesisMotifsByAlgo() if ($progressive_synthesis);
 
@@ -273,8 +297,8 @@ package main;
   &ScanSequences() if ($task{scan});
 
   &SynthesisByMotif() if ($progressive_synthesis);
-  &SynthesisMotifCompa() if ($progressive_synthesis);
 
+  &SynthesisMotifCompa() if ($progressive_synthesis);
 
   if ($task{timelog}) {
     &TimeLog();
@@ -363,7 +387,7 @@ sub DefaultParameters {
   $main::param{profiles_noov} = "-ovlp"; push(@main::param_list, "profiles_noov");
 
   ################################################################
-  ## Pattern discovery options
+  ## Motif discovery options
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
   $main::param{disco_noov} = "-noov"; push(@main::param_list, "disco_noov");
   $main::param{oligo_min_len} = 6; push(@main::param_list, "oligo_min_len");
@@ -443,14 +467,15 @@ sub DefaultParameters {
 
   ################################################################
   ## Options used for motif comparison
-  $main::param{matrix_compa_min_w} = 5;
-  $main::param{matrix_compa_min_cor} = 0.75;
-  $main::param{matrix_compa_min_Ncor} = 0.3;
-  $main::param{matrix_compa_min_Wr} = 0.3;
+  $main::param{matrix_compa_min_w} = 5; ## min number of aligned columns
+  $main::param{matrix_compa_min_Wr} = 0.3; ## min relative width
+  $main::param{matrix_compa_min_cor} = 0.75; ## min correlation
+  $main::param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
+  $main::param{matrix_compa_sort_field} = "Ncor"; ## sorting field
 
   my $motif_compa_options =  ""; 
   $motif_compa_options .= " -DR";
-  $motif_compa_options .= " -sort Ncor";
+  $motif_compa_options .= " -sort ".$main::param{matrix_compa_sort_field};
   $motif_compa_options .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $motif_compa_options .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $motif_compa_options .= " -lth Wr ".$main::param{matrix_compa_min_Wr}; ## Min relative width of the alignment
@@ -587,15 +612,17 @@ sub SetOutFileNames {
 
 
   ################################################################
-  ## Pattern discovery results
+  ## Motif discovery results
   my $pattern_type = "";
   if ($main::infile{ctrl_seq}) {
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
       ## oligo-diff
-      $pattern_type = 'oligo_diff_'.$len.'nt';
-      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$len."nt");
-      push @pattern_types, $pattern_type;
-      push @patterns_to_merge, $pattern_type;
+      if ($disco{oligo_diff}) {
+	$pattern_type = 'oligo_diff_'.$len.'nt';
+	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$len."nt");
+	push @pattern_types, $pattern_type;
+	push @patterns_to_merge, $pattern_type;
+      }
     }
   } else {
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
@@ -604,11 +631,13 @@ sub SetOutFileNames {
 	################################################################
 	## Background models estimated from the control sequences
 	## oligo-analysis
-	$pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
-	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
-						     $len."nt", "vs_ctrl");
-	push @pattern_types, $pattern_type;
-	push @patterns_to_merge, $pattern_type;
+	if ($disco{oligos}) {
+	  $pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
+	  $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
+						       $len."nt", "vs_ctrl");
+	  push @pattern_types, $pattern_type;
+	  push @patterns_to_merge, $pattern_type;
+	}
 
       } else {
 	################################################################
@@ -619,44 +648,50 @@ sub SetOutFileNames {
 	  $markov += $len if ($markov < 0);
 
 	  ## oligo-analysis
-	  $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
-	  $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
-						       $len."nt", "mkv".$markov);
-	  push @pattern_types, $pattern_type;
-	  push @patterns_to_merge, $pattern_type;
+	  if ($disco{oligos}) {
+	    $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
+	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
+							 $len."nt", "mkv".$markov);
+	    push @pattern_types, $pattern_type;
+	    push @patterns_to_merge, $pattern_type;
 
 
-	  ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
-#	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
-#						       $len."nt", "vs_ctrl");
-
+	    ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
+	    #	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
+	    #						       $len."nt", "vs_ctrl");
+	  }
 
 	  ## local-word-analysis
-	  $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
-	  $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "local_words".$main::param{strand}.$main::param{disco_noov},
-						       $len."nt", "windgroup".$main::param{local_words_windowgroup},
-						       #						     $main::param{local_words_heuristic},
-						       "mkv".$markov);
-	  push @pattern_types, $pattern_type;
-	  push @patterns_to_merge, $pattern_type;
+	  if ($disco{local_words}) {
+	    $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
+	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "local_words".$main::param{strand}.$main::param{disco_noov},
+							 $len."nt", "windgroup".$main::param{local_words_windowgroup},
+							 #						     $main::param{local_words_heuristic},
+							 "mkv".$markov);
+	    push @pattern_types, $pattern_type;
+	    push @patterns_to_merge, $pattern_type;
+	  }
 	}
       }
 
       ## position-analysis
-      $pattern_type = 'positions_'.$len.'nt';
-      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
-						   $len."nt", "ci".$main::param{positions_ci});
-      push @pattern_types, $pattern_type;
-      push @patterns_to_merge, $pattern_type;
+      if ($disco{positions}) {
+	$pattern_type = 'positions_'.$len.'nt';
+	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
+						     $len."nt", "ci".$main::param{positions_ci});
+	push @pattern_types, $pattern_type;
+	push @patterns_to_merge, $pattern_type;
+      }
     }
 
     ## dyad-analysis
-    $pattern_type = "dyads";
-    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
-					 "3nt_sp0-20_bg_monads");
-
-    push @pattern_types, $pattern_type;
-#    push @patterns_to_merge, $pattern_type;
+    if ($disco{dyads}) {
+      $pattern_type = "dyads";
+      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
+						   "3nt_sp0-20_bg_monads");
+      push @pattern_types, $pattern_type;
+      #    push @patterns_to_merge, $pattern_type;
+    }
   }
 
   ## Comparison between significance of the discovered patterns
@@ -664,7 +699,9 @@ sub SetOutFileNames {
   $main::outfile{merged_words} = &OutFileName("results/".$pattern_type, ".tab", "merged_words");
   $main::outfile{merged_words_html} = &OutFileName("results/".$pattern_type, ".html", "merged_words");
   $main::outfile{merged_words_heatmap} = &OutFileName("results/".$pattern_type, ".png", "merged_words_heatmap");
-  push @pattern_types, $pattern_type;
+  if ($disco{merged_words}) {
+    push @pattern_types, $pattern_type;
+  }
 
   &RSAT::message::Info("Pattern types", join (",", @pattern_types)) if ($main::verbose >= 2);
   &RSAT::message::Info("Sequence types", join (",", @seq_types)) if ($main::verbose >= 2);
@@ -689,7 +726,6 @@ sub SetOutFileNames {
       $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb} =
 	$main::outfile{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb."_rc.".$main::param{img_format};
     }
-
     push @timelog_keys, $pattern_type;
     push @timetable_keys, $pattern_type;
     push @timetable_keys, $pattern_type."_pssm";
@@ -697,12 +733,14 @@ sub SetOutFileNames {
 
 
   ## Output files for MEME
-  $main::outfile{meme_bg_file} = &OutFileName("results/meme", ".txt", "meme_bg_mkv".$main::param{bg_meme_markov});
-  &CalcMemeOptions(); ## this also computes the suffix of the meme output file
-  $main::outfile{meme} = &OutFileName("results/meme", ".txt", "meme_".$meme_suffix);
-  $main::outfile{meme_tf} = &OutFileName("results/meme", ".tf", "meme_".$meme_suffix);
-  $main::outfile{meme_logos} = &OutFileName("results/meme", "", "meme_".$meme_suffix."_logos");
-  push @timetable_keys, "meme";
+  if ($disco{meme}) {
+    $main::outfile{meme_bg_file} = &OutFileName("results/meme", ".txt", "meme_bg_mkv".$main::param{bg_meme_markov});
+    &CalcMemeOptions(); ## this also computes the suffix of the meme output file
+    $main::outfile{meme} = &OutFileName("results/meme", ".txt", "meme_".$meme_suffix);
+    $main::outfile{meme_tf} = &OutFileName("results/meme", ".tf", "meme_".$meme_suffix);
+    $main::outfile{meme_logos} = &OutFileName("results/meme", "", "meme_".$meme_suffix."_logos");
+    push @timetable_keys, "meme";
+  }
 
   ## Clustering of the discovered motifs + comparison with reference motif(s)
   ## Merged motifs
@@ -760,7 +798,6 @@ sub SetOutFileNames {
       $main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton_html"} = &OutFileName("results/discovered_vs_db", ".html", "motifs_vs_db_".$db_name."_alignments_1ton");
     }
   }
-
 }
 
 ################################################################
@@ -769,6 +806,7 @@ sub PurgeSeq {
   my ($seq_type) = @_;
 
   my $seq_file = $seqfile{$seq_type};
+
   ## Convert sequences to standard fasta format, mask non-DNA seqences
   ## selectd top peaks if required, and truncate sequences to max
   ## length if specified.
@@ -1256,11 +1294,8 @@ sub MergeWords {
   $cmd .= " -o ".$main::outfile{merged_words_heatmap};
   &one_command($cmd, 1);
 
-  ## Extract position-specific column matrices
-  my $pattern_type = "merged_words";
-  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);
-
   &RSAT::message::TimeWarn("Word comparison table", $main::outfile{merged_words}) if ($main::verbose >= 2);
+
 }
 
 
@@ -1668,10 +1703,11 @@ sub MotifsVersusDatabase {
     }
 
     ################################################################
-    ## TO DO: the all motifs against db is redundant (comparisons are
-    ## performed twice), but the result is used for drawing the db
-    ## versus discovered graph. The comparison table and graph should be
-    ## recollected from the individual motif comparisons.
+    ## TO DO: the coparison of all motifs against db is redundant
+    ## (comparisons are performed twice), but the result is used for
+    ## drawing the db versus discovered graph. The comparison table
+    ## and graph should be recollected from the individual motif
+    ## comparisons.
 
     ################################################################
     ## Comparison between all discovered matrices and the database
@@ -1685,7 +1721,7 @@ sub MotifsVersusDatabase {
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_html"};
     &one_command($cmd, 1, $main::outfile{"motifs_vs_db_".$db_name}."_time.txt");
 
-    &RSAT::message::TimeWarn("Dicovered versus DB", $main::outfile{motifs_vs_db}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Discovered versus DB", $db_name, $main::outfile{"motifs_vs_db_".$db_name}) if ($main::verbose >= 2);
 
     ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
     $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{"motifs_vs_db_".$db_name};
@@ -1813,30 +1849,17 @@ sub ScanSequences {
 
     ## Compute the genomic coordinates
     if ($main::infile{coord}) {
-      &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 2);
       $cmd = $SCRIPTS."/convert-features";
       $cmd .= " -from ft -i ".$main::outfile{$motif_id.'_pssm_sites'};
       $cmd .= " -coord ".$main::infile{coord};
       $cmd .= " -to bed -o ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
-      &one_command($cmd,1);
+#      &one_command($cmd,1);
     }
-
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    next;
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
-    ## DEBUG: TEMPORARILY INACTIVATE POSITIONAL DISTRIB AND ENRICHMENT
 
     ################################################################
     ## Compute the positional distribution of sites
+    &RSAT::message::Debug("Computing positional distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     $cmd = "grep -v '^;'";
     $cmd .= " ".$main::outfile{$motif_id.'_pssm_sites'};
     $cmd .= " | grep -v '^#'";
@@ -1847,6 +1870,7 @@ sub ScanSequences {
     &one_command($cmd, 1);
 
     ## Draw the graph of predicted site positions
+    &RSAT::message::Debug("Drawing positional distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/XYgraph";
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
@@ -1858,10 +1882,12 @@ sub ScanSequences {
     &one_command($cmd, 1);
 
     ################################################################
-    ## Analyze motif enrichment
+    ## Analyze enrichment of input sequences for the discovered motif
+    &RSAT::message::Debug("Estimating enrichment of input sequences for motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     &MotifEnrichment($infile{test_seq}, $main::outfile{$motif_id."_tf"},
 		     $main::outfile{$motif_id.'_pssm_enrichment'},
 		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
+#    die "HELLO";
   }
 }
 
@@ -2300,7 +2326,6 @@ sub SynthesisByMotif {
 		      "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
 		     );
     }
-
     print $syn "</tr>\n";
 
     ## Motif comparison results
@@ -2383,6 +2408,7 @@ sub SynthesisMotifCompa {
   print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'></a><h3>Motif comparisons</h3>", 0);
   print $syn "<table class='whitebg'>\n";
 
+
   ## Word comparisons
   &SynthesisWordCompa();
 
@@ -2392,11 +2418,13 @@ sub SynthesisMotifCompa {
   ## Comparison between discovered motifs and reference motif
   &SynthesisMotifsVersusReference() if (defined($main::infile{ref_motifs}));
 
+
   ## Comparison between discovered motifs and database(s)
   &SynthesisMotifsVersusDatabase() if (scalar(@motif_databases) > 0);
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
 }
+
 
 ################################################################
 ## Report the list if input/output files. This has to be done at the
@@ -2677,7 +2705,7 @@ sub SynthesisMotifsByAlgo {
   &RSAT::message::TimeWarn("Synthesis per motif discovery algorithm") if ($main::verbose >= 2);
   print $syn &open_menu_heading($menu_nb++, "<a name='motifs_by_algo'></a><h3>Discovered motifs (by algorithm)</h3>", 1);
   print $syn "<table class='whitebg'>\n";
-  &SyntheticTableAddHeaderRow("Pattern discovery");
+  &SyntheticTableAddHeaderRow("motif discovery");
   foreach my $pattern_type (@pattern_types) {
     &SynthesisPatternDisco($pattern_type);
   }
@@ -2686,7 +2714,7 @@ sub SynthesisMotifsByAlgo {
 }
 
 ################################################################
-## Synthesis for one pattern discovery algorithm
+## Synthesis for one motif discovery algorithm
 ## Usage:
 ##   &SynthesisPatternDisco($pattern_type);
 ## Where pattern type can be oligos, dyads, local_words, oligo-diff
@@ -2809,6 +2837,7 @@ sub SynthesisPatternDisco {
 ## Synthesis of word comparisons
 sub SynthesisWordCompa {
   my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{merged_words_heatmap});
+
   &SyntheticTableAddRow("Word comparisons",
 			"<a  href='".$img."'><img border='".$param{img_border}."' height=150 src='".$img."'></a>",
 			"tab",$main::outfile{merged_words},
@@ -3157,6 +3186,113 @@ All the formats supported by XYgraph can be used.
     } elsif ($arg eq "-img_format") {
       $main::param{img_format} = shift(@arguments);
 
+
+=pod
+
+=item B<-disco oligos|dyads|positions|local_words|merged_words|meme>
+
+Specify the software tool(s) that will be used for motif discovery.
+
+Several algorithms can be specified either by using the option
+iteratively:
+
+  -disco oligos -disco dyads
+
+or by entering a comma-separated list of algorithms:
+
+  -disco oligos,dyads
+
+B<Default motif discovery algorithms>
+
+=back
+
+=item I<oligos>
+
+Run I<oligo-analysis> to detect over-represented oligonucleotides of a
+given length (k, specified with option -l) in the test set (van Helden
+et al., 1998). Prior frequencies of oligonucleotides are taken from
+Markov model of order m (see option -markov) estimated from the test
+set sequences themselves.
+
+=item I<dyads>
+
+Run I<dyad-analysis> to detect over-represented dyads, i.e. pairs of
+short oligonucleotides (monads) spaced by a region of fixed width but
+variable content (van Helden et al., 2000). Spaced motifs are typical
+of certain classes of transcription factors forming homo- or
+heterodimers.
+
+By default, peak-motifs analyzes pairs of trinucleotides with
+any spacing between 0 and 20.
+
+The expected frequency of each dyad is estimated as the product of its
+monad frequencies in the input sequences (option -bg monads of
+dyad-analysis).
+
+=item I<positions>
+
+Run I<position-analysis> to detect oligonucleotides showing a
+positional bias, i.e. have a non-homogeneous distribution in the peak
+sequence set.
+
+This method was initially developed to analyze termination and
+poly-adenylation signals in downstream sequences (van Helden et al.,
+2001), and it turns out to be very efficient for detecting motifs
+centred on the ChIP-seq peaks. For ChIP-seq analysis, the reference
+position is the center of each sequence.
+
+Note that I<peak-motifs> also uses I<position-analysis> for the
+task B<composition>, in order to detect compositional biases (residues,
+dinucleotides) in the test sequence set.
+
+=item I<local_words>
+
+Run I<local-word-analysis> to detect locally over-represented
+oligonucleotides and dyads. 
+
+The program I<local-word-analysis> (Matthieu Defrance,unpublished)
+tests the over-representation of each possible word (oligo, dyad)
+in positional windows in the input sequence set.
+
+Two types of background models are supported: (i) Markov model of
+order m estimated locally (within the window under consideration; (ii)
+the frequency observed for a word in the whole sequence set is used as
+estimator of the prior probability of this word in the window.
+
+After our first trials, this program gives excellent results in
+ChIP-seq datasets, because its senstivitity increases with large
+number of sequences (several hundreds/thousands), and its background
+model is more stringent than for programs computing the global
+over-representation (oligo-analysis, dyad-analysis).
+
+=item I<merged_words>
+
+
+=item I<meme>
+
+Run the motif discovery program MEME on the input sequences.
+
+B<Beware>: the complexity of MEME is quadratic: the computing time
+increases as the square of sequence size. It is thus not recommended
+to use MEME for data sets exceeding 1Mb. If the input set contains
+many peaks, the option -task meme can be combined with a restriction
+on the number of top peaks to be considered (e.g. -top_peaks 500).
+
+=cut
+    } elsif ($arg eq "-disco") {
+      my @requested_discos = split ",", shift (@arguments);
+      foreach my $disco (@requested_discos) {
+	next unless $disco;
+	if ($supported_disco{$disco}) {
+	  $disco{$disco} = 1;
+	} else {
+	  &RSAT::error::FatalError("Motif discovery algorithm '$disco' is not supported. \n\tSupported: $supported_discos");
+	}
+      }
+
+
+
+
 =pod
 
 =item B<-task>
@@ -3232,83 +3368,28 @@ reference motif.
 
 Compare all discovered motifs with the reference motif.
 
-=back
+=item I<disco>
 
-=item I<oligos>
-
-Run I<oligo-analysis> to detect over-represented oligonucleotides of a
-given length (k, specified with option -l) in the test set (van Helden
-et al., 1998). Prior frequencies of oligonucleotides are taken from
-Markov model of order m (see option -markov) estimated from the test
-set sequences themselves.
-
-=item I<dyads>
-
-Run I<dyad-analysis> to detect over-represented dyads, i.e. pairs of
-short oligonucleotides (monads) spaced by a region of fixed width but
-variable content (van Helden et al., 2000). Spaced motifs are typical
-of certain classes of transcription factors forming homo- or
-heterodimers.
-
-By default, peak-motifs analyzes pairs of trinucleotides with
-any spacing between 0 and 20.
-
-The expected frequency of each dyad is estimated as the product of its
-monad frequencies in the input sequences (option -bg monads of
-dyad-analysis).
-
-=item I<positions>
-
-Run I<position-analysis> to detect oligonucleotides showing a
-positional bias, i.e. have a non-homogeneous distribution in the peak
-sequence set.
-
-This method was initially developed to analyze termination and
-poly-adenylation signals in downstream sequences (van Helden et al.,
-2001), and it turns out to be very efficient for detecting motifs
-centred on the ChIP-seq peaks. For ChIP-seq analysis, the reference
-position is the center of each sequence.
-
-Note that I<peak-motifs> also uses I<position-analysis> for the
-task B<composition>, in order to detect compositional biases (residues,
-dinucleotides) in the test sequence set.
-
-=item I<local_words>
-
-Run I<local-word-analysis> to detect locally over-represented
-oligonucleotides and dyads. 
-
-The program I<local-word-analysis> (Matthieu Defrance,unpublished)
-tests the over-representation of each possible word (oligo, dyad)
-in positional windows in the input sequence set.
-
-Two types of background models are supported: (i) Markov model of
-order m estimated locally (within the window under consideration; (ii)
-the frequency observed for a word in the whole sequence set is used as
-estimator of the prior probability of this word in the window.
-
-After our first trials, this program gives excellent results in
-ChIP-seq datasets, because its senstivitity increases with large
-number of sequences (several hundreds/thousands), and its background
-model is more stringent than for programs computing the global
-over-representation (oligo-analysis, dyad-analysis).
+Run the motif discovery algorithms. See option -disco for the
+selection of motif discovery algorithm(s).
 
 =item I<merge_words>
 
-Merge the words (oligos-dyads) discovered by the different
-algorithms. Those words will then be used as seeds for extracting
-over-represented position-specific scoring matrices from the sequences
-(using the program I<matrix-from-patterns>).
+Merge the words (oligos or dyads) discovered by the different
+string-based motif discovery algorithms. 
 
 The table of merged words has one row per word (oligo or dyad) and one
-column per pattern discovery program. This allows to analyze the
-consistency between the words detected by different approaches,
-e.g. show that a word is both over-represented (oligo-analysis,
-dyad-analysis) and positionally biased (position-analysis,
-local-words). A heatmap is also exported to provide a graphical
-representation of the significance of each word (row) for each
-algorthm (column).
+column per motif discovery program. This table is convenient to
+analyze the consistency between the words detected by different
+approaches, e.g. show that a word is both over-represented
+(oligo-analysis, dyad-analysis) and positionally biased
+(position-analysis, local-words). A heatmap is also exported to
+provide a graphical representation of the significance of each word
+(row) for each algorthm (column).
 
+The merged words can optionally be used as seeds for extracting
+position-specific scoring matrices from the sequences, using the
+program I<matrix-from-patterns> (see option -disco merged_words).
 
 =item I<motifs_vs_ref>
 
@@ -3348,16 +3429,6 @@ space.
 
 Compute meme background model from the input sequences.
 
-=item I<meme>
-
-Run the motif discovery program MEME on the input sequences.
-
-B<Beware>: the complexity of MEME is quadratic: the computing time
-increases as the square of sequence size. It is thus not recommended
-to use MEME for data sets exceeding 1Mb. If the input set contains
-many peaks, the option -task meme can be combined with a restriction
-on the number of top peaks to be considered (e.g. -top_peaks 500).
-
 =back
 
 =cut
@@ -3376,7 +3447,7 @@ on the number of top peaks to be considered (e.g. -top_peaks 500).
 
 =item B<-nmotifs max_motif_number>
 
-Maximal number of motifs (matrices) to return for pattern discovery
+Maximal number of motifs (matrices) to return for motif discovery
 algorithms. Note the distinction between the maximal number of motifs
 (matrices) and the maximum number of patterns (words, dyads): a motif
 generally corresponds to mutually overlapping several patterns (dyads,
@@ -3489,7 +3560,7 @@ of self-overlap, which violates the hypothesis of independence of
 successive occurrences underlying the binomial significance test
 (oligo-analysis, dyad-analysis).
 
-B<Beware>: the options -noov and -ovlp only apply to pattern discovery,
+B<Beware>: the options -noov and -ovlp only apply to motif discovery,
 and not to compositional profiles. Dinucleotide frequencies are always
 computed with the option -ovlp (count all occurrences), to avoid weird
 effect. Since those compositin profiles further serve to estimate the
@@ -3597,7 +3668,7 @@ sub CheckArguments {
     $task{motifs_vs_db} = 1 if (scalar(@motif_databases) > 0);
   }
 
-  ## collect_motifs includes merge_motifs and split_motifs
+  ## The task collect_motifs regroups merge_motifs and split_motifs
   if ($task{collect_motifs}) {
     $task{merge_motifs} = 1;
     $task{split_motifs} = 1;
@@ -3615,6 +3686,9 @@ sub CheckArguments {
       unless (scalar(@motif_databases) > 0)
   }
 
+
+  ################################################################
+  ## Check tasks
 
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
@@ -3637,6 +3711,26 @@ sub CheckArguments {
     delete($task{motifs_vs_db}) unless (scalar(@motif_databases) > 0);
   }
 
+  ################################################################
+  ## Dependencies between tasks
+
+  ## If motif discovery runs, the tasks that depend on it must re-run
+  if ($task{disco}) {
+      $task{merge_words} = 1;
+      $task{collect_motifs} = 1;
+
+## I hesitate to redo all the subsequent tasks, this would somewhat loose the advantage of the option -task
+#      $task{motifs_vs_ref} = 1;
+#      $task{motifs_vs_db} = 1;
+#      $task{scan} = 1;
+  }
+
+  ## Dependency between task merge_words and pattern discovery type merged_words
+  if (($task{disco}) && ($disco{merged_words})) {
+      $task{merge_words} = 1;
+  }
+
+  ## Prepare a list of the requested tasks (by order of execution)
   foreach my $task (@supported_tasks) {
    push (@tasks, $task) if $task{$task};
   }
@@ -3790,6 +3884,10 @@ factor binding sites and cis-regulatory modules. Nat Protoc 3,
 
 =item I<position-analysis>
 
+=item I<local-word-analysis>
+
+=item I<compare-matrices>
+
 =item I<matrix-scan>
 
 
@@ -3833,21 +3931,6 @@ oligonucleotides. This analysis is performed with the option
 
 - link from the result page to the link table returned by
   position-analysis (file *_graph_index.html).
-
-=item B<-discovery oligos|dyads|positions|local-words|meme>
-
-Specify the software tool(s) that will be used for pattern discovery.
-
-Several algorithms can be specified either by using the option
-iteratively:
-
-  -disco oligos -disco dyads
-
-or by entering a comma-separated list of algorithms:
-
-  -disco oligos,dyads
-
-Default: oligos,positions
 
 =back
 
