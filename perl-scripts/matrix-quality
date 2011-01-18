@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.124 2011/01/10 21:10:37 amedina Exp $
+# $Id: matrix-quality,v 1.125 2011/01/18 18:23:59 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -312,6 +312,7 @@ package main;
 
     ## Reference distribution for the ROC curve
     $roc_ref = "theor";
+    $tasks{nwd}=0;
 
     ## Tasks
     local @supported_tasks = ("all", ## Run all other tasks
@@ -349,7 +350,7 @@ package main;
     ################################################################
     ## Read argument values
     &ReadArguments();
-
+    $supported_tasks{nwd} = 0 unless $tasks{nwd};
     ## Class interval for classfreq
     $class_interval = 1/(10**$decimals);
 
@@ -446,9 +447,10 @@ package main;
     &RSAT::message::Info("Image formats for logos: ".join (",", sort(@logo_formats))) if ($main::verbose >= 2);
 
      ## NWD 
+ 
     $tasks{nwd}=1 if ($main::nwd_seq_type) ;
     if ($tasks{nwd} && (!$main::nwd_seq_type)){
-	&RSAT::error::FatalError("For NWD task you hav e to specify the seq_type");
+	&RSAT::error::FatalError("For NWD task you have to specify the seq_type");
     }
 
     ################################################################
