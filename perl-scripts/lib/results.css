@@ -160,6 +160,28 @@ table.simple th {
 	background-color: #F6E6CA;
 }
 
+/* TABLE */
+table.whitebg {
+	margin: 10px 20px 20px;
+	color: #000000;
+	border-left: 1px solid #cbcbb4;
+	border-top: 1px solid #cbcbb4;
+	border-spacing: 0px;
+}
+
+table.whitebg td,table.list th {
+	font-size: 70%;
+	border-right: 1px solid #cbcbb4;
+	border-bottom: 1px solid #cbcbb4;
+	padding: 2px 10px;
+	background-color: #FFFFFF;
+}
+
+table.whitebg th {
+	font-size: 70%;
+	background-color: #F6E6CA;
+}
+
 	
 /* TABLE ON RESULT PAGES - COMPATIBLE WITH THE SORTTABLE TYPE
    DEFINED BY JAVASCRIPT */
