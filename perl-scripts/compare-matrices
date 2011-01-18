@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.80 2010/12/22 06:07:32 jvanheld Exp $
+# $Id: compare-matrices,v 1.81 2011/01/18 21:33:15 jvanheld Exp $
 #
 ############################################################
 
@@ -109,7 +109,7 @@ Since the matrices are not supposed to be in phase, for each pair of
 matrix, the program tests all possible I<offset> (shift) values
 between the two matrices.
 
-=head1 (DIS)SIMLARITY METRICS
+=head1 (DIS)SIMILARITY METRICS
 
 
 =head2 Symbols used for the metrics
@@ -198,17 +198,28 @@ Sandelin-Wasserman below).
 
  SSD = SUM{i=1->r} SUM{j=1->w} [(f1{i,j} - f2{i,j})^2)]
 
-=head2 Sandelin-Wasserman simliarity (SW)
+=head2 Sandelin-Wasserman similarity (SW)
 
 Also implemented in STAMP (under the name SSD) and TOMTOM (under the
 name Sandelin-Wasserman). This is a distance to similarity conversion
 of the SSD. The conversion is ensured by substracting each squared
-distance to a constant 2 (the max distance between two relative
-frequencies).
+distance to a constant 2 (the max distance between two columns
+containing relative frequencies, i.e. one residue has frequency 1 in
+one column, and another residue has ffrequency 1 in the other column).
 
  SW = SUM{i=1->r} SUM{j=1->w} [2 - (f1{i,j} - f2{i,j})^2) ]
 
 Source: Sandelin A & Wasserman WW (2004) J Mol Biol 338:207-215.
+
+=head2 Normalized Sandelin-Wasserman similarity (NSW)
+
+Sandelin-Wasserman (SW) similarity normalized by the number of aligned
+columns (I<w>).
+
+ NWS = SW / (2*w)
+
+NSW takes a value comprized between 0 (not a single corresponding
+residue) and 1 (matrices are identical for all the aligned columns).
 
 =head2 Euclidian distance (dEucl)
 
@@ -222,7 +233,7 @@ distance can take values from 0 to sqrt(2)*w.
 Euclidian distance normalized by the number of aligned columns
 (I<w>).
 
- NdEucl = 1/w * dEucl
+ NdEucl = dEucl / w
 
 NdEucl can take values from 0 to sqrt(2).
 
@@ -381,7 +392,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.80 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -402,6 +413,7 @@ package main;
 			      "NdEucl", ## Normalized Euclidian distance
 			      "NsEucl", ## Euclidian similarity
 			      "SSD", ## Euclidian distance
+			      "NSW", ## Normalized Sandelin-Wasserman similarity
 			      "SW", ## Sandelin-Wasserman similarity
 #			      "dKL", ## Kullback-Leibler distance
 			      "all_metrics", ## all supported metrics
@@ -420,10 +432,14 @@ package main;
 				 "NdEucl"=>"asc",
 				 "NsEucl"=>"desc",
 				 "SSD"=>"asc",
+				 "NSW"=>"desc",
 				 "SW"=>"desc",
 				 "dKL"=>"asc",
 				);
   local $supported_sort_fields = join (",", keys (%supported_sort_field));
+    $sort_field = "Ncor";
+#    $sort_field = "Icor";
+#  local $sort_field = "SW";
 
   ## Return fields
   local @supported_return_fields = (@supported_metrics, ## Any supported metrics is a valid return field
@@ -588,8 +604,6 @@ package main;
 #    $return_field{NWcor} = 1;
     $return_field{consensus} = 1;
 
-#    $sort_field = "Ncor";
-    $sort_field = "Icor";
     $uth{rank}=1 unless(defined($uth{rank})); ## Only return the best match for each alignment
 
     ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
@@ -629,6 +643,7 @@ package main;
   $calc_field{NdEucl} = 1 if ($calc_field{NsEucl});
   $calc_field{dEucl} = 1 if ($calc_field{NdEucl});
   $calc_field{SSD} = 1 if ($calc_field{dEucl});
+  $calc_field{SW} = 1 if ($calc_field{NSW});
   $calc_field{SSD} = 1 if ($calc_field{SW});
 
   ################################################################
@@ -888,6 +903,7 @@ package main;
   push (@header, "Wcor") if ($return_field{Wcor});
   push (@header, "Ncor") if ($return_field{Ncor});
   push (@header, "cor") if ($return_field{cor});
+  push (@header, "NSW") if ($return_field{NSW});
   push (@header, "SW") if ($return_field{SW});
   push (@header, "SSD") if ($return_field{SSD});
   push (@header, "NdEucl") if ($return_field{NdEucl});
@@ -932,6 +948,7 @@ package main;
     $description{start2} = "Start position of the alignment in matrix 2";
     $description{end2} = "End position of the alignment in matrix 2";
     $description{SW} = "Sandelin-Wasserman similarity.";
+    $description{NSW} = "Normalized Sandelin-Wasserman similarity. NSW = SW/w";
     $description{SSD} = "sum of squared distance.";
     $description{NdEucl} = "Normalized Euclidian distance (NdEucl = dEucl/w) ";
     $description{dEucl} = "Euclidian distance";
@@ -1031,7 +1048,8 @@ package main;
       my %NIcor = (); ## Normalized correlations between information content
       my %Wcor = (); ## Correlations between weights
       my %NWcor = (); ## Normalized correlations between weights
-      my %SW = ();		## Euclidian distances
+      my %NSW = ();		## Normalized Sandelin-Wasserman similarity
+      my %SW = ();		## Sandelin-Wasserman similarity
       my %SSD = ();		## Euclidian distances
       my %NdEucl = ();	## Euclidian distances
       my %dEucl = ();		## Euclidian distances
@@ -1120,6 +1138,7 @@ package main;
 	  ################################################################
 	  ## Compute the (dis)similarity between the matrices
 	  my $SSD = 0;
+	  my $NSW = 0;
 	  my $SW = 0;
 	  my $NdEucl = 0;
 	  my $dEucl = 0;
@@ -1214,6 +1233,8 @@ package main;
 	  ## Compute Sandelin-Wasserman similarity
 	  $SW = 2*$w - $SSD;
 	  next unless (&CheckThresholdValue("SW", $SW)); $score{SW}{$compa_id} = $SW;
+	  $NSW = $SW / (2*$w);
+	  next unless (&CheckThresholdValue("NSW", $NSW)); $score{NSW}{$compa_id} = $NSW;
 
 	  ## Compute Euclidian similarity
 	  if ($calc_field{NsEucl}) {
@@ -1333,6 +1354,7 @@ package main;
 	  push (@out_fields, sprintf("%.3f", $Icor)) if ($return_field{Icor});
 	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
 	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
+	  push (@out_fields, sprintf("%.3f", $NSW)) if ($return_field{NSW});
 	  push (@out_fields, sprintf("%.2f", $SW)) if ($return_field{SW});
 	  push (@out_fields, sprintf("%.4f", $SSD)) if ($return_field{SSD});
 	  push (@out_fields, sprintf("%.5f", $NdEucl)) if ($return_field{NdEucl});
@@ -2256,6 +2278,10 @@ decreasing
 
 ascending
 
+=item I<NSW>
+
+decreasing
+
 =item I<SW>
 
 decreasing
@@ -2373,6 +2399,10 @@ decreasing
 ascending
 
 =item I<SW>
+
+decreasing
+
+=item I<NSW>
 
 decreasing
 
