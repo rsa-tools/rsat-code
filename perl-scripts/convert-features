@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.26 2011/01/18 16:57:37 jvanheld Exp $
+# $Id: convert-features,v 1.27 2011/01/18 17:12:26 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -30,6 +30,9 @@ local $null = "";
 
 local $input_format = "ft";
 local $output_format = "gff3";
+
+local $add_chr_bed = 0;
+local $remove_chr_gff = 0;
 
 local $origin = "start";
 local %supported_origin = ('start'=>1, 'end'=>1);
@@ -115,6 +118,11 @@ while (<$in>) {
   if ($output_format eq "bed") {
     &set_color($feature);
 #    &RSAT::message::Debug("assigned color to feature", $feature->get_attribute("feature_name"),$feature->get_attribute("itemRgb")) if ($main::verbose >= 5);
+  	&add_chr($feature)  if ($add_chr_bed);
+  }
+  
+    if (($output_format eq "gff")||($output_format eq "gff3")) {
+  	&remove_chr($feature)  if ($remove_chr_gff);
   }
 
   ## convert the coordinates if necessary
@@ -140,6 +148,31 @@ sub set_color {
   }
   $feature->set_attribute("itemRgb", $feature_color{$feature_name});
 }
+
+################################################################
+## Add "chr" + change MT into chrM for compatibility with UCSC (BED format)
+sub add_chr {
+  my ($feature) = @_;
+   my $seq_name = $feature->get_attribute("seq_name");
+   $seq_name = "chr".$seq_name;
+   ## also change the MT into ChrM
+   $seq_name =~ s/chrMT/chrM/ if ($seq_name =~/^chrMT$/);
+   $feature->force_attribute("seq_name",$seq_name); ## only the fist base is shifted
+   &RSAT::message::Debug("added chr to seq_name: ", $seq_name) if ($main::verbose >= 10);
+   }
+
+################################################################
+## Remove "chr" + change chrM into MT for compatibility with Ensembl (GFF format)
+sub remove_chr {
+  my ($feature) = @_;
+   my $seq_name = $feature->get_attribute("seq_name");
+   $seq_name =~ s/^chr(\S+)/$1/;
+   ## also change the chrM into MT
+   $seq_name =~ s/^chrM$/MT/;
+   $feature->force_attribute("seq_name",$seq_name); ## only the fist base is shifted
+   &RSAT::message::Debug("removed chr to seq_name: ", $seq_name) if ($main::verbose >= 10);
+   }
+
 
 ################################################################
 ## Convert relative coordinates to genomic coordinate (option -coord)
@@ -288,6 +321,8 @@ OPTIONS
 		This allows to place the command within a pipe.
 	-from	input format (Supported: $supported_input_formats)
 	-to	output format (Supported: $supported_output_formats)
+	-add_chr only for BED output: add "chr" in front of the chromosome name and change MT into chrM
+	-remove_chr only for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
 	-coord bedfile with absolute coordinate of the sequence fragment
 	-origin [start|end] origin of coordinates relative to sequence fragment
 
@@ -297,6 +332,7 @@ CONVERSION TO GENOMIC COORDINATES
 		on genome browsers (eg. UCSC).
 		The coord file should be a BED file (zero-based) containing the genomic coordinates of fragments of interests.
 		The file to convert contain features with coordinates relative to these fragments (eg: from matrix-scan).
+		Make sure that the 4th column of the BED file (feature name) contain the same name as the feature name of the file to convert (that is in relative coordinates)
 	
 	-origin [start|end] should be provided. This refer to the origin of relative coordinates in the file to convert.
 	
@@ -613,6 +649,14 @@ sub ReadArguments {
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
 		unless ($RSAT::feature::supported_output_format{$output_format});
 		
+	    ### add "chr" in front of chromosome names for BED output
+	}  elsif ($ARGV[$a] eq "-add_chr") {
+	    $add_chr_bed = 1;
+	
+	    ### remove "chr" in front of chromosome names for GFF output
+	}  elsif ($ARGV[$a] eq "-remove_chr") {
+	    $remove_chr_gff = 1;
+	    
 	    ### coordinate file for conversion of coordinates into absolute genomic coord
 	}  elsif ($ARGV[$a] eq "-coord") {
 	    $infile{coord} = $ARGV[$a+1];
