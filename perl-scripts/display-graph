@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.27 2010/12/08 13:08:48 rsat Exp $
+# $Id: display-graph,v 1.28 2011/01/18 11:29:50 jvanheld Exp $
 #
 ############################################################
 
@@ -153,35 +153,53 @@ package main;
 			    $target_color_col,
 			    $color_col);
 
+    ################################################################
+    ## If the graph has no node and no edge, quit.
+    ##
+    ## Only issue the warning for high verbosity (>= 2), to avoid
+    ## warning messages on the Web interface).
+    my $number_of_nodes = scalar($graph->get_nodes());
+    my $number_of_arcs = scalar($graph->get_attribute("arcs"));
+    &RSAT::message::Debug("Graph read", $number_of_nodes." nodes",
+			  $number_of_arcs." arcs") if ($main::verbose >= 2);
+    if ($number_of_nodes == 0) {
+      &RSAT::message::Warning("Empty graph, no nodes") if ($main::verbose >= 1);
+    } elsif ($number_of_arcs == 0) {
+      &RSAT::message::Warning("Graph contains ".$number_of_nodes." nodes but no edges/arcs") if ($main::verbose >= 1);
+    }
+
     ## Calculate the layout
     $graph->layout($layout) if ($layout);
 
     ## Calculate the minimum and maximum values of the weight on the edges
-    my ($edge_mean, $edge_sd, $edge_min, $edge_max);
-    if ($edge_width) {
-      my $real = $graph->get_attribute("real");
-      ($edge_mean, $edge_sd, $edge_min, $edge_max) = $graph->weight_properties();
-      if ($real eq "null") {
-	$real = $graph->get_attribute("real");
-      }
+    my $edge_mean = 0;
+    my $edge_sd = 0;
+    my $edge_min = 0;
+    my $edge_max = 1;
+    if ($number_of_arcs > 0) {
+      if ($edge_width) {
+	my $real = $graph->get_attribute("real");
+	($edge_mean, $edge_sd, $edge_min, $edge_max) = $graph->weight_properties();
+	if ($real eq "null") {
+	  $real = $graph->get_attribute("real");
+	}
 
-      ## If there is is not at least one real number, the weights cannot be computed
-      unless ($real) {
-        (&RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n")) if ($main::verbose >= 5);
-        $edge_width = 0;
-      }
+	## If there is is not at least one real number, the weights cannot be computed
+	unless ($real) {
+	  (&RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n")) if ($main::verbose >= 5);
+	  $edge_width = 0;
+	}
 
-      ## If all weights are equal, the min is arbitrarily set to 0
-
-      ## If all weights are equal, the min is arbitrarily set to 0
-      if ($edge_min == $edge_max) {
-	if ($edge_max > 0) {
-	  $edge_min = 0;
-	} elsif ($edge_min < 0) {
-	  $edge_max = 0;
-	} else {
-	  $edge_min = -0.5;
-	  $edge_max = 0.5;
+	## If all weights are equal, the min is arbitrarily set to 0
+	if ($edge_min == $edge_max) {
+	  if ($edge_max > 0) {
+	    $edge_min = 0;
+	  } elsif ($edge_min < 0) {
+	    $edge_max = 0;
+	  } else {
+	    $edge_min = -0.5;
+	    $edge_max = 0.5;
+	  }
 	}
       }
 
@@ -217,8 +235,12 @@ package main;
     ## Compute the total size of the picture
     my $margin_x = 50;
     my $margin_y = 50;
-    my $max_x = &RSAT::stats::max(values(%nodes_id_xpos)) + 2*$margin_x;
-    my $max_y = &RSAT::stats::max(values(%nodes_id_ypos)) + 2*$margin_y;
+    my $max_x = 2*$margin_x;
+    my $max_y = 2*$margin_y;
+    if ($number_of_nodes > 0) {
+      $max_x += &RSAT::stats::max(values(%nodes_id_xpos));
+      $max_y += &RSAT::stats::max(values(%nodes_id_ypos));
+    }
     &RSAT::message::Info("Graph size", "X: ".$max_x, "Y: ".$max_y) if ($main::verbose >= 2);
 
     ################################################################
