@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.25 2010/11/01 14:17:36 morgane Exp $
+# $Id: convert-features,v 1.26 2011/01/18 16:57:37 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -70,28 +70,28 @@ print $out $header if ($header);
 ##### assume this is zero-based
 my %coord =();
 if ($infile{coord}){
-	($coord) = &OpenInputFile($infile{coord});
-	while (my $line = <$coord>) {
-  	## Comment lines
-  	next if ($line =~ /^;/);
-  	next if ($line =~ /^--/);
-  	next if $line =~ (/^#/);
-  	next unless ($line =~ /\S/);
-  	next if ($line =~ /track name=/);
-  	next if ($line =~ /^browser/);
-  	## get the absolute coordinates
-   	&RSAT::error::FatalError("Coord file (BED format) is not tab delimited. Convert the space into tabulations first.")
-   	unless ($line =~ /\t/); 
-   	chomp($line);
-  	my @splitOnTab = split(/\t/,$line);
-  	my $featID=$splitOnTab[3];
-	$coord{$featID} -> {'id'} = $featID ;
-	$coord{$featID} -> {'chr'} = $splitOnTab[0] ;
-	$coord{$featID} -> {'start'} = $splitOnTab[1] + 1 ;
-	$coord{$featID} -> {'end'} = $splitOnTab[2] ;
-	$coord{$featID} -> {'strand'} = $splitOnTab[5] ;
-	}
-	close $coord;
+  ($coord) = &OpenInputFile($infile{coord});
+  while (my $line = <$coord>) {
+    ## Comment lines
+    next if ($line =~ /^;/);
+    next if ($line =~ /^--/);
+    next if $line =~ (/^#/);
+    next unless ($line =~ /\S/);
+    next if ($line =~ /track name=/);
+    next if ($line =~ /^browser/);
+    ## get the absolute coordinates
+    &RSAT::error::FatalError("Coord file (BED format) is not tab delimited. Convert the space into tabulations first.")
+      unless ($line =~ /\t/); 
+    chomp($line);
+    my @splitOnTab = split(/\t/,$line);
+    my $featID=$splitOnTab[3];
+    $coord{$featID} -> {'id'} = $featID ;
+    $coord{$featID} -> {'chr'} = $splitOnTab[0] ;
+    $coord{$featID} -> {'start'} = $splitOnTab[1] + 1 ;
+    $coord{$featID} -> {'end'} = $splitOnTab[2] ;
+    $coord{$featID} -> {'strand'} = $splitOnTab[5] ;
+  }
+  close $coord;
 }
 
 ################################################################
@@ -116,7 +116,7 @@ while (<$in>) {
     &set_color($feature);
 #    &RSAT::message::Debug("assigned color to feature", $feature->get_attribute("feature_name"),$feature->get_attribute("itemRgb")) if ($main::verbose >= 5);
   }
-  
+
   ## convert the coordinates if necessary
   if ($infile{coord}){
   	&convert_coords($feature);
@@ -142,103 +142,99 @@ sub set_color {
 }
 
 ################################################################
+## Convert relative coordinates to genomic coordinate (option -coord)
 sub convert_coords {
-	my ($feature) = @_;
-	my $seq_name = $feature->get_attribute("seq_name");
+  my ($feature) = @_;
+  my $seq_name = $feature->get_attribute("seq_name");
 
-	
-	if ($coord{$seq_name}) {
-		
-		## feature relative coord
-		my $start=$feature->get_attribute("start");
-		my $end=$feature->get_attribute("end");
-		my $strand=$feature->get_attribute("strand");
-		
-		## chromosome (absolute)
-		my $chr = $coord{$seq_name}->{'chr'};
-		my $chr_strand = $coord{$seq_name}->{'strand'};
-		#&RSAT::message::Debug("old values", $seq_name,$start,$end,$strand);
-		#&RSAT::message::Debug("chr coord", $chr,$coord{$seq_name} -> {'start'},$coord{$seq_name} -> {'end'},$chr_strand);
-		
-		my $new_start ="";
-		my $new_end ="";
-		
-		if ($chr_strand eq "+") {
-		### START origine
-		if ($origin eq "start") {
-			
-			## length
-			my $feat_length = $end - $start +1;
-			## start
-			$new_start = $coord{$seq_name} -> {'start'} + $start - 1;
-			## end
-			$new_end   = $new_start + $feat_length - 1 ;
-			#&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand);
-			
+  if ($coord{$seq_name}) {
 
-		### END origin
-		} elsif ($origin eq "end") {
-			## length
-			my $feat_length = abs($end - $start);
-			## end
-			$new_end   = $coord{$seq_name} -> {'end'} + $end + 1 ;
-			## start
-			$new_start = $new_end - $feat_length;
-		}
-		} else {
-			### START origine
-		if ($origin eq "start") {
-			
-			## length
-			my $feat_length = $end - $start +1;
-			## start
-			$new_end = $coord{$seq_name} -> {'end'} - $start + 1;
-			## end
-			$new_start = $new_end - $feat_length + 1 ;
-			#&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand);
-			
+    ## feature relative coord
+    my $start=$feature->get_attribute("start");
+    my $end=$feature->get_attribute("end");
+    my $strand=$feature->get_attribute("strand");
 
-		### END origin
-		} elsif ($origin eq "end") {
-			&RSAT::message::Warning("check your results, this combination of parameters has not been verified extensively !");
-			## length
-			my $feat_length = abs($end - $start);
-			## end
-			$new_start   = $coord{$seq_name} -> {'start'} - $start - 1 ;
-			## start
-			$new_end = $new_start + $feat_length;
-		}
-			
-			
-		}
-		
-		## strand
-			#&RSAT::message::Debug("absolute strand", $chr_strand);
-			my $new_strand   = "";
-			if ($chr_strand eq "+") {
-				if ($strand eq "R"){
-					$new_strand = "R";
-				} else {
-					$new_strand = "D";
-				}	 
-			} else {
-				if ($strand eq "R"){
-					$new_strand = "D";
-				} else {
-					$new_strand = "R";
-				}
-			}
-			
-		## update the feature 
-		$feature->force_attribute("seq_name", $chr);
-		$feature->force_attribute("start",$new_start);
-		$feature->force_attribute("end",$new_end);
-		$feature->force_attribute("strand",$new_strand);
-		
-	} else {
-		&RSAT::message::Warning($seq_name ,"not found in coord file" ,$infile{coord});
-	}
-	
+    ## chromosome (absolute)
+    my $chr = $coord{$seq_name}->{'chr'};
+    my $chr_strand = $coord{$seq_name}->{'strand'};
+    #&RSAT::message::Debug("old values", $seq_name,$start,$end,$strand);
+    #&RSAT::message::Debug("chr coord", $chr,$coord{$seq_name} -> {'start'},$coord{$seq_name} -> {'end'},$chr_strand);
+
+    my $new_start ="";
+    my $new_end ="";
+
+    if ($chr_strand eq "+") {
+      ### START origine
+      if ($origin eq "start") {
+
+	## length
+	my $feat_length = $end - $start +1;
+	## start
+	$new_start = $coord{$seq_name} -> {'start'} + $start - 1;
+	## end
+	$new_end   = $new_start + $feat_length - 1 ;
+	#&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand);
+
+	### END origin
+      } elsif ($origin eq "end") {
+	## length
+	my $feat_length = abs($end - $start);
+	## end
+	$new_end   = $coord{$seq_name} -> {'end'} + $end + 1 ;
+	## start
+	$new_start = $new_end - $feat_length;
+      }
+
+    } else {
+      ### START origine
+      if ($origin eq "start") {
+
+	## length
+	my $feat_length = $end - $start +1;
+	## start
+	$new_end = $coord{$seq_name} -> {'end'} - $start + 1;
+	## end
+	$new_start = $new_end - $feat_length + 1 ;
+	#&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand);
+
+	### END origin
+      } elsif ($origin eq "end") {
+	&RSAT::message::Warning("check your results, this combination of parameters has not been verified extensively !");
+	## length
+	my $feat_length = abs($end - $start);
+	## end
+	$new_start   = $coord{$seq_name} -> {'start'} - $start - 1 ;
+	## start
+	$new_end = $new_start + $feat_length;
+      }
+    }
+
+    ## strand
+    #&RSAT::message::Debug("absolute strand", $chr_strand);
+    my $new_strand   = "";
+    if ($chr_strand eq "+") {
+      if ($strand eq "R") {
+	$new_strand = "R";
+      } else {
+	$new_strand = "D";
+      }	 
+    } else {
+      if ($strand eq "R") {
+	$new_strand = "D";
+      } else {
+	$new_strand = "R";
+      }
+    }
+
+    ## update the feature 
+    $feature->force_attribute("seq_name", $chr);
+    $feature->force_attribute("start",$new_start);
+    $feature->force_attribute("end",$new_end);
+    $feature->force_attribute("strand",$new_strand);
+
+  } else {
+    &RSAT::message::Warning($seq_name ,"not found in coord file" ,$infile{coord});
+  }
 }
 
 ################################################################
