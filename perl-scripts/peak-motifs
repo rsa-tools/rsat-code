@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.121 2011/01/17 10:35:23 jvanheld Exp $
+# $Id: peak-motifs,v 1.122 2011/01/18 01:20:15 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.121 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.122 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2131,7 +2131,7 @@ sub SynthesisOneMotifComparison {
 
   ################################################################
   ## Print the header of the DB match table
-  my $db_match_table ="<table>\n";
+  my $db_match_table ="<table class='whitebg'>\n";
   $db_match_table .= "<tr>\n";
   foreach my $field (@match_fields) {
     $db_match_table .= "<th>".$field."</th>\n";
@@ -2201,7 +2201,7 @@ sub SynthesisOneMotifComparison {
 ## motif. this table is inserted in the synthetic report.
 sub SynthesisByMotif {
   print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs</h3>", 0);
-  print $syn "<table class='sortable'>\n";
+  print $syn "<table class='whitebg'>\n";
 
   &ReadMotifTable();
 
@@ -2277,7 +2277,7 @@ sub SynthesisByMotif {
     print $syn "</tr>\n";
 
     ## Motif comparison results
-    print $syn "<tr><td colspan='6'><table>\n";
+    print $syn "<tr><td colspan='6'><table class='whitebg'>\n";
 
     my @compa_names = ();
     my @compa_files = ();
@@ -2354,7 +2354,7 @@ sub OpenSynthesis {
 ## Report results of motif comparisons
 sub SynthesisMotifCompa {
   print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'></a><h3>Motif comparisons</h3>", 0);
-  print $syn "<table class='sortable'>\n";
+  print $syn "<table class='whitebg'>\n";
 
   ## Word comparisons
   &SynthesisWordCompa();
@@ -2379,7 +2379,7 @@ sub SynthesisParamsAndFiles {
 
   ## Log files
   print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Logs and result files</h3>", 1);
-  print $syn "<table class='sortable'>\n";
+  print $syn "<table class='whitebg'>\n";
   &SyntheticTableAddHeaderRow("Log files");
   &SyntheticTableAddRow("Parameters and files",
 			"",
@@ -2507,7 +2507,7 @@ sub SyntheticTableAddHeaderRow {
 ## Add sequence composition on the synthetic report
 sub SynthesisSequenceComposition {
   print $syn &open_menu_heading($menu_nb++, "<a name='seq_composition'></a><h3>Sequence composition</h3>", 0);
-  print $syn "<p><table class='sortable'>\n";
+  print $syn "<p><table class='whitebg'>\n";
 
   foreach my $seq_type (@seq_types) {
 
@@ -2575,7 +2575,7 @@ sub SynthesisSequenceComposition {
 
     ## Residue composition
     for my $ol (@profiles_oligo_lengths) {
-      my $table = "<table><tr>";
+      my $table = "<table class='whitebg'><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
       $table .= "<td>Transition frequencies<br><a  href='".$img."'><img '".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
@@ -2600,7 +2600,7 @@ sub SynthesisSequenceComposition {
 sub SynthesisRefMotif {
   if (defined($main::infile{ref_motifs})) {
     print $syn &open_menu_heading($menu_nb++, "<a name='ref_motifs'></a><h3>Reference motifs</h3>", 0);
-    print $syn "<p><table class='sortable'>\n";
+    print $syn "<p><table class='whitebg'>\n";
     &SyntheticTableAddHeaderRow("Reference motif(s)");
 
     my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
@@ -2649,7 +2649,7 @@ sub SynthesisRefMotif {
 sub SynthesisMotifsByAlgo {
   &RSAT::message::TimeWarn("Synthesis per motif discovery algorithm") if ($main::verbose >= 2);
   print $syn &open_menu_heading($menu_nb++, "<a name='motifs_by_algo'></a><h3>Discovered motifs (by algorithm)</h3>", 1);
-  print $syn "<table class='sortable'>\n";
+  print $syn "<table class='whitebg'>\n";
   &SyntheticTableAddHeaderRow("Pattern discovery");
   foreach my $pattern_type (@pattern_types) {
     &SynthesisPatternDisco($pattern_type);
