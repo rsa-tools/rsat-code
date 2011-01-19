@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.128 2011/01/19 10:35:11 morgane Exp $
+# $Id: peak-motifs,v 1.129 2011/01/19 13:12:19 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.128 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.129 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -259,6 +259,7 @@ package main;
     &CompositionProfiles($seq_type) if ($task{composition});
   }
   &SynthesisSequenceComposition() if ($progressive_synthesis);
+
 
   ## Control sequences
   if ($main::infile{ctrl_seq}) {
@@ -1376,9 +1377,9 @@ sub MergeWords {
   &RSAT::message::TimeWarn("Word comparison table", $main::outfile{merged_words}) if ($main::verbose >= 2);
 
   ## Extract position-specific scoring matrices from the merged words
-  if ($task{merge_words}) {
+  if ($disco{merged_words}) {
       my $pattern_type = "merged_words";
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);     
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);
   }
 }
 
@@ -2343,13 +2344,20 @@ sub SynthesisByMotif {
 
   &ReadMotifTable();
 
+
   my @motifs = &ReadDiscoveredMotifs();
 
   ## Load background model for computing the consensus and logo of each motif
   &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
   local $bg_model = new RSAT::MarkovModel();
-  $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
 
+  if (-e $main::param{scan_bg_file}) {
+    $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
+  } else {
+    &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet") 
+      if ($main::verbose >= 1);
+    return;
+  }
 
   ## Options for generating logos
   my $logo_opt = "";
@@ -3868,15 +3876,15 @@ sub CheckArguments {
   ## Dependencies between tasks
 
   ## If motif discovery runs, the tasks that depend on it must re-run
-  if ($task{disco}) {
-      $task{merge_words} = 1;
-      $task{collect_motifs} = 1;
-
 ## I hesitate to redo all the subsequent tasks, this would somewhat loose the advantage of the option -task
+#  if ($task{disco}) {
+#      $task{merge_words} = 1;
+#      $task{collect_motifs} = 1;
+#
 #      $task{motifs_vs_ref} = 1;
 #      $task{motifs_vs_db} = 1;
 #      $task{scan} = 1;
-  }
+#  }
 
   ## Dependency between task merge_words and pattern discovery type merged_words
   if (($task{disco}) && ($disco{merged_words})) {
