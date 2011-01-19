@@ -109,11 +109,11 @@ $descr1 .= "<blockquote class ='demo'>";
 
 $descr1 .= "In this demonstration, we apply time- and memory-efficient
 motif discovery algorithms to discover over-represented motifs in a
-set of 1370 peak regions bound by the mouse transcription factor Otc4
+set of 1000 peak regions bound by the mouse transcription factor Otc4
 (Chen et al., 2008)</p>\n";
 
-$descr1 .= "Discovered motifs are compared to JASPAR vertebrate
-motifs, and sequences are scanned to predict binding sites.</p>\n";
+#$descr1 .= "Discovered motifs are compared to JASPAR vertebrate
+#motifs, and sequences are scanned to predict binding sites.</p>\n";
 
 $descr1 .= "</blockquote>";
 
@@ -127,7 +127,7 @@ print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
 print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar');
 print $query->hidden(-name=>'max_seq_len',-default=>'250');
-print $query->hidden(-name=>'top_sequences',-default=>'5000');
+print $query->hidden(-name=>'top_sequences',-default=>'');
 print $query->submit(-label=>"DEMO 1");
 print "</B></TD>\n";
 print $query->end_form;
@@ -279,6 +279,7 @@ print $query->checkbox(-name=>'oligo_length8',
 		       -checked=>$default{oligo_length8},
 		       -label=>'8'); 
 print "&nbsp;"x2;
+print "<i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
 
 print "<br/>";
 
