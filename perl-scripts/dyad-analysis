@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.72 2010/05/24 08:09:01 jvanheld Exp $
+# $Id: dyad-analysis,v 1.73 2011/01/19 13:09:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -20,7 +20,7 @@ require "RSA.disco.lib";
 #### Initialise parameters
 local $start_time = &RSAT::util::StartScript();
 
-local $program_version = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "dyads";
 
 %supported_return_field = (proba=>1,
@@ -1118,6 +1118,9 @@ sub CountDyads {
       $seq_length[$sequence_number] = length($current_seq);
       my $prev_sum_seq_len = $sum_seq_length;
       $sum_seq_length += $seq_length[$sequence_number];
+
+      &RSAT::message::Info("sequence", $sequence_number, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 4);
+
 
       ################################################################
       ## Calculate the number of possible positions, as a function of
