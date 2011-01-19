@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.126 2011/01/19 00:39:47 jvanheld Exp $
+# $Id: peak-motifs,v 1.127 2011/01/19 09:26:47 jvanheld Exp $
 #
 ############################################################
 
@@ -110,7 +110,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.126 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.127 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -272,17 +272,13 @@ package main;
   &SynthesisRefMotif() if ($progressive_synthesis);
 
   ## Run motif discovery algorithms
-  &OligoAnalysis() if ($task{oligos});
-  &DyadAnalysis() if ($task{dyads});
-  &PositionAnalysis() if ($task{positions});
-  &LocalWords() if ($task{local_words});
-  &MergeWords() if ($task{merge_words});
-
-  ## Extract position-specific scoring matrices from the merged words
-  if ($disco{merged_words}) {
-      my $pattern_type = "merged_words";
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);     
+  if ($task{disco}) {
+    &OligoAnalysis() if ($disco{oligos});
+    &DyadAnalysis() if ($disco{dyads});
+    &PositionAnalysis() if ($disco{positions});
+    &LocalWords() if ($disco{local_words});
   }
+  &MergeWords() if ($task{merge_words});
 
   ## MEME pattern discovery
   &CalcMemeBackground() if ($task{meme_bg});
@@ -485,7 +481,7 @@ sub DefaultParameters {
   ## <mode>=oops|zoops_factor=0.0..1.0 <x:input_set1>..<x:input_setN>
   ## <try_limit> <step_limit> <iter_limit> <thread_count>
   ## <seeds>=random|filename.mfa <gc%>=0.
-  $main::param{chipmunk_start_motif_length} = 10;
+  $main::param{chipmunk_start_motif_length} = 12;
   $main::param{chipmunk_stop_motif_length} = 12;
   $main::param{chipmunk_verbose} = "yes";
   $main::param{chipmunk_mode} = "oops";
@@ -1378,6 +1374,11 @@ sub MergeWords {
 
   &RSAT::message::TimeWarn("Word comparison table", $main::outfile{merged_words}) if ($main::verbose >= 2);
 
+  ## Extract position-specific scoring matrices from the merged words
+  if ($task{merge_words}) {
+      my $pattern_type = "merged_words";
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);     
+  }
 }
 
 
@@ -1970,7 +1971,6 @@ sub ScanSequences {
     &MotifEnrichment($infile{test_seq}, $main::outfile{$motif_id."_tf"},
 		     $main::outfile{$motif_id.'_pssm_enrichment'},
 		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
-#    die "HELLO";
   }
 }
 
@@ -2043,6 +2043,7 @@ sub TimeTable {
       &RSAT::message::Warning("Missing time file", $file) if ($main::verbose >= 2);
     }
     print $timetable $key, "\t", $time, "\n";
+    &RSAT::message::Info("TimeTable", $key, $time) if ($main::verbose >= 4);
   }
   &RSAT::message::TimeWarn("Time table file", $main::outfile{timetable}) if ($main::verbose >= 2);
 }
