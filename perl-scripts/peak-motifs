@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.125 2011/01/19 00:37:01 jvanheld Exp $
+# $Id: peak-motifs,v 1.126 2011/01/19 00:39:47 jvanheld Exp $
 #
 ############################################################
 
@@ -110,7 +110,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.125 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.126 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -286,10 +286,10 @@ package main;
 
   ## MEME pattern discovery
   &CalcMemeBackground() if ($task{meme_bg});
-  &RunMEME() if ($task{meme});
+  &RunMEME() if (($task{meme}) || (($task{disco}) && ($disco{meme}))); ## Not yet clear to me (JvH) whether meme should be a separat etask or a disco algo that runs with task disco
 
   ## ChIPMunk pattern discovery
-  &RunChIPMunk() if ($task{chipmunk});
+  &RunChIPMunk() if  (($task{chipmunk}) || (($task{disco}) && ($disco{chipmunk}))); ## Not yet clear to me (JvH) whether chipmunk should be a separat etask or a disco algo that runs with task disco
 
   ## Merge all discovered motifs
   &MergeMotifs() if ($task{merge_motifs});
