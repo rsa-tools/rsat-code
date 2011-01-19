@@ -94,6 +94,10 @@ if ($query->param('local-word-analysis') =~ /on/) {
 if ($query->param('position-analysis') =~ /on/) {
     push(@disco_algo, "positions");
 }
+if ($query->param('local-word-analysis_dyads') =~ /on/) {
+	## to add
+}
+
 $parameters .= " -disco ".join(",",@disco_algo);
 
 ### task specific parameters
