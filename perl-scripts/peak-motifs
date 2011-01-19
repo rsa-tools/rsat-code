@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.127 2011/01/19 09:26:47 jvanheld Exp $
+# $Id: peak-motifs,v 1.128 2011/01/19 10:35:11 morgane Exp $
 #
 ############################################################
 
@@ -94,6 +94,7 @@ require "RSA.disco.lib";
 require "footprint.lib.pl";
 use RSAT::util;
 use RSAT::MatrixReader;
+use Data::Dumper;
 
 ################################################################
 ## Main package
@@ -110,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.127 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.128 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2178,7 +2179,7 @@ sub ResultTOC {
   if ((-e $main::outfile{archive}) || ($task{archive})) {
     my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
-    $result_toc .=  "<a href='".$link."'>All results (".$archive_short.")</a></p>\n";
+    $result_toc .=  "<a href='".$link."'>Download all results (".$archive_short.")</a></p>\n";
   }
 
   $result_toc .=  "<a href='#seq_composition'>Sequence composition & statistics </a><br/>";
@@ -2608,6 +2609,48 @@ sub SyntheticTableAddRow {
   &PrintFileLinks(@files);
   print $syn "</tr>\n";
 }
+################################################################
+## Add a row to the syhnthetic table
+sub SyntheticTableAddRow_New {
+  my ($type, $summary, @files) = @_;
+  print $syn "<tr>\n";
+  print $syn "<td>$type</td>\n";
+  print $syn "<td>$summary</td>\n";
+  &PrintFileLinks_New(@files);
+  print $syn "</tr>\n";
+}
+
+################################################################
+## Taking as input a key-file list, print a HTML table cell with a
+## list of links to the files
+sub PrintFileLinks_New {
+  my (@files) = @_;
+  print $syn "<td>\n";
+  my $title;
+  my $key;
+  my $file;
+
+ for (my $i=0; $i<=$#files; $i+=2){
+ 	$title = $files[$i];
+ 	print $syn "[ ".$title.": \n";
+
+	## treat each link
+ 	my $links = $files[$i+1];
+    while ($key = shift (@$links)){
+    last unless $key;
+    $file = shift(@$links);
+    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 5);
+    if (-e $file) {
+      my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+      print $syn "<a href='".$link."'>".$key."</a>\n";
+    } else {
+      print $syn "<font color='red'>[".$key."]</font>\n";
+    }
+  }
+  print $syn " ]<br/>";
+}
+  print $syn "</td>\n";
+}
 
 ################################################################
 ## Taking as input a key-file list, print a HTML table cell with a
@@ -2702,31 +2745,40 @@ sub SynthesisSequenceComposition {
     $seq_stats .= "<br>\nMin length: ".$min_peak_len." bp";
     $seq_stats .= "<br>\nMean length: ".$mean_peak_len." bp";
     $seq_stats .= "<br>\nMax length: ".$max_peak_len." bp";
-    &SyntheticTableAddRow($seq_stats,
+
+    &SyntheticTableAddRow_New($seq_stats,
 			  "<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
-			  "converted",$main::outfile{$seq_type."_converted"},
-			  "purged",$main::outfile{$seq_type."_purged"},
-			  "lengths",$main::outfile{$seq_type."_seqlen"},
-			  "distrib",$main::outfile{$seq_type."_seqlen_distrib"},
-			  "graph",$main::outfile{$seq_type."_seqlen_distrib_graph"},
+			  "seq",["converted",$main::outfile{$seq_type."_converted"},
+			  			"purged" , $main::outfile{$seq_type."_purged"}
+			  			],
+			  "lengths",['list', $main::outfile{$seq_type."_seqlen"},
+    					'distrib',$main::outfile{$seq_type."_seqlen_distrib"},
+    					 'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
+			 			 ]
 			 );
 
 
     ## Residue composition
     for my $ol (@profiles_oligo_lengths) {
-      my $table = "<table class='whitebg'><tr>";
+     # my $table = "<table class='whitebg'><tr>";
+     my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
-      $table .= "<td>Transition frequencies<br><a  href='".$img."'><img '".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img '".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
-      $table .= "<td>Position profile<br><a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a></td>";
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Position profile<br><a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a></td>";
       $table .= "</tr></table>";
-      &SyntheticTableAddRow($ol."nt composition",
+      &SyntheticTableAddRow_New($ol."nt composition",
 			    $table,
-			    $ol."nt freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
-			    $ol."nt transitions",$main::outfile{$ol."nt_".$seq_type."_transitions"},
-			    "inclusive bg model",$main::outfile{$ol."nt_".$seq_type."_inclusive"},
-			    "profile table",$main::outfile{$ol."nt_".$seq_type."_profiles"},
-			    "individual profiles",$main::outfile{$ol."nt_".$seq_type."_profiles_index"},
+			    $ol."nt", ["freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
+			   			 "transitions",$main::outfile{$ol."nt_".$seq_type."_transitions"}
+			   			 ],
+			   	"bg model", [ "Inclusive format",$main::outfile{$ol."nt_".$seq_type."_inclusive"}
+			   			],
+				
+			    "profile", [ "table",$main::outfile{$ol."nt_".$seq_type."_profiles"},
+			    			"html(individual)",$main::outfile{$ol."nt_".$seq_type."_profiles_index"}
+			    ] 
+			    
 			   );
     }
   }
