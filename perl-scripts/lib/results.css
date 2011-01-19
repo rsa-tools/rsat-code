@@ -94,6 +94,14 @@ h2 {
 	font-size: 14px;
 }
 
+h2.motif {
+	margin-top: 3px;
+	padding-top: 0px;
+	margin-bottom: 4px;
+	color : #2D282E;
+	font-size: 12px;
+}
+
 /* Other tag formatting  */
 hr {
 	border: 1px dotted #2D282E;
@@ -169,7 +177,7 @@ table.whitebg {
 	border-spacing: 0px;
 }
 
-table.whitebg td,table.list th {
+table.whitebg td,table.whitebg th {
 	font-size: 70%;
 	border-right: 1px solid #cbcbb4;
 	border-bottom: 1px solid #cbcbb4;
