@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.124 2011/01/18 22:22:25 jvanheld Exp $
+# $Id: peak-motifs,v 1.125 2011/01/19 00:37:01 jvanheld Exp $
 #
 ############################################################
 
@@ -34,8 +34,7 @@ Conception and implementation of the work flow + testing.
 
 =item Morgane Thomas-Chollier <thomas-c@molgen.mpg.de>
 
-Conception of the work flow + implementation of Web interface +
-testing.
+Conception of the work flow + output layout + Web interface + testing.
 
 =item Matthieu Defrance <defrance@ccg.unam.mx>
 
@@ -111,7 +110,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.124 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.125 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -169,7 +168,9 @@ package main;
   @extra_tasks = ("all",
 		  "clean_seq",
 		  "meme_bg",
-		  "meme");
+		  "meme",
+		  "chipmunk",
+		 );
 
   ## All the supported tasks
   @supported_tasks = (@default_tasks, @extra_tasks);
@@ -192,7 +193,10 @@ package main;
 		   "local_words",
 		   "oligo_diff",
 		   "merged_words",
-		   "meme");
+## Still to be treated: include the meme and chipmunk results in the HTML synthesis ?
+		   "meme",
+		   "chipmunk",
+		  );
 
   ## All the supported motif discovery algorithms
   @supported_discos = (@default_discos, @extra_discos);
@@ -209,9 +213,13 @@ package main;
   @motif_databases = ();
   @motif_db_format = ();
 
-  ## Options for meme software
+  ## Options and suffix for MEME (must be global variables)
   local $meme_options = "";
   local $meme_suffix = "";
+
+  ## Options and suffix for ChIPMunk  (must be global variables)
+  local $chipmunk_options = "";
+  local $chipmunk_suffix = "";
 
   ## Those variables need to be global for motif post-processing and indexing
   local @motif_ids;
@@ -276,11 +284,17 @@ package main;
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);     
   }
 
+  ## MEME pattern discovery
   &CalcMemeBackground() if ($task{meme_bg});
   &RunMEME() if ($task{meme});
+
+  ## ChIPMunk pattern discovery
+  &RunChIPMunk() if ($task{chipmunk});
+
+  ## Merge all discovered motifs
   &MergeMotifs() if ($task{merge_motifs});
 
-
+  ## HTML synthesis by algorithm
   &SynthesisMotifsByAlgo() if ($progressive_synthesis);
 
   ## Motif-wise analysis
@@ -463,7 +477,31 @@ sub DefaultParameters {
   ## Options for MEME background model
   $main::param{bg_meme_markov} = 3; ## Markov order for MEME
 
+  ################################################################
+  ## Default ChIPMunk options
+  ##
+  ## java -cp "some_dir" ru_genetika.ChIPMunk <start_motif_length>
+  ## <stop_motif_length> <verbose>=(y)es|(n)o
+  ## <mode>=oops|zoops_factor=0.0..1.0 <x:input_set1>..<x:input_setN>
+  ## <try_limit> <step_limit> <iter_limit> <thread_count>
+  ## <seeds>=random|filename.mfa <gc%>=0.
+  $main::param{chipmunk_start_motif_length} = 10;
+  $main::param{chipmunk_stop_motif_length} = 12;
+  $main::param{chipmunk_verbose} = "yes";
+  $main::param{chipmunk_mode} = "oops";
+  $chipmunk_suffix = join("_", "_w", 
+			  $main::param{chipmunk_start_motif_length},
+			  $main::param{chipmunk_stop_motif_length},
+			  $main::param{chipmunk_mode},
+			 );
 
+  ## TO BE TESTED
+#   ## Facultative ChIPMunk options - to evaluate
+#   $main::param{chipmunk_try_limit} = 100;
+#   $main::param{chipmunk_step_limit} = 10;
+#   $main::param{chipmunk_iter_limit} = 1;
+#   $main::param{chipmunk_thread_count} = 7;
+#   $main::param{chipmunk_gc} = 0.5;
 
   ################################################################
   ## Options used for motif comparison
@@ -731,15 +769,22 @@ sub SetOutFileNames {
     push @timetable_keys, $pattern_type."_pssm";
   }
 
-
   ## Output files for MEME
-  if ($disco{meme}) {
+  if (($disco{meme}) || ($task{meme})) {
     $main::outfile{meme_bg_file} = &OutFileName("results/meme", ".txt", "meme_bg_mkv".$main::param{bg_meme_markov});
     &CalcMemeOptions(); ## this also computes the suffix of the meme output file
     $main::outfile{meme} = &OutFileName("results/meme", ".txt", "meme_".$meme_suffix);
     $main::outfile{meme_tf} = &OutFileName("results/meme", ".tf", "meme_".$meme_suffix);
     $main::outfile{meme_logos} = &OutFileName("results/meme", "", "meme_".$meme_suffix."_logos");
     push @timetable_keys, "meme";
+  }
+
+  ## Output files and options for ChIPMunk
+  if (($disco{chipmunk}) || ($task{chipmunk})) {
+    $main::outfile{chipmunk} = &OutFileName("results/chipmunk", ".txt", "chipmunk_".$chipmunk_suffix);
+    #    $main::outfile{chipmunk_tf} = &OutFileName("results/chipmunk", ".tf", "chipmunk_".$chipmunk_suffix);
+    #    $main::outfile{chipmunk_logos} = &OutFileName("results/chipmunk", "", "chipmunk_".$chipmunk_suffix."_logos");
+    push @timetable_keys, "chipmunk";
   }
 
   ## Clustering of the discovered motifs + comparison with reference motif(s)
@@ -1194,6 +1239,43 @@ sub RunMEME {
   $cmd .= " -o ".$main::outfile{meme_tf};
   &one_command($cmd);
 }
+
+################################################################
+## Run ChIPMunk
+sub RunChIPMunk {
+  my $die_on_error = 0;
+  my $chipmunk_dir = $ENV{chipmunk_dir};
+  unless ($chipmunk_dir) {
+   &RSAT::error::FatalError("ChIPMunk directory must be specified in the file RSAT_config.props (chipmunk_dir=[ChIPMunk installation path]). ");
+  }
+
+
+  my $cmd = "java -cp '".$chipmunk_dir."'";
+  $cmd .= " ru_genetika.ChIPMunk";
+
+
+  $chipmunk_options .= " ".$main::param{chipmunk_start_motif_length};
+  $chipmunk_options .= " ".$main::param{chipmunk_stop_motif_length};
+  $chipmunk_options .= " ".$main::param{chipmunk_verbose};
+  $chipmunk_options .= " ".$main::param{chipmunk_mode};
+  $chipmunk_options .= " s:".$main::outfile{"test_purged"};
+
+  ## Run the CHIPMUNK command
+  $cmd .= " ".$chipmunk_options;
+  $cmd .= " > ".$main::outfile{chipmunk};
+  &one_command($cmd, 1, $main::outfile{chipmunk}."_time.txt");
+
+#   ## Convert the matrix
+#   $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{chipmunk};
+#   $cmd .= " -from chipmunk";
+#   $cmd .= " -to transfac";
+#   $cmd .= " -return counts,parameters,logo";
+#   $cmd .= " -logo_file ".$main::outfile{chipmunk_logos};
+#   $cmd .= " -o ".$main::outfile{chipmunk_tf};
+#  &one_command($cmd);
+
+}
+
 
 ################################################################
 ## Convert reference motif and generate logos
@@ -1852,6 +1934,7 @@ sub ScanSequences {
       &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 2);
       $cmd = $SCRIPTS."/convert-features";
       $cmd .= " -from ft -i ".$main::outfile{$motif_id.'_pssm_sites'};
+      $cmd .= " -add_chr";
       $cmd .= " -coord ".$main::infile{coord};
       $cmd .= " -to bed -o ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
 #      &one_command($cmd,1);
@@ -3189,7 +3272,7 @@ All the formats supported by XYgraph can be used.
 
 =pod
 
-=item B<-disco oligos|dyads|positions|local_words|merged_words|meme>
+=item B<-disco oligos|dyads|positions|local_words|merged_words|meme|chipmunk>
 
 Specify the software tool(s) that will be used for motif discovery.
 
@@ -3267,16 +3350,11 @@ over-representation (oligo-analysis, dyad-analysis).
 
 =item I<merged_words>
 
+Extract a position-specific scoring matrix (using
+I<matrix-from-patterns>) from all the words discovered by the selected
+string-based motif disovery algorithms (oigos,dyads,positions and/or
+local_words).
 
-=item I<meme>
-
-Run the motif discovery program MEME on the input sequences.
-
-B<Beware>: the complexity of MEME is quadratic: the computing time
-increases as the square of sequence size. It is thus not recommended
-to use MEME for data sets exceeding 1Mb. If the input set contains
-many peaks, the option -task meme can be combined with a restriction
-on the number of top peaks to be considered (e.g. -top_peaks 500).
 
 =cut
     } elsif ($arg eq "-disco") {
@@ -3372,6 +3450,28 @@ Compare all discovered motifs with the reference motif.
 
 Run the motif discovery algorithms. See option -disco for the
 selection of motif discovery algorithm(s).
+
+=item I<meme>
+
+Run the motif discovery program MEME on the input sequences.
+
+B<Beware>: the complexity of MEME is quadratic: the computing time
+increases as the square of sequence size. It is thus not recommended
+to use MEME for data sets exceeding 1Mb. If the input set contains
+many peaks, the option -task meme can be combined with a restriction
+on the number of top peaks to be considered (e.g. -top_peaks 500).
+
+MEME reference: Bailey, T. L. and Elkan, C. (1994). Fitting a mixture
+model by expectation maximization to discover motifs in
+biopolymers. Proc Int Conf Intell Syst Mol Biol 2, 28-36.
+
+=item I<chipmunk>
+
+Run the motif discovery program ChIPMunk.
+
+ChIPMunk reference: Kulakovskiy, I. V., Boeva, V. A., Favorov,
+A. V. and Makeev, V. J. (2010). Deep and wide digging for binding
+motifs in ChIP-Seq data. Bioinformatics 26, 2622-3.
 
 =item I<merge_words>
 
