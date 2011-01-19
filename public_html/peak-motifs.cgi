@@ -67,7 +67,7 @@ $parameters .= "-i $sequence_file ";
 ### tasks
 
 ## default
-@tasks = ("purge", "seqlen", "composition", "merge_words", "collect_motifs", "timelog", "archive", "synthesis");
+@tasks = ("purge", "seqlen", "composition", "disco", "timelog", "archive", "synthesis");
 
 ## motif-disco
 my $oligo_params = "";
@@ -77,22 +77,24 @@ foreach my $i (6..8){
     }
 }
 $parameters .= $oligo_params;
-
+## motif disco algo
+my @disco_algo =();
 if ($query->param('oligo-analysis') =~ /on/) {
-    push(@tasks, "oligos");
+    push(@disco_algo, "oligos");
     &FatalError("Select at least one oligo size for oligo-analysis") if ($oligo_params eq "");
 }
 
 if ($query->param('dyad-analysis') =~ /on/) {
-    push(@tasks, "dyads");
+    push(@disco_algo, "dyads");
 }
 if ($query->param('local-word-analysis') =~ /on/) {
-    push(@tasks, "local_words");
+    push(@disco_algo, "local_words");
     &FatalError("Select at least one oligo size for local-word-analysis") if ($oligo_params eq "");
 }
 if ($query->param('position-analysis') =~ /on/) {
-    push(@tasks, "positions");
+    push(@disco_algo, "positions");
 }
+$parameters .= " -disco ".join(",",@disco_algo);
 
 ### task specific parameters
 if (&IsNatural($query->param('markov'))) {
