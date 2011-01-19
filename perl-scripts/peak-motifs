@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.129 2011/01/19 13:12:19 jvanheld Exp $
+# $Id: peak-motifs,v 1.130 2011/01/19 13:47:17 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.129 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.130 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1487,15 +1487,15 @@ sub SetFileNamesForMotif {
   $main::outfile{$motif_id."_logo_rc"} = $main::prefix{$motif_id."_logo_rc"}.".".$main::param{img_format};
 #  $main::outfile{$motif_id."_logo_rc"} = $main::prefix{$motif_id."_prefix"}."_logo_rc";
 
-  ## Enrichment in binding sites
-  $main::outfile{$motif_id.'_pssm_enrichment'} = $main::prefix{$motif_id."_prefix"}."_scan_mkv".$main::param{scan_enrich_markov}."_enrichment.tab";
-  $main::outfile{$motif_id.'_pssm_enrichment_png'} = $main::prefix{$motif_id."_prefix"}."_scan_mkv".$main::param{scan_enrich_markov}."_enrichment.png";
-
   ## Predicted sites (sequence scanning)
   $main::outfile{$motif_id.'_pssm_sites'} = $main::prefix{$motif_id."_prefix"}."_sites.tab";
   $main::outfile{$motif_id.'_pssm_sites_genomic'} = $main::prefix{$motif_id."_prefix"}."_sites_genomic.bed";
   $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.tab";
   $main::outfile{$motif_id.'_pssm_site_distrib_graph'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.".$main::param{img_format};
+
+  ## Enrichment in binding sites
+  $main::outfile{$motif_id.'_pssm_enrichment'} = $main::prefix{$motif_id."_prefix"}."_scan_mkv".$main::param{scan_enrich_markov}."_enrichment.tab";
+  $main::outfile{$motif_id.'_pssm_enrichment_png'} = $main::prefix{$motif_id."_prefix"}."_scan_mkv".$main::param{scan_enrich_markov}."_enrichment.png";
 
   ## Comparisons betwen discoverd and reference motifs
   $main::prefix{$motif_id."_vs_ref_prefix"} = &OutFileName("results/discovered_motifs/".$motif_id, "", $motif_id."_vs_ref");
@@ -2343,7 +2343,6 @@ sub SynthesisByMotif {
   print $syn "<table class='whitebg'>\n";
 
   &ReadMotifTable();
-
 
   my @motifs = &ReadDiscoveredMotifs();
 
