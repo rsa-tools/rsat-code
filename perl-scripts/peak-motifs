@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.136 2011/01/19 22:21:08 jvanheld Exp $
+# $Id: peak-motifs,v 1.137 2011/01/19 22:46:14 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.136 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.137 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -3921,15 +3921,6 @@ sub CheckArguments {
       $task{$task} = 1;
     }
 
-    if (defined($main::infile{ctrl_seq})) {
-      delete($task{oligos});
-      delete($task{dyads});
-      delete($task{positions});
-      delete($task{local_words});
-    } else {
-      delete($task{oligo_diff});
-    }
-
     delete($task{motifs_vs_ref}) unless (defined($main::infile{ref_motifs}));
     delete($task{motifs_vs_db}) unless (scalar(@motif_databases) > 0);
   }
@@ -3938,6 +3929,16 @@ sub CheckArguments {
   if ((scalar(keys(%disco)) == 0) || ($disco{all})) {
     foreach my $disco (@default_discos) {
       $disco{$disco} = 1;
+    }
+
+    ## Adapt selection of discovery algorithms depending on whether a controls et has been provided
+    if (defined($main::infile{ctrl_seq})) {
+      delete($disco{oligos});
+      delete($disco{dyads});
+      delete($disco{positions});
+      delete($disco{local_words});
+    } else {
+      delete($disco{oligo_diff});
     }
   }
 
