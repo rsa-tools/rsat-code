@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.127 2011/01/18 22:07:03 amedina Exp $
+# $Id: matrix-quality,v 1.128 2011/01/19 22:57:30 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2463,7 +2463,7 @@ sub Calculate_NWD {
     %hashTemp = map { $_ => 1 } @pvals_list;
     @pvals_list = sort keys %hashTemp;
 
-    %hash_print;
+    my %hash_print;
     foreach my $pval (sort {$b cmp $a}(@pvals_list)){
 	next unless $p_val_score_case{$pval};
 	next unless $p_val_score_base{$pval};
