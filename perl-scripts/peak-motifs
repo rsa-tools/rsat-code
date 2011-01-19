@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.134 2011/01/19 21:02:53 morgane Exp $
+# $Id: peak-motifs,v 1.135 2011/01/19 21:16:14 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.134 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.135 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2194,7 +2194,8 @@ sub ResultTOC {
  for my $mot (1..$motif_nb) {
  	my $matrix = $motifs[$mot-1];
  	my $motif_id= $matrix->get_attribute("id");
- $result_toc .=  "	<li>Motif ".$mot.": <a href='".$main::outfile{$motif_id."_tf"}."'>[matrix]</a> </li>";
+ 	my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id."_tf"});
+ 	$result_toc .=  "	<li>Motif ".$mot.": <a href='".$link."'>[matrix]</a> </li>";
   #	$result_toc .=  "	<li>Motif ".$mot.": <a href=''>[matrix]</a> <a href=''>[BED file (UCSC track)] </a></li>";
  }
   $result_toc .=  "</ul>";
@@ -2944,7 +2945,6 @@ sub SynthesisPatternDisco {
     
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
       $pattern_table .= "<tr>\n";
-      $pattern_table .= "<td style='border-right-style:none;'>".$pattern_type."_m".$logo_nb."</td>";
       my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
       my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
       my $start_format="";
@@ -2962,6 +2962,8 @@ sub SynthesisPatternDisco {
       }
       &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
       if (-e $logo_file) {
+    $pattern_table .= "<td style='border-right-style:none;'>".$pattern_type."_m".$logo_nb."</td>";
+    
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
 	$pattern_table .= "<td align='right'>";
 	$pattern_table .= $start_format;
