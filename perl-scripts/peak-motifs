@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.133 2011/01/19 16:38:40 morgane Exp $
+# $Id: peak-motifs,v 1.134 2011/01/19 21:02:53 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.133 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.134 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2189,12 +2189,15 @@ sub ResultTOC {
   my $motif_nb = scalar(@motifs);
   $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - ".$motif_nb."</a><br/>";
   $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - ".$motif_nb."</a><br/>";
- # $result_toc .=  " <ul> ";
+  $result_toc .=  " <ul> ";
  
- # for my $mot (1..$motif_nb) {
+ for my $mot (1..$motif_nb) {
+ 	my $matrix = $motifs[$mot-1];
+ 	my $motif_id= $matrix->get_attribute("id");
+ $result_toc .=  "	<li>Motif ".$mot.": <a href='".$main::outfile{$motif_id."_tf"}."'>[matrix]</a> </li>";
   #	$result_toc .=  "	<li>Motif ".$mot.": <a href=''>[matrix]</a> <a href=''>[BED file (UCSC track)] </a></li>";
- # }
- # $result_toc .=  "</ul>";
+ }
+  $result_toc .=  "</ul>";
   $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
   $result_toc .=  "<a href='#logs'>Logs & Commands</a><br/>";
   $result_toc .=  "</div>";
@@ -2433,17 +2436,20 @@ sub SynthesisByMotif {
       print $syn "<font color='red'>No logo</font>","</td>\n";
     }
     print $syn "</tr></table></td>\n";
-	 print $syn "\n<td>";
-    if ($task{scan}) {
-      &PrintFileLinks("Sites",$main::outfile{$motif_id.'_pssm_sites'},
-		      "Site position distrib.",$main::outfile{$motif_id.'_pssm_site_distrib'},
-		      "site position profiles",$main::outfile{$motif_id.'_pssm_site_distrib_graph'},
-		      "Enrichment distrib", $main::outfile{$motif_id.'_pssm_enrichment'},
-		      "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
-		     );
-    }
-     print $syn "<br/>";
-    print $syn "</td></tr>\n";
+	  &PrintFileLinks_New(
+	  	"matrix", ["tab format",$main::outfile{$motif_id."_tab"},
+	  					"transfac format",$main::outfile{$motif_id."_tf"}
+	  					]
+			 );
+#    if ($task{scan}) {
+ #     &PrintFileLinks("Sites",$main::outfile{$motif_id.'_pssm_sites'},
+#		      "Site position distrib.",$main::outfile{$motif_id.'_pssm_site_distrib'},
+#		      "site position profiles",$main::outfile{$motif_id.'_pssm_site_distrib_graph'},
+#		      "Enrichment distrib", $main::outfile{$motif_id.'_pssm_enrichment'},
+#		      "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
+#		     );
+#   }
+    print $syn "</tr>\n";
 
     ## Motif comparison results
     
@@ -2560,7 +2566,7 @@ sub SynthesisMotifCompa {
 sub SynthesisParamsAndFiles {
 
   ## Log files
-  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Logs and result files</h3>", 1);
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Logs and parameter files</h3>", 1);
   print $syn "<table class='whitebg'>\n";
   &SyntheticTableAddHeaderRow("Log files");
   &SyntheticTableAddRow("Parameters and files",
@@ -2934,9 +2940,11 @@ sub SynthesisPatternDisco {
     close $asmb;
 
     ## Synthesize matrix logos
-    my $pattern_table = "<table cellpadding='0' cellspacing='0' align='center' border='0'>";
+   my $pattern_table = "<table class='whitebg' align='center' style='border-style:none;'>";
+    
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
       $pattern_table .= "<tr>\n";
+      $pattern_table .= "<td style='border-right-style:none;'>".$pattern_type."_m".$logo_nb."</td>";
       my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
       my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
       my $start_format="";
@@ -2971,7 +2979,7 @@ sub SynthesisPatternDisco {
       }
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
-	$pattern_table .= "<td align='left'>";
+	$pattern_table .= "<td align='left' style='border-right-style:none;'>";
 	$pattern_table .= $start_format;
 	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
 	$pattern_table .= $pattern_info[$logo_nb]->{rc_word};
@@ -2985,16 +2993,27 @@ sub SynthesisPatternDisco {
     }
     $pattern_table .= "</table>\n";
 
-    &SyntheticTableAddRow($pattern_type,
+#    &SyntheticTableAddRow($pattern_type,
+#			  $pattern_table,
+#			  $pattern_type,$main::outfile{$pattern_type},
+#			  "assembly",$main::outfile{$pattern_type.'_asmb'},
+#			  "sig matrices",$main::outfile{$pattern_type.'_pssm_sig'},
+#			  "matrices - tab format",$main::outfile{$pattern_type.'_pssm_counts'},
+#			  "matrices - transfac format",$main::outfile{$pattern_type.'_pssm_tf'},
+##			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
+##			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
+##			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
+#			 );
+	   &SyntheticTableAddRow_New($pattern_type,
 			  $pattern_table,
-			  $pattern_type,$main::outfile{$pattern_type},
-			  "assembly",$main::outfile{$pattern_type.'_asmb'},
-			  "sig matrices",$main::outfile{$pattern_type.'_pssm_sig'},
-			  "matrices - tab format",$main::outfile{$pattern_type.'_pssm_counts'},
-			  "matrices - transfac format",$main::outfile{$pattern_type.'_pssm_tf'},
-#			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
-#			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
-#			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
+			  "discovered words",["text",$main::outfile{$pattern_type.'_asmb'},
+			  			],
+			  "assembly",['text', $main::outfile{$pattern_type.'_asmb'},
+    					'sig matrices',$main::outfile{$pattern_type.'_pssm_sig'},
+			 			 ],
+			 "matrices",['tab format', $main::outfile{$pattern_type.'_pssm_counts'},
+    					'transfac format',$main::outfile{$pattern_type.'_pssm_tf'},
+			 			 ],
 			 );
 
   } else {
