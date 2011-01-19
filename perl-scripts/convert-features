@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.27 2011/01/18 17:12:26 morgane Exp $
+# $Id: convert-features,v 1.28 2011/01/19 08:31:57 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -92,7 +92,16 @@ if ($infile{coord}){
     $coord{$featID} -> {'chr'} = $splitOnTab[0] ;
     $coord{$featID} -> {'start'} = $splitOnTab[1] + 1 ;
     $coord{$featID} -> {'end'} = $splitOnTab[2] ;
-    $coord{$featID} -> {'strand'} = $splitOnTab[5] ;
+    ## put by default "+" if no strand
+    my $feat_strand ="";
+    if ($splitOnTab[5]){
+    	$feat_strand = $splitOnTab[5];
+    } else {
+    	$feat_strand = "+";
+    }
+    $coord{$featID} -> {'strand'} = $feat_strand ;
+    
+    
   }
   close $coord;
 }
