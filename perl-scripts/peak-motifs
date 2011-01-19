@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.130 2011/01/19 13:47:17 jvanheld Exp $
+# $Id: peak-motifs,v 1.131 2011/01/19 15:25:03 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.130 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.131 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2250,9 +2250,9 @@ sub ColorConsensus {
     } else {
       $color = $color{other};
     }
-    $color_consensus .= "<font color='".$color."'>";
+    $color_consensus .= "<span style='font-family: courier, sans-serif; font-weight:bold ; font-size: 14px; color:".$color."'>";
     $color_consensus .= $letter;
-    $color_consensus .= "</font>";
+    $color_consensus .= "</span>";
   }
   $color_consensus .= "</b>"if ($args{bold});
   return $color_consensus;
@@ -2265,6 +2265,7 @@ sub SynthesisOneMotifComparison {
   ## Read the DB matches for the current motif
   my ($db_name, $file) = @_;
   my @match_fields = qw(name2 id2 strand w Wr cor Ncor consensus1 consensus2);
+  my @match_fields_names = qw(name id strand w Wr cor Ncor consensus1 consensus2);
   my ($db_compa) = &OpenInputFile($file);
   my %col_index = ();
 
@@ -2272,7 +2273,7 @@ sub SynthesisOneMotifComparison {
   ## Print the header of the DB match table
   my $db_match_table ="<table class='whitebg'>\n";
   $db_match_table .= "<tr>\n";
-  foreach my $field (@match_fields) {
+  foreach my $field (@match_fields_names) {
     $db_match_table .= "<th>".$field."</th>\n";
   }
   $db_match_table .= "</tr>\n";
@@ -2323,7 +2324,7 @@ sub SynthesisOneMotifComparison {
   ## Report number of matches
   my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
   $db_match_table .= "<tr>\n";
-  $db_match_table .= "<td colspan=5><a href='".$link."'>Total maches= ".$match_nb."</a>";
+  $db_match_table .= "<td colspan=9><a href='".$link."'>Total maches= ".$match_nb."</a>";
   if ($match_nb > $max_match_nb) {
     my $more_matches = $match_nb -$max_match_nb;
     $db_match_table .= " (".$more_matches." more)";
@@ -2339,8 +2340,12 @@ sub SynthesisOneMotifComparison {
 ## Generate a HTML table summarizing the results for each discovered
 ## motif. this table is inserted in the synthetic report.
 sub SynthesisByMotif {
-  print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs</h3>", 0);
+  print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs</h3>\n", 0);
   print $syn "<table class='whitebg'>\n";
+  
+  ## Header line
+  &SyntheticTableAddHeaderRow("Motif discovery");
+  
 
   &ReadMotifTable();
 
@@ -2361,6 +2366,7 @@ sub SynthesisByMotif {
   ## Options for generating logos
   my $logo_opt = "";
 
+  ## Treat each motif
   my $motif_nb = scalar(@motifs);
   for my $m (1..$motif_nb) {
     my $matrix = $motifs[$m-1];
@@ -2380,17 +2386,14 @@ sub SynthesisByMotif {
     $matrix->makeLogo($main::prefix{$motif_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the logo image
 
     print $syn "<tr>\n";
-    print $syn "<td> Motif ", $m,"</td>\n";
-    print $syn "<td>", $matrix->get_attribute("name"),"</td>\n";
-#    print $syn "<td>", $colored_consensus,"</td>\n";
-#    print $syn "<td>", $colored_consensus_rc,"</td>\n";
-    #    my $logo_link = $main::outfile{$motif_id."_logo"}.".".$main::param{img_format};
-
+    print $syn "<td><b> Motif ", $m,"</b> \n";
+    print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n";
+	print $syn "<td><table align='center' ><tr>";
     ## Sequence logo
     my $file = $main::outfile{$motif_id."_logo"};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-      print $syn ("<td align='center'>", $colored_consensus, "<br>\n",
+      print $syn ("<td align='center' style='border-bottom-style:none;' >", $colored_consensus, "<br>\n",
 	     "<a href='", $logo_link, "'>",
 	     "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height}, 
 	     "' src='",$logo_link,"'>","</a>","</td>\n");
@@ -2402,14 +2405,15 @@ sub SynthesisByMotif {
     $file = $main::outfile{$motif_id."_logo_rc"};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-      print $syn ("<td align='center'>", $colored_consensus_rc, "<br>\n",
+      print $syn ("<td align='center' style='border-bottom-style:none;border-right-style:none;' >", $colored_consensus_rc, "<br>\n",
 		 "<a href='", $logo_link, "'>",
 		 "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height}, 
 		 "' src='",$logo_link,"'>","</a>","</td>\n");
     } else {
       print $syn "<font color='red'>No logo</font>","</td>\n";
     }
-
+    print $syn "</tr></table></td>\n";
+	 print $syn "\n<td>";
     if ($task{scan}) {
       &PrintFileLinks("Sites",$main::outfile{$motif_id.'_pssm_sites'},
 		      "Site position distrib.",$main::outfile{$motif_id.'_pssm_site_distrib'},
@@ -2418,10 +2422,11 @@ sub SynthesisByMotif {
 		      "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
 		     );
     }
-    print $syn "</tr>\n";
+     print $syn "<br/>";
+    print $syn "</td></tr>\n";
 
     ## Motif comparison results
-    print $syn "<tr><td colspan='6'><table class='whitebg'>\n";
+    
 
     my @compa_names = ();
     my @compa_files = ();
@@ -2445,14 +2450,20 @@ sub SynthesisByMotif {
 	my ($db_match_table, $match_nb) = &SynthesisOneMotifComparison($db_name, $file);
 
 	## Print the top matches + link to the complete file
-	print $syn "<tr>\n";
-	print $syn "<td valign='top'>", $db_name, "</td>\n";
-	print $syn "<td valign='top'>", $db_match_table, "</td>\n";
+	print $syn "<tr><td colspan='2' style='border-bottom-style:none;'>\n";
+	print $syn "<h2 class='motif'>",$db_name,"\n";
+	#print $syn "<tr>\n";
+	#print $syn "<td valign='top'>", $db_name, "</td>\n";
+	#print $syn "<td valign='top'>", $db_match_table, "</td>\n";
+	print $syn $db_match_table, "\n";
 	if ($match_nb > 0) {
-	  &PrintFileLinks("match table (text)", $prefix.".tab",
-			  "match table (html)", $prefix.".html",
-			  "alignments (txt)", $prefix."_alignments_1ton.tab",
-			  "alignments (html)", $prefix."_alignments_1ton.html",
+	  &PrintFileLinks_New(
+	  	"match table", ["html",$prefix.".html",
+	  					"text",$prefix.".tab"
+	  					],
+	  	"alignments (logos)", ["html", $prefix."_alignments_1ton.html",
+	  					"text",$prefix."_alignments_1ton.tab"
+	  					],
 			 );
 	} else {
 	  print $syn "<td>No match</td>\n";
@@ -2466,8 +2477,12 @@ sub SynthesisByMotif {
       }
 
     }
-    print $syn "</table></td></tr>\n";
-  }
+    print $syn "</td></tr>\n";
+    
+    ## add a black line
+	print $syn "<tr><td colspan=5 style='border-top-style:none;border-bottom-color:black;border-bottom-width:3px;'><pre/></td></tr>";
+    
+   }
   print $syn "</table>\n";
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
@@ -2632,7 +2647,7 @@ sub SyntheticTableAddRow_New {
 ## list of links to the files
 sub PrintFileLinks_New {
   my (@files) = @_;
-  print $syn "<td>\n";
+  print $syn "<td >\n";
   my $title;
   my $key;
   my $file;
