@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.131 2011/01/19 15:25:03 morgane Exp $
+# $Id: peak-motifs,v 1.132 2011/01/19 15:57:11 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.131 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.132 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2263,20 +2263,31 @@ sub ColorConsensus {
 ## Generate a HTML table with the first matches between one motif and a set of reference motifs or a database.
 sub SynthesisOneMotifComparison {
   ## Read the DB matches for the current motif
-  my ($db_name, $file) = @_;
+  my ($db_name, $file,$colored_consensus) = @_;
   my @match_fields = qw(name2 id2 strand w Wr cor Ncor consensus1 consensus2);
-  my @match_fields_names = qw(name id strand w Wr cor Ncor consensus1 consensus2);
+  my @match_fields_names = ("name" ,"id" ,"strand", "Nb overlap", "%", "Pearson", "Normalized");
+  my @match_fields_names2 = ("&nbsp;" ,"&nbsp;", "&nbsp;", "columns" ,"aligned" ,"correlation", " cor");
   my ($db_compa) = &OpenInputFile($file);
   my %col_index = ();
 
   ################################################################
   ## Print the header of the DB match table
   my $db_match_table ="<table class='whitebg'>\n";
-  $db_match_table .= "<tr>\n";
+  $db_match_table .= "<tr style='font-size:90%;'>\n";
   foreach my $field (@match_fields_names) {
+    $db_match_table .= "<th style='border-bottom-style:none;'>".$field."</th>\n";
+  }
+  $db_match_table .= "<th style='border-bottom-style:none;'>aligned col. motif</th>\n";
+  $db_match_table .= "<th style='border-bottom-style:none;'>aligned col. match</th>\n";
+  $db_match_table .= "</tr>\n";
+    $db_match_table .= "<tr style='font-size:90%;'>\n";
+  foreach my $field (@match_fields_names2) {
     $db_match_table .= "<th>".$field."</th>\n";
   }
+  $db_match_table .= "<th>".$colored_consensus."</th>\n";
+  $db_match_table .= "<th></th>\n";
   $db_match_table .= "</tr>\n";
+  
   my $match_nb = 0;
   my $max_match_nb = 3;	## Max number of matches to display in the synthetic table. 
 
@@ -2447,7 +2458,7 @@ sub SynthesisByMotif {
       my $file = $compa_files[$f];
       my $prefix = $compa_prefixes[$f];
       if (-e $file) {
-	my ($db_match_table, $match_nb) = &SynthesisOneMotifComparison($db_name, $file);
+	my ($db_match_table, $match_nb) = &SynthesisOneMotifComparison($db_name, $file,$colored_consensus);
 
 	## Print the top matches + link to the complete file
 	print $syn "<tr><td colspan='2' style='border-bottom-style:none;'>\n";
