@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.132 2011/01/19 15:57:11 morgane Exp $
+# $Id: peak-motifs,v 1.133 2011/01/19 16:38:40 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.132 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.133 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2185,10 +2185,20 @@ sub ResultTOC {
 
   $result_toc .=  "<a href='#seq_composition'>Sequence composition & statistics </a><br/>";
   $result_toc .=  "<a href='#ref_motifs'>Reference motifs</a><br/>" if (defined($main::infile{ref_motifs}));
-  $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm)</a><br/>";
-  $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs</a><br/>";
+  my @motifs = &ReadDiscoveredMotifs();
+  my $motif_nb = scalar(@motifs);
+  $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - ".$motif_nb."</a><br/>";
+  $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - ".$motif_nb."</a><br/>";
+ # $result_toc .=  " <ul> ";
+ 
+ # for my $mot (1..$motif_nb) {
+  #	$result_toc .=  "	<li>Motif ".$mot.": <a href=''>[matrix]</a> <a href=''>[BED file (UCSC track)] </a></li>";
+ # }
+ # $result_toc .=  "</ul>";
   $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
   $result_toc .=  "<a href='#logs'>Logs & Commands</a><br/>";
+  $result_toc .=  "</div>";
+  
 #     <a href="">Discovered motifs (7)</a>
 #       <ul>
 # 	<li>Motif 1: <a href="">[matrix]</a> <a href="">[BED file (UCSC track)] </a></li>
@@ -2201,7 +2211,6 @@ sub ResultTOC {
 # 		</ul>
 # 	<a href="http://royrosenow.com/" title="Sketches, illustrations, and Voodoo Bob">Motif comparison</a><br />
 # 	<a href="http://swankyal.com/" title="A swanky weblog">Logs & Command</a><br />
-# </div>
   return($result_toc);
 }
 
@@ -2351,7 +2360,7 @@ sub SynthesisOneMotifComparison {
 ## Generate a HTML table summarizing the results for each discovered
 ## motif. this table is inserted in the synthetic report.
 sub SynthesisByMotif {
-  print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs</h3>\n", 0);
+  print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs (with motif comparison)</h3>\n", 0);
   print $syn "<table class='whitebg'>\n";
   
   ## Header line
@@ -2910,7 +2919,7 @@ sub SynthesisPatternDisco {
 	$asmb_or_isol = "isol";
 	next;
       }
-      next if /^;/;		## Skip comments
+      next if (/^;/);		## Skip comments
       if ($asmb_or_isol eq "isol") {
 	$pattern_nb++;
       } elsif (!/consensus/) {
@@ -3039,16 +3048,21 @@ sub SynthesisMotifsVsMotifs {
 sub SynthesisMotifsVersusReference {
   &SyntheticTableAddHeaderRow("Discovered motifs versus reference motif");
   my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_ref_png"});
-  &SyntheticTableAddRow("Motifs versus reference motif",
-			"<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
-			"Reference motif",$main::infile{ref_motifs},
-			"table (txt)",$main::outfile{"motifs_vs_ref"},
-			"table (html)",$main::outfile{"motifs_vs_ref_html"},
-			"alignments", $main::outfile{"motifs_vs_ref_alignments_1ton"},
-			"aligned logos", $main::outfile{"motifs_vs_ref_alignments_1ton_html"},
-			"gml (for CytoScape)",$main::outfile{"motifs_vs_ref_gml"},
-			"png (low resolution)",$main::outfile{"motifs_vs_ref_png"},
-		       );
+
+ &SyntheticTableAddRow_New("Motifs versus reference motif",
+			    "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
+			    "Reference motif",["matrix",$main::infile{ref_motifs}],
+			    "table", ["html",$main::outfile{"motifs_vs_ref_html"},
+			   			 "txt",$main::outfile{"motifs_vs_ref"}
+			   			 ],
+			   	"alignments (logo)", [ "html",$main::outfile{"motifs_vs_ref_alignments_1ton_html"},
+			   							"text",$main::outfile{"motifs_vs_ref_alignments_1ton"}			
+			   			],
+				
+			    "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_vs_ref_gml"},
+			    			"png (low resolution)",$main::outfile{"motifs_vs_ref_png"}
+			    ] 	    
+			   );
 }
 
 ################################################################
@@ -3057,16 +3071,19 @@ sub SynthesisMotifsVersusDatabase {
   &SyntheticTableAddHeaderRow("Discovered motifs versus transcription factor databases");
   foreach my $db_name (@motif_databases) {
     my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_db_".$db_name."_png"});
-    &SyntheticTableAddRow("Motifs versus ".$db_name." database",
-			  "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
-			  $db_name." DB",$main::infile{"motif_db_".$db_name},
-			  "table (txt)",$main::outfile{"motifs_vs_db_".$db_name},
-			  "table (html)",$main::outfile{"motifs_vs_db_".$db_name."_html"},
-			  "alignments", $main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton"},
-			  "aligned logos", $main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton_html"},
-			  "gml (for CytoScape)",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
-			  "png (low resolution)",$main::outfile{"motifs_vs_db_".$db_name."_png"},
-			 );
+	&SyntheticTableAddRow_New("Motifs versus ".$db_name." database",
+			    "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
+			    "table", ["html",$main::outfile{"motifs_vs_db_".$db_name."_html"},
+			   			 "txt",$main::outfile{"motifs_vs_db_".$db_name}
+			   			 ],
+			   	"alignments (logo)", [ "html",$main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton_html"},
+			   							"text",$main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton"}				
+			   			],
+				
+			    "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
+			    			"png (low resolution)",$main::outfile{"motifs_vs_db_".$db_name."_png"}
+			    ] 	    
+			   );
   }
 }
 
