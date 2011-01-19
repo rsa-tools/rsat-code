@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.135 2011/01/19 21:16:14 morgane Exp $
+# $Id: peak-motifs,v 1.136 2011/01/19 22:21:08 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.135 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.136 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -3917,12 +3917,10 @@ sub CheckArguments {
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
-      foreach my $task (@default_tasks) {
-	  $task{$task} = 1;
-      }
-#    %task = %supported_task;
-#    delete($task{all});
-#    delete($task{clean_seq});
+    foreach my $task (@default_tasks) {
+      $task{$task} = 1;
+    }
+
     if (defined($main::infile{ctrl_seq})) {
       delete($task{oligos});
       delete($task{dyads});
@@ -3931,8 +3929,16 @@ sub CheckArguments {
     } else {
       delete($task{oligo_diff});
     }
+
     delete($task{motifs_vs_ref}) unless (defined($main::infile{ref_motifs}));
     delete($task{motifs_vs_db}) unless (scalar(@motif_databases) > 0);
+  }
+
+  ## If no discovery algorithms has been specified, run the default ones
+  if ((scalar(keys(%disco)) == 0) || ($disco{all})) {
+    foreach my $disco (@default_discos) {
+      $disco{$disco} = 1;
+    }
   }
 
   ################################################################
