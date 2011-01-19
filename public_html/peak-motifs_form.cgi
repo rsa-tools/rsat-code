@@ -33,6 +33,8 @@ $default{"oligo-analysis"}="checked";
 $default{"dyad-analysis"}="";
 $default{"position-analysis"}="checked";
 $default{'local-word-analysis'}="";
+$default{'local-word-analysis_dyads'} ="";
+$default{"position-analysis_dyads"} ="";
 $default{compare_motif_db}="checked";
 $default{title}="title for this dataset";
 $default{max_seq_len}="";
@@ -202,6 +204,8 @@ print '
 print "<p/><fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Discover motifs </a></b></legend>";
 
+print "<br/> <b>Continuous words</b> <br/>";
+
 #
 ### oligo analysis
 #
@@ -212,15 +216,7 @@ print "&nbsp;<b>Discover over-represented words</b> <a href='help.oligo-analysis
 print "<br/>";
 	       
 		       
-#
-### dyad-analysis
-#   
-print $query->checkbox(-name=>'dyad-analysis',
-		       -checked=>$default{"dyad-analysis"},
-		       -label=>''); 
-print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
 
-print "<br/>";	
 ### dyad sizes and spacer
 #print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</a>&nbsp;</B>\n";
 #	$oligoPopup = "";
@@ -249,15 +245,34 @@ print $query->checkbox(-name=>'position-analysis',
 print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
 print "<br/>";
 
+print "<br/> <b>Spaced words pairs</b> <br/>";
+#
+### dyad-analysis
+#   
+print $query->checkbox(-name=>'dyad-analysis',
+		       -checked=>$default{"dyad-analysis"},
+		       -label=>''); 
+print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
 
-#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.local-word-analysis.html#window_width'>Fixed window of width</a>&nbsp;</B>\n";
-#	$oligoPopup = "";
-#    $oligoPopup .=  "<SELECT NAME='orm_window'>\n";
-#	$oligoPopup .=  "<OPTION VALUE='50'>50</option>\n";
-#	$oligoPopup .=  "<OPTION SELECTED VALUE='20'>20</option>\n";
-#	$oligoPopup .=  "<OPTION VALUE='10'>10</option>\n";
-#    $oligoPopup .=  "</SELECT>";
-#    print $oligoPopup;
+print "<br/>";
+
+#
+### local-word-analysis
+#
+print $query->checkbox(-name=>'local-word-analysis_dyads',
+		       -checked=>$default{'local-word-analysis_dyads'},
+		       -label=>'');  
+print "&nbsp;<b>Discover spaced word pairs with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
+print "<br/>";
+
+#
+### position-analysis => still to be implemented
+#
+#print $query->checkbox(-name=>'position-analysis_dyads',
+#		       -checked=>$default{"position-analysis_dyads"},
+#		       -label=>'');  
+#print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
+#print "<br/>";
 
 print "<br/>";	
 		       
