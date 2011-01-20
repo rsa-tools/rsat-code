@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.137 2011/01/19 22:46:14 jvanheld Exp $
+# $Id: peak-motifs,v 1.138 2011/01/20 07:09:22 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.137 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.138 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2187,16 +2187,22 @@ sub ResultTOC {
   $result_toc .=  "<a href='#ref_motifs'>Reference motifs</a><br/>" if (defined($main::infile{ref_motifs}));
   my @motifs = &ReadDiscoveredMotifs();
   my $motif_nb = scalar(@motifs);
-  $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - ".$motif_nb."</a><br/>";
-  $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - ".$motif_nb."</a><br/>";
+  $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - </a>".$motif_nb."<br/>";
+  $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - </a>".$motif_nb."<br/>";
   $result_toc .=  " <ul> ";
  
  for my $mot (1..$motif_nb) {
  	my $matrix = $motifs[$mot-1];
  	my $motif_id= $matrix->get_attribute("id");
  	my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id."_tf"});
- 	$result_toc .=  "	<li>Motif ".$mot.": <a href='".$link."'>[matrix]</a> </li>";
+ 	$result_toc .=  "	<li>Motif ".$mot.": <a href='".$link."'>[matrix]</a> <a href='#discovered_motifs_".$mot."'>[details]</a> </li>";
   #	$result_toc .=  "	<li>Motif ".$mot.": <a href=''>[matrix]</a> <a href=''>[BED file (UCSC track)] </a></li>";
+  if ($mot == 6) {
+  	if (($motif_nb-$mot) > 0) {
+  		$result_toc .=  "	<li><a href='#discovered_motifs_".$mot."'>".($motif_nb-$mot)." more motifs</a></li>";
+  	}
+  	last;
+  }
  }
   $result_toc .=  "</ul>";
   $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
@@ -2410,7 +2416,7 @@ sub SynthesisByMotif {
     $matrix->makeLogo($main::prefix{$motif_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the logo image
 
     print $syn "<tr>\n";
-    print $syn "<td><b> Motif ", $m,"</b> \n";
+    print $syn "<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
     print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n";
 	print $syn "<td><table align='center' ><tr>";
     ## Sequence logo
