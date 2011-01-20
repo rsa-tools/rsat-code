@@ -25,7 +25,7 @@ body {
 	top:120px;
 	left:50%;
 	width:400px;
-	margin-left: -150px;
+	margin-left: -200px;
 	padding:10px;
 	background-color:#eee;
 	border:1px dashed #999;
@@ -257,11 +257,11 @@ table.resultlink td, table.resultlink th {
 .menu_collapsible {
 	display: none;
 	margin-bottom: 10px;
-	margin-left: 80px;
+	margin-left: 30px;
 }
 
 .menu_collapsible_display {
    display: block;
    margin-bottom: 10px;
-   margin-left: 80px;
+   margin-left: 30px;
 }
