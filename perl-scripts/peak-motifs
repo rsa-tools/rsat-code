@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.142 2011/01/20 09:48:23 morgane Exp $
+# $Id: peak-motifs,v 1.143 2011/01/20 14:44:52 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.142 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.143 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -237,6 +237,7 @@ package main;
   local $syn;
   local $synthesis_path;
   local $menu_nb = 100;
+  
 
   ################################################################
   ## Set default parameters
@@ -608,6 +609,9 @@ sub SetOutFileNames {
     #	$main::outfile{"ctrl_seqlen_distrib"} = &OutFileName("data/sequences", ".tab", "ctrl_seqlen_distrib");
     #	$main::outfile{"ctrl_seqlen_distrib_graph"} = &OutFileName("data/sequences", $param{img_format}, "ctrl_seqlen_distrib");
     #    }
+    
+    ## BED file from fasta header (e.g. Galaxy)
+    $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
 
     ## Compositional Profiles
     for my $ol (@profiles_oligo_lengths) {
@@ -1928,6 +1932,16 @@ sub MotifEnrichment {
 sub ScanSequences {
 
   &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
+  
+    ## convert the genomic coordinates
+    ## if these are embeded in the fasta headers
+    if ($main::param{seq_source}){
+      &RSAT::message::TimeWarn("Converting input fasta headers to BED file") if ($main::verbose >= 2);
+      $cmd = $SCRIPTS."/convert-features";
+      $cmd .= " -from ".$main::param{seq_source}."_seq -i ".$infile{test_seq};
+      $cmd .= " -to bed -o ".$main::outfile{"test_seq_coord"};
+      &one_command($cmd,1);
+    }
 
   &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
   my $motif_nb = scalar(@motif_ids);
@@ -1964,15 +1978,16 @@ sub ScanSequences {
 #     &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
 
 
-    ## Compute the genomic coordinates
-    if ($main::infile{coord}) {
+    ## Compute the genomic coordinates    
+    if (($main::infile{coord})||($main::param{seq_source})) {
       &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 2);
       $cmd = $SCRIPTS."/convert-features";
       $cmd .= " -from ft -i ".$main::outfile{$motif_id.'_pssm_sites'};
-      $cmd .= " -add_chr";
-      $cmd .= " -coord ".$main::infile{coord};
+      $cmd .= " -coord ".$main::infile{coord} if ($main::infile{coord});
+      $cmd .= " -coord ".$main::outfile{"test_seq_coord"} if ($main::param{seq_source});
+      $cmd .= " -origin center ";
       $cmd .= " -to bed -o ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
-#      &one_command($cmd,1);
+      &one_command($cmd,1);
     }
 
     ################################################################
@@ -2549,12 +2564,29 @@ sub SynthesisByMotif {
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $table .= "</tr></table>";
       ## display UCSC track
+      ## first get assembly
+      if ($main::param{seq_source}){      
+      	## also store the genome assembly
+      	$main::genome_assembly = ` head $infile{test_seq} | grep '^>' ` ;
+      	if ($main::param{seq_source} eq "galaxy"){
+      		$main::genome_assembly =~ s/>([^_]+)_.*$/$1/;
+      		}
+    	}
+
       if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
+      		## ucsc link 
+      		#my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
+      		#my $browser_url = "<a target='_blank' href='";
+      		#$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+      		#$browser_url .= "db=".$main::genome_assembly;
+      		#$browser_url .= "&hgt.customText=".$BED_URL;
+      		#$browser_url .= "'><img border=0 height='20' src='images/UCSC_icon.jpg' alt='UCSC'></a>";
+      	
       	      &SyntheticTableAddRow_New("Predicted sites on input peaks",
 			    $table,
-			#     "view in genome browser", ["UCSC",$main::outfile{$motif_id.'_pssm_sites'},
-			 #  			 "Ensembl",$main::outfile{$motif_id.'_pssm_sites_genomic'}
-			 #  			 ],
+			    # "view in genome browser", ["UCSC",$browser_url,
+			   		#	 "Ensembl",$main::outfile{$motif_id.'_pssm_sites_genomic'}
+			   	#		 ],
 			    "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
 			   			 "BED (UCSC track)",$main::outfile{$motif_id.'_pssm_sites_genomic'}
 			   			 ],
@@ -2761,7 +2793,7 @@ sub PrintFileLinks_New {
     while ($key = shift (@$links)){
     last unless $key;
     $file = shift(@$links);
-    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 5);
+    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 3);
     if (-e $file) {
       my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn "<a href='".$link."'>".$key."</a>\n";
@@ -3254,6 +3286,25 @@ sequences.
       $main::infile{test_seq} = shift(@arguments);
 
 =pod
+
+=item B<-from fasta_source>
+
+Enter the source of the fasta file. 
+
+Supported source: galaxy
+
+Coordinates embedded in the fasta header are extracted
+and used to convert predicted site coordinates
+(relative to peak center) to genomic coordinates
+(in the form of a bed file), which can be uploaded to the UCSC genome
+browser as an annotation track.
+
+This option is not compatible with -coord.
+
+=cut
+    } elsif ($arg eq "-from") {
+      $main::param{seq_source} = shift(@arguments);
+
 
 =item B<-coord peak_coordinate_file>
 
@@ -3916,6 +3967,12 @@ sub CheckArguments {
     @main::seq_types = ("test");
   } else {
     &FatalError("You must define the test sequence set (option -i)");
+  }
+  
+  if ($main::param{seq_source}) {
+  	unless ($main::param{seq_source} eq "galaxy") {
+      &FatalError("-from option: this sequence source is not supported", $main::param{seq_source});
+    }
   }
 
   ## If control file has been specified, chec that it exists
