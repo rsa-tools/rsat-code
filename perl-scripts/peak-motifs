@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.139 2011/01/20 07:35:18 jvanheld Exp $
+# $Id: peak-motifs,v 1.140 2011/01/20 07:36:26 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.139 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.140 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2230,8 +2230,7 @@ sub ResultTOC {
     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id."_tf"});
     my $consensus = $matrix->get_attribute("consensus.IUPAC");
     my $colored_consensus = &ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
-    $result_toc .= " ".$colored_consensus." ";
-    $result_toc .=  "	<li>Motif ".$mot.": <a href='".$link."'>[matrix]</a> <a href='#discovered_motifs_".$mot."'>[details]</a> </li>";
+    $result_toc .=  "	<li>Motif ".$mot.": ".$colored_consensus." <a href='".$link."'>[matrix]</a> <a href='#discovered_motifs_".$mot."'>[details]</a> </li>";
     #	$result_toc .=  "	<li>Motif ".$mot.": <a href=''>[matrix]</a> <a href=''>[BED file (UCSC track)] </a></li>";
     if ($mot == 6) {
       if (($motif_nb-$mot) > 0) {
