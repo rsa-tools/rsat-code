@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.141 2011/01/20 07:37:45 jvanheld Exp $
+# $Id: peak-motifs,v 1.142 2011/01/20 09:48:23 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.141 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.142 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2231,7 +2231,6 @@ sub ResultTOC {
     my $consensus = $matrix->get_attribute("consensus.IUPAC");
     my $colored_consensus = &ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
     $result_toc .=  "	<li>Motif ".$mot.": <a href='".$link."'>[matrix]</a> <a href='#discovered_motifs_".$mot."'>[details]</a>  ".$colored_consensus." </li>";
-    #	$result_toc .=  "	<li>Motif ".$mot.": <a href=''>[matrix]</a> <a href=''>[BED file (UCSC track)] </a></li>";
     if ($mot == 6) {
       if (($motif_nb-$mot) > 0) {
 	$result_toc .=  "	<li><a href='#discovered_motifs_".$mot."'>".($motif_nb-$mot)." more motifs</a></li>";
@@ -2484,19 +2483,10 @@ sub SynthesisByMotif {
 	  					"transfac format",$main::outfile{$motif_id."_tf"}
 	  					]
 			 );
-#    if ($task{scan}) {
- #     &PrintFileLinks("Sites",$main::outfile{$motif_id.'_pssm_sites'},
-#		      "Site position distrib.",$main::outfile{$motif_id.'_pssm_site_distrib'},
-#		      "site position profiles",$main::outfile{$motif_id.'_pssm_site_distrib_graph'},
-#		      "Enrichment distrib", $main::outfile{$motif_id.'_pssm_enrichment'},
-#		      "Enrichment profile", $main::outfile{$motif_id.'_pssm_enrichment_png'},
-#		     );
-#   }
     print $syn "</tr>\n";
 
     ## Motif comparison results
     
-
     my @compa_names = ();
     my @compa_files = ();
     my @compa_prefixes = ();
@@ -2547,6 +2537,47 @@ sub SynthesisByMotif {
 
     }
     print $syn "</td></tr>\n";
+    
+    ## scan results
+    
+    my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
+    if (-e $scan_file) {
+	  my $table = "<table><tr>";
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
+      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      $table .= "</tr></table>";
+      ## display UCSC track
+      if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
+      	      &SyntheticTableAddRow_New("Predicted sites on input peaks",
+			    $table,
+			#     "view in genome browser", ["UCSC",$main::outfile{$motif_id.'_pssm_sites'},
+			 #  			 "Ensembl",$main::outfile{$motif_id.'_pssm_sites_genomic'}
+			 #  			 ],
+			    "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
+			   			 "BED (UCSC track)",$main::outfile{$motif_id.'_pssm_sites_genomic'}
+			   			 ],
+			   	"distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
+			   			 ],
+				
+			    "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
+			    ]     
+			   ); 
+       } else { ## without UCSC track
+      		&SyntheticTableAddRow_New("Predicted sites on input peaks",
+			    $table,
+			    "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
+			   			 ],
+			   	"distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
+			   			 ],
+				
+			    "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
+			    ] 
+			    
+			   );  
+       }  	
+   }
     
     ## add a black line
 	print $syn "<tr><td colspan=5 style='border-top-style:none;border-bottom-color:black;border-bottom-width:3px;'><pre/></td></tr>";
@@ -2705,8 +2736,8 @@ sub SyntheticTableAddRow {
 sub SyntheticTableAddRow_New {
   my ($type, $summary, @files) = @_;
   print $syn "<tr>\n";
-  print $syn "<td>$type</td>\n";
-  print $syn "<td>$summary</td>\n";
+  print $syn "<td style='border-top: 1px solid #cbcbb4;'>$type</td>\n";
+  print $syn "<td style='border-top: 1px solid #cbcbb4;'>$summary</td>\n";
   &PrintFileLinks_New(@files);
   print $syn "</tr>\n";
 }
@@ -2831,11 +2862,11 @@ sub SynthesisSequenceComposition {
 
     ## Sequence lengths
     my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$seq_type."_seqlen_distrib_graph"});
-    my $seq_stats = "Nb of peaks: ".$peak_nb;
-    $seq_stats .= "<br>\nTotal seq. size: ".$seq_size." kb";
-    $seq_stats .= "<br>\nMin length: ".$min_peak_len." bp";
-    $seq_stats .= "<br>\nMean length: ".$mean_peak_len." bp";
-    $seq_stats .= "<br>\nMax length: ".$max_peak_len." bp";
+    my $seq_stats = "<u>Nb of peaks:</u> ".$peak_nb;
+    $seq_stats .= "<br>\n<u>Total seq. size:</u> ".$seq_size." kb";
+    $seq_stats .= "<br>\n<u>Min length:</u> ".$min_peak_len." bp";
+    $seq_stats .= "<br>\n<u>Mean length:</u> ".$mean_peak_len." bp";
+    $seq_stats .= "<br>\n<u>Max length:</u> ".$max_peak_len." bp";
 
     &SyntheticTableAddRow_New($seq_stats,
 			  "<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
@@ -2854,7 +2885,7 @@ sub SynthesisSequenceComposition {
      # my $table = "<table class='whitebg'><tr>";
      my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img '".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Position profile<br><a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a></td>";
       $table .= "</tr></table>";
