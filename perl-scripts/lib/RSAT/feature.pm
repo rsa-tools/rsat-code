@@ -10,6 +10,7 @@ package RSAT::feature;
 			  gff3=>1,
 			  dnapat=>1,
 			  bed=>1,
+			  galaxy_seq=>1,
 			 );
 
 %supported_output_format =(ft=>1,
@@ -130,6 +131,19 @@ $comment_char{gff3} = "## ";
 		      );
 @{$strands{bed}} = ("+", "-", ".");
 $comment_char{bed} = "## ";
+
+## Galaxy sequences
+## http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
+## warning: the coordinates are zero-based
+@{$columns{galaxy_seq}} = qw (assembly
+			   seq_name
+		       start
+		       end
+		       strand
+		      );
+@{$strands{galaxy_seq}} = ("+", "-");
+$comment_char{galaxy_seq} = "#";
+
 
 require "RSA.seq.lib";
 use RSAT::GenericObject;
@@ -553,6 +567,59 @@ items in this list should correspond to blockCount.
  chr7	127479365  127480532  Pos5  0  +  127479365  127480532  255,0,0
  chr7	127480532  127481699  Neg4  0  -  127480532  127481699  0,0,255
 
+=head2 galaxy_seq
+
+Fasta sequences retrieved from the website Galaxy (http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1)
+Warning: this format assumes that features are described with chromosomal positions, and should be zero-based (meaning that
+the first position is 0, not 1).
+
+>hg17_chr7_127475281_127475310_+
+
+=over
+
+=item 1. assembly
+
+UCSC-style description of the assembly (e.g. hg19,mm9)
+
+=item 2. chromosome
+
+The name of chromosome (e.g. chr3, chrY, chr2_random) or scaffold
+(e.g. scaffold10671).
+
+=item 3. chromStart
+
+The starting position of the feature in the chromosome or
+scaffold. The first base in a chromosome is numbered 0.
+
+=item 4. chromEnd
+
+The ending position of the feature in the chromosome or scaffold. The
+chromEnd base is not included in the display of the feature. For
+example, the first 100 bases of a chromosome are defined as
+chromStart=0, chromEnd=100, and span the bases numbered 0-99.
+
+
+=item 5. strand
+
+Defines the strand - either '+' or '-'.
+
+=back
+
+=head3 Example of galaxy_seq format
+
+>hg17_chr7_127475281_127475310_+
+GTAGGAATCGCAGCGCCAGCGGTTGCAAG
+>hg17_chr7_127485994_127486166_+
+GCCCAAGAAGCCCATCCTGGGAAGGAAAATGCATTGGGGAACCCTGTGCG
+GATTCTTGTGGCTTTGGCCCTATCTTTTCTATGTCCAAGCTGTGCCCATC
+CAAAAAGTCCAAGATGACACCAAAACCCTCATCAAGACAATTGTCACCAG
+GATCAATGACATTTCACACACG
+>hg17_chr7_127486011_127486166_+
+TGGGAAGGAAAATGCATTGGGGAACCCTGTGCGGATTCTTGTGGCTTTGG
+CCCTATCTTTTCTATGTCCAAGCTGTGCCCATCCAAAAAGTCCAAGATGA
+CACCAAAACCCTCATCAAGACAATTGTCACCAGGATCAATGACATTTCAC
+ACACG
+
 
 =head1 METHODS
 
@@ -590,7 +657,13 @@ sub parse_from_row {
   my ($self, $row, $in_format, $out_format) = @_;
   chomp($row);
   $row =~ s/\r//g;
-  my @fields = split("\t", $row);
+  my @fields = ();
+  if ($in_format eq "galaxy_seq"){
+  	$row =~ s/^\s*>//;
+  	@fields = split("_", $row);
+  } else {
+  	@fields = split("\t", $row);
+  }
   warn join( "\t", "parsing from ", $in_format, @fields), "\n" if ($main::verbose >= 10);
 
   my @cols = @{$columns{$in_format}};
@@ -619,6 +692,10 @@ sub parse_from_row {
   if (($in_format eq "gff") || ($in_format eq "gff3")) {
     $self->set_attribute("feature_name", $self->get_attribute("source"));
     $self->set_attribute("description", $self->get_attribute("attribute"));
+  }
+  if ($in_format eq "galaxy_seq")  {
+    $self->set_attribute("ft_type", "");
+    $self->set_attribute("feature_name", $row);
   }
 
   ## Convert name
@@ -702,6 +779,11 @@ sub parse_from_row {
   if ($in_format eq "bed") {
      $start_0_based = $self->get_attribute("start");
      $self->force_attribute("start",$start_0_based+1); ## only the fist base is shifted
+  }
+    ## bed format: convert to 1-based coordinates
+  if ($in_format eq "galaxy_seq") {
+     $start_0_based = $self->get_attribute("start");
+     $self->force_attribute("start",$start_0_based+1); ## nedd +1 because galaxy is 0-based
   }
 
   ## parsed row
