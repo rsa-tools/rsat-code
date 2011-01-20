@@ -211,19 +211,39 @@ if ($query->param('ref_motif')) {
 ################################################################
 ## Scan sequences to search motif occurrences (matrix-scan-quick).
 if ($query->param('matrix-scan-quick') =~ /on/) {
-    # push(@tasks, "scan");
-
+    push(@tasks, "scan");
     ## HERE need to add the pval and markov order for the background model for matrix-scan-quick
 
 }
 
-## HERE finish the BED custom track parameters + task
 ## UCSC custom track
-#if ($query->param('bed_custom_track') =~ /on/) {
-#       push(@tasks, "?");
-#      
-#       
-#}
+if ($query->param('visualize') eq "galaxy") {
+    $parameters .= " -from galaxy ";
+  }
+if ($query->param('visualize') eq "bed_coord") {
+	
+	## upload the coord file
+	 $upload_coord_file = $query->param('bed_file');
+  if ($upload_coord_file) {
+    my $type = $query->uploadInfo($upload_coord_file)->{'Content-Type'};
+    if ($upload_coord_file =~ /\.gz$/) {
+      $upload_coord_file .= ".gz";
+    }
+    open REF, ">$upload_coord_file" ||
+      &cgiError("Cannot store sequence file in temp dir.");
+    while (<$upload_coord_file>) {
+      print REF;
+    }
+    close REF;
+  }
+	
+	
+    $parameters .= " -coord ".$upload_coord_file;
+    
+    if ($query->param('assembly')){
+    	## here add the assembly version !
+    }
+  }
 
 ### add -task
 $parameters .= " -task " . join(",", @tasks);

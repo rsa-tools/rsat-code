@@ -35,10 +35,14 @@ $default{"position-analysis"}="checked";
 $default{'local-word-analysis'}="";
 $default{'local-word-analysis_dyads'} ="";
 $default{"position-analysis_dyads"} ="";
+$default{matrix-scan-quick}="checked";
 $default{compare_motif_db}="checked";
 $default{title}="title for this dataset";
 $default{max_seq_len}="";
 $default{top_sequences}="";
+
+$default{visualize}="no";
+$checked{$default{visualize}} = "CHECKED";	
 
 ## motif database
 $default{compare_motif_database}="jaspar_core_vertebrates";
@@ -392,23 +396,22 @@ print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href=
 
 print "<br/>";
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.matrix-scan.html'>Background model: Markov order</a>&nbsp;</B>\n";
-	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='markov-scan'>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>0</option>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='2'>1</option>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>2</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
+#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.matrix-scan.html'>Background model: Markov order</a>&nbsp;</B>\n";
+#	$oligoPopup = "";
+#    $oligoPopup .=  "<SELECT NAME='markov-scan'>\n";
+#	$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>0</option>\n";
+#	$oligoPopup .=  "<OPTION  SELECTED VALUE='2'>1</option>\n";
+#	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>2</option>\n";
+#    $oligoPopup .=  "</SELECT>";
+#   print $oligoPopup;
     
-print "<br/>";
+#print "<br/>";
 
 ### threshold (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.matrix-scan.html'>Upper threshold on P-value</a>&nbsp;</B>\n";
-print  $query->textfield(-name=>'uth_pval',
-							      -default=>$default{uth_pval},
-							      -size=>4);
-print "<br/>";	
+#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.matrix-scan.html'>Upper threshold on P-value</a>&nbsp;</B>\n";
+#print  $query->textfield(-name=>'uth_pval',
+#							      -default=>$default{uth_pval},
+#							      -size=>4);
 
 
 
@@ -417,13 +420,13 @@ print "</fieldset><p/>";
 ### UCSC custom track
 #
 print "<fieldset>
-<legend><b><a href='help.peak-motifs.html#tasks'>Visualize motifs </a></b></legend>";
+<legend><b><a href='help.peak-motifs.html#tasks'>Visualize motifs in genome browser </a></b></legend>";
 
-
-print $query->checkbox(-name=>'bed_custom_track',
-		       -checked=>$default{matrix-scan-quick},
-		       -label=>'');  
-print "&nbsp;<b>Visualize on UCSC genome browser</b> <a href='help.matrix-scan.html'></a>\n";
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='no' $checked{'no'}>","<b>No</b>");
+print "<br/>";
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>","<b>Yes, sequences from fetched with <a href=''>Galaxy</a></b><i> fasta headers are in the form: >mm9_chr1_3473041_3473370_+ </i>");
+print "<br/>";
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes, use the following BED file.</b>");
 print "<br/>";
 
 
@@ -431,12 +434,12 @@ print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>BED file with 
 print $query->filefield(-name=>'bed_file',
 			-size=>10);
 
-### threshold (common to all programs)
+### assembly
 print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>Assembly version (UCSC)</a>&nbsp;</B>\n";
 print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
-print "<br/>";	
+print "<br/>&nbsp;&nbsp;&nbsp;&nbsp;<i>The 4th column of the BED file (feature name) correspond to the fasta headers of input sequences</i>";	
 
 print "<br/>
 </fieldset><p/>";
