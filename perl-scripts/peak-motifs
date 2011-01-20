@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.138 2011/01/20 07:09:22 morgane Exp $
+# $Id: peak-motifs,v 1.139 2011/01/20 07:35:18 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.138 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.139 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -221,6 +221,10 @@ package main;
   ## Options and suffix for ChIPMunk  (must be global variables)
   local $chipmunk_options = "";
   local $chipmunk_suffix = "";
+
+  ## Discovered motifs
+  local @motifs; ## list of discovered motifs for the synthesis
+  local $motifs_read = 0; ## flag indicating if the motifs have been read (since the method ReadDiscoveredMotifs may be called from several places
 
   ## Those variables need to be global for motif post-processing and indexing
   local @motif_ids;
@@ -1431,7 +1435,29 @@ sub MergeMotifs {
 ################################################################
 ## Load the discovered motifs from the merged .tf file
 sub ReadDiscoveredMotifs {
-  my @motifs = ();
+
+  ## If motifs have already been read, avoir re-reading them
+  return (@motifs) if ($motifs_read);
+
+  ## make sure the list is empty since it is a global variable
+  @motifs = ();
+
+
+  ################################################################
+  ## Load background model for computing the consensus and logo of each motif
+  &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
+  local $bg_model = new RSAT::MarkovModel();
+
+  if (-e $main::param{scan_bg_file}) {
+    $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
+  } else {
+    &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet") 
+      if ($main::verbose >= 1);
+    return;
+  }
+
+  ################################################################
+  ## Read the motifs and compute their consensus
   if (-e $main::outfile{motifs_discovered}) {
     @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
     my $motif_nb = scalar(@motifs);
@@ -1439,12 +1465,18 @@ sub ReadDiscoveredMotifs {
     foreach my $matrix (@motifs) {
       my $motif_id = $matrix->get_attribute("id");
       &SetFileNamesForMotif($motif_id);
+
+      ## We compute the consensus and logos here with the same background model as used for sequence scanning
+      $matrix->setMarkovModel($bg_model);
+      $matrix->calcConsensus();
     }
 
     &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 3);
   } else {
     &RSAT::message::Warning("Discovered motif file does not exist",  $main::outfile{motifs_discovered});
   }
+
+  $motifs_read = 1;
   return @motifs;
 }
 
@@ -1516,7 +1548,7 @@ sub SetFileNamesForMotif {
 sub SplitMotifs {
   &RSAT::message::TimeWarn("Splitting discovered motifs in separate files") if ($main::verbose >= 2);
 
-  my @motifs = &ReadDiscoveredMotifs();
+  @motifs = &ReadDiscoveredMotifs();
   my $m = 0;
 
   ## Create a table with the lists of motifs
@@ -2185,24 +2217,28 @@ sub ResultTOC {
 
   $result_toc .=  "<a href='#seq_composition'>Sequence composition & statistics </a><br/>";
   $result_toc .=  "<a href='#ref_motifs'>Reference motifs</a><br/>" if (defined($main::infile{ref_motifs}));
-  my @motifs = &ReadDiscoveredMotifs();
+  @motifs = &ReadDiscoveredMotifs();
   my $motif_nb = scalar(@motifs);
   $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - </a>".$motif_nb."<br/>";
   $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - </a>".$motif_nb."<br/>";
   $result_toc .=  " <ul> ";
- 
- for my $mot (1..$motif_nb) {
- 	my $matrix = $motifs[$mot-1];
- 	my $motif_id= $matrix->get_attribute("id");
- 	my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id."_tf"});
- 	$result_toc .=  "	<li>Motif ".$mot.": <a href='".$link."'>[matrix]</a> <a href='#discovered_motifs_".$mot."'>[details]</a> </li>";
-  #	$result_toc .=  "	<li>Motif ".$mot.": <a href=''>[matrix]</a> <a href=''>[BED file (UCSC track)] </a></li>";
-  if ($mot == 6) {
-  	if (($motif_nb-$mot) > 0) {
-  		$result_toc .=  "	<li><a href='#discovered_motifs_".$mot."'>".($motif_nb-$mot)." more motifs</a></li>";
-  	}
-  	last;
-  }
+
+  ## Display the motifs
+  for my $mot (1..$motif_nb) {
+    my $matrix = $motifs[$mot-1];
+    my $motif_id= $matrix->get_attribute("id");
+    my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id."_tf"});
+    my $consensus = $matrix->get_attribute("consensus.IUPAC");
+    my $colored_consensus = &ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+    $result_toc .= " ".$colored_consensus." ";
+    $result_toc .=  "	<li>Motif ".$mot.": <a href='".$link."'>[matrix]</a> <a href='#discovered_motifs_".$mot."'>[details]</a> </li>";
+    #	$result_toc .=  "	<li>Motif ".$mot.": <a href=''>[matrix]</a> <a href=''>[BED file (UCSC track)] </a></li>";
+    if ($mot == 6) {
+      if (($motif_nb-$mot) > 0) {
+	$result_toc .=  "	<li><a href='#discovered_motifs_".$mot."'>".($motif_nb-$mot)." more motifs</a></li>";
+      }
+      last;
+    }
  }
   $result_toc .=  "</ul>";
   $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
@@ -2379,22 +2415,23 @@ sub SynthesisByMotif {
 
   &ReadMotifTable();
 
-  my @motifs = &ReadDiscoveredMotifs();
+  @motifs = &ReadDiscoveredMotifs();
 
-  ## Load background model for computing the consensus and logo of each motif
-  &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
-  local $bg_model = new RSAT::MarkovModel();
+#   ## Load background model for computing the consensus and logo of each motif
+#   &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
+#   local $bg_model = new RSAT::MarkovModel();
 
-  if (-e $main::param{scan_bg_file}) {
-    $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
-  } else {
-    &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet") 
-      if ($main::verbose >= 1);
-    return;
-  }
+#   if (-e $main::param{scan_bg_file}) {
+#     $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
+#   } else {
+#     &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet") 
+#       if ($main::verbose >= 1);
+#     return;
+#   }
 
   ## Options for generating logos
   my $logo_opt = "";
+
 
   ## Treat each motif
   my $motif_nb = scalar(@motifs);
@@ -2402,10 +2439,10 @@ sub SynthesisByMotif {
     my $matrix = $motifs[$m-1];
     my $motif_id = $matrix->get_attribute("id");
     &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $motif_id) if ($main::verbose >= 3);
-    $matrix->setMarkovModel($bg_model);
+#    $matrix->setMarkovModel($bg_model);
 
     ## We compute the consensus and logos here with the same background model as used for sequence scanning
-    $matrix->calcConsensus();
+#    $matrix->calcConsensus();
     my $consensus = $matrix->get_attribute("consensus.IUPAC");
     my $colored_consensus = &ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
     my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
