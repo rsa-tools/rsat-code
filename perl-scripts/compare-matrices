@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.82 2011/01/21 06:15:06 jvanheld Exp $
+# $Id: compare-matrices,v 1.83 2011/01/21 07:15:21 jvanheld Exp $
 #
 ############################################################
 
@@ -392,7 +392,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.82 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.83 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -454,9 +454,9 @@ package main;
 				 "Ncor"=>"desc",
 				 "cor"=>"desc",
 				 "cov"=>"desc",
-				 "Icor",
-				 "NIcor",
-#				 "NWcor",
+				 "Icor"=>"desc",
+				 "NIcor"=>"desc",
+#				 "NWcor"->"desc",
 				 "dEucl"=>"asc",
 				 "NdEucl"=>"asc",
 				 "NsEucl"=>"desc",
@@ -1225,7 +1225,6 @@ package main;
 	      ## Update sums for Wcor
 	      if ($calc_field{Wcor}) {
 		my $wght1 = $weight1[$col1-1][$r];
-#		die "HELLO", $wght1;
 		my $wght2 = $weight2[$col2-1][$r];
 		$sum_wght1 += $wght1;
 		$sum_wght2 += $wght2;
@@ -1520,24 +1519,23 @@ package main;
   my $selected_rank_metrics = 0; ## Number of metrics to take into account for mean rank computation
   if ($return_field{ranks}) {
 
-    ## Redefine sort field and sort order (the criterion for sorting matches will be the rank_mean, whereas the criterion to sort offsets was defined differently)
-    $sort_field = "rank_mean";
-    $sort_order = "asc";
-
     foreach my $metric (@rank_metrics) {
       next unless ($return_field{$metric});
       $selected_rank_metrics++;
 
       ## Sort the matches
       my $metric_order = $supported_sort_field{$metric};
+      my @match_ids = keys(%sort_score);
       &RSAT::message::Debug("Computing rank on", $metric, $metric_order) if ($main::verbose >= 5);
       if ($metric_order eq "asc") {
 	## Sort results in ascending order
-	@ranked_match_id = sort {$sort_score{$a} <=> $sort_score{$b}} keys(%sort_score);
+	@ranked_match_id = sort {$score{$metric}{$a} <=> $score{$metric}{$b}} @match_ids;
       } else {
 	## Sort results in descending order
-	@ranked_match_id = sort {$sort_score{$b} <=> $sort_score{$a}} keys(%sort_score);
+	@ranked_match_id = sort {$score{$metric}{$b} <=> $score{$metric}{$a}} @match_ids;
       }
+#      &RSAT::message::Debug("Ranked", join(',', @ranked_match_id)) if ($main::verbose >= 10);
+#      die "HELLO";
 
       ## Adapt scores and output line
       my $rank = 0;
@@ -1560,6 +1558,11 @@ package main;
       $match_score{$compa_id}{rank_mean} = $rank_mean;
       $match_out_line{$compa_id} .= "\t".$rank_mean;
     }
+
+    ## Redefine sort field and sort order (the criterion for sorting matches will be the rank_mean, whereas the criterion to sort offsets was defined differently)
+    $sort_field = "rank_mean";
+    $sort_order = "asc";
+
   }
 
 
