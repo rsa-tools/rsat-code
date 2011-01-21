@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.144 2011/01/21 06:15:15 jvanheld Exp $
+# $Id: peak-motifs,v 1.145 2011/01/21 10:51:14 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.144 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.145 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -192,6 +192,7 @@ package main;
   ## Extra tasks are only executed on explicit demand of the user
   @extra_discos = ("dyads",
 		   "local_words",
+		   "local_dyads",
 		   "oligo_diff",
 		   "merged_words",
 ## Still to be treated: include the meme and chipmunk results in the HTML synthesis ?
@@ -431,7 +432,6 @@ sub DefaultParameters {
 #  $main::param{local_words_heuristic} = "slices"; ## Heuristic
   $main::param{local_words_window} = 50; ## Class interval
   $main::param{local_words_windowgroup} = 50; ## Class interval for centered windows of increasing sizes
-
 
   ## matrix-from-patterns
   $main::param{asmb_toppat} = $main::param{patterns_max_rank}; push(@main::param_list, "asmb_toppat");
@@ -707,8 +707,17 @@ sub SetOutFileNames {
 
 	  ## local-word-analysis
 	  if ($disco{local_words}) {
+
+	    ## TEMPPORARY
+	    if ($disco{local_dyads}) {
+	      $main::param{local_words_dyads} = "--dyad";
+	    } else {
+	      $main::param{local_words_dyads} = "";
+	    }
+
 	    $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
-	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "local_words".$main::param{strand}.$main::param{disco_noov},
+	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
+							 "local_words".$main::param{local_words_dyads}.$main::param{strand}.$main::param{disco_noov},
 							 $len."nt", "windgroup".$main::param{local_words_windowgroup},
 							 #						     $main::param{local_words_heuristic},
 							 "mkv".$markov);
@@ -1145,6 +1154,7 @@ sub LocalWords {
       my $cmd = $PYTHON."/local-word-analysis -v 3";
       $cmd .= " -i ".$main::outfile{"test_purged"};
       #  $cmd .= " -format fasta";
+      $cmd .= " ".$main::param{local_words_dyads};
       $cmd .= " --min=occ_sig ".$main::param{min_sig};
       $cmd .= " --sort=-occ_sig";
       $cmd .= " --max=rank ".$main::param{patterns_max_rank};
@@ -4085,6 +4095,24 @@ sub CheckArguments {
 #      $task{motifs_vs_db} = 1;
 #      $task{scan} = 1;
 #  }
+
+
+  ################################################################
+  ################################################################
+  ################################################################
+  ################################################################
+  ##
+  ## TEMPORARY: local_dyads is treated by adding the option -dyad to
+  ## local_words. If it gives interesting results, I (JvH) will add it
+  ## independently of oligo-based local_words
+  ##
+  ################################################################
+  ################################################################
+  ################################################################
+  ################################################################
+  if ($disco{local_dyads}) {
+    $disco{local_words} = 1;
+  }
 
   ## Dependency between task merge_words and pattern discovery type merged_words
   if (($task{disco}) && ($disco{merged_words})) {
