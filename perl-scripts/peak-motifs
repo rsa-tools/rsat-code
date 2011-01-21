@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.145 2011/01/21 10:51:14 jvanheld Exp $
+# $Id: peak-motifs,v 1.146 2011/01/21 19:45:31 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.145 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.146 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -285,6 +285,7 @@ package main;
     &DyadAnalysis() if ($disco{dyads});
     &PositionAnalysis() if ($disco{positions});
     &LocalWords() if ($disco{local_words});
+    &LocalDyads() if ($disco{local_dyads});
   }
   &MergeWords() if ($task{merge_words});
 
@@ -426,12 +427,17 @@ sub DefaultParameters {
   ## position-analysis
   $main::param{positions_ci} = 50; ## Class interval
   $main::param{positions_min_occ} = 1; ## Min number of occurrences
-  $main::param{positions_max_graphs} = 20; push(@main::param_list, "positions_max_graphs");
-
+  $main::param{positions_max_graphs} = 20; push(@main::param_list, "positions_max_graphs")
+;
   ## local-word-analysis
 #  $main::param{local_words_heuristic} = "slices"; ## Heuristic
   $main::param{local_words_window} = 50; ## Class interval
   $main::param{local_words_windowgroup} = 50; ## Class interval for centered windows of increasing sizes
+
+
+  ## local-word-analysis with the option --dyad
+  ## Other parameters are the same as for local-word-analysis
+  $main::param{local_dyads_mkv} = 3;
 
   ## matrix-from-patterns
   $main::param{asmb_toppat} = $main::param{patterns_max_rank}; push(@main::param_list, "asmb_toppat");
@@ -684,6 +690,7 @@ sub SetOutFileNames {
 	}
 
       } else {
+
 	################################################################
 	## Background models estimated from the test sequences
 	## themselves (lower order Markov chain)
@@ -704,27 +711,41 @@ sub SetOutFileNames {
 	    #	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
 	    #						       $len."nt", "vs_ctrl");
 	  }
+	}
 
+
+	################################################################
+	## I suppress the Makov loop for local_words since it seems incompatible with the mode --windowgroup
+##	for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
 	  ## local-word-analysis
 	  if ($disco{local_words}) {
-
-	    ## TEMPPORARY
-	    if ($disco{local_dyads}) {
-	      $main::param{local_words_dyads} = "--dyad";
-	    } else {
-	      $main::param{local_words_dyads} = "";
-	    }
-
-	    $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
+	    $pattern_type = 'local_words_'.$len.'nt';
+	    #	    $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
 	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
-							 "local_words".$main::param{local_words_dyads}.$main::param{strand}.$main::param{disco_noov},
+							 "local_words".$main::param{strand}.$main::param{disco_noov},
 							 $len."nt", "windgroup".$main::param{local_words_windowgroup},
-							 #						     $main::param{local_words_heuristic},
-							 "mkv".$markov);
+							 #$main::param{local_words_heuristic},
+							 #"mkv".$markov
+							);
 	    push @pattern_types, $pattern_type;
 	    push @patterns_to_merge, $pattern_type;
 	  }
+
 	}
+##      }
+
+      ################################################################
+      ## local-word-analysis with the option --dyad
+      if ($disco{local_dyads}) {
+	$pattern_type = 'local_dyads_3nt';
+	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
+						     "local_dyads".$main::param{strand}.$main::param{disco_noov},
+						     $len."nt", "windgroup".$main::param{local_words_windowgroup},
+						     #$main::param{local_words_heuristic},
+						     #"mkv".$main::param{local_dyads_mkv}
+						    );
+	push @pattern_types, $pattern_type;
+	push @patterns_to_merge, $pattern_type;
       }
 
       ## position-analysis
@@ -743,7 +764,7 @@ sub SetOutFileNames {
       $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
 						   "3nt_sp0-20_bg_monads");
       push @pattern_types, $pattern_type;
-      #    push @patterns_to_merge, $pattern_type;
+      push @patterns_to_merge, $pattern_type;
     }
   }
 
@@ -1141,20 +1162,59 @@ sub PositionAnalysis {
 
 
 ################################################################
+## Run local-word-analysis to discover locally over-represented dyads
+## on the test set
+sub LocalDyads {
+  my $center_pos = 0;
+
+  ## Convert negative markov orders relative to the oligo length
+  my $markov = $main::param{local_dyads_mkv};
+  my $pattern_type = 'local_dyads_3nt';
+  &RSAT::message::TimeWarn("Running local-word-analysis --dyad") if ($main::verbose >= 2);
+  my $cmd = $PYTHON."/local-word-analysis -v 3 --dyad";
+  $cmd .= " -i ".$main::outfile{"test_purged"};
+  #  $cmd .= " -format fasta";
+  $cmd .= " --min=occ_sig ".$main::param{min_sig};
+  $cmd .= " --sort=-occ_sig";
+  $cmd .= " --max=rank ".$main::param{patterns_max_rank};
+  $cmd .= " --max=w_rank ".1; ## Only return the most significant window for each word
+  # " -return occ,proba,rank";
+  if ($main::param{strand} eq "-1str") {
+    $cmd .= " +";
+  } else {
+    $cmd .= " +-";
+  }
+  $cmd .= " --overlap" if ($main::param{disco_noov} eq "ovlp");
+  $cmd .= " --center=".$center_pos;
+  $cmd .= " --windowgroup=".$main::param{local_words_windowgroup};
+  #      $cmd .= " --window=".$main::param{local_words_window};
+  #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
+  #  $cmd .= " -seqtype dna";
+  $cmd .= " -l 3"; ## For dyads the monad length is fied to 3
+#      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
+  #  $cmd .= " -pseudo 0.01";
+  $cmd .= " > ".$main::outfile{$pattern_type};
+  &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
+}
+
+
+################################################################
 ## Run local-word-analysis on the test set
 sub LocalWords {
 #  my $center_pos = &RSAT::util::round($main::param{local_words_window}/2);
   my $center_pos = 0;
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-    for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+    ## I suppress the loop on Markov orders since --markov is incompatible with --windowgroup
+#    for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
       ## Convert negative markov orders relative to the oligo length
-      $markov += $len if ($markov < 0);
-      my $pattern_type = 'local_words_'.$len.'nt'.'_mkv'.$markov;
+#      $markov += $len if ($markov < 0);
+#      my $pattern_type = 'local_words_'.$len.'nt'.'_mkv'.$markov;
+      my $pattern_type = 'local_words_'.$len.'nt';
       &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 2);
       my $cmd = $PYTHON."/local-word-analysis -v 3";
       $cmd .= " -i ".$main::outfile{"test_purged"};
       #  $cmd .= " -format fasta";
-      $cmd .= " ".$main::param{local_words_dyads};
       $cmd .= " --min=occ_sig ".$main::param{min_sig};
       $cmd .= " --sort=-occ_sig";
       $cmd .= " --max=rank ".$main::param{patterns_max_rank};
@@ -1172,12 +1232,12 @@ sub LocalWords {
 #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
       #  $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
-#      $cmd .= " --markov ".$markov;
+#      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " > ".$main::outfile{$pattern_type};
       &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
-    }
+#    }
   }
 }
 
@@ -1338,6 +1398,7 @@ sub RefMotif {
 ## Compare the significance of words (oligos, dyads) discovered by
 ## the different approaches
 sub MergeWords {
+  &RSAT::message::Debug("Merging words", join(",", @patterns_to_merge)) if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/compare-scores -v 1 ";
   my $file_nb = 0;
   foreach my $pattern_type (@patterns_to_merge) {
@@ -1405,7 +1466,7 @@ sub MergeWords {
 ################################################################
 ## Merge all discoverd motifs in a single file
 sub MergeMotifs {
-  &RSAT::message::TimeWarn("Merging discovered motifs") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Merging discovered motifs", join(",", @pattern_types)) if ($main::verbose >= 2);
 
   ## Remove previous versions of the merged motif file
   my $cmd = "rm -f ".$main::outfile{motifs_discovered};
@@ -1421,6 +1482,7 @@ sub MergeMotifs {
   ## Concatenate all discovered motifs (matrices) in a single file.
   ## Use TRANSFAC format because if allows to associate a name to each
   ## matrix.
+
   foreach my $pattern_type (@pattern_types) {
     my $matrix_file = $main::outfile{$pattern_type.'_pssm_tf'};
 
@@ -3123,7 +3185,7 @@ sub SynthesisPatternDisco {
 #			 );
 	   &SyntheticTableAddRow_New($pattern_type,
 			  $pattern_table,
-			  "discovered words",["text",$main::outfile{$pattern_type.'_asmb'},
+			  "discovered words",["text",$main::outfile{$pattern_type},
 			  			],
 			  "assembly",['text', $main::outfile{$pattern_type.'_asmb'},
     					'sig matrices',$main::outfile{$pattern_type.'_pssm_sig'},
@@ -4096,23 +4158,6 @@ sub CheckArguments {
 #      $task{scan} = 1;
 #  }
 
-
-  ################################################################
-  ################################################################
-  ################################################################
-  ################################################################
-  ##
-  ## TEMPORARY: local_dyads is treated by adding the option -dyad to
-  ## local_words. If it gives interesting results, I (JvH) will add it
-  ## independently of oligo-based local_words
-  ##
-  ################################################################
-  ################################################################
-  ################################################################
-  ################################################################
-  if ($disco{local_dyads}) {
-    $disco{local_words} = 1;
-  }
 
   ## Dependency between task merge_words and pattern discovery type merged_words
   if (($task{disco}) && ($disco{merged_words})) {
