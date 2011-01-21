@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.81 2011/01/18 21:33:15 jvanheld Exp $
+# $Id: compare-matrices,v 1.82 2011/01/21 06:15:06 jvanheld Exp $
 #
 ############################################################
 
@@ -216,7 +216,7 @@ Source: Sandelin A & Wasserman WW (2004) J Mol Biol 338:207-215.
 Sandelin-Wasserman (SW) similarity normalized by the number of aligned
 columns (I<w>).
 
- NWS = SW / (2*w)
+ NSW = SW / (2*w)
 
 NSW takes a value comprized between 0 (not a single corresponding
 residue) and 1 (matrices are identical for all the aligned columns).
@@ -392,7 +392,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.82 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -413,11 +413,40 @@ package main;
 			      "NdEucl", ## Normalized Euclidian distance
 			      "NsEucl", ## Euclidian similarity
 			      "SSD", ## Euclidian distance
-			      "NSW", ## Normalized Sandelin-Wasserman similarity
 			      "SW", ## Sandelin-Wasserman similarity
+			      "NSW", ## Normalized Sandelin-Wasserman similarity
 #			      "dKL", ## Kullback-Leibler distance
 			      "all_metrics", ## all supported metrics
 			     );
+#  local @rank_metrics = ("SW", "dEucl"); ## Metrics on which a rank can be computed
+#  local @rank_metrics = @supported_metrics; ## Metrics on which a rank can be computed
+  local @rank_metrics = (); ## Metrics on which the rank has to be computed (will be filled according to selected metrics)
+
+  ## Return fields
+  local @supported_return_fields = (@supported_metrics, ## Any supported metrics is a valid return field
+				    "matrix_number", ## Number of the matrices in the input files
+				    "matrix_id", ## Identifiers of the matrices
+				    "matrix_name", ## Names of the matrices
+				    "matrix_ac", ## Accession number of the matrices
+				    "width", ## Width of the matrices and the alignment
+				    "strand", ## Direct (D) or Reverse complementary (R) comparison
+				    "direction", ## for backward compatibility only, replaced by "strand".
+				    "offset", ## offset between the positions of the first and second matrix
+				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
+				    "consensus",
+				    "rank", ## Rank of the match according to the sorting criterion
+				    "ranks", ## Ranks for all the selected metrics
+				    "alignments_pairwise", ## Shifted matrices resulting from the pairwise alignments.
+				    "alignments_1ton", ## Shifted matrices resulting from the 1-to-N alignments.
+				    "alignments", ## Shifted matrices resulting from the alignments (pairwise and 1-to-N).
+				    "all", ## All supported output fields, including all metrics
+				);
+  local %supported_return_field = ();
+  foreach my $field (@supported_return_fields) {
+    $supported_return_field{$field} = 1;
+  }
+  local $supported_return_fields = (join ",", @supported_return_fields);
+  local %return_field = ();
 
 
   ## Supported fields for sorting the matches
@@ -432,42 +461,21 @@ package main;
 				 "NdEucl"=>"asc",
 				 "NsEucl"=>"desc",
 				 "SSD"=>"asc",
-				 "NSW"=>"desc",
 				 "SW"=>"desc",
+				 "NSW"=>"desc",
 				 "dKL"=>"asc",
 				);
   local $supported_sort_fields = join (",", keys (%supported_sort_field));
-    $sort_field = "Ncor";
-#    $sort_field = "Icor";
+  local @sorted_match_id = (); ## list of sorted matches for the final output
+  ## Default sort field
+#  local $sort_field = "offset";
+#  $sort_field = "Icor";
 #  local $sort_field = "SW";
+  local $sort_field = "Ncor";
 
-  ## Return fields
-  local @supported_return_fields = (@supported_metrics, ## Any supported metrics is a valid return field
-				    "matrix_number", ## Number of the matrices in the input files
-				    "matrix_id", ## Identifiers of the matrices
-				    "matrix_name", ## Names of the matrices
-				    "matrix_ac", ## Accession number of the matrices
-				    "width", ## Width of the matrices and the alignment
-				    "strand", ## Direct (D) or Reverse complementary (R) comparison
-				    "direction", ## for backward compatibility only, replaced by "strand".
-				    "offset", ## offset between the positions of the first and second matrix
-				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
-				    "consensus",
-				    "rank",
-				    "alignments_pairwise", ## Shifted matrices resulting from the pairwise alignments.
-				    "alignments_1ton", ## Shifted matrices resulting from the 1-to-N alignments.
-				    "alignments", ## Shifted matrices resulting from the alignments (pairwise and 1-to-N).
-				    "all", ## All supported output fields, including all metrics
-				);
-  local %supported_return_field = ();
-  foreach my $field (@supported_return_fields) {
-    $supported_return_field{$field} = 1;
-  }
-  local $supported_return_fields = (join ",", @supported_return_fields);
-  local %return_field = ();
-
-  ## Sort field
-  local $sort_field = "offset";
+  ## Matches
+  local %match_score = (); ## key = match ID, value = match score (sorting score)
+  local %match_out_line = (); ## key = match ID, value = output row
 
   ## Threshold parameters
   local %lth = ();		# lower threshold values
@@ -498,10 +506,6 @@ package main;
   local @matrices1 = ();
   local @matrices2 = ();
 
-  ## Matches
-  local %match_score = (); ## key = match ID, value = match score (sorting score)
-  local %match_out_line = (); ## key = match ID, value = output row
-
   ## Input formats
   %supported_input_format = %RSAT::MatrixReader::supported_input_format;
   $supported_input_formats = join ",", sort keys %supported_input_format;
@@ -530,6 +534,14 @@ package main;
     }
     delete($return_field{all_metrics});
   }
+
+  ## Update the list of metrics to take into account for ranks and rank mean
+  if ($return_field{ranks}) {
+    foreach my $metric (@supported_metrics) {
+      push @rank_metrics, $metric if ($return_field{$metric});
+    }
+  }
+
 
   ## Return all fields
   if ($return_field{all}) {
@@ -602,7 +614,7 @@ package main;
     $return_field{Icor} = 1;
     $return_field{NIcor} = 1;
 #    $return_field{NWcor} = 1;
-    $return_field{consensus} = 1;
+#    $return_field{consensus} = 1;
 
     $uth{rank}=1 unless(defined($uth{rank})); ## Only return the best match for each alignment
 
@@ -615,7 +627,6 @@ package main;
 
   ## Sort order
   local $sort_order = $supported_sort_field{$sort_field};
-
 
   ################################################################
   ## Treat dependencies between fields to compute
@@ -919,8 +930,22 @@ package main;
     push (@header, "offset");
   }
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
-  push (@header, "rank") if ($return_field{rank}); ## Rank must ne the last column, because it is computed only after all the rows have been formed
 
+  ################################################################
+  ## Ranks must coms as last columns, because it is computed only after all the rows have been formed
+
+  ## Ranks on various metrics + rank mean
+  if ($return_field{ranks}) {
+    foreach my $metric (@rank_metrics) {
+      push (@header, "r".$metric);
+    }
+    push (@header, "rank_mean");
+  }
+
+  ## Rank on the sorting criterion
+  push (@header, "rank") if ($return_field{rank});
+
+  ################################################################
   ## Print a description of the output fields
   if ($main::verbose >= 1) {
     #	  my $norm_factor_descr =  "w/min(w1, w2)";
@@ -963,7 +988,15 @@ package main;
     $description{NWcor} = "Normalized Pearson correlation between the information content matrices. NWcor = Wcor * ".$norm_factor_descr;
     $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
     $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
-    $description{rank} = "Rank of the alignment for the current pair of matrices";
+
+    foreach my $metric (@rank_metrics) {
+      $description{"r".$metric} = "Rank on ".$metric;
+    }
+    $description{rank_mean} = "Mean of the ranks on all selected metrics";
+
+    $description{rank} = "Rank according to the selected sorting field (".$sort_field.")";
+
+    ## Print out the column content description
     print $out "; Column content\n";
     my $c = 0;
     foreach my $field (@header) {
@@ -1048,8 +1081,8 @@ package main;
       my %NIcor = (); ## Normalized correlations between information content
       my %Wcor = (); ## Correlations between weights
       my %NWcor = (); ## Normalized correlations between weights
-      my %NSW = ();		## Normalized Sandelin-Wasserman similarity
       my %SW = ();		## Sandelin-Wasserman similarity
+      my %NSW = ();		## Normalized Sandelin-Wasserman similarity
       my %SSD = ();		## Euclidian distances
       my %NdEucl = ();	## Euclidian distances
       my %dEucl = ();		## Euclidian distances
@@ -1138,8 +1171,8 @@ package main;
 	  ################################################################
 	  ## Compute the (dis)similarity between the matrices
 	  my $SSD = 0;
-	  my $NSW = 0;
 	  my $SW = 0;
+	  my $NSW = 0;
 	  my $NdEucl = 0;
 	  my $dEucl = 0;
 	  my $NsEucl = 0;
@@ -1443,7 +1476,6 @@ package main;
 
 #	&RSAT::message::Debug("Treating output for offset/strand", $compa_id, $offset, $strand) if ($main::verbose >= 10);
 
-
 	if ($comparison_mode eq "matches") {
 	  ################################################################
 	  ## In matching mode, index the matrix pair for further sorting
@@ -1482,6 +1514,53 @@ package main;
     }				## matrix 2
   }				## matrix 1
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
+
+  ################################################################
+  ## Compute rankstatistics for various metrics
+  my $selected_rank_metrics = 0; ## Number of metrics to take into account for mean rank computation
+  if ($return_field{ranks}) {
+
+    ## Redefine sort field and sort order (the criterion for sorting matches will be the rank_mean, whereas the criterion to sort offsets was defined differently)
+    $sort_field = "rank_mean";
+    $sort_order = "asc";
+
+    foreach my $metric (@rank_metrics) {
+      next unless ($return_field{$metric});
+      $selected_rank_metrics++;
+
+      ## Sort the matches
+      my $metric_order = $supported_sort_field{$metric};
+      &RSAT::message::Debug("Computing rank on", $metric, $metric_order) if ($main::verbose >= 5);
+      if ($metric_order eq "asc") {
+	## Sort results in ascending order
+	@ranked_match_id = sort {$sort_score{$a} <=> $sort_score{$b}} keys(%sort_score);
+      } else {
+	## Sort results in descending order
+	@ranked_match_id = sort {$sort_score{$b} <=> $sort_score{$a}} keys(%sort_score);
+      }
+
+      ## Adapt scores and output line
+      my $rank = 0;
+      foreach my $compa_id (@ranked_match_id) {
+	$rank++;
+	$rank_sum{$compa_id} += $rank;
+	$match_score{$compa_id}{"r".$metric} = $rank;
+	$match_out_line{$compa_id} .= "\t".$rank;
+      }
+    }
+
+    ## Compute mean rank
+    foreach my $compa_id (@ranked_match_id) {
+      my $rank_mean = "NA";
+      if ($selected_rank_metrics > 0) {
+	$rank_mean = sprintf("%.4f", $rank_sum{$compa_id} / $selected_rank_metrics);
+      }
+#      $rank_mean{$compa_id} = $rank_mean;
+      $sort_score{$compa_id} = $rank_mean;
+      $match_score{$compa_id}{rank_mean} = $rank_mean;
+      $match_out_line{$compa_id} .= "\t".$rank_mean;
+    }
+  }
 
 
   ################################################################
@@ -1795,6 +1874,17 @@ sub PrintAlignedMatrices {
       $html_header .= "<th>".$metric."</th>\n";
     }
   }
+   if ($return_field{ranks}) {
+     my @rank_scores_to_print = ();
+     foreach my $metric (@scores_to_print) {
+       push @rank_scores_to_print, "r".$metric;
+       $html_header .= "<th>"."r".$metric."</th>\n";
+     }
+     push @scores_to_print, @rank_scores_to_print, "rank_mean";
+     $html_header .= "<th>rank_mean</th>\n";
+   }
+
+  ## Aligned matrices
   $html_header .= "<th>Aligned matrices</th>\n";
   print $alignments_1ton_html "<tr>".$html_header."</tr>";
 
@@ -1818,17 +1908,17 @@ sub PrintAlignedMatrices {
 #    $match_scores .= sprintf("; %s=%s", "strand", $strand);
     if ($m > 1) {
       foreach my $metric (@scores_to_print) {
-#      foreach my $metric (@supported_metrics) {
-#	next if ($metric eq "all_metrics");
-#	if ($return_field{$metric}) {
-	  my $value = $match_score{$compa_id}{$metric};
-	  $value = sprintf("%.3f", $value);
-#	  &RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
-	  $match_scores .= "; ".$metric."=".$value;
-	  $match_scores_html .= "<td>".$value."</td>\n";
-	  #	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
-	}
-#      }
+	#      foreach my $metric (@supported_metrics) {
+	#	next if ($metric eq "all_metrics");
+	#	if ($return_field{$metric}) {
+	my $value = $match_score{$compa_id}{$metric};
+	$value = sprintf("%.3f", $value);
+	#	  &RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
+	$match_scores .= "; ".$metric."=".$value;
+	$match_scores_html .= "<td>".$value."</td>\n";
+	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
+      }
+      #      }
     } else {
       $match_scores = "; Alignment reference";
       $match_scores_html = "<td></td>\n" x scalar(@scores_to_print);

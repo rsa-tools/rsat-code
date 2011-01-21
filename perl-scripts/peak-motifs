@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.143 2011/01/20 14:44:52 morgane Exp $
+# $Id: peak-motifs,v 1.144 2011/01/21 06:15:15 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.143 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.144 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -516,13 +516,13 @@ sub DefaultParameters {
 
   my $motif_compa_options =  ""; 
   $motif_compa_options .= " -DR";
-  $motif_compa_options .= " -sort ".$main::param{matrix_compa_sort_field};
   $motif_compa_options .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $motif_compa_options .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $motif_compa_options .= " -lth Wr ".$main::param{matrix_compa_min_Wr}; ## Min relative width of the alignment
   $motif_compa_options .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $motif_compa_options .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $motif_compa_options .= " -return matrix_name,matrix_id,all_metrics,width,strand,offset,consensus,alignments_1ton";
+  $motif_compa_options .= " -return matrix_name,matrix_id,all_metrics,ranks,width,strand,offset,consensus,alignments_1ton";
+  $motif_compa_options .= " -sort ".$main::param{matrix_compa_sort_field};
   $main::param{motif_compa_options} = $motif_compa_options;
 
 }
@@ -1745,7 +1745,7 @@ sub MotifsVersusReference {
     my $motif_id = $motif_ids[$i];
     my $motif_dir = $motif_dirs[$i];
     my $motif_file = $motif_files[$i];
-    &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
+    &RSAT::message::Info("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 4);
 
     ## Compare one discovered motif with the reference motif
     my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
