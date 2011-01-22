@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.147 2011/01/22 06:54:06 jvanheld Exp $
+# $Id: peak-motifs,v 1.148 2011/01/22 07:05:28 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.147 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.148 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -437,7 +437,6 @@ sub DefaultParameters {
 
   ## local-word-analysis with the option --dyad
   ## Other parameters are the same as for local-word-analysis
-  $main::param{local_dyads_mkv} = 3;
 
   ## matrix-from-patterns
   $main::param{asmb_toppat} = $main::param{patterns_max_rank}; push(@main::param_list, "asmb_toppat");
@@ -756,12 +755,10 @@ sub SetOutFileNames {
     ################################################################
     ## local-word-analysis with the option --dyad
     if ($disco{local_dyads}) {
-      $pattern_type = 'local_dyads_3nt';
+      $pattern_type = 'local_dyads';
       $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
 						   "local_dyads".$main::param{strand}.$main::param{disco_noov},
-						   "3nt", "windgroup".$main::param{local_words_windowgroup},
-						   #$main::param{local_words_heuristic},
-						   #"mkv".$main::param{local_dyads_mkv}
+						   "3nt_sp0-20"."windgroup".$main::param{local_words_windowgroup},
 						  );
       push @pattern_types, $pattern_type;
       push @patterns_to_merge, $pattern_type;
@@ -1170,10 +1167,10 @@ sub LocalDyads {
   my $center_pos = 0;
 
   ## Convert negative markov orders relative to the oligo length
-  my $markov = $main::param{local_dyads_mkv};
-  my $pattern_type = 'local_dyads_3nt';
+  my $pattern_type = 'local_dyads';
   &RSAT::message::TimeWarn("Running local-word-analysis --dyad") if ($main::verbose >= 2);
-  my $cmd = $PYTHON."/local-word-analysis -v 3 --dyad";
+  my $cmd = $PYTHON."/local-word-analysis -v 3";
+  $cmd .= " --dyad  --length=3 --spacing=0:20";
   $cmd .= " -i ".$main::outfile{"test_purged"};
   #  $cmd .= " -format fasta";
   $cmd .= " --min=occ_sig ".$main::param{min_sig};
@@ -1192,7 +1189,6 @@ sub LocalDyads {
   #      $cmd .= " --window=".$main::param{local_words_window};
   #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
   #  $cmd .= " -seqtype dna";
-  $cmd .= " -l 3"; ## For dyads the monad length is fied to 3
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
   #  $cmd .= " -pseudo 0.01";
   $cmd .= " > ".$main::outfile{$pattern_type};
@@ -1233,7 +1229,7 @@ sub LocalWords {
 #      $cmd .= " --window=".$main::param{local_words_window};
 #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
       #  $cmd .= " -seqtype dna";
-      $cmd .= " -l ".$len;
+      $cmd .= " --lenl ".$len;
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " > ".$main::outfile{$pattern_type};
