@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.146 2011/01/21 19:45:31 jvanheld Exp $
+# $Id: peak-motifs,v 1.147 2011/01/22 06:54:06 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.146 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.147 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -734,20 +734,6 @@ sub SetOutFileNames {
 	}
 ##      }
 
-      ################################################################
-      ## local-word-analysis with the option --dyad
-      if ($disco{local_dyads}) {
-	$pattern_type = 'local_dyads_3nt';
-	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
-						     "local_dyads".$main::param{strand}.$main::param{disco_noov},
-						     $len."nt", "windgroup".$main::param{local_words_windowgroup},
-						     #$main::param{local_words_heuristic},
-						     #"mkv".$main::param{local_dyads_mkv}
-						    );
-	push @pattern_types, $pattern_type;
-	push @patterns_to_merge, $pattern_type;
-      }
-
       ## position-analysis
       if ($disco{positions}) {
 	$pattern_type = 'positions_'.$len.'nt';
@@ -766,7 +752,23 @@ sub SetOutFileNames {
       push @pattern_types, $pattern_type;
       push @patterns_to_merge, $pattern_type;
     }
+
+    ################################################################
+    ## local-word-analysis with the option --dyad
+    if ($disco{local_dyads}) {
+      $pattern_type = 'local_dyads_3nt';
+      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
+						   "local_dyads".$main::param{strand}.$main::param{disco_noov},
+						   "3nt", "windgroup".$main::param{local_words_windowgroup},
+						   #$main::param{local_words_heuristic},
+						   #"mkv".$main::param{local_dyads_mkv}
+						  );
+      push @pattern_types, $pattern_type;
+      push @patterns_to_merge, $pattern_type;
+    }
   }
+
+
 
   ## Comparison between significance of the discovered patterns
   $pattern_type = "merged_words";
