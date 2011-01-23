@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.83 2011/01/21 07:15:21 jvanheld Exp $
+# $Id: compare-matrices,v 1.84 2011/01/23 23:54:18 jvanheld Exp $
 #
 ############################################################
 
@@ -392,7 +392,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.83 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.84 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -535,13 +535,6 @@ package main;
     delete($return_field{all_metrics});
   }
 
-  ## Update the list of metrics to take into account for ranks and rank mean
-  if ($return_field{ranks}) {
-    foreach my $metric (@supported_metrics) {
-      push @rank_metrics, $metric if ($return_field{$metric});
-    }
-  }
-
 
   ## Return all fields
   if ($return_field{all}) {
@@ -551,6 +544,15 @@ package main;
     delete($return_field{all});
     delete($return_field{direction});
   }
+
+  ## Update the list of metrics to take into account for ranks and rank mean
+  if ($return_field{ranks}) {
+    foreach my $metric (@supported_metrics) {
+      next if ($metric eq "all_metrics");
+      push @rank_metrics, $metric if ($return_field{$metric});
+    }
+  }
+
 
   ## Alignments
   if ($return_field{alignments}) {
@@ -806,17 +808,34 @@ package main;
   local $max_id_len1 = 0;
   local $max_ac_len1 = 0;
   local %matrix_by_id1 = (); ## index matrices by ID
+  local $m = 0;
   foreach my $matrix (@matrices1) {
-    my $id = $matrix->get_attribute("id") || "<NA>";
+    $m++;
+
+    ## Ensure that the matrix has ID and name attributes;
+    my $id = $matrix->get_attribute("id")
+      || $matrix->get_attribute("identifier")
+	|| $matrix->get_attribute("name")
+	  || $matrix->get_attribute("accession")
+	    || "matrix_".$m;
     $matrix_by_id1{$id} = $matrix;
+
+    ## Compute max size for identifiers
     my $id_len = length($id);
     $max_id_len1 = $id_len if ($id_len > $max_id_len1);
-    my $ac = $matrix->get_attribute("accession") || "<NA>";
+
+    ## Compute max size for accession numbers
+    ## Accession number
+    my $ac = $matrix->get_attribute("accession") || $id;
     my $ac_len = length($ac);
     $max_ac_len1 = $ac_len if ($ac_len > $max_ac_len1);
-    my $name = $matrix ->get_attribute("name");
+
+    ## Compute max size for matrix names
+    my $name = $matrix ->get_attribute("name") || $id;
     my $name_len = length($name);
     $max_name_len1 = $name_len if ($name_len > $max_name_len1);
+
+#    &RSAT::message::Debug("Matrix", $m, "ID=".$id, "NAME=".$name, "AC=".$ac) if ($main::verbose >= 10);
   }
   &RSAT::message::Debug("max string lengths for matrices 1",
 			"id:".$max_id_len1,
@@ -838,14 +857,22 @@ package main;
     foreach my $matrix (@matrices2) {
       my $id = $matrix->get_attribute("id") || "<NA>";
       $matrix_by_id2{$id} = $matrix;
+
+      ## Compute max size for identifiers
       my $id_len = length($id);
       $max_id_len2 = $id_len if ($id_len > $max_id_len2);
+
+      ## Compute max size for accession numbers
       my $ac = $matrix->get_attribute("accession") || "<NA>";
       my $ac_len = length($ac);
       $max_ac_len2 = $ac_len if ($ac_len > $max_ac_len2);
-      my $name = $matrix ->get_attribute("name");
+
+      ## Compute max size for matrix names
+      my $name = $matrix ->get_attribute("name") || $matrix ->get_attribute("id");
       my $name_len = length($name);
       $max_name_len2 = $name_len if ($name_len > $max_name_len2);
+
+#      &RSAT::message::Debug("Matrix", $m, "ID=".$id, "NAME=".$name, "AC=".$ac) if ($main::verbose >= 10);
     }
   }
 #  &RSAT::message::Debug("max name length for matrices 2", $max_name_len2) if ($main::verbose >= 10);
@@ -1916,7 +1943,7 @@ sub PrintAlignedMatrices {
 	#	if ($return_field{$metric}) {
 	my $value = $match_score{$compa_id}{$metric};
 	$value = sprintf("%.3f", $value);
-	#	  &RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
+	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
 	$match_scores .= "; ".$metric."=".$value;
 	$match_scores_html .= "<td>".$value."</td>\n";
 	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
