@@ -495,6 +495,8 @@ sub _readFromSTAMPFile {
 
   my %prior = ();
   my $l = 0;
+  my $last_field_name = 0; ## 1 if the last read field was "NA"
+
   while (<$in>) {
     $l++;
     next if (/^;/);
@@ -523,20 +525,58 @@ sub _readFromSTAMPFile {
       }
 
       ## Start a new matrix (one STAMP file contains several matrices)
-    } elsif (/^DE\s+(.+)/) {
+    } elsif ((/^(DE)\s+(.+)/) || (/^(NA)\s+(.+)/)) {
+      ## Problem: STAMP has 2 formats (so called "TRANSFAC" and the
+      ## "TRANSFAC-like", but actually the TRANSFAC is not TRANSFAC
+      ## for example, it has no AC field, whereas this is an essential
+      ## field for TRANSFAC).
+      ##
+      ## The beginning of a record is marked EITHER by "NA"
+      ## ("TRANSFAC" format) OR by "DE" ("TANSFAC-like" format).
+      ## We have to fiddle around to circumvent this ambiguity.
+
+      my $accession = $2; ## Name and description are both acceptable
+			  ## as AC.
+
       ## STAMP uses the description field as accession number
-      my $accession = $1;
       $comment_nb = 0;
       &RSAT::message::Info("STAMP accession", $accession) if ($main::verbose >= 4);
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
-      $matrix->set_parameter("program", "STAMP");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       push @matrices, $matrix;
-      if ($accession) {
+
+
+      my $name = "";
+      my $description = "";
+      if ($1 eq "NA") {
+	## If field "name" is defined, we are in the so-called
+	## "TRANSFAC" format. The "name" is then used as accession +
+	## as ID + as name
+	$last_field_name = 1;
+	$name = $2;
+	$matrix->set_parameter("name", $name);
 	$matrix->set_parameter("accession", $accession);
 	$matrix->set_parameter("AC", $accession);
+	$matrix->set_parameter("id", $accession);
+      } else {
+	## Field DE is always taken as description
+	$description = $2;
+	$matrix->set_parameter("description", $description);
+
+	unless ($last_field_name) {
+	  ## If no name has been specified earlier, we are in the
+	  ## "TRANSFAC-like" format. In this case the description is
+	  ## used as name, accession and ID.
+	  $matrix->set_parameter("name", $accession);
+	  $matrix->set_parameter("accession", $accession);
+	  $matrix->set_parameter("AC", $accession);
+	  $matrix->set_parameter("id", $accession);
+	}
+	$last_field_name = 0;
       }
+
+      $matrix->set_parameter("program", "STAMP");
       $matrix->set_parameter("version", $version);
       $ncol = 0;
       while (my $comment = shift(@pre_matrix_comments)) {
