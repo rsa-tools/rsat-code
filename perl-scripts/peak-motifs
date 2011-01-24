@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.148 2011/01/22 07:05:28 jvanheld Exp $
+# $Id: peak-motifs,v 1.149 2011/01/24 12:31:29 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.148 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.149 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1229,7 +1229,7 @@ sub LocalWords {
 #      $cmd .= " --window=".$main::param{local_words_window};
 #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
       #  $cmd .= " -seqtype dna";
-      $cmd .= " --lenl ".$len;
+      $cmd .= " --len ".$len;
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " > ".$main::outfile{$pattern_type};
