@@ -1202,16 +1202,24 @@ sub weight_properties {
     my @arcs = $self->get_attribute("arcs");
     if ($real eq "null") {
       $real = $self->get_weights();
-    } 
+    }
     if (!@weights) {
       @weights = map $_->[ 2 ], @arcs;
     }
+    $weights[0] = $arcs[0][2] if (scalar @weights == 1); 
     if ($real) {
-      my %summary = &RSAT::stats::summary(@weights);
-      $mean = $summary{mean};
-      $sd = $summary{sd};
-      $min = $summary{min};
-      $max = $summary{max};
+      if (scalar @weights > 1) {
+        my %summary = &RSAT::stats::summary(@weights);
+        $mean = $summary{mean};
+        $sd = $summary{sd};
+        $min = $summary{min};
+        $max = $summary{max};
+      } else {
+        $mean = $weights[0];
+        $sd = 0;
+        $min = $mean;
+        $max = $mean;
+      }
     } else {
       &RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n") if ($main::verbose >= 5);
     }
