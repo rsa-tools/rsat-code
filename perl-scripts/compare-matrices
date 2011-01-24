@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.84 2011/01/23 23:54:18 jvanheld Exp $
+# $Id: compare-matrices,v 1.85 2011/01/24 23:48:25 jvanheld Exp $
 #
 ############################################################
 
@@ -392,7 +392,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.84 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.85 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -613,7 +613,7 @@ package main;
     $return_field{matrix_name} = 1;
     $return_field{strand} = 1;
     $return_field{Ncor} = 1;
-    $return_field{Icor} = 1;
+#    $return_field{Icor} = 1;
     $return_field{NIcor} = 1;
 #    $return_field{NWcor} = 1;
 #    $return_field{consensus} = 1;
@@ -622,9 +622,9 @@ package main;
 
     ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
     $lth{w}=5 unless (defined($lth{w}));
-    $lth{Icor}=0.75 unless (defined($lth{Icor}));
-    $lth{cor}=0.75 unless (defined($lth{cor}));
-    $lth{ncor}=0.5 unless (defined($lth{ncor}));
+#    $lth{Icor}=0.75 unless (defined($lth{Icor}));
+    $lth{cor}=0.7 unless (defined($lth{cor}));
+    $lth{ncor}=0.4 unless (defined($lth{ncor}));
   }
 
   ## Sort order
@@ -826,12 +826,18 @@ package main;
 
     ## Compute max size for accession numbers
     ## Accession number
-    my $ac = $matrix->get_attribute("accession") || $id;
+    unless ($matrix->get_attribute("accession")) {
+      $matrix->force_attribute("accession", $id)
+    }
+    my $ac = $matrix->get_attribute("accession");
     my $ac_len = length($ac);
     $max_ac_len1 = $ac_len if ($ac_len > $max_ac_len1);
 
     ## Compute max size for matrix names
-    my $name = $matrix ->get_attribute("name") || $id;
+    unless ($matrix->get_attribute("name")) {
+      $matrix->force_attribute("name", $id)
+    }
+    my $name = $matrix ->get_attribute("name");
     my $name_len = length($name);
     $max_name_len1 = $name_len if ($name_len > $max_name_len1);
 
@@ -855,23 +861,34 @@ package main;
     %matrix_by_id2 = %matrix_by_id1;
   } else {
     foreach my $matrix (@matrices2) {
-      my $id = $matrix->get_attribute("id") || "<NA>";
+      my $id = $matrix->get_attribute("id")
+	|| $matrix->get_attribute("identifier")
+	  || $matrix->get_attribute("name")
+	    || $matrix->get_attribute("accession")
+	      || "matrix_".$m;
+      #      my $id = $matrix->get_attribute("id") || "<NA>";
       $matrix_by_id2{$id} = $matrix;
 
-      ## Compute max size for identifiers
-      my $id_len = length($id);
-      $max_id_len2 = $id_len if ($id_len > $max_id_len2);
+    ## Compute max size for identifiers
+    my $id_len = length($id);
+    $max_id_len2 = $id_len if ($id_len > $max_id_len2);
 
-      ## Compute max size for accession numbers
-      my $ac = $matrix->get_attribute("accession") || "<NA>";
-      my $ac_len = length($ac);
-      $max_ac_len2 = $ac_len if ($ac_len > $max_ac_len2);
+    ## Compute max size for accession numbers
+    ## Accession number
+    unless ($matrix->get_attribute("accession")) {
+      $matrix->force_attribute("accession", $id)
+    }
+    my $ac = $matrix->get_attribute("accession");
+    my $ac_len = length($ac);
+    $max_ac_len2 = $ac_len if ($ac_len > $max_ac_len2);
 
-      ## Compute max size for matrix names
-      my $name = $matrix ->get_attribute("name") || $matrix ->get_attribute("id");
-      my $name_len = length($name);
-      $max_name_len2 = $name_len if ($name_len > $max_name_len2);
-
+    ## Compute max size for matrix names
+    unless ($matrix->get_attribute("name")) {
+      $matrix->force_attribute("name", $id)
+    }
+    my $name = $matrix ->get_attribute("name");
+    my $name_len = length($name);
+    $max_name_len2 = $name_len if ($name_len > $max_name_len2);
 #      &RSAT::message::Debug("Matrix", $m, "ID=".$id, "NAME=".$name, "AC=".$ac) if ($main::verbose >= 10);
     }
   }
