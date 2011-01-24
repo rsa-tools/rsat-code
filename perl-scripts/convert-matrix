@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.127 2010/12/21 22:15:49 jvanheld Exp $
+# $Id: convert-matrix,v 1.128 2011/01/24 00:15:22 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -712,7 +712,6 @@ OPTIONS
 		name (e.g. tab) to formats with names (e.g. transfac).
 
 	-attr key value
-
 	        Force an attribute of the matrix (matrices) to have a
 	        given value. This can be convenient for converting
 	        poorly documented formats (e.g. tab-delimited) into
@@ -739,12 +738,14 @@ OPTIONS
 		Convert the matrix to its reverse complement.
 
 	-logo_format
-		Format for logo image file. supported : $supported_logo_formats (default:png).
-		Beware: the logo file will be created in current directory by default, unless
-		the -logo_dir option is specified or the -o option. In the last case the logo
-                will be in the same directory than the output file (-o ).
-                Several formats can be sepcified at the same time by using comma as separator
-                (eg. -logo_format png,pdf)
+		Format for logo image file. supported :
+		$supported_logo_formats (default:png).  Beware: the
+		logo file will be created in current directory by
+		default, unless the -logo_dir option is specified or
+		the -o option. In the last case the logo will be in
+		the same directory than the output file (-o ).
+		Several formats can be sepcified at the same time by
+		using comma as separator (eg. -logo_format png,pdf)
 
 	-logo_dir
 		Specifies a directory for the output of the logo
@@ -838,6 +839,14 @@ INPUT/OUTPUT FORMATS
 	developed by Andrew Neuwald (Lawrence et al. Science, 1993:
 	262, 208-214; Neuwald, et al. Protein Sci, 1995: 4, 1618-1632)
 
+    JASPAR (input/output)
+    	http://jaspar.genereg.net/html/TEMPLATES/help.html
+            > Mycn
+            A [ 0 29 0 2 0 0 ]
+            C [31 0 30 1 3 0 ]
+            G [ 0 0 0 28 0 31]
+            T [ 0 2 1 0 28 0 ]
+            
     meme (input)
 	Output file from MEME, the pattern-discovery program developed by
 	tim Bailey.This file contains one or several matrices, +
@@ -854,12 +863,33 @@ INPUT/OUTPUT FORMATS
         (http://www.gene-regulation.com/pub/databases.html)
 
     STAMP (input/output)
-	Converts the matrix into a string in STAMP format.
+	Converts the matrix from/to a string in STAMP format
+	(http://www.benoslab.pitt.edu/stamp/help.html).
+
 	STAMP is a dialect of the TRANSFAC format, with important differences:
 	- the fields ID and AC are absent, and the matrix ID comes in the field DE
 	- the header row (PO) is not supported
 	- the positions start at 0 instead of 1
 	- there is no matrix delimiter (the double slash)
+	In additin, STAMP admits two variants: 
+
+	- what they call" TRANSFAC" format, which is actually not
+          TRANSFAC (the fields AC and ID are not defined).
+
+                      NA Mync
+                      XX
+                      DE Mync
+                      XX
+                      P0 A C G T
+                      01 0 31 0 0 C
+                      02 29 0 0 2 A
+                      03 0 30 0 1 C
+                      04 2 1 28 0 G
+                      05 0 3 0 28 T
+                      06 0 0 31 0 G
+                      XX
+
+	- what they call "TRANSFAC-like" (same as above, but the first two rows are missing)
 
     infogibbs (input/output)
         Output file from infogibbs.
