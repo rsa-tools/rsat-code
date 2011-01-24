@@ -75,7 +75,7 @@ sub AlignMatrixPair {
   }
 
   &RSAT::message::TimeWarn("Pairwise matrix alignment", $desc1, $desc2, "offset=".$offset,  "strand=".$strand)
-    if ($main::verbose >= 2);
+    if ($main::verbose >= 3);
 
   my @counts1 = $matrix1->getMatrix();
   my @counts2;
