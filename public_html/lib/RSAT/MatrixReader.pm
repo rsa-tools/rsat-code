@@ -1941,6 +1941,10 @@ sub _readFromMEMEFile {
       $matrix->init();
       $matrix->set_parameter("program", "meme");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+      my $id = "meme_motif_".$current_matrix_nb;
+      $matrix->set_parameter("id", $id);
+      $matrix->set_parameter("ac", $id); ## For TRANSFAC compatibility
+      $matrix->set_parameter("name", $id); ## For readability of logos
       $matrix->set_attribute("ncol", $2);
 
       $matrix->set_parameter("command", $meme_command);
