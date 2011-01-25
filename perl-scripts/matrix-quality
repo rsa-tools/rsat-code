@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.128 2011/01/19 22:57:30 amedina Exp $
+# $Id: matrix-quality,v 1.129 2011/01/25 17:22:02 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2387,7 +2387,7 @@ sub CalcTheorScoreDistribution {
 
 sub Calculate_NWD {
     my ($m_width, $comp_distrib_file)= @_; 
-    $outfile{distrib_nwd} = $outfile{prefix}."_score_distrib_nwd.tab"; push @files_to_index, "distrib_nwd";
+    $outfile{distrib_nwd} = $outfile{prefix}."_score_distrib_".$main::nwd_seq_type."_nwd.tab"; push @files_to_index, "distrib_nwd";
     $main::out_nwd = &OpenOutputFile($outfile{distrib_nwd});
     #die "width " . $m_width. "file " . $comp_distrib_file;
     my $dists;
