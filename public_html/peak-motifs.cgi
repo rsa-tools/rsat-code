@@ -237,12 +237,11 @@ if ($query->param('visualize') eq "bed_coord") {
     close REF;
   }
 	
-	
-    $parameters .= " -coord ".$upload_coord_file;
-    
-    if ($query->param('assembly')){
-    	## here add the assembly version !
+    unless ($query->param('assembly')){
+    	  &cgiError("The assembly version must be provided when using a BED coordinates file.");
     }
+    
+     $parameters .= " -coord ".$query->param('assembly')." ".$upload_coord_file;
   }
 
 ### add -task

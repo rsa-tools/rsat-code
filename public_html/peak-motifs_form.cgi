@@ -132,8 +132,10 @@ print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
 print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar');
-print $query->hidden(-name=>'max_seq_len',-default=>'250');
+print $query->hidden(-name=>'max_seq_len',-default=>'');
 print $query->hidden(-name=>'top_sequences',-default=>'');
+print $query->hidden(-name=>'visualize',-default=>'galaxy');
+print $query->hidden(-name=>'galaxy',-default=>'CHECKED');
 print $query->submit(-label=>"DEMO 1");
 print "</B></TD>\n";
 print $query->end_form;
@@ -258,16 +260,16 @@ print $query->checkbox(-name=>'dyad-analysis',
 		       -label=>''); 
 print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
 
-print "<br/>";
+##print "<br/>";
 
 #
-### local-word-analysis
+### local-word-analysis => too slow to be put on the website
 #
-print $query->checkbox(-name=>'local-word-analysis_dyads',
-		       -checked=>$default{'local-word-analysis_dyads'},
-		       -label=>'');  
-print "&nbsp;<b>Discover spaced word pairs with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
-print "<br/>";
+#print $query->checkbox(-name=>'local-word-analysis_dyads',
+#		       -checked=>$default{'local-word-analysis_dyads'},
+#		       -label=>'');  
+#print "&nbsp;<b>Discover spaced word pairs with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
+#print "<br/>";
 
 #
 ### position-analysis => still to be implemented
