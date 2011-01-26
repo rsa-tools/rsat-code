@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.149 2011/01/24 12:31:29 jvanheld Exp $
+# $Id: peak-motifs,v 1.150 2011/01/26 15:10:00 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.149 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.150 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2633,30 +2633,36 @@ sub SynthesisByMotif {
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $table .= "</tr></table>";
+      
       ## display UCSC track
-      ## first get assembly
+      ## IF from fasta sequence: first get assembly
+      my $genome_assembly ="";
       if ($main::param{seq_source}){      
       	## also store the genome assembly
-      	$main::genome_assembly = ` head $infile{test_seq} | grep '^>' ` ;
-      	if ($main::param{seq_source} eq "galaxy"){
-      		$main::genome_assembly =~ s/>([^_]+)_.*$/$1/;
+      	$genome_assembly = ` grep '^>' $infile{test_seq} | head -n 1 ` ;
+      	chomp($genome_assembly);
+      	if ($main::param{seq_source} eq "galaxy"){      		
+      		$genome_assembly =~ s/>([^_]+)_.*$/$1/;
       		}
+      &RSAT::message::Info("Assembly from fasta header", $main::param{seq_source},$genome_assembly) if ($main::verbose >= 3);    	
+      	 ## IF from coord file
+    	} elsif ($main::param{coord_assembly}){
+    		$genome_assembly = $main::param{coord_assembly};
     	}
 
       if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
-      		## ucsc link 
-      		#my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
-      		#my $browser_url = "<a target='_blank' href='";
-      		#$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
-      		#$browser_url .= "db=".$main::genome_assembly;
-      		#$browser_url .= "&hgt.customText=".$BED_URL;
-      		#$browser_url .= "'><img border=0 height='20' src='images/UCSC_icon.jpg' alt='UCSC'></a>";
+      		## ucsc link
+      		my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
+      		my $browser_url = "<a target='_blank' href='";
+      		$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+      		$browser_url .= "db=".$genome_assembly;
+      		$browser_url .= "&hgt.customText=".$BED_URL;
+      		$browser_url .= "'><img border=0 height='20' src='".$main::dir{images_html}."/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
       	
-      	      &SyntheticTableAddRow_New("Predicted sites on input peaks",
+      		  &SyntheticTableAddRow_New("Predicted sites on input peaks",
 			    $table,
-			    # "view in genome browser", ["UCSC",$browser_url,
-			   		#	 "Ensembl",$main::outfile{$motif_id.'_pssm_sites_genomic'}
-			   	#		 ],
+			     "view in genome browser ", [$browser_url,,
+			   			 ],
 			    "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
 			   			 "BED (UCSC track)",$main::outfile{$motif_id.'_pssm_sites_genomic'}
 			   			 ],
@@ -2699,6 +2705,7 @@ sub OpenSynthesis {
   &RSAT::util::CheckOutDir($main::dir{images_html});
   my $cmd = "rsync -ruptl ";
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/arrow*.gif ";
+  $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/UCSC_icon.jpg ";
   $cmd .= " ".$main::dir{images_html};
   &one_command($cmd, 1);
 
@@ -2778,7 +2785,8 @@ sub Archive {
   ## Archive all data and results
   my $archive = $main::outfile{archive};
   $to_archive = $main::dir{output} unless $to_archive;
-  $cmd .= "zip -ryq ".$archive." ".$to_archive;
+#  $cmd .= "zip -ryq ".$archive." ".$to_archive;
+  $cmd .= "zip -q ".$archive." ".$to_archive;
   &one_command($cmd, 1);
 
   &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
@@ -2864,11 +2872,11 @@ sub PrintFileLinks_New {
     last unless $key;
     $file = shift(@$links);
     &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 3);
-    if (-e $file) {
+    if (($file)&&(-e $file)) {
       my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn "<a href='".$link."'>".$key."</a>\n";
     } else {
-      print $syn "<font color='red'>[".$key."]</font>\n";
+      print $syn $key."\n";
     }
   }
   print $syn " ]<br/>";
@@ -3375,19 +3383,30 @@ This option is not compatible with -coord.
     } elsif ($arg eq "-from") {
       $main::param{seq_source} = shift(@arguments);
 
+=pod
 
-=item B<-coord peak_coordinate_file>
+=item B<-coord assembly peak_coordinate_file>
 
 Enter a file providing the coordinates of each peak in bed format.
+The name of the file must be after the assembly corresponding to this file.
+Assembly are encoded in the form of uscsc (eg. mm9, hg19 ...)
+
+Example: -coord hg19 path/to/bed/file.bed
 
 When a coordinate file is provided, predicted site coordinates
 (relative to peak center) are also converted to genomic coordinates
 (in the form of a bed file), which can be uploaded to the UCSC genome
 browser as an annotation track.
 
+The 4th column of the BED file should correspond to the fasta headers
+
 =cut
     } elsif ($arg eq "-coord") {
+      $main::param{coord_assembly} = shift(@arguments);
       $main::infile{coord} = shift(@arguments);
+       &RSAT::error::FatalError($main::param{coord_assembly}, $main::infile{coord}, "are not valid values for -coord option. Should be -coord assembly path/to/bed/file.bed")
+	if ($main::infile{coord} =~ /^-/);
+
 
 =pod
 
