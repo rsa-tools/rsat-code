@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.152 2011/01/27 09:39:32 morgane Exp $
+# $Id: peak-motifs,v 1.153 2011/01/27 12:51:26 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.152 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.153 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2729,7 +2729,7 @@ sub SynthesisMotifCompa {
 
 
   ## Word comparisons
-  &SynthesisWordCompa();
+  &SynthesisWordCompa() if ($task{merge_words});
 
   ## Comparison between discovered motifs
 #  &SynthesisMotifsVsMotifs();
@@ -3029,7 +3029,7 @@ sub SynthesisRefMotif {
     print $syn "<p><table class='whitebg'>\n";
     &SyntheticTableAddHeaderRow("Reference motif(s)");
 
-    my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
+    my $logo_table = "<table class='whitebg' align='center' style='border-style:none;'>";
 
     ## get the names of all reference logo files
     my @logo_files = glob($main::outfile{ref_motifs_logo}."_m*.".$main::param{img_format});
@@ -3039,7 +3039,7 @@ sub SynthesisRefMotif {
     ## Prepare a table with the logos
     for my $i (1..scalar(@logo_files)) {
       $logo_table .= "<tr>\n";
-      $logo_table .= "<td>Ref motif ".$i."</td>\n";
+      $logo_table .= "<td style='border-right-style:none;>Ref motif ".$i."</td>\n";
       my $logo_file = $main::outfile{ref_motifs_logo}."_m".$i.".".$main::param{img_format};
       my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
       if (-e $logo_file) {
@@ -3050,7 +3050,7 @@ sub SynthesisRefMotif {
       }
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
-	$logo_table .= "<td align='left'><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
+	$logo_table .= "<td align='left' style='border-right-style:none;'><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
       } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
       }
