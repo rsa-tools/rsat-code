@@ -20,7 +20,10 @@
       <h2>
 	<a href="RSAT_home.cgi" target="tools"><img src="images/RSAT_icon.jpg" height='50'  border='0'> 
 	  <!--<a href="RSAT_home.cgi" target="tools"><img src="images/RSAT_logo.png" width='65'> -->
-	  Regulatory Sequence Analysis Tools </a>
+	  <span class='brown_text'>R</span>egulatory <br/>
+	  <span class='brown_text'>S</span>equence <br/>
+	  <span class='brown_text'>A</span>nalysis <br/>
+	  <span class='brown_text'>T</span>ools </a>
       </h2>
 
 
@@ -30,14 +33,14 @@
 	<div id="menu100">
 	  <a class="menu_item" href="retrieve-seq_form.cgi"
 	     target="tools">retrieve sequence</a>
-	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL sequence</a>
+	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq.</a>
 	  <a class="menu_item" href="oligo-analysis_form.cgi" target="tools">oligo-analysis (words)</a>
-	  <a class="menu_item" href="matrix-scan-quick_form.cgi" target="tools">matrix-scan (quick) <font color=#FFCCCC>New !</font></a>
+	  <a class="menu_item" href="matrix-scan-quick_form.cgi" target="tools">matrix-scan (quick)</a>
 	  <a class="menu_item" href="random-seq_form.cgi" target="tools">random sequence</a>
 	</div>
       </div>
 
-      <div class="menu_expand" onclick="expandAll('11')" id="expand"> > view all tools</div>
+      <div class="menu_expand" onclick="expandAll('13')" id="expand"> > view all tools</div>
 
       <div class="menu">
 	<div class="menu_heading_closed"
@@ -52,18 +55,38 @@
 
 <!--	<font color=#FF0000 size=1>New!</font>-->
 	<div class="menu_heading_closed"
-	     onclick="toggleMenu('2')" id="heading2">Sequence retrieval</div>
+	     onclick="toggleMenu('2')" id="heading2">Sequence tools</div>
 	<div id="menu2" class="menu_collapsible">
 	  <a class="menu_item" href="retrieve-seq_form.cgi" target="tools">retrieve sequence</a>
-	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL sequence <font color=#FFCCCC>New!</font></a>
+	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq. </a>
 	  <a class="menu_item" href="purge-sequence_form.cgi" target="tools">purge sequence</a>
 	  <a class="menu_item" href="convert-seq_form.cgi" target="tools">convert sequence</a>
 	  <a class="menu_item" href="random-seq_form.cgi" target="tools">random sequences</a>
 	</div>
+
+      
+      	<div class="menu_heading_closed"
+	     onclick="toggleMenu('12')" id="heading12">Matrix tools <img src="images/onebit_49.png"  class="new"/></div>
+		<div id="menu12" class="menu_collapsible">
+	  <a class="menu_item" href="convert-matrix_form.cgi" target="tools">convert matrix</a>
+	  <a class="menu_item" href="matrix-distrib_form.cgi" target="tools">matrix distrib</a>
+	  <a class="menu_item" href="matrix-quality_form.cgi" target="tools">matrix quality <img src="images/onebit_49.png"  class="new"/></a>
+		</div>
+		
+
+	<div class="menu_heading_closed"
+	     onclick="toggleMenu('11')" id="heading11">Build control sets</div>
+	<div id="menu11" class="menu_collapsible">
+	  <a class="menu_item" href="random-genes_form.cgi" target="tools">random gene selection</a>
+	  <a class="menu_item" href="random-seq_form.cgi" target="tools">random sequence</a>
+	  <a class="menu_item" href="random-genome-fragments_form.cgi" target="tools">random genome fragments <img src="images/onebit_49.png" class="new"/></a>
+	  <a class="menu_item" href="random-motif_form.cgi" target="tools">random-motif <img src="images/onebit_49.png" class="new"/></a>
+	  <a class="menu_item" href="random-sites_form.cgi" target="tools">random-sites <img src="images/onebit_49.png" class="new"/></a>
+	  <a class="menu_item" href="implant-sites_form.cgi" target="tools">implant-sites <img src="images/onebit_49.png" class="new"/></a>
+	</div>
       </div>
 
       <div class="menu">	
-	     <font color=#FF0000 size=1>New!</font>
 	<div class="menu_heading_closed"
 	     onclick="toggleMenu('3')" id="heading3">Pattern discovery</div>
 	<div id="menu3" class="menu_collapsible">
@@ -71,20 +94,17 @@
 	  <a class="menu_item" href="oligo-analysis_form.cgi" target="tools">oligo-analysis (words)</a>
 	  <a class="menu_item" href="oligo-diff_form.cgi" target="tools">oligo-diff (words)</a>
 	  <a class="menu_item" href="dyad-analysis_form.cgi" target="tools">dyad-analysis (spaced pairs)</a>
+	  <a class="menu_item_last" href="pattern-assembly_form.cgi" target="tools">pattern assembly</a>
+	  <a class="menu_separator">string with positional biais</a>
 	  <a class="menu_item" href="position-analysis_form.cgi" target="tools">position-analysis (words)</a>
 	  <a class="menu_item" href="local-word-analysis_form.cgi" target="tools">local-word-analysis (word and spaced pairs)</a>
-<!--	  <a class="menu_item" href="peak-motifs_form.cgi" target="tools">peak-motifs (ChIP-seq)<font color=#FFCCCC>New !</font></a>-->
-	  <a class="menu_item_last" href="pattern-assembly_form.cgi" target="tools">pattern assembly</a>
 	  <a class="menu_separator">matrices</a>
 	  <a class="menu_item" href="info-gibbs_form.cgi" target="tools">info-gibbs</a>
 	  <a class="menu_item" href="consensus_form.cgi" target="tools">consensus</a>
 <!--	  <a class="menu_item" href="gibbs_form.cgi" target="tools">gibbs</a>-->
-	  <a class="menu_separator">pipelines</a>
-	  <a class="menu_item" href="footprint-discovery_form.cgi" target="tools">footprint-discovery</a>
-	  <a class="menu_item" href="peak-motifs_form.cgi" target="tools">peak-motifs (ChIP-seq analysis)<font color=#FFCCCC> New!</font></a>
 	</div>
 
-	     <font color=#FF0000 size=1>New!</font>
+
 	<div class="menu_heading_closed"
 	     onclick="toggleMenu('4')" id="heading4">Pattern matching</div>
 	<div id="menu4" class="menu_collapsible">
@@ -93,12 +113,9 @@
 	  <a class="menu_item_last" href="genome-scale-dna-pattern_form.cgi" target="tools">genome-scale dna-pattern</a>
 	  <a class="menu_separator">matrices</a>
 	  <a class="menu_item" href="matrix-scan_form.cgi" target="tools">matrix-scan (full options)</a>
-	  <a class="menu_item" href="matrix-scan-quick_form.cgi" target="tools">matrix-scan (quick) <font color=#FFCCCC>New !</font></a>
+	  <a class="menu_item" href="matrix-scan-quick_form.cgi" target="tools">matrix-scan (quick) <img src="images/onebit_49.png" class="new"/></a>
 	  <a class="menu_item" href="patser_form.cgi" target="tools">patser [discontinued]</a>
 	  <a class="menu_item" href="genome-scale-patser_form.cgi" target="tools">genome-scale patser</a>
-	  <a class="menu_item" href="matrix-distrib_form.cgi" target="tools">matrix distrib</a>
-	  <a class="menu_separator">pipelines</a>
-	  <a class="menu_item" href="matrix-quality_form.cgi" target="tools">matrix quality <font color=#FFCCCC>New!</font></a>
 	</div>
       </div>
       
@@ -109,20 +126,16 @@
 	  <a class="menu_item" href="get-orthologs_form.cgi" target="tools">get orthologs</a>
 	  <a class="menu_item" href="footprint-discovery_form.cgi" target="tools">footprint-discovery</a>
 	</div>
-      </div>
-	
-      <div class="menu">	
+ 
+
 	<div class="menu_heading_closed"
-	     onclick="toggleMenu('11')" id="heading11">Build control sets</div>
-	<div id="menu11" class="menu_collapsible">
-	  <a class="menu_item" href="random-genes_form.cgi" target="tools">random gene selection</a>
-	  <a class="menu_item" href="random-seq_form.cgi" target="tools">random sequence</a>
-	  <a class="menu_item" href="random-genome-fragments_form.cgi" target="tools">random genome fragments <font color=#FFCCCC>New !</font></a>
-	  <a class="menu_item" href="random-motif_form.cgi" target="tools">random-motif <font color=#FFCCCC>New !</font></a>
-	  <a class="menu_item" href="random-sites_form.cgi" target="tools">random-sites <font color=#FFCCCC>New !</font></a>
-	  <a class="menu_item" href="implant-sites_form.cgi" target="tools">implant-sites <font color=#FFCCCC>New !</font></a>
+	     onclick="toggleMenu('13')" id="heading13">NGS - ChIP-seq <img src="images/onebit_49.png" height="30" class="new"></img></div>
+	<div id="menu13" class="menu_collapsible">
+	  <a class="menu_item" href="peak-motifs_form.cgi" target="tools">peak-motifs (ChIP-seq analysis)</a>
 	</div>
       </div>
+	
+  
 
 
       <div class="menu">	
@@ -133,7 +146,7 @@
 	  <a class="menu_item_last" href="convert-seq_form.cgi" target="tools">convert sequence</a>
 	  <a class="menu_separator">matrices</a>
 	  <a class="menu_item_last" href="convert-matrix_form.cgi" target="tools">convert matrix</a>
-	  <a class="menu_separator">background models <font color=#FFCCCC>New !</font></a>
+	  <a class="menu_separator">background models</a>
 	  <a class="menu_item" href="convert-background-model_form.cgi" target="tools">convert background</a>
 	  <a class="menu_item_last" href="seq-proba_form.cgi" target="tools">sequence probability</a>
 	  <a class="menu_separator">features</a>
@@ -166,7 +179,7 @@ onclick="toggleMenu('7')" id="heading7">Other tools</div>
 	  <a class="menu_item" href="web_services.html" target=tools>Introduction</a>
 	  <a class="menu_item" href="web_services/RSATWS_documentation.xml" target=tools>Documentation</a>
 	  <a class="menu_item" href="web_services/RSATWS.wsdl" target=tools>WSDL</a>
-	  <a class="menu_item" href="ws_clients.html" target=tools>Clients <font color=#FFCCCC>New !</font></a>
+	  <a class="menu_item" href="ws_clients.html" target=tools>Clients</a>
 	  <a class="menu_item" href="ws_workflows.html" target=tools>Taverna workflows </a>
 	</div>
 	
