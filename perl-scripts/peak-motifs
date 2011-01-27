@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.150 2011/01/26 15:10:00 morgane Exp $
+# $Id: peak-motifs,v 1.151 2011/01/27 09:00:38 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.150 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.151 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2652,12 +2652,12 @@ sub SynthesisByMotif {
 
       if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
       		## ucsc link
-      		my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
+      		my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
       		my $browser_url = "<a target='_blank' href='";
       		$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
       		$browser_url .= "db=".$genome_assembly;
       		$browser_url .= "&hgt.customText=".$BED_URL;
-      		$browser_url .= "'><img border=0 height='20' src='".$main::dir{images_html}."/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+      		$browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
       	
       		  &SyntheticTableAddRow_New("Predicted sites on input peaks",
 			    $table,
