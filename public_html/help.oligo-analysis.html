@@ -591,11 +591,16 @@ calculated with the binomial formulae.
     Z-SCORE
 	The Z-score is calculated in the following way
 
-		Zsc = (obs_occ - exp_occ)/var_occ
+		Zsc = (obs_occ - exp_occ)/sd_occ
+	            = (obs_occ - exp_occ)/sqrt(var_occ)
+
 	where
 		obs_occ	is the observed number of occurrences
 		exp_occ	is the expected number of occurrences
-		var_occ	is the estimate for the variance on occurrences
+		sd_occ and var_occ
+                    are the estimated standard deviation and variances
+                    for the occurrences, respectively.
+    
 
 	The estimation of the variance is derived from Pevzner et al.(1989). 
 	J Biomol Struct & Dynamics 5:1013-1026):
