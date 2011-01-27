@@ -41,8 +41,10 @@ $default{title}="title for this dataset";
 $default{max_seq_len}="";
 $default{top_sequences}="";
 
-$default{visualize}="no";
+
+$default{visualize}="none";
 $checked{$default{visualize}} = "CHECKED";	
+
 
 ## motif database
 $default{compare_motif_database}="jaspar_core_vertebrates";
@@ -53,6 +55,12 @@ $default{perso_motif_name}="title for this collection";
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
+  }
+   if ($query->param($key) =~ /checked/i) {
+    $checked{$key} = "CHECKED";
+  }
+  if ($key eq "visualize"){
+  	$checked{$query->param($key)} = "CHECKED";
   }
 }
 
@@ -134,8 +142,8 @@ print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
 print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar');
 print $query->hidden(-name=>'max_seq_len',-default=>'');
 print $query->hidden(-name=>'top_sequences',-default=>'');
-print $query->hidden(-name=>'visualize',-default=>'galaxy');
-print $query->hidden(-name=>'galaxy',-default=>'CHECKED');
+print $query->hidden(-name=>'visualize',-default=>"galaxy");
+#print $query->hidden(-name=>'galaxy',-default=>'CHECKED');
 print $query->submit(-label=>"DEMO 1");
 print "</B></TD>\n";
 print $query->end_form;
@@ -424,7 +432,7 @@ print "</fieldset><p/>";
 print "<fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Visualize motifs in genome browser </a></b></legend>";
 
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='no' $checked{'no'}>","<b>No</b>");
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b>No</b>");
 print "<br/>";
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>","<b>Yes, sequences from fetched with <a href=''>Galaxy</a></b><i> fasta headers are in the form: >mm9_chr1_3473041_3473370_+ </i>");
 print "<br/>";
