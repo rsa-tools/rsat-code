@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.151 2011/01/27 09:00:38 morgane Exp $
+# $Id: peak-motifs,v 1.152 2011/01/27 09:39:32 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.151 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.152 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2056,7 +2056,10 @@ sub ScanSequences {
       $cmd .= " -coord ".$main::infile{coord} if ($main::infile{coord});
       $cmd .= " -coord ".$main::outfile{"test_seq_coord"} if ($main::param{seq_source});
       $cmd .= " -origin center ";
-      $cmd .= " -to bed -o ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
+      $cmd .= " -to bed ";
+      my $new_bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs: ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
+      $cmd .= " | sed '1s/^.*/".$new_bed_header."/' ";## change first line
+      $cmd .= " > ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
       &one_command($cmd,1);
     }
 
