@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.85 2011/01/24 23:48:25 jvanheld Exp $
+# $Id: compare-matrices,v 1.86 2011/01/28 00:16:52 jvanheld Exp $
 #
 ############################################################
 
@@ -392,7 +392,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.85 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.86 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -545,6 +545,10 @@ package main;
     delete($return_field{direction});
   }
 
+
+  ## The sorting field must be returned
+  $return_field{$sort_field} = 1;
+
   ## Update the list of metrics to take into account for ranks and rank mean
   if ($return_field{ranks}) {
     foreach my $metric (@supported_metrics) {
@@ -552,6 +556,7 @@ package main;
       push @rank_metrics, $metric if ($return_field{$metric});
     }
   }
+
 
 
   ## Alignments
@@ -614,7 +619,7 @@ package main;
     $return_field{strand} = 1;
     $return_field{Ncor} = 1;
 #    $return_field{Icor} = 1;
-    $return_field{NIcor} = 1;
+#    $return_field{NIcor} = 1;
 #    $return_field{NWcor} = 1;
 #    $return_field{consensus} = 1;
 
@@ -624,7 +629,7 @@ package main;
     $lth{w}=5 unless (defined($lth{w}));
 #    $lth{Icor}=0.75 unless (defined($lth{Icor}));
     $lth{cor}=0.7 unless (defined($lth{cor}));
-    $lth{ncor}=0.4 unless (defined($lth{ncor}));
+    $lth{Ncor}=0.4 unless (defined($lth{Ncor}));
   }
 
   ## Sort order
@@ -644,9 +649,6 @@ package main;
     $calc_field{$field} = 1;
   }
 
-  ## The sorting field must be computed
-  $calc_field{$sort_field} = 1;
-
 
   ## Some fields must be computed as intermediate results for other fields
   $calc_field{Icor} = 1 if ($calc_field{NIcor});
@@ -658,6 +660,8 @@ package main;
   $calc_field{SSD} = 1 if ($calc_field{dEucl});
   $calc_field{SW} = 1 if ($calc_field{NSW});
   $calc_field{SSD} = 1 if ($calc_field{SW});
+
+  &RSAT::message::Debug("Fields to compute", join (",", sort(keys(%calc_field)))) if ($main::verbose >= 4);
 
   ################################################################
   ## Open output stream(s)
@@ -1071,13 +1075,13 @@ package main;
 
     ## Get the information content matrix if required
     my @info1;
-    if ($return_field{Icor}) {
+    if ($calc_field{Icor}) {
       @info1 = $matrix1->getInformation();
     }
 
     ## Get the weight matrix if required
     my @weight1;
-    if ($return_field{Wcor}) {
+    if ($calc_field{Wcor}) {
       @weight1 = $matrix1->getWeights();
     }
 
@@ -1151,13 +1155,13 @@ package main;
 
 	## Get the information content matrix if required
 	my @info2;
-	if ($return_field{Icor}) {
+	if ($calc_field{Icor}) {
 	  @info2 = $matrix2->getInformation();
 	}
 
 	## Get the weight matrix if required
 	my @weight2;
-	if ($return_field{Wcor}) {
+	if ($calc_field{Wcor}) {
 	  @weight2 = $matrix2->getWeights();
 	}
 
@@ -1182,7 +1186,7 @@ package main;
 	  my $norm_factor = $Wr;
 
 	  ## Highlight alignment in consensus
-	  if ($return_field{consensus}) {
+	  if ($calc_field{consensus}) {
 	    $consensus1 = join ("",
 				"."x($start1-1),
 				substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $w),
@@ -1597,6 +1601,7 @@ package main;
       if ($selected_rank_metrics > 0) {
 	$rank_mean = sprintf("%.4f", $rank_sum{$compa_id} / $selected_rank_metrics);
       }
+#      &RSAT::message::Debug("rank_mean", $rank_mean, $compa_id) if ($main::verbose >= 10);
 #      $rank_mean{$compa_id} = $rank_mean;
       $sort_score{$compa_id} = $rank_mean;
       $match_score{$compa_id}{rank_mean} = $rank_mean;
@@ -1815,6 +1820,7 @@ sub PairwiseAlignments {
 ## set as group seed.
 sub OneToNAlignments {
   &RSAT::message::TimeWarn("Computing one-to-n alignments") if ($main::verbose >= 2);
+
   ## Index matches per matrix
   foreach my $compa_id (@sorted_match_id) {
     local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
@@ -1849,6 +1855,7 @@ sub OneToNAlignments {
     @sorted_matrix_ids1 = sort {$best_score1{$b} <=> $best_score1{$a}} keys (%best_score1);
   }
 
+
 #  &RSAT::message::Debug("Matrix IDs from set 1, sorted by best matching score", join (", ", @sorted_matrix_ids1)) if ($main::verbose >= 10);
   my $m1 = 0;
   my $n1 = scalar(@sorted_matrix_ids1);
@@ -1882,6 +1889,8 @@ sub OneToNAlignments {
     if ($return_field{Icor}) {
       $type = "info";
     }
+
+
     my ($merged_matrix, @shifted_matrices) = 
       &RSAT::MatrixAlignment::AlignMatricesOneToN($matrix1, 
 						  \@matching_compa_ids,
@@ -1895,6 +1904,7 @@ sub OneToNAlignments {
     &PrintAlignedMatrices(@shifted_matrices);
   }
   &RSAT::message::TimeWarn("Finished one-to-n alignments") if ($main::verbose >= 5);
+
 }
 
 ################################################################
@@ -1935,6 +1945,7 @@ sub PrintAlignedMatrices {
   $html_header .= "<th>Aligned matrices</th>\n";
   print $alignments_1ton_html "<tr>".$html_header."</tr>";
 
+
   ## Print the result
   my $m=0;
   foreach my $shifted_matrix (@shifted_matrices) {
@@ -1960,7 +1971,7 @@ sub PrintAlignedMatrices {
 	#	if ($return_field{$metric}) {
 	my $value = $match_score{$compa_id}{$metric};
 	$value = sprintf("%.3f", $value);
-	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
+#	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
 	$match_scores .= "; ".$metric."=".$value;
 	$match_scores_html .= "<td>".$value."</td>\n";
 	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
@@ -1972,16 +1983,20 @@ sub PrintAlignedMatrices {
     }
     $matrix_string .= $match_scores."\n";
 
-    if ($return_field{Icor}) {
+    if ($calc_field{Icor}) {
       $shifted_matrix->calcInformation();
+    }
+
+    if ($calc_field{Icor}) {
       $matrix_string .= $shifted_matrix->toString(col_width=>6,
-					decimals=>2,
-					type=>"information",
-					format=>"tab");
+						  decimals=>2,
+						  type=>"information",
+						  format=>"tab");
     } else {
-      $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"count", colwidth=>6, decimals=>0);
+      $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"counts", colwidth=>6, decimals=>0);
     }
     print $alignments_1ton $matrix_string;
+
 
     ## Generate a sequence logo for the HTML output file
     my $logo_file = $main::outfile{logo_dir}."/".$shifted_matrix->get_attribute("id");
@@ -2129,7 +2144,37 @@ Specify the matrix format for the first input file only (requires
 	&RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
       }
 
-      ## Background model file
+
+=pod
+
+=item B<-format2 matrix_format2>
+
+Specify the matrix format for the second input file only (requires
+-format1).
+
+=cut
+    } elsif ($arg eq "-format2") {
+      $input_format2 = shift(@arguments);
+      unless ($supported_input_format{$input_format2}) {
+	&RSAT::error::FatalError("$input_format2\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+      }
+
+
+
+=pod
+
+=item B<-format matrix_format>
+
+Specify the matrix format for both input files (alternatively, see
+options -format1 and -format2).
+
+=cut
+    } elsif ($arg eq "-format") {
+      $input_format1 = shift(@arguments);
+      $input_format2 = $input_format1;
+      unless ($supported_input_format{$input_format1}) {
+	&RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+      }
 
 =pod
 
@@ -2164,36 +2209,6 @@ convert-background-model.
 			       "Supported: ", $RSAT::MarkovModel::supported_input_formats)
 	unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_format});
 
-
-
-=pod
-
-=item B<-format2 matrix_format2>
-
-Specify the matrix format for the second input file only (requires
--format1).
-
-=cut
-    } elsif ($arg eq "-format2") {
-      $input_format2 = shift(@arguments);
-      unless ($supported_input_format{$input_format2}) {
-	&RSAT::error::FatalError("$input_format2\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
-      }
-
-=pod
-
-=item B<-format matrix_format>
-
-Specify the matrix format for both input files (alternatively, see
-options -format1 and -format2).
-
-=cut
-    } elsif ($arg eq "-format") {
-      $input_format1 = shift(@arguments);
-      $input_format2 = $input_format1;
-      unless ($supported_input_format{$input_format1}) {
-	&RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
-      }
 
 =pod
 
