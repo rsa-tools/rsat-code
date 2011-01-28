@@ -1190,6 +1190,7 @@ sub RetrieveOrthoSeq {
     my $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
     $cmd .= " -i ".$outfile{bbh};
     $cmd .= " -noorf";
+    $cmd .= " -feattype CDS,mRNA,tRNA,rRNA,scRNA,misc_RNA" ;
     $cmd .= " -o ".$outfile{seq};
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
