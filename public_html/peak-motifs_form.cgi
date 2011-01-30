@@ -154,7 +154,7 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-
+print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
 print "<td><b><a href='help.peak-motifs.html'>[MANUAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
@@ -181,7 +181,7 @@ sub Panel1 {
 
   &MultiSequenceChoice("Peak sequences",1);
 
-  print '<b><font style="font-size:80%"><a href=""> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b></br>';
+  print '<b><font style="font-size:80%"><a href="tutorials/tut_peak_motif.html#seq" target="_blank"> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b></br>';
   print "</fieldset><p/>";
 }
 
