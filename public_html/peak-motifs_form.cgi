@@ -65,6 +65,7 @@ foreach $key (keys %default) {
 }
 
 
+
 ################################################################
 ### print the form ###
 
@@ -82,6 +83,9 @@ print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lan
 print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
+
+&ListParameters() if ($ENV{rsat_echo} >=2);
+
 
 ## demo description
 print $default{demo_descr1};
@@ -106,6 +110,7 @@ print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 ### send results by email only
 print "<p>\n";
 &SelectOutput('email', email_only=>1);
+#&SelectOutput($default{output});
 
 ################################################################
 ### action buttons
@@ -143,8 +148,8 @@ print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar')
 print $query->hidden(-name=>'max_seq_len',-default=>'');
 print $query->hidden(-name=>'top_sequences',-default=>'');
 print $query->hidden(-name=>'visualize',-default=>"galaxy");
-#print $query->hidden(-name=>'galaxy',-default=>'CHECKED');
-print $query->submit(-label=>"DEMO 1");
+print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
+print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
 
