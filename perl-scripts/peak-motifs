@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.156 2011/01/30 10:28:01 morgane Exp $
+# $Id: peak-motifs,v 1.157 2011/01/30 10:37:22 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.156 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.157 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -964,7 +964,7 @@ sub SequenceLengths {
       $cmd = $SCRIPTS."/convert-features";
       $cmd .= " -from ".$main::param{seq_source}."_seq -i ".$infile{test_seq};
       $cmd .= " -to bed ";
-      my $new_bed_header= "track name=\"".basename($infile{test_seq})."\" description=\"RSAT peak-motifs: ".basename($infile{test_seq})."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
+      my $new_bed_header= "track name=\"peaks\" description=\"RSAT peak-motifs: peaks\" visibility=2 use_score=1 color=13,115,67";
       $cmd .= " | sed '1s/^.*/".$new_bed_header."/' ";## change first line
       $cmd .= " > ".$main::outfile{"test_seq_coord"};
       &one_command($cmd,1);
