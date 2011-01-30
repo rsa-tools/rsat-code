@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.154 2011/01/28 00:17:06 jvanheld Exp $
+# $Id: peak-motifs,v 1.155 2011/01/30 10:17:39 morgane Exp $
 #
 ############################################################
 
@@ -95,6 +95,7 @@ require "footprint.lib.pl";
 use RSAT::util;
 use RSAT::MatrixReader;
 use Data::Dumper;
+use File::Basename;
 
 ################################################################
 ## Main package
@@ -111,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.154 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.155 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2010,7 +2011,10 @@ sub ScanSequences {
       &RSAT::message::TimeWarn("Converting input fasta headers to BED file") if ($main::verbose >= 2);
       $cmd = $SCRIPTS."/convert-features";
       $cmd .= " -from ".$main::param{seq_source}."_seq -i ".$infile{test_seq};
-      $cmd .= " -to bed -o ".$main::outfile{"test_seq_coord"};
+      $cmd .= " -to bed ";
+      my $new_bed_header= "track name=\"".basename($infile{test_seq})."\" description=\"RSAT peak-motifs: ".basename($infile{test_seq})."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
+      $cmd .= " | sed '1s/^.*/".$new_bed_header."/' ";## change first line
+      $cmd .= " > ".$main::outfile{"test_seq_coord"};
       &one_command($cmd,1);
     }
 
@@ -2274,15 +2278,11 @@ sub PrintHtmlFileHedaer {
 
   ## Reserve space for result TOC in the beginning of the form
   $header .=  "<div id='Menu_space'>\n";
-
-#   ## Link to the archive
-#   if ((-e $main::outfile{archive}) || ($task{archive})) {
-#     my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
-#     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
-#     $header .=  "<p><b>All results (.zip): </b>\n";
-#     $header .=  "<a href='".$link."'>".$archive_short."</a></p>\n";
-#   }
-
+  $header .=  "<div id='Menu_wait'>\n";
+  $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>
+  <p style='text-align:center;color:green'>Results will progressively appear on this page <br/>
+  <b>Please regularly refresh the page until this message disappear</b></p>\n";
+  $header .=  "</div>\n";
   $header .=  "</div>\n";
 
   return($header);
@@ -2654,7 +2654,7 @@ sub SynthesisByMotif {
     		$genome_assembly = $main::param{coord_assembly};
     	}
 
-      if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
+       if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
       		## ucsc link
       		my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
       		my $browser_url = "<a target='_blank' href='";
@@ -2930,7 +2930,7 @@ sub SynthesisSequenceComposition {
   foreach my $seq_type (@seq_types) {
 
     ## Header line
-    &SyntheticTableAddHeaderRow("Sequence composition (".$seq_type." sequences)");
+    &SyntheticTableAddHeaderRow("Sequence composition (peak sequences)");
 
 
     my $peak_nb = "NA";
@@ -2981,8 +2981,54 @@ sub SynthesisSequenceComposition {
     $seq_stats .= "<br>\n<u>Min length:</u> ".$min_peak_len." bp";
     $seq_stats .= "<br>\n<u>Mean length:</u> ".$mean_peak_len." bp";
     $seq_stats .= "<br>\n<u>Max length:</u> ".$max_peak_len." bp";
-
-    &SyntheticTableAddRow_New($seq_stats,
+    
+    ## display peaks UCSC track
+      ## IF from fasta sequence: first get assembly
+      my $genome_assembly ="";
+      if ($main::param{seq_source}){      
+      	## also store the genome assembly
+      	$genome_assembly = ` grep '^>' $infile{test_seq} | head -n 1 ` ;
+      	chomp($genome_assembly);
+      	if ($main::param{seq_source} eq "galaxy"){      		
+      		$genome_assembly =~ s/>([^_]+)_.*$/$1/;
+      		}
+      &RSAT::message::Info("Assembly from fasta header", $main::param{seq_source},$genome_assembly) if ($main::verbose >= 3);    	
+      	 ## IF from coord file
+    	} elsif ($main::param{coord_assembly}){
+    		$genome_assembly = $main::param{coord_assembly};
+    	}
+    	
+     if ((($main::infile{coord})&&(-e $main::infile{coord}))
+      	||(($main::outfile{"test_seq_coord"})&&(-e $main::outfile{"test_seq_coord"}))) {
+      		## ucsc link
+      		my $BED_URL = $ENV{rsat_www}."/tmp/";
+      		$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
+      		$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
+      		my $browser_url = "<a target='_blank' href='";
+      		$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+      		$browser_url .= "db=".$genome_assembly;
+      		$browser_url .= "&hgt.customText=".$BED_URL;
+      		$browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+			
+			my $BED = "";
+			$BED = $main::infile{coord} if ($main::infile{coord});
+			$BED = $main::outfile{"test_seq_coord"} if ($main::outfile{"test_seq_coord"});
+   			 &SyntheticTableAddRow_New($seq_stats,
+			  "<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
+			   "view peaks in genome browser ", [$browser_url,,
+			   			 ],
+			   "coordinates", ["UCSC BED track",$BED,
+			   			 ],
+			  "seq",["converted",$main::outfile{$seq_type."_converted"},
+			  			"purged" , $main::outfile{$seq_type."_purged"}
+			  			],
+			  "lengths",['list', $main::outfile{$seq_type."_seqlen"},
+    					'distrib',$main::outfile{$seq_type."_seqlen_distrib"},
+    					 'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
+			 			 ]
+			 );
+      	} else { ## without UCSC track
+      		 &SyntheticTableAddRow_New($seq_stats,
 			  "<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
 			  "seq",["converted",$main::outfile{$seq_type."_converted"},
 			  			"purged" , $main::outfile{$seq_type."_purged"}
@@ -2992,7 +3038,8 @@ sub SynthesisSequenceComposition {
     					 'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
 			 			 ]
 			 );
-
+      		
+      	}
 
     ## Residue composition
     for my $ol (@profiles_oligo_lengths) {
