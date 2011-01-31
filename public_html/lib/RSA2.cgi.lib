@@ -215,7 +215,7 @@ sub SelectOutput {
     } else {
       if ($default_output eq 'server') {
 	push @values, 'server'
-      }
+      } 
       push @values, ('display','email');
     }
     print "<B>Output</B>&nbsp;";
@@ -223,7 +223,8 @@ sub SelectOutput {
 			      -values=>[@values],
 			      -default=>$default_output);
     print $query->textfield(-name=>'user_email',
-			    -size=>30);
+			    -size=>30,
+	);
     print "<BR>\n";
     print "<BR>\n";
 }
@@ -1235,6 +1236,7 @@ sub EmailTheResult {
     my ($command, $email_address, $tmp_file_name, %args) = @_;
     my $delay = "72 hours";
     my $mail_title = $args{title};
+    my $no_email = $args{no_email} || 0;
 
     my $clean_command = $command;
     $clean_command =~ s/\"/\'/g; ## Avoid clashes with the quotes
@@ -1251,7 +1253,7 @@ sub EmailTheResult {
     $mail_command = "mail -s \'".$mail_title."\'";
 
     #### check the email address
-    &CheckEmailAddress($email_address);
+    &CheckEmailAddress($email_address)  unless ($no_email);;
 
     #### temporary file for storing the result
     unless ($tmp_file_name) {
@@ -1272,7 +1274,7 @@ sub EmailTheResult {
     $message .= "The server is now processing your request.\n";
     $message .= "Once it will be finished, the result will become available at\n";
     $message .= "\t".${result_URL}."\n";
-    $message .= "An email will be sent to ".$email_address.".\n";
+    $message .= "An email will be sent to ".$email_address.".\n"  unless ($no_email);
     $message .= "The result file will remain on the server for ".$delay.".\n";
     $html_message = $message;
     $html_message =~ s|(http://\S+)|<a href=$1>$1</a>|gm;
@@ -1286,7 +1288,7 @@ sub EmailTheResult {
     $email_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
     $email_message .= "\nThe result file will remain there for $delay.";
     $email_command =  "$command | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> $TMP/$tmp_file_name; ";
-    $email_command .= "echo \"$email_message\" | $mail_command $email_address &";
+    $email_command .= "echo \"$email_message\" | $mail_command $email_address &" unless ($no_email);
     print "<PRE>$email_command</PRE>" if ($ENV{rsat_echo} >= 1);
     system $email_command;
 
