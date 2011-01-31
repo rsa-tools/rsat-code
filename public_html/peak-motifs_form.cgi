@@ -155,8 +155,9 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
+##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
 print "<td><b><a href='help.peak-motifs.html'>[MANUAL]</a></B></TD>\n";
+print "<td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
