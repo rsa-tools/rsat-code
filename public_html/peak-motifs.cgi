@@ -25,7 +25,7 @@ $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
 $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
 $output_prefix = "peak-motifs";
 
-## We need to create the output directory before starting matrix-quality  for uploading the input sequences and reference motifs
+## We need to create the output directory before starting peak-motif  for uploading the input sequences and reference motifs
 $output_path = $TMP."/".$output_directory;
 $output_path =~ s|\/\/|\/|g;
 system("mkdir -p $output_path");
@@ -67,7 +67,7 @@ $parameters .= "-i $sequence_file ";
 ### tasks
 
 ## default
-@tasks = ("purge", "seqlen", "composition", "disco", "merge_words", "collect_motifs","timelog", "archive", "synthesis");
+@tasks = ("purge", "seqlen", "composition", "disco", "collect_motifs","timelog", "archive", "synthesis");
 
 ## motif-disco
 my $oligo_params = "";
@@ -262,10 +262,15 @@ $parameters .= " -2str -noov -img_format png ";
 ############################################ display or send result
 $index_file = $output_directory."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
+if ($query->param('output') =~ /display/i) {
+&EmailTheResult("$command $parameters", "nobody@nowhere",$index_file, title=>$mail_title ,no_email=>1);
+} else {
+
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 # $debug = "$command $parameters 2> $TMP/log.txt";
 # print $debug;
 # `$debug`;
+}
 
 ############################################ result page footer
 print $query->end_html;
