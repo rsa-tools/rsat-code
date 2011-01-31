@@ -111,6 +111,7 @@ print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 print "<p>\n";
 #&SelectOutput('email', email_only=>1);
 &SelectOutput();
+print "<i>Note: email output is preferred for very large datasets or many comparisons with motifs collections</i>\n";
 
 ################################################################
 ### action buttons
@@ -148,7 +149,7 @@ print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar')
 print $query->hidden(-name=>'max_seq_len',-default=>'');
 print $query->hidden(-name=>'top_sequences',-default=>'');
 print $query->hidden(-name=>'visualize',-default=>"galaxy");
-print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
+#print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
