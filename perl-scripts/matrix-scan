@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.185 2010/12/22 14:03:04 jvanheld Exp $
+# $Id: matrix-scan,v 1.186 2011/01/31 04:01:47 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1166,6 +1166,60 @@ package main;
     $sequence_scores->{$seq_id}->{matches} = 0;
     $sequence_scores->{$seq_id}->{weight_sum} = 0;
     $sequence_scores->{$seq_id}->{sig_sum} = 0;
+
+
+    ################################################################
+    ##
+    ## START RESTORED PART. THIS CODE, HAD DISAPPEARED BETWEEN v1.184
+    ## and 1.185, I (JvH) DON'T UNDERSTAND WHY
+
+
+    ## Count the number of N residues and increment the corresponding counter
+    my $n_seq = $current_seq;
+    $n_seq =~ s/[^N]//gi;
+    $n_residues += length($n_seq);
+
+
+    ## Calculate the offset
+    local $orig_pos = 0; ## $orig_pos is local because it has to be passed to subroutines for CRER positions
+    local $ref_strand = "D"; ## Strand of the sequence relative to the
+			     ## reference (chromosome) for genomic
+			     ## coordinates. if this strand is R, all
+			     ## matches have to be reversed.
+    if ($origin eq "end") {
+      $orig_pos = $seq_len + $main::offset + 1;
+    } elsif ($origin eq "center") {
+      $orig_pos = &round(($seq_len+1)/2) + $main::offset;
+    } elsif ($origin eq "start") {
+      $orig_pos = $main::offset;
+    } elsif ($origin eq "genomic") {
+      ($ref_org, $ref_chrom, $ref_start, $ref_end, $ref_strand, $genome_format, $browser_url) = &parse_genomic_coordinates($seq_id, @seq_comments);
+      if ((defined($ref_strand)) && ($ref_strand eq "D")) {
+	$orig_pos = -$ref_start +1 + $main::offset;
+#      } elsif ($ref_strand eq "R") {
+      } else {
+	$ref_strand = "DR";
+	$orig_pos = -$ref_end +1 + $main::offset;
+#      } else {
+#	&RSAT::error::FatalError($ref_strand, "Invalid strand specification for genomic coordinates");
+      }
+      $seq_id = $ref_chrom;
+
+      &RSAT::message::Debug("Reference for genomic coordinates",
+			    "start=".$ref_start,
+			    "end=".$ref_end,
+			    "strand=".$ref_strand,
+			    "orig_pos=".$orig_pos,
+			   ) if ($main::verbose >= 10);
+    }
+
+    ################################################################
+    ## Report sequence limits
+    &PrintSequenceLimits($seq_id, $seq_len, $orig_pos, $ref_strand) if ($return_fields{limits});
+
+    ## END RESTORED PART
+    ##
+    ################################################################
 
     ################################################################
     ## Calculate background model from the current sequence
