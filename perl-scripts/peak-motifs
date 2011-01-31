@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.157 2011/01/30 10:37:22 morgane Exp $
+# $Id: peak-motifs,v 1.158 2011/01/31 03:34:49 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.157 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.158 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -3174,8 +3174,13 @@ sub SynthesisPatternDisco {
     close $asmb;
 
     ## Synthesize matrix logos
-   my $pattern_table = "<table class='whitebg' align='center' style='border-style:none;'>";
-    
+    my $pattern_table = "<table class='whitebg' align='center' style='border-style:none;'>";
+
+    ################################################################
+    ## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
+    ################################################################
+#    foreach my $logo_nb (0..$#pattern_info) {
+#    foreach my $logo_nb (1..$#pattern_info) {
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
       $pattern_table .= "<tr>\n";
       my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
@@ -3195,16 +3200,19 @@ sub SynthesisPatternDisco {
       }
       &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
       if (-e $logo_file) {
-    $pattern_table .= "<td style='border-right-style:none;'>".$pattern_type."_m".$logo_nb."</td>";
-    
+	$pattern_table .= "<td style='border-right-style:none;'>".$pattern_type."_m".$logo_nb."</td>";
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
 	$pattern_table .= "<td align='right'>";
 	$pattern_table .= $start_format;
 	$pattern_table .= "$asmb_or_isol";
+	################################################################
 	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
+	################################################################
 	$pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
 	$pattern_table .= "&nbsp;"x5;
+	################################################################
 	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
+	################################################################
 	$pattern_table .= $pattern_info[$logo_nb]->{word};
 	$pattern_table .= "<br><a  href='".$img."'><img  border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
 	$pattern_table .= $start_format;
@@ -3216,7 +3224,9 @@ sub SynthesisPatternDisco {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
 	$pattern_table .= "<td align='left' style='border-right-style:none;'>";
 	$pattern_table .= $start_format;
+	################################################################
 	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
+	################################################################
 	$pattern_table .= $pattern_info[$logo_nb]->{rc_word};
 	$pattern_table .= "<br><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
 	$pattern_table .= "</td>\n";
