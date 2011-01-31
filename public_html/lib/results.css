@@ -67,13 +67,19 @@ body {
 }
 
 .menulink a:link,a:visited {
-	color:#ffffff;
+	color:#cc6600;
+	background: transparent;
+	text-decoration: none;
+	}
+
+.menulink a:visited {
+	color:#cc6600;
 	background: transparent;
 	text-decoration: none;
 	}
 
 .menulink A:active {
-	color: #ffffff;
+	color: #cc6600;
 	background: transparent;
 	text-decoration: none
 }

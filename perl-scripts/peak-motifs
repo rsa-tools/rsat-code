@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.159 2011/01/31 16:08:45 morgane Exp $
+# $Id: peak-motifs,v 1.160 2011/01/31 16:24:37 morgane Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.159 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.160 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2300,15 +2300,18 @@ sub ResultTOC {
   if ((-e $main::outfile{archive}) || ($task{archive})) {
     my $archive_short = &RSAT::util::ShortFileName($main::outfile{archive});
     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
-    $result_toc .=  "[<a href='".$link."' class='menulink'> Download all results (".$archive_short.")</a> ] \n";
+    $result_toc .=  "<span class='menulink'>";
+    $result_toc .=  "[<a href='".$link."'> Download all results (".$archive_short.")</a> ]</span> \n";
     $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{motifs_discovered});
-    $result_toc .=  "[<a href='".$link."' class='menulink' > Download all matrices (transfac format)</a> ]</p>\n";
+    $result_toc .=  "<span class='menulink'>";
+    $result_toc .=  "[<a href='".$link."'> Download all matrices (transfac format)</a> ]</p></span>\n";
   }
 
   $result_toc .=  "<a href='#seq_composition'>Sequence composition & statistics </a><br/>";
   $result_toc .=  "<a href='#ref_motifs'>Reference motifs</a><br/>" if (defined($main::infile{ref_motifs}));
   @motifs = &ReadDiscoveredMotifs();
   my $motif_nb = scalar(@motifs);
+
   $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - </a>".$motif_nb."<br/>";
   $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - </a>".$motif_nb."<br/>";
   
@@ -2322,7 +2325,7 @@ sub ResultTOC {
     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id."_tf"});
     my $consensus = $matrix->get_attribute("consensus.IUPAC");
     my $colored_consensus = &ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
-    $result_toc .=  "Motif ".$mot.": <a href='".$link."'>[matrix]</a> <a href='#discovered_motifs_".$mot."'>[details]</a>  ".$colored_consensus."<br/> ";
+    $result_toc .=  "<span class='menulink'><a href='#discovered_motifs_".$mot."'>Motif ".$mot."</a></span>: <a href='".$link."'>[matrix]</a> ".$colored_consensus."<br/> ";
     if ($mot == 5) {
     	$result_toc .=  " </td> ";
     	$result_toc .=  " <td> ";
