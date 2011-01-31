@@ -109,8 +109,8 @@ print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 ################################################################
 ### send results by email only
 print "<p>\n";
-&SelectOutput('email', email_only=>1);
-#&SelectOutput($default{output});
+#&SelectOutput('email', email_only=>1);
+&SelectOutput();
 
 ################################################################
 ### action buttons
