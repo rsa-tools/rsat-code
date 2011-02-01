@@ -2282,7 +2282,7 @@ sub load_from_array {
     if (scalar @array < 2 && ($main::edge_colors || $main::edge_width)) {
       $main::edge_colors = 0;
       $main::edge_width = 0;
-      &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
+      &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored") if ($main::verbose >= 2);
     }
 
     if ($main::edge_colors || $main::edge_width) {
