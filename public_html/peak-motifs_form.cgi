@@ -315,7 +315,7 @@ print $query->checkbox(-name=>'oligo_length8',
 		       -checked=>$default{oligo_length8},
 		       -label=>'8'); 
 print "&nbsp;"x2;
-print "<i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
+print "<br><i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
 
 print "<br/>";
 
@@ -441,9 +441,14 @@ print "<fieldset>
 
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b>No</b>");
 print "<br/>";
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>","<b>Yes, sequences from fetched with <a href=''>Galaxy</a></b><i> fasta headers are in the form: >mm9_chr1_3473041_3473370_+ </i>");
+
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy'
+$checked{'galaxy'}>","<b>Yes; sequences fetched from <a
+href=''>Galaxy</a></b> (fasta headers should be in the form:
+<tt>>mm9_chr1_3473041_3473370_+ </tt>)");
+
 print "<br/>";
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes, use the following BED file.</b>");
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes; use the following BED file.</b>");
 print "<br/>";
 
 
