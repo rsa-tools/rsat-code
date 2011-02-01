@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.160 2011/01/31 16:24:37 morgane Exp $
+# $Id: peak-motifs,v 1.161 2011/02/01 00:31:54 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.160 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.161 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2280,7 +2280,7 @@ sub PrintHtmlFileHedaer {
   $header .=  "<div id='Menu_wait'>\n";
   $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>
   <p style='text-align:center;color:green'>Results will progressively appear on this page <br/>
-  <b>Please regularly refresh the page until this message disappear</b></p>\n";
+  <b>Please regularly refresh the page until this message disappears.</b></p>\n";
   $header .=  "</div>\n";
   $header .=  "</div>\n";
 
