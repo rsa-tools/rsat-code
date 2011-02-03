@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.161 2011/02/01 00:31:54 jvanheld Exp $
+# $Id: peak-motifs,v 1.162 2011/02/03 10:10:48 jvanheld Exp $
 #
 ############################################################
 
@@ -111,7 +111,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.161 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.162 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -517,7 +517,7 @@ sub DefaultParameters {
   $main::param{matrix_compa_min_Wr} = 0.3; ## min relative width
   $main::param{matrix_compa_min_cor} = 0.75; ## min correlation
   $main::param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
-  $main::param{matrix_compa_metrics} = "NIcor,Ncor,NsEucl,SSD,NSW";
+  $main::param{matrix_compa_metrics} = "NIcor,cor,Ncor,NsEucl,SSD,NSW";
   $main::param{matrix_compa_sort_field} = "Ncor"; ## sorting field
 
   my $motif_compa_options =  ""; 
