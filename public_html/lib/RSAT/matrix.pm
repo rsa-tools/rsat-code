@@ -1083,6 +1083,7 @@ sub to_tab {
 		      frequencies=>1,
 		      weights=>1,
 		      information=>1,
+		      logo_matrix=>1,
 		      parameters=>1,
 		      consensus=>1
       );
@@ -1179,7 +1180,7 @@ sub to_tab {
 
       ################################################################
       ##Print column statistics
-      if (($self->get_attribute("margins")) 
+      if (($self->get_attribute("margins"))
 	  && (!$args{no_comment})) {
 	$prefix_letter = substr($type, 0, 1);
 	$to_print .= $self->_printSeparator($ncol, $to_print);
@@ -1701,6 +1702,101 @@ sub calcInformation {
 
     ## Remember that info was calculated once
     $self->force_attribute("information_calculated", 1);
+}
+
+
+################################################################
+
+=pod
+
+=item getLogoMatrix()
+
+Return the logo matrix.
+
+=cut
+sub getLogoMatrix {
+    my ($self) = @_;
+    $self->calcLogoMatrix();
+    return @{$self->{information}};
+}
+
+################################################################
+
+=pod
+
+=item setLogoMatrix($nrow, $ncol, @information)
+
+Specify the logo matrix.
+
+=cut
+sub setLogoMatrix {
+    my ($self,$nrow, $ncol, @logo_matrix) = @_;
+    $self->force_attribute("nrow", $nrow);
+    $self->force_attribute("ncol", $ncol);
+    @{$self->{logo_matrix}} = @logo_matrix;
+    $self->force_attribute("logo_matrix_specified", 1);
+}
+
+
+################################################################
+
+=pod
+
+=item calcLogoMatrix()
+
+Calculate logo matrix fro information matrix and frequency matrix.
+
+Caching: if already calculated, do not calculate anymore.  
+
+Attribute "force": force calculaton even if aready calculated.
+
+=cut
+sub calcLogoMatrix {
+    my ($self, $force) = @_;
+
+    ## Caching
+    if (($self->get_attribute("logo_matrix_calculated")) && !($force)) {
+	&RSAT::message::Warning("Logo matrix already calculated before") if ($main::verbose >= 4);
+	return;
+    }
+
+    ## Calculate frequencies if required
+    unless ($self->get_attribute("frequencies_specified")) {
+	$self->calcFrequencies();
+    }
+    my @frequencies = $self->getFrequencies();
+
+
+    ## Calculate information if required
+    unless ($self->get_attribute("information_specified")) {
+	$self->calcInformation();
+    }
+    my @information = $self->getInformation();
+    my @column_information = $self->get_attribute("column.information"); ## Information per column
+
+
+    ## Matrix size
+    my $nrow = $self->nrow();
+    my $ncol = $self->ncol();
+
+    ## Calculate logo values
+    my @logo_matrix = (); ## Logo matrix
+    for my $c (0..($ncol-1)) {
+	for my $r (0..($nrow-1)) {
+	  my $col_info = $column_information[$c];
+	  if ($col_info <= 0) {
+	    $logo_matrix[$c][$r] = 0;
+	  } else {
+	    $logo_matrix[$c][$r] =  $frequencies[$c][$r] * $col_info;
+	  }
+#	  &RSAT::message::Debug("Logo matrix value", $r, $c, $logo_matrix[$c][$r], $column_information[$c]) if ($main::verbose >= 10);
+	}
+    }
+    $self->setLogoMatrix($nrow,$ncol,@logo_matrix);
+
+
+    ## Remember that logo matrix was calculated once
+    $self->force_attribute("logo_matrix_calculated", 1);
 }
 
 
