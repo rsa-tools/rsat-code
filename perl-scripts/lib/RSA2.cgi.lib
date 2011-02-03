@@ -1271,7 +1271,6 @@ sub EmailTheResult {
     print "<pre>$command >> $TMP/$tmp_file_name</pre>" if ($ENV{rsat_echo} >= 1);
 
     #### Indicate the URL of the future result file
-    my $submission_mail_command = "mail -s \'".$mail_title." submission\'";
     my $submission_message = $mail_title."\n";
     $submission_message .= "\n\nCommand: $clean_command\n\n";
     $submission_message .= "Your task has been submitted to the RSAT server.\n\n";
@@ -1285,8 +1284,11 @@ sub EmailTheResult {
     &Info($html_submission_message);
 
     ## Send an email for confirmation of task submission
-    my $submission_command = "echo \"$submission_message\" | $submission_mail_command $email_address &" unless ($no_email);
-    system($submission_command);
+    unless ($no_email) {
+      my $submission_mail_command = "echo \"".$submission_message."\" ";
+      my $submission_mail_command .= " | mail -s \'".$mail_title." submission\' ".$email_address;
+      system($submission_mail_command);
+    }
 
 
     #### concatenate the command with the email notification
@@ -1296,9 +1298,11 @@ sub EmailTheResult {
     $completion_message .= "\n\nCommand: $clean_command";
     $completion_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
     $completion_message .= "\nThe result file will remain there for $delay.";
+    print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
+
+    ## Run the command and send a notification mail if the user provided an email address
     $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> $TMP/$tmp_file_name; ";
     $command .= "echo \"$completion_message\" | $completion_mail_command $email_address &" unless ($no_email);
-    print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
     system $command;
 
 
