@@ -1286,7 +1286,7 @@ sub EmailTheResult {
     ## Send an email for confirmation of task submission
     unless ($no_email) {
       my $submission_mail_command = "echo \"".$submission_message."\" ";
-      my $submission_mail_command .= " | mail -s \'".$mail_title." submission\' ".$email_address;
+      $submission_mail_command .= " | mail -s \'".$mail_title." submission\' ".$email_address;
       system($submission_mail_command);
     }
 
