@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.128 2011/01/24 00:15:22 jvanheld Exp $
+# $Id: convert-matrix,v 1.129 2011/02/03 22:22:43 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -65,6 +65,7 @@ local $flanks = 0;
 			  "weights"=>1,
 			  "info"=>1,
 			  "information"=>1,
+			  "logo_matrix"=>1,
 			  "parameters"=>1,
 			  "consensus"=>1,
 			  "header"=>1,
@@ -186,14 +187,14 @@ if ($return_field{logo_table}) {
 ## Check return type(s)
 local %return_fields = ();
 unless (scalar(@return_fields)) {
-    if ((lc($output_format ) eq "transfac") ||
-	(lc($output_format ) eq "consensus") ||	
-	(lc($output_format ) eq "tab") ||
-	(lc($output_format ) eq "infogibbs")
-	) {
-	push @return_fields, "counts";
-    } else {
-	&RSAT::error::FatalError("You should define at least one return type");
+  if ((lc($output_format ) eq "transfac") ||
+      (lc($output_format ) eq "consensus") ||	
+      (lc($output_format ) eq "tab") ||
+      (lc($output_format ) eq "infogibbs")
+     ) {
+    push @return_fields, "counts";
+  } else {
+    &RSAT::error::FatalError("You should define at least one return type");
   }
 }
 
@@ -208,11 +209,11 @@ if ($perm) {
 
 ## Check return fields
 foreach my $field (@return_fields) {
-    if ($supported_return_type{$field}) {
-	$return_fields{$field}++;
-    } else {
-	&RSAT::error::FatalError("Invalid return type $field. Supported: ".$supported_return_fields);
-    }
+  if ($supported_return_type{$field}) {
+    $return_fields{$field}++;
+  } else {
+    &RSAT::error::FatalError("Invalid return type $field. Supported: ".$supported_return_fields);
+  }
 }
 
 ## Deprecated option -return wdistrib
@@ -222,22 +223,23 @@ if ($return_fields{wdistrib}) {
 
 ## Information
 if ($return_fields{information}) {
-    $return_fields{info} = 1;
-    &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
+  $return_fields{info} = 1;
+  &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
 }
+
 
 ## Prior residue frequencies
 local %prior = ();
 if ($infile{prior}) {
-    if (defined($bg_pseudo)) {
-	$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
-    }
-    $bg_model->load_from_file($infile{prior}, $bg_format);
-    %prior = $bg_model->get_attribute("suffix_proba");
-    foreach my $key (sort keys %prior) {
-	my $residue = lc($key);
-	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 2);
-    }
+  if (defined($bg_pseudo)) {
+    $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+  }
+  $bg_model->load_from_file($infile{prior}, $bg_format);
+  %prior = $bg_model->get_attribute("suffix_proba");
+  foreach my $key (sort keys %prior) {
+    my $residue = lc($key);
+    &RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 2);
+  }
 }
 
 ## logo format(s)
@@ -251,7 +253,7 @@ if ($return_fields{logo}) {
   }else{
     @logo_formats = ($logo_format);
   }
-  
+
   ## Check that seqlogo is installed at the expected location
   if (-e $seqlogo_path) {
     if(-x $seqlogo_path) {
@@ -1477,7 +1479,7 @@ sub ExportMatrix {
 				       );
   } 
 
-  ## Calculate frequency matrix
+  ## Print frequency matrix
   if ($return_fields{frequencies}) {
     $matrix->calcFrequencies();
     print $out_handle $matrix->toString(col_width=>($decimals+4),
@@ -1486,7 +1488,7 @@ sub ExportMatrix {
 					format=>$output_format);
   }
 
-  ## Calculate weight matrix
+  ## Print weight matrix
   if ($return_fields{weights}) {
     $matrix->calcWeights();
     print $out_handle $matrix->toString(col_width=>($decimals+4), 
@@ -1503,12 +1505,21 @@ sub ExportMatrix {
 				       );
   }
 
-  ## Calculate information content matrix
+  ## Print information content matrix
   if ($return_fields{info}) {
     $matrix->calcInformation();
     print $out_handle $matrix->toString(col_width=>($decimals+4),
 					decimals=>$decimals,
 					type=>"information",
+					format=>$output_format);
+  }
+
+  ## Print logo matrix
+  if ($return_fields{logo_matrix}) {
+    $matrix->calcLogoMatrix();
+    print $out_handle $matrix->toString(col_width=>($decimals+4),
+					decimals=>$decimals,
+					type=>"logo_matrix",
 					format=>$output_format);
   }
 
