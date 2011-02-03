@@ -1238,10 +1238,12 @@ sub EmailTheResult {
     my $mail_title = $args{title};
     my $no_email = $args{no_email} || 0;
 
-    my $clean_command = $command;
-    $clean_command =~ s/\"/\'/g; ## Avoid clashes with the quotes
-    $clean_command =~ s|$ENV{RSAT}\/||g; ## Avoid providing the full path of the RSAT package
+#    my $clean_command = $command;
+#    $clean_command =~ s/\"/\'/g; ## Avoid clashes with the quotes
+#    $clean_command =~ s|$ENV{RSAT}\/||g; ## Avoid providing the full path of the RSAT package
 #    $clean_command =~ s|public_html\/+tmp\/+|$ENV{rsat_www}\/tmp\/|g; ## Replace input/output file names by URL
+
+    my $clean_command = &RSAT::util::hide_RSAT_path($command);
 
     my $script_name = $0;
     $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g; ## Avoid providing the full path of the RSAT package
@@ -1271,9 +1273,10 @@ sub EmailTheResult {
     #### Indicate the URL of the future result file
     my $submission_mail_command = "mail -s \'".$mail_title." submission\'";
     my $submission_message = $mail_title."\n";
+    $submission_message .= "\n\nCommand: $clean_command\n\n";
     $submission_message .= "Your task has been submitted to the RSAT server.\n\n";
     $submission_message .= "After completion of the task, an email will be sent to ".$email_address.",\n"  unless ($no_email);
-    $submission_message .= " and, the result will become available at\n";
+    $submission_message .= " and the result will become available at\n";
     $submission_message .= "\t".${result_URL}."\n\n";
 
     ## Print the task submission message the Web page
