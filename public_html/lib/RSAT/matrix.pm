@@ -1717,7 +1717,7 @@ Return the logo matrix.
 sub getLogoMatrix {
     my ($self) = @_;
     $self->calcLogoMatrix();
-    return @{$self->{information}};
+    return @{$self->{logo_matrix}};
 }
 
 ################################################################
