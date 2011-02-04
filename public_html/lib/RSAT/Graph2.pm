@@ -2292,12 +2292,18 @@ sub load_from_array {
         my @weights = map $_->[ 2 ], @array;
         ($mean, $sd, $min, $max) = $self->weight_properties(@weights);
       }
-      # if $main:$min_value a,d $main:max_value are defined in convert-graph (or display-graph)
-      # then use these value as minimum or maximum to compute the edge color gradient
+
+      ################################################################
+      ## if $main:$min_value a,d $main:max_value are defined in convert-graph (or display-graph)
+      ## then use these value as minimum or maximum to compute the edge color gradient
       $min = $main::min_value if (defined $main::min_value && $main::min_value <= $min);
-      $max = $main::max_value if (defined $main::max_value && $main::max_value >= $max);      
+      $max = $main::max_value if (defined $main::max_value && $main::max_value >= $max);
+
+      ################################################################
+      ## The max must be larger than the min
+      $max = 1 unless ($max > 0);
     }
-    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile);
 
     ## Load the graph
     for ($l = 0; $l < scalar(@array); $l++){
@@ -2317,8 +2323,7 @@ sub load_from_array {
 	my $source_ypos = $array[$l][7];
 	my $target_xpos = $array[$l][8];
 	my $target_ypos = $array[$l][9];
-	
-	
+
 	## Source node
 	my $source_node_index = $nodes_name_id{$source_name};
 	if (!defined($source_node_index)) {
@@ -2328,9 +2333,7 @@ sub load_from_array {
 	    $nodes_label{$source_node_index} = $node_label;
 	    $nodes_name_id{$source_name} = $nodecpt;
 	    $nodes_id_name{$nodecpt} = $source_name;
-	    
-	    
-	    
+
 	    $source_xpos = $nodecpt*10 if (!defined($source_xpos) || !&RSAT::util::IsReal($source_xpos));
 	    $source_ypos = $nodecpt*10 if (!defined($source_ypos) || !&RSAT::util::IsReal($source_ypos));
 	    $nodes_id_xpos{$nodecpt} = $source_xpos;
@@ -2341,7 +2344,6 @@ sub load_from_array {
 				      $source_node_index, 
 				      $node_label)
 	 			     ) if ($main::verbose >= 3);
-	
 	}
 
 	## Target node
@@ -2375,7 +2377,7 @@ sub load_from_array {
 	if ($edge_weight_colors) {
 	  $edge_color = &RSAT::util::getBgColorFromOneScore($arc_label, $min, $max, 0, $edge_weight_colors);
 	}
-	
+
 	push @{$out_neighbours[$source_node_index]}, $target_node_index;
 	push @{$in_neighbours[$target_node_index]}, $source_node_index;
 	push @{$arc_out_label[$source_node_index]}, $arc_label;
@@ -2884,7 +2886,7 @@ sub layout_spring_embedding_new {
       $nodes_dy[$node_id] /= 2;
       $xpos[$node_id] = $node_x;
       $ypos[$node_id] = $node_y;
-      print "CPT $cpt ID $node_id node XPOS $xpos[$node_id] node YPOS $ypos[$node_id]\n";
+      &RSAT::message::Debug( "CPT $cpt ID $node_id node XPOS $xpos[$node_id] node YPOS $ypos[$node_id]\n") if ($main::verbose >= 5);
     }
 #     exit(0) if ($cpt == 100);
    
@@ -3177,7 +3179,7 @@ sub layout_spring_embedding {
     ################################################################
     ## Iterate over all arcs to compute spring forces (attraction and
     ## repulsion) according to Hooke's law
-    &RSAT::message::TimeWarn("Hooke's forces (spring)", "iter=".$iter."/".$max_iter) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Hooke's forces (spring)", "iter=".$iter."/".$max_iter) if ($main::verbose >= 5);
     for (my $i = 0; $i < $nb_arcs; $i++) { 
 
       ## Source node
@@ -3279,7 +3281,7 @@ sub layout_spring_embedding {
     ## N nodes) so we apply the repulsive forces only once every X
     ## iterations.
     if ($iter % $coulomb_delay == 0) {
-      &RSAT::message::TimeWarn("Coulomb's forces (electromagnetic repulsion)", "iter=".$iter."/".$max_iter) if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("Coulomb's forces (electromagnetic repulsion)", "iter=".$iter."/".$max_iter) if ($main::verbose >= 5);
       for my $n1 (0..$#node_names) {
 	my $name1 = $node_names[$n1];
 	my $id1 = $nodes_name_id{$name1};
