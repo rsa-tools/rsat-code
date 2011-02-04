@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.86 2011/01/28 00:16:52 jvanheld Exp $
+# $Id: compare-matrices,v 1.87 2011/02/04 06:46:33 jvanheld Exp $
 #
 ############################################################
 
@@ -392,7 +392,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.86 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.87 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -403,11 +403,14 @@ package main;
 
   ## Supported metrics for comparing matrices
   local @supported_metrics = (
-			      "NIcor", ## Normalized correlation between information content matrices
-#			      "NWcor", ## Normalized correlation between weight matrices
-			      "Icor", ## Correlation between information content matrices
-			      "Ncor", ## Normalized coefficient of correlation
 			      "cor", ## Coefficient of correlation
+			      "Ncor", ## Normalized coefficient of correlation
+			      "logocor", ## Correlation between sequence logo values (column info * frequency)
+			      "Nlogocor", ## Normalized correlation between sequence logo values (column info * frequency)
+			      "Wcor", ## Correlation between weight matrices
+			      "NWcor", ## Normalized correlation between weight matrices
+			      "Icor", ## Correlation between information content matrices
+			      "NIcor", ## Normalized correlation between information content matrices
 			      "cov", ## Covariance
 			      "dEucl", ## Euclidian distance
 			      "NdEucl", ## Normalized Euclidian distance
@@ -456,6 +459,8 @@ package main;
 				 "cov"=>"desc",
 				 "Icor"=>"desc",
 				 "NIcor"=>"desc",
+				 "logocor"=>"desc",
+				 "Nlogocor"=>"desc",
 #				 "NWcor"->"desc",
 				 "dEucl"=>"asc",
 				 "NdEucl"=>"asc",
@@ -651,6 +656,7 @@ package main;
 
 
   ## Some fields must be computed as intermediate results for other fields
+  $calc_field{logocor} = 1 if ($calc_field{Nlogocor});
   $calc_field{Icor} = 1 if ($calc_field{NIcor});
   $calc_field{Wcor} = 1 if ($calc_field{NWcor});
   $calc_field{cor} = 1 if ($calc_field{Ncor});
@@ -956,12 +962,14 @@ package main;
     push (@header, sprintf("%-${width}s", "name1"));
     push (@header, sprintf("%-${max_name_len2}s", "name2"));
   }
-  push (@header, "NIcor") if ($return_field{NIcor});
-  push (@header, "Icor") if ($return_field{Icor});
-  push (@header, "NWcor") if ($return_field{NWcor});
-  push (@header, "Wcor") if ($return_field{Wcor});
-  push (@header, "Ncor") if ($return_field{Ncor});
   push (@header, "cor") if ($return_field{cor});
+  push (@header, "Ncor") if ($return_field{Ncor});
+  push (@header, "logocor") if ($return_field{logocor});
+  push (@header, "Nlogocor") if ($return_field{Nlogocor});
+  push (@header, "Wcor") if ($return_field{Wcor});
+  push (@header, "NWcor") if ($return_field{NWcor});
+  push (@header, "Icor") if ($return_field{Icor});
+  push (@header, "NIcor") if ($return_field{NIcor});
   push (@header, "NSW") if ($return_field{NSW});
   push (@header, "SW") if ($return_field{SW});
   push (@header, "SSD") if ($return_field{SSD});
@@ -1032,6 +1040,8 @@ package main;
     $description{Ncor} = "Normalized correlation. Ncor = cor * ".$norm_factor_descr;
     $description{Icor} = "Pearson correlation between the information content matrices. ";
     $description{NIcor} = "Normalized Pearson correlation between the information content matrices. NIcor = Icor * ".$norm_factor_descr;
+    $description{logocor} = "Pearson correlation between the logo matrices.";
+    $description{Nlogocor} = "Normalized Pearson correlation between the logo matrices. Nlogocor = logocor * ".$norm_factor_descr;
     $description{Wcor} = "Pearson correlation between the information content matrices. ";
     $description{NWcor} = "Normalized Pearson correlation between the information content matrices. NWcor = Wcor * ".$norm_factor_descr;
     $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
@@ -1077,6 +1087,12 @@ package main;
     my @info1;
     if ($calc_field{Icor}) {
       @info1 = $matrix1->getInformation();
+    }
+
+    ## Get the logo matrix if required
+    my @logo1;
+    if ($calc_field{logocor}) {
+      @logo1 = $matrix1->getLogoMatrix();
     }
 
     ## Get the weight matrix if required
@@ -1127,6 +1143,8 @@ package main;
       my %Ncor = ();		## Normalized correlations
       my %Icor = (); ## Correlations between information content
       my %NIcor = (); ## Normalized correlations between information content
+      my %logocor = (); ## Correlations between logo matrices
+      my %Nlogocor = (); ## Normalized correlations between logo matrices
       my %Wcor = (); ## Correlations between weights
       my %NWcor = (); ## Normalized correlations between weights
       my %SW = ();		## Sandelin-Wasserman similarity
@@ -1157,6 +1175,12 @@ package main;
 	my @info2;
 	if ($calc_field{Icor}) {
 	  @info2 = $matrix2->getInformation();
+	}
+
+	## Get the logo matrix if required
+	my @logo2;
+	if ($calc_field{logocor}) {
+	  @logo2 = $matrix2->getLogoMatrix();
 	}
 
 	## Get the weight matrix if required
@@ -1217,7 +1241,7 @@ package main;
 	  }
 
 	  ################################################################
-	  ## Compute the (dis)similarity between the matrices
+	  ## Compute the (dis)similarity scores between matrices
 	  my $SSD = 0;
 	  my $SW = 0;
 	  my $NSW = 0;
@@ -1226,23 +1250,45 @@ package main;
 	  my $NsEucl = 0;
 	  my $dKL = 0;
 	  my $cov = 0;
+
+	  ## Correlation
 	  my $cor = 0;
 	  my $Ncor = 0;
-	  my $Icor = 0;
-	  my $NIcor = 0;
-	  my $Wcor = 0;
-	  my $NWcor = 0;
 	  my $sum_f1 = 0;
 	  my $sum_f2 = 0;
 	  my $sum_f1f2 = 0;
 	  my $sum_sq_f1 = 0;
 	  my $sum_sq_f2 = 0;
 
+	  ## Information correlation
+	  my $Icor = 0;
+	  my $NIcor = 0;
 	  my $sum_i1 = 0;
 	  my $sum_i2 = 0;
 	  my $sum_i1i2 = 0;
 	  my $sum_sq_i1 = 0;
 	  my $sum_sq_i2 = 0;
+
+	  ## Logo correlation
+	  my $logocor = 0;
+	  my $Nlogocor = 0;
+	  my $sum_l1 = 0;
+	  my $sum_l2 = 0;
+	  my $sum_l1l2 = 0;
+	  my $sum_sq_l1 = 0;
+	  my $sum_sq_l2 = 0;
+
+	  ## Weight correlation
+	  my $Wcor = 0;
+	  my $NWcor = 0;
+	  my $sum_wght1 = 0;
+	  my $sum_wght2 = 0;
+	  my $sum_wght1wght2 = 0;
+	  my $sum_sq_wght1 = 0;
+	  my $sum_sq_wght2 = 0;
+
+
+	  ## Compute correlations
 	  foreach my $pos (1..$w) {
 	    my $col1 = $start1+$pos-1;
 	    my $col2 = $start2+$pos-1;
@@ -1268,6 +1314,17 @@ package main;
 		$sum_sq_i1 += $i1**2;
 		$sum_sq_i2 += $i2**2;
 		$sum_i1i2 += $i1*$i2;
+	      }
+
+	      ## Update sums for logocor
+	      if ($calc_field{logocor}) {
+		my $l1 = $logo1[$col1-1][$r];
+		my $l2 = $logo2[$col2-1][$r];
+		$sum_l1 += $l1;
+		$sum_l2 += $l2;
+		$sum_sq_l1 += $l1**2;
+		$sum_sq_l2 += $l2**2;
+		$sum_l1l2 += $l1*$l2;
 	      }
 
 	      ## Update sums for Wcor
@@ -1388,6 +1445,41 @@ package main;
 	  next unless (&CheckThresholdValue("Icor", $Icor));
 	  next unless (&CheckThresholdValue("NIcor", $NIcor));
 
+	  ## Index values for sorting
+	  $score{Icor}{$compa_id} = $Icor;
+	  $score{NIcor}{$compa_id} = $NIcor;
+
+	  ## Compute logo matrix correlation
+	  if ($calc_field{logocor}) {
+	    $lv1 = $sum_sq_l1/$n - ($sum_l1/$n)**2;
+	    $lv2 = $sum_sq_l2/$n - ($sum_l2/$n)**2;
+	    $lcov = $sum_l1l2/$n - $sum_l1*$sum_l2/($n**2);
+	    if ($lcov == 0) {
+	      $logocor = 0;
+	    } else {
+	      $logocor = $lcov/sqrt($lv1*$lv2);
+	    }
+# 	    &RSAT::message::Debug(
+# 				  "sum_sq_l1=".$sum_sq_l1,
+# 				  "sum_sq_l2=".$sum_sq_l2,
+# 				  "sum_l1=".$sum_l1,
+# 				  "sum_l2=".$sum_l2,
+# 				  "lv1=".$lv1,
+# 				  "lv2=".$lv2,
+# 				 "lcov=".$lcov,
+# 				 "logocor=".$logocor,
+# 				 ) if ($main::verbose >= 10);
+	    $Nlogocor = $logocor *$norm_factor;
+	  }
+
+	  ## Check thresholds on logo matrix correlation
+	  next unless (&CheckThresholdValue("logocor", $logocor));
+	  next unless (&CheckThresholdValue("Nlogocor", $Nlogocor));
+
+	  ## Index values for sorting
+	  $score{logocor}{$compa_id} = $logocor;
+	  $score{Nlogocor}{$compa_id} = $Nlogocor;
+
 	  ## Compute weight correlation
 	  if ($calc_field{Wcor}) {
 	    $wghtv1 = $sum_sq_wght1/$n - ($sum_wght1/$n)**2;
@@ -1406,8 +1498,9 @@ package main;
 	  next unless (&CheckThresholdValue("NWcor", $NWcor));
 
 	  ## Index values for sorting
-	  $score{Icor}{$compa_id} = $Icor;
-	  $score{NIcor}{$compa_id} = $NIcor;
+	  $score{Wcor}{$compa_id} = $Wcor;
+	  $score{NWcor}{$compa_id} = $NWcor;
+
 
 	  ## Generate the output line
 	  my @out_fields = ();
@@ -1430,10 +1523,14 @@ package main;
 #	    $name2 = sprintf("%-${max_name_len2}s", $name2);
 	    push (@out_fields, $name1, $name2);
 	  }
-	  push (@out_fields, sprintf("%.3f", $NIcor)) if ($return_field{NIcor});
-	  push (@out_fields, sprintf("%.3f", $Icor)) if ($return_field{Icor});
-	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
 	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
+	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
+	  push (@out_fields, sprintf("%.3f", $logocor)) if ($return_field{logocor});
+	  push (@out_fields, sprintf("%.3f", $Nlogocor)) if ($return_field{Nlogocor});
+	  push (@out_fields, sprintf("%.3f", $Wcor)) if ($return_field{Wcor});
+	  push (@out_fields, sprintf("%.3f", $NWcor)) if ($return_field{NWcor});
+	  push (@out_fields, sprintf("%.3f", $Icor)) if ($return_field{Icor});
+	  push (@out_fields, sprintf("%.3f", $NIcor)) if ($return_field{NIcor});
 	  push (@out_fields, sprintf("%.3f", $NSW)) if ($return_field{NSW});
 	  push (@out_fields, sprintf("%.2f", $SW)) if ($return_field{SW});
 	  push (@out_fields, sprintf("%.4f", $SSD)) if ($return_field{SSD});
@@ -1693,6 +1790,10 @@ package main;
 ## Print pairwise matrix alignments
 sub PairwiseAlignments {
   &RSAT::message::TimeWarn("Computing pairwise matrix alignments") if ($main::verbose >= 2);
+  print $alignments_pairwise_html "<p><pre><b>Command:</b> compare-matrices ";
+  &PrintArguments($alignments_pairwise_html);
+  print $alignments_pairwise_html "</pre></p>\n";
+
   foreach my $compa_id (@sorted_match_id) {
     local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
 
@@ -1918,6 +2019,10 @@ sub PrintAlignedMatrices {
   my $header_row = join ("\t", "One-to-n matrix alignment; reference matrix: ".$id1, "; ".scalar(@shifted_matrices)." matrices", "; sort_field=".$sort_field);
   print $alignments_1ton "; ", $header_row, "\n";
   print $alignments_1ton_html "<h2>", $header_row, "</h2>\n";
+
+  print $alignments_1ton_html "<p><pre><b>Command:</b> compare-matrices ";
+  &PrintArguments($alignments_1ton_html);
+  print $alignments_1ton_html "</pre></p>\n";
 
   ## Open a table in the HTML file and print column headers
   print $alignments_1ton_html "<p><table class='sortable' border='1' cellpadding='5' cellspacing='1'>\n";
