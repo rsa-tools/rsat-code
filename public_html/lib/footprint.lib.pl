@@ -27,38 +27,9 @@ $dir{output_root} = "footprints"; ## Default root output directory. Can be chang
 
 
 ################################################################
-## Treat one command, by either executing it, or concatenating it for
-## further batch processing
-##
-## Usage: 
-##   &one_command($cmd, $print_out, $time_file);
-##
-## If the variable $print_out is set to 1, the command is printed to
-## the output file $main::out.
-##
-## If the variable $time_file is specified, the execution time is
-## measured and stored in this file.
-##
+## The procedure &one_command() has been moved to RSAT::util
 sub one_command {
-  my ($cmd, $print_out, $time_file) = @_;
-
-  if ($time_file) {
-    $cmd = " time (".$cmd.") >& ".$time_file;
-    ##    open TIME, ">>".$time_file;
-    #    print TIME $cmd, "\n";
-    #    close TIME;
-  }
-
-  if ($main::batch) {
-    if ($main::batch_cmd =~/\S/) {
-      $main::batch_cmd .= " ; $cmd";
-    } else {
-      $main::batch_cmd = "$cmd";
-    }
-  } else {
-    print $main::out ("\n", "; ", &AlphaDate(), "\n", $cmd, "\n\n") if (($print_out) || ($main::verbose >= 3));
-    &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  }
+  &RSAT::util::one_command(@_);
 }
 
 ################################################################
