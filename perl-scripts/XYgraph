@@ -522,27 +522,38 @@ for $series (0..$#y_col_list) {
 
 ### draw hline
 if ($hline){
-	  $hline_color_new = $orange if ($hline_color eq "orange");
-      $hline_color_new = $red if ($hline_color eq "red");
-      $hline_color_new = $blue if ($hline_color eq "blue");
-      $hline_color_new = $green if ($hline_color eq "green");
-      $hline_color_new = $violet if ($hline_color eq "violet");
-       
-      $hline_pos_new = &YPixelPos($hline_pos); 
-      $image->line($left, $hline_pos_new, $right, $hline_pos_new, $hline_color_new);
-   
+  for $h (0..$#hline_pos) {
+    $hline_color = $hline_colors[$h];
+    $hline_pos = $hline_pos[$h];
+
+    ## Accept some predefine colors
+    $hline_color_new = $orange if ($hline_color eq "orange");
+    $hline_color_new = $red if ($hline_color eq "red");
+    $hline_color_new = $blue if ($hline_color eq "blue");
+    $hline_color_new = $green if ($hline_color eq "green");
+    $hline_color_new = $violet if ($hline_color eq "violet");
+
+    $hline_pos_new = &YPixelPos($hline_pos);
+    $image->line($left, $hline_pos_new, $right, $hline_pos_new, $hline_color_new);
+  }
 }
 
 ## draw vline
 if ($vline){
-      $vline_color_new = $orange if ($vline_color eq "orange");
-      $vline_color_new = $red if ($vline_color eq "red");
-      $vline_color_new = $blue if ($vline_color eq "blue");
-      $vline_color_new = $green if ($vline_color eq "green");
-      $vline_color_new = $violet if ($vline_color eq "violet");
-      
-      $vline_pos_new = $left + ($vline_pos-$x_axis_min)*$x_scale;
-      $image->line($vline_pos_new, $bottom, $vline_pos_new, $top, $vline_color_new);
+  for $v (0..$#vline_pos) {
+    $vline_color = $vline_colors[$v];
+    $vline_pos = $vline_pos[$v];
+
+    # Accept some predefined colors
+    $vline_color_new = $orange if ($vline_color eq "orange");
+    $vline_color_new = $red if ($vline_color eq "red");
+    $vline_color_new = $blue if ($vline_color eq "blue");
+    $vline_color_new = $green if ($vline_color eq "green");
+    $vline_color_new = $violet if ($vline_color eq "violet");
+
+    $vline_pos_new = $left + ($vline_pos-$x_axis_min)*$x_scale;
+    $image->line($vline_pos_new, $bottom, $vline_pos_new, $top, $vline_color_new);
+  }
 }
 
 #### draw graph legends and titles ####
@@ -874,10 +885,18 @@ sub GnuPlotEPS {
 
   ## hline and vline
   if ($hline){
-  	$gnuplot_cmd .= "set arrow from graph 0, first ".$hline_pos." to graph 1, first ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."'\n";
-   }
+    for $h (0..$#hline_pos) {
+      $hline_color = $hline_colors[$h];
+      $hline_pos = $hline_pos[$h];
+      $gnuplot_cmd .= "set arrow from graph 0, first ".$hline_pos." to graph 1, first ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."'\n";
+    }
+  }
   if ($vline){
-  	$gnuplot_cmd .= "set arrow from first ".$vline_pos.", graph 0  to first ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."'\n";
+    for $v (0..$#vline_pos) {
+      $vline_color = $vline_colors[$v];
+      $vline_pos = $vline_pos[$v];
+      $gnuplot_cmd .= "set arrow from first ".$vline_pos.", graph 0  to first ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."'\n";
+    }
   }
 
   ## additional user-specified commands
@@ -1702,8 +1721,8 @@ XYgraph options
 -colors		colorfile
 -export_colors	export a color file
 -gp		gnuplot additional commands
--vline color #  vertical line at position #
--hline color #   horizontal line at position #
+-vline color #  vertical line at position # (can be used iteratively)
+-hline color #   horizontal line at position # (can be used iteratively)
 End_of_options
     close SHORTHELP;
 }
@@ -2135,17 +2154,17 @@ sub ReadArguments {
       ### hline ###
     } elsif ($ARGV[$a] eq "-hline") {
 	$hline=1;
-	$hline_color =  $ARGV[$a+1]; 
-	$hline_pos =  $ARGV[$a+2];
+	push @hline_colors, $ARGV[$a+1]; 
+	push @hline_pos, $ARGV[$a+2];
 	&RSAT::error::FatalError("-hline option requires 2 arguments") unless defined($ARGV[$a+2]);
-	
+
 	### vline ###
     } elsif ($ARGV[$a] eq "-vline") {
 	$vline=1;
-	$vline_color =  $ARGV[$a+1];
-	$vline_pos =  $ARGV[$a+2];
+	push @vline_colors,  $ARGV[$a+1];
+	push @vline_pos,  $ARGV[$a+2];
 	&RSAT::error::FatalError("-vline option requires 2 arguments") unless defined($ARGV[$a+2]);
-	
+
 	### label column
     } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
 	$label_col = $ARGV[$a+1];
