@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.87 2011/02/04 06:46:33 jvanheld Exp $
+# $Id: compare-matrices,v 1.88 2011/02/04 09:10:46 jvanheld Exp $
 #
 ############################################################
 
@@ -392,7 +392,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.87 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.88 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -405,6 +405,7 @@ package main;
   local @supported_metrics = (
 			      "cor", ## Coefficient of correlation
 			      "Ncor", ## Normalized coefficient of correlation
+			      "logoDP", ##  Dot product between sequence logo values (column info * frequency)
 			      "logocor", ## Correlation between sequence logo values (column info * frequency)
 			      "Nlogocor", ## Normalized correlation between sequence logo values (column info * frequency)
 			      "Wcor", ## Correlation between weight matrices
@@ -415,7 +416,7 @@ package main;
 			      "dEucl", ## Euclidian distance
 			      "NdEucl", ## Normalized Euclidian distance
 			      "NsEucl", ## Euclidian similarity
-			      "SSD", ## Euclidian distance
+			      "SSD", ## Sum of squared distances
 			      "SW", ## Sandelin-Wasserman similarity
 			      "NSW", ## Normalized Sandelin-Wasserman similarity
 #			      "dKL", ## Kullback-Leibler distance
@@ -454,14 +455,16 @@ package main;
 
   ## Supported fields for sorting the matches
   local %supported_sort_field = ("offset"=>"asc",
-				 "Ncor"=>"desc",
 				 "cor"=>"desc",
-				 "cov"=>"desc",
-				 "Icor"=>"desc",
-				 "NIcor"=>"desc",
+				 "Ncor"=>"desc",
+				 "logoDP"=>"desc",
 				 "logocor"=>"desc",
 				 "Nlogocor"=>"desc",
-#				 "NWcor"->"desc",
+				 "Wcor"=>"desc",
+				 "NWcor"=>"desc",
+				 "Icor"=>"desc",
+				 "NIcor"=>"desc",
+				 "cov"=>"desc",
 				 "dEucl"=>"asc",
 				 "NdEucl"=>"asc",
 				 "NsEucl"=>"desc",
@@ -964,6 +967,7 @@ package main;
   }
   push (@header, "cor") if ($return_field{cor});
   push (@header, "Ncor") if ($return_field{Ncor});
+  push (@header, "logoDP") if ($return_field{logoDP});
   push (@header, "logocor") if ($return_field{logocor});
   push (@header, "Nlogocor") if ($return_field{Nlogocor});
   push (@header, "Wcor") if ($return_field{Wcor});
@@ -1040,6 +1044,7 @@ package main;
     $description{Ncor} = "Normalized correlation. Ncor = cor * ".$norm_factor_descr;
     $description{Icor} = "Pearson correlation between the information content matrices. ";
     $description{NIcor} = "Normalized Pearson correlation between the information content matrices. NIcor = Icor * ".$norm_factor_descr;
+    $description{logoDP} = "Dot product between the logo matrices.";
     $description{logocor} = "Pearson correlation between the logo matrices.";
     $description{Nlogocor} = "Normalized Pearson correlation between the logo matrices. Nlogocor = logocor * ".$norm_factor_descr;
     $description{Wcor} = "Pearson correlation between the information content matrices. ";
@@ -1083,6 +1088,10 @@ package main;
     my $nrow1 = $matrix1->get_attribute("nrow");
     my @crude_freq1 = $matrix1->getCrudeFrequencies();
 
+    my $id1 = $matrix1->get_attribute("id") || "<NA>";
+    my $name1 = $matrix1 ->get_attribute("name");
+    my $m2 = 0;
+
     ## Get the information content matrix if required
     my @info1;
     if ($calc_field{Icor}) {
@@ -1091,7 +1100,7 @@ package main;
 
     ## Get the logo matrix if required
     my @logo1;
-    if ($calc_field{logocor}) {
+    if (($calc_field{logocor}) || ($calc_field{logoDP})) {
       @logo1 = $matrix1->getLogoMatrix();
     }
 
@@ -1100,10 +1109,6 @@ package main;
     if ($calc_field{Wcor}) {
       @weight1 = $matrix1->getWeights();
     }
-
-    my $id1 = $matrix1->get_attribute("id") || "<NA>";
-    my $name1 = $matrix1 ->get_attribute("name");
-    my $m2 = 0;
 
     ## Iterate over matrices of the second list
     foreach my $matrix2 (@matrices2) {
@@ -1143,6 +1148,7 @@ package main;
       my %Ncor = ();		## Normalized correlations
       my %Icor = (); ## Correlations between information content
       my %NIcor = (); ## Normalized correlations between information content
+      my %logoDP = (); ## Dot product between logo matrices
       my %logocor = (); ## Correlations between logo matrices
       my %Nlogocor = (); ## Normalized correlations between logo matrices
       my %Wcor = (); ## Correlations between weights
@@ -1179,7 +1185,7 @@ package main;
 
 	## Get the logo matrix if required
 	my @logo2;
-	if ($calc_field{logocor}) {
+	if (($calc_field{logocor}) || ($calc_field{logoDP})) {
 	  @logo2 = $matrix2->getLogoMatrix();
 	}
 
@@ -1269,7 +1275,8 @@ package main;
 	  my $sum_sq_i1 = 0;
 	  my $sum_sq_i2 = 0;
 
-	  ## Logo correlation
+	  ## Logo correlation and dot product
+	  my $logoDP = 0;
 	  my $logocor = 0;
 	  my $Nlogocor = 0;
 	  my $sum_l1 = 0;
@@ -1316,6 +1323,7 @@ package main;
 		$sum_i1i2 += $i1*$i2;
 	      }
 
+
 	      ## Update sums for logocor
 	      if ($calc_field{logocor}) {
 		my $l1 = $logo1[$col1-1][$r];
@@ -1326,6 +1334,7 @@ package main;
 		$sum_sq_l2 += $l2**2;
 		$sum_l1l2 += $l1*$l2;
 	      }
+
 
 	      ## Update sums for Wcor
 	      if ($calc_field{Wcor}) {
@@ -1359,6 +1368,14 @@ package main;
 	    }
 	  }
 
+
+	  ## Check thresholds and index logoDP
+	  if ($calc_field{logoDP}) {
+	    $logoDP = $sum_l1l2;
+	    next unless (&CheckThresholdValue("logoDP", $logoDP));
+	    $score{logoDP}{$compa_id} = $logoDP;
+	  }
+
 	  ## Compute Euclidian distance
 	  if ($calc_field{dEucl}) {
 	    $dEucl = sqrt($SSD);
@@ -1389,10 +1406,8 @@ package main;
 	    }
 	  }
 
-	  ## Compute coefficient of correlation
+	  ## Compute covariance and coefficient of correlation
 	  my $n = $nrow1*$w;	    ## Number of matrix cells in the alignment
-#	  my $v1 = 0;		## Variance of the first matrix
-#	  my $v2 = 0;		## Variance of the second matrix
 	  if (($calc_field{cov}) || ($calc_field{cor})) {
 	    my $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2; ## Variance of the first matrix
 	    my $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2; ## Variance of the second matrix
@@ -1402,19 +1417,7 @@ package main;
 	    } else {
 	      $cor = $cov/sqrt($v1*$v2);
 	    }
-#	    $Ncor = $cor * $Wr;
 	    $Ncor = $cor * $norm_factor;
-	    #  	  &RSAT::message::Debug("n=".$n,
-	    # 				"sum_f1=".$sum_f1,
-	    # 				"sum_f2=".$sum_f2,
-	    # 				"sum_sq_f1=".$sum_sq_f1,
-	    # 				"sum_sq_f2=".$sum_sq_f2,
-	    # 				"v1=".$v1,
-	    # 				"v2=".$v2,
-	    # 				"cov=".$cov,
-	    # 				"cor=".$cor,
-	    # 				"Ncor=".$Ncor,
-	    # 			       ) if ($main::verbose >= 10);
 	  }
 
 	  ## Check thresholds on covariance, correlation and normalized correlation
@@ -1525,6 +1528,7 @@ package main;
 	  }
 	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
 	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
+	  push (@out_fields, sprintf("%.3f", $logoDP)) if ($return_field{logoDP});
 	  push (@out_fields, sprintf("%.3f", $logocor)) if ($return_field{logocor});
 	  push (@out_fields, sprintf("%.3f", $Nlogocor)) if ($return_field{Nlogocor});
 	  push (@out_fields, sprintf("%.3f", $Wcor)) if ($return_field{Wcor});
