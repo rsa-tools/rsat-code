@@ -546,11 +546,11 @@ sub ConvertStrand {
     ### Heli's notation: F (forward) or R (reverse)
     $strand_to_convert =~ s/F/D/;
     $strand_to_convert =~ s/R/R/;
-    
+
     ### > OR <
     $strand_to_convert =~ s/>/D/;
     $strand_to_convert =~ s/</R/;
-    
+
     ### Yeast notation: W (Watson) or C (Crick)
     $strand_to_convert =~ s/W/D/;
     $strand_to_convert =~ s/C/R/;
@@ -569,6 +569,11 @@ sub getBgColorFromOneScore {
     my $gval=0;
     my $bval=0;
     my $new_score = "";
+
+    &RSAT::message::Debug("&RSAT::util::getBgColorFromOneScore", $score, $min, $max, $log, $gradient) if ($main::verbose >= 5);
+    $score = 0 unless ($score > 0);
+    $min = 0 unless ($min > 0);
+    $max = 1 unless ($max > 0);
 
     ## Avoid illegal divisions by 0 when $min == $ax (this can happen if all the edges have the same weight)
     unless ($max > $min) {
@@ -813,6 +818,40 @@ sub doit {
     }
   }
 }
+
+
+################################################################
+## Treat one command, by either executing it, or concatenating it for
+## further batch processing
+##
+## Usage: 
+##   &one_command($cmd, $print_out, $time_file);
+##
+## If the variable $print_out is set to 1, the command is printed to
+## the output file $main::out.
+##
+## If the variable $time_file is specified, the execution time is
+## measured and stored in this file.
+##
+sub one_command {
+  my ($cmd, $print_out, $time_file) = @_;
+
+  if ($time_file) {
+    $cmd = " time (".$cmd.") >& ".$time_file;
+  }
+
+  if ($main::batch) {
+    if ($main::batch_cmd =~/\S/) {
+      $main::batch_cmd .= " ; $cmd";
+    } else {
+      $main::batch_cmd = "$cmd";
+    }
+  } else {
+    print $main::out ("\n", "; ", &AlphaDate(), "\n", $cmd, "\n\n") if (($print_out) || ($main::verbose >= 3));
+    &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  }
+}
+
 
 ################################################################
 
