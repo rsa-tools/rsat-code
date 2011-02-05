@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.129 2011/01/25 17:22:02 amedina Exp $
+# $Id: matrix-quality,v 1.130 2011/02/05 15:17:29 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1118,7 +1118,12 @@ Sequence format.
 
 =item B<-pseudo pseudo_counts>
 
-Pseudo-weight.
+Pseudo-counts.
+The pseudo-count reflects the possibility that residues that were
+not (yet) observed in the model might however be valid for future
+observations. The pseudo-count is used to compute the corrected
+residue frequencies.
+
 
 =cut
 	} elsif ($arg eq "-pseudo") {
@@ -1129,6 +1134,9 @@ Pseudo-weight.
 			&& ($main::pseudo_counts >= 0));
 
 	    ## Background model for theorical score distribution
+# This option is to be specified if the option
+# -bgfile has not been specified.  (see other options section for more
+# details)
 
 =pod
 
@@ -1136,22 +1144,26 @@ Pseudo-weight.
 
 Background model to be used to calculate the matrix theorical
 distribution.  The matrix theorical distribution is calculated with
-I<matrix-distrib>.  This option is to be specified if the option
--bgfile has not been specified.  (see other options section for more
-details).
+I<matrix-distrib>.  
+
+
 
 =cut
 	} elsif ($arg eq "-th_prior") {
 		$main::infile{bg_file} = shift(@arguments);
 
 	    ## Format of Background model for theorical score distribution
+# If the option -th_prior and -bg_file are used at the same time
+# the background format must be the same in both cases.
 
 =pod
 
 =item B<-bg_format background_file>
 
-If the option -th_prior and -bg_file are used at the same time
-the background format must be the same in both cases.
+Format for the background model file.
+
+        Supported formats: all the input formats supported by
+        convert-background-model.
 
 
 =cut
