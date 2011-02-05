@@ -25,12 +25,12 @@ $query = new CGI;
 
 ## Output fields
 my @output_fields = qw(ident
-			   ali_len
-			   mismat
-			   gap_open
-			   e_value
-			   bit_sc
-			   rank);
+		       ali_len
+		       mismat
+		       gap_open
+		       e_value
+		       bit_sc
+		       rank);
 my %field_description = ();
 $field_description{ident} = "Percentage of identity";
 $field_description{ali_len} = "Alignment length";
