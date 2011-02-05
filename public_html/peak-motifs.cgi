@@ -20,7 +20,8 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-############################################ configuration
+################################################################
+## configuration
 $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
 $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
 $output_prefix = "peak-motifs";
@@ -32,7 +33,8 @@ system("mkdir -p $output_path");
 # $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/perl-scripts" . ":$ENV{RSAT}/python-scripts";
 # $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/bin";
 
-############################################ result page header
+################################################################
+## result page header
 ### Read the CGI query
 $query = new CGI;
 
@@ -43,9 +45,10 @@ $query = new CGI;
 ### update log file
 &UpdateLogFile();
 
-############################################ command line paramters
+################################################################
+## command line paramters
 ### read parameters
-$parameters = "";
+$parameters = " -v 1";
 
 ### title
 if ($query->param('title')){
@@ -247,23 +250,22 @@ if ($query->param('visualize') eq "bed_coord") {
 ### add -task
 $parameters .= " -task " . join(",", @tasks);
 
-### output directory
-$parameters .= " -outdir $output_path";
-
 ### output prefix
 $parameters .= " -prefix $output_prefix";
 
-### verbosity
-$parameters .= " -v 1";
 
 ### other default parmaters
 $parameters .= " -2str -noov -img_format png ";
 
-############################################ display or send result
+### output directory
+$parameters .= " -outdir $output_path";
+
+################################################################
+## display or send result
 $index_file = $output_directory."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-&EmailTheResult("$command $parameters", "nobody@nowhere",$index_file, title=>$mail_title ,no_email=>1);
+  &EmailTheResult("$command $parameters", "nobody@nowhere",$index_file, title=>$mail_title ,no_email=>1);
 } else {
 
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
@@ -272,7 +274,8 @@ if ($query->param('output') =~ /display/i) {
 # `$debug`;
 }
 
-############################################ result page footer
+################################################################
+## result page footer
 print $query->end_html;
 
 exit(0);
