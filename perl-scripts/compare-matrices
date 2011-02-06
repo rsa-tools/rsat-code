@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.88 2011/02/04 09:10:46 jvanheld Exp $
+# $Id: compare-matrices,v 1.89 2011/02/06 13:25:57 jvanheld Exp $
 #
 ############################################################
 
@@ -20,7 +20,8 @@ $program_version
 =head1 DESCRIPTION
 
 Compare two or more position-specific scoring matrices (PSSM), and
-return various similarity statistics.
+return various similarity statistics + matrix alignments (pairwise,
+one-to-n).
 
 =head1 AUTHORS
 
@@ -392,7 +393,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.88 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.89 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
