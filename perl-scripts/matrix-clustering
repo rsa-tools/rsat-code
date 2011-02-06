@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-clustering,v 1.1 2011/02/04 22:33:35 jvanheld Exp $
+# $Id: matrix-clustering,v 1.2 2011/02/06 13:25:45 jvanheld Exp $
 #
 ############################################################
 
@@ -19,7 +19,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Taking as input a set of position-specific scoring matrices, detect
+Taking as input a set of position-specific scoring matrices, identify
 clusters of similar matrices and build consensus motifs.
 
 =head1 DEPENTENCIES
@@ -84,7 +84,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
