@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.73 2011/01/19 13:09:03 jvanheld Exp $
+# $Id: dyad-analysis,v 1.74 2011/02/09 14:14:46 rsat Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -20,7 +20,7 @@ require "RSA.disco.lib";
 #### Initialise parameters
 local $start_time = &RSAT::util::StartScript();
 
-local $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "dyads";
 
 %supported_return_field = (proba=>1,
@@ -292,7 +292,7 @@ sub CheckThresholdDependencies {
 ## Check fields to calculate, as a function of those to return
 ## There are dependencies betwen these fields.
 sub CheckCalcFields {
-    %return_fields = %default_return_fields unless (defined(%return_fields));
+    %return_fields = %default_return_fields unless (%return_fields);
     %calc_fields = %return_fields;
 
     ## Check depencencies between fields and thresholds
