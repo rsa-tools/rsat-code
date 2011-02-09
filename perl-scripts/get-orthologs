@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.54 2010/11/30 08:17:34 jvanheld Exp $
+# $Id: get-orthologs,v 1.55 2011/02/09 14:14:46 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1141,13 +1141,13 @@ in the data repository.
 sub Verbose {
     print $main::out "; get-orthologs ";
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";

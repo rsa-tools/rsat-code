@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.11 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.12 2011/02/09 14:14:46 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -302,13 +302,13 @@ See the manual of retrieve-seq for a description of supported parameters.
 sub Verbose {
     warn "; retrieve-seq-multigenome ";
     &PrintArguments($out);
-    if (defined(%infile)) {
+    if (%infile) {
 	warn "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    warn ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
+    if (%outfile) {
 	warn "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    warn ";\t$key\t$value\n";
