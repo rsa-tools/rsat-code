@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.55 2011/01/17 06:45:05 jvanheld Exp $
+# $Id: footprint-discovery,v 1.56 2011/02/10 14:02:30 rsat Exp $
 #
 ############################################################
 
@@ -201,7 +201,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.55 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.56 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -854,13 +854,13 @@ sub Verbose {
       $header_verbose .= sprintf "; %s\n", "No dyad filtering";
   }
 
-  if (defined(%main::infile)) {
+  if (%main::infile) {
     print $main::out "; Input files\n";
     while (my ($key,$value) = each %main::infile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
-  if (defined(%main::outfile)) {
+  if (%main::outfile) {
     print $main::out "; Output files\n";
     while (my ($key,$value) = each %main::outfile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
