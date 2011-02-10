@@ -21,7 +21,7 @@ list_nodes:
 
 ################################################################
 ## Specific setting for compiling RSAT on the cluster@bigre
-COMPILE_NODES=n103 n70 n25
+COMPILE_NODES=n29 n103 n70 n25
 NODE_TASK=compile_all
 compile_nodes:
 	${MAKE} iterate_nodes NODES='${COMPILE_NODES}' NODE_CMD='cd ${RSAT}; make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin' 
