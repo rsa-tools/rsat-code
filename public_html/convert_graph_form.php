@@ -84,7 +84,8 @@ if (!$pipe) {
 
 if ($pipe) {
   info_link("Graph uploaded from the previous treatment", rsat_path_to_url($graph_file));
-  echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
+  echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>"; 
+  echo "<br><table><tr><td><B><a href = 'help.convert_graph.html#wcol'>Column containing the weight or the label</a></B></td><td><input type = 'text' name='w_col' size = 1 value = ''></input></td></tr></table><br>";
 
 } else {
   if ($demo) {
@@ -122,7 +123,6 @@ if ($pipe) {
 if ($graph_format == 'tab') {
   echo "<input type='hidden' NAME='s_col' VALUE='$scol'/>\n";
   echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
-  echo "<input type='hidden' NAME='w_col' VALUE='$wcol'/>\n";
   echo "<input type='hidden' NAME='ec_col' VALUE='$eccol'/>\n";
   echo "<input type='hidden' NAME='sc_col' VALUE='$sccol'/>\n";
   echo "<input type='hidden' NAME='tc_col' VALUE='$tccol'/>\n";
