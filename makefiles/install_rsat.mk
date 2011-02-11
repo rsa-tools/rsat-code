@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.24 2010/12/08 04:53:44 rsat Exp $
+# $Id: install_rsat.mk,v 1.25 2011/02/11 14:35:56 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -16,6 +16,10 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/install_rsat.mk
 V=1
+
+## Operating system
+## Supported: linux | mac
+OS=linux
 
 #################################################################
 # Programs used for downloading and sycnrhonizing
@@ -40,8 +44,7 @@ install_ext_apps:
 	${MAKE} download_seqlogo install_seqlogo
 	${MAKE} download_rnsc install_rnsc
 	${MAKE} download_meme install_meme
-	${MAKE} download_blast_linux install_blast_linux
-	${MAKE} download_blast_mac install_blast_mac
+	${MAKE} download_blast install_blast
 
 
 ################################################################
@@ -274,6 +277,13 @@ install_rnsc:
 	@echo "	export PATH=${RNSC_BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH ${RNSC_BIN_DIR}:\$$PATH"
+
+################################################################
+## Install BLAST 32
+download_blast: download_blast_${OS}
+
+install_blast: install_blast_${OS}
+
 
 ################################################################
 ## Install the BLAST 32 linux
