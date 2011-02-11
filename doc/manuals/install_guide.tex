@@ -183,7 +183,7 @@ file in your home directory.
 
 \begin{lstlisting}
 setenv CVS_RSH ssh
-\end{lstlisting}
+\End{lstlisting}
 
 
 If your shell is bash, add the following line to the \file{.bashrc}
@@ -367,15 +367,17 @@ make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
 \end{itemize}
 
 
-% To compile info-gibbs.
-% \verb|cd| to the \verb|contrib/info-gibbs|
-% directory and run
+\section{Importing and installing programs from third parties}
 
-% \begin{verbatim}
-% cd ${RSAT}/contrib/info-gibbs
-% make all
-% ln -s info-gibbs ${RSAT}/bin/info-gibbs
-% \end{verbatim}
+In addition to the binaries incorporated in the suite itself, \RSAT
+uses some programs developed by third parties for specific
+tasks. Those programs can be downloaded and installed automatically
+using the makefile \file{install\_rsat.mk}.
+
+\begin{lstlisting}
+make -f makefiles/install_rsat.mk install_ext_apps
+\end{lstlisting}
+
 
 \section{Libraries required to support EnsEMBL genomes}
 
@@ -401,35 +403,38 @@ To obtain BioPerl:
 mkdir -p $RSAT/lib
 cd $RSAT/lib
 
-## Login into the BioPerl CVS server
-cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
-### (password is 'cvs')
 
-## download the current version
-cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl \
-  checkout bioperl-live
+## Easy installation using GIT, protocol from http://www.bioperl.org/wiki/Using_Git
+git clone git://github.com/bioperl/bioperl-live.git
 
+## To test the version of BioPerl that you are running, use:
+perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
 \end{lstlisting}
+%%$
 
-%% (or cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -d bioperl-branch-1.4 -r branch-1-4 bioperl-live for older branch)
-
-To obtain EnsEMBL:
+To obtain EnsEMBL \footnote{Full instructions at
+  \url{http://useast.ensembl.org/info/docs/api/api_cvs.html}}.
 
 \begin{lstlisting}
+
+## Make sure you start from the right directory
+cd $RSAT/lib
+
 ## Login on the EnsEMBL CVS server
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
-## (password is 'CVSUSER')
+## (password is CVSUSER)
 
 ## Download the current version of EnsEMBL
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-56 ensembl
-## (you need to adapt the branch number, e.g. 56, as it updates).
+  checkout -r branch-ensembl-61 ensembl
+## (you need to adapt the branch number, e.g. 61, as it updates).
 
 ## Download the current version of the EnsEMBL module for comparative genomics
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-56 ensembl-compara
-## (you need to adapt the branch number, e.g. 56, as it updates).
+  checkout -r branch-ensembl-61 ensembl-compara
+## (you need to adapt the branch number, e.g. 61, as it updates).
 \end{lstlisting}
+%%$ 
 
 Adapt the 3 following lines in the RSAT configuration file
 \file{RSAT\_config.props} to specify the actual path of the bioperl
