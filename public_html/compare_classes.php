@@ -435,9 +435,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Display the graph'>
         </form>
       </td>");
@@ -448,9 +447,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Compare this graph to another one'>
         </form>
       </td>");
@@ -461,9 +459,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Convert table to graph'>
         </form>
       </td>");
@@ -477,9 +474,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Map clusters or extract a subnetwork'>
         </form>
       </td>");
@@ -490,9 +486,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Node topology statistics'>
         </form>
       </td>");
@@ -503,9 +498,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Neighbourhood analysis'>
         </form>
       </td> ");
@@ -519,9 +513,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='MCL Graph clustering'>
         </form>
       </td>");
@@ -532,9 +525,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='RNSC Graph clustering'>
         </form>
       </td>");
@@ -546,9 +538,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Graph alteration'>
         </form>
       </td>");
@@ -562,9 +553,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Path Finding'>
         </form>
       </td>");
@@ -575,9 +565,8 @@
           <input type='hidden' name='pipe' value='1'>
           <input type='hidden' name='visant_graph_file' value='$server'>
           <input type='hidden' name='graph_format' value='tab'>
-          <input type='hidden' name='scol' value='2'>
-          <input type='hidden' name='tcol' value='3'>
-          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='hidden' name='scol' value='1'>
+          <input type='hidden' name='tcol' value='2'>
           <input type='submit' value='Load in VisANT'>
           </form>
         </td>");
