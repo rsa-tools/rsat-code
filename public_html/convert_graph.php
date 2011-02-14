@@ -63,7 +63,7 @@
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
   $w_col = $_REQUEST['w_col'];
-  echo("TEST $w_col");
+##  echo("TEST $w_col");
   $ec_col = $_REQUEST['ec_col'];
   $sc_col = $_REQUEST['sc_col'];
   $tc_col = $_REQUEST['tc_col'];
