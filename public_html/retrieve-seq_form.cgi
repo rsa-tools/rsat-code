@@ -72,9 +72,9 @@ if ($default{single_multi_org} eq 'multi') {
     $CHECKED = "";
 }
 print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi' $CHECKED>", 
-       "<A HREF=help.retrieve-seq.html#multi_org>",
        "<b>Multiple organisms</b>",
-       "</a>\n"
+       " (2-column input, check <A HREF=help.retrieve-seq.html#multi_org>help</a> for format)",
+       "\n"
       );
 
 # ### Gene/organism columns
