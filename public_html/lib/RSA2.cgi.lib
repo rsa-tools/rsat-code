@@ -332,20 +332,24 @@ sub MultiSequenceChoice {
     
     #### sequence format (pop-up menu)
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-    $sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
-    $sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format'.$seq_num,
-						 -Values=>['fasta', 
-							   'ig',
-							   'wconsensus',
-							   'raw',
-							   'ncbi',
-							   "tab",
-							   'multi'],
-						 -default=>$sequence_format);
-    
+    #$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
+   #  $sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format'.$seq_num,
+# 						 -Values=>['fasta', 
+# 							   'ig',
+# 							   'wconsensus',
+# 							   'raw',
+# 							   'ncbi',
+# 							   "tab",
+# 							   'multi'],
+# 						 -default=>$sequence_format);
+
+   #  $sequence_format = $query->param(sequence_format, "fasta");
+
+#    $sequenceChoiceString .= $query->param(sequence_format);
     ### text area to copy-paste the sequence
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;\n";
-    $sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
+    $sequenceChoiceString .=  "Paste your sequence in fatsa format in the box below<BR>\n";
+
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
 					       -default=>$default{sequence},
 					       -rows=>4,
@@ -489,9 +493,12 @@ sub MultiGetSequenceFile {
     my ($seq_num, $sequence_file, $required_opt) = @_ ;
     
     ### sequence file format
-    my $sequence_format = lc($query->param("sequence_format".$seq_num));
+#    my $sequence_format = lc($query->param("sequence_format".$seq_num));
+    my $sequence_format = "fasta";
+
     unless ($accepted_input_seq{$sequence_format}) {
 	&cgiError("Invalid sequence format : '$sequence_format'.");
+
     }
     
 	
