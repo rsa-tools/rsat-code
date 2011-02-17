@@ -3,11 +3,21 @@ BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push @INC, "$`lib/";
     }
+#    push @INC, "$ENV{RSAT}/extlib/arch/";
+#    if ($config_site eq "uppsala") {
+#	use lib ('/home/jvanheld/rsa-tools/perl-scripts/lib',  
+#		 '/home/jvanheld/rsa-tools/perl-scripts/lib/arch');
+#    }
+#    if ($config_site eq "ccg") {
+#	use lib ('/data/lib/bin', 
+#		 '/data/lib/lib/', 
+#		 '/data/lib/lib/perl5/site_perl/5.8.0/');
+#    }
 }
 
 require "RSA.lib";
-use GD;
 use RSAT::PostscriptWrapper;
+use GD;
 
 $start_time = &RSAT::util::StartScript();
 

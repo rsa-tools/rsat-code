@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.26 2010/11/09 11:41:14 jvanheld Exp $
+# $Id: compare-profiles,v 1.27 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1379,13 +1379,13 @@ ignored.
 sub Verbose {
     print $out "; compare-profiles ";
     &PrintArguments($out);
-    if (defined(%infile)) {
+    if (%infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
+    if (%outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";
