@@ -133,14 +133,14 @@ package main;
 	die "Error: cannot create directory $dir\n" 
 	    unless (-d $dir{diagrams});
     }
-    $out_file{graph} = $dir{diagrams}."/sigtrans_graph.tdd";
+    $outfile{graph} = $dir{diagrams}."/sigtrans_graph.tdd";
 
     ### object files
-    $out_file{signal_transduction} = $dir{output}."/signal_transduction.obj";
-    $out_file{stats} = $dir{output}."/sigtrans_parsing_stats";
+    $outfile{signal_transduction} = $dir{output}."/signal_transduction.obj";
+    $outfile{stats} = $dir{output}."/sigtrans_parsing_stats";
 
     ### reports
-    $out_file{errors} = $dir{output}."/sigtrans_parsing_errors.txt";
+    $outfile{errors} = $dir{output}."/sigtrans_parsing_errors.txt";
 
 
     #### check for the existence of input files
@@ -157,7 +157,7 @@ package main;
 
     &DefaultVerbose() if ($verbose >= 1);
 
-    open ERR, "> $out_file{errors}" || die "Error : cannot write file $out_file{errors}\n";
+    open ERR, "> $outfile{errors}" || die "Error : cannot write file $outfile{errors}\n";
 
     &ReadEntities();
     &ReadInteractions();
@@ -179,10 +179,10 @@ package main;
     $interactions->dump_tables();
     $pathways->dump_tables();
 
-    &ExportClasses($out_file{signal_transduction}, $out_format, @classes)  if ($export{obj});
+    &ExportClasses($outfile{signal_transduction}, $out_format, @classes)  if ($export{obj});
 
     ### print stats 
-    &PrintStats($out_file{stats}, @classes);
+    &PrintStats($outfile{stats}, @classes);
     
     &CompressParsedData();
 
@@ -1337,7 +1337,7 @@ sub PathwayToDiagram {
 #      warn "; Printing graph\t$graph_file\n" if ($verbose >= 1);
     
 #      open GRAPH, ">$graph_file" 
-#  	|| die "Error: cannot write $out_file{graph}\n";
+#  	|| die "Error: cannot write $outfile{graph}\n";
     
 #      print GRAPH "ftype\ttfd\n";
 #      print GRAPH "title\t$title\n";

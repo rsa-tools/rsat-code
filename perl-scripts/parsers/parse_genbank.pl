@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.13 2009/05/14 11:03:42 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.14 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-10-01 15:41:54 jvanheld>
 #
@@ -147,12 +147,12 @@ package main;
     #### output directory
     &CheckOutputDir();
     chdir $dir{output};
-    $out_file{features} = "$dir{output}/genbank.obj" if ($export{obj});
-    $out_file{error} = "$dir{output}/genbank.errors.txt";
-    $out_file{stats} = "$dir{output}/genbank.stats.txt";
+    $outfile{features} = "$dir{output}/genbank.obj" if ($export{obj});
+    $outfile{error} = "$dir{output}/genbank.errors.txt";
+    $outfile{stats} = "$dir{output}/genbank.stats.txt";
     
     ### open error report file
-    open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
+    open ERR, ">$outfile{error}" || die "Error: cannot write error file $outfile{error}\n";
     
 
     #### define organism-specific data directories
@@ -304,7 +304,7 @@ package main;
     chdir $dir{output};
 
     #### print parsing statistics
-    &PrintStats($out_file{stats}, @classes);
+    &PrintStats($outfile{stats}, @classes);
 
     @class_factories = qw (
 			   organisms 
@@ -324,7 +324,7 @@ package main;
 				      dbms=>$dbms
 				      );
     }
-    &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
+    &ExportClasses($outfile{features}, $out_format, @classes) if $export{obj};
 
 
     

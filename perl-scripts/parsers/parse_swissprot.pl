@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.36 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.37 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -120,9 +120,9 @@ package main;
     &CheckOutputDir();
 
     #### output file names
-    $out_file{polypeptides} = $dir{output}."/Polypeptide".$suffix.".obj";
-    $out_file{errors} = $dir{output}."/swissprot".$suffix.".errors.txt";
-    $out_file{stats} = $dir{output}."/swissprot".$suffix.".stats.txt";
+    $outfile{polypeptides} = $dir{output}."/Polypeptide".$suffix.".obj";
+    $outfile{errors} = $dir{output}."/swissprot".$suffix.".errors.txt";
+    $outfile{stats} = $dir{output}."/swissprot".$suffix.".stats.txt";
     
     #### clean output directory
     if ($clean) {
@@ -132,13 +132,13 @@ package main;
 	system "\\rm -f $dir{output}/Polypeptide*.tab.gz";
 	system "\\rm -f $dir{output}/Polypeptide*.gz";
 	system "\\rm -f $dir{output}/Polypeptide*.obj.gz";
-	system "\\rm -f $out_file{stats}";
-	system "\\rm -f $out_file{errors}";
+	system "\\rm -f $outfile{stats}";
+	system "\\rm -f $outfile{errors}";
     }
 
     #### open error report file
-    open ERR, ">$out_file{errors}" || 
-	die "Error: cannot write error file $out_file{errors}\n";
+    open ERR, ">$outfile{errors}" || 
+	die "Error: cannot write error file $outfile{errors}\n";
 #    ERR = STDERR;
    
     #### select three predefined organisms if none was selected (-org)
@@ -236,7 +236,7 @@ package main;
     &CheckSelectedACs() if ($in_file{acs});
     
     #### print the result
-    &PrintStats($out_file{stats}, @classes);
+    &PrintStats($outfile{stats}, @classes);
     $polypeptides->dump_tables($suffix, 0, $dir{output});
 
     #### special field formats for SQL
@@ -255,7 +255,7 @@ package main;
 				host=>$main::host,
 				);
     &ExportMakefile(@classes);
-    &ExportClasses($out_file{polypeptides}, $out_format,classes::Polypeptide) if ($export{obj});
+    &ExportClasses($outfile{polypeptides}, $out_format,classes::Polypeptide) if ($export{obj});
 #    &CompressParsedData();
     close ERR;
 

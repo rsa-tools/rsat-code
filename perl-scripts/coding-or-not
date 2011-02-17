@@ -28,7 +28,7 @@ $supported_return = join (",", @supported_return);
 
 
 #### default : return sequences of all types
-unless (defined(%return)) {
+unless (%return) {
   $return{'pos'} = 1;
   $return{'ncs'} = 1;
   $return{'cs'} = 1;

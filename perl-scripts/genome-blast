@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.25 2011/02/17 04:54:49 rsat Exp $
+# $Id: genome-blast,v 1.26 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -741,7 +741,7 @@ but could be adapted for other configurations by adapting the method
 sub Verbose {
     print $out "; genome-blast ";
     &PrintArguments($out);
-    if (defined(%dir)) {
+    if (%dir) {
 	print $out "; Directories\n";
 	while (($key,$value) = each %dir) {
 	    print $out ";\t$key\t$value\n";
