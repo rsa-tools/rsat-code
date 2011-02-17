@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.130 2011/02/05 15:17:29 amedina Exp $
+# $Id: matrix-quality,v 1.131 2011/02/17 04:54:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2581,7 +2581,7 @@ sub PreVerbose {
 ################################################################
 #### Pre-verbose message
 sub PostVerbose {
-  if (defined(%main::infile)) {
+  if (%main::infile) {
     print $main::out "; Input files\n";
     foreach my $key (sort(keys %infile)) {
       my $value = $infile{$key};
@@ -2596,7 +2596,7 @@ sub PostVerbose {
       printf $main::out ";\t%-29s\t%s\n", $key , $value;
     }
   }
-  if (defined(%main::outfile)) {
+  if (%main::outfile) {
     print $main::out "; Output files\n";
     foreach my $key (sort(keys %outfile)) {
       my $value = $outfile{$key};

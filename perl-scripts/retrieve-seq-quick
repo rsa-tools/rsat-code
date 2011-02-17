@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-quick,v 1.7 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: retrieve-seq-quick,v 1.8 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -367,13 +367,13 @@ allows to use the command within a pipe.
 sub Verbose {
     print $main::out "; retrieve-seq-quick ";
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";
