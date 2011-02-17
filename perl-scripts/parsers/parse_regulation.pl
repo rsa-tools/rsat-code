@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.9 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.10 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:58 jvanheld>
 #
@@ -75,10 +75,10 @@ package main;
 #  	    unless (-d $dir{output});
 #      }
 #      chdir $dir{output};
-    $out_file{regulation} = "$dir{output}/regulation.obj";
-    $out_file{stats} = "$dir{output}/regulation.stats.txt";
-    $out_file{errors} = "$dir{output}/regulation.errors.txt";
-    $out_file{mirror} = "$dir{output}/regulation.mirror.txt";
+    $outfile{regulation} = "$dir{output}/regulation.obj";
+    $outfile{stats} = "$dir{output}/regulation.stats.txt";
+    $outfile{errors} = "$dir{output}/regulation.errors.txt";
+    $outfile{mirror} = "$dir{output}/regulation.mirror.txt";
 
     ################################################################
     #### check some parameters
@@ -109,8 +109,8 @@ package main;
 	system "\\rm -f $dir{output}/*.tab  $dir{output}/*.txt $dir{output}/*.obj" ;
     }
 
-    open ERR, ">$out_file{errors}" || die "Error: cannot write error report file $$out_file{errors}\n";
-    open MIRROR, ">$out_file{mirror}" || die "Error: cannot write mirror file $$out_file{mirror}\n";
+    open ERR, ">$outfile{errors}" || die "Error: cannot write error report file $$outfile{errors}\n";
+    open MIRROR, ">$outfile{mirror}" || die "Error: cannot write mirror file $$outfile{mirror}\n";
 
     ### testing mode
     if ($test) {
@@ -197,7 +197,7 @@ package main;
     push @classes, ("classes::TranscriptRegul");
     #push @classes, ("classes::ControlOfControl");
     #push @classes, ("classes::Induction");
-    &ExportClasses($out_file{regulation}, $out_format, @classes)  if ($export{obj});
+    &ExportClasses($outfile{regulation}, $out_format, @classes)  if ($export{obj});
 
 
     #### export SQL scripts to load the data in a relational database
@@ -210,7 +210,7 @@ package main;
     }
 
     ### print some stats after parsing
-    &PrintStats($out_file{stats}, @classes);
+    &PrintStats($outfile{stats}, @classes);
 
     ### report execution time
     if ($verbose >= 1) {
@@ -327,7 +327,7 @@ sub ReadArguments {
 	    ### output file
 	} elsif ($ARGV[$a] eq "-o") {
 	    $a++;
-	    $out_file{regulation} = $ARGV[$a];
+	    $outfile{regulation} = $ARGV[$a];
 	}
 
 	$a++;

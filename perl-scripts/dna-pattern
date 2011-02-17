@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.61 2011/01/31 03:35:01 jvanheld Exp $
+# $Id: dna-pattern,v 1.62 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -63,7 +63,7 @@ if ($HelpRequested) {
 #
 
 #### return values
-unless (defined(%return_fields)) {
+unless (%return_fields) {
     $return_fields{sites} = 1;
 }
 

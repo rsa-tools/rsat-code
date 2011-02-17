@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_glaxo.pl,v 1.6 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: parse_glaxo.pl,v 1.7 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:53:01 jvanheld>
 #
@@ -102,7 +102,7 @@ $dir{input} = $data_glaxo;
 $in_file{glaxo} = "gunzip -c ".$dir{input}."/".$file_name.".gz | ";
 
 
-open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $out_file{errors}\n";
+open ERR, ">$outfile{errors}" || die "Error: cannot write error report fle $outfile{errors}\n";
 
 $out_format = "obj";
 
@@ -121,9 +121,9 @@ push @classes, "classes::ECreference";
 #### output directory
 &CheckOutputDir();
 
-$out_file{glaxo} = "$dir{output}/glaxo.obj";
-$out_file{stats} = "$dir{output}/glaxo.stats.txt";
-$out_file{errors} = "$dir{output}/glaxo.errors.txt";
+$outfile{glaxo} = "$dir{output}/glaxo.obj";
+$outfile{stats} = "$dir{output}/glaxo.stats.txt";
+$outfile{errors} = "$dir{output}/glaxo.errors.txt";
 
 #### clean the output directory
 if ($clean) {
@@ -245,13 +245,13 @@ $ec_references->dump_tables();
 
 if ($export{obj}) {
     warn "Exporting objects in .obj format\n" if ($verbose >=1);
-    &ExportClasses($out_file{glaxo}, $out_format, @classes) 
+    &ExportClasses($outfile{glaxo}, $out_format, @classes) 
 }
 
 
 ### print some stats after parsing
 warn "Printing parsing statitsics\n" if ($verbose >=1);
-&PrintStats($out_file{stats}, @classes);
+&PrintStats($outfile{stats}, @classes);
 
 ### report execution time
 if ($verbose >= 1) {
@@ -267,7 +267,7 @@ close ERR;
 
 if ($verbose >= 1) {
     my @commands = ("ls -l '$dir{output}'",
-		    "gunzip -c '${out_file{stats}}.gz'");
+		    "gunzip -c '${outfile{stats}}.gz'");
     foreach my $command (@commands) {
 	warn "\t$command\n";
 #	system $command;

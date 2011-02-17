@@ -292,7 +292,7 @@ sub ReadArguments {
 sub Verbose {
     print $log "; get-ensembl-genome.pl ";
     &PrintArguments($log);
-    if (defined(%dir)) {
+    if (%dir) {
 	print $log "; Directories\n";
 	while (($key,$value) = each %dir) {
 	    print $log ";\t$key\t$value\n";

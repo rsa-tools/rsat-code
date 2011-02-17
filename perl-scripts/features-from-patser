@@ -33,10 +33,10 @@ if (($fixed_origin) && !($sequence_file)) {
 }
 
 #### default return format
-unless (defined(%return)) {
+unless (%return) {
     $return{matches} = 1;
 }
-if (($return{table}) && !(defined(%table_fields))){
+if (($return{table}) && !(%table_fields)){
     $table_fields{score} = 1;
 }
 
