@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.25 2011/02/11 14:35:56 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.26 2011/02/17 13:11:20 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -35,9 +35,6 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
 install_ext_apps:
-	${MAKE} install_consensus
-	${MAKE} download_patser install_patser
-	${MAKE} install_gibbs
 	${MAKE} download_mcl install_mcl
 	${MAKE} download_gs install_gs
 	${MAKE} download_gnuplot install_gnuplot
@@ -45,6 +42,9 @@ install_ext_apps:
 	${MAKE} download_rnsc install_rnsc
 	${MAKE} download_meme install_meme
 	${MAKE} download_blast install_blast
+	${MAKE} install_consensus
+	${MAKE} download_patser install_patser
+	${MAKE} install_gibbs
 
 
 ################################################################
