@@ -55,7 +55,7 @@ if (&IsNatural($group_nb)) {
 unless ($organism = $query->param('organism')) {
     &FatalError("You should specify an organism to use intergenic frequency calibration");
 }
-if (defined(%{$supported_organism{$organism}})) {
+if (%{$supported_organism{$organism}}) {
     $parameters .= " -org $organism ";
 } else {
     &FatalError("Organism $organism is not supported on this site");
