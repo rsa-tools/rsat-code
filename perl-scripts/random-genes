@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: random-genes,v 1.24 2011/02/17 04:44:08 rsat Exp $
+# $Id: random-genes,v 1.25 2011/02/17 04:54:49 rsat Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -352,13 +352,13 @@ sub ReadArguments {
 sub Verbose {
     print $out "; random-genes ";
     &PrintArguments($out);
-    if (%infile) {
+    if (%main::infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (%outfile) {
+    if (%main::outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";

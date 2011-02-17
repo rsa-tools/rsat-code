@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-score-distrib,v 1.13 2011/02/17 04:44:08 rsat Exp $
+# $Id: compare-score-distrib,v 1.14 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -601,7 +601,7 @@ sub Verbose {
 		     $input_files[$f-1]), "\n";
   }
 
-  if (%outfile) {
+  if (%main::outfile) {
     print $out "; Output files\n";
     while (my ($key,$value) = each %outfile) {
       print $out ";\t$key\t$value\n";

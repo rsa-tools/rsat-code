@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-clustering,v 1.2 2011/02/06 13:25:45 jvanheld Exp $
+# $Id: matrix-clustering,v 1.3 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -325,7 +325,7 @@ sub Verbose {
     print $main::out "; matrix-clustering ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	  printf $main::out ";\t%-28s\t%s\n", $key, $value;
@@ -333,7 +333,7 @@ sub Verbose {
     }
     printf $main::out  "; %-28s\t%s\n", "Number of matrices", scalar(@matrices);
 
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	  printf $main::out ";\t%-28s\t%s\n", $key, $value;

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: reverse-complement,v 1.12 2011/02/17 04:44:08 rsat Exp $
+# $Id: reverse-complement,v 1.13 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -350,13 +350,13 @@ This option is only valid when the option -add is active.
 sub Verbose {
     print $out "; reverse-complement ";
     &PrintArguments($out);
-    if (%infile) {
+    if (%main::infile) {
 	print $out "; Input files\n";
 	while (my ($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (%outfile) {
+    if (%main::outfile) {
 	print $out "; Output files\n";
 	while (my ($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";

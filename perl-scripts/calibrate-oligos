@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.14 2011/02/17 04:44:08 rsat Exp $
+# $Id: calibrate-oligos,v 1.15 2011/02/17 04:54:48 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -51,7 +51,7 @@ $die_on_error = 1;
 
 
 #### check selected tasks
-unless (defined(%task)) {
+unless (%task) {
     &RSAT::error::FatalError("You should select at least one task.");
 }
 if ($task{all}) {
@@ -462,13 +462,13 @@ sub Verbose {
     printf $out "; %-29s\t%s\n", "Oligonucleotide length", $oligo_len;
     printf $out "; %-29s\t%s\n", "Strands", $str;
     printf $out "; %-29s\t%s\n", "Overlap mode", $ov;
-    if (%infile) {
+    if (%main::infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (%outfile) {
+    if (%main::outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";

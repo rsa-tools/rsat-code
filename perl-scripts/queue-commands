@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: queue-commands,v 1.6 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: queue-commands,v 1.7 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -272,13 +272,13 @@ conform to the options of the local queue manager.
 sub Verbose {
     print $main::out "; queue-commands ";
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";
