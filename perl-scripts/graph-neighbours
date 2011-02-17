@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.23 2011/01/15 06:31:25 jvanheld Exp $
+# $Id: graph-neighbours,v 1.24 2011/02/17 04:54:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -534,13 +534,13 @@ The output file is presented differently, with one line for each seed node.
 sub Verbose {
     print $main::out "; graph-neighbnours ";
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: conditional-probabilities,v 1.7 2011/02/17 04:44:08 rsat Exp $
+# $Id: conditional-probabilities,v 1.8 2011/02/17 04:54:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -184,13 +184,13 @@ sub ReadArguments {
 sub Verbose {
     print $out "; conditional-probabilities ";
     &PrintArguments($out);
-    if (%infile) {
+    if (%main::infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (%outfile) {
+    if (%main::outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";

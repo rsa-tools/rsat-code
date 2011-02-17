@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.42 2010/12/15 09:23:28 rsat Exp $
+# $Id: taxon-frequencies,v 1.43 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -1001,7 +1001,7 @@ sub Verbose {
       }
     }
 
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";

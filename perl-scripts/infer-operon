@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.14 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: infer-operon,v 1.15 2011/02/17 04:54:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -693,13 +693,13 @@ Number of genes in the predicted operon.
 sub Verbose {
     print $main::out "; infer-operon ";
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";

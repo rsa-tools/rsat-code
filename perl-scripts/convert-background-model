@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.27 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: convert-background-model,v 1.28 2011/02/17 04:54:49 rsat Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -586,13 +586,13 @@ transition frequencies on each pair of reverse complements.
 sub Verbose {
     print $main::out "; convert-backgound-model ";
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";

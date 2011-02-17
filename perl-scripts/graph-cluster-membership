@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.27 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: graph-cluster-membership,v 1.28 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -625,13 +625,13 @@ sub Verbose {
     print $main::out "; graph-cluster-membership ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 		print $main::out "; Input files\n";
 		while (my ($key,$value) = each %main::infile) {
 	    	print $main::out ";\t$key\t$value\n";
 		}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 		print $main::out "; Output files\n";
 		while (my ($key,$value) = each %main::outfile) {
 	    	print $main::out ";\t$key\t$value\n";

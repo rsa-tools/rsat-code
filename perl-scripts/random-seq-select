@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: random-seq-select,v 1.9 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: random-seq-select,v 1.10 2011/02/17 04:54:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -387,13 +387,13 @@ This option is incompatible with the option -n and -g.
 sub Verbose {
     print "; random-seq-select ";
     &PrintArguments();
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print ";\t$key\t$value\n";
