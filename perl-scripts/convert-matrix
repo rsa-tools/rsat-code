@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.129 2011/02/03 22:22:43 jvanheld Exp $
+# $Id: convert-matrix,v 1.130 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1374,14 +1374,14 @@ sub ReadArguments {
 sub Verbose {
   print $out "; convert-matrix ";
   &PrintArguments($out);
-  if (defined(%infile)) {
+  if (%infile) {
     print $out "; Input files\n";
     while (($key,$value) = each %infile) {
       print $out ";\t$key\t$value\n";
     }
   }
   printf $out "%-22s\t%s\n", "; Input format", $input_format;
-  if (defined(%outfile)) {
+  if (%outfile) {
     print $out "; Output files\n";
     while (($key,$value) = each %outfile) {
       print $out ";\t$key\t$value\n";

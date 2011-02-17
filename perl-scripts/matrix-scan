@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.186 2011/01/31 04:01:47 jvanheld Exp $
+# $Id: matrix-scan,v 1.187 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -628,7 +628,7 @@ package main;
    	if ($return_fields{crer}){
    		&RSAT::error::FatalError("Detection of CRER is not compatible with -window option");
    	}
-   	unless (defined(%lth) || defined(%uth)){
+   	unless ((%lth) || (%uth)){
    		if ($return_fields{pval}){
    			&RSAT::message::Warning("Calculating P-values for -window background model requires a lot of computing time. Specify a threshold with -lth or -uth. P-val will not be returned.");
     		delete($return_fields{pval});
@@ -3005,7 +3005,7 @@ sub Verbose {
 	}
 
   ## Input files
-  if (defined(%main::infile)) {
+  if (%main::infile) {
     print $main::out "; Input files\n";
     while (my ($key,$value) = each %main::infile) {
       print $main::out ";\t$key\t$value\n";
@@ -3019,7 +3019,7 @@ sub Verbose {
   printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
 
   ## Output files
-  if (defined(%main::outfile)) {
+  if (%main::outfile) {
     print $main::out "; Output files\n";
     while (my ($key,$value) = each %main::outfile) {
       print $main::out ";\t$key\t$value\n";

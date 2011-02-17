@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.51 2010/11/28 03:52:38 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.52 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -753,13 +753,13 @@ without limit on the number of sites.
 sub Verbose {
     print $log "; matrix-from-patterns ";
     &PrintArguments($log);
-    if (defined(%infile)) {
+    if (%infile) {
 	print $log "; Input files\n";
 	while (my ($key,$value) = each %infile) {
 	    print $log ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
+    if (%outfile) {
 	print $log "; Output files\n";
 	while (my ($key,$value) = each %outfile) {
 	    print $log ";\t$key\t$value\n";

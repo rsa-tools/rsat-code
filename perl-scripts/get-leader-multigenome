@@ -300,13 +300,13 @@ See the manual of get-leader for a description of supported parameters.
   sub Verbose {
     warn "; get-leader-multigenome ";
     &PrintArguments($out);
-    if (defined(%infile)) {
+    if (%infile) {
       warn "; Input files\n";
       while (($key,$value) = each %infile) {
 	warn ";\t$key\t$value\n";
       }
     }
-    if (defined(%outfile)) {
+    if (%outfile) {
       warn "; Output files\n";
       while (($key,$value) = each %outfile) {
 	warn ";\t$key\t$value\n";

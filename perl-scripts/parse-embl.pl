@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.26 2010/12/15 09:24:58 rsat Exp $
+# $Id: parse-embl.pl,v 1.27 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -803,7 +803,7 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%infile)) {
+    if (%infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";

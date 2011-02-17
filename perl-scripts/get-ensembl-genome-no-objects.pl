@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.20 2010/12/15 09:25:56 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.21 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp
 #
@@ -1045,7 +1045,7 @@ sub Verbose {
 	    print $log ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
+    if (%outfile) {
 	print $log "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $log ";\t$key\t$value\n";
