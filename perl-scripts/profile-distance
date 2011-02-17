@@ -202,7 +202,7 @@ foreach $a (0..$#ARGV) {
 
 
 #### check argument values ####
-unless (defined(%return)) {
+unless (%return) {
        print "Error: you did not specify the output (option -return)\n";
        exit(1);
 }
@@ -338,10 +338,10 @@ sub DrawGraph {
 
 	### header ###
 	print XY ";id\t$id1";
-	print XY "_${score{$id1}}" if (defined(%score));
+	print XY "_${score{$id1}}" if (%score);
 	foreach $id2 (@{$cluster{$id1}}) { 
 		print XY "\t$id2";
-		print XY "_${score{$id2}}" if (defined(%score));
+		print XY "_${score{$id2}}" if (%score);
 		print XY "_${distance{$id1}{$id2}}";
 	}
 	print XY "\n";
@@ -356,7 +356,7 @@ sub DrawGraph {
 	close XYgraph;
 	open INDEX, ">>$index_file";
 	print INDEX "<A HREF=\"$graph_file_name\">$id1</A>";
-	print INDEX "\t${score{$id1}}" if (defined(%score));
+	print INDEX "\t${score{$id1}}" if (%score);
 	print INDEX "\t$cluster_size";
 	print INDEX "\n";
 	close INDEX;

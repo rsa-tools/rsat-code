@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.296 2010/12/15 09:25:56 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.297 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.296 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.297 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Paths of the programs called by gene-cluster-motifs
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -2906,7 +2906,7 @@ sub CheckParameters {
     unless $dir{output};
 
   #### accepted feature types
-  unless (defined %accepted_feature_types) {
+  unless (%accepted_feature_types) {
     ## By default, accept all feature types
     $accepted_feature_types{cds} = 1;
   }
@@ -2924,7 +2924,7 @@ sub CheckParameters {
 
 
   #### check selected tasks
-  unless (defined(%task)) {
+  unless (%task) {
     &RSAT::error::FatalError("You should select at least one task.");
   }
   if ($task{all}) {

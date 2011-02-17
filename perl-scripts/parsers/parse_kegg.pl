@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.18 2009/05/14 11:04:17 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.19 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:53:00 jvanheld>
 #
@@ -163,11 +163,11 @@ push @classes, ("KEGG::GenericPathway");
 &CheckOutputDir();
 
 #### output files
-$out_file{kegg} = "$dir{output}/kegg.obj";
-$out_file{connectivity} = "$dir{output}/kegg.connectivity.txt";
-$out_file{stats} = "$dir{output}/kegg.stats.txt";
-$out_file{errors} = "$dir{output}/kegg.errors.txt";
-open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
+$outfile{kegg} = "$dir{output}/kegg.obj";
+$outfile{connectivity} = "$dir{output}/kegg.connectivity.txt";
+$outfile{stats} = "$dir{output}/kegg.stats.txt";
+$outfile{errors} = "$dir{output}/kegg.errors.txt";
+open ERR, ">$outfile{errors}" || die "Error: cannot write error report fle $$outfile{errors}\n";
 
 #### check input files
 foreach $key (keys %data_file) {
@@ -296,13 +296,13 @@ foreach $class_factory (@class_factories) {
 				  );
 }
 
-&ExportClasses($out_file{kegg}, $out_format, @classes) if ($export{obj});
+&ExportClasses($outfile{kegg}, $out_format, @classes) if ($export{obj});
 
 
 ### print some stats after parsing
-&PrintStats($out_file{stats}, @classes);
-&Connectivity($out_file{connectivity});
-#&AppendECstats($out_file{stats});
+&PrintStats($outfile{stats}, @classes);
+&Connectivity($outfile{connectivity});
+#&AppendECstats($outfile{stats});
 
 ### report execution time
 if ($verbose >= 1) {

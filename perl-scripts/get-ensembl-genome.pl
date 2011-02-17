@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.39 2011/02/17 04:54:49 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.40 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1492,7 +1492,7 @@ sub ReadArguments {
 sub Verbose {
     print $log "; get-ensembl-genome.pl ";
     &PrintArguments($log);
-    if (defined(%dir)) {
+    if (%dir) {
 	print $log "; Directories\n";
 	while (($key,$value) = each %dir) {
 	    print $log ";\t$key\t$value\n";
