@@ -51,7 +51,7 @@ my $organism = "";
 unless ($organism = $query->param('organism')) {
     &cgiError("You should specify a query organism");
 }
-unless (defined(%{$supported_organism{$organism}})) {
+unless (%{$supported_organism{$organism}}) {
     &cgiError("Organism $org is not supported on this site");
 }
 $parameters .= " -org $organism";
