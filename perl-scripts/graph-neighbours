@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.24 2011/02/17 04:54:49 rsat Exp $
+# $Id: graph-neighbours,v 1.25 2011/02/17 05:15:54 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -218,7 +218,7 @@ package main;
       my @neighbours = $graph->get_neighbours_id($seed_node_id, $steps, $self_included, $weight_col);
       if (!$stats) {
         for (my $i = 0; $i < scalar(@neighbours); $i++) {
-          if (defined(@{$neighbours[$i]})) {
+          if (@{$neighbours[$i]}) {
             my @neighbours_array = @{$neighbours[$i]};
             if (($direction eq "all") || ($direction ne "all" && $neighbours_array[3] eq $direction)) {
               print $out join("\t", @neighbours_array[0..$range])."\n";

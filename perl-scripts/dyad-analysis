@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.74 2011/02/09 14:14:46 rsat Exp $
+# $Id: dyad-analysis,v 1.75 2011/02/17 05:15:54 rsat Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -20,7 +20,7 @@ require "RSA.disco.lib";
 #### Initialise parameters
 local $start_time = &RSAT::util::StartScript();
 
-local $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.75 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "dyads";
 
 %supported_return_field = (proba=>1,
@@ -1662,7 +1662,7 @@ sub PrintResult {
       @sorted_patterns = sort {$patterns{$b}->{occ} <=> $patterns{$a}->{occ}} keys %patterns;
     }
   }
-  unless (defined(@sorted_patterns)) {
+  unless (@sorted_patterns) {
     @sorted_patterns = sort keys %patterns;
   }
 

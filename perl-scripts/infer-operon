@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.15 2011/02/17 04:54:49 rsat Exp $
+# $Id: infer-operon,v 1.16 2011/02/17 05:15:54 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -265,7 +265,7 @@ package main;
 
     ## Treat the case of subfields
     foreach my $field (@return_fields) {
-      if (defined(@{$sub_fields{$field}})) {
+      if (@{$sub_fields{$field}}) {
 	push @return_subfields, @{$sub_fields{$field}};
       } else {
 	push @return_subfields, $field;
