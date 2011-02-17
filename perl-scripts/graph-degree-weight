@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-degree-weight,v 1.6 2011/02/17 04:54:49 rsat Exp $
+# $Id: graph-degree-weight,v 1.7 2011/02/17 05:15:54 rsat Exp $
 #
 ############################################################
 
@@ -100,7 +100,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
 
@@ -292,12 +292,12 @@ package main;
 			$Degree->{$nodeID}->{'deg'}   = 0;
 
     		# calculate in degree
-    		if (defined(@{$in_neighbours[$nodeID]})) {
+    		if (@{$in_neighbours[$nodeID]}) {
     		  $Degree->{$nodeID}->{'in_deg'} = scalar(@{$in_neighbours[$nodeID]});
 			  print "in_degree: ",$Degree->{$nodeID}->{'in_deg'},"\n";
     		}
     		# calculate out degree
-    		if (defined(@{$out_neighbours[$nodeID]})) {
+    		if (@{$out_neighbours[$nodeID]}) {
     		  $Degree->{$nodeID}->{'out_deg'} = scalar(@{$out_neighbours[$nodeID]});
 			  print "out_degree: ",$Degree->{$nodeID}->{'out_deg'},"\n";
     		}
