@@ -298,7 +298,7 @@ sub Verbose {
 	    print $log ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
+    if (%outfile) {
 	print $log "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $log ";\t$key\t$value\n";

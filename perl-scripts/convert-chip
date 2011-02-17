@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-chip,v 1.7 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: convert-chip,v 1.8 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2003-09-03 10:23:23 jvanheld>
 #
@@ -160,13 +160,13 @@ sub ReadArguments {
 sub Verbose {
     print $out "; convert-chip ";
     &PrintArguments($out);
-    if (defined(%infile)) {
+    if (%infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
+    if (%outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";

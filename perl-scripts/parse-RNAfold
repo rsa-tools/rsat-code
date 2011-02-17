@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-RNAfold,v 1.9 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: parse-RNAfold,v 1.10 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:23:08 jvanheld>
 #
@@ -178,13 +178,13 @@ sub ReadArguments {
 sub Verbose {
     print $out "; parse-RNAfold ";
     &PrintArguments($out);
-    if (defined(%infile)) {
+    if (%infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
+    if (%outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";
