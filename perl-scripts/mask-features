@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.17 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: mask-features,v 1.18 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -584,7 +584,7 @@ chromosomal location of the masked regions.
 sub Verbose {
     print "; mask-features ";
     &PrintArguments(STDOUT);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print  "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print ";\t$key\t$value\n";
@@ -623,7 +623,7 @@ sub Verbose {
 	print  "; Total Nb of features masked\t$total_nb\n";
 	print  "; Total size of masked sequence\t$total_size\n";
 
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print  "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print  ";\t$key\t$value\n";

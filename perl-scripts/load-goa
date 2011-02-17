@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.19 2010/12/15 09:24:41 rsat Exp $
+# $Id: load-goa,v 1.20 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -379,13 +379,13 @@ but could be adapted for other configurations by adapting the method
 sub Verbose {
     print $main::out "; load-goa ";
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.21 2010/12/15 09:25:56 rsat Exp $
+# $Id: go-hierarchy,v 1.22 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -717,13 +717,13 @@ is selected).
 sub Verbose {
     print $main::out "; go-hierarchy ";
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";

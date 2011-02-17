@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.65 2011/02/17 04:44:08 rsat Exp $
+# $Id: parse-genbank.pl,v 1.66 2011/02/17 04:54:49 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -628,13 +628,13 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (%infile) {
+    if (%main::infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (%outfile) {
+    if (%main::outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";

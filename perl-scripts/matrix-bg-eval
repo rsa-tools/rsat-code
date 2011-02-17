@@ -1157,7 +1157,7 @@ Dispatch matrix-quality jobs on a cluster.
 sub Verbose {
     print $main::out "; matrix-bg-eval "; 
     &PrintArguments($main::out);
-    if (defined(%main::infile)) {
+    if (%main::infile) {
 		print $main::out "; Input files\n";
 		foreach my $key (sort(keys %main::infile)) {
 	  		my $value = $main::infile{$key};
@@ -1166,7 +1166,7 @@ sub Verbose {
 	  		}
 		}
     }
-    if (defined(%main::outfile)) {
+    if (%main::outfile) {
 		print $main::out "; Output files\n";
 		foreach my $key (sort(keys %main::outfile)) {
 	  		my $value = $main::outfile{$key};

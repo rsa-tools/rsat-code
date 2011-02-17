@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.163 2011/02/04 22:35:42 jvanheld Exp $
+# $Id: peak-motifs,v 1.164 2011/02/17 04:54:49 rsat Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.163 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.164 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -4309,7 +4309,7 @@ sub ReportParamsAndFiles {
   print $out &PrintThresholdValues();
 
   ## Input file(s)
-  if (defined(%main::infile)) {
+  if (%main::infile) {
     print $main::out "; Input files\n";
     print $links "<tr><th colspan=2>","Input files","</th></tr>";
 
@@ -4333,7 +4333,7 @@ sub ReportParamsAndFiles {
   }
 
   ## Output files
-  if (defined(%main::outfile)) {
+  if (%main::outfile) {
     print $main::out "; Output files\n";
     print $links "<tr><th colspan=2>","Output files","</th></tr>";
     foreach my $key (sort keys  %main::outfile) {

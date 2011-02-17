@@ -301,7 +301,7 @@ End_short_help
 sub Verbose {
     print $out "; poissson ";
     &PrintArguments($out);
-    if (%outfile) {
+    if (%main::outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";
