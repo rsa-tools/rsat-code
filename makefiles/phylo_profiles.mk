@@ -142,7 +142,7 @@ GENE_NAMES=${RES_DIR}/gene_names.tab
 CDS=${RSAT}/data/genomes/${ORG}/genome/cds.tab
 gene_names:
 	@mkdir -p ${RES_DIR}
-	cut -f 1 ${CDS} | add-gene-info -org ${ORG} -info name -o ${GENE_NAMES}
+	grep -v '^--'  ${CDS} | cut -f 1 | add-gene-info -org ${ORG} -info name -o ${GENE_NAMES}
 	@echo ${GENE_NAMES}
 
 
@@ -151,17 +151,17 @@ gene_names:
 ## closely related species. This is a bit tricky: we cut the organism
 ## tree at a given depth (e.g. 5) and select a single species of each
 ## taxon at this depth.
-ORG=Saccharomyces_cerevisiae
+#ORG=Saccharomyces_cerevisiae
 TAXON=Fungi
 ORG=Escherichia_coli_K12
 TAXON=Bacteria
-DEPTH=5
+DEPTH=4
 RES_DIR=results/profiles/${ORG}/${TAXON}_depth${DEPTH}
 SPECIES=${RES_DIR}/selected_species_${TAXON}_depth${DEPTH}.tab
 select_species:
 	@echo "Selecting species	${TAXON}	depth=${DEPTH}"
 	@mkdir -p ${RES_DIR}
-	@supported-organisms -return ID,taxonomy -taxon Bacteria | perl -pe 's|; |\t|g' \
+	@supported-organisms -return ID,taxonomy -taxon ${TAXON} | perl -pe 's|; |\t|g' \
 		| cut -f 1-${DEPTH} | sort -k 2 -u | perl -pe 's|\t|; |g' | perl -pe 's|; |\t|' \
 		> ${SPECIES}
 	@echo "species	`wc -l ${SPECIES}`"
@@ -219,13 +219,14 @@ profiles_evalue:
 ## Pairwise comparisons between each gene pair 
 COMPA=${PROFILES}_compa
 SIG_COL=`grep -P '^;\t\d+\tsig' results/profiles/Escherichia_coli_K12/Bacteria_depth5/profiles_Escherichia_coli_K12_vs_Bacteria_eval_1e-10_ident30_len50_compa.tab | cut -f 2`
+MIN_SPEC=5
 compa:
 	grep -v '^;' ${BBH}.tab | grep -v '^#' \
 		| awk '{print $$2"\t"$$3"\t"$$4}' \
 		| compare-classes -v ${V}  -i /dev/stdin -sc 3 \
-		-return occ,freq,proba,jac_sim,dotprod,rank -sort sig \
+		-return occ,freq,proba,entropy,jac_sim,rank -sort sig \
 		-triangle -distinct \
-		-lth sig 0 -lth QR 5 \
+		-lth sig 0 -lth Q ${MIN_SPEC} -lth R ${MIN_SPEC} -lth QR ${MIN_SPEC} \
 		-rnames ${GENE_NAMES} -qnames ${GENE_NAMES} \
 		-o ${COMPA}.tab
 	@echo ${COMPA}.tab
