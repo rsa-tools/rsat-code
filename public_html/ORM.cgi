@@ -185,7 +185,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
 	unless ($organism = $query->param('organism')) {
 	    &cgiError("You should specify an organism to use intergenic frequency calibration");
 	}
-	unless (defined(%{$supported_organism{$organism}})) {
+	unless (%{$supported_organism{$organism}}) {
 	    &cgiError("Organism $org is not supported on this site");
 	}
 	my $background = $query->param("background");

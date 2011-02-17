@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.40 2010/11/27 16:32:40 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.41 2011/02/17 05:53:17 rsat Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -141,7 +141,7 @@ if ($query->param('freq_estimate') eq 'background') {
     unless ($organism = $query->param('organism')) {
       &cgiError("You should specify an organism to use intergenic frequency calibration");
     }
-    unless (defined(%{$supported_organism{$organism}})) {
+    unless (%{$supported_organism{$organism}}) {
       &cgiError("Organism $org is not supported on this site");
     }
     $freq_option .= " -org $organism";

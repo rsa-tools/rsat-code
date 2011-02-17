@@ -85,7 +85,7 @@ local $organism_name = "";
 unless ($organism_name = $query->param('organism')) {
     &cgiError("You should specify a query organism");
 }
-unless (defined(%{$supported_organism{$organism_name}})) {
+unless (%{$supported_organism{$organism_name}}) {
     &cgiError("Organism $org is not supported on this site");
 }
 $parameters .= " -org $organism_name";
