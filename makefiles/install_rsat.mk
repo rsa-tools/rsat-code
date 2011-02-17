@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.27 2011/02/17 13:26:27 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.28 2011/02/17 13:46:27 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -109,14 +109,15 @@ ensembl_api:
 ## Get and install patser (matrix-based pattern matching)
 #PATSER_TAR=patser-v3e.1.tar.gz
 PATSER_VERSION=patser-v3b.5
+#PATSER_VERSION=patser-v3b.5
 PATSER_TAR=${PATSER_VERSION}.tar.gz
-PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus/
+PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 PATSER_DIR=ext/patser/${PATSER_VERSION}
 PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
 download_patser:
 	@mkdir -p ${PATSER_DIR}
 	@echo "Getting patser using ${WGET}"
-	(cd ${PATSER_DIR}; ${WGET} -nv ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
+	(cd ${PATSER_DIR}; ${WGET} -nv  ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
 	@echo "patser dir	${PATSER_DIR}"
 
 install_patser:
@@ -132,8 +133,9 @@ install_patser:
 ################################################################
 ## Install consensus (J.Hertz)
 CONSENSUS_VERSION=consensus-v6c.1.tar.gz
-CONSENSUS_URL=ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/
-CONSENSUS_DIR=ext/patser/${PATSER_VERSION}
+CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
+CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
+CONSENSUS_DIR=ext/consensus/${CONSENSUS_VERSION}
 download_consensus:
 	@mkdir -p ${CONSENSUS_DIR}
 	@echo "Getting consensus using ${WGET}"
