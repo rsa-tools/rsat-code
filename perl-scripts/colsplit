@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: colsplit,v 1.14 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: colsplit,v 1.15 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:21:08 jvanheld>
 #
@@ -244,7 +244,7 @@ sub ReadArguments {
 sub Verbose {
     print $out "; colsplit ";
     &PrintArguments($out);
-    if (defined(%infile)) {
+    if (%infile) {
 	print $out "; Input files\n";
 	while (($key, $value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
@@ -254,7 +254,7 @@ sub Verbose {
 	print $out "; Output directory\t$output_dir\n";
     }
 
-    if (defined(%outfile)) {
+    if (%outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";

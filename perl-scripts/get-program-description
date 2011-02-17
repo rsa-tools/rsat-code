@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.17 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: get-program-description,v 1.18 2011/02/17 04:44:08 rsat Exp $
 #
 # Time-stamp: <2003-06-26 17:17:06 jvanheld>
 #
@@ -238,7 +238,7 @@ sub ReadArguments {
 sub Verbose {
     print $out "; get-program-description ";
     &PrintArguments($out);
-    if (defined(%infile)) {
+    if (%infile) {
 	print $out "; Input files\n";
 	while (($key,$value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
@@ -246,7 +246,7 @@ sub Verbose {
     }
     print $out join ("\n;\t", ";Program names", @program_names), "\n" if ($verbose >= 2);
 
-    if (defined(%outfile)) {
+    if (%outfile) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";

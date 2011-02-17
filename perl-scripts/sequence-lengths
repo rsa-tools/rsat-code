@@ -160,13 +160,13 @@ sub ReadArguments {
 sub Verbose {
   print $out "; sequence-lengths ";
   &PrintArguments($out);
-  if (defined(%infile)) {
+  if (%infile) {
     print $out "; Input files\n";
     while (($key,$value) = each %infile) {
       print $out ";\t$key\t$value\n";
     }
   }
-  if (defined(%outfile)) {
+  if (%outfile) {
     print $out "; Output files\n";
     while (($key,$value) = each %outfile) {
       print $out ";\t$key\t$value\n";

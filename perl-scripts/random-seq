@@ -45,7 +45,7 @@ if ($sequence_type eq "dna") {
     &RSAT::error::FatalError($sequence_type, "is not a valid sequence type. Supported: dna,protein,other");
 }
 
-if (defined(%alphabet)) {
+if (%alphabet) {
     %freq = %alphabet
 } else {
     foreach $letter (@letters) {
