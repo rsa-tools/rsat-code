@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.15 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.16 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:59 jvanheld>
 #
@@ -78,16 +78,16 @@ package main;
     $dir{seed_files} = "$dir{output}/amaze_pathway_seeds";
 #    $dir{seed_files} = "/win/amaze/amaze_programs/amaze_graph_analysis/amaze_pathway_seeds";
 
-    $out_file{process_skeleton} = "$dir{output}/process_skeleton.obj";
-    $out_file{stats} = "$dir{output}/process_skeleton.stats.txt";
-    $out_file{errors} = "$dir{output}/process_skeleton.errors.txt";
+    $outfile{process_skeleton} = "$dir{output}/process_skeleton.obj";
+    $outfile{stats} = "$dir{output}/process_skeleton.stats.txt";
+    $outfile{errors} = "$dir{output}/process_skeleton.errors.txt";
     
     #### open error stream
     
-    open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
+    open ERR, ">$outfile{errors}" || die "Error: cannot write error report fle $$outfile{errors}\n";
 
-    unless (-e $out_file{errors}) {
-	die "Error: cannot open error file $out_file{errors} with write access";
+    unless (-e $outfile{errors}) {
+	die "Error: cannot open error file $outfile{errors} with write access";
     }
 
     my $files_to_parse = `find $dir{skeletons} -follow -name "*.txt" -o -name "*.tab" | xargs`;
@@ -176,8 +176,8 @@ package main;
 				    dir=>"$dir{output}/sql_scripts", 
 				    prefix=>"");
     }
-    &ExportClasses($out_file{process_skeleton}, $out_format, @classes) if ($export{obj});
-    &PrintStats($out_file{stats}, @classes);
+    &ExportClasses($outfile{process_skeleton}, $out_format, @classes) if ($export{obj});
+    &PrintStats($outfile{stats}, @classes);
 
     &GenerateECSeeds() if ($seeds);
     close ERR;

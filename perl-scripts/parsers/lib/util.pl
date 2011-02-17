@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.12 2008/01/25 21:58:35 jvanheld Exp $
+# $Id: util.pl,v 1.13 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -222,7 +222,7 @@ sub DefaultVerbose {
 	warn sprintf ";\t%-23s\t%s\n", $key, $value;
     }
     warn "; output files\n";
-    while (($key, $value) = each %out_file) {
+    while (($key, $value) = each %outfile) {
 	warn sprintf ";\t%-23s\t%s\n", $key, $value;
     }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.24 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.25 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:53:04 jvanheld>
 #
@@ -117,11 +117,11 @@ package main ;
     #### check output directory
     &CheckOutputDir();
 
-    $out_file{error} = "$dir{output}/gene.errors.txt";
-    $out_file{stats} = "$dir{output}/gene.stats.txt";
-    $out_file{genes} = "$dir{output}/gene.obj" if ($export{obj});
+    $outfile{error} = "$dir{output}/gene.errors.txt";
+    $outfile{stats} = "$dir{output}/gene.stats.txt";
+    $outfile{genes} = "$dir{output}/gene.obj" if ($export{obj});
     ### open error report file
-    open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
+    open ERR, ">$outfile{error}" || die "Error: cannot write error file $outfile{error}\n";
 
 
     ### default output fields for each class
@@ -266,7 +266,7 @@ package main ;
 
 
     ### print result
-    &PrintStats($out_file{stats}, @classes);
+    &PrintStats($outfile{stats}, @classes);
     $genes->dump_tables();
     $genes->generate_sql(schema=>$schema, 
 			 user=>$user,
@@ -275,7 +275,7 @@ package main ;
 			 prefix=>"",
 			 dbms=>$dbms
 			 );
-    &ExportClasses($out_file{genes}, $out_format, @classes) if $export{obj};
+    &ExportClasses($outfile{genes}, $out_format, @classes) if $export{obj};
 
 
     close ERR;

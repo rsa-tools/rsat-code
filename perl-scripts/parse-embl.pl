@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.28 2011/02/17 04:54:49 rsat Exp $
+# $Id: parse-embl.pl,v 1.29 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -209,7 +209,7 @@ package main;
 
     local $data_source = "embl";
     local %infile = ();
-    local %out_file = ();
+    local %outfile = ();
     local $verbose = 0;
     local $in = STDIN;
     local $out = STDOUT;
@@ -363,9 +363,9 @@ package main;
     }
     &CheckOutputDir($dir{output});
     chdir $dir{output};
-    $out_file{error} = "$dir{output}/genbank.errors.txt";
-    $out_file{stats} = "$dir{output}/genbank.stats.txt";
-    open ERR, ">$out_file{error}";
+    $outfile{error} = "$dir{output}/genbank.errors.txt";
+    $outfile{stats} = "$dir{output}/genbank.stats.txt";
+    open ERR, ">$outfile{error}";
 
     #### come back to the starting directory
     chdir($wd);
@@ -543,10 +543,10 @@ package main;
     &ExportMakefile(@classes);
 
     chdir($dir{output});
-    &PrintStats($out_file{stats}, @classes);
+    &PrintStats($outfile{stats}, @classes);
 
     #### document the ffields which were parsed but not exported
-    open STATS, ">>$out_file{stats}";
+    open STATS, ">>$outfile{stats}";
     print STATS "; \n; Fields parsed but not exported\n";
     foreach my $key (sort keys %feature_extra_fields) {
 	my $value = $feature_extra_fields{$key};
@@ -557,7 +557,7 @@ package main;
     ###### close output file ######
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
     print $main::out $exec_time if ($main::verbose >= 1);
-    close $out if ($out_file{output});
+    close $out if ($outfile{output});
     close ERR;
 
     &RSAT::message::TimeWarn("Results exported in directory", $dir{output}) if ($main::verbose >= 1);
@@ -797,7 +797,7 @@ sub ReadArguments {
 sub Verbose {
     print $out "; parse-embl ";
     &PrintArguments($out);
-    if (defined(%dir)) {
+    if (%dir) {
 	print $out "; Directories\n";
 	while (($key,$value) = each %dir) {
 	    print $out ";\t$key\t$value\n";
@@ -809,9 +809,9 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%out_file)) {
+    if (%outfile) {
 	print $out "; Output files\n";
-	while (($key,$value) = each %out_file) {
+	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
@@ -1163,11 +1163,11 @@ sub ParsePositionEMBL {
 ## Export protein sequences in fasta format
 sub ExportProteinSequences {
     my ($features, $org) = @_;
-    $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
+    $outfile{pp} = $dir{output}."/".$org."_aa.fasta";
 
-    warn join ("\t", "; Exporting translated sequences to file", $out_file{pp}), "\n" if ($main::verbose >= 1);
+    warn join ("\t", "; Exporting translated sequences to file", $outfile{pp}), "\n" if ($main::verbose >= 1);
 
-    open PP, ">$out_file{pp}";
+    open PP, ">$outfile{pp}";
     foreach my $feature ($features->get_objects()) {
 	next unless ($feature);
 	if ($feature->get_attribute("type") eq "CDS") {

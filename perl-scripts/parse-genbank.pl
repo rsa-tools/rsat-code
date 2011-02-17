@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.66 2011/02/17 04:54:49 rsat Exp $
+# $Id: parse-genbank.pl,v 1.67 2011/02/17 05:07:46 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -622,7 +622,7 @@ sub ReadArguments {
 sub Verbose {
     print $out "; parse-genbank.pl ";
     &PrintArguments($out);
-    if (defined(%dir)) {
+    if (%dir) {
 	print $out "; Directories\n";
 	while (($key,$value) = each %dir) {
 	    print $out ";\t$key\t$value\n";
