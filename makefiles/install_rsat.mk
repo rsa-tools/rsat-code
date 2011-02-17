@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.26 2011/02/17 13:11:20 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.27 2011/02/17 13:26:27 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -42,7 +42,7 @@ install_ext_apps:
 	${MAKE} download_rnsc install_rnsc
 	${MAKE} download_meme install_meme
 	${MAKE} download_blast install_blast
-	${MAKE} install_consensus
+	${MAKE} download_consensus install_consensus
 	${MAKE} download_patser install_patser
 	${MAKE} install_gibbs
 
@@ -61,16 +61,12 @@ uncompress_program:
 	gunzip -c ${PROGRAM_ARCHIVE} | tar -xf - )
 
 ################################################################
-## Install consensus (J.Hertz)
+## Common frame for installing programs
 INSTALLED_PROGRAM=`ls -1t ${APP_DIR}/${PROGRAM}/${PROGRAM}*`
 install_program:
 	(cd ${PROGRAM_DIR}; make ${INSTALL_OPT})
 	(cd bin; ln -fs ${INSTALLED_PROGRAM} ./${PROGRAM})
 
-
-install_consensus:
-	${MAKE} uncompress_program PROGRAM=consensus
-	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
 
 ################################################################
 ## Install Andrew Neuwald's gibbs sampler (1995 version)
@@ -131,6 +127,22 @@ install_patser:
 	@echo "ls -ltr ${RSAT}/bin/patser*"
 #	${MAKE} uncompress_program PROGRAM_DIR=${PATSER_DIR} PROGRAM=patser
 #	${MAKE} install_program PROGRAM=patser
+
+
+################################################################
+## Install consensus (J.Hertz)
+CONSENSUS_VERSION=consensus-v6c.1.tar.gz
+CONSENSUS_URL=ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/
+CONSENSUS_DIR=ext/patser/${PATSER_VERSION}
+download_consensus:
+	@mkdir -p ${CONSENSUS_DIR}
+	@echo "Getting consensus using ${WGET}"
+	(cd ${CONSENSUS_DIR}; ${WGET} -nv ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
+	@echo "consensus dir	${CONSENSUS_DIR}"
+
+install_consensus:
+	${MAKE} uncompress_program PROGRAM=consensus
+	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
 
 ################################################################
 ## Get and install the program seqlogo
