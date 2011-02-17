@@ -7,6 +7,7 @@ require "RSA.lib";
 require RSAT::Tree;
 require RSAT::TreeNode;
 require RSAT::OrganismManager;
+use SOAP::WSDL;
 #use strict;
 
 
