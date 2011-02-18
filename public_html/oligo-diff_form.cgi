@@ -60,6 +60,7 @@ print "<h2>Input sequences</h2>\n";
 
 ## Textarea for the test sequence set
 print "<p><b><a href='help.oligo-diff.html#upload_test_seq'>Test sequence set</a></b><br>";
+print "Paste your sequence in fasta format in the box below<BR>\n";
 print $query->textarea(-name=>'test_seq',
 		       -default=>$default{test_seq},
 		       -rows=>8,
@@ -76,6 +77,8 @@ print "</p>\n";
 ################################################################
 ## Control sequence set
 print "<p><b><a href='help.oligo-diff.html#upload_ctrl_seq'>Control sequence set</a></b><br>";
+print "Paste your sequence in fasta format in the box below<BR>\n";
+
 
 ## Textarea for the control sequence set
 print $query->textarea(-name=>'ctrl_seq',
