@@ -397,8 +397,7 @@ sub OligoReturnTable {
 
 print "<p><b>Result</b></p>\n";
 
-print ("<INPUT TYPE='radio' NAME='return' VALUE='fields' checked>", 
-       "One row per pattern");
+print ("<INPUT TYPE='radio' NAME='return' VALUE='fields' checked>", "One row per pattern");
 
 print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
