@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.55 2010/12/20 15:05:44 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.56 2011/02/18 12:51:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -43,7 +43,7 @@ print <<EndText;
     </td>
 
     <td align=center>
-    <H1>Regulatory Sequence Analysis Tools</H1>
+    <h1>Regulatory Sequence Analysis Tools</h1>
     </td>
 
 
@@ -53,7 +53,7 @@ print <<EndText;
     <br>
     <font color="#006600" size=-2>Laboratorio de Biologia Computacional<br>UNAM/CCG
     </FONT>
-    </TD>
+    </td>
 
     </TR>
     </TABLE>
@@ -61,36 +61,36 @@ print <<EndText;
 
     <table border=0 cellspacing=3 cellpadding=7>
     <TR>
-    <TD><A HREF="tool_map.html"><B>
-    Tool Map</B></A></TD>
+    <td><a href="tool_map.html"><b>
+    Tool Map</b></a></td>
 
-    <TD><A HREF="intro.html"><B>
-    Introduction</B></A></TD>
+    <td><a href="intro.html"><b>
+    Introduction</b></a></td>
 
-    <TD><A HREF="http://www.bigre.ulb.ac.be/forums/"><B>
-    Forum</B></A><font color='red'> (New)</font></TD>
+    <td><a href="http://www.bigre.ulb.ac.be/forums/"><b>
+    Forum</b></a></td>
 
-    <TD><A HREF="tutorials/tutorials.html"><B>
-    Tutorials</B></A></TD>
+    <td><a href="tutorials/tutorials.html"><b>
+    Tutorials</b></a></td>
 
-    <TD><A HREF="publications.html"><B>
-    Publications</B></A></TD>
+    <td><a href="publications.html"><b>
+    Publications</b></a></td>
 
-    <TD><A HREF="credits.html"><B>
-    Credits</B></A></TD>
+    <td><a href="credits.html"><b>
+    Credits</b></a></td>
 
-    <TD><A HREF="people.html"><B>
-    People</B></A></TD>
+    <td><a href="people.html"><b>
+    People</b></a></td>
 
-    <TD><A HREF="data/"><B>
-    Data</B></A></TD>
+    <td><a href="data/"><b>
+    Data</b></a></td>
 
-<!--    <TD><A HREF="links.html"><B>
-    Links</B></A></TD>
+<!--    <td><a href="links.html"><b>
+    Links</b></a></td>
 -->
 
-    <TD><A HREF="distrib/index.html"><B>
-    Download</B></A></TD>
+    <td><a href="distrib/index.html"><b>
+    Download</b></a></td>
 
     </tr>
     </table>
@@ -101,7 +101,7 @@ print <<EndText;
     <td>
 
     <p>Welcome to <b>Regulatory Sequence Analysis Tools</b>
-    (<B>RSAT</B>). This web site provides a series of modular computer
+    (<b>RSAT</b>). This web site provides a series of modular computer
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.</p>
 
@@ -120,7 +120,7 @@ print <<EndText;
     <li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li>
 	</ul>
 
-    <P> This website is free and open to all users.
+    <p> This website is free and open to all users.
    </p>
 </td>
 
@@ -150,66 +150,66 @@ print <<EndText;
 <tr align=center valign=bottom>
 
   <td>
-  <A HREF="http://rsat.ulb.ac.be/rsat/" target="_top">
-  <B>Brussels - Belgium</B><BR>
-  <IMG SRC="images/manneken_pis.jpg" HEIGHT=80 BORDER=0><BR>
-  http://rsat.ulb.ac.be/rsat/</A>
-  </TD>
+  <a href="http://rsat.ulb.ac.be/rsat/" target="_top">
+  <b>Brussels - Belgium</b><br>
+  <IMG SRC="images/manneken_pis.jpg" HEIGHT=80 BORDER=0><br>
+  http://rsat.ulb.ac.be/rsat/</a>
+  </td>
 
   <td>
-  <A HREF="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
-  <B>Brussels (2) - Belgium</B><BR>
-  <IMG SRC="images/Atomium_icon_80.png" HEIGHT=80 BORDER=0><BR>
-  http://wwwsup.scmbb.ulb.ac.be/rsat/</A>
-  </TD>
+  <a href="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
+  <b>Brussels (2) - Belgium</b><br>
+  <IMG SRC="images/Atomium_icon_80.png" HEIGHT=80 BORDER=0><br>
+  http://wwwsup.scmbb.ulb.ac.be/rsat/</a>
+  </td>
 
-  <TD ALIGN=CENTER>
-  <A HREF="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
-  <B>Cuernavaca - Mexico</B><BR>
-  <IMG SRC="images/zapata.jpg" HEIGHT=80 BORDER=0><BR>
-  http://embnet.ccg.unam.mx/rsa-tools/</A>
-  </TD>
+  <td ALIGN=CENTER>
+  <a href="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
+  <b>Cuernavaca - Mexico</b><br>
+  <IMG SRC="images/zapata.jpg" HEIGHT=80 BORDER=0><br>
+  http://embnet.ccg.unam.mx/rsa-tools/</a>
+  </td>
 
 </tr>
 <tr>
 
-  <TD ALIGN=CENTER>
-  <A HREF="http://liv.bmc.uu.se/rsa-tools/" target="_top">
-  <B>Uppsala - Sweden</B><BR>
-  <IMG SRC="images/uppsala_lcb.jpg" HEIGHT=80 BORDER=0><BR>
-  http://liv.bmc.uu.se/rsa-tools/</A>
-  </TD>
+  <td ALIGN=CENTER>
+  <a href="http://liv.bmc.uu.se/rsa-tools/" target="_top">
+  <b>Uppsala - Sweden</b><br>
+  <IMG SRC="images/uppsala_lcb.jpg" HEIGHT=80 BORDER=0><br>
+  http://liv.bmc.uu.se/rsa-tools/</a>
+  </td>
 
   <td align=center>
   <a href='http://tagc.univ-mrs.fr/rsa-tools/' target='_top'>
-  <B>Marseille TAGC - France</B><BR>
-  <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
+  <b>Marseille TAGC - France</b><br>
+  <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><br>
   http://tagc.univ-mrs.fr/rsa-tools/</a>
 <br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
-  </TD>
+  </td>
 
 <!--
   <td align=center>
-  <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
-  <B>Toronto - Canada</B><BR>
-  <IMG SRC="images/toronto.jpg" HEIGHT=80 BORDER=0><BR>
-  http://rsat.ccb.sickkids.ca/</A>
-  </TD>
+  <a href="http://rsat.ccb.sickkids.ca/" target="_top">
+  <b>Toronto - Canada</b><br>
+  <IMG SRC="images/toronto.jpg" HEIGHT=80 BORDER=0><br>
+  http://rsat.ccb.sickkids.ca/</a>
+  </td>
 </tr><tr>
 
 
   <td align=center>
   <a href="http://www.bi.up.ac.za/rsa-tools/" target="_top">
-  <B>Pretoria - South-Africa</b><br>
+  <b>Pretoria - South-Africa</b><br>
   <img src="images/pretoria_icon.jpg" height=80 border=0><br>
   http://www.bi.up.ac.za/rsa-tools/</a>
   </td>
 
   <td align=center>
-  <A HREF="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
-  <B>Vienna - Austria</B><BR>
-  <IMG SRC="http://www.wien.gv.at/english/cityhall/images/cityhall.jpg" HEIGHT=80 BORDER=0><BR>
-  http://af.boku.ac.at:4080/rsa-tools/</A>
+  <a href="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
+  <b>Vienna - Austria</b><br>
+  <IMG SRC="http://www.wien.gv.at/english/cityhall/images/cityhall.jpg" HEIGHT=80 BORDER=0><br>
+  http://af.boku.ac.at:4080/rsa-tools/</a>
   </td>
 
   <td></td>
@@ -220,12 +220,12 @@ print <<EndText;
 <!--
 </tr><tr>
 
-  <TD ALIGN=CENTER>
-  <A HREF="http://www.flychip.org.uk/rsa-tools/" target="_top">
-  <B>Cambridge - UK</B><BR>
-  <IMG SRC="images/cambridge.jpg" HEIGHT=80 BORDER=0><BR>
-  http://www.flychip.org.uk/rsa-tools/</A>
-  </TD>
+  <td ALIGN=CENTER>
+  <a href="http://www.flychip.org.uk/rsa-tools/" target="_top">
+  <b>Cambridge - UK</b><br>
+  <IMG SRC="images/cambridge.jpg" HEIGHT=80 BORDER=0><br>
+  http://www.flychip.org.uk/rsa-tools/</a>
+  </td>
 -->
 
     </tr>
@@ -234,22 +234,22 @@ print <<EndText;
 EndText
 
 @orgs =  &RSAT::OrganismManager::get_supported_organisms();
-print "<H4 align ='center'>", scalar(@orgs) ," organisms supported on <A HREF='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</A></H4>\n";
+print "<h4 align ='center'>", scalar(@orgs) ," organisms supported on <a href='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</a></h4>\n";
 # print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile();
 $count = &UpdateCounterFile();
 
 print <<EndAddress;
-<P>
-<HR  align = 'left'>
-<H4 class='footer'><i>
+<p>
+<hr  align = 'left'>
+<h4 class='footer'><i>
 For suggestions or information request, please contact :
-<BR>
-<A HREF="mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)">
+<br>
+<a href="mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)">
 Jacques van Helden (jvanheld\@bigre.ulb.ac.be)</i>
-</A>
-</H4>
+</a>
+</h4>
 EndAddress
 
 print "</blockquote>\n";
