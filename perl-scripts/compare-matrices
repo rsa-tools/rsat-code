@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.90 2011/02/17 04:54:49 rsat Exp $
+# $Id: compare-matrices,v 1.91 2011/02/18 12:49:21 jvanheld Exp $
 #
 ############################################################
 
@@ -19,9 +19,9 @@ $program_version
 
 =head1 DESCRIPTION
 
-Compare two or more position-specific scoring matrices (PSSM), and
-return various similarity statistics + matrix alignments (pairwise,
-one-to-n).
+Compare two collections of position-specific scoring matrices (PSSM),
+and return various similarity statistics + matrix alignments
+(pairwise, one-to-n).
 
 =head1 AUTHORS
 
@@ -356,15 +356,27 @@ recent and relevant articles are cited hereafter.
 
 =over
 
-=item Aerts et al. Computational detection of cis -regulatory
-modules. Bioinformatics (2003) vol. 19 Suppl 2 pp. ii5-14
+=item Aerts, S., Van Loo, P., Thijs, G., Moreau, Y. and De Moor,
+B. (2003). Computational detection of cis -regulatory
+modules. Bioinformatics 19 Suppl 2, II5-II14.
 
-=item Gupta et al. Quantifying similarity between motifs. Genome Biol
-(2007) vol. 8 (2) pp. R24.
+=item Gupta, S., Stamatoyannopoulos, J. A., Bailey, T. L. and Noble,
+W. S. (2007). Quantifying similarity between motifs. Genome Biol 8,
+R24.
 
 =item Pape, U.J., Rahman, S., and Vingron, M. (2008). Natural
 similarity measures between position frequency matrices with an
 application to clustering. Bioinformatics 24 (3) pp. 350-7.
+
+=item Mahony, S. and Benos, P. V. (2007). STAMP: a web tool for
+exploring DNA-binding motif similarities. Nucleic Acids Res 35,
+W253-8.
+
+=item Sandelin, A. and Wasserman, W. W. (2004). Constrained binding site
+diversity within families of transcription factors enhances pattern
+discovery bioinformatics. J Mol Biol 338, 207-15.
+
+
 
 =back
 
@@ -393,7 +405,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.90 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.91 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -2522,47 +2534,48 @@ Supported return fields:
 
 =item I<offset>
 
-ascending (default for the profile mode)
-
-=item I<Ncor>
-
-decreasing (default for the matching mode)
+Offset (shift) between the two compared matrices.
 
 =item I<cor>
 
-decreasing
+Pearsons coefficient of correlatiojn. 
+
+=item I<Ncor>
+
+Normalized correlation (default sorting criterion for the matching
+mode).
 
 =item I<cov>
 
-decreasing
+Covariance.
 
 =item I<SSD>
 
-ascending
+Sum of squared distances. 
 
 =item I<NSW>
 
-decreasing
+Normalized Sandelin-Wasserman similarity.
 
 =item I<SW>
 
-decreasing
+Sandelin-Wasserman similarity.
 
 =item I<dEucl>
 
-ascending
+Euclidian distance
 
 =item I<NdEucl>
 
-ascending
+Normalized Euclidian distance.
 
 =item I<NsEucl>
 
-decreasing
+Normalized Euclidian similarity.
 
 =item I<dKL>
 
-ascending
+Kullback-Leibler distance
 
 =item I<matrix_number>
 
@@ -2577,6 +2590,9 @@ Identifiers of the matrices
 Names of the matrices
 
 =item I<matrix_ac>
+
+Accession number of the matrices (TRANSFAC format makes a distinction
+between IDs and accession numbers).
 
 =item I<width>
 
@@ -2596,7 +2612,13 @@ Relative positions the aligned matrices (start, end, strand, width)
 
 =item I<consensus>
 
+Aligned consensus. The residues of the consensus corresponding to
+aligned columns are displaye, non-aligned columns are replaced by
+dots.
+
 =item I<rank>
+
+Rank of the motif according to the sorting field.
 
 =item I<alignments_pairwise>
 
@@ -2640,49 +2662,27 @@ Supported sort fields:
 
 =over
 
-=item I<offset>
+=item I<offset>, ascending (default sorting criterion for the profile mode)
 
-ascending (default for the profile mode)
+=item I<Ncor>, decreasing (default sorting criterion for the matching mode)
 
-=item I<Ncor>
+=item I<cor>, decreasing
 
-decreasing (default for the matching mode)
+=item I<cov>, decreasing
 
-=item I<cor>
+=item I<SSD>, ascending
 
-decreasing
+=item I<SW>, decreasing
 
-=item I<cov>
+=item I<NSW>, decreasing
 
-decreasing
+=item I<dEucl>, ascending
 
-=item I<SSD>
+=item I<NdEucl>, ascending
 
-ascending
+=item I<NsEucl>, decreasing
 
-=item I<SW>
-
-decreasing
-
-=item I<NSW>
-
-decreasing
-
-=item I<dEucl>
-
-ascending
-
-=item I<NdEucl>
-
-ascending
-
-=item I<NsEucl>
-
-decreasing
-
-=item I<dKL>
-
-ascending
+=item I<dKL>, ascending
 
 =back
 
