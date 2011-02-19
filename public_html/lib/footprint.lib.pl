@@ -253,7 +253,7 @@ sub GetOutfilePrefix {
 
   ## Create the query-specific sub-directory
   my $query_prefix = &GetQueryPrefix();
-   my $used_orgs="";
+  $main::used_orgs="";
   if ($taxon){
       $used_orgs=$taxon;
   }
@@ -930,7 +930,7 @@ sub OpenMainIndex {
 ## results: one row per query, one column per output type.
 sub OpenSynthesisFilesScan {
   &RSAT::util::CheckOutDir($dir{output_root});
-  $outfile{synthesis} = $dir{output_root}."/"."result_synthesis";
+  $outfile{synthesis} = join( "/",$dir{output_root}, $used_orgs, $organism_name,"result_synthesis");
   $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
   $outfile{synthesis_html} = $outfile{synthesis}.".html";
 
@@ -1063,6 +1063,7 @@ sub ComputeFilterDyads {
 ## Detect all matrix hits  in promoters of query genes for scan filtering
 sub ComputeFilterScan {
     my ($matrix_format2, @matrix_files2)=@_;
+    $main::skip_gene=0;
     &RSAT::message::TimeWarn("Computing filter hits", $outfile{filter_scan}) if ($main::verbose >= 2);
     &CheckDependency("filter", "query_seq");
     my $cmd = "$SCRIPTS/matrix-scan -v 1 -return sites,pval,rank -uth pval " .$main::filter_pval;
@@ -1075,6 +1076,7 @@ sub ComputeFilterScan {
     $cmd .= " -bgfile ".$main::filter_bgfile ; 
     $cmd .= " -matrix_format ".$matrix_format2;
     $cmd .= " ".$strands;
+    $cmd .= " -quick ";
     #$cmd .= " ".$noov;
     $cmd .= " -o ".$outfile{filter_scan};
     &one_command($cmd) if ($task{filter_scan});
