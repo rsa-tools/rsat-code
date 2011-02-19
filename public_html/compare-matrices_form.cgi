@@ -26,8 +26,8 @@ $default{ref_db} = "CHECKED";
 $default{demo_descr1} = "";
 $default{matrix}="";
 $default{matrix_file}="";
-$default{pseudo_counts}=1;
-$default{pseudo_distribution}="pseudo_prior";
+#$default{pseudo_counts}=1;
+#$default{pseudo_distribution}="pseudo_prior";
 $checked{$default{pseudo_distribution}} = "CHECKED";
 $default{matrix_format} = "transfac";
 $default{bg_format}="oligo-analysis";
@@ -77,7 +77,7 @@ print $query->start_multipart_form(-action=>"compare-matrices.cgi");
 print "<hr>";
 
 ## Input matrix
-&GetMatrix('nowhere'=>1,'no_pseudo'=>0, consensus=>1);
+&GetMatrix('nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 print "<hr>";
 
 ################# Database comparison
@@ -85,7 +85,11 @@ print "<hr>";
 print "<hr>";
 
 ## Background model
-my %bg_params =("from_matrix" => 1);
+my %bg_params =("from_matrix" => 1,
+		"bg_input"=>0,
+		"simple"=>1,
+		"no_bg_pseudo"=>1,
+	       );
 &GetBackgroundModel(%bg_params);
 print "<hr>";
 
@@ -131,9 +135,8 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
 print "<td><b><a href='help.compare-matrices.html'>[MANUAL]</a></B></TD>\n";
-print "<td><b><a href='tutorials/tut_compare-matrices.html'>[TUTORIAL]</a></B></TD>\n";
+##print "<td><b><a href='tutorials/tut_compare-matrices.html'>[TUTORIAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
