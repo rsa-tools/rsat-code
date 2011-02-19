@@ -78,7 +78,7 @@ print "<hr>";
 my %bg_params =("markov" => 1,
 		"markov_message" => 1
 				);
-&GetBackgroundModel(\%bg_params);
+&GetBackgroundModel(%bg_params);
 
 print "<hr>";
 
