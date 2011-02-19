@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.91 2011/02/18 12:49:21 jvanheld Exp $
+# $Id: compare-matrices,v 1.92 2011/02/19 06:34:31 jvanheld Exp $
 #
 ############################################################
 
@@ -405,11 +405,16 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.91 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
   %main::outfile = ();
+
+  ## Use arrays for ordered listing of files in the HMTL index
+  @main::outfiles = ();
+  @main::infiles = ();
+  @main::dirs = ();
 
   $main::verbose = 0;
   $main::out = STDOUT;
@@ -587,6 +592,12 @@ package main;
     delete($return_field{alignments});
   }
 
+  ## Alignments require to specify an output prefix
+  if (($return_field{alignments_pairwise}) ||
+       ($return_field{alignments_1ton})) {
+    &RSAT::error::FatalError("You must specify an output file to obtain alignments.") unless $main::outfile{output_prefix};
+  }
+
   ## Incompatibilities between output modes
   if ((($return_field{alignments_pairwise}) ||
       ($return_field{alignments_1ton})) && ($comparison_mode eq "profiles")) {
@@ -622,14 +633,14 @@ package main;
     @strands = ("D", "R");
   }
 
-  ## Obsolete return field
-  if ($return_field{direction}) {
-    $return_field{strand} = 1;
-    $return_field{direction} = 0;
-    &RSAT::message::Warning("The option '-return direction' is obsolete, should be replaced by '-return strand'");
-  }
+#   ## Obsolete return field
+#   if ($return_field{direction}) {
+#     $return_field{strand} = 1;
+#     $return_field{direction} = 0;
+#     &RSAT::message::Warning("The option '-return direction' is obsolete, should be replaced by '-return strand'");
+#   }
 
-  ## Check return files
+  ## Check return fields
   if ($comparison_mode eq "profiles") {
     if (scalar(keys(%return_field)) ==0) {
       &RSAT::error::FatalError("With the profiles format, you must define at least one return field (option -return).",
@@ -691,73 +702,103 @@ package main;
   ## Check that output file is specified if required (for the alignments)
   if (defined($main::outfile{output_prefix})) {
     $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
-    $main::outfile{output} = $main::outfile{output_prefix}.".tab";
-    $main::outfile{output_html} = $main::outfile{output_prefix}.".html";
 
     ## Create output dir if required
     my $basename;
-    ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{output_prefix});
-    &RSAT::util::CheckOutDir($dir{output});
+    ($dir{match_table_txt}, $basename) = &RSAT::util::SplitFileName($main::outfile{output_prefix});
+    &RSAT::util::CheckOutDir($dir{match_table_txt});
+    push @dirs, "output";
+
+    ## tab-delimited output file
+    $main::outfile{match_table_txt} = $main::outfile{output_prefix}.".tab";
+    push @outfiles, "match_table_txt";
+
+    ## HTML-formatted table of matches
+    $main::outfile{match_table_html} = $main::outfile{output_prefix}.".html";
+    push @outfiles, "match_table_html";
+
+    ## Matrix alignments
+    if (($return_field{alignments_pairwise}) ||
+	($return_field{alignments_1ton})) {
+      &RSAT::error::FatalError("The option -return alignments requires to specify an output prefix (option -o).")
+	unless ($main::outfile{output_prefix});
+
+      ## Pariwise alignments
+      if ($return_field{alignments_pairwise}) {
+
+	## Text output stream for pairwise alignments
+	$main::outfile{alignments_pairwise} = $main::outfile{output_prefix}."_alignments_pairwise.tab";
+	push @outfiles, "alignments_pairwise";
+	$main::alignments_pairwise = &OpenOutputFile($main::outfile{alignments_pairwise});
+
+	## Pairwise alignments in HTML format
+	$main::outfile{alignments_pairwise_html} = $main::outfile{output_prefix}."_alignments_pairwise.html";
+	#      ## Open the stream for the HTML index of aligned matrices
+	#      $main::outfile{alignments_pairwise_html} = $main::outfile{alignments_pairwise};
+	#      $main::outfile{alignments_pairwise_html} =~ s/\.tab$//;
+	#      $main::outfile{alignments_pairwise_html} .= ".html";
+	push @outfiles, "alignments_pairwise_html";
+	$main::alignments_pairwise_html = &OpenOutputFile($main::outfile{alignments_pairwise_html});
+	print $main::alignments_pairwise_html "<html>\n";
+	my $title = "Pairwise alignments";
+	#      $title .= " ".&RSAT::util::ShortFileName($main::outfile{alignments_pairwise});
+	#      $title =~ s/\.tab//;
+	print $main::alignments_pairwise_html "<head><title>".$title."</title></head>\n";
+	#      print $main::alignments_pairwise_html &sorttable_script();
+	print $main::alignments_pairwise_html "<body>\n";
+	print $main::alignments_pairwise_html "<h1>".$title."</h1>\n";
+      }
+
+      ## 1-to-N alignments
+      if ($return_field{alignments_1ton}) {
+
+	## Text output stream for 1ton alignments
+	$main::outfile{alignments_1ton} = $main::outfile{output_prefix}."_alignments_1ton.tab";
+	push @outfiles, "alignments_1ton";
+	$main::alignments_1ton = &OpenOutputFile($main::outfile{alignments_1ton});
+
+	## Open the file for the HTML index of aligned matrices
+	#      $main::outfile{alignments_1ton_html} = $main::outfile{alignments_1ton};
+	#      $main::outfile{alignments_1ton_html} =~ s/\.tab$//;
+	#      $main::outfile{alignments_1ton_html} .= ".html";
+	$main::outfile{alignments_1ton_html} = $main::outfile{output_prefix}."_alignments_1ton.html";
+	push @outfiles, "alignments_1ton_html";
+	$main::alignments_1ton_html = &OpenOutputFile($main::outfile{alignments_1ton_html});
+	print $main::alignments_1ton_html "<html>\n";
+	my $title = "One-to-n alignments";
+	#      $title .= &RSAT::util::ShortFileName($main::outfile{alignments_1ton});
+	#      $title =~ s/\.tab//;
+	print $main::alignments_1ton_html "<head><title>".$title."</title></head>\n";
+	print $main::alignments_1ton_html &sorttable_script();
+	print $main::alignments_1ton_html "<body>\n";
+	print $main::alignments_1ton_html "<h1>".$title."</h1>\n";
+      }
+
+      ## Open the HTML index file
+      $main::outfile{html_index} = $main::outfile{output_prefix}."_index.html";
+      push @outfiles, "html_index";
+      $main::html_index = &OpenOutputFile($main::outfile{html_index});
+      my $header = &PrintHtmlResultHeader(program=>"compare-classes");
+#      &RSAT::message::Debug("header", $header) if ($main::verbose >= 0);
+      print $main::html_index $header;
+      print $html_index "<p><tt><b>Command:</b> compare-matrices ";
+      &PrintArguments($main::html_index);
+      print $html_index "</tt></p>\n";
+
+
+
+      ## Define directory for the logos
+      $main::dir{logos} = $main::outfile{match_table_txt};
+      $main::dir{logos} =~ s/\.tab$//;
+      $main::dir{logos} .= "_aligned_logos";
+      push @dirs, "logos";
+    }
   }
-  if (($return_field{alignments_pairwise}) ||
-      ($return_field{alignments_1ton})) {
-    &RSAT::error::FatalError("The option -return alignments requires to specify an output prefix (option -o).")
-      unless ($main::outfile{output_prefix});
 
-    ## Pariwise alignments
-    if ($return_field{alignments_pairwise}) {
-      $main::outfile{alignments_pairwise} = $main::outfile{output_prefix}."_alignments_pairwise.tab";
-      $main::outfile{alignments_pairwise_html} = $main::outfile{output_prefix}."_alignments_pairwise.html";
-
-      ## Text output stream for pairwise alignments
-      $main::alignments_pairwise = &OpenOutputFile($main::outfile{alignments_pairwise});
-
-      ## Open the file for the HTML index of aligned matrices
-      $main::outfile{alignments_pairwise_html} = $main::outfile{alignments_pairwise};
-      $main::outfile{alignments_pairwise_html} =~ s/\.tab$//;
-      $main::outfile{alignments_pairwise_html} .= ".html";
-      $main::alignments_pairwise_html = &OpenOutputFile($main::outfile{alignments_pairwise_html});
-      print $main::alignments_pairwise_html "<html>\n";
-      my $title = "Pairwise alignments";
-#      $title .= " ".&RSAT::util::ShortFileName($main::outfile{alignments_pairwise});
-#      $title =~ s/\.tab//;
-      print $main::alignments_pairwise_html "<head><title>".$title."</title></head>\n";
-#      print $main::alignments_pairwise_html &sorttable_script();
-      print $main::alignments_pairwise_html "<body>\n";
-      print $main::alignments_pairwise_html "<h1>".$title."</h1>\n";
-    }
-
-    ## 1-to-N alignments
-    if ($return_field{alignments_1ton}) {
-      $main::outfile{alignments_1ton} = $main::outfile{output_prefix}."_alignments_1ton.tab";
-      $main::outfile{alignments_1ton_html} = $main::outfile{output_prefix}."_alignments_1ton.html";
-
-      ## Text output stream for 1ton alignments
-      $main::alignments_1ton = &OpenOutputFile($main::outfile{alignments_1ton});
-
-      ## Open the file for the HTML index of aligned matrices
-      $main::outfile{alignments_1ton_html} = $main::outfile{alignments_1ton};
-      $main::outfile{alignments_1ton_html} =~ s/\.tab$//;
-      $main::outfile{alignments_1ton_html} .= ".html";
-      $main::alignments_1ton_html = &OpenOutputFile($main::outfile{alignments_1ton_html});
-      print $main::alignments_1ton_html "<html>\n";
-      my $title = "One-to-n alignments";
-#      $title .= &RSAT::util::ShortFileName($main::outfile{alignments_1ton});
-#      $title =~ s/\.tab//;
-      print $main::alignments_1ton_html "<head><title>".$title."</title></head>\n";
-      print $main::alignments_1ton_html &sorttable_script();
-      print $main::alignments_1ton_html "<body>\n";
-      print $main::alignments_1ton_html "<h1>".$title."</h1>\n";
-    }
-
-    ## Define directory for the logos
-    $main::outfile{logo_dir} = $main::outfile{output}."_alignments";
-    $main::outfile{logo_dir} =~ s/\.tab$//;
-    $main::outfile{logo_dir} .= "_logos";
-   }
-
-  $main::out = &OpenOutputFile($main::outfile{output});
-
+  ################################################################
+  ## Output stream must be open in all cases, even if there is no
+  ## output prefix (in which case results are printed on STDOUT).
+  $main::out = &OpenOutputFile($main::outfile{match_table_txt});
 
   ################################################################
   ## Read input matrices
@@ -769,8 +810,10 @@ package main;
     @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
     &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
       if ($main::verbose >= 2);
+    push @infiles, "file1";
   } elsif ($infile{mlist1}){
     @matrices1 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist1}), $input_format1);
+    push @infiles, "mlist1";
   }
 
   ## Select top motifs for the first file
@@ -792,15 +835,17 @@ package main;
       &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
 	if ($main::verbose >= 2);
     }
+    push @infiles, "file2";
   } elsif($infile{mlist2}){
     @matrices2 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
+    push @infiles, "mlist2";
   }
+
   ## Select top motifs for the second file
   if (($main::top2 > 0) && ($main::top2 < scalar(@matrices2))){
     &RSAT::message::Warning("Selecting ".$main::top2." top motifs among ".scalar(@matrices2)." in file 2");
     @matrices2 = @matrices2[0..($main::top2-1)];
   }
-
   my @matrices = @matrices1;
   push @matrices, @matrices2  unless ($single_input_file);
 
@@ -814,6 +859,7 @@ package main;
   ## Load background model file
   local $bg_model;
   if ($main::infile{bg}) {
+    push @infiles, "bg";
     $bg_model = new RSAT::MarkovModel();
     &RSAT::message::TimeWarn("Loading background model from ".$bg_format." file", $main::infile{bg}) if ($main::verbose >= 2);
     $bg_model->load_from_file($main::infile{bg}, $bg_format);
@@ -1697,7 +1743,6 @@ package main;
 	@ranked_match_id = sort {$score{$metric}{$b} <=> $score{$metric}{$a}} @match_ids;
       }
 #      &RSAT::message::Debug("Ranked", join(',', @ranked_match_id)) if ($main::verbose >= 10);
-#      die "HELLO";
 
       ## Adapt scores and output line
       my $rank = 0;
@@ -1769,15 +1814,20 @@ package main;
   &RSAT::message::TimeWarn("Closing") if ($main::verbose >= 5);
 
   ################################################################
+  ## Generate the HMTL index of input/output files
+  &IndexFiles() if ($main::outfile{html_index});
+
+  ################################################################
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
-  if ($main::outfile{output}) {
+  if ($main::outfile{match_table_html}) {
     close $main::out;
-    my $html_cmd =  "text-to-html -i ".$main::outfile{output};
-    $html_cmd .= " -o ".$main::outfile{output_html};
+    my $html_cmd =  $SCRIPTS."/text-to-html -i ".$main::outfile{match_table_txt};
+    $html_cmd .= " -o ".$main::outfile{match_table_html};
     &doit($html_cmd);
+#    &RSAT::error::FatalError("HELLO"); ## DEBUG
   }
 
 
@@ -1793,6 +1843,13 @@ package main;
     print $main::alignments_1ton_html "</body>";
     print $main::alignments_1ton_html "</html>";
     close $main::alignments_1ton_html;
+  }
+
+
+  if ($main::outfile{html_index}) {
+    print $main::html_index "</body>";
+    print $main::html_index "</html>";
+    close $main::html_index;
   }
 
   exit(0);
@@ -1879,8 +1936,8 @@ sub PairwiseAlignments {
     print $alignments_pairwise $matrix2_string;
 
     ## Generate a sequence logo for the HTML output file
-    my $logo1_file = $main::outfile{logo_dir}."/".$matrix1_shifted->get_attribute("id");
-#    $matrix1_shifted->makeLogo($logo1_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+    my $logo1_file = $main::dir{logos}."/".$matrix1_shifted->get_attribute("id");
+#    $matrix1_shifted->makeLogo($logo1_file, "", $main::dir{logos}, " -h 3", 0);
     $matrix1_shifted->makeLogo($logo1_file, "", " -h 3", 0);
     my $logo1_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo1_file.".png");
     $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
@@ -1891,8 +1948,8 @@ sub PairwiseAlignments {
     print $alignments_pairwise_html "</tr>\n";
 
     ## Generate a sequence logo for the HTML output file
-    my $logo2_file = $main::outfile{logo_dir}."/".$matrix2_shifted->get_attribute("id");
-#    $matrix2_shifted->makeLogo($logo2_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
+    my $logo2_file = $main::dir{logos}."/".$matrix2_shifted->get_attribute("id");
+#    $matrix2_shifted->makeLogo($logo2_file, "", $main::dir{logos}, " -h 3", $rc);
     $matrix2_shifted->makeLogo($logo2_file, "", " -h 3", $rc);
     my $logo2_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo2_file.".png");
     $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
@@ -1915,8 +1972,8 @@ sub PairwiseAlignments {
       print $alignments_pairwise $merged_matrix_string;
 
       ## Generate a sequence logo for the merged matrix
-      my $logo_file = $main::outfile{logo_dir}."/".$id_align;
-#      $merged_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", 0);
+      my $logo_file = $main::dir{logos}."/".$id_align;
+#      $merged_matrix->makeLogo($logo_file, "", $main::dir{logos}, " -h 3", 0);
       $merged_matrix->makeLogo($logo_file, "", " -h 3", 0);
       my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo_file.".png");
       $merged_matrix_string =~ s|//\n||mg;
@@ -2121,8 +2178,8 @@ sub PrintAlignedMatrices {
 
 
     ## Generate a sequence logo for the HTML output file
-    my $logo_file = $main::outfile{logo_dir}."/".$shifted_matrix->get_attribute("id");
-#    $shifted_matrix->makeLogo($logo_file, "", $main::outfile{logo_dir}, " -h 3", $rc);
+    my $logo_file = $main::dir{logos}."/".$shifted_matrix->get_attribute("id");
+#    $shifted_matrix->makeLogo($logo_file, "", $main::dir{logos}, " -h 3", $rc);
     $shifted_matrix->makeLogo($logo_file, "", " -h 3", $rc);
     my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_1ton_html}, $logo_file.".png");
     $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
@@ -2743,49 +2800,110 @@ Supported threshold fields : rank, dEucl, cor, cov, ali_len, offset
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; compare-matrices ";
-    &PrintArguments($main::out);
-    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
-    if (%main::infile) {
-	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	  printf $main::out ";\t%-6s\t%s\n", $key, $value;
-	}
+  print $main::out "; compare-matrices ";
+  &PrintArguments($main::out);
+  printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $main::out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $main::out ";\t%-6s\t%s\n", $key, $value;
     }
-    if (%main::outfile) {
-	print $main::out "; Output files\n";
-	while (my ($key,$value) = each %main::outfile) {
-	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
-	}
+  }
+  if (%main::outfile) {
+    print $main::out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $main::out ";\t%-13s\t%s\n", $key, $value;
     }
+  }
 
-    print $main::out "; Matrices\n";
-    print $main::out join ("\t", ";", "file1", $matrix_nb1." matrices", $main::infile{file1}),"\n";
-    print $main::out join ("\t", ";", "file2", $matrix_nb2." matrices", $main::infile{file2}),"\n";
-#    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
+  print $main::out "; Matrices\n";
+  print $main::out join ("\t", ";", "file1", $matrix_nb1." matrices", $main::infile{file1}),"\n";
+  print $main::out join ("\t", ";", "file2", $matrix_nb2." matrices", $main::infile{file2}),"\n";
+  #    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
 
-    ## Matrices in the first file
-    my $m1 = 0;
-    foreach my $matrix (@matrices1) {
-      $m1++;
-      print $main::out join ("\t", ";", "file1", $m1,
-			     $matrix->get_attribute("ncol"),
-			     $matrix->get_attribute("nsites"),
-			     $matrix->get_attribute("consensus.IUPAC")), "\n";
-    }
+  ## Matrices in the first file
+  my $m1 = 0;
+  foreach my $matrix (@matrices1) {
+    $m1++;
+    print $main::out join ("\t", ";", "file1", $m1,
+			   $matrix->get_attribute("ncol"),
+			   $matrix->get_attribute("nsites"),
+			   $matrix->get_attribute("consensus.IUPAC")), "\n";
+  }
 
-    ## Matrices in the second file
-    my $m2 = 0;
-    foreach my $matrix (@matrices2) {
-      $m2++;
-      print $main::out join ("\t", ";", "file2", $m2,
-			     $matrix->get_attribute("ncol"),
-			     $matrix->get_attribute("nsites"),
-			     $matrix->get_attribute("consensus.IUPAC")),  "\n";
-    }
-    printf $out &PrintThresholdValues();
+  ## Matrices in the second file
+  my $m2 = 0;
+  foreach my $matrix (@matrices2) {
+    $m2++;
+    print $main::out join ("\t", ";", "file2", $m2,
+			   $matrix->get_attribute("ncol"),
+			   $matrix->get_attribute("nsites"),
+			   $matrix->get_attribute("consensus.IUPAC")),  "\n";
+  }
+  printf $out &PrintThresholdValues();
 }
 
+
+################################################################
+## Generate a HTML index with links to all input/output files
+sub IndexFiles {
+  &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
+
+  ## Directories
+  print $html_index "<h2>Directories</h2>";
+  print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+  print $html_index "<tr>\n";
+  print $html_index "<th>Type</th>";
+  print $html_index "<th>Directory</th>";
+  print $html_index "</tr>\n";
+  foreach my $key (@dirs) {
+    my $file = $dir{$key};
+    my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+    print $html_index "<tr>\n";
+    print $html_index "<td>".$key."</td>";
+    print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+    print $html_index "</tr>\n";
+  }
+  print $html_index "</table>\n";
+
+#   ## Input files
+#   print $html_index "<h2>Input files</h2>";
+#   print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+#   print $html_index "<tr>\n";
+#   print $html_index "<th>Type</th>";
+#   print $html_index "<th>File</th>";
+#   print $html_index "</tr>\n";
+#   foreach my $key (@infiles) {
+#     my $file = $infile{$key};
+#     my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+#     print $html_index "<tr>\n";
+#     print $html_index "<td>".$key."</td>";
+#     print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+#     print $html_index "</tr>\n";
+#   }
+#   print $html_index "</table>\n";
+
+
+  ## Output files
+  print $html_index "<h2>Output files</h2>";
+  print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+  print $html_index "<tr>\n";
+  print $html_index "<th>Type</th>";
+  print $html_index "<th>File</th>";
+  print $html_index "</tr>\n";
+  foreach my $key (@outfiles) {
+    next if ($key eq "html_index");
+    my $file = $outfile{$key};
+    my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+    print $html_index "<tr>\n";
+    print $html_index "<td>".$key."</td>";
+    print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+    print $html_index "</tr>\n";
+  }
+  print $html_index "</table>\n";
+
+  &RSAT::message::TimeWarn("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
+}
 
 ################################################################
 #### check threshold on some parameter
