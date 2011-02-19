@@ -37,7 +37,7 @@ $default{info}="";
 $default{parameters}="";
 $default{profile}="";
 $default{weights}="";
-$default{pseudo_weight}=1;
+$default{pseudo_counts}=1;
 $default{header}="checked";
 $default{margins}="";
 $default{links}="checked";
@@ -56,7 +56,6 @@ $default{logo}="checked";
 $default{error_bar}="checked";
 $default{small_correc}="checked";
 $default{stretch}="";
-
 
 &ReadMatrixFromFile();
 
@@ -95,7 +94,7 @@ print "<hr>";
 
 ## Background model
 my %bg_params =("from_matrix" => 1);
-&GetBackgroundModel(\%bg_params);
+&GetBackgroundModel(%bg_params);
 
 print "<br/><b>Note:</b> Only Bernoulli models are supported. Higher-order Markov models are converted into Markov 0 (Bernoulli).";
 print "<hr>";
@@ -136,24 +135,8 @@ print $query->checkbox(-name=>'small_correc',
 print $query->checkbox(-name=>'stretch',
 		       -checked=>$default{stretch},
 		       -label=>'Stretching of logos to entire length'); 
-  
-  
 print ")<br>\n";
- 
 
-
-## Pseudo weight
-#print "<p><A HREF='help.convert-matrix.html#item_weight'><B>Pseudo-weight</B></A>&nbsp; ";
-#print $query->textfield(-name=>'pseudo_weight',
-#			-default=>$default{pseudo_weight},
-#			-size=>2);
-
-## Decimals
-#print "&nbsp;"x5;
-#print "<A HREF='help.convert-matrix.html#decimals'><B>Decimals</B></A>&nbsp; ";
-#print $query->textfield(-name=>'decimals',
-#			-default=>$default{decimals},
-#			-size=>2);
 print "<br/>";
 print "<A HREF='help.convert-matrix.html#decimals'><B>score decimals</B></A>\n";
 print $query->popup_menu(-name=>'decimals',
@@ -200,7 +183,7 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"convert-matrix_form.cgi");
-$demo_matrix=`cat convert-matrix_demo_data.txt`;
+my $demo_matrix=`cat demo_files/convert-matrix_demo_data.txt`;
 print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'input_format',-default=>'tab');

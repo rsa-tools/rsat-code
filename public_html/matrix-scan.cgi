@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.35 2010/11/27 16:30:56 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.36 2011/02/19 06:41:31 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -260,16 +260,26 @@ sub ReadMatrixScanParameters {
     $parameters .= " -consensus_name ";
   }
 
+
   ################################################################
-  ## pseudo-counts and weights are mutually exclusive
+  ## Pseudo-counts
   if (&IsReal($query->param('pseudo_counts'))) {
     $parameters .= " -pseudo ".$query->param('pseudo_counts');
+  } else {
+    &FatalError("Pseudo-count should be a real number");
   }
- 
   if ($query->param('pseudo_distribution') eq "equi_pseudo") {
     $parameters .= " -equi_pseudo ";
   }
- 
+  #   ################################################################
+  #   ## pseudo-counts and weights are mutually exclusive
+  #   if (&IsReal($query->param('pseudo_counts'))) {
+  #     $parameters .= " -pseudo ".$query->param('pseudo_counts');
+  #   }
+  #   if ($query->param('pseudo_distribution') eq "equi_pseudo") {
+  #     $parameters .= " -equi_pseudo ";
+  #   }
+
   ################################################################
   ## decimals
   if (&IsReal($query->param('decimals'))) {
