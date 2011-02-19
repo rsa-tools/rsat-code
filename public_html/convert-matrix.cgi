@@ -94,53 +94,15 @@ if (&IsInteger($query->param('perm'))) {
 
 ################################################################
 ## Matrix input format
-
 local $input_format = lc($query->param('matrix_format'));
 ($input_format) = split (/\s+/, $input_format);
 #$input_format =~ s/cluster\-buster/cb/i;
 #$input_format =~ s/(\S+)/$1/; ## Only retain the first word
 $parameters .= " -from ".$input_format;
 
-
 ################################################################
 ## Background model method
-local $bg_method = $query->param('bg_method');
-if ($bg_method eq "from_matrix") {
-
-} elsif ($bg_method eq "bgfile") {
-  ## Select pre-computed background file in RSAT genome directory
-  local $organism_name = $query->param("organism");
-  local $noov = "ovlp";
-  local $background_model = $query->param("background");
-  local $oligo_length = 1;
-  $bg_file = &ExpectedFreqFile($organism_name,
-			       $oligo_length, $background_model,
-			       noov=>$noov, str=>"-1str");
-  $parameters .= " -bgfile ".$bg_file;
-
-} elsif ($bg_method =~ /upload/i) {
-  ## Upload user-specified background file
-  local $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
-  local $upload_bgfile = $query->param('upload_bgfile');
-  if ($upload_bgfile) {
-    if ($upload_bgfile =~ /\.gz$/) {
-      $bgfile .= ".gz";
-    }
-    local $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
-    open BGFILE, ">$bgfile" ||
-      &cgiError("Cannot store background file in temp dir.");
-    while (<$upload_bgfile>) {
-      print BGFILE;
-    }
-    close BGFILE;
-    $parameters .= " -bgfile $bgfile";
-    $parameters .= " -bg_format ".$query->param('bg_format');
-  } else {
-    &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
-  }
-} else {
-  &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
-}
+&SetBackgroundModel();
 
 ################################################################
 ## bg_pseudo
