@@ -31,7 +31,7 @@ $default{organism} = "Saccharomyces cerevisiae";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
 $default{consensus_as_name} = "CHECKED";
-$default{pseudo_distribution} = "bginput";
+$default{pseudo_distribution} = "pseudo_prior";
 $default{pseudo_prior} = "pseudo_prior";
 $checked{$default{pseudo_prior}} = "CHECKED";
 $default{bg_pseudo} = "0.01";
@@ -164,7 +164,7 @@ print "<hr>";
 ################################################################
 #### Matrix specification
 print "<hr>";
-&GetMatrix("1");
+&GetMatrix("consensus"=>1);
 
 ################################################################
 ## Background model
@@ -175,7 +175,7 @@ my %bg_params =("markov" => 1,
 		"bg_window" => 1,
 		"markov_message" => 1
 	       );
-&GetBackgroundModel(\%bg_params);
+&GetBackgroundModel(%bg_params);
 
 print "<hr>";
 
