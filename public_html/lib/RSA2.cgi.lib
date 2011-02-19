@@ -310,14 +310,14 @@ sub SequenceChoice {
 #Multiple Sequence choice
 sub MultiSequenceChoice {
 
-	my $seq_title = shift(@_);
-    my $seq_num = shift(@_);
-    my $sequenceChoiceString = "";
-    $sequenceChoiceString .=  "<B>$seq_title</B>";
-    #$sequenceChoiceString .=  "<UL>\n";
-    my $sequence_file = "";
+  my $seq_title = shift(@_);
+  my $seq_num = shift(@_);
+  my $sequenceChoiceString = "";
+  $sequenceChoiceString .=  "<B>$seq_title</B>";
+  #$sequenceChoiceString .=  "<UL>\n";
+  my $sequence_file = "";
     
-    if ($sequence_file = $query->param(sequence_file)) {
+  if ($sequence_file = $query->param(sequence_file)) {
     ### sequence file is already on the server machine 
     ### (piped from a previous script)
     $sequence_url = $sequence_file;
@@ -328,27 +328,27 @@ sub MultiSequenceChoice {
     $sequence_format = $query->param(sequence_format);
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
-  	} else {
+  } else {
     
     #### sequence format (pop-up menu)
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     #$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
-   #  $sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format'.$seq_num,
-# 						 -Values=>['fasta', 
-# 							   'ig',
-# 							   'wconsensus',
-# 							   'raw',
-# 							   'ncbi',
-# 							   "tab",
-# 							   'multi'],
-# 						 -default=>$sequence_format);
+    #  $sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format'.$seq_num,
+    # 						 -Values=>['fasta', 
+    # 							   'ig',
+    # 							   'wconsensus',
+    # 							   'raw',
+    # 							   'ncbi',
+    # 							   "tab",
+    # 							   'multi'],
+    # 						 -default=>$sequence_format);
 
-   #  $sequence_format = $query->param(sequence_format, "fasta");
+    #  $sequence_format = $query->param(sequence_format, "fasta");
 
-#    $sequenceChoiceString .= $query->param(sequence_format);
+    #    $sequenceChoiceString .= $query->param(sequence_format);
     ### text area to copy-paste the sequence
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;\n";
-    $sequenceChoiceString .=  "Paste your sequence in fatsa format in the box below<BR>\n";
+    $sequenceChoiceString .=  "Paste your sequence in fasta format in the box below<BR>\n";
 
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
 					       -default=>$default{sequence},
@@ -364,10 +364,10 @@ sub MultiSequenceChoice {
 						-maxlength=>200);
     $sequenceChoiceString .=  "<BR>\n";
     
-    }
+  }
     
     
-    print($sequenceChoiceString);
+  print($sequenceChoiceString);
 }
 
 
@@ -720,51 +720,66 @@ sub SeqBoxMQ {
 
 
 ################################################################
-## MATRICES
+## Display the options for input matrices
+##
+## Arguments can be entered to modify the form by skipping some
+## options.
+##
+## Usage: &GetMatrix(%args);
+##
+## Supported arguments:
+##  no_pseudo=>1   do not display the pseudo-count options
+##  consensus=>1   do not display the option "consensus as matrix name"
+##  nowhere=>1     do not display the info "Where to find matrices"
 sub GetMatrix {
-  my $consensus = shift;
-  my $simple = shift;
+  my (%args) = @_;
+#  my $consensus = $args{consensus};
+#  my $no_pseudo = $args{no_pseudo};
+
   print "<B>Matrix (or matrices)</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
 
   my %supported_input_format = (
-			     'alignace'=> 1,
-			     'assembly'=>1,
-			     'clustal'=>1,
-			     'cluster-buster'=>1,
-			     'consensus'=>1,
-			     'feature'=>1,
-			     'gibbs'=> 1,
-			     'infogibbs'=>1,
-			     'jaspar'=>1,
-			     'meme'=>1,
-			     'motifsampler'=>1,
-			     'stamp'=>1,
-			     'tab'=>1,
-			     'transfac'=>1,
-			     'uniprobe'=>1,
-			  );
-## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
-## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
-## I SHOULD CHECK LATER
-##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format; 
+				'alignace'=> 1,
+				'assembly'=>1,
+				'clustal'=>1,
+				'cluster-buster'=>1,
+				'consensus'=>1,
+				'feature'=>1,
+				'gibbs'=> 1,
+				'infogibbs'=>1,
+				'jaspar'=>1,
+				'meme'=>1,
+				'motifsampler'=>1,
+				'stamp'=>1,
+				'tab'=>1,
+				'transfac'=>1,
+				'uniprobe'=>1,
+			       );
+  ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
+  ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
+  ## I SHOULD CHECK LATER
+  ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format; 
   my @supported_input_formats = sort(keys( %supported_input_format));
-#  my $supported_input_formats = join ",", @supported_input_formats;
-#  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
+  #  my $supported_input_formats = join ",", @supported_input_formats;
+  #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   #### matrix format 
   print $query->popup_menu(-name=>'matrix_format',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
-  if ($consensus) {
+
+  ## Display option fo use consensus as matrix name
+  if ($args{consensus}) {
     print $query->checkbox(-name=>'consensus_as_name',
 			   -checked=>$default{consensus_as_name},
 			   -label=>' use motif consensus as matrix name ');
   }
-  #### text area to enter the matrix
+
+  ## Text area to enter the matrix
   print "<BR>\n";
   print "<div><div style='float:left;'>";
   print $query->textarea(-name=>'matrix',
@@ -772,11 +787,14 @@ sub GetMatrix {
 			 -rows=>4,
 			 -columns=>60);
 
-  print '</div><div class="menu"><font color=#FF0000>New!</font>
+
+  ## Propose help to find matrices
+  unless ($args{nowhere}) {
+    print '</div><div class="menu"><font color=#FF0000>New!</font>
 <div class="menu_heading_closed"
 onclick="toggleMenu(';
-  print "'98'";
-  print ')" id="heading98"> Where to find matrices ?</div>
+    print "'98'";
+    print ')" id="heading98"> Where to find matrices ?</div>
 <div id="menu98" class="menu_collapsible">
 	<a class="menu_item" href="http://www.pazar.info/" target="_blank">PAZAR</a>
 	<a class="menu_item" href="http://the_brain.bwh.harvard.edu/uniprobe/" target="_blank">UniProbe</a>
@@ -790,27 +808,49 @@ onclick="toggleMenu(';
 </div>
 <div style="clear:both;"></div>
 ';
+  }
 
-	unless ($simple) {
-  #### pseudo-counts
-  print "<BR>\n";
-  print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
-  print $query->textfield(-name=>'pseudo_counts',
-			  -default=>$default{pseudo_counts},
-			  -size=>2);
-
-  print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
-  print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
-	}
+  ## Display additional options: pseudo-count and pseudo-count distribution
+  unless ($args{no_pseudo}) {
+    #### pseudo-counts
+    print "<BR>\n";
+    print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+    print $query->textfield(-name=>'pseudo_counts',
+			    -default=>$default{pseudo_counts},
+			    -size=>2);
+    print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
+    print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
+  }
 }
 
 
 ################################################################
-## BACKGROUND MODEL for matrix-based programs
+## Display the options to select a background model for matrix-based
+## programs.
+##
+## Parameters can change the options to be displayed.
+##
+## Usage: &GetBackgroundModel(%params);
+##
+## Supported parameters:
+##   title=>'alternative title'  replace the title "Background model" by the specified title
+##   title_choose=>1             display a radio button
+##   simple=>1                   simplify the display
+##   markov=>1                   display Markov order option
+##   markov_message=>1           display message "higher orders can b time-consuming"
+##   from_matrix=>1              display option to estimate BG model from input matrix
+##   bg_input=>1                 display option to estimate BG model from input sequences
+##   bg_window=>1                display option to estimate BG model from sliding window
+##   taxon=>1                    display option to select taxon-specific BG models
+##   strand=>1                   display option single/both strands
+##   noov=>1                     display "no overlap" option
+##   title2=>1                   display a second title ????
+##   sep_bg_pseudo=>1            draw a horizontal line to separate bg pseudo options
+##   no_bg_pseudo=>1             do not display bg pseudo option
 sub GetBackgroundModel {
-  my ($params_ref) = shift;
-  my %params = %$params_ref;
-  my $simple = shift;
+#  my ($params_ref) = shift;
+  my %params = @_;;
+#  my $simple = shift;
 
 
   my $title = "Background model";
@@ -825,37 +865,41 @@ sub GetBackgroundModel {
     print "<p><B>$title</B><br>";
   }
 
+  #### Markov order
   if ($params{markov}) {
-    #### Markov order
     print ("<b><a href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
-    if ($simple) {
-        print $query->popup_menu(-name=>'markov_order',
-			     -Values=>[0..2],
-			     -default=>$default{markov_order});
-    
+    if ($params{simple}) {
+      print $query->popup_menu(-name=>'markov_order',
+			       -Values=>[0..2],
+			       -default=>$default{markov_order});
     } else {
-    print $query->popup_menu(-name=>'markov_order',
-			     -Values=>[0..7],
-			     -default=>$default{markov_order});
-	}
+      print $query->popup_menu(-name=>'markov_order',
+			       -Values=>[0..7],
+			       -default=>$default{markov_order});
+    }
     if ($params{markov_message}) {
       print ("&nbsp;&nbsp;&nbsp;<font color=red>High orders can be time-comsuming.</font>");
     }
   }
   print "<p>";
-  ## Method to estimate the bg model
 
+
+  ## Method to estimate the bg model
   print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
 
+
+  ## Display option to estimate BG model from input matrix
   if ($params{from_matrix}) {
     print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='from_matrix' $checked{'from_matrix'}>","<b>Estimate from input matrix</b>");
   }
 
+  ## Display option to estimate BG model from input sequences
   if ($params{bg_input}) {
     #### Input sequences
     print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bginput' $checked{'bginput'}>","<b>Estimate from input sequences</b>");
   }
 
+  ## Display option to estimate BG model from sliding window
   if ($params{bg_window}) {
     ## Sliding window
     print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>","<b>Sliding window</b> &nbsp;");
@@ -871,6 +915,7 @@ sub GetBackgroundModel {
   }
   print ("<b>Genome subset</b> &nbsp; ",$query->popup_menu(-name=>'background',-Values=>["upstream-noorf","upstream","intergenic"],-default=>$default{background}));
 
+  ## Display option to select taxon-specific BG models
   if ($params{taxon}) {
     print "<br/>";
     print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -883,6 +928,7 @@ sub GetBackgroundModel {
     print  &OrganismPopUpString();
   }
 
+  ### Display strand option
   if ($params{strands}) {
     print "<B><A HREF='help.convert-background-model.html#item__2d1str'>Count on</A></b>\n";
     print $query->popup_menu(-name=>'strands',
@@ -893,12 +939,17 @@ sub GetBackgroundModel {
 			     -default=>$default{strands});
     print "&nbsp;&nbsp";
   }
+
+
+  ## Display "no overlap" option
   if ($params{noov}) {
     print ($query->checkbox(-name=>'noov',-checked=>$default{noov},-label=>''));
     print "<B><A HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
     print "<br/>";
   }
 
+
+  ## Display a second title ????
   if ($params{title2}) {
     if ($params{title_choose}) {
       print "<p><b> OR <b></p>";
@@ -908,36 +959,42 @@ sub GetBackgroundModel {
   }
 
   #### custom background model
-  unless ($simple) {
-  unless ($params{title_choose}) {
-    print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
-  }
-  print "<a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
-  print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
-  #### bg format 
-  print $query->popup_menu(-name=>'bg_format',
-			   -Values=>[
-				     'oligo-analysis',
-				     'MotifSampler',
-				     'meme'
-				    ],
-			   -default=>$default{bg_format});
+  unless ($params{simple}) {
+    unless ($params{title_choose}) {
+      print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
+    }
+    print "<a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
+    print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
 
-  print $query->filefield(-name=>'upload_bgfile',
-			  -default=>'starting value',
-			  -size=>30,
-			  -maxlength=>200);
+    #### bg format 
+    print $query->popup_menu(-name=>'bg_format',
+			     -Values=>[
+				       'oligo-analysis',
+				       'MotifSampler',
+				       'meme'
+				      ],
+			     -default=>$default{bg_format});
 
-  if ($params{sep_bg_pseudo}) {
-    print "<hr/>";
+    print $query->filefield(-name=>'upload_bgfile',
+			    -default=>'starting value',
+			    -size=>30,
+			    -maxlength=>200);
+
+
+    #### Pseudo-frequencies for the BG model
+    unless ($params{no_bg_pseudo}) {
+      ## Draw a horizontal line to separate bg pseudo options
+      if ($params{sep_bg_pseudo}) {
+	print "<hr/>";
+      }
+
+      print "<p/>\n";
+      print "<B><A HREF='help.matrix-scan.html'>Pseudo-frequencies</A></b>\n";
+      print $query->textfield(-name=>'bg_pseudo',
+			      -default=>$default{bg_pseudo},
+			      -size=>5);
+    }
   }
-  #### pseudo-counts
-  print "<p/>\n";
-  print "<B><A HREF='help.matrix-scan.html'>Pseudo-frequencies</A></b>\n";
-  print $query->textfield(-name=>'bg_pseudo',
-			  -default=>$default{bg_pseudo},
-			  -size=>5);
-	}
 }
 
 
@@ -1030,7 +1087,7 @@ sub GetMatrixDBfromBox {
   my $loaded_params ="";
   my @selected_db = ();
 
-  ## load the file containing the path to the databases
+  ## load the file containing the description and path of supported motif databases
   my $mat_db = $ENV{RSAT}."/public_html/data/motif_databases/db_matrix_files.tab" ;
   open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
   while (my $line = <MAT_DB>) {
@@ -1040,10 +1097,21 @@ sub GetMatrixDBfromBox {
     chomp($line);
 #    my (@mat_line = split (/\t/,$line);
     my ($db_name, $format,  $file, $descr, $version) = split (/\t/,$line);
+
+    ## Treat multiple database selections if the DB list was presented with checkboxes
     if ($query->param($db_name) =~ /on/){
       $loaded_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/data/motif_databases/".$file;
       push @selected_db, $db_name;
+    } else {
+
+      ## Treat single database selection if the DB list was presented with radio box
+      if ($query->param('db_choice') eq $db_name) {
+	$loaded_params .= " -file2 ".$ENV{RSAT}."/public_html/data/motif_databases/".$file;
+	$loaded_params .= " -format2 ".$format;
+	push @selected_db, $db_name;
+      }
     }
+
   }
   close MAT_DB;
   return($loaded_params, @selected_db);
@@ -1138,6 +1206,59 @@ sub close_menu_heading {
   $string .= "</div>\n";
   $string .= "<p class=\"clear\"></p>";
   return($string);
+}
+
+
+################################################################
+## Print the HTML header for a result file (include styles etc)
+sub PrintHtmlResultHeader {
+  my (%args) = @_;
+  my $header = "";
+  my $program = $args{program} || "RSAT";
+  my $title = $main::param{title} || "result";
+  my $result_toc = $args{result_toc};
+
+  ## HTML Header and title
+  $header .=  "<html>\n";
+  $header .=  "<head>\n";
+  $header .=  "<title>".$program." ".$title."</title>\n";
+
+  ## Page styles
+  $header .=  "<style type='text/css'>\n";
+  $header .=  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+  $header .=  "</style>\n";
+#  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
+
+  ## Java scripts
+  $header .=  sorttable_script();
+#  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
+  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/RSAT_menu.js");
+  $header .=  "</head>\n";
+
+  ## Start HTML body
+  $header .=  "<body>\n";
+  if (defined($ENV{rsat_www})) {
+    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - ".$program." result</h1>\n";
+  } else {
+    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - ".$program." result</h1>\n";
+  }
+  $header .=  "<h3 style='text-align:center;'>Analysis: ";
+  $header .=  $title." (";
+  $header .=  &RSAT::util::Date();
+  $header .=  ")</h3>\n";
+
+  ## Reserve space for result TOC in the beginning of the form
+  if ($result_toc) {
+    $header .=  "<div id='Menu_space'>\n";
+    $header .=  "<div id='Menu_wait'>\n";
+    $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>
+  <p style='text-align:center;color:green'>Results will progressively appear on this page <br/>
+  <b>Please regularly refresh the page until this message disappears.</b></p>\n";
+    $header .=  "</div>\n";
+    $header .=  "</div>\n";
+  }
+
+  return($header);
 }
 
 ################################################################
@@ -1291,16 +1412,13 @@ sub ServerOutput {
 ################################################################
 ## Run a Web server query in background and send an email with the URL
 ## when finished.
+##
+## index=>$index_file  index generated by the called program (e.g. compare-matrices)
 sub EmailTheResult {
     my ($command, $email_address, $tmp_file_name, %args) = @_;
     my $delay = "72 hours";
     my $mail_title = $args{title};
     my $no_email = $args{no_email} || 0;
-
-#    my $clean_command = $command;
-#    $clean_command =~ s/\"/\'/g; ## Avoid clashes with the quotes
-#    $clean_command =~ s|$ENV{RSAT}\/||g; ## Avoid providing the full path of the RSAT package
-#    $clean_command =~ s|public_html\/+tmp\/+|$ENV{rsat_www}\/tmp\/|g; ## Replace input/output file names by URL
 
     my $clean_command = &RSAT::util::hide_RSAT_path($command);
 

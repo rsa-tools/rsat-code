@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.164 2011/02/17 04:54:49 rsat Exp $
+# $Id: peak-motifs,v 1.165 2011/02/19 06:34:11 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.164 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.165 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2242,52 +2242,6 @@ sub TimeLog {
 }
 
 
-################################################################
-## Print the HTML header with styles etc
-sub PrintHtmlFileHedaer {
-  my $header = "";
-
-  ## HTML Header and title
-  $header .=  "<html>\n";
-  $header .=  "<head>\n";
-  $header .=  "<title>peak-motifs ".$main::param{title}."</title>\n";
-
-  ## Page styles
-  $header .=  "<style type='text/css'>\n";
-  $header .=  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
-  $header .=  "</style>\n";
-#  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
-
-  ## Java scripts
-  $header .=  sorttable_script();
-#  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
-  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/RSAT_menu.js");
-  $header .=  "</head>\n";
-
-  ## Start HTML body
-  $header .=  "<body>\n";
-  if (defined($ENV{rsat_www})) {
-    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - peak-motifs result</h1>\n";
-  } else {
-    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - peak-motifs result</h1>\n";
-  }
-  $header .=  "<h3 style='text-align:center;'>Analysis: ";
-  $header .=  $main::param{title}." (";
-  $header .=  &RSAT::util::Date();
-  $header .=  ")</h3>\n";
-
-  ## Reserve space for result TOC in the beginning of the form
-  $header .=  "<div id='Menu_space'>\n";
-  $header .=  "<div id='Menu_wait'>\n";
-  $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>
-  <p style='text-align:center;color:green'>Results will progressively appear on this page <br/>
-  <b>Please regularly refresh the page until this message disappears.</b></p>\n";
-  $header .=  "</div>\n";
-  $header .=  "</div>\n";
-
-  return($header);
-}
-
 
 ################################################################
 ## Generate a HTML table of content of the results with links to the
@@ -2720,7 +2674,7 @@ sub OpenSynthesis {
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
 
-  print $syn &PrintHtmlFileHedaer();
+  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::title, "result_toc"=>1);
 }
 
 
@@ -4289,7 +4243,7 @@ sub ReportParamsAndFiles {
 
   ## Open HTML file for links
   local $links = &OpenOutputFile($main::outfile{links});
-  &PrintHtmlFileHedaer($links);
+  &PrintHtmlResultHeader($links);
 
   ## Read the list of directories and files for the discovered motifs
   &ReadMotifTable();
