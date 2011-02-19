@@ -23,11 +23,11 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ################################################################
 ## configuration
 $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
-$output_directory = sprintf "peak-motifs.%s", &AlphaDate();
+$output_dir = sprintf "peak-motifs.%s", &AlphaDate();
 $output_prefix = "peak-motifs";
 
 ## We need to create the output directory before starting peak-motif  for uploading the input sequences and reference motifs
-$output_path = $TMP."/".$output_directory;
+$output_path = $TMP."/".$output_dir;
 $output_path =~ s|\/\/|\/|g;
 system("mkdir -p $output_path");
 # $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/perl-scripts" . ":$ENV{RSAT}/python-scripts";
@@ -262,16 +262,12 @@ $parameters .= " -outdir $output_path";
 
 ################################################################
 ## display or send result
-$index_file = $output_directory."/".$output_prefix."_synthesis.html";
+$index_file = $output_dir."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere",$index_file, title=>$mail_title ,no_email=>1);
+  &EmailTheResult("$command $parameters", "nobody@nowhere", $index_file, title=>$mail_title ,no_email=>1);
 } else {
-
-&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
-# $debug = "$command $parameters 2> $TMP/log.txt";
-# print $debug;
-# `$debug`;
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 }
 
 ################################################################
