@@ -78,7 +78,7 @@ my %bg_params = ("markov" => 1,
 		 "sep_bg_pseudo" => 1
 		);
 
-&GetBackgroundModel(\%bg_params);
+&GetBackgroundModel(%bg_params);
 
 print "<hr>";
 
