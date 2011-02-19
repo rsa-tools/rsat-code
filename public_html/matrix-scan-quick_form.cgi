@@ -13,8 +13,6 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
-$simple = 1; ## this turns the forms into simple mode
-
 $default{demo_descr1} = "";
 
 $default{sequence_file} = ""; ### [-f <Name of sequence file---default: standard input>]
@@ -29,7 +27,7 @@ $default{markov_order} = "0";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
-$default{pseudo_distribution} = "bginput";
+$default{pseudo_distribution} = "pseudo_prior";
 $default{pseudo_prior} = "pseudo_prior";
 $checked{$default{pseudo_prior}} = "CHECKED";
 $default{bg_pseudo} = "0.01";
@@ -37,7 +35,6 @@ $default{bg_format}="oligo-analysis";
 $default{decimals} = "1";
 $default{analysis_type} = "analysis_sites";
 $checked{$default{analysis_type}} = "CHECKED";
-
 
 ## Return fields
 $default{return_field} = "sites";
@@ -76,7 +73,7 @@ print "<div align=center>";
 print "<b>Citation</b>: <a href='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A>, <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Defrance</a> and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</a> (2008).<br> Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
 print "</p>";
 
-print "<a href='matrix-scan_form.cgi'><b><font color=red>--> Click here to access the ADVANCED form <-- </font></b></a> <i>(personal background, CRER detection, overrepresentation of sites,...)</i>";
+print "<a href='matrix-scan_form.cgi'><b><font color=red>--> Click here to access the ADVANCED form <-- </font></b></a> <i>(custom background, CRER detection, overrepresentation of sites,...)</i>";
 print "</div>";
 
 ## demo description
@@ -96,7 +93,7 @@ print "</fieldset><p/>";
 print "<fieldset>
 <legend><b><a href='help.convert-matrix.html#io_format'>Matrix </a></b></legend>";
 
-&GetMatrix("0",$simple);
+&GetMatrix("consensus"=>0,"no_pseudo"=>1);
 print "</fieldset><p/>";
 
 ################################################################
@@ -107,9 +104,10 @@ print "<fieldset>
 my %bg_params =("markov" => 1,
 		"bg_input" => 1,
 		"bg_window" => 0,
-		"markov_message" => 0
+		"markov_message" => 0,
+		"simple"=>1,
 	       );
-&GetBackgroundModel(\%bg_params,$simple);
+&GetBackgroundModel(%bg_params);
 
 print "</fieldset><p/>";
 
