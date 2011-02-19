@@ -23,17 +23,17 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ################################################################
 ## configuration
 $command = "$ENV{RSAT}/perl-scripts/compare-matrices";
-$output_directory = sprintf "compare-matrices.%s", &AlphaDate();
+$output_dir = sprintf "compare-matrices.%s", &AlphaDate();
 
 ## We need to create the output directory before starting
 ## compare-matrices, since it will generate multiple output files.
-$output_path = $TMP."/".$output_directory;
+$output_path = $TMP."/".$output_dir;
 $output_path =~ s|\/\/|\/|g;
 system("mkdir -p $output_path");
 # $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/perl-scripts" . ":$ENV{RSAT}/python-scripts";
 # $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/bin";
 
-$output_prefix = $output_path."/compare-matrices";
+$output_prefix = "compare-matrices";
 
 ################################################################
 ## result page header
@@ -42,7 +42,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("compare-matrices result", "results");
-&ListParameters() if ($ENV{rsat_echo} >=0);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ### update log file
 &UpdateLogFile();
@@ -65,7 +65,7 @@ $parameters .= " -format1 ".$query_matrix_format;
 
 ################################################################
 #### Query matrix file
-$matrix_file = $output_prefix."_query_matrices.".$query_matrix_format;
+$matrix_file = $output_path."/".$output_prefix."_query_matrices.".$query_matrix_format;
 if ($query->param('matrix')) {
     open MAT, "> $matrix_file";
     print MAT $query->param('matrix');
@@ -79,16 +79,16 @@ push @result_files, ("Input file",$matrix_file);
 push @result_files, ("Result file",$result_file);
 
 
-################################################################
-## Pseudo-counts
-if (&IsReal($query->param('pseudo_counts'))) {
-  $parameters .= " -pseudo ".$query->param('pseudo_counts');
-} else {
-  &FatalError("Pseudo-count should be a real number");
-}
-if ($query->param('pseudo_distribution') eq "equi_pseudo") {
-  $parameters .= " -equi_pseudo ";
-}
+# ################################################################
+# ## Pseudo-counts CURRENTLY NOT SUPPORTED, SHOULD BE ADDED
+# if (&IsReal($query->param('pseudo_counts'))) {
+#   $parameters .= " -pseudo ".$query->param('pseudo_counts');
+# } else {
+#   &FatalError("Pseudo-count should be a real number");
+# }
+# if ($query->param('pseudo_distribution') eq "equi_pseudo") {
+#   $parameters .= " -equi_pseudo ";
+# }
 
 ################################################################
 ## Background model method
@@ -124,31 +124,33 @@ if ($query->param('db_choice') eq "custom") {
 } else {
   my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
   if (scalar(@selected_db) > 0) {
-    $parameters .= " -file2 ".$selected_db[0];
+    $parameters .= $mat_db_params;
   }
 }
 
 ### other default parmaters
 $parameters .= " -strand DR";
 
+## Output fields
+my $output_fields = qw(cor,Ncor,NIcor,NsEucl,SSD,NSW,matrix_id,matrix_ac,width,strand,offset,consensus,rank,ranks,alignments_1ton);
+$parameters .= " -return ".$output_fields;
+
+
 ### output directory
-$parameters .= " -o $output_path";
+$output_file = $output_path."/".$output_prefix.".tab";
+$parameters .= " -o ".$output_file;
 
 ## Report the full command before executing
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 ################################################################
 ## display or send result
-$index_file = $output_directory."/".$output_prefix."_synthesis.html";
+$index_file = $output_dir."/".$output_prefix."_index.html";
 my $mail_title = join (" ", "[RSAT]", "compare-matrices", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere",$index_file, title=>$mail_title ,no_email=>1);
+  &EmailTheResult("$command $parameters", "nobody@nowhere","", title=>$mail_title ,no_email=>1,index=>$index_file);
 } else {
-
-&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
-# $debug = "$command $parameters 2> $TMP/log.txt";
-# print $debug;
-# `$debug`;
+  &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
 }
 
 ################################################################
