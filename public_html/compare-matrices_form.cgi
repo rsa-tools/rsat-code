@@ -36,6 +36,9 @@ $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
 $default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = 0.7;
 $default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = 0.4;
 $default{'return_match_rank'} = "CHECKED"; $default{'uth_match_rank'} = 50;
+$default{'logoDP'} = "CHECKED";
+$default{'return_NSW'} = "CHECKED";
+$default{'return_NsEucl'} = "CHECKED";
 
 
 ## motif database
