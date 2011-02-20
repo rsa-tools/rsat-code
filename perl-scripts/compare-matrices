@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.92 2011/02/19 06:34:31 jvanheld Exp $
+# $Id: compare-matrices,v 1.93 2011/02/20 11:32:56 jvanheld Exp $
 #
 ############################################################
 
@@ -110,8 +110,7 @@ Since the matrices are not supposed to be in phase, for each pair of
 matrix, the program tests all possible I<offset> (shift) values
 between the two matrices.
 
-=head1 (DIS)SIMILARITY METRICS
-
+=head1 MATCHING SCORES
 
 =head2 Symbols used for the metrics
 
@@ -405,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -426,8 +425,8 @@ package main;
 			      "logoDP", ##  Dot product between sequence logo values (column info * frequency)
 			      "logocor", ## Correlation between sequence logo values (column info * frequency)
 			      "Nlogocor", ## Normalized correlation between sequence logo values (column info * frequency)
-			      "Wcor", ## Correlation between weight matrices
-			      "NWcor", ## Normalized correlation between weight matrices
+#			      "Wcor", ## Correlation between weight matrices
+#			      "NWcor", ## Normalized correlation between weight matrices
 			      "Icor", ## Correlation between information content matrices
 			      "NIcor", ## Normalized correlation between information content matrices
 			      "cov", ## Covariance
@@ -437,8 +436,9 @@ package main;
 			      "SSD", ## Sum of squared distances
 			      "SW", ## Sandelin-Wasserman similarity
 			      "NSW", ## Normalized Sandelin-Wasserman similarity
-#			      "dKL", ## Kullback-Leibler distance
+			      #			      "dKL", ## Kullback-Leibler distance
 			      "all_metrics", ## all supported metrics
+			      "match_rank", ## Matching ranks for all the selected metrics
 			     );
 #  local @rank_metrics = ("SW", "dEucl"); ## Metrics on which a rank can be computed
 #  local @rank_metrics = @supported_metrics; ## Metrics on which a rank can be computed
@@ -450,14 +450,14 @@ package main;
 				    "matrix_id", ## Identifiers of the matrices
 				    "matrix_name", ## Names of the matrices
 				    "matrix_ac", ## Accession number of the matrices
+				    "w", ## Width of the alignment (included in width, but useful for the Web page parameters)
 				    "width", ## Width of the matrices and the alignment
 				    "strand", ## Direct (D) or Reverse complementary (R) comparison
 				    "direction", ## for backward compatibility only, replaced by "strand".
 				    "offset", ## offset between the positions of the first and second matrix
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
-				    "rank", ## Rank of the match according to the sorting criterion
-				    "ranks", ## Ranks for all the selected metrics
+				    "offset_rank", ## Rank of the match according to the sorting criterion
 				    "alignments_pairwise", ## Shifted matrices resulting from the pairwise alignments.
 				    "alignments_1ton", ## Shifted matrices resulting from the 1-to-N alignments.
 				    "alignments", ## Shifted matrices resulting from the alignments (pairwise and 1-to-N).
@@ -478,8 +478,8 @@ package main;
 				 "logoDP"=>"desc",
 				 "logocor"=>"desc",
 				 "Nlogocor"=>"desc",
-				 "Wcor"=>"desc",
-				 "NWcor"=>"desc",
+#				 "Wcor"=>"desc",
+#				 "NWcor"=>"desc",
 				 "Icor"=>"desc",
 				 "NIcor"=>"desc",
 				 "cov"=>"desc",
@@ -511,7 +511,7 @@ package main;
 				 offset
 				 w
 				 Wr
-				 rank
+				 offset_rank
 				);
   local $supported_thresholds = join ",", @supported_thresholds;
   local %supported_threshold = ();
@@ -571,14 +571,19 @@ package main;
     delete($return_field{direction});
   }
 
+  ## Field w is converted to width, for the Web interface
+  if ($return_field{w}) {
+    $return_field{width} = 1;
+  }
 
   ## The sorting field must be returned
   $return_field{$sort_field} = 1;
 
   ## Update the list of metrics to take into account for ranks and rank mean
-  if ($return_field{ranks}) {
+  if ($return_field{match_rank}) {
     foreach my $metric (@supported_metrics) {
       next if ($metric eq "all_metrics");
+      next if ($metric eq "match_rank");
       push @rank_metrics, $metric if ($return_field{$metric});
     }
   }
@@ -595,7 +600,8 @@ package main;
   ## Alignments require to specify an output prefix
   if (($return_field{alignments_pairwise}) ||
        ($return_field{alignments_1ton})) {
-    &RSAT::error::FatalError("You must specify an output file to obtain alignments.") unless $main::outfile{output_prefix};
+    &RSAT::error::FatalError("You must specify an output file to obtain alignments.") 
+      unless $main::outfile{output_prefix};
   }
 
   ## Incompatibilities between output modes
@@ -655,7 +661,7 @@ package main;
 #    $return_field{NWcor} = 1;
 #    $return_field{consensus} = 1;
 
-    $uth{rank}=1 unless(defined($uth{rank})); ## Only return the best match for each alignment
+    $uth{offset_rank}=1 unless(defined($uth{offset_rank})); ## Only return the best match for each alignment
 
     ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
     $lth{w}=5 unless (defined($lth{w}));
@@ -685,7 +691,7 @@ package main;
   ## Some fields must be computed as intermediate results for other fields
   $calc_field{logocor} = 1 if ($calc_field{Nlogocor});
   $calc_field{Icor} = 1 if ($calc_field{NIcor});
-  $calc_field{Wcor} = 1 if ($calc_field{NWcor});
+#  $calc_field{Wcor} = 1 if ($calc_field{NWcor});
   $calc_field{cor} = 1 if ($calc_field{Ncor});
   $calc_field{cov} = 1 if ($calc_field{cor});
   $calc_field{NdEucl} = 1 if ($calc_field{NsEucl});
@@ -701,12 +707,11 @@ package main;
 
   ## Check that output file is specified if required (for the alignments)
   if (defined($main::outfile{output_prefix})) {
-    $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
 
     ## Create output dir if required
     my $basename;
-    ($dir{match_table_txt}, $basename) = &RSAT::util::SplitFileName($main::outfile{output_prefix});
-    &RSAT::util::CheckOutDir($dir{match_table_txt});
+    ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{output_prefix});
+    &RSAT::util::CheckOutDir($dir{output});
     push @dirs, "output";
 
     ## tab-delimited output file
@@ -716,6 +721,18 @@ package main;
     ## HTML-formatted table of matches
     $main::outfile{match_table_html} = $main::outfile{output_prefix}.".html";
     push @outfiles, "match_table_html";
+
+
+    ## Open the HTML index file
+    $main::outfile{html_index} = $main::outfile{output_prefix}."_index.html";
+    push @outfiles, "html_index";
+    $main::html_index = &OpenOutputFile($main::outfile{html_index});
+    my $header = &PrintHtmlResultHeader(program=>"compare-classes");
+    #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 0);
+    print $main::html_index $header;
+    print $html_index "<p><tt><b>Command:</b> compare-matrices ";
+    &PrintArguments($main::html_index);
+    print $html_index "</tt></p>\n";
 
     ## Matrix alignments
     if (($return_field{alignments_pairwise}) ||
@@ -773,19 +790,6 @@ package main;
 	print $main::alignments_1ton_html "<body>\n";
 	print $main::alignments_1ton_html "<h1>".$title."</h1>\n";
       }
-
-      ## Open the HTML index file
-      $main::outfile{html_index} = $main::outfile{output_prefix}."_index.html";
-      push @outfiles, "html_index";
-      $main::html_index = &OpenOutputFile($main::outfile{html_index});
-      my $header = &PrintHtmlResultHeader(program=>"compare-classes");
-#      &RSAT::message::Debug("header", $header) if ($main::verbose >= 0);
-      print $main::html_index $header;
-      print $html_index "<p><tt><b>Command:</b> compare-matrices ";
-      &PrintArguments($main::html_index);
-      print $html_index "</tt></p>\n";
-
-
 
       ## Define directory for the logos
       $main::dir{logos} = $main::outfile{match_table_txt};
@@ -1029,8 +1033,8 @@ package main;
   push (@header, "logoDP") if ($return_field{logoDP});
   push (@header, "logocor") if ($return_field{logocor});
   push (@header, "Nlogocor") if ($return_field{Nlogocor});
-  push (@header, "Wcor") if ($return_field{Wcor});
-  push (@header, "NWcor") if ($return_field{NWcor});
+#  push (@header, "Wcor") if ($return_field{Wcor});
+#  push (@header, "NWcor") if ($return_field{NWcor});
   push (@header, "Icor") if ($return_field{Icor});
   push (@header, "NIcor") if ($return_field{NIcor});
   push (@header, "NSW") if ($return_field{NSW});
@@ -1051,18 +1055,19 @@ package main;
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
 
   ################################################################
-  ## Ranks must coms as last columns, because it is computed only after all the rows have been formed
+  ## Matching ranks must coms as last columns, because it is computed only after all the rows have been formed
 
-  ## Ranks on various metrics + rank mean
-  if ($return_field{ranks}) {
+  ## Matching ranks on various metrics + rank mean
+  if ($return_field{match_rank}) {
     foreach my $metric (@rank_metrics) {
       push (@header, "r".$metric);
     }
     push (@header, "rank_mean");
+    push (@header, "match_rank");
   }
 
   ## Rank on the sorting criterion
-  push (@header, "rank") if ($return_field{rank});
+  push (@header, "offset_rank") if ($return_field{offset_rank});
 
   ################################################################
   ## Print a description of the output fields
@@ -1106,17 +1111,18 @@ package main;
     $description{logoDP} = "Dot product between the logo matrices.";
     $description{logocor} = "Pearson correlation between the logo matrices.";
     $description{Nlogocor} = "Normalized Pearson correlation between the logo matrices. Nlogocor = logocor * ".$norm_factor_descr;
-    $description{Wcor} = "Pearson correlation between the information content matrices. ";
-    $description{NWcor} = "Normalized Pearson correlation between the information content matrices. NWcor = Wcor * ".$norm_factor_descr;
+#    $description{Wcor} = "Pearson correlation between the information content matrices. ";
+#    $description{NWcor} = "Normalized Pearson correlation between the information content matrices. NWcor = Wcor * ".$norm_factor_descr;
     $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
     $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
 
     foreach my $metric (@rank_metrics) {
-      $description{"r".$metric} = "Rank on ".$metric;
+      $description{"r".$metric} = "Matching rank for ".$metric;
     }
-    $description{rank_mean} = "Mean of the ranks on all selected metrics";
+    $description{rank_mean} = "Mean of the matching ranks on all selected metrics";
+    $description{match_rank} = "Rank of the match (sorting by rank_mean)";
 
-    $description{rank} = "Rank according to the selected sorting field (".$sort_field.")";
+    $description{offset_rank} = "Rank according to the field used for selecting the \"best\" offset (".$sort_field.")";
 
     ## Print out the column content description
     print $out "; Column content\n";
@@ -1164,10 +1170,10 @@ package main;
     }
 
     ## Get the weight matrix if required
-    my @weight1;
-    if ($calc_field{Wcor}) {
-      @weight1 = $matrix1->getWeights();
-    }
+#    my @weight1;
+#    if ($calc_field{Wcor}) {
+#      @weight1 = $matrix1->getWeights();
+#    }
 
     ## Iterate over matrices of the second list
     foreach my $matrix2 (@matrices2) {
@@ -1210,8 +1216,8 @@ package main;
       my %logoDP = (); ## Dot product between logo matrices
       my %logocor = (); ## Correlations between logo matrices
       my %Nlogocor = (); ## Normalized correlations between logo matrices
-      my %Wcor = (); ## Correlations between weights
-      my %NWcor = (); ## Normalized correlations between weights
+#      my %Wcor = (); ## Correlations between weights
+#      my %NWcor = (); ## Normalized correlations between weights
       my %SW = ();		## Sandelin-Wasserman similarity
       my %NSW = ();		## Normalized Sandelin-Wasserman similarity
       my %SSD = ();		## Euclidian distances
@@ -1249,10 +1255,10 @@ package main;
 	}
 
 	## Get the weight matrix if required
-	my @weight2;
-	if ($calc_field{Wcor}) {
-	  @weight2 = $matrix2->getWeights();
-	}
+#	my @weight2;
+#	if ($calc_field{Wcor}) {
+#	  @weight2 = $matrix2->getWeights();
+#	}
 
 	## Slide matrix2 along matrix1
 	foreach my $offset ($offset_min..$offset_max) {
@@ -1345,8 +1351,8 @@ package main;
 	  my $sum_sq_l2 = 0;
 
 	  ## Weight correlation
-	  my $Wcor = 0;
-	  my $NWcor = 0;
+#	  my $Wcor = 0;
+#	  my $NWcor = 0;
 	  my $sum_wght1 = 0;
 	  my $sum_wght2 = 0;
 	  my $sum_wght1wght2 = 0;
@@ -1395,16 +1401,16 @@ package main;
 	      }
 
 
-	      ## Update sums for Wcor
-	      if ($calc_field{Wcor}) {
-		my $wght1 = $weight1[$col1-1][$r];
-		my $wght2 = $weight2[$col2-1][$r];
-		$sum_wght1 += $wght1;
-		$sum_wght2 += $wght2;
-		$sum_sq_wght1 += $wght1**2;
-		$sum_sq_wght2 += $wght2**2;
-		$sum_wght1wght2 += $wght1*$wght2;
-	      }
+# 	      ## Update sums for Wcor
+# 	      if ($calc_field{Wcor}) {
+# 		my $wght1 = $weight1[$col1-1][$r];
+# 		my $wght2 = $weight2[$col2-1][$r];
+# 		$sum_wght1 += $wght1;
+# 		$sum_wght2 += $wght2;
+# 		$sum_sq_wght1 += $wght1**2;
+# 		$sum_sq_wght2 += $wght2**2;
+# 		$sum_wght1wght2 += $wght1*$wght2;
+# 	      }
 
 	      ## Update sum for Euclidian distance
 	      if ($calc_field{SSD}) {
@@ -1543,17 +1549,17 @@ package main;
 	  $score{Nlogocor}{$compa_id} = $Nlogocor;
 
 	  ## Compute weight correlation
-	  if ($calc_field{Wcor}) {
-	    $wghtv1 = $sum_sq_wght1/$n - ($sum_wght1/$n)**2;
-	    $wghtv2 = $sum_sq_wght2/$n - ($sum_wght2/$n)**2;
-	    $icov = $sum_wght1wght2/$n - $sum_wght1*$sum_wght2/($n**2);
-	    if ($icov == 0) {
-	      $Wcor = 0;
-	    } else {
-	      $Wcor = $icov/sqrt($wghtv1*$wghtv2);
-	    }
-	    $NWcor = $Wcor *$norm_factor;
-	  }
+# 	  if ($calc_field{Wcor}) {
+# 	    $wghtv1 = $sum_sq_wght1/$n - ($sum_wght1/$n)**2;
+# 	    $wghtv2 = $sum_sq_wght2/$n - ($sum_wght2/$n)**2;
+# 	    $wcov = $sum_wght1wght2/$n - $sum_wght1*$sum_wght2/($n**2);
+# 	    if ($wcov == 0) {
+# 	      $Wcor = 0;
+# 	    } else {
+# 	      $Wcor = $wcov/sqrt($wghtv1*$wghtv2);
+# 	    }
+# 	    $NWcor = $Wcor *$norm_factor;
+# 	  }
 
 	  ## Check thresholds on weight correlation
 	  next unless (&CheckThresholdValue("Wcor", $Wcor));
@@ -1590,8 +1596,8 @@ package main;
 	  push (@out_fields, sprintf("%.3f", $logoDP)) if ($return_field{logoDP});
 	  push (@out_fields, sprintf("%.3f", $logocor)) if ($return_field{logocor});
 	  push (@out_fields, sprintf("%.3f", $Nlogocor)) if ($return_field{Nlogocor});
-	  push (@out_fields, sprintf("%.3f", $Wcor)) if ($return_field{Wcor});
-	  push (@out_fields, sprintf("%.3f", $NWcor)) if ($return_field{NWcor});
+#	  push (@out_fields, sprintf("%.3f", $Wcor)) if ($return_field{Wcor});
+#	  push (@out_fields, sprintf("%.3f", $NWcor)) if ($return_field{NWcor});
 	  push (@out_fields, sprintf("%.3f", $Icor)) if ($return_field{Icor});
 	  push (@out_fields, sprintf("%.3f", $NIcor)) if ($return_field{NIcor});
 	  push (@out_fields, sprintf("%.3f", $NSW)) if ($return_field{NSW});
@@ -1645,31 +1651,31 @@ package main;
       ## Specific treatment for the rank of the pairwise comparison.
       ## In mode -return match, this rank is the way to select the
       ## best matching offset and strand for a give pair of matrices.
-      my %rank = ();
-      my $max_rank = "NA";
-      if ($calc_field{rank}) {
-	my $rank = 0;
+      my %offset_rank = ();
+      my $max_offset_rank = "NA";
+      if ($calc_field{offset_rank}) {
+	my $offset_rank = 0;
 	foreach my $compa_id (@sorted_offset_strand) {
-	  $rank++;
-	  $rank{$compa_id} = $rank;
+	  $offset_rank++;
+	  $offset_rank{$compa_id} = $offset_rank;
 	}
 
-	## Max rank
-	if (defined($uth{rank})) {
-	  $max_rank = &RSAT::stats::min($uth{rank}, scalar(@sorted_offset_strand));
-	  @sorted_offset_strand = @sorted_offset_strand[0..($max_rank-1)];
+	## Max offset_rank
+	if (defined($uth{offset_rank})) {
+	  $max_offset_rank = &RSAT::stats::min($uth{offset_rank}, scalar(@sorted_offset_strand));
+	  @sorted_offset_strand = @sorted_offset_strand[0..($max_offset_rank-1)];
 	}
 
-	## Min rank
-	if (defined($lth{rank})) {
-	  if ($lth{rank} >= scalar(@sorted_offset_strand)) {
-	    @sorted_offset_strand = @sorted_offset_strand[($lth{rank}-1)..$#sorted_offset_strand];
+	## Min offset_rank
+	if (defined($lth{offset_rank})) {
+	  if ($lth{offset_rank} >= scalar(@sorted_offset_strand)) {
+	    @sorted_offset_strand = @sorted_offset_strand[($lth{offset_rank}-1)..$#sorted_offset_strand];
 	  } else {
 	    @sorted_offset_strand = ();
 	  }
 	}
       }
-#      &RSAT::message::Debug("\@sorted_offset_strand after rank threshold", $max_rank, join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("\@sorted_offset_strand after offset_rank threshold", $max_offset_rank, join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
 
       ################################################################
       ## Print the output row(s) + the aligned matrices
@@ -1690,7 +1696,7 @@ package main;
 	  ## pairs). Note that the results are indexed not only by
 	  ## matrix pair but also by offset + strand. This allows to
 	  ## return multiple matches for a single matrix pair (by
-	  ## forcing the upper threshold on rank to be > 1).
+	  ## forcing the upper threshold on offset_rank to be > 1).
 #	  my $compa_id = join (":", $id1, $id2, $offset, $strand);
 	  $sort_score{$compa_id} = $score{$sort_field}{$compa_id};
 
@@ -1712,7 +1718,7 @@ package main;
 	  ## In profile mode, print the output row for each comparison
 	  ## (motif pair/offset/strand).
 	  print $out  $out_line{$compa_id};
-	  print $out "\t", $rank{$compa_id} if ($return_field{rank});
+	  print $out "\t", $offset_rank{$compa_id} if ($return_field{offset_rank});
 	  print $out "\n";
 	}
 
@@ -1723,18 +1729,19 @@ package main;
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
 
   ################################################################
-  ## Compute rankstatistics for various metrics
+  ## Compute matching rank for various metrics
   my $selected_rank_metrics = 0; ## Number of metrics to take into account for mean rank computation
-  if ($return_field{ranks}) {
+  if ($return_field{match_rank}) {
 
     foreach my $metric (@rank_metrics) {
       next unless ($return_field{$metric});
+#      next if ($metric eq "match_rank");
       $selected_rank_metrics++;
 
       ## Sort the matches
       my $metric_order = $supported_sort_field{$metric};
       my @match_ids = keys(%sort_score);
-      &RSAT::message::Debug("Computing rank on", $metric, $metric_order) if ($main::verbose >= 5);
+      &RSAT::message::Debug("Computing matching rank on", $metric, $metric_order) if ($main::verbose >= 0);
       if ($metric_order eq "asc") {
 	## Sort results in ascending order
 	@ranked_match_id = sort {$score{$metric}{$a} <=> $score{$metric}{$b}} @match_ids;
@@ -1792,9 +1799,19 @@ package main;
     my $rank = 0;
     foreach my $compa_id (@sorted_match_id) {
       $rank++;
+
+      ## apply thresholds on matching rank
+      if ((defined($lth{match_rank})) && ($rank < $lth{match_rank})) {
+	next;
+      }
+      if ((defined($uth{match_rank})) && ($rank > $uth{match_rank})) {
+	last;
+      }
+
+      ## Print out the matches
       $rank{$compa_id} = $rank;
       print $out  $match_out_line{$compa_id};
-      print $out "\t", $rank if ($return_field{rank});
+      print $out "\t", $rank if ($return_field{match_rank});
       print $out "\n";
     }
   }
@@ -1824,10 +1841,10 @@ package main;
 
   if ($main::outfile{match_table_html}) {
     close $main::out;
+    $SCRIPTS = $SCRIPTS || $ENV{RSAT}."/perl-scripts";
     my $html_cmd =  $SCRIPTS."/text-to-html -i ".$main::outfile{match_table_txt};
     $html_cmd .= " -o ".$main::outfile{match_table_html};
     &doit($html_cmd);
-#    &RSAT::error::FatalError("HELLO"); ## DEBUG
   }
 
 
@@ -2110,7 +2127,7 @@ sub PrintAlignedMatrices {
       $html_header .= "<th>".$metric."</th>\n";
     }
   }
-   if ($return_field{ranks}) {
+   if ($return_field{match_rank}) {
      my @rank_scores_to_print = ();
      foreach my $metric (@scores_to_print) {
        push @rank_scores_to_print, "r".$metric;
@@ -2118,6 +2135,8 @@ sub PrintAlignedMatrices {
      }
      push @scores_to_print, @rank_scores_to_print, "rank_mean";
      $html_header .= "<th>rank_mean</th>\n";
+     push @scores_to_print, @rank_scores_to_print, "match_rank";
+     $html_header .= "<th>match_rank</th>\n";
    }
 
   ## Aligned matrices
@@ -2429,6 +2448,7 @@ detail).
 =cut
     } elsif ($arg eq "-o") {
       $main::outfile{output_prefix} = shift(@arguments);
+      $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
 
 =item B<-mode matches | profiles>
 
@@ -2673,9 +2693,17 @@ Aligned consensus. The residues of the consensus corresponding to
 aligned columns are displaye, non-aligned columns are replaced by
 dots.
 
-=item I<rank>
+=item I<offset_rank>
 
-Rank of the motif according to the sorting field.
+During pairwise alignment, scores are computed for each offset and
+offsets are sorted according to the sorting criterion. The offset_rank
+indicates the rank of an offset in this sorted list. This is a
+"within-alignment" rank, which is useful in profile mode.
+
+=item I<match_rank>
+
+In matching mode, ranks can be computed for all the selected metrics,
+and a mean rank is computed.
 
 =item I<alignments_pairwise>
 
@@ -2849,6 +2877,7 @@ sub Verbose {
 sub IndexFiles {
   &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
 
+
   ## Directories
   print $html_index "<h2>Directories</h2>";
   print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
@@ -2857,8 +2886,9 @@ sub IndexFiles {
   print $html_index "<th>Directory</th>";
   print $html_index "</tr>\n";
   foreach my $key (@dirs) {
-    my $file = $dir{$key};
+    my $file = $main::dir{$key};
     my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+    &RSAT::message::Debug("indexing dir", $key, $file, $link) if ($main::verbose >= 0);
     print $html_index "<tr>\n";
     print $html_index "<td>".$key."</td>";
     print $html_index "<td><a href='".$link."'>".$link."</a></td>";
@@ -2882,7 +2912,6 @@ sub IndexFiles {
 #     print $html_index "</tr>\n";
 #   }
 #   print $html_index "</table>\n";
-
 
   ## Output files
   print $html_index "<h2>Output files</h2>";
