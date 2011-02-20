@@ -131,12 +131,88 @@ if ($query->param('db_choice') eq "custom") {
 ### other default parmaters
 $parameters .= " -strand DR";
 
-## Output fields
-my $output_fields = qw(cor,Ncor,NIcor,NsEucl,SSD,NSW,matrix_id,matrix_ac,width,strand,offset,consensus,rank,ranks,alignments_1ton);
-$parameters .= " -return ".$output_fields;
+################################################################
+## Output fields and thresolds
+my @supported_output_fields = qw(cor
+				 Ncor
+				 logoDP
+				 logocor
+				 Nlogocor
+				 Icor
+				 NIcor
+				 cov
+				 dEucl
+				 NdEucl
+				 NsEucl
+				 SSD
+				 SW
+				 NSW
+				 all_metrics
+				 matrix_number
+				 matrix_id
+				 matrix_name
+				 matrix_ac
+				 width
+				 strand
+				 direction
+				 offset
+				 pos
+				 consensus
+				 match_rank
+				 alignments_pairwise
+				 alignments_1ton
+				);
 
+my @selected_output_fields = qw(
+				cor
+				Ncor
+				NIcor
+				NsEucl
+				SSD
+				NSW
+				match_rank
+				matrix_id
+				matrix_ac
+				width
+				strand
+				offset
+				consensus
+				alignments_1ton);
+my @selected_output_fields = ();
+my $thresholds = "";
+foreach my $field (@supported_output_fields) {
+  ## Selected field
+  if ($query->param('return_'.$field)) {
+    push @selected_output_fields, $field;
+  }
 
-### output directory
+  ## Lower threshold
+  my $lth = $query->param('lth_'.$field);
+  if (&IsReal($lth)) {
+    $thresholds .= " -lth ".$field." ".$lth;
+  }
+
+  ## Upper threshold
+  my $uth = $query->param('uth_'.$field);
+  if (&IsReal($uth)) {
+    $thresholds .= " -uth ".$field." ".$uth;
+  }
+}
+push @selected_output_fields, qw(
+				 matrix_id
+				 matrix_name
+				 width
+				 strand
+				 offset
+				 consensus
+				 alignments_1ton
+				);
+my $selected_output_fields = join (",", @selected_output_fields);
+$parameters .= " -return ".$selected_output_fields;
+$parameters .= $thresholds;
+
+################################################################
+### Output file
 $output_file = $output_path."/".$output_prefix.".tab";
 $parameters .= " -o ".$output_file;
 
@@ -144,7 +220,7 @@ $parameters .= " -o ".$output_file;
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 ################################################################
-## display or send result
+## Display or send result by email
 $index_file = $output_dir."/".$output_prefix."_index.html";
 my $mail_title = join (" ", "[RSAT]", "compare-matrices", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
@@ -154,7 +230,7 @@ if ($query->param('output') =~ /display/i) {
 }
 
 ################################################################
-## result page footer
+## Result page footer
 print $query->end_html;
 
 exit(0);
