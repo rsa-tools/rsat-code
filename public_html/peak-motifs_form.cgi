@@ -235,8 +235,7 @@ print $query->checkbox(-name=>'oligo-analysis',
 		       -label=>'');  
 print "&nbsp;<b>Discover over-represented words</b> <a href='help.oligo-analysis.html'> [oligo-analysis]</a>\n";
 print "<br/>";
-	       
-		       
+
 
 ### dyad sizes and spacer
 #print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</a>&nbsp;</B>\n";
@@ -367,7 +366,7 @@ sub Panel4 {
   print "<a href=''><b>Compare discovered motifs with known motifs from databases</b></a><br/>";
 
   ## load the various databases that can be compared against
-  &MatrixDBcheckBox();
+  &MatrixDBcheckBox("choice_mode"=>"checkbox");
 
   print "<p/> ";
   print "<a href=''><b>Add your own motif database:</b></a><br/>";
