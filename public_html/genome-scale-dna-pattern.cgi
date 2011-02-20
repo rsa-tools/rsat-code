@@ -17,6 +17,7 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$ENV{RSAT}/public_html/genome-scale.lib.pl";
+@result_files = ();
 
 $dna_pattern_command = "$SCRIPTS/dna-pattern -nolimits";
 $add_linenb_command = "$SCRIPTS/add-linenb";
@@ -34,7 +35,7 @@ $query = new CGI;
 
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 ################################################################
 #
@@ -80,6 +81,7 @@ unless ($query->param('patterns') =~ /\S/) {
   &cgiError("The pattern box should not be empty.<P>Read on-line manual for more information.");
 }
 $pattern_file = "$TMP/$tmp_file_name.pat";
+push @result_files, ("patterns",$pattern_file);
 if (open PAT, ">$pattern_file") {
   print PAT $query->param('patterns');
   close PAT;
@@ -179,16 +181,19 @@ if ($query->param("output") =~ /display/i) {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
+    push @result_files, ("result",$result_file);
     open RESULT, "$command & |";
-    
+
     ### Print the result on Web page
-    &PrintHtmlTable(RESULT, $result_file);
+    &PrintHtmlTable(RESULT, $result_file, "", 100000);
     close RESULT;
-    
+
     my $gene_file = "$result_file.genes";
     system "grep -v '^;' $result_file | cut -f $orf_col | sort -u > $gene_file";
     $export_genes = `cat $result_file.genes`;
     &DelayedRemoval($gene_file);
+
+    &PrintURLTable(@result_files);
 
     unless ($query->param("match_format" eq "fasta")) {
 #    if ($export_genes =~ /\S/) {
