@@ -735,8 +735,9 @@ sub GetMatrix {
   my (%args) = @_;
 #  my $consensus = $args{consensus};
 #  my $no_pseudo = $args{no_pseudo};
+  my $title = $args{title} || "Matrix (or matrices)";
 
-  print "<B>Matrix (or matrices)</B>\n";
+  print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
@@ -1046,8 +1047,9 @@ sub SetBackgroundModel {
 ## Display a list of checkboxes allowing to select the supported motif
 ## databases (ex: Jaspar).
 sub MatrixDBcheckBox {
-  my ($choice_type) = @_;
-  $choice_type = "checkbox" unless ($choice_type);
+  my (%args) = @_;
+  my $choice_mode = $args{choice_mode} || "checkbox"; ## Display check boxes or radio buttons
+
   ## load the file containing the path to the databases
   my $mat_db = $ENV{RSAT}."/public_html/data/motif_databases/db_matrix_files.tab" ;
   open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
@@ -1059,17 +1061,16 @@ sub MatrixDBcheckBox {
     if ($mat_line[0] eq $default{compare_motif_database}) {
       $status = "checked";
     }
-#      print $query->checkbox(-name=>$mat_line[0],
-#			     -checked=>"checked",
-#			     -label=>$mat_line[3]); 
-#    } else {
-    if ($choice_type eq "checkbox") {
+
+    if ($choice_mode eq "checkbox") {
       print $query->checkbox(-name=>$mat_line[0],
 			     -checked=>$status,
 			     -label=>$mat_line[3]); 
-    } else {
+    } elsif ($choice_mode eq "radiobox") {
       print( "<input type='radio' NAME='db_choice' VALUE='",$mat_line[0],"' $status>");
       print "$mat_line[3]";
+    } else {
+      &RSAT::error::FatalError("&MatrixDBcheckBox()", $choice_mode, "invalid value for choice_mode", );
     }
       #    }
     print "<br/>"
