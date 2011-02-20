@@ -20,19 +20,23 @@ $query = new CGI;
 
 ################################################################
 ### default values for filling the form
-$default{uth_cor} = "0.7";
-$default{uth_w} = "4";
 $default{ref_db} = "CHECKED";
 $default{demo_descr1} = "";
 $default{matrix}="";
 $default{matrix_file}="";
 #$default{pseudo_counts}=1;
 #$default{pseudo_distribution}="pseudo_prior";
-$checked{$default{pseudo_distribution}} = "CHECKED";
+#$checked{$default{pseudo_distribution}} = "CHECKED";
 $default{matrix_format} = "transfac";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="from_matrix";
 $checked{$default{bg_method}} = "CHECKED";
+
+$default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
+$default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = 0.7;
+$default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = 0.4;
+$default{'return_match_rank'} = "CHECKED"; $default{'uth_match_rank'} = 50;
+
 
 ## motif database
 $default{compare_motif_database}="jaspar_core_vertebrates";
@@ -49,6 +53,8 @@ foreach $key (keys %default) {
 
 
 
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+
 ################################################################
 ### print the form ###
 
@@ -64,8 +70,6 @@ print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lan
 print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
 print "</CENTER>";
 
-&ListParameters() if ($ENV{rsat_echo} >= 2);
-
 ## demo description
 print $default{demo_descr1};
 
@@ -76,14 +80,17 @@ print $query->start_multipart_form(-action=>"compare-matrices.cgi");
 #### Matrix specification
 print "<hr>";
 
-## Input matrix
-&GetMatrix('nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+################################################################
+## Query matrices
+&GetMatrix('title'=>'Query matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 print "<hr>";
 
-################# Database comparison
+################################################################
+## Database comparison
 &DatabaseChoice();
 print "<hr>";
 
+################################################################
 ## Background model
 my %bg_params =("from_matrix" => 1,
 		"bg_input"=>0,
@@ -92,6 +99,44 @@ my %bg_params =("from_matrix" => 1,
 	       );
 &GetBackgroundModel(%bg_params);
 print "<hr>";
+
+################################################################
+## Selection of output fields and thresholds
+my @matching_scores = qw(w
+			 cor
+			 Ncor
+			 logoDP
+			 logocor
+			 Nlogocor
+			 Icor
+			 NIcor
+			 cov
+			 dEucl
+			 NdEucl
+			 NsEucl
+			 SSD
+			 SW
+			 NSW
+			 match_rank
+			 offset
+			);
+&ScoresAndThresholdsDiv("Matching scores and thresholds",
+			"help.compare-matrices.html#return_fields",
+			@matching_scores);
+
+################################################################
+## Other selectable output fields
+my @other_fields = qw(matrix_number
+		      matrix_id
+		      matrix_name
+		      matrix_ac
+		      strand
+		      direction
+		      pos
+		      consensus
+		      alignments_pairwise
+		      alignments_1ton
+		     );
 
 ################################################################
 ### send results by email only
@@ -149,7 +194,8 @@ exit(0);
 
 
 ################################################################
-#################### Internal functions #######################
+#################### SUBROUTINE DEFINITIONS  ###################
+################################################################
 
 
 ################################################################
@@ -159,25 +205,27 @@ sub DatabaseChoice {
 <br/>
 <div>';
 #  print "<div class='menu_heading_closed' onclick='toggleMenu(\'103\')' id='heading103'>\n";
-  print "<b>Reference motifs (databases or custom motif collection)</b>";
-  print "</div>\n";
+#  print "<b>Reference motifs (databases or custom motif collection)</b>";
+#  print "</div>\n";
 #  print "<div id='menu103' class='menu_collapsible'>";
 
   ## Tasks
-  print "<fieldset><legend><b><a href='help.compare-matrices.html#tasks'>Reference collection</a></b></legend>";
+  print "<fieldset><legend><b><a href='help.compare-matrices.html#tasks'>Reference matrices (database or custom motif collection)</a></b></legend>";
 
   print "<p/> ";
 
   ## load the various databases that can be compared against
-  &MatrixDBcheckBox("radiobox");
+  &MatrixDBcheckBox("choice_mode"=>"radiobox");
 
   print ("<INPUT TYPE='radio' NAME='db_choice' VALUE='custom'>");
-  print "Custom motif collection (should be in TRANSFAC format *)";
+  print "Custom motif collection (in TRANSFAC format *)\n";
+#  print "<ul>\n";
   print $query->filefield(-name=>'custom_motif_file',
 			-size=>10);
 #  print "&nbsp;"x6, "Matrices should be in <b>Transfac format</b>";
   print "<br>", "&nbsp;"x6, "* Other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>.";
-  print"</p>";
+#  print"</ul>\n";
+  print "</p>\n";
 
   print "</fieldset><p/>";
 
@@ -185,4 +233,49 @@ sub DatabaseChoice {
 </div>
 </div>
 <p class="clear"></p>';
+}
+
+
+################################################################
+## Display a collapsable div with selectable scores and thresholds
+sub ScoresAndThresholdsDiv {
+  my ($title, $help_file, @fields) = @_;
+  print "<p class=\"clear\"></p>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b> </div>\n";
+  print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
+  print "<p/><fieldset>\n";
+
+  &FieldsThresholdsTable($help_file, @fields);
+
+  print "</fieldset><p/>";
+  print '</div></div><p class="clear"></p>';
+  print "<hr>";
+}
+
+################################################################
+## Display a table with checkboxes and thresholds for a set of
+## specified fields
+sub FieldsThresholdsTable {
+  my ($help_file, @fields) = @_;
+  print "<table align='center'>\n";
+  print $query->th([" <A HREF='".$help_file."'>Output<br>fields</A> ",
+		    " <A HREF='".$help_file."'>Lower<BR>Threshold</A> ",
+		    " <A HREF='".$help_file."'>Upper<BR>Threshold</A> "]);
+  foreach my $field (@fields) {
+    my $lth = $default{'lth_'.$field} || "none";
+    my $uth = $default{'uth_'.$field} || "none";
+
+    print "<tr valign='middle'>";
+#    print "<td>", $field, "</td>\n";
+    print "<td>", $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>''), "&nbsp;", $field, "</td>\n";
+    print "<td>", $query->textfield(-name=>'lth_'.$field,
+				    -default=>$lth,
+				    -size=>5), "</td>\n";
+    print "<td>", $query->textfield(-name=>'uth_'.$field,
+				    -default=>$uth,
+				    -size=>5), "</td>\n";
+  }
+  print "</table>\n";
 }
