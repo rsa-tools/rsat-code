@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.94 2011/02/20 11:41:19 jvanheld Exp $
+# $Id: compare-matrices,v 1.95 2011/02/22 09:48:25 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.94 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -588,6 +588,18 @@ package main;
     }
   }
 
+  ## Specify the output format for the different metrics
+  local %metric_format = ();
+  $metric_format{"match_rank"} = "%d";
+  $metric_format{"rank_mean"} = "%.3f";
+  foreach my $metric (@rank_metrics) {
+    $metric_format{"r".$metric} = "%d";
+  }
+  foreach my $metric (@supported_metrics) {
+    unless (defined($metric_format{$metric})) {
+      $metric_format{$metric} = "%.3f";
+    }
+  }
 
 
   ## Alignments
@@ -712,6 +724,7 @@ package main;
     my $basename;
     ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{output_prefix});
     &RSAT::util::CheckOutDir($dir{output});
+    $dir{output} = "." if ($dir{output} eq "");
     push @dirs, "output";
 
     ## tab-delimited output file
@@ -730,6 +743,8 @@ package main;
     my $header = &PrintHtmlResultHeader(program=>"compare-classes");
     #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 0);
     print $main::html_index $header;
+
+    ## Report command
     print $html_index "<p><tt><b>Command:</b> compare-matrices ";
     &PrintArguments($main::html_index);
     print $html_index "</tt></p>\n";
@@ -1796,22 +1811,25 @@ package main;
     }
 
     ## Print the output rows
-    my $rank = 0;
+    my $match_rank = 0;
     foreach my $compa_id (@sorted_match_id) {
-      $rank++;
+      $match_rank++;
+      $match_rank{$compa_id} = $match_rank;
+      $match_score{$compa_id}{match_rank} = $match_rank; ## Index for further use in other output formats
+
+      ## Add macth rank to the output line
+      $match_out_line{$compa_id} .= "\t".$match_rank if ($return_field{match_rank});
 
       ## apply thresholds on matching rank
-      if ((defined($lth{match_rank})) && ($rank < $lth{match_rank})) {
+      if ((defined($lth{match_rank})) && ($match_rank < $lth{match_rank})) {
 	next;
       }
-      if ((defined($uth{match_rank})) && ($rank > $uth{match_rank})) {
+      if ((defined($uth{match_rank})) && ($match_rank > $uth{match_rank})) {
 	last;
       }
 
       ## Print out the matches
-      $rank{$compa_id} = $rank;
       print $out  $match_out_line{$compa_id};
-      print $out "\t", $rank if ($return_field{match_rank});
       print $out "\n";
     }
   }
@@ -1913,7 +1931,7 @@ sub PairwiseAlignments {
     my $id_align = $merged_matrix->get_attribute("id") || "alignment";
 
     ## Print a header for the alignment in the tab-delimited file
-    my $header_row = join ("\t", "Pairwise matrix alignment", "rank=".$rank{$compa_id}, $id1, "versus", $id2);
+    my $header_row = join ("\t", "Pairwise matrix alignment", "match_rank=".$match_rank{$compa_id}, $id1, "versus", $id2);
     $header_row .= sprintf("; %s=%d", "offset", $offset);
     $header_row .= sprintf("; %s=%s", "strand", $strand);
     foreach my $metric (@supported_metrics) {
@@ -2019,6 +2037,11 @@ sub OneToNAlignments {
     push @{$matches_by_matrix1{$id1}}, $compa_id;
   }
 
+  ## Report the command
+  print $alignments_1ton_html "<p><pre><b>Command:</b> compare-matrices ";
+  &PrintArguments($alignments_1ton_html);
+  print $alignments_1ton_html "</pre></p>\n";
+
   ## Compute the best matching score per matrix
   my %best_score1 = ();
   foreach $id1 (keys(%matches_by_matrix1)) {
@@ -2111,33 +2134,38 @@ sub PrintAlignedMatrices {
   print $alignments_1ton "; ", $header_row, "\n";
   print $alignments_1ton_html "<h2>", $header_row, "</h2>\n";
 
-  print $alignments_1ton_html "<p><pre><b>Command:</b> compare-matrices ";
-  &PrintArguments($alignments_1ton_html);
-  print $alignments_1ton_html "</pre></p>\n";
+#  print $alignments_1ton_html "<p><pre><b>Command:</b> compare-matrices ";
+#  &PrintArguments($alignments_1ton_html);
+#  print $alignments_1ton_html "</pre></p>\n";
 
   ## Open a table in the HTML file and print column headers
   print $alignments_1ton_html "<p><table class='sortable' border='1' cellpadding='5' cellspacing='1'>\n";
   my $html_header = "<th>Matrix name</th>";
   $html_header .= "<th>Aligned logos</th>";
+
+  ## Define the list of scores to print
   my @scores_to_print = ();
   foreach my $metric (@supported_metrics) {
     next if ($metric eq "all_metrics");
+    next if ($metric eq "match_rank");
     if ($return_field{$metric}) {
       push @scores_to_print, $metric;
       $html_header .= "<th>".$metric."</th>\n";
     }
   }
-   if ($return_field{match_rank}) {
-     my @rank_scores_to_print = ();
-     foreach my $metric (@scores_to_print) {
-       push @rank_scores_to_print, "r".$metric;
-       $html_header .= "<th>"."r".$metric."</th>\n";
-     }
-     push @scores_to_print, @rank_scores_to_print, "rank_mean";
-     $html_header .= "<th>rank_mean</th>\n";
-     push @scores_to_print, @rank_scores_to_print, "match_rank";
-     $html_header .= "<th>match_rank</th>\n";
-   }
+
+  ## Add the list of score ranks if requested
+  if ($return_field{match_rank}) {
+    my @rank_scores_to_print = ();
+    foreach my $metric (@scores_to_print) {
+      push @rank_scores_to_print, "r".$metric;
+      $html_header .= "<th>"."r".$metric."</th>\n";
+    }
+    push @scores_to_print, @rank_scores_to_print, "rank_mean", "match_rank";
+    $html_header .= "<th>rank_mean</th>\n";
+    $html_header .= "<th>match_rank</th>\n";
+  }
+  &RSAT::message::Debug("scores to print", join(",", @scores_to_print)) if ($main::verbose >= 5);
 
   ## Aligned matrices
   $html_header .= "<th>Aligned matrices</th>\n";
@@ -2162,13 +2190,15 @@ sub PrintAlignedMatrices {
     my $match_scores_html = "";
 #    $match_scores .= sprintf("; %s=%d", "offset", $offset);
 #    $match_scores .= sprintf("; %s=%s", "strand", $strand);
+#    &RSAT::message::Debug("scores to print", join(",", @scores_to_print)) if ($main::verbose >= 5);
+    #  die;
     if ($m > 1) {
       foreach my $metric (@scores_to_print) {
 	#      foreach my $metric (@supported_metrics) {
 	#	next if ($metric eq "all_metrics");
 	#	if ($return_field{$metric}) {
 	my $value = $match_score{$compa_id}{$metric};
-	$value = sprintf("%.3f", $value);
+	$value = sprintf($metric_format{$metric}, $value);
 #	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
 	$match_scores .= "; ".$metric."=".$value;
 	$match_scores_html .= "<td>".$value."</td>\n";
@@ -2194,7 +2224,6 @@ sub PrintAlignedMatrices {
       $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"counts", colwidth=>6, decimals=>0);
     }
     print $alignments_1ton $matrix_string;
-
 
     ## Generate a sequence logo for the HTML output file
     my $logo_file = $main::dir{logos}."/".$shifted_matrix->get_attribute("id");
