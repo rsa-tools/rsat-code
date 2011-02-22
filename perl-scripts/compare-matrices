@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.95 2011/02/22 09:48:25 jvanheld Exp $
+# $Id: compare-matrices,v 1.96 2011/02/22 17:28:17 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.96 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -741,7 +741,7 @@ package main;
     push @outfiles, "html_index";
     $main::html_index = &OpenOutputFile($main::outfile{html_index});
     my $header = &PrintHtmlResultHeader(program=>"compare-classes");
-    #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 0);
+    #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
     print $main::html_index $header;
 
     ## Report command
@@ -1756,7 +1756,7 @@ package main;
       ## Sort the matches
       my $metric_order = $supported_sort_field{$metric};
       my @match_ids = keys(%sort_score);
-      &RSAT::message::Debug("Computing matching rank on", $metric, $metric_order) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Computing matching rank on", $metric, $metric_order) if ($main::verbose >= 5);
       if ($metric_order eq "asc") {
 	## Sort results in ascending order
 	@ranked_match_id = sort {$score{$metric}{$a} <=> $score{$metric}{$b}} @match_ids;
@@ -2953,7 +2953,7 @@ sub IndexFiles {
   foreach my $key (@dirs) {
     my $file = $main::dir{$key};
     my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
-    &RSAT::message::Debug("indexing dir", $key, $file, $link) if ($main::verbose >= 0);
+    &RSAT::message::Debug("indexing dir", $key, $file, $link) if ($main::verbose >= 5);
     print $html_index "<tr>\n";
     print $html_index "<td>".$key."</td>";
     print $html_index "<td><a href='".$link."'>".$link."</a></td>";
