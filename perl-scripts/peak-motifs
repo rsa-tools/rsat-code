@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.166 2011/02/22 09:49:35 jvanheld Exp $
+# $Id: peak-motifs,v 1.167 2011/02/22 17:30:44 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.166 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.167 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2748,11 +2748,11 @@ sub Archive {
   ## Archive all data and results
   my $archive = $main::outfile{archive};
   $to_archive = $main::dir{output} unless $to_archive;
-#  $cmd .= "zip -ryq ".$archive." ".$to_archive;
-  $cmd .= "zip -q ".$archive." ".$to_archive;
+  $cmd .= "zip -ryq ".$archive." ".$to_archive;
+#  $cmd .= "zip -q ".$archive." ".$to_archive;
   &one_command($cmd, 1);
 
-  &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 0);
 }
 
 
