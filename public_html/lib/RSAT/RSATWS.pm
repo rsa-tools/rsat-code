@@ -4830,6 +4830,7 @@ sub compare_graphs {
     }
     my $command = $self->compare_graphs_cmd(%args);
     my $result = `$command`;
+
     my $stderr = `$command 2>&1 1>/dev/null`;
     $stderr = &error_handling($stderr, 1);
 
