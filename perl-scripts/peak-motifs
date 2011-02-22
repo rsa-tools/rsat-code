@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.165 2011/02/19 06:34:11 jvanheld Exp $
+# $Id: peak-motifs,v 1.166 2011/02/22 09:49:35 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.165 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.166 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -522,13 +522,13 @@ sub DefaultParameters {
   $main::param{matrix_compa_sort_field} = "Ncor"; ## sorting field
 
   my $motif_compa_options =  ""; 
-  $motif_compa_options .= " -DR";
-  $motif_compa_options .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
+  $motif_compa_options .= " -DR -mode matches";
+  $motif_compa_options .= " -uth offset_rank 1"; ## Only report the best matching shift between a pair of matrices
   $motif_compa_options .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $motif_compa_options .= " -lth Wr ".$main::param{matrix_compa_min_Wr}; ## Min relative width of the alignment
   $motif_compa_options .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $motif_compa_options .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $motif_compa_options .= " -return matrix_name,matrix_id,".$main::param{matrix_compa_metrics}.",ranks,width,strand,offset,consensus,alignments_1ton";
+  $motif_compa_options .= " -return matrix_name,matrix_id,".$main::param{matrix_compa_metrics}.",match_rank,width,strand,offset,consensus,alignments_1ton";
   $motif_compa_options .= " -sort ".$main::param{matrix_compa_sort_field};
   $main::param{motif_compa_options} = $motif_compa_options;
 
@@ -1838,8 +1838,8 @@ sub MotifsVersusReference {
     $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
     $cmd .= $main::param{motif_compa_options};
     $cmd .= " -o ".$main::prefix{$motif_id."_vs_ref_prefix"};
-    $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id."_vs_ref"};
-    $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_html"};
+#    $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id."_vs_ref"};
+#    $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_html"};
     &one_command($cmd, 1);
   }
 
@@ -1856,8 +1856,9 @@ sub MotifsVersusReference {
   $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motifs_transfac};
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
   $cmd .= " -o ".$main::prefix{"motifs_vs_ref_prefix"};
-  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_ref"};
-  $cmd .= " -o ".$main::outfile{"motifs_vs_ref_html"};
+## Not necessary here anymore, it is automatically done in the script compare-matrices
+#  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_ref"};
+#  $cmd .= " -o ".$main::outfile{"motifs_vs_ref_html"};
   &one_command($cmd, 1);
 
   &RSAT::message::TimeWarn("Discovered versus reference motif", $main::outfile{motifs_vs_ref}) if ($main::verbose >= 2);
@@ -1903,8 +1904,9 @@ sub MotifsVersusDatabase {
       $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
       $cmd .= $main::param{motif_compa_options};
       $cmd .= " -o ".$main::prefix{$motif_id.'_vs_db_'.$db_name."_prefix"};
-      $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id.'_vs_db_'.$db_name};
-      $cmd .= " -o ".$main::outfile{$motif_id.'_vs_db_'.$db_name."_html"};
+## Not necessary here anymore, it is automatically done in the script compare-matrices
+#      $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id.'_vs_db_'.$db_name};
+#      $cmd .= " -o ".$main::outfile{$motif_id.'_vs_db_'.$db_name."_html"};
       &one_command($cmd, 1);
     }
 
@@ -1923,8 +1925,9 @@ sub MotifsVersusDatabase {
     $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
     $cmd .= $main::param{motif_compa_options};
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
-    $cmd .= " ; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
-    $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_html"};
+## Not necessary here anymore, it is automatically done in the script compare-matrices
+#    $cmd .= " ; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
+#    $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_html"};
     &one_command($cmd, 1, $main::outfile{"motifs_vs_db_".$db_name}."_time.txt");
 
     &RSAT::message::TimeWarn("Discovered versus DB", $db_name, $main::outfile{"motifs_vs_db_".$db_name}) if ($main::verbose >= 2);
@@ -2674,7 +2677,7 @@ sub OpenSynthesis {
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
 
-  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::title, "result_toc"=>1);
+  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1);
 }
 
 
