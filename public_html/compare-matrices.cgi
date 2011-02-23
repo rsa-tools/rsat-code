@@ -104,22 +104,23 @@ if (&IsReal($query->param('bg_pseudo'))) {
 ## Reference motifs
 if ($query->param('db_choice') eq "custom") {
   ## Upload custom reference motif file
-  local $ref_motif_file = "${TMP}/${tmp_file_name}_ref_motif_file.txt";
-  local $upload_ref_motif_file = $query->param('upload_ref_motif_file');
-  if ($upload_ref_motif_file) {
-    if ($upload_ref_motif_file =~ /\.gz$/) {
-      $ref_motif_file .= ".gz";
+  local $custom_motif_file = "${TMP}/${tmp_file_name}_custom_motif_file.txt";
+  local $upload_custom_motif_file = $query->param('upload_custom_motif_file');
+  if ($upload_custom_motif_file) {
+    if ($upload_custom_motif_file =~ /\.gz$/) {
+      $custom_motif_file .= ".gz";
     }
-    local $type = $query->uploadInfo($upload_ref_motif_file)->{'Content-Type'};
-    open REF_MOTIF_FILE, ">$ref_motif_file" ||
+    local $type = $query->uploadInfo($upload_custom_motif_file)->{'Content-Type'};
+    open CUSTOM_MOTIF_FILE, ">$custom_motif_file" ||
       &cgiError("Cannot store reference motif fie file in temp dir.");
-    while (<$upload_ref_motif_file>) {
-      print REF_MOTIF_FILE;
+    while (<$upload_custom_motif_file>) {
+      print CUSTOM_MOTIF_FILE;
     }
-    close REF_MOTIF_FILE;
-    $parameters .= " -file2 $ref_motif_file";
+    close CUSTOM_MOTIF_FILE;
+    $parameters .= " -file2 $custom_motif_file";
+    $parameters .= " -format2 transfac";
   } else {
-    &RSAT::error::FatalError("You did not specify the custom matrix file with the Browse button");
+    &RSAT::error::FatalError("You did not specify the custom matrix file (for this, you need to click on the Browse button)");
   }
 } else {
   my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
