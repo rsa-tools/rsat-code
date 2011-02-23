@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.43 2011/02/17 04:54:49 rsat Exp $
+# $Id: template,v 1.44 2011/02/23 00:11:51 jvanheld Exp $
 #
 ############################################################
 
@@ -27,7 +27,11 @@ Jacques.van.Helden@ulb.ac.be
 
 =head1 CATEGORY
 
-util
+=over
+
+=item util
+
+=back
 
 =head1 USAGE
 
@@ -61,7 +65,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -130,11 +134,11 @@ sub PrintOptions {
 ################################################################
 ## Read arguments 
 sub ReadArguments {
-    my $arg;
-    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    while (scalar(@arguments) >= 1) {
-      $arg = shift (@arguments);
-	## Verbosity
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
 
 =pod
 
@@ -147,14 +151,13 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-	if ($arg eq "-v") {
-	    if (&IsNatural($arguments[0])) {
-		$main::verbose = shift(@arguments);
-	    } else {
-		$main::verbose = 1;
-	    }
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
 
-	    ## Help message
 
 =pod
 
@@ -163,10 +166,9 @@ Level of verbosity (detail in the warning messages during execution)
 Display full help message
 
 =cut
-	} elsif ($arg eq "-h") {
-	    &PrintHelp();
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
 
-	    ## List of options
 
 =pod
 
@@ -175,10 +177,9 @@ Display full help message
 Same as -h
 
 =cut
-	} elsif ($arg eq "-help") {
-	    &PrintOptions();
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
 
-	    ## Input file
 
 =pod
 
@@ -188,10 +189,9 @@ If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
 
 =cut
-	} elsif ($arg eq "-i") {
-	    $main::infile{input} = shift(@arguments);
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
 
-	    ## Output file
 
 =pod
 
@@ -201,14 +201,14 @@ If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
 =cut
-	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@arguments);
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
 
-	} else {
-	    &FatalError(join("\t", "Invalid option", $arg));
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
 
-	}
     }
+  }
 
 =pod
 
