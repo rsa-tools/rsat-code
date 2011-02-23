@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.53 2011/02/23 15:24:43 amedina Exp $
+# $Id: footprint-scan,v 1.54 2011/02/23 15:59:37 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.53 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.54 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -541,10 +541,13 @@ package main;
 	      $g++;
 	      
 	      my $gene_info= `(add-gene-info -i $gene_list{$gene} -org $organism_name -info name,descr,upstr_neighb_name | grep -v "^;")`;
+	     
 	      chomp ($gene_info);
 	     
+	      $gene_info=~s/Escherichia_coli_K12//;
 	      my @gene_info=split(/\t+/,$gene_info);
 	      shift @gene_info;  
+	      
 	      #shift @gene_info;
 
 	      my $gene_info_line=join ("\t",@gene_info); #### Line containing the information about the current gene for the table
