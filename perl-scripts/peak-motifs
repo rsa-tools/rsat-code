@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.168 2011/02/23 00:11:47 jvanheld Exp $
+# $Id: peak-motifs,v 1.169 2011/02/24 04:28:13 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.168 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.169 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -382,6 +382,7 @@ sub DefaultParameters {
   $main::param{img_border} = 1; ## Border for the images in the synthetic table (generally blue because linked to the image file)
   $main::param{logo_table_height} = 50; ## Height for displaying logos in the synthetic tables
   $main::param{iupac_coloring} = 0; ## Color IUPAC degenerate letters in the consensus of HTML reports
+  $main::param{archive_format} = "zip"; ## Supported: zip, tar, tgz
 
   ## Motif formats
   $main::param{ref_motifs_format} = "transfac"; push(@main::param_list, "ref_motifs_format");
@@ -2743,25 +2744,46 @@ sub SynthesisParamsAndFiles {
 ## Generate a compressed archive with all the results
 sub Archive {
   my ($remove_first, $to_archive) = @_;
-  &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
 
-  my $cmd = "";
+  ## By default, archive the whole output directory
+  $to_archive = $main::dir{output} unless $to_archive;
+
+  &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
 
   ## Delete previous version of the archive to avoid including the old archive in the new one
   $cmd .= "rm -f ".$main::outfile{archive}."; " if ($remove_first);
 
-#   ## Archive all data and results
-#   my $archive = $main::outfile{archive};
-#   $to_archive = $main::dir{output} unless $to_archive;
-#   $cmd .= "(cd ".$dir{output}." ; zip -ryq ".$archive." ".$to_archive.")";
-
-
   ## Archive all data and results
   my ($archive_dir, $archive) = &SplitFileName($main::outfile{archive});
-  $to_archive = $main::dir{output} unless $to_archive;
+  my ($archive_dir_dir, $archive_dir_base) = &SplitFileName($archive_dir);
+#  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
+  my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
+#  my $archive_rel_path = &RSAT::util::RelativePath($archive, $archive_dir_dir);
 
-  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
-  $cmd .= "(cd ".$archive_dir." ; zip -ryq ".$archive." ".$to_archive_rel_path.")";
+#   &RSAT::message::Debug("&Archive()",
+# 			"\n\tto_archive", $to_archive,
+# 			"\n\tarchive_dir", $archive_dir,
+# 			"\n\tarchive_dir_dir", $archive_dir_dir,
+# 			"\n\tarchive_rel_path", $to_archive_rel_path,
+# 		       ) if ($main::verbose >= 5);
+
+  my $cmd = "";
+  if ($main::param{archive_format} eq "zip") {
+    $cmd .= "(cd ".$archive_dir_dir." ; ";
+    $cmd .= " zip -ryq ".$archive." ".$to_archive_rel_path;
+    $cmd .= " --exclude ".$archive;
+    $cmd .= ")";
+  } elsif (($main::param{archive_format} eq "tar") ||
+	   ($main::param{archive_format} eq "tgz")) {
+    $cmd .= "tar -cpf ".$main::outfile{archive};
+    $cmd .= " -z" if ($main::param{archive_format} eq "tgz");
+    $cmd .= " -C ".$archive_dir_dir; ## Avoid including the whole path in the archive paths
+    $cmd .= " --exclude ".$archive;
+    $cmd .= " ".$to_archive_rel_path;
+  #$cmd .= " ".$to_archive;
+  } else {
+    &RSAT::error::FatalError($main::param{archive_format}, "Invalid archive format. Supported: zip, tar, tgz.");
+  }
 
 #  $cmd .= "zip -q ".$archive." ".$to_archive;
   &one_command($cmd, 1);
@@ -4130,7 +4152,7 @@ sub CheckArguments {
   $main::outfile{timelog} = &OutFileName("reports", ".txt", "timelog");
   $main::outfile{timelog_html} = &OutFileName("reports", ".html", "timelog");
   $main::outfile{timetable} = &OutFileName("reports", ".txt", "timetable");
-  $main::outfile{archive} = &OutFileName("", ".zip", "archive");
+  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
 
   ## Synthesis file
   $main::outfile{synthesis} = &OutFileName("", ".html", "synthesis");
