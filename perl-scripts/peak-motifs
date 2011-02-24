@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.171 2011/02/24 04:54:15 jvanheld Exp $
+# $Id: peak-motifs,v 1.172 2011/02/24 04:58:15 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.171 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.172 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2766,7 +2766,7 @@ sub Archive {
 # 			"\n\tarchive_dir_dir", $archive_dir_dir,
 # 			"\n\tto_archive_rel_path", $to_archive_rel_path,
 # 			"\n\tarchive_rel_path", $archive_rel_path,
-		       ) if ($main::verbose >= 10);
+#		       ) if ($main::verbose >= 10);
 
   my $cmd = "";
   if ($main::param{archive_format} eq "zip") {
