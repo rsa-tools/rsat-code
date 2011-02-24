@@ -347,13 +347,18 @@ sub RelativePath {
 # 			"\n\treferring_dir", $referring_dir, join("; ", @referring_path),
 # 			"\n\treferred_file", $referred_file,
 # 			"\n\treferred_dir", $referred_dir, join("; ", @referred_path)) 
-#     if ($main::verbose >= 5);
+#     if ($main::verbose >= 10);
 
 
   ## Particular cases
   if ($referring_file eq $referred_dir) {
     $link = $referred_basename;
     $shared_path = $referring_dir;
+
+  } elsif ($referred_file =~ /${referring_file}\/(.*)/) {
+    ## The referring "file" is a directory in the path of the referred file
+    $link = $1 || ".";
+    $shared_path = $referring_file;
 
   } else {
 
