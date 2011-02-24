@@ -331,49 +331,67 @@ sub RelativePath {
   my ($referring_file, $referred_file) = @_;
 
   my ($referring_dir, $referring_basename) = &RSAT::util::SplitFileName($referring_file);
+  $referring_dir =~ s/\/+$//;
   my @referring_path = split /\/+/, $referring_dir;
 
   my ($referred_dir, $referred_basename) = &RSAT::util::SplitFileName($referred_file);
+  $referred_dir =~ s/\/+$//;
   my @referred_path = split /\/+/, $referred_dir;
 
   my @shared_path = ();
-
-#  my $level = 0;
-  while ((scalar(@referring_path) > 0) && (scalar(@referred_path) > 0)) {
-#    $level++;
-#    &RSAT::message::Debug("level=".$level,
-#			  "\n\treferring=".$referring_path[0], join("; ", @referring_path),
-#			  "\n\treferred:".$referred_path[0], join("; ", @referred_path))
-#      if ($main::verbose >= 10);
-
-    if ($referring_path[0] eq $referred_path[0]) {
-      my $shared_folder = shift(@referring_path);
-      shift(@referred_path);
-      push @shared_path, $shared_folder;
-    } else {
-      last;
-    }
-  }
-
-  my $shared_path = join "/", @shared_path;
-
-  my $up_levels = 0;
+  my $shared_path = "";
   my $link = "";
 
-  if ((defined($referring_path[0])) && ($referring_path[0] eq $referred_basename)) {
-    ## The referred path is the folder of the referring file
-    $link = ".";
+#   &RSAT::message::Debug("&RSAT::util::RelativePath()",
+# 			"\n\treferring_file", $referring_file,
+# 			"\n\treferring_dir", $referring_dir, join("; ", @referring_path),
+# 			"\n\treferred_file", $referred_file,
+# 			"\n\treferred_dir", $referred_dir, join("; ", @referred_path)) 
+#     if ($main::verbose >= 5);
+
+
+  ## Particular cases
+  if ($referring_file eq $referred_dir) {
+    $link = $referred_basename;
+    $shared_path = $referring_dir;
+
   } else {
-    $up_levels = scalar(@referring_path);
-    $link = "../" x $up_levels;
-    $link .= join ("/", @referred_path, $referred_basename);
+
+#  my $level = 0;
+    while ((scalar(@referring_path) > 0) && (scalar(@referred_path) > 0)) {
+      #    $level++;
+      #    &RSAT::message::Debug("level=".$level,
+      #			  "\n\treferring=".$referring_path[0], join("; ", @referring_path),
+      #			  "\n\treferred:".$referred_path[0], join("; ", @referred_path))
+      #      if ($main::verbose >= 10);
+
+      if ($referring_path[0] eq $referred_path[0]) {
+	my $shared_folder = shift(@referring_path);
+	shift(@referred_path);
+	push @shared_path, $shared_folder;
+      } else {
+	last;
+      }
+    }
+
+    my $up_levels = 0;
+    $shared_path = join "/", @shared_path;
+
+    if ((defined($referring_path[0])) && ($referring_path[0] eq $referred_basename)) {
+      ## The referred path is the folder of the referring file
+      $link = ".";
+    } else {
+      $up_levels = scalar(@referring_path);
+      $link = "../" x $up_levels;
+      $link .= join ("/", @referred_path, $referred_basename);
+    }
+
+    #  &RSAT::message::Debug("Computed relative path", $referring_file, $referred_file,
+    #			$shared_path, $link,
+    #			)
+    #    if ($main::verbose >= 10);
+
   }
-
-#  &RSAT::message::Debug("Computed relative path", $referring_file, $referred_file,
-#			$shared_path, $link,
-#			)
-#    if ($main::verbose >= 10);
-
   if (wantarray) {
     return ($link, $shared_path);
   } else {
@@ -381,7 +399,7 @@ sub RelativePath {
   }
 }
 
-=pod 
+=pod
 
 =item hide_RSAT_path()
 
