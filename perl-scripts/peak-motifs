@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.170 2011/02/24 04:38:15 jvanheld Exp $
+# $Id: peak-motifs,v 1.171 2011/02/24 04:54:15 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.170 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.171 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2758,19 +2758,20 @@ sub Archive {
   my ($archive_dir_dir, $archive_dir_base) = &SplitFileName($archive_dir);
 #  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
   my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
-#  my $archive_rel_path = &RSAT::util::RelativePath($archive, $archive_dir_dir);
+  my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
 
 #   &RSAT::message::Debug("&Archive()",
 # 			"\n\tto_archive", $to_archive,
 # 			"\n\tarchive_dir", $archive_dir,
 # 			"\n\tarchive_dir_dir", $archive_dir_dir,
-# 			"\n\tarchive_rel_path", $to_archive_rel_path,
-# 		       ) if ($main::verbose >= 5);
+# 			"\n\tto_archive_rel_path", $to_archive_rel_path,
+# 			"\n\tarchive_rel_path", $archive_rel_path,
+		       ) if ($main::verbose >= 10);
 
   my $cmd = "";
   if ($main::param{archive_format} eq "zip") {
     $cmd .= "(cd ".$archive_dir_dir." ; ";
-    $cmd .= " zip -ryq ".$archive." ".$to_archive_rel_path;
+    $cmd .= " zip -ryq ".$archive_rel_path." ".$to_archive_rel_path;
     $cmd .= " --exclude ".$archive;
     $cmd .= ")";
   } elsif (($main::param{archive_format} eq "tar") ||
@@ -2788,7 +2789,7 @@ sub Archive {
 #  $cmd .= "zip -q ".$archive." ".$to_archive;
   &one_command($cmd, 1);
 
-  &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
 }
 
 
