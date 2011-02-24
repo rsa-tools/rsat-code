@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.169 2011/02/24 04:28:13 jvanheld Exp $
+# $Id: peak-motifs,v 1.170 2011/02/24 04:38:15 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.169 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.170 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2816,7 +2816,7 @@ sub Synthesis {
   &SynthesisMotifCompa() unless ($progressive_synthesis);
 
   ## Parameters and files
-  &SynthesisParamsAndFiles(); # unless ($progressive_synthesis);
+  &SynthesisParamsAndFiles() unless ($progressive_synthesis);
 
   ## End of the HTML file
   print $syn &ResultTOC();
