@@ -116,7 +116,7 @@
          "self"=>$self
        )
      );
-         
+//          print_r($parameters);
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
