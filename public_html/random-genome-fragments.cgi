@@ -1,4 +1,3 @@
-
 #!/usr/bin/perl
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
@@ -7,14 +6,14 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
-BEGIN {
-    $ERR_LOG = "/dev/null";
+#BEGIN {
+#    $ERR_LOG = "/dev/null";
 #    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
-    use CGI::Carp qw(carpout);
-    open (LOG, ">> $ERR_LOG")
-	|| die "Unable to redirect log\n";
-    carpout(*LOG);
-}
+#    use CGI::Carp qw(carpout);
+#    open (LOG, ">> $ERR_LOG")
+#	|| die "Unable to redirect log\n";
+#    carpout(*LOG);
+#}
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
