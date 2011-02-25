@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.97 2011/02/25 05:58:26 rsat Exp $
+# $Id: compare-matrices,v 1.98 2011/02/25 09:45:58 morgane Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.97 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -800,7 +800,12 @@ package main;
 	my $title = "One-to-n alignments";
 	#      $title .= &RSAT::util::ShortFileName($main::outfile{alignments_1ton});
 	#      $title =~ s/\.tab//;
-	print $main::alignments_1ton_html "<head><title>".$title."</title></head>\n";
+	print $main::alignments_1ton_html "<head>";
+	print $main::alignments_1ton_html "<title>".$title."</title>";
+	print $main::alignments_1ton_html  "<style type='text/css'>\n";
+  	print $main::alignments_1ton_html `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+ 	print $main::alignments_1ton_html  "</style>\n";
+	print $main::alignments_1ton_html "</head>\n";
 	print $main::alignments_1ton_html &sorttable_script();
 	print $main::alignments_1ton_html "<body>\n";
 	print $main::alignments_1ton_html "<h1>".$title."</h1>\n";
@@ -2139,7 +2144,7 @@ sub PrintAlignedMatrices {
 #  print $alignments_1ton_html "</pre></p>\n";
 
   ## Open a table in the HTML file and print column headers
-  print $alignments_1ton_html "<p><table class='sortable' border='1' cellpadding='5' cellspacing='1'>\n";
+  print $alignments_1ton_html "<p><table class='sortable'>\n";
   my $html_header = "<th>Matrix name</th>";
   $html_header .= "<th>Aligned logos</th>";
 
@@ -2201,13 +2206,13 @@ sub PrintAlignedMatrices {
 	$value = sprintf($metric_format{$metric}, $value);
 #	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
 	$match_scores .= "; ".$metric."=".$value;
-	$match_scores_html .= "<td>".$value."</td>\n";
+	$match_scores_html .= "<td style='background-color: #FFFFFF;'>".$value."</td>\n";
 	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
       }
       #      }
     } else {
       $match_scores = "; Alignment reference";
-      $match_scores_html = "<td></td>\n" x scalar(@scores_to_print);
+      $match_scores_html = "<td style='background-color: #FFFFFF;border-right:none'>&nbsp</td>\n" x scalar(@scores_to_print);
     }
     $matrix_string .= $match_scores."\n";
 
@@ -2232,10 +2237,10 @@ sub PrintAlignedMatrices {
     my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_1ton_html}, $logo_file.".png");
     $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
     print $alignments_1ton_html "<tr>\n";
-    print $alignments_1ton_html "<td>".$id_name."</td>\n";
-    print $alignments_1ton_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+    print $alignments_1ton_html "<td style='background-color: #FFFFFF;'>".$id_name."</td>\n";
+    print $alignments_1ton_html "<td style='background-color: #FFFFFF;'><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
     print $alignments_1ton_html $match_scores_html;
-    print $alignments_1ton_html "<td><pre>".$matrix_string."</pre></td>\n";
+    print $alignments_1ton_html "<td style='background-color: #FFFFFF;'><pre>".$matrix_string."</pre></td>\n";
     print $alignments_1ton_html "</tr>\n";
   }
   print $alignments_1ton ";\n";
