@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.96 2011/02/22 17:28:17 jvanheld Exp $
+# $Id: compare-matrices,v 1.97 2011/02/25 05:58:26 rsat Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.96 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.97 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -1946,7 +1946,7 @@ sub PairwiseAlignments {
     print $alignments_pairwise join ("\t", ";pos", "|", 1..$merged_matrix->ncol()), "\n";
 
     ## Open a table in the HTML file
-    print $alignments_pairwise_html "<p><table border='1' cellpadding='5' cellspacing='1'>\n";
+    print $alignments_pairwise_html "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
     print $alignments_pairwise_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
 
     ## Generate a string to display the first matrix in text output file
