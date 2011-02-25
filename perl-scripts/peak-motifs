@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.173 2011/02/24 05:04:03 rsat Exp $
+# $Id: peak-motifs,v 1.174 2011/02/25 10:41:45 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.173 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.174 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -4405,17 +4405,16 @@ factor binding sites and cis-regulatory modules. Nat Protoc 3,
 
 =over
 
+=item B<-return explanation>
+
+Print guidelines for explaining the motifs, comparison tables and
+graphs at the bottom of the result page.
+
 =item B<background models from ctrl sequences>
 
 Estimate background models from control sequences, for oligo-analysis,
 dyad-analysis, and local-word-analysis. This should in principle
 reduce the rate of false positive.
-
-=item B<partial synthesis>
-
-For the Web server: generate temporary synthetic table showing the
-results already obtained so far, and finishing by a message "Partial
-results, please don't forget to reload the file later".
 
 =item B<motif_cluster>
 
