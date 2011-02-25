@@ -324,9 +324,9 @@ print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html'>Background 
 $oligoPopup = "";
 $oligoPopup .=  "<SELECT NAME='markov'>\n";
 $oligoPopup .=  "<OPTION  SELECTED VALUE='0'>0 (generally not ideal)</option>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>1 (more sensitive for small data sets)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
 $oligoPopup .=  "<OPTION  SELECTED VALUE='-2'>oligo length -2 </option>\n";
-$oligoPopup .=  "<OPTION VALUE='-3'>oligo length -3</option>\n";
+$oligoPopup .=  "<OPTION VALUE='-3'>oligo length -3 (more stringent for large data sets e.g. > 1Mb)</option>\n";
 $oligoPopup .=  "</SELECT>";
 print $oligoPopup;
     
