@@ -297,7 +297,8 @@ print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dy
 print "<br/>";	
 		       
 
-### markov  order (common to all programs)
+
+## Word size
 print "<br/> <b>Common options for above programs</b> <br/>";
 
 print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html#oligo_length'>Oligomer length</a>&nbsp;</B>\n";
@@ -318,13 +319,16 @@ print "<br><i>Note: motifs can be larger than word sizes (words are used as seed
 
 print "<br/>";
 
+### markov  order (common to all programs)
 print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html'>Background model: Markov order</a>&nbsp;</B>\n";
- 	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='markov'>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='-2'>oligo length -2 </option>\n";
-	$oligoPopup .=  "<OPTION VALUE='-3'>oligo length -3</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
+$oligoPopup = "";
+$oligoPopup .=  "<SELECT NAME='markov'>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='0'>0 (generally not ideal)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>1 (more sensitive for small data sets)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='-2'>oligo length -2 </option>\n";
+$oligoPopup .=  "<OPTION VALUE='-3'>oligo length -3</option>\n";
+$oligoPopup .=  "</SELECT>";
+print $oligoPopup;
     
 print "<br/>";
 
