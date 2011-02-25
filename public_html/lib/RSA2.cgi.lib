@@ -1136,6 +1136,9 @@ sub html_header {
   $header .=  "<header>\n";
   $header .=  "<title>$infile{input}</title>\n";
   $header .= &sorttable_script() if ($sorttable);
+  $header .= "<style type='text/css'>\n";
+  $header .= `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+  $header .=  "</style>\n";
   $header .=  "<header>\n";
   $header .=  "<body bgcolor='#ffffff'>\n";
   return $header;
