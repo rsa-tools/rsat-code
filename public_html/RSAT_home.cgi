@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.56 2011/02/18 12:51:31 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.57 2011/02/25 17:05:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -188,6 +188,13 @@ print <<EndText;
 <br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
   </td>
 
+  <td align=center>
+  <a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
+  <b>Pretoria - South-Africa</b><br>
+  <img src="images/pretoria_icon.jpg" height=80 border=0><br>
+  http://anjie.bi.up.ac.za/rsa-tools/</a>
+  </td>
+
 <!--
   <td align=center>
   <a href="http://rsat.ccb.sickkids.ca/" target="_top">
@@ -197,13 +204,6 @@ print <<EndText;
   </td>
 </tr><tr>
 
-
-  <td align=center>
-  <a href="http://www.bi.up.ac.za/rsa-tools/" target="_top">
-  <b>Pretoria - South-Africa</b><br>
-  <img src="images/pretoria_icon.jpg" height=80 border=0><br>
-  http://www.bi.up.ac.za/rsa-tools/</a>
-  </td>
 
   <td align=center>
   <a href="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
