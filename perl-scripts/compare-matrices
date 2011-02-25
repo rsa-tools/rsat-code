@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.98 2011/02/25 09:45:58 morgane Exp $
+# $Id: compare-matrices,v 1.99 2011/02/25 10:41:32 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -3015,6 +3015,11 @@ __END__
 =head1 WISH LIST
 
 =over
+
+=item B<logoDP>
+
+Dot product between the "sequence logo statisitcs", i.e. the
+column-wise information content multiplied by the residue frequency.
 
 =item B<Additional metrics>
 
