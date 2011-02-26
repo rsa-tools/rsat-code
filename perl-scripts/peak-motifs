@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.174 2011/02/25 10:41:45 jvanheld Exp $
+# $Id: peak-motifs,v 1.175 2011/02/26 06:50:18 jvanheld Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ supported.
 
 The pipeline runs a series of programs generating each one or several
 result file. An HTML index is generated in order to synthesize the
-results and give access to the individual result files. 
+results and give access to the individual result files.
 
 The index file is formed from the output directory (option -outdir)
 and the file prefix (option -prefix).
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.174 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.175 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -212,6 +212,12 @@ package main;
   %disco = (); ## List of motif discovery algorithms to run
 
 
+  ################################################################
+  ## Supported sequence sources
+  local %supported_seq_source = ("galaxy"=>1);
+  local @supported_seq_sources = sort keys %%supported_seq_source;
+  local $supported_seq_sources = join ",", @supported_seq_sources;
+
   ## Motif databases
   @motif_databases = ();
   @motif_db_format = ();
@@ -239,7 +245,7 @@ package main;
   local $syn;
   local $synthesis_path;
   local $menu_nb = 100;
-  
+
 
   ################################################################
   ## Set default parameters
@@ -357,7 +363,7 @@ package main;
 
 
 ################################################################
-## Display full help message 
+## Display full help message
 sub PrintHelp {
   system "pod2text -c $0";
   exit()
@@ -502,7 +508,7 @@ sub DefaultParameters {
   $main::param{chipmunk_stop_motif_length} = 12;
   $main::param{chipmunk_verbose} = "yes";
   $main::param{chipmunk_mode} = "oops";
-  $chipmunk_suffix = join("_", "_w", 
+  $chipmunk_suffix = join("_", "_w",
 			  $main::param{chipmunk_start_motif_length},
 			  $main::param{chipmunk_stop_motif_length},
 			  $main::param{chipmunk_mode},
@@ -525,7 +531,7 @@ sub DefaultParameters {
   $main::param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NsEucl,SSD,NSW";
   $main::param{matrix_compa_sort_field} = "Ncor"; ## sorting field
 
-  my $motif_compa_options =  ""; 
+  my $motif_compa_options =  "";
   $motif_compa_options .= " -DR -mode matches";
   $motif_compa_options .= " -uth offset_rank 1"; ## Only report the best matching shift between a pair of matrices
   $motif_compa_options .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
@@ -603,7 +609,7 @@ sub SetOutFileNames {
     #    $seqfile{$seq_type} = $main::outfile{$seq_type."_converted"};
     #  } else {
     #      $main::outfile{$seq_type."_purged"} = &OutFileName("data/sequences",
-    # ".fasta", 
+    # ".fasta",
     #							  #							 $seq_type,
     #							 "purged",
     #							 "ml".$main::param{purge_match_length},
@@ -620,7 +626,7 @@ sub SetOutFileNames {
     #	$main::outfile{"ctrl_seqlen_distrib"} = &OutFileName("data/sequences", ".tab", "ctrl_seqlen_distrib");
     #	$main::outfile{"ctrl_seqlen_distrib_graph"} = &OutFileName("data/sequences", $param{img_format}, "ctrl_seqlen_distrib");
     #    }
-    
+
     ## BED file from fasta header (e.g. Galaxy)
     $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
 
@@ -940,7 +946,7 @@ sub SequenceLengths {
   my ($seq_type) = @_;
   &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/sequence-lengths";
-#  $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
+  #  $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
   $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen'};
   $cmd .= " ; cut -f 2 ".$main::outfile{$seq_type.'_seqlen'};
@@ -956,24 +962,25 @@ sub SequenceLengths {
   $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -xmin 0 -ymin 0";
-#  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
-#  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
+  #  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
+  #  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen_distrib'};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib_graph'};
   &one_command($cmd, 1);
-  
-  ## convert the genomic coordinates
+
+  ################################################################
+  ## Convert the genomic coordinates
   ## if these are embeded in the fasta headers
-    if ($main::param{seq_source}){
-      &RSAT::message::TimeWarn("Converting input fasta headers to BED file") if ($main::verbose >= 2);
-      $cmd = $SCRIPTS."/convert-features";
-      $cmd .= " -from ".$main::param{seq_source}."_seq -i ".$infile{test_seq};
-      $cmd .= " -to bed ";
-      my $new_bed_header= "track name=\"peaks\" description=\"RSAT peak-motifs: peaks\" visibility=2 use_score=1 color=13,115,67";
-      $cmd .= " | sed '1s/^.*/".$new_bed_header."/' ";## change first line
-      $cmd .= " > ".$main::outfile{"test_seq_coord"};
-      &one_command($cmd,1);
-    }
+  if ($main::param{seq_source}) {
+    &RSAT::message::TimeWarn("Converting input fasta headers to BED file") if ($main::verbose >= 2);
+    $cmd = $SCRIPTS."/convert-features";
+    $cmd .= " -from ".$main::param{seq_source}."_seq -i ".$infile{test_seq};
+    $cmd .= " -to bed ";
+    my $new_bed_header= "track name=\"peaks\" description=\"RSAT peak-motifs: peaks\" visibility=2 use_score=1 color=13,115,67";
+    $cmd .= " | sed '1s/^.*/".$new_bed_header."/' "; ## change first line
+    $cmd .= " > ".$main::outfile{"test_seq_coord"};
+    &one_command($cmd,1);
+  }
 }
 
 ################################################################
@@ -1544,7 +1551,7 @@ sub ReadDiscoveredMotifs {
   if (-e $main::param{scan_bg_file}) {
     $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
   } else {
-    &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet") 
+    &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet")
       if ($main::verbose >= 1);
     return;
   }
@@ -1820,7 +1827,7 @@ sub ReadMotifTable {
 }
 
 ################################################################
-## Compare discovered motifs to the referencemotif 
+## Compare discovered motifs to the referencemotif
 sub MotifsVersusReference {
   ################################################################
   ## Compare separately each discovered motif to reference motif(s)
@@ -2060,7 +2067,7 @@ sub ScanSequences {
 #     &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
 
 
-    ## Compute the genomic coordinates    
+    ## Compute the genomic coordinates
     if (($main::infile{coord})||($main::param{seq_source})) {
       &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 2);
       $cmd = $SCRIPTS."/convert-features";
@@ -2218,10 +2225,10 @@ sub TimeLog {
       close $in;
     }
     if ($start =~ /(\d{4})_(\d{2})_(\d{2}).(\d{2})(\d{2})(\d{2})/) {
-      my ($start_year, $start_month, $start_day, $start_hour, $start_min, $start_sec) = 
+      my ($start_year, $start_month, $start_day, $start_hour, $start_min, $start_sec) =
 	($1, $2, $3, $4, $5, $6);
       if ($done =~ /(\d{4})_(\d{2})_(\d{2}).(\d{2})(\d{2})(\d{2})/) {
-	my ($done_year, $done_month, $done_day, $done_hour, $done_min, $done_sec) = 
+	my ($done_year, $done_month, $done_day, $done_hour, $done_min, $done_sec) =
 	  ($1, $2, $3, $4, $5, $6);
 	if ($done_month > $start_month) {
 	  $done_day = $start_day +1; ## Quick and tricky treatment of
@@ -2276,7 +2283,7 @@ sub ResultTOC {
 
   $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - </a>".$motif_nb."<br/>";
   $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - </a>".$motif_nb."<br/>";
-  
+
   $result_toc .=  " <table> ";
   $result_toc .=  " <tr> ";
   $result_toc .=  " <td> ";
@@ -2305,7 +2312,7 @@ sub ResultTOC {
   $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
   $result_toc .=  "<a href='#logs'>Logs & Commands</a><br/>";
   $result_toc .=  "</div>";
-  
+
 
   return($result_toc);
 }
@@ -2392,9 +2399,9 @@ sub SynthesisOneMotifComparison {
   $db_match_table .= "<th>".$colored_consensus."</th>\n";
   $db_match_table .= "<th></th>\n";
   $db_match_table .= "</tr>\n";
-  
+
   my $match_nb = 0;
-  my $max_match_nb = 3;	## Max number of matches to display in the synthetic table. 
+  my $max_match_nb = 3;	## Max number of matches to display in the synthetic table.
 
   ## Read the comparison file
   while (<$db_compa>) {
@@ -2458,10 +2465,10 @@ sub SynthesisOneMotifComparison {
 sub SynthesisByMotif {
   print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs (with motif comparison)</h3>\n", 0);
   print $syn "<table class='whitebg'>\n";
-  
+
   ## Header line
   &SyntheticTableAddHeaderRow("Motif discovery");
-  
+
 
   &ReadMotifTable();
 
@@ -2474,7 +2481,7 @@ sub SynthesisByMotif {
 #   if (-e $main::param{scan_bg_file}) {
 #     $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
 #   } else {
-#     &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet") 
+#     &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet")
 #       if ($main::verbose >= 1);
 #     return;
 #   }
@@ -2512,7 +2519,7 @@ sub SynthesisByMotif {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;' >", $colored_consensus, "<br>\n",
 	     "<a href='", $logo_link, "'>",
-	     "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height}, 
+	     "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
 	     "' src='",$logo_link,"'>","</a>","</td>\n");
     } else {
       print $syn "<td><font color='red'>No logo</font>","</td>\n";
@@ -2524,7 +2531,7 @@ sub SynthesisByMotif {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;border-right-style:none;' >", $colored_consensus_rc, "<br>\n",
 		 "<a href='", $logo_link, "'>",
-		 "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height}, 
+		 "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
 		 "' src='",$logo_link,"'>","</a>","</td>\n");
     } else {
       print $syn "<font color='red'>No logo</font>","</td>\n";
@@ -2538,7 +2545,6 @@ sub SynthesisByMotif {
     print $syn "</tr>\n";
 
     ## Motif comparison results
-    
     my @compa_names = ();
     my @compa_files = ();
     my @compa_prefixes = ();
@@ -2589,75 +2595,71 @@ sub SynthesisByMotif {
 
     }
     print $syn "</td></tr>\n";
-    
-    ## scan results
-    
+
+    ## Scan results
     my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
     if (-e $scan_file) {
-	  my $table = "<table><tr>";
+      my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $table .= "</tr></table>";
-      
-      ## display UCSC track
-      ## IF from fasta sequence: first get assembly
+
+      ## Display UCSC track
+      ## If from fasta sequence: first get assembly
       my $genome_assembly ="";
-      if ($main::param{seq_source}){      
+      if ($main::param{seq_source}) {
       	## also store the genome assembly
       	$genome_assembly = ` grep '^>' $infile{test_seq} | head -n 1 ` ;
       	chomp($genome_assembly);
-      	if ($main::param{seq_source} eq "galaxy"){      		
-      		$genome_assembly =~ s/>([^_]+)_.*$/$1/;
-      		}
-      &RSAT::message::Info("Assembly from fasta header", $main::param{seq_source},$genome_assembly) if ($main::verbose >= 3);    	
-      	 ## IF from coord file
-    	} elsif ($main::param{coord_assembly}){
-    		$genome_assembly = $main::param{coord_assembly};
-    	}
+      	if ($main::param{seq_source} eq "galaxy") {
+	  $genome_assembly =~ s/>([^_]+)_.*$/$1/;
+	}
+	&RSAT::message::Info("Assembly from fasta header", $main::param{seq_source},$genome_assembly) if ($main::verbose >= 3);
+	## IF from coord file
+      } elsif ($main::param{coord_assembly}) {
+	$genome_assembly = $main::param{coord_assembly};
+      }
 
-       if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
-      		## ucsc link
-      		my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
-      		my $browser_url = "<a target='_blank' href='";
-      		$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
-      		$browser_url .= "db=".$genome_assembly;
-      		$browser_url .= "&hgt.customText=".$BED_URL;
-      		$browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
-      	
-      		  &SyntheticTableAddRow_New("Predicted sites on input peaks",
-			    $table,
-			     "view in genome browser ", [$browser_url,,
-			   			 ],
-			    "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
-			   			 "BED (UCSC track)",$main::outfile{$motif_id.'_pssm_sites_genomic'}
-			   			 ],
-			   	"distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
-			   			 ],
-				
-			    "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
-			    ]     
-			   ); 
-       } else { ## without UCSC track
-      		&SyntheticTableAddRow_New("Predicted sites on input peaks",
-			    $table,
-			    "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
-			   			 ],
-			   	"distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
-			   			 ],
-				
-			    "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
-			    ] 
-			    
-			   );  
-       }  	
-   }
-    
+      if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
+	## UCSC link
+	my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
+	my $browser_url = "<a target='_blank' href='";
+	$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+	$browser_url .= "db=".$genome_assembly;
+	$browser_url .= "&hgt.customText=".$BED_URL;
+	$browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+
+	&SyntheticTableAddRow_New("Predicted sites on input peaks",
+				  $table,
+				  "view in genome browser ", [$browser_url,,
+							     ],
+				  "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
+					    "BED (UCSC track)",$main::outfile{$motif_id.'_pssm_sites_genomic'}
+					   ],
+				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
+						  ],
+
+				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
+						]
+				 );
+      } else {			## without UCSC track
+	&SyntheticTableAddRow_New("Predicted sites on input peaks",
+				  $table,
+				  "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
+					   ],
+				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
+						  ],
+				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
+						]
+				 );
+      }
+    }
+
     ## add a black line
-	print $syn "<tr><td colspan=5 style='border-top-style:none;border-bottom-color:black;border-bottom-width:3px;'><pre/></td></tr>";
-    
-   }
+    print $syn "<tr><td colspan=5 style='border-top-style:none;border-bottom-color:black;border-bottom-width:3px;'><pre/></td></tr>";
+  }
   print $syn "</table>\n";
   print $syn "</table><p>\n";
   print $syn &close_menu_heading();
@@ -2977,88 +2979,86 @@ sub SynthesisSequenceComposition {
     $seq_stats .= "<br>\n<u>Min length:</u> ".$min_peak_len." bp";
     $seq_stats .= "<br>\n<u>Mean length:</u> ".$mean_peak_len." bp";
     $seq_stats .= "<br>\n<u>Max length:</u> ".$max_peak_len." bp";
-    
-    ## display peaks UCSC track
-      ## IF from fasta sequence: first get assembly
-      my $genome_assembly ="";
-      if ($main::param{seq_source}){      
-      	## also store the genome assembly
-      	$genome_assembly = ` grep '^>' $infile{test_seq} | head -n 1 ` ;
-      	chomp($genome_assembly);
-      	if ($main::param{seq_source} eq "galaxy"){      		
-      		$genome_assembly =~ s/>([^_]+)_.*$/$1/;
-      		}
-      &RSAT::message::Info("Assembly from fasta header", $main::param{seq_source},$genome_assembly) if ($main::verbose >= 3);    	
-      	 ## IF from coord file
-    	} elsif ($main::param{coord_assembly}){
-    		$genome_assembly = $main::param{coord_assembly};
-    	}
-    	
-     if ((($main::infile{coord})&&(-e $main::infile{coord}))
+
+    ## Display peaks UCSC track.
+    ## If from fasta sequence: first get assembly.
+    my $genome_assembly ="";
+    if ($main::param{seq_source}) {
+      ## also store the genome assembly
+      $genome_assembly = ` grep '^>' $infile{test_seq} | head -n 1 ` ;
+      chomp($genome_assembly);
+      if ($main::param{seq_source} eq "galaxy") {
+	$genome_assembly =~ s/>([^_]+)_.*$/$1/;
+      }
+      &RSAT::message::Info("Assembly from fasta header", $main::param{seq_source},$genome_assembly) if ($main::verbose >= 3);
+      ## IF from coord file
+    } elsif ($main::param{coord_assembly}) {
+      $genome_assembly = $main::param{coord_assembly};
+    }
+
+    if ((($main::infile{coord})&&(-e $main::infile{coord}))
       	||(($main::outfile{"test_seq_coord"})&&(-e $main::outfile{"test_seq_coord"}))) {
-      		## ucsc link
-      		my $BED_URL = $ENV{rsat_www}."/tmp/";
-      		$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
-      		$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
-      		my $browser_url = "<a target='_blank' href='";
-      		$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
-      		$browser_url .= "db=".$genome_assembly;
-      		$browser_url .= "&hgt.customText=".$BED_URL;
-      		$browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
-			
-			my $BED = "";
-			$BED = $main::infile{coord} if ($main::infile{coord});
-			$BED = $main::outfile{"test_seq_coord"} if ($main::outfile{"test_seq_coord"});
-   			 &SyntheticTableAddRow_New($seq_stats,
-			  "<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
-			   "view peaks in genome browser ", [$browser_url,,
-			   			 ],
-			   "coordinates", ["UCSC BED track",$BED,
-			   			 ],
-			  "seq",["converted",$main::outfile{$seq_type."_converted"},
-			  			"purged" , $main::outfile{$seq_type."_purged"}
-			  			],
-			  "lengths",['list', $main::outfile{$seq_type."_seqlen"},
-    					'distrib',$main::outfile{$seq_type."_seqlen_distrib"},
-    					 'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
-			 			 ]
-			 );
-      	} else { ## without UCSC track
-      		 &SyntheticTableAddRow_New($seq_stats,
-			  "<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
-			  "seq",["converted",$main::outfile{$seq_type."_converted"},
-			  			"purged" , $main::outfile{$seq_type."_purged"}
-			  			],
-			  "lengths",['list', $main::outfile{$seq_type."_seqlen"},
-    					'distrib',$main::outfile{$seq_type."_seqlen_distrib"},
-    					 'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
-			 			 ]
-			 );
-      		
-      	}
+      ## UCSC link
+      my $BED_URL = $ENV{rsat_www}."/tmp/";
+      $BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
+      $BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
+      my $browser_url = "<a target='_blank' href='";
+      $browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+      $browser_url .= "db=".$genome_assembly;
+      $browser_url .= "&hgt.customText=".$BED_URL;
+      $browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+
+      my $BED = "";
+      $BED = $main::infile{coord} if ($main::infile{coord});
+      $BED = $main::outfile{"test_seq_coord"} if ($main::outfile{"test_seq_coord"});
+      &SyntheticTableAddRow_New($seq_stats,
+				"<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
+				"view peaks in genome browser ", [$browser_url,,
+								 ],
+				"coordinates", ["UCSC BED track",$BED,
+					       ],
+				"seq",["converted",$main::outfile{$seq_type."_converted"},
+				       "purged" , $main::outfile{$seq_type."_purged"}
+				      ],
+				"lengths",['list', $main::outfile{$seq_type."_seqlen"},
+					   'distrib',$main::outfile{$seq_type."_seqlen_distrib"},
+					   'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
+					  ]
+			       );
+    } else {			## without UCSC track
+      &SyntheticTableAddRow_New($seq_stats,
+				"<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
+				"seq",["converted",$main::outfile{$seq_type."_converted"},
+				       "purged" , $main::outfile{$seq_type."_purged"}
+				      ],
+				"lengths",['list', $main::outfile{$seq_type."_seqlen"},
+					   'distrib',$main::outfile{$seq_type."_seqlen_distrib"},
+					   'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
+					  ]
+			       );
+
+    }
 
     ## Residue composition
     for my $ol (@profiles_oligo_lengths) {
-     # my $table = "<table class='whitebg'><tr>";
-     my $table = "<table><tr>";
+      # my $table = "<table class='whitebg'><tr>";
+      my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Position profile<br><a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a></td>";
       $table .= "</tr></table>";
       &SyntheticTableAddRow_New($ol."nt composition",
-			    $table,
-			    $ol."nt", ["freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
-			   			 "transitions",$main::outfile{$ol."nt_".$seq_type."_transitions"}
-			   			 ],
+				$table,
+				$ol."nt", ["freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
+					   "transitions",$main::outfile{$ol."nt_".$seq_type."_transitions"}
+					  ],
 			   	"bg model", [ "Inclusive format",$main::outfile{$ol."nt_".$seq_type."_inclusive"}
-			   			],
-				
-			    "profile", [ "table",$main::outfile{$ol."nt_".$seq_type."_profiles"},
-			    			"html(individual)",$main::outfile{$ol."nt_".$seq_type."_profiles_index"}
-			    ] 
-			    
-			   );
+					    ],
+				"profile", [ "table",$main::outfile{$ol."nt_".$seq_type."_profiles"},
+					     "html(individual)",$main::outfile{$ol."nt_".$seq_type."_profiles_index"}
+					   ]
+			       );
     }
   }
   print $syn "</table><p>\n";
@@ -3310,19 +3310,19 @@ sub SynthesisMotifsVersusReference {
   &SyntheticTableAddHeaderRow("Discovered motifs versus reference motif");
   my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_ref_png"});
 
- &SyntheticTableAddRow_New("Motifs versus reference motif",
+  &SyntheticTableAddRow_New("Motifs versus reference motif",
 			    "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
 			    "Reference motif",["matrix",$main::infile{ref_motifs}],
 			    "table", ["html",$main::outfile{"motifs_vs_ref_html"},
-			   			 "txt",$main::outfile{"motifs_vs_ref"}
-			   			 ],
-			   	"alignments (logo)", [ "html",$main::outfile{"motifs_vs_ref_alignments_1ton_html"},
-			   							"text",$main::outfile{"motifs_vs_ref_alignments_1ton"}			
-			   			],
-				
+				      "txt",$main::outfile{"motifs_vs_ref"}
+				     ],
+			    "alignments (logo)", [ "html",$main::outfile{"motifs_vs_ref_alignments_1ton_html"},
+						   "text",$main::outfile{"motifs_vs_ref_alignments_1ton"}
+						 ],
+
 			    "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_vs_ref_gml"},
-			    			"png (low resolution)",$main::outfile{"motifs_vs_ref_png"}
-			    ] 	    
+				       "png (low resolution)",$main::outfile{"motifs_vs_ref_png"}
+				     ]
 			   );
 }
 
@@ -3332,19 +3332,19 @@ sub SynthesisMotifsVersusDatabase {
   &SyntheticTableAddHeaderRow("Discovered motifs versus transcription factor databases");
   foreach my $db_name (@motif_databases) {
     my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_db_".$db_name."_png"});
-	&SyntheticTableAddRow_New("Motifs versus ".$db_name." database",
-			    "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
-			    "table", ["html",$main::outfile{"motifs_vs_db_".$db_name."_html"},
-			   			 "txt",$main::outfile{"motifs_vs_db_".$db_name}
-			   			 ],
-			   	"alignments (logo)", [ "html",$main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton_html"},
-			   							"text",$main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton"}				
-			   			],
-				
-			    "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
-			    			"png (low resolution)",$main::outfile{"motifs_vs_db_".$db_name."_png"}
-			    ] 	    
-			   );
+    &SyntheticTableAddRow_New("Motifs versus ".$db_name." database",
+			      "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
+			      "table", ["html",$main::outfile{"motifs_vs_db_".$db_name."_html"},
+					"txt",$main::outfile{"motifs_vs_db_".$db_name}
+				       ],
+			      "alignments (logo)", [ "html",$main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton_html"},
+						     "text",$main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton"}
+						   ],
+
+			      "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
+					 "png (low resolution)",$main::outfile{"motifs_vs_db_".$db_name."_png"}
+				       ]
+			     );
   }
 }
 
@@ -3359,7 +3359,7 @@ sub CleanSequences {
 
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
   &RSAT::message::TimeWarn("Reading arguments") if ($main::verbose >= 2);
   my $arg;
@@ -3422,31 +3422,33 @@ sequences.
 
 =pod
 
-=item B<-from fasta_source>
+=item B<-source sequence_source>
 
-Enter the source of the fasta file. 
+Enter the source of the fasta sequence file.
 
 Supported source: galaxy
 
-Coordinates embedded in the fasta header are extracted
-and used to convert predicted site coordinates
-(relative to peak center) to genomic coordinates
-(in the form of a bed file), which can be uploaded to the UCSC genome
+When the sequence file comes from Galaxy, peak coordinates embedded in
+the fasta headers are extracted and used to convert predicted site
+coordinates (relative to peak center) to genomic coordinates (in the
+form of a bed file), which can then be uploaded to the UCSC genome
 browser as an annotation track.
 
-This option is not compatible with -coord.
+This option is incompatible with -coord.
 
 =cut
-    } elsif ($arg eq "-from") {
+    } elsif ($arg eq "-source") {
       $main::param{seq_source} = shift(@arguments);
+      &RSAT::message::Warning($main::param{seq_source}, "invalid sequence source, will be ignored. Supported: ".$supported_seq_sources)
+	unless ($supported_seq_source{$main::param{seq_source}};
 
 =pod
 
 =item B<-coord assembly peak_coordinate_file>
 
-Enter a file providing the coordinates of each peak in bed format.
-The name of the file must be after the assembly corresponding to this file.
-Assembly are encoded in the form of uscsc (eg. mm9, hg19 ...)
+Specify a file in bed format indicating the coordinates of each peak .
+The name of the file must be after the assembly corresponding to this
+file.  Assembly are encoded in the form of uscsc (eg. mm9, hg19 ...)
 
 Example: -coord hg19 path/to/bed/file.bed
 
@@ -3455,7 +3457,9 @@ When a coordinate file is provided, predicted site coordinates
 (in the form of a bed file), which can be uploaded to the UCSC genome
 browser as an annotation track.
 
-The 4th column of the BED file should correspond to the fasta headers
+The 4th column of the BED file must correspond to the fasta
+headers. See the documentation of the UCSC Genome Browser for the
+specification of the bed format.
 
 =cut
     } elsif ($arg eq "-coord") {
@@ -3577,7 +3581,7 @@ I<convert-matrix> for interconversions between matrix formats).
 
 File containinf a database of transcription factor binding motifs
 (e.g. JASPAR, TRANSFAC, RegulonDB, ...) which will be compared to the
-discovered motifs (task motifs_vs_db). 
+discovered motifs (task motifs_vs_db).
 
 The option requires three arguments:
 
@@ -3655,7 +3659,7 @@ Title displayed on top of the graphs.
 
 =item	B<-img_format img_format>
 
-Image format. 
+Image format.
 
 All the formats supported by XYgraph can be used.
 
@@ -3725,7 +3729,7 @@ dinucleotides) in the test sequence set.
 =item I<local_words>
 
 Run I<local-word-analysis> to detect locally over-represented
-oligonucleotides and dyads. 
+oligonucleotides and dyads.
 
 The program I<local-word-analysis> (Matthieu Defrance,unpublished)
 tests the over-representation of each possible word (oligo, dyad)
@@ -3799,7 +3803,7 @@ patterns.
 
 =item I<seqlen>
 
-Compute sequence lengths and their distribution. 
+Compute sequence lengths and their distribution.
 
 Sequence lengths are useful for the negative control (selection of
 random genome fragments).
@@ -3870,7 +3874,7 @@ motifs in ChIP-Seq data. Bioinformatics 26, 2622-3.
 =item I<merge_words>
 
 Merge the words (oligos or dyads) discovered by the different
-string-based motif discovery algorithms. 
+string-based motif discovery algorithms.
 
 The table of merged words has one row per word (oligo or dyad) and one
 column per motif discovery program. This table is convenient to
@@ -4114,7 +4118,7 @@ sub CheckArguments {
   } else {
     &FatalError("You must define the test sequence set (option -i)");
   }
-  
+
   if ($main::param{seq_source}) {
   	unless ($main::param{seq_source} eq "galaxy") {
       &FatalError("-from option: this sequence source is not supported", $main::param{seq_source});
