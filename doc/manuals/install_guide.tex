@@ -53,9 +53,6 @@ the following operating systems.
 
 \item Dec Alpha
 
-\item cygwin (under MS Windows 98) (except for the graphical
-librairies, because I did not find a cygwin version of GD.pm)
-
 \end{enumerate}
 
 \RSAT is not compatible with any version of Microsoft Windows and I
@@ -76,9 +73,30 @@ for some other specific programs. The perl modules can be found in the
 Comprehensive Perl Archive Network (\url{http://www.cpan.org/}), or
 can be installed with the command \program{cpan}.
 
+
+The simplest way to install a Perl module is to run the \program{cpan}
+installer via \program{perl}. For example, to install the module
+\program{Postscript::Simple}, type the following.
+
+\begin{lstlisting}
+sudo perl -MCPAN -e 'install PostScript::Simple install Postscript::Simple' 
+\end{lstlisting}
+
+\emph{Beware:} the command sudo requires administrator rights on the
+computer. If you don't have the root password, please consult your
+system administrator.
+
+
 \begin{description}
 \item[GD.pm] Interface to Gd Graphics Library. Used by
-  \program{XYgraph} and \program{feature-map}.
+  \program{XYgraph} and \program{feature-map}. 
+
+  \textbf{Warning:} the installation of GD requires prior installation
+  of seveal libraries, which can be more or less tricky depending on
+  operating system. Several protocols can be found on the web to
+  install the required libraries. For instance, I found a protocol
+  that works for Mac OSX on
+  \url{http://www.libgd.org/DOC_INSTALL_OSX}.
 
 \item[PostScript::Simple] Produce PostScript files from Perl. Used by
   \program{feature-map}.
@@ -109,8 +127,7 @@ can be installed with the command \program{cpan}.
   clients for the Web service interface to \RSAT (RSATWS).
 
 \item[Class::Std::Fast and Storable] are required to bring persistence
-  to data structures ike organisms. The slow procedure of organisms
-  loading can then be done only once. This library can be easyly
+  to data structures like organisms. This library can be easyly
   installed via CPAN.
 
 \item[XML::LibXML] is required for parsing and writing XML and uses
@@ -183,7 +200,7 @@ file in your home directory.
 
 \begin{lstlisting}
 setenv CVS_RSH ssh
-\End{lstlisting}
+\end{lstlisting}
 
 
 If your shell is bash, add the following line to the \file{.bashrc}
@@ -366,6 +383,28 @@ make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
   sites or the weight score distribution).
 \end{itemize}
 
+
+\section{Compiling the Stubb for Web services}
+
+If you want to use the Web services, you need to compile the Stubb in
+order to synchronize the Perl modules of your client with the service
+specification of the server.
+
+
+\begin{lstlisting}
+## Change directory to the sample Perl Web services clients
+cd $RSAT/ws_clients/perl_clients
+
+## Compile the stubb.
+## Your computer will open a connection to the Web services server 
+## and collect the WSDL specifications of the supported services.
+make stubb
+
+## Test the connection to the Web services
+make test
+\end{lstlisting}
+
+%$
 
 \section{Importing and installing programs from third parties}
 
