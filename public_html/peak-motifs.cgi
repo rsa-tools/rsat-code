@@ -221,12 +221,11 @@ if ($query->param('matrix-scan-quick') =~ /on/) {
 
 ## UCSC custom track
 if ($query->param('visualize') eq "galaxy") {
-    $parameters .= " -from galaxy ";
-  }
+  $parameters .= " -from galaxy ";
+}
 if ($query->param('visualize') eq "bed_coord") {
-	
-	## upload the coord file
-	 $upload_coord_file = $query->param('bed_file');
+  ## upload the coord file
+  $upload_coord_file = $query->param('bed_file');
   if ($upload_coord_file) {
     my $type = $query->uploadInfo($upload_coord_file)->{'Content-Type'};
     if ($upload_coord_file =~ /\.gz$/) {
@@ -239,13 +238,13 @@ if ($query->param('visualize') eq "bed_coord") {
     }
     close REF;
   }
-	
-    unless ($query->param('assembly')){
-    	  &cgiError("The assembly version must be provided when using a BED coordinates file.");
-    }
-    
-     $parameters .= " -coord ".$query->param('assembly')." ".$upload_coord_file;
+
+  unless ($query->param('assembly')){
+    &cgiError("The assembly version must be provided when using a BED coordinates file.");
   }
+
+  $parameters .= " -coord ".$query->param('assembly')." ".$upload_coord_file;
+}
 
 ### add -task
 $parameters .= " -task " . join(",", @tasks);
