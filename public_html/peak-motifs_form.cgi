@@ -436,19 +436,20 @@ print "<br/>";
 
 
 print "</fieldset><p/>";
-#
-### UCSC custom track
-#
+
+
+################################################################
+## UCSC custom track
+##
 print "<fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Visualize motifs in genome browser </a></b></legend>";
 
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b>No</b>");
 print "<br/>";
 
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy'
-$checked{'galaxy'}>","<b>Yes; sequences fetched from <a
-href=''>Galaxy</a></b> (fasta headers should be in the form:
-<tt>>mm9_chr1_3473041_3473370_+ </tt>)");
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
+       "<b>Yes; sequences fetched from <a href=''>Galaxy</a></b>",
+       "(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
 
 print "<br/>";
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes; use the following BED file.</b>");
