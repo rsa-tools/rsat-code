@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>RSA-tools - tutorials - template</title>
+   <title>RSA-tools - tutorials - peak-motifs</title>
 <link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
 </head>
 <body class="info">
@@ -21,12 +21,8 @@
 <ol>
 <li><a href='#prerequisite'>Prerequisite</a>
 <li><a href='#intro'>Introduction</a></li>
-<li><a href='#coord'>Accessing ChIP-seq read and peak coordinates in the GEO database</a></li>
-<li><a href='#galaxy_connection'>Opening a custom session in Galaxy (optional)</a></li>
-<li><a href='#galaxy_upload'>Uploading mapped reads to Galaxy</a></li>
-<li><a href='#peak_calling'>Peak calling with MACS</a></li>
-<li><a href='#seq'>Retrieving peak sequences with Galaxy</a></li>
-<li><a href='#peak_motifs'>Discovering over-represented motifs</a></li>
+<li><a href='#study_case'>Study case</a></li>
+<li><a href='#parameters'>Tuning <i>peak-motifs</i> parameters</a></li>
 <li><a href='#interpret'>Interpreting the result</a></li>
 <li><a href='#references'>References</a></li>
 </ol>
@@ -44,15 +40,17 @@ developed in the following parts of the theoretical course.
 
 <p>It is better to have also followed the corresponding tutorials.
 <ol>
-<li><a href='tut_PSSM.html'>Position-specific scoring matrices</a></li>
-<li><a href="tut_oligo-analysis.html"><b><i>oligo-analysis</i></b></a>: detection of over-represented words</li>
-<li><a href="tut_position-analysis.html"><b><i>position-analysis</i></b></a>: detection of words having a positional bias in sequences aligned on some reference position.</li>
+<li><a href='tut_galaxy.html'>Retrieving peak sequences from Galaxy</a>.</li>
+<li><a href='tut_PSSM.html'>Position-specific scoring matrices</a>.</li>
+<li><a href="tut_oligo-analysis.html"><i>oligo-analysis</i></a>: detection of over-represented words.</li>
+<li><a href="tut_position-analysis.html"><i>position-analysis</i></a>: detection of words having a positional bias in sequences aligned on some reference position.</li>
 </ol>
+
+
 </p>
 
 
 <hr><a name='intro'></a><h2>Introduction</h2>
-
 
 <p>The
 program <a href='../peak-motifs_form.cgi'><i>peak-motifs</i></a>
@@ -61,366 +59,20 @@ cis-regulatory motifs and predict putative transcription factor
 binding sites from a set of peaks identified by high-throughput
 methods such as ChIP-seq, ChIP-on-chip or related methods.</p>
 
-<p>In this tutorial, we will show how to combine various Web resources
-in order to perform a complete pipeline to analyze ChIP-seq data:
-
+<p>In this tutorial, we provide hints about the tuning of parameters
+and interpretation of results for the different takss ensured
+by <i>peak-motifs</i>:
 <ol>
-<li> obtain the primary data from a ChIP-seq experiment, </li>
-<li>identify the peak locations, </li>
-<li>obtain the corresponding genomic sequences, </li>
-<li>predict cis-regulatory motifs and putative transcription factor
-binding sites, </li>
-<li> visualize the result in a genome browser.</p>
+  <li>motif discovery combining various criteria (global
+    over-representation, local over-representation, position biases);</li>
+  <li>comparisons with motif databases and/or custom reference motifs;</li>
+  <li>sequence scanning to predict putative binding sites;</li>
+  <li>visualization in a genome browser.</li>
 </ol>
 
-<hr><a name='coord'></a><h2>Accessing ChIP-seq read and peak coordinates in the GEO database</h2>
- 
-<p><b>Goal:</b> Identify the dataset corresponding to the article by
-  Chen et al., 2008 (Pubmed ID: <a target='_blank'
-  href='http://www.ncbi.nlm.nih.gov/pubmed?term=18555785[uid]'>18555785</a>)
-  in the <a target='_blank'
-  href='http://www.ncbi.nlm.nih.gov/gds/'>GEO datasets</a> and
-  Retrieve the data for the <b>Sox2</b> experiment.</p>
+<hr><a name='study_case'></a><h2>Study case</h2>
 
-
-<ol>
-  <li><p>Open a connection to the <a target='_blank'
-      href='http://www.ncbi.nlm.nih.gov/pubmed/'>Pubmed</a>
-      database.</p></li>
-  
-  <li>
-    <p>In the text box, enter the title of the article:
-      
-      <p><ul><i>Integration of external signaling pathways with the
-	  core transcriptional network in embryonic stem
-	  cells</i></ul></p>
-    
-    <p>This should give a single result. If this is not the case, you
-      can select the publication on the basis of its PubMed
-      ID <a target='_blank'
-	    href='http://www.ncbi.nlm.nih.gov/pubmed?term=18555785[uid]'>18555785</a></p>
-  </li>
-  
-  <li><p>On the right side of the Pubmed record, under the title <b>All links from this record
-      </b>, click the link <b>GEO DataSets</b>.</p></li>
-
-  <li><p>This opens the record <a target='_blank'
-      href='http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE11431'>GSE11431</a>
-      with the title <i>Mapping of transcription factor binding sites
-      in mouse embryonic stem cells</i>.
-      
-    <p><ul>Note: the title of the record differs from the title of the
-	article, which makes it somewhat difficult to identify a
-	record by browsing the GEO datasets alone. The easiest way to
-	go from an article to the corresponding records is generally
-	to use the direct link from PubMed to GEO DataSets, as we
-	did.</ul></p>
-  </p></li>
-      
-  <li><p>In the GEO database, the identifiers with prefix <i>GSE</i> denote
-      <i>series</i> of experiments. Chen et al. (2008) published ChIP-seq
-      results for various transcription factors, so that the series
-      associated to this article contains 16 samples in
-      total.</p></li>
-
-  <li><p>The bottom of the GSE record provides the list
-      of <i>samples</i> (identifiers starting with <i>GSM</i>). Click
-      on the link corresponding to <b>ES_Oct4</b> (sample
-      ID <a target='_blank'
-      href='http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM288346'>GSM288346</a>).
-  </p></li>
-
-  <li><p> Read the information available about this sample. The bottom
-      of the record provides links to the data sets at various
-      processing stages:
-      <p><ul>
-	  <li>The <b><i>SRA</i></b> files contain the raw sequences of
-	    the reads produced by the massively parallel
-	    sequencer. For the Oct4 sample, there are 4 files each
-	    containing more than 5 million reads (~150 Megabases of
-	    sequence per file). These files are quite heavy, and we
-	    don't need to download them for the purpose of this
-	    tutorial.</li>
-	    
-	  <li>The <b><i>txt</i></b> file <a target='_blank'
-	    href='ftp://ftp.ncbi.nih.gov/pub/geo/DATA/supplementary/samples/GSM288nnn/GSM288346/GSM288346%5FES%5FOct4%2Etxt%2Egz'>SM288346_ES_Oct4.txt.gz</tt></a>
-	    contains a set of peaks selected by Chen et
-	    al. (2008). Those reads are described in a tab-delimited
-	    text file, the first column indicates the chromosome, the
-	    second column the start and the third column the end of
-	    each peak. This bed file can be uploaded to Galaxy in
-	    order to directly retrieve the sequences of the peaks
-	    published by Chen and colleagues in their original
-	    paper. However, in this tutorial we will perform one
-	    additional step: we will run a peak calling program (MACS)
-	    in order to identify the regions enriched in reads (the
-	    peaks).</li>
-
-	  <li>The <b><i>bed</i></b> file <a target='_blank'
-	    href='ftp://ftp.ncbi.nih.gov/pub/geo/DATA/supplementary/samples/GSM288nnn/GSM288346/GSM288346%5FOct4%2Ebed%2Egz'>GSM288346_Oct4.bed.gz</a>
-	    contains the location of the reads. This is the file we
-	    will use as input to identify ourselves the the
-	    significant peaks (see
-	    section <i><a href='#peak_calling'>Peak calling</a></i>
-	    below).</li>
-	  
-	  </ul>
-      </p></li>
-      
-    </ol>
-
-
-
-<hr><a name='galaxy_connection'></a>
-<h3>Opening a custom session in Galaxy (optional)</h3>
-
-<p>The Galaxy Web server offers a wide variety of tools for analyzing
-  genomic data. </p>
-
-
-<p>To take benefit of all the advantages of Galaxy, you can open an
-  account on the server, which will allow you to keep a trace of
-  previous analyses and store the data and results on their
-  server. </p>
-
-<ol>
-  <li><p>Open a connection to the Galaxy server (<a target='_blank'
-  href='http://main.g2.bx.psu.edu/'>http://main.g2.bx.psu.edu/</a>).</p></li>
-  
-  <li><p>On the top of the window, open the command <b>User >
-	Login</b> and provide your email address and password (at
-      the first connection, you must fill a form to obtain a
-      login). </p></li>
-  
-</ol>
-
-<hr><a name='galaxy_upload'></a>
-<h3>Uploading mapped reads to Galaxy</h3>
-
-<ol>
-
-  <li><p>In the menu at the left of the window, click <b>Get Data > Upload File</b>.</p></li>
-      
-  <li><p>You can either upload a file from your computer
-      (click <b>Browse</b> besides the <b>File</b> text box) or from
-      a Web server (type a link to the file in the <b>URL/Text</b>
-      box).
-      <ul>For this exercise, we will upload the read location file
-	from GEO (<tt>.bed</tt> file described above). In
-	the <b>URL/Text</b> box, paste the URL of the Oct4 sample:
-	<pre>ftp://ftp.ncbi.nih.gov/pub/geo/DATA/supplementary/samples/GSM288nnn/GSM288346/GSM288346%5FOct4%2Ebed%2Egz</pre>
-      </ul>
-  </p></li>
-  
-  <li><p>In the <b>Genome</b> pop-up menu, select <i>Mouse Feb 2006
-	(NCBI36/mm8)</i>. Tip: he genome is selected if you simply
-      type <i>mm8</i> when the menu is selected.</p></li>
-  
-  <li><p>Leave the other options to their default value, and
-      click <b>Execute</b>. The upload may take several
-      minutes. When the file will be uploaded, the yellow box on the
-      right side will turn to green. 
-      <ul>
-	<li><b>Note:</b> the upload speed depends on the
-	  availability of the two servers. Indeed, the coordinates
-	  of the ChIP-seq reads were directly transferred from GEO
-	  to Galaxy, without transiting by your computer. .</li>
-      </ul>
-  </p></li>
-
-  <li><p>Click on this box and make sure that the format is BED and
-      the genome is mm8. </p></li>
-
-  <li><p>Optionally, you can rename the Galaxy entry for the sake of readability
-      <ul>
-	<li>In the green box represeting your uploaded data, click
-	  on the pencil (<i><b>Edit attributes</i></b>).
-	<li>The field <b><i>Name</i></b> currently contains the
-	  ftp location from which the bed fiel was retrieved. Cut
-	  this information and paste it in the <b><i>Info</i></b>
-	  box.</li>
-	<li>Type a more informative content in
-	  the <i><b>Name</b></i> box, for example <i>Chen 2008,
-	    ES_Oct4 reads</i>.</li>
-	<li>Don't forget to click <b>Save</b>, and check that the
-	  information has been updated in the history panel at the
-	  right of the window.</li>
-      </ul>
-  </p></li>
-  
-</ol>
-
-<hr><a name='peak_calling'></a><h3>Peak calling with MACS</h3>
-    
-<ol>
-  <li><p>In the left frame of the Galaxy window, you can see a set of
-      specialized tools for analyzing data from Next Generation
-      (<b>NGS TOOLBOX BETA</b>).</p></li>
-  
-  <li><p>Click <b>NGS:Peak Calling > MACS Model-based Analysis of
-	ChIP-Seq</b>.</p></li>
-
-  <li><p>Enter an <b>Experiment Name</b> (e.g. <i>OCT4 Chen-2008</i>.</p></li>
-      
-  <li><p>For the <b>ChIP-seq tag file</b>, select the file you
-      uploaded in the previous step (if you performed all the steps
-      above, it should appear as <i>Oct4 reads</i> in the pop-up
-      menu). </p></li>
-
-  <ul>
-    <li><p><b>Note:</b>Since we dispose of a single set of reads, we
-	will run the peak-calling without providing any control. In
-	case you would dispose of a control set, you could enter its
-	mapped read BED file as
-	<b>Control tag file</b>.</p></li>
-  </uL>
-
-  <li><p><b>Effective genome size</b>: this is the size of the genome
-      considered "usable" for peak calling. This value is given by the
-      MACS developpers on their website. It is smaller than the
-      complete genome because many regions are excluded (telomeres,
-      highly repeated regions...). The default value is for human
-      (2700000000.0), as we work on mouse,
-      choose <i>1870000000.0</i> </p></li>
-  
-  <li><p>Set the <b>Tag size</b> to 26bp (the default is 25).
-  </p></li>
-  
-<!--  <li><p>Set the values of the parameter <i><b>3 levels of regions
-	  around the peak region</b></i> to <i>200,300,500</i>.
-      <ul>
-	<li><b>Note:</b> the default values are much larger for this
-	parameter, in order to support the detection of wide enriched
-	regions, such as those detected in the analysis of chromatin
-	accessibility or histone modifications.  For ChIP-seq
-	experiments involving a pull-down of specific transcription
-	factors, region sizs shoudl typicaly correspond to the
-	expected sizes of cis-regulatory modules (a few hundreds
-	bp).</li>
-      </uL>
-  </p></li>
--->
-  
-  <li><p>Leave all other options to their default values and
-      click <b>Execute</b>.</p></li>
-  
-  <li><p>While the program is running, two yellow boxes should appear
-      in the "History" frame at the right of the Galaxy
-      Window. After completion of the job, the boxes will be colored
-      in green. The first box contains an HTML page with links to
-      the results in various formats. The second box contain a BED
-      file with the coordinates of the peaks. How many peaks
-      ("regions") were detected by MACS ?</p></li>
-  
-
-  <li><p>Once the result is available, click on the pencil to change
-      the information. Rename the dataset (e.g. <i>Oct4 peaks from
-	MACS</i>).</p></li>
-
-  <li><p>Optionally, you can upload the peak coordinates to the UCSC genome
-      browser to visualize them on the mouse chromosomes. For this,
-      you can simply click on the link <b>display at UCSC main</b> in
-      the green box <i>Oct4 peaks from MACS</i> of the History
-      frame.</p></li>
-
-
-
-    </ol>
-
-<hr><a name='seq'></a><h2>Retrieving peak sequences with Galaxy</h2>
-
-<p>The Galaxy Web server allows to quickly retrieve sequences from a
-  coordinate file (eg. BED file). The coordinates can be provided in various forms: 
-  <ul>
-    <li> stored on the Galaxy server (e.g. MACS result of the previous
-      section),</li>
-    <li>uploaded from a file on your computer,</li>
-    <li>uploaded from an URL (e.g. from a GEO sample record).</li>
-  </ul>
-</p>
-
-
-<h3>Option A: retrieving sequences from the peak identified by
-MACS</h3>
-
-<ol>
-  <li><p>The BED file retrieved in the previous section indicates the
-      chromosomal coordinates of the peaks, but in the next section
-      (motif discovery) we will need to analyze the peak sequences. In
-      the <b>Tools</b> frame at the left iof the Galaxy window,
-      click <b>Fetch Sequences > Extract Genomic DNA</b>. Select
-      the <i>Oct4 peaks from MACS</i> dataset and
-      click <b><i>Execute</i></b>. </p></li>
-
-  <li><p>Once the box become green in the History frame, click on the
-      <b>pencil icon</b> and rename the data set (for example <b>Oct4
-      peaks from GEO</b>). </p></li>
-
-  <li><p>Open the green box and click on the <b>disk icon</b> to store
-      the result on your computer (for example in a
-      file <tt>Oct4_MAC_peak_sequences.fasta</tt>.
-  </p></li>
-
-</ol>
-
-<p>We now obtained a sequence file that can be used as input for motif
-  discovery and TF binding site prediction. You can sckip Options B
-  and C, and directly follow the
-  section <a href='#peak_motifs'>Discovering over-represented
-  motifs</a></p>
-
-
-<h3>Option B: retrieving sequences from a bed file stored on your computer</h3>
-
-<p>If you dipose of a bed file (e.. produced by a stand-alone peak
-calling program running on your comptuer), you can upload this bed
-file to the Galaxy server and proceed as for the Option A.</p>
-
-<h3>Option C: retrieving the sequences from the peak coordinates
-stored in the GEO database</h3>
-
-<p>In this section, we will directly upload the peak sequences
-  published by Chen in GEO (the above mentioned "txt" file, which
-  is actually in BED format). </p>
-
-<ol>
-  <li><p>In the menu at the left of the Galaxy page, click <b><i>Get
-	Data > Upload File</i></b>.</p></li>
-  
-  <li><p>In the <b>URL/Text</b> box, paste the URL of the Oct4 sample:
-      <pre>ftp://ftp.ncbi.nih.gov/pub/geo/DATA/supplementary/samples/GSM288nnn/GSM288346/GSM288346%5FES%5FOct4%2Etxt%2Egz</pre>
-
-  </p></li>
-      
-  <li><p>In the <b>Genome</b> pop-up menu, select <i>Mouse Feb 2006
-	(NCBI36/mm8)</i>.  
-      <ul>
-	<li><b>Tip:</b> the item will be automatically selected if you simply
-	  type <i>mm8</i> after clicking on the pop-up menu.</li>
-	<li><b>Note:</b> the choice of the genome should be adapted to
-	  the particular data set you are analyzing. As indicated in
-	  the field "Data processing" of the GEO
-	  record <a target='_blank'
-	  href='http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM288346'>GSM288346</a>,
-	  Chen's study was performed with the 2006 version of the
-	  genome;</li>
-      </ul>
-  </p></li>
-      
-  <li><p>Leave the other options to their default value, and
-      click <b>Execute</b>. The upload may take several
-      minutes. When the file will be uploaded, the yellow box on the
-      right side will turn to green. </p></li>
-
-  <li><p>Click on this box and make sure that the format is BED and
-      the genome is mm8. How many ChIP-seq "regions" are present in this
-      file ?</p></li>
-  
-  <li><p>Click on the disk icon in this box to download this sequence file. Save it on your computer.</p></li>
-</ol>
-
-
-<hr><a name='peak_motifs'></a><h2>Discovering over-represented motifs</h2>
+<hr><a name='parameters'></a><h2>Tuning <i>peak-motifs</i> parameters</h2>
 <p>The program <a href='../peak-motifs_form.cgi'>peak-motifs</a> performs a complete procedure of motif analysis in the Chip-seq peaks.
 It automatically run through the following steps:</p>
 <ul>
