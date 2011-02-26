@@ -7,7 +7,7 @@
 
 \begin{document}
 
-\RSATtitlePage{Web server installation}
+\RSATtitlePage{Web server configuration for \RSAT}
 
 % \title{Regulatory Sequence Analysis Tools \\
 % Web server installation}
@@ -21,6 +21,8 @@
 \newpage
 \tableofcontents
 \newpage
+
+\chapter{Web server configuration for \RSAT}
 
 \section{Description}
 
@@ -77,9 +79,9 @@ In summary, the configuration includes the following steps.
 
 \item Specify an alias for rsa-tools in the appropriate section.
 
-\begin{verbatim}
+\begin{lstlisting}
 Alias /rsa-tools /home/myaccount/rsa-tools/public_html/
-\end{verbatim}
+\end{lstlisting}
 
   (you need of course to adapt this command according to your own
   \RSAT directory)
@@ -90,19 +92,19 @@ Make sure the following line is present in the config file. If the
 server has not yet been configured, the line is commented, and you
 need to remove the \texttt{\#} character before it.
 
-\begin{verbatim}
+\begin{lstlisting}
 AddHandler cgi-script .cgi
-\end{verbatim}
+\end{lstlisting}
 
 \item Give authorization to execute CGI scripts in the rsa-tools directory
 
-\begin{verbatim}
+\begin{lstlisting}
 ScriptAlias /rsa-tools/ /home/myaccount/rsa-tools/public_html/
-\end{verbatim}
+\end{lstlisting}
 
 \item Specify the access options for the rsa-tools directory.
 
-\begin{verbatim}
+\begin{lstlisting}
 <Directory "/home/myaccount/rsa-tools/public_html/">
    AllowOverride None
    AddHandler cgi-script .cgi
@@ -110,7 +112,7 @@ ScriptAlias /rsa-tools/ /home/myaccount/rsa-tools/public_html/
    Order allow,deny
    Allow from all
 </Directory>
-\end{verbatim}
+\end{lstlisting}
 
 \end{enumerate}
 
@@ -130,11 +132,11 @@ Apache server.
 You can try the following commands, and if they don'r work check the
 documentation of your web server.
 
-\begin{verbatim}
+\begin{lstlisting}
 sudo httpd restart
 
 sudo apachectl restart
-\end{verbatim}
+\end{lstlisting}
 
 \subsection{Editing the configuration file for the \RSAT server}
 
@@ -155,18 +157,18 @@ configuration of your server. For this, edit the file
 By default, the RSAT web server is configured to be used from the
 machine on which it is installed. 
 
-\begin{verbatim}
+\begin{lstlisting}
 $WWW_RSA = 	"http://localhost/rsa-tools/";
-\end{verbatim}
+\end{lstlisting}
 
 If you want to give access from external machines, you need to adapt
 the following line and replace ``localhost'' by the IP address of your
 machine. Let us assume that your mahine has the address
 www.myserver. You should then edit the row as follows.
 
-\begin{verbatim}
+\begin{lstlisting}
 $WWW_RSA = 	"http://www.myserver/rsa-tools/";
-\end{verbatim}
+\end{lstlisting}
 
 \subsubsection{Setting the environment variable RSAT}
 
@@ -175,21 +177,21 @@ variable RSAT. This is necessary for the perl program to know the
 location of your programs. If this variable is not specified, the
 scripts are stopped with an error message.
 
-\begin{verbatim}
+\begin{lstlisting}
 unless ($ENV{RSAT}) {
     die "Error: the environment variable RSAT needs to be defined\n";
 }
-\end{verbatim}
+\end{lstlisting}
 
 Since the web server is ran by another user, you need to define this
 environment variable for this user as well. For this, edit the
 above line in the following way.
 
-\begin{verbatim}
+\begin{lstlisting}
 unless ($ENV{RSAT}) {
     $ENV{RSAT} = "/home/myaccount/rsa-tools";
 }
-\end{verbatim}
+\end{lstlisting}
 
 
 \subsection{Testing the web server}
@@ -240,17 +242,17 @@ the server, in order to allow users to consult their results.
 The \RSAT package includes a make script to clean old files in the
 temporary directory.
 
-\begin{verbatim}
+\begin{lstlisting}
 cd rsa-tools
 make -f makefiles/server.mk clean_tmp
-\end{verbatim}
+\end{lstlisting}
 
 This command cleans all the files older than 3 days. You can clean
 more recent files by modifying the variable CLEAN\_DATE.
 
-\begin{verbatim}
-make -f makefiles/server.mk clean_tmp  CLEAN\_DATE=1
-\end{verbatim}
+\begin{lstlisting}
+make -f makefiles/server.mk clean_tmp  CLEAN_DATE=1
+\end{lstlisting}
 
 This will clean all files older than 1 day.
 
@@ -263,9 +265,9 @@ command to your personal \texttt{crontab} configuration file.
 \begin{enumerate}
 \item Start to edit the crontab command file
 
-\begin{verbatim}
+\begin{lstlisting}
 crontab -e
-\end{verbatim}
+\end{lstlisting}
 
 This will open your \file{crontab} file with your default text editor
 (this default editor can be specified with the environment variable
@@ -273,9 +275,9 @@ EDITOR or VISUAL).
 
 \item Add the following line to the \file{crontab} file. 
 
-\begin{verbatim}
+\begin{lstlisting}
 02 04 * * * make -f /home/myaccount/rsa-tools/makefiles/server.mk clean_tmp
-\end{verbatim}
+\end{lstlisting}
 
 This will execute the make script \file{server.mk}, with the target
 \texttt{clean\_tmp}, every day, at 04:02 AM. 
