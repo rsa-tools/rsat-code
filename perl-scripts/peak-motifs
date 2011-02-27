@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.175 2011/02/26 06:50:18 jvanheld Exp $
+# $Id: peak-motifs,v 1.176 2011/02/27 06:16:52 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.175 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.176 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -215,8 +215,8 @@ package main;
   ################################################################
   ## Supported sequence sources
   local %supported_seq_source = ("galaxy"=>1);
-  local @supported_seq_sources = sort keys %%supported_seq_source;
-  local $supported_seq_sources = join ",", @supported_seq_sources;
+  local @supported_seq_sources = sort (keys (%supported_seq_source));
+  local $supported_seq_sources = join( ",", @supported_seq_sources);
 
   ## Motif databases
   @motif_databases = ();
@@ -3440,7 +3440,7 @@ This option is incompatible with -coord.
     } elsif ($arg eq "-source") {
       $main::param{seq_source} = shift(@arguments);
       &RSAT::message::Warning($main::param{seq_source}, "invalid sequence source, will be ignored. Supported: ".$supported_seq_sources)
-	unless ($supported_seq_source{$main::param{seq_source}};
+	unless ($supported_seq_source{$main::param{seq_source}});
 
 =pod
 
