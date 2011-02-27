@@ -40,11 +40,13 @@ developed in the following parts of the theoretical course.
 
 <p>It is better to have also followed the corresponding tutorials.
 <ol>
-<li><a href='tut_galaxy.html'>Retrieving peak sequences from Galaxy</a>.</li>
 <li><a href='tut_PSSM.html'>Position-specific scoring matrices</a>.</li>
 <li><a href="tut_oligo-analysis.html"><i>oligo-analysis</i></a>: detection of over-represented words.</li>
 <li><a href="tut_position-analysis.html"><i>position-analysis</i></a>: detection of words having a positional bias in sequences aligned on some reference position.</li>
 </ol>
+
+<p>A companion tutorial explains how to <a href='tut_galaxy.html'>retrieve peak
+sequences from Galaxy</a>.
 
 
 </p>
@@ -59,29 +61,37 @@ cis-regulatory motifs and predict putative transcription factor
 binding sites from a set of peaks identified by high-throughput
 methods such as ChIP-seq, ChIP-on-chip or related methods.</p>
 
+
 <p>In this tutorial, we provide hints about the tuning of parameters
 and interpretation of results for the different takss ensured
 by <i>peak-motifs</i>:
 <ol>
-  <li>motif discovery combining various criteria (global
-    over-representation, local over-representation, position biases);</li>
-  <li>comparisons with motif databases and/or custom reference motifs;</li>
-  <li>sequence scanning to predict putative binding sites;</li>
-  <li>visualization in a genome browser.</li>
+<li>Statistics on the input peak sequences (length, mono- and
+di-nucleotides composition, links to genome browser to vizualise the
+peaks)</li>
+<li>Motif discovery with multiple algorithms
+(<i>oligo-analysis</i>, <i>position-analysis</i>, <i>dyad-analysis</i>, <i>local-words</i>)</li>
+<li>Comparison of discovered motifs with collections of known
+motifs.</li>
+<li>Scanning of input sequence with discovered motifs to predict
+putative binding sites, analyze their positional profiles and
+enrichment.</li>
+<li>Vizualisation of binding sites in the <a target='_blank'
+href='http://genome.ucsc.edu/'>UCSC Genome Browser</a>.</li>
 </ol>
+
 
 <hr><a name='study_case'></a><h2>Study case</h2>
 
+<p>To illustrate the features of <i>peak-motifs</i>, we will analyze a
+set of peak sequences that were obtained by pulling down genomic
+regions bound by the transcription factor Oct4 in the mouse. The
+experiment was performed in the context of a wider study, where
+X.&nbsp;Chen and colleagues characterized the binding location of 12
+transcription factors involved in mouse embryonic stem cell
+differentiation (<a href='#ref_chen_2010'>Chen et al., 2008</a>).</p>
+
 <hr><a name='parameters'></a><h2>Tuning <i>peak-motifs</i> parameters</h2>
-<p>The program <a href='../peak-motifs_form.cgi'>peak-motifs</a> performs a complete procedure of motif analysis in the Chip-seq peaks.
-It automatically run through the following steps:</p>
-<ul>
-<li>Statistics on the input peak sequences (length, mono- and di-nucleotides composition, links to genome browser to vizualise the peaks)</li>
-<li>Motif discovery with multiple algorithms (oligo-analysis, position-analysis, dyad-analysis, local-words)</li>
-<li>Comparison of discovered motifs with collections of known motifs</li>
-<li>Scan of input sequence peaks with discovered motifs, binding site positional profiles</li>
-<li>Vizualisation of binding sites in a genome browser (UCSC)</li>
-</ul>
 
 <p>This part of the tutorial will help you to select the parameters of
 <i>peak-motifs</o> in order to discover transcription factor biding
@@ -89,17 +99,21 @@ motifs and predict putative binding sites from the peak sequences
 obtained in the previous steps.</p>
 
 <ol>
-<li>Open a connection to the <a href="http://rsat.ulb.ac.be/rsat/"
-target="_blank">RSAT Web server</a>.</li>
 
-<li>In the menu on the left side, select the peak-motifs form</a>
-under the title <b><i>NGS - ChIP-seq</i></b>. </li>
+<li><p>Open a connection to the <a href="http://rsat.ulb.ac.be/rsat/"
+target="_blank">RSAT Web server</a>.<p></li>
+
+<li><p> In the menu on the left side, select the peak-motifs form</a>
+under the title <b><i>NGS - ChIP-seq</i></b>.
+<p></li>
 
 <h3>Peak sequences panel</h3>
 
-<li>Enter a <b><i>Title</i></b> for this analysis (e.g. <i>Oct4 dataset Chen 2008</i>)</li>
+<li><p>Enter a <b><i>Title</i></b> for this analysis (e.g. <i>Oct4
+dataset Chen 2008</i>)
+<p></li>
 
-<li>Under <b><i>Peak sequences</i></b>, click on the <b><i>Browse</i></b>
+<li><p>Under <b><i>Peak sequences</i></b>, click on the <b><i>Browse</i></b>
 button to select your peak sequence file. 
   <ul><li><b>Note:</b> Alternatively, you may alternatively paste
       sequences in the box, but this will impose restrictions on the size of
@@ -110,6 +124,7 @@ button to select your peak sequence file.
       of sequences).
     </li>
   </ul> 
+<p></li>
 
 <h3>Reduce input peak sequences panel</h3>
 
@@ -136,7 +151,7 @@ may also upload here private collection of matrices e.g. TRANSFAC.</p>
 
 <li><p>Keep <i>JASPAR core Vertebrates</i> checked, and <u>also
 check</u> <i>JASPAR PBM (UNIPROBE) Mouse</i>, since our dataset was
-obtained from mouse.</p></li>
+obtained from mouse.</li>
 
 <h3>Locate motifs and export as UCSC custom track</h3>
 
@@ -202,15 +217,22 @@ more quickly.
 
 <hr><a name='references'></a><h2>References</h2>
 
-<ul>
-<li>Chen, X., Xu, H., Yuan, P., Fang, F., Huss, M., Vega, V. B., Wong, E.,
-Orlov, Y. L., Zhang, W., Jiang, J., Loh, Y. H., Yeo, H. C., Yeo,
-Z. X., Narang, V., Govindarajan, K. R., Leong, B., Shahab, A., Ruan,
-Y., Bourque, G., Sung, W. K., Clarke, N. D., Wei, C. L. and Ng,
-H. H. (2008). Integration of external signaling pathways with the core
-transcriptional network in embryonic stem cells. Cell 133, 1106-17.
+<ol>
+<li><a name='ref_chen_2010'>Chen</a>, X., Xu, H., Yuan, P., Fang, F.,
+Huss, M., Vega, V. B., Wong, E., Orlov, Y. L., Zhang, W., Jiang, J.,
+Loh, Y. H., Yeo, H. C., Yeo, Z. X., Narang, V., Govindarajan, K. R.,
+Leong, B., Shahab, A., Ruan, Y., Bourque, G., Sung, W. K., Clarke,
+N. D., Wei, C. L. and Ng, H. H. (2008). Integration of external
+signaling pathways with the core transcriptional network in embryonic
+stem cells. Cell 133, 1106-17. [Pubmed <a target='_blank'
+href='http://www.ncbi.nlm.nih.gov/pubmed?term=18555785[uid]'>18555785</a>].
 </li>
-</ul>
+
+<li>Thomas-Chollier, M., Defrance, M., Sand, O., Herrmann, C.,
+Thieffry, D. and van Helden, J. (2011). RSAT peak-motifs: fast
+extraction of transcription binding motifs from full-size ChIP-seq
+datasets. in prep.</li>
+</ol>
 
 <hr width="100%">
 <h4 class="footer">
