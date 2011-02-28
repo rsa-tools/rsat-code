@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.35 2011/02/28 14:59:48 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.36 2011/02/28 15:03:54 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -178,7 +178,7 @@ download_meme:
 	@echo "Downloading MEME ${MEME_VERSION}"
 	@echo
 	@mkdir -p ${MEME_BASE_DIR}
-	(cd ${MEME_BASE_DIR}; wget -nw -nd ${MEME_URL} ; tar -xpzf ${MEME_ARCHIVE})
+	(cd ${MEME_BASE_DIR}; wget -nv -nd ${MEME_URL} ; tar -xpzf ${MEME_ARCHIVE})
 	@echo ${MEME_DISTRIB_DIR}
 
 MEME_INSTALL_DIR=${MEME_DISTRIB_DIR}_installed
