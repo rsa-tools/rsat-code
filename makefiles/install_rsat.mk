@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.32 2011/02/28 12:11:56 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.33 2011/02/28 14:23:52 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -36,15 +36,47 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ## or useful for RSAT.
 install_ext_apps:
 	${MAKE} download_mcl install_mcl
-	${MAKE} download_gs install_gs
-	${MAKE} download_gnuplot install_gnuplot
 	${MAKE} download_seqlogo install_seqlogo
 	${MAKE} download_rnsc install_rnsc
 	${MAKE} download_meme install_meme
 	${MAKE} download_blast install_blast
+#	${MAKE} download_gs install_gs
+#	${MAKE} download_gnuplot install_gnuplot
 	${MAKE} install_gibbs
 	${MAKE} download_consensus install_consensus
 	${MAKE} download_patser install_patser
+
+################################################################
+## Install perl modules
+## 
+## Modules are installed using cpan. Beware, this requires admin
+## rights.
+PERL_MODULES=Postscript::Simple \
+	Statistics::Distributions \
+	File::Spec \
+	POSIX \
+	Data::Dumper \
+	Util::Properties \
+	Class::Std::Fast \
+	XML::LibXML \
+	DBD::mysql \
+	DBI \
+	SOAP::WSDL \
+	Module::Build::Compat \
+	GD
+list_perl_modules:
+	@echo "Perl modules required for RSAT"
+	@echo ${PERL_MODULES} | perl -pe 's|\s+|\n|g'
+
+install_perl_modules:
+	@for module in ${PERL_MODULES} ; do \
+		${MAKE} install_one_perl_module PERL_MODULE=$${module}; \
+	done
+
+PERL_MODULE=Postscript::Simple
+install_one_perl_module:
+	@echo "Installing Perl module ${PERL_MODULE}"
+	@sudo perl -MCPAN -e 'install ${PERL_MODULE}' 
 
 ################################################################
 ## Install the BioPerl library
@@ -90,8 +122,8 @@ SEQLOGO_TAR=weblogo.2.8.2.tar.gz
 SEQLOGO_DIR=${RSAT}/ext/seqlogo
 download_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
-	@echo "Getting seqlogo using ${WGET}"
-	(cd ${SEQLOGO_DIR}; ${WGET} -nw ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	@echo "Getting seqlogo using wget"
+	(cd ${SEQLOGO_DIR}; wget -nw -nd ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 install_seqlogo:
@@ -108,8 +140,8 @@ GS_TAR=ghostscript-8.64.tar.gz
 GS_DIR=${RSAT}/ext/ghostscript
 download_gs:
 	@mkdir -p ${GS_DIR}
-	@echo "Getting gs using ${WGET}"
-	(cd ${GS_DIR}; ${WGET} -nv ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
+	@echo "Getting gs using wget"
+	(cd ${GS_DIR}; wget -nv -nd ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
 	@echo "gs dir	${GS_DIR}"
 
 install_gs:
@@ -126,8 +158,8 @@ GNUPLOT_TAR=${GNUPLOT_VER}.tar.gz
 GNUPLOT_DIR=${RSAT}/ext/gnuplot
 download_gnuplot:
 	@mkdir -p ${GNUPLOT_DIR}
-	@echo "Getting gnuplot using ${WGET}"
-	(cd ${GNUPLOT_DIR}; ${WGET} -nv ${GNUPLOT_URL}/${GNUPLOT_TAR}; tar -xpzf ${GNUPLOT_TAR})
+	@echo "Getting gnuplot using wget"
+	(cd ${GNUPLOT_DIR}; wget -nv -nd ${GNUPLOT_URL}/${GNUPLOT_TAR}; tar -xpzf ${GNUPLOT_TAR})
 	@echo "gnuplot dir	${GNUPLOT_DIR}"
 
 install_gnuplot:
@@ -175,7 +207,7 @@ MCL_URL=http://www.micans.org/mcl/src/${MCL_ARCHIVE}
 MCL_DISTRIB_DIR=${MCL_BASE_DIR}/mcl-${MCL_VERSION}
 download_mcl:
 	@mkdir -p ${MCL_BASE_DIR}
-	wget --no-directories  --directory-prefix ${MCL_BASE_DIR} -rNL ${MCL_URL}
+	wget -nd  --directory-prefix ${MCL_BASE_DIR} -rNL ${MCL_URL}
 	(cd ${MCL_BASE_DIR}; tar -xpzf ${MCL_ARCHIVE})
 	@echo ${MCL_DISTRIB_DIR}
 
@@ -340,10 +372,10 @@ PATSER_DIR=${RSAT}/ext/patser/${PATSER_VERSION}
 PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
 download_patser:
 	@mkdir -p ${PATSER_DIR}
-	@echo "Getting patser using ${WGET}"
+	@echo "Getting patser using wget"
 	wget --no-directories  --directory-prefix ${PATSER_DIR} -rNL ${PATSER_URL}/${PATSER_TAR}
 	(cd ${PATSER_DIR}; tar -xpzf ${PATSER_TAR})
-#	(cd ${PATSER_DIR}; ${WGET} -nv  ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
+#	(cd ${PATSER_DIR}; wget -nv  ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
 	@echo "patser dir	${PATSER_DIR}"
 
 install_patser:
@@ -364,8 +396,8 @@ CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 CONSENSUS_DIR=ext/consensus/${CONSENSUS_VERSION}
 download_consensus:
 	@mkdir -p ${CONSENSUS_DIR}
-	@echo "Getting consensus using ${WGET}"
-	(cd ${CONSENSUS_DIR}; wget -v --no-directories ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
+	@echo "Getting consensus using wget"
+	(cd ${CONSENSUS_DIR}; wget -v -nv -nd ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
 	@echo "consensus dir	${CONSENSUS_DIR}"
 
 install_consensus:
