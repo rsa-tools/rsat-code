@@ -177,3 +177,69 @@ download.
 \begin{lstlisting}
 download-organism -v 1 -taxon Enterobacteriales 
 \end{lstlisting}
+
+
+\section{Adding support for Ensembl genomes}
+
+In addition to the genomes imported and maintained on your local \RSAT
+server, the program \program{retrieve-ensembl-seq} allows you to
+retrieve sequences for any organism supported in the Ensembl database
+(\url{http://ensembl.org}).
+
+For this, you first need to install the Bioperl and Ensembl Perl
+libraries (see section \ref{sect:ensembl_libraries}).
+
+\subsection{Handling genomes from Ensembl}
+
+The first step to work with Ensembl genomes is to check the list of
+organisms currently supported on their Web server.
+
+\begin{lstlisting}
+supported-organisms-ensembl
+\end{lstlisting}
+
+You can then get more precise information about a given organism
+(build, chromosomes) with the command \program{ensembl-org-info}.
+
+\begin{lstlisting}
+ensembl-org-info -org Drosophila_melanogaster
+\end{lstlisting}
+
+Sequences can be retrieved from Ensembl with the command
+\program{retrieve-ensembl-seq}. 
+
+You can for example retrieve the 2kb sequence upstream of the
+transcription start site of the gene \gene{PAX6} of the mouse. 
+
+
+\begin{lstlisting}
+retrieve-ensembl-seq.pl -org Mus_musculus -q PAX6 \
+  -type upstream -feattype mrna -from -2000 -to -1 -nogene -rm \
+  -alltranscripts -uniqseqs
+\end{lstlisting}
+
+Options
+
+\begin{itemize}
+
+\item \option{-type upstream} specifies that we want to collect the
+  sequences located upstream of the gene (more procisely, upstream of
+  the mRNA).
+
+\item \option{-feattype mrna} indicates that the reference for computing
+  coordinates is the mRNA. Since we collect upstream sequences, the
+  5'most position of the mRNA has coordinate 0, and upstream sequences
+  have negative coordinates. Note that many genes are annotated with
+  multiple RNAs for different reasons (alternative splicing,
+  alternative transcription start sites). By default, the program will
+  return the sequences upstream of each mRNA annotated for the query
+  gene.
+
+\item \option{-nogene} clip the sequences to avoid overlapping the next
+  upstream gene.
+
+\item \option{-rm} repeat masking (important for pattern
+  discovery). Repetitive sequences are replaced by \seq{N} characters.
+
+\end{itemize} 
+
