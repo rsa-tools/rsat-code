@@ -419,6 +419,7 @@ make -f makefiles/install_rsat.mk install_ext_apps
 
 
 \section{Libraries required to support EnsEMBL genomes}
+\label{sect:ensembl_libraries}
 
 Since 2009, a series of \RSAT programs support a direct access to the
 EnsEMBL database in order to ensure a convenient access to genomes
@@ -434,7 +435,9 @@ from higher organisms \cite{Sand:2009}.
 Those programs require to install a few Perl libraries as well as a
 MySQL client on your machine. 
 
-To obtain BioPerl:
+To obtain BioPerl, you first need to install the program \program{git}
+(\url{http://git-scm.com/}). You can then execute the following
+instructions.
 
 \begin{lstlisting}
 ## For this example, we install Bioperl and EnsEMBL libraries 
@@ -477,7 +480,8 @@ cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
 
 Adapt the 3 following lines in the RSAT configuration file
 \file{RSAT\_config.props} to specify the actual path of the bioperl
-and ensembl libraries on your computer.
+and ensembl libraries on your computer. \emph{The path must be adapted
+  to fit your local configuration}.
 
 \begin{lstlisting}
 ensembl=/home/rsat/rsa-tools/lib/ensembl/modules
