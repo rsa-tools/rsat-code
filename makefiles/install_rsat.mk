@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.29 2011/02/28 11:51:17 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.30 2011/02/28 12:01:27 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -42,10 +42,9 @@ install_ext_apps:
 	${MAKE} download_rnsc install_rnsc
 	${MAKE} download_meme install_meme
 	${MAKE} download_blast install_blast
+	${MAKE} install_gibbs
 	${MAKE} download_consensus install_consensus
 	${MAKE} download_patser install_patser
-	${MAKE} install_gibbs
-
 
 ################################################################
 ## Generic call for installing a program. This tag is called with
@@ -141,12 +140,13 @@ CONSENSUS_DIR=ext/consensus/${CONSENSUS_VERSION}
 download_consensus:
 	@mkdir -p ${CONSENSUS_DIR}
 	@echo "Getting consensus using ${WGET}"
-	(cd ${CONSENSUS_DIR}; ${WGET} -nv ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
+	(cd ${CONSENSUS_DIR}; wget -v --no-directories ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
 	@echo "consensus dir	${CONSENSUS_DIR}"
 
 install_consensus:
-	${MAKE} uncompress_program PROGRAM=consensus
-	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
+#	${MAKE} uncompress_program PROGRAM=consensus
+#	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
+	(cd  ${CONSENSUS_DIR}; rm *.o ; make CPPFLAGS="")
 
 ################################################################
 ## Get and install the program seqlogo
