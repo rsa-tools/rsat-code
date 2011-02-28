@@ -476,11 +476,11 @@ sub LoadFeatures {
     my $linenb = 0;
     while (my $line = <$annot>) {
       $linenb++;
-      
+
       if (($main::verbose >= 3) && ($linenb % 1000 == 1)) {
 	&RSAT::message::psWarn("Loaded features", $linenb);
       }
-      
+
       chomp($line);
       next unless ($line =~ /\S/);
       if ($line =~ /^\-\-/) {
@@ -640,7 +640,8 @@ sub LoadFeatures {
   ## Check the number of features
   if (scalar($self->get_attribute("features")) < 1) {
     &RSAT::message::Warning("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
-  } elsif ($main::verbose >= 2) {
+  } elsif ($main::verbose >= 3) {
+
     ## Print stats on the features
     &RSAT::message::Info(join ("\t",
 			       "Loaded",
