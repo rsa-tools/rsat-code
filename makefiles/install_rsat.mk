@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.31 2011/02/28 12:08:20 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.32 2011/02/28 12:11:56 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -47,44 +47,23 @@ install_ext_apps:
 	${MAKE} download_patser install_patser
 
 ################################################################
-## Generic call for installing a program. This tag is called with
-## specific parameters for each program (consensus, patser, ...)
-APP_DIR=${RSAT}/applications
-PROGRAM=consensus
-PROGRAM_DIR=${APP_DIR}/${PROGRAM}
-PROGRAM_ARCHIVE=`ls -1t ${RSAT}/app_sources/${PROGRAM}* | head -1`
-uncompress_program:
-	@echo installing ${PROGRAM_ARCHIVE} in dir ${PROGRAM_DIR}
-	@mkdir -p ${PROGRAM_DIR}
-	@(cd ${PROGRAM_DIR} ;				\
-	gunzip -c ${PROGRAM_ARCHIVE} | tar -xf - )
-
-################################################################
-## Common frame for installing programs
-INSTALLED_PROGRAM=`ls -1t ${APP_DIR}/${PROGRAM}/${PROGRAM}*`
-install_program:
-	(cd ${PROGRAM_DIR}; make ${INSTALL_OPT})
-	(cd bin; ln -fs ${INSTALLED_PROGRAM} ./${PROGRAM})
-
-
-################################################################
-## Install Andrew Neuwald's gibbs sampler (1995 version)
-GIBBS_DIR=${APP_DIR}/gibbs/gibbs9_95
-install_gibbs:
-	${MAKE} uncompress_program PROGRAM=gibbs
-	(cd ${GIBBS_DIR}; ./compile; cd ${GIBBS_DIR}/code; make clean)
-	(cd bin; ln -fs ${GIBBS_DIR}/gibbs ./gibbs)
-
-################################################################
 ## Install the BioPerl library
 ## For this example, we install Bioperl and EnsEMBL libraries 
 ## in $RSAT/lib, but you can install it in some other place
 ### (password is 'cvs')
-bioperl:
+_old_bioperl:
 	@mkdir -p ${RSAT}/lib
 	@echo "Password is 'cvs'"
 	@cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
 	(cd ${RSAT}/lib;  cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live)
+
+bioperl_git:
+	@mkdir -p $RSAT/lib
+	@cd $RSAT/lib
+	git clone git://github.com/bioperl/bioperl-live.git
+
+bioperl_test:
+	perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
 
 
 ################################################################
@@ -103,49 +82,6 @@ ensembl_api:
 	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
 	@echo "bioperl=${RSAT}/lib/bioperl-live"
 
-
-################################################################
-## Get and install patser (matrix-based pattern matching)
-#PATSER_TAR=patser-v3e.1.tar.gz
-PATSER_VERSION=patser-v3b.5
-#PATSER_VERSION=patser-v3b.5
-PATSER_TAR=${PATSER_VERSION}.tar.gz
-PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
-PATSER_DIR=${RSAT}/ext/patser/${PATSER_VERSION}
-PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
-download_patser:
-	@mkdir -p ${PATSER_DIR}
-	@echo "Getting patser using ${WGET}"
-	wget --no-directories  --directory-prefix ${PATSER_DIR} -rNL ${PATSER_URL}/${PATSER_TAR}
-	(cd ${PATSER_DIR}; tar -xpzf ${PATSER_TAR})
-#	(cd ${PATSER_DIR}; ${WGET} -nv  ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
-	@echo "patser dir	${PATSER_DIR}"
-
-install_patser:
-	@echo "Installing patser"
-	(cd ${PATSER_DIR}; rm *.o; make)
-	rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${RSAT}/bin/
-#	(cd ${RSAT}/bin; ln -fs ${PATSER_APP} patser)
-	@echo "ls -ltr ${RSAT}/bin/patser*"
-#	${MAKE} uncompress_program PROGRAM_DIR=${PATSER_DIR} PROGRAM=patser
-#	${MAKE} install_program PROGRAM=patser
-
-
-################################################################
-## Install consensus (J.Hertz)
-CONSENSUS_VERSION=consensus-v6c.1
-CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
-CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
-CONSENSUS_DIR=ext/consensus/${CONSENSUS_VERSION}
-download_consensus:
-	@mkdir -p ${CONSENSUS_DIR}
-	@echo "Getting consensus using ${WGET}"
-	(cd ${CONSENSUS_DIR}; wget -v --no-directories ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
-	@echo "consensus dir	${CONSENSUS_DIR}"
-
-install_consensus:
-#	${MAKE} uncompress_program PROGRAM=consensus
-	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
 
 ################################################################
 ## Get and install the program seqlogo
@@ -362,6 +298,80 @@ install_blast_mac:
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH ${BLAST_BIN_DIR}:\$$PATH"
 
+
+
+################################################################
+## Generic call for installing a program. This tag is called with
+## specific parameters for each program (consensus, patser, ...)
+APP_DIR=${RSAT}/applications
+PROGRAM=consensus
+PROGRAM_DIR=${APP_DIR}/${PROGRAM}
+PROGRAM_ARCHIVE=`ls -1t ${RSAT}/app_sources/${PROGRAM}* | head -1`
+uncompress_program:
+	@echo installing ${PROGRAM_ARCHIVE} in dir ${PROGRAM_DIR}
+	@mkdir -p ${PROGRAM_DIR}
+	@(cd ${PROGRAM_DIR} ;				\
+	gunzip -c ${PROGRAM_ARCHIVE} | tar -xf - )
+
+################################################################
+## Common frame for installing programs
+INSTALLED_PROGRAM=`ls -1t ${APP_DIR}/${PROGRAM}/${PROGRAM}*`
+install_program:
+	(cd ${PROGRAM_DIR}; make ${INSTALL_OPT})
+	(cd bin; ln -fs ${INSTALLED_PROGRAM} ./${PROGRAM})
+
+
+################################################################
+## Install Andrew Neuwald's gibbs sampler (1995 version)
+GIBBS_DIR=${APP_DIR}/gibbs/gibbs9_95
+install_gibbs:
+	${MAKE} uncompress_program PROGRAM=gibbs
+	(cd ${GIBBS_DIR}; ./compile; cd ${GIBBS_DIR}/code; make clean)
+	(cd bin; ln -fs ${GIBBS_DIR}/gibbs ./gibbs)
+
+################################################################
+## Get and install patser (matrix-based pattern matching)
+#PATSER_TAR=patser-v3e.1.tar.gz
+PATSER_VERSION=patser-v3b.5
+#PATSER_VERSION=patser-v3b.5
+PATSER_TAR=${PATSER_VERSION}.tar.gz
+PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
+PATSER_DIR=${RSAT}/ext/patser/${PATSER_VERSION}
+PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
+download_patser:
+	@mkdir -p ${PATSER_DIR}
+	@echo "Getting patser using ${WGET}"
+	wget --no-directories  --directory-prefix ${PATSER_DIR} -rNL ${PATSER_URL}/${PATSER_TAR}
+	(cd ${PATSER_DIR}; tar -xpzf ${PATSER_TAR})
+#	(cd ${PATSER_DIR}; ${WGET} -nv  ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
+	@echo "patser dir	${PATSER_DIR}"
+
+install_patser:
+	@echo "Installing patser"
+	(cd ${PATSER_DIR}; rm *.o; make)
+	rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${RSAT}/bin/
+#	(cd ${RSAT}/bin; ln -fs ${PATSER_APP} patser)
+	@echo "ls -ltr ${RSAT}/bin/patser*"
+#	${MAKE} uncompress_program PROGRAM_DIR=${PATSER_DIR} PROGRAM=patser
+#	${MAKE} install_program PROGRAM=patser
+
+
+################################################################
+## Install consensus (J.Hertz)
+CONSENSUS_VERSION=consensus-v6c.1
+CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
+CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
+CONSENSUS_DIR=ext/consensus/${CONSENSUS_VERSION}
+download_consensus:
+	@mkdir -p ${CONSENSUS_DIR}
+	@echo "Getting consensus using ${WGET}"
+	(cd ${CONSENSUS_DIR}; wget -v --no-directories ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
+	@echo "consensus dir	${CONSENSUS_DIR}"
+
+install_consensus:
+#	${MAKE} uncompress_program PROGRAM=consensus
+	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
+
 ################################################################
 ## Obsolete: compile some perl scripts to binaries.  This was a test and the
 ## results were not very good, the compiled programs were unstable.
@@ -379,7 +389,7 @@ LIBRARIES=\
 #	RSA.seq.lib	\
 #	RSA.cgi.lib	\
 #	RSA.lib 	
-compile_perl_scripts:
+_compile_perl_scripts:
 	@mkdir -p ${COMPIL}/lib
 	@mkdir -p ${COMPIL}/bin
 	@(cd  ${COMPIL}/bin; ln -fs ../lib)
@@ -396,4 +406,5 @@ compile_perl_scripts:
 		cp -f ${SRC}/$${pgm} ${COMPIL}/bin/$${pgm}.pl ; \
 		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
 	dgone
+
 
