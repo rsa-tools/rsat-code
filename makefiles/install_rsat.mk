@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.30 2011/02/28 12:01:27 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.31 2011/02/28 12:08:20 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -145,8 +145,7 @@ download_consensus:
 
 install_consensus:
 #	${MAKE} uncompress_program PROGRAM=consensus
-#	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
-	(cd  ${CONSENSUS_DIR}; rm *.o ; make CPPFLAGS="")
+	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
 
 ################################################################
 ## Get and install the program seqlogo
@@ -156,7 +155,7 @@ SEQLOGO_DIR=${RSAT}/ext/seqlogo
 download_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
 	@echo "Getting seqlogo using ${WGET}"
-	(cd ${SEQLOGO_DIR}; ${WGET} -nv ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	(cd ${SEQLOGO_DIR}; ${WGET} -nw ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 install_seqlogo:
