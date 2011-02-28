@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.34 2011/02/28 14:26:41 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.35 2011/02/28 14:59:48 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -35,16 +35,16 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
 install_ext_apps:
-	${MAKE} download_mcl install_mcl
 	${MAKE} download_seqlogo install_seqlogo
+	${MAKE} download_mcl install_mcl
 	${MAKE} download_rnsc install_rnsc
 	${MAKE} download_meme install_meme
-	${MAKE} download_blast install_blast
+#	${MAKE} download_blast install_blast
 #	${MAKE} download_gs install_gs
 #	${MAKE} download_gnuplot install_gnuplot
-	${MAKE} install_gibbs
-	${MAKE} download_consensus install_consensus
-	${MAKE} download_patser install_patser
+#	${MAKE} install_gibbs
+#	${MAKE} download_consensus install_consensus
+#	${MAKE} download_patser install_patser
 
 ################################################################
 ## Install perl modules
@@ -169,19 +169,24 @@ install_gnuplot:
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${RSAT}/app_sources/MEME
-MEME_VERSION=4.4.0
+MEME_VERSION=4.6.0
 MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
 MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
 MEME_DISTRIB_DIR=${MEME_BASE_DIR}/meme_${MEME_VERSION}
 download_meme:
+	@echo
+	@echo "Downloading MEME ${MEME_VERSION}"
+	@echo
 	@mkdir -p ${MEME_BASE_DIR}
-	wget --no-directories  --directory-prefix ${MEME_BASE_DIR} -rNL ${MEME_URL}
-	(cd ${MEME_BASE_DIR}; tar -xpzf ${MEME_ARCHIVE})
+	(cd ${MEME_BASE_DIR}; wget -nw -nd ${MEME_URL} ; tar -xpzf ${MEME_ARCHIVE})
 	@echo ${MEME_DISTRIB_DIR}
 
 MEME_INSTALL_DIR=${MEME_DISTRIB_DIR}_installed
 MEME_BIN_DIR=${MEME_INSTALL_DIR}/bin
 install_meme:
+	@echo
+	@echo "Installing MEME ${MEME_VERSION}"
+	@echo
 	@mkdir -p ${MEME_INSTALL_DIR}
 	(cd ${MEME_DISTRIB_DIR}; ./configure --prefix=${MEME_INSTALL_DIR} --with-url="http://localhost/meme")
 	(cd ${MEME_DISTRIB_DIR}; make clean; make ; make test; make install)
@@ -206,6 +211,8 @@ MCL_ARCHIVE=mcl-${MCL_VERSION}.tar.gz
 MCL_URL=http://www.micans.org/mcl/src/${MCL_ARCHIVE}
 MCL_DISTRIB_DIR=${MCL_BASE_DIR}/mcl-${MCL_VERSION}
 download_mcl:
+	@echo
+	@echo "Downloading MCL"
 	@mkdir -p ${MCL_BASE_DIR}
 	wget -nd  --directory-prefix ${MCL_BASE_DIR} -rNL ${MCL_URL}
 	(cd ${MCL_BASE_DIR}; tar -xpzf ${MCL_ARCHIVE})
@@ -214,6 +221,8 @@ download_mcl:
 MCL_INSTALL_DIR=${RSAT}
 MCL_BIN_DIR=${MCL_INSTALL_DIR}/bin
 install_mcl:
+	@echo
+	@echo "Installing MCL"
 	@mkdir -p ${MCL_INSTALL_DIR}
 	(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_INSTALL_DIR} ; \
 	make clean; make ; make install)
@@ -236,6 +245,8 @@ RNSC_VERSION=09-308
 RNSC_ARCHIVE=rnsc.zip
 RNSC_URL=http://www.cs.utoronto.ca/~juris/data/rnsc/rnsc.zip
 download_rnsc:
+	@echo
+	@echo "Downloading RNSC"
 	@mkdir -p ${RNSC_BASE_DIR}
 	wget --no-directories  --directory-prefix ${RNSC_BASE_DIR} -rNL ${RNSC_URL}
 	(cd ${RNSC_BASE_DIR}; unzip ${RNSC_ARCHIVE})
@@ -243,6 +254,8 @@ download_rnsc:
 
 RNSC_BIN_DIR=${RSAT}/bin
 install_rnsc:
+	@echo
+	@echo "Installing RNSC"
 	@mkdir -p ${RNSC_BIN_DIR}
 	(cd ${RNSC_BASE_DIR}; make ; \
 	mv -f rnsc ${RNSC_BIN_DIR}; \
@@ -262,16 +275,17 @@ install_rnsc:
 	@echo "	setenv PATH ${RNSC_BIN_DIR}:\$$PATH"
 
 ################################################################
-## Install BLAST 32
+## Install BLAST
 download_blast: download_blast_${OS}
 
 install_blast: install_blast_${OS}
 
 
 ################################################################
-## Install the BLAST 32 linux
+## Install the BLAST on linux
+ARCHITECTURE=32
 BLAST_BASE_DIR=${RSAT}/app_sources/blast
-BLAST_LINUX_ARCHIVE=blast-*-ia32-linux.tar.gz
+BLAST_LINUX_ARCHIVE=blast-*-ia${ARCHITECTURE}-linux.tar.gz
 BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
 BLAST_BIN_DIR=${RSAT}/bin
 BLAST_SOURCE_DIR=blast_latest
@@ -300,7 +314,7 @@ install_blast_linux:
 	@echo "	setenv PATH ${BLAST_BIN_DIR}:\$$PATH"
 
 ################################################################
-## Install the BLAST 32 MAC
+## Install the BLAST on MAC
 BLAST_BASE_DIR=${RSAT}/app_sources/blast
 BLAST_MAC_ARCHIVE=blast-*-universal-macosx.tar.gz
 BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
@@ -395,9 +409,11 @@ CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
 CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 CONSENSUS_DIR=ext/consensus/${CONSENSUS_VERSION}
 download_consensus:
+	@echo
+	@echo "Downloading ${CONSENSUS_VERSION}"
+	@echo
 	@mkdir -p ${CONSENSUS_DIR}
-	@echo "Getting consensus using wget"
-	(cd ${CONSENSUS_DIR}; wget -v -nv -nd ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
+	(cd ${CONSENSUS_DIR}; wget -nv -nd ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
 	@echo "consensus dir	${CONSENSUS_DIR}"
 
 install_consensus:
