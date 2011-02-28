@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.77 2010/12/12 16:59:28 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.78 2011/02/28 17:21:50 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -1924,14 +1924,18 @@ USAGE
 			[-o outpufile] -q query_orf | -i query file | -all
 
 DESCRIPTION
-	Returns upstream, downstream, intronic, exonic or UTR  DNA sequences for a list of query
-	genes.
+
+	Returns upstream, downstream, intronic, exonic or UTR DNA
+	sequences for a list of query genes.
 
 CATEGORY
 	genomics
 	sequences
 
-REMARK  Requires local instal of the EnsEMBL Perl Core and Compara APIs (see http://www.ensembl.org/info/using/api/api_installation.html)
+REMARK
+
+    This script requires a local installation of the EnsEMBL Perl Core
+    and Compara APIs (see RSAT installation guide).
 
 OPTIONS
 	-org organism
@@ -1962,6 +1966,12 @@ OPTIONS
 			upstream (default)
 			downstream
                         feature
+
+       -utr utr_type
+
+              Type(s) of UTR (untranslated region) to return.
+
+              Supported: all | 5prime | 3prime
 
 	-q query
 		The query should be an EnsEMBL gene identifier (eg 'ENSG00000177799').
@@ -2063,6 +2073,7 @@ retrieve-ensembl-seq options
 -dbname         name of ensembl db
 -feattype	accepted feature types. Supported: $supported_feattypes
 -type		upstream | downstream | feature
+-utr utr_type   Type(s) of UTR to return. Supported: all | 5prime | 3prime
 -q		query
 -i              query file
 -all		returns all genomic upstream regions
