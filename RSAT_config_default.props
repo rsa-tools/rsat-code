@@ -21,19 +21,19 @@ rsat_echo=0
 ## time of each task in a monthly log file.  
 ##
 ## Log file names:
-##    $RSAT/logs/exec_time_log_[SITE]_[YEAR]_[MONTH].txt 
-##    $RSAT/logs/start_time_log_[SITE]_[YEAR]_[MONTH].txt 
+##    $RSAT/logs/exec_time_log_[SERVER]_[YEAR]_[MONTH].txt 
+##    $RSAT/logs/start_time_log_[SERVER]_[YEAR]_[MONTH].txt 
 ##
 ## These report files are useful for detecting time-consuming tasks on
 ## the server.  All RSAT Perl scripts are monitored, whether they are
-## run on the Web site or on the command-line.  
+## run on the Web server or on the command-line.  
 start_time=0
 exec_time=0
 
-## name of the site (which will appear in the log file)
-rsat_site=your_site_name
+## name of the local server (which will appear in the log file)
+rsat_site=your_server_name
 
-## Administrator of this RSAT site (to whom the error reports should be sent by email)
+## Administrator of this RSAT server (to whom the error reports should be sent by email)
 rsat_server_admin=your.mail@your.mail.server
 
 ## Main RSAT directory
