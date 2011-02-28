@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.36 2011/02/28 15:03:54 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.37 2011/02/28 17:21:00 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -51,7 +51,9 @@ install_ext_apps:
 ## 
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
-PERL_MODULES=Postscript::Simple \
+PERL_MODULES= \
+	PostScript::Simple \
+	GD \
 	Statistics::Distributions \
 	File::Spec \
 	POSIX \
@@ -63,7 +65,8 @@ PERL_MODULES=Postscript::Simple \
 	DBI \
 	SOAP::WSDL \
 	Module::Build::Compat \
-	GD
+	DB_File \
+	Bio::Perl
 list_perl_modules:
 	@echo "Perl modules required for RSAT"
 	@echo ${PERL_MODULES} | perl -pe 's|\s+|\n|g'
@@ -73,10 +76,11 @@ install_perl_modules:
 		${MAKE} install_one_perl_module PERL_MODULE=$${module}; \
 	done
 
+## Install a single Perl module
 PERL_MODULE=Postscript::Simple
 install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
-	@sudo perl -MCPAN -e 'install ${PERL_MODULE}' 
+	@sudo perl -MCPAN -e 'install ${PERL_MODULE}'
 
 ################################################################
 ## Install the BioPerl library
