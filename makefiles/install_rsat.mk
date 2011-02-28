@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.28 2011/02/17 13:46:27 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.29 2011/02/28 11:51:17 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -112,19 +112,21 @@ PATSER_VERSION=patser-v3b.5
 #PATSER_VERSION=patser-v3b.5
 PATSER_TAR=${PATSER_VERSION}.tar.gz
 PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
-PATSER_DIR=ext/patser/${PATSER_VERSION}
+PATSER_DIR=${RSAT}/ext/patser/${PATSER_VERSION}
 PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
 download_patser:
 	@mkdir -p ${PATSER_DIR}
 	@echo "Getting patser using ${WGET}"
-	(cd ${PATSER_DIR}; ${WGET} -nv  ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
+	wget --no-directories  --directory-prefix ${PATSER_DIR} -rNL ${PATSER_URL}/${PATSER_TAR}
+	(cd ${PATSER_DIR}; tar -xpzf ${PATSER_TAR})
+#	(cd ${PATSER_DIR}; ${WGET} -nv  ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
 	@echo "patser dir	${PATSER_DIR}"
 
 install_patser:
 	@echo "Installing patser"
-#	(cd ${PATSER_DIR}; rm *.o; make)
+	(cd ${PATSER_DIR}; rm *.o; make)
 	rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${RSAT}/bin/
-	(cd ${RSAT}/bin; ln -fs ${PATSER_APP} patser)
+#	(cd ${RSAT}/bin; ln -fs ${PATSER_APP} patser)
 	@echo "ls -ltr ${RSAT}/bin/patser*"
 #	${MAKE} uncompress_program PROGRAM_DIR=${PATSER_DIR} PROGRAM=patser
 #	${MAKE} install_program PROGRAM=patser
@@ -132,7 +134,7 @@ install_patser:
 
 ################################################################
 ## Install consensus (J.Hertz)
-CONSENSUS_VERSION=consensus-v6c.1.tar.gz
+CONSENSUS_VERSION=consensus-v6c.1
 CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
 CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 CONSENSUS_DIR=ext/consensus/${CONSENSUS_VERSION}
