@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.33 2011/02/28 14:23:52 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.34 2011/02/28 14:26:41 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -123,7 +123,7 @@ SEQLOGO_DIR=${RSAT}/ext/seqlogo
 download_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
 	@echo "Getting seqlogo using wget"
-	(cd ${SEQLOGO_DIR}; wget -nw -nd ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	(cd ${SEQLOGO_DIR}; wget -nv -nd ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 install_seqlogo:
