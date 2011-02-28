@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.57 2011/02/25 17:05:21 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.58 2011/02/28 16:40:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -173,7 +173,7 @@ print <<EndText;
 </tr>
 <tr>
 
-  <td ALIGN=CENTER>
+  <td align=center>
   <a href="http://liv.bmc.uu.se/rsa-tools/" target="_top">
   <b>Uppsala - Sweden</b><br>
   <IMG SRC="images/uppsala_lcb.jpg" HEIGHT=80 BORDER=0><br>
@@ -187,6 +187,15 @@ print <<EndText;
   http://tagc.univ-mrs.fr/rsa-tools/</a>
 <br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
   </td>
+
+  <td align=center>
+  <a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
+  <b>ENS Paris - France</b><br>
+  <IMG SRC="images/paris.jpg" height=80 border=0><br>
+  http://rsat01.biologie.ens.fr/rsa-tools/</a></font>
+  </td>
+
+  </tr><tr>
 
   <td align=center>
   <a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
