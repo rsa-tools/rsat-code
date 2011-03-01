@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.15 2010/05/24 13:51:08 rsat Exp $
+# $Id: gene-info,v 1.16 2011/03/01 13:08:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -23,7 +23,7 @@ use Storable qw(nstore retrieve);
 my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
 
 
-$start_time = &RSAT::util::StartScript(); 
+local $start_time = &RSAT::util::StartScript();
 $date = $start_time;
 
 #### initialise parameters ####
@@ -81,7 +81,7 @@ if (($inputfile) || ($#queries == -1)) {
   }
   close $in if ($inputfile ne "");
 }
-TimeWarn&RSAT::message::Info("Number of queries", scalar(@queries)) if ($main::verbose >= 2);
+&RSAT::message::Info("Number of queries", scalar(@queries)) if ($main::verbose >= 2);
 
 unless (scalar(@queries)) {
   &RSAT::error::FatalError("You must define at least one query, with the options -q or -i.");
@@ -286,63 +286,63 @@ End_short_help
 ################################################################
 #### read arguments
 sub ReadArguments {
-    foreach $a (0..$#ARGV) {
-	### verbose ###
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
+  foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
 	    
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
 	    
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
 	    
-	    #### organism
-	} elsif ($ARGV[$a] eq "-org") {
-	    $organism_name =$ARGV[$a+1];
+      #### organism
+    } elsif ($ARGV[$a] eq "-org") {
+      $organism_name =$ARGV[$a+1];
 	    
-	    #### full match only
-	} elsif ($ARGV[$a] eq "-full") {
-	    $full = 1;
+      #### full match only
+    } elsif ($ARGV[$a] eq "-full") {
+      $full = 1;
 	    
-	    #### feature types
-	} elsif ($ARGV[$a] eq "-feattype") {
-	    my @feature_types = split ",", $ARGV[$a+1];
-	    foreach my $feature_type (@feature_types) {
-		if ($supported_feature_types{lc($feature_type)}) {
-		    $accepted_feature_types{lc($feature_type)}++;
-		} else {
-		    &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
-		}
-	    }
-
-	    #### match query against description
-	} elsif ($ARGV[$a] =~ /^-desc/) {
-	    $match_description = 1;
-	    
-	    #### don't print the query in output
-	} elsif ($ARGV[$a] eq "-noquery") {
-	    $no_query = 1;
-	    
-	    ### input file ###
-	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
-	    
-	    ### query ###
-	} elsif ($ARGV[$a] eq "-q") {
-	    push(@queries, $ARGV[$a+1]);
-	    
-	    ### output file ###
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+      #### feature types
+    } elsif ($ARGV[$a] eq "-feattype") {
+      my @feature_types = split ",", $ARGV[$a+1];
+      foreach my $feature_type (@feature_types) {
+	if ($supported_feature_types{lc($feature_type)}) {
+	  $accepted_feature_types{lc($feature_type)}++;
+	} else {
+	  &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
 	}
+      }
+
+      #### match query against description
+    } elsif ($ARGV[$a] =~ /^-desc/) {
+      $match_description = 1;
+	    
+      #### don't print the query in output
+    } elsif ($ARGV[$a] eq "-noquery") {
+      $no_query = 1;
+	    
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
+	    
+      ### query ###
+    } elsif ($ARGV[$a] eq "-q") {
+      push(@queries, $ARGV[$a+1]);
+	    
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
     }
+  }
 }
 
 ################################################################
