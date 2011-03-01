@@ -104,7 +104,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 ## Reference motifs
 if ($query->param('db_choice') eq "custom") {
   ## Upload custom reference motif file
-  local $custom_motif_file = "${TMP}/${tmp_file_name}_custom_motif_file.txt";
+  local $custom_motif_file = "${TMP}/custom_motif_file.txt";
   local $upload_custom_motif_file = $query->param('upload_custom_motif_file');
   if ($upload_custom_motif_file) {
     if ($upload_custom_motif_file =~ /\.gz$/) {
