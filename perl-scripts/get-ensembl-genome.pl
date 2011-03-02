@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.40 2011/02/17 05:07:46 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.41 2011/03/02 09:56:02 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -453,6 +453,7 @@ package main;
     $ensembl_user = "anonymous";
     $dbname = '';
     $org = '';
+    $port = '5306';
     
     #### Options for the exported SQL database
     $host= "localhost";
@@ -725,7 +726,7 @@ package main;
 	&RSAT::message::TimeWarn (join("\t", "Connecting EnsEMBL to get the dbname for organism ", $org, 
 				       "host=".$ensembl_host, 
 				       "user=".$ensembl_user )) if ($main::verbose >= 1);
-	my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host", "$ensembl_user", "", {'RaiseError' => 1});
+	my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host:port=$port", "$ensembl_user", "", {'RaiseError' => 1});
 	my $sth = $dbh->prepare("SHOW DATABASES");
 	$sth->execute();
 	while (my $ref = $sth->fetchrow_hashref()) {
@@ -820,7 +821,7 @@ package main;
 			     "user=".$ensembl_user,
 			     "dbname=".$dbname,
 			     ) if ($main::verbose >= 1);
-    my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname);
+    my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname, -port => $port);
 
     ## Get Species object
     my $meta_container = $db->get_MetaContainer();
