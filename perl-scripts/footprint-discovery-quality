@@ -1,0 +1,379 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: footprint-discovery-quality,v 1.1 2011/03/03 15:24:08 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+footprint-discovery-quality
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+This program computes the distribution of significance score values returned by dyad-analysis in promoters of orthologous clusters or in random selections of genes. 
+
+=head1 AUTHORS
+
+sylvain@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+UTIL
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+footprint-discovery-quality -n nb_of_genegroups -o output [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+footprint-discovery
+get-orthologs
+dyad-analysis
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+    %main::outputdir = ();
+
+    $main::verbose = 0;
+
+    $main::taxon_list = "";
+    @taxa = ();
+    $main::batch = 0;
+    $main::organism = "";
+    $main::orthogroups_nb = 100;
+    
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if ($taxon_list eq "") {
+      &RSAT::error::FatalError("Please specify at least one taxon with the -taxon option");
+    } else {
+      @taxa = split /,/, $taxon_list;
+      foreach my $taxon (@taxa) {
+        &CheckTaxon($taxon);
+      }
+    }
+    
+    if ($organism eq "") {
+      &RSAT::error::FatalError("Please specify at least one organism with the -org option");
+    } else {
+      &CheckOrganism($organism);
+    }
+    
+    my $batch_arg = "";  
+    if ($batch) {
+      $batch_arg = " -batch ";
+    }
+
+
+    ################################################################
+    ## Create the output directories, files and prefixes
+    $outputdir{root} = 'footprint_quality/';
+    $outfile{random_genes_selection} =  $outputdir{root}."random_gene_selection.tab";
+    
+    system("mkdir -p $outputdir{root}");
+    
+
+    ################################################################
+    ## Data treatment
+    
+    ################################################################
+    ## REAL DATA 
+    
+    ## Get orthogroups_nb groups of orthologs
+    ## Use the program 
+    my $rdm_genes_cmd = "random-genes -v $verbose -n $orthogroups_nb -org $organism -o $outfile{random_genes_selection}";
+#     &doit($rdm_genes_cmd);
+    ## put gene names in a hash
+    my %rdm_genes = ();
+    ($main::genelist) = &OpenInputFile($outfile{random_genes_selection});
+    while (<$main::genelist>) {
+      chomp();
+      s/\r/\n/g;		  ## Suppress Windows-specific carriage return
+      next if /^;/;		## Comment line
+      next if /^\#/;		## Header line
+      next if /^\--/;		## SQL comment line
+      next unless /\S/;		## Empty line
+      my ($gene) = split /\s/;
+      $gene = &trim($gene); ## Remove leading and trailing spaces
+      $rdm_genes{$gene}++;
+    }
+    
+    ## Run footprint-discovery on each requested taxon and discover the motifs
+    foreach my $taxon (@taxa) {
+      my $footprint_discovery_cmd = "footprint-discovery $batch_arg -task query_seq,orthologs,ortho_seq,purge,filter_dyads,dyads -taxon $taxon -genes $outfile{random_genes_selection} -v $verbose -org $organism -o $outputdir{root} -sep_genes";
+      &doit($footprint_discovery_cmd);
+    }
+    
+    ##################################################################
+    ## RANDOM DATA
+    ## Determine for each taxon the average number of gene per group of orthologs
+    ## wait until the bbh search has been achieved
+    &RSAT::message::TimeWarn ("Estimating the average number of gene by orthology group") if ($main::verbose >= 3);
+    my $achieved = 0;
+    my %ortho_nb = ();
+    foreach my $taxon (@taxa) {
+        while (!$achieved) {
+        sleep(20);
+        &RSAT::message::TimeWarn ("All data are not available yet ... wait 20 seconds") if ($main::verbose >= 2);
+        $achieved = 1;
+        my $ortho_nb_sum = 0;
+        foreach my $gene (keys (%rdm_genes)) {
+          my $taxon_gene_dir = $outputdir{root}."/".$taxon."/".$organism."/".$gene;
+          my $ortho_seq_file = $taxon_gene_dir."/".$gene."_".$organism."_".$taxon."_ortho_seq.fasta";
+          my $ortho_file = $taxon_gene_dir."/".$gene."_".$organism."_".$taxon."_ortho_bbh.tab";
+          if (!-e $ortho_seq_file) {
+            $achieved = 0;
+            &RSAT::message::TimeWarn ("File $ortho_seq_file does not exist") if ($main::verbose >= 2);
+          } 
+          my $ortho_nb = 0;
+          next if (!$achieved);
+          $ortho_nb = `cat $ortho_file | grep -v '^;' | grep -v '^#' | wc -l`;
+          chomp $ortho_nb;
+          &RSAT::message::TimeWarn ("$ortho_nb orthologs for gene $gene of $organism in taxon $taxon") if ($main::verbose >= 4);
+          $ortho_nb_sum += $ortho_nb;
+        }
+        $ortho_nb{$taxon} = $ortho_nb_sum;
+      }
+      $achieved = 0;
+    }
+
+    
+
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+    ################################################################
+    ## Insert here output printing
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+    ## Organism
+=pod
+
+=item	B<-org query_organism>
+
+Query organism, to which the query genes belong.
+
+=cut
+  } elsif ($arg eq "-org") {
+    $main::organism = shift(@arguments);
+
+    ## Taxon
+=pod
+
+=item	B<-taxon reference_taxon>
+
+Reference taxon, in which orthologous genes have to be collected. In principle, more than one taxon is given (coma sepated)
+
+=cut
+  } elsif ($arg eq "-taxon") {
+    $main::taxon_list = shift(@arguments);
+   
+    ## Taxon
+=pod
+
+=item	B<-n number_of_controls>
+
+Numbers of groups of orthologs. Default = 100
+
+=cut
+  } elsif ($arg eq "-n") {
+    $main::orthogroups_nb = shift(@arguments);
+
+=pod
+
+=item B<-batch>
+
+Generate one command per query gene, and post it on the queue of a PC
+cluster.
+
+=cut
+  } elsif ($arg eq "-batch") {
+    $main::batch = 1;
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; footprint-discovery-quality";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
