@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.28 2011/02/17 04:54:49 rsat Exp $
+# $Id: convert-background-model,v 1.29 2011/03/04 14:25:54 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -13,7 +13,7 @@
 
 =head1 NAME
 
-convert-backgound-model
+convert-background-model
 
 =head1 DESCRIPTION
 
@@ -45,7 +45,7 @@ util
 
 =head1 USAGE
 
-convert-backgound-model [-i inputfile] [-o outputfile] [-v]
+convert-background-model [-i inputfile] [-o outputfile] [-v]
 
 =head1 BACKGROUND MODEL FORMATS
 
@@ -584,7 +584,7 @@ transition frequencies on each pair of reverse complements.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; convert-backgound-model ";
+    print $main::out "; convert-background-model ";
     &PrintArguments($main::out);
     if (%main::infile) {
 	print $main::out "; Input files\n";
