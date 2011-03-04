@@ -3,6 +3,10 @@ use strict;
 use warnings;
 
 
+__PACKAGE__->_set_element_form_qualified(0);
+
+sub get_xmlns { 'urn:RSATWS' };
+
 our $XML_ATTRIBUTE_CLASS;
 undef $XML_ATTRIBUTE_CLASS;
 
