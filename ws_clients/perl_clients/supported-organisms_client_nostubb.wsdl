@@ -24,6 +24,7 @@ my @servers = qw(
 		 http://tagc.univ-mrs.fr/rsa-tools
 		 http://embnet.ccg.unam.mx/rsa-tools
 		 http://anjie.bi.up.ac.za/rsa-tools
+		 http://localhost/rsat
 		);
 
 #		 http://rsat01.biologie.ens.fr/rsa-tools
