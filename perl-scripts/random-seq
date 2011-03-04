@@ -366,12 +366,19 @@ OPTIONS
 		genome.
 
 	-expfreq
-		indicate the file that contains expected oligomer 
-		frequencies. When this option is used, the sequences are 
-		generated according to a Markov chain. For instance if the 
-		frequency file contains tetramers, each base will be 
-		selected randomly with a probability depending on the 3 
-		preceding bases:
+
+		Specifyt a file describing the background model. This
+		file must be in oligo format, i.e. a table with
+		expected oligomer frequencies. See
+		I<convert-background-model> for conversion of other
+		background model formats into oligomer frequency
+		tables.
+
+                When this option is used, the sequences are generated
+		according to a Markov chain. For instance if the
+		frequency file contains tetramers, each base will be
+		selected randomly with a probability depending on the
+		3 preceding bases:
 
 		           p(Wj-3,j)
 		p(Bj=B) = -----------
