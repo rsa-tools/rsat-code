@@ -79,6 +79,27 @@ graph_get_clusters from the namespace urn:RSATWS.
 
 
 
+
+
+=head1 PROPERTIES
+
+The following properties may be accessed using get_PROPERTY / set_PROPERTY
+methods:
+
+=over
+
+=item * request
+
+ $element->set_request($data);
+ $element->get_request();
+
+
+
+
+
+=back
+
+
 =head1 METHODS
 
 =head2 new

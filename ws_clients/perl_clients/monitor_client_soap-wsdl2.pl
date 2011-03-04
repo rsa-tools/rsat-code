@@ -14,7 +14,7 @@ my $ticket = $ARGV[0];
 
 my %args = (
             'ticket' => $ticket
-    );
+	   );
 
 ## Send the request to the server
 print "Sending request to the server $server\n";
@@ -22,11 +22,11 @@ my $som = $soap->monitor({'request' => \%args});
 
 ## Get the result
 unless ($som) {
-    printf "A fault (%s) occured: %s\n", $som->get_faultcode(), $som->get_faultstring();
+  printf "A fault (%s) occured: %s\n", $som->get_faultcode(), $som->get_faultstring();
 } else {
-    my $response = $som->get_response();
+  my $response = $som->get_response();
 
-    ## Report the status
-    my $status = $response -> get_status();
-    print "Status: ".$status."\n";
+  ## Report the status
+  my $status = $response -> get_status();
+  print "Status: ".$status."\n";
 }
