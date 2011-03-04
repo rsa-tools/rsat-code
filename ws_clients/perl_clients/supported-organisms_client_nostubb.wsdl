@@ -17,14 +17,14 @@ use XML::Compile::Transport::SOAPHTTP;
 
 ## Specification of the server
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
-my @servers = qw(
-		 http://rsat.bigre.ulb.ac.be/rsat
-		 http://wwwsup.scmbb.ulb.ac.be/rsat
-		 http://liv.bmc.uu.se/rsa-tools
-		 http://tagc.univ-mrs.fr/rsa-tools
-		 http://embnet.ccg.unam.mx/rsa-tools
-		 http://anjie.bi.up.ac.za/rsa-tools
-		 http://localhost/rsat
+my @servers = $ARGV[0] || qw(
+			   http://rsat.bigre.ulb.ac.be/rsat
+			   http://wwwsup.scmbb.ulb.ac.be/rsat
+			   http://liv.bmc.uu.se/rsa-tools
+			   http://tagc.univ-mrs.fr/rsa-tools
+			   http://embnet.ccg.unam.mx/rsa-tools
+			   http://anjie.bi.up.ac.za/rsa-tools
+			   http://localhost/rsat
 		);
 
 #		 http://rsat01.biologie.ens.fr/rsa-tools
@@ -37,30 +37,32 @@ my %args = (
 	    'return'=>$return,
 	   );
 foreach my $server (@servers) {
-  my $file = "organisms_".$server.".txt";
-  $file =~ s|http://||;
-  $file =~ s|/|_|g;
-  open OUT, ">$file";
-
   warn "\n";
-  warn "Getting list of supported organisms from server\t", $server, "\n";
-  warn "Result stored in file\t", $file, "\n";
 
   eval
     {
       # Retriving and processing the WSDL
-      my $wsdl  = XML::LibXML->new->parse_file($server.'/web_services/RSATWS.wsdl');
+      my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
+      warn ("Parsing Web service description from WSDL", "\t", $wsdl_url, "\n");
+      my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
       my $proxy = XML::Compile::WSDL11->new($wsdl);
 
       # Generating a request message based on the WSDL
-      warn ("Compiling client from WSDL", "\t", $wsdl, "\n");
+      warn ("Compiling client\n");
       my $client = $proxy->compileClient('supported_organisms');
 
       # Calling the service and getting the response
       warn ("Sending query to server", "\t", $server, "\n");
+#      warn "Getting list of supported organisms from server\t", $server, "\n";
       my $answer = $client->( request => {%args});
       #    print OUT "Answer: ".$answer."\n";
 
+      ## Open output file
+      my $file = "organisms_".$server.".txt";
+      $file =~ s|http://||;
+      $file =~ s|/|_|g;
+      open OUT, ">$file";
+      warn "Result stored in file\t", $file, "\n";
       # If the response arrived, look for a specific pattern
       # If the pattern is present, return 0 because the test passed.
       # If the result is something else, return 2 to indicate a warning.
