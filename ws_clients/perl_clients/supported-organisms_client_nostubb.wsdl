@@ -20,12 +20,12 @@ use XML::Compile::Transport::SOAPHTTP;
 my @servers = $ARGV[0] || qw(
 			   http://rsat.bigre.ulb.ac.be/rsat
 			   http://wwwsup.scmbb.ulb.ac.be/rsat
-			   http://liv.bmc.uu.se/rsa-tools
 			   http://tagc.univ-mrs.fr/rsa-tools
 			   http://embnet.ccg.unam.mx/rsa-tools
 			   http://anjie.bi.up.ac.za/rsa-tools
 			   http://localhost/rsat
-		);
+			   http://liv.bmc.uu.se/rsa-tools
+			    );
 
 #		 http://rsat01.biologie.ens.fr/rsa-tools
 
@@ -57,12 +57,13 @@ foreach my $server (@servers) {
       my $answer = $client->( request => {%args});
       #    print OUT "Answer: ".$answer."\n";
 
-      ## Open output file
       my $file = "organisms_".$server.".txt";
       $file =~ s|http://||;
       $file =~ s|/|_|g;
       open OUT, ">$file";
       warn "Result stored in file\t", $file, "\n";
+
+      ## Open output file
       # If the response arrived, look for a specific pattern
       # If the pattern is present, return 0 because the test passed.
       # If the result is something else, return 2 to indicate a warning.
@@ -87,8 +88,8 @@ foreach my $server (@servers) {
     };
 
   if ($@) {
-    print OUT "Caught an exception\n";
-    print OUT $@."\n";
+    warn "Caught an exception\n";
+    warn $@."\n";
     exit 1;
   }
 }
