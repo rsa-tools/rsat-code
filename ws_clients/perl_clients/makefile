@@ -10,11 +10,11 @@ SERVER=http://rsat.ulb.ac.be/rsat
 #SERVER=http://tagc.univ-mrs.fr/rsa-tools
 #SERVER=http://embnet.ccg.unam.mx/rsa-tools
 #SERVER=http://localhost/rsat
+
 stubb:
 	@echo "Generating stubb for server	${SERVER}"
 	./wsdl2perl.pl -b RSATWS ${SERVER}/web_services/RSATWS.wsdl
 	@echo "Generated stubb for server	${SERVER}"
-
 
 test:
 	./convert_matrix_soap_wsdl_2.pl 
