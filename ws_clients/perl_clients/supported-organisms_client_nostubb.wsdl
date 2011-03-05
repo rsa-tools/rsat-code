@@ -41,13 +41,13 @@ foreach my $server (@servers) {
 
   eval
     {
-      # Retriving and processing the WSDL
+      # Retrieving and processing the WSDL
       my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
       warn ("Parsing Web service description from WSDL", "\t", $wsdl_url, "\n");
       my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
       my $proxy = XML::Compile::WSDL11->new($wsdl);
 
-      # Generating a request message based on the WSDL
+      ## Compiling the client for supported-organisms
       warn ("Compiling client\n");
       my $client = $proxy->compileClient('supported_organisms');
 
