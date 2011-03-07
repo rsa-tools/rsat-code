@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery-quality,v 1.2 2011/03/04 16:10:53 rsat Exp $
+# $Id: footprint-discovery-quality,v 1.3 2011/03/07 14:26:33 rsat Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -95,6 +95,9 @@ package main;
     local $batch = 0;		## Run the processes on a PC cluster
     local $die_on_error = 1;
     local $job_prefix = "footpring_qual";
+    
+    ## Option for the sleep commands
+    my $sleep_time = 20;
 
     ################################################################
     ## Read argument values
@@ -125,8 +128,11 @@ package main;
 
     ################################################################
     ## Create the output directories, files and prefixes
-    $outputdir{root} = 'footprint_quality/';
-    $outputdir{random_genes_dir} = 'footprint_quality/random_gene_selections/';
+    my $absolute_path = `pwd`;
+    chomp $absolute_path;
+    $absolute_path .= "/";
+    $outputdir{root} = $absolute_path.'footprint_quality/';
+    $outputdir{random_genes_dir} = $outputdir{root}."random_gene_selections/";
     $outputdir{dyad_scores} = $outputdir{root}."/dyad_scores/";
     $outfile{random_genes_selection} = $outputdir{random_genes_dir}."random_gene_selection.tab";
     
@@ -179,8 +185,8 @@ package main;
     my %ortho_nb = ();
     foreach my $taxon (@taxa) {
         while (!$achieved) {
-        sleep(20);
-        &RSAT::message::TimeWarn ("All data are not available yet ... wait 20 seconds") if ($main::verbose >= 2);
+        sleep($sleep_time);
+        &RSAT::message::TimeWarn ("All data are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 2);
         $achieved = 1;
         my $ortho_nb_sum = 0;
         foreach my $gene (keys (%rdm_genes)) {
@@ -207,7 +213,7 @@ package main;
       my $dyad_file_result = "footprint_quality/".$taxon."/".$organism."/".$rdm_genes_array[0]."/".$rdm_genes_array[0]."_".$organism."_".$taxon."_ortho_dyads_3nt_sp0-20-2str-noov_taxfreq_sig0.tab";
       my $bgmodel_taxon = "";
       while ($bgmodel_taxon eq "") {
-        sleep (30);
+        sleep ($sleep_time);
         $bgmodel_taxon = `cat $dyad_file_result | grep 'exp. freq.' | cut -f 3` if (-e $dyad_file_result);
         chomp $bgmodel_taxon;
       }
@@ -226,13 +232,12 @@ package main;
       &RSAT::message::TimeWarn ("$nbgene_per_group random genes per group of genes in taxon $taxon") if ($main::verbose >= 3);
       my $random_genes_dir_taxon =  $outputdir{random_genes_dir}."/".$taxon."/";
       system ("mkdir -p $random_genes_dir_taxon");
-      my $absolute_path = `pwd`;
-      chomp $absolute_path;
+
 
       for (my $i = 0; $i < $orthogroups_nb; $i ++) {
         # constitute $orthogroups_nb groups of random genes (input of retrieve-seq-multigenome)
         # the number of random genes per group is equal to the mean number of orthologs per taxon (determined in previous step).
-        my $random_genes_taxon_dir_i = $absolute_path."/".$random_genes_dir_taxon."/"."random_genes_".$i;
+        my $random_genes_taxon_dir_i = $random_genes_dir_taxon."/"."random_genes_".$i;
         my $file_root = $random_genes_taxon_dir_i."/"."random_genes_".$taxon."_".$i;
         
         my $random_gene_taxon_file = $file_root."_ref_gene.tab";
@@ -281,8 +286,8 @@ package main;
     foreach my $taxon (@taxa) {
       my $dyads = "";
       while (!$achieved) {
-        sleep(20);
-        &RSAT::message::TimeWarn ("All data are not available yet ... wait 20 seconds") if ($main::verbose >= 2);
+        sleep($sleep_time);
+        &RSAT::message::TimeWarn ("All data are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 2);
         $achieved = 1;
         foreach my $gene (keys (%rdm_genes)) {
           my $taxon_gene_dir = $outputdir{root}."/".$taxon."/".$organism."/".$gene;
@@ -311,8 +316,8 @@ package main;
       my $dyads = "";
       my $random_genes_dir_taxon =  $outputdir{random_genes_dir}."/".$taxon."/";
       while (!$achieved) {
-        sleep(20);
-        &RSAT::message::TimeWarn ("All data are not available yet ... wait 20 seconds") if ($main::verbose >= 2);
+        sleep($sleep_time);
+        &RSAT::message::TimeWarn ("All data are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 2);
         $achieved = 1;
         for (my $i = 0; $i < $orthogroups_nb; $i ++) {
           
@@ -333,7 +338,35 @@ package main;
       print $dyad_score_taxon_file_hdl $dyads;
       close $dyad_score_taxon_file_hdl;
       $achieved = 0;
-    }   
+    }
+    
+    
+    ## Computes the significance score distributions (using the RSAT classfreq program)
+    my $compare_scores_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.tab";
+    my $xygraph_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.png";
+    my $compare_scores_cmd = "compare-scores -v $verbose -sc 2 -ic 1 -o $compare_scores_output -suppress $outputdir{dyad_scores} -suppress _dyad_scores_rel_freq.tab -numeric -null \'\' -v verbose ";
+    my $ycolcpt = 2;
+    my $xy_graph_cmd = "XYgraph -v $verbose -i $compare_scores_output -o $xygraph_output -xcol 1 -ylog -lines -legend -ycol $ycolcpt";
+    
+    foreach my $taxon (@taxa) {
+      my @real_rdm = qw (real rdm);
+      foreach my $type (@real_rdm) {
+        my $root = $outputdir{dyad_scores}."/".$taxon."_".$type;
+        my $dyad_score_taxon_file = $root."_dyad_scores.tab";
+        my $dyad_score_freq_taxon_file = $root."_dyad_scores_freq.tab";
+        my $dyad_score_rel_freq_taxon_file = $root."_dyad_scores_rel_freq.tab";
+        my $classfreq_cmd = "classfreq -i $dyad_score_taxon_file -o $dyad_score_freq_taxon_file -v $verbose -ci 0.1 ;";
+        $classfreq_cmd .= "cat $dyad_score_freq_taxon_file | grep -v '^;' | grep -v '^#' | awk -F \"\\t\" '{print \$3\"\\t\"\$6/$orthogroups_nb}' > $dyad_score_rel_freq_taxon_file";
+        $compare_scores_cmd .= "-i $dyad_score_rel_freq_taxon_file ";
+        $xy_graph_cmd .= ",".++$ycolcpt;
+        system("$classfreq_cmd");
+      }
+      
+      
+
+    }
+    system $compare_scores_cmd;
+    system $xy_graph_cmd;
 
     ################################################################
     ## Print verbose
