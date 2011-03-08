@@ -42,7 +42,7 @@ $default{return_site_limits} = "on";
 
 ## Threshold values for site detection
 $default{thresh_field} = "weight";
-$default{thresh_value} = "0";
+$default{thresh_value} = "1";
 
 ### print the form ###
 &RSA_header("matrix-scan QUICK and SIMPLE");
