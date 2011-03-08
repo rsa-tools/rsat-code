@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery-quality,v 1.3 2011/03/07 14:26:33 rsat Exp $
+# $Id: footprint-discovery-quality,v 1.4 2011/03/08 14:04:48 rsat Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -97,7 +97,7 @@ package main;
     local $job_prefix = "footpring_qual";
     
     ## Option for the sleep commands
-    my $sleep_time = 20;
+    my $sleep_time = 0.5;
 
     ################################################################
     ## Read argument values
@@ -284,7 +284,7 @@ package main;
     ## Check that all jobs are done (real cases) ... it is done when the asmb file is produced
     $achieved = 0;
     foreach my $taxon (@taxa) {
-      my $dyads = "";
+      my @dyads = ();
       while (!$achieved) {
         sleep($sleep_time);
         &RSAT::message::TimeWarn ("All data are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 2);
@@ -296,24 +296,23 @@ package main;
 
           if (!-e $asmb_file) {
             $achieved = 0;
-            $dyads = "";
+            $dyads = ();
             &RSAT::message::TimeWarn ("File $asmb_file does not exist yet") if ($main::verbose >= 2);
+            next;
           }
-          next if (!$achieved);
-          $dyads .= &readDyads($dyad_file, $gene);
+          @dyads = &readDyads($dyad_file, $gene, \@dyads);
         }
       }
       my $dyad_score_taxon_file = $outputdir{dyad_scores}."/".$taxon."_real_dyad_scores.tab";
-      my ($dyad_score_taxon_file_hdl) = &OpenOutputFile($dyad_score_taxon_file);
-      print $dyad_score_taxon_file_hdl $dyads;
-      close $dyad_score_taxon_file_hdl;
+      @dyads = &sort_table(\@dyads, 1);
+      &arrayToFile(\@dyads, $dyad_score_taxon_file);
       $achieved = 0;
     }
     
     ## Check that all jobs are done (random cases) ... it is done when the .done file is produced
     $achieved = 0;
     foreach my $taxon (@taxa) {
-      my $dyads = "";
+      my @dyads = ();
       my $random_genes_dir_taxon =  $outputdir{random_genes_dir}."/".$taxon."/";
       while (!$achieved) {
         sleep($sleep_time);
@@ -327,16 +326,17 @@ package main;
           my $random_genes_dyad_taxon_file = $file_root."_random_ortho_genes_dyads.tab";
           if (!-e $random_genes_dyad_taxon_file_done) {
             $achieved = 0;
+            $dyads = ();
             &RSAT::message::TimeWarn ("File $random_genes_dyad_taxon_file_done does not exist yet") if ($main::verbose >= 2);
+            next;
           }
-          next if (!$achieved);
-          $dyads .= &readDyads($random_genes_dyad_taxon_file, "rand_".$i);
+
+          @dyads = &readDyads($random_genes_dyad_taxon_file, "rand_".$i, \@dyads);
         }
       }
       my $dyad_score_taxon_file = $outputdir{dyad_scores}."/".$taxon."_rdm_dyad_scores.tab";
-      my ($dyad_score_taxon_file_hdl) = &OpenOutputFile($dyad_score_taxon_file);
-      print $dyad_score_taxon_file_hdl $dyads;
-      close $dyad_score_taxon_file_hdl;
+      @dyads = &sort_table(\@dyads, 1);
+      &arrayToFile(\@dyads, $dyad_score_taxon_file);
       $achieved = 0;
     }
     
@@ -344,9 +344,15 @@ package main;
     ## Computes the significance score distributions (using the RSAT classfreq program)
     my $compare_scores_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.tab";
     my $xygraph_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.png";
-    my $compare_scores_cmd = "compare-scores -v $verbose -sc 2 -ic 1 -o $compare_scores_output -suppress $outputdir{dyad_scores} -suppress _dyad_scores_rel_freq.tab -numeric -null \'\' -v verbose ";
     my $ycolcpt = 2;
     my $xy_graph_cmd = "XYgraph -v $verbose -i $compare_scores_output -o $xygraph_output -xcol 1 -ylog -lines -legend -ycol $ycolcpt";
+    my $control_line_file = $outputdir{dyad_scores}."/control.tab";
+    my ($control_line_file_hdl) = &OpenOutputFile($control_line_file);
+    my $control_line = "-4\t10000\n-3\t1000\n-2\t100\n-1\t10\n1\t0\n2\t0.01\n3\t0.001\n4\t0.0001\n";
+    print $control_line_file_hdl $control_line;
+    close $control_line_file_hdl;
+    my $compare_scores_cmd = "compare-scores -i $control_line_file -v $verbose -sc 2 -ic 1 -o $compare_scores_output  -suppress $outputdir{dyad_scores} -suppress _dyad_scores_rel_freq.tab -suppress '.tab' -suppress '/' -numeric -null \'\' -v verbose ";
+
     
     foreach my $taxon (@taxa) {
       my @real_rdm = qw (real rdm);
@@ -455,13 +461,15 @@ sub getAllOrganismsGenes {
 }
 
 ################################################################
-## Read a dyad file and returns a string containing of the form 
-## dyad<tab>score<tab>genename
+## Read a dyad-analysis output file and returns a string containing of the form 
+## dyad<tab>score<tab>genename, sorted by dyad significance.
 sub readDyads {
   my $dyadfile = shift;
   my $id = shift;
+  my $array_ref = shift;
+  my @result = @{$array_ref};
   my ($dyadfile_handler) = &OpenInputFile($dyadfile);
-  my $result = "";
+  my $i = scalar @result;
   while (my $ligne = <$dyadfile_handler>) {
     next if ($ligne =~ /^#/);
     next if ($ligne =~ /^;/);
@@ -469,12 +477,40 @@ sub readDyads {
     my @lignecp = split /\t/, $ligne;
     my $dyad = $lignecp[0];
     my $sig = $lignecp[7];
-    $result .= join "\t", $dyad, $sig, $id;
-    $result .= "\n";
+    $result[$i][0] = $dyad;
+    $result[$i][1] = $sig;
+    $result[$i][2] = $id;
+    $i++;
   }
   close $dyadfile_handler;
-  return $result;
+  return @result;
 }
+
+################################################################
+# Export an array into a file
+
+sub arrayToFile {
+  my $array_ref = shift;
+  my $outputfile = shift;
+  my @array = @{$array_ref};
+  my ($out) = &OpenOutputFile($outputfile);
+  for (my $i = 0; $i < scalar @array; $i++) {
+    print $out join "\t", @{$array[$i]};
+    print $out "\n";
+  }
+}
+
+################################################################
+# Export an array into a file
+
+sub sort_table {
+  my $table_ref = shift;
+  my $col = shift;
+  my @table = @{$table_ref};
+  my @sortedByScore = sort {$b->[$col] <=> $a->[$col]} @table;
+  return @sortedByScore;
+}
+
 
 ################################################################
 ## Read arguments 
