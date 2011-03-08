@@ -65,7 +65,7 @@ $checked{$default{analysis_type}} = "CHECKED";
 
 
 ## Threshold values for site detection
-$default{lth_score} = "0";
+$default{lth_score} = "1";
 $default{uth_score} = "none";
 $default{lth_rank} = "none";
 $default{uth_rank} = "none";
