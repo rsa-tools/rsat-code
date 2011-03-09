@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.12 2011/02/17 04:54:49 rsat Exp $
+# $Id: contingency-table,v 1.13 2011/03/09 10:27:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -28,7 +28,7 @@ jvanheld@bigre.ulb.ac.be
 util
 
 =head1 USAGE
-    
+
 contingency-table [-i inputfile] [-o outputfile] [-v]
 
 =head1 INPUT FORMAT
@@ -63,6 +63,7 @@ local %col_sum;
 local $total=0;
 local $null = 0;
 local $margin = 0;
+local $density = 0;
 
 &ReadArguments();
 
@@ -86,10 +87,10 @@ while (<$in>) {
     my @fields = split "\t";
     my $value1 = $fields[$cols[0]-1];
     my $value2 = $fields[$cols[1]-1];
+    $counts{$value1}{$value2}++;
     $row_sum{$value1}++;
     $col_sum{$value2}++;
     $total++;
-    $counts{$value1}{$value2}++;
 #    &RSAT::message::Debug($value1, $value2, $counts{$value1}{$value2}) if ($main::verbose >= 10);
 }
 close $in if ($infile{input});
@@ -110,23 +111,38 @@ if ($margin) {
   print $out join ("\t", "#", @col_values), "\n";
 }
 if ($margin) {
-  print $out "Sum";
-
+  if ($density) {
+    print $out "Margin freq";
+  } else {
+    print $out "Sum";
+  }
   print $out "\t", $total;
   foreach my $col_value (@col_values) {
-      print $out "\t", $col_sum{$col_value}
+    if ($density) {
+      print $out "\t", $col_sum{$col_value}/$total;
+    } else {
+      print $out "\t", $col_sum{$col_value};
+    }
   }
   print $out "\n";
 }
 
 foreach my $row_value (@row_values) {
     print $out $row_value;
-    print $out "\t", $row_sum{$row_value};    
+    if ($density) {
+      print $out "\t", $row_sum{$row_value}/$total;
+    } else {
+      print $out "\t", $row_sum{$row_value};
+    }
     foreach my $col_value (@col_values) {
 	if (defined($counts{$row_value}{$col_value})) {
+	  if ($density) {
+	    printf $out "\t%d", $counts{$row_value}{$col_value}/$total;
+	  } else {
 	    printf $out "\t%d", $counts{$row_value}{$col_value};
+	  }
 	} else {
-	    print $out "\t", $null;	    
+	    print $out "\t", $null;
 	}
     }
     print $out "\n";
@@ -148,7 +164,7 @@ exit(0);
 
 
 ################################################################
-#### display full help message 
+#### display full help message
 sub PrintHelp {
     system "pod2text -c $0";
     exit()
@@ -161,14 +177,14 @@ sub PrintOptions {
 }
 
 ################################################################
-#### Read arguments 
+#### Read arguments
 sub ReadArguments {
 #    foreach my $a (0..$#ARGV) {
     my $arg = "";
     while ($arg = shift (@ARGV)) {
-	## Verbosity
+
 =pod
-	    
+
 
 =head1 OPTIONS
 
@@ -185,8 +201,8 @@ Level of verbosity (detail in the warning messages during execution)
 	    } else {
 		$verbose = 1;
 	    }
-	    
-	    ## Help message
+
+
 =pod
 
 =item B<-h>
@@ -196,8 +212,8 @@ Display full help message
 =cut
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
-	    
-	    ## List of options
+
+
 =pod
 
 =item B<-help>
@@ -207,9 +223,9 @@ Same as -h
 =cut
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
-	    
 
-	    ## Input file
+
+
 =pod
 
 =item B<-i inputfile>
@@ -221,7 +237,7 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-i") {
 	    $infile{input} = shift (@ARGV);
 
-	    ## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -233,12 +249,12 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $outfile{output} =  shift (@ARGV);
 
-	    ## Null character
+
 =pod
 
 =item	B<-null>
 
-Value for the null character (default: 0). 
+Value for the null character (default: 0).
 
 =cut
 	} elsif ($arg eq "-null") {
@@ -252,7 +268,7 @@ Calculate the marginal sums
 	} elsif ($arg eq "-margin") {
 	    $main::margin = 1;
 
-	    ## First column
+
 =pod
 
 =item	B<-col1>
@@ -263,7 +279,7 @@ First column to use for the contingency table (default: 1)
 	} elsif ($arg eq "-col1") {
 	    $main::cols[0] =  shift (@ARGV);
 
-	    ## Second column
+
 =pod
 
 =item	B<-col2>
@@ -275,11 +291,23 @@ Second column to use for the contingency table (default: 1)
 	    $main::cols[1] =  shift (@ARGV);
 
 
+=pod
+
+=item B<-density>
+
+Return the density (relative frequency) rather than the counts.
+
+ f_{i,j} = counts_{i,j} / total_counts
+
+=cut 
+	  } elsif ($arg eq "-density") {
+	    $main::density = 1;
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
 	}
     }
+
 
 =pod
 
