@@ -22,6 +22,7 @@
 <li><a href='#prerequisite'>Prerequisite</a>
 <li><a href='#intro'>Introduction</a></li>
 <li><a href='#study_case'>Study case</a></li>
+<li><a href='#test_sets'>Test sets</a></li>
 <li><a href='#parameters'>Tuning <i>peak-motifs</i> parameters</a></li>
 <li><a href='#interpret'>Interpreting the result</a></li>
 <li><a href='#references'>References</a></li>
@@ -56,28 +57,32 @@ sequences from Galaxy</a>.
 
 <p>The
 program <a href='../peak-motifs_form.cgi'><i>peak-motifs</i></a>
-combines various software tools of the RSAT suite to discover
-cis-regulatory motifs and predict putative transcription factor
-binding sites from a set of peaks identified by high-throughput
-methods such as ChIP-seq, ChIP-on-chip or related methods.</p>
+combines various programs of the RSAT suite to discover cis-regulatory
+motifs and predict putative transcription factor binding sites from a
+set of peak sequences identified by high-throughput methods such as
+ChIP-seq, ChIP-on-chip or related methods.</p>
 
-
-<p>In this tutorial, we provide hints about the tuning of parameters
-and interpretation of results for the different takss ensured
-by <i>peak-motifs</i>:
+<p>In this tutorial, we expain how to tune the parameters and
+interpret of results for the different steps of the
+ <i>peak-motifs</i> workflow:
 <ol>
-<li>Statistics on the input peak sequences (length, mono- and
-di-nucleotides composition, links to genome browser to vizualise the
-peaks)</li>
-<li>Motif discovery with multiple algorithms
-(<i>oligo-analysis</i>, <i>position-analysis</i>, <i>dyad-analysis</i>, <i>local-words</i>)</li>
+<li>Statistics on the input peak sequences (peak length distribution,
+mono- and di-nucleotides composition).</li>
+
+<li>Motifs discovered with a variety of algorithms
+(<i>oligo-analysis</i>, <i>position-analysis</i>, <i>dyad-analysis</i>,
+<i>local-words</i>)</li>
+
 <li>Comparison of discovered motifs with collections of known
 motifs.</li>
+
 <li>Scanning of input sequence with discovered motifs to predict
 putative binding sites, analyze their positional profiles and
 enrichment.</li>
+
 <li>Vizualisation of binding sites in the <a target='_blank'
 href='http://genome.ucsc.edu/'>UCSC Genome Browser</a>.</li>
+
 </ol>
 
 
@@ -91,20 +96,37 @@ X.&nbsp;Chen and colleagues characterized the binding location of 12
 transcription factors involved in mouse embryonic stem cell
 differentiation (<a href='#ref_chen_2010'>Chen et al., 2008</a>).</p>
 
-<hr><a name='parameters'></a><h2>Tuning <i>peak-motifs</i> parameters</h2>
+<hr><a name='test_sets'></a><h2>Test sets</h2>
 
-<p>This part of the tutorial will help you to select the parameters of
-<i>peak-motifs</o> in order to discover transcription factor biding
-motifs and predict putative binding sites from the peak sequences
-obtained in the previous steps.</p>
+<p>A set of test sequences are available on the supplementary material
+Web site
+<br><a target='_blank' href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/'>http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/</a>
+</p>
+
+<p>The peak sequences from Chen's article are in the
+subdirectory 
+<br><a
+target='_blank' href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/data/sequences/Chen_2008/peaks_from_galaxy/'>data/sequences/Chen_2008/peaks_from_galaxy/</a></p>
+
+<p>Note that these peak sequences differ from those available in the
+ GEO database. Indeed, Chen and colleagues filtered their peaks on the
+ basis of discovered motifs in order to submit a "cleaned" collection
+ of peaks to GEO. Since the goal of this tutorial is to show how
+ peak-motifs performs on a raw collection of peak sequences, we used
+ as primary inputs the original reads submitted by by Chen in the GEO
+ database, we used the program MACS to select the peak regions, and
+ PeakSplitter to split the large regions into effective peaks. The
+ peak sequences were then collected from Galaxy.</p>
+
+<hr><a name='parameters'></a><h2>Tuning <i>peak-motifs</i> parameters</h2>
 
 <ol>
 
 <li><p>Open a connection to the <a href="http://rsat.ulb.ac.be/rsat/"
 target="_blank">RSAT Web server</a>.<p></li>
 
-<li><p> In the menu on the left side, select the peak-motifs form</a>
-under the title <b><i>NGS - ChIP-seq</i></b>.
+<li><p> In the menu on the left side, expand the title <i><b>NGS -
+ChIP-seq</b></i> and select the tool <i><b>peak-motifs</b></i></b>.
 <p></li>
 
 <h3>Peak sequences panel</h3>
