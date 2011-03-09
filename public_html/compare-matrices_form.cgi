@@ -108,6 +108,7 @@ print "<hr>";
 my @matching_scores = qw(w
 			 cor
 			 Ncor
+                         logoDP
 			 logocor
 			 Nlogocor
 			 Icor
@@ -124,7 +125,6 @@ my @matching_scores = qw(w
 			);
 
 
-##			 logoDP ## NOT WORKING YET, TO BE ADDED LATER
 
 &ScoresAndThresholdsDiv("Matching scores and thresholds",
 			"help.compare-matrices.html#return_fields",

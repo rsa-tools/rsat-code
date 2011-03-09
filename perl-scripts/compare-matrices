@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.100 2011/03/09 08:53:06 jvanheld Exp $
+# $Id: compare-matrices,v 1.101 2011/03/09 08:57:00 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.101 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -702,6 +702,7 @@ package main;
 
   ## Some fields must be computed as intermediate results for other fields
   $calc_field{logocor} = 1 if ($calc_field{Nlogocor});
+  $calc_field{logoDP} = 1 if ($calc_field{logocor});
   $calc_field{Icor} = 1 if ($calc_field{NIcor});
 #  $calc_field{Wcor} = 1 if ($calc_field{NWcor});
   $calc_field{cor} = 1 if ($calc_field{Ncor});
@@ -1410,7 +1411,7 @@ package main;
 
 
 	      ## Update sums for logocor
-	      if ($calc_field{logocor}) {
+	      if (($calc_field{logocor}) || ($calc_field{logoDP})) {
 		my $l1 = $logo1[$col1-1][$r];
 		my $l2 = $logo2[$col2-1][$r];
 		$sum_l1 += $l1;
