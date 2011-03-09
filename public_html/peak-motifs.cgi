@@ -221,7 +221,7 @@ if ($query->param('matrix-scan-quick') =~ /on/) {
 
 ## UCSC custom track
 if ($query->param('visualize') eq "galaxy") {
-  $parameters .= " -from galaxy ";
+  $parameters .= " -source galaxy ";
 }
 if ($query->param('visualize') eq "bed_coord") {
   ## upload the coord file
