@@ -108,19 +108,28 @@ subdirectory
 <br><a
 target='_blank' href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/data/sequences/Chen_2008/peaks_from_galaxy/'>data/sequences/Chen_2008/peaks_from_galaxy/</a></p>
 
-<p>Note that these peak sequences differ from those available in the
- GEO database. Indeed, Chen and colleagues filtered their peaks on the
- basis of discovered motifs in order to submit a "cleaned" collection
- of peaks to GEO. Since the goal of this tutorial is to show how
- peak-motifs performs on a raw collection of peak sequences, we used
- as primary inputs the original reads submitted by by Chen in the GEO
- database, we used the program MACS to select the peak regions, and
- PeakSplitter to split the large regions into effective peaks. The
- peak sequences were then collected from Galaxy.</p>
+<p><b>Note:</b> these peak sequences differ from those available in
+ the GEO database. Indeed, Chen and colleagues filtered their peaks on
+ the basis of discovered motifs in order to submit a "cleaned"
+ collection of peaks to GEO. Since the goal of this tutorial is to
+ show how peak-motifs performs on a raw collection of peak sequences,
+ we used as primary inputs the original reads submitted by by Chen in
+ the GEO database, we used the program MACS to select the peak
+ regions, and PeakSplitter to split the large regions into effective
+ peaks. The peak sequences were then collected from Galaxy.</p>
 
 <hr><a name='parameters'></a><h2>Tuning <i>peak-motifs</i> parameters</h2>
 
 <ol>
+
+<li><p>Unless you dispose of a custom set of peak sequences, you can
+download the test set provided on the supplementary material Web site
+<br>(file <a target='_blank'
+href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/data/sequences/Chen_2008/peaks_from_galaxy/Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted.fa'>Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted.fa</a>). </p></li>
+
+<ul><b>Note:</b> the sequences should be saved as unformatted text
+file.</ul>
+
 
 <li><p>Open a connection to the <a href="http://rsat.ulb.ac.be/rsat/"
 target="_blank">RSAT Web server</a>.<p></li>
@@ -137,25 +146,41 @@ dataset Chen 2008</i>)
 
 <li><p>Under <b><i>Peak sequences</i></b>, click on the <b><i>Browse</i></b>
 button to select your peak sequence file. 
-  <ul><li><b>Note:</b> Alternatively, you may alternatively paste
-      sequences in the box, but this will impose restrictions on the size of
-      the data set. 
-    <li><b><font color='darkorange'>Caution:</font></b> make sure you upload
-      a file containing <i><u>peaks</u></i> (usually less than 100 000
-      sequences) and <i><u>not the raw reads</u></i> (usually millions
-      of sequences).
+  <ul><li><b>Note:</b> Alternatively, you may directly copy-paste the
+      sequences in the box, but this will impose restrictions on the
+      size of the data set.
+    <li><b><font color='darkorange'>Caution:</font></b> make sure you
+      upload a file containing <i><u>peak sequences</u></i> (usually
+      less than 100 000 sequences) and <i><u>not the raw reads</u></i>
+      (usually several millions of sequences).
     </li>
   </ul> 
 <p></li>
 
 <h3>Reduce input peak sequences panel</h3>
 
-<p>This panel allows you to limit the analysis to a given number of
-  top peaks from the input file, or to clip sequences around the
-  centers in order to restrict them to a maximal size.  With the peak
-  sequences used in this tutorial, there is no specific need to apply
-  those restrictions.  Leave thus blank the options of this panel.</p>
+<p>This panel can be expanded by double-clicking on the triangle on
+the right.</p>
 
+<p>It allows you to limit the analysis to a given number of top peaks
+  from the input file, or to clip sequences around the centers in
+  order to restrict them to a maximal size.  With the peak sequences
+  used in this tutorial, there is no specific need to apply those
+  restrictions.  
+
+<li>Make sure that the option <i>Number of top sequences to retain</i>
+is left blank.
+
+  <ul>
+    <li><b>Note:</b> many alternative tools systematically restric the
+    number of top sequences because the underlying algorithms to not
+    scale up with large sequence sets. In contrast, the algorithms
+    used in <i>peak-motifs</i>are linear in time and can analyze
+    several megabases in a few minutes. There is thus no need to
+    restrict the number of peaks.</li>
+  </ul>
+
+</li>
 
 <h3>Change motif discovery parameters panel</h3>
 
