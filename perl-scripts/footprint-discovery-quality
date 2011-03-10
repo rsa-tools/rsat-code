@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery-quality,v 1.4 2011/03/08 14:04:48 rsat Exp $
+# $Id: footprint-discovery-quality,v 1.5 2011/03/10 15:15:28 rsat Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -151,7 +151,7 @@ package main;
     ## Get orthogroups_nb groups of orthologs
     ## Use the program 
     my $rdm_genes_cmd = $scripts."random-genes -feattype CDS -v $verbose -n $orthogroups_nb -org $organism -o $outfile{random_genes_selection}";
-    &doit($rdm_genes_cmd);
+#     &doit($rdm_genes_cmd);
     ## put gene names in a hash
     my %rdm_genes = ();
     ($main::genelist) = &OpenInputFile($outfile{random_genes_selection});
@@ -172,7 +172,7 @@ package main;
     ## Run footprint-discovery on each requested taxon and discover the motifs
     foreach my $taxon (@taxa) {
       my $footprint_discovery_cmd = $scripts."footprint-discovery $batch_arg -task query_seq,orthologs,ortho_seq,purge,filter_dyads,dyads -taxon $taxon -genes $outfile{random_genes_selection} -v $verbose -org $organism -o $outputdir{root} -sep_genes";
-      &doit($footprint_discovery_cmd);
+#       &doit($footprint_discovery_cmd);
       
     }
     
@@ -265,7 +265,7 @@ package main;
         close $random_genes_taxon_file_hdl;
         
         
-        system ("cat $random_genes_taxon_file | head -n 1 > $random_gene_taxon_file");
+#         system ("cat $random_genes_taxon_file | head -n 1 > $random_gene_taxon_file");
         # write commands
         my $rdm_footprint_cmd = $scripts."retrieve-seq-multigenome -v $verbose -i $random_genes_taxon_file -o $random_genes_seq_taxon_file ";
         $rdm_footprint_cmd .= "; ".$scripts."retrieve-seq-multigenome -v $verbose -i $random_gene_taxon_file -o $random_gene_seq_taxon_file";
@@ -275,7 +275,7 @@ package main;
         $rdm_footprint_cmd .= "; ".$scripts."dyad-analysis -v $verbose -expfreq ".$bgmodel{$taxon}." -accept $random_gene_dyad_taxon_file -return occ,proba,rank -uth rank 50 -lth occ 1 -lth occ_sig 0 -l 3 -sp 0-20 -i $random_genes_seq_purged_file -o $random_genes_dyad_taxon_file -2str -noov";
         $rdm_footprint_cmd .= "; touch $random_genes_dyad_taxon_file_done";
 
-        &doit($rdm_footprint_cmd, $dry, $die_on_error, $verbose, $job_prefix);
+#         &doit($rdm_footprint_cmd, $dry, $die_on_error, $verbose, $job_prefix);
       }
     }
     
@@ -305,6 +305,8 @@ package main;
       }
       my $dyad_score_taxon_file = $outputdir{dyad_scores}."/".$taxon."_real_dyad_scores.tab";
       @dyads = &sort_table(\@dyads, 1);
+      &arrayToFile(\@dyads, $dyad_score_taxon_file);
+      @dyads = leastMotifProportion(\@dyads, $orthogroups_nb);
       &arrayToFile(\@dyads, $dyad_score_taxon_file);
       $achieved = 0;
     }
@@ -337,22 +339,29 @@ package main;
       my $dyad_score_taxon_file = $outputdir{dyad_scores}."/".$taxon."_rdm_dyad_scores.tab";
       @dyads = &sort_table(\@dyads, 1);
       &arrayToFile(\@dyads, $dyad_score_taxon_file);
+      @dyads = leastMotifProportion(\@dyads, $orthogroups_nb);
+      &arrayToFile(\@dyads, $dyad_score_taxon_file);
       $achieved = 0;
     }
     
     
     ## Computes the significance score distributions (using the RSAT classfreq program)
-    my $compare_scores_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.tab";
-    my $xygraph_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.png";
+    my $compare_scores_rel_freq_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.tab";
+    my $compare_scores_least_sig_output = $outputdir{dyad_scores}."/sig_scores_least_sig_comparaison.tab";
+    my $xygraph_rel_freq_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.png";
+    my $xygraph_least_sig_output = $outputdir{dyad_scores}."/sig_scores_least_sig_comparaison.png";
     my $ycolcpt = 2;
-    my $xy_graph_cmd = "XYgraph -v $verbose -i $compare_scores_output -o $xygraph_output -xcol 1 -ylog -lines -legend -ycol $ycolcpt";
+    my $xy_graph_rel_freq_cmd = "XYgraph -v $verbose -i $compare_scores_rel_freq_output -o $xygraph_rel_freq_output -xcol 1 -ylog -lines -legend -ycol $ycolcpt";
+    my $xy_graph_least_sig_cmd = "XYgraph -v $verbose -i $compare_scores_least_sig_output -o $xygraph_least_sig_output -xcol 1  -lines -legend -ycol $ycolcpt";
+
     my $control_line_file = $outputdir{dyad_scores}."/control.tab";
     my ($control_line_file_hdl) = &OpenOutputFile($control_line_file);
     my $control_line = "-4\t10000\n-3\t1000\n-2\t100\n-1\t10\n1\t0\n2\t0.01\n3\t0.001\n4\t0.0001\n";
     print $control_line_file_hdl $control_line;
     close $control_line_file_hdl;
-    my $compare_scores_cmd = "compare-scores -i $control_line_file -v $verbose -sc 2 -ic 1 -o $compare_scores_output  -suppress $outputdir{dyad_scores} -suppress _dyad_scores_rel_freq.tab -suppress '.tab' -suppress '/' -numeric -null \'\' -v verbose ";
-
+    my $compare_scores_rel_freq_cmd = "compare-scores -i $control_line_file -v $verbose -sc 2 -ic 1 -o $compare_scores_rel_freq_output  -suppress $outputdir{dyad_scores} -suppress _dyad_scores_rel_freq.tab -suppress '.tab' -suppress '/' -numeric -null \'\' -v verbose ";
+    my $compare_scores_least_sig_cmd = "compare-scores -v 5 -sc 4 -ic 2 -o $compare_scores_least_sig_output  -suppress $outputdir{dyad_scores} -suppress _dyad_scores_rel_freq.tab -suppress '.tab' -suppress '/' -numeric -null \'\' -v verbose ";
+    my $xy_graph_col = "";
     
     foreach my $taxon (@taxa) {
       my @real_rdm = qw (real rdm);
@@ -363,16 +372,26 @@ package main;
         my $dyad_score_rel_freq_taxon_file = $root."_dyad_scores_rel_freq.tab";
         my $classfreq_cmd = "classfreq -i $dyad_score_taxon_file -o $dyad_score_freq_taxon_file -v $verbose -ci 0.1 ;";
         $classfreq_cmd .= "cat $dyad_score_freq_taxon_file | grep -v '^;' | grep -v '^#' | awk -F \"\\t\" '{print \$3\"\\t\"\$6/$orthogroups_nb}' > $dyad_score_rel_freq_taxon_file";
-        $compare_scores_cmd .= "-i $dyad_score_rel_freq_taxon_file ";
-        $xy_graph_cmd .= ",".++$ycolcpt;
+        $compare_scores_rel_freq_cmd .= "-i $dyad_score_rel_freq_taxon_file ";
+        $compare_scores_least_sig_cmd .= "-i $dyad_score_taxon_file ";
+        $xy_graph_col .= ",".++$ycolcpt;
         system("$classfreq_cmd");
       }
       
       
 
     }
-    system $compare_scores_cmd;
-    system $xy_graph_cmd;
+    
+    
+    $xy_graph_rel_freq_cmd .= $xy_graph_col;
+    $xy_graph_least_sig_cmd .= $xy_graph_col;
+    
+    
+    system $compare_scores_rel_freq_cmd;
+    system $xy_graph_rel_freq_cmd;
+    system $compare_scores_least_sig_cmd;
+    system $xy_graph_least_sig_cmd;
+
 
     ################################################################
     ## Print verbose
@@ -501,16 +520,38 @@ sub arrayToFile {
 }
 
 ################################################################
-# Export an array into a file
+# Sort an array with multiple columns
 
 sub sort_table {
   my $table_ref = shift;
   my $col = shift;
   my @table = @{$table_ref};
-  my @sortedByScore = sort {$b->[$col] <=> $a->[$col]} @table;
+  my @sortedByScore = sort {$a->[$col] <=> $b->[$col]} @table;
   return @sortedByScore;
 }
 
+################################################################
+# with a sorted dyad file (as given by sort_table)
+# a sorted dyad file that gives the proportion of genes showing at least one dyad given the score
+
+sub leastMotifProportion {
+  my $input_table_ref = shift;
+  my $gene_nb = shift;
+  my @input_table = @{$input_table_ref};
+  my %genes = ();
+  for (my $i = 0; $i < scalar @input_table; $i++) {
+    $genes{$input_table[$i][2]}++;
+  }
+  for (my $i = 0; $i < scalar @input_table; $i++) {
+    my $gene = $input_table[$i][2];
+    my $gene_occ = $genes{$gene};
+    $genes{$gene}--;
+    delete $genes{$gene} if (!$genes{$gene}); 
+    my $proportion = (scalar keys %genes)/$gene_nb;
+    $input_table[$i][3] = $proportion;
+  }
+  return @input_table;
+}
 
 ################################################################
 ## Read arguments 
