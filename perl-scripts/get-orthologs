@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.57 2011/03/04 16:10:53 rsat Exp $
+# $Id: get-orthologs,v 1.58 2011/03/10 12:28:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -413,17 +413,20 @@ package main;
   my $query_org_blast_dir = join("/", $query_org_dir, "blast_hits");
   my $r = 0;
   foreach my $ref_organism (@main::ref_organisms) {
+    $r++;
+    &RSAT::message::TimeWarn("Reference organism", $r."/".scalar(@main::ref_organisms), $ref_organism) if ($main::verbose >= 2);
 
     ## Load the ref organism only if required for the reference gene names
     my $ref_org_object = new RSAT::organism();
     $ref_org_object->DefineAcceptedFeatureTypes("cds");
     $ref_org_object->check_name($ref_organism);
     $ref_org_object->set_attribute("name", $ref_organism);
-    $ref_org_object->OpenContigs($ref_organism);
-    $ref_org_object->LoadFeatures();
+    if ($output_field{ref_name}) {
+      $ref_org_object->OpenContigs($ref_organism);
+      $ref_org_object->LoadFeatures();
+    }
 
-    $r++;
-    &RSAT::message::TimeWarn("Reference organism", $r."/".scalar(@main::ref_organisms), $ref_organism) if ($main::verbose >= 2);
+
     my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
     my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
     &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 3);
@@ -1030,6 +1033,10 @@ Common name of the query gene
 =item  ref_name
 
 Common name of the gene found in the reference genome.
+
+B<Beware:> this output field requires to load synonym tables for all
+the organisms of the reference taxon, which increases the running time
+(a few seconds per taxon).
 
 =item  query_organism
 
