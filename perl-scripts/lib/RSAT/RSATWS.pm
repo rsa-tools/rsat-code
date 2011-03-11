@@ -1063,6 +1063,7 @@ sub peak_motifs_cmd {
 #    my $output_prefix = $args{"output_prefix"};
     my $graph_title = $args{"graph_title"};
     my $image_format = $args{"image_format"};
+    my $disco = $args{"disco"};
     my $task = $args{"task"};
 
     my $command = "$SCRIPTS/peak-motifs";
@@ -1117,6 +1118,12 @@ sub peak_motifs_cmd {
 	$task =~ s/\'//g;
 	$task =~ s/\"//g;
 	$command .= " -task '".$task."'";
+    }
+
+    if ($disco) {
+	$disco =~ s/\'//g;
+	$disco =~ s/\"//g;
+	$command .= " -disco '".$disco."'";
     }
 
     if ($max_motif_number) {
