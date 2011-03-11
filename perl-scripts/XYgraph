@@ -53,6 +53,7 @@ $y = 0;
 $x_axis_size = 400;
 $y_axis_size = 400;
 
+$force_lines = 0;
 
 #### font sizes ####
 $small_font_width = 6;
@@ -68,6 +69,11 @@ $viline=0;
 &ReadArguments();
 
 ## check arguments compatibility 
+if ($force_lines && (!$lines && scalar @lines == 0)) {
+  &RSAT::message::Warning("-force_lines option used without any line to trace specification is useless.") ;
+}
+
+
 if (($img_format eq "eps")||($img_format eq "pdf")) {
 
   if (($x_grid_step1) || ($y_grid_step1) || ($x_grid_step2) || ($y_grid_step2)) {
@@ -75,6 +81,9 @@ if (($img_format eq "eps")||($img_format eq "pdf")) {
     #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
     #     $img_format = "png";
     #     $outputfile .=".png";
+  }
+  if ($force_lines) {
+    &RSAT::message::Warning("-force_lines option is not compatible with the vectorial format") ;
   }
   if ($bg ne "white") {
     &RSAT::message::Warning("changing background color is not yet compatible with eps format => ignored.") ;
@@ -425,6 +434,8 @@ for $series (0..$#y_col_list) {
 for $series (0..$#y_col_list) {
   $prev_x = "ND";
   $prev_y = "ND";
+  $last_defined_x = "ND";
+  $last_defined_y = "ND";
   my $current_color = $series_color[$series];
   $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
 
@@ -503,9 +514,16 @@ for $series (0..$#y_col_list) {
 	    print "shape=rect ";
 	    print "coords=\"",int($x-$point_size/2) , ",", int($y-$point_size/2), ",",int($x+$point_size/2), ",",int($y+$point_size/2), "\">\n";
 	  }
-	  if ((($lines) || ($lines[$y_col_list[$series]])) 
-	      && ($prev_x ne "ND") && ($prev_y ne "ND")) {
-	    $image->line($prev_x, $prev_y, $x, $y, $current_color);
+	  if ($lines || $lines[$y_col_list[$series]]) {
+	    my $prev_x_coord = $prev_x;
+	    my $prev_y_coord = $prev_y;
+	    if (($prev_x eq "ND" || $prev_y eq "ND") && $force_lines) {
+	      $prev_x_coord = $last_defined_x;
+	      $prev_y_coord = $last_defined_y;
+	    }
+	    if (($prev_x_coord ne "ND" && $prev_y_coord ne "ND")) {
+	      $image->line($prev_x_coord, $prev_y_coord, $x, $y, $current_color);
+	    }
 	  }
 	}
       }				#if historgram
@@ -515,8 +533,10 @@ for $series (0..$#y_col_list) {
       $prev_bar_right = $bar_right;
     } else {
       $prev_x = $x;
+      $last_defined_x = $x if ($x ne "ND");
     }
     $prev_y = $y;
+    $last_defined_y = $y if ($y ne "ND");
   }				# for p
 }				# for series
 
@@ -1705,7 +1725,8 @@ XYgraph options
 -xlog #		logarithm X axis base #, default 10)
 -ylog #		logarithm Y axis (base #, default 10)
 -log #		same as combining -xlog # -ylog #
--lines	        points are jointed by lines 
+-lines	        points are jointed by lines
+-force_lines	points are jointed by lines even if there are missing values on the Y axis
 -line #		points of the #th column are jointed by lines
 -header		first row (column) of the data file contains a column header 
 -legend		use the first line as legend for Y data.
@@ -1826,7 +1847,8 @@ OPTIONS
 			If the next argument is a number, it provides the 
 			log base. Default log base is 10.  
 	-log #		same as combining -xlog # -ylog #
-	-lines	        points are jointed by lines 
+	-lines	        points are jointed by lines. When there are missing Y values, the points are not joined by a line (see -force_lines option).
+	-force_lines	points are jointed by lines. Even if ther eare missing values on the Y axis.
 	-line #		same as lines, but for the #th column only
 			can be used recursively to specify several columns for 
 			which a line must be drawn between points.
@@ -2070,7 +2092,9 @@ sub ReadArguments {
       ### join points by lines ###
     } elsif ($ARGV[$a] eq "-lines") {
       $lines = 1;
-
+      ### force the joining of points by lines (even where there are missing values)
+    } elsif ($ARGV[$a] eq "-force_lines") {
+      $force_lines = 1;
       ### join points of a specific column by lines ###
     } elsif (($ARGV[$a] eq "-line") && (&IsNatural($ARGV[$a+1]))) {
       $lines[$ARGV[$a+1]-1] = 1;
