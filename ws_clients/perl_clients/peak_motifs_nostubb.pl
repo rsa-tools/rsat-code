@@ -24,7 +24,9 @@ my $max_seq_length = 500;
 my $noov = 1;  ## Do not allow overlapping patterns
 my $str = 2;  ## Search on both strands
 my $image_format = 'png';
-my $task = 'purge,seqlen,composition,merge_words,collect_motifs,timelog,synthesis,oligos,positions';
+#my $task = 'purge,seqlen,composition,disco,merge_words,collect_motifs,timelog,synthesis';
+my $task = 'purge,seqlen,composition,disco,synthesis';
+my $disco = 'oligos,positions';
 my $graph_title = 'Oct4_Chen2008';
 my $test = `cat peak_motifs_test1_demo_seq.fasta`;
 
@@ -40,7 +42,8 @@ my %args = (
             'noov' => $noov,
             'str' => $str,
 	    'image_format' => $image_format,
-	    'task' => $task
+	    'task' => $task,
+#	    'disco' => $disco,
            );
 
 eval
