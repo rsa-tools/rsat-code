@@ -113,9 +113,8 @@ target='_blank' href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-
  the basis of discovered motifs in order to submit a "cleaned"
  collection of peaks to GEO. Since the goal of this tutorial is to
  show how peak-motifs performs on a raw collection of peak sequences,
- we used as primary inputs the original reads submitted by by Chen in
- the GEO database, we used the program MACS to select the peak
- regions, and PeakSplitter to split the large regions into effective
+ we have re-generated a complete peak collection from the original reads submitted by Chen in
+ the GEO database. The mapping of the reads was performed with Bowtie against the mm9 assembly, then we used the program MACS to call the peak regions, and PeakSplitter to split the large regions into effective
  peaks. The peak sequences were then collected from Galaxy.</p>
 
 <hr><a name='parameters'></a><h2>Tuning <i>peak-motifs</i> parameters</h2>
