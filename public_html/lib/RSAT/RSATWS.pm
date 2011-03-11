@@ -925,9 +925,11 @@ sub peak_motifs {
     my $command = $self->peak_motifs_cmd(%args);
 
 #    my $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
-    my $date = `date`;
-    chomp $date;
-    $date =~s| |-|g;
+    my $date = &RSAT::util::AlphaDate();
+    $date =~ s/\n//;
+#    my $date = `date `;
+#    chomp $date;
+#    $date =~s| |-|g;
     my $output_directory = sprintf "peak-motifs.%s", $date;
     my $output_prefix = "peak-motifs";
     my $output_path = $TMP."/".$output_directory;
