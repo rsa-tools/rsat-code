@@ -13,8 +13,6 @@
 </h2>
 </center>
 
-
-
 <a name='toc'></a><h2>Contents</h2>
 
 <p>
@@ -126,8 +124,12 @@ download the test set provided on the supplementary material Web site
 <br>(file <a target='_blank'
 href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/data/sequences/Chen_2008/peaks_from_galaxy/Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted.fa'>Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted.fa</a>). </p></li>
 
-<ul><b>Note:</b> the sequences should be saved as unformatted text
-file.</ul>
+<ul>
+  <li><b>Note:</b> the sequences should be saved as unformatted text
+    file.
+  </li>
+</ul>
+
 
 
 <li><p>Open a connection to the <a href="http://rsat.ulb.ac.be/rsat/"
@@ -150,8 +152,9 @@ button to select your peak sequence file.
       size of the data set.
     <li><b><font color='darkorange'>Caution:</font></b> make sure you
       upload a file containing <i><u>peak sequences</u></i> (usually
-      less than 100 000 sequences) and <i><u>not the raw reads</u></i>
-      (usually several millions of sequences).
+      less than 100 000 sequences of a few hundreds base pairs each)
+      and <i><u>not the raw reads</u></i> (usually several millions of
+      sequences of a few tens bp).
     </li>
   </ul> 
 <p></li>
@@ -159,35 +162,65 @@ button to select your peak sequence file.
 <h3>Reduce input peak sequences panel</h3>
 
 <p>This panel can be expanded by double-clicking on the triangle on
-the right.</p>
+  the right.</p>
 
 <p>It allows you to limit the analysis to a given number of top peaks
   from the input file, or to clip sequences around the centers in
   order to restrict them to a maximal size.  With the peak sequences
   used in this tutorial, there is no specific need to apply those
-  restrictions.  
+  restrictions. The two steps hereafter just indicate the reasons why
+  you generally don't need to activate the restrictions on peak number
+  and peak size. 
 
-<li>Make sure that the option <i>Number of top sequences to retain</i>
-is left blank.
+  <li>Make sure that the option <i><b>Number of top sequences to retain</b></i>
+    is left blank.
 
-  <ul>
-    <li><b>Note:</b> many alternative tools systematically restric the
-    number of top sequences because the underlying algorithms to not
-    scale up with large sequence sets. In contrast, the algorithms
-    used in <i>peak-motifs</i>are linear in time and can analyze
-    several megabases in a few minutes. There is thus no need to
-    restrict the number of peaks.</li>
-  </ul>
+    <ul>
+      <li><b>Note:</b> most existing tools for motif discovery in
+	ChIP-seq peaks systematically restrict the number of top sequences
+	because the underlying algorithms to not scale up with large
+	sequence sets. In contrast, the algorithms used
+	in <i>peak-motifs</i>are linear in time and can analyze several
+	megabases in a few minutes. There is thus no need to restrict the
+	number of peaks.</li>
+    </ul>
+  </li>
 
-</li>
+  <li>
+    Make sure that the option <i><b>Cut peak sequences</b></i> is left black. 
+    <ul>
+      <li><b>Note:</b> this option permits to restrict the width of
+	the peaks by clipping the left and right extremities of each
+	peak sequence over a given distance. As a result, the analysis
+	is restricted to the central region of each peak, which is
+	supposed to contain the highest density in transcription
+	factor binding sites. However, the benefit strongly depends on
+	the precision of the previous procedure used for peak
+	calling. In practice, it is generally safe to let the program
+	anlyze the whole dataset, but in some cases it might be useful
+	to also restrict the analysis to peak centers and compare the
+	results.
+      </li>
+
+      <li><b>Note:</b> this option should not be used for collection
+	of large regions such as those obtained from chromatin
+	accessiblity or histone methylation studies. </li>
+    </ul>
+  </li>
 
 <h3>Change motif discovery parameters panel</h3>
 
-<p>This panel contain the parameters for the motif discovery
-step. We will first keep the default settings, using the
+<p>This panel contain the parameters for the motif discovery step. For
+the case study, we will keep the default settings, using the
 programs <i>oligo-analysis</i> and <i>position-analysis</i> to
-discover over-represented motifs and motifs with positional
-biais.</li>
+discover over-represented motifs and motifs with positional biais.</p>
+
+<p>We explain hereafter the way to tune the parameters for depending
+on the properties of the peak collection and the expected structure of
+the trnascription factor binding motif.</li>
+
+<li></li>
+
 
 <h3>Compare motifs panel</h3>
 
