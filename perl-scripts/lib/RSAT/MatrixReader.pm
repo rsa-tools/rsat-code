@@ -1098,6 +1098,8 @@ sub _readFromAlignACEFile {
       $matrix_nb = $1;
       $site_nb = 0;
       $matrix = new RSAT::matrix();
+      $matrix->set_parameter("id", "Motif_".$matrix_nb);
+      $matrix->set_parameter("accession", "Motif_".$matrix_nb);
       $matrix->set_parameter("matrix.nb", $matrix_nb);
       $matrix->set_parameter("program", "AlignACE");
       $matrix->set_parameter("command", $AlignACE_command);
@@ -1151,6 +1153,17 @@ sub _readFromAlignACEFile {
     }
   }
   close $in if ($file);
+
+  ## Compute matrix consensus
+  foreach my $matrix (@matrices) {
+      ## Replace undefined values by 0
+    $matrix->treat_null_values();
+    $matrix->calcConsensus();
+    my $consensus = $matrix->get_attribute("consensus.IUPAC");
+#    my $ac = $matrix->get_attribute("accession");
+    $matrix->force_attribute("id", $consensus);
+    $matrix->force_attribute("name", $consensus);
+  }
 
   return @matrices;
 }
