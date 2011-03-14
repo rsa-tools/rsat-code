@@ -1122,6 +1122,8 @@ sub _readFromAlignACEFile {
     } elsif (/^AlignACE (\d+\.\d+)\s+(\S+)/) {
       $AlignACE_version = $1;
       $AlignACE_date = $2;
+    } elsif (/AlignACE/) {
+      $AlignACE_command = $_;
     } elsif (/gcback = \s+(\S+)/) {
       $gcback = $1;
     } elsif (/seed\s+=\s+(\S+)/) {
@@ -1134,8 +1136,6 @@ sub _readFromAlignACEFile {
       $oversample = $1;
     } elsif (/undersample\s+=\s+(\S+)/) {
       $undersample = $1;
-    } elsif (/^AlignACE/) {
-      $AlignACE_command = $_;
     } elsif (/#(\d+)\s+(\S+)/) {
       $seq_id[$1] = $2;
     } elsif ($in_matrix) {
