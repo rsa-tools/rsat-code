@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.16 2011/02/17 05:15:54 rsat Exp $
+# $Id: infer-operon,v 1.17 2011/03/14 09:10:25 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -197,6 +197,7 @@ package main;
 				name
 				strand
 				start
+				end
 			       );
 
     @{$sub_fields{up_info}} = qw(upstr_neighb_id
@@ -231,6 +232,7 @@ package main;
     $field_descr{name} = "Name of the query gene."; 
     $field_descr{strand} = "Strand of the query gene.";
     $field_descr{start} = "Starting position of the query gene (first nucleotide of the start codon).";
+    $field_descr{end} = "Ending position of the query gene (last nucleotide of the stop codon).";
 
     $field_descr{upstr_neighb_id} = "ID of the upstream gene.";
     $field_descr{upstr_neighb_name} = "Name of the upstream gene."; 
@@ -265,7 +267,7 @@ package main;
 
     ## Treat the case of subfields
     foreach my $field (@return_fields) {
-      if (@{$sub_fields{$field}}) {
+      if (defined(@{$sub_fields{$field}})) {
 	push @return_subfields, @{$sub_fields{$field}};
       } else {
 	push @return_subfields, $field;
@@ -738,7 +740,7 @@ sub ExtendOperon {
     &RSAT::message::Warning("Operon already extended for feature", $feature) if ($main::verbose >= 3);
     return;
   }
-  
+
   ## Attributes of the curent feature
   my $id = $feature->get_attribute("id");
   my $name = $feature->get_attribute("name");
@@ -761,10 +763,13 @@ sub ExtendOperon {
   ## Start position (side depends on the strand)
   if ($strand eq "D") {
     $start = $feature->get_attribute("left");
+    $end = $feature->get_attribute("right");
   } else {
     $start = $feature->get_attribute("right");
+    $end = $feature->get_attribute("left");
   }
   $feature->set_attribute("start", $start);
+  $feature->set_attribute("end", $end);
 
   ################################################################
   ## Attributes of the upstream neighbour
