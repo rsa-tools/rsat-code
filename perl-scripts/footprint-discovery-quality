@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery-quality,v 1.6 2011/03/10 16:20:40 rsat Exp $
+# $Id: footprint-discovery-quality,v 1.7 2011/03/15 10:22:28 rsat Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -97,7 +97,7 @@ package main;
     local $job_prefix = "footpring_qual";
     
     ## Option for the sleep commands
-    my $sleep_time = 30;
+    my $sleep_time = 10;
 
     ################################################################
     ## Read argument values
@@ -178,13 +178,13 @@ package main;
     
     ##################################################################
     ## RANDOM DATA
-    ## Determine for each taxon the average number of gene per group of orthologs
+    ## Determines for each taxon the average number of gene per group of orthologs
     ## wait until the bbh search has been achieved
     &RSAT::message::TimeWarn ("Estimating the average number of gene by orthology group") if ($main::verbose >= 3);
     my $achieved = 0;
     my %ortho_nb = ();
     foreach my $taxon (@taxa) {
-        while (!$achieved) {
+      while (!$achieved) {
         sleep($sleep_time);
         &RSAT::message::TimeWarn ("All data are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 2);
         $achieved = 1;
@@ -207,19 +207,25 @@ package main;
         $ortho_nb{$taxon} = $ortho_nb_sum;
       }
       $achieved = 0;
+      &RSAT::message::TimeWarn ("Startagain....") if ($main::verbose >= 2);
     }
-    
+    # What is the expected frequency file (wait that at least one of the dyad result file is availalble for each taxon)
     foreach my $taxon (@taxa) {
-      my $dyad_file_result = "footprint_quality/".$taxon."/".$organism."/".$rdm_genes_array[0]."/".$rdm_genes_array[0]."_".$organism."_".$taxon."_ortho_dyads_3nt_sp0-20-2str-noov_taxfreq_sig0.tab";
+      my $dyad_file_result = "";
       my $bgmodel_taxon = "";
       while ($bgmodel_taxon eq "") {
-        &RSAT::message::TimeWarn ("File $dyad_file_result does not exist ... waiting $sleep_time seconds") if ($main::verbose >= 3);
-        sleep ($sleep_time);
-        
-        $bgmodel_taxon = `cat $dyad_file_result | grep 'exp. freq.' | cut -f 3` if (-e $dyad_file_result);
-        chomp $bgmodel_taxon;
+        for (my $i = 0; $i < scalar @rdm_genes_array; $i++) {
+          $dyad_file_result = "footprint_quality/".$taxon."/".$organism."/".$rdm_genes_array[$i]."/".$rdm_genes_array[$i]."_".$organism."_".$taxon."_ortho_dyads_3nt_sp0-20-2str-noov_taxfreq_sig0.tab";
+          if (-e $dyad_file_result || !-z $dyad_file_result) {
+            $bgmodel_taxon = `cat $dyad_file_result | grep 'exp. freq.' | cut -f 3` if (-e $dyad_file_result);
+            chomp $bgmodel_taxon;
+            last;
+          } else {
+            &RSAT::message::TimeWarn ("File $dyad_file_result is of size 0 ... waiting ".int($sleep_time/2)." seconds") if ($main::verbose >= 3);
+            sleep($sleep_time / 2);
+          }
+        } 
       }
-
       $bgmodel{$taxon} = $bgmodel_taxon;
     }
 
@@ -289,7 +295,7 @@ package main;
       my @dyads = ();
       while (!$achieved) {
         sleep($sleep_time);
-        &RSAT::message::TimeWarn ("All data are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 2);
+        &RSAT::message::TimeWarn ("All data for taxon $taxon are not available yet ... wait $sleep_time seconds - trac") if ($main::verbose >= 2);
         $achieved = 1;
         foreach my $gene (keys (%rdm_genes)) {
           my $taxon_gene_dir = $outputdir{root}."/".$taxon."/".$organism."/".$gene;
@@ -302,7 +308,12 @@ package main;
             &RSAT::message::TimeWarn ("File $asmb_file does not exist yet") if ($main::verbose >= 2);
             next;
           }
-          @dyads = &readDyads($dyad_file, $gene, \@dyads);
+          if (-e $dyad_file && !-z $dyad_file) {
+             @dyads = &readDyads($dyad_file, $gene, \@dyads);
+          } else {
+             &RSAT::message::Warning("Dyad file ".$dyad_file. " does not exist");            
+          }
+         
         }
       }
       my $dyad_score_taxon_file = $outputdir{dyad_scores}."/".$taxon."_real_dyad_scores.tab";
@@ -320,7 +331,7 @@ package main;
       my $random_genes_dir_taxon =  $outputdir{random_genes_dir}."/".$taxon."/";
       while (!$achieved) {
         sleep($sleep_time);
-        &RSAT::message::TimeWarn ("All data are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 2);
+        &RSAT::message::TimeWarn ("All data for taxon $taxon are not available yet ... wait $sleep_time seconds - truc") if ($main::verbose >= 2);
         $achieved = 1;
         for (my $i = 0; $i < $orthogroups_nb; $i ++) {
           
@@ -334,8 +345,13 @@ package main;
             &RSAT::message::TimeWarn ("File $random_genes_dyad_taxon_file_done does not exist yet") if ($main::verbose >= 2);
             next;
           }
-
-          @dyads = &readDyads($random_genes_dyad_taxon_file, "rand_".$i, \@dyads);
+          if (-e $random_genes_dyad_taxon_file && !-z $random_genes_dyad_taxon_file) {
+             @dyads = &readDyads($random_genes_dyad_taxon_file, "rand_".$i, \@dyads);
+          } else {
+             &RSAT::message::Warning("Dyad file ".$random_genes_dyad_taxon_file. " does not exist");            
+          }
+         
+          
         }
       }
       my $dyad_score_taxon_file = $outputdir{dyad_scores}."/".$taxon."_rdm_dyad_scores.tab";
@@ -489,7 +505,7 @@ sub readDyads {
   my $id = shift;
   my $array_ref = shift;
   my @result = @{$array_ref};
-  my ($dyadfile_handler) = &OpenInputFile($dyadfile);
+  my ($dyadfile_handler) = &OpenInputFile($dyadfile) ;
   my $i = scalar @result;
   while (my $ligne = <$dyadfile_handler>) {
     next if ($ligne =~ /^#/);

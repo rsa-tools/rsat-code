@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.43 2011/02/17 04:54:49 rsat Exp $
+# $Id: taxon-frequencies,v 1.44 2011/03/15 10:22:28 rsat Exp $
 #
 ############################################################
 
@@ -135,7 +135,10 @@ package main;
   local $occ_col = 4; ## Column containing pattern occurrences in the frequency files
 
   local $decimals = 13;		## Decimals for printing frequencies
+  
 
+
+  
   #### background models
   %supported_bg = ('upstream'=>1,
 		   'upstream-noorf'=>1,
@@ -418,7 +421,7 @@ package main;
 		  ## Check oligonucleotide length
 		  if ($pattern_type eq "oligo") {
 		    unless (length($pattern_seq) == $length) {
-		      &RSAT::message::Warning($org, "Skipped", $pattern_seq, "Invalid pattern for ".$length."nucleotide");
+		      &RSAT::message::Warning($org, "Skipped", $pattern_seq, "Invalid pattern for ".$length."nucleotide(s)");
 		      $invalid_patterns_per_organism{$org}++; ## Increment pattern counter
 		      next;
 		    }
@@ -912,6 +915,7 @@ only when many genomes are updated.
 	  if (scalar(@main::taxa) > 0) {
 	    &RSAT::error::FatalError("Options -taxon and -all_taxa are mutually incompatible");
 	  }
+
 
 	  ## Return occurrences per organism
 =pod

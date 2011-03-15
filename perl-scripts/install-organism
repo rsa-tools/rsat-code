@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.102 2011/02/10 14:43:10 rsat Exp $
+# $Id: install-organism,v 1.103 2011/03/15 10:22:28 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -276,7 +276,7 @@ sub UpdateConfig {
 	&RSAT::message::Info (join("\t", "Parsed taxonomy from organism.tab", "Id",$id, "Taxonomy", $taxonomy)) if ($main::verbose >= 2);
       } else {
 	&Warning("Cannot read taxonomy in file $organism_table\n");
-# 	print "######\n###\nlala\n########\n############\n";
+# 	print "######\n###\nlala\n########\n############\n";z
       }
     }
   }
@@ -427,12 +427,13 @@ sub CreatePhylogeny {
 	if (/^-- field (\d)	taxonomy/) {
 	    $taxonomy_field = $1;
 	} elsif (/^--/) {
+
 	    next;
 	} else {
 	    if (defined($taxonomy_field)) {
 		@fields = split "\t";
 		$taxonomy = $fields[$taxonomy_field - 1];
-		&RSAT::message::Info ("Taxonomy\t$taxonomy\n") if ($main::verbose >= 2);
+		&RSAT::message::Info ("Taxonomyyy\t$taxonomy\n") if ($main::verbose >= 2);
 	    } else {
 		&Warning("Cannot read taxonomy in file $organism_table\n");
 	    }
