@@ -924,13 +924,11 @@ sub peak_motifs {
 
     my $command = $self->peak_motifs_cmd(%args);
 
-#    my $output_directory = sprintf "peak-motifs.%s", &AlphaDate();
     my $date = &RSAT::util::AlphaDate();
     $date =~ s/\n//;
-#    my $date = `date `;
-#    chomp $date;
-#    $date =~s| |-|g;
+
     my $output_directory = sprintf "peak-motifs.%s", $date;
+#    my $output_directory = sprintf "peak-motifs_TESTS_OLY";
     my $output_prefix = "peak-motifs";
     my $output_path = $TMP."/".$output_directory;
     $output_path =~ s|\/\/|\/|g;
@@ -939,54 +937,53 @@ sub peak_motifs {
     $command .= " -outdir '".$output_path."'";
     $command .= " -prefix '".$output_prefix."'";
 
-#    local(*HIS_IN, *HIS_OUT, *HIS_ERR);
-#    my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
-#    my @outlines = <HIS_OUT>;    # Read till EOF.
-#    my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+    local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+    my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+    my @outlines = <HIS_OUT>;    # Read till EOF.
+    my @errlines = <HIS_ERR>;    # XXX: block potential if massive
 
 #    my $result = join('', @outlines);
-#    my $stderr;
+    my $stderr;
 
-#    foreach my $errline(@errlines) {
+    foreach my $errline(@errlines) {
 	## Some errors and RSAT warnings are not considered as fatal errors
-#	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
-#	    $stderr .= $errline;
-#	}
+	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING') || ($errline =~'Odd number of elements in hash assignment')) {
+	    $stderr .= $errline;
+	}
 	## RSAT warnings are added at the end of results
 #	if ($errline =~'WARNING') {
 #	    $result .= $errline;
 #	}
-#    }
-#    $stderr = &error_handling($stderr, 1);
-#    close HIS_OUT;
-#    close HIS_ERR;
+    }
+    $stderr = &error_handling($stderr, 1);
+    close HIS_OUT;
+    close HIS_ERR;
 
-    system($command);
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
 
-##    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-##    my $result = `$command`;
-##    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(peak_motifs.XXXXXXXXXX, DIR => $TMP);
-##    print $TMP_OUT $result;
-##    close $TMP_OUT;
     my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
     $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-##    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+#   $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+    my $tmp_outdir = $output_path;
+    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
 
     if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $command,
-					       'server' => $tmp_outfile});
+	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
+			                                         SOAP::Data->name('command' => $command)))
+				->attr({'xmlns' => ''});
     } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $command,
-					       'client' => $tmp_outfile});
+	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $command),
+								 SOAP::Data->name('client' => $tmp_outdir)))
+				->attr({'xmlns' => ''});
     } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $command,
-					       'client' => $tmp_outfile});
+	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
+								 SOAP::Data->name('command' => $command),
+								 SOAP::Data->name('client' => $tmp_outdir)))
+				->attr({'xmlns' => ''});
     }
 }
 
