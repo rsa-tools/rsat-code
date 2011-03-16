@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.17 2011/02/17 05:15:54 rsat Exp $
+# $Id: graph-topology,v 1.18 2011/03/16 13:39:59 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -250,11 +250,11 @@ package main;
       if ($return_fields{'degree'}) {
         my $id = $nodes_name_id{$node}; # Numerical id of the node
         # calculate in degree
-        if (@{$in_neighbours[$id]}) {
+        if (defined $in_neighbours[$id]) {
           $in_deg = scalar(@{$in_neighbours[$id]});
         }
         # calculate out degree
-        if (@{$out_neighbours[$id]}) {
+        if (defined $out_neighbours[$id]) {
           $out_deg = scalar(@{$out_neighbours[$id]});
         }
         # degree ( sum of in- and out-degree)
