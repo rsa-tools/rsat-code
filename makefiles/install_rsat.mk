@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.39 2011/03/03 11:10:59 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.40 2011/03/19 08:41:48 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -97,6 +97,7 @@ _old_bioperl:
 	(cd ${RSAT}/lib;  cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live)
 
 bioperl_git:
+	@echo "This method is obsolete, BioPerl module can now be installed with cpan"
 	@mkdir -p $RSAT/lib
 	@cd $RSAT/lib
 	git clone git://github.com/bioperl/bioperl-live.git
@@ -463,3 +464,35 @@ _compile_perl_scripts:
 	dgone
 
 
+
+################################################################
+################################################################
+###########  SOFTWARE FOR HIGH-THROUGHPUT SEQUENCING ###########
+################################################################
+################################################################
+
+## TopHat
+tophat: download_tophat install_tophat
+
+
+TOPHAT_BASE_DIR=${RSAT}/app_sources/TopHat
+TOPHAT_VERSION=1.2.0
+TOPHAT_ARCHIVE=tophat-${TOPHAT_VERSION}.tar.gz
+TOPHAT_URL=http://tophat.cbcb.umd.edu/downloads/${TOPHAT_ARCHIVE}
+TOPHAT_DISTRIB_DIR=${TOPHAT_BASE_DIR}/tophat-${TOPHAT_VERSION}
+download_tophat:
+	@echo
+	@echo "Downloading TopHat"
+	@mkdir -p ${TOPHAT_BASE_DIR}
+	wget -nd  --directory-prefix ${TOPHAT_BASE_DIR} -rNL ${TOPHAT_URL}
+	(cd ${TOPHAT_BASE_DIR}; tar -xpzf ${TOPHAT_ARCHIVE})
+	@echo ${TOPHAT_DISTRIB_DIR}
+
+TOPHAT_INSTALL_DIR=${RSAT}
+TOPHAT_BIN_DIR=${TOPHAT_INSTALL_DIR}/bin
+install_tophat:
+	@echo
+	@echo "Installing TopHat"
+	@mkdir -p ${TOPHAT_INSTALL_DIR}
+	(cd ${TOPHAT_DISTRIB_DIR}; ./configure --prefix=${TOPHAT_INSTALL_DIR} ; \
+	make clean; make ; make install)
