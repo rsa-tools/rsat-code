@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.177 2011/03/21 10:47:59 rsat Exp $
+# $Id: peak-motifs,v 1.178 2011/03/21 11:31:08 rsat Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.177 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.178 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -976,7 +976,8 @@ sub SequenceLengths {
     $cmd = $SCRIPTS."/convert-features";
     $cmd .= " -from ".$main::param{seq_source}."_seq -i ".$infile{test_seq};
     $cmd .= " -to bed ";
-    my $new_bed_header= "track name=\"peaks\" description=\"RSAT peak-motifs: peaks\" visibility=2 use_score=1 color=13,115,67";
+    my $bed_prefix = $main::param{title};
+    my $new_bed_header= "track name=\"peaks\" description=\"RSAT peak-motifs ".$bed_prefix.": peaks\" visibility=2 use_score=1 color=13,115,67";
     $cmd .= " | sed '1s/^.*/".$new_bed_header."/' "; ## change first line
     $cmd .= " > ".$main::outfile{"test_seq_coord"};
     &one_command($cmd,1);
@@ -2076,7 +2077,8 @@ sub ScanSequences {
       $cmd .= " -coord ".$main::outfile{"test_seq_coord"} if ($main::param{seq_source});
       $cmd .= " -origin center ";
       $cmd .= " -to bed ";
-      my $new_bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs: ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
+      my $bed_prefix = $main::param{title};
+      my $new_bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs ".$bed_prefix.": ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
       $cmd .= " | sed '1s/^.*/".$new_bed_header."/' ";## change first line
       $cmd .= " > ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
       &one_command($cmd,1);
