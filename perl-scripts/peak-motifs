@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.176 2011/02/27 06:16:52 jvanheld Exp $
+# $Id: peak-motifs,v 1.177 2011/03/21 10:47:59 rsat Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.176 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.177 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2623,8 +2623,14 @@ sub SynthesisByMotif {
       }
 
       if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
-	## UCSC link
-	my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
+	  ## UCSC link to genomic location of predicted sites
+	  my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
+#	my $BED_URL = join ("/", 
+#			    $ENV{rsat_www},
+#			    "tmp", 
+#			    &RSAT::util::ShortFileName($main::dir{output}),
+#			    &RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'}));
+#	$BED_URL =~ s|/+|/|g;
 	my $browser_url = "<a target='_blank' href='";
 	$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
 	$browser_url .= "db=".$genome_assembly;
@@ -2999,9 +3005,14 @@ sub SynthesisSequenceComposition {
     if ((($main::infile{coord})&&(-e $main::infile{coord}))
       	||(($main::outfile{"test_seq_coord"})&&(-e $main::outfile{"test_seq_coord"}))) {
       ## UCSC link
-      my $BED_URL = $ENV{rsat_www}."/tmp/";
-      $BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
-      $BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
+#      my $BED_URL = $ENV{rsat_www}."/tmp/";
+	my $BED_URL = join ("/", 
+			    $ENV{rsat_www},
+			    "tmp",
+			    &RSAT::util::ShortFileName($main::dir{output}));
+	$BED_URL .= "/";
+	$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
+	$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
       my $browser_url = "<a target='_blank' href='";
       $browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
       $browser_url .= "db=".$genome_assembly;
