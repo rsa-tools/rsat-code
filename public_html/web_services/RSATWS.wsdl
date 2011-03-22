@@ -2426,6 +2426,266 @@ Default is 'both'.</xsd:documentation>
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="CompareMatricesRequest">
+	<xsd:annotation>
+	  <xsd:documentation>Parameters for the operation compare_matrices</xsd:documentation>
+	</xsd:annotation>
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type.
+Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="matrix_1" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>The first input containing one or several matrices. Matrix format is specified with the option format1 or format (see below).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="matrix_2" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>The second input containing one or several matrices. Matrix format is specified with the option format2 or format (see below).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="matrix" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Single input containing one or several matrices. Each matrix of this file is compared to each other. Matrix format is specified with the option format (see below).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_matrix1_infile" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+              <xsd:documentation>Name of the first file containing matrix/ces on the server. You need to supply either this parameter or matrix_1 (or matrix or tmp_matrix_infile).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_matrix2_infile" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+              <xsd:documentation>Name of the second file containing matrix/ces on the server. You need to supply either this parameter or matrix_2 (or matrix or tmp_matrix_infile).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_matrix_infile" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+              <xsd:documentation>Name of the single file containing matrix/ces on the server. You need to supply either this parameter or matrix (or use matrix_1 + matrix_2).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format1" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Martix format for the first input. Supported fields: tab, cb, consensus, gibbs, meme, assembly.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format2" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Matrix format for the second input. Supported fields: tab, cb, consensus, gibbs, meme, assembly.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Matrix format for both inputs. Supported fields: tab, cb, consensus, gibbs, meme, assembly.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element> 
+	  <xsd:element name="background_model" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Background model is tab-delimited and contains the specification of oligonucleotide frequencies.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_background_infile" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Background model file on the server. It is a tab-delimited file containing the specification of oligonucleotide frequencies.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="background_format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Format for the background model file. Supported formats: all the input formats supported by convert-background-model.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="top1" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Only analyze the first X motifs of the first file. This options is convenient for quick testing before starting the full analysis.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="top2" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Only analyze the first X motifs of the second file. This options is convenient for quick testing before starting the full analysis.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="output_prefix" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Prefix for the output files. The output prefix is mandatory for some return fields (alignments, graphs, ...). This prefix will be appended with a series of suffixes for the different output types (see section OUTPUT FORMATS above for the detail).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="mode" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>-format matches (default)
+            Return matches between any matrix of file1 and any matrix of file2.
+
+            This is the typical use of compare-matrices: comparing one or several query motifs (e.g. obtained from pattern discovery) with a collection of reference motifs (e.f. a database of experimentally characterized transcription factor binding motifs, such as JASPAR, TRANSFAC, RegulonDB, ...).
+
+            For a given pair of matrices (one from file1 and one from file2), the program tests all possible offsets, and measures one or several matching scores (see section "(Dis)similarity metrics" above). The program only returns the sore of the best alignemnt between the two matrices. The "best" alignement is the combination of offset and strand (with the option -strand DR) that maximizes the default score (Ncor). Alternative scores can be used as optimality criteria with the option -sort.
+
+        -format profiles
+            Return a table with one row for each possible alignment offset between two matrices, and various columns indicating the matching parameters (offset, strand, aligned width,...), the matching scores, and the consensus of the aligned columns of the matrices.
+
+            Matching profiles are convenient for drawing the similarity profiles, or for analyzing the correlations between various similarity metrics, but they are too verbosy for the typical use of compare-matrices (detect matches between a query matrix and a database of reference matrices). The formats "matches" and "table" are more convenient for basic use.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="distinct" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Skip comparison between a matrix and itself.
+
+        This option is useful when the program is sused to compare all matrices of a given file to all matrices of the same file, to avoid comparing each matrix to itself.
+
+        Beware: the criterion for considering two matrices identical is that they have the same identifier. If two matrices have exactly the same content (in terms of occurrences per position) but different identifiers, they will be compared.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="strand" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Perform matrix comparisons in direct (D) reverse complementary (R) or both orientations (DR, default option).
+
+        When the R or DR options are activated, all matrices of the second matrix file are converted to the reverse complementary matrix.
+
+        This option is useful to answer very particular questions, for example
+
+        Comparing motifs in a strand-insensitive way (-strand DR)
+            DNA-binding motifs are usually strand-insensitive. A motif may be detected in one given orientation by a motif-discovery algorithm, but annotated in the reverse complementary orientation in a motif database. For DNA binding motifs, we thus recomment the DR option.
+
+            On the contrary, RNA-related signals (termination, poly-adenylation, miRNA) are strand-sensitive, and should be compared in a single orientation (-strand D).
+
+        Detecting reverse complementary palindromic motifs
+            An example of reverse complementary palindromic motif is tCAGswwsGTGa. When a motif is reverse complementary palindromic, the matrix is correlated to its own reverse complement.
+
+            Remark about a frequent misconception of biological palindromes
+
+            Reverse complementary palindroms are frequent in DNA signals (e.g. transcription factor binding sites, restriction sites, ...) because they correspond to a rotational symmetry in the 3D structure. Such symmetrical motifs are often characteristic of sites recognized by homodimeric complexes.
+
+            By contrast, simple string-based palindromes (e.g. CAGTTGAC) do absolutely not correspond to any symmetry on the biochemical point of view, because the 3D structure of the corresponding double helix is not symmetrical. The apparent symmetry is an artifact of the string-based representation, but the corresponding molecule has neither rotational nor translational symmetry.
+
+            DNA signals can either be symmetrical (reverse complementary palindromes, tandem repeats) or asymmetrical.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="matrix_id" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Obsolete option for returning matrix names, Replaced by -return matrix_name. Maintained for backward compatibility.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>List of fields to return (only valid for the formats "profiles" and "matches").
+
+        Supported return fields:
+
+        offset
+            Offset (shift) between the two compared matrices.
+
+        cor
+            Pearsons coefficient of correlatiojn.
+
+        Ncor
+            Normalized correlation (default sorting criterion for the matching mode).
+
+        cov
+            Covariance.
+
+        SSD
+            Sum of squared distances.
+
+        NSW
+            Normalized Sandelin-Wasserman similarity.
+
+        SW
+            Sandelin-Wasserman similarity.
+
+        dEucl
+            Euclidian distance
+
+        NdEucl
+            Normalized Euclidian distance.
+
+        NsEucl
+            Normalized Euclidian similarity.
+
+        dKL
+            Kullback-Leibler distance
+
+        matrix_number
+            Number of the matrices in the input files
+
+        matrix_id
+            Identifiers of the matrices
+
+        matrix_name
+            Names of the matrices
+
+        matrix_ac
+            Accession number of the matrices (TRANSFAC format makes a distinction between IDs and accession numbers).
+
+        width
+            Width of the matrices and the alignment
+
+        strand
+            Direct (D) or Reverse complementary (R) comparison
+
+        offset
+            Offset between the positions of the first and second matrix
+        pos
+            Relative positions the aligned matrices (start, end, strand, width)
+
+        consensus
+            Aligned consensus. The residues of the consensus corresponding to aligned columns are displaye, non-aligned columns are replaced by dots.
+
+        offset_rank
+            During pairwise alignment, scores are computed for each offset and offsets are sorted according to the sorting criterion. The offset_rank indicates the rank of an offset in this sorted list. This is a "within-alignment" rank, which is useful in profile mode.
+
+        match_rank
+            In matching mode, ranks can be computed for all the selected metrics, and a mean rank is computed.
+
+        alignments_pairwise
+            Shifted matrices resulting from the pairwise alignments.
+
+        alignments_1ton
+            Shifted matrices resulting from the 1-to-N alignments.
+
+        alignments
+            Shifted matrices resulting from the alignments (pairwise and 1-to-N).
+
+        all
+            All supported output fields, including all metrics.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sort" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Field to sort the results. The sorting direction depends on the metric: ascending for dissimilarity metrics, decreasing for similarity metrics.
+
+        Supported sort fields:
+
+        offset, ascending (default sorting criterion for the profile mode)
+        Ncor, decreasing (default sorting criterion for the matching mode)
+        cor, decreasing
+        cov, decreasing
+        SSD, ascending
+        SW, decreasing
+        NSW, decreasing
+        dEucl, ascending
+        NdEucl, ascending
+        NsEucl, decreasing
+        dKL, ascending</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:annotation>
+	    <xsd:documentation>Lower threshold on some parameter. Format=list of 'parameter value'.
+Supported fields: rank, dEucl, cor, cov, ali_len, offset</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:annotation>
+	    <xsd:documentation>Upper threshold on some parameter. Format=list of 'param value'.
+Supported parameters: same as lth.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="MatrixScanRequest">
 	<xsd:annotation>
 	  <xsd:documentation>Parameters for the operation matrix_scan</xsd:documentation>
@@ -4348,6 +4608,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="CompareMatricesResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="MatrixScanResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -5179,6 +5459,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:ContingencyTableResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="compare_matrices">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:CompareMatricesRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="compare_matricesResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:CompareMatricesResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
@@ -6037,6 +6333,11 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <input name="ContingencyTableRequest" message="tns:contingency_tableRequest"/>
       <output name="ContingencyTableResponse" message="tns:contingency_tableResponse"/>
     </operation>
+    <operation name="compare_matrices">
+      <documentation>Compare two collections of position-specific scoring matrices (PSSM), and return various similarity statistics + matrix alignments (pairwise, one-to-n).</documentation>
+      <input name="CompareMatricesRequest" message="tns:compare_matricesRequest"/>
+      <output name="CompareMatricesResponse" message="tns:compare_matricesResponse"/>
+    </operation>
     <operation name="matrix_scan">
       <documentation>Scan sequences with one or several position-specific scoring matrices (PSSM) to identify instances of the corresponding motifs(putative sites). This program supports a variety of background models (Bernoulli, Markov chains of any order).</documentation>
       <input name="MatrixScanRequest" message="tns:matrix_scanRequest"/>
@@ -6395,6 +6696,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <soap:body use="literal" />
       </input>
       <output name="ContingencyTableResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
+    <operation name="compare_matrices">
+      <soap:operation soapAction=""/>
+      <input name="CompareMatricesRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="CompareMatricesResponse">
         <soap:body use="literal" />
       </output>
     </operation>
