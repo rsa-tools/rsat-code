@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.178 2011/03/21 11:31:08 rsat Exp $
+# $Id: peak-motifs,v 1.179 2011/03/22 08:26:25 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.178 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.179 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -3451,9 +3451,12 @@ This option is incompatible with -coord.
 
 =cut
     } elsif ($arg eq "-source") {
-      $main::param{seq_source} = shift(@arguments);
-      &RSAT::message::Warning($main::param{seq_source}, "invalid sequence source, will be ignored. Supported: ".$supported_seq_sources)
-	unless ($supported_seq_source{$main::param{seq_source}});
+      my $seq_source = shift(@arguments);
+      if ($supported_seq_source{$seq_source}) {
+	$main::param{seq_source} = $seq_source;
+      } else {
+	&RSAT::message::Warning($seq_source, "invalid sequence source, will be ignored. Supported: ".$supported_seq_sources);
+      }
 
 =pod
 
