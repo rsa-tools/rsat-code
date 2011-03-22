@@ -963,26 +963,28 @@ sub peak_motifs {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
 
-    my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
-    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+#    my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
 #   $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
-    my $tmp_outdir = $output_path;
-    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+#    my $tmp_outdir = $output_path;
+#    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
+    $tmp_outzip =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
 
     if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
+	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outzip),
 			                                         SOAP::Data->name('command' => $command)))
 				->attr({'xmlns' => ''});
     } elsif ($output_choice eq 'client') {
 	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $command),
-								 SOAP::Data->name('client' => $tmp_outdir)))
+								 SOAP::Data->name('client' => $tmp_outzip)))
 				->attr({'xmlns' => ''});
     } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
+	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outzip),
 								 SOAP::Data->name('command' => $command),
-								 SOAP::Data->name('client' => $tmp_outdir)))
+								 SOAP::Data->name('client' => $tmp_outzip)))
 				->attr({'xmlns' => ''});
     }
 }
@@ -3763,6 +3765,267 @@ sub matrix_distrib {
   }
 
   &run_WS_command($command, $output_choice, ".matrix-distrib")
+}
+
+##########
+sub compare_matrices {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  if ($args{"matrix_1"}) {
+      my $input_matrix1 = $args{"matrix_1"};
+      chomp $input_matrix1;
+      $tmp_matrix1_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+      open TMP_IN1, ">".$tmp_matrix1_infile or die "cannot open temp file ".$tmp_matrix1_infile."\n";
+      print TMP_IN1 $input_matrix1;
+      close TMP_IN1;
+  } elsif ($args{tmp_matrix1_infile}){
+      $tmp_matrix1_infile = $args{"tmp_matrix1_infile"};
+  }
+  chomp $tmp_matrix1_infile;
+
+  if ($args{"matrix_2"}) {
+      my $input_matrix2 = $args{"matrix_2"};
+      chomp $input_matrix2;
+      $tmp_matrix2_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+      open TMP_IN2, ">".$tmp_matrix2_infile or die "cannot open temp file ".$tmp_matrix2_infile."\n";
+      print TMP_IN2 $input_matrix2;
+      close TMP_IN2;
+  } elsif ($args{tmp_matrix2_infile}){
+      $tmp_matrix2_infile = $args{"tmp_matrix2_infile"};
+  }
+  chomp $tmp_matrix2_infile;
+
+  if ($args{"matrix"}) {
+      my $input_matrix = $args{"matrix"};
+      chomp $input_matrix;
+      $tmp_matrix_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_matrix_infile or die "cannot open temp file ".$tmp_matrix_infile."\n";
+      print TMP_IN $input_matrix;
+      close TMP_IN;
+  } elsif ($args{tmp_matrix_infile}){
+      $tmp_matrix_infile = $args{"tmp_matrix_infile"};
+  }
+  chomp $tmp_matrix_infile;
+
+#   if ($args{"matrix_list1"}) {
+#       my $matrix_list1 = $args{"matrix_list1"};
+#       chomp $matrix_list1;
+#       $tmp_matrix_list1_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#       open TMP_LIST1, ">".$tmp_matrix_list1_infile or die "cannot open temp file ".$tmp_matrix_list1_infile."\n";
+#       print TMP_LIST1 $matrix_list1;
+#       close TMP_LIST1;
+#   } elsif ($args{tmp_matrix_list1_infile}){
+#       $tmp_matrix_list1_infile = $args{"tmp_matrix_list1_infile"};
+#   }
+#   chomp $tmp_matrix_list1_infile;
+
+#   if ($args{"matrix_list2"}) {
+#       my $matrix_list2 = $args{"matrix_list2"};
+#       chomp $matrix_list2;
+#       $tmp_matrix_list2_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#       open TMP_LIST2, ">".$tmp_matrix_list2_infile or die "cannot open temp file ".$tmp_matrix_list2_infile."\n";
+#       print TMP_LIST2 $matrix_list2;
+#       close TMP_LIST2;
+#   } elsif ($args{tmp_matrix_list2_infile}){
+#       $tmp_matrix_list2_infile = $args{"tmp_matrix_list2_infile"};
+#   }
+#   chomp $tmp_matrix_list2_infile;
+
+  my $format1 = $args{"format1"};
+  my $format2 = $args{"format2"};
+  my $format = $args{"format"};
+
+  if ($args{"background_model"}) {
+      my $background_model = $args{"background_model"};
+      chomp $background_model;
+      $tmp_background_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+      open TMP_BCKGND, ">".$tmp_background_infile or die "cannot open temp file ".$tmp_background_infile."\n";
+      print TMP_BCKGND $background_model;
+      close TMP_BCKGND;
+  } elsif ($args{tmp_background_infile}){
+      $tmp_background_infile = $args{"tmp_background_infile"};
+  }
+  chomp $tmp_background_infile;
+
+  my $background_format = $args{"background_format"};
+  my $top1 = $args{"top1"};
+  my $top2 = $args{"top2"};
+  my $output_prefix = $args{"output_prefix"};
+  my $mode = $args{"mode"};
+  my $distinct = $args{"distinct"};
+  my $strand = $args{"strand"};
+  my $matrix_id = $args{"matrix_id"};
+  my $return = $args{"return"};
+  my $sort = $args{"sort"};
+
+  ## List of lower thresholds
+  my $lth_ref = $args{"lth"};
+  my $lth = "";
+  if ($lth_ref =~ /ARRAY/) {
+    my @lth = @{$lth_ref};
+    foreach $lt (@lth) {
+      $lt =~s/\'//g;
+      $lt =~s/\"//g;
+      @_lt = split / /, $lt;
+      $lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+    }
+  } elsif ($lth_ref) {
+    @_lt = split / /, $lth_ref;
+    $lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+  }
+
+  ## List of upper thresholds
+  my $uth_ref = $args{"uth"};
+  my $uth = "";
+  if ($uth_ref =~ /ARRAY/) {
+    my @uth = @{$uth_ref};
+    foreach $ut (@uth) {
+      $ut =~s/\'//g;
+      $ut =~s/\"//g;
+      @_ut = split / /, $ut;
+      $uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+    }
+  } elsif ($uth_ref) {
+    @_ut = split / /, $uth_ref;
+    $uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+  }
+
+  my $command = "$SCRIPTS/convert-matrix";
+
+  if ($tmp_matrix1_infile) {
+      $tmp_matrix1_infile =~ s/\'//g;
+      $tmp_matrix1_infile =~ s/\"//g;
+      chomp $tmp_matrix1_infile;
+      $command .= " -file1 '".$tmp_matrix1_infile."'";
+  }
+
+  if ($tmp_matrix2_infile) {
+      $tmp_matrix2_infile =~ s/\'//g;
+      $tmp_matrix2_infile =~ s/\"//g;
+      chomp $tmp_matrix2_infile;
+      $command .= " -file2 '".$tmp_matrix2_infile."'";
+  }
+
+  if ($tmp_matrix_infile) {
+      $tmp_matrix_infile =~ s/\'//g;
+      $tmp_matrix_infile =~ s/\"//g;
+      chomp $tmp_matrix_infile;
+      $command .= " -file '".$tmp_matrix_infile."'";
+  }
+
+  if ($tmp_matrix_list1_infile) {
+      $tmp_matrix_list1_infile =~ s/\'//g;
+      $tmp_matrix_list1_infile =~ s/\"//g;
+      chomp $tmp_matrix_list1_infile;
+      $command .= " -mlist1 '".$tmp_matrix_list1_infile."'";
+  }
+
+  if ($tmp_matrix_list2_infile) {
+      $tmp_matrix_list2_infile =~ s/\'//g;
+      $tmp_matrix_list2_infile =~ s/\"//g;
+      chomp $tmp_matrix_list2_infile;
+      $command .= " -mlist2 '".$tmp_matrix_list2_infile."'";
+  }
+
+  if ($format1) {
+    $format1  =~ s/\'//g;
+    $format1  =~ s/\"//g;
+    $command .= " -format1 '".$format1."'";
+  }
+
+  if ($format2) {
+    $format2  =~ s/\'//g;
+    $format2  =~ s/\"//g;
+    $command .= " -format2 '".$format2."'";
+  }
+
+  if ($format) {
+    $format  =~ s/\'//g;
+    $format  =~ s/\"//g;
+    $command .= " -format '".$format."'";
+  }
+
+  if ($tmp_background_infile) {
+      $tmp_background_infile =~ s/\'//g;
+      $tmp_background_infile =~ s/\"//g;
+      chomp $tmp_background_infile;
+      $command .= " -bgfile '".$tmp_background_infile."'";
+  }
+
+  if ($background_format) {
+    $background_format  =~ s/\'//g;
+    $background_format  =~ s/\"//g;
+    $command .= " -bg_format '".$background_format."'";
+  }
+
+  if ($top1 =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $top1 =~ s/\'//g;
+    $top1 =~ s/\"//g;
+    $command .= " -top1 '".$top1."'";
+  }
+
+  if ($top2 =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $top2 =~ s/\'//g;
+    $top2 =~ s/\"//g;
+    $command .= " -top2 '".$top2."'";
+  }
+
+  if ($output_prefix) {
+    $output_prefix =~ s/\'//g;
+    $output_prefix =~ s/\"//g;
+    $command .= " -o '".$output_prefix."'";
+  }
+
+  if ($mode) {
+    $mode =~ s/\'//g;
+    $mode =~ s/\"//g;
+    $command .= " -mode '".$mode."'";
+  }
+
+  if ($distinct) {
+    $distinct =~ s/\'//g;
+    $distinct =~ s/\"//g;
+    $command .= " -distinct";
+  }
+
+  if ($strand) {
+    $strand =~ s/\'//g;
+    $strand =~ s/\"//g;
+    $command .= " -strand '".$strand."'";
+  }
+
+  if ($matrix_id) {
+    $matrix_id =~ s/\'//g;
+    $matrix_id =~ s/\"//g;
+    $command .= " -matrix_id '".$matrix_id."'";
+  }
+
+  if ($return) {
+    $return  =~ s/\'//g;
+    $return =~ s/\"//g;
+    $command .= " -return '".$return."'";
+  }
+
+  if ($sort) {
+    $sort =~ s/\'//g;
+    $sort =~ s/\"//g;
+    $command .= " -sort '".$sort."'";
+  }
+
+  if ($lth) {
+    $command .= $lth;
+  }
+
+  if ($uth) {
+    $command .= $uth;
+  }
+
+ &run_WS_command($command, $output_choice, ".compare-matrices")
 }
 
 ##########
