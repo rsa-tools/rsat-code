@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery-quality,v 1.8 2011/03/16 13:29:42 rsat Exp $
+# $Id: footprint-discovery-quality,v 1.9 2011/03/23 12:52:12 rsat Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -106,6 +106,7 @@ package main;
 
     ################################################################
     ## Check argument values
+    $taxon_list =~ s/ /_/g;
     if ($taxon_list eq "") {
       &RSAT::error::FatalError("Please specify at least one taxon with the -taxon option");
     } else {
@@ -157,7 +158,7 @@ package main;
     my %rdm_genes = ();
     
 #     $orthogroups_nb++;
-#     system ("echo 'YBL072C' >> $outfile{random_genes_selection}");
+#     system ("echo '8957139' >> $outfile{random_genes_selection}");
     
     ($main::genelist) = &OpenInputFile($outfile{random_genes_selection});
     while (<$main::genelist>) {
@@ -176,7 +177,7 @@ package main;
     close $main::genelist;
     ## Run footprint-discovery on each requested taxon and discover the motifs
     foreach my $taxon (@taxa) {
-      my $footprint_discovery_cmd = $scripts."footprint-discovery $batch_arg -task query_seq,orthologs,ortho_seq,purge,filter_dyads,dyads -taxon $taxon -genes $outfile{random_genes_selection} -v $verbose -org $organism -o $outputdir{root} -sep_genes";
+      my $footprint_discovery_cmd = $scripts."footprint-discovery $batch_arg -task query_seq,bg_model,orthologs,ortho_seq,purge,filter_dyads,dyads -taxon '$taxon' -genes $outfile{random_genes_selection} -v $verbose -org $organism -o $outputdir{root} -sep_genes";
       &doit($footprint_discovery_cmd);
       
     }
@@ -236,7 +237,7 @@ package main;
       }
       $bgmodel{$taxon} = $bgmodel_taxon;
     }
-     &RSAT::message::TimeWarn ("Discovery of dyads in random set of sequences") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn ("Discovery of dyads in random set of sequences") if ($main::verbose >= 2);
     foreach my $taxon (@taxa) {
       my @taxon_organisms = &getAllTaxonOrganisms($taxon, \%supported_organism);
       my @taxon_genes = &getAllOrganismsGenes(\@taxon_organisms);
