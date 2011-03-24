@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.59 2011/03/24 10:51:47 jvanheld Exp $
+# $Id: get-orthologs,v 1.60 2011/03/24 15:09:24 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -105,6 +105,7 @@ BEGIN {
 
 require "RSA.lib";
 require "RSA.disco.lib";
+
 use Data::Dumper; # added for debugging (print contents of hashes)
 
 ################################################################
@@ -115,7 +116,7 @@ package main;
   ################################################################
   #### initialise parameters
   local $start_time = &RSAT::util::StartScript();
-
+  $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
 
   %main::infile = ();
   %main::outfile = ();
@@ -145,6 +146,8 @@ package main;
   @main::unknown_query_genes = ();
   @main::bidirect_hits = ();
   $main::bbh = ();
+
+  $main::rand= 0;
 
   $main::null = "<NULL>";
 
@@ -526,7 +529,8 @@ package main;
 		       #		       "query_org",
 		      );
 
-    if (scalar(@output_fields) > 0) {
+    &RSAT::message::Warning("Using option -rand","no additional output fields will be reported") if($main::rand && ($main::verbose>=1)) ;
+    if (  (scalar(@output_fields) > 0 ) && (!$main::rand) ) {
       ## add fields for the fwd hit
       #	$header .= "\tFWD";
       foreach $field (@output_fields) {
@@ -543,14 +547,27 @@ package main;
     print $out "#", $header, "\n";
 
     my $nb_hits_info="";
+    &RSAT::message::Warning("Using option -rand","a random gene will be selected from each organisms where an ortholog for the query gene was found") if($main::rand && ($main::verbose>=0)) ;
     foreach my $query_gene (keys (%is_query)) {
       my $nb_hits=0;
       foreach my $org (@ordered_ref_organisms) {
 	if ($bbh->{$query_gene}->{$org}) {
 	  foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
-	    print $out $bbh->{$query_gene}->{$org}->{$hit},"\n";
-	    $nb_hits++;
-	    $genome_hits{$org}++; # count genomes where hits have been found
+	      if($main::rand){
+		  &RSAT::message::Warning("Selecting random gene from ", $org ) if($main::rand && ($main::verbose>=2)) ;				   
+		   my $cmd = "$SCRIPTS/random-genes -org ". $org ;		   
+		   $cmd .= " -n 1 ";
+		   $cmd .= " -feattype CDS,mRNA,tRNA,rRNA,scRNA,misc_RNA" ;
+		   my $random_gene= ` $cmd ` ; 
+		   $random_gene_id=(split(/\t/,$random_gene))[0];
+		   print $out  join("\t",$random_gene_id,$org,$query_gene)."\n";		 
+	      }
+	      else {
+		  print $out $bbh->{$query_gene}->{$org}->{$hit},"\n";
+	      }
+	      $nb_hits++;
+	      $genome_hits{$org}++; # count genomes where hits have been found
+	      
 	  }
 	} else {
 	  next;
@@ -1135,6 +1152,20 @@ organism. Lines starting with a semicolumn are ignored.
 
 =pod
 
+=item B<-rand>
+
+When the option I<-rand> is activated, the program replaces the
+orthologs by the same number of genes randomly selected from the
+genomes where orthologs are found.
+
+=cut
+
+	} elsif ($arg eq "-rand") {
+	    $main::rand= 1;
+
+
+=pod
+
 =item B<-nowarn>
     
 Do not issue warning about organisms for which there is no BLAST file
@@ -1243,11 +1274,6 @@ elements in promoters of orthologous genes.
 
 =head1 WISH LIST
 
-=head2 option -rand
-
-When the option I<-rand> is activated, the program replaces the
-orthologs by the same number of genes randomly selected from the
-genomes where orthologs are found.
 
 =head2 option -return hit_profiles
 
