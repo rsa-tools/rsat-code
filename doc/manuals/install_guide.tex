@@ -64,86 +64,9 @@ calls to unix system commands.
 \subsection{Perl language}
 
 Most of the programs in \RSAT are written in perl. Version 5.1 or
-later is recommended.
-
-\subsection{Perl modules}
-
-Some perl modules are required for the graphical tools of \RSAT, and
-for some other specific programs. The perl modules can be found in the
-Comprehensive Perl Archive Network (\url{http://www.cpan.org/}), or
-can be installed with the command \program{cpan}.
-
-
-The simplest way to install a Perl module is to run the \program{cpan}
-installer via \program{perl}. For example, to install the module
-\program{Postscript::Simple}, type the following.
-
-\begin{lstlisting}
-sudo perl -MCPAN -e 'install PostScript::Simple install Postscript::Simple' 
-\end{lstlisting}
-
-\emph{Beware:} the command sudo requires administrator rights on the
-computer. If you don't have the root password, please consult your
-system administrator.
-
-
-\begin{description}
-\item[GD.pm] Interface to Gd Graphics Library. Used by
-  \program{XYgraph} and \program{feature-map}. 
-
-  \textbf{Warning:} the installation of GD requires prior installation
-  of seveal libraries, which can be more or less tricky depending on
-  operating system. Several protocols can be found on the web to
-  install the required libraries. For instance, I found a protocol
-  that works for Mac OSX on
-  \url{http://www.libgd.org/DOC_INSTALL_OSX}.
-
-\item[PostScript::Simple] Produce PostScript files from Perl. Used by
-  \program{feature-map}.
-
-\item[Statistics::Distributions] is used to calculate some probability
-  distribution functions. In particular, it is used by the program
-  \program{position-analysis} to calculate the P-value of the
-  chi2. 
-
-  \textbf{Notes} 
-  \begin{itemize}
-  \item In previous releases, the chi2 P-value was computed using
-    \program{Math::CDF}, but the precision was limited to
-    1e-15. \program{Statistics::Distributions} can compute P-values
-    down to 1e-65.
-  \item For the discrete functions (binomial , Poisson,
-    hypergeometric) \RSAT relies on a custom library (
-    \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision
-    of 1e-300.
-  \end{itemize}
-
-\item[File::Spec, POSIX and Data::Dumper] re required for some
-  functions of \program{matrix-scan}.
-
-\item[Util::Properties] is required to load property files, which are
-  used to specify the site-specific configuration of your \RSAT
-  server. Property filesa are also useful to write your own perl
-  clients for the Web service interface to \RSAT (RSATWS).
-
-\item[Class::Std::Fast and Storable] are required to bring persistence
-  to data structures like organisms. This library can be easyly
-  installed via CPAN.
-
-\item[XML::LibXML] is required for parsing and writing XML and uses
-  the XML::Parser::Expat library. It is necessary for some RSAT
-  applications.
-
-\item[DBD::mysql and DBI] those two libraries are required by the
-  program \program{retrieve-ensembl-seq} in order to access the
-  ENSEMBL database.
-
-\item[SOAP::WSDL, Module::Build::Compat and Util::Properties] are
-  required for the Web services. \RSAT Web services is a convenient
-  interface that permits to write Perl scripts to run \RSAT queries on
-  a remote server.
-
-\end{description}
+later is recommended. A set of Perl modules is required, the \RSAT
+package includes a script to install them automatically (see
+Chapter~\ref{chap:perl_modules}).
 
 \subsection{Python language}
 
@@ -157,11 +80,32 @@ or higher is recommended.
 
 \subsection{Helper applications}
 
-The standard version of the program \program{XYgraph} export figures
-in bitmapformat (png, jpeg). If you want to support vectorial drawings
-(pdf), which give a much better resolution for printing, you need to
-install the freeware software \program{gnuplot} (4.2 or later), which
-can be downloaded from \url{http://www.gnuplot.info/}.
+\subsubsection{wget}
+
+The program \program{wget}, is used  to download
+\begin{enumerate}
+
+\item some helper programs developed by third-parties, which can be
+  installed in \RSAT;
+
+\item genomes from the \RSAT server to your local \RSAT installation.
+
+\end{enumerate}
+
+\program{wget} is part of linux distribution. If it is not installed
+on your computer, you can download it from
+\url{http://www.gnu.org/software/wget/}.  An installation package for
+Mac OSX can be found at
+\url{http://download.cnet.com/Wget/3000-18506_4-128268.html}.
+
+
+\subsubsection{gnuplot}
+
+The standard version of the \RSAT program \program{XYgraph} export
+figures in bitmapformat (png, jpeg). If you want to support vectorial
+drawings (pdf), which give a much better resolution for printing, you
+need to install the freeware software \program{gnuplot} (4.2 or
+later), which can be downloaded from \url{http://www.gnuplot.info/}.
 
 
 
@@ -195,16 +139,16 @@ You need to indicate your \program{cvs} client to use \program{ssh}
 as remote shell application. For this, you can specify an environment
 variable.
 
-if your shell is tcsh, add the following line to the \file{.cshrc}
-file in your home directory.
+\emph{If your shell is tcsh}, add the following line to the
+\file{.cshrc} file in your home directory.
 
 \begin{lstlisting}
 setenv CVS_RSH ssh
 \end{lstlisting}
 
 
-If your shell is bash, add the following line to the \file{.bashrc}
-file in your home directory.
+\emph{If your shell is bash}, add the following line to the
+\file{.bashrc} file in your home directory.
 
 \begin{lstlisting}
 export CVS_RSH=ssh
@@ -238,8 +182,6 @@ directory, and use the \texttt{cvs} command in the following way.
 cd rsa-tools
 cvs update -d
 \end{lstlisting}
-
-
 
 \section{Installation from a compressed archive}
 
@@ -312,6 +254,18 @@ random-seq -l 350
 If your configuration is correct, this command should return a random
 sequence of 350 nucleotides.
 
+Don't worry if you see a warning looking like this:
+
+\begin{footnotesize}
+\begin{verbatim}
+; WARNING	The tabular file with the list of supported organism cannot be read
+; WARNING	Missing file	/no_backup/rsa-tools/public_html/data/supported_organisms.tab
+\end{verbatim}
+\end{footnotesize}
+
+This warning will disappear after we download the first organism in
+\RSAT.
+
 You are now able to use any program from the \RSAT package, untill you
 quit your session. It is however not very convenient to set the path
 manually each time you open a new connection. You can modify your
@@ -322,8 +276,10 @@ modify this file, see the system administrator.
 
 \subsection{Checking the java path (required for pathway tools only)}
 
-To check the correct setting for the java-based pathway tools, you can
-type the following command.
+The \program{java} language is necessary for the path finding tools
+included in the \program{NeAT} suite. If you want to use those tools,
+you can check the correct setting for the java-based pathway tools, by
+typing the following command.
 
 \begin{lstlisting}
 java graphtools.util.ListTools
@@ -333,14 +289,126 @@ This should display the list of available pathway analysis tools,
 which are part of the NeAT package.
 
 
+
+\chapter{Installing Perl modules}
+\label{chap:perl_modules}
+
+Some Perl modules are required for the graphical tools of \RSAT, and
+for some other specific programs. The perl modules can be found in the
+Comprehensive Perl Archive Network (\url{http://www.cpan.org/}), or
+can be installed with the command \program{cpan}.
+
+\section{Before installing Perl modules: install the GD library}
+
+The Perl module GD.pm requires the prior installation of the GD
+library. 
+
+\begin{itemize}
+
+\item On \emph{Linux} systems, this library can be installed with the
+  package manager of your distribution (e.g. \command{apt-get}).
+
+
+\item On \emph{Mac OSX} systems, the installation of the GD library is
+  quite tricky. The bet is to follow the installation protocol of the
+  libgd Web site: \url{http://www.libgd.org/DOC_INSTALL_OSX}.
+
+\end{itemize}
+
+\section{Automatic installation of Perl modules}
+
+The simplest way to install all the required Perl modules is to tye
+the command below. \emph{Beware:} this command sudo requires
+administrator rights on the computer. If you don't have the root
+password, please consult your system administrator.
+
+\begin{lstlisting}
+cd ${RSAT}
+
+## Display the list of Perl modules that will be installed
+make -f makefiles/install_RSAT.mk list_perl_modules
+
+## Install the Perl modules
+make -f makefiles/install_RSAT.mk install_perl_modules
+\end{lstlisting}
+%% closing $
+
+\section{Utilization of the Perl modules in \RSAT}
+
+For information, we describe hereafter the list of modules that will
+be installed with this command, and the reason why it is useful to
+install them before running \RSAT programs.
+
+If you are not interested by technical details, you can skip this
+section.
+
+
+\begin{enumerate}
+\item \program{GD.pm} Interface to Gd Graphics Library. Used by
+  \program{XYgraph} and \program{feature-map}. 
+
+\item \program{PostScript::Simple} Produce PostScript files from Perl. Used by
+  \program{feature-map}.
+
+\item \program{Statistics::Distributions} is used to calculate some probability
+  distribution functions. In particular, it is used by the program
+  \program{position-analysis} to calculate the P-value of the
+  chi2. 
+
+  \textbf{Notes} 
+  \begin{itemize}
+  \item In previous releases, the chi2 P-value was computed using
+    \program{Math::CDF}, but the precision was limited to
+    1e-15. \program{Statistics::Distributions} can compute P-values
+    down to 1e-65.
+  \item For the discrete functions (binomial , Poisson,
+    hypergeometric) \RSAT relies on a custom library (
+    \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision
+    of 1e-300.
+  \end{itemize}
+
+\item \program{File::Spec}, \program{POSIX} and \program{Data::Dumper}
+  are required for some functions of \program{matrix-scan}.
+
+\item \program{Util::Properties} is required to load property files, which are
+  used to specify the site-specific configuration of your \RSAT
+  server. Property filesa are also useful to write your own perl
+  clients for the Web service interface to \RSAT (RSATWS).
+
+\item \program{Class::Std::Fast} and \program{Storable} are required
+  to bring persistence to data structures like organisms. This library
+  can be easyly installed via CPAN.
+
+\item \program{XML::LibXML} is required for parsing and writing XML and uses
+  the XML::Parser::Expat library. It is necessary for some RSAT
+  applications.
+
+\item \program{DBD::mysql} and \program{DBI} those two libraries are
+  required by the program \program{retrieve-ensembl-seq} in order to
+  access the ENSEMBL database.
+
+\item \program{SOAP::WSDL}, \program{Module::Build::Compat} and
+  \program{Util::Properties} (already mentioned above) are required
+  for the Web services. \RSAT Web services is a convenient interface
+  that permits to write Perl scripts to run \RSAT queries on a remote
+  server.
+
+\item \program{Bio::Perl} is required for the Ensembl API, which in
+  turn is required for handling genomes installed on the ENSEMBL
+  database (\url{http://www.ensembl.org/}).
+
+\end{enumerate}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Compile C/C++ programs
 \section{Compiling C programs in \RSAT}
 
-Some of the tools available in \RSAT (info-gibbs, matrix-scan-quick,
-count-words) are written in the C. The distribution only contains
-the sources of these tools, because the binaries are operating
-system-dependent. The programs can be compiled in a very easy way.
+Some of the tools available in \RSAT (\program{info-gibbs},
+\program{matrix-scan-quick}, \program{count-words}) are written in the
+\program{C} language. The distribution only contains the sources of
+these tools, because the binaries are operating system-dependent. The
+programs can be compiled in a very easy way.
 
 \begin{lstlisting}
 cd ${RSAT}
@@ -413,10 +481,15 @@ uses some programs developed by third parties for specific
 tasks. Those programs can be downloaded and installed automatically
 using the makefile \file{install\_rsat.mk}.
 
+Before doing this, you must make sure that the program \program{wget}
+(For Linux: \url{http://www.gnu.org/software/wget/}; for Mac OSX
+\url{http://download.cnet.com/Wget/3000-18506_4-128268.html}).
+
 \begin{lstlisting}
+cd $RSAT
 make -f makefiles/install_rsat.mk install_ext_apps
 \end{lstlisting}
-
+%$
 
 \section{Libraries required to support EnsEMBL genomes}
 \label{sect:ensembl_libraries}
@@ -435,24 +508,27 @@ from higher organisms \cite{Sand:2009}.
 Those programs require to install a few Perl libraries as well as a
 MySQL client on your machine. 
 
-To obtain BioPerl, you first need to install the program \program{git}
-(\url{http://git-scm.com/}). You can then execute the following
-instructions.
+The first requirement is the \program{BioPerl} module, which has in
+principle been installed in Chapter~\ref{chap:perl_modules}).
 
-\begin{lstlisting}
-## For this example, we install Bioperl and EnsEMBL libraries 
-## in $RSAT/lib, but you can install it in some other place
-mkdir -p $RSAT/lib
-cd $RSAT/lib
+% To obtain BioPerl, you first need to install the program \program{git}
+% (\url{http://git-scm.com/}). You can then execute the following
+% instructions.
+
+% \begin{lstlisting}
+% ## For this example, we install Bioperl and EnsEMBL libraries 
+% ## in $RSAT/lib, but you can install it in some other place
+% mkdir -p $RSAT/lib
+% cd $RSAT/lib
 
 
-## Easy installation using GIT, protocol from http://www.bioperl.org/wiki/Using_Git
-git clone git://github.com/bioperl/bioperl-live.git
+% ## Easy installation using GIT, protocol from http://www.bioperl.org/wiki/Using_Git
+% git clone git://github.com/bioperl/bioperl-live.git
 
-## To test the version of BioPerl that you are running, use:
-perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
-\end{lstlisting}
-%%$
+% ## To test the version of BioPerl that you are running, use:
+% perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
+% \end{lstlisting}
+% %%$
 
 To obtain EnsEMBL \footnote{Full instructions at
   \url{http://useast.ensembl.org/info/docs/api/api_cvs.html}}.
@@ -484,9 +560,9 @@ and ensembl libraries on your computer. \emph{The path must be adapted
   to fit your local configuration}.
 
 \begin{lstlisting}
-ensembl=/home/rsat/rsa-tools/lib/ensembl/modules
-compara=/home/rsat/rsa-tools/lib/ensembl-compara/modules
-bioperl=/home/rsat/rsa-tools/lib/bioperl-live
+ensembl=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl-compara/modules
+bioperl=[RSAT_PARENT_PATH]/rsa-tools/lib/bioperl-live
 \end{lstlisting}
 
 You also need to define the URL of the Ensembl database in that
