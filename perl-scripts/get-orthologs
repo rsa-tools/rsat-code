@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.58 2011/03/10 12:28:11 jvanheld Exp $
+# $Id: get-orthologs,v 1.59 2011/03/24 10:51:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1242,6 +1242,12 @@ I<get-orthologs> with other programs in order to discover conserved
 elements in promoters of orthologous genes.
 
 =head1 WISH LIST
+
+=head2 option -rand
+
+When the option I<-rand> is activated, the program replaces the
+orthologs by the same number of genes randomly selected from the
+genomes where orthologs are found.
 
 =head2 option -return hit_profiles
 
