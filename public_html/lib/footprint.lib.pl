@@ -952,14 +952,18 @@ sub HeaderSynthesisFilesScan {
     $html_title .= " ".$taxon if ($taxon);
     $html_title .= " ".$organism_name if ($organism_name);
     $html_title .= " ".$bg_model if ($bg_model);
-    print $synthesis_index "<head><title>", $html_title , "</title></head>\n" ;
+    print $synthesis_index "<head><title>", $html_title , "</title>";
     print $synthesis_index &sorttable_script();
+    $header .= "<style type='text/css'>\n";
+    $header .= `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+    $header .=  "</style>\n";
+    print $synthesis_index "</head>\n";
     print $synthesis_index "<body>\n";
     print $synthesis_index "<h1>", $html_title, "</h1\n";
     print $synthesis_index "<p><b>Command:</b> footprint-scan";
     print $synthesis_index &PrintArguments();
     print $synthesis_index "</p>\n";
-    
+
     ## Open the index table
     print $synthesis_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
     print $synthesis_index "<tr>\n";
