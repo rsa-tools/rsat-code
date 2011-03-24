@@ -333,6 +333,7 @@ sub InitQueryOutput {
     $promoter = "ortho";
   }
   $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab"; ##
+  $outfile{seq_notclean} = $outfile{prefix}."_".$promoter."_seq_notclean.fasta"; 
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta"; 
   $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
@@ -1168,7 +1169,18 @@ sub RetrieveOrthoSeq {
     $cmd .= " -i ".$outfile{bbh};
     $cmd .= " -noorf";
     $cmd .= " -feattype CDS,mRNA,tRNA,rRNA,scRNA,misc_RNA" ;
-    $cmd .= " -o ".$outfile{seq};
+    $cmd .= " -o ". $outfile{seq_notclean} ;
+
+
+    &one_command($cmd);
+
+    $cmd = "$SCRIPTS/convert-seq";
+    $cmd .= " -i ".$outfile{seq_notclean};
+    $cmd .= " -mask non-dna ";
+    $cmd .= " -from fasta ";
+    $cmd .= " -to fasta ";
+    $cmd .= " -dna ";
+    $cmd .= " -o ". $outfile{seq};
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
@@ -1192,7 +1204,7 @@ sub PurgeOrthoSeq {
     &one_command($cmd);
 
     $cmd = "$SCRIPTS/convert-seq";
-    $cmd .= " -i ".$outfile{purged_notclean}; ;
+    $cmd .= " -i ".$outfile{purged_notclean}; 
     $cmd .= " -mask non-dna ";
     $cmd .= " -from fasta ";
     $cmd .= " -to fasta ";
