@@ -19,13 +19,23 @@ computer.
 Before starting to use the tools, you need to define an environment
 variable (\texttt{RSAT}), and to add some directories to your path.
 
+For the following instructions, we will denote as \file{[RSAT\_PARENT\_PATH]}
+the path of the parent folder in which the \RSAT suite has been
+downloaded.
+
+For example, if the \file{rsa-tools} folder has been installed in your
+home directory (it is thus found at \file{/home/fred/rsa-tools}), you
+should replace \file{[RSAT\_PARENT\_PATH]} by \file{/home/fred} in all the
+following instructions. 
+
+
 \begin{enumerate}
 
-\item Create an environment variable named \textit{RSAT} and
-  containing the path of rsa-tools.
+\item Identify your \texttt{SHELL}.
 
-  The way to create an environment variable depends on your shell. To
-  know you shell, you can type
+  The way to execute the following instructions depends on your
+  ``shell'' environment. If you don't know which is your default
+  shell, type
 
 \lstset{language=csh}
 
@@ -35,67 +45,65 @@ echo $SHELL
 %$
 
 The answer should be something like \result{/sbin/bash} or
-\result{/bin/tcsh}.
+\result{/bin/tcsh}
 
-Now, if we assume that \RSAT have been installed in the following
-directory.
+\item Declare the \RSAT environment variables.
+
+  We will define configuration parameters necessary for \RSAT.  This
+  includes an environment variable named \texttt{RSAT}.  We will then
+  add the path of the \RSAT \ perl scripts, python scripts and
+  binaries to your path. In addition, add java jar files to your
+  \texttt{CLASSPATH}.
+
+\begin{itemize}
+
+\item \emph{If your default shell is \textbf{tcsh} or \textbf{csh}},
+  copy the following lines in a file named \file{.chsrc} that should
+  be found at root of your account.
 
 \begin{lstlisting}
-/home/rsat/rsa-tools
+setenv RSAT [PARENT_PATH]/rsa-tools
+set PATH=($RSAT/bin $PATH)
+set PATH=($RSAT/perl-scripts $PATH)
+set PATH=($RSAT/python-scripts $PATH)
+set CLASSPATH=($RSAT/java/lib/NeAT_javatools.jar=${CLASSPATH})
+\end{lstlisting}
+%% closing $
+
+\item \emph{If your shell is bash}, you should copy the following lines in a
+file named \file{.bash\_profile} at the root of your account.
+
+\begin{lstlisting}
+export RSAT=[PARENT_PATH]/rsa-tools
+export PATH=${RSAT}/bin:${PATH}
+export PATH=${RSAT}/perl-scripts:${PATH}
+export PATH=${RSAT}/python-scripts:${PATH}
+export CLASSPATH=${RSAT}/java/lib/NeAT_javatools.jar:${CLASSPATH}
 \end{lstlisting}
 
 
-We will declare the \RSAT path to your shell by defining an
-environment variable named \texttt{RSAT}.  We will then add the path
-of the \RSAT \ perl scripts, python scripts and binaries to your
-path. In addition, add java jar files to your classpath.
-
-\item If your default shell is \textbf{tcsh} or \textbf{csh}, type the
-  following commands (you probably need to update the first command to
-  specify the RSAT path of your machine.
-
-\begin{lstlisting}
-setenv RSAT /home/rsat/rsa-tools
-set path=($path $RSAT/bin)
-set path=($path $RSAT/perl-scripts)
-set path=($path $RSAT/python-scripts)
-set CLASSPATH=($RSAT/java/lib/NeAT_javatools.jar)
-\end{lstlisting}
-
-Now you need to type one more command in order to update the list of
-executables found in the path.
-
-\begin{lstlisting}
-rehash
-\end{lstlisting}
-
-
-If your shell is bash, you should type the following command:
-
-\begin{lstlisting}
-export RSAT=/home/rsat/rsa-tools
-export PATH=${PATH}:${RSAT}/bin
-export PATH=${PATH}:${RSAT}/perl-scripts
-export PATH=${PATH}:${RSAT}/python-scripts
-export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
-\end{lstlisting}
-
-
-
-(the \texttt{rehash} command updates the list of executable programs)
-
-\end{enumerate}
-
-If you are using a different shell than bash, csh or tcsh, the
+\item If you are using a different shell than bash, csh or tcsh, the
 specification of environment variables might differ from the syntax
 above.  In case of doubt, ask your system administrator how to
 configure your environment variables and your path.
 
-The specification of the environment variables and paths are required
-each time you want to use \RSAT. You can add these specification to
-your personal profile.  This file is normally found at the root of
-your personal account, in the file \file{.bashrc} if your shell is
-bash, or \file{.cshrc} if your shell is csh or tcsh. If you don't know
-how to proceed, ask your system administrator.
+\end{itemize}
 
+\item In order for the variables to be taken in consideration, you
+  need to log out and open a new terminal session. To check that the
+  variables are correctly defined, type.
+
+\begin{lstlisting}
+  echo $RSAT
+\end{lstlisting}
+%%$
+
+In the example above, this command should return
+
+\begin{lstlisting}
+/home/fred/rsa-tools
+\end{lstlisting}
+
+
+\end{enumerate}
 

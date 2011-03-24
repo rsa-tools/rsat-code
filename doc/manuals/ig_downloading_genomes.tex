@@ -42,9 +42,14 @@ genome-sequencing centers.
 \section{Requirement : wget}
 
 The download of genomes relies on the application \program{wget},
-which is part of linux distribution. \program{wget} is a ``web
-aspirator'', which allows to download whole directories from ftp and
-http sites. You can check if the program is installed on your machine.
+which is part of linux distribution\footnote{For Linux:
+  \url{http://www.gnu.org/software/wget/}; for Mac OSX
+  \url{http://download.cnet.com/Wget/3000-18506_4-128268.html}}.
+
+
+\program{wget} is a ``web aspirator'', which allows to download whole
+directories from ftp and http sites. You can check if the program is
+installed on your machine.
 
 \begin{lstlisting}
 wget --help
@@ -97,12 +102,14 @@ supported-organisms -server -taxon Fungi -return last_update,source,ID
 \subsection{Importing a single organism}
 
 
-The command \command{download-organism} allows youj to download one or
-several organisms. Beware, the complete data for a single genome may
-occupy several tens of Megabytes (Bacterial genomes) or a few
-Gigabases (Mammalian). Downloading tenomes thus requires a fast
-Internet connection, and may take time. If possible, please download
-genomes during the night (European time).
+The command \command{download-organism} allows you to download one or
+several organisms. 
+
+Beware, the complete data for a single genome may occupy several tens
+of Megabytes (Bacterial genomes) or a few Gigabases
+(Mammalian). Downloading tenomes thus requires a fast Internet
+connection, and may take time. If possible, please download genomes
+during the night (European time).
 
 As a first step, we recommend to download the genome of the yeast
 \org{Saccharomyces cerevisiae}, since this is the model organism used
