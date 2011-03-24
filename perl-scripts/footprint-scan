@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.55 2011/03/24 10:51:47 jvanheld Exp $
+# $Id: footprint-scan,v 1.56 2011/03/24 15:14:56 amedina Exp $
 #
 ############################################################
 
@@ -279,7 +279,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.55 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.56 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -488,9 +488,11 @@ package main;
       &RSAT::message::TimeWarn("Analyzing TF", $main::tf) if ($main::verbose >= 1);
       eval {
 	  local $current_gene=$main::tf;
+	  $global_filter=$main::filter;
 	  $main::filter = 0;
+
 	  &RunFootprintScan($current_gene);
-	  $main::filter = 1;
+	  $main::filter = $global_filter;
       };  
       if ($@) {
 	  if ($no_die) {
