@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.60 2011/03/24 15:09:24 amedina Exp $
+# $Id: get-orthologs,v 1.61 2011/03/25 13:53:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -547,7 +547,7 @@ package main;
     print $out "#", $header, "\n";
 
     my $nb_hits_info="";
-    &RSAT::message::Warning("Using option -rand","a random gene will be selected from each organisms where an ortholog for the query gene was found") if($main::rand && ($main::verbose>=0)) ;
+    &RSAT::message::Warning("Using option -rand","a random gene will be selected from each organism where an ortholog for the query gene was found") if($main::rand && ($main::verbose>=0)) ;
     foreach my $query_gene (keys (%is_query)) {
       my $nb_hits=0;
       foreach my $org (@ordered_ref_organisms) {
@@ -1154,9 +1154,14 @@ organism. Lines starting with a semicolumn are ignored.
 
 =item B<-rand>
 
-When the option I<-rand> is activated, the program replaces the
-orthologs by the same number of genes randomly selected from the
-genomes where orthologs are found.
+When the option I<-rand> is activated, the program replaces each
+ortholog by a gene selected at random in the genome where this ortholg
+was found.
+
+This option is used (for example by I<footprint-scan> and
+I<footprint-discovery> to perform negative controls, i.e. check the
+rate of false positives in randomly selected promoters of the
+reference taxon.
 
 =cut
 
@@ -1273,7 +1278,6 @@ I<get-orthologs> with other programs in order to discover conserved
 elements in promoters of orthologous genes.
 
 =head1 WISH LIST
-
 
 =head2 option -return hit_profiles
 
