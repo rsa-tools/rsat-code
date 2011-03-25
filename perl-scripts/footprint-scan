@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.56 2011/03/24 15:14:56 amedina Exp $
+# $Id: footprint-scan,v 1.57 2011/03/25 13:52:43 jvanheld Exp $
 #
 ############################################################
 
@@ -215,7 +215,36 @@ I<footprint-discovery> perfoms I<ab initio> motif discovery.
 
 =head1 WISH LIST
 
-=head2 option -rand
+=head2 Options to be added
+
+=over
+
+=item B<-matrix_table matrix_table_file.tab>
+
+A table providing the paths to matrix files (one file per row) +
+optional columns to specify parameters (factor name, format) for
+each martrix.
+
+The matrix list is provided as a tab-delimited text file, where each
+row specifies one matrix.
+
+- The first column indicates the path to a file containing a single
+  matrix (in the format specified with -matrix_format).
+
+- The second column (optional) indicates a common name for the matrix
+  (e.g. transcription factor name) which will be displayed in the
+  synthetic report tables. If the option I<-tf> is used, this column
+  must indicate the name of the transcription factor on which the
+  taxonomic filter will be applied (i.e. the analysis will only be led
+  in species of the taxon where an ortholog has been found for the
+  factor).
+
+- The third column (optional) indicates the format of each matrix, in
+  case the search would be done with matrices obtained from different
+  sources (e.g. TRANSFAC, consensus, meme). Note that if the file
+  contains a third column, the option -matrix_format cannot be used.
+
+=item B<-rand>
 
 When the option I<-rand> is activated, I<footprint-scan> scans random
 selections of promoters rather than promoters of orthologs.
@@ -226,6 +255,8 @@ with the theoretical estimation of the significance.
 
 The random selections are done by passing the option I<-rand> to the
 program I<get-orthologs>.
+
+=back
 
 =head2 Revise the manual
 
@@ -279,7 +310,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.56 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.57 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -699,7 +730,6 @@ This argument can be used iteratively to scan the sequence with
 multiple matrices.
 
 =cut
-		
 	} elsif ($arg eq "-m") {
 	    push @matrix_files, shift(@arguments);
 
@@ -714,7 +744,7 @@ Matrix format. Default is tab. This argument is mandatory.
 
 	} elsif ($arg eq "-matrix_format") {
 	    $main::matrix_format = lc(shift(@arguments));
-	    
+
 =pod
 
 =item B<-matrix_suffix matrix_suffix>
