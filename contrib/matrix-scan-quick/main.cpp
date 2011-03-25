@@ -26,7 +26,7 @@ using namespace std;
 #include "dist.h"
 #include "pval.h"
 
-int VERSION = 20100629;
+int VERSION = 20110325;
 char *COMMAND_LINE;
 
 /*
@@ -47,7 +47,7 @@ void help()
 "        matrix-scan-quick\n"
 "\n"
 "VERSION\n"
-"        200909\n"
+"        20110325\n"
 "\n"
 "AUTHOR\n"
 "        Matthieu Defrance <defrance@bigre.ulb.ac.be>\n"

@@ -70,6 +70,28 @@ int read_matrix(Array &matrix, char *filename, double pseudo)
             matrix[i][j] = p[i][j];
     }
 
+    // security check
+    while (!feof(fp))
+    {
+        fscanf(fp, "%c", &base[0]);
+
+        if (base[0] == ';' | base[0] == ' ') // skip comments
+        {
+            char buffer[1024];
+            fgets(buffer, 1024, fp);
+            continue;
+        }
+        else if (base[0] == '\n')
+        {
+            
+        }
+        else
+        {
+            WARNING("only first matrix in %s is used", filename);
+            break;;
+        }
+    }
+
     // close stream
     fclose(fp);
     
