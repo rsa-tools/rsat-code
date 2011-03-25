@@ -1872,6 +1872,7 @@ sub _readFromJasparFile {
       if  ($line =~ /^\>(\S+)/) {
 	my $id = $1;
 	my $postmatch = $';
+#'
 	my $name = $id;
 	if ($postmatch =~ /\S+/) {
 	  $name = &RSAT::util::trim($postmatch);
@@ -1919,6 +1920,8 @@ Read a matrix from a MEME file. This method is called by the
 method C<readFromFile($file, "MEME")>.
 
 =cut
+
+
 sub _readFromMEMEFile {
   my ($file) = @_;
   &RSAT::message::Info("Reading matrix from consensus file\t", $file) if ($main::verbose >= 3);
@@ -1939,6 +1942,10 @@ sub _readFromMEMEFile {
 #  my $parsed_width = 0;
   my $l = 0;
   my $meme_command = "";
+  my $prefix = "matrix";
+  if ($file) {
+      $prefix = &RSAT::util::ShortFileName($file);
+  }
   while (<$in>) {
     $l++;
     next unless (/\S/);
@@ -1954,7 +1961,11 @@ sub _readFromMEMEFile {
       $matrix->init();
       $matrix->set_parameter("program", "meme");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
-      my $id = "meme_motif_".$current_matrix_nb;
+
+#      my $id = "meme_motif_".$current_matrix_nb;
+
+      $matrix->set_parameter("id", $prefix.$current_matrix_nb);
+
       $matrix->set_parameter("id", $id);
       $matrix->set_parameter("ac", $id); ## For TRANSFAC compatibility
       $matrix->set_parameter("name", $id); ## For readability of logos
