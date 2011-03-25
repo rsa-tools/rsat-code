@@ -955,9 +955,9 @@ sub HeaderSynthesisFilesScan {
     $html_title .= " ".$bg_model if ($bg_model);
     print $synthesis_index "<head><title>", $html_title , "</title>";
     print $synthesis_index &sorttable_script();
-    $header .= "<style type='text/css'>\n";
-    $header .= `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
-    $header .=  "</style>\n";
+    print $synthesis_index "<style type='text/css'>\n";
+    print $synthesis_index  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+    print $synthesis_index  "</style>\n";
     print $synthesis_index "</head>\n";
     print $synthesis_index "<body>\n";
     print $synthesis_index "<h1>", $html_title, "</h1\n";
