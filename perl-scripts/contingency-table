@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.15 2011/03/28 12:45:35 jvanheld Exp $
+# $Id: contingency-table,v 1.16 2011/03/28 13:01:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -64,6 +64,7 @@ local $total=0;
 local $null = 0;
 local $margin = 0;
 local $density = 0;
+local $sort_criterion = "keys";
 
 &ReadArguments();
 
@@ -101,22 +102,29 @@ close $in if ($infile{input});
 
 ################################################################
 ###### print output
+
+## Row and column headers
 my @row_values = ();
 my @col_values = ();
-
-if ($sort_criterion eq "counts") {
+if ($sort_criterion eq "freq") {
   @row_values = sort {$row_sum{$b} <=> $row_sum{$a}} keys %row_sum;
   @col_values = sort {$col_sum{$b} <=> $col_sum{$a}} keys %col_sum;
-} else {
+} elsif ($sort_criterion eq "num_labels") {
   @row_values = sort {$a <=> $b} keys %row_sum;
   @col_values = sort {$a <=> $b} keys %col_sum;
+} else {
+  @row_values = sort keys %row_sum;
+  @col_values = sort keys %col_sum;
 }
 
+## Print column headers
 if ($margin) {
   print $out join ("\t", "#", "Sum", @col_values), "\n";
 } else {
   print $out join ("\t", "#", @col_values), "\n";
 }
+
+## Print the column margins (sum of each column)
 if ($margin) {
   if ($density) {
     print $out "Margin freq";
@@ -134,13 +142,19 @@ if ($margin) {
   print $out "\n";
 }
 
+## Print the results
 foreach my $row_value (@row_values) {
     print $out $row_value;
-    if ($density) {
-      print $out "\t", $row_sum{$row_value}/$total;
-    } else {
-      print $out "\t", $row_sum{$row_value};
+
+    ## Print row sums if required
+    if ($margin) {
+      if ($density) {
+	print $out "\t", $row_sum{$row_value}/$total;
+      } else {
+	print $out "\t", $row_sum{$row_value};
+      }
     }
+
     foreach my $col_value (@col_values) {
 	if (defined($counts{$row_value}{$col_value})) {
 	  if ($density) {
@@ -309,6 +323,40 @@ Return the density (relative frequency) rather than the counts.
 =cut 
 	  } elsif ($arg eq "-density") {
 	    $main::density = 1;
+
+
+=pod
+
+=item B<-sort sort_criterion>
+
+Criterion for sorting rows and columns.
+
+
+Supported:
+
+=over
+
+=item freq
+
+Sort columns and rows by frequency of their margial sum. Most frequent
+columns/row are printed first.
+
+=item num_labels
+
+Sort columns and rows by numeric values of the labels (the values
+appearing in the column header and row names).
+
+=item labels
+
+Sort columns and rows by alphabetical values of the labels (the values
+appearing in the column header and row names).
+
+
+=cut 
+	  } elsif ($arg eq "-sort") {
+	    $main::sort_criterion = shift(@ARGV);
+
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
