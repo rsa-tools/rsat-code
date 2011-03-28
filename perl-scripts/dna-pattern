@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.62 2011/02/17 05:07:46 rsat Exp $
+# $Id: dna-pattern,v 1.63 2011/03/28 12:41:12 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -913,15 +913,18 @@ sub ReadArguments {
 #	    $return_fields{sum_only} = 0;
 	    $return_fields{table} = 1;
 
-	    #### add a column containing the sum of colums to the table output
+	    #### add to the output table  a row containing the sum of each column
 	} elsif ($arg eq "-colsum") {
 	    &RSAT::message::Warning("'dna-pattern -colsum' is obsolete, use '-return colsum' instead");
 	    $return_fields{colsum} = 1;
-	    #### add a row containing the sum of rows to the table output
+
+	    #### add to the output table a column containing row sums
 	} elsif ($arg eq "-rowsum") {
 	    &RSAT::message::Warning("'dna-pattern -rowsum' is obsolete, use '-return rowsum' instead");
 	    $return_fields{rowsum} = 1;
-	    #### add a column and a row for totals to the table output
+
+
+	    #### add a column and a row for totals to the output table
 	} elsif ($arg eq "-total") {
 	    &RSAT::message::Warning("'dna-pattern -total' is obsolete, use '-return total' instead");
 	    $return_fields{colsum} = 1;
@@ -1239,7 +1242,7 @@ sub CountTable {
 	$total_score += $score_per_sequence{$sequence_id};
 	print $out "\t", $score_per_sequence{$sequence_id};
       }
-      print $out "\t", $sum_per_sequence{$sequence_id} if ($return_fields{colsum});
+      print $out "\t", $sum_per_sequence{$sequence_id} if ($return_fields{rowsum});
       if ($return_fields{table}) {
 	foreach my $pattern (@patterns) {
 	  print $out "\t", $match_count{$sequence_id}{$pattern};
