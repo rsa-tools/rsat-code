@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.14 2011/03/28 12:29:24 jvanheld Exp $
+# $Id: contingency-table,v 1.15 2011/03/28 12:45:35 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -101,10 +101,17 @@ close $in if ($infile{input});
 
 ################################################################
 ###### print output
+my @row_values = ();
+my @col_values = ();
 
+if ($sort_criterion eq "counts") {
+  @row_values = sort {$row_sum{$b} <=> $row_sum{$a}} keys %row_sum;
+  @col_values = sort {$col_sum{$b} <=> $col_sum{$a}} keys %col_sum;
+} else {
+  @row_values = sort {$a <=> $b} keys %row_sum;
+  @col_values = sort {$a <=> $b} keys %col_sum;
+}
 
-my @row_values = sort {$row_sum{$b} <=> $row_sum{$a}} keys %row_sum;
-my @col_values = sort {$col_sum{$b} <=> $col_sum{$a}} keys %col_sum;
 if ($margin) {
   print $out join ("\t", "#", "Sum", @col_values), "\n";
 } else {
