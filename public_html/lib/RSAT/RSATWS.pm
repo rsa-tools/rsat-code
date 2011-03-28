@@ -3775,7 +3775,74 @@ sub compare_matrices {
   unless ($output_choice) {
     $output_choice = 'both';
   }
+    my $command = $self->compare_matrices_cmd(%args);
 
+    my $date = &RSAT::util::AlphaDate();
+    $date =~ s/\n//;
+
+    my $output_directory = sprintf "compare-matrices.%s", $date;
+    my $output_prefix = "compare-matrices";
+    my $output_path = $TMP."/".$output_directory;
+    $output_path =~ s|\/\/|\/|g;
+    system("mkdir -p $output_path");
+
+    $command .= " -outdir '".$output_path."'";
+    $command .= " -prefix '".$output_prefix."'";
+
+    local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+    my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+    my @outlines = <HIS_OUT>;    # Read till EOF.
+    my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+
+#    my $result = join('', @outlines);
+    my $stderr;
+
+    foreach my $errline(@errlines) {
+	## Some errors and RSAT warnings are not considered as fatal errors
+	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING') || ($errline =~'Odd number of elements in hash assignment')) {
+	    $stderr .= $errline;
+	}
+	## RSAT warnings are added at the end of results
+#	if ($errline =~'WARNING') {
+#	    $result .= $errline;
+#	}
+    }
+    $stderr = &error_handling($stderr, 1);
+    close HIS_OUT;
+    close HIS_ERR;
+
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+
+#    my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+#   $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+    my $tmp_outdir = $output_path;
+    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+#   my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
+#   $tmp_outzip =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+
+    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"compare-matrices", output_choice=>$output_choice);
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
+			                                         SOAP::Data->name('command' => $command)))
+				->attr({'xmlns' => ''});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $command),
+								 SOAP::Data->name('client' => $tmp_outdir)))
+				->attr({'xmlns' => ''});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
+								 SOAP::Data->name('command' => $command),
+								 SOAP::Data->name('client' => $tmp_outdir)))
+				->attr({'xmlns' => ''});
+    }
+}
+##########
+sub compare_matrices_cmd {
+  my ($self, %args) =@_;
   if ($args{"matrix_1"}) {
       my $input_matrix1 = $args{"matrix_1"};
       chomp $input_matrix1;
@@ -4025,7 +4092,7 @@ sub compare_matrices {
     $command .= $uth;
   }
 
- &run_WS_command($command, $output_choice, ".compare-matrices")
+  return $command;
 }
 
 ##########
