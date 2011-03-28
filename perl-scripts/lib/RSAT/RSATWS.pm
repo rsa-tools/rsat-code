@@ -3780,14 +3780,15 @@ sub compare_matrices {
     my $date = &RSAT::util::AlphaDate();
     $date =~ s/\n//;
 
-    my $output_directory = sprintf "compare-matrices.%s", $date;
-    my $output_prefix = "compare-matrices";
+#    my $output_directory = sprintf "compare-matrices.%s", $date;
+    my $output_directory = "COMPARE-MATRICES-TESTOLY";
+    my $output_prefix = "compare-matrices.tab";
     my $output_path = $TMP."/".$output_directory;
     $output_path =~ s|\/\/|\/|g;
     system("mkdir -p $output_path");
 
-    $command .= " -outdir '".$output_path."'";
-    $command .= " -prefix '".$output_prefix."'";
+#    $command .= " -outdir '".$output_path."'";
+    $command .= " -o '".$output_path."/".$output_prefix."'";
 
     local(*HIS_IN, *HIS_OUT, *HIS_ERR);
     my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
@@ -3815,8 +3816,8 @@ sub compare_matrices {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
 
-#    my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
-#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
 #   $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $tmp_outdir = $output_path;
     $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
@@ -3922,7 +3923,7 @@ sub compare_matrices_cmd {
   my $background_format = $args{"background_format"};
   my $top1 = $args{"top1"};
   my $top2 = $args{"top2"};
-  my $output_prefix = $args{"output_prefix"};
+#  my $output_prefix = $args{"output_prefix"};
   my $mode = $args{"mode"};
   my $distinct = $args{"distinct"};
   my $strand = $args{"strand"};
@@ -3962,7 +3963,7 @@ sub compare_matrices_cmd {
     $uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
   }
 
-  my $command = "$SCRIPTS/convert-matrix";
+  my $command = "$SCRIPTS/compare-matrices";
 
   if ($tmp_matrix1_infile) {
       $tmp_matrix1_infile =~ s/\'//g;
@@ -3985,19 +3986,19 @@ sub compare_matrices_cmd {
       $command .= " -file '".$tmp_matrix_infile."'";
   }
 
-  if ($tmp_matrix_list1_infile) {
-      $tmp_matrix_list1_infile =~ s/\'//g;
-      $tmp_matrix_list1_infile =~ s/\"//g;
-      chomp $tmp_matrix_list1_infile;
-      $command .= " -mlist1 '".$tmp_matrix_list1_infile."'";
-  }
+#  if ($tmp_matrix_list1_infile) {
+#      $tmp_matrix_list1_infile =~ s/\'//g;
+#      $tmp_matrix_list1_infile =~ s/\"//g;
+#      chomp $tmp_matrix_list1_infile;
+#      $command .= " -mlist1 '".$tmp_matrix_list1_infile."'";
+#  }
 
-  if ($tmp_matrix_list2_infile) {
-      $tmp_matrix_list2_infile =~ s/\'//g;
-      $tmp_matrix_list2_infile =~ s/\"//g;
-      chomp $tmp_matrix_list2_infile;
-      $command .= " -mlist2 '".$tmp_matrix_list2_infile."'";
-  }
+#  if ($tmp_matrix_list2_infile) {
+#      $tmp_matrix_list2_infile =~ s/\'//g;
+#      $tmp_matrix_list2_infile =~ s/\"//g;
+#      chomp $tmp_matrix_list2_infile;
+#      $command .= " -mlist2 '".$tmp_matrix_list2_infile."'";
+#  }
 
   if ($format1) {
     $format1  =~ s/\'//g;
@@ -4042,11 +4043,11 @@ sub compare_matrices_cmd {
     $command .= " -top2 '".$top2."'";
   }
 
-  if ($output_prefix) {
-    $output_prefix =~ s/\'//g;
-    $output_prefix =~ s/\"//g;
-    $command .= " -o '".$output_prefix."'";
-  }
+#  if ($output_prefix) {
+#    $output_prefix =~ s/\'//g;
+#    $output_prefix =~ s/\"//g;
+#    $command .= " -o '".$output_prefix."'";
+#  }
 
   if ($mode) {
     $mode =~ s/\'//g;
