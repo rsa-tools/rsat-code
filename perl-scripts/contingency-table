@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.13 2011/03/09 10:27:11 jvanheld Exp $
+# $Id: contingency-table,v 1.14 2011/03/28 12:29:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -137,7 +137,7 @@ foreach my $row_value (@row_values) {
     foreach my $col_value (@col_values) {
 	if (defined($counts{$row_value}{$col_value})) {
 	  if ($density) {
-	    printf $out "\t%d", $counts{$row_value}{$col_value}/$total;
+	    printf $out "\t%g", $counts{$row_value}{$col_value}/$total;
 	  } else {
 	    printf $out "\t%d", $counts{$row_value}{$col_value};
 	  }
