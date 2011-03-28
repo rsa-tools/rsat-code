@@ -6045,6 +6045,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:convert_matrixResponse"></part>
   </message>
 
+  <message name="compare_matricesRequest">
+    <part name="parameters" element="tns:compare_matrices"></part>
+  </message>
+
+  <message name="compare_matricesResponse">
+    <part name="output" element="tns:compare_matricesResponse"></part>
+  </message>
+
   <message name="matrix_distribRequest">
     <part name="parameters" element="tns:matrix_distrib"></part>
   </message>
