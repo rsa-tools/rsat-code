@@ -264,7 +264,8 @@ sub GetOutfilePrefix {
       $used_orgs="orthologs_list";
   }
  
-  $dir{output_per_query} = join("/",$main::dir{output_root}, $used_orgs, $organism_name, $query_prefix);
+  $dir{output_per_query} = join("/",$main::dir{output_root}, $used_orgs, $organism_name,$m_suffix, $query_prefix);
+
   &RSAT::util::CheckOutDir($dir{output_per_query});
 
   ## Compute a query-specific file prefix including the main parameters
@@ -931,7 +932,7 @@ sub OpenMainIndex {
 ## results: one row per query, one column per output type.
 sub OpenSynthesisFilesScan {
   &RSAT::util::CheckOutDir($dir{output_root});
-  $outfile{synthesis} = join( "/",$dir{output_root}, $used_orgs, $organism_name,"result_synthesis");
+  $outfile{synthesis} = join( "/",$dir{output_root}, $used_orgs, $organism_name,$m_suffix,"result_synthesis");
   $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
   $outfile{synthesis_html} = $outfile{synthesis}.".html";
 
@@ -1067,7 +1068,7 @@ sub ComputeFilterDyads {
 ################################################################
 ## Detect all matrix hits  in promoters of query genes for scan filtering
 sub ComputeFilterScan {
-    my ($matrix_format2, @matrix_files2)=@_;
+    my ($matrix_format2,@matrix_files2)=@_;
     $main::skip_gene=0;
     &RSAT::message::TimeWarn("Computing filter hits", $outfile{filter_scan}) if ($main::verbose >= 2);
     &CheckDependency("filter", "query_seq");
@@ -1231,6 +1232,8 @@ sub OccurrenceSig {
     }
     my $cmd = "matrix-scan";
     $cmd .= $ms_parameters;
+    #$cmd .= " -m ".$matrix_file;
+    #$cmd .= " -matrix_format ".$matrix_format;
     $cmd .= " -return distrib,occ_proba,rank -sort_distrib";
     #  $cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
     if ($main::no_purge){
@@ -1240,6 +1243,8 @@ sub OccurrenceSig {
     }
     $cmd .= " -o ".$outfile{occ_sig};
     $cmd .= $occ_sig_opt;
+
+
     &one_command($cmd);
   }
   &IndexOneFile("occ sig", $outfile{occ_sig});
