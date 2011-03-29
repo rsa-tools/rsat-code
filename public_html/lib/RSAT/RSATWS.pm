@@ -3780,15 +3780,14 @@ sub compare_matrices {
     my $date = &RSAT::util::AlphaDate();
     $date =~ s/\n//;
 
-#    my $output_directory = sprintf "compare-matrices.%s", $date;
-    my $output_directory = "COMPARE-MATRICES-TESTOLY";
-    my $output_prefix = "compare-matrices.tab";
+    my $output_directory = sprintf "compare-matrices.%s", $date;
+    my $output_prefix = $args{"output_prefix"};
     my $output_path = $TMP."/".$output_directory;
     $output_path =~ s|\/\/|\/|g;
     system("mkdir -p $output_path");
 
-#    $command .= " -outdir '".$output_path."'";
-    $command .= " -o '".$output_path."/".$output_prefix."'";
+    my $output_file = $output_path."/".$output_prefix.".tab";
+    $command .= " -o '".$output_file."'";
 
     local(*HIS_IN, *HIS_OUT, *HIS_ERR);
     my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
@@ -3816,13 +3815,10 @@ sub compare_matrices {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
 
-    my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
+    my $tmp_outfile = $output_path."/".$output_prefix."_index.html";
     $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-#   $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $tmp_outdir = $output_path;
     $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-#   my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
-#   $tmp_outzip =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"compare-matrices", output_choice=>$output_choice);
 
@@ -3841,6 +3837,7 @@ sub compare_matrices {
 				->attr({'xmlns' => ''});
     }
 }
+
 ##########
 sub compare_matrices_cmd {
   my ($self, %args) =@_;
@@ -3923,7 +3920,6 @@ sub compare_matrices_cmd {
   my $background_format = $args{"background_format"};
   my $top1 = $args{"top1"};
   my $top2 = $args{"top2"};
-#  my $output_prefix = $args{"output_prefix"};
   my $mode = $args{"mode"};
   my $distinct = $args{"distinct"};
   my $strand = $args{"strand"};
@@ -4042,12 +4038,6 @@ sub compare_matrices_cmd {
     $top2 =~ s/\"//g;
     $command .= " -top2 '".$top2."'";
   }
-
-#  if ($output_prefix) {
-#    $output_prefix =~ s/\'//g;
-#    $output_prefix =~ s/\"//g;
-#    $command .= " -o '".$output_prefix."'";
-#  }
 
   if ($mode) {
     $mode =~ s/\'//g;
