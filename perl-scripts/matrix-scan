@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.189 2011/02/17 20:41:26 jvanheld Exp $
+# $Id: matrix-scan,v 1.190 2011/03/29 11:41:18 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -649,7 +649,7 @@ package main;
   ## Return fields
   if (scalar(keys(%return_fields)) < 1) {
     $return_fields{sites} = 1;
-    $return_fields{pval} = 1;
+   # $return_fields{pval} = 1; ## Morgane: remove the pval by default if no return field specified. This makes problem with matrix-scan-quick
   } elsif (($return_fields{pval})||($return_fields{bg_residues})||($return_fields{weight_limits})) {
     ## It makes no sense to return pval without sites
     $return_fields{sites} = 1;
@@ -1061,7 +1061,7 @@ package main;
   ################################################################
   #### print verbose
   &Verbose() if ($main::verbose >= 1);
-
+  
   ## Print header
   if ($return_fields{sites}) {
     my @out_fields =  qw(seq_id
@@ -1406,11 +1406,17 @@ package main;
 
    #############################
    ## CRER search
+   
+   ## this is done inside the loop on the position ($pos)
    if ($return_fields{crer}){
-	my %last_hits = ();
-    if ($pos >= $crer_seed) {
+	my %last_hits = (); ## initialize the 
+	## do not do anything unless we have the seeding window
+    if ($pos >= $crer_seed) { 
     	&RSAT::message::Debug("position: ", $pos) if ($main::verbose >= 10);
     unless ($pos == $crer_seed){
+    	## all hashes below are populated in the "score_segment" routine
+    	## for each scored position, the program decides whether this is a hit or not,
+    	## and if yes, populate the %crer_seed_XXX hashes
       foreach my $matrix (keys(%crer_seed_hits)){
 	shift(@{$crer_seed_hits{$matrix}->{"D"}});
 	shift(@{$crer_seed_pval{$matrix}->{"D"}});
@@ -1426,6 +1432,7 @@ package main;
     }
 
 	## Populate sum vector that merge the hits of all matrices
+	## "merge" the info from the %crer_seed_hits 
 	if ($pos == $crer_seed){
 	  foreach my $seed_pos (0..($pos-1)){
 	    $crer_sum_hits[$seed_pos]=0;
