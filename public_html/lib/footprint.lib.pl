@@ -80,6 +80,7 @@ sub SelectReferenceOrganisms {
 
   my @ref_organisms = ();
 
+  ################################################################
   ## Check reference taxon or org_list
   &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
     unless ($main::taxon || $main::orglist_file);
@@ -100,6 +101,20 @@ sub SelectReferenceOrganisms {
       &RSAT::error::FatalError("-no_purge option can only be used if -org_list option is active (not with -taxon).");
     }
   }
+
+  ################################################################
+  ## Define a prefix indicating the type of organism selection
+  $main::org_selection_prefix="";
+  if ($taxon){
+      $main::org_selection_prefix=$taxon;
+  }
+  elsif ($main::orglist_file){
+      $main::org_selection_prefix="org_list";
+  }
+  elsif ($main::orthologs_list_file){
+      $main::org_selection_prefix="orthologs_list";
+  }
+
 
   return @ref_organisms;
 }
@@ -253,25 +268,15 @@ sub GetOutfilePrefix {
 
   ## Create the query-specific sub-directory
   my $query_prefix = &GetQueryPrefix();
-  $main::used_orgs="";
-  if ($taxon){
-      $used_orgs=$taxon;
-  }
-  elsif ($main::orglist_file){
-      $used_orgs="org_list";
-  }
-  elsif ($main::orthologs_list_file){
-      $used_orgs="orthologs_list";
-  }
  
-  $dir{output_per_query} = join("/",$main::dir{output_root}, $used_orgs, $organism_name,$m_suffix, $query_prefix);
+  $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name,$m_suffix, $query_prefix);
 
   &RSAT::util::CheckOutDir($dir{output_per_query});
 
   ## Compute a query-specific file prefix including the main parameters
   my $outfile_prefix = $query_prefix;
   $outfile_prefix .= "_";
-  $outfile_prefix .= join ("_", $organism_name,$used_orgs );
+  $outfile_prefix .= join ("_", $organism_name,$main::org_selection_prefix );
 
   ## We don't want the bg model in the query prefix, because it is only a parameter for the dyads file (not for the sequences)
   #  if ($bg_model) {
@@ -927,55 +932,7 @@ sub OpenMainIndex {
 
   return ($main_index);
 }
-################################################################
-## Main index for footprint-scan. This is a HTML table with links to the query-specific
-## results: one row per query, one column per output type.
-sub OpenSynthesisFilesScan {
-  &RSAT::util::CheckOutDir($dir{output_root});
-  $outfile{synthesis} = join( "/",$dir{output_root}, $used_orgs, $organism_name,$m_suffix,"result_synthesis");
-  $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
-  $outfile{synthesis_html} = $outfile{synthesis}.".html";
 
-  my $synthesis_index = &OpenOutputFile($outfile{synthesis_html} ); 
-  my $synthesis_table = &OpenOutputFile($outfile{synthesis_tab});
-
-  return ($synthesis_index, $synthesis_table)  ;
-}
-sub HeaderSynthesisFilesScan {
-    ($synthesis_index, $synthesis_table, $occ_one_gene_file) =@_;
-    $occ_sig_header = `grep '^#' $occ_one_gene_file`;
-    chomp $occ_sig_header;
-    $occ_sig_header =~ s/occ_sig_rank/gene_rank/;
-    $occ_sig_header =~ s/^#//;
-    print $synthesis_table join("\t", "#gene", $occ_sig_header,"name","descr","upstr_neighb_name","file"), "\n";
-
-    print $synthesis_index "<html>\n";
-    $html_title = "footprint-scan";
-    $html_title .= " ".$taxon if ($taxon);
-    $html_title .= " ".$organism_name if ($organism_name);
-    $html_title .= " ".$bg_model if ($bg_model);
-    print $synthesis_index "<head><title>", $html_title , "</title>";
-    print $synthesis_index &sorttable_script();
-    print $synthesis_index "<style type='text/css'>\n";
-    print $synthesis_index  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
-    print $synthesis_index  "</style>\n";
-    print $synthesis_index "</head>\n";
-    print $synthesis_index "<body>\n";
-    print $synthesis_index "<h1>". $html_title ." - ". $m_suffix."</h1\n";
-    print $synthesis_index "<p><b>Command:</b> footprint-scan";
-    print $synthesis_index &PrintArguments();
-    print $synthesis_index "</p>\n";
-
-    ## Open the index table
-    print $synthesis_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
-    print $synthesis_index "<tr>\n";
-     my $html_sep="<\/th>\n<th>";
-    $occ_sig_header=~s/\t/$html_sep/g;
-    my $header_index=join("</th>\n<th>", "<th>gene", $occ_sig_header, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", "name","descr","upstr_neighb_name</th>");
-    $header_index .= "\n"; 
-    print $synthesis_index $header_index;
-    print $synthesis_index "</tr>\n";
-}
 
 ################################################################
 ## Add one file to the index file
@@ -1138,7 +1095,6 @@ sub GetOrthologs {
       print $out $orthologs; 
       close $out;
       &RSAT::message::Info("Orthologs for gene(s)",$genes, "specified by the user can be found in " , $outfile{orthologs}) if ($main::verbose >= 0);
-      #die"HELLO";
   }
   &IndexOneFile("orthologs", $outfile{orthologs});
 }
