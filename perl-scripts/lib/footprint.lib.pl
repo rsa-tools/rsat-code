@@ -961,7 +961,7 @@ sub HeaderSynthesisFilesScan {
     print $synthesis_index  "</style>\n";
     print $synthesis_index "</head>\n";
     print $synthesis_index "<body>\n";
-    print $synthesis_index "<h1>", $html_title, "</h1\n";
+    print $synthesis_index "<h1>". $html_title ." - ". $m_suffix."</h1\n";
     print $synthesis_index "<p><b>Command:</b> footprint-scan";
     print $synthesis_index &PrintArguments();
     print $synthesis_index "</p>\n";
