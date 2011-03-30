@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.58 2011/03/29 20:17:00 amedina Exp $
+# $Id: footprint-scan,v 1.59 2011/03/30 10:10:59 rsat Exp $
 #
 ############################################################
 
@@ -317,7 +317,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.58 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.59 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -449,10 +449,21 @@ package main;
 
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
- 
-  &RSAT::error::FatalError("Usage of -m and -matrix_table are mutually exclusive matrices added with option -m should be included in the matrix_table_file") if ((scalar(@matrix_files) > 0) && ($main::matrix_table_file));
-  &RSAT::error::FatalError("Usage of -matrix_format and -matrix_table are mutually exclusive, please specify in the correspondng column the format for each listed matrix") if ((scalar(@matrix_files) > 0) && ($main::matrix_table_file));
-  &RSAT::error::FatalError("For using the option -tf with option  -matrix_tab you showld specify -tf file  ") if (($main::tf ne "file") && ($main::matrix_table_file));
+
+  ################################################################
+  ## Check the compatibility between matrix input modes.
+
+  ## Options -m and -matrix_table are mutually exclusive
+  &RSAT::error::FatalError("Usage of -m and -matrix_table are mutually exclusive matrices added with option -m should be included in the matrix_table_file") 
+      if ((scalar(@matrix_files) > 0) && ($main::matrix_table_file));
+
+  ## Options -matrix_format and -matrix_table are mutually exclusive
+  &RSAT::error::FatalError("Usage of -matrix_format and -matrix_table are mutually exclusive. Matrix tables include a column for specifying matrix formats.")
+      if ((scalar(@matrix_files) > 0) && ($main::matrix_table_file));
+
+  ## Check compatibility between options -tf and -matrix_table
+  &RSAT::error::FatalError("For using the option -tf with option  -matrix_table you should type \"-tf file\" to indicate that TF names are included in the matrixx table file") 
+      if (($main::matrix_table_file) && ($main::tf ne "") && ($main::tf ne "file"));
 
   ################################################################
   ## Check parameters for matrix-scan
@@ -492,7 +503,7 @@ package main;
   &RSAT::error::FatalError("You must specify a bgfile for the filter task") if ($main::filter && !$main::filter_bgfile);
 
   ## Thresholds
-    foreach my $key (keys(%lth)) {
+  foreach my $key (keys(%lth)) {
       $ms_general_parameters .= " -lth ".$key." ".$lth{$key};
   }
   foreach my $key (keys(%uth)) {
@@ -535,17 +546,18 @@ package main;
       }
       close $mlist;
 
-      &RSAT::message::Info("Read matrix list from file", $main::matrix_table_file, scalar(keys %matrix_table_hash), "matrices") if ($main::verbose >= 2);
-
+      my $matrix_nb_from_table = scalar(keys %matrix_table_hash);
+      &RSAT::message::Info("Read a list of",$matrix_nb_from_table,"matrices from file", $main::matrix_table_file) if ($main::verbose >= 2);
   }
-  ## Matrix file and format
-#########
+
+
+  ################################################################
+  ## Index matrix file entered separately with the option -m and their
+  ## format.
 
   &RSAT::message::Warning("Option -tf is combined with multiple matrices, all matrices will be taken as being alternative motifs of the same transcriptional factor, if this is not the case please see option  -matrix_table ") if ( (scalar(@matrix_files)>1) && ($main::tf)) ;
-  
 
   if (scalar(@matrix_files)>0){
-      
       my $mcount =1;
       foreach my $m_option_matrices (@matrix_files){
 	  
@@ -557,8 +569,6 @@ package main;
 	      $matrix_table_hash{$matrix_suffix}{"tf"}=$main::tf if ($main::tf) ;
 	      $mcount++;
 	  }elsif(scalar(@matrix_files)>1){
-	      	        die "BOOO";
-
 	      print "$matrix_suffix.$mcount+++";
 	      $matrix_table_hash{$matrix_suffix.$mcount}{"file"}= $m_option_matrices;
 	      $matrix_table_hash{$matrix_suffix.$mcount}{"format"}= $main::matrix_format ;
@@ -567,10 +577,24 @@ package main;
 	  }
       }
   }
-  &RSAT::error::FatalError("You must specify a matrix file (option -m or -matrix_table)") unless (scalar(keys %matrix_table_hash) > 0);
 
-      
-  foreach my $ms (keys %matrix_table_hash) {	 
+  ## Check that at least one matrix has been entered
+  my $matrix_nb = scalar(keys %matrix_table_hash);
+  if ($matrix_nb > 0) {
+      &RSAT::message::Info($matrix_nb, "matrices specified") if ($main::verbose >= 2);
+  } else {
+      &RSAT::error::FatalError("You must specify at least one matrix file (option -m or -matrix_table)");
+  }
+
+
+
+  ################################################################
+  ## Iterate over matrices and genes
+  &RSAT::message::TimeWarn("Starting analysis") if ($main::verbose >= 2);
+
+  my $m = 0; ## Matrix counter
+  foreach my $ms (keys %matrix_table_hash) {
+      $m++;
       local $m_suffix =$ms;
       local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
       local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
@@ -579,18 +603,20 @@ package main;
       local $ms_parameters =  $ms_general_parameters ;
       $ms_parameters .= " -m ".$matrix_file;
       
-      #}
       &RSAT::error::FatalError("You must specify the matrix format (option -matrix_format)") unless ($matrix_format);
       $ms_parameters .= " -matrix_format ".$matrix_format;
       
       ## Matrix suffix
       &RSAT::error::FatalError("You must specify a matrix suffix (option -matrix_suffix or second colm in -matrix_table file)") unless (defined($m_suffix));
-      
       $m_suffix.= "_infer-operons" if ($infer_operons);
+
+      &RSAT::message::TimeWarn("Analyzing matrix", $m."/".$matrix_nb) if ($main::verbose >= 1);
+
       
       ################################################################
-      ## If -tf is used analyze this gene independently
-      
+      ## If the option -tf is used, also run footprint analysis for
+      ## the transcripiton factor-coding gene (in addition to the
+      ## query genes).
       if($tf){
 	  &RSAT::message::TimeWarn("Analyzing TF", $tf) if ($main::verbose >= 1);
 	  eval {
@@ -612,6 +638,7 @@ package main;
 	  }
 	  &RSAT::error::FatalError("There were no organisms with an ortholog for the specified TF") unless (-s $main::tf_ortho_file );
       }
+
       
       ################################################################
       ## Analyze query genes separately or altogether
@@ -635,7 +662,7 @@ package main;
 		  &RSAT::message::Info("Last gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
 		  last;
 	      }
-	      &RSAT::message::TimeWarn("Analyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
+	      &RSAT::message::TimeWarn("\tAnalyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
 	      eval {
 		  &RunFootprintScan($current_gene);
 	      };
@@ -1070,18 +1097,20 @@ quotes, and can thus not contain any quote.
 
 =item B<-info_lines>
 
-Set of informative lines for the occurrence significance graph, this includes:
+Draw reference lines on the significance profile plots, to highlight
+some particular values.
 
- '-hline violet 0 ' line showing the significance zero line.
- '-vline violet 0 ' line showing the score zero value 
- '-vline red sig_max ' the sig_max (score with the maximal
- significance) value is extracted from the occurrence significance
- table taken only for those score values grater than zero
+- horizontal axis (Y=0), in violet
+
+- vertical axis (X=0), in violet
+
+- the weight value associated with maximal significance 
+  (only weights >=0 are considered), in red
 
 =cut
 	} elsif ($arg eq "-info_lines") {
     $main::draw_info_lines=1;
-    &RSAT::message::Info("Informative lines for ocurrence significance graph will be drawn ");
+    &RSAT::message::Info("Informative lines for ocurrence significance graph will be drawn ") if ($main::verbose >= 3);
 
 =pod
 
@@ -1258,9 +1287,10 @@ sub RunFootprintScan {
   }
   &IndexOneFile("genes", $outfile{genes});
 
+  &RetrieveQueryPromoters();
+
   ## Retrieve promoters of the query organism 
   if ($main::filter) {
-    &RetrieveQueryPromoters();
    # &ComputeFilterScan($matrix_format,@matrix_files);
    &ComputeFilterScan($matrix_format,$matrix_file);
   }
@@ -1270,9 +1300,10 @@ sub RunFootprintScan {
   &Verbose() if ($verbose);
 
   if ($main::filter && $main::skip_gene) {
-    &RSAT::message::Info("No genes remained after filtering  ", $outfile{genes} ) if ($main::verbose >= 0);  
+    &RSAT::message::Info("Skipping: no site for matrix", $m_suffix, "in query promoter(s)", join(";",@current_query_genes)) if ($main::verbose >= 0);  
     return;
   }
+
   ################################################################
   ## Identify ortholog genes
   &GetOrthologs();
