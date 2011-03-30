@@ -82,7 +82,25 @@ print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/oly/'>Olivier
 print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>\n";
 print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
 print "</CENTER>";
+print "</BLOCKQUOTE>\n";
+print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\"><font color='#0D73A7'>Information on the methods used in peak-motifs</font> </div>\n";
+ print "<div id=\"menu105\" class=\"menu_collapsible\">\n";
 print "<BLOCKQUOTE>\n";
+print "The idea behind <i>peak-motifs</i> is that we detect <b>exceptional words</b> based on <b>distinct and complementary criteria</b>:
+<ul>
+<li> <b>global over-representation (oligo-analysis and dyad-analysis)</b>: a word/dyad is more frequent than expected from the background model. The over-repressentation is tested with a right-tailed binomial significance test.</li>
+
+<li> <b>positional bias (position-analysis)</b>: a word has a heterogeneous of occurrences in the input sequences, i.e. there are regions with higher frequency and other regions with lower frequencies than the average of the same word observed over the whole width of the sequences. Positional bias is tested with a chi-squared tests. 
+</li>
+<li><b>local over-representation (local-word-analysis)</b>: the same test as for oligo-analysis (significance of the right tail of the binomial distribution) applied successfully to positional windows defined over the input set. 
+</li>
+<br/>
+For position-analysis and local-word-analysis, the <b>sequences</b> are supposed to be <b>aligned</b> over some reference. For peaks, the reference is the summit (or <b>center</b>) of each sequence. ";
+print "</BLOCKQUOTE>\n";
+print "</div></p>\n";
+
+
+
 
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
