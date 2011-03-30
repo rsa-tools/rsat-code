@@ -234,29 +234,37 @@ table.whitebg th {
 	background-color: #F6E6CA;
 }
 
+table.bluebg {
+	color: #333333;
+	border-left: 1px solid #cbcbb4;
+	border-top: 1px solid #cbcbb4;
+	}
+
+table.bluebg td,table.bluebg th {
+	font-size: 70%;
+	border-right: 1px solid #cbcbb4;
+	border-bottom: 1px solid #cbcbb4;
+	background-color: #D6EEFA;
+}
+
+table.bluebg th {
+	background-color: #0D73A7;
+	color: #D6EEFA;
+}
 	
 /* TABLE ON RESULT PAGES - COMPATIBLE WITH THE SORTTABLE TYPE
    DEFINED BY JAVASCRIPT */
 
 table.sortable {
 /* 	margin: 10px 20px 20px; */
-	color: #333333;
-	border-left: 1px solid #cbcbb4;
-	border-top: 1px solid #cbcbb4;
 	border-spacing: 0px;
 }
 
 table.sortable td,table.sortable th {
-	font-size: 70%;
-	border-right: 1px solid #cbcbb4;
-	border-bottom: 1px solid #cbcbb4;
 	padding: 2px 10px;
-	background-color: #D6EEFA;
 }
 
 table.sortable th {
-	background-color: #0D73A7;
-	color: #D6EEFA;
 }
 
 
