@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.59 2011/03/30 10:10:59 rsat Exp $
+# $Id: footprint-scan,v 1.60 2011/03/30 14:45:09 rsat Exp $
 #
 ############################################################
 
@@ -317,7 +317,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.59 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.60 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -329,6 +329,8 @@ package main;
   local $skip = 0;
   local $last = 0;
   $main::window_size=50; #default length of window size based on bacterial genome size
+  ##tf parameter
+  $main::tf="";
   ## parameters for promoter retrieval
   local $taxon;			## Reference taxon
   local $organism_name;		## Query organism
@@ -450,6 +452,14 @@ package main;
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
+  ################################################################
+  ## Check compatibility between -batch and -task synthesis
+  if ($task{synthesis} && $batch){
+  &RSAT::error::FatalError("Synthesis task is incompatible with \"-batch\" option, no other tasks where specified") if (scalar(keys(%task)) == 1);    
+       &RSAT::message::Warning("Synthesis task is incompatible with \"-batch\" option, all other tasks will be performed");
+      $task{synthesis}=0;
+  }  
+  
   ################################################################
   ## Check the compatibility between matrix input modes.
 
@@ -645,7 +655,7 @@ package main;
       if ($main::sep_genes) {
 	  
 	  if ($task{synthesis}){
-	      ($synthesis_index, $synthesis_table) = &OpenSynthesisFilesScan ; ## AQUI VOY
+	      ($synthesis_index, $synthesis_table) = &OpenSynthesisFilesScan ; 
 	      &RSAT::message::Info("Synthesis files: "," Index ". $outfile{synthesis_html} . " Table  ". $outfile{synthesis_tab} );
 	  }
 	  
