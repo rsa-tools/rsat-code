@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.191 2011/03/31 09:56:42 jvanheld Exp $
+# $Id: matrix-scan,v 1.192 2011/03/31 10:44:28 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3255,7 +3255,7 @@ sub QuickScan {
     $quick_cmd .= " -return distrib";
 
     &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 2);
-    open QUICK, "$quick_cmd |";
+    open QUICK, "$quick_cmd 2>/dev/null |";
     ## columns are:
     ## score	occ	co	cco	ccdf
     my $l=0;
@@ -3326,11 +3326,12 @@ sub QuickScan {
     #################################
     ## run matrix-scan-quick
     &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 1);
-    open QUICK, "$quick_cmd |";
+    open QUICK, "$quick_cmd 2>/dev/null |";
     my $l=0;
     my $comments="";
     while (<QUICK>) {
       next if (/^#/);
+      next unless (/\S/);		## Skip empty lines
       if (/^;/) {
 	$comments.=$_;
 	next;
