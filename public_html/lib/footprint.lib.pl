@@ -1272,7 +1272,7 @@ sub GetTopSig {
     $top_sig{$current_gene} = $fields[10];
     $top_score{$current_gene} = $fields[1];
     $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
-    &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5;
+    &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
 
     ## Index occ sig files for the synthetic table
     $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
