@@ -10,30 +10,46 @@ include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/word_cooccurrences.mk
 
 
+## Define the parameters
+PAT1=CACGTG
+PAT2=CACGTT
 ORG=Saccharomyces_cerevisiae
 #ORG=Mus_musculus_EnsEMBL
 L=10000
 N=10000
 MKV=2
 BG=upstream-noorf
+STR=-1str
 
 ## Those parameters are automatically derived from the previous ones
 PREFIX=${ORG}_${BG}_m${MKV}_L${L}_N${N}
 RES_DIR=results/${PREFIX}
+PATTERNS=
+PATTERNS= patterns.txt
 
 ################################################################
 ## Define the targets
 
 
-## Run all the required tasks in teh appropriate order
-all: randseq count ct heatmap compress
-	@echo "Fininshed by job"
+## Store patterns in a file
+patterns:
+	@echo
+	@echo "Storing patterns ${PAT1} and ${PAT2}"
+	@echo ${PAT1} > ${PATTERNS}
+	@echo ${PAT2} >> ${PATTERNS}
+	@echo "Pattern file	${PATTERNS}"
 
+## Compress the sequence file to save disk space
 compress:
 	gzip ${SEQ}
 
+## Uncompress the sequence file
 uncompress:
 	gunzip ${SEQ}
+
+## Run all the required tasks in teh appropriate order
+one_analysis: randseq count ct heatmap compress
+	@echo "Fininshed by job"
 
 ## Generate a set of random sequences
 SEQ=${RES_DIR}/${PREFIX}_randseq.fasta
@@ -47,8 +63,6 @@ randseq:
 	@echo ${SEQ}
 
 ## Count word occurrences
-STR=-1str
-PATTERNS= patterns.txt
 COUNTS=${RES_DIR}/${PREFIX}_counts
 V=1
 count:
