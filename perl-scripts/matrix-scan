@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.190 2011/03/29 11:41:18 morgane Exp $
+# $Id: matrix-scan,v 1.191 2011/03/31 09:56:42 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1404,120 +1404,131 @@ package main;
 	  }
 	}
 
-   #############################
-   ## CRER search
-   
-   ## this is done inside the loop on the position ($pos)
-   if ($return_fields{crer}){
-	my %last_hits = (); ## initialize the 
-	## do not do anything unless we have the seeding window
-    if ($pos >= $crer_seed) { 
-    	&RSAT::message::Debug("position: ", $pos) if ($main::verbose >= 10);
-    unless ($pos == $crer_seed){
-    	## all hashes below are populated in the "score_segment" routine
-    	## for each scored position, the program decides whether this is a hit or not,
-    	## and if yes, populate the %crer_seed_XXX hashes
-      foreach my $matrix (keys(%crer_seed_hits)){
-	shift(@{$crer_seed_hits{$matrix}->{"D"}});
-	shift(@{$crer_seed_pval{$matrix}->{"D"}});
-	shift(@{$crer_seed_weights{$matrix}->{"D"}});
-	shift(@{$crer_seed_weights{$matrix}->{'normw'}->{"D"}}) if ($calc_fields{normw});
-	if ($main::both_strands) {
-	  shift(@{$crer_seed_hits{$matrix}->{"R"}});
-	  shift(@{$crer_seed_pval{$matrix}->{"R"}});
-	  shift(@{$crer_seed_weights{$matrix}->{"R"}});
-	  shift(@{$crer_seed_weights{$matrix}->{'normw'}->{"R"}}) if ($calc_fields{normw});
-	}
-      }
-    }
+	#############################
+	## CRER search
+	## This is done inside the loop on the position ($pos).
+	if ($return_fields{crer}) {
 
-	## Populate sum vector that merge the hits of all matrices
-	## "merge" the info from the %crer_seed_hits 
-	if ($pos == $crer_seed){
-	  foreach my $seed_pos (0..($pos-1)){
-	    $crer_sum_hits[$seed_pos]=0;
-	    foreach my $matrix (keys(%crer_seed_hits)){
-	      if (defined($crer_seed_hits{$matrix}->{"D"}->[$seed_pos])){
-		$crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"D"}->[$seed_pos];
+	  ## Initialize the hash table containing the position of the
+	  ## last hit for each matrix. Keys are matrix IDs and values
+	  ## are the positions of the last hit for each matrix.
+	  my %last_hits = ();
+
+	  ## Do not do anything unless we have the seeding window,
+	  ## i.e. a window of sufficient size to start computing CRER
+	  ## statistics.
+	  if ($pos >= $crer_seed) {
+	    &RSAT::message::Debug("position: ", $pos) if ($main::verbose >= 10);
+	    unless ($pos == $crer_seed){
+
+	      ## All hashes below are populated in the "score_segment"
+	      ## routine for each scored position, the program decides
+	      ## whether this is a hit or not, and if yes, populate
+	      ## the %crer_seed_XXX hashes.
+	      foreach my $matrix (keys(%crer_seed_hits)) {
+		shift(@{$crer_seed_hits{$matrix}->{"D"}});
+		shift(@{$crer_seed_pval{$matrix}->{"D"}});
+		shift(@{$crer_seed_weights{$matrix}->{"D"}});
+		shift(@{$crer_seed_weights{$matrix}->{'normw'}->{"D"}}) if ($calc_fields{normw});
 		if ($main::both_strands) {
-		  $crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"R"}->[$seed_pos];
+		  shift(@{$crer_seed_hits{$matrix}->{"R"}});
+		  shift(@{$crer_seed_pval{$matrix}->{"R"}});
+		  shift(@{$crer_seed_weights{$matrix}->{"R"}});
+		  shift(@{$crer_seed_weights{$matrix}->{'normw'}->{"R"}}) if ($calc_fields{normw});
 		}
 	      }
-	      #&RSAT::message::Debug("First seed:", "seed position",$seed_pos,"hits",$crer_sum_hits[$seed_pos]);
 	    }
-	  }
 
-	  ##get the last hit position (for first seed, the last hit may not be on the right end of the array)
-	  for (my $k=($pos-1) ;  $k >= 0 ;  $k--){
-	    if ($crer_sum_hits[$k] != 0){
-	      $last_hits{$k} = $pos - ($crer_seed - $k) +1; ## store last hit + corresponding absolute position
-	      #&RSAT::message::Debug("First seed:", "hit in position", $pos - ($crer_seed - $k) +1,"position relative to seed", $k) if ($main::verbose >= 10);
-	    }
-      		}
-	  ## only update each border of the seed
-	} else {
-	  $last_hits{($crer_seed - 1)} = $pos; ## only one last hit in the array
-	
-	  shift(@crer_sum_hits);## remove left entry
-	  my $last_hits = 0;
-	  foreach my $matrix (keys(%crer_seed_hits)){
-	    if (defined($crer_seed_hits{$matrix}->{"D"}->[$crer_seed-1])){
-	      $last_hits += $crer_seed_hits{$matrix}->{"D"}->[$crer_seed-1];
-	      if ($main::both_strands) {
-		$last_hits += $crer_seed_hits{$matrix}->{"R"}->[$crer_seed-1];
+	    ## Populate sum vector that merge the hits of all matrices
+	    ## "merge" the info from the %crer_seed_hits.
+	    if ($pos == $crer_seed) {
+	      foreach my $seed_pos (0..($pos-1)) {
+		$crer_sum_hits[$seed_pos]=0;
+		foreach my $matrix (keys(%crer_seed_hits)) {
+		  if (defined($crer_seed_hits{$matrix}->{"D"}->[$seed_pos])) {
+		    $crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"D"}->[$seed_pos];
+		    if ($main::both_strands) {
+		      $crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"R"}->[$seed_pos];
+		    }
+		  }
+		  #&RSAT::message::Debug("First seed:", "seed position",$seed_pos,"hits",$crer_sum_hits[$seed_pos]);
+		}
 	      }
+
+	      ## Get the last hit position (for first seed, the last
+	      ## hit may not be on the right end of the array)
+	      for (my $k=($pos-1) ;  $k >= 0 ;  $k--) {
+		if ($crer_sum_hits[$k] != 0) {
+		  $last_hits{$k} = $pos - ($crer_seed - $k) +1;	## store last hit + corresponding absolute position
+		  #&RSAT::message::Debug("First seed:", "hit in position", $pos - ($crer_seed - $k) +1,"position relative to seed", $k) if ($main::verbose >= 10);
+		}
+	      }
+
+	      ## Only update each border of the seed
+	    } else {
+	      $last_hits{($crer_seed - 1)} = $pos; ## only one last hit in the array
+
+	      shift(@crer_sum_hits); ## remove left entry
+	      my $last_hits = 0;
+	      foreach my $matrix (keys(%crer_seed_hits)) {
+		if (defined($crer_seed_hits{$matrix}->{"D"}->[$crer_seed-1])) {
+		  $last_hits += $crer_seed_hits{$matrix}->{"D"}->[$crer_seed-1];
+		  if ($main::both_strands) {
+		    $last_hits += $crer_seed_hits{$matrix}->{"R"}->[$crer_seed-1];
+		  }
+		}
+	      }
+	      push(@crer_sum_hits,$last_hits); ## add right entry
+	    }
+
+	    ## Calculate CRER scores for all the sub-windows ending at
+	    ## the current position.
+	    foreach my $last_hit (sort {$b <=> $a} (keys(%last_hits))) {
+	      ## Get subwindow end absolute position
+	      my $sub_window_end = $last_hits{$last_hit};
+	      &score_crer($last_hit,$seq_id,$sub_window_end,$pos,$crer_seed);
 	    }
 	  }
-	  push(@crer_sum_hits,$last_hits); ## add right entry
-     }
-
-	## calculate crer
-	foreach my $last_hit (sort {$b <=> $a} (keys(%last_hits))){
-	  ## get subwindow end absolute position
-	  my $sub_window_end = $last_hits{$last_hit};
-	  &score_crer($last_hit,$seq_id,$sub_window_end,$pos,$crer_seed);
-     	}
-      }
-      }
+	}
 
       }
     }
 
-  	################################################################
+    ################################################################
     ## Rank CRERs
     if (($return_fields{crer})  && (@{$crer_per_seq{$seq_id}})) {
-    	&RSAT::message::TimeWarn( "Returning individual CRER for sequence", $seq_id)
-	  if ($main::verbose >= 4);
+      &RSAT::message::TimeWarn( "Returning individual CRER for sequence", $seq_id)
+	if ($main::verbose >= 4);
 
-	my @ranked_crers = @{$crer_per_seq{$seq_id}};
-	if (scalar(@ranked_crers) <= 0) {
-	  &RSAT::message::Info("No CRER in sequence",
-			       $seq_id,
-			      ) if ($main::verbose >= 4);
-	  next;
-      		}
-      	if ($calc_fields{rank}) {
-	  &RSAT::message::TimeWarn("Sorting CRER for sequence", $seq_id) if ($main::verbose >= 5);
-	  ## Sort CRERs by crer_sig
-	  @ranked_crers =
-	    sort {$b->get_attribute('crer_sig') <=> $a->get_attribute('crer_sig')}
-	      @ranked_crers;
-      	}
+      my @ranked_crers = @{$crer_per_seq{$seq_id}};
+      if (scalar(@ranked_crers) <= 0) {
+	&RSAT::message::Info("No CRER in sequence",
+			     $seq_id,
+			    ) if ($main::verbose >= 4);
+	next;
+      }
+      if ($calc_fields{rank}) {
+	&RSAT::message::TimeWarn("Sorting CRER for sequence", $seq_id) if ($main::verbose >= 5);
+	## Sort CRERs by crer_sig
+	@ranked_crers =
+	  sort {$b->get_attribute('crer_sig') <=> $a->get_attribute('crer_sig')}
+	    @ranked_crers;
+      }
 
-      	################################################################
-      	## Return the CRER
-      	my $rank = 0;
-      	foreach my $crer (@ranked_crers) {
+      ################################################################
+      ## Return the CRER
+      my $rank = 0;
+      foreach my $crer (@ranked_crers) {
 
-	  ## Compute a sequence-specific rank
-	  $rank++;
-	  $crer->force_attribute('rank', $rank);
+	## Compute a sequence-specific rank
+	$rank++;
+	$crer->force_attribute('rank', $rank);
 
-	  next if ((defined($lth{rank})) && ($rank < $lth{rank}));
-	  #next if ((defined($lth{rank})) && (&check_thresholds("rank", $rank);
-	  &print_crer($crer);
-	  last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
-	}
+	next if ((defined($lth{rank})) && ($rank < $lth{rank}));
+	#next if ((defined($lth{rank})) && (&check_thresholds("rank", $rank);
+	&print_crer($crer);
+	last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
+      }
     }
 
 
