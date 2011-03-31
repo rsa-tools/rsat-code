@@ -153,6 +153,14 @@ sub CheckFootprintParameters {
   $organism->set_attribute("name", $organism_name);
 
   ################################################################
+  ## For generating matrix-wise synthesis we need gene names and description
+  if ($task{synthesis}) {
+    &RSAT::message::TimeWarn("Loading features and calculating gene neighbours for organism", $organism_name) if ($main::verbose >= 2);
+    $organism->LoadFeatures();
+    $organism->CalcNeighbourLimits();
+  }
+
+  ################################################################
   ## Read query genes from input file
   if ($all_genes) {
     if (defined($supported_organism{$organism_name})) {
@@ -163,6 +171,7 @@ sub CheckFootprintParameters {
     }
   }
   if ($infile{genes}) {
+    &RSAT::message::TimeWarn("Reading query genes") if ($main::verbose >= 2);
     my ($in) = &OpenInputFile($infile{genes});
     while (<$in>) {
       next if (/^--/);		## Skip mysql-type comment lines
@@ -182,9 +191,8 @@ sub CheckFootprintParameters {
       my @fields = split (/\s+/,$genes);
       push @query_genes, @fields;
   }
-  
   &RSAT::message::Info("Genes analyzed taken from orthologs_list file",join(" ", @query_genes)) if ( ($main::verbose >= 0) && ($main::orthologs_list_file) );
-  
+
   ################################################################
   ## Check query genes
   if (scalar(@query_genes) ==0) {
@@ -844,11 +852,11 @@ result files.
 
 ################################################################
 ## Open file for the HTML index
-sub OpenIndex {
+sub OpenQueryReport {
   my ($program_name) = @_;
   $outfile{index} = $outfile{prefix}."_index.html";
   my $outfile_prefix = $dir{query_prefix};
-  $index_list{$outfile_prefix} = $outfile{index};
+  $index_report_per_query{$outfile_prefix} = $outfile{index};
   $index = &OpenOutputFile($outfile{index});
   print $index "<html>\n";
   $html_title = $outfile_prefix;
