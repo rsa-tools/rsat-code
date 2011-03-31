@@ -48,7 +48,7 @@ uncompress:
 	gunzip ${SEQ}
 
 ## Run all the required tasks in teh appropriate order
-one_analysis: randseq count ct heatmap compress
+one_analysis: randseq count ct heatmap
 	@echo "Fininshed by job"
 
 ## Generate a set of random sequences
