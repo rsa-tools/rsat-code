@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.37 2011/03/08 10:04:50 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.38 2011/03/31 13:17:58 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -73,7 +73,13 @@ if ($query->param('vertically_print')) {
 
 ################################################################
 ## Treatment of N characters
-$parameters .= ' -n score';
+
+if ($query->param('n_score')) {
+ my $n_treatment = $query->param('n_score');
+  $parameters .= " -n ".$n_treatment;
+} else {
+	$parameters .= " -n score ";
+}
 
 $command .= " $parameters";
 #$command .= " -o ".$result_file;
