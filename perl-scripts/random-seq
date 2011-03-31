@@ -302,7 +302,16 @@ sub ReadArguments {
 
       #### oligonucleotide length
     } elsif ($ARGV[$a] eq "-ol") {
+      &RSAT::error::FatalError("Options -ol and -mkv are mutually exclusive") if ($markov_given);
       $oligo_length = $ARGV[$a+1];
+      $length_given = 1;
+
+
+      #### markov order
+    } elsif ($ARGV[$a] eq "-markov") {
+      &RSAT::error::FatalError("Options -ol and -mkv are mutually exclusive") if ($oligo_given);
+      $oligo_length = $ARGV[$a+1] + 1;
+      $markov_given = 1;
 
       #### file containing a list of the desired lengths of random sequences
     } elsif ($ARGV[$a] eq "-lf") {
@@ -400,6 +409,10 @@ OPTIONS
 		required, to indicate the organism and the
 		oligonucleotide length, respectively.
 
+		When the option -bg is used, it is necessary to
+		define the order of the markov chain, either with the
+		option -markov, or with the option -ol (oligo length).
+
 		This option is incompatible with the option -expfreq. 
 
 		Type of sequences used as background model for
@@ -433,9 +446,17 @@ OPTIONS
 		This is necessary with the option -bg, to determine
 		which frequency file has to be sued for expected
 		frequency calibration.
+
+	-markov	markov order for the background model
+
+		Note: options -markov and -ol are mutually exclusive. 
+
 	-ol	oligo-length
-		This is necessary with the option -bg, to determine
-		the oligonucleotide length for the Markov chain model.
+
+		Oligonucleotide length used to train the Markov
+		background model. If the oligo length is k, the markov
+		order is m = k-1.
+
 	-lf	length file 
 		Allows to generate random sequences with the same
 		lengths as a set of reference sequences. The sequence
@@ -472,7 +493,8 @@ random-seq options
 -ncf		(deprecated, use '-bg intergenic' instead)
 -bg		background model (supported: $supported_bg)
 -org		organism
--ol		oligo-length
+-markov		markov order (incompatible with -ol)
+-ol		oligo length (incompatible with -markov)
 -lf		length file
 End_short_help
     close HELP;
