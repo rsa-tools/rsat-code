@@ -7,7 +7,7 @@
 ## March 2011.
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefile
+MAKEFILE=${RSAT}/makefiles/word_cooccurrences.mk
 
 
 ORG=Saccharomyces_cerevisiae
