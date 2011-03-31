@@ -319,7 +319,8 @@ sub InitQueryOutput {
 
   ## Open output stream for the log file
   $outfile{log} = $outfile{prefix}."_log.txt";
-  $out = &OpenOutputFile($outfile{log});
+  $main::out = &OpenOutputFile($outfile{log});
+
 
   ## File for storing the list of query gene names
   $outfile{genes} = $outfile{prefix}."_query_genes.tab";
@@ -709,11 +710,10 @@ generated using the option -synthesis.
 
 =item I<synthesis>
 
-(still to be implemented)
-
 Generate a HTML table with links to the individual result files. The
 table contains one row per query gene, one column by output type
-(sequences, dyads, maps, ...).
+(sequences, dyads, maps, ...) for footpritn-discovery and for 
+footprint-scan on line per TF-gene interacction.
 
 =back
 
@@ -1269,10 +1269,10 @@ sub GetTopSig {
   if ($top_sig_row) {
     my @fields = split "\t", $top_sig_row;
 
-    $top_sig{$current_gene} = $fields[10];;
+    $top_sig{$current_gene} = $fields[10];
     $top_score{$current_gene} = $fields[1];
     $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
-#    &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
 
     ## Index occ sig files for the synthetic table
     $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
