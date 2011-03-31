@@ -1218,7 +1218,8 @@ sub OccurrenceSigGraph {
     my $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
     $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800 -xgstep1 1 -xgstep2 0.5";
     $cmd .= " -ycol 5,8 -yleg1 'Hit numbers' -ylog 10";
-    $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
+    $cmd .= " -title 'matrix ".$m_suffix." " ;
+    $cmd .= " ; gene ".$current_gene."'" if ($current_gene);
     $cmd .= " -lines -legend ";
     $cmd .= " -format ".$plot_format;
     $cmd .= " -o ".$outfile{occ_freq_graph};
@@ -1229,7 +1230,8 @@ sub OccurrenceSigGraph {
     $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
     $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800  -xgstep1 1 -xgstep2 0.5";
     $cmd .= " -ycol 11 -yleg1 'Binomial significance of hits'";
-    $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
+    $cmd .= " -title 'matrix ".$m_suffix." " ;
+    $cmd .=  "; gene ".$current_gene."'" if ($current_gene);
     $cmd .= " -lines -legend ";
     $cmd .= " -format ".$plot_format;
     $cmd .= " -o ".$outfile{occ_sig_graph};
