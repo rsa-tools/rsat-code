@@ -1187,7 +1187,7 @@ sub CalcNeighbourLimits {
     }
   }
   &RSAT::message::TimeWarn("Calculated neighbour limits") if ($main::verbose >= 2);
-  &RSAT::message::psWarn("Calculated neighbour limits") if ($main::verbose >= 2);
+#  &RSAT::message::psWarn("Calculated neighbour limits") if ($main::verbose >= 2);
 }
 
 
