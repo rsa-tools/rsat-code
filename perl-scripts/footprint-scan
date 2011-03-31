@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.63 2011/03/31 10:22:52 amedina Exp $
+# $Id: footprint-scan,v 1.64 2011/03/31 16:23:35 jvanheld Exp $
 #
 ############################################################
 
@@ -57,7 +57,7 @@ run the analysis on all the genes of a genome.
 =head2 Position-specific scoring matrices (PSSMs)
 
 I<footprint-scan> requires a collection of (at least one)
-position-specific scoring matrices (PSSM). 
+position-specific scoring matrices (PSSM).
 
 All the format supported by I<matrix-scan> can be used to enter the
 matrices. However, we recommend to use the TRANSFAC format, which
@@ -187,7 +187,7 @@ given Transcription Factor. The usual approach would be to retrieve
 all upstream region sequences of the organism of interest and then
 search for high scored sites with matrix-scan, althougth to have a
 high score in one sequence doesn’t mean is a real binding site.
- 
+
 As we know sequences with a functional relevance migth be conserved
 througth some branches of phylogeny. So we expect binding sites with a
 functional rele- vance to be conserved in a group of close othologous
@@ -317,14 +317,14 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
   #$main::in = STDIN;
   $main::out = STDOUT;
 
-  local $no_die = 1; ## Don't die when a problem occurs
+  local $no_die = 1;		## Don't die when a problem occurs
   local $die_on_error = 1;
   local $skip = 0;
   local $last = 0;
@@ -344,7 +344,7 @@ package main;
   ## Matrix scanning parameters
   local @matrix_files = ();
   $main::matrix_table_file=0;
-  local $strands = "-2str"; ## Strands for pattern matching
+  local $strands = "-2str";	## Strands for pattern matching
   local $pseudo = 1;
   $main::bg_pseudo = 0.05;
   local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
@@ -364,7 +364,7 @@ package main;
   $main::filter=0;
   $main::filter_pval=0;
   #$bg_format="oligo";
-#  $main::footprint_scan=1;
+  #  $main::footprint_scan=1;
   ## Local definition of threshold parameters passed to matrix-scan
   ## used to check if the options passed to matrix-scna are correct
 
@@ -374,7 +374,7 @@ package main;
 			      score
 			      normw
 			      pval
-			      ln_pval			   
+			      ln_pval
 			      sig
 			      proba_m
 			      proba_b
@@ -395,12 +395,12 @@ package main;
 			     );
   my $supported_thresholds = join ",", @supported_thresholds;
   %main::supported_threshold = ();
-  
+
   foreach my $thr (@supported_thresholds) {
     $main::supported_threshold{$thr} = 1;
   }
-  
-  
+
+
   my $supported_graph_thresholds = join ",", @supported_graph_thresholds;
   %main::supported_graph_threshold = ();
 
@@ -409,7 +409,7 @@ package main;
   }
 
   ## info_lines Ocurrence Significance graph
-  ## by default lines are not drawn 
+  ## by default lines are not drawn
   $main::draw_info_lines=0;
 
   ## Supported-tasks added to those of footprint.lib.pl
@@ -435,6 +435,13 @@ package main;
     $supported_task{$task} = 1;
   }
 
+  ## PArameters for matrix-wise report tables
+  local $sort_criterion = "sig"; ## Supported: sig | alpha | list;
+  local @info_fields = qw(name
+			  descr
+			  upstr_neighb_name
+			 ); #### TO DEBUG: UPSTR_NEIGHB_NAME DOES NOT WORK
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -443,119 +450,119 @@ package main;
   ## Check argument values
 
   #### Organism
- #  &RSAT::OrganismManager::check_name($organism_name);
-#   my $organism = new RSAT::organism();
-#   $organism->set_attribute("name", $organism_name);
-#   $organism->check_name($organism_name);
+  #  &RSAT::OrganismManager::check_name($organism_name);
+  #   my $organism = new RSAT::organism();
+  #   $organism->set_attribute("name", $organism_name);
+  #   $organism->check_name($organism_name);
 
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
   ################################################################
   ## Check compatibility between -batch and -task synthesis
-  if ($task{synthesis} && $batch){
-  &RSAT::error::FatalError("Synthesis task is incompatible with \"-batch\" option, no other tasks where specified") if (scalar(keys(%task)) == 1);    
-       &RSAT::message::Warning("Synthesis task is incompatible with \"-batch\" option, all other tasks will be performed");
-      $task{synthesis}=0;
-  }  
-  
+  if ($task{synthesis} && $batch) {
+    &RSAT::error::FatalError("Synthesis task is incompatible with \"-batch\" option, no other tasks where specified") if (scalar(keys(%task)) == 1);
+    &RSAT::message::Warning("Synthesis task is incompatible with \"-batch\" option, all other tasks will be performed");
+    $task{synthesis}=0;
+  }
+
   ################################################################
   ## Check the compatibility between matrix input modes.
 
   ## Options -m and -matrix_table are mutually exclusive
-  &RSAT::error::FatalError("Usage of -m and -matrix_table are mutually exclusive matrices added with option -m should be included in the matrix_table_file") 
-      if ((scalar(@matrix_files) > 0) && ($main::matrix_table_file));
+  &RSAT::error::FatalError("Usage of -m and -matrix_table are mutually exclusive matrices added with option -m should be included in the matrix_table_file")
+    if ((scalar(@matrix_files) > 0) && ($main::matrix_table_file));
 
   ## Options -matrix_format and -matrix_table are mutually exclusive
   &RSAT::error::FatalError("Usage of -matrix_format and -matrix_table are mutually exclusive. Matrix tables include a column for specifying matrix formats.")
-      if ((scalar(@matrix_files) > 0) && ($main::matrix_table_file));
+    if ((scalar(@matrix_files) > 0) && ($main::matrix_table_file));
 
   ## Check compatibility between options -tf and -matrix_table
-  &RSAT::error::FatalError("For using the option -tf with option  -matrix_table you should type \"-tf file\" to indicate that TF names are included in the matrixx table file") 
-      if (($main::matrix_table_file) && ($main::tf ne "") && ($main::tf ne "file"));
+  &RSAT::error::FatalError("For using the option -tf with option  -matrix_table you should type \"-tf file\" to indicate that TF names are included in the matrixx table file")
+    if (($main::matrix_table_file) && ($main::tf ne "") && ($main::tf ne "file"));
 
   ################################################################
   ## Check parameters for matrix-scan
   local $ms_general_parameters = " -v 1"; ## for all matices
   if (defined($main::infile{bg})) {
-      $ms_general_parameters .= " -bgfile ".$main::infile{bg};
-      if(defined($main::bg_format)){
-	$ms_general_parameters .= " -bg_format ".$main::bg_format;
-      }
+    $ms_general_parameters .= " -bgfile ".$main::infile{bg};
+    if (defined($main::bg_format)) {
+      $ms_general_parameters .= " -bg_format ".$main::bg_format;
+    }
   } elsif ($bg_method eq "input") {
-      $ms_general_parameters .= " -bginput ";
-      if (defined($markov)) {
-	  $ms_general_parameters .= " -markov ".$markov;
-      } else {
-	  &RSAT::error::FatalError("The option -bginput requires to specify a Markov model (option -markov)");
-      } 
+    $ms_general_parameters .= " -bginput ";
+    if (defined($markov)) {
+      $ms_general_parameters .= " -markov ".$markov;
+    } else {
+      &RSAT::error::FatalError("The option -bginput requires to specify a Markov model (option -markov)");
+    }
   } elsif ($bg_method eq "window") {
-      $ms_general_parameters .= " -window ". $main::window_size ." " ;
-      if (defined($markov)) {
-	  $ms_general_parameters .= " -markov ".$markov;
-      } else {
-	  &RSAT::error::FatalError("The option -bginput requires o specify a Markov model (option -markov)");
-      }       
+    $ms_general_parameters .= " -window ". $main::window_size ." " ;
+    if (defined($markov)) {
+      $ms_general_parameters .= " -markov ".$markov;
+    } else {
+      &RSAT::error::FatalError("The option -bginput requires o specify a Markov model (option -markov)");
+    }
   } else {
-      &RSAT::error::FatalError("You must define a background model using either -bgfile , -window or -bginput ");
+    &RSAT::error::FatalError("You must define a background model using either -bgfile , -window or -bginput ");
   }
 
 
   ## Sequence format
   $ms_general_parameters .= " -seq_format fasta";
-  
+
   ##Filter
-  if ($main::filter){
-      $main::filter_pval=1e-4 unless ($main::filter_pval);
-  }  
+  if ($main::filter) {
+    $main::filter_pval=1e-4 unless ($main::filter_pval);
+  }
   &RSAT::error::FatalError("You must use the option -filter in order to set -filter_pval") if ($main::filter_pval && !$main::filter);
   &RSAT::error::FatalError("You must specify a bgfile for the filter task") if ($main::filter && !$main::filter_bgfile);
 
   ## Thresholds
   foreach my $key (keys(%lth)) {
-      $ms_general_parameters .= " -lth ".$key." ".$lth{$key};
+    $ms_general_parameters .= " -lth ".$key." ".$lth{$key};
   }
   foreach my $key (keys(%uth)) {
-      $ms_general_parameters .= " -uth ".$key." ".$uth{$key};
+    $ms_general_parameters .= " -uth ".$key." ".$uth{$key};
   }
 
   ## Strands
   $ms_general_parameters .= " ".$strands;
-  
+
   ## Origin for the positions
   $ms_general_parameters .= " -origin end";
-  
+
   ## Pseudo-count for the matrix
   $ms_general_parameters .= " -pseudo ".$pseudo;
-  
+
   ## Pseudo-frequency for the background model
   $ms_general_parameters .= " -bg_pseudo ".$main::bg_pseudo;
 
 
-  
+
   ## Read table of matrices
   my %matrix_table_hash=();
-  if($main::matrix_table_file){  
-      my ($mlist, $input_dir) = &OpenInputFile($main::matrix_table_file);
-      while (<$mlist>) {
-	  chomp;
-	  next if ($_=~/^;/);		# skip comment lines
-	  next if ($_=~/^#/);		# skip header lines
-	  next if ($_=~/^--/);	# skip mysql-type comment lines
-	  next unless (/\S/);	# skip empty lines
-  
-	  my @fields = split /\t+/;
-	  my $matrix_file=$fields[0];
-	  my $matrix_mt_suffix = $fields[1];
-	  my $matrix_mt_format = $fields[2];
-	  $matrix_table_hash{$matrix_mt_suffix}{"file"}= $matrix_file;
-	  $matrix_table_hash{$matrix_mt_suffix}{"format"}= $matrix_mt_format;
-	  $matrix_table_hash{$matrix_mt_suffix}{"tf"}= $matrix_mt_suffix    if ($main::tf eq "file") ;
-      }
-      close $mlist;
+  if ($main::matrix_table_file) {
+    my ($mlist, $input_dir) = &OpenInputFile($main::matrix_table_file);
+    while (<$mlist>) {
+      chomp;
+      next if ($_=~/^;/);		# skip comment lines
+      next if ($_=~/^#/);		# skip header lines
+      next if ($_=~/^--/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
 
-      my $matrix_nb_from_table = scalar(keys %matrix_table_hash);
-      &RSAT::message::Info("Read a list of",$matrix_nb_from_table,"matrices from file", $main::matrix_table_file) if ($main::verbose >= 2);
+      my @fields = split /\t+/;
+      my $matrix_file=$fields[0];
+      my $matrix_mt_suffix = $fields[1];
+      my $matrix_mt_format = $fields[2];
+      $matrix_table_hash{$matrix_mt_suffix}{"file"}= $matrix_file;
+      $matrix_table_hash{$matrix_mt_suffix}{"format"}= $matrix_mt_format;
+      $matrix_table_hash{$matrix_mt_suffix}{"tf"}= $matrix_mt_suffix    if ($main::tf eq "file") ;
+    }
+    close $mlist;
+
+    my $matrix_nb_from_table = scalar(keys %matrix_table_hash);
+    &RSAT::message::TimeWarn("Read a list of",$matrix_nb_from_table,"matrices from file", $main::matrix_table_file) if ($main::verbose >= 2);
   }
 
 
@@ -565,33 +572,30 @@ package main;
 
   &RSAT::message::Warning("Option -tf is combined with multiple matrices, all matrices will be taken as being alternative motifs of the same transcriptional factor, if this is not the case please see option  -matrix_table ") if ( (scalar(@matrix_files)>1) && ($main::tf)) ;
 
-  if (scalar(@matrix_files)>0){
-      my $mcount =1;
-      foreach my $m_option_matrices (@matrix_files){
-	  
-	  if (scalar(@matrix_files)==1){
+  if (scalar(@matrix_files)>0) {
+    my $mcount =1;
+    foreach my $m_option_matrices (@matrix_files) {
 
-	      print "$matrix_suffix+++";
-	      $matrix_table_hash{$matrix_suffix}{"file"}= $m_option_matrices;
-	      $matrix_table_hash{$matrix_suffix}{"format"}= $main::matrix_format ;
-	      $matrix_table_hash{$matrix_suffix}{"tf"}=$main::tf if ($main::tf) ;
-	      $mcount++;
-	  }elsif(scalar(@matrix_files)>1){
-	      print "$matrix_suffix.$mcount+++";
-	      $matrix_table_hash{$matrix_suffix.$mcount}{"file"}= $m_option_matrices;
-	      $matrix_table_hash{$matrix_suffix.$mcount}{"format"}= $main::matrix_format ;
-	      $matrix_table_hash{$matrix_suffix.$mcount}{"tf"}=$main::tf if ($main::tf) ;
-	      
-	  }
+      if (scalar(@matrix_files)==1) {
+	$matrix_table_hash{$matrix_suffix}{"file"}= $m_option_matrices;
+	$matrix_table_hash{$matrix_suffix}{"format"}= $main::matrix_format ;
+	$matrix_table_hash{$matrix_suffix}{"tf"}=$main::tf if ($main::tf) ;
+	$mcount++;
+      } elsif (scalar(@matrix_files)>1) {
+	$matrix_table_hash{$matrix_suffix.$mcount}{"file"}= $m_option_matrices;
+	$matrix_table_hash{$matrix_suffix.$mcount}{"format"}= $main::matrix_format ;
+	$matrix_table_hash{$matrix_suffix.$mcount}{"tf"}=$main::tf if ($main::tf) ;
+
       }
+    }
   }
 
   ## Check that at least one matrix has been entered
   my $matrix_nb = scalar(keys %matrix_table_hash);
   if ($matrix_nb > 0) {
-      &RSAT::message::Info($matrix_nb, "matrices specified") if ($main::verbose >= 2);
+    &RSAT::message::Info($matrix_nb, "matrices specified") if ($main::verbose >= 2);
   } else {
-      &RSAT::error::FatalError("You must specify at least one matrix file (option -m or -matrix_table)");
+    &RSAT::error::FatalError("You must specify at least one matrix file (option -m or -matrix_table)");
   }
 
 
@@ -600,200 +604,231 @@ package main;
   ## Iterate over matrices and genes
   &RSAT::message::TimeWarn("Starting analysis") if ($main::verbose >= 2);
 
-  my $m = 0; ## Matrix counter
+  my $m = 0;			## Matrix counter
   foreach my $ms (keys %matrix_table_hash) {
-      $m++;
-      %top_sig=();
-      local $m_suffix =$ms;
-      local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
-      local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
-      local $tf=$matrix_table_hash{$m_suffix}{"tf"} if ($matrix_table_hash{$m_suffix}{"tf"}) ;
-      &RSAT::error::FatalError("Matrix file $file does not exist. Matrix file is mandatory.")  unless (-e $matrix_file) ;
-      local $ms_parameters =  $ms_general_parameters ;
-      $ms_parameters .= " -m ".$matrix_file;
-      
-      &RSAT::error::FatalError("You must specify the matrix format (option -matrix_format)") unless ($matrix_format);
-      $ms_parameters .= " -matrix_format ".$matrix_format;
-      
-      ## Matrix suffix
-      &RSAT::error::FatalError("You must specify a matrix suffix (option -matrix_suffix or second colm in -matrix_table file)") unless (defined($m_suffix));
-      $m_suffix.= "_infer-operons" if ($infer_operons);
+    $m++;
+    %top_sig=();
+    local $m_suffix =$ms;
+    local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
+    local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
+    local $tf=$matrix_table_hash{$m_suffix}{"tf"} if ($matrix_table_hash{$m_suffix}{"tf"}) ;
+    &RSAT::error::FatalError("Matrix file $file does not exist. Matrix file is mandatory.")  unless (-e $matrix_file) ;
+    local $ms_parameters =  $ms_general_parameters ;
+    $ms_parameters .= " -m ".$matrix_file;
 
-      &RSAT::message::TimeWarn("Analyzing matrix", $m."/".$matrix_nb) if ($main::verbose >= 1);
+    &RSAT::error::FatalError("You must specify the matrix format (option -matrix_format)") unless ($matrix_format);
+    $ms_parameters .= " -matrix_format ".$matrix_format;
 
-      
-      ################################################################
-      ## If the option -tf is used, also run footprint analysis for
-      ## the transcripiton factor-coding gene (in addition to the
-      ## query genes).
-      if($tf){
-	  &RSAT::message::TimeWarn("Analyzing TF", $tf) if ($main::verbose >= 1);
-	  eval {
-	      local $current_gene= $tf;
-	      $global_filter=$main::filter;
-	      $main::filter = 0;
-	      
-	      &RunFootprintScan($current_gene);
-	      $main::filter = $global_filter;
-	  };  
-	  if ($@) {
-	      if ($no_die) {
-		  ## Catch error and report in in log file
-		  print $out join("\t", "ERROR", $current_gene, $@);
-		  &RSAT::message::Warning("ERROR", $current_gene, $@);
-	      } else {
-		  &RSAT::error::FatalError($@);
-	      }
-	  }
-	  &RSAT::error::FatalError("There were no organisms with an ortholog for the specified TF") unless (-s $main::tf_ortho_file );
+    ## Matrix suffix
+    &RSAT::error::FatalError("You must specify a matrix suffix (option -matrix_suffix or second colm in -matrix_table file)") unless (defined($m_suffix));
+    $m_suffix.= "_infer-operons" if ($infer_operons);
+    &RSAT::message::TimeWarn("Analyzing matrix", $m."/".$matrix_nb) if ($main::verbose >= 1);
+
+    ################################################################
+    ## If the option -tf is used, also run footprint analysis for
+    ## the transcripiton factor-coding gene (in addition to the
+    ## query genes).
+    if ($tf) {
+      &RSAT::message::TimeWarn("Analyzing TF", $tf) if ($main::verbose >= 1);
+      eval {
+	local $current_gene= $tf;
+	$global_filter=$main::filter;
+	$main::filter = 0;
+	&RunFootprintScan($current_gene);
+	$main::filter = $global_filter;
+      };
+
+      ## Reorganize gene list to ensure that TF is added to it
+      @query_gnees_ori = @query_genes;
+      @query_genes = ($tf);
+      for my $g (0..$#query_genes_ori) {
+	$gene = $query_genes[$g];
+	push @query_genes, $gene if ((lc($gene) ne lc($tf)) || ($main::filter));
       }
 
-      
-      ################################################################
-      ## Analyze query genes separately or altogether
-      if ($main::sep_genes) {
-	  
-	  if ($task{synthesis}){
-	      ($synthesis_index, $synthesis_table) = &OpenSynthesisPerMatrix ; 
-	      &RSAT::message::Info("Synthesis files: "," Index ". $outfile{synthesis_html} . " Table  ". $outfile{synthesis_tab} );
-	  }
-	  
-	  my $g = 0;
-	  my $gene_nb = scalar(@query_genes);
-	  local $current_gene;
-	  foreach $current_gene (@query_genes) {
-	      $g++;
-	      if (($skip > 0) && ($g <= $skip)) {
-		  &RSAT::message::Info("Skipping gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
-		  next;
-	      }
-	      if (($last > 0) && ($g >= $last)) {
-		  &RSAT::message::Info("Last gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
-		  last;
-	      }
-	      &RSAT::message::TimeWarn("\tAnalyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
-	      eval {
-		  &RunFootprintScan($current_gene);
-	      };
-	      if ($@) {
-		  if ($no_die) {
-		      ## Catch error and report in in log file
-		      print $out join("\t", "ERROR", $current_gene, $@);
-		      &RSAT::message::Warning("ERROR", $current_gene, $@);
-		  } else {
-		      &RSAT::error::FatalError($@);
-		  }
-	      }
-	  }
-	  
-	#  &RSAT::message::Debug("Top sig", join ("\t","top genes ", keys( %top_sig)), "\n" ) if ($main::verbose >= 0);
-	  ## Create the synthetic table
-	  if ($task{synthesis}) {
-	      
-	      my $syn_dir = `dirname $outfile{synthesis_tab}`;
-	      chomp($syn_dir);
-	      my $img_hight=120;
-	      my $g = 0;
-	      my $occ_sig_header = "";
-	      foreach my $gene (sort {$top_sig{$b} <=> $top_sig{$a}} keys %top_sig) {
-		  $g++;
-		  
-		  my $gene_info= `(add-gene-info -i $gene_list{$gene} -org $organism_name -info name,descr,upstr_neighb_name | grep -v "^;")`;
-		  
-		  chomp ($gene_info);
-		  
-		  $gene_info=~s/Escherichia_coli_K12//;
-		  my @gene_info=split(/\t+/,$gene_info);
-		  shift @gene_info;  
-		  
-		  #shift @gene_info;
-		  
-		  my $gene_info_line=join ("\t",@gene_info); #### Line containing the information about the current gene for the table
-		  my $gene_info_html_line=join ("</td>\n<td>",@gene_info);
-		  $gene_info_html_line="<td>".$gene_info_html_line."</td>";  #### Line containing the information about the current gene for the tablhtml index
-		  
-		  
-		  ##############
-		  ##Table
-		  ## Grep the header for the synthesis
-		  unless ($occ_sig_header){
-		      &HeaderSynthesisFilesScan($synthesis_index, $synthesis_table,$occ_sig_file{$gene});
-		      $occ_sig_header=1;
-		  }
-		  
-		  ## Print the table
-		  print $synthesis_table join("\t", $gene, $top_sig_row{$gene}, $g,$gene_info_line,  $occ_sig_file{$gene} ), "\n";
-		  
-		  ## print HTML 
-		  print $synthesis_index "<tr>\n"; 
-		  my $sig_line=$top_sig_row{$gene};
-		  my $html_sep="<\/td>\n<td>";
-		  $sig_line =~ s/\t+/$html_sep/g;
-		  print $synthesis_index "<td>".$gene.$html_sep. $sig_line.$html_sep. $g."</td>";
-		  
-		  
-		  my $links = ""; 
-		  
-		  if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
-		      my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
-		      print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>"."\n";
-		  }
-		  if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
-		      my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
-		      print $synthesis_index  "<td>".join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
-		      print $synthesis_index   join("", " <a href='", $file, "'>[sigplot]</a>")." </td>"."\n";
-		      
-		  }
-		  if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
-		      my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
-		      print $synthesis_index  "<td>".join("", " <a href='", $file, "'>",,"<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
-		      print $synthesis_index   join("", " <a href='", $file, "'>[freqplot]</a>")." </td>"."\n";
-		  }
-		  if ((defined($map_file{$gene})) && (-e $map_file{$gene})) {
-		      my $file = $map_file{$gene}; $file =~ s|${syn_dir}/||g;
-		      print $synthesis_index "<td>".join("", " <a href='", $file, "'>[map]</a>")."</td>"."\n";
-		  }
-		  print $synthesis_index   $gene_info_html_line;
-#	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
-		  
-		  print $synthesis_index "</tr>\n";
-		  
-	      }
-	      
-	      
-	  }
-	  
-      } else {
-	  &RunFootprintScan(@query_genes);
+      ## Report caught errors
+      if ($@) {
+	if ($no_die) {
+	  ## Catch error and report in in log file
+	  print $out join("\t", "ERROR", $current_gene, $@);
+	  &RSAT::message::Warning("ERROR", $current_gene, $@);
+	} else {
+	  &RSAT::error::FatalError($@);
+	}
       }
- 
-  
-      ################################################################
-      ## Close output stream
-      my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-      print $main::out $exec_time if ($main::verbose >= 1);
-      close $main::out if ($main::outfile{output});
+      &RSAT::error::FatalError("There were no organisms with an ortholog for the specified TF") unless (-s $main::tf_ortho_file );
+    }
+
+    ################################################################
+    ## Analyze query genes separately or altogether
+    if ($main::sep_genes) {
       if ($task{synthesis}) {
-	  print $synthesis_index "</table>\n";
-	  print $synthesis_index "<p><pre>", $exec_time, "</pre></p>\n";
-	  print $synthesis_index "</body>\n";
-	  print $synthesis_index "</html>\n";
-	  close ($synthesis_index);
+	($synthesis_index, $synthesis_table) = &OpenSynthesisPerMatrix ;
+	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
       }
-      
-      ################################################################
-      ## Report the index files
-      if ($main::verbose >= 2) {
-	  print ("; Index files\n");
-	  foreach my $key (sort keys %index_list) {
-	      print join ("\t", ";", $key, $index_list{$key}), "\n";
+
+      my $g = 0;
+      my $gene_nb = scalar(@query_genes);
+      local $current_gene;
+      foreach $current_gene (@query_genes) {
+	$g++;
+	if (($skip > 0) && ($g <= $skip)) {
+	  &RSAT::message::Info("Skipping gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
+	  next;
+	}
+	if (($last > 0) && ($g >= $last)) {
+	  &RSAT::message::Info("Last gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
+	  last;
+	}
+	&RSAT::message::TimeWarn("\tAnalyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
+	eval {
+	  &RunFootprintScan($current_gene);
+	};
+	if ($@) {
+	  if ($no_die) {
+	    ## Catch error and report in in log file
+	    print $out join("\t", "ERROR", $current_gene, $@);
+	    &RSAT::message::Warning("ERROR", $current_gene, $@);
+	  } else {
+	    &RSAT::error::FatalError($@);
 	  }
+	}
       }
-  }   ## close matrices cycle
-  
+
+      #  &RSAT::message::Debug("Top sig", join ("\t","top genes ", keys( %top_sig)), "\n" ) if ($main::verbose >= 0);
+
+
+
+      ################################################################
+      ## Create the matrix-wise report table (tab-delimite + HTML)
+      if ($task{synthesis}) {
+	&RSAT::message::TimeWarn("Generating matrix-wise synthetic tables", $prefix{$m_suffix."_synthesis"}) if ($main::verbose >= 2);
+	my $syn_dir = `dirname $outfile{$m_suffix."_synthesis_tab"}`;
+	chomp($syn_dir);
+	my $img_hight=120;
+	my $g = 0;
+	my $occ_sig_header = "";
+
+
+	## Sort query genes according to user-selected criterion
+	my @sorted_genes = ();
+	if ($sort_criterion eq "sig") {
+	  @sorted_genes = sort {$top_sig{$b} <=> $top_sig{$a}} @query_genes;
+
+	} elsif ($sort_criterion eq "alpha") {
+	  @sorted_genes = sort @query_genes;
+
+	} else {
+	  @sorted_genes = @query_genes;
+
+	}
+
+
+	foreach my $gene (@sorted_genes) {
+	  $g++;
+
+#	  my $gene_info= `(add-gene-info -i $gene_list{$gene} -org $organism_name -info name,descr,upstr_neighb_name | grep -v "^;")`;
+#	  chomp ($gene_info);
+#	  $gene_info=~s/Escherichia_coli_K12//;
+#	  my @gene_info=split(/\t+/,$gene_info);
+#	  shift @gene_info;
+	  #shift @gene_info;
+
+	  ## Array containing the fields for the query gene
+	  my $feature = $organism->get_feature_for_name($gene);
+	  my @gene_info = ();
+	  foreach my $field (@info_fields) {
+	    my $value = $feature->get_attribute($field);
+	    &RSAT::message::Debug($gene, $feature->get_attribute("id"), $value) if ($main::verbose >= 10);
+	    push @gene_info, $value;
+	  }
+
+	  my $gene_info_line=join ("\t",@gene_info); #### Line containing the information about the current gene for the table
+	  my $gene_info_html_line=join ("</td>\n<td>",@gene_info);
+	  $gene_info_html_line="<td>".$gene_info_html_line."</td>"; #### Line containing the information about the current gene for the tablhtml index
+
+
+	  ################################################################
+	  ## HTML table with data + figures
+	  ## grep the header of the tab-delmited table for the HTML file
+	  unless ($occ_sig_header){
+	    &MatrixReportHeader($synthesis_index, $synthesis_table,$occ_sig_file{$gene});
+	    $occ_sig_header=1;
+	  }
+
+	  ## Print the table
+	  print $synthesis_table join("\t", $gene, $top_sig_row{$gene}, $g,$gene_info_line,  $occ_sig_file{$gene} ), "\n";
+
+	  ## print HTML
+	  print $synthesis_index "<tr>\n";
+	  my $sig_line=$top_sig_row{$gene};
+	  my $html_sep="<\/td>\n<td>";
+	  $sig_line =~ s/\t+/$html_sep/g;
+	  print $synthesis_index "<td>".$gene.$html_sep. $sig_line.$html_sep. $g."</td>";
+
+
+	  my $links = "";
+
+	  if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
+	    my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
+	    print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>"."\n";
+	  }
+	  if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
+	    my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
+	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
+	    print $synthesis_index   join("", " <a href='", $file, "'>[sigplot]</a>")." </td>"."\n";
+
+	  }
+	  if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
+	    my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
+	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>",,"<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
+	    print $synthesis_index   join("", " <a href='", $file, "'>[freqplot]</a>")." </td>"."\n";
+	  }
+	  if ((defined($map_file{$gene})) && (-e $map_file{$gene})) {
+	    my $file = $map_file{$gene}; $file =~ s|${syn_dir}/||g;
+	    print $synthesis_index "<td>".join("", " <a href='", $file, "'>[map]</a>")."</td>"."\n";
+	  }
+	  print $synthesis_index   $gene_info_html_line;
+	  #	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
+
+	  print $synthesis_index "</tr>\n";
+
+	}
+
+
+      }
+    } else {
+      &RunFootprintScan(@query_genes);
+    }
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+    if ($task{synthesis}) {
+      print $synthesis_index "</table>\n";
+      print $synthesis_index "<p><pre>", $exec_time, "</pre></p>\n";
+      print $synthesis_index "</body>\n";
+      print $synthesis_index "</html>\n";
+      close ($synthesis_index);
+    }
+
+    ################################################################
+    ## Report the index files (not necessary anymore since they were
+    ## displayed after each query)
+    if ($main::verbose >= 5) {
+      print ("; Index files\n");
+      foreach my $key (sort keys %index_report_per_query) {
+	print join ("\t", ";", $key, $index_report_per_query{$key}), "\n";
+      }
+    }
+  }				## close matrices cycle
+
+
   ################################################################
   ## Print verbose
- # &Verbose() if ($main::verbose);
+  # &Verbose() if ($main::verbose);
   exit(0);
 }
 
@@ -803,7 +838,7 @@ package main;
 
 
 ################################################################
-## Display full help message 
+## Display full help message
 sub PrintHelp {
 #    system "pod2text -c $0";
     system "cat $0 $ENV{RSAT}/perl-scripts/lib/footprint.lib.pl | pod2text -c";
@@ -817,7 +852,7 @@ sub PrintOptions {
 }
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
     local $arg;
     local @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
@@ -833,9 +868,9 @@ sub ReadArguments {
 	## Read the options that are common to all footprint-detection programs
 	if (&ReadFootprintOptions()) {
 	    next;
-	    
+
 =pod
-    
+
 =over 4
 
 =item B<-m matrix_file>
@@ -848,7 +883,7 @@ multiple matrices.
 =cut
 	} elsif ($arg eq "-m") {
 	    push @matrix_files, shift(@arguments);
-	   
+
 
 
 =pod
@@ -893,9 +928,9 @@ second scanning.
 
 =item B<-tf transcription_factor>
 
-Most matrices are derived from specific TFBS, so they represent the preferential sequence where a TF binds. 
+Most matrices are derived from specific TFBS, so they represent the preferential sequence where a TF binds.
 This option will search for all the genomes in the given taxon where there is an ortholog for the specified tf.
-Orthologs for the query genes will only be retrived if the organism has an ortholog for the TF. 
+Orthologs for the query genes will only be retrived if the organism has an ortholog for the TF.
 
 -tf gene_name
 
@@ -920,7 +955,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 		unless (&IsReal($main::pseudo));
 
 =pod
-    
+
 =item B<-bgfile background_file>
 
 Background model file.
@@ -929,7 +964,7 @@ Background model file.
 	} elsif ($arg eq "-bgfile") {
 	    $main::infile{bg} = shift(@arguments);
 =pod
-    
+
 =item B<-bg_format background_format>
 
 Format of background model file.
@@ -956,16 +991,16 @@ Calculate background model from the input sequence set.
 
 =item B<-markov>
 
-Order of the markov chain for the background model. 
+Order of the markov chain for the background model.
 
-This option is incompatible with the option -bgfile. 
+This option is incompatible with the option -bgfile.
 
 =cut
 	} elsif ($arg eq "-markov") {
 	    $main::markov = shift(@arguments);
-	    &RSAT::error::FatalError("Markov order must be a natural number.") 
+	    &RSAT::error::FatalError("Markov order must be a natural number.")
 		unless &RSAT::util::IsNatural($main::markov);
-	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.")
 		if defined($infile{bg});
 =pod
 
@@ -985,16 +1020,16 @@ The required sequence length increases exponentially with the Markov
 order. This option is thus usually suitable for low order models
 only (-markov 0 to 1).
 
-This option is incompatible with the option -bgfile. 
+This option is incompatible with the option -bgfile.
 
 =cut
-	} elsif ($arg eq "-window") { 
-            &RSAT::error::FatalError("Options -bgfile and -window  are mutually exclusive") if (defined($infile{bg})); 
+	} elsif ($arg eq "-window") {
+            &RSAT::error::FatalError("Options -bgfile and -window  are mutually exclusive") if (defined($infile{bg}));
             &RSAT::error::FatalError("Options -bginput and -window  are mutually exclusive") if ($main::bg_method eq "input");
-	    $main::bg_method = "window"; 
+	    $main::bg_method = "window";
             $main::window_size = shift(@arguments);
 	    &RSAT::error::FatalError("Window size must be a natural number.") unless &RSAT::util::IsNatural($main::window_size);
-	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") if (defined($infile{bg})); 
+	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") if (defined($infile{bg}));
 
 =pod
 
@@ -1011,7 +1046,7 @@ calculated from the length (L) of the sequence following this formula:
 
 sqrt(L)/(L+sqrt(L))
 
-For -bgfile, default value is 0.05. 
+For -bgfile, default value is 0.05.
 
 In other cases, if the length (L) of the training sequence is known
 (e.g. all promoters for the considered organism), the value can be set
@@ -1029,7 +1064,7 @@ sqrt(L)/(L+sqrt(L))
 					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
 		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
 
-	  
+
 =pod
 
 =item B<-filter>
@@ -1053,7 +1088,7 @@ Background model file for the scanning of query sequences for filtering,.
 	} elsif ($arg eq "-filter_bgfile") {
     	    $main::filter_bgfile= shift(@arguments);
 
-	  
+
 =pod
 
 =item B<-filter_pval>
@@ -1066,14 +1101,14 @@ Set the threshold to filter out TF-interactions that are not present on the quer
 	} elsif ($arg eq "-filter_pval") {
     	    $main::filter_pval= shift(@arguments);
 
-	     &RSAT::error::FatalError($main::filter_pval, "Invalid value for filter_pval. Should be a real number. ") 
+	     &RSAT::error::FatalError($main::filter_pval, "Invalid value for filter_pval. Should be a real number. ")
 	unless (&RSAT::util::IsReal($main::filter_pval));
 =pod
 
-=item B<-occ_sig_opt>    
+=item B<-occ_sig_opt>
 
 Additional options passed to matrix-scan for the test of
-over-representation of matrix hits.  
+over-representation of matrix hits.
 
 Supported threshold fields for the matches : score pval eval sig normw
 proba_M proba_B rank crer_sites crer_size
@@ -1096,7 +1131,7 @@ Note: the argument passed to matrix-scan is delimited by single
 quotes, and can thus not contain any quote.
 
 =cut
-    
+
     } elsif ($arg eq "-occ_sig_opt") {
     my $new_occ_sig_opt = shift(@arguments);
     $occ_sig_opt .= " ".$new_occ_sig_opt;
@@ -1114,7 +1149,7 @@ some particular values.
 
 - vertical axis (X=0), in violet
 
-- the weight value associated with maximal significance 
+- the weight value associated with maximal significance
   (only weights >=0 are considered), in red
 
 =cut
@@ -1186,7 +1221,7 @@ Change the thickness of the maps
 
 Write the weight score above each site (also activate the auto
 adjustment of map thickness to ensure there is enough space for drawing the
-labels).  
+labels).
 -map_opt  '-label score -mapthick auto'
 
 Note: the argument passed to matrix-scan is delimited by single
@@ -1199,7 +1234,7 @@ quotes, and can thus not contain any quote.
 
 $map_opt .= " ".$new_map_opt;
 
-=pod 
+=pod
 
 =item B<-matrix_table matrix_table_file.tab>
 
@@ -1220,7 +1255,7 @@ row specifies one matrix.
   taxonomic filter will be applied (i.e. the analysis will only be led
   in species of the taxon where an ortholog has been found for the
   factor).
-  
+
 - The third column (optional) indicates the format of each matrix, in
   case the search would be done with matrices obtained from different
   sources (e.g. TRANSFAC, consensus, meme). Note that if the file
@@ -1267,7 +1302,7 @@ sub Verbose {
 sub RunFootprintScan {
   local (@current_query_genes) = @_;
 
-  local $start_time = &RSAT::util::StartScript();
+  local $query_start_time = &AlphaDate();
   local $batch_cmd = "";
   local $out = "";
   local $genes = "";
@@ -1287,8 +1322,8 @@ sub RunFootprintScan {
   $outfile{map} = $outfile{matrix_prefix}."_sites.".$map_format;
 
   ################################################################
-  ## Open file to the HTML index
-  &OpenIndex("footprint-scan");
+  ## Open file to the HTML index for the current query
+  &OpenQueryReport("footprint-scan");
 
   ################################################################
   ## Print query genes in the gene file
@@ -1299,7 +1334,7 @@ sub RunFootprintScan {
 
   &RetrieveQueryPromoters();
 
-  ## Retrieve promoters of the query organism 
+  ## Retrieve promoters of the query organism
   if ($main::filter) {
    # &ComputeFilterScan($matrix_format,@matrix_files);
    &ComputeFilterScan($matrix_format,$matrix_file);
@@ -1310,7 +1345,7 @@ sub RunFootprintScan {
   &Verbose() if ($verbose);
 
   if ($main::filter && $main::skip_gene) {
-    &RSAT::message::Info("Skipping: no site for matrix", $m_suffix, "in query promoter(s)", join(";",@current_query_genes)) if ($main::verbose >= 0);  
+    &RSAT::message::Info("Skipping: no site for matrix", $m_suffix, "in query promoter(s)", join(";",@current_query_genes)) if ($main::verbose >= 0);
     return;
   }
 
@@ -1320,10 +1355,10 @@ sub RunFootprintScan {
 
   ## only for the $tf option
   if ($main::tf && !($main::tf_ortho_file) ) {
-    $main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";	   
+    $main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";
     $org_column =qq@grep -v "#" $outfile{orthologs} |grep -v ";"| cut -f2 >$main::tf_ortho_file @;
     system ($org_column);
-    &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ") 
+    &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ")
       if ($main::verbose>=1);
   }
 
@@ -1355,9 +1390,11 @@ sub RunFootprintScan {
   ################################################################
   ## Finish verbose
   if ($verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
+    my $query_done_time = &AlphaDate();
+    my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
+    print $out "; Job started $query_start_time\n";
+    print $out "; Job done    $query_done_time\n";
+    print $out "; Elapsed     $query_exec_time\n";
   }
 
   ################################################################
@@ -1375,6 +1412,12 @@ sub RunFootprintScan {
   ## Send the command to a batch queue (e.g. PC cluster)
   if ($batch) {
     &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  } else {
+    if ($main::verbose >= 3) {
+      &RSAT::message::TimeWarn("Query done", $query_prefix);
+      &RSAT::message::Info("\tlog file", $outfile{log});
+      &RSAT::message::Info("\treport file", $outfile{index});
+    }
   }
 
 }
@@ -1386,20 +1429,22 @@ sub RunFootprintScan {
 ## per output type.
 sub OpenSynthesisPerMatrix {
   $dir{synthesis} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix);
-
-  &RSAT::message::Debug("Synthesis per matrix", $dir{synthesis});
-
   &RSAT::util::CheckOutDir($dir{synthesis});
-  $outfile{synthesis} = join( "/",$dir{synthesis},"result_synthesis");
-  $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
-  $outfile{synthesis_html} = $outfile{synthesis}.".html";
+  $prefix{$m_suffix."_synthesis"} = join( "/",$dir{synthesis},"result_synthesis");
+  $outfile{$m_suffix."_synthesis_tab"} = $prefix{$m_suffix."_synthesis"}.".tab";
+  $outfile{$m_suffix."_synthesis_html"} = $prefix{$m_suffix."_synthesis"}.".html";
 
-  my $synthesis_index = &OpenOutputFile($outfile{synthesis_html} ); 
-  my $synthesis_table = &OpenOutputFile($outfile{synthesis_tab});
+  my $synthesis_index = &OpenOutputFile($outfile{$m_suffix."_synthesis_html"});
+  my $synthesis_table = &OpenOutputFile($outfile{$m_suffix."_synthesis_tab"});
 
+  &RSAT::message::Info("Synthesis per matrix", $prefix{$m_suffix."_synthesis"});
   return ($synthesis_index, $synthesis_table)  ;
 }
-sub HeaderSynthesisFilesScan {
+
+
+################################################################
+## Write the header of the HTML matrix report
+sub MatrixReportHeader {
     ($synthesis_index, $synthesis_table, $occ_one_gene_file) =@_;
     $occ_sig_header = `grep '^#' $occ_one_gene_file`;
     chomp $occ_sig_header;
@@ -1430,7 +1475,7 @@ sub HeaderSynthesisFilesScan {
      my $html_sep="<\/th>\n<th>";
     $occ_sig_header=~s/\t/$html_sep/g;
     my $header_index=join("</th>\n<th>", "<th>gene", $occ_sig_header, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", "name","descr","upstr_neighb_name</th>");
-    $header_index .= "\n"; 
+    $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";
 }
