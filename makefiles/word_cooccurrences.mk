@@ -63,7 +63,7 @@ randseq:
 	@echo ${SEQ}
 
 ## Count word occurrences
-COUNTS=${RES_DIR}/${PREFIX}_counts
+COUNTS=${RES_DIR}/${PREFIX}_${PAT1}_${PAT2}_counts
 V=1
 count:
 	@echo
