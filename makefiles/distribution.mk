@@ -60,8 +60,9 @@ DISTRIB_FILES=rsa-tools/perl-scripts		\
 	rsa-tools/contrib/count-words  		\
 	rsa-tools/contrib/matrix-scan-quick  	\
 	rsa-tools/contrib/floydwarshall		\
-	rsa-tools/contrib/kwalks		\
+	rsa-tools/java				\
 	rsa-tools/contrib/REA			\
+	rsa-tools/contrib/kwalks		\
 	rsa-tools/ws_clients		  	\
 	rsa-tools/contrib/info-gibbs
 
