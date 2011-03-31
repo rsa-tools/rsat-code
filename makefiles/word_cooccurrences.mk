@@ -30,15 +30,6 @@ PATTERNS= patterns.txt
 ################################################################
 ## Define the targets
 
-
-## Store patterns in a file
-patterns:
-	@echo
-	@echo "Storing patterns ${PAT1} and ${PAT2}"
-	@echo ${PAT1} > ${PATTERNS}
-	@echo ${PAT2} >> ${PATTERNS}
-	@echo "Pattern file	${PATTERNS}"
-
 ## Compress the sequence file to save disk space
 compress:
 	gzip ${SEQ}
@@ -46,10 +37,6 @@ compress:
 ## Uncompress the sequence file
 uncompress:
 	gunzip ${SEQ}
-
-## Run all the required tasks in teh appropriate order
-one_analysis: randseq count ct heatmap
-	@echo "Fininshed by job"
 
 ## Generate a set of random sequences
 SEQ=${RES_DIR}/${PREFIX}_randseq.fasta
@@ -62,10 +49,22 @@ randseq:
 		-o ${SEQ}
 	@echo ${SEQ}
 
+
+## Run all the required tasks in teh appropriate order
+one_analysis: count ct heatmap
+
+## Store patterns in a file
+patterns:
+	@echo
+	@echo "Storing patterns ${PAT1} and ${PAT2}"
+	@echo ${PAT1} > ${PATTERNS}
+	@echo ${PAT2} >> ${PATTERNS}
+	@echo "Pattern file	${PATTERNS}"
+
 ## Count word occurrences
 COUNTS=${RES_DIR}/${PREFIX}_${PAT1}_${PAT2}_counts
 V=1
-count:
+count: patterns
 	@echo
 	@echo "Counting word occurrences"
 	dna-pattern -v ${V} -pl ${PATTERNS} -i ${SEQ} -format fasta \
