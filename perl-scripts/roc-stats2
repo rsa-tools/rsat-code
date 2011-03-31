@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: roc-stats2,v 1.16 2010/12/08 13:08:48 rsat Exp $
+# $Id: roc-stats2,v 1.17 2011/03/31 09:57:15 jvanheld Exp $
 #
 ############################################################
 
@@ -20,7 +20,7 @@ roc-stats2
 
 =head1 DESCRIPTION
 
-This program takes azs input a set of scored results associated with
+This program takes as input a set of scored results associated with
 validation labels (pos for positive, neg for negative) and computes,
 for each score value, the derived statistics (Sn, PPV, FPR), which can
 be further used to draw a ROC curve.
@@ -68,8 +68,8 @@ Score (X)
 
 =item B<N_icum>
 
-Inverse cumulated occurreces i.e. number of observations with score >=
-X
+Inverse cumulated occurreces i.e. number of observations with score
+>=X.
 
 =item B<F_icum>
 
@@ -613,7 +613,7 @@ with various suffixes, for the graph files.
 	} elsif ($arg eq "-graphs") {
 	    $main::graphs = 1;
 
-	    ## Image format
+
 =pod
 
 =item	B<-img_format>
@@ -624,7 +624,7 @@ Image format fo the graph files.
 	} elsif ($arg eq "-img_format") {
 	    $main::img_format = shift(@arguments);
 
-	    ## Score column
+
 =pod
 
 =item	B<-scol>
@@ -637,7 +637,7 @@ Column of the input ile containing the score value (default 1).
 	    &RSAT::error::FatalError($main::col{score}, "Invalid score column. Should be a strictly positive Natural number.") 
 	      unless ((&IsInteger($main::col{score})) && ($main::col{score} > 0));
 
-	    ## Status column
+
 =pod
 
 =item	B<-lcol>
@@ -650,14 +650,13 @@ Column of the input file containing the status label (default 2).
 	    &RSAT::error::FatalError($main::col{score}, "Invalid score column. Should be a strictly positive Natural number.") 
 	      unless ((&IsInteger($main::col{score})) && ($main::col{score} > 0));
 
-	    ## Status renaming
+
 =pod
 
 =item	B<-status>
 
 This option allows to use different labels as synonyms for the
-pre-defined status (neg and pos). 
-
+pre-defined status (neg and pos).
 
 By default, two labels are accepted in the status column.
 
@@ -749,14 +748,14 @@ considered element.
 	    &RSAT::error::FatalError($old_status, "Invalid status label. Cannot be renamed.");
 	  }
 
-	    ## Manually enter the total number of elemens
+
 =pod
 
 =item	B<-total #>
 
 Total number of elements in the universe (neg + pos). This option
 allows to manually specify the total number of elements, in case the
-input file would not contain the complete data set. 
+input file would not contain the complete data set.
 
 A typical example is when roc-stats2 is used to analyze the output of
 compare-graphs: the graph comparison returns the intersection and the
