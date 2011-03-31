@@ -37,6 +37,7 @@ $checked{$default{pseudo_prior}} = "CHECKED";
 $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{decimals} = "1";
+$default{n_score} = "score";
 $default{crer_ids} = "";
 
 ## Return fields
@@ -216,6 +217,14 @@ print $query->popup_menu(-name=>'decimals',
 			 -Values=>['0',
 				   '1','2'],
 			 -default=>$default{decimals});
+
+################################################################
+#### decimals
+print "&nbsp;"x2,  "<A HREF='help.matrix-scan.html'><B>handling of N characters</B></A>\n";
+print $query->popup_menu(-name=>'n_score',
+			 -Values=>['score',
+				   'skip'],
+			 -default=>$default{n_score});
 
 
 ################################################################
