@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.58 2011/03/24 10:51:47 jvanheld Exp $
+# $Id: footprint-discovery,v 1.59 2011/03/31 16:24:10 jvanheld Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.58 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.59 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -224,7 +224,7 @@ package main;
   local $dyad_return_fields = "occ,proba,rank";	## Default return fields for dyad-analysis
   local @dyad_return_fields = (); ## User-specified return fields for dyad-analysis
 
-  local %index_list = (); ## List of index files (there can be several indexes with the option -sep_genes)
+  local %index_report_per_query = (); ## List of index files (there can be several indexes with the option -sep_genes)
   local $verbose = 0;		## Verbosity
   local $noov = "-noov";     ## Treatment of self-overlapping patterns
   local $filter = 1; ## Only report dyads present in the query promoter
@@ -420,9 +420,9 @@ package main;
   if ($main::verbose >= 2) {
     print ("; Index files\n");
     my $i = 0;
-    foreach my $key (sort keys %index_list) {
+    foreach my $key (sort keys %index_report_per_query) {
       $i++;
-      print join ("\t", ";", $key, $index_list{$key}), "\n";
+      print join ("\t", ";", $key, $index_report_per_query{$key}), "\n";
       if ($i > 10) {
 	print join ("\t", "; ... skipping other gene-wise index files"), "\n";
 	last;
@@ -509,7 +509,7 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Open the file to store the HTML index
-  &OpenIndex("footprint-discovery");
+  &OpenQueryReport("footprint-discovery");
 
   ################################################################
   ## Print query genes in the gene file
