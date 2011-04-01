@@ -37,6 +37,7 @@ sub GetProgramPath {
     foreach my $dir (@rsat_path) {
       my $possible_path = $dir."/".$program_name;
       $possible_path =~ s|/+|/|g;
+#      &RSAT::message::Debug("GetProgramPath()", "testing", $program_name, $possible_path) if ($main::verbose >= 10);
       if (-e $possible_path) {
 	## If the RSAT property file contains a RSAT_BIN, use it as
 	## preferred path
