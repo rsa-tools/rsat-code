@@ -1307,7 +1307,7 @@ sub OrthoScan {
     $cmd .= " -return limits,sites,rank";
     $cmd .= " -i ".$outfile{seq};
     $cmd .= " -o ".$outfile{sites};
-    $cmd .= " ".$scan_opt;
+    $cmd .= " ".$scan_opt; #Default -uth pval 1e-3
     &one_command($cmd);
   }
   &IndexOneFile("sites", $outfile{sites});
