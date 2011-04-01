@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.65 2011/04/01 14:20:25 amedina Exp $
+# $Id: footprint-scan,v 1.66 2011/04/01 16:38:29 jvanheld Exp $
 #
 ############################################################
 
@@ -317,7 +317,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.65 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.66 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -362,8 +362,7 @@ package main;
   local $scan_opt = $pvalue_th;
 
   ## Featur maps
-  my $feture_map_options="  -mlen 300  -mspacing  2";
-  local $map_opt = $feture_map_options ;
+  local $map_opt = "";
 
   ## Filter 
   $main::no_purge=0;
@@ -690,7 +689,7 @@ package main;
 	  &RSAT::message::Info("Skipping gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
 	  next;
 	}
-	if (($last > 0) && ($g >= $last)) {
+	if (($last > 0) && ($g > $last)) {
 	  &RSAT::message::Info("Last gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
 	  last;
 	}
