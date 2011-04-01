@@ -1317,17 +1317,18 @@ sub OrthoScan {
 ## Draw a feature map with the detected sites
 sub OrthoMap {
   if ($task{map}) {
+
+    my $title = $m_suffix;
+    $title .= " (".$tf.")" if ($tf);
+    $title .= "; ".$query_prefix." orthologs";
+    $title .= " in ".$org_selection_prefix;
+
     &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 2);
     &CheckDependency("map", "sites");
     my $cmd = "feature-map -i ".$outfile{sites};
     $cmd .= " -scalebar -legend";
-    $cmd .= " -xsize 800 -scorethick -minscore 0";
-    if ($taxon) { 
-      $cmd .= " -title 'matrix hits in ".$taxon." promoters'";
-    }
-    else {
-      $cmd .= " -title 'matrix hits in promoters'";
-    }
+    $cmd .= " -mlen 400 -scorethick -minscore 0 -mspacing 2 -mapthick 16 -minfthick 1";
+    $cmd .= " -title '".$title."'";
     $cmd .= " -format ".$map_format;
     $cmd .= " -o ".$outfile{map};
     $cmd .= " ".$map_opt;
