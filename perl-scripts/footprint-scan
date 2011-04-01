@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.66 2011/04/01 16:38:29 jvanheld Exp $
+# $Id: footprint-scan,v 1.67 2011/04/01 20:20:02 amedina Exp $
 #
 ############################################################
 
@@ -317,7 +317,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.66 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.67 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -795,11 +795,16 @@ package main;
 	  
 	  print $synthesis_index "<tr>\n"; #initialize line
 
-	  print $synthesis_index "<td>".$gene.$html_sep. $gene_sig."</td>"; 
+	  #Gene (link to query index) and columns with information about ocurrence
+	  $file=$query_indexes{$gene}; $file =~ s|${syn_dir}/||g;
+	  print $synthesis_index "<td>"."<a href='", $file, "'>".$gene."</a>";
+	  print $synthesis_index $html_sep. $gene_sig."</td>"; 
 
-
+	  ################
+	  ## Add figures and links to figures and results tables
 	  my $links = "";
 
+	  ##Link to significance file 
 	  if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
 	    my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>"."\n";
@@ -808,17 +813,21 @@ package main;
 # 	      my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
 # 	      print $synthesis_index  "<td>". "<FONT COLOR=\"red\">". join("", " <a href='", $file, "'>[sig]</a>") ."</FONT>"." </td>"."\n";
 # 	  }
+	  ##Link and display to  significance graph 
 	  if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
 	    my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
 	    print $synthesis_index   join("", " <a href='", $file, "'>[sigplot]</a>")." </td>"."\n";
-
 	  }
+
+	  ##Link and Display  frequency plot 
 	  if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
 	    my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>",,"<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
 	    print $synthesis_index   join("", " <a href='", $file, "'>[freqplot]</a>")." </td>"."\n";
 	  }
+
+	  ##Link to feature map
 	  if ((defined($map_file{$gene})) && (-e $map_file{$gene})) {
 	    my $file = $map_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index "<td>".join("", " <a href='", $file, "'>[map]</a>")."</td>"."\n";
@@ -826,7 +835,7 @@ package main;
 	  print $synthesis_index   $gene_info_html_line;
 	  #	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
 
-	  print $synthesis_index "</tr>\n";
+	  print $synthesis_index "</tr>\n"; #finish line
 
 	}
 
@@ -1502,16 +1511,14 @@ sub MatrixReportHeader {
     chomp $occ_sig_header;
    
     my @header_occ_gene=split(/\t/,$occ_sig_header);
-    #die join ("++",@header_occ_gene) ;
     pop (@header_occ_gene); ## Last element is the internal ranking of the occ_sig and is one for all the genes
-     
+
     # $occ_sig_header =~ s/occ_sig_rank//;
 #     $occ_sig_header =~ s/^#//;
     #$occ_sig_header =~ s/occ_sig_rank/gene_rank/; #the rank makes no sense if the $sort_creteria is alphabthic
     
- 
     #Write header for the table
-    print $synthesis_table join("\t", "#gene", @header_occ_gen,@info_fields,"file"), "\n";
+    print $synthesis_table join("\t", "#gene", @header_occ_gene,@info_fields,"file"), "\n";
 
     ################
     ## Initiatie the Html file
@@ -1544,7 +1551,7 @@ sub MatrixReportHeader {
     $occ_sig_header=~s/\t/$html_sep/g;
 
     #Creat the header for the html matrix-wise report
-    my $header_index=join("</th>\n<th>", "<th>gene",  @header_occ_gen, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields,"</th>");
+    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields)."</th>";
     $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";
