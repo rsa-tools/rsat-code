@@ -3882,9 +3882,12 @@ sub makeLogo{
   my $logo_info = $seq_number." sites";
 
   ## Run seqlogo to generate the logo(s)
-  my $seqlogo_path = &RSAT::server::GetProgramPath("seqlogo");
+#  die "HERE"
+#  &RSAT::error::FatalError("BOUM");
+  my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{seqlogo_dir});
+#  my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
+#  &RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 0);
   foreach my $logo_format (@logo_formats){
-#    my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
       &RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path",
