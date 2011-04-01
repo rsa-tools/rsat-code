@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.64 2011/03/31 16:23:35 jvanheld Exp $
+# $Id: footprint-scan,v 1.65 2011/04/01 14:20:25 amedina Exp $
 #
 ############################################################
 
@@ -317,7 +317,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.65 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -358,11 +358,19 @@ package main;
   local %uth = ();
   local $occ_sig_opt = "";
   local $occ_sig_graph_opt = "";
-  local $scan_opt = "";
-  local $map_opt = "";
+  my $pvalue_th=" -uth pval 1e-4 ";
+  local $scan_opt = $pvalue_th;
+
+  ## Featur maps
+  my $feture_map_options="  -mlen 300  -mspacing  2";
+  local $map_opt = $feture_map_options ;
+
+  ## Filter 
   $main::no_purge=0;
   $main::filter=0;
   $main::filter_pval=0;
+
+
   #$bg_format="oligo";
   #  $main::footprint_scan=1;
   ## Local definition of threshold parameters passed to matrix-scan
@@ -438,9 +446,13 @@ package main;
   ## PArameters for matrix-wise report tables
   local $sort_criterion = "sig"; ## Supported: sig | alpha | list;
   local @info_fields = qw(name
-			  descr
-			  upstr_neighb_name
-			 ); #### TO DEBUG: UPSTR_NEIGHB_NAME DOES NOT WORK
+                            upstr_neighb_name 
+                            descr); #### TO DEBUG: UPSTR_NEIGHB_NAME DOES NOT WORK
+  
+  #up_neighb_name
+  #    
+  #    upstr_neighb_id
+
 
   ################################################################
   ## Read argument values
@@ -538,8 +550,7 @@ package main;
   ## Pseudo-frequency for the background model
   $ms_general_parameters .= " -bg_pseudo ".$main::bg_pseudo;
 
-
-
+  
   ## Read table of matrices
   my %matrix_table_hash=();
   if ($main::matrix_table_file) {
@@ -638,14 +649,17 @@ package main;
 	$main::filter = $global_filter;
       };
 
-      ## Reorganize gene list to ensure that TF is added to it
-      @query_gnees_ori = @query_genes;
-      @query_genes = ($tf);
+      ## Reorganize gene list to ensure that TF is not added to it
+      @query_genes_ori = @query_genes;
+      @query_genes = ();
+
+      &RSAT::message::Info("The tf will not be analyzed as a separate gene unless the \'-filter\' option is used") if ($main::verbose >= 3);
       for my $g (0..$#query_genes_ori) {
-	$gene = $query_genes[$g];
+	$gene = $query_genes_ori[$g];
 	push @query_genes, $gene if ((lc($gene) ne lc($tf)) || ($main::filter));
       }
 
+      
       ## Report caught errors
       if ($@) {
 	if ($no_die) {
@@ -713,8 +727,10 @@ package main;
 	## Sort query genes according to user-selected criterion
 	my @sorted_genes = ();
 	if ($sort_criterion eq "sig") {
-	  @sorted_genes = sort {$top_sig{$b} <=> $top_sig{$a}} @query_genes;
+	    &RSAT::message::Info("Sorting genes by ",$sort_criterion," for Matrix-wise synthesis report table and html") if ($main::verbose >=3);
+	    @sorted_genes = sort {$top_sig{$b} <=> $top_sig{$a}} @query_genes;
 
+	  #  join ("\t", (sort {$top_sig{$b} <=> $top_sig{$a}} @query_genes));
 	} elsif ($sort_criterion eq "alpha") {
 	  @sorted_genes = sort @query_genes;
 
@@ -735,12 +751,13 @@ package main;
 	  #shift @gene_info;
 
 	  ## Array containing the fields for the query gene
+	  ## If the field of gene information is not available is substituted by NA
 	  my $feature = $organism->get_feature_for_name($gene);
 	  my @gene_info = ();
 	  foreach my $field (@info_fields) {
 	    my $value = $feature->get_attribute($field);
-	    &RSAT::message::Debug($gene, $feature->get_attribute("id"), $value) if ($main::verbose >= 10);
-	    push @gene_info, $value;
+	    &RSAT::message::Debug($gene, $feature->get_attribute("id"), $value||"NA") if ($main::verbose >= 0);
+	    push @gene_info, $value||"NA";
 	  }
 
 	  my $gene_info_line=join ("\t",@gene_info); #### Line containing the information about the current gene for the table
@@ -750,21 +767,36 @@ package main;
 
 	  ################################################################
 	  ## HTML table with data + figures
-	  ## grep the header of the tab-delmited table for the HTML file
+
+	  ## Grep the header of one of the query genes to use it in the matrix-wise reports: tab-delmited table and HTML file
 	  unless ($occ_sig_header){
 	    &MatrixReportHeader($synthesis_index, $synthesis_table,$occ_sig_file{$gene});
 	    $occ_sig_header=1;
 	  }
 
-	  ## Print the table
-	  print $synthesis_table join("\t", $gene, $top_sig_row{$gene}, $g,$gene_info_line,  $occ_sig_file{$gene} ), "\n";
+	  ### Get the information related to the most significant score per query gene. This information is the first line of the 
+	  ## the occ_sig.tab file
+	  my $gene_sig=$top_sig_row{$gene}; # Query gene significance
 
-	  ## print HTML
-	  print $synthesis_index "<tr>\n";
-	  my $sig_line=$top_sig_row{$gene};
+	
+	 
+	  ################
+	  ## Print gene info and results in the text tab delimited table
+	  #my @gene_table_fields=$gene, $gene_sig, $g,$gene_info_line,  $occ_sig_file{$gene} ;  #the rank ($g) makes no sense if the $sort_creteria is alphabthic
+	  my @gene_table_fields=$gene, $gene_sig, $gene_info_line,  $occ_sig_file{$gene} ;
+	  print $synthesis_table join("\t",@gene_table_field  ), "\n";
+
+	  ################
+	  ## Print query gene information and result in the Matrix-wise HTML report 
+	 
+	  
 	  my $html_sep="<\/td>\n<td>";
-	  $sig_line =~ s/\t+/$html_sep/g;
-	  print $synthesis_index "<td>".$gene.$html_sep. $sig_line.$html_sep. $g."</td>";
+
+	  $gene_sig =~ s/\t+/$html_sep/g; # substitute the tab separator used for the table by the html table separator
+	  
+	  print $synthesis_index "<tr>\n"; #initialize line
+
+	  print $synthesis_index "<td>".$gene.$html_sep. $gene_sig."</td>"; 
 
 
 	  my $links = "";
@@ -772,7 +804,11 @@ package main;
 	  if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
 	    my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>"."\n";
-	  }
+	  } 
+	  # else {
+# 	      my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
+# 	      print $synthesis_index  "<td>". "<FONT COLOR=\"red\">". join("", " <a href='", $file, "'>[sig]</a>") ."</FONT>"." </td>"."\n";
+# 	  }
 	  if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
 	    my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
@@ -812,6 +848,9 @@ package main;
       print $synthesis_index "</body>\n";
       print $synthesis_index "</html>\n";
       close ($synthesis_index);
+       &RSAT::message::Info("Synthesis table for matrix ", $m_suffix, $outfile{$m_suffix."_synthesis_tab"} ) if ($main::verbose >= 1);
+       &RSAT::message::Info("Synthesis html table for matrix ", $m_suffix,   $outfile{$m_suffix."_synthesis_html"} ) if ($main::verbose >= 1);
+      
     }
 
     ################################################################
@@ -1202,6 +1241,8 @@ Scan sequences with an upper threshold of 0.001 on pval.
 Note: the argument passed to matrix-scan is delimited by single
 quotes, and can thus not contain any quote.
 
+Default: By default sites are filtered with a threshodl on p-value on 1e-4
+
 =cut
 
     } elsif ($arg eq "-scan_opt") {
@@ -1224,8 +1265,10 @@ adjustment of map thickness to ensure there is enough space for drawing the
 labels).
 -map_opt  '-label score -mapthick auto'
 
-Note: the argument passed to matrix-scan is delimited by single
+Note: the argument passed to feature-map is delimited by single
 quotes, and can thus not contain any quote.
+
+Default= " -mlen 300  -mspacing  2"
 
 =cut
 
@@ -1444,19 +1487,45 @@ sub OpenSynthesisPerMatrix {
 
 ################################################################
 ## Write the header of the HTML matrix report
+## takes the header of one of the occ_sig tables
+## adds some fields that will be included regarding the information
+## of the genes
+## The table contains the same information as the html, but the html displays also the figures.
+
 sub MatrixReportHeader {
+
+    ################
+    #Grep header from occ_sig file
     ($synthesis_index, $synthesis_table, $occ_one_gene_file) =@_;
+
+    &RSAT::message::TimeWarn("Initializing results report for matrix",$m_suffix) if ($main::verbose >= 5);
     $occ_sig_header = `grep '^#' $occ_one_gene_file`;
     chomp $occ_sig_header;
-    $occ_sig_header =~ s/occ_sig_rank/gene_rank/;
-    $occ_sig_header =~ s/^#//;
-    print $synthesis_table join("\t", "#gene", $occ_sig_header,"name","descr","upstr_neighb_name","file"), "\n";
+   
+    my @header_occ_gene=split(/\t/,$occ_sig_header);
+    #die join ("++",@header_occ_gene) ;
+    pop (@header_occ_gene); ## Last element is the internal ranking of the occ_sig and is one for all the genes
+     
+    # $occ_sig_header =~ s/occ_sig_rank//;
+#     $occ_sig_header =~ s/^#//;
+    #$occ_sig_header =~ s/occ_sig_rank/gene_rank/; #the rank makes no sense if the $sort_creteria is alphabthic
+    
+ 
+    #Write header for the table
+    print $synthesis_table join("\t", "#gene", @header_occ_gen,@info_fields,"file"), "\n";
 
+    ################
+    ## Initiatie the Html file
+
+    ##Title includes information about the parameters used in the program
     print $synthesis_index "<html>\n";
     $html_title = "footprint-scan";
     $html_title .= " ".$taxon if ($taxon);
     $html_title .= " ".$organism_name if ($organism_name);
     $html_title .= " ".$bg_model if ($bg_model);
+     $html_title .= " ".$m_suffix ;
+
+    ## Write style and title
     print $synthesis_index "<head><title>", $html_title , "</title>";
     print $synthesis_index &sorttable_script();
     print $synthesis_index "<style type='text/css'>\n";
@@ -1469,12 +1538,14 @@ sub MatrixReportHeader {
     print $synthesis_index &PrintArguments();
     print $synthesis_index "</p>\n";
 
-    ## Open the index table
+    ## Open the html table
     print $synthesis_index "<p><table class='sortable whitebg' border='0' cellpadding='3' cellspacing='0'>\n";
     print $synthesis_index "<tr>\n";
      my $html_sep="<\/th>\n<th>";
     $occ_sig_header=~s/\t/$html_sep/g;
-    my $header_index=join("</th>\n<th>", "<th>gene", $occ_sig_header, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", "name","descr","upstr_neighb_name</th>");
+
+    #Creat the header for the html matrix-wise report
+    my $header_index=join("</th>\n<th>", "<th>gene",  @header_occ_gen, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields,"</th>");
     $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";
