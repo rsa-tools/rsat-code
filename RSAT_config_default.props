@@ -147,8 +147,8 @@ tomcat_port=
 ## Those programs are not necessary for running RSAT commands, but
 ## provide useful complements.
 
-## seqlogo, program to draw sequence logos
-seqlogo=[your_path_to_rsat]/rsa-tools/bin/seqlogo
+## seqlogo, program to draw sequence logos used by convert-matrix
+seqlogo_dir=[parent_path_of_weblogo]/weblogo/
 
 ## MEME, motif discovery program developed by Tim Bailey
 # meme_dir=/rsat/applications/meme.3.0.5/
