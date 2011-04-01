@@ -855,6 +855,7 @@ result files.
 sub OpenQueryReport {
   my ($program_name) = @_;
   $outfile{index} = $outfile{prefix}."_index.html";
+  $query_indexes{$current_gene}= $outfile{prefix}."_index.html";
   my $outfile_prefix = $dir{query_prefix};
   $index_report_per_query{$outfile_prefix} = $outfile{index};
   $index = &OpenOutputFile($outfile{index});
