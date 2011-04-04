@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.67 2011/04/01 20:20:02 amedina Exp $
+# $Id: footprint-scan,v 1.68 2011/04/04 09:03:56 amedina Exp $
 #
 ############################################################
 
@@ -317,7 +317,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.67 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.68 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -368,7 +368,7 @@ package main;
   $main::no_purge=0;
   $main::filter=0;
   $main::filter_pval=0;
-
+ # %occ_sig_file=()
 
   #$bg_format="oligo";
   #  $main::footprint_scan=1;
@@ -612,6 +612,12 @@ package main;
 
   ################################################################
   ## Iterate over matrices and genes
+
+  ################
+  ## Open Matrices report
+
+  &OpenMatricesReport() if ($task{synthesis});
+
   &RSAT::message::TimeWarn("Starting analysis") if ($main::verbose >= 2);
 
   my $m = 0;			## Matrix counter
@@ -630,7 +636,8 @@ package main;
     $ms_parameters .= " -matrix_format ".$matrix_format;
 
     ## Matrix suffix
-    &RSAT::error::FatalError("You must specify a matrix suffix (option -matrix_suffix or second colm in -matrix_table file)") unless (defined($m_suffix));
+    &RSAT::error::FatalError("You must specify a matrix suffix (option -matrix_suffix or second colm in -matrix_table file)")
+	unless (defined($m_suffix));
     $m_suffix.= "_infer-operons" if ($infer_operons);
     &RSAT::message::TimeWarn("Analyzing matrix", $m."/".$matrix_nb) if ($main::verbose >= 1);
 
@@ -669,7 +676,9 @@ package main;
 	  &RSAT::error::FatalError($@);
 	}
       }
-      &RSAT::error::FatalError("There were no organisms with an ortholog for the specified TF") unless (-s $main::tf_ortho_file );
+      if ($task{orthologs}){
+	  &RSAT::error::FatalError("There were no organisms with an ortholog for the specified TF") unless(-s $main::tf_ortho_file );
+      }
     }
 
     ################################################################
@@ -782,9 +791,9 @@ package main;
 	  ################
 	  ## Print gene info and results in the text tab delimited table
 	  #my @gene_table_fields=$gene, $gene_sig, $g,$gene_info_line,  $occ_sig_file{$gene} ;  #the rank ($g) makes no sense if the $sort_creteria is alphabthic
-	  my @gene_table_fields=$gene, $gene_sig, $gene_info_line,  $occ_sig_file{$gene} ;
-	  print $synthesis_table join("\t",@gene_table_field  ), "\n";
-
+	  my @gene_table_fields=($gene, $gene_sig, $gene_info_line,  $occ_sig_file{$gene}) ;
+	  print  $synthesis_table join("\t",@gene_table_fields  ). "\n";
+	  
 	  ################
 	  ## Print query gene information and result in the Matrix-wise HTML report 
 	 
@@ -836,7 +845,7 @@ package main;
 	  #	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
 
 	  print $synthesis_index "</tr>\n"; #finish line
-
+   
 	}
 
 
@@ -856,8 +865,8 @@ package main;
       print $synthesis_index "</body>\n";
       print $synthesis_index "</html>\n";
       close ($synthesis_index);
-       &RSAT::message::Info("Synthesis table for matrix ", $m_suffix, $outfile{$m_suffix."_synthesis_tab"} ) if ($main::verbose >= 1);
-       &RSAT::message::Info("Synthesis html table for matrix ", $m_suffix,   $outfile{$m_suffix."_synthesis_html"} ) if ($main::verbose >= 1);
+       &RSAT::message::Info("Synthesis table for matrix ",  $outfile{$m_suffix."_synthesis_tab"} ) if ($main::verbose >= 1);
+       &RSAT::message::Info("Synthesis html table for matrix ",  $outfile{$m_suffix."_synthesis_html"} ) if ($main::verbose >= 1);
       
     }
 
@@ -870,8 +879,17 @@ package main;
 	print join ("\t", ";", $key, $index_report_per_query{$key}), "\n";
       }
     }
+
+    ################################################################
+    ## Print information for each matrix in the Matrices Report
+    &AddOneMatrixToMatricesReport($m_suffix);
+
   }				## close matrices cycle
 
+  ################################################################
+  ## Close the general report for all matrices
+
+  &CloseMatricesReport();
 
   ################################################################
   ## Print verbose
@@ -1402,6 +1420,8 @@ sub RunFootprintScan {
 
   ################################################################
   ## Identify ortholog genes
+  
+ 
   &GetOrthologs();
 
   ## only for the $tf option
@@ -1525,12 +1545,12 @@ sub MatrixReportHeader {
 
     ##Title includes information about the parameters used in the program
     print $synthesis_index "<html>\n";
-    $html_title = "footprint-scan";
+    my $html_title = "footprint-scan";
     $html_title .= " ".$taxon if ($taxon);
     $html_title .= " ".$organism_name if ($organism_name);
     $html_title .= " ".$bg_model if ($bg_model);
-     $html_title .= " ".$m_suffix ;
-
+    $html_title .= " ".$m_suffix ;
+    
     ## Write style and title
     print $synthesis_index "<head><title>", $html_title , "</title>";
     print $synthesis_index &sorttable_script();
@@ -1539,7 +1559,7 @@ sub MatrixReportHeader {
     print $synthesis_index  "</style>\n";
     print $synthesis_index "</head>\n";
     print $synthesis_index "<body>\n";
-    print $synthesis_index "<h1>". $html_title ." - ". $m_suffix."</h1\n";
+    print $synthesis_index "<h1>". $html_title ."</h1\n";
     print $synthesis_index "<p><b>Command:</b> footprint-scan";
     print $synthesis_index &PrintArguments();
     print $synthesis_index "</p>\n";
@@ -1555,6 +1575,119 @@ sub MatrixReportHeader {
     $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";
+}
+
+################################################################
+##Open report for matrices
+
+sub OpenMatricesReport{
+
+    ################
+    ## Check Dir and open html and synthesis table
+    $dir{matrices_synthesis} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name);
+    &RSAT::util::CheckOutDir($dir{matrices_synthesis});
+    $prefix{"all_matrices_synthesis"} = join( "/",$dir{matrices_synthesis},"matrices_result_synthesis");
+    $outfile{"all_matrices_synthesis_tab"} =  $prefix{"all_matrices_synthesis"}.".tab";
+    $outfile{"all_matrices_synthesis_html"} =  $prefix{"all_matrices_synthesis"}.".html";
+    &RSAT::message::Info("Synthesis text and html table for all matrices",  $prefix{"all_matrices_synthesis"} )if ($main::verbose>=1) ;
+
+    ##Open files
+    my $matrices_synthesis_index = &OpenOutputFile($outfile{"all_matrices_synthesis_html"});
+    my $matrices_synthesis_table = &OpenOutputFile($outfile{"all_matrices_synthesis_tab"}  );
+
+    ################
+    ## Write header for Matrices Report table
+    
+    my @header_matrices ="MatrixID";
+    push(@header_matricesm,"TFname") if ($tf);
+    @header_matrices =(@header_matrices,"TF","report","IUPAC","num_regulated_genes");
+
+
+    print $matrices_synthesis_table join("\t",@header_matrices), "\n";
+
+    ################
+    ## Header and Style for HTML matrices report 
+    ##Title includes information about the parameters used in the program
+    print $matrices_synthesis_index "<html>\n";
+    my $html_title = "footprint-scan";
+    $html_title .= " ".$taxon if ($taxon);
+    $html_title .= " ".$organism_name if ($organism_name);
+    $html_title .= " ".$bg_model if ($bg_model);
+    $html_title .= " -  Matrices Report " ;
+
+    ## Write style and title
+    print $matrices_synthesis_index "<head><title>", $html_title , "</title>";
+    print $matrices_synthesis_index &sorttable_script();
+    print $matrices_synthesis_index "<style type='text/css'>\n";
+    print $matrices_synthesis_index  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+    print $matrices_synthesis_index  "</style>\n";
+    print $matrices_synthesis_index "</head>\n";
+    print $matrices_synthesis_index "<body>\n";
+    print $matrices_synthesis_index "<h1>". $html_title ."</h1\n";
+    print $matrices_synthesis_index "<p><b>Command:</b> footprint-scan";
+    print $matrices_synthesis_index &PrintArguments();
+    print $matrices_synthesis_index "</p>\n";
+
+    ## Open the html table
+    print $matrices_synthesis_index "<p><table class='sortable whitebg' border='0' cellpadding='3' cellspacing='0'>\n";
+    print $matrices_synthesis_index "<tr>\n";
+    my $html_sep="<\/th>\n<th>";
+    my $header_index="<th>".join($html_sep,@header_matrices)."</th>";
+    $header_index .= "\n";
+    print $matrices_synthesis_index $header_index;
+    print $matrices_synthesis_index "</tr>\n";
+    
+    
+}
+sub AddOneMatrixToMatricesReport{
+    my $msuf=@_; # Matrix suffix
+    &RSAT::message::Info("Adding information for matrix", $msuf, " to the matrices report " ) if ($main::verbose >= 1);
+    my $m_file=$matrix_table_hash{$m_suffix}{"file"} ; # Matrix file
+    my $m_tf=$matrix_table_hash{$m_suffix}{"tf"} ; # Matrix tf
+    my $m_format=$matrix_table_hash{$m_suffix}{"format"} ; # Matrix format
+    my $m_report=$outfile{$m_suffix."_synthesis_html"}; #Matrix report
+
+    
+    @motifs = &RSAT::MatrixReader::readFromFile($m_file, $m_format);
+    
+    my $motif_nb = scalar(@motifs);
+    
+    &RSAT::message::Debugg("Reading information for matrix  ", $msuf , "Matrices in file", $msuf) if ($main::verbose >= 1);
+
+    foreach my $matrix (@motifs) {
+      my $motif_id = $matrix->get_attribute("id");
+      &SetFileNamesForMotif($motif_id);
+      ## We compute the consensus and logos here with the same background model as used for sequence scanning
+      $matrix->calcConsensus();
+      my $consensus = $matrix->get_attribute("consensus.IUPAC");
+      my $colored_consensus = &ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+     $consensus_for_html.=  "<span class='menulink'><a href='#discovered_motifs_".$mot."'>Motif ".$mot."</a></span>: <a href='".$link."'>[matrix]</a> ".$colored_consensus."<br/> ";
+    }
+    my $html_sep="<\/th>\n<th>";
+    
+    #Creat the header for the html matrix-wise report
+    my $header_index="<td>".join("</td>\n<td>",  @)."</td>";
+        print $synthesis_index "</tr>\n"; #finish line
+
+}
+sub CloseMatricesReport{
+    
+    
+    print $matrices_synthesis_index  "</table>\n";
+    print $matrices_synthesis_index  "<p><pre>", $exec_time, "</pre></p>\n";
+    print $matrices_synthesis_index  "</body>\n";
+    print $matrices_synthesis_index  "</html>\n";
+
+    &RSAT::message::Info("Report table for matrices  ",  $outfile{"all_matrices_synthesis_tab"} ) if ($main::verbose >= 1);
+    &RSAT::message::Info("Report HTML table for matrices ", $outfile{"all_matrices_synthesis_html"} ) if ($main::verbose >= 1);
+      
+
+
+    ################
+    ## Close Matrices report html and table
+    close $matrices_synthesis_index ;
+    close $matrices_synthesis_table ;
+
 }
 
 
