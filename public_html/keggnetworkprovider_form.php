@@ -119,7 +119,7 @@
   <br>
   <br>
     <table>
-         <tr><td><B>Directed network</B><input type='checkbox' name='directed' value='on'></input></td></tr>
+         <tr><td><B>Directed network</B><input type='checkbox' name='directed' value='on' checked></input></td></tr>
          ");
          if($demo == 2){
           echo("
