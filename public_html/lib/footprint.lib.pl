@@ -1250,7 +1250,7 @@ sub OccurrenceSigGraph {
       $cmd .= " -hline violet 0 "; #line showing the significance zero line.
       $cmd .= " -vline violet 0 " ; # line showing the score zero value 
 
-      #Calculate the positive score wirh maximal significance
+      #Calculate the positive score with maximal significance
       my $tab="\t";
       my $new_line="\n"; 
       my $top_sig_cmd = "grep -v '^;' $outfile{occ_sig} | grep -v '^#' | perl -ane 'if(\$F[1]>0) {print join(\"\t\",\@F).\"\n\" }' | head -n 1";
