@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.69 2011/04/04 16:08:14 amedina Exp $
+# $Id: footprint-scan,v 1.70 2011/04/04 18:39:34 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.69 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.70 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -744,7 +744,7 @@ package main;
 	my $occ_sig_header = "";
 
 	##Index also de TFm tf will be included on the list if it was not done before
-	push (@query_genes,$tf) if ($main::tf && !$main::filter);
+	push (@query_genes,$tf) if ($main::tf && !$main::filter && !$main::all_genes);
 
 	## Sort query genes according to user-selected criterion
 	my @sorted_genes = ();
@@ -899,7 +899,7 @@ package main;
     	&AddOneMatrixToMatricesReport($m_suffix,$matrix_file,$matrix_format,$outfile{$m_suffix."_synthesis_html"},($tf||0),$matrices_synthesis_index,$matrices_synthesis_table );
     }
     	##Get the actual tf form the list before procesing the next tf
-    pop (@query_genes) if ($main::tf && !$main::filter);
+    pop (@query_genes) if  ($main::tf && !$main::filter && !$main::all_genes);;
 
   }				## close matrices cycle
 
