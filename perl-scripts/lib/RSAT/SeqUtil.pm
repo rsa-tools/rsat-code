@@ -150,6 +150,70 @@ sub ReverseComplement {
 }# ReverseComplement
 
 
+################################################################
+=pod
+
+=item B<ColorConsensus>
+
+Colorize a consensus with same colors as sequence logos
+
+Usage: my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($IUPAC_consensus);
+
+=cut
+
+sub ColorConsensus {
+  my ($consensus, %args) = @_;
+  my $color_consensus = "";
+  my %color = (
+	       ## Nucleotides
+	       A=>'#00CC00',
+	       C=>'#0000DD',
+	       G=>'#FFBB00',
+	       T=>'#DD0000',
+
+	       other=>'#888888',
+	      );
+
+
+  if ($args{iupac}) {
+    ## Two-nucleotide IUPAC
+#    $color{K} = '#FF6600';
+#    $color{W} = '#BB8800';
+#    $color{R} = '#88BB00';
+#    $color{S} = '#6688DD';
+#    $color{Y} = '#880088';
+
+    $color{K} = '#CC5500';
+    $color{W} = '#884400';
+    $color{R} = '#666600';
+    $color{S} = '#4466BB';
+    $color{Y} = '#660066';
+  }
+
+  ## Case-insensitive coloring
+  foreach my $letter (keys %color) {
+    $color{lc($letter)} = $color{$letter};
+  }
+
+  $color_consensus = "<b>"if ($args{bold});
+  foreach my $l (0..length($consensus)) {
+    my $letter = substr($consensus, $l, 1);
+    my $color;
+    if (defined($color{$letter})) {
+      $color = $color{$letter};
+    } else {
+      $color = $color{other};
+    }
+    $color_consensus .= "<span style='font-family: courier, sans-serif; font-weight:bold ; font-size: 14px; color:".$color."'>";
+    $color_consensus .= $letter;
+    $color_consensus .= "</span>";
+  }
+  $color_consensus .= "</b>"if ($args{bold});
+  return $color_consensus;
+}
+
+
+
 return 1;
 
 __END__
