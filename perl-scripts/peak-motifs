@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.179 2011/03/22 08:26:25 jvanheld Exp $
+# $Id: peak-motifs,v 1.180 2011/04/04 12:45:29 amedina Exp $
 #
 ############################################################
 
@@ -94,6 +94,7 @@ require "RSA.disco.lib";
 require "footprint.lib.pl";
 use RSAT::util;
 use RSAT::MatrixReader;
+use RSAT::SeqUtil;
 use Data::Dumper;
 use File::Basename;
 
@@ -112,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.179 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.180 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2295,7 +2296,7 @@ sub ResultTOC {
     my $motif_id= $matrix->get_attribute("id");
     my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id."_tf"});
     my $consensus = $matrix->get_attribute("consensus.IUPAC");
-    my $colored_consensus = &ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+    my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
     $result_toc .=  "<span class='menulink'><a href='#discovered_motifs_".$mot."'>Motif ".$mot."</a></span>: <a href='".$link."'>[matrix]</a> ".$colored_consensus."<br/> ";
     if ($mot == 5) {
     	$result_toc .=  " </td> ";
@@ -2319,58 +2320,6 @@ sub ResultTOC {
   return($result_toc);
 }
 
-################################################################
-## Colorize a consensus with same colors as sequence logos
-sub ColorConsensus {
-  my ($consensus, %args) = @_;
-  my $color_consensus = "";
-  my %color = (
-	       ## Nucleotides
-	       A=>'#00CC00',
-	       C=>'#0000DD',
-	       G=>'#FFBB00',
-	       T=>'#DD0000',
-
-	       other=>'#888888',
-	      );
-
-
-  if ($args{iupac}) {
-    ## Two-nucleotide IUPAC
-#    $color{K} = '#FF6600';
-#    $color{W} = '#BB8800';
-#    $color{R} = '#88BB00';
-#    $color{S} = '#6688DD';
-#    $color{Y} = '#880088';
-
-    $color{K} = '#CC5500';
-    $color{W} = '#884400';
-    $color{R} = '#666600';
-    $color{S} = '#4466BB';
-    $color{Y} = '#660066';
-  }
-
-  ## Case-insensitive coloring
-  foreach my $letter (keys %color) {
-    $color{lc($letter)} = $color{$letter};
-  }
-
-  $color_consensus = "<b>"if ($args{bold});
-  foreach my $l (0..length($consensus)) {
-    my $letter = substr($consensus, $l, 1);
-    my $color;
-    if (defined($color{$letter})) {
-      $color = $color{$letter};
-    } else {
-      $color = $color{other};
-    }
-    $color_consensus .= "<span style='font-family: courier, sans-serif; font-weight:bold ; font-size: 14px; color:".$color."'>";
-    $color_consensus .= $letter;
-    $color_consensus .= "</span>";
-  }
-  $color_consensus .= "</b>"if ($args{bold});
-  return $color_consensus;
-}
 
 
 ################################################################
@@ -2437,7 +2386,7 @@ sub SynthesisOneMotifComparison {
 	my $column = $col_index{$field};
 	$value = $fields[$column];
 	if ($field =~ /^consensus/) {
-	  $value = &ColorConsensus($value, bold=>1, iupac=>$main::param{iupac_coloring});
+	  $value = &RSAT::SeqUtil::ColorConsensus($value, bold=>1, iupac=>$main::param{iupac_coloring});
 	}
       }
       $db_match_table .= "<td>".$value."</td>\n";
@@ -2503,9 +2452,9 @@ sub SynthesisByMotif {
     ## We compute the consensus and logos here with the same background model as used for sequence scanning
 #    $matrix->calcConsensus();
     my $consensus = $matrix->get_attribute("consensus.IUPAC");
-    my $colored_consensus = &ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+    my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
     my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
-    my $colored_consensus_rc = &ColorConsensus($consensus_rc,bold=>1, iupac=>$main::param{iupac_coloring});
+    my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc,bold=>1, iupac=>$main::param{iupac_coloring});
 
     ## Compute matrix logos
     $matrix->makeLogo($main::prefix{$motif_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
