@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.62 2011/04/05 14:00:51 rsat Exp $
+# $Id: get-orthologs,v 1.63 2011/04/05 17:26:56 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -250,6 +250,7 @@ package main;
   ##open orglist
   if ($main::orglist_file) {
     ($main::orglist) = &OpenInputFile($main::orglist_file);
+    &RSAT::message::Info ("Reading list of organisms form file", $main::orglist_file ) if ($main::verbose > 1);
     while (<$main::orglist>) {
       chomp();
       s/\r/\n/g;	  ## Suppress Windows-specific carriage return
@@ -276,7 +277,7 @@ package main;
   foreach my $org (keys (%supported_organism)) {
     if (%main::query_orgs) {
       if ($main::query_orgs{$org}) {
-	push @ref_organisms, $org;
+	push @main::ref_organisms, $org;
       }
     } elsif ($main::ref_taxon) {
       my $taxonomy = $supported_organism{$org}->{"taxonomy"};
@@ -286,7 +287,7 @@ package main;
         my $taxon_wt_underscore = $ref_taxon;
         $taxon_wt_underscore =~ s/_/ /;
 	if (lc($taxon) eq lc($ref_taxon) || lc($taxon) eq lc($taxon_wt_underscore)) {
-	  push @ref_organisms, $org;
+	  push @main::ref_organisms, $org;
 	}
       }
     }
@@ -555,6 +556,7 @@ package main;
       foreach my $org (@ordered_ref_organisms) {
 	if ($bbh->{$query_gene}->{$org}) {
 	  foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
+	      ##When option -rand is used still of taking the corresponding othologous gene of the orgnaism a randome gene is selected.
 	      if($main::rand){
 		  &RSAT::message::Warning("Selecting random gene from ", $org ) if($main::rand && ($main::verbose>=2)) ;				   
 		   my $cmd = "$SCRIPTS/random-genes -org ". $org ;		   
