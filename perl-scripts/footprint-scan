@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.71 2011/04/05 14:42:57 amedina Exp $
+# $Id: footprint-scan,v 1.72 2011/04/05 17:27:26 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.71 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -649,6 +649,9 @@ package main;
     local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
     local $tf=$matrix_table_hash{$m_suffix}{"tf"} if ($matrix_table_hash{$m_suffix}{"tf"}) ;
     &RSAT::error::FatalError("Matrix file $matrix_file does not exist. Matrix file is mandatory.")  unless (-e $matrix_file) ;
+
+    ## Initialize variable that keeps the current file with othorlogs for the current TF
+    $main::tf_ortho_file=() if $tf;
 
     ################  TO DO
     ## Obtain the score related to the threshold p-value for selecting the recovered interactions
