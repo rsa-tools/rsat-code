@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.61 2011/03/25 13:53:09 jvanheld Exp $
+# $Id: get-orthologs,v 1.62 2011/04/05 14:00:51 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -283,7 +283,9 @@ package main;
       my @taxa = split( /;\s*/, $taxonomy);
       push @taxa, $org;     
       foreach my $taxon (@taxa) {
-	if (lc($taxon) eq lc($ref_taxon)) {
+        my $taxon_wt_underscore = $ref_taxon;
+        $taxon_wt_underscore =~ s/_/ /;
+	if (lc($taxon) eq lc($ref_taxon) || lc($taxon) eq lc($taxon_wt_underscore)) {
 	  push @ref_organisms, $org;
 	}
       }
