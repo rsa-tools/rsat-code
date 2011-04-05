@@ -106,10 +106,7 @@ sub SelectReferenceOrganisms {
   ## Define a prefix indicating the type of organism selection
   ## rand indicates when a randome selections of genes instead of the othrolog genes is being selectected
   $main::org_selection_prefix="";
-  if($main::rand){
-   $main::org_selection_prefix="orthologs_randome_selection";
-  }
-  elsif ($taxon){
+  if ($taxon){
       $main::org_selection_prefix=$taxon;
   }
   elsif ($main::orglist_file){
@@ -118,7 +115,9 @@ sub SelectReferenceOrganisms {
   elsif ($main::orthologs_list_file){
       $main::org_selection_prefix="orthologs_list";
   }
-
+  
+  $main::org_selection_prefix.="_orthologs_randome_selection"     if($main::rand);
+  
 
   return @ref_organisms;
 }
