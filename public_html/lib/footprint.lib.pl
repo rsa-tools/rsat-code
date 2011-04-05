@@ -104,8 +104,12 @@ sub SelectReferenceOrganisms {
 
   ################################################################
   ## Define a prefix indicating the type of organism selection
+  ## rand indicates when a randome selections of genes instead of the othrolog genes is being selectected
   $main::org_selection_prefix="";
-  if ($taxon){
+  if($main::rand){
+   $main::org_selection_prefix="orthologs_randome_selection";
+  }
+  elsif ($taxon){
       $main::org_selection_prefix=$taxon;
   }
   elsif ($main::orglist_file){
@@ -277,8 +281,12 @@ sub GetOutfilePrefix {
   ## Create the query-specific sub-directory
   my $query_prefix = &GetQueryPrefix();
  
-  $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name,$m_suffix, $query_prefix);
+  if($m_suffix){
+      $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name,$m_suffix, $query_prefix);
+  }else{
+      $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name, $query_prefix);
 
+  }
   &RSAT::util::CheckOutDir($dir{output_per_query});
 
   ## Compute a query-specific file prefix including the main parameters
@@ -294,6 +302,7 @@ sub GetOutfilePrefix {
     $outfile_prefix .= "_operons";
   }
   $outfile{prefix} = join("/", $dir{output_per_query}, $outfile_prefix);
+  $outfile{prefix} .= "_rand" if ($main::rand);
   &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 4);
 
   &RSAT::message::Info("&GetOutfilePrefix()", 
@@ -1091,7 +1100,13 @@ sub GetOrthologs {
     $cmd .= " -uth e_value 1e-05";
     $cmd .= " -return e_value";
     $cmd .= " -only_blast";	## only use genome having blast files
+
+    $cmd .= " -rand " if ($main::rand);
+
+
     $cmd .= " -o ".$outfile{orthologs};
+
+    
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
