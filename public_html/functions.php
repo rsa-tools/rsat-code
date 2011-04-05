@@ -174,7 +174,9 @@ Function load_props($props) {
    $line = trim($lines[$y]);
    if (!preg_match("/^\#/", $line)) {
      $property = explode('=', $line);
-     $prop_array[$property[0]] = $property[1];
+     if (isset($property[1])) {
+       $prop_array[$property[0]] = $property[1];
+     }
    }
   }
   return $prop_array;
@@ -189,21 +191,21 @@ Function load_props($props) {
 
   # LOAD PROPERTIES
   $properties = load_props($rsat_main."/RSAT_config.props");
-  $tmp = $properties[rsat_tmp];
-  $WWW_RSA = $properties[rsat_www];
-  $log_name = $properties[rsat_site];
+  $tmp = $properties['rsat_tmp'];
+  $WWW_RSA = $properties['rsat_www'];
+  $log_name = $properties['rsat_site'];
   date_default_timezone_set("Europe/Paris");
-  $neat_wsdl = $properties[neat_ws];
-  $neat_www_root = $properties[neat_www_root];
+  $neat_wsdl = $properties['neat_ws'];
+  $neat_www_root = $properties['neat_www_root'];
   # Karoline: property neat_java_host not required for me, just need the host name here
   # in future: obtain host from url address
   # $scheme = parse_url($WWW_RSA,PHP_URL_SCHEME);
   # $host = parse_url($WWW_RSA,PHP_URL_HOST);
   # $neat_java_host = $scheme."://".$host;
   # for the moment: java tools run only on ulb host
-  $neat_java_host = $properties[neat_java_host];
+  $neat_java_host = $properties['neat_java_host'];
   # host may include tomcat port
-  $tomcat_port = $properties[tomcat_port];
+  $tomcat_port = $properties['tomcat_port'];
   if(strcmp($tomcat_port,"") != 0){
   	  $neat_java_host = $neat_java_host . ":" . $tomcat_port;
   }
