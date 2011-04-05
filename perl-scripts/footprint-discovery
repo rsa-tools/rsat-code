@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.59 2011/03/31 16:24:10 jvanheld Exp $
+# $Id: footprint-discovery,v 1.60 2011/04/05 14:00:51 rsat Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.59 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.60 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -224,11 +224,12 @@ package main;
   local $dyad_return_fields = "occ,proba,rank";	## Default return fields for dyad-analysis
   local @dyad_return_fields = (); ## User-specified return fields for dyad-analysis
 
-  local %index_report_per_query = (); ## List of index files (there can be several indexes with the option -sep_genes)
+  local %index_list = (); ## List of index files (there can be several indexes with the option -sep_genes)
   local $verbose = 0;		## Verbosity
   local $noov = "-noov";     ## Treatment of self-overlapping patterns
   local $filter = 1; ## Only report dyads present in the query promoter
   local $bg_model = "taxfreq"; ## Background model for pattern discovery (Supported:taxfreq or monads)
+  local $bgfile = 0;
   local $to_matrix = 0;		## Convert assembled dyads into PSSM
   local %lth = (occ=>1,occ_sig=>0); ## Lower thresholds
   local %uth = (rank=>50);	    ## Upper thresholds
@@ -262,6 +263,7 @@ package main;
 			    monads
 			    taxfreq
 			    org_list
+			    file
 			   );
   $supported_bg_models = join (",", @supported_bg_models);
   %supported_bg_model = ();
@@ -317,8 +319,14 @@ package main;
   ##Bg model for orthologs_list is monad
   $bg_model = "monad" if  $main::orthologs_list_file ;
 
+
   ## Background model file for dyad-analysis
-  if ($bg_model eq "org_list") {
+  
+  if ($bg_model eq "file") {
+    &RSAT::error::FatalError("The option '-bg_model file' requires to specify a file with the option '-bgfile'")
+      unless ($bgfile);
+      $infile{bg_model} = $bgfile;
+  } elsif ($bg_model eq "org_list") {
 
     ## Check that the list of organisms has been specified
     &RSAT::error::FatalError("The option '-bg_model org_list' requires to specify a list of organisms with the option '-org_list org_list_file'")
@@ -365,6 +373,7 @@ package main;
     unless ((-e $infile{bg_model}) ||
 	    (-e ($infile{bg_model}.".gz"))) {
 
+
       ## Store the background model in the parent directory of the query sub-directories
       $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
       &RSAT::util::CheckOutDir($dir{bg_model});
@@ -385,6 +394,8 @@ package main;
     }
     &RSAT::message::Info("Background model file", $infile{bg_model}) if ($main::verbose >= 3);
   }
+
+
 
   ################################################################
   ## Analyze query genes separately or altogether
@@ -420,9 +431,9 @@ package main;
   if ($main::verbose >= 2) {
     print ("; Index files\n");
     my $i = 0;
-    foreach my $key (sort keys %index_report_per_query) {
+    foreach my $key (sort keys %index_list) {
       $i++;
-      print join ("\t", ";", $key, $index_report_per_query{$key}), "\n";
+      print join ("\t", ";", $key, $index_list{$key}), "\n";
       if ($i > 10) {
 	print join ("\t", "; ... skipping other gene-wise index files"), "\n";
 	last;
@@ -755,7 +766,7 @@ is large and if there are many assemblies.
 	    ## Background model
 =pod
 
-=item B<-bg_model taxfreq|org_list|monads>
+=item B<-bg_model taxfreq|org_list|monads|file>
 
 Allow the user to choose among alternative background model (see Janky
 & van Helden, 2008).
@@ -788,12 +799,31 @@ Expected dyad frequencies are computed by summing the frequencies of
 all dyads in the non-coding upstream sequences of all genes for each
 organism of user-specified list.
 
+=item I<file>
+
+Only valid in combination with the option -bgfile.
+
+Precises that the background model that will be used for dyad-analysis will be a file given as argument (with the option -bgfile, see below)
+
 =back
 
 =cut
     } elsif ($arg eq "-bg_model") {
       $main::bg_model = shift(@arguments);
+      
+	  ## Background model file
 
+=pod
+
+=item B<-bgfile>
+
+File containing the word frequencies to be used as the background model for dyad-analysis.
+This option must be used in combination with the option -bg_model file
+
+=cut
+    } elsif ($arg eq "-bgfile") {
+      $main::bgfile = shift(@arguments);
+      
 	  ## Dyads filtering
 
 =pod
@@ -901,7 +931,7 @@ sub DyadAnalysis {
     ## Backgroun model
     if ($bg_model eq "monads") {
       $cmd .= " -bg monads" ;
-    } elsif ($bg_model eq "taxfreq") {
+    } elsif ($bg_model eq "taxfreq" || $bg_model eq "file") {
       $cmd .= " -expfreq ".$infile{bg_model} ;
     }
     ## dyad filtering (only accept dyads found in the promoter of the query gene(s)
