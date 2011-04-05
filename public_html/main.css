@@ -46,6 +46,14 @@ A:hover {
 	color: #cc6600;
 }
 
+img.newprograms {
+    margin-top: -6px;
+    margin-bottom: 0px;
+ 	vertical-align:text-top;
+ 	border-style:none;
+ 	height:25px;
+}
+
 /* Text  */
 
 h1 {
