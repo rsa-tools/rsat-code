@@ -1032,7 +1032,8 @@ sub ComputeFilterDyads {
 }
 
 ################################################################
-## Detect all matrix hits  in promoters of query genes for scan filtering
+## Detect all matrix hits in promoters of the currrent query gene for
+## scan filtering
 sub ComputeFilterScan {
     my ($matrix_format2,@matrix_files2)=@_;
     $main::skip_gene=0;
@@ -1063,7 +1064,7 @@ sub ComputeFilterScan {
     close $filter_genes if ($outfile{genes} && $main::filter);
     &RSAT::message::Info("Filter genes  ", $outfile{genes} ) if ($main::verbose >= 1);  
     &IndexOneFile("filter genes", $outfile{genes});
-    $main::skip_gene=1 unless ($filterg=~/\w/);
+    $main::skip_gene = 1 unless ($filterg=~/\w/);
 }
 
 ################################################################
@@ -1239,6 +1240,7 @@ sub OccurrenceSigGraph {
     $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
     $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800  -xgstep1 1 -xgstep2 0.5";
     $cmd .= " -ycol 11 -yleg1 'Binomial significance of hits'";
+
     $cmd .= " -title 'matrix ".$m_suffix." " ;
     $cmd .=  "; gene ".$current_gene."'" if ($current_gene);
     $cmd .= " -lines -legend ";
