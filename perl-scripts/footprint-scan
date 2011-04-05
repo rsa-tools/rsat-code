@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.70 2011/04/04 18:39:34 amedina Exp $
+# $Id: footprint-scan,v 1.71 2011/04/05 14:42:57 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.70 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.71 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -343,6 +343,11 @@ package main;
   $main::crer=0; ## ON THE WISH LIST: when set to one, look for CRER over-representation
   local $skip_gene = 0;
   local %top_sig_row = ();
+
+  ##################
+  ## Option for randomized genes 
+  $main::rand = 0;
+
 
   ## Matrix scanning parameters
   local @matrix_files = ();
@@ -430,11 +435,12 @@ package main;
 			all
 			operons
 			query_seq
+			filter_scan
 			orthologs
 			ortho_seq
 			purge
+			distrib_bg_model
 			occ_sig
-			filter_scan
 			occ_sig_graph
 			scan
 			map
@@ -569,9 +575,18 @@ package main;
       my $matrix_file=$fields[0];
       my $matrix_mt_suffix = $fields[1];
       my $matrix_mt_format = $fields[2];
-      $matrix_table_hash{$matrix_mt_suffix}{"file"}= $matrix_file;
-      $matrix_table_hash{$matrix_mt_suffix}{"format"}= $matrix_mt_format;
-      $matrix_table_hash{$matrix_mt_suffix}{"tf"}= $matrix_mt_suffix    if ($main::tf eq "file") ;
+
+       #If -rand option is selected, add a suffix to the matrix suffix to id this out files
+      if ($main::rand){  
+      $matrix_table_hash{$matrix_mt_suffix."_rand"}{"file"}= $matrix_file;
+      $matrix_table_hash{$matrix_mt_suffix."_rand"}{"format"}= $matrix_mt_format;
+      $matrix_table_hash{$matrix_mt_suffix."_rand"}{"tf"}= $matrix_mt_suffix    if ($main::tf eq "file") ;
+      }
+      else{ 
+	   $matrix_table_hash{$matrix_mt_suffix}{"file"}= $matrix_file;
+	   $matrix_table_hash{$matrix_mt_suffix}{"format"}= $matrix_mt_format;
+	   $matrix_table_hash{$matrix_mt_suffix}{"tf"}= $matrix_mt_suffix    if ($main::tf eq "file") ;
+      }
     }
     close $mlist;
 
@@ -589,6 +604,7 @@ package main;
   if (scalar(@matrix_files)>0) {
     my $mcount =1;
     foreach my $m_option_matrices (@matrix_files) {
+	$m_suffix.="_rand" if ($main::rand); #If -rand option is selected, add a suffix to the matrix suffix to id this out files
 
       if (scalar(@matrix_files)==1) {
 	$matrix_table_hash{$matrix_suffix}{"file"}= $m_option_matrices;
@@ -632,12 +648,11 @@ package main;
     local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
     local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
     local $tf=$matrix_table_hash{$m_suffix}{"tf"} if ($matrix_table_hash{$m_suffix}{"tf"}) ;
-    &RSAT::error::FatalError("Matrix file $file does not exist. Matrix file is mandatory.")  unless (-e $matrix_file) ;
+    &RSAT::error::FatalError("Matrix file $matrix_file does not exist. Matrix file is mandatory.")  unless (-e $matrix_file) ;
 
-    ################
+    ################  TO DO
     ## Obtain the score related to the threshold p-value for selecting the recovered interactions
-    
-    
+    # &GetScoreTHForPval($matrix_file);
     
     ################
     ## Complet parameters for matrix scan commands with specific information for the matrix
@@ -663,19 +678,23 @@ package main;
 	local $current_gene= $tf;
 	$global_filter=$main::filter;
 	$main::filter = 0;
-	&RunFootprintScan($current_gene);
+	$global_rand=$main::rand;
+	$main::rand = 0;
+	&GetOrthologsTF($current_gene);
 	$main::filter = $global_filter;
+	$main::rand = $global_rand;
       };
 
-      ## Reorganize gene list to ensure that TF is not added to it
-      @query_genes_ori = @query_genes;
-      @query_genes = ();
 
-      &RSAT::message::Info("The tf will not be analyzed as a separate gene unless the \'-filter\' option is used") if ($main::verbose >= 3);
-      for my $g (0..$#query_genes_ori) {
-	$gene = $query_genes_ori[$g];
-	push @query_genes, $gene if ((lc($gene) ne lc($tf)) || ($main::filter));
-      }
+      ## Reorganize gene list to ensure that TF is not added to it                         ##The TF is not completely analyzed now, only the ortholgos are retrived.
+     #  @query_genes_ori = @query_genes;
+#       @query_genes = ();
+
+#       &RSAT::message::Info("The tf will not be analyzed as a separate gene unless the \'-filter\' option is used") if ($main::verbose >= 3);
+#       for my $g (0..$#query_genes_ori) {
+# 	$gene = $query_genes_ori[$g];
+# 	push @query_genes, $gene if ((lc($gene) ne lc($tf)) || ($main::filter));
+#       }
 
       
       ## Report caught errors
@@ -744,7 +763,7 @@ package main;
 	my $occ_sig_header = "";
 
 	##Index also de TFm tf will be included on the list if it was not done before
-	push (@query_genes,$tf) if ($main::tf && !$main::filter && !$main::all_genes);
+	#push (@query_genes,$tf) if ($main::tf && !$main::filter && !$main::all_genes);
 
 	## Sort query genes according to user-selected criterion
 	my @sorted_genes = ();
@@ -899,14 +918,14 @@ package main;
     	&AddOneMatrixToMatricesReport($m_suffix,$matrix_file,$matrix_format,$outfile{$m_suffix."_synthesis_html"},($tf||0),$matrices_synthesis_index,$matrices_synthesis_table );
     }
     	##Get the actual tf form the list before procesing the next tf
-    pop (@query_genes) if  ($main::tf && !$main::filter && !$main::all_genes);;
+    #pop (@query_genes) if  ($main::tf && !$main::filter && !$main::all_genes);;
 
   }				## close matrices cycle
 
   ################################################################
   ## Close the general report for all matrices
 
-  &CloseMatricesReport();
+  &CloseMatricesReport() if $task{synthesis};
 
   ################################################################
   ## Print verbose
@@ -1192,8 +1211,6 @@ Set the threshold to filter out TF-interactions that are not present on the quer
 
 Set the threshold on site p-value to report only the evaluated over-representations of binding sites whenever the individual sites that crossed it.
 
-
-
 =cut
 	} elsif ($arg eq "-pval") {
     	    $main::pval= shift(@arguments);
@@ -1335,6 +1352,25 @@ Default= " -mlen 300  -mspacing  2"
     my $new_map_opt = shift(@arguments);
 
 $map_opt .= " ".$new_map_opt;
+
+=pod
+
+=item B<-rand>
+
+When the option -rand is activated, the program replaces each
+ortholog by a gene selected at random in the genome where this
+ortholg was found.
+
+This option is used (for example by footprint-scan and
+footprint-discovery to perform negative controls, i.e. check the
+rate of false positives in randomly selected promoters of the
+reference taxon.
+
+
+=cut
+
+  } elsif ($arg eq "-rand") {
+    $main::rand = 1;
 
 =pod
 
@@ -1526,6 +1562,125 @@ sub RunFootprintScan {
 
 }
 
+
+################################################################
+## Get Orthologs for the TF this gene is not longer analized completly
+## by default, only the query seq and the orthologs are obtained.
+
+sub GetOrthologsTF {
+  local (@current_query_genes) = @_;
+
+  local $query_start_time = &AlphaDate();
+  local $batch_cmd = "";
+  local $out = "";
+  local $genes = "";
+
+
+  ################################################################
+  ## Initialize output directory + output files
+  local ($outfile_prefix, $query_prefix)= &InitQueryOutput();
+
+  ## Output files for matrix-scan
+  $outfile{filter_scan} = $outfile{prefix}."_filter_scan.tab";
+  $outfile{matrix_prefix} = $outfile{prefix}."_".$m_suffix;
+ #  $outfile{occ_sig} = $outfile{matrix_prefix}."_occ_sig.tab";
+#   $outfile{occ_freq_graph} = $outfile{matrix_prefix}."_occ_freq.".$plot_format;
+#   $outfile{occ_sig_graph} = $outfile{matrix_prefix}."_occ_sig.".$plot_format;
+#   $outfile{sites} = $outfile{matrix_prefix}."_sites.tab";
+#   $outfile{map} = $outfile{matrix_prefix}."_sites.".$map_format;
+
+  ################################################################
+  ## Open file to the HTML index for the current query
+  &OpenQueryReport("footprint-scan");
+
+  ################################################################
+  ## Print query genes in the gene file
+  foreach my $gene (@current_query_genes) {
+    print $genes $gene, "\t", $organism_name, "\n";
+  }
+  &IndexOneFile("genes", $outfile{genes});
+
+  &RetrieveQueryPromoters();
+
+    ################################################################
+  ## Print verbose
+  &Verbose() if ($verbose);
+
+ 
+  ################################################################
+  ## Identify ortholog genes
+  
+ 
+  &GetOrthologs();
+
+  ## only for the $tf option
+  if ($main::tf && !($main::tf_ortho_file) ) {
+    $main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";
+    $org_column =qq@grep -v "#" $outfile{orthologs} |grep -v ";"| cut -f2 >$main::tf_ortho_file @;
+    system ($org_column);
+    &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ")
+      if ($main::verbose>=1);
+  }
+
+#   ################################################################
+#   ## Predict operon leader genes for the orthologous genes
+#   &InferOrthoOperons() if ($infer_operons);
+
+#   ################################################################
+#   ## Retrieve sequences from orthologs
+#   &RetrieveOrthoSeq();
+
+#   ################################################################
+#   ## Purge sequences
+#   &PurgeOrthoSeq() unless  ($main::no_purge) ;
+
+#   ################################################################
+#   ## Scan the promoters of one group of orhtologous genes with one
+#   ## position-specific scoring matrix
+
+#   ## Estimate over-representation in hits for all threshold values
+#   &OccurrenceSig();
+#   &OccurrenceSigGraph();
+#   &GetTopSig() if (($task{synthesis}) && !($batch));
+#   #&OccurrenceSigGraph();
+#   ## Scan sequences to detect hits
+#   &OrthoScan();
+#   &OrthoMap();
+
+  ################################################################
+  ## Finish verbose
+  if ($verbose >= 1) {
+    my $query_done_time = &AlphaDate();
+    my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
+    print $out "; Job started $query_start_time\n";
+    print $out "; Job done    $query_done_time\n";
+    print $out "; Elapsed     $query_exec_time\n";
+  }
+
+  ################################################################
+  ## Close output stream
+  close $out if ($outfile{log});
+  close $genes if ($outfile{genes});
+  print $index "</table>\n";
+  print $index "</blockquote>";
+  print $index "<hr size=2 color='#000088'>";
+  print $index "</body>";
+  print $index "</html>";
+  close $index;
+
+  ################################################################
+  ## Send the command to a batch queue (e.g. PC cluster)
+  if ($batch) {
+    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  } else {
+    if ($main::verbose >= 3) {
+      &RSAT::message::TimeWarn("Query done", $query_prefix);
+      &RSAT::message::Info("\tlog file", $outfile{log});
+      &RSAT::message::Info("\treport file", $outfile{index});
+    }
+  }
+
+}
 
 ################################################################
 ## Matrix-wise index for footprint-scan. This is a HTML table with
@@ -1752,5 +1907,59 @@ sub CloseMatricesReport{
 
 }
 
+################################################################        TO DO
+## Calculate the equivalente Score for the designated Pvalue threshold
+##  to define which TF-gene interactions are conserved
+
+# sub GetScoreTHForPval{
+#     my ($mfile,$mformat)=@_;
+#     &GetMatrixBG();
+# }
+
+################################################################
+## Calculate the Bg_model to estimate the score equivalente to the pvalue setted as trheshold
+## for selecting those genes that conserve the interaction with the TF
+## Background model file for matrix-distrib
+
+# sub GetMatrixBG{
+#   if ($main::org_selection_prefix eq "org_list") {
+
+#     ## If the option -org_list has been specified and the bg_model is
+#     ## taxfreq, compute the list-specific frequencies with the program
+#     ## taxon-frequencies -org_list org_list_file.
+#     &RSAT::message::TimeWarn("Computing background model for organism list") if ($main::verbose >= 1);
+
+#     ## Store the background model in the parent directory of the matrices/tfs sub-directories
+#     $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", "org_list");
+#     &RSAT::util::CheckOutDir($dir{bg_model});
+
+#     ## Background model file
+#     $infile{bg_model} = $dir{bg_model}."/";
+#     $infile{bg_model} .= "oligo_2nt_upstream-noorf_org_list".$noov.$strands.".freq";
+#     if ($task{distrib_bg_model}) {
+#       my $cmd = "taxon-frequencies -v 1 -type oligo  -ml 2";
+#       $cmd .= " -org_list ".$orglist_file;
+#       $cmd .= " > ".$infile{bg_model};
+#       &doit($cmd);
+#     }
+
+#   } elsif ($bg_model eq "taxfreq") {
+#     ## Check that the taxon has been specified
+#     &RSAT::error::FatalError("The option '-bg_model taxfreq' requires to specify a taxon with the option '-taxon'")
+#       unless ($taxon);
+
+#     ## Ident the server-installed taxon-specific background model file
+#     $infile{bg_model} = &ExpectedFreqFile($taxon,
+# 					  3,
+# 					  # spacing ? 0-20
+# 					  "upstream-noorf",
+# 					  str=>$strands,
+# 					  noov=>$noov,
+# 					  type=>"dyad",
+# 					  warn=>1,
+# 					  taxon=>1);
+    
+#   }
+# }
 
 __END__
