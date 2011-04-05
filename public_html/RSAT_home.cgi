@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.60 2011/04/05 14:17:10 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.61 2011/04/05 14:44:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -189,7 +189,6 @@ print <<EndText;
 <br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
   </td>
 
-<!--
   <td align=center>
   <a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
   <b>ENS Paris - France</b><br>
@@ -198,7 +197,6 @@ print <<EndText;
   </td>
 
   </tr><tr>
--->
 
   <td align=center>
   <a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
