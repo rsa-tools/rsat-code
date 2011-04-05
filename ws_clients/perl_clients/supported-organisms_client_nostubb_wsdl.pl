@@ -18,13 +18,14 @@ use XML::Compile::Transport::SOAPHTTP;
 ## Specification of the server
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers = $ARGV[0] || qw(
+			   http://rsat01.biologie.ens.fr/rsa-tools
 			   http://rsat.bigre.ulb.ac.be/rsat
 			   http://wwwsup.scmbb.ulb.ac.be/rsat
 			   http://tagc.univ-mrs.fr/rsa-tools
 			   http://embnet.ccg.unam.mx/rsa-tools
-			   http://anjie.bi.up.ac.za/rsa-tools
-			   http://localhost/rsat
 			   http://liv.bmc.uu.se/rsa-tools
+			   http://localhost/rsat
+			   http://anjie.bi.up.ac.za/rsa-tools
 			    );
 
 #		 http://rsat01.biologie.ens.fr/rsa-tools
