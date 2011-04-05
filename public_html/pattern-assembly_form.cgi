@@ -29,7 +29,7 @@ print "Assembly of patterns (oligos or dyads).<P>\n";
 print "</CENTER>";
 print "<HR>";
 print "<blockquote>";
-g
+
 &ListParameters if ($ENV{rsat_echo} >=2);
 
 ### replace defaults by parameters from the cgi call, if defined
