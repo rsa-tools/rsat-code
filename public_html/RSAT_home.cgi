@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.59 2011/02/28 17:02:10 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.60 2011/04/05 14:17:10 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -106,6 +106,7 @@ print <<EndText;
     signals in non-coding sequences.</p>
 
     <ul>
+	<p><li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
 
      <p><li><font color="red">New !</font> <a target='_top' href='http://rsat.ulb.ac.be/rsat/tutorial_ECCB_2010/'>Supporting
      material</a> of the 3rd Tutorial presented at </a> of <a target='_blank' href='http://www.eccb10.org/'>ECCB
