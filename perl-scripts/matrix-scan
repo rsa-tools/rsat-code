@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.192 2011/03/31 10:44:28 morgane Exp $
+# $Id: matrix-scan,v 1.193 2011/04/06 19:46:40 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2935,7 +2935,7 @@ on a set of background sequences, with the options
 
 =over
 
-matrix-proba -v 1 -return distrib -mlist matrix_list.txt -i bg_seq.fta [...]
+matrix-scan -v 1 -return distrib -m matrix.tab -i bg_sequences.fta [...]
 
 =back
 
