@@ -360,7 +360,6 @@ sub InitQueryOutput {
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta"; 
   #  $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
-
   return($outfile_prefix, $query_prefix);
 }
 
@@ -1199,25 +1198,68 @@ sub PurgeOrthoSeq {
 ## (will be used for several purposes including occurrence
 ## significanc, site scanning, curve drawing).
 sub CalcMAtrixTheorDistrib {
-  if ($task{theor_distrib}) {
-    die "NOT IMPLEMENTED YET";
+    if ($task{theor_distrib}) {
+	$main::bg_distrib="";
+	if (($bg_method eq "input" )||($bg_method eq "window") ){
+	    my $cmd = "$SCRIPTS/oligo-analysis ";
+	    $cmd .= " -l  ".($markov+1);
+	    $cmd .= " -i ". $outfile{purged};
+	    $cmd .= " -format fasta";
+	    $cmd .= " -return freq,occ ";
+	    $cmd .= " -seqtype dna ";
+	    $cmd .= " -1str ";
+	    $cmd .= " -o ". $outfile{bg_distrib_file};
+	    &one_command($cmd);
+	    #print $cmd ;
+	}
+    }
+      ################
+      ## Difine the global variable containing bg_distrib_file
+    if (($bg_method eq "input" )||($bg_method eq "window")){ ##bg input and bgwindow
+	$main::bg_distrib=$outfile{bg_distrib_file} ;
+    }elsif(defined($main::infile{bg})) { ## bgfile was entered by the user
+	$main::bg_distrib=$main::infile{bg};
+    }
+    
+    &RSAT::error::FatalError("File specified to calculate the score distribution in matrix-distrib does not exist")unless (-e  $main::bg_distrib ) ;
+    &RSAT::message::Info ("Frequency file used to calculate the matrix score distribution ", $main::bg_distrib )unless ($main::verbose >=2 ) ;
 
-    ################################################################
-    ######## IN CONSTRUCTION ########
+    ################
+    ##
 
-    ## Identify the weight coresponding to the filtering P-value
-
-    ## Lower bound on Pval (upper bound on weight)
-    $cmd = "sort -n -k 2 ".$outfile{occ_sig};
-    $cmd .= "| grep -v '^;' ";
-    $cmd .= "| grep -v '^#' ";
-    $cmd .= "| awk '\$7 <= ".$main::pval."'";
-    $cmd .= "| head -1";
-    $cmd .= "|cut -f 2,7";
-    my $lower_pval = `$cmd`;
-    chomp($lower_pval);
-    my ($weight1, $pval1) = split('\t', $lower_pval);
-
+    if ($task{theor_distrib}) {
+	my $cmd = "$SCRIPTS/matrix-distrib ";
+	$cmd .= " -m ".$matrix_file;
+	$cmd .= " -matrix_format ".$matrix_format;
+	$cmd .= " -bgfile ". $main::bg_distrib;
+	if (($bg_method eq "input" )||($bg_method eq "window")){
+	    $cmd .= " -bg_format oligo-analysis "   ;
+	}elsif  ( $main::bg_format ){	
+	    $cmd .= " -bg_format ".  $main::bg_format ;
+	}
+	$cmd .= " -o ".  $outfile{matrix_distrib} ;
+	&one_command($cmd);
+	#print $cmd ;
+    }
+    
+    
+   
+      ################################################################
+      ######## IN CONSTRUCTION ########
+      
+      ## Identify the weight coresponding to the filtering P-value
+      
+      ## Lower bound on Pval (upper bound on weight)
+      $cmd = "sort -n -k 2 ".$outfile{occ_sig};
+      $cmd .= "| grep -v '^;' ";
+      $cmd .= "| grep -v '^#' ";
+      $cmd .= "| awk '\$7 <= ".$main::pval."'";
+      $cmd .= "| head -1";
+      $cmd .= "|cut -f 2,7";
+      my $lower_pval = `$cmd`;
+      chomp($lower_pval);
+      my ($weight1, $pval1) = split('\t', $lower_pval);
+      
     ## Upper bound on Pval (lower bound on weight)
     $cmd = "sort -n -k 2 ".$outfile{occ_sig};
     $cmd .= "| grep -v '^;' ";
@@ -1235,18 +1277,20 @@ sub CalcMAtrixTheorDistrib {
 			  "weight2=".$weight2,
 			  "pval2=".$pval2,
 			 ) if ($main::verbose >= 0);
-
+     die "NOT IMPLEMENTED YET";
+    
 #    die "HELLO";
     ########  / IN CONSTRUCTION ########
     ################################################################
-  }
+  #}
 }
 
 ################################################################
 ## Detect over-representation of matching occurrecnes (hits) of the motif
 sub OccurrenceSig {
-  if ($task{occ_sig}) {
-
+    &CalcMAtrixTheorDistrib() if (($bg_method eq "input" )||($bg_method eq "window") );
+    
+    if ($task{occ_sig}) {
     ## Compute observed distribution of hits + estimate the hit
     ## significance for each weight score
     &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 2);
