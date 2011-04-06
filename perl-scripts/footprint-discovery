@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.60 2011/04/05 14:00:51 rsat Exp $
+# $Id: footprint-discovery,v 1.61 2011/04/06 15:50:43 amedina Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.60 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.61 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -404,16 +404,16 @@ package main;
     local $query_nb = scalar(@query_genes);
     foreach my $current_gene (@query_genes) {
       $q++;
-      if (($skip > 0) && ($q <= $skip)) {
-	  &RSAT::message::Info("Skipping gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
-	  next;
-      }
+     #  if (($skip > 0) && ($q <= $skip)) {
+# 	  &RSAT::message::Info("Skipping gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
+# 	  next;
+#       }
       &RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
       &RunFootprintDisco($current_gene);
-      if (($last > 0) && ($q >= $last)) {
-	  &RSAT::message::Info("Stopped after gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
-	  last;
-      }
+      # if (($last > 0) && ($q >= $last)) {
+# 	  &RSAT::message::Info("Stopped after gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
+# 	  last;
+#       }
     }
   } else {
       $q = 1;
