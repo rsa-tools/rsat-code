@@ -194,7 +194,7 @@ sub CheckFootprintParameters {
       my @fields = split (/\s+/,$genes);
       push @query_genes, @fields;
   }
-  &RSAT::message::Info("Genes analyzed taken from orthologs_list file",join(" ", @query_genes)) if ( ($main::verbose >= 0) && ($main::orthologs_list_file) );
+  &RSAT::message::Info("Genes analyzed taken from orthologs_list file",join(" ", @query_genes)) if ( ($main::verbose >= 1) && ($main::orthologs_list_file) );
 
   ################################################################
   ## Check query genes
@@ -207,13 +207,37 @@ sub CheckFootprintParameters {
   ################################################################
   ## Get maximum number of genes if limited
   if ($max_genes) {
-    if (scalar(@query_genes)>$max_genes) {
+    if (scalar(@query_genes) > $max_genes) {
       &RSAT::message::Warning("The analysis has been limited to the first ", $max_genes,"genes");
       @query_genes= splice(@query_genes,0,$max_genes);
       &RSAT::message::Warning(join("\t","Query genes:",@query_genes)) if ($main::verbose >= 2);
     }
   }
 
+  ################################################################
+  ## Apply the -skip and -last options
+  if ($last > 0) {
+    if ($skip > $last) {
+      &RSAT::error::FatalError("Incompatible skip and last values (no gene left for analysis): -skip $skip -last $last");
+    }
+
+    if (scalar(@query_genes) > $last) {
+#      @query_genes = @query_genes[0..($last-1)];
+      @query_genes= splice(@query_genes,0,$last);
+      &RSAT::message::Warning("Truncated the end of the gene list (last $last)", "Remaining genes", scalar(@query_genes), join(";", @query_genes));
+    } else {
+      &RSAT::message::Warning("Cannot apply option -last $last because query list is too short (".scalar(@query_genes).")");
+    }
+  }
+  if ($skip > 0) {
+    if (scalar(@query_genes) > $skip) {
+#      @query_genes = @query_genes[$skip..$#query_genes];
+      @query_genes= splice(@query_genes,$skip, (scalar(@query_genes) - $skip));
+      &RSAT::message::Warning("Truncated the beginning of the gene list (skip $skip)", "Remaining genes", scalar(@query_genes), join(";", @query_genes));
+    } else {
+      &RSAT::error::FatalError("No gene left after applying the option -skip $skip (gene list contains ".scalar(@query_genes)." genes)");
+    }
+  }
 }
 
 ################################################################
@@ -1117,7 +1141,7 @@ sub GetOrthologs {
       my $out= &OpenOutputFile($outfile{orthologs});
       print $out $orthologs; 
       close $out;
-      &RSAT::message::Info("Orthologs for gene(s)",$genes, "specified by the user can be found in " , $outfile{orthologs}) if ($main::verbose >= 0);
+      &RSAT::message::Info("Orthologs for gene(s)",$genes, "specified by the user can be found in " , $outfile{orthologs}) if ($main::verbose >= 2);
   }
   &IndexOneFile("orthologs", $outfile{orthologs});
 }
@@ -1198,92 +1222,55 @@ sub PurgeOrthoSeq {
 ## (will be used for several purposes including occurrence
 ## significanc, site scanning, curve drawing).
 sub CalcMAtrixTheorDistrib {
-    if ($task{theor_distrib}) {
-	$main::bg_distrib="";
-	if (($bg_method eq "input" )||($bg_method eq "window") ){
-	    my $cmd = "$SCRIPTS/oligo-analysis ";
-	    $cmd .= " -l  ".($markov+1);
-	    $cmd .= " -i ". $outfile{purged};
-	    $cmd .= " -format fasta";
-	    $cmd .= " -return freq,occ ";
-	    $cmd .= " -seqtype dna ";
-	    $cmd .= " -1str ";
-	    $cmd .= " -o ". $outfile{bg_distrib_file};
-	    &one_command($cmd);
-	    #print $cmd ;
-	}
+
+  ## Define the global variable containing bg_distrib_file
+  ## This BG file has either been
+  $main::bg_distrib="";
+  if (($bg_method eq "input" )||($bg_method eq "window")) { ##bg input and bgwindow
+    $main::bg_distrib=$outfile{bg_distrib};
+  } elsif (defined($main::infile{bg})) { ## bgfile was entered by the user
+    $main::bg_distrib=$main::infile{bg};
+  } else {
+    &RSAT::error::FatalError("No background file for the computation of the theoretical distribution.");
+  }
+
+  if ($task{theor_distrib}) {
+
+    ## Compute the Markov background model from input sequences if required
+    if (($bg_method eq "input" ) || ($bg_method eq "window") ) {
+      &RSAT::message::TimeWarn ("Computing background model from input sequences", $outfile{purged}) if ($main::verbose >=2 ) ;
+      my $cmd = "$SCRIPTS/oligo-analysis ";
+      $cmd .= " -l  ".($markov+1);
+      $cmd .= " -i ".$outfile{purged};
+      $cmd .= " -format fasta";
+      $cmd .= " -return freq,occ ";
+      $cmd .= " -seqtype dna ";
+      $cmd .= " -1str ";
+      $cmd .= " -o ".$main::bg_distrib;
+      &one_command($cmd);
+      #print $cmd ;
     }
-      ################
-      ## Difine the global variable containing bg_distrib_file
-    if (($bg_method eq "input" )||($bg_method eq "window")){ ##bg input and bgwindow
-	$main::bg_distrib=$outfile{bg_distrib_file} ;
-    }elsif(defined($main::infile{bg})) { ## bgfile was entered by the user
-	$main::bg_distrib=$main::infile{bg};
-    }
-    
+
+    ## Check that the background model file exists
     &RSAT::error::FatalError("File specified to calculate the score distribution in matrix-distrib does not exist")unless (-e  $main::bg_distrib ) ;
-    &RSAT::message::Info ("Frequency file used to calculate the matrix score distribution ", $main::bg_distrib )unless ($main::verbose >=2 ) ;
 
-    ################
-    ##
-
-    if ($task{theor_distrib}) {
-	my $cmd = "$SCRIPTS/matrix-distrib ";
-	$cmd .= " -m ".$matrix_file;
-	$cmd .= " -matrix_format ".$matrix_format;
-	$cmd .= " -bgfile ". $main::bg_distrib;
-	if (($bg_method eq "input" )||($bg_method eq "window")){
-	    $cmd .= " -bg_format oligo-analysis "   ;
-	}elsif  ( $main::bg_format ){	
-	    $cmd .= " -bg_format ".  $main::bg_format ;
-	}
-	$cmd .= " -o ".  $outfile{matrix_distrib} ;
-	&one_command($cmd);
-	#print $cmd ;
+    ## Compute the theoretical distribution for the current matrix
+    &RSAT::message::TimeWarn ("Computing matrix score distribution with background file", $main::bg_distrib) if ($main::verbose >=2);
+    my $cmd = "$SCRIPTS/matrix-distrib ";
+    $cmd .= " -m ".$matrix_file;
+    $cmd .= " -matrix_format ".$matrix_format;
+    $cmd .= " -bgfile ". $main::bg_distrib;
+    if (($bg_method eq "input" )||($bg_method eq "window")) {
+      $cmd .= " -bg_format oligo-analysis "   ;
+    } elsif ( $main::bg_format ) {
+      $cmd .= " -bg_format ".  $main::bg_format ;
     }
-    
-    
-   
-      ################################################################
-      ######## IN CONSTRUCTION ########
-      
-      ## Identify the weight coresponding to the filtering P-value
-      
-      ## Lower bound on Pval (upper bound on weight)
-      $cmd = "sort -n -k 2 ".$outfile{occ_sig};
-      $cmd .= "| grep -v '^;' ";
-      $cmd .= "| grep -v '^#' ";
-      $cmd .= "| awk '\$7 <= ".$main::pval."'";
-      $cmd .= "| head -1";
-      $cmd .= "|cut -f 2,7";
-      my $lower_pval = `$cmd`;
-      chomp($lower_pval);
-      my ($weight1, $pval1) = split('\t', $lower_pval);
-      
-    ## Upper bound on Pval (lower bound on weight)
-    $cmd = "sort -n -k 2 ".$outfile{occ_sig};
-    $cmd .= "| grep -v '^;' ";
-    $cmd .= "| grep -v '^#' ";
-    $cmd .= "| awk '\$7 > ".$main::pval."'";
-    $cmd .= "| tail -1";
-    $cmd .= "|cut -f 2,7";
-    my $upper_pval = `$cmd`;
-    chomp($upper_pval);
-    my ($weight2, $pval2) = split('\t', $upper_pval);
-    &RSAT::message::Debug(
-			  "Score threshold",
-			  "weight1=".$weight1,
-			  "pval1=".$pval1,
-			  "weight2=".$weight2,
-			  "pval2=".$pval2,
-			 ) if ($main::verbose >= 0);
-     die "NOT IMPLEMENTED YET";
-    
-#    die "HELLO";
-    ########  / IN CONSTRUCTION ########
-    ################################################################
-  #}
+    $cmd .= " -o ".$outfile{matrix_distrib};
+    &one_command($cmd);
+    &RSAT::message::TimeWarn ("Matrix score distribution", $outfile{matrix_distrib}) if ($main::verbose >=2);
+  }
 }
+
 
 ################################################################
 ## Detect over-representation of matching occurrecnes (hits) of the motif
@@ -1319,12 +1306,61 @@ sub OccurrenceSig {
   &IndexOneFile("occ sig", $outfile{occ_sig});
 }
 
+
+
+################################################################
+## Define the weight score corresponding to the threshold of P-value,
+## which will be used for selecting significant genes + site
+## prediction (scanning).
+sub GetMinWeight {
+
+  my $min_weight = "";
+
+  ## Lower bound on Pval (upper bound on weight)
+  my $weight_column = 1;
+  my $pval_column = 4;
+  $cmd = "sort -n -k ".$weight_column." ".$outfile{matrix_distrib};
+  $cmd .= "| grep -v '^;' ";
+  $cmd .= "| grep -v '^#' ";
+  $cmd .= "| awk '\$".$pval_column." <= ".$main::pval."'";
+  $cmd .= "| head -1";
+  $cmd .= "|cut -f ".$weight_column.",".$pval_column;
+  my $lower_pval = `$cmd`;
+  chomp($lower_pval);
+  my ($weight1, $pval1) = split('\t', $lower_pval);
+
+  ## Upper bound on Pval (lower bound on weight)
+  $cmd = "sort -n -k ".$weight_column." ".$outfile{matrix_distrib};
+  $cmd .= "| grep -v '^;' ";
+  $cmd .= "| grep -v '^#' ";
+  $cmd .= "| awk '\$".$pval_column." > ".$main::pval."'";
+  $cmd .= "| tail -1";
+  $cmd .= "|cut -f ".$weight_column.",".$pval_column;
+  my $upper_pval = `$cmd`;
+  chomp($upper_pval);
+  my ($weight2, $pval2) = split('\t', $upper_pval);
+
+  $min_weight = sprintf("%.2f", $weight1 + ($weight2 - $weight1) * ($pval - $pval1 )/ ($pval2 - $pval1));
+
+  &RSAT::message::Debug("weight1=".$weight1,
+			"pval1=".$pval1,
+			"weight2=".$weight2,
+			"pval2=".$pval2,
+			"pval=".$pval,
+			"min_weight=".$min_weight,
+		       ) if ($main::verbose >= 3);
+  &RSAT::message::Info("min weight", $min_weight) if ($main::verbose >= 2);
+
+  return($min_weight);
+}
+
 ################################################################
 ## Draw a graph with occurrence significance profiles
 sub OccurrenceSigGraph {
   if ($task{occ_sig_graph}) {
     &RSAT::message::TimeWarn("Graph with over-representation of hits", $outfile{occ_freq_graph}) if ($main::verbose >= 2);
     &CheckDependency("occ_sig_graph", "occ_sig");
+
 
     my $cmd = "";
 
@@ -1368,6 +1404,8 @@ sub OccurrenceSigGraph {
 	my $sig_max = $fields[1];
 	$cmd .= " -vline red ". $sig_max;
       }
+      my $min_weight = &GetMinWeight();
+      $cmd .= " -vline darkgreen ". $min_weight;
     }
 
     ## options added  from comand line
