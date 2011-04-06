@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.73 2011/04/06 07:34:48 amedina Exp $
+# $Id: footprint-scan,v 1.74 2011/04/06 08:35:36 jvanheld Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -826,22 +826,18 @@ package main;
 	  ## the occ_sig.tab file
 	  my $gene_sig=$top_sig_row{$gene}; # Query gene significance
 
-	
-	 
 	  ################
 	  ## Print gene info and results in the text tab delimited table
 	  #my @gene_table_fields=$gene, $gene_sig, $g,$gene_info_line,  $occ_sig_file{$gene} ;  #the rank ($g) makes no sense if the $sort_creteria is alphabthic
 	  my @gene_table_fields=($gene, $gene_sig, $gene_info_line,  $occ_sig_file{$gene}) ;
 	  print  $synthesis_table join("\t",@gene_table_fields  ). "\n";
-	  
+
 	  ################
 	  ## Print query gene information and result in the Matrix-wise HTML report 
-	 
-	  
 	  my $html_sep="<\/td>\n<td>";
 
 	  $gene_sig =~ s/\t+/$html_sep/g; # substitute the tab separator used for the table by the html table separator
-	  
+
 	  print $synthesis_index "<tr>\n"; #initialize line
 
 	  #Gene (link to query index) and columns with information about ocurrence
@@ -1725,7 +1721,7 @@ sub MatrixReportHeader {
     &RSAT::message::TimeWarn("Initializing results report for matrix",$m_suffix) if ($main::verbose >= 5);
     $occ_sig_header = `grep '^#' $occ_one_gene_file`;
     chomp $occ_sig_header;
-   
+
     my @header_occ_gene=split(/\t/,$occ_sig_header);
     pop (@header_occ_gene); ## Last element is the internal ranking of the occ_sig and is one for all the genes
 
