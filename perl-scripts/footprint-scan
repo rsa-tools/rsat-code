@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.76 2011/04/06 12:52:58 amedina Exp $
+# $Id: footprint-scan,v 1.77 2011/04/06 14:04:52 jvanheld Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -366,8 +366,8 @@ package main;
   local %uth = ();
   local $occ_sig_opt = "";
   local $occ_sig_graph_opt = "";
-  local $main::pval=1e-4;
-  local $main::bg_distrib="";
+  local $pval=1e-4;
+  local $bg_distrib="";
 
   ## Feature maps
   local $map_opt = "";
@@ -645,6 +645,8 @@ package main;
   my $m = 0;			## Matrix counter
   foreach my $ms  (sort(keys %matrix_table_hash)) {
     $m++;
+
+
     %top_sig=();
     local $m_suffix =$ms;
     local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
@@ -673,7 +675,7 @@ package main;
 
     ################
     ## Complet parameters for matrix scan commands with specific information for the matrix
-    local $ms_parameters =  $ms_general_parameters ;
+    local $ms_parameters =  $ms_general_parameters;
     $ms_parameters .= " -m ".$matrix_file;
 
     &RSAT::error::FatalError("You must specify the matrix format (option -matrix_format)") unless ($matrix_format);
@@ -740,19 +742,13 @@ package main;
 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
       }
 
+#      &RSAT::message::Debug("query_genes", scalar(@query_genes), join(";", @query_genes)) if ($main::;
+
       my $g = 0;
       my $gene_nb = scalar(@query_genes);
       local $current_gene;
       foreach $current_gene (@query_genes) {
 	$g++;
-	if (($skip > 0) && ($g <= $skip)) {
-	  &RSAT::message::Info("Skipping gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
-	  next;
-	}
-	if (($last > 0) && ($g > $last)) {
-	  &RSAT::message::Info("Last gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
-	  last;
-	}
 	&RSAT::message::TimeWarn("\tAnalyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
 	eval {
 	  &RunFootprintScan($current_gene);
@@ -816,6 +812,15 @@ package main;
 	  my @gene_info = ();
 	  foreach my $field (@info_fields) {
 	    my $value = $feature->get_attribute($field);
+
+	    ################################################################
+	    ################################################################
+	    ################################################################
+	    #### NEEDS TO BE DEBUGGED: WE DON'T GET THE NEIGHBOUR NAME  ####
+	    ################################################################
+	    ################################################################
+	    ################################################################
+
 	    &RSAT::message::Debug($gene, $feature->get_attribute("id"), $value||"NA") if ($main::verbose >= 0);
 	    push @gene_info, $value||"NA";
 	  }
@@ -1469,7 +1474,7 @@ sub RunFootprintScan {
   ## Output files for matrix-scan
   $outfile{filter_scan} = $outfile{prefix}."_filter_scan.tab";
   $outfile{matrix_prefix} = $outfile{prefix}."_".$m_suffix;
-  $outfile{bg_distrib_file} = $outfile{matrix_prefix}."_bginput_oligo_l".($markov+1).".freq" if  (($bg_method eq "input" )||($bg_method eq "window") ) ;
+  $outfile{bg_distrib} = $outfile{matrix_prefix}."_bginput_oligo_l".($markov+1).".freq" if  (($bg_method eq "input" )||($bg_method eq "window") ) ;
   $outfile{matrix_distrib} = $outfile{matrix_prefix}."_matrix-distrib_occsig.tab" if  (($bg_method eq "input" )||($bg_method eq "window") ) ;
   $outfile{occ_sig} = $outfile{matrix_prefix}."_occ_sig.tab";
   $outfile{occ_freq_graph} = $outfile{matrix_prefix}."_occ_freq.".$plot_format;
@@ -1924,7 +1929,6 @@ sub CloseMatricesReport{
     close $matrices_synthesis_table ;
 
 }
-
 
 
 __END__
