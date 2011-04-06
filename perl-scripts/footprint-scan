@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.75 2011/04/06 11:03:29 jvanheld Exp $
+# $Id: footprint-scan,v 1.76 2011/04/06 12:52:58 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.75 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -367,6 +367,7 @@ package main;
   local $occ_sig_opt = "";
   local $occ_sig_graph_opt = "";
   local $main::pval=1e-4;
+  local $main::bg_distrib="";
 
   ## Feature maps
   local $map_opt = "";
@@ -659,9 +660,16 @@ package main;
     ## Initialize variable that keeps the current file with othorlogs for the current TF
     $main::tf_ortho_file=() if $tf;
 
-    ################  TO DO
+    ################ 
     ## Obtain the score related to the threshold p-value for selecting the recovered interactions
-    # &GetScoreTHForPval($matrix_file);
+    ## if a bg_file is given this calculus be done per matrix, if -bginput is used the calculaiton
+    ## is done by Matrix-query_gene pair before calculationg the OccurrenceSig
+    if( defined($main::infile{bg}) ){
+	$dir{matrix_result_dir} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix);
+	&RSAT::util::CheckOutDir($dir{matrix_result_dir});
+	$outfile{matrix_distrib} = join( "/",$dir{synthesis},$m_suffix."_matrix-distrib_occsig.tab") ;
+	&CalcMAtrixTheorDistrib   ;
+    }
 
     ################
     ## Complet parameters for matrix scan commands with specific information for the matrix
@@ -717,7 +725,10 @@ package main;
 	}
       }
       if ($task{orthologs}){
-	  &RSAT::error::FatalError("There were no organisms with an ortholog for the specified TF") unless(-s $main::tf_ortho_file );
+	  unless(-s $main::tf_ortho_file ){
+	  &RSAT::message::Warning("There were no organisms with an ortholog for the specified TF")  if ($main::verbose >= 0) ;
+	  next;
+	  }
       }
     }
 
@@ -1458,6 +1469,8 @@ sub RunFootprintScan {
   ## Output files for matrix-scan
   $outfile{filter_scan} = $outfile{prefix}."_filter_scan.tab";
   $outfile{matrix_prefix} = $outfile{prefix}."_".$m_suffix;
+  $outfile{bg_distrib_file} = $outfile{matrix_prefix}."_bginput_oligo_l".($markov+1).".freq" if  (($bg_method eq "input" )||($bg_method eq "window") ) ;
+  $outfile{matrix_distrib} = $outfile{matrix_prefix}."_matrix-distrib_occsig.tab" if  (($bg_method eq "input" )||($bg_method eq "window") ) ;
   $outfile{occ_sig} = $outfile{matrix_prefix}."_occ_sig.tab";
   $outfile{occ_freq_graph} = $outfile{matrix_prefix}."_occ_freq.".$plot_format;
   $outfile{occ_sig_graph} = $outfile{matrix_prefix}."_occ_sig.".$plot_format;
@@ -1912,59 +1925,6 @@ sub CloseMatricesReport{
 
 }
 
-################################################################        TO DO
-## Calculate the equivalente Score for the designated Pvalue threshold
-##  to define which TF-gene interactions are conserved
 
-# sub GetScoreTHForPval{
-#     my ($mfile,$mformat)=@_;
-#     &GetMatrixBG();
-# }
-
-################################################################
-## Calculate the Bg_model to estimate the score equivalente to the pvalue setted as trheshold
-## for selecting those genes that conserve the interaction with the TF
-## Background model file for matrix-distrib
-
-# sub GetMatrixBG{
-#   if ($main::org_selection_prefix eq "org_list") {
-
-#     ## If the option -org_list has been specified and the bg_model is
-#     ## taxfreq, compute the list-specific frequencies with the program
-#     ## taxon-frequencies -org_list org_list_file.
-#     &RSAT::message::TimeWarn("Computing background model for organism list") if ($main::verbose >= 1);
-
-#     ## Store the background model in the parent directory of the matrices/tfs sub-directories
-#     $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", "org_list");
-#     &RSAT::util::CheckOutDir($dir{bg_model});
-
-#     ## Background model file
-#     $infile{bg_model} = $dir{bg_model}."/";
-#     $infile{bg_model} .= "oligo_2nt_upstream-noorf_org_list".$noov.$strands.".freq";
-#     if ($task{theor_distrib}) {
-#       my $cmd = "taxon-frequencies -v 1 -type oligo  -ml 2";
-#       $cmd .= " -org_list ".$orglist_file;
-#       $cmd .= " > ".$infile{bg_model};
-#       &doit($cmd);
-#     }
-
-#   } elsif ($bg_model eq "taxfreq") {
-#     ## Check that the taxon has been specified
-#     &RSAT::error::FatalError("The option '-bg_model taxfreq' requires to specify a taxon with the option '-taxon'")
-#       unless ($taxon);
-
-#     ## Ident the server-installed taxon-specific background model file
-#     $infile{bg_model} = &ExpectedFreqFile($taxon,
-# 					  3,
-# 					  # spacing ? 0-20
-# 					  "upstream-noorf",
-# 					  str=>$strands,
-# 					  noov=>$noov,
-# 					  type=>"dyad",
-# 					  warn=>1,
-# 					  taxon=>1);
-    
-#   }
-# }
 
 __END__
