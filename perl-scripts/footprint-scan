@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.77 2011/04/06 14:04:52 jvanheld Exp $
+# $Id: footprint-scan,v 1.78 2011/04/06 15:49:49 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.78 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -435,6 +435,7 @@ package main;
 			operons
 			query_seq
 			filter_scan
+			orthologs_tf
 			orthologs
 			ortho_seq
 			purge
@@ -699,23 +700,12 @@ package main;
 	$main::filter = 0;
 	$global_rand=$main::rand;
 	$main::rand = 0;
-	&GetOrthologsTF($current_gene);
+	&GetOrthologsTF($current_gene)  ;
 	$main::filter = $global_filter;
 	$main::rand = $global_rand;
+	    
+ 
       };
-
-
-      ## Reorganize gene list to ensure that TF is not added to it                         ##The TF is not completely analyzed now, only the ortholgos are retrived.
-     #  @query_genes_ori = @query_genes;
-#       @query_genes = ();
-
-#       &RSAT::message::Info("The tf will not be analyzed as a separate gene unless the \'-filter\' option is used") if ($main::verbose >= 3);
-#       for my $g (0..$#query_genes_ori) {
-# 	$gene = $query_genes_ori[$g];
-# 	push @query_genes, $gene if ((lc($gene) ne lc($tf)) || ($main::filter));
-#       }
-
-      
       ## Report caught errors
       if ($@) {
 	if ($no_die) {
@@ -1516,15 +1506,6 @@ sub RunFootprintScan {
  
   &GetOrthologs();
 
-  ## only for the $tf option
-  if ($main::tf && !($main::tf_ortho_file) ) {
-    $main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";
-    $org_column =qq@grep -v "#" $outfile{orthologs} |grep -v ";"| cut -f2 >$main::tf_ortho_file @;
-    system ($org_column);
-    &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ")
-      if ($main::verbose>=1);
-  }
-
   ################################################################
   ## Predict operon leader genes for the orthologous genes
   &InferOrthoOperons() if ($infer_operons);
@@ -1632,43 +1613,23 @@ sub GetOrthologsTF {
  
   ################################################################
   ## Identify ortholog genes
+  if ($task{orthologs_tf}){
+      &RSAT::message::Info("Recovering the ortholgoous genes for the TF ", $tf) if ($main::verbose>=2);
+      $task_ortho_original=$task{orthologs};
+      $task{orthologs}=1;
+      &GetOrthologs() ;
+      $task{orthologs}=$task_ortho_original;
+  }
+  ## only for the $tf option
+  if ( !($main::tf_ortho_file) ) {
+      $main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";
+      $org_column =qq@grep -v "#" $outfile{orthologs} |grep -v ";"| cut -f2 >$main::tf_ortho_file @;
+      system ($org_column);
+      &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ")
+	  if ($main::verbose>=1);
+  } 
   
  
-  &GetOrthologs();
-
-  ## only for the $tf option
-  if ($main::tf && !($main::tf_ortho_file) ) {
-    $main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";
-    $org_column =qq@grep -v "#" $outfile{orthologs} |grep -v ";"| cut -f2 >$main::tf_ortho_file @;
-    system ($org_column);
-    &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ")
-      if ($main::verbose>=1);
-  }
-
-#   ################################################################
-#   ## Predict operon leader genes for the orthologous genes
-#   &InferOrthoOperons() if ($infer_operons);
-
-#   ################################################################
-#   ## Retrieve sequences from orthologs
-#   &RetrieveOrthoSeq();
-
-#   ################################################################
-#   ## Purge sequences
-#   &PurgeOrthoSeq() unless  ($main::no_purge) ;
-
-#   ################################################################
-#   ## Scan the promoters of one group of orhtologous genes with one
-#   ## position-specific scoring matrix
-
-#   ## Estimate over-representation in hits for all threshold values
-#   &OccurrenceSig();
-#   &OccurrenceSigGraph();
-#   &GetTopSig() if (($task{synthesis}) && !($batch));
-#   #&OccurrenceSigGraph();
-#   ## Scan sequences to detect hits
-#   &OrthoScan();
-#   &OrthoMap();
 
   ################################################################
   ## Finish verbose
