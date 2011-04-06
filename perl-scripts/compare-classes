@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.68 2011/02/17 04:54:49 rsat Exp $
+# $Id: compare-classes,v 1.69 2011/04/06 08:28:20 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -52,48 +52,53 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 
 ## Groups of calculation
 %calc_groups = (
-    'rank'=>'rank',
+		'rank'=>'rank',
 
-    'QR'=>'occ',
-    'R'=>'occ',
-    'Q'=>'occ',
-    'QvR'=>'occ',
+		'QR'=>'occ',
+		'R'=>'occ',
+		'Q'=>'occ',
+		'QvR'=>'occ',
 
 
-    'P(Q|R)'=>'freq',
-    'P(R|Q)'=>'freq',
-    'F(R)'=>'freq',
-    'F(Q)'=>'freq',
-    'F(QR)'=>'freq',
-    'F(Q!R)'=>'freq',
-    'F(R!Q)'=>'freq',
-    'F(!Q!R)'=>'freq',
-    'P(QR)'=>'freq',
-    'E(QR)'=>'freq',
+		'P(Q|R)'=>'freq',
+		'P(R|Q)'=>'freq',
+		'F(R)'=>'freq',
+		'F(Q)'=>'freq',
+		'F(QR)'=>'freq',
+		'F(Q!R)'=>'freq',
+		'F(R!Q)'=>'freq',
+		'F(!Q!R)'=>'freq',
+		'P(QR)'=>'freq',
+		'E(QR)'=>'freq',
 
-    'jac_sim'=>'jac_sim',
+		'jac_sim'=>'jac_sim',
 
-    'dotprod'=>'dotprod',
-    'rDPbits'=>'dotprod',
-    'DPbits'=>'dotprod',
-    'sqrt_dp'=>'dotprod',
-#    'prodrts'=>'dotprod',
+		'dotprod'=>'dotprod',
+		'rDPbits'=>'dotprod',
+		'DPbits'=>'dotprod',
+		'sqrt_dp'=>'dotprod',
+		#    'prodrts'=>'dotprod',
 
-    'P_val'=>'proba',
-    'E_val'=>'proba',
-    'sig'=>'proba',
+		'P_val'=>'proba',
+		'E_val'=>'proba',
+		'sig'=>'proba',
 
-    'H(R)'=>'entropy',
-    'H(Q)'=>'entropy',
-    'H(Q,R)'=>'entropy',
-    'dH(Q,R)'=>'entropy',
-    'H(Q|R)'=>'entropy',
-    'H(R|Q)'=>'entropy',
-    'I(Q,R)'=>'entropy',
-    'U(Q|R)'=>'entropy',
-    'U(R|Q)'=>'entropy',
-    'IC'=>'entropy',
-);
+		'H(R)'=>'entropy',
+		'H(Q)'=>'entropy',
+		'H(Q,R)'=>'entropy',
+		'dH(Q,R)'=>'entropy',
+		'H(Q|R)'=>'entropy',
+		'H(R|Q)'=>'entropy',
+		'I(Q,R)'=>'entropy',
+		'U(Q|R)'=>'entropy',
+		'U(R|Q)'=>'entropy',
+		'IC'=>'entropy',
+
+		'common'=>'members',
+		'Q_only'=>'members',
+		'R_only'=>'members',
+	       );
+
 @calc_keys = keys %calc_groups;
 @calc_values = values %calc_groups;
 
@@ -101,7 +106,7 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 ## Field descriptions
 local %field_description = &DescribeFields();
 local $field_description_text = join ("\t", "", "group", "field", "description")."\n";
-foreach my $group qw(rank occ freq proba  jac_sim dotprod entropy) {
+foreach my $group qw(rank occ freq proba  jac_sim dotprod entropy members) {
     foreach my $field (sort @calc_keys) {
 	if ($calc_groups{$field} eq $group) {
 	    $field_description_text .= join("\t", "", $group, $field, $field_description{$field});
@@ -113,14 +118,17 @@ foreach my $group qw(rank occ freq proba  jac_sim dotprod entropy) {
 
 ## Define supported fields for the options return, sort, and matrix
 while (my ($key,$value) = each (%calc_groups)) {
-    $supported_return_fields{$value} = 1;
-    $supported_threshold_fields{$key} = 1;
-    $supported_matrix_fields{$key} = 1;
-    $supported_sort_fields{$key} = 1;
+  $supported_return_fields{$value} = 1;
+  $supported_threshold_fields{$key} = 1;
+  $supported_matrix_fields{$key} = 1;
+  $supported_sort_fields{$key} = 1;
 }
-$supported_return_fields{members} = 1,
-$supported_sort_fields{names} = 1,
-delete($supported_sort_fields{rank}),
+#$supported_return_fields{members} = 1;
+$supported_return_fields{common} = 1;
+$supported_return_fields{Q_only} = 1;
+$supported_return_fields{R_only} = 1;
+$supported_sort_fields{names} = 1;
+delete($supported_sort_fields{rank});
 
 $supported_matrix_fields = join (",", sort(keys( %supported_matrix_fields)));
 $supported_sort_fields = join (",", sort(keys( %supported_sort_fields)));
@@ -257,6 +265,15 @@ if ($calc_fields{proba}) {
 
 if ($calc_fields{freq}) {
     $calc_fields{occ} = 1;
+}
+
+# if ($calc_fields{members}) {
+#     $calc_fields{common} = 1;
+#     $calc_fields{Q_only} = 1;
+#     $calc_fields{R_only} = 1;
+# }
+if (($calc_fields{Q_only}) || ($calc_fields{R_only}) || ($calc_fields{common})) {
+    $calc_fields{members} = 1;
 }
 
 if ($main::verbose >= 2) {
@@ -1158,12 +1175,12 @@ sub CompareClasses {
       my @keys = sort keys %matching_elements;
 
       #### identify elements found in the reference class only
-      if ($calc_fields{members}) {
-	  foreach $m (sort($ref_classes{$r}->get_members())) {
-	      unless ($matching_elements{$m}) {
-		  push @R_only, $m;
-	      } 
+      if ($calc_fields{R_only}) {
+	foreach $m (sort($ref_classes{$r}->get_members())) {
+	  unless ($matching_elements{$m}) {
+	    push @R_only, $m;
 	  }
+	}
       }
 
 
@@ -1434,14 +1451,9 @@ sub CompareClasses {
       }
 
       ## Store members if required
-      if ($return_fields{members}) {
-	  @{$current_compa{R_only}} = @R_only;
-	  @{$current_compa{Q_only}} = @Q_only;
-	  @{$current_compa{common}} = @common;
-#	  @{$R_only{$compa_key}} = @R_only;
-#	  @{$Q_only{$compa_key}} = @Q_only;
-#	  @{$common{$compa_key}} = @common;
-      }
+      @{$current_compa{common}} = @common if ($return_fields{common});
+      @{$current_compa{R_only}} = @R_only if ($return_fields{R_only});
+      @{$current_compa{Q_only}} = @Q_only if ($return_fields{Q_only});
 
 
       ## Print the comparison in order to free memory
@@ -1532,11 +1544,9 @@ sub PrintHeader {
 
 
     ## Members
-    if ($return_fields{members}) {
-      push @header_fields, "R_only";
-      push @header_fields, "Q_only";
-      push @header_fields, "common_members";
-    }
+    push @header_fields, "common" if ($return_fields{common});
+    push @header_fields, "R_only" if ($return_fields{R_only});
+    push @header_fields, "Q_only" if ($return_fields{Q_only});
 
     ## ##############################################################
     ## Print field descriptions
@@ -1729,18 +1739,9 @@ sub PrintOneComparison {
   }
 
   ## Members
-  if ($return_fields{members}) {
-    print $out "\t", join( " ", @{$current_compa{R_only}}) ;
-    print $out "\t", join( " ", @{$current_compa{Q_only}}) ;
-    print $out "\t", join( " ", @{$current_compa{common}}) ;
-
-        
-
-    
-#    print $out "\t", join( " ", @{$R_only{$compa_key}}) ;
-#    print $out "\t", join( " ", @{$Q_only{$compa_key}}) ;
-#    print $out "\t", join( " ", @{$common{$compa_key}}) ;
-  }
+  print $out "\t", join( " ", @{$current_compa{common}}) if ($return_fields{common});
+  print $out "\t", join( " ", @{$current_compa{R_only}}) if ($return_fields{R_only});
+  print $out "\t", join( " ", @{$current_compa{Q_only}}) if ($return_fields{Q_only});
 
   print $out "\n";
 
@@ -2056,9 +2057,9 @@ sub DescribeFields {
 #	$field_description{'mtest'}  = "Correction for the multi-testing.";
     $field_description{'E_val'}  = "E-value of the intersection. E_val = P_val * nb_tests";
     $field_description{'sig'}  = "Significance of the intersection. sig = -log10(E_val)";
+    $field_description{'common'}  = "Elements found in both reference and query classes";
     $field_description{'R_only'}  = "Elements found in the class R only";
     $field_description{'Q_only'}  = "Elements found in the class Q only";
-    $field_description{'common_members'}  = "Elements found in both reference and query classes";
     $field_description{'H(Q)'} = "Entropy of class Q. H(Q) = - F(Q)*log[F(Q)] - F(!Q)*log[F(!Q)]";
     $field_description{'H(R)'} = "Entropy of class R. H(R) = - F(R)*log[F(R)] - F(!R)*log[F(!R)]";
     $field_description{'H(Q,R)'} = "Join entropy for classes Q and R. H(Q,R) = - F(QR)*log[F(QR)] - F(Q!R)*log[F(Q!R)] - F(R!Q)*log[F(R!Q)] - F(!Q!R)*log[F(!Q!R)]";
