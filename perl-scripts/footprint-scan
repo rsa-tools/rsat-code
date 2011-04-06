@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.72 2011/04/05 17:27:26 amedina Exp $
+# $Id: footprint-scan,v 1.73 2011/04/06 07:34:48 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -641,14 +641,19 @@ package main;
   &RSAT::message::TimeWarn("Starting analysis") if ($main::verbose >= 2);
 
   my $m = 0;			## Matrix counter
-  foreach my $ms (keys %matrix_table_hash) {
+  foreach my $ms  (sort(keys %matrix_table_hash)) {
     $m++;
     %top_sig=();
     local $m_suffix =$ms;
     local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
     local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
     local $tf=$matrix_table_hash{$m_suffix}{"tf"} if ($matrix_table_hash{$m_suffix}{"tf"}) ;
-    &RSAT::error::FatalError("Matrix file $matrix_file does not exist. Matrix file is mandatory.")  unless (-e $matrix_file) ;
+    
+    unless (-e $matrix_file){
+	&RSAT::message::Warning("Matrix file does not exist. Matrix file is mandatory.", $matrix_file)   ;
+	&RSAT::message::Warning("Analyzing next matrix.")   ;
+	next;
+    }
 
     ## Initialize variable that keeps the current file with othorlogs for the current TF
     $main::tf_ortho_file=() if $tf;
