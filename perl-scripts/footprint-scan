@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.74 2011/04/06 08:35:36 jvanheld Exp $
+# $Id: footprint-scan,v 1.75 2011/04/06 11:03:29 jvanheld Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.75 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -366,11 +366,9 @@ package main;
   local %uth = ();
   local $occ_sig_opt = "";
   local $occ_sig_graph_opt = "";
-  $main::pval=1e-4;
-  my $pvalue_th=" -uth pval ".$pval." ";
-  local $scan_opt = $pvalue_th;
+  local $main::pval=1e-4;
 
-  ## Featur maps
+  ## Feature maps
   local $map_opt = "";
 
   ## Filter 
@@ -439,7 +437,7 @@ package main;
 			orthologs
 			ortho_seq
 			purge
-			distrib_bg_model
+			theor_distrib
 			occ_sig
 			occ_sig_graph
 			scan
@@ -466,6 +464,14 @@ package main;
   ################################################################
   ## Read argument values
   &ReadArguments();
+
+  ################################################################
+  ## Upper P-value thrshold for selecting regulatory interactions, and
+  ## for scanning promoters.
+  if ($scan_opt =~/-uth pval/) {
+    &RSAT::message::FatalError("Please use the footprint-scan option -pval to specify p-value, rather than entering it with -scan_opt");
+  }
+  local $scan_opt .= " -uth pval ".$main::pval;
 
   ################################################################
   ## Check argument values
@@ -559,7 +565,6 @@ package main;
   ## Pseudo-frequency for the background model
   $ms_general_parameters .= " -bg_pseudo ".$main::bg_pseudo;
 
-  
   ## Read table of matrices
   my %matrix_table_hash=();
   if ($main::matrix_table_file) {
@@ -630,16 +635,12 @@ package main;
 
 
 
-  ################################################################
-  ## Iterate over matrices and genes
-
-  ################
   ## Open Matrices report
-
   my ($matrices_synthesis_index,$matrices_synthesis_table)= &OpenMatricesReport() if ($task{synthesis});
 
+  ################################################################
+  ## Iterate over matrices and genes
   &RSAT::message::TimeWarn("Starting analysis") if ($main::verbose >= 2);
-
   my $m = 0;			## Matrix counter
   foreach my $ms  (sort(keys %matrix_table_hash)) {
     $m++;
@@ -648,7 +649,7 @@ package main;
     local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
     local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
     local $tf=$matrix_table_hash{$m_suffix}{"tf"} if ($matrix_table_hash{$m_suffix}{"tf"}) ;
-    
+
     unless (-e $matrix_file){
 	&RSAT::message::Warning("Matrix file does not exist. Matrix file is mandatory.", $matrix_file)   ;
 	&RSAT::message::Warning("Analyzing next matrix.")   ;
@@ -661,7 +662,7 @@ package main;
     ################  TO DO
     ## Obtain the score related to the threshold p-value for selecting the recovered interactions
     # &GetScoreTHForPval($matrix_file);
-    
+
     ################
     ## Complet parameters for matrix scan commands with specific information for the matrix
     local $ms_parameters =  $ms_general_parameters ;
@@ -1940,7 +1941,7 @@ sub CloseMatricesReport{
 #     ## Background model file
 #     $infile{bg_model} = $dir{bg_model}."/";
 #     $infile{bg_model} .= "oligo_2nt_upstream-noorf_org_list".$noov.$strands.".freq";
-#     if ($task{distrib_bg_model}) {
+#     if ($task{theor_distrib}) {
 #       my $cmd = "taxon-frequencies -v 1 -type oligo  -ml 2";
 #       $cmd .= " -org_list ".$orglist_file;
 #       $cmd .= " > ".$infile{bg_model};

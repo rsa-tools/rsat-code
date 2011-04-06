@@ -356,9 +356,9 @@ sub InitQueryOutput {
     $promoter = "ortho";
   }
   $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab"; ##
-  $outfile{seq_notclean} = $outfile{prefix}."_".$promoter."_seq_notclean.fasta"; 
+  #  $outfile{seq_notclean} = $outfile{prefix}."_".$promoter."_seq_notclean.fasta"; 
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta"; 
-  $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
+  #  $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
 
   return($outfile_prefix, $query_prefix);
@@ -1123,13 +1123,14 @@ sub GetOrthologs {
   &IndexOneFile("orthologs", $outfile{orthologs});
 }
 
+
 ################################################################
 ## Predict operon leader genes for the orthologous genes
 sub InferOrthoOperons {
   if  ($task{operons}) {
     &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 2);
     &CheckDependency("operons", "orthologs");
-    my $cmd = "$SCRIPTS/get-leader-multigenome ";
+    my $cmd = $SCRIPTS."/get-leader-multigenome ";
     $cmd .= " -i ".$outfile{orthologs};
     $cmd .= " -o ".$outfile{bbh};
     $cmd .= " -uth interg_dist ".$dist_thr;
@@ -1146,17 +1147,14 @@ sub RetrieveOrthoSeq {
   if ($task{ortho_seq}) {
     &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 2);
     &CheckDependency("ortho_seq", "bbh");
-    my $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
+    my $cmd = $SCRIPTS."/retrieve-seq-multigenome -ids_only";
     $cmd .= " -i ".$outfile{bbh};
     $cmd .= " -noorf";
     $cmd .= " -feattype CDS,mRNA,tRNA,rRNA,scRNA,misc_RNA" ;
-    $cmd .= " -o ". $outfile{seq_notclean} ;
-
-
-    &one_command($cmd);
-
-    $cmd = "$SCRIPTS/convert-seq";
-    $cmd .= " -i ".$outfile{seq_notclean};
+#    $cmd .= " -o ". $outfile{seq_notclean} ;
+#    &one_command($cmd);
+    $cmd .= "| ".$SCRIPTS."/convert-seq";
+#    $cmd .= " -i ".$outfile{seq_notclean};
     $cmd .= " -mask non-dna ";
     $cmd .= " -from fasta ";
     $cmd .= " -to fasta ";
@@ -1167,7 +1165,6 @@ sub RetrieveOrthoSeq {
   }
   &IndexOneFile("$promoter sequences", $outfile{seq});
 }
-
 
 
 ################################################################
@@ -1181,11 +1178,10 @@ sub PurgeOrthoSeq {
     $cmd .= " -i ".$outfile{seq};
     $cmd .= " -ml 30 -mis 0 -mask_short 30";
     $cmd .= " ".$strands;
-    $cmd .= " -o ".$outfile{purged_notclean};
-    &one_command($cmd);
-
-    $cmd = "$SCRIPTS/convert-seq";
-    $cmd .= " -i ".$outfile{purged_notclean}; 
+#    $cmd .= " -o ".$outfile{purged_notclean};
+#    &one_command($cmd);
+    $cmd .= "|".$SCRIPTS."/convert-seq";
+#    $cmd .= " -i ".$outfile{purged_notclean};
     $cmd .= " -mask non-dna ";
     $cmd .= " -from fasta ";
     $cmd .= " -to fasta ";
@@ -1198,27 +1194,76 @@ sub PurgeOrthoSeq {
 }
 
 
+################################################################
+## Compute the theoretical distribution of scores for a given matrix
+## (will be used for several purposes including occurrence
+## significanc, site scanning, curve drawing).
+sub CalcMAtrixTheorDistrib {
+  if ($task{theor_distrib}) {
+    die "NOT IMPLEMENTED YET";
+
+    ################################################################
+    ######## IN CONSTRUCTION ########
+
+    ## Identify the weight coresponding to the filtering P-value
+
+    ## Lower bound on Pval (upper bound on weight)
+    $cmd = "sort -n -k 2 ".$outfile{occ_sig};
+    $cmd .= "| grep -v '^;' ";
+    $cmd .= "| grep -v '^#' ";
+    $cmd .= "| awk '\$7 <= ".$main::pval."'";
+    $cmd .= "| head -1";
+    $cmd .= "|cut -f 2,7";
+    my $lower_pval = `$cmd`;
+    chomp($lower_pval);
+    my ($weight1, $pval1) = split('\t', $lower_pval);
+
+    ## Upper bound on Pval (lower bound on weight)
+    $cmd = "sort -n -k 2 ".$outfile{occ_sig};
+    $cmd .= "| grep -v '^;' ";
+    $cmd .= "| grep -v '^#' ";
+    $cmd .= "| awk '\$7 > ".$main::pval."'";
+    $cmd .= "| tail -1";
+    $cmd .= "|cut -f 2,7";
+    my $upper_pval = `$cmd`;
+    chomp($upper_pval);
+    my ($weight2, $pval2) = split('\t', $upper_pval);
+    &RSAT::message::Debug(
+			  "Score threshold",
+			  "weight1=".$weight1,
+			  "pval1=".$pval1,
+			  "weight2=".$weight2,
+			  "pval2=".$pval2,
+			 ) if ($main::verbose >= 0);
+
+#    die "HELLO";
+    ########  / IN CONSTRUCTION ########
+    ################################################################
+  }
+}
 
 ################################################################
 ## Detect over-representation of matching occurrecnes (hits) of the motif
 sub OccurrenceSig {
   if ($task{occ_sig}) {
+
+    ## Compute observed distribution of hits + estimate the hit
+    ## significance for each weight score
     &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 2);
-    if ($main::no_purge){
+    if ($main::no_purge) {
       &CheckDependency("occ_sig", "seq");
-    }
-    else {
+    } else {
       &CheckDependency("occ_sig", "purged");
     }
     my $cmd = "matrix-scan";
     $cmd .= $ms_parameters;
     #$cmd .= " -m ".$matrix_file;
     #$cmd .= " -matrix_format ".$matrix_format;
-    $cmd .= " -return distrib,occ_proba,rank -sort_distrib";
+    $cmd .= " -return distrib,occ_proba,rank"; # -sort_distrib";
     #  $cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
-    if ($main::no_purge){
+    if ($main::no_purge) {
       $cmd .= " -i ".$outfile{seq};
-    }else{
+    } else {
       $cmd .= " -i ".$outfile{purged};
     }
     $cmd .= " -o ".$outfile{occ_sig};
@@ -1237,9 +1282,11 @@ sub OccurrenceSigGraph {
     &RSAT::message::TimeWarn("Graph with over-representation of hits", $outfile{occ_freq_graph}) if ($main::verbose >= 2);
     &CheckDependency("occ_sig_graph", "occ_sig");
 
+    my $cmd = "";
 
     ## Occ frequency graph
-    my $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
+    $cmd = "sort -n -k 2 $outfile{occ_sig}";
+    $cmd .= " | ".$SCRIPTS."/XYgraph";
     $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800 -xgstep1 1 -xgstep2 0.5";
     $cmd .= " -ycol 5,8 -yleg1 'Hit numbers' -ylog 10";
     $cmd .= " -title 'matrix ".$m_suffix." " ;
@@ -1251,7 +1298,8 @@ sub OccurrenceSigGraph {
     &one_command($cmd);
 
     ## Occ significance graph
-    $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
+    $cmd = "sort -n -k 2 $outfile{occ_sig}";
+    $cmd .= " | ".$SCRIPTS."/XYgraph";
     $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800  -xgstep1 1 -xgstep2 0.5";
     $cmd .= " -ycol 11 -yleg1 'Binomial significance of hits'";
 
