@@ -1294,6 +1294,7 @@ sub OccurrenceSig {
     }
     my $cmd = "matrix-scan";
     $cmd .= $ms_parameters;
+    $cmd .= " -quick ";
     #$cmd .= " -m ".$matrix_file;
     #$cmd .= " -matrix_format ".$matrix_format;
     $cmd .= " -return distrib,occ_proba,rank"; # -sort_distrib";
@@ -1321,7 +1322,6 @@ sub OccurrenceSig {
 sub GetMinWeight {
 
   my $min_weight = "";
-
   ## Lower bound on Pval (upper bound on weight)
   my $weight_column = 1;
   my $pval_column = 4;
@@ -1410,10 +1410,16 @@ sub OccurrenceSigGraph {
 	my $sig_max = $fields[1];
 	$cmd .= " -vline red ". $sig_max;
       }
-      my $min_weight = &GetMinWeight();
-      $cmd .= " -vline darkgreen ". $min_weight;
-    }
 
+      if(-e $outfile{matrix_distrib}){ 
+	  my $min_weight = &GetMinWeight();
+	  $cmd .= " -vline green ". $min_weight;
+      }
+      else{
+	  &RSAT::message::Warning("File with the theoretical score distribution for the matrix is not available and the weigth equivalent to the threhold p-value will no be drawn", $outfile{matrix_distrib});
+      }
+    }
+      
     ## options added  from comand line
     $cmd .= " ".$occ_sig_graph_opt;
     &one_command($cmd);
@@ -1457,6 +1463,7 @@ sub OrthoScan {
     &CheckDependency("scan", "seq");
     my $cmd = "matrix-scan";
     $cmd .= $ms_parameters;
+    $cmd .= " -quick ";
     $cmd .= " -return limits,sites,rank";
     $cmd .= " -i ".$outfile{seq};
     $cmd .= " -o ".$outfile{sites};
