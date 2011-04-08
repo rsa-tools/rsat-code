@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.31 2010/05/20 07:27:57 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.32 2011/04/08 04:55:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -173,15 +173,6 @@ print "<BR>\n";
 print "<HR width=550 align=left>\n";
 
 &PrintDyadBackgroundOptions();
-
-# print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-# 		    $query->Tr($query->td("<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
-# 		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='exp_freq' VALUE='dyad freq from intergenic sequences' CHECKED>Dyad frequencies from all intergenic regions<BR>",
-# 					   &OrganismPopUpString])),
-# 		    $query->Tr($query->td([
-# 					   "<INPUT TYPE='radio' NAME='exp_freq' VALUE='monad (word) freq in the input sequences.'>Monad (word) frequencies from the input sequences<BR>",
-# 					   ])),
-# 		    );
 
  print "<HR width=550 align=left>\n";
 

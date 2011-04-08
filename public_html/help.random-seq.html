@@ -72,17 +72,18 @@ are grouped). This probability is constant over the sequence, i.e. each
 nucleotide is generated independently of the preceding and succeeding
 nucleotides.
 
-<Li><b>Markov chains (calibrated on intergenic frequencies)</b><br>
-The random sequence has the same oligonucleotide composition as
-observed in the intergenic regions of the selected organism.  This is
-obtained by a Markov chain process, where nucleotide probabilities
-vary at each position, depending on the preceding nucleotides.
+<Li><b>Markov chains (calibrated on upstream non-coding
+frequencies)</b><br> The random sequence has the same oligonucleotide
+composition as observed in the non-coding regions located upstream of
+all genes of the selected organism.  This is obtained by a Markov
+chain process, where nucleotide probabilities vary at each position,
+depending on the preceding nucleotides.
 
 <ul>
 
 <li><b>Organism</b> The reference organism (oligonucleotide
 frequencies are pre-calculated for each supported organism, on the
-basis of the complete set of intergenic sequences).
+basis of the complete set of upstream sequences).
 
 <li><b>Oligonucleotide size</b> This determines which expected
 oligonucleotide calibraiton table has to be used. The markov chain
