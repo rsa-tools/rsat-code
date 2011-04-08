@@ -788,6 +788,12 @@ file generated with the task "synthesis".
 
 =over
 
+=item I<orthologs_tf>
+
+Ortholgous genes will be obtained for the genes realted to the specified trasncription factors.
+This task shoulb be executed befor the option -orthologs when a tf is specified.
+See -tf option description for more information.
+
 =item I<occ_sig>
 
 Compute the significance of number of matrix hit occurrences as a
@@ -799,7 +805,7 @@ I<matrix-scan-quick>).
 Generate graphs showing the distributions of occurrences and their
 significances, as a function of the weight score (using >XYgraph>).
 
-=item scan
+=item I<scan>
 
 Scan upstream sequences to detect hits above a given threshold (using
 I<matrix-scan>).
