@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.78 2011/04/06 15:49:49 amedina Exp $
+# $Id: footprint-scan,v 1.79 2011/04/08 17:56:41 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.78 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.79 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -470,8 +470,8 @@ package main;
   ################################################################
   ## Upper P-value thrshold for selecting regulatory interactions, and
   ## for scanning promoters.
-  if ($scan_opt =~/-uth pval/) {
-    &RSAT::message::FatalError("Please use the footprint-scan option -pval to specify p-value, rather than entering it with -scan_opt");
+  if ($scan_opt) {
+    &RSAT::message::FatalError("Please use the footprint-scan option -pval to specify p-value, rather than entering it with -scan_opt")   if ($scan_opt =~/-uth pval/);
   }
   local $scan_opt .= " -uth pval ".$main::pval;
 
@@ -487,13 +487,22 @@ package main;
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
+  
   ################################################################
+  ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems 
+
+  ## Check compatibility between -batch and -task all 
+  if (  ((scalar(keys(%task)) == 0) || ($task{all} ) ) && ($batch)  ) {
+      &RSAT::error::FatalError("Execution of all tasks is incompatible with \"-batch\" option, you should execute each tasks independently, to avoid dependency files problems. See help \"-task\" to consult all possible tasks ");
+  }
+  
   ## Check compatibility between -batch and -task synthesis
   if ($task{synthesis} && $batch) {
     &RSAT::error::FatalError("Synthesis task is incompatible with \"-batch\" option, no other tasks where specified") if (scalar(keys(%task)) == 1);
     &RSAT::message::Warning("Synthesis task is incompatible with \"-batch\" option, all other tasks will be performed");
     $task{synthesis}=0;
   }
+  
 
   ################################################################
   ## Check the compatibility between matrix input modes.
@@ -718,7 +727,7 @@ package main;
       }
       if ($task{orthologs}){
 	  unless(-s $main::tf_ortho_file ){
-	  &RSAT::message::Warning("There were no organisms with an ortholog for the specified TF")  if ($main::verbose >= 0) ;
+	  &RSAT::message::Warning("There were no organisms with an ortholog for the specified TF, please be sure that you have ran the orthologs_tf task before trying to get the orthologs for the query genes ")  if ($main::verbose >= 0) ;
 	  next;
 	  }
       }
