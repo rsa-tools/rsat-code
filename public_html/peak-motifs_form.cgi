@@ -281,21 +281,37 @@ print $query->checkbox(-name=>'position-analysis',
 		       -checked=>$default{"position-analysis"},
 		       -label=>'');  
 print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
-print "<br/>";
 
-print "<br/> <b>Spaced words pairs</b> <br/>";
-#
-### dyad-analysis
-#   
-print $query->checkbox(-name=>'dyad-analysis',
-		       -checked=>$default{"dyad-analysis"},
-		       -label=>''); 
+
+## Word size
+print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer length</a>&nbsp;</b> for the three programs above\n";
+
+print $query->checkbox(-name=>'oligo_length6',
+		       -checked=>$default{oligo_length6},
+		       -label=>'6'); 
+print "&nbsp;"x2;
+print $query->checkbox(-name=>'oligo_length7',
+		       -checked=>$default{oligo_length7},
+		       -label=>'7'); 
+print "&nbsp;"x2;
+print $query->checkbox(-name=>'oligo_length8',
+		       -checked=>$default{oligo_length8},
+		       -label=>'8'); 
+print "&nbsp;"x2;
+print "<br><i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
+print "</p>";
+
+################################################################
+## dyad-analysis
+print "<p> <b>Spaced words pairs</b>";
+print "<br>", $query->checkbox(-name=>'dyad-analysis',
+			       -checked=>$default{"dyad-analysis"},
+			       -label=>'');
 print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
+print "</p>";
 
-##print "<br/>";
 
-#
-### local-word-analysis => too slow to be put on the website
+### local-word-analysis => too slow to be put on the website until the program is optimized
 #
 #print $query->checkbox(-name=>'local-word-analysis_dyads',
 #		       -checked=>$default{'local-word-analysis_dyads'},
@@ -312,50 +328,24 @@ print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dy
 #print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
 #print "<br/>";
 
-print "<br/>";	
-		       
-
-
-## Word size
-print "<br/> <b>Common options for above programs</b> <br/>";
-
-print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html#oligo_length'>Oligomer length</a>&nbsp;</B>\n";
-
-print $query->checkbox(-name=>'oligo_length6',
-		       -checked=>$default{oligo_length6},
-		       -label=>'6'); 
-print "&nbsp;"x2;
-print $query->checkbox(-name=>'oligo_length7',
-		       -checked=>$default{oligo_length7},
-		       -label=>'7'); 
-print "&nbsp;"x2;
-print $query->checkbox(-name=>'oligo_length8',
-		       -checked=>$default{oligo_length8},
-		       -label=>'8'); 
-print "&nbsp;"x2;
-print "<br><i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
-
-print "<br/>";
-
 ### markov  order (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html'>Background model: Markov order</a>&nbsp;</B>\n";
-$oligoPopup = "";
+print "<p><b><a href='help.oligo-analysis.html'> Markov order of the background model</a></b>\n";
+$oligoPopup = "<br>";
 $oligoPopup .=  "<SELECT NAME='markov'>\n";
 $oligoPopup .=  "<OPTION  SELECTED VALUE='0'>0 (generally not ideal)</option>\n";
 $oligoPopup .=  "<OPTION  SELECTED VALUE='1'>1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='-3'>oligo length -3 (intermediate size sets)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='-3'>oligo length -3 (intermediate size data sets)</option>\n";
 $oligoPopup .=  "<OPTION VALUE='-2'>oligo length -2 (more stringent for large data sets e.g. > 1Mb)</option>\n";
 $oligoPopup .=  "</SELECT>";
 print $oligoPopup;
-    
-print "<br/>";
+print "</p>";
 
 ### threshold (common to all programs)
 #print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html#thresholds'>Lower threshold on significance</a>&nbsp;</B>\n";
 #print  $query->textfield(-name=>'lth_occ_sig',
 #							      -default=>$default{lth_occ_sig},
 #							      -size=>3);
-#print "<br/>";			 
+#print "<br/>";
 print "</fieldset><p/>";
 
 print '	
