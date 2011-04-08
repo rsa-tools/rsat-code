@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.41 2011/02/17 05:53:17 rsat Exp $
+# $Id: dyad-analysis.cgi,v 1.42 2011/04/08 04:55:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -128,7 +128,7 @@ if ($query->param('freq_estimate') eq 'background') {
   %supported_background = (
 			   "upstream"=>1,
 			   "upstream-noorf"=>1,
-			   "intergenic"=>1
+#			   "intergenic"=>1
 			  );
   my $background = $query->param("background");
   unless ($supported_background{$background}) {
