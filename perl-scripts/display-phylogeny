@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-phylogeny,v 1.1 2011/04/08 09:57:45 rsat Exp $
+# $Id: display-phylogeny,v 1.2 2011/04/08 10:14:43 rsat Exp $
 #
 ############################################################
 
@@ -71,7 +71,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -143,7 +143,7 @@ package main;
       my @string = split /\,/, $string_val;
       &find_node_levels(\@string, 0, 0);
       # computes the maximal coordinates of x and y
-      my $x_width = (scalar keys %sons) * 100;
+      my $x_width = (scalar keys %sons) *100 +100;
       my $y_width = $maxlevel * 80;
       &dispose_nodes($grandfather, 0, 0, $x_width);
       # create the picture
@@ -166,15 +166,16 @@ package main;
       $p->setfont("Arial", 12);
       foreach my $node (keys %pos) {
         next if (!$leaves{$node});
-        my $length_name = length($node) * 10;
+        my $length_name = length($node) * 6;
 	my $xpos = $pos{$node}{'x'};
 	my $ypos = $pos{$node}{'y'}+$top_margin;;
-        $p->setcolour("black");
-        $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos + $length_name/2, $ypos+12);
-        $p->setcolour("white");
-        $p->box({filled=>1},$xpos-$length_name/2+1, $ypos-4, $xpos + $length_name/2-1, $ypos+11);
-        $p->setcolour("black");
-        $p->text($xpos-($length_name/2)+2,$ypos-1, $node);
+#	  draw a black box around the node label
+#         $p->setcolour("black");
+#         $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos + $length_name/2, $ypos+12);
+#         $p->setcolour("white");
+#         $p->box({filled=>1},$xpos-$length_name/2+1, $ypos-4, $xpos + $length_name/2-1, $ypos+11);
+#         $p->setcolour("black");
+        $p->text({rotate => 90}, $xpos, $ypos, $node);
       }      
       my $outputfile = $main::outfile{output};
       if ($out_format eq "pdf") {
