@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.79 2011/04/08 17:56:41 amedina Exp $
+# $Id: footprint-scan,v 1.80 2011/04/08 21:47:44 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.79 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.80 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -1682,7 +1682,7 @@ sub GetOrthologsTF {
 sub OpenSynthesisPerMatrix {
   $dir{synthesis} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix);
   &RSAT::util::CheckOutDir($dir{synthesis});
-  $prefix{$m_suffix."_synthesis"} = join( "/",$dir{synthesis},"result_synthesis");
+  $prefix{$m_suffix."_synthesis"} = join( "/",$dir{synthesis},"synthesis_per_matrix");
   $outfile{$m_suffix."_synthesis_tab"} = $prefix{$m_suffix."_synthesis"}.".tab";
   $outfile{$m_suffix."_synthesis_html"} = $prefix{$m_suffix."_synthesis"}.".html";
 
@@ -1767,7 +1767,7 @@ sub OpenMatricesReport{
     ## Check Dir and open html and synthesis table
     $dir{matrices_synthesis} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name);
     &RSAT::util::CheckOutDir($dir{matrices_synthesis});
-    $prefix{"all_matrices_synthesis"} = join( "/",$dir{matrices_synthesis},"matrices_result_synthesis");
+    $prefix{"all_matrices_synthesis"} = join( "/",$dir{matrices_synthesis},"all_matrices_report");
     $outfile{"all_matrices_synthesis_tab"} =  $prefix{"all_matrices_synthesis"}.".tab";
     $outfile{"all_matrices_synthesis_html"} =  $prefix{"all_matrices_synthesis"}.".html";
     &RSAT::message::Info("Synthesis text and html table for all matrices",  $prefix{"all_matrices_synthesis"} )if ($main::verbose>=1) ;
