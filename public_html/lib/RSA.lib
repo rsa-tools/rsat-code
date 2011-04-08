@@ -103,7 +103,7 @@ sub ExpectedFreqFile {
 		      'upstream-rm'=>1,
 		      'upstream-noorf-rm'=>1,
 		      'protein'=>1,
-		      'intergenic'=>1,
+#		      'intergenic'=>1,
 		      'genomic'=>1
 		     );
 

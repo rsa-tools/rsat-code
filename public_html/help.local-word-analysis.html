@@ -94,7 +94,15 @@ For example, <tt>TATATATATATA</tt> would represent
 Various probabilistic models can be used to estimate the expected frequency of each oligonucleotide.<br />
 </p>
 <blockquote>
-<b>Warning !</b> The results will be dramatically affected by the choice of expected frequency, which is the main specificity of this program. It has been shown that for the detection of regulatory sites in yeast upstream sequences, the best choice is to estimate the expected oligonucleotide frequencies on basis of the frequencies observed in the set of all intergenic sequences from the genome. For the same purpose, choosing "equiprobable residues" would be totally inefficient, and "Residue frequencies from input sequence" works poorly.
+<b>Warning !</b> The results will be dramatically affected by the
+choice of expected frequency, which is the main specificity of this
+program. It has been shown that for the detection of regulatory sites
+in yeast upstream sequences, the best choice is to estimate the
+expected oligonucleotide frequencies on basis of the frequencies
+observed in the set of all non-coding upstream sequences from the
+genome. For the same purpose, choosing "equiprobable residues" would
+be totally inefficient, and "Residue frequencies from input sequence"
+works poorly.
 </blockquote>
 <p>
 <a name="background" id="background"></a>
@@ -109,9 +117,11 @@ Various probabilistic models can be used to estimate the expected frequency of e
 <li>
 <b>upstream-noorf</b>: all upstream regions, preventing overlap with upstream ORFs (sequences are clipped to discard upstream ORF sequences).
 </li>
+<!--
 <li>
 <b>intergenic</b>: all the intergenic regions, including upstream and downstream sequences.
 </li>
+-->
 </ul>
 </li>
 <li>
