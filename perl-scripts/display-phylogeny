@@ -1,0 +1,401 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: display-phylogeny,v 1.1 2011/04/08 09:57:45 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+display-phylogeny
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Template for writing new perl scripts.
+
+=head1 AUTHORS
+
+sylvain@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+phylogeny tools
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+display-phylogeny [-i inputfile] [-o outputfile] [-out_format pdf|ps] [-v #] [-q] [...]
+
+=head1 INPUT FORMAT
+
+
+
+=head1 OUTPUT FORMAT
+
+A phylogenetic tree in the postscript format
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require PostScript::Simple;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    @main::newick = ();
+    $main::out_format = "pdf";
+    my $top_margin = 7;
+    
+    our %sons = ();
+    our $grandfather = "";
+    our $maxlevel = 0;
+    our %pos = ();
+    our %levels = ();
+    our %leaves = ();
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if ($infile{input} && scalar @newick > 0) {
+      &FatalError("You must either submit a file (-i option) or a set of newick trees (-q option) not both)");
+    }
+    if ($infile{input} && (! -e $infile{input} || -z $infile{input})) {
+      &FatalError("File ".$infile{input}." does not exist or is not valid... Please check");
+    }
+    if (!$outfile{output}) {
+      &FatalError("Please, specify a valid output file name or prefix");
+    }
+
+    ################################################################
+    ## Read input
+    if ($main::infile{input}) {
+      ($main::in) = &OpenInputFile($main::infile{input});
+      while (my $ligne = <$main::in>) {
+	chomp $ligne;
+	# Check if it is a valid newick format (TO BE IMPLEMENTED)
+	push @newick, $ligne;
+
+      }
+      close $main::in if ($main::infile{input});
+    }
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+    my $iteration = 1;
+    foreach my $string_val (@newick) {
+      %sons = ();
+      $grandfather = "";
+      $maxlevel = 0;
+      %pos = ();
+      %levels = ();
+      my $iterationid = "output"."_$iteration";
+      $outfile{$iterationid} = $outfile{"output"};
+      if (scalar @newick > 1) {
+        $outfile{$iterationid} = $outfile{"output"}."_".$iteration.".$out_format";
+      } 
+      $string_val =~ s/\)/\,\)/g;
+      $string_val =~ s/\(/\(\,/g;
+      my @string = split /\,/, $string_val;
+      &find_node_levels(\@string, 0, 0);
+      # computes the maximal coordinates of x and y
+      my $x_width = (scalar keys %sons) * 100;
+      my $y_width = $maxlevel * 80;
+      &dispose_nodes($grandfather, 0, 0, $x_width);
+      # create the picture
+      $p = new PostScript::Simple(xsize=>$x_width, ysize=>$y_width, colour => 1, eps => 0, units => "pt");
+      # create a new page
+      $p -> newpage;
+      # first draw the edges
+      foreach my $node (keys %sons) {
+	my @sons = @{$sons{$node}};
+	foreach my $son (@sons) {
+	  my $source_xpos = $pos{$node}{'x'};
+	  my $source_ypos = $pos{$node}{'y'}+$top_margin;
+	  my $target_xpos = $pos{$son}{'x'};
+	  my $target_ypos = $pos{$son}{'y'}+$top_margin;;
+	  &RSAT::message::Info(join "\t", $node, $son, $source_xpos, $source_ypos, $target_xpos, $target_xpos) if ($main::verbose >= 2);
+	  $p->line($source_xpos,$source_ypos, $target_xpos, $target_ypos, 0, 0, 0);
+	}
+      }
+      # then draw the nodes
+      $p->setfont("Arial", 12);
+      foreach my $node (keys %pos) {
+        next if (!$leaves{$node});
+        my $length_name = length($node) * 10;
+	my $xpos = $pos{$node}{'x'};
+	my $ypos = $pos{$node}{'y'}+$top_margin;;
+        $p->setcolour("black");
+        $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos + $length_name/2, $ypos+12);
+        $p->setcolour("white");
+        $p->box({filled=>1},$xpos-$length_name/2+1, $ypos-4, $xpos + $length_name/2-1, $ypos+11);
+        $p->setcolour("black");
+        $p->text($xpos-($length_name/2)+2,$ypos-1, $node);
+      }      
+      my $outputfile = $main::outfile{output};
+      if ($out_format eq "pdf") {
+        $outputfile = `mktemp temp.XXXXX`;
+        chomp $outputfile;
+      }
+      $p->output($outputfile);
+      if ($out_format eq "pdf") {
+        system("pstoedit -f pdf $outputfile ".$outfile{$iterationid});
+        system("rm $outputfile");
+      }
+      $iteration++;
+    }
+    
+    ##########################
+    ######################################
+    ## Insert here output printing
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-out_format>
+
+pdf or ps
+
+=cut
+    } elsif ($arg eq "-out_format") {
+      $main::out_format = shift(@arguments);
+      
+      
+=pod
+
+=item B<-q>
+
+taxonomy in the newick format (between quotes). This option can be used iteratively.
+
+=cut
+    } elsif ($arg eq "-q") {
+      my $q = shift(@arguments);
+      push @newick, $q;
+=pod
+
+=item B<-i inputfile>
+
+file containing a list of taxonomies in the newick format
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+Name of the output file. If more than one tree is required, you have to give a prefix as argument.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+################################################################
+## Parse the tree in newick format and returns the node levels 
+sub find_node_levels {
+  my ($string_ref, $start, $level) = (shift, shift, shift);
+  my @string = @{$string_ref};
+  my $group = "";
+  my @groups = ();
+  for (my $i = $start; $i < scalar @string; $i++) {
+    my $current_char = $string[$i];
+    if ($current_char eq ")") {
+      $levels{$group} = $level if (!defined $levels{$group});
+      foreach my $subgroup (@groups) {
+        push @{$sons{$group}}, $subgroup if ($subgroup ne $group);
+      }
+      $grandfather = $group;
+      return ($i, $group);
+    } elsif ($current_char eq "(") {
+      my ($newpos, $group_here) = &find_node_levels(\@string, $i+1, $level+1);
+      $maxlevel = ($level+1) if (($level+1) > $maxlevel);
+      $i = $newpos;
+      $group .= $group_here;
+      push @groups, $group_here;
+    } else {
+      $levels{$current_char} = $level if (!defined $levels{$current_char});
+      push @groups, $current_char;
+      $leaves{$current_char}++;
+      $group .= $current_char;
+    }
+  }
+}
+
+################################################################
+## Computes the position of the nodes
+sub dispose_nodes {
+  my ($node, $level, $xstart, $xend) = (shift, shift, shift, shift);
+  if (defined ($sons{$node})) {
+    my @children = @{$sons{$node}};
+    @children = sort @children;
+    my $children_nb = scalar @children;
+    my $cut = ($xend - $xstart) / $children_nb;
+    my $start_xpos = $xstart;
+    my $end_xpos = $xstart + $cut;
+    foreach my $child (@children) {
+      &dispose_nodes($child, $level+1, $start_xpos, $end_xpos);
+      $start_xpos = $end_xpos;
+      $end_xpos = $end_xpos + $cut;
+    }
+  }
+  $pos{$node}{'x'} = ($xstart + $xend) / 2;
+  $pos{$node}{'y'} = $level*50;
+}
+
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; template ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
