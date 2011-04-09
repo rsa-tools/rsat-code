@@ -19,9 +19,9 @@ RSAT::Tree - Class for handling taxonomic trees in RSAT.
 }
 
 =head1 DESCRIPTION
-    
+
 Class for the maipulation of taxonomic trees in RSAT.
-    
+
 =head1 AUTHOR
 
 Email rekins@bigre.ulb.ac.be
@@ -443,7 +443,6 @@ sub LoadSupportedTaxonomy_rj {
 }
 
 
-## ##############################################################
 =pod
 
 =item LoadSupportedTaxonomy
@@ -515,7 +514,7 @@ sub LoadSupportedTaxonomy_jvh {
       my $parent = $taxonomy[$t];
       if (defined $nodes{$parent}) {
 	$nodes{$parent}->add_child($child_node) unless (($no_species) && ($child_node eq $org_node));
-	warn join("\t", ";\t", "parent found", $t, $parent, $nodes{$parent}), "\n" if ($main::verbose >= 4);
+	&RSAT::message::Debug("\t\tparent found", $t, $parent, $nodes{$parent}) if ($main::verbose >= 4);
 	$child_node = $nodes{$parent};
 	last;
       } else {
