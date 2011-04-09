@@ -26,8 +26,8 @@ $out = &OpenOutputFile($outputfile);
 
 
 #### read patterns
-@patterns = &ReadPatterns(pattern_file=>$inputfile, 
-			  score_column=>$score_column, 
+@patterns = &ReadPatterns(pattern_file=>$inputfile,
+			  score_column=>$score_column,
 			  noid=>$noid,
 			  pattern_score=>$pattern_score,
 			  pattern_id=>$pattern_id,
@@ -35,7 +35,8 @@ $out = &OpenOutputFile($outputfile);
 			  expand=>1,
 			  inf_scores=>1, ## Accept infinite score values (e.g. from position-analysis)
 			 );
-&IndexScores(@patterns);
+$pattern_nb = scalar(@patterns);
+#&IndexScores(@patterns);
 
 #### verbose ####
 if ($verbose) {
@@ -63,21 +64,42 @@ if ($verbose) {
 }
 
 
-#### check that pattern number does not exceed the limit
-if (($top_pattern_nb > 0) && 
-    ($pattern_nb > $top_pattern_nb)) {
-    my $message = join("\t", "Number of patterns = $pattern_nb.",
-		       "Exceeds top number = $top_pattern_nb.",
-		       "Only the top $top_pattern_nb patterns will be assembled.");
-    print $out ";",  $message, "\n";
-    &RSAT::message::Warning($message) if ($main::verbose >= 1);
+################################################################
+#### Check that pattern number does not exceed the limit
 
-    @patterns = @patterns[0..($top_pattern_nb-1)];;
-    &IndexScores(@patterns);
-#    die "$pattern_nb", "\n";
+
+## With the option -top_patterns, the exceeding patterns are ignored
+if (($top_pattern_nb > 0) &&
+    ($pattern_nb > $top_pattern_nb)) {
+  my $message = join("\t", "Number of patterns = $pattern_nb.",
+		     "Exceeds top number = $top_pattern_nb.",
+		     "Only the top $top_pattern_nb patterns will be assembled.");
+  print $out ";",  $message, "\n";
+  &RSAT::message::Warning($message) if ($main::verbose >= 1);
+
+
+  @patterns = @patterns[0..($top_pattern_nb-1)];
+  $pattern_nb = scalar(@patterns);
+  &RSAT::message::Debug("remaining patterns", scalar(@patterns)) if ($main::verbose >= 2);
+#    &IndexScores(@patterns);
+}
+&IndexScores(@patterns);
+
+## Report patterns to assemble
+if ($main::verbose >= 3) {
+  my $message = "Patterns to assemble\t".scalar(@to_assemble)."\n";
+  foreach my $pattern (@patterns) {
+    $message .= join("\t", ";", 
+		     $pattern->get_attribute("sequence"),
+		     $pattern->get_attribute("score"));
+    $message .= "\n";
+  }
+  &RSAT::message::Info($message);
 }
 
-if (($max_pattern_nb > 0) && 
+## With the option -max_patterns, the program does not perform the
+## assemblies if there are too many patterns
+if (($max_pattern_nb > 0) &&
     ($pattern_nb > $max_pattern_nb)) {
     my $message = join("\t", "Too many patterns to assemble. ",
 		       "Number of patterns = $pattern_nb.",
@@ -89,7 +111,7 @@ if (($max_pattern_nb > 0) &&
     &AssemblePatterns(@to_assemble);
 }
 
-###### close output file ######
+##### Close output file
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
 print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $out unless ($outputfile eq "");
@@ -103,47 +125,56 @@ exit(0);
 ################################################################
 ## Create a hash with pattern scores
 sub  IndexScores {
-    my (@patterns) = @_;
-    &RSAT::message::TimeWarn("Indexing", scalar(@patterns), "patterns by scores") if ($main::verbose >= 2);
+  my (@patterns) = @_;
+  &RSAT::message::TimeWarn("Indexing", scalar(@patterns), "patterns by scores") if ($main::verbose >= 2);
 
-    ## Make sure the index is empty before starting
-    %score = ();
-    %seed = ();
-    @to_assemble = ();
+  ## Make sure the index is empty before starting
+  %sort_score = (); ## Score for sorting the patterns.
+  %score = (); ## Actual score assigned to the pattern
+  %seed = ();
+  @to_assemble = ();
 
-    foreach $pattern (@patterns) {
-	my $word = $pattern->get_attribute("sequence"); 
-	my $score = $pattern->get_attribute("score");
-	my $description = $pattern->get_attribute("description");
-	if ($score_column >= 1) {
-	    $info{$word} = $score;
-	    $score{$word} = $score;
-	} else {
-	    $info{$word} = $description;
-	    $score{$word} = "nd";
-	}
-#    die join "\t", $info{$word}, $score{$word}, $description, "\n";
+  $pattern_nb = scalar(@patterns);
+  for my $i (0..$#patterns) {
+    my $pattern = $patterns[$i];
+    my $word = $pattern->get_attribute("sequence");
+    my $score = $pattern->get_attribute("score");
+    my $description = $pattern->get_attribute("description");
+
+    ## Index score and information (score or description) for the output
+    if ($score_column >= 1) {
+      $sort_score{$word} = $score;
+      $score{$word} = $score;
+      $info{$word} = $score;
+    } else {
+      $sort_score{$word} = $pattern_nb - $i;
+      $score{$word} = 1;
+      $info{$word} = $description;
     }
 
+    &RSAT::message::Debug("IndexScores", $score{$word}) if ($main::verbose>= 5);
+  }
 
-    ## #### reverse complement
-    %seed = %score;
-    if ($strand_insensitive) {
-	foreach $word (keys %seed) {
-	    $score{lc(&ReverseComplement($word))} = $score{$word};
-	}
+
+  ## #### reverse complement
+  %seed = %score;
+  if ($strand_insensitive) {
+    foreach $word (keys %seed) {
+      $score{lc(&ReverseComplement($word))} = $score{$word};
+      $sort_score{lc(&ReverseComplement($word))} = $sort_score{$word};
     }
+  }
 
-    #### sort patterns according to their score
-    @to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
-    $pattern_nb = scalar(@to_assemble);
+  #### sort patterns according to their score
+  @to_assemble = sort {$sort_score{$b} <=> $sort_score{$a}} keys %seed;
 
-    &RSAT::message::Info("Patterns to assemble", scalar(@to_assemble)) if ($main::verbose >= 3);
+
+  &RSAT::message::Info("Patterns to assemble", scalar(@to_assemble)) if ($main::verbose >= 3);
 
 }
 
 ################################################################
-## Usage 
+## Usage
 ## AssembleFragments ($word1,$word2,$offset)
 sub AssembleFragments {
     local($word1) = $_[0];
@@ -160,7 +191,7 @@ sub AssembleFragments {
     local($over_word) = "";
     local($left_limit) = 0;
     local($right_limit) = 0;
-    
+
     if ($offset < 0) {
 	$prefix = substr($word2,0,-$offset);
 	$left_limit = 0;
@@ -182,19 +213,19 @@ sub AssembleFragments {
 	$base2 = substr($word2,$p2,1);
 	$over_word .= &BaseAnd($base1,$base2);
     }
-    
+
     #    local($assembled) = $prefix.$word1.$suffix;
     local($assembled) = $prefix.$over_word.$suffix;
     return $assembled;
 }
 
-    ### usage 
+    ### usage
     ###        $base_and = &BaseAnd($base1,$base2);
 sub BaseAnd {
     local($base1) = $_[0];
     local($base2) = $_[1];
     local($base_and) = "";
-    
+
     if (uc($base1) eq "N") {
 	$base_and = $base2;
     } elsif (uc($base2) eq "N") {
@@ -209,7 +240,7 @@ sub BaseAnd {
 
 
 #### finds the best offset for aligning two sequences without mismatches
-#### usage 
+#### usage
 ####     ($best_offset,$flanking_length,$assembly_score) = &BestOffset($word1,$word2,$max_flanking);
 ####
 sub BestOffset {
@@ -218,8 +249,8 @@ sub BestOffset {
     if (&IsNatural($_[2])) {
 	local($max_flanking) = $_[2];
     }
-    local($l1) =length($word1); 
-    local($l2) =length($word2); 
+    local($l1) =length($word1);
+    local($l2) =length($word2);
     local($best_offset) = "none";
     local($best_flanking) = "none";
     local($offset) = -$l2 +1;
@@ -230,7 +261,7 @@ sub BestOffset {
     local($assembly_score) = 0;
 
     my %match = &InitMatchScores();
-    
+
     while ($offset < $l1) {
 	$mis = 0;
 	$pos1 = 0;
@@ -251,11 +282,11 @@ sub BestOffset {
 		$assembly_score += &MatchScore($base1,$base2);
 	    }
 	}
-	
+
 	unless ($mis) {
 	    #### calculate the flanking length
-	    #### by summing the lengthes of word2 segments flanking word1 
-	    #### on both sides. This might be necessary when word2 is larger 
+	    #### by summing the lengthes of word2 segments flanking word1
+	    #### on both sides. This might be necessary when word2 is larger
 	    #### than word1.
 	    if ($offset < 0) {
 		$flanking_length -= $offset;
@@ -273,14 +304,14 @@ sub BestOffset {
 	$offset++;
     }
     #print "$best_offset\t$best_flanking\t$best_score\tbest offset\n";
-    return ($best_offset,$best_flanking,$best_score);    
+    return ($best_offset,$best_flanking,$best_score);
 }
 
-#### print assembly header 
+#### print assembly header
 sub PrintAssemblyHeader {
     $seed_length = length($seed);
     $l = $seed_length -1;
-    printf $out ";%${l}s", "alignt"; 
+    printf $out ";%${l}s", "alignt";
     printf $out "\t%${seed_length}s","rev_cpl" if ($strand_insensitive);
     if (&IsNatural($score_column)) {
 	print $out "\tscore";
@@ -313,10 +344,10 @@ sub PrintAssembly {
 	print $out "\n";
 	&PrintAssemblyHeader();
     }
-    foreach $word (sort {($position{$a} <=> $position{$b}) || ($score{$b} <=> $score{$a})} keys %position) {
+    foreach $word (sort {($position{$a} <=> $position{$b}) || ($sort_score{$b} <=> $sort_score{$a})} keys %position) {
 	$assembly_score = &max($assembly_score, $score{$word}) if (&IsNatural($score_column));
 	$position = $position{$word} - $min_pos;
-	
+
 	for $p (0..$position-1) {
 	    print $out ".";
 	}
@@ -324,7 +355,7 @@ sub PrintAssembly {
 	for $p ($position+length($word)+1..$max_length-$min_pos) {
 	    print $out ".";
 	}
-	
+
 	if ($strand_insensitive) {
 	    $rc = lc(&ReverseComplement($word));
 	    print $out "\t";
@@ -336,7 +367,7 @@ sub PrintAssembly {
 		print $out ".";
 	    }
 	}
-	
+
 	if (defined($score_column)) {
 	    print $out "\t", $score{$word} || $score{$rc};
 	} else {
@@ -344,7 +375,7 @@ sub PrintAssembly {
 	}
 	print $out "\n";
     }
-    
+
     print $out "$seed";
     printf $out "\t%s", lc(&ReverseComplement($seed)) if ($strand_insensitive);
     print $out "\t$assembly_score" if (&IsNatural($score_column));
@@ -363,14 +394,14 @@ sub MatchScore {
     local($base2) = uc($_[1]);
     local($match_score) = 0;
     local(%base_proba);
-    
+
     ### equiprobable alphabet
     $base_proba{'A'} = 0.25;
     $base_proba{'C'} = 0.25;
     $base_proba{'T'} = 0.25;
     $base_proba{'G'} = 0.25;
     $base_proba{'N'} = 1;
-    
+
     if (($base1 eq "N") || ($base2 eq "N")) {
 	$match_score = 0;
     } elsif (($base1 eq $base2) && ($base_proba{$base1}) == 0.25) {
@@ -382,18 +413,20 @@ sub MatchScore {
 
 
 
-### assign a length to a pattern, taking into account the informative bases 
-### only. This means that a N is not taken into account into the length
-### while A, C, G, or T are.
-### example:
-###     I&InfoLength('ATGnnnGCA') will return 6
-### usage:
-###     $info_length = &InfoLength($word);
+################################################################
+## Assign a length to a pattern, taking into account the informative
+## bases only. This means that a N is not taken into account into the
+## length while A, C, G, or T are.
+##
+## Example:
+##     I&InfoLength('ATGnnnGCA') will return 6
+## Usage:
+##     $info_length = &InfoLength($word);
 sub InfoLength {
     local($word) = $_[0];
     local($info_length) = 0;
-    local($string_length) = length($word);    
-    local($p);			### position 
+    local($string_length) = length($word);
+    local($p);			### position
     local($b);			### base
     local(%info_value);
     $info_value{'A'} = 1;
@@ -401,12 +434,12 @@ sub InfoLength {
     $info_value{'G'} = 1;
     $info_value{'T'} = 1;
     $info_value{'N'} = 0;
-    
+
     foreach $p (0..$string_length-1) {
 	$b = uc(substr($word,$p,1));
 	$info_length += $info_value{$b};
     }
-    
+
     return $info_length;
 }
 
@@ -418,7 +451,7 @@ NAME
 	pattern-assembly
 
         1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
-	
+
 USAGE
         pattern-assembly [-i inputfile] [-o outputfile] [-v]
 
@@ -462,8 +495,8 @@ OPTIONS
 		their scores (higher scores are incorporated first.
 
 	-maxfl #
-		maximum flanking segment size (default $max_flanking). 
-		The flanking segment is the portion of a fragment that 
+		maximum flanking segment size (default $max_flanking).
+		The flanking segment is the portion of a fragment that
 		extends outside of the assembly on which it is aligned.
 
 	-subst #
@@ -504,9 +537,9 @@ OPTIONS
 
 
 INPUT FORMAT
-	Each pattern must appear as the first word of a line. 
+	Each pattern must appear as the first word of a line.
 	Lines starting with a semicolon (;) are ignored.
-	
+
 OUTPUT FORMAT
 
 	The program returns groups of aligned patterns (oligonucleotides or
@@ -515,12 +548,12 @@ OUTPUT FORMAT
 
 EXAMPLES
        pattern-assembly -v -i mydata -o myresult -2str
-	
+
 End_of_help
   close HELP;
   exit(0);
 }
-  
+
 sub PrintOptions {
   #### display short help message #####
   open HELP, "| more";
@@ -535,7 +568,7 @@ pattern-assembly options
 -1str		strand sensitive assembly
 -2str		strand insensitive assembly
 -sc		score column
--maxfl #	maximum flanking segment size (default $max_flanking). 
+-maxfl #	maximum flanking segment size (default $max_flanking).
 -subst #	maximum allowed substitutions (default $max_subst).
 -max_asmb_nb #	maximal number of assemblies (default: $max_asmb_nb)
 -max_asmb_size #	maximal assembly size, i.e. number of patterns per assembly (default: $max_asmb_size)
@@ -552,16 +585,20 @@ sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
+	  if (&IsNatural($ARGV[$a+1])) {
+	    $verbose = $ARGV[$a+1];
+	  } else {
 	    $verbose = 1;
+	  }
 
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp;
-	    
+
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
-	    
+
 
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
@@ -570,18 +607,18 @@ sub ReadArguments {
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
-	    
+
 	    ### strand-insensitive assembly
 	} elsif ($ARGV[$a] eq "-2str") {
 	    $strand_insensitive = 1;
 	} elsif ($ARGV[$a] eq "-1str") {
 	    $strand_insensitive = 0;
-	    
+
 	    ### max number of allowed patterns
 	} elsif (($ARGV[$a] eq "-maxpat") && (&IsNatural($ARGV[$a+1]))) {
 	    $max_pattern_nb = $ARGV[$a+1];
 	    $top_pattern_nb = 0;
-	    
+
 	    ### max number of patterns to assemble
 	} elsif (($ARGV[$a] eq "-toppat") && (&IsNatural($ARGV[$a+1]))) {
 	    $top_pattern_nb = $ARGV[$a+1];
@@ -602,7 +639,7 @@ sub ReadArguments {
 		print "Error: the number of substitutions must be a positive integer\n";
 		exit;
 	    }
-	    
+
 	    ### max flank
 	} elsif ($ARGV[$a] =~ /^-maxfl/i) {
 	    $max_flanking = $ARGV[$a+1];
@@ -610,29 +647,29 @@ sub ReadArguments {
 		print "Error: the flanking segment size must be a positive integer\n";
 		exit;
 	    }
-	    
+
 	    ### max number of clusters
 	} elsif ($ARGV[$a] =~ /^-max_asmb_nb/i) {
 	    $max_asmb_nb = $ARGV[$a+1];
 	    unless (&IsNatural($max_asmb_nb)) {
 		&RSAT::error::FatalErro("maximal number of assemblies must be a positive integer");
 	    }
-	    
+
 	    ### max cluster size
 	} elsif ($ARGV[$a] =~ /^-max_asmb_size/i) {
 	    $max_asmb_size = $ARGV[$a+1];
 	    unless (&IsNatural($max_asmb_size)) {
 		&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
 	    }
-	    
+
 	} elsif ($ARGV[$a] =~ /^-maxcl/i) {
 	    &RSAT::message::Warning("Option -maxcl has been replaced by -mac_cl_size.");
 	    $max_asmb_size = $ARGV[$a+1];
 	    unless (&IsNatural($max_asmb_size)) {
 		&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
 	    }
-	    
-	    
+
+
 	}
     }
 }
@@ -641,148 +678,143 @@ sub ReadArguments {
 ################################################################
 ## Assemble patterns
 sub AssemblePatterns {
-    my (@to_assemble) = @_;
-    $assembly_nb = 0;
-    
-    &RSAT::message::TimeWarn(join "\t", "Starting pattern assembly", scalar(@to_assemble)) if ($main::verbose >= 2);
+  my (@to_assemble) = @_;
+  $assembly_nb = 0;
 
-    #### make a list of words remaining to assembly
-    while ($#to_assemble > -1) {
-	if (($max_asmb_nb > 0) && ($assembly_nb >= $max_asmb_nb)) {
-	    print $out ("; Maximal number of assemblies is reached (", $max_asmb_nb, 
-			"). Remaining patterns: ", $#to_assemble, ".\n");
-	    last;
-	}
+  &RSAT::message::TimeWarn(join "\t", "Starting pattern assembly", scalar(@to_assemble)) if ($main::verbose >= 2);
 
-	#### reinitialize variables
-	undef %position;
-	my $origin = 0;
-
-	#### new seed for the next assembly
-	$seed = $first_seed = $to_assemble[0];
-	$position{$first_seed} = 0;
-	delete $seed{$to_assemble[0]};
-
-	&RSAT::message::TimeWarn(join ("\t", "new seed", $seed, "remaining", scalar(@to_assemble))) 
-	    if ($main::verbose >= 2);
-
-	#### all input oligos are considered for assembly with the new seed
-	%to_align = %score;
-	delete $to_align{$first_seed};
-	@to_align =  sort {$score{$b} <=> $score{$a}} keys %to_align;
-
-	## DEBUG
-#	foreach my $pattern (@to_align) {
-#	  warn join ("\t", $pattern, $score{$pattern}), "\n";
-#	}
-
-	#### try to align each input word to the current assembly
-	my $assembly_size = 1;
-	while (($assembly_size < $max_asmb_size) && ($#to_align > -1)) {
-	    $found = 0;
-	    while (($assembly_size < $max_asmb_size) && ($#to_align > -1)) {
-		$best_offset = "";
-
-		#### best alignment for the direct word
-		$best_word = $word = shift(@to_align);
-		$min_score = &InfoLength($word) - $max_flanking;
-#		&RSAT::message::TimeWarn(join ("\t", "aligning word", $word, "remaining", scalar(@to_align))) 
-#		    if ($main::verbose >= 10);
-
-		#### alignment by substitutions ####
-		if ($max_subst > 0) {
-		    $word_length = length($word);
-		    $last_pos = length($seed) - $word_length;
-		    foreach $offset (0..$last_pos) {
-			$other_word = substr($seed,$offset,$word_length);
-			$mismatches = &CountMismatches($word,$other_word,$max_subst);
-			if ($mismatches <= $max_subst) {
-			    #print "$seed\t$offset\t$word\t$other_word\t$mismatches\n";
-			    $found = 1;
-			    $position{$word} = $position{$other_word};
-			    last;
-			}
-			#if ($strand_insensitive) {
-			#  $mismatches = &CountMismatches($rc_word,$other_word,$max_subst);
-			#  if ($mismatches <= $max_subst) {
-			#    #print "$seed\t$offset\t$rc_word\t$other_word\t$mismatches\n";
-			#    $found = 1;
-			#    $position{$rc_word} = $position{$other_word};
-			#    last;
-			#  }
-			#}
-		    }
-		}
-
-#		($match, $weight, $Pval, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
-
-		#### alignment by offset ###
-		unless ($found) {
-		    ($best_offset,$flanking_length,$assembly_score) = (&BestOffset($seed,$word));
-
-		    #print "$seed\t$word\t$best_word\t$best_offset\t$flanking_length\t$assembly_score\t$min_score\n";
-		    next if ($best_offset eq "none");
-		    next if ($flanking_length > $max_flanking);
-		    next if ($assembly_score < $min_score);
-		    
-		    $seed = AssembleFragments($seed,$best_word,$best_offset);
-		    $found = 1;
-		    $position{$best_word} = $best_offset + $origin;
-		    if ($best_offset <0) {
-			$origin += $best_offset;
-		    }
-		}
-		
-		if ($found) {
-		    $assembly_size++;
-		    ### -> do not consider this word anymore
-		    delete($to_align{$word});
-		    delete($seed{$word});
-		    delete($seed{lc(&ReverseComplement($word))}) if ($strand_insensitive);
-		}
-		@to_align = ();
-		
-	    }
-	    if ($found) {
-		@to_align =  sort {$score{$b} <=> $score{$a}} keys %to_align;
-	    } else {
-		@to_align = ();
-	    }
-	}
-	
- 	
-	@positions = keys %position;
-	
-	$assembly_nb++;
-
-	if ($#positions <=0) { 	
-	    ## If no pattern matches the initial seed, it is exported at the end of the file, 
-	    ## as a singleton (single-pattern assembly)
-	    push @singletons, $seed;
-	} else {
-	    &PrintAssembly();
-	}
-	@to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
+  ################################################################
+  #### make a list of patterns remaining to assemble
+  while ($#to_assemble > -1) {
+    if (($max_asmb_nb > 0) && ($assembly_nb >= $max_asmb_nb)) {
+      print $out ("; Maximal number of assemblies is reached (", $max_asmb_nb,
+		  "). Remaining patterns: ", $#to_assemble, ".\n");
+      last;
     }
-    
-    #### singleton patterns ####
-    if ($#singletons >=0) {
-	printf $out "\n; Isolated patterns: %d\n", $#singletons+1;
-	&PrintAssemblyHeader() if ($verbose);
-	foreach $word (@singletons) {
-	    print $out "$word";
-	    if ($strand_insensitive) {
-		$rc = lc(&ReverseComplement($word));
-		printf $out "\t%s", $rc;
+
+    #### reinitialize variables
+    undef %position;
+    my $origin = 0;
+
+    #### new seed for the next assembly
+    local $seed = local $first_seed = $to_assemble[0];
+    $position{$first_seed} = 0;
+    delete $seed{$to_assemble[0]};
+
+    &RSAT::message::TimeWarn(join ("\t", "new seed", $seed, "remaining", scalar(@to_assemble)))
+      if ($main::verbose >= 2);
+
+    #### all input oligos are considered for assembly with the new seed
+    my %to_align = %score;
+    delete $to_align{$first_seed};
+    @to_align =  sort {$sort_score{$b} <=> $sort_score{$a}} keys %to_align;
+
+    #### try to align each remaining pattern to the current assembly
+    my $assembly_size = 1;
+    while (($assembly_size < $max_asmb_size) && ($#to_align > -1)) {
+      $found = 0;
+      while (($assembly_size < $max_asmb_size) && ($#to_align > -1)) {
+	$best_offset = "";
+
+	#### best alignment for the direct word
+	$best_word = $word = shift(@to_align);
+	$min_score = &InfoLength($word) - $max_flanking;
+	#		&RSAT::message::TimeWarn(join ("\t", "aligning word", $word, "remaining", scalar(@to_align)))
+	#		    if ($main::verbose >= 10);
+
+	#### alignment by substitutions ####
+	if ($max_subst > 0) {
+	  $word_length = length($word);
+	  $last_pos = length($seed) - $word_length;
+	  foreach $offset (0..$last_pos) {
+	    $other_word = substr($seed,$offset,$word_length);
+	    $mismatches = &CountMismatches($word,$other_word,$max_subst);
+	    if ($mismatches <= $max_subst) {
+	      #print "$seed\t$offset\t$word\t$other_word\t$mismatches\n";
+	      $found = 1;
+	      $position{$word} = $position{$other_word};
+	      last;
 	    }
-	    if (defined($score_column)) {
-		print $out "\t", $score{$word} || $score{$rc};
-	    } else {
-		print $out "\t", $info{$word} || $info{$rc};
-	    }
-	    print $out "\tisol";
-	    print $out "\n";
-	    
+	    #if ($strand_insensitive) {
+	    #  $mismatches = &CountMismatches($rc_word,$other_word,$max_subst);
+	    #  if ($mismatches <= $max_subst) {
+	    #    #print "$seed\t$offset\t$rc_word\t$other_word\t$mismatches\n";
+	    #    $found = 1;
+	    #    $position{$rc_word} = $position{$other_word};
+	    #    last;
+	    #  }
+	    #}
+	  }
 	}
+
+	#		($match, $weight, $Pval, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
+
+	#### alignment by offset ###
+	unless ($found) {
+	  ($best_offset,$flanking_length,$assembly_score) = (&BestOffset($seed,$word));
+
+	  #print "$seed\t$word\t$best_word\t$best_offset\t$flanking_length\t$assembly_score\t$min_score\n";
+	  next if ($best_offset eq "none");
+	  next if ($flanking_length > $max_flanking);
+	  next if ($assembly_score < $min_score);
+
+	  $seed = AssembleFragments($seed,$best_word,$best_offset);
+	  $found = 1;
+	  $position{$best_word} = $best_offset + $origin;
+	  if ($best_offset <0) {
+	    $origin += $best_offset;
+	  }
+	}
+
+	if ($found) {
+	  $assembly_size++;
+	  ### -> do not consider this word anymore
+	  delete($to_align{$word});
+	  delete($seed{$word});
+	  delete($seed{lc(&ReverseComplement($word))}) if ($strand_insensitive);
+	}
+	@to_align = ();
+
+      }
+      if ($found) {
+	@to_align =  sort {$sort_score{$b} <=> $sort_score{$a}} keys %to_align;
+      } else {
+	@to_align = ();
+      }
     }
+
+
+    @positions = keys %position;
+
+    if ($#positions <=0) {
+      ## If no pattern matches the initial seed, it is exported at the end of the file,
+      ## as a singleton (single-pattern assembly)
+      push @singletons, $seed;
+    } else {
+      $assembly_nb++;
+      &PrintAssembly();
+    }
+    @to_assemble = sort {$sort_score{$b} <=> $sort_score{$a}} keys %seed;
+  }
+
+  #### singleton patterns ####
+  if ($#singletons >=0) {
+    printf $out "\n; Isolated patterns: %d\n", $#singletons+1;
+    &PrintAssemblyHeader() if ($verbose);
+    foreach $word (@singletons) {
+      print $out "$word";
+      if ($strand_insensitive) {
+	$rc = lc(&ReverseComplement($word));
+	printf $out "\t%s", $rc;
+      }
+      if (defined($score_column)) {
+	print $out "\t", $score{$word} || $score{$rc};
+      } else {
+	print $out "\t", $info{$word} || $info{$rc};
+      }
+      print $out "\tisol";
+      print $out "\n";
+
+    }
+  }
 }
