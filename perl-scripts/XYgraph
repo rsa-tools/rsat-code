@@ -545,6 +545,9 @@ if ($hline){
   for $h (0..$#hline_pos) {
     $hline_color = $hline_colors[$h];
     $hline_pos = $hline_pos[$h];
+    if ($ylog) {
+      $hline_pos = log($hline_pos)/$y_ref_log;
+    }
 
     ## Accept some predefine colors
     $hline_color_new = $orange if ($hline_color eq "orange");
@@ -554,6 +557,9 @@ if ($hline){
     $hline_color_new = $violet if ($hline_color eq "violet");
 
     $hline_pos_new = &YPixelPos($hline_pos);
+
+#    &RSAT::message::Debug("Horizontal line", $hline_pos[$h], $hline_pos, $hline_pos_new, $hline_color) if ($main::verbose >= 10);
+
     $image->line($left, $hline_pos_new, $right, $hline_pos_new, $hline_color_new);
   }
 }
@@ -563,6 +569,9 @@ if ($vline){
   for $v (0..$#vline_pos) {
     $vline_color = $vline_colors[$v];
     $vline_pos = $vline_pos[$v];
+    if ($xlog) {
+      $vline_pos = log($vline_pos)/$x_ref_log;
+    }
 
     # Accept some predefined colors
     $vline_color_new = $orange if ($vline_color eq "orange");
@@ -661,7 +670,6 @@ exit(0);
 ################################################################
 ## Generate the graph with GnuPlot and export it in eps format
 sub GnuPlotEPS {
-	
 
   ## remove lines starting by ; and adapt the comment line
     ($in, $input_dir) = &OpenInputFile($inputfile);
@@ -1013,6 +1021,7 @@ sub YPixelPos {
   local($y_pixel_pos);
   if (($y_pos < $y_axis_min) or ($y_pos > $y_axis_max)) {
     $y_pixel_pos = "ND";
+    &RSAT::message::Warning("YPixelPos", "y_pos=".$ypos, "out of range (".$y_axis_min.":".$y_axis_max.")") if ($main::verbose >= 0);
   } else {
     $y_pixel_pos = $bottom - ($y_pos - $y_axis_min)*$y_scale;
   }
@@ -1742,8 +1751,8 @@ XYgraph options
 -colors		colorfile
 -export_colors	export a color file
 -gp		gnuplot additional commands
--vline color #  vertical line at position # (can be used iteratively)
--hline color #   horizontal line at position # (can be used iteratively)
+-vline color #  vertical line(s) at position(s) # (multiple positions separated by commas)
+-hline color #   horizontal line(s) at position(s) # (multiple positions separated by commas)
 End_of_options
     close SHORTHELP;
 }
@@ -1847,8 +1856,12 @@ OPTIONS
 			If the next argument is a number, it provides the 
 			log base. Default log base is 10.  
 	-log #		same as combining -xlog # -ylog #
-	-lines	        points are jointed by lines. When there are missing Y values, the points are not joined by a line (see -force_lines option).
-	-force_lines	points are jointed by lines. Even if ther eare missing values on the Y axis.
+
+	-lines 		points are jointed by lines. When there are missing Y
+			values, the points are not joined by a line (see -force_lines
+         		option).
+	-force_lines	points are jointed by lines. Even if there are missing values 
+			on the Y axis.
 	-line #		same as lines, but for the #th column only
 			can be used recursively to specify several columns for 
 			which a line must be drawn between points.
@@ -1934,7 +1947,13 @@ OPTIONS
 		e.g. salmon, dark-green ...
 
 		 -hline red 0
+
 		 will draw a red line at the y position 0
+
+		 -hline red 0,10,20,30
+
+		 will draw a red line at the y positions 0, 10, 20 and
+		 30
 
 	-vline Draw a vertical line on the indicated position. 
 		This helps to mark some relevant positions on the graph.
@@ -1944,7 +1963,13 @@ OPTIONS
 		e.g. salmon, dark-green ...
 
 		 -vline green 0
+
 		 will draw a green line at the x position 0
+
+		 -vline green 1,2,4,8,16
+
+		 will draw a green line at the x positions 1, 2, 4, 8
+		 and 16
 
 Web VERSION
 	http://rsat.ulb.ac.be/rsat/
@@ -2178,16 +2203,28 @@ sub ReadArguments {
       ### hline ###
     } elsif ($ARGV[$a] eq "-hline") {
 	$hline=1;
-	push @hline_colors, $ARGV[$a+1]; 
-	push @hline_pos, $ARGV[$a+2];
-	&RSAT::error::FatalError("-hline option requires 2 arguments") unless defined($ARGV[$a+2]);
+	my $color = $ARGV[$a+1];
+	my @positions = split(",", $ARGV[$a+2]);
+	&RSAT::error::FatalError("-hline option requires 2 arguments") unless (scalar(@positions) >=1);
+	foreach my $pos (@positions) {
+	  push @hline_colors, $color;
+	  push @hline_pos, $pos;
+	}
 
 	### vline ###
     } elsif ($ARGV[$a] eq "-vline") {
 	$vline=1;
-	push @vline_colors,  $ARGV[$a+1];
-	push @vline_pos,  $ARGV[$a+2];
-	&RSAT::error::FatalError("-vline option requires 2 arguments") unless defined($ARGV[$a+2]);
+	my $color = $ARGV[$a+1];
+	my @positions = split(",", $ARGV[$a+2]);
+	&RSAT::error::FatalError("-vline option requires 2 arguments") unless (scalar(@positions) >=1);
+	foreach my $pos (@positions) {
+	  push @vline_colors, $color;
+	  push @vline_pos, $pos;
+	}
+#	$vline=1;
+#	push @vline_colors,  $ARGV[$a+1];
+#	push @vline_pos,  $ARGV[$a+2];
+#	&RSAT::error::FatalError("-vline option requires 2 arguments") unless defined($ARGV[$a+2]);
 
 	### label column
     } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
