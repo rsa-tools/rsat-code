@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.60 2011/02/17 05:07:46 rsat Exp $
+# $Id: position-analysis,v 1.61 2011/04/09 09:07:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -26,7 +26,7 @@ $group_rc = 0;
 $img_format = $ENV{rsat_img_format} || "png";
 $XYgraph_command = "$SCRIPTS/XYgraph";
 $log_base = log(10);
-$MAX_SIG = 75; ## Value to be displayed for the significance when the P-value is lower than precision limit (thus, P-val = 0)
+$MAX_SIG = 300; ## Value to be displayed for the significance when the P-value is lower than precision limit (thus, P-val = 0)
 
 ## Origin and offset
 $origin = "start";
@@ -142,6 +142,7 @@ if (defined($lth{'occ'})) {
 &CalcExpected();
 
 &CalcChi() if ($return{chi});
+
 &RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
 
 &Verbose() if ($main::verbose >= 1);
@@ -683,6 +684,26 @@ sub CalcChi {
       delete $pattern{$oligo_seq};
       #	    delete $pattern{$oligo_seq}->{occ};
       #	    delete $pattern{$oligo_seq}->{chi_square};
+    }
+  }
+}
+
+
+################################################################
+## Compute the P-value of over-representation for word in each window.
+sub CalcWindowPvalues {
+
+  ### BEGINNING OF DEVELOPMENT, NOT AT ALL FUNCTIONAL
+
+  ### calculate chi2 to compare the position distribution with a flat line
+  &RSAT::message::TimeWarn("Calculating chi values") if ($main::verbose >= 2);
+  my $nb_tests = scalar(keys(%pattern));
+  foreach my $oligo_seq (sort keys %pattern) {
+
+    @chi_values = ();
+    foreach my $class ($min_calc_class..$max_calc_class) {
+      $pval{$oligo_seq}{$class} = &sum_of_poisson($m,$s,$r);;
+      push @chi_values, $exp_occ{$oligo_seq}{$class};
     }
   }
 }
