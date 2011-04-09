@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.180 2011/04/04 12:45:29 amedina Exp $
+# $Id: peak-motifs,v 1.181 2011/04/09 05:40:09 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.180 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.181 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -233,6 +233,7 @@ package main;
 
   ## Discovered motifs
   local @motifs; ## list of discovered motifs for the synthesis
+  local %motif_by_id; ## Index of motifs by ID
   local $motifs_read = 0; ## flag indicating if the motifs have been read (since the method ReadDiscoveredMotifs may be called from several places
 
   ## Those variables need to be global for motif post-processing and indexing
@@ -307,13 +308,13 @@ package main;
   ## Merge all discovered motifs
   &MergeMotifs() if ($task{merge_motifs});
 
-  ## HTML synthesis by algorithm
-  &SynthesisMotifsByAlgo() if ($progressive_synthesis);
-
   ## Motif-wise analysis
   &SplitMotifs() if ($task{split_motifs});
 
 #  &ClusterMotifs() if ($task{cluster_motifs});
+
+  ## HTML synthesis by algorithm
+  &SynthesisMotifsByAlgo() if ($progressive_synthesis);
 
   &MotifsVersusReference() if ((defined($main::infile{ref_motifs}))
 			       && ($task{motifs_vs_ref}));
@@ -803,9 +804,6 @@ sub SetOutFileNames {
     $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_counts'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_tf'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.tf";
-#    $main::outfile{$pattern_type.'_pssm_sites'} = $main::outfile{$pattern_type.'_pssm'}."_sites.tab";
-#    $main::outfile{$pattern_type.'_pssm_site_distrib'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib.tab";
-#    $main::outfile{$pattern_type.'_pssm_site_distrib_graph'} = $main::outfile{$pattern_type.'_pssm'}."_site_distrib".$main::param{img_format};
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
       $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb} =
 	$main::outfile{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb.".".$main::param{img_format};
@@ -1571,6 +1569,9 @@ sub ReadDiscoveredMotifs {
       ## We compute the consensus and logos here with the same background model as used for sequence scanning
       $matrix->setMarkovModel($bg_model);
       $matrix->calcConsensus();
+
+      ## Index motifs by ID
+      $motif_by_id{$motif_id} = $matrix;
     }
 
     &RSAT::message::Info($motif_nb." discovered motifs read from file", $main::outfile{motifs_discovered}) if ($main::verbose >= 3);
@@ -2097,7 +2098,7 @@ sub ScanSequences {
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     &one_command($cmd, 1);
 
-    ## Draw the graph of predicted site positions
+    ## Draw the graph of predicted site positions (occurrences per window)
     &RSAT::message::Debug("Drawing positional distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/XYgraph";
     $cmd .= " -format ".$main::param{img_format};
@@ -2108,6 +2109,7 @@ sub ScanSequences {
     $cmd .= " -title1 'Predicted sites : $motif_id'";
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
     &one_command($cmd, 1);
+
 
     ################################################################
     ## Analyze enrichment of input sequences for the discovered motif
@@ -2419,7 +2421,6 @@ sub SynthesisByMotif {
 
   ## Header line
   &SyntheticTableAddHeaderRow("Motif discovery");
-
 
   &ReadMotifTable();
 
@@ -3099,8 +3100,13 @@ sub SynthesisPatternDisco {
   my ($pattern_type) = @_;
   &RSAT::message::TimeWarn("Synthesis for pattern type", $pattern_type) if ($main::verbose >= 3);
 
+
+  ################################################################
+  ## Synthesize results of pattern assembly (assembly consensus + sig
+  ## scores)
+
+  ## Parse the assembly file to get the consensus + sig score
   if (-e $main::outfile{$pattern_type.'_asmb'}) {
-    ## Synthesize results of pattern assembly (assembly consensus + sig scores)
     my ($asmb) = &OpenInputFile($main::outfile{$pattern_type.'_asmb'});
     my $pattern_nb = 0;
     my $asmb_or_isol = "";
@@ -3108,17 +3114,20 @@ sub SynthesisPatternDisco {
     while (<$asmb>) {
       next if /^#/;		## Skip header line
       next unless /\S/;		## Skip empty lines
+
       if (/assembly\s+\#\s+(\d+)/i) {
 	## Assembly number
 	$pattern_nb = $1;
 	$asmb_or_isol = "asmb";
 	next;
+
       } elsif (/Isolated patterns/) {
 	## Isolated patterns at the end of the assembly file
 	$asmb_or_isol = "isol";
 	next;
       }
-      next if (/^;/);		## Skip comments
+
+      next if (/^;/); ## Skip comments that do not indicate assembly number or start of isolated patterns
       if ($asmb_or_isol eq "isol") {
 	$pattern_nb++;
       } elsif (!/consensus/) {
@@ -3135,9 +3144,10 @@ sub SynthesisPatternDisco {
     ## Synthesize matrix logos
     my $pattern_table = "<table class='whitebg' align='center' style='border-style:none;'>";
 
-    ################################################################
-    ## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
-    ################################################################
+    ## Read the discovered motifs (matrices) in ordert to get their
+    ## consensus for the report.
+    @motifs = &ReadDiscoveredMotifs();
+
 #    foreach my $logo_nb (0..$#pattern_info) {
 #    foreach my $logo_nb (1..$#pattern_info) {
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
@@ -3147,6 +3157,9 @@ sub SynthesisPatternDisco {
       my $start_format="";
       my $end_format="";
       my $score = $pattern_info[$logo_nb]->{score};
+
+
+      ## Highlight in bold the patterns with score > 10
       if (&IsReal($score)) {
 	if ($score >10) {
 	  $start_format .= '<b>';
@@ -3157,41 +3170,55 @@ sub SynthesisPatternDisco {
 	  }
 	}
       }
+
       &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
+
+      my $matrix_id = $pattern_type."_m".$logo_nb;
+
+      ## Get the consensus from the assembly 
+      my $consensus = $pattern_info[$logo_nb]->{word};
+      my $consensus_rc = $pattern_info[$logo_nb]->{rc_word};
+
+#       ## Get the consensus from the matix rather than from the assembly
+#       ## THIS IS NOT WORKING, I ONLY GET THE MATRICES FROM THE FIRST PATTERN DISCOVERY PROGRAM
+#       my $matrix = $motif_by_id{$matrix_id};
+#       &RSAT::message::Debug("motif", $matrix_id, $matrix) if ($main::verbose >= 10);
+#       if ($matrix) {
+# 	$consensus = $matrix->get_attribute("consensus.IUPAC");
+# 	$consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
+#       }
+
+      my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+      my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc, bold=>1, iupac=>$main::param{iupac_coloring});
+
+      $pattern_table .= "<td style='border-right-style:none;'>".$matrix_id."</td>";
+      $pattern_table .= "<td align='right'>";
+      $pattern_table .= $pattern_info[$logo_nb]->{type};
+      $pattern_table .= ": ";
+      #	my $seed = $pattern_info[$logo_nb]->{word};
+      #	$pattern_table .= &RSAT::SeqUtil::ColorConsensus($pattern_info[$logo_nb]->{word}, bold=>1, iupac=>0);
+      $pattern_table .= $colored_consensus;
+      $pattern_table .= $start_format;
+      $pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
+      $pattern_table .= $end_format;
       if (-e $logo_file) {
-	$pattern_table .= "<td style='border-right-style:none;'>".$pattern_type."_m".$logo_nb."</td>";
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
-	$pattern_table .= "<td align='right'>";
-	$pattern_table .= $start_format;
-	$pattern_table .= "$asmb_or_isol";
-	################################################################
-	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
-	################################################################
-	$pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
-	$pattern_table .= "&nbsp;"x5;
-	################################################################
-	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
-	################################################################
-	$pattern_table .= $pattern_info[$logo_nb]->{word};
 	$pattern_table .= "<br><a  href='".$img."'><img  border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
-	$pattern_table .= $start_format;
-	$pattern_table .= "</td>\n";
       } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find logo", $logo_file) if ($main::verbose >= 3);
       }
+      $pattern_table .= "</td>\n";
+
+      $pattern_table .= "<td align='left' style='border-right-style:none;'>";
+      $pattern_table .= "RC: ";
+      $pattern_table .= $colored_consensus_rc;
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
-	$pattern_table .= "<td align='left' style='border-right-style:none;'>";
-	$pattern_table .= $start_format;
-	################################################################
-	## THERE SEEMS TO BE A BUG HERE: SOMETIMES NOT DEFINED: TO CHECK
-	################################################################
-	$pattern_table .= $pattern_info[$logo_nb]->{rc_word};
 	$pattern_table .= "<br><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
-	$pattern_table .= "</td>\n";
       } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc) if ($main::verbose >= 3);
       }
+
       #    $pattern_table .= "<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>";
       $pattern_table .= "</tr>\n";
     }
