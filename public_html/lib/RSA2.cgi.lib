@@ -615,6 +615,9 @@ sub OrganismPopUpEnsembl {
 sub TaxonPopUp {
     print &TaxonPopUpString(@_);
 }
+
+
+
 sub TaxonPopUpStringIndented {
     require RSAT::Tree;
     my $tree = new RSAT::Tree();
@@ -644,6 +647,9 @@ sub TaxonPopUpStringIndented {
     return $taxonomyPopup;
 }
 
+
+################################################################
+## Generate a string with alphabetical
 sub TaxonPopUpString {
   my ($node_type) =  @_;
   $node_type = "node" unless ($node_type);
