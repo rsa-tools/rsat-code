@@ -13,7 +13,7 @@ use GD;
 
 ################################################################
 #### select output format depending on the site configuration
-%supported_format = ("jpg"=>1, 
+%supported_format = ("jpg"=>1,
 		     "gif"=>1,
 		     "png"=>1,
 		     "eps" =>1,
@@ -21,7 +21,7 @@ use GD;
 		     );
 
 $img_format = $ENV{rsat_img_format} || "png";
-$supported_formats = join (",", keys %supported_format); 
+$supported_formats = join (",", keys %supported_format);
 
 ################################################################
 ##### initialize default parameters #####
@@ -68,7 +68,7 @@ $viline=0;
 
 &ReadArguments();
 
-## check arguments compatibility 
+## check arguments compatibility
 if ($force_lines && (!$lines && scalar @lines == 0)) {
   &RSAT::message::Warning("-force_lines option used without any line to trace specification is useless.") ;
 }
@@ -91,7 +91,7 @@ if (($img_format eq "eps")||($img_format eq "pdf")) {
     # 	 $img_format = "png";
     # 	 $outputfile .=".png";
   }
- 
+
   if (($histogram)||($filled_histogram)) {
     &RSAT::message::Warning("histogram plot  is not yet compatible with eps format => this option will be ignored.") ;
     # 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.") ;
@@ -200,7 +200,7 @@ if ($ylog) {
 
 #### open output file ####
 $out = &OpenOutputFile($outputfile);
-&InitHTMLmap() if ($HTML_map);  
+&InitHTMLmap() if ($HTML_map);
 
 &ReadData();
 &CalcLimits();
@@ -209,8 +209,8 @@ $out = &OpenOutputFile($outputfile);
 if ($tbox_low_x ne "") {
     $hbox_left = &XPixelPos($tbox_low_x);
     $hbox_right = &XPixelPos($tbox_high_x);
-    $hbox_top = &YPixelPos($tbox_high_y); 
-    $hbox_bottom = &YPixelPos($tbox_low_y); 
+    $hbox_top = &YPixelPos($tbox_high_y);
+    $hbox_bottom = &YPixelPos($tbox_low_y);
 }
 
 ### check hbox dimensions ###
@@ -238,8 +238,8 @@ if ($hbox_left ne "") {
   #### convert hbox into a tbox ###
   $tbox_low_x = ($hbox_left - $border)/$x_scale + $x_axis_min;
   $tbox_high_x = ($hbox_right - $border)/$x_scale + $x_axis_min;
-  $tbox_high_y = ($hbox_top - $graph_y_size + $border)/$y_scale + $y_axis_min; 
-  $tbox_low_y = ($hbox_bottom - $graph_y_size + $border)/$y_scale + $y_axis_min; 
+  $tbox_high_y = ($hbox_top - $graph_y_size + $border)/$y_scale + $y_axis_min;
+  $tbox_low_y = ($hbox_bottom - $graph_y_size + $border)/$y_scale + $y_axis_min;
 }
 
 #### report graph parameters ####
@@ -312,7 +312,7 @@ if ($main::verbose >= 2) {
 ### create new image ####
 $image = new GD::Image($graph_x_size, $graph_y_size);
 &AssignColors();
-$image->filledRectangle(0,0,$graph_x_size, $graph_y_size, $bg_color);  
+$image->filledRectangle(0,0,$graph_x_size, $graph_y_size, $bg_color);
 
 #### draw grid and limits ####
 
@@ -406,7 +406,7 @@ for $series (0..$#y_col_list) {
     my ($R, $G, $B) = ();
     if ($color_string =~ /^\d+\,\d+\,\d+$/) {
       ($R,$G,$B) = split (",", $header_colors{$series_name});
-    } elsif ($color_string =~ /^#\S{6}$/) { 
+    } elsif ($color_string =~ /^#\S{6}$/) {
       ($R,$G,$B) = &RSAT::util::hex2rgb($color_string);
     } else {
       &RSAT::message::Warning("series:".$series, $series_name, "Invalid color specification", $color_string);
@@ -415,7 +415,7 @@ for $series (0..$#y_col_list) {
     $series_color[$series] = $image->colorAllocate($R,$G,$B);
     &RSAT::message::Debug("series:".$series,
 			"column:".$y_col_list[$series],
-			"color:".$series_color[$series], 
+			"color:".$series_color[$series],
 			$color_string,
 			"RGB=($R,$G,$B)",
 			$series_name)
@@ -540,7 +540,7 @@ for $series (0..$#y_col_list) {
   }				# for p
 }				# for series
 
-### draw hline
+### draw hlines
 if ($hline){
   for $h (0..$#hline_pos) {
     $hline_color = $hline_colors[$h];
@@ -549,23 +549,30 @@ if ($hline){
       $hline_pos = log($hline_pos)/$y_ref_log;
     }
 
-    ## Accept some predefine colors
-    $hline_color_new = $orange if ($hline_color eq "orange");
-    $hline_color_new = $red if ($hline_color eq "red");
-    $hline_color_new = $blue if ($hline_color eq "blue");
-    $hline_color_new = $green if ($hline_color eq "green");
-    $hline_color_new = $violet if ($hline_color eq "violet");
+    ## Accept some predefined colors
+    my $hline_color_converted = $black;
+    if ($hline_color eq "orange") {
+      $hline_color_converted = $orange;
+    } elsif ($hline_color eq "red") {
+      $hline_color_converted = $red;
+    } elsif ($hline_color eq "blue") {
+      $hline_color_converted = $blue;
+    } elsif ($hline_color eq "green") {
+      $hline_color_converted = $green;
+    } elsif ($hline_color eq "violet") {
+      $hline_color_converted = $violet;
+    }
 
     $hline_pos_new = &YPixelPos($hline_pos);
 
 #    &RSAT::message::Debug("Horizontal line", $hline_pos[$h], $hline_pos, $hline_pos_new, $hline_color) if ($main::verbose >= 10);
 
-    $image->line($left, $hline_pos_new, $right, $hline_pos_new, $hline_color_new);
+    $image->line($left, $hline_pos_new, $right, $hline_pos_new, $hline_color_converted);
   }
 }
 
-## draw vline
-if ($vline){
+## draw vlines
+if ($vline) {
   for $v (0..$#vline_pos) {
     $vline_color = $vline_colors[$v];
     $vline_pos = $vline_pos[$v];
@@ -573,15 +580,22 @@ if ($vline){
       $vline_pos = log($vline_pos)/$x_ref_log;
     }
 
-    # Accept some predefined colors
-    $vline_color_new = $orange if ($vline_color eq "orange");
-    $vline_color_new = $red if ($vline_color eq "red");
-    $vline_color_new = $blue if ($vline_color eq "blue");
-    $vline_color_new = $green if ($vline_color eq "green");
-    $vline_color_new = $violet if ($vline_color eq "violet");
+    ## Accept some predefined colors
+    my $vline_color_converted = $black;
+    if ($vline_color eq "orange") {
+      $vline_color_converted = $orange;
+    } elsif ($vline_color eq "red") {
+      $vline_color_converted = $red;
+    } elsif ($vline_color eq "blue") {
+      $vline_color_converted = $blue;
+    } elsif ($vline_color eq "green") {
+      $vline_color_converted = $green;
+    } elsif ($vline_color eq "violet") {
+      $vline_color_converted = $violet;
+    }
 
     $vline_pos_new = $left + ($vline_pos-$x_axis_min)*$x_scale;
-    $image->line($vline_pos_new, $bottom, $vline_pos_new, $top, $vline_color_new);
+    $image->line($vline_pos_new, $bottom, $vline_pos_new, $top, $vline_color_converted);
   }
 }
 
@@ -619,7 +633,7 @@ if ($legend) {
   $legend_x_pos = $right + $legend_point_size + 20;
   $point_x_pos = $right + 10;
   $line_spacing = &checked_max($small_font_height, $legend_point_size) + 6;
-  $series = 0; 
+  $series = 0;
   $legend_y_pos = 0;
   while ($series <= $#y_col_list) {
     my $legend_text = $header_fields[$y_col_list[$series]];
@@ -685,10 +699,10 @@ sub GnuPlotEPS {
     }
     close $out;
     close $in;
-    
+
     ## do not process if no data
   die("No input data !!!") if ((!$inputfile)&&(!$tmp_file));
-  
+
  ## will use this new file as input for gnuplot
   my $input_data_file = $tmp_file;
 
@@ -714,7 +728,7 @@ sub GnuPlotEPS {
   ## fonts
   $gnuplot_cmd .= "small='Arial,9'\n";
   $gnuplot_cmd .= "big='Arial,11'\n";
-  ## add the ; to the default comment character # 
+  ## add the ; to the default comment character #
   $gnuplot_cmd .= "set datafile commentschars '#;'\n";
 
   ## color
@@ -761,7 +775,7 @@ sub GnuPlotEPS {
     $x_legend =~ s/_/-/g;
     $gnuplot_cmd .= 'set xlabel "'.$x_legend.'" font big'."\n";
   }
-	
+
   if ($y_legend1) {
     $y_legend = "";
     if ($y_legend2) {
@@ -771,18 +785,18 @@ sub GnuPlotEPS {
     $y_legend =~ s/_/-/g;
     $gnuplot_cmd .= 'set ylabel "'.$y_legend.'" font big'."\n";
   }
-	
+
   ## default linewidth
   $lw = 4;
   ## default pointsize
   $gnuplot_cmd .= "set pointsize ".($point_size/2)."\n";
-	
+
   ## tics
   $gnuplot_cmd .= "set tics font big\n";
-	
+
   ## grid
   $gnuplot_cmd .= "set grid ".($lw-1)."\n";
-	
+
   ## x axis
   if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
     if ($x_axis_min eq "ND") {
@@ -791,18 +805,18 @@ sub GnuPlotEPS {
     if ($x_axis_max eq "ND") {
       $x_axis_max = "";
     }
-		
+
     if ($xlog) {
       if (($x_axis_min ne "")&&($x_axis_min <=0)) {
 	$x_axis_min = "";
       }
       if (($x_axis_max ne "")&&($x_axis_max <=0)) {
 	$x_axis_max = "";
-      }	
+      }
     }
-    $gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."]\n";			
+    $gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."]\n";
   }
-	
+
   ## y axis
   if (($y_axis_min ne "ND") || ($y_axis_max ne "ND")) {
     if ($y_axis_min eq "ND") {
@@ -811,7 +825,7 @@ sub GnuPlotEPS {
     if ($y_axis_max eq "ND") {
       $y_axis_max = "";
     }
-		
+
     ##log
     if ($ylog) {
       if (($y_axis_min ne "")&&($y_axis_min <=0)) {
@@ -819,9 +833,9 @@ sub GnuPlotEPS {
       }
       if (($y_axis_max ne "")&&($y_axis_max <=0)) {
 	$y_axis_max = "";
-      }	
+      }
     }
-    $gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."]\n";	
+    $gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."]\n";
   }
 
   ## log
@@ -834,18 +848,18 @@ sub GnuPlotEPS {
 
   ## legend (key box)
   if (($header)||($legend)) {
-    $gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
+    $gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";
   } else {
-    $gnuplot_cmd .= "set key off\n";	
+    $gnuplot_cmd .= "set key off\n";
   }
   ## get legend from columnheader
   if (($header)||($legend)) {
     ## remove # from data file comments charaters
     $gnuplot_cmd .= "set datafile commentschars '!;%'\n";
-    $gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";	
+    $gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";
   }
 
-  ## colors 
+  ## colors
   if ($colorfile){
     @color_list = ();
 
@@ -904,14 +918,14 @@ sub GnuPlotEPS {
       $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt ".($i+1)." lc rgb '".$color_list[$i]."'\n";
     }
   } else {
-    ## no symbols (only lines and circle points)		
+    ## no symbols (only lines and circle points)
     foreach my $i (0..$#color_list) {
-      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt 6 lc rgb '".$color_list[$i]."'\n";	
+      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt 6 lc rgb '".$color_list[$i]."'\n";
     }
   }
-  $gnuplot_cmd .= "set style increment user\n";	
+  $gnuplot_cmd .= "set style increment user\n";
 
-  ## hline and vline
+  ## hlines and vlines
   if ($hline){
     for $h (0..$#hline_pos) {
       $hline_color = $hline_colors[$h];
@@ -1036,13 +1050,13 @@ sub AssignColors {
     @color_list = ();
     if ($bg eq "black") {
       $bg_color = $black;
-      
+
       #$grid1_color = $gray_150;
       #$grid2_color = $gray_064;
-      
+
       $grid1_color = $gray_175;
       $grid2_color = $gray_245;
-      
+
       $text_color = $white;
       $axis_color = $white;
       if ($monochrome) {
@@ -1309,9 +1323,9 @@ sub AutoGrid {
   } else {
     $grid_min = (int($min_value/$grid_step) -1)* $grid_step;
   }
-    
+
   $grid_max = (int($max_value/$grid_step)+1)*$grid_step;
-    
+
   return($grid_min, $grid_step, $grid_max);
 }
 
@@ -1331,7 +1345,7 @@ sub StandardPalette {
   $gray_150 = $image->colorAllocate(150,150,150);
   $gray_175 = $image->colorAllocate(175,175,175);
   $gray_200 = $image->colorAllocate(200,200,200);
-  $gray_225 = $image->colorAllocate(225,225,225); 
+  $gray_225 = $image->colorAllocate(225,225,225);
   $gray_245 = $image->colorAllocate(245,245,245);
 
   ### yellow series
@@ -1413,7 +1427,7 @@ sub ReadData {
     $l = 0;		## Counter for non-comment and non-empty lines
     while ($new_data_line = <$in>) {
       next unless ($new_data_line =~ /\S/);
-      $l++; 
+      $l++;
       if (($header) && ($l == 1) || ($new_data_line =~ /^#/)) {
 
 	#### read legend ####
@@ -1470,24 +1484,24 @@ sub ReadData {
       } else {
 	push @data_lines, $new_data_line;
       }
-	    
+
       #### read Y values
       for $series (0..$#y_col_list) {
 	if ((IsReal($data_fields[$y_col_list[$series]]))) {
 	  if ($ylog) {
 	    if ($data_fields[$y_col_list[$series]] > 0) {
-	      $Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]])/$y_ref_log; 
+	      $Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]])/$y_ref_log;
 	    } else {
 	      $Y_values[$series][$#X_values] = "ND";
 	    }
 	  } else {
-	    $Y_values[$series][$#X_values] = $data_fields[$y_col_list[$series]]; 
-	  }    
+	    $Y_values[$series][$#X_values] = $data_fields[$y_col_list[$series]];
+	  }
 	} else {
 	  $Y_values[$series][$#X_values] = "ND";
-	} 
+	}
       }
-    }    
+    }
 
     ################################################################
     #### point series correspond to rows
@@ -1538,7 +1552,7 @@ sub ReadData {
 	  push (@X_values, $new_x);
 	}
       }
-	    
+
       ### read Y values
       if (defined($yline{$line_nb})) {
 	for $c (0..$#data_fields) {
@@ -1577,7 +1591,7 @@ sub CalcLimits {
   ## Calculate max and min X values
   $min_x_value = &checked_min(@X_values);
   $max_x_value = &checked_max(@X_values);
-  unless ((&IsReal($max_x_value)) && 
+  unless ((&IsReal($max_x_value)) &&
 	  (&IsReal($min_x_value))) {
     &RSAT::error::FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
   }
@@ -1665,7 +1679,7 @@ sub CalcLimits {
 }
 
 ################################################################
-## Initialize HTML map 
+## Initialize HTML map
 sub InitHTMLmap {
   $max_map_elements = 5000;
   $href = ShortFileName($inputfile);
@@ -1703,15 +1717,15 @@ XYgraph options
 -i		inputfile
 -o		outpufile
 -format		image format (supported $supported_formats; default $img_format)
--v		verbose. 
--title1 "t1"	first graph title. 
--title2 "t2"	second graph title. 	
--xleg1 "legend"	First X legend. 
+-v		verbose.
+-title1 "t1"	first graph title.
+-title2 "t2"	second graph title.
+-xleg1 "legend"	First X legend.
 -xleg2 "legend"	Second X legend.
--yleg1 "legend"	First Y legend. 
+-yleg1 "legend"	First Y legend.
 -yleg2 "legend"	Second Y legend.
 -xmax #	        maximal value represented on X axis.
--ymax #	        maximal value represented on Y axis.	
+-ymax #	        maximal value represented on Y axis.
 -xmin #	        minimal value represented on X axis.
 -ymin #	        minimal value represented on Y axis.
 -same_limits	use same limits (min, max) for the X and Y axis
@@ -1725,24 +1739,24 @@ XYgraph options
 -gstep2 #       2nd step value for the grid across both X and Y axis.
 -xsize #        size of the X axis (in pixels). Default is 400.
 -ysize #        size of the Y axis (in pixels). Default is 400.
--size #		size of X and Y axes (in pixels). 
+-size #		size of X and Y axes (in pixels).
 -pointsize #    point size (in pixels).
 -columns	data fields are in columns (default)
 -rows		data fields are in rows
--xcol #	        column containing data for the X axis. 
--ycol #,#,#     columns containing data for the Y axis. 
+-xcol #	        column containing data for the X axis.
+-ycol #,#,#     columns containing data for the Y axis.
 -xlog #		logarithm X axis base #, default 10)
 -ylog #		logarithm Y axis (base #, default 10)
 -log #		same as combining -xlog # -ylog #
 -lines	        points are jointed by lines
 -force_lines	points are jointed by lines even if there are missing values on the Y axis
 -line #		points of the #th column are jointed by lines
--header		first row (column) of the data file contains a column header 
+-header		first row (column) of the data file contains a column header
 -legend		use the first line as legend for Y data.
--histo		histogram. 
--fhisto		filled histogram. 
--hbox #,#,#.#   Highlight box. 
--tbox #,#,#.#   Threshold box. 
+-histo		histogram.
+-fhisto		filled histogram.
+-hbox #,#,#.#   Highlight box.
+-tbox #,#,#.#   Threshold box.
 -bg		background color (white, blue, black or gray).
 -mono		monochrome output.
 -symbols	represent points by symbols
@@ -1759,7 +1773,7 @@ End_of_options
 
 
 ################################################################
-## Display full help message 
+## Display full help message
 sub PrintHelp {
     open HELP, "| more";
     print HELP <<End_of_Help;
@@ -1775,29 +1789,29 @@ DESCRIPTION
 CATEGORY drawing
 
 USAGE
-	XYgraph [-i inputfile] [-o outputfile] [-v] 
+	XYgraph [-i inputfile] [-o outputfile] [-v]
 		[-title1 "title1"][-title2 "title2"]
 		[-xmax #] [-xmin #] [-ymax #] [-ymin #]
 		[-xleg1 "legend"] [-xleg2 "legend"]
 		[-yleg1 "legend"] [-yleg2 "legend"]
 		[-xsize #][-ysize #] [-ycol #,#,#]
-		[-lines][-legend][-header] [-histo|-fhisto] 
+		[-lines][-legend][-header] [-histo|-fhisto]
                 [-xgstep1 #][-ygstep1 #][-xgstep2 #][-ygstep2 #]
 
 OPTIONS
-	-i inputfile    The input file should contain columns with 
+	-i inputfile    The input file should contain columns with
 			numeric data.
-			Each line contains info about one point of the graph. 
+			Each line contains info about one point of the graph.
 			By default, the first column is considered to contain
-			X data, and the second column Y data. 
-			X and Y columns can be changed with -xcol and -ycol 
+			X data, and the second column Y data.
+			X and Y columns can be changed with -xcol and -ycol
 			options.
 			Columns should be separated by tabs.
-			If no input file is specified, the data are taken 
+			If no input file is specified, the data are taken
 			from the standard input (keyboard).
-	-o outpufile    The name under which the graph will be saved, in 
-			the form of a GIF document. 
-			If no output file is specified, the result is sent 
+	-o outpufile    The name under which the graph will be saved, in
+			the form of a GIF document.
+			If no output file is specified, the result is sent
 			to the standard output (screen).
 	-format		output image format
 			Supported: $supported_formats
@@ -1806,16 +1820,16 @@ OPTIONS
 			For pdf format, ps2pdf must be installed.
 	-v		verbose. Comments about data and graph parameters
 			are printed on the screen.
-	-title1 "t1"	first graph title. The title string should be 
-			embedded in double quotes if is contains spaces or 
+	-title1 "t1"	first graph title. The title string should be
+			embedded in double quotes if is contains spaces or
 			special chars.
 	-title2 "t2"	second graph title.
- 	-xleg1 "legend"	First X legend. 
+ 	-xleg1 "legend"	First X legend.
 	-xleg2 "legend"	Second X legend.
-	-yleg1 "legend"	First Y legend. 
+	-yleg1 "legend"	First Y legend.
 	-yleg2 "legend"	Second Y legend.
 	-xmax #	        maximal value represented on X axis.
-	-ymax #	        maximal value represented on Y axis.	
+	-ymax #	        maximal value represented on Y axis.
 	-xmin #	        minimal value represented on X axis.
 	-ymin #	        minimal value represented on Y axis.
 	-same_limits	use same limits (max, min) for the X and Y axes.
@@ -1834,77 +1848,77 @@ OPTIONS
 	-xsize #        size of the X axis (in pixels). Default is 400.
 	-ysize #        size of the Y axis (in pixels). Default is 400.
 	-size #		size of X and Y axes (in pixel).
-			(combinates the effects of -xsize and -ysize). 
+			(combinates the effects of -xsize and -ysize).
 	-pointsize #    point size (in pixels).
 
 	-columns	data fields are in columns (default)
 			(one column for X and one or several for Y values)
 	-rows		data fields are in row
 			(one row for X and one or several for Y values)
-	-xcol #	        column containing data for the X axis. 
-			A zero value indicates that there is no column with X values. 
+	-xcol #	        column containing data for the X axis.
+			A zero value indicates that there is no column with X values.
 			In this case, X values are ordinal.
-	-ycol #		column containing data for the Y axis. 
+	-ycol #		column containing data for the Y axis.
 			Several columns can be specified by:
 				-ycol #,#,#
 			A range of columns can be specified by:
-			They have to be separated by commas without spaces. 
+			They have to be separated by commas without spaces.
 	-xlog #		X data are displayed on a logarithmic scale
-			If the next argument is a number, it provides the 
-			log base. Default log base is 10.  
+			If the next argument is a number, it provides the
+			log base. Default log base is 10.
 	-ylog #		Y data are displayed on a logarithmic scale
-			If the next argument is a number, it provides the 
-			log base. Default log base is 10.  
+			If the next argument is a number, it provides the
+			log base. Default log base is 10.
 	-log #		same as combining -xlog # -ylog #
 
 	-lines 		points are jointed by lines. When there are missing Y
 			values, the points are not joined by a line (see -force_lines
          		option).
-	-force_lines	points are jointed by lines. Even if there are missing values 
+	-force_lines	points are jointed by lines. Even if there are missing values
 			on the Y axis.
 	-line #		same as lines, but for the #th column only
-			can be used recursively to specify several columns for 
+			can be used recursively to specify several columns for
 			which a line must be drawn between points.
-	-header		first line of the data file contains a column header 
-			if option -legend is active, this header is used as 
+	-header		first line of the data file contains a column header
+			if option -legend is active, this header is used as
 			legend, else it is ignored.
-	-legend		use the content of the first line from input file as 
+	-legend		use the content of the first line from input file as
 			legend for Y data.
-	-histo		histogram. The X data should in this case contain the 
-			middle position of ach class, and Y data the 
+	-histo		histogram. The X data should in this case contain the
+			middle position of ach class, and Y data the
 			frequencies.
-	-fhisto		filled histogram. 
-	-hbox #,#,#.#   Highlight box. All points located within this box are 
-			highlighted, and the data corresponding to these 
-			points are are printed on the standard output 
-			device (screen).  
-			#,#,#,# are the coordinates of the highlighted 
+	-fhisto		filled histogram.
+	-hbox #,#,#.#   Highlight box. All points located within this box are
+			highlighted, and the data corresponding to these
+			points are are printed on the standard output
+			device (screen).
+			#,#,#,# are the coordinates of the highlighted
 			box in pixels (left, top, right, bottom respectively).
 
-	-tbox #,#,#.#   Threshold box. All points located within these 
+	-tbox #,#,#.#   Threshold box. All points located within these
 			thresholds are highlighted, and the corresponding data
-			are printed on the standard output device (screen).  
-			#,#,#,# are in units of X and Y data 
+			are printed on the standard output device (screen).
+			#,#,#,# are in units of X and Y data
 			(low_x, high_x, low_y, high_y respectively).
 
-	-bg bg_color	background color. 
+	-bg bg_color	background color.
 			The following colors are currently supported:
 			- white (default),
 			- gray,
 			- blue
 			- black.
-			The foreground colors are automatically adapted to 
+			The foreground colors are automatically adapted to
 			provide a good contrast with the bg color.
 
-	-mono		monochrome. All dots are drawn in black, and a 
+	-mono		monochrome. All dots are drawn in black, and a
 			specific symbol is associated to each.
 
 	-htmap	HTML map
-		An HTML document is automatically generated, which includes 
+		An HTML document is automatically generated, which includes
 		the XYgraph GIF file as an HTML map. In other words,
-		this document displays a figure with sensitive areas. 
-		Each time the mouse is positioned above a point of the XYgraphs, 
-		information about this particuliar point is displayed 
+		this document displays a figure with sensitive areas.
+		Each time the mouse is positioned above a point of the XYgraphs,
+		information about this particuliar point is displayed
 		at the bottom of the browser window.
 
 	-lc	label column
@@ -1939,7 +1953,7 @@ OPTIONS
 		Additional gnuplot commands can be specified, separated by commas.
 		e.g. -gp 'set size ratio 0.5'
 
-	-hline Draw an horizontal line on the indicated position. 
+	-hline Draw an horizontal line on the indicated position.
 		This helps to mark some relevant positions on the graph.
 		The following colors are currently supported:
 			red, blue, green, violet, orange
@@ -1955,7 +1969,7 @@ OPTIONS
 		 will draw a red line at the y positions 0, 10, 20 and
 		 30
 
-	-vline Draw a vertical line on the indicated position. 
+	-vline Draw a vertical line on the indicated position.
 		This helps to mark some relevant positions on the graph.
 		The following colors are currently supported:
 			red, blue, green, violet, orange
@@ -2082,27 +2096,27 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-log") {
       $xlog= 1;
       $ylog= 1;
-      if (($ARGV[$a+1] eq "e") 
+      if (($ARGV[$a+1] eq "e")
 	  || (&IsReal($ARGV[$a+1]))) {
 	$x_log_base = $ARGV[$a+1];
 	$y_log_base = $ARGV[$a+1];
-	&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.")
 	  unless (($x_log_base > 1) || ($x_log_base eq "e"));
       }
     } elsif ($ARGV[$a] eq "-xlog") {
       $xlog= 1;
-      if (($ARGV[$a+1] eq "e") 
+      if (($ARGV[$a+1] eq "e")
 	  || (&IsReal($ARGV[$a+1]))) {
 	$x_log_base = $ARGV[$a+1];
-	&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.")
 	  unless (($x_log_base > 1) || ($x_log_base eq "e"));
       }
     } elsif ($ARGV[$a] eq "-ylog") {
       $ylog= 1;
-      if (($ARGV[$a+1] eq "e") 
+      if (($ARGV[$a+1] eq "e")
 	  || (&IsReal($ARGV[$a+1]))) {
 	$y_log_base = $ARGV[$a+1];
-	&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.")
 	  unless (($y_log_base > 1) || ($y_log_base eq "e"));
       }
 
@@ -2135,7 +2149,7 @@ sub ReadArguments {
     } elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
       $point_size = $ARGV[$a+1];
 
-      ### data columns ###  
+      ### data columns ###
     } elsif ($ARGV[$a] eq "-xcol") {
       $x_col = $ARGV[$a+1] -1;	#indexes begin at 0
 
@@ -2149,7 +2163,7 @@ sub ReadArguments {
 	### range of columns
       } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
 	       (&IsNatural($1)) &&
-	       (&IsNatural($2)) && 
+	       (&IsNatural($2)) &&
 	       ($2 >= $1)) {
 	@y_col_list = ();
 	for $col ($1-1..$2-1) {
@@ -2232,10 +2246,10 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-colors") {
       $colorfile = $ARGV[$a+1];
-    
+
     } elsif ($ARGV[$a] eq "-export_colors") {
       $colorexportfile = $ARGV[$a+1];
-      
+
     } elsif ($ARGV[$a] eq "-gp") {
       $gp_supp_commands = $ARGV[$a+1];
 
