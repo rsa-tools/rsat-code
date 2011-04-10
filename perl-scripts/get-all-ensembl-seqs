@@ -1,0 +1,132 @@
+#!/usr/bin/perl -w
+# install-ensembl-organism
+
+use strict;
+
+my $dbversion = '50';
+
+## Get organism names
+# my $organism_list = `supported-organisms-ensembl | grep -v 'EnsEMBL'`;
+my $organism_list = `supported-organisms-ensembl | grep -v EnsEMBL | grep -v homo_sapiens | grep -v mus_musculus`;
+
+if ($organism_list) {
+    chomp $organism_list;
+    print ";INFO : organisms : \n$organism_list\n";
+    my @organisms = split ',', $organism_list;
+
+    @organisms = ('anopheles_gambiae', 'bos_taurus', 'caenorhabditis_elegans', 'canis_familiaris', 'ciona_intestinalis', 'danio_rerio', 'drosophila_melanogaster', 'equus_caballus', 'gallus_gallus', 'homo_sapiens', 'macaca_mulatta', 'monodelphis_domestica', 'mus_musculus', 'ornithorhynchus_anatinus', 'oryzias_latipes' ,'pan_troglodytes', 'pongo_pygmaeus', 'rattus_norvegicus', 'saccharomyces_cerevisiae', 'tetraodon_nigroviridis');
+    @organisms = ('anopheles_gambiae', 'bos_taurus', 'canis_familiaris', 'ciona_intestinalis', 'danio_rerio', 'drosophila_melanogaster', 'equus_caballus', 'gallus_gallus', 'macaca_mulatta', 'monodelphis_domestica', 'ornithorhynchus_anatinus', 'oryzias_latipes' , 'pongo_pygmaeus', 'rattus_norvegicus', 'saccharomyces_cerevisiae', 'tetraodon_nigroviridis');
+#    @organisms = ('saccharomyces_cerevisiae');
+
+    foreach my $org (@organisms) {
+	my $organism = ucfirst($org);
+	print ";INFO: retrieving sequences for organism $organism\n";
+
+	`mkdir $organism`;
+
+	## Get chromosome names
+	my $chromosome_list = `ensembl-org-info -org $organism | grep Chromosomes`;
+
+	if ($chromosome_list) {
+	    chomp $chromosome_list;
+	    $chromosome_list =~ s/Chromosomes : //;
+	    $chromosome_list =~ s/\w*Het//g;
+	    $chromosome_list =~ s/Un\.\w*\.\w*//g;
+	    $chromosome_list =~ s/U\w*//g;
+	    $chromosome_list =~ s/\w*_random//g;
+	    $chromosome_list =~ s/\w*hap\w*,/,/g;
+	    $chromosome_list =~ s/MT//;
+	    $chromosome_list =~ s/MtDNA//;
+	    $chromosome_list =~ s/2-micron//;
+	    $chromosome_list =~ s/UNKN//;
+	    $chromosome_list =~ s/Y_unplaced//;
+	    $chromosome_list =~ s/dmel_mitochondrion_genome//;
+	    $chromosome_list =~ s/E22C19W28_E50C23//;
+	    $chromosome_list =~ s/E64//;
+	    $chromosome_list =~ s/Uextra//;
+	    $chromosome_list =~ s/U//;
+	    $chromosome_list =~ s/,+/,/g;
+	    $chromosome_list =~ s/,$//;
+	    $chromosome_list =~ s/^,//;
+	    print ";INFO : chromosomes : $chromosome_list\n";
+#	    next;
+	    my @chromosomes = split ',', $chromosome_list;
+
+#	    @chromosomes = ('3','4','5','6','7','8','9','11','12','13','14','15','16','17','18','20','21','22','X','Y');
+#	    @chromosomes = ('4','5','6','7','8','9','X','Y');
+#	    @chromosomes =('I','III');
+
+	    ###
+	    ### Retrieve-ensembl-seq parameters
+	    ###
+
+	    ### Feature types
+	    foreach my $_feattype ('mRNA', 'CDS', 'intron', 'firstintron', 'utr') {
+
+		my $feattype;
+
+		## Type
+		my $type;
+		my $from;
+		my $to;
+		if (($_feattype eq 'mRNA') || ($_feattype eq 'CDS')) {
+		    $type = 'upstream';  ## The -type option value; other example:'-type downstream'
+		    $from = -2000;  ## Start position of the sequence
+		    $to = -1;  ## End position of the sequence
+		} else {
+		    $type = '';
+		    $from = '';
+		    $to = '';
+		}
+
+		## First intron
+		my $firstintron = '';
+		if ($_feattype eq 'firstintron') {
+		    $firstintron = '-firstintron';
+		    $feattype = 'intron';
+		} else {
+		    $feattype = $_feattype;
+		}
+
+#		my $noorf = '-noorf';
+		my $noorf = '';
+
+		my $maskcoding = '-maskcoding';
+#		my $maskcoding = '';
+
+		### Repeats masked or not
+		foreach my $rm ('', '-rm') {
+
+		    ## retrieve sequences for each chromosome
+		    foreach my $chrom (@chromosomes) {
+			print ";INFO: retrieving sequences from chromosome $chrom\n";
+			
+			my $file_name = $organism."_chrom".$chrom."_".$type."_".$_feattype.$from.$to.$maskcoding.$rm.$noorf.".fasta";
+			$file_name =~ s/__/_/;
+
+			print ";INFO: Saving result to file $file_name\n";
+
+			my $command = "retrieve-ensembl-seq.pl -dbversion $dbversion -org $organism -all -chrom $chrom -from $from -to $to -feattype $feattype -type $type $firstintron $maskcoding $rm $noorf -alltranscripts -uniqseqs -o $organism/$file_name";
+			`$command`;
+		    }
+
+		    ## Concatenate all chromosome files and compress
+		    my $generic_file_name = $organism."_chrom*_".$type."_".$_feattype.$from.$to.$maskcoding.$rm.$noorf.".fasta";
+		    $generic_file_name =~ s/__/_/;
+		    my $concatenation_file_name = $organism."_".$type."_".$_feattype.$from.$to.$maskcoding.$rm.$noorf.".fasta";
+		    $concatenation_file_name =~ s/__/_/;
+		    my $cat_command = "cat $organism/$generic_file_name > $organism/$concatenation_file_name";
+		    `$cat_command`;
+		    `gzip $organism/$concatenation_file_name`;
+
+		}          ## rm
+	    }          ## feattypes
+	}          ## chromosome list
+
+	## Archive all sequences for one organism
+	my $tar_name = $organism.".tar";
+	`tar -cvf $tar_name $organism/*.gz`;
+	`gzip $tar_name`;
+
+    }          ## organisms
+}
