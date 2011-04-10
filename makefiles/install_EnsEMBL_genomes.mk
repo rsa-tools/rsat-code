@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_EnsEMBL_genomes.mk,v 1.2 2007/02/22 11:27:43 rsat Exp $
+# $Id: install_EnsEMBL_genomes.mk,v 1.3 2011/04/10 13:29:22 rsat Exp $
 #
 # Time-stamp: <>
 #
@@ -15,6 +15,14 @@ MAKEFILE=${RSAT}/makefiles/install_EnsEMBL_genomes.mk
 V=1
 
 VERSION=41
+
+
+
+################################################################
+## Return the list of organisms supported at ensembl.org
+list_supported:
+	supported-organisms-ensembl
+
 
 ## One genome
 ORG=Pan_troglodytes_EnsEMBL
