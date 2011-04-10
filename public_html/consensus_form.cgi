@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.10 2009/11/03 10:06:12 jvanheld Exp $
+# $Id: consensus_form.cgi,v 1.11 2011/04/10 13:49:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:07:43 jvanheld>
 #
@@ -44,7 +44,7 @@ foreach $key (keys %default) {
 &RSA_header("consensus", "form");
 
 print "<CENTER>\n";
-print "Matrix-based pattern discovery using CONSENSUS<BR>\n";
+print "Matrix-based motif discovery using CONSENSUS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
 print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A>. \n";
 print "Web interface by <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van Helden</A>.<br>";

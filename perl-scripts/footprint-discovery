@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.61 2011/04/06 15:50:43 amedina Exp $
+# $Id: footprint-discovery,v 1.62 2011/04/10 13:49:57 jvanheld Exp $
 #
 ############################################################
 
@@ -38,7 +38,7 @@ Adapted from the procedure described in Janky & van Helden (2008).
 
 Sequences
 
-Pattern discovery
+Motif discovery
 
 =head1 USAGE
 
@@ -116,7 +116,7 @@ Promoter sequences of the orthologous genes
 
 =item [prefix]_ortho_seq_purged.fasta
 
-Purged promoter sequences (for pattern discovery)
+Purged promoter sequences (for motif discovery)
 =item [prefix]_ortho_filter_dyads.tab
 
 Dyads found in the query genes (for dyad filtering)
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.61 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -228,12 +228,12 @@ package main;
   local $verbose = 0;		## Verbosity
   local $noov = "-noov";     ## Treatment of self-overlapping patterns
   local $filter = 1; ## Only report dyads present in the query promoter
-  local $bg_model = "taxfreq"; ## Background model for pattern discovery (Supported:taxfreq or monads)
+  local $bg_model = "taxfreq"; ## Background model for motif discovery (Supported:taxfreq or monads)
   local $bgfile = 0;
   local $to_matrix = 0;		## Convert assembled dyads into PSSM
   local %lth = (occ=>1,occ_sig=>0); ## Lower thresholds
   local %uth = (rank=>50);	    ## Upper thresholds
-  local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
+  local $strands = "-2str"; ## Strands for motif discovery and pattern matching
   local $start_time = &RSAT::util::StartScript();
   $main::orthologs_list_file=0;
   ## Supported tasks

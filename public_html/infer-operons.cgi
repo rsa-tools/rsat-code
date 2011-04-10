@@ -53,7 +53,7 @@ $organism = $query->param('organism');
 if (defined($supported_organism{$organism})) {
     $organism_name = $supported_organism{$organism}->{'name'};
 
-    $parameters .= " -org ".$organism unless ($query->param('single_multi_org') eq 'multi'); ## For multi-genome retrieval, the query organism name is passed to pattern discovery programs, but it is not necessary
+    $parameters .= " -org ".$organism unless ($query->param('single_multi_org') eq 'multi'); ## For multi-genome retrieval, the query organism name is passed to motif discovery programs, but it is not necessary
 } else {
     &cgiError("Organism '",
 	      $organism,

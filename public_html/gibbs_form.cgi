@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs_form.cgi,v 1.9 2009/12/13 18:54:57 jvanheld Exp $
+# $Id: gibbs_form.cgi,v 1.10 2011/04/10 13:49:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:18 jvanheld>
 #
@@ -40,7 +40,7 @@ foreach $key (keys %default) {
 &RSA_header("gibbs", "form");
 
 print "<CENTER>\n";
-print "Matrix-based pattern discovery using GIBBS<BR>\n";
+print "Matrix-based motif discovery using GIBBS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
 print "Program developed by <A HREF='mailto:neuwald\@cshl.org (Andrew Neuwald)'>Andrew Neuwald</A><BR>\n";
 print "Web interface by <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van Helden</A>.\n";

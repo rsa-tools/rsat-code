@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.181 2011/04/09 05:40:09 jvanheld Exp $
+# $Id: peak-motifs,v 1.182 2011/04/10 13:49:57 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.181 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.182 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -298,11 +298,11 @@ package main;
   }
   &MergeWords() if ($task{merge_words});
 
-  ## MEME pattern discovery
+  ## MEME motif discovery
   &CalcMemeBackground() if ($task{meme_bg});
   &RunMEME() if (($task{meme}) || (($task{disco}) && ($disco{meme}))); ## Not yet clear to me (JvH) whether meme should be a separat etask or a disco algo that runs with task disco
 
-  ## ChIPMunk pattern discovery
+  ## ChIPMunk motif discovery
   &RunChIPMunk() if  (($task{chipmunk}) || (($task{disco}) && ($disco{chipmunk}))); ## Not yet clear to me (JvH) whether chipmunk should be a separat etask or a disco algo that runs with task disco
 
   ## Merge all discovered motifs
@@ -1097,7 +1097,7 @@ sub OligoAnalysis {
 #      }
       $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
-      &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+#TMP#      &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
     }
   }
@@ -1125,7 +1125,7 @@ sub OligoDiff {
     #    $cmd .= " -seqtype dna";
     #    $cmd .= " -pseudo 0.01";
     $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+#TMP#    &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
   }
 }
@@ -1150,7 +1150,7 @@ sub DyadAnalysis {
   $cmd .= " -pseudo 0.01";
   $cmd .= " | perl -pe 's/n\\{0\\}//g'"; ## Suppress zero spacings for merging with oligos
   $cmd .= " >".$main::outfile{dyads};
-  &one_command($cmd, 1, $main::outfile{dyads}."_time.txt");
+#TMP#  &one_command($cmd, 1, $main::outfile{dyads}."_time.txt");
   &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads", 0);
 }
 
@@ -1180,7 +1180,7 @@ sub PositionAnalysis {
     $cmd .= " -origin center ";
     $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+#TMP#    &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type, 0);
   }
 }
@@ -1218,7 +1218,7 @@ sub LocalDyads {
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
   #  $cmd .= " -pseudo 0.01";
   $cmd .= " > ".$main::outfile{$pattern_type};
-  &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+#TMP#  &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
 }
 
@@ -1259,7 +1259,7 @@ sub LocalWords {
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " > ".$main::outfile{$pattern_type};
-      &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+#TMP#      &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
 #    }
   }
@@ -3180,7 +3180,7 @@ sub SynthesisPatternDisco {
       my $consensus_rc = $pattern_info[$logo_nb]->{rc_word};
 
 #       ## Get the consensus from the matix rather than from the assembly
-#       ## THIS IS NOT WORKING, I ONLY GET THE MATRICES FROM THE FIRST PATTERN DISCOVERY PROGRAM
+#       ## THIS IS NOT WORKING, I ONLY GET THE MATRICES FROM THE FIRST MOTIF DISCOVERY PROGRAM
 #       my $matrix = $motif_by_id{$matrix_id};
 #       &RSAT::message::Debug("motif", $matrix_id, $matrix) if ($main::verbose >= 10);
 #       if ($matrix) {
@@ -4229,7 +4229,7 @@ sub CheckArguments {
 #  }
 
 
-  ## Dependency between task merge_words and pattern discovery type merged_words
+  ## Dependency between task merge_words and motif discovery type merged_words
   if (($task{disco}) && ($disco{merged_words})) {
       $task{merge_words} = 1;
   }

@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.132 2011/03/22 08:27:10 jvanheld Exp $
+# $Id: convert-matrix,v 1.133 2011/04/10 13:49:57 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1018,7 +1018,7 @@ RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
     parameters
         Returns a series of parameters associated to the matrix. The
         list of parameters to be exported depends on the input formats
-        (each pattern discovery program returns specific parameters,
+        (each motif discovery program returns specific parameters,
         which are more or less related to each others but not
         identical).
 
