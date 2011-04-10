@@ -94,7 +94,7 @@ utilization. Motif comparisons and clustering.</p>
 </p>
 <hr />
 <h1><a name="category">CATEGORY</a></h1>
-<p>Pattern discovery</p>
+<p>motif discovery</p>
 <p>
 </p>
 <hr />
@@ -395,7 +395,7 @@ algorithms. Those words will then be used as seeds for extracting
 over-represented position-specific scoring matrices from the sequences
 (using the program <em>matrix-from-patterns</em>).</p>
 <p>The table of merged words has one row per word (oligo or dyad) and one
-column per pattern discovery program. This allows to analyze the
+column per motif discovery program. This allows to analyze the
 consistency between the words detected by different approaches,
 e.g. show that a word is both over-represented (oligo-analysis,
 dyad-analysis) and positionally biased (position-analysis,
@@ -457,7 +457,7 @@ on the number of top peaks to be considered (e.g. -top_peaks 500).</p>
 <dt><strong><a name="nmotifs_max_motif_number" class="item"><strong>-nmotifs max_motif_number</strong></a></strong></dt>
 
 <dd>
-<p>Maximal number of motifs (matrices) to return for pattern discovery
+<p>Maximal number of motifs (matrices) to return for motif discovery
 algorithms. Note the distinction between the maximal number of motifs
 (matrices) and the maximum number of patterns (words, dyads): a motif
 generally corresponds to mutually overlapping several patterns (dyads,
@@ -529,7 +529,7 @@ renewing occurrences are counted.</p>
 of self-overlap, which violates the hypothesis of independence of
 successive occurrences underlying the binomial significance test
 (oligo-analysis, dyad-analysis).</p>
-<p><strong>Beware</strong>: the options -noov and -ovlp only apply to pattern discovery,
+<p><strong>Beware</strong>: the options -noov and -ovlp only apply to motif discovery,
 and not to compositional profiles. Dinucleotide frequencies are always
 computed with the option -ovlp (count all occurrences), to avoid weird
 effect. Since those compositin profiles further serve to estimate the
