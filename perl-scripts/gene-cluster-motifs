@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.297 2011/02/17 05:07:46 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.298 2011/04/10 13:49:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.297 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.298 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Paths of the programs called by gene-cluster-motifs
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -163,7 +163,7 @@ package main;
   $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 
 
-  ## Background models for string-based pattern discovery
+  ## Background models for string-based motif discovery
   %supported_background = (
 			   "intergenic"=>1,
 			   "upstream"=>1,
@@ -208,7 +208,7 @@ package main;
   $purge_ml = 40;
   $purge_mis = 3;
 
-  ## pattern discovery options
+  ## motif discovery options
   $background = "upstream-noorf";
   $noov = "-noov";
   $sort_key = "score";
@@ -223,7 +223,7 @@ package main;
   $min_sp = 0;
   $max_sp = 20;
 
-  ## Default matrix-based pattern discovery options
+  ## Default matrix-based motif discovery options
   $matrix_width = 16;
   $expected_sites_per_seq = 2;
   $nmotifs = 3;
@@ -231,7 +231,7 @@ package main;
   $matrix_pseudo = 1;
 
   ## Program-specific keys for sorting matrices (PSSM)
-  ## Values are defined below for each matrix-based pattern discovery program
+  ## Values are defined below for each matrix-based motif discovery program
   %pssm_sort_key = ();
   %pssm_sort_order = ();
 
@@ -3452,7 +3452,7 @@ DESCRIPTION
 
 CATEGORY
 	sequences
-	pattern discovery
+	motif discovery
 
 OPTIONS
 	-h	(must be first argument) display full help message
@@ -3572,7 +3572,7 @@ OPTIONS
 
    Sequence purging option
 
-   	For pattern discovery, it is essential to purge sequences
+   	For motif discovery, it is essential to purge sequences
    	i.e. to mask redundant fragments. Such redundant fragments can
    	come from genomic repeats (e.g. in duplicated genes in
    	telomeric regions), or from neighbour genes sharing the same
@@ -3584,15 +3584,15 @@ OPTIONS
    	of false positive motif.
 
 	The approach followed here is to mask repeats (replace them
-	with N characters) during the pattern discovery step, but use
+	with N characters) during the motif discovery step, but use
 	the unmasked sequences for pattern matching, in order to
 	locate all the putative instances of the discovered motifs.
 
-	-purge	use purged sequences for pattern discovery
+	-purge	use purged sequences for motif discovery
 		(default)
 
 	-nopurge
-		use non-purged sequences for pattern discovery
+		use non-purged sequences for motif discovery
 
         -purge_ml #
 		matching length above which repeats have to be masked
@@ -3715,7 +3715,7 @@ OPTIONS
 
    orm-specific options
 
-	orm is a pattern discovery program developed by Matthieu
+	orm is a motif discovery program developed by Matthieu
 	Defrance. It should be installed in the contribution dir:
 		    $RSAT/python-scripts/orm
 
@@ -3723,7 +3723,7 @@ OPTIONS
 	comparison with the background model. More information can be found
 	in the ORM documentation.
 
-   Matrix-based pattern discovery options (consensus, gibbs, AlignACE, meme, MotifSampler, infogibbs)
+   Matrix-based motif discovery options (consensus, gibbs, AlignACE, meme, MotifSampler, infogibbs)
        -width  matrix width (default $matrix_width)
        -sps	expected number of sites per sequence
 		(default $expected_sites_per_seq)
@@ -3808,7 +3808,7 @@ OPTIONS
 	-known	known_site_file
 		A file containing a list of known sites/motifs for
 		each of the gene clusters. These known sites are NOT
-		used during the pattern discovery. They are simply
+		used during the motif discovery. They are simply
 		displayed besides the discovered patterns, for the
 		sake of comparison.
 
@@ -3852,7 +3852,7 @@ OPTIONS
 		problem encountered with the gibbbs sampler under some
 		operating systems (Linux but not Mac OSX): the gibbs
 		program returns an error code to the system even when
-		the pattern discovery was successful.
+		the motif discovery was successful.
 
 FILE FORMAT
    $HELP_FAMILY_FILE
@@ -4090,7 +4090,7 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-scalestep") {
       $scalestep = $ARGV[$a+1];;
 
-      ### matrix-based pattern discovery
+      ### matrix-based motif discovery
     } elsif ($ARGV[$a] eq "-width") {
       $matrix_width = $ARGV[$a+1];
     } elsif ($ARGV[$a] eq "-sps") {
@@ -4745,7 +4745,7 @@ sub ReadSequenceList {
 }
 
 ################################################################
-## Validate the pattern discovery results by comparing discovered patterns to
+## Validate the motif discovery results by comparing discovered patterns to
 ## known sites
 sub Validate {
    &RSAT::message::Info( ";\n; Validating discovered patterns") if ($verbose >= 1);
@@ -5802,8 +5802,8 @@ gene-cluster-motifs options
 -size_names     use the old naming system (obsolete, only for backward compatibility)
 -org_fam	each family corresponds to one organism
 -taxon		taxon (collect upstream sequences of orthologous genes)
--purge		use purged sequences for pattern discovery (default)
--nopurge	use non-purged sequences for pattern discovery
+-purge		use purged sequences for motif discovery (default)
+-nopurge	use non-purged sequences for motif discovery
 -purge_ml	min matching length for purge-sequence
 -purge_mis	max number of mismatches for purge-sequence
 -mingenes	minimal number of genes per family
@@ -5853,7 +5853,7 @@ gene-cluster-motifs options
 -origin #       origin for dna-pattern, matrix-scan and feature-maps
 -scalestep #	scale steps for the feature maps.
 
-## General options for matrix-based pattern discovery
+## General options for matrix-based motif discovery
 -width		matrix width (default $matrix_width)
 -sps		expected number of sites per sequence (default $expected_sites_per_seq)
 -nmotifs	number of motifs to discover per sequence set (family)

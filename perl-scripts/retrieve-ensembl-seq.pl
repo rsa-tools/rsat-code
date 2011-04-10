@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.78 2011/02/28 17:21:50 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.79 2011/04/10 13:49:58 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -2011,7 +2011,7 @@ OPTIONS
 
         -alltranscripts
                 Get sequences for all transcripts of genes.
-                Use -uniqseqs if you do pattern discovery afterwards
+                Use -uniqseqs if you do motif discovery afterwards
 
         -uniqseqs
                 With -alltranscripts, returns only non-redondant sequences

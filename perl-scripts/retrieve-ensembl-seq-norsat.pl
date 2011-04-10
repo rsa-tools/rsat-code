@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq-norsat.pl,v 1.6 2010/06/09 23:06:11 jvanheld Exp $
+# $Id: retrieve-ensembl-seq-norsat.pl,v 1.7 2011/04/10 13:49:58 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -1039,7 +1039,7 @@ OPTIONS
 
         -alltranscripts
                 Get sequences for all transcript of genes.
-                Use purge-sequence if you do pattern discovery afterwards
+                Use purge-sequence if you do motif discovery afterwards
 
         -firstintron
                 With feattype intron, get only first intron sequence
