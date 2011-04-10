@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.183 2011/04/10 17:31:34 jvanheld Exp $
+# $Id: peak-motifs,v 1.184 2011/04/10 21:39:13 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.183 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.184 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -267,20 +267,23 @@ package main;
 
   &OpenSynthesis() if ($progressive_synthesis);
 
-  ## Sequence composition
   foreach my $seq_type (@seq_types) {
+    ## Prepare sequences
     &PurgeSeq($seq_type) if ($task{purge});
     &SequenceLengths($seq_type) if ($task{seqlen});
-    &CompositionProfiles($seq_type) if ($task{composition});
+
+    if ($task{composition}) {
+      ## Sequence composition
+      &CompositionProfiles($seq_type);
+
+    }
+  }
+
+  ## Build background models from control sequences
+  if (($main::infile{ctrl_seq}) && ($task{composition})) {
+    ##    &ComputeBgModels($main::infile{ctrl_seq}); ## I SHOULD IMPLEMENT THIS: COMPUTE BG MODELS FROM THE CTRL SEQ FOR oligo-analysis and dyad-analysis
   }
   &SynthesisSequenceComposition() if ($progressive_synthesis);
-
-
-  ## Control sequences
-  if ($main::infile{ctrl_seq}) {
-##    &ComputeBgModels($main::infile{ctrl_seq}); ## I SHOULD IMPLEMENT THIS: COMPUTE BG MODELS FROM THE CTRL SEQ FOR oligo-analysis and dyad-analysis
-    &OligoDiff() if ($task{oligo_diff});
-  }
 
   ## Reference motifs
   if (defined($main::infile{ref_motifs})) {
@@ -295,6 +298,7 @@ package main;
     &PositionAnalysis() if ($disco{positions});
     &LocalWords() if ($disco{local_words});
     &LocalDyads() if ($disco{local_dyads});
+    &OligoDiff() if (($disco{oligo_diff}) && ($main::infile{ctrl_seq}));
   }
   &MergeWords() if ($task{merge_words});
 
@@ -428,7 +432,7 @@ sub DefaultParameters {
 
   ## Thresholds for oligo-analysis, dyad-analysis and oligo-diff
   $main::param{min_ratio} = 1; push(@main::param_list, "min_ratio");
-  $main::param{min_zscore} = 6; push(@main::param_list, "min_ratio");
+  $main::param{min_zscore} = 6; push(@main::param_list, "min_zscore");
   $main::param{min_sig} = 0; push(@main::param_list, "min_sig");
 
   ## oligo-analysis
@@ -1109,7 +1113,7 @@ sub OligoDiff {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'oligo_diff_'.$len.'nt';
     &RSAT::message::TimeWarn("Running oligo-diff", $len."nt") if ($main::verbose >= 2);
-    my $cmd = $SCRIPTS."/oligo-diff -v 2";
+    my $cmd = $SCRIPTS."/oligo-diff -v 3";
     $cmd .= " -test ".$main::outfile{"test_purged"};
     $cmd .= " -ctrl ".$main::outfile{"ctrl_purged"};
     $cmd .= " -nopurge"; ## The input sequences have already been purged
