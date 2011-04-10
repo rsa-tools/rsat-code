@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.41 2010/11/24 03:39:24 jvanheld Exp $
+# $Id: purge-sequence,v 1.42 2011/04/10 13:49:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -208,7 +208,7 @@ OPTIONS
 	-mask_short min_seq_len
 		Mask (replace by N characters) sequences shorter than
 		the specified length. This can be useful to discard
-		short intergenic segments from the pattern discovery
+		short intergenic segments from the motif discovery
 		step, especially when working with bacterial genomes,
 		where short intergenic sequences generally correspond
 		to intra-operon segments.

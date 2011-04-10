@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.80 2011/04/08 21:47:44 amedina Exp $
+# $Id: footprint-scan,v 1.81 2011/04/10 13:49:57 jvanheld Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.80 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -355,7 +355,7 @@ package main;
   local $strands = "-2str";	## Strands for pattern matching
   local $pseudo = 1;
   $main::bg_pseudo = 0.05;
-  local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
+  local $strands = "-2str"; ## Strands for motif discovery and pattern matching
   #local $matrix_dir="data/matrices";
   #local $matrix_file = $matrix_dir."/PHO4_matrix.tab";
   local $matrix_format = "tab";

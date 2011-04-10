@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.39 2010/08/06 09:50:50 jvanheld Exp $
+# $Id: convert-seq,v 1.40 2011/04/10 13:49:57 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -277,7 +277,7 @@ OPTIONS
 	-mask_short min_seq_len
 		Mask (replace by N characters) sequences shorter than
 		the specified length. This can be useful to discard
-		short intergenic segments from the pattern discovery
+		short intergenic segments from the motif discovery
 		step, especially when working with bacterial genomes,
 		where short intergenic sequences generally correspond
 		to intra-operon segments.

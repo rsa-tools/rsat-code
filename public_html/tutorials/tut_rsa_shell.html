@@ -26,7 +26,7 @@ analyzing regulatory sequences in a unix shell
 <li><a href=#accessing>Accessing the programs</a>
 <li><a href=#getting_help>Getting help</a>
 <li><a href=#retrieve_seq>Retrieving sequences</a>
-<li><a href=#pattern_discovery>Pattern discovery</a>
+<li><a href=#pattern_discovery>Motif discovery</a>
 <ul>
 <li><a href=#oligo_analysis>oligo-analysis</a>
 <li><a href=#dyad_analysis>dyad-analysis</a>
@@ -72,7 +72,7 @@ Analysis Tools (<B><I>RSAT</I></B>) directly from the unix shell.
 <I>RSAT</I> is a package combining a series of specialized programs for the
 detection of regulatory signals in non-coding sequences. A variety of
 tasks can be performed : retrieval of upstream or downstream
-sequences, pattern discovery, pattern matching, and gaphical
+sequences, motif discovery, pattern matching, and gaphical
 reprsentation of regulatory regions.
 
 <P>
@@ -317,10 +317,10 @@ returns all the stop codong for <I>E.coli</I>.
 
 </ul>
 <a name=pattern_discovery></a>
-<h2>Pattern discovery</h2>
+<h2>Motif discovery</h2>
 <UL>
 
-<P>In a pattern discovery problem, you start from a set of
+<P>In a motif discovery problem, you start from a set of
 functionally related sequences (e.g.  upstream sequences for a set of
 co-regulated genes) and you try to extract motifs (e.g. regulatory
 elements) that are characteristic of these sequences.
@@ -354,7 +354,7 @@ interpretable because the programs always return an answer.
 
 <P>
 Basically, I would tend to prefer string-based approaches for any
-problem of pattern discovery. On the contrary, matrix-based approaches
+problem of motif discovery. On the contrary, matrix-based approaches
 are much more sensitive for pattern matching problems (see below). The
 ideal would thus be to combine string-based pattern disovery and
 matrix-based pattern matching.
@@ -380,7 +380,7 @@ ecoli_stop_codons.wc
 <a name=oligo_analysis></a>
 <h3>oligo-analysis</h3>
 
-The program <tt>oligo-analysis</tt> is the simplest pattern discovery
+The program <tt>oligo-analysis</tt> is the simplest motif discovery
 program. It counts the number of occurrences of all oligonucleotides
 (word) of a given length (typically 6), and compares, for each word,
 the observed and expected occurrences, and return words with a
@@ -396,7 +396,7 @@ occurrences. The application will be to check the start and stop
 codons retrieved above. 
 
 <P>
-We will then use <tt>oligo-analysis</tt> in a pattern discovery
+We will then use <tt>oligo-analysis</tt> in a motif discovery
 process, to detect over-represented words from the set of 5 upstream
 sequences retrieved above (the PHO family).  In a first time, we will
 use the appropriate parameters, which have been optimized for pattern
@@ -447,7 +447,7 @@ columns, ...
 <P>
 <b>Exercise:</b> check the frequencies of <I>E.coli</i> stop codons.
 
-<h4>Pattern discovery in yeast upstream regions</h4>
+<h4>Motif discovery in yeast upstream regions</h4>
 
 Try the following command :
 
@@ -654,7 +654,7 @@ patterns, and higher orders don't return any single significant word.
 <a name=consensus></a>
 <h3>consensus (program developed by Jerry Hertz)</h3>
 
-An alternative approach for matrix-based pattern discovery is
+An alternative approach for matrix-based motif discovery is
 <i>consensus</i>, a program written by Jerry hertz, an based on a
 greedy algorithm. We will see how to extract a profile matrix from ths
 upstream regions of the PHO genes.

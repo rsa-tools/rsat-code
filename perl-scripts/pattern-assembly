@@ -530,7 +530,7 @@ OPTIONS
        	The time of assembly increases quadratically with the number
        	of patterns to assemble. When too many patterns are submitted,
        	this can represent a huge time. Moreover, when too many
-       	patterns are returned by a pattern discovery program, it
+       	patterns are returned by a motif discovery program, it
        	generally reflects a problem (redundant sequences, wrong
        	selection of the threshold). Two options (-toppat and -maxpat)
        	can be used to treat the cases when too many patterns are
