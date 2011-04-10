@@ -63,12 +63,15 @@ eval
     my $client = $proxy->compileClient('peak_motifs');
 
     # Calling the service and getting the response
+    warn ("Sending request\n");
     my $answer = $client->( request => {%args});
     #    print "Answer: ".$answer."\n";
     # If the response arrived, look for a specific pattern
     # If the pattern is present, return 0 because the test passed.
     # If the result is something else, return 2 to indicate a warning.
     # If no answer has arrived, return 1 to indicate the test failed.
+
+    warn ("Collecting answer\n");
     if ( defined $answer ) {
       print "Result : ".$answer->{output}->{response}->{client}."\n";
       print "Command : ".$answer->{output}->{response}->{command}."\n";
