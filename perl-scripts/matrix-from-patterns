@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.53 2011/02/17 04:54:49 rsat Exp $
+# $Id: matrix-from-patterns,v 1.54 2011/04/10 13:49:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -67,7 +67,7 @@ jvhelden@ulb.ac.be
 
 =item sequences
 
-=item pattern discovery
+=item motif discovery
 
 =back
 

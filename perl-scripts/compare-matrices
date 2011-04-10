@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.101 2011/03/09 08:57:00 jvanheld Exp $
+# $Id: compare-matrices,v 1.102 2011/04/10 13:49:57 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.101 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.102 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -2495,7 +2495,7 @@ Return matches between any matrix of the file1 and any matrix of
 file2.
 
 This is the typical use of I<compare-matrices>: comparing one or
-several query motifs (e.g. obtained from pattern discovery) with a
+several query motifs (e.g. obtained from motif discovery) with a
 collection of reference motifs (e.f. a database of experimentally
 characterized transcription factor binding motifs, such as JASPAR,
 TRANSFAC, RegulonDB, ...).

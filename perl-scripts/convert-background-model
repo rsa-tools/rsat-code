@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.29 2011/03/04 14:25:54 jvanheld Exp $
+# $Id: convert-background-model,v 1.30 2011/04/10 13:49:57 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -98,7 +98,7 @@ background sequence.
 
 =head2 MEME (input/output)
 
-MEME (http://meme.sdsc.edu/meme/) is a matrix-based pattern discovery
+MEME (http://meme.sdsc.edu/meme/) is a matrix-based motif discovery
 program developed by Tim Bailey, and supporting Marckov chain
 background models. 
 

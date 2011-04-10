@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.44 2011/03/15 10:22:28 rsat Exp $
+# $Id: taxon-frequencies,v 1.45 2011/04/10 13:49:58 jvanheld Exp $
 #
 ############################################################
 
@@ -1028,12 +1028,12 @@ I<supported-organisms -format full>.
 =head2 oligo-analysis
 
 Taxon-wide oligo frequency files can be used as expected frequencies
-for pattern discovery with I<oligo-analysis>.
+for motif discovery with I<oligo-analysis>.
 
 =head2 dyad-analysis
 
 Taxon-wide dyad frequency files can be used as expected frequencies
-for pattern discovery with I<dyad-analysis>.
+for motif discovery with I<dyad-analysis>.
 
 =head2 convert-background-model
 

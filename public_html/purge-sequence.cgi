@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.10 2010/11/27 16:30:56 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.11 2011/04/10 13:49:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -152,7 +152,7 @@ sub PipingForm {
 <TR VALIGN="top" ALIGN="center">
 
     <TD>
-	<B>Pattern discovery</B><BR>
+	<B>motif discovery</B><BR>
 	(unknown patterns)
     </TD>
 

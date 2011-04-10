@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.83 2010/11/28 02:14:58 rsat Exp $
+# $Id: retrieve-seq,v 1.84 2011/04/10 13:49:58 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -669,7 +669,7 @@ OPTIONS
 		More importantly, coding and non-coding sequences
 		generally have very different background models. The
 		inclusion of coding sequences from neighbour genes may
-		thus lead to biases in pattern discovery.
+		thus lead to biases in motif discovery.
 
 		The weaknesses of using this option are that, in some
 		cases, predicted orf do not correspond to real genes,
