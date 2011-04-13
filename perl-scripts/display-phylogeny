@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-phylogeny,v 1.2 2011/04/08 10:14:43 rsat Exp $
+# $Id: display-phylogeny,v 1.3 2011/04/13 09:03:07 rsat Exp $
 #
 ############################################################
 
@@ -37,7 +37,7 @@ phylogeny tools
 
 =head1 USAGE
 
-display-phylogeny [-i inputfile] [-o outputfile] [-out_format pdf|ps] [-v #] [-q] [...]
+display-phylogeny -i inputfile [-phyloprofile value_file] -o radical [-out_format pdf|ps] [-v #] [-q] [...]
 
 =head1 INPUT FORMAT
 
@@ -45,9 +45,12 @@ display-phylogeny [-i inputfile] [-o outputfile] [-out_format pdf|ps] [-v #] [-q
 
 =head1 OUTPUT FORMAT
 
-A phylogenetic tree in the postscript format
+From a newick representation of a tree returns phylogenetic tree in the postscript format.
+
+A value file can also be given as argument. Using it, labels of the tree will be displayed using a color scale.
 
 =head1 SEE ALSO
+supported-organisms
 
 =head1 WISH LIST
 
@@ -71,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -83,6 +86,7 @@ package main;
     @main::newick = ();
     $main::out_format = "pdf";
     my $top_margin = 7;
+    my %taxon_prot = ();
     
     our %sons = ();
     our $grandfather = "";
@@ -90,6 +94,7 @@ package main;
     our %pos = ();
     our %levels = ();
     our %leaves = ();
+    our %children_number = ();
 
     ################################################################
     ## Read argument values
@@ -119,6 +124,29 @@ package main;
       }
       close $main::in if ($main::infile{input});
     }
+    ## Read values
+    if ($main::infile{phyloprofile}) {
+      ($main::inphyloprofile) = &OpenInputFile($main::infile{phyloprofile});
+      my @header = ();
+      while (my $ligne = <$main::inphyloprofile>) {
+	chomp $ligne;
+	my @lignecp = split /\t/, $ligne; 
+	if ($ligne =~ /^#/) {
+	  # this is the header
+	  for (my $i = 1; $i < scalar @lignecp; $i++) {
+	    push @header, $lignecp[$i];
+	  }
+	} else {
+	  my $protein = $lignecp[0];
+	  for (my $i = 1; $i < scalar @lignecp; $i++) {
+	    ${$taxon_prot{$header[$i-1]}}{$protein} = $lignecp[$i];
+	  }	  
+	}
+      }
+      close $main::in if ($main::infile{phyloprofile});
+    }
+    my $protnb = scalar keys %taxon_prot;
+    
 
     ################################################################
     ## Print verbose
@@ -127,12 +155,14 @@ package main;
     ################################################################
     ## Execute the command
     my $iteration = 1;
+    my $maxheight = 0;
     foreach my $string_val (@newick) {
       %sons = ();
       $grandfather = "";
       $maxlevel = 0;
       %pos = ();
       %levels = ();
+      %children_number = ();
       my $iterationid = "output"."_$iteration";
       $outfile{$iterationid} = $outfile{"output"};
       if (scalar @newick > 1) {
@@ -142,21 +172,28 @@ package main;
       $string_val =~ s/\(/\(\,/g;
       my @string = split /\,/, $string_val;
       &find_node_levels(\@string, 0, 0);
+      
+      &count_children($grandfather);
+      
+
+      
       # computes the maximal coordinates of x and y
       my $x_width = (scalar keys %sons) *100 +100;
       my $y_width = $maxlevel * 80;
       &dispose_nodes($grandfather, 0, 0, $x_width);
       # create the picture
-      $p = new PostScript::Simple(xsize=>$x_width, ysize=>$y_width, colour => 1, eps => 0, units => "pt");
+      my $table_size = 10 * $protnb;
+      my $margin = 40;
+      $p = new PostScript::Simple(xsize=>$x_width + 2*$margin, ysize=>$y_width + $table_size, colour => 1, eps => 0, units => "pt");
       # create a new page
       $p -> newpage;
       # first draw the edges
       foreach my $node (keys %sons) {
 	my @sons = @{$sons{$node}};
 	foreach my $son (@sons) {
-	  my $source_xpos = $pos{$node}{'x'};
+	  my $source_xpos = $pos{$node}{'x'}+$margin;
 	  my $source_ypos = $pos{$node}{'y'}+$top_margin;
-	  my $target_xpos = $pos{$son}{'x'};
+	  my $target_xpos = $pos{$son}{'x'}+$margin;
 	  my $target_ypos = $pos{$son}{'y'}+$top_margin;;
 	  &RSAT::message::Info(join "\t", $node, $son, $source_xpos, $source_ypos, $target_xpos, $target_xpos) if ($main::verbose >= 2);
 	  $p->line($source_xpos,$source_ypos, $target_xpos, $target_ypos, 0, 0, 0);
@@ -164,19 +201,41 @@ package main;
       }
       # then draw the nodes
       $p->setfont("Arial", 12);
-      foreach my $node (keys %pos) {
+      foreach my $node (sort keys %pos) {
         next if (!$leaves{$node});
         my $length_name = length($node) * 6;
-	my $xpos = $pos{$node}{'x'};
+	my $xpos = $pos{$node}{'x'}+$margin;
 	my $ypos = $pos{$node}{'y'}+$top_margin;;
-#	  draw a black box around the node label
-#         $p->setcolour("black");
-#         $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos + $length_name/2, $ypos+12);
-#         $p->setcolour("white");
-#         $p->box({filled=>1},$xpos-$length_name/2+1, $ypos-4, $xpos + $length_name/2-1, $ypos+11);
-#         $p->setcolour("black");
         $p->text({rotate => 90}, $xpos, $ypos, $node);
+        my $height =  length($node) * 10 + $pos{$node}{'y'};
+        $maxheight = $height if ($height > $maxheight);
+      }
+      
+      # draw the phylogenetic profile (if any)
+      $p->setfont("Arial", 10);
+      if (scalar keys %taxon_prot > 0) {
+        my $firstcol = 1;
+	foreach my $node (sort keys %pos) {
+	  next if (!$leaves{$node});
+	  my $xpos = $pos{$node}{'x'}+$margin;
+	  my $previous_height = $maxheight;
+	  my $j = 0;
+	  foreach my $protein (sort keys %{$taxon_prot{$node}}) {
+	    my $ypos = $previous_height;
+	    my $result = $taxon_prot{$node}{$protein};
+	    $p->setcolour("red");
+	    $p->setcolour("green") if ($result);
+	    $p->box( {filled => 1}, $xpos,$ypos, $xpos+8,$ypos+8);
+	    if ($firstcol) {
+	      $p->setcolour("black");
+	      $p->text(5, $ypos, $protein);
+	    }
+	    $previous_height = $ypos+8;
+	  }
+	  $firstcol = 0;
+	}      
       }      
+      
       my $outputfile = $main::outfile{output};
       if ($out_format eq "pdf") {
         $outputfile = `mktemp temp.XXXXX`;
@@ -304,6 +363,17 @@ file containing a list of taxonomies in the newick format
 
 =pod
 
+=item B<-phyloprofile valuesfile>
+
+Tab-delimited File containing one value for every taxon. The first column contains the taxon name, the second column the score.
+
+=cut
+    } elsif ($arg eq "-phyloprofile") {
+      $main::infile{phyloprofile} = shift(@arguments);
+
+
+=pod
+
 =item	B<-o outputfile>
 
 Name of the output file. If more than one tree is required, you have to give a prefix as argument.
@@ -364,24 +434,46 @@ sub dispose_nodes {
     my @children = @{$sons{$node}};
     @children = sort @children;
     my $children_nb = scalar @children;
-    my $cut = ($xend - $xstart) / $children_nb;
+    my $length = ($xend - $xstart);
+    my $total_children_nb = $children_number{$node};
     my $start_xpos = $xstart;
-    my $end_xpos = $xstart + $cut;
-    foreach my $child (@children) {
+    my $end_xpos = $xstart + $length * ((1 + $children_number{$children[0]}) / $total_children_nb);
+    for (my $i = 0; $i < $children_nb; $i ++) {
+      my $child = $children[$i];
       &dispose_nodes($child, $level+1, $start_xpos, $end_xpos);
       $start_xpos = $end_xpos;
-      $end_xpos = $end_xpos + $cut;
+      if (defined $children[$i+1]) {
+        $end_xpos = $end_xpos + $length * ((1 + $children_number{$children[$i+1]}) / $total_children_nb);
+      } else {
+        $end_xpos = $xend;
+      }
+
     }
   }
   $pos{$node}{'x'} = ($xstart + $xend) / 2;
   $pos{$node}{'y'} = $level*50;
 }
 
+################################################################
+## Computes the total number of children (and grand children) for a node
+sub count_children {
+  my $node = shift;
+  if (defined ($sons{$node})) {
+    my @children = @{$sons{$node}};
+    foreach my $child (@children) {
+      &count_children($child);
+      $children_number{$node} += $children_number{$child} + 1;
+    }
+  } else {
+    $children_number{$node} = 0;
+  }
+}
+
 
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; template ";
+    print $main::out "; display-phylogeny ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
     if (%main::infile) {
