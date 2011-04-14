@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.82 2011/04/14 17:10:00 amedina Exp $
+# $Id: footprint-scan,v 1.83 2011/04/14 17:34:38 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.82 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.83 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -672,7 +672,7 @@ package main;
 
   ################
   ## Check that at least one matrix has been entered
-  my $matrix_nb = scalar(keys %matrix_table_hash);
+  my $matrix_nb =  scalar(@analyzed_matrices);
   if ($matrix_nb > 0) {
     &RSAT::message::Info($matrix_nb, "matrices specified") if ($main::verbose >= 2);
   } else {
@@ -687,7 +687,7 @@ package main;
   ## Iterate over matrices and genes
   &RSAT::message::TimeWarn("Starting analysis") if ($main::verbose >= 2);
   my $m = 0;			## Matrix counter
-  foreach my $ms  (sort(keys %matrix_table_hash)) {
+  foreach my $ms (@analyzed_matrices) {
     $m++;
 
 
