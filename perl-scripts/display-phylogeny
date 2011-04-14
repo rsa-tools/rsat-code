@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-phylogeny,v 1.4 2011/04/14 07:57:04 rsat Exp $
+# $Id: display-phylogeny,v 1.5 2011/04/14 13:49:42 rsat Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -88,6 +88,7 @@ package main;
     $main::out_format = "pdf";
     my $top_margin = 7;
     my %taxon_prot = ();
+    our %xy = ();
     our %group_names = ();
     our %sons = ();
     our $grandfather = "";
@@ -95,7 +96,10 @@ package main;
     our %pos = ();
     our %levels = ();
     our %leaves = ();
+    our $level_height = 50;
+    $level_height = 115 if ($groupdraw);
     our %children_number = ();
+    our @count = (-45, -30, -15, 0, 15, 30, 45);
 
     ################################################################
     ## Read argument values
@@ -182,7 +186,7 @@ package main;
       
       # computes the maximal coordinates of x and y
       my $x_width = (scalar keys %sons) *100 +100;
-      my $y_width = $maxlevel * 80;
+      my $y_width = $maxlevel * ($level_height+30);
       &dispose_nodes($grandfather, 0, 0, $x_width);
       # create the picture
       my $table_size = 10 * $protnb;
@@ -214,9 +218,7 @@ package main;
           $p->text({rotate => 90}, $xpos, $ypos+8, $node);
           my $height =  length($node) * 10 + $pos{$node}{'y'} + 10;
           $maxheight = $height if ($height > $maxheight);
-        }
-        if ($group_names{$node}) {
-          next if (!$groupdraw);
+        } elsif ($groupdraw && $group_names{$node}) {
           $node = $group_names{$node} || $node;
           $length_name = length($node) * 7;
           $p->setcolour("black");
@@ -479,8 +481,23 @@ sub dispose_nodes {
 
     }
   }
-  $pos{$node}{'x'} = ($xstart + $xend) / 2;
-  $pos{$node}{'y'} = $level*50;
+  my $posx = ($xstart + $xend) / 2;
+  my $posy = $level*$level_height;
+  # check if this place has not already been taken
+  if (defined ($sons{$node}) && defined $xy{$posy}) {
+    my @x = @{$xy{$posy}};
+    for (my $i = 0; $i < scalar @x; $i++) {
+      print "$x[$i] $posx\n";
+      if (abs($x[$i]-$posx) < 300) {
+        my $this_count = int(rand(scalar @count));
+        $posy += $count[$this_count];
+        last;
+      }
+    }
+  } 
+  $pos{$node}{'x'} = $posx;
+  $pos{$node}{'y'} = $posy;
+  push @{$xy{$posy}}, $posx;
 }
 
 ################################################################
