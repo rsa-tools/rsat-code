@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-phylogeny,v 1.3 2011/04/13 09:03:07 rsat Exp $
+# $Id: display-phylogeny,v 1.4 2011/04/14 07:57:04 rsat Exp $
 #
 ############################################################
 
@@ -74,20 +74,21 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
     %main::outfile = ();
 
     $main::verbose = 0;
+    $main::groupdraw  = 0;
     $main::in = STDIN;
     $main::out = STDOUT;
     @main::newick = ();
     $main::out_format = "pdf";
     my $top_margin = 7;
     my %taxon_prot = ();
-    
+    our %group_names = ();
     our %sons = ();
     our $grandfather = "";
     our $maxlevel = 0;
@@ -162,12 +163,14 @@ package main;
       $maxlevel = 0;
       %pos = ();
       %levels = ();
+      %group_names = ();
       %children_number = ();
       my $iterationid = "output"."_$iteration";
       $outfile{$iterationid} = $outfile{"output"};
       if (scalar @newick > 1) {
         $outfile{$iterationid} = $outfile{"output"}."_".$iteration.".$out_format";
       } 
+      $string_val = "(".$string_val.")";
       $string_val =~ s/\)/\,\)/g;
       $string_val =~ s/\(/\(\,/g;
       my @string = split /\,/, $string_val;
@@ -202,13 +205,27 @@ package main;
       # then draw the nodes
       $p->setfont("Arial", 12);
       foreach my $node (sort keys %pos) {
-        next if (!$leaves{$node});
         my $length_name = length($node) * 6;
 	my $xpos = $pos{$node}{'x'}+$margin;
-	my $ypos = $pos{$node}{'y'}+$top_margin;;
-        $p->text({rotate => 90}, $xpos, $ypos, $node);
-        my $height =  length($node) * 10 + $pos{$node}{'y'};
-        $maxheight = $height if ($height > $maxheight);
+	my $ypos = $pos{$node}{'y'}+$top_margin;
+        # draw a black box around the node label
+        if ($leaves{$node}) {
+          $p->setcolour("black");
+          $p->text({rotate => 90}, $xpos, $ypos+8, $node);
+          my $height =  length($node) * 10 + $pos{$node}{'y'} + 10;
+          $maxheight = $height if ($height > $maxheight);
+        }
+        if ($group_names{$node}) {
+          next if (!$groupdraw);
+          $node = $group_names{$node} || $node;
+          $length_name = length($node) * 7;
+          $p->setcolour("black");
+          $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos + $length_name/2, $ypos+12);
+          $p->setcolour("white");
+          $p->box({filled=>1},$xpos-$length_name/2+1, $ypos-4, $xpos + $length_name/2-1, $ypos+11);
+          $p->setcolour("black");
+          $p->text($xpos-$length_name/2+2,  $ypos-2, $node);
+        }
       }
       
       # draw the phylogenetic profile (if any)
@@ -371,6 +388,15 @@ Tab-delimited File containing one value for every taxon. The first column contai
     } elsif ($arg eq "-phyloprofile") {
       $main::infile{phyloprofile} = shift(@arguments);
 
+=pod
+
+=item B<-groupdraw>
+
+Draw the group names (when present in the Newick input).
+
+=cut
+    } elsif ($arg eq "-groupdraw") {
+      $main::groupdraw = 1;
 
 =pod
 
@@ -404,8 +430,11 @@ sub find_node_levels {
   my @groups = ();
   for (my $i = $start; $i < scalar @string; $i++) {
     my $current_char = $string[$i];
-    if ($current_char eq ")") {
+    if ($current_char =~ /\)(.*)$/) {
       $levels{$group} = $level if (!defined $levels{$group});
+      if ($1 ne "") {
+        $group_names{$group} = $1;
+      }
       foreach my $subgroup (@groups) {
         push @{$sons{$group}}, $subgroup if ($subgroup ne $group);
       }
