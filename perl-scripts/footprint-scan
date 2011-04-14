@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.81 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: footprint-scan,v 1.82 2011/04/14 17:10:00 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.82 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -331,6 +331,8 @@ package main;
   local $die_on_error = 1;
   local $skip = 0;
   local $last = 0;
+  local $skip_m = 0;
+  local $last_m = 0;
   $main::window_size=50; #default length of window size based on bacterial genome size
   ##tf parameter
   $main::tf="";
@@ -636,6 +638,39 @@ package main;
     }
   }
 
+  ################
+  ## Skip and last controls for multiple matrices
+  my @analyzed_matrices=sort(keys %matrix_table_hash);
+
+  ## Apply the -skip_m and -last_m options
+ 
+  
+  if ($last_m > 0) {
+      if ($skip_m > $last_m) {
+	  &RSAT::error::FatalError("Incompatible skip_m and last_m values (no matrix left for analysis): -skip_m $skip_m -last_m $last_m");
+      }
+      
+      if (scalar(@analyzed_matrices) > $last_m) {
+	  @analyzed_matrices= splice(@analyzed_matrices,0,$last_m);
+	  &RSAT::message::Warning("Truncated the end of the matrices list (last_m $last_m)", "Remaining matrices", scalar(@analyzed_matrices), join(";", @analyzed_matrices));
+      } else {
+	  &RSAT::message::Warning("Cannot apply option -last_m $last_m because matrices list is too short (".scalar(@analyzed_matrices).")");
+      }
+  }
+  if ($skip_m > 0) {
+      if (scalar(@analyzed_matrices) > $skip_m) {
+	  @analyzed_matrices= splice(@analyzed_matrices,$skip_m, (scalar(@analyzed_matrices) - $skip_m));
+	  &RSAT::message::Warning("Truncated the beginning of the matrix list (skip_m $skip_m)", "Remaining matrices", scalar(@analyzed_matrices), join(";", @analyzed_matrices));
+      } else {
+	  &RSAT::error::FatalError("No gene left after applying the option -skip $skip_m (gene list contains ".scalar(@analyzed_matrices)." genes)");
+      }
+  }
+  
+  
+ &RSAT::message::Warning("Matrices will be analyzed in alphabetic order \t Number of matrices",  scalar(@analyzed_matrices),join(";", @analyzed_matrices))   if ($main::verbose>=2);
+
+
+  ################
   ## Check that at least one matrix has been entered
   my $matrix_nb = scalar(keys %matrix_table_hash);
   if ($matrix_nb > 0) {
@@ -643,7 +678,6 @@ package main;
   } else {
     &RSAT::error::FatalError("You must specify at least one matrix file (option -m or -matrix_table)");
   }
-
 
 
   ## Open Matrices report
@@ -1425,7 +1459,34 @@ row specifies one matrix.
      $main::matrix_table_file = shift(@arguments);
 
 
-} else {
+
+=pod
+
+=item B<-skip_m  #>
+
+Skip the first # matrices in the matrix_table (useful for quick testing and for resuming
+interrupted tasks when using a matrix_table or when several matrices are entered with the option -m ).
+
+=cut
+
+  } elsif ($arg eq "-skip_m") {
+    $main::skip_m = shift(@arguments);
+    &RSAT::error::FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
+
+=pod
+
+=item B<-last_m #>
+
+Stop after having treated the first # matrices in the matrix table (useful for quick
+testing when using a matrix_table or when several matrices are entered with the option -m ).
+
+=cut
+
+  } elsif ($arg eq "-last_m") {
+    $main::last_m = shift(@arguments);
+    &RSAT::error::FatalError("Invalid number with option -last\t$last") unless &IsNatural($last);
+
+  } else {
     &FatalError(join("\t", "Invalid option", $arg));
 }
     }
