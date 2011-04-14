@@ -1424,8 +1424,8 @@ sub OccurrenceSigGraph {
     $cmd .= " ".$occ_sig_graph_opt;
     &one_command($cmd);
   }
-  &IndexOneFile("occ freq graph", $outfile{occ_freq_graph});
-  &IndexOneFile("occ sig graph", $outfile{occ_sig_graph});
+  &IndexOneFile("occ sig graph", $outfile{occ_sig_graph}, image =>1);
+  &IndexOneFile("occ freq graph", $outfile{occ_freq_graph}, image =>1);
 
 }
 
