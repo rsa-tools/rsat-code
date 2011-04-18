@@ -642,10 +642,12 @@ sub as_indented_text{
 
 sub as_newick  {
   my $self = shift;
-  my $taxon = shift;
+  my $taxon = shift || "Organisms";
   our %newick_results = ();
   our %parents = ();
-  my $root = $self->get_root_node();
+  $root = $self->get_node_by_id($taxon);
+  
+  
   my $root_id = $root->getid;
   &create_newick($self, $root_id, 1);
   my $output = "((".(join ",", @{$newick_results{"$taxon"}}).")$taxon)";
