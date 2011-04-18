@@ -275,6 +275,7 @@ sub get_all_descendents{
 =cut
 
 sub get_all_descendents_by_DFS{
+  
   my $self=shift;
   my $type=shift; # all, leave, node
   my $max_depth=shift;
@@ -286,7 +287,7 @@ sub get_all_descendents_by_DFS{
 				  "Node",$self->get_name(),
 				  "Level",$self->get_level(),
 				  "Depth",$depth,
-				  "max_depth",$max_depth)) if ($main::verbose >=0);
+				  "max_depth",$max_depth)) if ($main::verbose >= 3);
     if ($depth >= $max_depth){
       return (@descendents);
     }
@@ -295,12 +296,15 @@ sub get_all_descendents_by_DFS{
   foreach my $child (sort {$a->get_name() cmp $b->get_name()} $self->get_children()) {
     if ($type eq "all"){
       push @descendents,$child,($child->get_all_descendents_by_DFS($type,$max_depth,$max_leaves,$depth));
-    }elsif ($child->get_type() eq "$type"){
+      
+    }elsif ($child->get_type() eq $type){
       if ($child->get_type() eq "leaf"){
 	push @descendents,$child;
       }else{
+
 	push @descendents,$child,($child->get_all_descendents_by_DFS($type,$max_depth,$max_leaves,$depth));
       }
+ 
     }else{
       if($child->get_type() eq "node"){
 	push @descendents,($child->get_all_descendents_by_DFS($type,$max_depth,$max_leaves,$depth));

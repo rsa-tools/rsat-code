@@ -218,9 +218,11 @@ sub get_node_by_id {
   if ( ($rootnode->getid) && ($rootnode->getid eq $id) ) {
     return $rootnode;
   }
-  foreach my $node ($rootnode->get_all_descendents(undef,"node") ) {
+  foreach my $node ($rootnode->get_all_descendents(undef,"all") ) { ## SB: The type was set to "node" but I changed it to all which seemes more logical to me!
+    
     my $current_id = $node->get_id();
     if ($current_id eq $id) {
+      
       return $node;
     }
 #    &RSAT::message::Debug("&RSAT::Tree::get_node_by_id()",$current_id, "differs from", $node_id) if ($main::verbose >= 10);
@@ -336,7 +338,8 @@ sub LoadSupportedTaxonomy {
   &RSAT::message::Info("RSAT::Tree", $self, "Loading supported taxonomy") if ($main::verbose >= 3);
 #  &LoadSupportedTaxonomy_jvh(@_);
   &LoadSupportedTaxonomy_rj(@_);
-  $self->force_attribute("loaded", 1);
+  $self->force_attribute("loaded", 1)
+;
 }
 
 
@@ -400,7 +403,10 @@ sub LoadSupportedTaxonomy_rj {
 
 #    &RSAT::message::Debug("Created TreeNode for organism", $org, $org_id, $species_node) if ($main::verbose >= 10);
 
+
+
     for my $t (0..$#taxa) {
+
       # TEMPORARY PATCH
       # correct the taxon name for weird taxon name due to parsing error (cases of Salmonella enterica)
       if (($taxa[$t] =~ "^SC-B67")||($taxa[$t] =~ "^9150")) {
@@ -610,10 +616,69 @@ sub as_indented_text{
       $output .= "<b>".join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."</b>\n";
     }else{
       $output .= join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
+
     }
   }
   $output.= "</PRE></BODY></HTML>\n"  if ($format =~ /^HTML/i);
   return ($output);
+}
+
+################################################################
+#### EXPORT METHODS
+################################################################
+
+=pod
+
+=head2 export tree as newick format (format used to represent taxonomical trees)
+
+ Title   : as_newick()
+ Usage   : $tree->as_newick($start_node_id)
+ Function: Export tree as newick 
+ Returns : $text_to_print
+ Argument: $indent [string]
+           $start_node_id [string]
+
+=cut
+
+sub as_newick  {
+  my $self = shift;
+  my $taxon = shift;
+  our %newick_results = ();
+  our %parents = ();
+  my $root = $self->get_root_node();
+  my $root_id = $root->getid;
+  &create_newick($self, $root_id, 1);
+  my $output = "((".(join ",", @{$newick_results{"$taxon"}}).")$taxon)";
+  return ($output);
+}
+
+
+
+sub create_newick {
+  my ($self, $taxonid, $depth) = @_;
+  my ($what, @descendants) = $self->get_node_descendents($taxonid, "DFS", "all", 1, undef);
+  my $descendants_nb = scalar @descendants;
+  if ($descendants_nb > 0) {
+    foreach my $child (@descendants) {
+      my $childid = $child->getid;
+      $parents{$childid} = $taxonid;
+      &create_newick($self,$childid, 1);
+    }
+  }
+  
+  my @species = @{$newick_results{$taxonid}};
+
+
+  my $species_group = "";
+
+  if (scalar @species > 0) {
+    $species_group = "(".(join ",", @species).")$taxonid";
+  } else {
+    $species_group = $taxonid;
+  }
+  my $parent = $parents{$taxonid};
+  push @{$newick_results{$parent}}, $species_group if $parent;
+
 }
 
 
