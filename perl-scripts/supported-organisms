@@ -131,7 +131,7 @@ if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newic
     $tree->LoadSupportedTaxonomy_rj("Organisms", \%main::supported_organism);
 #    print $out join("\n","--",$taxon,$out_format,"all",undef)."\n";
     print $out $tree->as_indented_text("--",$taxon,$out_format,"all",undef) if (($out_format eq "tree")||($out_format eq "html_tree"));
-    print $out $tree->as_newick("$taxon") if ($out_format eq "newick");
+    print $out $tree->as_newick($taxon) if ($out_format eq "newick");
  } else {
    print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $taxon, @return_fields); ## Export the table with header and absolute paths
 }
