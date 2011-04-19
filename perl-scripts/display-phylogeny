@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-phylogeny,v 1.5 2011/04/14 13:49:42 rsat Exp $
+# $Id: display-phylogeny,v 1.6 2011/04/19 14:29:17 rsat Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -88,6 +88,7 @@ package main;
     $main::out_format = "pdf";
     my $top_margin = 7;
     my %taxon_prot = ();
+    our $count = 0;
     our %xy = ();
     our %group_names = ();
     our %sons = ();
@@ -174,14 +175,14 @@ package main;
       if (scalar @newick > 1) {
         $outfile{$iterationid} = $outfile{"output"}."_".$iteration.".$out_format";
       } 
-      $string_val = "(".$string_val.")";
       $string_val =~ s/\)/\,\)/g;
       $string_val =~ s/\(/\(\,/g;
+            
+
       my @string = split /\,/, $string_val;
-      &find_node_levels(\@string, 0, 0);
+      &find_node_levels(\@string, 0, 0, $grandfather);
       
       &count_children($grandfather);
-      
 
       
       # computes the maximal coordinates of x and y
@@ -423,39 +424,36 @@ Name of the output file. If more than one tree is required, you have to give a p
 =cut
 
 }
-################################################################
-## Parse the tree in newick format and returns the node levels 
+
 sub find_node_levels {
-  my ($string_ref, $start, $level) = (shift, shift, shift);
+  my ($string_ref, $start, $level, $group_name) = (shift, shift, shift, shift);
   my @string = @{$string_ref};
-  my $group = "";
+  my $group_real_name = $group_name;
+  $levels{$group_name} = $level;
+  $maxlevel = $level if ($level > $maxlevel);
   my @groups = ();
   for (my $i = $start; $i < scalar @string; $i++) {
     my $current_char = $string[$i];
-    if ($current_char =~ /\)(.*)$/) {
-      $levels{$group} = $level if (!defined $levels{$group});
-      if ($1 ne "") {
-        $group_names{$group} = $1;
-      }
-      foreach my $subgroup (@groups) {
-        push @{$sons{$group}}, $subgroup if ($subgroup ne $group);
-      }
-      $grandfather = $group;
-      return ($i, $group);
+    if ($current_char =~ /^\)(.*)$/) {
+      $group_real_name = $1;
+      $group_real_name = $group_name if ($group_real_name eq "");
+      $group_names{$group_name} = $group_real_name;
+      $grandfather = $group_name;
+      return $i;
     } elsif ($current_char eq "(") {
-      my ($newpos, $group_here) = &find_node_levels(\@string, $i+1, $level+1);
-      $maxlevel = ($level+1) if (($level+1) > $maxlevel);
+      my $son_group_name =  "group_".$count++;
+      push @{$sons{$group_name}}, $son_group_name;
+      my $newpos = &find_node_levels(\@string, $i+1, $level+1, $son_group_name);
       $i = $newpos;
-      $group .= $group_here;
-      push @groups, $group_here;
     } else {
-      $levels{$current_char} = $level if (!defined $levels{$current_char});
       push @groups, $current_char;
-      $leaves{$current_char}++;
-      $group .= $current_char;
+      $leaves{$current_char} ++;
+      $levels{$current_char} = $level if (!defined $levels{$current_char});
+      push @{$sons{$group_name}}, $current_char;
     }
   }
 }
+
 
 ################################################################
 ## Computes the position of the nodes
@@ -473,6 +471,7 @@ sub dispose_nodes {
       my $child = $children[$i];
       &dispose_nodes($child, $level+1, $start_xpos, $end_xpos);
       $start_xpos = $end_xpos;
+      
       if (defined $children[$i+1]) {
         $end_xpos = $end_xpos + $length * ((1 + $children_number{$children[$i+1]}) / $total_children_nb);
       } else {
@@ -487,7 +486,6 @@ sub dispose_nodes {
   if (defined ($sons{$node}) && defined $xy{$posy}) {
     my @x = @{$xy{$posy}};
     for (my $i = 0; $i < scalar @x; $i++) {
-      print "$x[$i] $posx\n";
       if (abs($x[$i]-$posx) < 300) {
         my $this_count = int(rand(scalar @count));
         $posy += $count[$this_count];
