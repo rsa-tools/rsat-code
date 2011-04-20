@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.184 2011/04/10 21:39:13 jvanheld Exp $
+# $Id: peak-motifs,v 1.185 2011/04/20 16:35:01 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.184 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.185 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -149,6 +149,7 @@ package main;
   @default_tasks = ("purge",
 		    "seqlen",
 		    "composition",
+		    "bg_from_ctrl",
 		    "ref_motifs",
 		    "disco",
 		    "merge_words",
@@ -280,8 +281,8 @@ package main;
   }
 
   ## Build background models from control sequences
-  if (($main::infile{ctrl_seq}) && ($task{composition})) {
-    ##    &ComputeBgModels($main::infile{ctrl_seq}); ## I SHOULD IMPLEMENT THIS: COMPUTE BG MODELS FROM THE CTRL SEQ FOR oligo-analysis and dyad-analysis
+  if (($main::infile{ctrl_seq}) && ($task{bg_from_ctrl})) {
+    &ComputeBgModels($main::infile{ctrl_seq}); ## I SHOULD IMPLEMENT THIS: COMPUTE BG MODELS FROM THE CTRL SEQ FOR oligo-analysis and dyad-analysis
   }
   &SynthesisSequenceComposition() if ($progressive_synthesis);
 
@@ -426,9 +427,10 @@ sub DefaultParameters {
   ## Motif discovery options
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
   $main::param{disco_noov} = "-noov"; push(@main::param_list, "disco_noov");
+  $main::param{disco_pseudo} = 0.01;
   $main::param{oligo_min_len} = 6; push(@main::param_list, "oligo_min_len");
   $main::param{oligo_max_len} = 7; push(@main::param_list, "oligo_max_len");
-  $main::param{patterns_max_rank} = 25; push(@main::param_list, "patterns_max_rank");
+  $main::param{patterns_max_rank} = 50; push(@main::param_list, "patterns_max_rank");
 
   ## Thresholds for oligo-analysis, dyad-analysis and oligo-diff
   $main::param{min_ratio} = 1; push(@main::param_list, "min_ratio");
@@ -636,6 +638,7 @@ sub SetOutFileNames {
     ## BED file from fasta header (e.g. Galaxy)
     $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
 
+    ################################################################
     ## Compositional Profiles
     for my $ol (@profiles_oligo_lengths) {
 
@@ -679,112 +682,125 @@ sub SetOutFileNames {
 
 
   ################################################################
-  ## Motif discovery results
+  ## Motif discovery
   my $pattern_type = "";
-  if ($main::infile{ctrl_seq}) {
-    for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-      ## oligo-diff
-      if ($disco{oligo_diff}) {
-	$pattern_type = 'oligo_diff_'.$len.'nt';
-	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$len."nt");
-	push @pattern_types, $pattern_type;
-	push @patterns_to_merge, $pattern_type;
-      }
-    }
-  } else {
-    for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
 
-      if ($main::infile{ctrl_seq}) {
-	################################################################
-	## Background models estimated from the control sequences
-	## oligo-analysis
-	if ($disco{oligos}) {
-	  $pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
-	  $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
-						       $len."nt", "vs_ctrl");
-	  push @pattern_types, $pattern_type;
-	  push @patterns_to_merge, $pattern_type;
-	}
+  ## Iterate lengths for word-counting programs (oligo-diff,
+  ## oligo-analysis, position-analysis, local-word-analysis).
+  for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
 
-      } else {
-
-	################################################################
-	## Background models estimated from the test sequences
-	## themselves (lower order Markov chain)
-	for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
-	  ## Convert negative markov orders relative to the oligo length
-	  $markov += $len if ($markov < 0);
-
-	  ## oligo-analysis
-	  if ($disco{oligos}) {
-	    $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
-	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
-							 $len."nt", "mkv".$markov);
-	    push @pattern_types, $pattern_type;
-	    push @patterns_to_merge, $pattern_type;
-
-
-	    ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
-	    #	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
-	    #						       $len."nt", "vs_ctrl");
-	  }
-	}
-
-
-	################################################################
-	## I suppress the Makov loop for local_words since it seems incompatible with the mode --windowgroup
-##	for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
-	  ## local-word-analysis
-	  if ($disco{local_words}) {
-	    $pattern_type = 'local_words_'.$len.'nt';
-	    #	    $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
-	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
-							 "local_words".$main::param{strand}.$main::param{disco_noov},
-							 $len."nt", "windgroup".$main::param{local_words_windowgroup},
-							 #$main::param{local_words_heuristic},
-							 #"mkv".$markov
-							);
-	    push @pattern_types, $pattern_type;
-	    push @patterns_to_merge, $pattern_type;
-	  }
-
-	}
-##      }
-
-      ## position-analysis
-      if ($disco{positions}) {
-	$pattern_type = 'positions_'.$len.'nt';
-	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
-						     $len."nt", "ci".$main::param{positions_ci});
-	push @pattern_types, $pattern_type;
-	push @patterns_to_merge, $pattern_type;
-      }
-    }
-
-    ## dyad-analysis
-    if ($disco{dyads}) {
-      $pattern_type = "dyads";
-      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},
-						   "3nt_sp0-20_bg_monads");
+    ################################################################
+    ## oligo-diff (requires control sequences)
+    if ($disco{oligo_diff}) {
+      $pattern_type = 'oligo_diff_'.$len.'nt';
+      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$len."nt");
       push @pattern_types, $pattern_type;
       push @patterns_to_merge, $pattern_type;
     }
 
     ################################################################
-    ## local-word-analysis with the option --dyad
-    if ($disco{local_dyads}) {
-      $pattern_type = 'local_dyads';
+    ## oligo-analysis
+    if ($disco{oligos}) {
+
+      ## Test versus control sequences
+      if ($main::infile{ctrl_seq}) {
+	$pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
+
+	## Background models estimated from the control sequences
+	## (Markov chain m = k - 1).
+	my $mkv = $len -1;
+	$main::outfile{$pattern_type."_bg_file"} = &OutFileName("results/".$pattern_type, ".tab", "oligos_bg_from_ctrl_".$len."nt_1nt_ovlp_mkv".$mkv);
+
+
+	## oligo-analysis result file
+	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
+						     $len."nt", "vs_ctrl");
+	push @pattern_types, $pattern_type;
+	push @patterns_to_merge, $pattern_type;
+
+      } else {
+
+	## Background models estimated from the test sequences
+	## themselves (Markov chain m <= k -2)
+	for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+	  ## Convert negative markov orders relative to the oligo length
+	  $markov += $len if ($markov < 0);
+
+	  ## oligo-analysis result file
+	  $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
+	  $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
+						       $len."nt", "mkv".$markov);
+	  push @pattern_types, $pattern_type;
+	  push @patterns_to_merge, $pattern_type;
+
+	  ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
+	  #	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
+	  #						       $len."nt", "vs_ctrl");
+	}
+      }
+    }
+
+    ################################################################
+    ## local-word-analysis
+    if ($disco{local_words}) {
+
+      ## I temporarily suppress the Makov loop for local_words since it seems incompatible with the mode --windowgroup
+      # for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+      #	    $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
+      $pattern_type = 'local_words_'.$len.'nt';
       $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
-						   "local_dyads".$main::param{strand}.$main::param{disco_noov},
-						   "3nt_sp0-20"."windgroup".$main::param{local_words_windowgroup},
+						   "local_words".$main::param{strand}.$main::param{disco_noov},
+						   $len."nt", "windgroup".$main::param{local_words_windowgroup},
+						   #$main::param{local_words_heuristic},
+						   #"mkv".$markov
 						  );
+      push @pattern_types, $pattern_type;
+      push @patterns_to_merge, $pattern_type;
+      # }
+    }
+
+    ################################################################
+    ## position-analysis
+    if ($disco{positions}) {
+      $pattern_type = 'positions_'.$len.'nt';
+      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
+						   $len."nt", "ci".$main::param{positions_ci});
       push @pattern_types, $pattern_type;
       push @patterns_to_merge, $pattern_type;
     }
   }
 
+  ################################################################
+  ## dyad-analysis
+  if ($disco{dyads}) {
+    ## Test versus control sequences
+    if ($main::infile{ctrl_seq}) {
+      $pattern_type = 'dyads_vs_ctrl';
 
+      ## Background models estimated from the control sequences
+      $main::outfile{$pattern_type."_bg_file"} = &OutFileName("results/".$pattern_type, ".tab", "dyads_bg_from_ctrl".$main::param{strand}.$main::param{disco_noov},"3nt_sp0-20_bg_monads");
 
+    } else {
+      $pattern_type = "dyads";
+    }
+    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},"3nt_sp0-20_bg_monads");
+    push @pattern_types, $pattern_type;
+    push @patterns_to_merge, $pattern_type;
+  }
+
+  ################################################################
+  ## local-word-analysis with the option --dyad
+  if ($disco{local_dyads}) {
+    $pattern_type = 'local_dyads';
+    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab",
+						 "local_dyads".$main::param{strand}.$main::param{disco_noov},
+						 "3nt_sp0-20"."windgroup".$main::param{local_words_windowgroup},
+						);
+    push @pattern_types, $pattern_type;
+    push @patterns_to_merge, $pattern_type;
+  }
+
+  ################################################################
   ## Comparison between significance of the discovered patterns
   $pattern_type = "merged_words";
   $main::outfile{merged_words} = &OutFileName("results/".$pattern_type, ".tab", "merged_words");
@@ -1074,32 +1090,102 @@ sub CompositionProfiles {
 
 
 ################################################################
+## Compute background models for oligo-analysis and dyad-analysis from
+## the control sequence file.
+##
+## Beware: when control sequences are provided, the background models
+## are computed with the oligonucleotide lengths (from min to max)
+## used for oligo-analysis. For an oligo length of k, the markov order
+## is thus m = k - 1.
+##
+sub ComputeBgModels {
+  my ($bg_seq) = @_;
+
+  ## Build background models for oligo-analysis (same oligo lengths as
+  ## for the analysis of the test sequences).
+  if ($disco{oligos}) {
+    for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
+      my $pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
+      #    my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
+      my $cmd = $SCRIPTS."/oligo-analysis -v 1";
+      $cmd .= " -quick";
+      $cmd .= " -i ".$main::outfile{"ctrl_purged"};
+      $cmd .= " -format fasta";
+      $cmd .= " -return occ,freq";
+      $cmd .= " ".$main::param{strand};
+      $cmd .= " ".$main::param{disco_noov};
+      $cmd .= " -seqtype dna";
+      $cmd .= " -l ".$len;
+      $cmd .= " -o ".$main::outfile{$pattern_type."_bg_file"};
+      &one_command($cmd, 1);
+    }
+  }
+
+  ## Build background model for dyad-analysis (dyad counts/frequencies
+  ## in control sequences).
+  if ($disco{dyads}) {
+    my $pattern_type = 'dyads_vs_ctrl';
+    my $cmd = $SCRIPTS."/dyad-analysis -v 1";
+    $cmd .= " -i ".$main::outfile{"ctrl_purged"}; ## NOTE: AS A NEGATIVE CONTROL, USE SAME FILE AS INPUT AND CTRL, AND SET PSEUDO TO 0.
+    $cmd .= " -quick";
+    $cmd .= " -format fasta";
+    $cmd .= " -return occ,freq";
+    $cmd .= " ".$main::param{strand};
+    $cmd .= " ".$main::param{disco_noov};
+    $cmd .= " -seqtype dna";
+    $cmd .= " -l 3 -sp 0-20 ";
+    $cmd .= " -o ".$main::outfile{$pattern_type."_bg_file"};
+    &one_command($cmd, 1);
+  }
+}
+
+################################################################
 ## Run oligo-analysis on the test set
 sub OligoAnalysis {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-    for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
-      ## Convert negative markov orders relative to the oligo length
-      $markov += $len if ($markov < 0);
-      my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
-      &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 2);
+
+    ## Define Markov order(s) depending on the background model type
+    ## (from control sequences or from test sequence).
+    my @markov_orders = ();
+    my @oligo_types = ();
+    if ($main::infile{ctrl_seq}) {
+      ## When control sequences are provided, oligo-analysis runs with
+      ## a single markov model (m = k-1) trained on these sequences.
+      push @markov_orders, $len - 1;
+      push @oligo_types, 'oligos_'.$len.'nt_vs_ctrl';
+    } else {
+      for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+	$markov += $len if ($markov < 0); ## Convert negative markov orders relative to the oligo length
+	my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
+	push @markov_orders, $markov;
+	push @oligo_types, $pattern_type;
+      }
+    }
+
+    for my $i (0..$#oligo_types) {
+      my $pattern_type = $oligo_types[$i];
+      my $markov = $markov_orders[$i];
+
+      &RSAT::message::TimeWarn("Running oligo-analysis", $pattern_type) if ($main::verbose >= 2);
       my $cmd = $SCRIPTS."/oligo-analysis -v 1";
       $cmd .= " -quick";
       $cmd .= " -i ".$main::outfile{"test_purged"};
       $cmd .= " -format fasta";
-      $cmd .= " -sort -lth ratio ".$main::param{min_ratio};
-      $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
+      $cmd .= " -sort";
+      $cmd .= " -lth ratio ".$main::param{min_ratio};
+      $cmd .= " -lth occ_sig ".$main::param{min_sig};
       $cmd .= " -uth rank ".$main::param{patterns_max_rank};
       $cmd .= " -return occ,proba,rank";
       $cmd .= " ".$main::param{strand};
       $cmd .= " ".$main::param{disco_noov};
       $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
-#      if ($main::infile{ctrl_seq}) {
-#	$cmd .= " -expfreq ".;
-#      } else {
-      $cmd .= " -markov ".$markov;
-#      }
-      $cmd .= " -pseudo 0.01";
+      if ($main::infile{ctrl_seq}) {
+	$cmd .= " -expfreq ".$main::outfile{$pattern_type."_bg_file"};
+      } else {
+	$cmd .= " -markov ".$markov;
+      }
+      $cmd .= " -pseudo ".$main::param{disco_pseudo};;
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
@@ -1127,7 +1213,7 @@ sub OligoDiff {
     $cmd .= " -uth rank ".$main::param{patterns_max_rank};
     #    $cmd .= " -return occ,proba,rank";
     #    $cmd .= " -seqtype dna";
-    #    $cmd .= " -pseudo 0.01";
+    #    $cmd .= " -pseudo ".$main::param{disco_pseudo};;
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
@@ -1139,23 +1225,38 @@ sub OligoDiff {
 ## Run dyad-analysis on the test set
 sub DyadAnalysis {
   &RSAT::message::TimeWarn("Running dyad-analysis") if ($main::verbose >= 2);
+
+  ## Test versus control sequences
+  if ($main::infile{ctrl_seq}) {
+    $pattern_type = 'dyads_vs_ctrl';
+  } else {
+    ## Single-input mode
+      $pattern_type = "dyads";
+    }
+
   my $cmd = $SCRIPTS."/dyad-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"test_purged"};
   $cmd .= " -quick";
   $cmd .= " -format fasta";
-  $cmd .= " -sort -lth ratio ".$main::param{min_ratio};
-  $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
-  $cmd .= " -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,ratio,zscore,rank";
+  $cmd .= " -sort";
+  $cmd .= " -lth ratio ".$main::param{min_ratio};
+  $cmd .= " -lth occ_sig ".$main::param{min_sig};
+  $cmd .= " -uth rank ".$main::param{patterns_max_rank};
+  $cmd .= " -return occ,proba,ratio,zscore,rank";
   $cmd .= " ".$main::param{strand};
   $cmd .= " ".$main::param{disco_noov};
   $cmd .= " -seqtype dna";
   $cmd .= " -l 3 -sp 0-20 ";
-  $cmd .= " -bg monads";
-  $cmd .= " -pseudo 0.01";
+  if ($main::infile{ctrl_seq}) {
+    $cmd .= " -expfreq ".$main::outfile{$pattern_type."_bg_file"};
+  } else {
+    $cmd .= " -bg monads";
+  }
+  $cmd .= " -pseudo ".$main::param{disco_pseudo};;
   $cmd .= " | perl -pe 's/n\\{0\\}//g'"; ## Suppress zero spacings for merging with oligos
-  $cmd .= " >".$main::outfile{dyads};
-  &one_command($cmd, 1, $main::outfile{dyads}."_time.txt");
-  &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads", 0);
+  $cmd .= " >".$main::outfile{$pattern_type};
+  &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type, 0);
 }
 
 ################################################################
@@ -1220,7 +1321,7 @@ sub LocalDyads {
   #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
   #  $cmd .= " -seqtype dna";
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
-  #  $cmd .= " -pseudo 0.01";
+  # $cmd .= " -pseudo ".$main::param{disco_pseudo};;
   $cmd .= " > ".$main::outfile{$pattern_type};
   &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
@@ -1261,7 +1362,7 @@ sub LocalWords {
       #  $cmd .= " -seqtype dna";
       $cmd .= " --len ".$len;
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
-      #  $cmd .= " -pseudo 0.01";
+      #   $cmd .= " -pseudo ".$main::param{disco_pseudo};
       $cmd .= " > ".$main::outfile{$pattern_type};
       &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
@@ -1589,7 +1690,7 @@ sub ReadDiscoveredMotifs {
 
 
 ################################################################
-## Specify the names of all fiels associated to one discovered motif
+## Specify the names of all files associated to one discovered motif
 ## and index those file names for post-processing and synthesis.
 sub SetFileNamesForMotif {
   my ($motif_id) = @_;
@@ -2644,7 +2745,6 @@ sub OpenSynthesis {
   $syn = &OpenOutputFile($main::outfile{synthesis});
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
-
   print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1);
 }
 
@@ -4124,12 +4224,20 @@ sub CheckArguments {
     }
   }
 
-  ## If control file has been specified, chec that it exists
+  ## If control file has been specified, check that it exists
   if ($infile{ctrl_seq}) {
     unless (-e $infile{ctrl_seq}) {
       &FatalError("Control sequence file does not exist", $infile{ctrl_seq});
     }
     push @main::seq_types, ("ctrl");
+  }
+
+
+  ## oligo-diff
+  if ($disco{oligo_diff}) {
+    unless ($infile{ctrl_seq}) {
+      &FatalError("The option -disco oligo_diff requires to specify a control sequence file (option -ctrl)");
+    }
   }
 
   ## Output directory
@@ -4210,16 +4318,17 @@ sub CheckArguments {
       $disco{$disco} = 1;
     }
 
-    ## Adapt selection of discovery algorithms depending on whether a controls et has been provided
-    if (defined($main::infile{ctrl_seq})) {
-      delete($disco{oligos});
-      delete($disco{dyads});
-      delete($disco{positions});
-      delete($disco{local_words});
-    } else {
-      delete($disco{oligo_diff});
-    }
+    ## Adapt selection of discovery algorithms depending on whether a control set has been provided
+#     if (defined($main::infile{ctrl_seq})) {
+#       delete($disco{oligos});
+#       delete($disco{dyads});
+#       delete($disco{positions});
+#       delete($disco{local_words});
+#     } else {
+#       delete($disco{oligo_diff});
+#     }
   }
+
 
   ################################################################
   ## Dependencies between tasks
