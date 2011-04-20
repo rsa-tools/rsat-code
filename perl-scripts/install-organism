@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.103 2011/03/15 10:22:28 rsat Exp $
+# $Id: install-organism,v 1.104 2011/04/20 17:59:43 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -28,28 +28,31 @@ $purged_frequencies = 0; #### temporarily inactivated because for human genome i
 $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
 $supported_for_installation{"filelist"} = 1;
-%supported_task = (
-		   parse=>1,
-		   config=>1,
-		   start_stop=>1,
-		   allup=>1,
-		   seq_len_distrib=>1,
-		   genome_segments=>1,
-		   oligos=>1,
-		   distrib=>1,
-		   ncf=>1,
-		   protein_freq=>1,
-#		   gene_freq=>1,
-		   genome_freq=>1,
-		   upstream_freq=>1,
-		   intergenic_freq=>1,
-                   ensembl_freq=>1,
-		   dyads=>1,
-		   clean=>1,
-		   phylogeny=>1,
-		   all=>1
+@supported_tasks = qw(
+		   parse
+		   config
+		   phylogeny
+		   start_stop
+		   allup
+		   seq_len_distrib
+		   genome_segments
+		   upstream_freq
+		   oligos
+		   dyads
+		   distrib
+		   ncf
+		   protein_freq
+		   genome_freq
+		   intergenic_freq
+                   ensembl_freq
+		   clean
+		   all
 		   );
-$supported_tasks = join ",", sort (keys %supported_task);
+%supported_task = ();
+foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+}
+$supported_tasks = join ",", @supported_tasks;
 %task = ();
 $parse_options = "";
 
@@ -292,10 +295,10 @@ sub UpdateConfig {
 	$up_from=-400;
       } elsif ($taxonomy =~ /^Viruses/) {
 	$up_from=-400;
-      } elsif ($taxonomy =~ /^Eukaryota; Fungi/) {
+      } elsif ($taxonomy =~ /^Eukaryota; *Fungi/) {
 	$up_from=-800;
-      } elsif ($taxonomy =~ /^Eukaryota;Metazoa/) {
-	$up_from=-2000;
+      } elsif ($taxonomy =~ /^Eukaryota; *Metazoa/) {
+	$up_from=-5000;
       } else {
 	$up_from=-1000;
       }
@@ -395,7 +398,7 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
   $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $main::install_date;
   $supported_organism{$organism_short_name}->{'source'} = $args{source} || $main::source;
-  ## OLIVIER SAND SHOULD CHEXK IF THIS RESTRICTION FOR ensembl IS STILL VALID
+  ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
   unless ($source eq 'ensembl') {
     $supported_organism{$organism_short_name}->{'features'} = $args{features} || $main::outfile{features};
     $supported_organism{$organism_short_name}->{'genome'} = $args{genome} || $main::outfile{genome};
@@ -518,8 +521,8 @@ sub AllUpstream {
 	    $command .= " -all -o $seq_file\n\n";
 	    &doit($command, $dry_run, $die_on_error, $verbose);
 
-	    #### draw sequence length distributions
-	    &SeqLengthDistribution($seq_file, $format, $seq_type, 50) if (($noorf) && ($task{seq_len_distrib}));
+	    #### Compute sequence length distributions and generate a frequency plot
+	    &SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
 
 	    #### compress sequence file
 	    $command = "gzip -f $seq_file";
