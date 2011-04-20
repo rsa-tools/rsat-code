@@ -1119,7 +1119,7 @@ sub two_words_update {
 
 	my $pseudo_freq = $self->get_attribute("bg_pseudo");
 	my @dna_alphabet =  qw (a c g t);
-	
+
     ## No need to update if added word equald deleted word
     return(0) if ($added_word eq $deleted_word);
     
