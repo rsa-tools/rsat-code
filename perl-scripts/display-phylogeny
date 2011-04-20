@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-phylogeny,v 1.6 2011/04/19 14:29:17 rsat Exp $
+# $Id: display-phylogeny,v 1.7 2011/04/20 17:05:07 jvanheld Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -152,7 +152,6 @@ package main;
       close $main::in if ($main::infile{phyloprofile});
     }
     my $protnb = scalar keys %taxon_prot;
-    
 
     ################################################################
     ## Print verbose
@@ -184,8 +183,7 @@ package main;
       
       &count_children($grandfather);
 
-      
-      # computes the maximal coordinates of x and y
+      ## Compute the maximal coordinates of x and y
       my $x_width = (scalar keys %sons) *100 +100;
       my $y_width = $maxlevel * ($level_height+30);
       &dispose_nodes($grandfather, 0, 0, $x_width);
@@ -253,9 +251,8 @@ package main;
 	    $previous_height = $ypos+8;
 	  }
 	  $firstcol = 0;
-	}      
-      }      
-      
+	}
+      }
       my $outputfile = $main::outfile{output};
       if ($out_format eq "pdf") {
         $outputfile = `mktemp temp.XXXXX`;
@@ -268,10 +265,6 @@ package main;
       }
       $iteration++;
     }
-    
-    ##########################
-    ######################################
-    ## Insert here output printing
 
     ################################################################
     ## Report execution time and close output stream
