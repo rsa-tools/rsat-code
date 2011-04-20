@@ -1254,7 +1254,7 @@ sub PrintHtmlResultHeader {
   }
   $header .=  "<h3 style='text-align:center;'>Analysis: ";
   $header .=  $title." (";
-  $header .=  &RSAT::util::Date();
+  $header .=  &RSAT::util::DateAndTime();
   $header .=  ")</h3>\n";
 
   ## Reserve space for result TOC in the beginning of the form
