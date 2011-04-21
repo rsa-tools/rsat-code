@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.186 2011/04/21 05:30:48 jvanheld Exp $
+# $Id: peak-motifs,v 1.187 2011/04/21 14:26:50 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.186 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.187 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2993,7 +2993,7 @@ sub SynthesisSequenceComposition {
   foreach my $seq_type (@seq_types) {
 
     ## Header line
-    &SyntheticTableAddHeaderRow("Sequence composition (peak sequences)");
+    &SyntheticTableAddHeaderRow("Sequence composition ($seq_type sequences)");
 
 
     my $peak_nb = "NA";
