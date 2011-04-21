@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery-quality,v 1.10 2011/04/05 14:00:51 rsat Exp $
+# $Id: footprint-discovery-quality,v 1.11 2011/04/21 13:15:16 rsat Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -153,25 +153,26 @@ package main;
     ## REAL DATA 
     
     ## Get orthogroups_nb groups of orthologs
-    ## Use the program 
-    my $rdm_genes_cmd = $scripts."random-genes -feattype CDS -v $verbose -n $orthogroups_nb -org $organism -o $outfile{random_genes_selection}";
-    &doit($rdm_genes_cmd);
-    ## put gene names in a hash
+    ## Use the program rdm_genes
+    ## Unfortunately, there is an error using this program. In bacteria mainly, all genes present in cds.tab are not present in the org_name_aa.fasta and this leads to inconsistencies
+    ## We deciced to write our in house script to capture random genes.
+#     my $rdm_genes_cmd = $scripts."random-genes -feattype CDS -v $verbose -n $orthogroups_nb -org $organism -o $outfile{random_genes_selection}";
+#     &doit($rdm_genes_cmd);
+    my $all_genes_cmd = "cat $ENV{RSAT}/data/genomes/Escherichia_coli_K12/genome/Escherichia_coli_K12_aa.fasta | grep '>' | perl -pe 's/>//'";
+    my $genes = `$all_genes_cmd`;
+    my @all_genes = split /\n/, $genes;
+    my @all_genes_rdm = shuffle (@all_genes);
+
+    ## put the required number of genes in a hash
     my %rdm_genes = ();
     
 #     $orthogroups_nb++;
-#     system ("echo '8957139' >> $outfile{random_genes_selection}");
     
-    ($main::genelist) = &OpenInputFile($outfile{random_genes_selection});
-    while (<$main::genelist>) {
-      chomp();
-      s/\r/\n/g;		  ## Suppress Windows-specific carriage return
-      next if /^;/;		## Comment line
-      next if /^\#/;		## Header line
-      next if /^\--/;		## SQL comment line
-      next unless /\S/;		## Empty line
-      my ($gene) = split /\s/;
-      $gene = &trim($gene); ## Remove leading and trailing spaces
+    ($main::genelist) = &OpenOutputFile($outfile{random_genes_selection});
+    
+    for (my $i = 0; $i < $orthogroups_nb; $i++){
+      my $gene = $all_genes_rdm[$i];
+      print $main::genelist $gene."\n";
       $rdm_genes{$gene}++;
     }
     my @rdm_genes_array = keys %rdm_genes;
