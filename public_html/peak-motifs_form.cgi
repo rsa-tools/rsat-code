@@ -37,7 +37,8 @@ $default{'local-word-analysis_dyads'} ="";
 $default{"position-analysis_dyads"} ="";
 $default{matrix-scan-quick}="checked";
 $default{compare_motif_db}="checked";
-$default{title}="title for this dataset";
+$default{title}="test_dataset";
+$default{title2}="control_dataset";
 $default{max_seq_len}="";
 $default{top_sequences}="";
 
@@ -147,7 +148,7 @@ $descr1 .= "<blockquote class ='demo'>";
 
 $descr1 .= "In this demonstration, we apply time- and memory-efficient
 motif discovery algorithms to discover over-represented motifs in a
-set of 1000 peak regions bound by the mouse transcription factor Otc4
+set of 1000 peak regions bound by the mouse transcription factor Oct4
 (Chen et al., 2008)</p>\n";
 
 #$descr1 .= "Discovered motifs are compared to JASPAR vertebrate
@@ -192,6 +193,8 @@ exit(0);
 sub Panel1 {
 
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
+  print "<table><tr><td style='padding-right:35px;border-right:1px solid #2D282E;'>";
+  print "<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>\n";
   print "<b>Title</B>\n";
   print $query->textfield(-name=>'title',
 			  -default=>$default{title},
@@ -200,7 +203,20 @@ sub Panel1 {
   print "<p/>\n";
 
   &MultiSequenceChoice("Peak sequences",1);
+  
+    print "<p/>\n";
+	print "</td><td style='padding-left:35px;'>";
+  print "<p><b>Optional:</b> <i>control dataset for differential analysis (test vs control)</i></p>\n";
+  print "<b>Title</B>\n";
+  print $query->textfield(-name=>'title2',
+			  -default=>$default{title2},
+			  -size=>15);
+ print "<p/>\n";
 
+  &MultiSequenceChoice("Control sequences",2);
+  print "<p/>\n";
+
+  print "</td></tr></table>";
   print '<b><font style="font-size:80%"><a href="tutorials/tut_peak_motif.html#seq" target="_blank"> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b></br>';
   print "</fieldset><p/>";
 }
@@ -329,7 +345,7 @@ print "</p>";
 #print "<br/>";
 
 ### markov  order (common to all programs)
-print "<p><b><a href='help.oligo-analysis.html'> Markov order of the background model</a></b>\n";
+print "<p><b><a href='help.oligo-analysis.html'> Markov order of the background model</a> </b><i>(only for non-differential analysis)</i>\n";
 $oligoPopup = "<br>";
 $oligoPopup .=  "<SELECT NAME='markov'>\n";
 $oligoPopup .=  "<OPTION  SELECTED VALUE='0'>0 (generally not ideal)</option>\n";
