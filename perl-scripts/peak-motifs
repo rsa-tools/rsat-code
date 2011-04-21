@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.185 2011/04/20 16:35:01 jvanheld Exp $
+# $Id: peak-motifs,v 1.186 2011/04/21 05:30:48 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.185 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.186 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -149,7 +149,7 @@ package main;
   @default_tasks = ("purge",
 		    "seqlen",
 		    "composition",
-		    "bg_from_ctrl",
+#		    "bg_from_ctrl",
 		    "ref_motifs",
 		    "disco",
 		    "merge_words",
@@ -277,13 +277,14 @@ package main;
       ## Sequence composition
       &CompositionProfiles($seq_type);
 
+      ## Build background models from control sequences
+      if (($main::infile{ctrl_seq})) {
+	&ComputeBgModels($main::infile{ctrl_seq}); 
+      }
+
     }
   }
 
-  ## Build background models from control sequences
-  if (($main::infile{ctrl_seq}) && ($task{bg_from_ctrl})) {
-    &ComputeBgModels($main::infile{ctrl_seq}); ## I SHOULD IMPLEMENT THIS: COMPUTE BG MODELS FROM THE CTRL SEQ FOR oligo-analysis and dyad-analysis
-  }
   &SynthesisSequenceComposition() if ($progressive_synthesis);
 
   ## Reference motifs
@@ -1104,6 +1105,7 @@ sub ComputeBgModels {
   ## Build background models for oligo-analysis (same oligo lengths as
   ## for the analysis of the test sequences).
   if ($disco{oligos}) {
+    &RSAT::message::TimeWarn("Computing expected oligo frequencies from control set.") if ($main::verbose >= 2);
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
       my $pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
       #    my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
@@ -1124,6 +1126,7 @@ sub ComputeBgModels {
   ## Build background model for dyad-analysis (dyad counts/frequencies
   ## in control sequences).
   if ($disco{dyads}) {
+    &RSAT::message::TimeWarn("Computing expected dyad frequencies from control set.") if ($main::verbose >= 2);
     my $pattern_type = 'dyads_vs_ctrl';
     my $cmd = $SCRIPTS."/dyad-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"ctrl_purged"}; ## NOTE: AS A NEGATIVE CONTROL, USE SAME FILE AS INPUT AND CTRL, AND SET PSEUDO TO 0.
