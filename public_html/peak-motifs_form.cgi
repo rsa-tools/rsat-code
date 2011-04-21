@@ -178,10 +178,8 @@ print $query->end_form;
 my $descr2 = "<H4>Comment on the demonstration example 2 :</H4>\n";
 $descr2 .= "<blockquote class ='demo'>";
 
-$descr2 .= "In this demonstration, we apply time- and memory-efficient
-motif discovery algorithms to discover over-represented motifs in a
-set of 1000 peak regions bound by the mouse transcription factor Oct4
-(Chen et al., 2008)</p>\n";
+$descr2 .= "In this demonstration, we run a differential analysis (test vs control)
+to discover the motifs that are over-represented in one tissue (heart) compared to another tissue (limb), for a same transcription factor (p300) (Blow et al, 2010)</p>\n";
 
 $descr2 .= "</blockquote>";
 
@@ -224,7 +222,7 @@ exit(0);
 sub Panel1 {
 
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
-  print "<table><tr><td style='padding-right:35px;border-right:1px solid #2D282E;'>";
+  print "<table><tr><td style='padding-right:15px;border-right:1px solid #2D282E;'>";
   print "<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>\n";
   print "<b>Title</B>\n";
   print $query->textfield(-name=>'title',
@@ -236,7 +234,7 @@ sub Panel1 {
   &MultiSequenceChoice("Peak sequences",1);
   
     print "<p/>\n";
-	print "</td><td style='padding-left:35px;'>";
+	print "</td><td style='padding-left:15px;'>";
   print "<p><b>Optional:</b> <i>control dataset for differential analysis (test vs control)</i></p>\n";
 
  print "<p/>\n";
