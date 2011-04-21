@@ -27,7 +27,7 @@ $default{demo_descr2} = "";
 $default{lth_occ_sig}=0;
 $default{uth_pval} = "1e-4";
 $default{assembly} = "";
-$default{oligo_length6}="checked";
+#$default{oligo_length6}="checked";
 $default{oligo_length7}="checked";
 $default{"oligo-analysis"}="checked";
 $default{"dyad-analysis"}="";
@@ -37,8 +37,7 @@ $default{'local-word-analysis_dyads'} ="";
 $default{"position-analysis_dyads"} ="";
 $default{matrix-scan-quick}="checked";
 $default{compare_motif_db}="checked";
-$default{title}="test_dataset";
-$default{title2}="control_dataset";
+$default{title}="title for this analysis";
 $default{max_seq_len}="";
 $default{top_sequences}="";
 
@@ -169,7 +168,39 @@ print $query->hidden(-name=>'max_seq_len',-default=>'');
 print $query->hidden(-name=>'top_sequences',-default=>'');
 print $query->hidden(-name=>'visualize',-default=>"galaxy");
 #print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
-print $query->submit(-label=>"DEMO");
+print $query->submit(-label=>"DEMO single");
+print "</B></TD>\n";
+print $query->end_form;
+
+################################################################
+### data for the demo differential (test vs control)
+
+my $descr2 = "<H4>Comment on the demonstration example 2 :</H4>\n";
+$descr2 .= "<blockquote class ='demo'>";
+
+$descr2 .= "In this demonstration, we apply time- and memory-efficient
+motif discovery algorithms to discover over-represented motifs in a
+set of 1000 peak regions bound by the mouse transcription factor Oct4
+(Chen et al., 2008)</p>\n";
+
+$descr2 .= "</blockquote>";
+
+
+print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
+$demo_seq=`cat demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa`;
+$ctrl_seq=`cat demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa`;
+print "<TD><b>";
+print $query->hidden(-name=>'demo_descr2',-default=>$descr2);
+print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
+print $query->hidden(-name=>'sequence2',-default=>$ctrl_seq);
+print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
+print $query->hidden(-name=>'sequence_format2',-default=>'fasta');
+print $query->hidden(-name=>'title',-default=>'p300 heart versus limb Blow2010');
+print $query->hidden(-name=>'max_seq_len',-default=>'');
+print $query->hidden(-name=>'top_sequences',-default=>'');
+print $query->hidden(-name=>'visualize',-default=>"galaxy");
+#print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
+print $query->submit(-label=>"DEMO test vs ctrl");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -207,10 +238,7 @@ sub Panel1 {
     print "<p/>\n";
 	print "</td><td style='padding-left:35px;'>";
   print "<p><b>Optional:</b> <i>control dataset for differential analysis (test vs control)</i></p>\n";
-  print "<b>Title</B>\n";
-  print $query->textfield(-name=>'title2',
-			  -default=>$default{title2},
-			  -size=>15);
+
  print "<p/>\n";
 
   &MultiSequenceChoice("Control sequences",2);
