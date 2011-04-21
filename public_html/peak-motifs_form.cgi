@@ -188,7 +188,7 @@ print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
 $demo_seq=`cat demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa`;
 $ctrl_seq=`cat demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa`;
 print "<TD><b>";
-print $query->hidden(-name=>'demo_descr2',-default=>$descr2);
+print $query->hidden(-name=>'demo_descr1',-default=>$descr2);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence2',-default=>$ctrl_seq);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
@@ -223,7 +223,6 @@ sub Panel1 {
 
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
   print "<table><tr><td style='padding-right:15px;border-right:1px solid #2D282E;'>";
-  print "<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>\n";
   print "<b>Title</B>\n";
   print $query->textfield(-name=>'title',
 			  -default=>$default{title},
