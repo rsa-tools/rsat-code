@@ -61,16 +61,26 @@ if ($query->param('title')){
   $parameters .= " -title '".$title."' ";
 }
 
+## default
+@tasks = ("purge", "seqlen", "composition", "disco", "collect_motifs","timelog", "archive", "synthesis");
+
+
 ### peak sequences file
 ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $output_path."/".$output_prefix."peak_seq", 1);
 
 $parameters .= "-i $sequence_file ";
 
+### control sequences file
+($control_file, $sequence_format) = &MultiGetSequenceFile(2, $output_path."/".$output_prefix."control_seq", 0);
+
+if ($control_file){
+	$parameters .= "-ctrl $control_file ";
+}
+
+
 
 ### tasks
 
-## default
-@tasks = ("purge", "seqlen", "composition", "disco", "collect_motifs","timelog", "archive", "synthesis");
 
 ## motif-disco
 my $oligo_params = "";
