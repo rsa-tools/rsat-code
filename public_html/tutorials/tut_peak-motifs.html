@@ -23,6 +23,7 @@
 <li><a href='#test_sets'>Test sets</a></li>
 <li><a href='#parameters'>Tuning <i>peak-motifs</i> parameters</a></li>
 <li><a href='#interpret'>Interpreting the result</a></li>
+<li><a href='#exercises'>Additional exercises</a></li>
 <li><a href='#references'>References</a></li>
 </ol>
 
@@ -282,14 +283,69 @@ more quickly.
 
 </ol>
 
-<!--
+
 <hr><a name='exercises'></a><h2>Additional exercises</h2>
 <ul>
+<li><a href='#seq'>Retrieving peak sequences with Galaxy</a></li>
+
+<!--
 <li>Upload your own collection of motifs</li>
 <li>Upload a reference motif</li>
 <li>Change motif-discovery parameters by clicking "dyad-analysis"</li>
 -->
+</ul>
 
+<a name='seq'></a><h2>Retrieving peak sequences with Galaxy</h2>
+
+<p>The Galaxy Web server offers a wide variety of tools for analyzing
+  genomic data. It allows to quickly retrieve sequences from a
+  coordinate file (eg. BED file).</p>
+
+<ol>
+  <li><p>Open a connection to the Galaxy server (<a target='_blank'
+  href='http://main.g2.bx.psu.edu/'>http://main.g2.bx.psu.edu/</a>).</p></li>
+
+  <li><p>In the menu at the left of the window, click <b>Get Data >
+	Upload File</b>.</p></li>
+  
+  <li><p>You can either upload a file from your computer
+      (click <b>Browse</b> besides the <b>File</b> text box) or from a
+      Web server (type a link to the file in the <b>URL/Text</b>
+      box). For this exercise, we will directly upload the peak
+      sequences published by Chen in GEO (the above mentioned "txt"
+      file, which is actually in BED format). In the <b>URL/Text</b>
+      box, paste the URL of the Oct4 sample:
+      <pre>ftp://ftp.ncbi.nih.gov/pub/geo/DATA/supplementary/samples/GSM288nnn/GSM288346/GSM288346%5FES%5FOct4%2Etxt%2Egz</pre>
+
+  </p></li>
+      
+  <li><p>In the <b>Genome</b> pop-up menu, select <i>Mouse Feb 2006
+	(NCBI36/mm8)</i>.  
+      <ul>
+	<li><b>Tip:</b> the item will be automatically selected if you simply
+	  type <i>mm8</i> after clicking on the pop-up menu.</li>
+	<li><b>Note:</b> the choice of the genome should be adapted to
+	  the particular data set you are analyzing. As indicated in
+	  the field "Data processing" of the GEO
+	  record <a target='_blank'
+	  href='http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM288346'>GSM288346</a>,
+	  Chen's study was performed with the 2006 version of the
+	  genome;</li>
+      </ul>
+  </p></li>
+      
+      <li><p>Leave the other options to their default value, and
+	click <b>Execute</b>. The upload may take several
+	minutes. When the file will be uploaded, the yellow box on the
+	right side will turn to green. </p></li>
+
+      <li><p>Click on this box and make sure that the format is BED and
+	the genome is mm8.</p></li>
+	
+	<li><p>In the left menu, click on "Fetch sequences", and then "Extract Genomic DNA".Leave the other options by default, click execute.</p></li>
+      
+      <li><p>When the sequences have been retrieved, look at the green box in the right menu. Click on the disk icon in this box to download this sequence file. Save it on your computer.</p></li>
+    </ol>
 </ul>
 
 </ul>
