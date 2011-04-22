@@ -222,13 +222,22 @@ exit(0);
 sub Panel1 {
 
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
-  print "<table><tr><td style='padding-right:15px;border-right:1px solid #2D282E;'>";
-  print "<b>Title</B>\n";
+ 
+  print "<table>
+  <tr><td colspan='2' style='text-align:center;'>";
+  
+   print "<b>Title</B>\n";
   print $query->textfield(-name=>'title',
 			  -default=>$default{title},
-			  -size=>15);
+			  -size=>25);
 
-  print "<p/>\n";
+ # print "</div>\n";
+  
+  print "</td>
+  </tr>
+  
+  <tr><td style='padding-right:15px;border-right:1px solid #2D282E;'>";
+  
 
   &MultiSequenceChoice("Peak sequences",1);
   
@@ -242,7 +251,7 @@ sub Panel1 {
   print "<p/>\n";
 
   print "</td></tr></table>";
-  print '<b><font style="font-size:80%"><a href="tutorials/tut_peak_motif.html#seq" target="_blank"> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b></br>';
+  print '<b><font style="font-size:80%"><a href="tutorials/tut_peak-motifs.html#seq" target="_blank"> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b></br>';
   print "</fieldset><p/>";
 }
 
@@ -370,7 +379,7 @@ print "</p>";
 #print "<br/>";
 
 ### markov  order (common to all programs)
-print "<p><b><a href='help.oligo-analysis.html'> Markov order of the background model</a> </b><i>(only for non-differential analysis)</i>\n";
+print "<p><b><a href='help.oligo-analysis.html'> Markov order of the background model</a> </b><i>(only for single-input analysis, will be ignored if control set is provided)</i>\n";
 $oligoPopup = "<br>";
 $oligoPopup .=  "<SELECT NAME='markov'>\n";
 $oligoPopup .=  "<OPTION  SELECTED VALUE='0'>0 (generally not ideal)</option>\n";
