@@ -777,20 +777,18 @@ sub to_TRANSFAC {
     my $output_format = $args{format};
     $output_format = lc($output_format);
 
-    ## Accession number
-    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("name");
+    ## TRANSFAC accession number corresponds to what we call ID
+    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("id");
+
     if ($accession) {
       $to_print .= "AC  ".$accession."\n";
       $to_print .= "XX\n";
     }
 
-    ## Identifier
-    my $id = $self->get_attribute("identifier");
+    ## TRANSFAC accession number corresponds to what we call name
+    my $id = $self->get_attribute("name") || $self->get_attribute("id");
     unless ($id) {
-	$id = $self->get_attribute("id");
-    }
-    unless ($id) {
-	$id = $accession;
+      $id = $accession;
     }
     if ($id) {
       $to_print .= "ID  ".$id."\n";
