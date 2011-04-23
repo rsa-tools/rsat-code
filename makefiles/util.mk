@@ -37,10 +37,11 @@ JOB_PREFIX=job
 JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
 ## CCG configuration:  MASTER=kayab.ccg.unam.mx QUEUE=default QUEUE_MANAGER=torque
 QUEUE_MANAGER=sge
-QUEUE=medium
+QUEUE=rsat
+#QUEUE=medium
 MASTER=cluster
 CLUSTER_ADDRESS=${QUEUE}@${MASTER}
-QSUB_OPTIONS=-l proc=xeon
+#QSUB_OPTIONS=-l proc=xeon
 #QSUB_OPTIONS=
 command_queue:
 	${MAKE} command_queue_${QUEUE_MANAGER}
