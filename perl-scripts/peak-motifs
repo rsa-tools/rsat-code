@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.187 2011/04/21 14:26:50 jvanheld Exp $
+# $Id: peak-motifs,v 1.188 2011/04/23 14:14:25 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.187 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.188 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -254,6 +254,7 @@ package main;
   ## Set default parameters
   &DefaultParameters();
 
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -289,9 +290,9 @@ package main;
 
   ## Reference motifs
   if (defined($main::infile{ref_motifs})) {
-    &RefMotif() if ($task{ref_motifs});
+    &RefMotifs() if ($task{ref_motifs});
   }
-  &SynthesisRefMotif() if ($progressive_synthesis);
+  &SynthesisRefMotifs() if ($progressive_synthesis);
 
   ## Run motif discovery algorithms
   if ($task{disco}) {
@@ -1487,7 +1488,7 @@ sub RunChIPMunk {
 
 ################################################################
 ## Convert reference motif and generate logos
-sub RefMotif {
+sub RefMotifs {
 
   ## Copy the reference motif in the output directory
   my $cmd = "rsync -ruptL ";
@@ -1497,21 +1498,26 @@ sub RefMotif {
   &one_command($cmd, 1);
 
   ## Convert the reference motif to TRANSFAC format, because this
-  ## format holds information about the motif name, ID etc
-  ## Export the logo and matrix parameters
-  if ((lc($main::param{ref_motifs_format}) eq "transfac") ||
-      (lc($main::param{ref_motifs_format}) eq "tf")) {
-    $cmd = "cp ";
-    $cmd .= " ".$main::infile{ref_motifs};
-    $cmd .= " ".$main::outfile{ref_motifs_transfac};
-  } else {
-    $cmd = $SCRIPTS."/convert-matrix -v 0";
-    $cmd .= " -i ".$main::infile{ref_motifs};
-    $cmd .= " -from ".$main::param{ref_motifs_format};
-    $cmd .= " -to transfac -decimals 1";
-    $cmd .= " -return counts,consensus,parameters";
-    $cmd .= " -o ".$main::outfile{ref_motifs_transfac};
-  }
+  ## format holds information about the motif name, ID etc.
+  ##
+  ## The conversion is done even if input is TRANSFAC, because we need
+  ## to compute the IUPAC consensus and matrix parameters with our own
+  ## background model.
+
+#  if ((lc($main::param{ref_motifs_format}) eq "transfac") ||
+#      (lc($main::param{ref_motifs_format}) eq "tf")) {
+#    $cmd = "cp ";
+#    $cmd .= " ".$main::infile{ref_motifs};
+#    $cmd .= " ".$main::outfile{ref_motifs_transfac};
+#  } else {
+  $cmd = $SCRIPTS."/convert-matrix -v 0";
+  $cmd .= " -i ".$main::infile{ref_motifs};
+  $cmd .= " -from ".$main::param{ref_motifs_format};
+  $cmd .= " -to transfac -decimals 1";
+  $cmd .= "  -bg_format motifsampler -bgfile ".$main::param{scan_bg_file};
+  $cmd .= " -return counts,consensus,parameters";
+  $cmd .= " -o ".$main::outfile{ref_motifs_transfac};
+#  }
   &one_command($cmd, 1);
 
   ## Also export the matrices in tab-delimited format and export sequence logos
@@ -1520,7 +1526,8 @@ sub RefMotif {
   $cmd .= " -from ".$main::param{ref_motifs_format};
   $cmd .= " -to tab";
   $cmd .= " -return counts,logo";
-    $cmd .= " -logo_file ".$main::outfile{ref_motifs_logo};
+  $cmd .= "  -bg_format motifsampler -bgfile ".$main::param{scan_bg_file};
+  $cmd .= " -logo_file ".$main::outfile{ref_motifs_logo};
   $cmd .= " -o ".$main::outfile{ref_motifs_tab};
   &one_command($cmd, 1);
 }
@@ -1650,12 +1657,10 @@ sub ReadDiscoveredMotifs {
   ## make sure the list is empty since it is a global variable
   @motifs = ();
 
-
   ################################################################
   ## Load background model for computing the consensus and logo of each motif
-  &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
+  &RSAT::message::Info("Loading background model from file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
   local $bg_model = new RSAT::MarkovModel();
-
   if (-e $main::param{scan_bg_file}) {
     $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
   } else {
@@ -2872,7 +2877,7 @@ sub Synthesis {
   &SynthesisSequenceComposition() unless ($progressive_synthesis);
 
   ## Reference motifs
-  &SynthesisRefMotif() unless ($progressive_synthesis);
+  &SynthesisRefMotifs() unless ($progressive_synthesis);
 
   ## Discovered motifs (by algorithm)
   &SynthesisMotifsByAlgo() unless ($progressive_synthesis);
@@ -3137,8 +3142,23 @@ sub SynthesisSequenceComposition {
 
 ################################################################
 ## Add the reference motif to the report
-sub SynthesisRefMotif {
+sub SynthesisRefMotifs {
   if (defined($main::infile{ref_motifs})) {
+    ## Read Background model for computing the consensus of the reference motifs
+    &RSAT::message::Info("Loading background model from file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
+    local $bg_model = new RSAT::MarkovModel();
+    if (-e $main::param{scan_bg_file}) {
+      $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
+    } else {
+      &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet")
+	if ($main::verbose >= 1);
+      return;
+    }
+
+    ## Read reference motifs
+    my @ref_motifs = &RSAT::MatrixReader::readFromFile($main::outfile{ref_motifs_transfac}, "transfac");
+
+    ## Print a HTML table with reference motifs (loos and consensus)
     print $syn &open_menu_heading($menu_nb++, "<a name='ref_motifs'></a><h3>Reference motifs</h3>", 0);
     print $syn "<p><table class='whitebg'>\n";
     &SyntheticTableAddHeaderRow("Reference motif(s)");
@@ -3152,27 +3172,49 @@ sub SynthesisRefMotif {
 
     ## Prepare a table with the logos
     for my $i (1..scalar(@logo_files)) {
+      ## Get the matrix
+      my $matrix = $ref_motifs[$i-1];
+      $matrix->setMarkovModel($bg_model);
+      $matrix->calcConsensus();
+
       $logo_table .= "<tr>\n";
-      $logo_table .= "<td style='border-right-style:none;>Ref motif ".$i."</td>\n";
+      my $name = $matrix->get_attribute("name");
+      my $id = $matrix->get_attribute('id');
+      $logo_table .= "<td style='border-right-style:none;'>".$name."<br/>".$id."</td>\n";
+
+      ## Print consensus and logo
+      $logo_table .= "<td align='right'>";
+      my $consensus = $matrix->get_attribute("consensus.IUPAC");
+      my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+      $logo_table .= $colored_consensus."<br/>";
+
       my $logo_file = $main::outfile{ref_motifs_logo}."_m".$i.".".$main::param{img_format};
-      my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
       if (-e $logo_file) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
-	$logo_table .= "<td align='right'><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
+	$logo_table .= "<a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
       } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reference logo", $logo_file);
       }
+
+      ## Print consensus and logo for reverse complement of the motif
+      $logo_table .= "<td align='left' style='border-right-style:none;'>";
+      my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
+      my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc, bold=>1, iupac=>$main::param{iupac_coloring});
+      $logo_table .= $colored_consensus_rc."<br/>";
+
+      my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
-	$logo_table .= "<td align='left' style='border-right-style:none;'><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
+	$logo_table .= "<a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
       } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
       }
+
       $logo_table .= "</tr>\n";
     }
     $logo_table .= "</table>\n";
 
-    &SyntheticTableAddRow("Reference motif",
+    &SyntheticTableAddRow("Reference motif(s)",
 			  $logo_table,
 			  #			  $main::param{ref_motifs_format}, &RSAT::util::RelativePath($main::outfile{synthesis}, $main::infile{ref_motifs}),
 			  "transfac format",$main::outfile{ref_motifs_transfac},
@@ -4196,6 +4238,7 @@ Class interval for I<position-analysis>.
       &FatalError(join("\t", "Invalid option", $arg));
 
     }
+
   }
 
 =pod
@@ -4210,6 +4253,7 @@ Class interval for I<position-analysis>.
 ## Check arguments
 sub CheckArguments {
   &RSAT::message::TimeWarn("Checking arguments") if ($main::verbose >= 2);
+
 
   ## Input sequence file
   if ($infile{test_seq}) {
