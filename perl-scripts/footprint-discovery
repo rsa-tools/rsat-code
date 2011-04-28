@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.62 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: footprint-discovery,v 1.63 2011/04/28 12:37:31 rsat Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -590,6 +590,15 @@ sub RunFootprintDisco {
   ################################################################
   ## Send the command to a batch queue (e.g. PC cluster)
   if ($batch) {
+    my $jobnb = 0;
+    if (($q-1) % 500 == 0) {
+      $jobnb = &get_job_nb();
+    }
+    while ($jobnb > 2000) {
+      &RSAT::message::TimeWarn("Already $jobnb jobs on queue... waiting 30 seconds before submitting new jobs") if ($main::verbose >= 2);
+      sleep(60);
+      $jobnb = &get_job_nb();
+    }
     &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
   }
 
@@ -1114,7 +1123,18 @@ sub CoregulationNetwork {
 
 }
 
+#######################################################################
+## Returns the number of jobs running currently for the current user
 
+sub get_job_nb {
+      my $batchuser = `whoami`;
+      chomp $batchuser;
+      my $jobnb = `qstat -u $batchuser | wc -l`;
+      chomp $jobnb;
+      $jobnb -= 2;
+      &RSAT::message::TimeWarn("$jobsnb are in the queue for user $batchuser") if ($main::verbose >= 4);
+      return $jobnb;
+}
 __END__
 
 
