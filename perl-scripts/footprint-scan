@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.83 2011/04/14 17:34:38 amedina Exp $
+# $Id: footprint-scan,v 1.84 2011/04/28 01:56:43 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.83 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.84 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -369,6 +369,8 @@ package main;
   local $occ_sig_opt = "";
   local $occ_sig_graph_opt = "";
   local $pval=1e-4;
+  local $occ_th=5;
+
   local $bg_distrib="";
 
   ## Feature maps
@@ -816,7 +818,7 @@ package main;
 
 	## Sort query genes according to user-selected criterion
 	my @sorted_genes = ();
-	if ($sort_criterion eq "sig") {
+	if (($sort_criterion eq "sig") && (scalar (keys %top_sig) > 1 )) {
 	    &RSAT::message::Info("Sorting genes by ",$sort_criterion," for Matrix-wise synthesis report table and html") if ($main::verbose >=3);
 	    @sorted_genes = sort {$top_sig{$b} <=> $top_sig{$a}} @query_genes;
 
@@ -831,6 +833,7 @@ package main;
 
 	foreach my $gene (@sorted_genes) {
 	  $g++;
+	  next unless($top_sig{$gene}); ## Only report genes that passed the p-value and occurrence significance threshold
 
 #	  my $gene_info= `(add-gene-info -i $gene_list{$gene} -org $organism_name -info name,descr,upstr_neighb_name | grep -v "^;")`;
 #	  chomp ($gene_info);
@@ -1263,7 +1266,8 @@ Set the threshold to filter out TF-interactions that are not present on the quer
 
 =item B<-pval>
 
-Set the threshold on site p-value to report only the evaluated over-representations of binding sites whenever the individual sites that crossed it.
+Set the threshold on site p-value to report only the evaluated over-representations of binding sites whenever the individual sites crossed it.
+The default is set to 1e-4.
 
 =cut
 	} elsif ($arg eq "-pval") {
@@ -1271,6 +1275,22 @@ Set the threshold on site p-value to report only the evaluated over-representati
 
 	     &RSAT::error::FatalError($main::pval, "Invalid value for pval. Should be a real number. ")
 	unless (&RSAT::util::IsReal($main::pval));
+=pod
+
+=item B<-occ_th>
+
+Threshold set on the occurrence significance (over-representation) for scores that have p-value equal or smaller thant the one given as threshold in the option I<-pval>.
+
+All genes are completely analyzed, only the genes that pass both threshold on pvalue and occ_sig will be included on the synthesis table and html of the matrix.
+
+Default is set to 5 .
+
+=cut
+	} elsif ($arg eq "-occ_th") {
+    	    $main::occ_th= shift(@arguments);
+
+	     &RSAT::error::FatalError($main::occ_th, "Invalid value for pval. Should be a real number. ")
+	unless (&RSAT::util::IsReal($main::occ_th));
 
 =pod
 
@@ -1526,7 +1546,6 @@ sub RunFootprintScan {
   local $out = "";
   local $genes = "";
 
-
   ################################################################
   ## Initialize output directory + output files
   local ($outfile_prefix, $query_prefix)= &InitQueryOutput();
@@ -1594,12 +1613,31 @@ sub RunFootprintScan {
 
   ## Estimate over-representation in hits for all threshold values
   &OccurrenceSig();
+  ## Evaluate if the gene occurrence significance in the given p-value can pass the threshold for selecting conserved interactions based on overrepresentation
+ 
   &OccurrenceSigGraph();
-  &GetTopSig() if (($task{synthesis}) && !($batch));
-  #&OccurrenceSigGraph();
+  #&GetTopSig() if (($task{synthesis}) && !($batch)); ## With the Select_interaction
+                                                          ## subrutine this one is no longer necesary
+
   ## Scan sequences to detect hits
   &OrthoScan();
   &OrthoMap();
+  
+  
+  if ($task{synthesis} && !($batch)){
+      $selected_interaction=&Select_interaction;
+    
+      
+      ## Index occ sig files for the synthetic table
+      $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
+      $occ_freq_graph_file{$current_gene} = $outfile{occ_freq_graph} if (-e $outfile{occ_freq_graph});
+      $occ_sig_graph_file{$current_gene} = $outfile{occ_sig_graph} if (-e $outfile{occ_sig_graph});
+      $gene_list{$current_gene} = $outfile{genes} if (-e $outfile{genes} );
+      
+      ## Index scan files for the synthetic table
+      $map_file{$current_gene} = $outfile{map} if (-e $outfile{map});
+  }
+  
 
   ################################################################
   ## Finish verbose
