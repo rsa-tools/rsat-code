@@ -1313,6 +1313,58 @@ sub OccurrenceSig {
   &IndexOneFile("occ sig", $outfile{occ_sig});
 }
 
+################################################################
+## Evaluate if the gene occurrence significance in the given p-value 
+## can pass the threshold for selecting conserved interactions based 
+## on overrepresentation
+
+sub Select_interaction{
+	&CheckDependency("occ_sig");
+	my $min_weight = &GetMinWeight();
+	my $select_interaction=0;
+ 	my ($occ_sig_file) = &OpenInputFile($outfile{occ_sig});
+	my %scores_occ_th=(); # hash to store all scores avobe the pval threshold, 
+	                       #$score and that also pass the threshold set on occ, for selecting possible interactions
+	my $score_column=1;
+	my $occ_column=10;
+	
+	################
+	# Read the occ significance file and select the scores and corresponding occurence significance,
+	&RSAT::message::TimeWarn ("Reading Occurrence significance table to select genes with a probabliy conserved interactions", $outfile{occ_sig}) if ($main::verbose >=2 ) ;
+	while (<$occ_sig_file>) {
+	    chomp;
+	    next if ($_=~/^;/);		# skip comment lines
+	    next if ($_=~/^#/);		# skip header lines
+	    next if ($_=~/^--/);	# skip mysql-type comment lines
+	    next unless (/\S/);	# skip empty lines
+	    my @fields = split /\t+/;
+	    my $one_score=$fields[$score_column];
+	    my $one_occ_sig=$fields[$occ_column];
+                ## store the ones that pass both thresholds in the hash
+	    if ($one_score>=$min_weight && $one_occ_sig >= $main::occ_th ){
+		$scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
+		&RSAT::message::Debug("Occ_sig ", $one_occ_sig, "Score",$one_score,$current_gene) if ($main::verbose >= 0);
+	    }
+	   
+	}
+
+	my @sorted_scores=sort (keys %scores_occ_th);
+
+	if (scalar(@sorted_scores) >0 ){ #If there are occ significances that passed th threshold
+	    my $highest_occ_sig=pop (@sorted_scores);
+	    my @sorted_highest_occ_score=sort (keys %{$scores_occ_th{$highest_occ_sig}});
+	
+	    if (scalar(@sorted_highest_occ_score) >0 ){ #If there are scores that passed the pvalue threshold
+		my $highest_occ_score=pop(@sorted_highest_occ_score);   
+		#Report the values for the gene for the synthesis table
+		$top_sig{$current_gene} = $highest_occ_sig;
+		$top_score{$current_gene} = $highest_occ_score;
+		$top_sig_row{$current_gene} = $scores_occ_th{$highest_occ_sig}{$highest_occ_score};
+		&RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
+	    }
+	}
+    
+}
 
 
 ################################################################
@@ -1354,7 +1406,7 @@ sub GetMinWeight {
 			"pval2=".$pval2,
 			"pval=".$pval,
 			"min_weight=".$min_weight,
-		       ) if ($main::verbose >= 3);
+		       ) if ($main::verbose >= 0);
   &RSAT::message::Info("min weight", $min_weight) if ($main::verbose >= 2);
 
   return($min_weight);
@@ -1429,6 +1481,7 @@ sub OccurrenceSigGraph {
 
 }
 
+
 ################################################################
 ## Collect info for the synthetic table
 sub GetTopSig {
@@ -1442,16 +1495,10 @@ sub GetTopSig {
     $top_score{$current_gene} = $fields[1];
     $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
     &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
-
-    ## Index occ sig files for the synthetic table
-    $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
-    $occ_freq_graph_file{$current_gene} = $outfile{occ_freq_graph} if (-e $outfile{occ_freq_graph});
-    $occ_sig_graph_file{$current_gene} = $outfile{occ_sig_graph} if (-e $outfile{occ_sig_graph});
-    $gene_list{$current_gene} = $outfile{genes} if (-e $outfile{genes} )
+  
   }
 
-  ## Index scan files for the synthetic table
-  $map_file{$current_gene} = $outfile{map} if (-e $outfile{map});
+
 }
 
 
