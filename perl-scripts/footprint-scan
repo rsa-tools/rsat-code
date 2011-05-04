@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.84 2011/04/28 01:56:43 amedina Exp $
+# $Id: footprint-scan,v 1.85 2011/05/04 19:23:32 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.84 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.85 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -818,9 +818,10 @@ package main;
 
 	## Sort query genes according to user-selected criterion
 	my @sorted_genes = ();
+
 	if (($sort_criterion eq "sig") && (scalar (keys %top_sig) > 1 )) {
 	    &RSAT::message::Info("Sorting genes by ",$sort_criterion," for Matrix-wise synthesis report table and html") if ($main::verbose >=3);
-	    @sorted_genes = sort {$top_sig{$b} <=> $top_sig{$a}} @query_genes;
+	    @sorted_genes = sort {$top_sig{$b} <=> $top_sig{$a}} (keys %top_sig);
 
 	  #  join ("\t", (sort {$top_sig{$b} <=> $top_sig{$a}} @query_genes));
 	} elsif ($sort_criterion eq "alpha") {
