@@ -245,7 +245,8 @@ sub CheckFootprintParameters {
 sub CheckDependency {
   my ($task, @files_types) = @_;
 
-  ## in batch mode, the check should not be done since the previous
+  ## in batch mode, the check should not be done since the previous	#die join ("\t",  @sorted_genes). "  BOOM";
+
   ## tasks have not yet been ran
   return(0) if ($batch);
 
@@ -1319,7 +1320,7 @@ sub OccurrenceSig {
 ## on overrepresentation
 
 sub Select_interaction{
-	&CheckDependency("occ_sig");
+	&CheckDependency("synthesis","matrix_distrib");
 	my $min_weight = &GetMinWeight();
 	my $select_interaction=0;
  	my ($occ_sig_file) = &OpenInputFile($outfile{occ_sig});
@@ -1343,7 +1344,7 @@ sub Select_interaction{
                 ## store the ones that pass both thresholds in the hash
 	    if ($one_score>=$min_weight && $one_occ_sig >= $main::occ_th ){
 		$scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
-		&RSAT::message::Debug("Occ_sig ", $one_occ_sig, "Score",$one_score,$current_gene) if ($main::verbose >= 0);
+		&RSAT::message::Debug("Occ_sig ", $one_occ_sig, "Score",$one_score,$current_gene) if ($main::verbose >= 5);
 	    }
 	   
 	}
@@ -1484,22 +1485,22 @@ sub OccurrenceSigGraph {
 
 ################################################################
 ## Collect info for the synthetic table
-sub GetTopSig {
-  &CheckDependency("synthesis", "occ_sig");
-  my $top_cmd = "grep -v '^;' $outfile{occ_sig} | grep -v '^#' | awk '\$12==1'";
-  my $top_sig_row = `$top_cmd`;
-  if ($top_sig_row) {
-    my @fields = split "\t", $top_sig_row;
+# sub GetTopSig {
+#   &CheckDependency("synthesis", "occ_sig");
+#   my $top_cmd = "grep -v '^;' $outfile{occ_sig} | grep -v '^#' | awk '\$12==1'";
+#   my $top_sig_row = `$top_cmd`;
+#   if ($top_sig_row) {
+#     my @fields = split "\t", $top_sig_row;
 
-    $top_sig{$current_gene} = $fields[10];
-    $top_score{$current_gene} = $fields[1];
-    $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
-    &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
+#     $top_sig{$current_gene} = $fields[10];
+#     $top_score{$current_gene} = $fields[1];
+#     $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
+#     &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
   
-  }
+#   }
 
 
-}
+# }
 
 
 ################################################################
