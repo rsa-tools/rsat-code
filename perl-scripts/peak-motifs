@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.188 2011/04/23 14:14:25 jvanheld Exp $
+# $Id: peak-motifs,v 1.189 2011/05/06 11:58:41 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.188 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.189 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -173,6 +173,7 @@ package main;
 		  "clean_seq",
 		  "meme_bg",
 		  "meme",
+		  "dreme",
 		  "chipmunk",
 		 );
 
@@ -200,6 +201,7 @@ package main;
 		   "merged_words",
 ## Still to be treated: include the meme and chipmunk results in the HTML synthesis ?
 		   "meme",
+		   "dreme",
 		   "chipmunk",
 		  );
 
@@ -227,6 +229,10 @@ package main;
   ## Options and suffix for MEME (must be global variables)
   local $meme_options = "";
   local $meme_suffix = "";
+
+  ## Options and suffix for DREME (must be global variables)
+  local $dreme_options = "";
+  local $dreme_suffix = "";
 
   ## Options and suffix for ChIPMunk  (must be global variables)
   local $chipmunk_options = "";
@@ -308,6 +314,9 @@ package main;
   ## MEME motif discovery
   &CalcMemeBackground() if ($task{meme_bg});
   &RunMEME() if (($task{meme}) || (($task{disco}) && ($disco{meme}))); ## Not yet clear to me (JvH) whether meme should be a separat etask or a disco algo that runs with task disco
+
+  ## DREME motif discovery
+  &RunDREME() if (($task{dreme}) || (($task{disco}) && ($disco{dreme}))); ## Not yet clear to me (JvH) whether dreme should be a separat etask or a disco algo that runs with task disco
 
   ## ChIPMunk motif discovery
   &RunChIPMunk() if  (($task{chipmunk}) || (($task{disco}) && ($disco{chipmunk}))); ## Not yet clear to me (JvH) whether chipmunk should be a separat etask or a disco algo that runs with task disco
@@ -492,7 +501,6 @@ sub DefaultParameters {
   $main::param{scan_enrich_options} = " -lth score ".$main::param{scan_enrich_min_score};
   $main::param{scan_enrich_options} .= " -bginput -markov ".$main::param{scan_enrich_markov};
 
-
   ## Default MEME options
   $main::param{meme_text} = ""; push @MEME_options, "text";	## Ouptut format = text
   $main::param{meme_dna} = ""; push @MEME_options, "dna"; ## Sequence type == dna
@@ -502,9 +510,13 @@ sub DefaultParameters {
   $main::param{meme_nmotifs} = 1; push @MEME_options, "nmotifs"; ## Number of motifs
   $main::param{meme_evt} = 1; push @MEME_options, "evt"; ## upper threshold on E-value
   $main::param{meme_maxsize} = 10000000; push @MEME_options, "maxsize"; ## maximum size for the sequence set
+  $main::param{bg_meme_markov} = 3; ## Markov order for MEME background model
 
-  ## Options for MEME background model
-  $main::param{bg_meme_markov} = 3; ## Markov order for MEME
+  ## Default DREME options
+  $main::param{dreme_e} = 0.05; push @DREME_options, "e";	## E-value threshold
+  $main::param{dreme_m} = $main::param{matrix_nmotifs}; push @DREME_options, "m";	## max number of motifs
+  $main::param{dreme_mink} = $main::param{oligo_min_len}; push @DREME_options, "mink";	## min width of core motif
+  $main::param{dreme_maxk} = $main::param{oligo_max_len}; push @DREME_options, "maxk";	## max width of core motif
 
   ################################################################
   ## Default ChIPMunk options
@@ -845,6 +857,15 @@ sub SetOutFileNames {
     $main::outfile{meme_tf} = &OutFileName("results/meme", ".tf", "meme_".$meme_suffix);
     $main::outfile{meme_logos} = &OutFileName("results/meme", "", "meme_".$meme_suffix."_logos");
     push @timetable_keys, "meme";
+  }
+
+  ## Output files for DREME
+  if (($disco{dreme}) || ($task{dreme})) {
+    &CalcDremeOptions(); ## this also computes the suffix of the dreme output file
+    $main::outfile{dreme} = &OutFileName("results/dreme", ".txt", "dreme_".$dreme_suffix);
+    $main::outfile{dreme_tf} = &OutFileName("results/dreme", ".tf", "dreme_".$dreme_suffix);
+    $main::outfile{dreme_logos} = &OutFileName("results/dreme", "", "dreme_".$dreme_suffix."_logos");
+    push @timetable_keys, "dreme";
   }
 
   ## Output files and options for ChIPMunk
@@ -1390,7 +1411,7 @@ sub CalcMemeOptions {
     $meme_options .= " -revcomp";
   }
 
-  ## If bacgrkound sequences have been specified, check that
+  ## If background sequences have been specified, check that
   ## background model file exists.
   if ($main::outfile{meme_bg_file}) {
     $meme_options .= " -bfile ".$main::outfile{meme_bg_file};
@@ -1402,6 +1423,32 @@ sub CalcMemeOptions {
     $meme_options .= " -".$option." ".$main::param{"meme_".$option};
     unless ($option eq "bfile") {
       $meme_suffix .= "_".$option.$main::param{"meme_".$option};
+    }
+  }
+}
+
+################################################################
+## Concatenate the options for DREME and compute the suffix
+sub CalcDremeOptions {
+  $dreme_options = ""; ## Must be a global variable
+  $dreme_suffix = ""; ## Must be a global variable
+
+  ## input file
+  $dreme_options .= " -p ".$main::outfile{"test_purged"};
+
+  ## strands: there is apparently no strand option in the current release of DREME (MEME 4.6.1)
+
+  ## If background sequences have been specified, sue them as negative sequence file for DREME
+  if (($main::infile{ctrl_seq})) {
+    $dreme_options .= " -n ".$main::outfile{"ctrl_purged"};
+    $dreme_options .= "_vs_ctrl";
+  }
+
+  foreach my $option (@DREME_options) {
+#    &RSAT::message::Debug("adding dreme option", $option, $main::param{"dreme_".$option}) if ($main::verbose >= 10);
+    $dreme_options .= " -".$option." ".$main::param{"dreme_".$option};
+    unless ($option eq "bfile") {
+      $dreme_suffix .= "_".$option.$main::param{"dreme_".$option};
     }
   }
 }
@@ -1447,6 +1494,38 @@ sub RunMEME {
   $cmd .= " -logo_file ".$main::outfile{meme_logos};
   $cmd .= " -o ".$main::outfile{meme_tf};
   &one_command($cmd);
+}
+
+################################################################
+## Run DREME
+sub RunDREME {
+  my $die_on_error = 0;
+  my $dreme_cmd = &RSAT::server::GetProgramPath("dreme", $die_on_error);
+  my $cmd = "";
+
+  ################################################################
+  ## DREME does not accept sequences shorter than 8
+  ## However, peas are usually smaller than 8bp -> we skip this conversion
+#  my $min_seq_len = &max(8, $main::param{dreme_minw});
+#  $cmd = "convert-seq ";
+#  $cmd .= " -from fasta -to fasta -skip_short ".$min_seq_len;
+#  $cmd .= " -i ".$main::outfile{"test_purged"};
+#  $cmd .= " -o ".$main::outfile{"test_purged_noshort"};
+
+  ## Run the DREME command
+  $cmd .= $dreme_cmd;
+  $cmd .= " ".$dreme_options;
+  $cmd .= " > ".$main::outfile{dreme};
+  &one_command($cmd, 1, $main::outfile{dreme}."_time.txt");
+
+  ## Convert the matrix
+#  $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{dreme};
+#  $cmd .= " -from dreme";
+#  $cmd .= " -to transfac";
+#  $cmd .= " -return counts,parameters,logo";
+#  $cmd .= " -logo_file ".$main::outfile{dreme_logos};
+#  $cmd .= " -o ".$main::outfile{dreme_tf};
+#  &one_command($cmd);
 }
 
 ################################################################
