@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.40 2011/03/19 08:41:48 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.41 2011/05/06 12:49:42 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -177,7 +177,8 @@ install_gnuplot:
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${RSAT}/app_sources/MEME
-MEME_VERSION=4.6.0
+MEME_VERSION=4.6.1
+#MEME_VERSION=current
 MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
 MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
 MEME_DISTRIB_DIR=${MEME_BASE_DIR}/meme_${MEME_VERSION}
