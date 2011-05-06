@@ -320,7 +320,7 @@ class Extractor:
             return []    
 
         #ALL
-        if params['window'] == None:
+        if params['window'] == 'none':
             a,b = self.location
             obsOcc = len(l)
             self.__next(a,b,obsOcc)
