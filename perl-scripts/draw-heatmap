@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.19 2011/02/17 04:54:49 rsat Exp $
+# $Id: draw-heatmap,v 1.20 2011/05/06 11:58:28 jvanheld Exp $
 #
 ############################################################
 
@@ -73,7 +73,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -522,11 +522,12 @@ Name of the output file. This option is mandatory.
 =item	B<-html html_map_file>
 
 If a HTML map file is defined, draw-heatmap then produces a HTML file
-that loads the HEATMAP. Moreover, each of the cell is defined so that
-when the mouse is over in a web browser, the user get the name of row,
-of the column and the value of the cell.  For CHAOS game
-representation, the word corresponding to the cell and its associated
-value are given.
+that loads the HEATMAP. Moreover, each of the cells is defined so that
+when the mouse is over in a web browser, a tooltip displays the row
+name, column name and the value of the cell.
+
+For CHAOS game representation, the word corresponding to the cell and
+its associated value are given.
 
 =cut
 	} elsif ($arg eq "-html") {
