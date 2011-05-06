@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.25 2011/02/17 05:15:54 rsat Exp $
+# $Id: graph-neighbours,v 1.26 2011/05/06 07:55:32 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -400,7 +400,7 @@ graph file.
 
 =item B<-wcol>
 
-Weight column. Column containing the weight nodes in the tab-delimited
+Weight column. Column containing the weight on the edges in the tab-delimited
 graph file.
 
 =cut
