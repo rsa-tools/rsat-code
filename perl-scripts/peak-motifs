@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.189 2011/05/06 11:58:41 jvanheld Exp $
+# $Id: peak-motifs,v 1.190 2011/05/08 20:22:03 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.189 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.190 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -138,8 +138,8 @@ package main;
   ## measurements taken from RSAT programs. Then I implemented a
   ## systematic way to measure the exectution time of a task with the
   ## Unix time command, which allows me to apply to third-party
-  ## algorithms as well. I should see later if I suppress all the
-  ## timelog stuff.
+  ## algorithms as well (meme, dreme, ChipMunk). I should see later if I
+  ## suppress all the timelog stuff.
   @timetable_keys = ();
   @timelog_keys = ();
 
@@ -507,7 +507,7 @@ sub DefaultParameters {
   $main::param{meme_mod} = "anr"; push @MEME_options, "mod"; ## Accept any number of occurrences per sequence
   $main::param{meme_minw} = 12; push @MEME_options, "minw"; ## Minimal motif width
   $main::param{meme_maxw} = 12; push @MEME_options, "maxw"; ## Maximal motif width
-  $main::param{meme_nmotifs} = 1; push @MEME_options, "nmotifs"; ## Number of motifs
+  $main::param{meme_nmotifs} = $main::param{matrix_nmotifs}; push @MEME_options, "nmotifs"; ## Number of motifs
   $main::param{meme_evt} = 1; push @MEME_options, "evt"; ## upper threshold on E-value
   $main::param{meme_maxsize} = 10000000; push @MEME_options, "maxsize"; ## maximum size for the sequence set
   $main::param{bg_meme_markov} = 3; ## Markov order for MEME background model
@@ -1470,6 +1470,9 @@ sub RunMEME {
   my $die_on_error = 0;
   my $meme_cmd = &RSAT::server::GetProgramPath("meme", $die_on_error);
   my $cmd = "";
+
+  ## Make sure the background file is computed before running MEME
+  &CalcMemeBackground unless (-e $main::outfile{meme_bg_file});
 
   ################################################################
   ## MEME does not accept sequences shorter than 8
@@ -4178,6 +4181,8 @@ words).
 
     } elsif ($arg eq "-nmotifs") {
       $main::param{matrix_nmotifs} = shift (@arguments);
+      $main::param{dreme_m} = $main::param{matrix_nmotifs};
+      $main::param{meme_nmotifs} = $main::param{matrix_nmotifs};
 
 =pod
 
@@ -4208,10 +4213,14 @@ of oligonucleotide lengths.
       my $oligo_len = shift (@arguments);
       $main::param{oligo_min_len} = $oligo_len;
       $main::param{oligo_max_len} = $oligo_len;
+      $main::param{dreme_mink} = $main::param{oligo_min_len};
+      $main::param{dreme_maxk} = $main::param{oligo_max_len};
     } elsif ($arg eq "-minol") {
       $main::param{oligo_min_len} = shift (@arguments);
+      $main::param{dreme_mink} = $main::param{oligo_min_len};
     } elsif ($arg eq "-maxol") {
       $main::param{oligo_max_len} = shift (@arguments);
+      $main::param{dreme_maxk} = $main::param{oligo_max_len};
 
 =pod
 
