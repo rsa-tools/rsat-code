@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.26 2010/11/27 16:26:10 rsat Exp $
+# $Id: server.mk,v 1.27 2011/05/08 20:57:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -34,7 +34,7 @@ MERLIN = jvanheld@merlin.bigre.ulb.ac.be:rsa-tools
 #FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
 CCG = jvanheld@kayab.ccg.unam.mx:rsa-tools
 TAGC = jvanheld@139.124.66.43:rsa-tools
-LIV = jvanheld@liv.bmc.uu.se:rsa-tools
+LIV = jvanheld@liv.hgen.slu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
 MILLIWAYS=jvanheld@milliways.bi.up.ac.za:rsa-tools
 MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${TORONTO} ${CCG} 
