@@ -28,6 +28,20 @@ PATTERNS=
 PATTERNS= patterns.txt
 
 ################################################################
+## List teh values of the parameters
+list_parameters:
+	@echo
+	@echo "Parameters"
+	@echo "	PAT1	${PAT1}"
+	@echo "	PAT2	${PAT2}"
+	@echo "	L	${L}"
+	@echo "	N	${N}"
+	@echo "	MKV	${MKV}"
+	@echo "	STR	${STR}"
+	@echo "	BG	${BG}"
+	@echo "	ORG	${ORG}"
+
+################################################################
 ## Define the targets
 
 ## Compress the sequence file to save disk space
