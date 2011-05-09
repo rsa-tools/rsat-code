@@ -957,7 +957,11 @@ sub GnuPlotEPS {
 
     ## draw lines
     if (($lines eq "1") || ($lines[$y_col_list[$k]])) {
-      $gnuplot_cmd .= "lines";
+    	if ($point_size == 0 ){
+      		$gnuplot_cmd .= "lines";
+      	} else {
+      		 $gnuplot_cmd .= "linespoints";
+      	}     
     } else {
       $gnuplot_cmd .= "points";
     }
