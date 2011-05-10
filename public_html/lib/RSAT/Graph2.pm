@@ -1260,7 +1260,7 @@ sub get_out_neighbours_id {
 
 =item B<get_node_label()>
 
-get the color of the node
+get the label of the node
 
 =cut
 sub get_node_label {
@@ -1548,6 +1548,63 @@ sub node_by_id {
     }
 }
 
+
+##############################################################
+## Load a graph from a the output of the pathway inference tool developped by Karoline Faust(mainly)
+sub read_path_extract {
+  my ($self, $inputfile) = @_;
+  &RSAT::message::TimeWarn("Loading graph from pathway extractor outputfile file", $inputfile) if ($main::verbose >= 2);
+  ($main::in) = &RSAT::util::OpenInputFile($inputfile);
+  my %nodes_attributes = ();
+  my @arcs_array = ();
+  my %colors = ();
+  while (my $line = <$main::in>) {
+    last if ($line =~ /^;NODES\t/);
+  }
+  while (my $line = <$main::in>) {
+    last if ($line =~ /^;ARCS\t/);
+    chomp $line;
+    my @linecp = split /\t/, $line;
+    my $node_name = $linecp[0];
+    my $color = $linecp[1];
+    my $label = $linecp[3];
+    $label = $node_name if ($label eq 'NA');
+    my $type;
+    if ($linecp[6]=~/^Reaction/) {
+    $type = "box";
+    }  elsif ($linecp[6]=~/^Compound/){
+    $type = "ellipse"; 
+    }
+    $colors{$node_name} = $color;
+    $nodes_attributes{$node_name}{'label'} = $label;
+    $nodes_attributes{$node_name}{'type'} = $type;
+  }
+  my $cpt = 0;
+  while (my $line = <$main::in>) {
+    chomp $line;
+    
+    my @linecp = split /\t/, $line;
+    my $source = $linecp[0];
+    my $target = $linecp[1];
+    my $arc_color = $linecp[2];
+    $arcs_array[$cpt][0] = $source;
+    $arcs_array[$cpt][1] = $target;
+    $arcs_array[$cpt][2] = join "_", $source, $target;
+    $arcs_array[$cpt][3] = $colors{$source};
+    $arcs_array[$cpt][4] = $colors{$target};
+    $arcs_array[$cpt][5] = $arc_color;
+    $cpt++;    
+  }
+  $self->load_from_array(@arcs_array);
+  $self->set_hash_attribute("nodes_attribute", %nodes_attributes);
+  return $self;  
+}
+
+
+
+
+
+
 ################################################################
 ## Load a graph from a tab-delimited text file
 sub read_from_table {
@@ -1727,7 +1784,7 @@ sub read_from_table {
 ## Load a graph from a tab-delimited path file (returned by NeAT PathFinder algorithm)
 sub read_from_paths {
 
-    my ($self,$inputfile, $path_col, $distinct_path) = @_;
+    my ($self, $inputfile, $path_col, $distinct_path) = @_;
     $path_col = 7;
     &RSAT::message::TimeWarn("Loading path(s) from tab file", $inputfile) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
@@ -2462,6 +2519,9 @@ sub graph_from_text {
         my $txcol = $args[9] || 0;
         my $tycol = $args[10] || 0;
 	return $self->read_from_table($inputfile, $scol, $tcol, $wcol, $sccol, $tccol, $ecol, $sxcol, $sycol, $txcol, $tycol);
+    } elsif ($in_format eq "path_extract") {
+        my $inputfile =  $args[0];
+        return $self->read_path_extract($inputfile);
     } elsif ($in_format eq "adj_matrix") {
 	return $self->read_from_adj_matrix($args[0], $args[11]);
     } elsif ($in_format eq "path") {
@@ -2473,7 +2533,6 @@ sub graph_from_text {
 	&RSAT::error::FatalError(join ("\t", $in_format, "Invalid format"));
     }
 }
-
 ################################################################
 
 
@@ -2526,6 +2585,8 @@ sub to_dot {
     my ($self) = @_;    
     my @nodes = $self->get_nodes();
     my @arcs = $self->get_attribute("arcs");
+    my %nodes_attribute = $self->get_attribute("nodes_attribute");
+
     my $min = $self->get_attribute("min_weight");
     my $max = $self->get_attribute("max_weight");    
     
@@ -2548,11 +2609,15 @@ sub to_dot {
       my $nodeid = $self->node_by_name($node);
       my $color = $self->get_node_color($node);
       my $label = $self->get_node_label($node);
+      my $dot_label = $nodes_attribute{$node}{"label"} || $label;
+      my $node_type = $nodes_attribute{$node}{"type"} || "ellipse";
+      
       #print "NODEID"." ".$node." ".$nodeid." ".$color." ".$label."\n";
       $dot .= join("", 
 		   "\"", $node, "\"",  
-		   " [style=filled, color=\"$color\"",
-		   ",label=\"$label",
+		   " [color=\"$color\"",
+		   ",label=\"$dot_label\"",
+		   ",shape=\"$node_type",
 		   "\"]",
 		   "\n");
     }
