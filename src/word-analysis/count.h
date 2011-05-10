@@ -18,6 +18,7 @@ typedef struct count_s
     long *count_table;
     long *last_position;
     long *palindromic;
+    int test_count;
     int position_count;
     int total_count;
     int size;
