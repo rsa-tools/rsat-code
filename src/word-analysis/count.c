@@ -131,6 +131,8 @@ void count_occ(count_t *count, int l, int sp, seq_t *seq, int rc, int noov)
         // count
         count->count_table[index]++;
         count->total_count++;
+        if (count->count_table[index] == 1)
+            count->test_count++;
     }
 }
 
@@ -187,6 +189,7 @@ count_t *new_count(int l)
     count->palindromic      = new_count_array(l);
     count->position_count   = 0;
     count->total_count      = 0;
+    count->test_count       = 0;
     return count;
 }
 

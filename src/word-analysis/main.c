@@ -32,7 +32,7 @@ void help(char *progname)
 "        Matthieu Defrance\n"
 "\n"
 "DESCRIPTION\n"
-"        calculates oligomer frequencies in a set of sequences,\n"
+"        Calculates oligomer frequencies in a set of sequences,\n"
 "        and detects overrepresented oligomers.\n"
 "\n"
 "CATEGORY\n"
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
     //     ";    4    occ    occurrences\n"
     // );
 
-    fprintf(output_fp, "#seq\tid\tocc\tocc_P\n");
+    fprintf(output_fp, "#seq\tid\tocc\tocc_P\tocc_E\tocc_sig\n");
     
     // binomial stats on count table
     char name[16];
@@ -229,7 +229,10 @@ int main(int argc, char *argv[])
         if (rc && !count->palindromic[i])
             p *= 2;
         //printf("%ld %ld %f\n", n, N, p);
+
         double pv = pbinom(n, N, p);
+        double ev = pv * count->test_count;
+        double sig = -log10(ev);
         if (rc)
         {
             index2oligo_rc_char(i, oligo_length, name_rc);
@@ -239,9 +242,8 @@ int main(int argc, char *argv[])
         {
             sprintf(id, "%s", name);
         }
-        fprintf(output_fp, "%s\t%s\t%ld\t%G\n", name, id, n, pv);
+        fprintf(output_fp, "%s\t%s\t%ld\t%G\t%G\t%G\n", name, id, n, pv, ev, sig);
     }
-
 
     // free data
     free_fasta_reader(reader);
@@ -256,16 +258,16 @@ int main(int argc, char *argv[])
 }
 
 
-    // count_occ(&count, oligo_length, int sp, seq_t *seq, rc, noov);
-    // 
-    // count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 1);
-    // // if (spacing != -1)
-    // // {
-    // //     for (spacing = spacing_tab[0] + 1; spacing <= spacing_tab[1]; spacing++)
-    // //     {
-    // //         fseek(input_fp, SEEK_SET, 0);
-    // //         count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 0);
-    // //     }
-    // // }
-    // 
+// count_occ(&count, oligo_length, int sp, seq_t *seq, rc, noov);
+// 
+// count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 1);
+// // if (spacing != -1)
+// // {
+// //     for (spacing = spacing_tab[0] + 1; spacing <= spacing_tab[1]; spacing++)
+// //     {
+// //         fseek(input_fp, SEEK_SET, 0);
+// //         count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 0);
+// //     }
+// // }
+// 
 
