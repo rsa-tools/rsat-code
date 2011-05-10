@@ -226,6 +226,7 @@ int main(int argc, char *argv[])
         index2oligo_char(i, oligo_length, name);
         long N = count->position_count;
         double p = markov_P(bg, name, 0, oligo_length);
+        //printf("%ld %ld %f\n", n, N, p);
         double pv = pbinom(n, N, p);
         if (rc)
         {
