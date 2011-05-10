@@ -36,13 +36,29 @@ int char2int(char c)
     case 'g':
     case 'G':
         return 2;
-    break;
     case 't':
     case 'T':
         return 3;
-    break;
     default:
         return -1;
+    }
+}
+
+static inline
+int int2char(int i)
+{
+    switch (i)
+    {
+    case 0:
+        return 'a';
+    case 1:
+        return 'c';
+    case 2:
+        return 'g';
+    case 3:
+        return 't';
+    default:
+        return 'n';
     }
 }
 
@@ -78,20 +94,31 @@ int oligo2index_rc_char(char *seq, int pos, int l)
     return value;
 }
 
-// int oligo2index(int *seq, int pos, int l)
-// {
-//     int value = 0;
-//     int S = 1;
-//     int i;
-//     for (i = l - 1; i >= 0; i--)
-//     {
-//         if (seq[pos + i] == -1)
-//             return -1;
-//         value += S * seq[pos + i];
-//         S *= 4;
-//     }
-//     return value;
-// }
+void index2oligo_char(int index, int l, char *buffer)
+{
+    // int value = 0;
+    int S = 1;
+    int i;
+    buffer[l] = '\0';
+    for (i = l - 1; i >= 0; i--) 
+    {
+        buffer[i] = int2char((index / S) % 4);
+        S *= 4;
+    }
+}
+
+void index2oligo_rc_char(int index, int l, char *buffer)
+{
+    // int value = 0;
+    int S = 1;
+    int i;
+    buffer[l] = '\0';
+    for (i = l - 1; i >= 0; i--) 
+    {
+        buffer[l - i - 1] = int2char(3 - (index / S) % 4);
+        S *= 4;
+    }
+}
 
 static
 void skip_comments(FILE *fp)
@@ -121,6 +148,16 @@ void next_line(FILE *fp)
         if (feof(fp) || mark == '\n')
             break;
     }
+}
+
+markov_t *new_markov_uniform()
+{
+    markov_t *self = new_markov(0);
+    self->S[0] = 0.25;
+    self->S[1] = 0.25;
+    self->S[2] = 0.25;
+    self->S[3] = 0.25;
+    return self;
 }
 
 markov_t *load_markov(char *filename)
@@ -195,6 +232,22 @@ void print_markov(markov_t *self)
 
 double markov_P(markov_t *self, char *seq, int pos, int length)
 {
+    // bernoulli
+    if (self->order == 0)
+    {
+        double p = 1.0;
+        int i;
+        for (i = 0; i < length; i++)
+        {
+            int prefix = oligo2index_char(seq, i, 1);
+            if (prefix == -1)
+                return 0.0;
+            p *= self->S[prefix];
+        }
+        return p;
+    }
+
+    // markov order >= 1
     int prefix = oligo2index_char(seq, pos, length - 1);
     if (prefix == -1)
         return 0.0;
