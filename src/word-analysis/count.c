@@ -102,9 +102,7 @@ void count_occ(count_t *count, int l, int sp, seq_t *seq, int rc, int noov)
     if (noov)
         init_last_position_array(count->last_position, l);
 
-    int index               = -1;
-    count->position_count   = 0;
-    count->total_count      = 0;
+    int index = -1;
 
     int i;
     for (i = 0; i < seq->size - l + 1; i++) 
