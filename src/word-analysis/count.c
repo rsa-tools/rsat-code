@@ -11,11 +11,6 @@ int count_array_size(int l)
     return size;
 }
 
-int count_size(int l)
-{
-    return count_array_size(l);
-}
-
 long *new_count_array(int l)
 {
     int size = count_array_size(l);
@@ -67,34 +62,34 @@ void init_last_position_array(long *array, int l)
 // }
 
 static
-int oligo2index(seq_t *seq, int pos, int l, int sp)
+int oligo2index_full(seq_t *seq, int pos, int l, int sp)
 {
     if (sp > 0)
     {
         int m = (l - sp) / 2;
         int S = count_array_size(m);
-        return S * oligo2index_char(seq->data, pos, m) + \
-                   oligo2index_char(seq->data, pos + m + sp, m);
+        return S * oligo2index(seq->data, pos, m) + \
+                   oligo2index(seq->data, pos + m + sp, m);
     }
     else
     {
-        return oligo2index_char(seq->data, pos, l);
+        return oligo2index(seq->data, pos, l);
     }
 }
 
 static
-int oligo2index_rc(seq_t *seq, int pos, int l, int sp)
+int oligo2index_rc_full(seq_t *seq, int pos, int l, int sp)
 {
     if (sp > 0)
     {
         int m = (l - sp) / 2;
         int S = count_array_size(m);
-        return oligo2index_rc_char(seq->data, pos, m) + \
-               S * oligo2index_rc_char(seq->data, pos + m + sp, m);
+        return oligo2index_rc(seq->data, pos, m) + \
+               S * oligo2index_rc(seq->data, pos + m + sp, m);
     }
     else
     {
-        return oligo2index_rc_char(seq->data, pos, l);
+        return oligo2index_rc(seq->data, pos, l);
     }
 }
 void count_occ(count_t *count, int l, int sp, seq_t *seq, int rc, int noov)
@@ -107,10 +102,13 @@ void count_occ(count_t *count, int l, int sp, seq_t *seq, int rc, int noov)
     int i;
     for (i = 0; i < seq->size - l + 1; i++) 
     {
-        index = oligo2index(seq, i, l, sp);
+        index = oligo2index_full(seq, i, l, sp);
         if (rc)
-            index = MIN(index, oligo2index_rc(seq, i, l, sp));
-
+        {
+            long index_rc = oligo2index_rc_full(seq, i, l, sp);
+            count->palindromic[index] = index == index_rc;
+            index = MIN(index, index_rc);
+        }
 
         // invalid position
         if (index == -1)
@@ -183,8 +181,10 @@ void count_occ(count_t *count, int l, int sp, seq_t *seq, int rc, int noov)
 count_t *new_count(int l)
 {
     count_t *count = (count_t *) malloc(sizeof(count_t));
+    count->size             = count_array_size(l);
     count->count_table      = new_count_array(l);
     count->last_position    = new_count_array(l);
+    count->palindromic      = new_count_array(l);
     count->position_count   = 0;
     count->total_count      = 0;
     return count;
@@ -194,5 +194,6 @@ void free_count(count_t *count)
 {
     free(count->count_table);
     free(count->last_position);
+    free(count->palindromic);
     free(count);
 }

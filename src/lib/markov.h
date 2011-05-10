@@ -39,10 +39,13 @@ double markov_P(markov_t *self, char *seq, int pos, int length);
 void print_markov(markov_t *self);
 
 // oligo2index
-int oligo2index_char(char *seq, int pos, int l);
+int oligo2index(char *seq, int pos, int l);
 
 // oligo2index reverse complement
-int oligo2index_rc_char(char *seq, int pos, int l);
+int oligo2index_rc(char *seq, int pos, int l);
+
+// index to oligo
+void index2oligo(int index, int l, char *buffer);
 
 // convert back index to oligo
 void index2oligo_char(int index, int l, char *buffer);
