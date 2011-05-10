@@ -10,7 +10,7 @@
 #include "count.h"
 #include "markov.h"
 #include "binomial.h"
-
+#include <math.h>
 
 int VERSION = 20110510;
 
