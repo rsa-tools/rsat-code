@@ -94,6 +94,51 @@ int oligo2index_rc_char(char *seq, int pos, int l)
     return value;
 }
 
+int oligo2index(char *seq, int pos, int l)
+{
+    int value = 0;
+    int S = 1;
+    int i;
+    for (i = l - 1; i >= 0; i--) 
+    {
+        int v = seq[pos + i];
+        if (v == -1)
+            return -1;
+        value += S * v;
+        S *= 4;
+    }
+    return value;
+}
+
+int oligo2index_rc(char *seq, int pos, int l)
+{
+    int value = 0;
+    int S = 1;
+    int i;
+    for (i = 0; i < l; i++) 
+    {
+        int v = seq[pos + i];
+        if (v == -1)
+            return -1;
+        value += S * (3 - v);
+        S *= 4;
+    }
+    return value;
+}
+
+void index2oligo(int index, int l, char *buffer)
+{
+    // int value = 0;
+    int S = 1;
+    int i;
+    buffer[l] = '\0';
+    for (i = l - 1; i >= 0; i--) 
+    {
+        buffer[i] = (index / S) % 4;
+        S *= 4;
+    }
+}
+
 void index2oligo_char(int index, int l, char *buffer)
 {
     // int value = 0;
@@ -239,7 +284,7 @@ double markov_P(markov_t *self, char *seq, int pos, int length)
         int i;
         for (i = 0; i < length; i++)
         {
-            int prefix = oligo2index_char(seq, i, 1);
+            int prefix = oligo2index(seq, i, 1);
             if (prefix == -1)
                 return 0.0;
             p *= self->S[prefix];
@@ -248,7 +293,7 @@ double markov_P(markov_t *self, char *seq, int pos, int length)
     }
 
     // markov order >= 1
-    int prefix = oligo2index_char(seq, pos, length - 1);
+    int prefix = oligo2index(seq, pos, length - 1);
     if (prefix == -1)
         return 0.0;
     double p = self->S[prefix];
@@ -256,8 +301,8 @@ double markov_P(markov_t *self, char *seq, int pos, int length)
     int i;
     for (i = self->order; i < length; i++)
     {
-        int suffix = char2int(seq[i]);
-        int prefix = oligo2index_char(seq, i - self->order, self->order);
+        int suffix = (int) seq[i]; //char2int(seq[i]);
+        int prefix = oligo2index(seq, i - self->order, self->order);
         if (suffix == -1 || prefix == -1)
             return 0.0;
         p *= self->T[4 * prefix + suffix];
