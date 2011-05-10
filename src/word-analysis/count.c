@@ -1,5 +1,6 @@
 #include "count.h"
 
+
 static inline
 int count_array_size(int l)
 {
@@ -8,6 +9,11 @@ int count_array_size(int l)
     for (i = 0; i < l; i++)
         size *= 4;
     return size;
+}
+
+int count_size(int l)
+{
+    return count_array_size(l);
 }
 
 long *new_count_array(int l)
@@ -91,14 +97,14 @@ int oligo2index_rc(seq_t *seq, int pos, int l, int sp)
         return oligo2index_rc_char(seq->data, pos, l);
     }
 }
-void count_occ(long *count_table, long *last_position, int l, int sp, seq_t *seq, int rc, int noov)
+void count_occ(count_t *count, int l, int sp, seq_t *seq, int rc, int noov)
 {
     if (noov)
-        init_last_position_array(last_position, l);
+        init_last_position_array(count->last_position, l);
 
-    int index = -1;
-    int position_count = 0;
-    int total_count = 0;
+    int index               = -1;
+    count->position_count   = 0;
+    count->total_count      = 0;
 
     int i;
     for (i = 0; i < seq->size - l + 1; i++) 
@@ -107,26 +113,88 @@ void count_occ(long *count_table, long *last_position, int l, int sp, seq_t *seq
         if (rc)
             index = MIN(index, oligo2index_rc(seq, i, l, sp));
 
+
         // invalid position
         if (index == -1)
             continue;
 
         // increment position counter
-        position_count++;
+        count->position_count++;
             
         // overlapping occurrences
         if (noov)
         {
-            if (last_position[index] + l - 1 >= i)
+            if (count->last_position[index] + l - 1 >= i)
             {
                 //overlapping_occ[index]++;
                 continue;
             }
-            last_position[index] = i;
+            count->last_position[index] = i;
         }
 
         // count
-        count_table[index]++;
-        total_count++;
+        count->count_table[index]++;
+        count->total_count++;
     }
+}
+
+// void print_header(FILE *fp, int l, int sp, int noov, long *oov_occ, int argc, char *argv[])
+// {
+//     // if (VERBOSITY >= 1)
+//     // {
+//     // 
+//     //     // print command line        
+//     //     fprintf(output_fp, "; ");
+//     //     int i;
+//     //     for (i = 0; i < argc; i++) 
+//     //     {
+//     //         fprintf(output_fp, "%s ", argv[i]);            
+//     //     }
+//     //     fprintf(output_fp, "\n");
+//     //     fprintf(output_fp,
+//     //         "; oligomer length               %d\n", oligo_length);
+//     // 
+//     //     fprintf(output_fp, 
+//     //         "; column headers\n"
+//     //         ";    1    seq    oligomer sequence\n"
+//     //         ";    2    id     oligomer identifier\n"
+//     //         ";    3    freq   relative frequencies (occurrences per position)\n" 
+//     //         ";    4    occ    occurrences\n"
+//     //     );
+//     // 
+//     //     if (noov) 
+//     //     {
+//     //         fprintf(output_fp, 
+//     //             ";    5    ovl_occ    overlapping occurrences\n"
+//     //         );
+//     //     }
+//     // }
+// 
+//     // header
+//     // if (overlapping_occ)
+//     //     fprintf(output_fp, "#seq\tidentifier\tobserved_freq\tocc\tovl_occ\n");
+//     // else
+//     fprintf(fp, "#seq\tidentifier\tobserved_freq\tocc\n");
+// }
+
+// void print_body(FILE *fp, count_t *count)
+// {
+//     fprintf(fp, "#seq\tidentifier\tobserved_freq\tocc\n");
+// }
+
+count_t *new_count(int l)
+{
+    count_t *count = (count_t *) malloc(sizeof(count_t));
+    count->count_table      = new_count_array(l);
+    count->last_position    = new_count_array(l);
+    count->position_count   = 0;
+    count->total_count      = 0;
+    return count;
+}
+
+void free_count(count_t *count)
+{
+    free(count->count_table);
+    free(count->last_position);
+    free(count);
 }
