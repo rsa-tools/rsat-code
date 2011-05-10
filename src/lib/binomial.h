@@ -9,6 +9,7 @@
 #ifndef __BINOMIAL__
 #define __BINOMIAL__
 
+#include <math.h>
 #include "utils.h"
 
 // Compute the binomial P-value P(x >= n)

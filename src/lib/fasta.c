@@ -41,27 +41,27 @@ void seq_append_c(seq_t *seq, char c)
     {
         case 'a':
         case 'A':
-            seq->data[seq->size++] = 0;
+            seq->data[seq->size++] = 'a';
             break;
 
         case 'c':
         case 'C':
-            seq->data[seq->size++] = 1;
+            seq->data[seq->size++] = 'c';
             break;
 
         case 'g':
         case 'G':
-            seq->data[seq->size++] = 2;
+            seq->data[seq->size++] = 'g';
             break;
 
         case 't':
         case 'T':
-            seq->data[seq->size++] = 3;
+            seq->data[seq->size++] = 't';
             break;
 
         case 'n':
         case 'N':
-            seq->data[seq->size++] = -1;
+            seq->data[seq->size++] = 'n';
             break;
     }
 }
