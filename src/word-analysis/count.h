@@ -17,19 +17,17 @@ typedef struct count_s
 {
     long *count_table;
     long *last_position;
+    long *palindromic;
     int position_count;
     int total_count;
+    int size;
 } count_t;
-
 
 // new count data
 count_t *new_count(int l);
 
 // free count data
 void free_count(count_t *count);
-
-// count array size
-int count_size(int l);
 
 // count oligo occurrences in given sequence
 // last_position: used by noov to store last occurrence 
