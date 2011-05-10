@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.62 2010/12/08 13:08:48 rsat Exp $
+# $Id: convert-graph,v 1.63 2011/05/10 14:56:27 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -105,6 +105,13 @@ In NeAT, however as the nodes present labels in the graph we are working with, t
 
 More information are available in King et al (2004).
 
+
+=head2 pathway_extraction
+
+TO BE DESCRIBED (didier)
+
+
+
 =head2 tab_numeric
 
 Exports a tab delimited file in a tab-delimited format with numerical ids required by some programs (e.g. MFfinder, Milo et al, 2002 or FANMOD, Wernicke 2006). The output file is accompagnied by another file specifying a label for each node id. For this reason, you must only submit the prefix of both output files.
@@ -155,7 +162,8 @@ package main;
 	tab=>1,
 	gml=>1,
 	adj_matrix=>1,
-	path=>1
+	path=>1,
+	path_extract=>1
     );
     $supported_input_formats = join (",", keys %supported_input_format);
     local $source_col = 1;
@@ -454,7 +462,7 @@ extension of the resulting graph as it will consist of two files (radical.rns an
 
 =item B<-from input_format>
 
-Input format. Supported: tab, gml, adj_matrix, path
+Input format. Supported: tab, gml, adj_matrix, path, pathway_extract
 
 =cut
 	} elsif ($arg eq "-from") {
