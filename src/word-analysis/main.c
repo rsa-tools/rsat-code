@@ -201,7 +201,6 @@ int main(int argc, char *argv[])
         count_occ(count, oligo_length, 0, seq, rc, noov);
         free_seq(seq);
     }
-
     // 
     // fprintf(output_fp, 
     //     "; column headers\n"
@@ -216,16 +215,19 @@ int main(int argc, char *argv[])
     // binomial stats on count table
     char name[16];
     char name_rc[16];
+    char oligo[16];
     char id[128];
-    int size = count_size(oligo_length);
-    for (i = 0; i < size; i++)
+    for (i = 0; i < count->size; i++)
     {
         long n = count->count_table[i];
         if (n == 0)
             continue;
+        index2oligo(i, oligo_length, oligo);
         index2oligo_char(i, oligo_length, name);
         long N = count->position_count;
-        double p = markov_P(bg, name, 0, oligo_length);
+        double p = markov_P(bg, oligo, 0, oligo_length);
+        if (rc && !count->palindromic[i])
+            p *= 2;
         //printf("%ld %ld %f\n", n, N, p);
         double pv = pbinom(n, N, p);
         if (rc)
