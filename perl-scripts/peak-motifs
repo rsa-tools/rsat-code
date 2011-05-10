@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.190 2011/05/08 20:22:03 jvanheld Exp $
+# $Id: peak-motifs,v 1.191 2011/05/10 07:20:28 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.190 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.191 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -286,7 +286,7 @@ package main;
 
       ## Build background models from control sequences
       if (($main::infile{ctrl_seq})) {
-	&ComputeBgModels($main::infile{ctrl_seq}); 
+	&ComputeBgModels($main::infile{ctrl_seq});
       }
 
     }
@@ -423,8 +423,9 @@ sub DefaultParameters {
   @main::profiles_oligo_lengths = (1,2);
   $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
+  ################################################################
   ## Beware: computational profiles are always computed with the
-  ## option -ovlp (count all occurrences), to avoid weird effectw:
+  ## option -ovlp (count all occurrences), to avoid weird effect:
   ## with the -noov mode, the transition tables are unbalanced even
   ## when the input sequences are generated with equiprobable
   ## residues. This is consistent with the fact that those profiles
@@ -723,7 +724,7 @@ sub SetOutFileNames {
 	## Background models estimated from the control sequences
 	## (Markov chain m = k - 1).
 	my $mkv = $len -1;
-	$main::outfile{$pattern_type."_bg_file"} = &OutFileName("results/".$pattern_type, ".tab", "oligos_bg_from_ctrl_".$len."nt_1nt_ovlp_mkv".$mkv);
+	$main::outfile{$pattern_type."_bg_file"} = &OutFileName("results/".$pattern_type, ".tab", "oligos_bg_from_ctrl_".$len."nt".$main::param{strand}.$main::param{disco_noov});
 
 
 	## oligo-analysis result file
@@ -1137,7 +1138,8 @@ sub ComputeBgModels {
       $cmd .= " -format fasta";
       $cmd .= " -return occ,freq";
       $cmd .= " ".$main::param{strand};
-      $cmd .= " ".$main::param{disco_noov};
+      $cmd .= " ".$main::param{disco_noov} if ($main::param{disco_noov} eq "-noov"); ## The option -ovlp is not supported by count-words
+#      $cmd .= " ".$main::param{disco_noov};
       $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
       $cmd .= " -o ".$main::outfile{$pattern_type."_bg_file"};
@@ -1156,7 +1158,8 @@ sub ComputeBgModels {
     $cmd .= " -format fasta";
     $cmd .= " -return occ,freq";
     $cmd .= " ".$main::param{strand};
-    $cmd .= " ".$main::param{disco_noov};
+    $cmd .= " ".$main::param{disco_noov} if ($main::param{disco_noov} eq "-noov"); ## The option -ovlp is not supported by count-words
+#    $cmd .= " ".$main::param{disco_noov};
     $cmd .= " -seqtype dna";
     $cmd .= " -l 3 -sp 0-20 ";
     $cmd .= " -o ".$main::outfile{$pattern_type."_bg_file"};
@@ -1206,6 +1209,7 @@ sub OligoAnalysis {
       $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
       if ($main::infile{ctrl_seq}) {
+	&ComputeBgModels($main::infile{ctrl_seq}) unless -e ($main::outfile{$pattern_type."_bg_file"});
 	$cmd .= " -expfreq ".$main::outfile{$pattern_type."_bg_file"};
       } else {
 	$cmd .= " -markov ".$markov;
@@ -1273,6 +1277,7 @@ sub DyadAnalysis {
   $cmd .= " -seqtype dna";
   $cmd .= " -l 3 -sp 0-20 ";
   if ($main::infile{ctrl_seq}) {
+    &ComputeBgModels($main::infile{ctrl_seq}) unless -e ($main::outfile{$pattern_type."_bg_file"});
     $cmd .= " -expfreq ".$main::outfile{$pattern_type."_bg_file"};
   } else {
     $cmd .= " -bg monads";
@@ -4422,7 +4427,7 @@ sub CheckArguments {
 
   ## Check that reference motif has been specified if required
   if ($task{motifs_vs_ref}) {
-    &RSAT::error::FatalError("The task motifs_vs_dref requires to specify a file containing the reference motif (option -ref_motifs).")
+    &RSAT::error::FatalError("The task motifs_vs_ref requires to specify a file containing the reference motif (option -ref_motifs).")
       unless (defined($main::infile{ref_motifs}));
   }
 
