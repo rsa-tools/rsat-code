@@ -1,5 +1,4 @@
-#include <math.h>
-//#include <stdio.h>
+#include "binomial.h"
 
 // Compute P(x >= n) (binomial)
 // n -- number of success
