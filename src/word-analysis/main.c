@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     // );
 
     if (count_only)
-        fprintf(output_fp, "#seq\tid\tocc\n");
+        fprintf(output_fp, "#seq\tid\tobserved_freq\tocc\n");
     else
         fprintf(output_fp, "#seq\tid\tocc\tocc_P\tocc_E\tocc_sig\n");
     
@@ -228,17 +228,22 @@ int main(int argc, char *argv[])
     char name_rc[16];
     char oligo[16];
     char id[128];
-    long N;
-    double p;
-    double pv;
-    double ev;
-    double sig;
+    long N = 0;
+    long n = 0;
+    double p = 1.0;
+    double pv = 1.0;
+    double ev = 1.0;
+    double sig = 0.0;
+    double freq = 0.0;
+    long n_exp;
 
     for (i = 0; i < count->size; i++)
     {
-        long n = count->count_table[i];
+        n = count->count_table[i];
         if (n == 0)
             continue;
+        N = count->position_count;
+        freq = n / (double) N;
         index2oligo(i, oligo_length, oligo);
         index2oligo_char(i, oligo_length, name);
         if (rc)
@@ -252,16 +257,25 @@ int main(int argc, char *argv[])
         }
         if (!count_only)
         {
-            N = count->position_count;
             p = markov_P(bg, oligo, 0, oligo_length);
             if (rc && !count->palindromic[i])
                 p *= 2;
-            pv = pbinom(n, N, p);
-            ev = pv * count->test_count;
-            sig = -log10(ev);
+            n_exp = N * p;
+            // if (FALSE && n <= n_exp)
+            // {
+            //     pv = 1.0;
+            //     ev = 1000.0;
+            //     sig = -1000.0;
+            // }
+            // else
+            // {
+                pv = pbinom(n, N, p);
+                ev = pv * count->test_count;
+                sig = -log10(ev);
+            // }
         }
         if (count_only)
-            fprintf(output_fp, "%s\t%s\t%ld\n", name, id, n);
+            fprintf(output_fp, "%s\t%s\t%.13f\t%ld\n", name, id, freq, n);
         else
             fprintf(output_fp, "%s\t%s\t%ld\t%G\t%G\t%G\n", name, id, n, pv, ev, sig);
     }
