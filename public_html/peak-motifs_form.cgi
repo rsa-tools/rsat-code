@@ -344,10 +344,6 @@ print $query->checkbox(-name=>'oligo_length7',
 		       -checked=>$default{oligo_length7},
 		       -label=>'7'); 
 print "&nbsp;"x2;
-print $query->checkbox(-name=>'oligo_length8',
-		       -checked=>$default{oligo_length8},
-		       -label=>'8'); 
-print "&nbsp;"x2;
 print "<br><i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
 print "</p>";
 
