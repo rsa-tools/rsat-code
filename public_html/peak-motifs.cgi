@@ -81,15 +81,18 @@ if ($control_file){
 
 ### tasks
 
-
 ## motif-disco
 my $oligo_params = "";
+my @oligo_lengths =();
 foreach my $i (6..8){
     if ($query->param('oligo_length'.$i) =~ /on/){
-	$oligo_params .= " -l ".$i;
+		push (@oligo_lengths, $i);
     }
 }
+@oligo_lengths = sort @oligo_lengths;
+$oligo_params .= " 	-minol ".$oligo_lengths[0]." -maxol ".$oligo_lengths[-1]." ";
 $parameters .= $oligo_params;
+
 ## motif disco algo
 my @disco_algo =();
 if ($query->param('oligo-analysis') =~ /on/) {
