@@ -51,6 +51,8 @@ void help(char *progname)
 "        -2str            add reverse complement\n"
 "        -1str            do not add reverse complement\n"
 "        -noov            do not allow overlapping occurrences\n"
+"        -count           only repport oligo count\n"
+
 // "        -grouprc         group reverse complement with the direct sequence\n"
 // "        -nogrouprc       do not group reverse complement with the direct sequence\n"
 "\n"
@@ -88,6 +90,8 @@ int main(int argc, char *argv[])
     int rc                  = TRUE;
     int noov                = FALSE;
     int oligo_length        = 1;
+    int count_only          = FALSE;
+    
     // int spacing = -1;
     // int spacing_range[2]    = {-1, -1};
     // int grouprc = TRUE;
@@ -118,6 +122,10 @@ int main(int argc, char *argv[])
         {
             ENSURE(argc > i + 1, "-v requires a number (0, 1 or 2)");
             bg_filename = argv[++i];
+        } 
+        else if (strcmp(argv[i], "-count") == 0) 
+        {
+            count_only = TRUE;
         } 
     //     else if (strcmp(argv[i], "-v") == 0) 
     //     {
@@ -210,13 +218,22 @@ int main(int argc, char *argv[])
     //     ";    4    occ    occurrences\n"
     // );
 
-    fprintf(output_fp, "#seq\tid\tocc\tocc_P\tocc_E\tocc_sig\n");
+    if (count_only)
+        fprintf(output_fp, "#seq\tid\tocc\n");
+    else
+        fprintf(output_fp, "#seq\tid\tocc\tocc_P\tocc_E\tocc_sig\n");
     
     // binomial stats on count table
     char name[16];
     char name_rc[16];
     char oligo[16];
     char id[128];
+    long N;
+    double p;
+    double pv;
+    double ev;
+    double sig;
+
     for (i = 0; i < count->size; i++)
     {
         long n = count->count_table[i];
@@ -224,15 +241,6 @@ int main(int argc, char *argv[])
             continue;
         index2oligo(i, oligo_length, oligo);
         index2oligo_char(i, oligo_length, name);
-        long N = count->position_count;
-        double p = markov_P(bg, oligo, 0, oligo_length);
-        if (rc && !count->palindromic[i])
-            p *= 2;
-        //printf("%ld %ld %f\n", n, N, p);
-
-        double pv = pbinom(n, N, p);
-        double ev = pv * count->test_count;
-        double sig = -log10(ev);
         if (rc)
         {
             index2oligo_rc_char(i, oligo_length, name_rc);
@@ -242,7 +250,20 @@ int main(int argc, char *argv[])
         {
             sprintf(id, "%s", name);
         }
-        fprintf(output_fp, "%s\t%s\t%ld\t%G\t%G\t%G\n", name, id, n, pv, ev, sig);
+        if (!count_only)
+        {
+            N = count->position_count;
+            p = markov_P(bg, oligo, 0, oligo_length);
+            if (rc && !count->palindromic[i])
+                p *= 2;
+            pv = pbinom(n, N, p);
+            ev = pv * count->test_count;
+            sig = -log10(ev);
+        }
+        if (count_only)
+            fprintf(output_fp, "%s\t%s\t%ld\n", name, id, n);
+        else
+            fprintf(output_fp, "%s\t%s\t%ld\t%G\t%G\t%G\n", name, id, n, pv, ev, sig);
     }
 
     // free data
