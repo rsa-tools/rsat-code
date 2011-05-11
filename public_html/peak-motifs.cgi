@@ -84,7 +84,7 @@ if ($control_file){
 ## motif-disco
 my $oligo_params = "";
 my @oligo_lengths =();
-foreach my $i (6..8){
+foreach my $i (6..7){
     if ($query->param('oligo_length'.$i) =~ /on/){
 		push (@oligo_lengths, $i);
     }
@@ -97,7 +97,7 @@ $parameters .= $oligo_params;
 my @disco_algo =();
 if ($query->param('oligo-analysis') =~ /on/) {
     push(@disco_algo, "oligos");
-    &FatalError("Select at least one oligo size for oligo-analysis") if ($oligo_params eq "");
+    &FatalError("Select at least one oligo size for oligo-analysis") if (scalar(@oligo_lengths) < 1 );
 }
 
 if ($query->param('dyad-analysis') =~ /on/) {
@@ -105,7 +105,7 @@ if ($query->param('dyad-analysis') =~ /on/) {
 }
 if ($query->param('local-word-analysis') =~ /on/) {
     push(@disco_algo, "local_words");
-    &FatalError("Select at least one oligo size for local-word-analysis") if ($oligo_params eq "");
+    &FatalError("Select at least one oligo size for local-word-analysis") if (scalar(@oligo_lengths) < 1 );
 }
 if ($query->param('position-analysis') =~ /on/) {
     push(@disco_algo, "positions");
