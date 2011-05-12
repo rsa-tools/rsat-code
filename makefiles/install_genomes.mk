@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.40 2011/04/23 04:07:15 rsat Exp $
+# $Id: install_genomes.mk,v 1.41 2011/05/12 09:51:19 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -35,7 +35,7 @@ ORG=Saccharomyces_cerevisiae
 MASKING=''
 ORG_DIR=${NCBI_DIR}/${ORG}
 PARSE_TASK=config,parse
-CALIBRATE_TASK=allup,seq_len_distrib,phylogeny,dyads,oligos,start_stop,upstream_freq,genome_segments,protein_freq
+CALIBRATE_TASK=allup,seq_len_distrib,dyads,oligos,start_stop,upstream_freq,genome_segments,protein_freq
 INSTALL_TASK=${PARSE_TASK},${CALIBRATE_TASK}
 INSTALL_CMD=install-organism -v ${V}		\
 		-genbank ${NCBI_DIR}		\
