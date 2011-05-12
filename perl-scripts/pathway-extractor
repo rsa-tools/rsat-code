@@ -1,0 +1,507 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: pathway-extractor,v 1.1 2011/05/12 15:14:07 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 Extract Pathway from gene list
+
+=head1 VERSION 1.0
+
+=head1 DESCRIPTION
+	This script use the Pathwayinference program developped by Karoline Faust 
+	Pathwayinference connects multipe genes node sets in a given metabolic graph
+        and returns the resulting pathway.
+        Pathwayinference wraps a number of algorithms to infer pathways: one based on a k shortest paths algorithm (REA),
+        one based on kWalks and a hybrid approach combining both. In addition, two Steiner tree algorithms are available
+        (Takahashi-Matsuyama and Klein-Ravi), each of them alone or in combination with kWalks.
+        Pathwayinference can also be run in batch mode using seed node files 
+
+=head1 AUTHORS
+
+didier.croes@ulb.ac.be
+
+=head1 CATEGORY
+
+Graph tool
+
+=head1 USAGE
+
+pathway_extractor -h -hp [-i inputfile] [-o outputdirectory] [-v verbosity] -g graphfile -a gene2ec2reactions [-b gene2reaction] 
+
+=head1 INPUT FORMAT
+
+=head2  1) Input file: a gene id:
+    NP_414739
+    NP_414740
+    NP_414741
+    NP_416617
+    NP_417417
+    NP_417481
+    NP_418232
+    NP_418272
+    NP_418273
+    NP_418373
+    NP_418374
+    NP_418375
+    NP_418376
+    NP_418437
+    NP_418443
+    b0666
+    b0673
+    b2814
+    b2815
+    b2816
+    b3171
+----------------------------------------------------------------    
+
+=head2   2)graphfile : see Pathwayinference tools
+   command : java graphtools.algorithms.Pathwayinference -h
+---------------------------------------------------------------- 
+
+=head2   3) -a gene2ec2reactions [-b gene2reaction]
+  gene_id ec_number       reaction_id     species_name    taxonomy_id     gene_name
+  O22340  4.2.3.- RXN-10482       Abies grandis   46611   (4S)-limonene synthase
+  O22340  4.2.3.- RXN-10483       Abies grandis   46611   (4S)-limonene synthase
+  O22340  4.2.3.- RXN-10566       Abies grandis   46611   (4S)-limonene synthase
+  O22340  4.2.3.- RXN-10567       Abies grandis   46611   (4S)-limonene synthase
+  O22340  4.2.3.- RXN-10568       Abies grandis   46611   (4S)-limonene synthase
+  O22340  4.2.3.- RXN-10600       Abies grandis   46611   (4S)-limonene synthase
+
+=head1 example:
+
+B<pathway_extractor.pl> -i met_genes -g MetaCyc_directed_141.txt  -b METACYC_GPR_NOEC.tab -a METACYC_GPR_EC.tab -o temp
+
+cat met_genes|B<pathway_extractor.pl> -g MetaCyc_directed_141.txt  -b METACYC_GPR_NOEC.tab -a METACYC_GPR_EC.tab -o temp
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+	push (@INC,"$ENV{RSAT}/perl-scripts/lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();				# File name containing a list of genes ID
+    $main::outdir = ".";
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    
+    $main::gprfile ="METACYC_GPR_EC.tab";	# GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+    $main::grfile;				# GR Gene -> REACTION annotation
+    $main::graph = "";				# Graph Name 
+    $main::graphfile;				# File containing the graph
+    $main::show;				# Open png image in gwenview
+
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    
+    ################################################################
+    ## Read input
+#     ($main::in) = &OpenInputFile($main::infile{input});
+#     while (<$main::in>) {
+# 
+#     }
+#     
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+  my $organism = "Unknown";
+  my $organismid;
+  # my $working_dir = "";
+  my $genesid;
+  my @genesidlist;
+  if (!($outdir=~m/\/$/)) {
+    $outdir = $outdir."/";
+  }
+  if (defined $main::infile{input}) {
+    ($main::in) = &OpenInputFile($main::infile{input});
+    $filename = $main::infile{input};
+  }else{
+    $filename ="stdin";
+  }
+  @genesidlist = <$main::in>;
+  close $main::in if ($main::infile{input});
+  chomp(@genesidlist);
+  $genesid = (join "|^",@genesidlist );#
+
+  my @grconversiontable;
+  my %genelist=();
+  if ($grfile){
+    my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genesid."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $grfile";
+    @grconversiontable = qx ($seed_converter_cmd) ;
+    chomp(@grconversiontable);
+    @grconversiontable = sort(@grconversiontable);
+  print join( "\n",@grconversiontable) ."\n"; 
+  }
+   
+  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genesid."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $gprfile";
+  print $seed_converter_cmd."\n";
+
+  my @conversiontable = qx ($seed_converter_cmd) ;
+  chomp(@conversiontable);
+  @conversiontable =sort(@conversiontable);
+  # getting organism information
+  my @tempdata = split(/\t/,$conversiontable[0]);
+  $organism = $tempdata[3];
+  $organismid = $tempdata[4];
+  my $groupid=( join "-",$organism,$organismid);
+  $groupid=~s/\s+/_/g;
+  #  merging GR and GPR in one array
+  if (@grconversiontable){
+    foreach  my $val (@conversiontable) {
+      @tempdata = split(/\t/,$val);
+      if (!grep(/^$tempdata[0]/, @grconversiontable)){
+	push(@grconversiontable, grep(/^$tempdata[0]/, @conversiontable))
+      }
+    }
+  print join( "\n",@conversiontable) ."\n"; 
+    @conversiontable=@grconversiontable;
+    
+  }
+
+
+
+  # Creating reaction file
+  my $seed_converter_filename = $outdir.(join "_",$filename,$groupid,$graph, "_converted_seeds.txt");
+#   my $tempfilename = `mktemp $seed_converter_filename.XXXX`;
+  open (MYFILE, '>>'.$seed_converter_filename);
+  print MYFILE "# Batch file created" . qx("date");
+  print MYFILE "# GENE groups parsed from file:". "\n"; 
+  print MYFILE "# Organism: ". $organism. "\n";
+  print MYFILE "# EC number grouping: true". "\n";
+  
+  my @previousarray;
+  foreach  my $val (@conversiontable) {
+	  @tempdata = split(/\t/,$val);
+	  if (@previousarray && !($tempdata[0] eq $previousarray[0])){
+	    print MYFILE "$previousarray[0]\t$groupid\n";
+	  }
+  # 	print "$tempdata[1] eq $previousarray[1]\n";
+	  print MYFILE $tempdata[2] .">\t".$tempdata[2]. "\n";
+	  print MYFILE $tempdata[2] ."<\t".$tempdata[2]. "\n";
+	  print MYFILE $tempdata[2] ."\t".$tempdata[0]. "\n";
+	  @previousarray = @tempdata;
+   } 
+  print MYFILE "$previousarray[1]\t$groupid\n";
+  close (MYFILE); 
+
+  # NP_416366       1.1.1.49        GLU6PDEHYDROG-RXN
+
+
+  chomp($tempfilename);
+    # Pathway inference
+    #my $remove_pattern = join "_", "_".$organism, $taxon, $searched_pattern;
+    my $predicted_pathway_filename = $outdir.(join "_",$filename, $groupid, $graph, "_pred_pathways.txt");
+    #system ("mkdir -p $result_dir");
+
+    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -f flat -n -E $outdir -p $outdir -b -d -g $graphfile -y con -v -o $predicted_pathway_filename";
+  #   graphtools.algorithms.Pathwayinference -A /home/rsat/rsa-tools/contrib/REA -K /home/rsat/rsa-tools/contrib/kwalks/bin -i /home/rsat/rsa-tools/public_html/data/Stored_networks/9a3af932-8bf1-4438-b899-81f2acf5ca35_batchfile.txt -z -p /home/rsat/rsa-tools/public_html/data/Stored_networks -o /home/rsat/rsa-tools/public_html/tmp/Pathwayinference_tmpGraph_20110510_ee51092f-4af0-4de4-91e3-de21d7b3803b_Result.tab -T pathsGraphs -O tab -g /home/rsat/rsa-tools/public_html/data/Stored_networks/Pathwayinference_tmpGraph_e2063b35-8dcf-468b-9e16-178fb30ed19c.tab -f tab -e ExclusionAttribute -y con -a takahashihybrid -d -b -u -I 1 -x 0.05
+
+
+    print $pathway_infer_cmd."\n";
+    print $predicted_pathway_filename."\n";
+    system $pathway_infer_cmd;
+  open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
+  my $i = 0;
+  my $stop = "";
+  my $line;
+  my $reactionquery="";
+
+  while ($line=<INFILE>) {
+    #$line = $_;
+  chomp  ($line );
+  if (length($line)>0 && !($line=~m/^;/)){
+      my @tempdata = split(/\t/,$line);
+      
+      if ($tempdata[6] &&($tempdata[6] eq "Reaction")){
+  #       print "|".$line."|"."\n";
+	$tempdata[0]=~s/<$|>$//;
+	$i++;
+	$reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$4~\"".$organism."\")||";
+      }
+    }elsif ($i>0){
+      last;
+    }
+
+  }
+  close (INFILE); 
+  # Searching all reaction information for reaction in the graph
+   $reactionquery =~s/\|+$//;
+  my $command_ = "awk -F'\\t+' ' $reactionquery {print \$_}' METACYC_GPR_EC.tab";
+  print "$command_\n";
+  @conversiontable = qx ($command_);
+  # print @contents;
+  # Storing in a hash for faster search
+  my %reactioninfos=();
+  foreach my $content(@conversiontable){
+    my @reactioninfo = split(/\t/,$content);
+    $reactioninfos{$reactioninfo[2]}=[@reactioninfo];
+  #   print $reactioninfos{$reactioninfo[2]}[1] ."\n";
+  }
+
+  open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
+  my $annot_graph_filename = $outdir.(join "_",$filename, $groupid, $graph, "annot_pred_pathways.txt");
+  # my $outfilename = `mktemp $annot_graph_filename`;
+  open (OUTFILE, '>'.$annot_graph_filename);
+  print $filename;
+  while (<INFILE>) {
+	  my($line) = $_;
+	  chomp($line);
+	  my @tempdatab = split(/\t/,$line);
+	  if (length($line)==0 || $line=~ m/^;/ || !$tempdatab[6] ||!($tempdatab[6] eq "Reaction")){
+	    print OUTFILE $line. "\n";
+	  } else {
+	    my $tempstring = $tempdatab[0];
+	    $tempstring=~s/<$|>$//;
+	    print "TEMPSTRING = $tempstring\n";
+	    my $values = $reactioninfos{$tempstring};
+	    if ($values){
+	      my($geneid,$ec,$reacid,$orgname,$orgid,$genename,$gensyn) = @{$values};
+	      if ($geneid){
+		chomp($genename);
+		$tempdatab[3]="$genename\\n$ec\\n($reacid)";
+	      }
+	    }
+    # 	  print $ec.">>>>".$geneid. "\n";
+	    print OUTFILE (join "\t",@tempdatab). "\n";
+	  }
+   } 
+     close (MYFILE); 
+
+  my $annot_graph_dot = $outdir.(join "_",$filename, $groupid, $graph, "annot_pred_pathways.dot");
+  my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $annot_graph_filename -o $annot_graph_dot";
+  system  $convert_graph_cmd;
+  my $dpng_file = $outdir.(join "_",$filename, $groupid, $graph, "annot_pred_pathways.png");
+  my $graph_image_cmd = "dot -Tpng -Kdot -o $dpng_file $annot_graph_dot";
+  system $graph_image_cmd;
+  #exit 0;
+  if($main::show){
+    system "gwenview $dpng_file &";
+  }
+    ################################################################
+    ## Insert here output printing
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+      
+=pod
+
+=item B<-hp>
+
+Display full PathwayInference help message
+
+=cut
+    } elsif ($arg eq "-hp") {
+      system "java graphtools.algorithms.Pathwayinference -h";
+=pod
+
+=item B<-show>
+
+execute gwenview to display the pathway results in png format
+=cut
+    } elsif ($arg eq "-show") {
+     $main::show ="true";
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+    
+=pod
+
+=item	B<-a GPR Genes file Default (METACYC_GPR_EC.tab)>
+
+GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+
+=cut
+    } elsif ($arg eq "-a") {
+      $main::gprfile = shift(@arguments);
+    
+=pod
+
+=item	B<-b GR Gene -> REACTION annotation>
+
+An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
+
+=cut
+    } elsif ($arg eq "-b") {
+      $main::grfile = shift(@arguments);
+=pod
+
+=item	B<-n Graph name>
+
+Name of the Graph (default: Name of the graph file) 
+
+=cut
+    } elsif ($arg eq "-n") {
+      $main::graph = shift(@arguments);
+
+=pod
+
+=item	B<-g Graph file>
+
+Name of the Graph (default: Name of the graph file) 
+
+=cut
+    } elsif ($arg eq "-g") {
+      $main::graphfile = shift(@arguments);
+
+=pod
+
+=item	B<-o output Directory>
+
+If no output file is specified, the current directory is used. 
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outdir = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; template ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
