@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.1 2011/05/12 15:14:07 rsat Exp $
+# $Id: pathway-extractor,v 1.2 2011/05/13 08:54:20 rsat Exp $
 #
 ############################################################
 
@@ -32,11 +32,11 @@ Graph tool
 
 =head1 USAGE
 
-pathway_extractor -h -hp [-i inputfile] [-o outputdirectory] [-v verbosity] -g graphfile -a gene2ec2reactions [-b gene2reaction] 
+pathway_extractor -h -hp [-i inputfile] [-o outputdirectory] [-v verbosity] -g graphfile -a gene2ec2reactions [-b gene2reaction] [-d unique descriptor] [-show] 
 
 =head1 INPUT FORMAT
 
-=head2  1) Input file: a gene id:
+=head2  1) Input file containing a list of gene ids: (Warning at least 2 gene ids must be present in -a -b and -g files)
     NP_414739
     NP_414740
     NP_414741
@@ -101,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
@@ -116,7 +116,7 @@ package main;
     $main::graph = "";				# Graph Name 
     $main::graphfile;				# File containing the graph
     $main::show;				# Open png image in gwenview
-
+    $main::groupdescriptor;			# Unique name to differenciate output files
 
     ################################################################
     ## Read argument values
@@ -125,6 +125,28 @@ package main;
     ################################################################
     ## Check argument values
     
+    
+    if (defined $main::infile{input}) {
+      ($main::in) = &OpenInputFile($main::infile{input});
+    if (!$main::groupdescriptor){
+      $main::groupdescriptor = $main::infile{input};
+      $main::groupdescriptor =~ s{.*/}{};      # removes path  
+      $main::groupdescriptor=~ s{\.[^.]+$}{}; # removes extension 
+
+    }
+    }else{
+      if (!$main::groupdescriptor){
+	$main::groupdescriptor ="stdin";
+      }
+    }
+    $main::groupdescriptor=~s/\s+/_/g;
+
+    if (!$main::graph){
+      $main::graph = $main::graphfile;
+      $main::graph =~ s{.*/}{};      # removes path
+      $main::graph=~ s{\.[^.]+$}{}; # removes extension
+    }
+     $main::graph=~s/\s+/_/g;
     ################################################################
     ## Read input
 #     ($main::in) = &OpenInputFile($main::infile{input});
@@ -148,12 +170,8 @@ package main;
   if (!($outdir=~m/\/$/)) {
     $outdir = $outdir."/";
   }
-  if (defined $main::infile{input}) {
-    ($main::in) = &OpenInputFile($main::infile{input});
-    $filename = $main::infile{input};
-  }else{
-    $filename ="stdin";
-  }
+  
+  
   @genesidlist = <$main::in>;
   close $main::in if ($main::infile{input});
   chomp(@genesidlist);
@@ -197,7 +215,7 @@ package main;
 
 
   # Creating reaction file
-  my $seed_converter_filename = $outdir.(join "_",$filename,$groupid,$graph, "_converted_seeds.txt");
+  my $seed_converter_filename = $outdir.(join "_",$main::groupdescriptor,$groupid,$graph, "_converted_seeds.txt");
 #   my $tempfilename = `mktemp $seed_converter_filename.XXXX`;
   open (MYFILE, '>>'.$seed_converter_filename);
   print MYFILE "# Batch file created" . qx("date");
@@ -218,24 +236,19 @@ package main;
 	  @previousarray = @tempdata;
    } 
   print MYFILE "$previousarray[1]\t$groupid\n";
-  close (MYFILE); 
+ 
 
   # NP_416366       1.1.1.49        GLU6PDEHYDROG-RXN
 
 
-  chomp($tempfilename);
-    # Pathway inference
-    #my $remove_pattern = join "_", "_".$organism, $taxon, $searched_pattern;
-    my $predicted_pathway_filename = $outdir.(join "_",$filename, $groupid, $graph, "_pred_pathways.txt");
-    #system ("mkdir -p $result_dir");
-
-    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -f flat -n -E $outdir -p $outdir -b -d -g $graphfile -y con -v -o $predicted_pathway_filename";
-  #   graphtools.algorithms.Pathwayinference -A /home/rsat/rsa-tools/contrib/REA -K /home/rsat/rsa-tools/contrib/kwalks/bin -i /home/rsat/rsa-tools/public_html/data/Stored_networks/9a3af932-8bf1-4438-b899-81f2acf5ca35_batchfile.txt -z -p /home/rsat/rsa-tools/public_html/data/Stored_networks -o /home/rsat/rsa-tools/public_html/tmp/Pathwayinference_tmpGraph_20110510_ee51092f-4af0-4de4-91e3-de21d7b3803b_Result.tab -T pathsGraphs -O tab -g /home/rsat/rsa-tools/public_html/data/Stored_networks/Pathwayinference_tmpGraph_e2063b35-8dcf-468b-9e16-178fb30ed19c.tab -f tab -e ExclusionAttribute -y con -a takahashihybrid -d -b -u -I 1 -x 0.05
-
-
-    print $pathway_infer_cmd."\n";
-    print $predicted_pathway_filename."\n";
-    system $pathway_infer_cmd;
+#   chomp($tempfilename);
+  # Pathway inference
+  my $predicted_pathway_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "_pred_pathways.txt");
+  my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -f flat -n -E $outdir -p $outdir -b -d -g $graphfile -y con -v -o $predicted_pathway_filename";
+#graphtools.algorithms.Pathwayinference -A /home/rsat/rsa-tools/contrib/REA -K /home/rsat/rsa-tools/contrib/kwalks/bin -i /home/rsat/rsa-tools/public_html/data/Stored_networks/9a3af932-8bf1-4438-b899-81f2acf5ca35_batchfile.txt -z -p /home/rsat/rsa-tools/public_html/data/Stored_networks -o /home/rsat/rsa-tools/public_html/tmp/Pathwayinference_tmpGraph_20110510_ee51092f-4af0-4de4-91e3-de21d7b3803b_Result.tab -T pathsGraphs -O tab -g /home/rsat/rsa-tools/public_html/data/Stored_networks/Pathwayinference_tmpGraph_e2063b35-8dcf-468b-9e16-178fb30ed19c.tab -f tab -e ExclusionAttribute -y con -a takahashihybrid -d -b -u -I 1 -x 0.05
+  print $pathway_infer_cmd."\n";
+  print $predicted_pathway_filename."\n";
+  system $pathway_infer_cmd;
   open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
   my $i = 0;
   my $stop = "";
@@ -275,10 +288,10 @@ package main;
   }
 
   open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
-  my $annot_graph_filename = $outdir.(join "_",$filename, $groupid, $graph, "annot_pred_pathways.txt");
+  my $annot_graph_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.txt");
   # my $outfilename = `mktemp $annot_graph_filename`;
   open (OUTFILE, '>'.$annot_graph_filename);
-  print $filename;
+  print $main::groupdescriptor;
   while (<INFILE>) {
 	  my($line) = $_;
 	  chomp($line);
@@ -303,10 +316,10 @@ package main;
    } 
      close (MYFILE); 
 
-  my $annot_graph_dot = $outdir.(join "_",$filename, $groupid, $graph, "annot_pred_pathways.dot");
+  my $annot_graph_dot = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.dot");
   my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $annot_graph_filename -o $annot_graph_dot";
   system  $convert_graph_cmd;
-  my $dpng_file = $outdir.(join "_",$filename, $groupid, $graph, "annot_pred_pathways.png");
+  my $dpng_file = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.png");
   my $graph_image_cmd = "dot -Tpng -Kdot -o $dpng_file $annot_graph_dot";
   system $graph_image_cmd;
   #exit 0;
@@ -452,14 +465,24 @@ Name of the Graph (default: Name of the graph file)
 
 =pod
 
-=item	B<-g Graph file>
+=item	B<-d Graph file>
 
 Name of the Graph (default: Name of the graph file) 
 
 =cut
+    } elsif ($arg eq "-d") {
+      $main::groupdescriptor = shift(@arguments);
+
+
+=pod
+
+=item	B<-d Unique descriptor>
+
+Unique name to differenciate output files. If not set With -i, the name of the input file will be used.  
+
+=cut
     } elsif ($arg eq "-g") {
       $main::graphfile = shift(@arguments);
-
 =pod
 
 =item	B<-o output Directory>
