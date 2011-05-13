@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway_extractor.pl,v 1.2 2011/05/13 08:54:20 rsat Exp $
+# $Id: pathway_extractor.pl,v 1.3 2011/05/13 15:37:11 rsat Exp $
 #
 ############################################################
 
@@ -101,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
@@ -217,7 +217,7 @@ package main;
   # Creating reaction file
   my $seed_converter_filename = $outdir.(join "_",$main::groupdescriptor,$groupid,$graph, "_converted_seeds.txt");
 #   my $tempfilename = `mktemp $seed_converter_filename.XXXX`;
-  open (MYFILE, '>>'.$seed_converter_filename);
+  open (MYFILE, '>'.$seed_converter_filename);
   print MYFILE "# Batch file created" . qx("date");
   print MYFILE "# GENE groups parsed from file:". "\n"; 
   print MYFILE "# Organism: ". $organism. "\n";
@@ -235,7 +235,7 @@ package main;
 	  print MYFILE $tempdata[2] ."\t".$tempdata[0]. "\n";
 	  @previousarray = @tempdata;
    } 
-  print MYFILE "$previousarray[1]\t$groupid\n";
+  print MYFILE "$previousarray[0]\t$groupid\n";
  
 
   # NP_416366       1.1.1.49        GLU6PDEHYDROG-RXN
@@ -248,13 +248,13 @@ package main;
 #graphtools.algorithms.Pathwayinference -A /home/rsat/rsa-tools/contrib/REA -K /home/rsat/rsa-tools/contrib/kwalks/bin -i /home/rsat/rsa-tools/public_html/data/Stored_networks/9a3af932-8bf1-4438-b899-81f2acf5ca35_batchfile.txt -z -p /home/rsat/rsa-tools/public_html/data/Stored_networks -o /home/rsat/rsa-tools/public_html/tmp/Pathwayinference_tmpGraph_20110510_ee51092f-4af0-4de4-91e3-de21d7b3803b_Result.tab -T pathsGraphs -O tab -g /home/rsat/rsa-tools/public_html/data/Stored_networks/Pathwayinference_tmpGraph_e2063b35-8dcf-468b-9e16-178fb30ed19c.tab -f tab -e ExclusionAttribute -y con -a takahashihybrid -d -b -u -I 1 -x 0.05
   print $pathway_infer_cmd."\n";
   print $predicted_pathway_filename."\n";
-  system $pathway_infer_cmd;
+ system $pathway_infer_cmd;
   open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
   my $i = 0;
   my $stop = "";
   my $line;
   my $reactionquery="";
-
+  my $cpdquery="";
   while ($line=<INFILE>) {
     #$line = $_;
   chomp  ($line );
@@ -266,6 +266,8 @@ package main;
 	$tempdata[0]=~s/<$|>$//;
 	$i++;
 	$reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$4~\"".$organism."\")||";
+      }elsif($tempdata[6] &&($tempdata[6] eq "Compound")){
+	$cpdquery = $cpdquery."(\$1~\"^".$tempdata[0]."\"&&\$2~\"Compound\")||";
       }
     }elsif ($i>0){
       last;
@@ -275,18 +277,32 @@ package main;
   close (INFILE); 
   # Searching all reaction information for reaction in the graph
    $reactionquery =~s/\|+$//;
-  my $command_ = "awk -F'\\t+' ' $reactionquery {print \$_}' METACYC_GPR_EC.tab";
+   $cpdquery =~s/\|+$//;
+  my $command_ = "awk -F'\\t+' ' $reactionquery {print \$_}' $grfile|sort +2";
   print "$command_\n";
   @conversiontable = qx ($command_);
-  # print @contents;
+  $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $graphfile";
+  print "$command_\n";
+  my @conversionreactiontable = qx ($command_);
+  print "****************".join("\n", @conversionreactiontable)."\n";
+  push (@conversiontable,@conversionreactiontable);
+   
+  chomp(@conversiontable);
   # Storing in a hash for faster search
   my %reactioninfos=();
+  undef @previousarray;
+ my @reacinfoarray=();
   foreach my $content(@conversiontable){
-    my @reactioninfo = split(/\t/,$content);
-    $reactioninfos{$reactioninfo[2]}=[@reactioninfo];
-  #   print $reactioninfos{$reactioninfo[2]}[1] ."\n";
+    my @currentarray = split(/\t/,$content);
+    if ( @previousarray && !($previousarray[2] eq $currentarray[2])){ 
+	my @truc = @reacinfoarray;
+	$reactioninfos{$previousarray[2]}=\@truc;
+	undef @reacinfoarray;
+    }
+    push (@reacinfoarray,\@currentarray);
+    @previousarray = @currentarray;
   }
-
+$reactioninfos{$previousarray[2]}=\@reacinfoarray;
   open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
   my $annot_graph_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.txt");
   # my $outfilename = `mktemp $annot_graph_filename`;
@@ -296,21 +312,40 @@ package main;
 	  my($line) = $_;
 	  chomp($line);
 	  my @tempdatab = split(/\t/,$line);
-	  if (length($line)==0 || $line=~ m/^;/ || !$tempdatab[6] ||!($tempdatab[6] eq "Reaction")){
+	  if (length($line)==0 || $line=~ m/^;/){
 	    print OUTFILE $line. "\n";
-	  } else {
+	  } else{
+	  
 	    my $tempstring = $tempdatab[0];
 	    $tempstring=~s/<$|>$//;
 	    print "TEMPSTRING = $tempstring\n";
-	    my $values = $reactioninfos{$tempstring};
-	    if ($values){
-	      my($geneid,$ec,$reacid,$orgname,$orgid,$genename,$gensyn) = @{$values};
-	      if ($geneid){
-		chomp($genename);
-		$tempdatab[3]="$genename\\n$ec\\n($reacid)";
+	    my $values_ref = $reactioninfos{$tempstring};
+	    if (defined $values_ref){
+	      my @values = @{$values_ref};
+	      if ($tempdatab[6] && ($tempdatab[6] eq "Reaction")){
+
+		my $label="";
+		my $labelb;
+		foreach my $info_ref(@values){
+		  my @info = @{$info_ref};
+
+    #  	      print "JOIN=".join("\t", $myarray[0][0])."\n";
+		  my($geneid, $ec,$reacid,$orgname,$orgid,$genename,$gensyn) = @info;
+		  print "GENEID: $geneid\n";
+		  if ($geneid){
+		    chomp($genename);
+		    $label=$label."$genename,";
+		    if(!defined $labelb) {
+		      $labelb = "\\n$ec\\n($reacid)";
+		    }
+		  }
+		}
+		$tempdatab[3] = $label.$labelb;
+	      }elsif ($tempdatab[6] &&($tempdatab[6] eq "Compound")){
+	       print ">>>>>>>>>>".$values[0][1]."\n";
+	       $tempdatab[3] =  $values[0][1];
 	      }
 	    }
-    # 	  print $ec.">>>>".$geneid. "\n";
 	    print OUTFILE (join "\t",@tempdatab). "\n";
 	  }
    } 
