@@ -1058,7 +1058,11 @@ sub MatrixDBcheckBox {
 
   ## load the file containing the path to the databases
   my $mat_db = $ENV{RSAT}."/public_html/data/motif_databases/db_matrix_files.tab" ;
-  open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
+  unless (-e $mat_db) {
+    &RSAT::message::Warning( "Motif database description file not found ($mat_db)");
+    return;
+  }
+  open MAT_DB, "<$mat_db" or &RSAT::message::Warning( "Cannot read motif database description file file ($mat_db)");;
   while (my $line = <MAT_DB>) {
     next if ($line =~ /^;/);
     next if ($line =~ /^#/);
