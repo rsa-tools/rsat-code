@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.32 2011/04/08 04:55:34 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.33 2011/05/17 23:49:56 amedina Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -132,11 +132,11 @@ print $query->popup_menu(-name=>'oligo_size',
 print "<A HREF='help.dyad-analysis.html#spacing'><B>Spacing</B></A>&nbsp;\n";
 print "&nbsp;", "from", "&nbsp;";
 print $query->popup_menu(-name=>'spacing_from',
-			 -Values=>[0..20],
+			 -Values=>[0..22],
 			 -default=>$default{spacing_from});
 print "&nbsp;", "to", "&nbsp;";
 print $query->popup_menu(-name=>'spacing_to',
-			 -Values=>[0..20],
+			 -Values=>[0..22],
 			 -default=>$default{spacing_to});
 
 print "<BR>\n";
