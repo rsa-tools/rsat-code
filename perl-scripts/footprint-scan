@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.85 2011/05/04 19:23:32 amedina Exp $
+# $Id: footprint-scan,v 1.86 2011/05/17 21:39:48 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.85 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.86 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -345,6 +345,7 @@ package main;
   $main::crer=0; ## ON THE WISH LIST: when set to one, look for CRER over-representation
   local $skip_gene = 0;
   local %top_sig_row = ();
+  local $batch_matrix=0;
 
   ##################
   ## Option for randomized genes 
@@ -501,9 +502,9 @@ package main;
   }
   
   ## Check compatibility between -batch and -task synthesis
-  if ($task{synthesis} && $batch) {
-    &RSAT::error::FatalError("Synthesis task is incompatible with \"-batch\" option, no other tasks where specified") if (scalar(keys(%task)) == 1);
-    &RSAT::message::Warning("Synthesis task is incompatible with \"-batch\" option, all other tasks will be performed");
+  if ($task{synthesis} && ($batch || $batch_matrix)) {
+    &RSAT::error::FatalError("Synthesis task is incompatible with \"-batch\" and \"-batch_matrix\" option, no other tasks where specified") if (scalar(keys(%task)) == 1);
+    &RSAT::message::Warning("Synthesis task is incompatible with \"-batch\"  and \"-batch_matrix\" option, all other tasks will be performed");
     $task{synthesis}=0;
   }
   
@@ -681,6 +682,31 @@ package main;
     &RSAT::error::FatalError("You must specify at least one matrix file (option -m or -matrix_table)");
   }
 
+  ##################
+  ## Creat basic command line for -batch_matrix commands 
+
+  if ($batch_matrix){
+
+      #################################
+      ## Get the command used, so we can recover the general parammeters
+      $batch_matrix_argument_string = "";
+      foreach my $a (@main::ARGV) {
+	  if (($a =~ /\s+/)  ||
+	      ($a !~ /\S+/) ||
+	      ($a =~ /[\(\)\>\<\&]/)) {
+	       $batch_matrix_argument_string  .= " '$a'";
+	  } else {
+	     $batch_matrix_argument_string  .= " $a";
+	  }
+      }
+
+      ## Matrix and TF are set by each matrix
+      $batch_matrix_argument_string=~s/-matrix +\S+ +/ /;
+      $batch_matrix_argument_string=~s/-matrix_table +\S+ +/ /;
+      $batch_matrix_argument_string=~s/-tf +\S+ +/ /;
+      $batch_matrix_argument_string=~s/-matrix_format +\S+ +/ /;
+       &RSAT::message::Info(" Arguments to be sent to all commands for the PC cluster ",  $batch_matrix_argument_string )if ($main::verbose >= 0);
+  }
 
   ## Open Matrices report
   my ($matrices_synthesis_index,$matrices_synthesis_table)= &OpenMatricesReport() if ($task{synthesis});
@@ -704,6 +730,25 @@ package main;
 	&RSAT::message::Warning("Analyzing next matrix.")   ;
 	next;
     }
+
+    ################
+    ## I requiered with -batch_matrix option, generate the command line by matrix and send it to the cluster
+
+    if ($batch_matrix){
+	$batch=1;
+	my $cmd = "$SCRIPTS/footprint-scan ";
+	$cmd .= " -m  ".$matrix_file;
+	$cmd .=" -matrix_format ".$matrix_format;
+	$cmd .= " -tf ".$tf;
+	$cmd.= " ". $batch_matrix_argument_string;
+	print "$cmd \n";
+#&one_command($cmd) ;
+	$batch=0;
+	next;
+	die " HELLO ";
+  
+    }
+
 
     ## Initialize variable that keeps the current file with othorlogs for the current TF
     $main::tf_ortho_file=() if $tf;
@@ -1480,6 +1525,19 @@ row specifies one matrix.
      $main::matrix_table_file = shift(@arguments);
 
 
+
+=pod
+
+=item B<-batch_matrix >
+
+Generate one footprint-scan command per matrix and post it on the queue of a PC
+cluster. 
+
+=cut
+
+  } elsif ($arg eq "-batch_matrix") {
+    $main::batch_matrix = 1;
+    &RSAT::message::Info("One indepent footprint-scan job will be sent to the cluster with the same query genes") ;
 
 =pod
 
