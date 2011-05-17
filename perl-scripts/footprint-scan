@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.94 2011/05/17 23:40:03 amedina Exp $
+# $Id: footprint-scan,v 1.95 2011/05/17 23:54:56 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.94 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -705,9 +705,9 @@ package main;
       $batch_matrix_argument_string=~s/-matrix_table +\S+ +/ /;
       $batch_matrix_argument_string=~s/-tf +\S+ +/ /;
       $batch_matrix_argument_string=~s/-matrix_format +\S+ +/ /;
-      $batch_matrix_argument_string=~s/-skip_m +\S+ +/ /;
-      $batch_matrix_argument_string=~s/-last_m +\S+ +/ /;
-      $batch_matrix_argument_string=~s/-batch_matrix +\S+ +/ /;
+      $batch_matrix_argument_string=~s/-skip_m +\d+/ /;
+      $batch_matrix_argument_string=~s/-last_m +\d+/ /;
+      $batch_matrix_argument_string=~s/-batch_matrix / /;
        &RSAT::message::Info(" Arguments to be sent to all commands for the PC cluster ",  $batch_matrix_argument_string )if ($main::verbose >= 0);
   }
 
