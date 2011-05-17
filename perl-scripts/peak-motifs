@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.191 2011/05/10 07:20:28 jvanheld Exp $
+# $Id: peak-motifs,v 1.192 2011/05/17 13:51:45 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.191 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.192 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -737,9 +737,11 @@ sub SetOutFileNames {
 
 	## Background models estimated from the test sequences
 	## themselves (Markov chain m <= k -2)
-	for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
-	  ## Convert negative markov orders relative to the oligo length
-	  $markov += $len if ($markov < 0);
+
+	## Convert negative markov orders relative to the current oligo length
+	my $min_mkv = $main::param{oligo_min_mkv}; $min_mkv += $len if ($min_mkv < 0);
+	my $max_mkv = $main::param{oligo_max_mkv}; $max_mkv += $len if ($max_mkv < 0);
+	for my $markov ($min_mkv..$max_mkv) {
 
 	  ## oligo-analysis result file
 	  $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
@@ -2248,27 +2250,17 @@ sub ScanSequences {
     ################################################################
     ## Predict site positions
 
+
     ## Site prediction with matrix-scan (option -quick)
     my $cmd = $SCRIPTS."/matrix-scan -quick -v 1";
-    $cmd .= " -seq_format fasta -i ".$infile{test_seq};
+    $cmd .= " -seq_format fasta -i ".$main::outfile{"test_converted"};
+#    $cmd .= " -seq_format fasta -i ".$infile{test_seq};
     $cmd .= " -matrix_format transfac -m ".$main::outfile{$motif_id."_tf"};
     $cmd .= " -bg_format inclusive -bgfile ".$main::param{scan_bg_file};
     $cmd .= " ".$main::param{scan_options};
     $cmd .= " ".$main::param{scan_sites_options};
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites'};
     &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
-
-#     ## Direct scan with matrix-scan-quick
-#     my $cmd = $BIN."/matrix-scan-quick -v 1";
-#     $cmd .= " -i ".$infile{test_seq};
-#     $cmd .= " -m ".$main::outfile{$motif_id."_tab"};
-#     $cmd .= " -bgfile ".$main::param{scan_bg_file};
-#     $cmd .= " ".$main::param{scan_strands};
-#     $cmd .= " -origin center -return sites";
-#     $cmd .= " -t ".$main::param{scan_min_score};
-#     $cmd .= " >".$main::outfile{$motif_id.'_pssm_sites'};
-#     &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
-
 
     ## Compute the genomic coordinates
     if (($main::infile{coord})||($main::param{seq_source})) {
@@ -2314,7 +2306,7 @@ sub ScanSequences {
     ################################################################
     ## Analyze enrichment of input sequences for the discovered motif
     &RSAT::message::Debug("Estimating enrichment of input sequences for motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
-    &MotifEnrichment($infile{test_seq}, $main::outfile{$motif_id."_tf"},
+    &MotifEnrichment($main::outfile{"test_converted"}, $main::outfile{$motif_id."_tf"},
 		     $main::outfile{$motif_id.'_pssm_enrichment'},
 		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
   }
@@ -2332,7 +2324,7 @@ sub ScanSequences {
 # #  foreach my $seq_type (@seq_types) {
 #     foreach my $pattern_type (@pattern_types) {
 #       my $cmd = $BIN."/matrix-scan-quick -v 1";
-#       $cmd .= " -i ".$infile{test_seq};
+#       $cmd .= " -i ".$main::outfile{$seq_type."_converted"};
 #       $cmd .= " -m ".$main::outfile{$pattern_type.'_pssm_counts'};
 #       $cmd .= " -bgfile ".$main::param{scan_bg_file};
 #       $cmd .= " ".$main::param{scan_strands};
@@ -4191,27 +4183,21 @@ words).
 
 =pod
 
-=item B<-l oligo_len>
+=item B<-minol oligo_min_len>
 
+=item B<-maxol oligo_max_len>
 
-Oligonucleotide length for word-counting approaches (oligo-analysis,
-position-analysis, local-word-analysis, oligo-diff).
+Minimal (-minol) and maximal (-maxol) lengths of oligonucleotide for
+word-counting approaches (oligo-analysis, position-analysis,
+local-word-analysis, oligo-diff, dreme).
 
 In our experience, optimal results are obtained with hexanucleotides
 and heptanucleotides.
 
 Note: the monad length used for dyad-analysis is not affected by those
-options. Instead it is fixed to to 3. Indeed, dyad-analysis can detect
-larger motifs by sampling various spacings between the two
-trinucleotide monads.
-
-=item B<-minol oligo_min_len>
-
-=item B<-maxol oligo_max_len>
-
-Minimal (-minol) and maximal (-maxol) oligonucleotide lengths. If
-those options are used, the program iterated over the specified range
-of oligonucleotide lengths.
+options. Instead it is fixed to to 3. Indeed, dyad-analysis
+automatically detects larger motifs by sampling various spacings
+between the two trinucleotide monads.
 
 =cut
     } elsif ($arg eq "-l") {
@@ -4220,6 +4206,8 @@ of oligonucleotide lengths.
       $main::param{oligo_max_len} = $oligo_len;
       $main::param{dreme_mink} = $main::param{oligo_min_len};
       $main::param{dreme_maxk} = $main::param{oligo_max_len};
+      &RSAT::message::Warning("The option -l is obsolete, please use the options -minol and -maxol instead.");
+
     } elsif ($arg eq "-minol") {
       $main::param{oligo_min_len} = shift (@arguments);
       $main::param{dreme_mink} = $main::param{oligo_min_len};
