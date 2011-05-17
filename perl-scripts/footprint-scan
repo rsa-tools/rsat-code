@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.88 2011/05/17 21:56:42 amedina Exp $
+# $Id: footprint-scan,v 1.89 2011/05/17 22:01:06 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.88 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.89 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -737,6 +737,7 @@ package main;
     ## I requiered with -batch_matrix option, generate the command line by matrix and send it to the cluster
 
     if ($batch_matrix){
+
 	$batch=1;
 	$batch_cmd="";
 	my $cmd = "$SCRIPTS/footprint-scan ";
@@ -745,6 +746,7 @@ package main;
 	$cmd .= " -tf ".$tf;
 	$cmd.= " ". $batch_matrix_argument_string;
 	#print "$cmd \n";
+	&RSAT::message::Warning("Command to cluster for matrix ",  $m_suffix , ":" ,$cmd )  if ($main::verbose >= 0)
 	&one_command($cmd) ;
 	$batch=0;
 	next;
