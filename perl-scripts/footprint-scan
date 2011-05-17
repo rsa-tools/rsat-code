@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.91 2011/05/17 22:04:53 amedina Exp $
+# $Id: footprint-scan,v 1.92 2011/05/17 22:07:06 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.91 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -747,7 +747,8 @@ package main;
 	$cmd.= " ". $batch_matrix_argument_string;
 	#print "$cmd \n";
 	&RSAT::message::Warning("Command to cluster for matrix ",  $m_suffix , ":" ,$cmd )  if ($main::verbose >= 0);
-	&one_command($cmd) ;
+	&doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+	#&one_command($cmd) ;
 	$batch=0;
 	next;
     }
