@@ -72,7 +72,7 @@ fasta_reader_t *new_fasta_reader(FILE *fp)
     ASSERT(fp != NULL, "invalid file");
     fasta_reader_t *fasta_reader = (fasta_reader_t *) malloc(sizeof(fasta_reader_t));
     fasta_reader->buffze_size = FASTA_READER_BUFFER_SIZE;
-    fasta_reader->pos = 0;
+    fasta_reader->pos = -1;
     fasta_reader->buffer = (char *) malloc(sizeof(char) * fasta_reader->buffze_size);
     fasta_reader->fp = fp;
     return fasta_reader;
@@ -87,7 +87,7 @@ void free_fasta_reader(fasta_reader_t *fasta_reader)
 static inline
 char fasta_reader_getc(fasta_reader_t *reader)
 {
-    if (reader->pos >= reader->buffze_size) 
+    if (reader->pos == -1 || reader->pos >= reader->buffze_size) 
     {
         int read_size = fread(reader->buffer, 1, reader->buffze_size, reader->fp);
         if (read_size != reader->buffze_size)
@@ -111,6 +111,7 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
     do 
     {
         c = fasta_reader_getc(reader);
+        //c = fgetc(reader->fp);
         if (i < 1024 && c!= EOF && c != '\n')
             seq->name[i++] = c;
     } while (c != EOF && c != '\n');
@@ -123,8 +124,10 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
     do 
     {
         c = fasta_reader_getc(reader);
+        // c = fgetc(reader->fp);
         if (c == EOF)
           break;
+        //printf("%c", c);
         if (c != '\n' && c != '>') 
             seq_append_c(seq, c);
     } while (c != '>');
