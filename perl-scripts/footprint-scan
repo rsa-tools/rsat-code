@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.95 2011/05/17 23:54:56 amedina Exp $
+# $Id: footprint-scan,v 1.96 2011/05/18 18:03:49 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.96 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -625,7 +625,13 @@ package main;
   if (scalar(@matrix_files)>0) {
     my $mcount =1;
     foreach my $m_option_matrices (@matrix_files) {
-	$m_suffix.="_rand" if ($main::rand); #If -rand option is selected, add a suffix to the matrix suffix to id this out files
+	if ((!$m_suffix) && $main::tf ){
+	    $matrix_suffix= $main::tf ;
+	}
+	else {
+	    $matrix_suffix="Matrix";
+	}
+	$matrix_suffix.="_rand" if ($main::rand); #If -rand option is selected, add a suffix to the matrix suffix to id this out files
 
       if (scalar(@matrix_files)==1) {
 	$matrix_table_hash{$matrix_suffix}{"file"}= $m_option_matrices;
