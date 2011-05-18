@@ -9,6 +9,8 @@
 //   P[x+1] = -------------
 //               q(x+1)
 
+//double cache[1024]
+
 // P[x] = P[x-1] * p (N-x+1) / (q x)
 double pbinom(int n, int N, double p)
 {
@@ -26,6 +28,7 @@ double pbinom(int n, int N, double p)
     int x;
     for (x = 1; x <= N; x++) 
     {
+        //printf("%d %d\n", N - x + 1, x);
         logbin += log(N - x + 1) - log(x) + logp - logq;
         if (x >= n)
             S += exp(logbin);

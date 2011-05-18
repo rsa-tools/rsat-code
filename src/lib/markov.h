@@ -10,7 +10,6 @@
 #define __MARKOV__
 
 #include <math.h>
-
 #include "utils.h"
 
 typedef struct markov_s
