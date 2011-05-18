@@ -6,6 +6,7 @@
  *
  *                                                                         *
  ***************************************************************************/
+
 #ifndef __FASTA__
 #define __FASTA__
 
@@ -46,5 +47,8 @@ void free_fasta_reader(fasta_reader_t *fasta_reader);
 
 // read and return the next sequence or NULL
 seq_t *fasta_reader_next(fasta_reader_t *reader);
+
+// restart from begining of file
+void fasta_reader_rewind(fasta_reader_t *reader);
 
 #endif
