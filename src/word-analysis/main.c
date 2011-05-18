@@ -47,7 +47,7 @@ void help(char *progname)
 "        --version        print version\n"
 "        -v #             change verbosity level (0, 1, 2)\n"
 "        -l #             set oligomer length to # (monad size when using dyads)\n"
-"        -bg #            load the background model from # (oligo-analysis format)\n"
+"        -expfreq #       load the background model from # (oligo-analysis format)\n"
 "        -2str            add reverse complement\n"
 "        -1str            do not add reverse complement\n"
 "        -noov            do not allow overlapping occurrences\n"
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
             printf("%d\n", VERSION);
             exit(0);
         } 
-        else if (strcmp(argv[i], "-bg") == 0) 
+        else if (strcmp(argv[i], "-expfreq") == 0) 
         {
             ENSURE(argc > i + 1, "-v requires a number (0, 1 or 2)");
             bg_filename = argv[++i];
@@ -180,9 +180,13 @@ int main(int argc, char *argv[])
         bg = load_markov(bg_filename);
     else
         bg = new_markov_uniform();
-    //print_markov(bg);
-    // double x = markov_P(bg, "acg", 0, 3);
+
+    // // print_markov(bg);
+    // char str[] = {0,0,0,0};
+    // double x = markov_P(bg, str, 0, 2);
     // INFO("x=%G", x);
+    // // return 1;
+
     FILE *input_fp = stdin;
     if (input_filename) 
     {
@@ -203,6 +207,7 @@ int main(int argc, char *argv[])
     fasta_reader_t *reader = new_fasta_reader(input_fp);
     while  (TRUE)
     {
+        // INFO("%c", fgetc(input_fp));
         seq_t *seq = fasta_reader_next(reader);
         if (seq == NULL)
             break;
@@ -221,21 +226,21 @@ int main(int argc, char *argv[])
     if (count_only)
         fprintf(output_fp, "#seq\tid\tobserved_freq\tocc\n");
     else
-        fprintf(output_fp, "#seq\tid\tocc\tocc_P\tocc_E\tocc_sig\n");
+        fprintf(output_fp, "#seq\tid\texp_freq\tocc\texp_occ\tocc_P\tocc_E\tocc_sig\n");
     
     // binomial stats on count table
     char name[16];
     char name_rc[16];
     char oligo[16];
     char id[128];
-    long N = 0;
-    long n = 0;
-    double p = 1.0;
-    double pv = 1.0;
-    double ev = 1.0;
-    double sig = 0.0;
+    long N      = 0;
+    long n      = 0;
+    double p    = 1.0;
+    double pv   = 1.0;
+    double ev   = 1.0;
+    double sig  = 0.0;
     double freq = 0.0;
-    long n_exp;
+    long n_exp  = 1.0;
 
     for (i = 0; i < count->size; i++)
     {
@@ -258,6 +263,7 @@ int main(int argc, char *argv[])
         if (!count_only)
         {
             p = markov_P(bg, oligo, 0, oligo_length);
+            //INFO("oligo=%s p=%G", name, p);
             if (rc && !count->palindromic[i])
                 p *= 2;
             n_exp = N * p;
@@ -277,7 +283,8 @@ int main(int argc, char *argv[])
         if (count_only)
             fprintf(output_fp, "%s\t%s\t%.13f\t%ld\n", name, id, freq, n);
         else
-            fprintf(output_fp, "%s\t%s\t%ld\t%G\t%G\t%G\n", name, id, n, pv, ev, sig);
+            fprintf(output_fp, "%s\t%s\t%.13f\t%ld\t%ld\t%G\t%G\t%G\n", 
+                    name, id, p, n, n_exp, pv, ev, sig);
     }
 
     // free data
