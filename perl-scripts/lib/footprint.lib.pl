@@ -1043,7 +1043,7 @@ sub RetrieveQueryPromoters {
       $cmd .= " -i ".$outfile{genes};
     }
     $cmd .= " -noorf";
-    $cmd .= " -feattype misc_RNA,cds,trna,rrna";
+    $cmd .= " -feattype misc_RNA,cds,trna";
     $cmd .= " -o ".$outfile{query_seq};
     &RSAT::message::Info("Retrieve seq command", $cmd) if ($main::verbose >= 5);
     &one_command($cmd);
@@ -1180,7 +1180,7 @@ sub RetrieveOrthoSeq {
     my $cmd = $SCRIPTS."/retrieve-seq-multigenome -ids_only";
     $cmd .= " -i ".$outfile{bbh};
     $cmd .= " -noorf";
-    $cmd .= " -feattype CDS,mRNA,tRNA,rRNA,scRNA,misc_RNA" ;
+    $cmd .= " -feattype CDS,mRNA,tRNA,scRNA,misc_RNA" ;
 #    $cmd .= " -o ". $outfile{seq_notclean} ;
 #    &one_command($cmd);
     $cmd .= "| ".$SCRIPTS."/convert-seq";
