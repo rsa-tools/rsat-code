@@ -134,3 +134,9 @@ seq_t *fasta_reader_next(fasta_reader_t *reader)
 
     return seq;
 }
+
+void fasta_reader_rewind(fasta_reader_t *reader)
+{
+    reader->pos = -1;
+    fseek(reader->fp, SEEK_SET, 0);
+}

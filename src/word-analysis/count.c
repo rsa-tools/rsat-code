@@ -1,5 +1,13 @@
 #include "count.h"
 
+// spaced motif
+//      l
+// -----------
+// ***-----***
+//  m  sp   m
+//
+// E-value = stats->ntests * stats->pv[i]
+// expected occurrences = stats->N * stats->p[i]
 
 static inline
 int count_array_size(int l)
@@ -28,38 +36,6 @@ void init_last_position_array(long *array, int l)
     for (i = 0; i < size; i++)
         array[i] = -l;
 }
-
-// static
-// int oligo2index(seq_t *seq, int pos, int l)
-// {
-//     int value = 0;
-//     int S = 1;
-//     int i;
-//     for (i = l - 1; i >= 0; i--) 
-//     {
-//         if (seq->data[pos + i] == -1)
-//             return -1;
-//         value += S * seq->data[pos + i];
-//         S *= 4;
-//     }
-//     return value;
-// }
-// 
-// static
-// int oligo2index_rc(seq_t *seq, int pos, int l)
-// {
-//     int value = 0;
-//     int S = 1;
-//     int i;
-//     for (i = 0; i < l; i++) 
-//     {
-//         if (seq->data[pos + i] == -1)
-//             return -1;
-//         value += S * (3 - seq->data[pos + i]);
-//         S *= 4;
-//     }
-//     return value;
-// }
 
 static
 int oligo2index_full(seq_t *seq, int pos, int l, int sp)
@@ -92,17 +68,25 @@ int oligo2index_rc_full(seq_t *seq, int pos, int l, int sp)
         return oligo2index_rc(seq->data, pos, l);
     }
 }
-void count_occ(count_t *count, int l, int sp, seq_t *seq, int rc, int noov)
+void count_occ(count_t *count, seq_t *seq)
 {
+    int index   = -1;
+    int l       = count->oligo_length;
+    int sp      = count->spacing;
+    int rc      = count->rc;
+    int noov    = count->noov;
+
+    // INFO("olio length=%d", l);
+    // INFO("olio spacing=%d", sp);
+
     if (noov)
         init_last_position_array(count->last_position, l);
-
-    int index = -1;
 
     int i;
     for (i = 0; i < seq->size - l + 1; i++) 
     {
         index = oligo2index_full(seq, i, l, sp);
+        // INFO("index=%d", index);
         if (rc)
         {
             long index_rc = oligo2index_rc_full(seq, i, l, sp);
@@ -130,66 +114,27 @@ void count_occ(count_t *count, int l, int sp, seq_t *seq, int rc, int noov)
 
         // count
         count->count_table[index]++;
-        count->total_count++;
-        if (count->count_table[index] == 1)
-            count->test_count++;
+        count->occ_count++;
     }
 }
 
-// void print_header(FILE *fp, int l, int sp, int noov, long *oov_occ, int argc, char *argv[])
-// {
-//     // if (VERBOSITY >= 1)
-//     // {
-//     // 
-//     //     // print command line        
-//     //     fprintf(output_fp, "; ");
-//     //     int i;
-//     //     for (i = 0; i < argc; i++) 
-//     //     {
-//     //         fprintf(output_fp, "%s ", argv[i]);            
-//     //     }
-//     //     fprintf(output_fp, "\n");
-//     //     fprintf(output_fp,
-//     //         "; oligomer length               %d\n", oligo_length);
-//     // 
-//     //     fprintf(output_fp, 
-//     //         "; column headers\n"
-//     //         ";    1    seq    oligomer sequence\n"
-//     //         ";    2    id     oligomer identifier\n"
-//     //         ";    3    freq   relative frequencies (occurrences per position)\n" 
-//     //         ";    4    occ    occurrences\n"
-//     //     );
-//     // 
-//     //     if (noov) 
-//     //     {
-//     //         fprintf(output_fp, 
-//     //             ";    5    ovl_occ    overlapping occurrences\n"
-//     //         );
-//     //     }
-//     // }
-// 
-//     // header
-//     // if (overlapping_occ)
-//     //     fprintf(output_fp, "#seq\tidentifier\tobserved_freq\tocc\tovl_occ\n");
-//     // else
-//     fprintf(fp, "#seq\tidentifier\tobserved_freq\tocc\n");
-// }
-
-// void print_body(FILE *fp, count_t *count)
-// {
-//     fprintf(fp, "#seq\tidentifier\tobserved_freq\tocc\n");
-// }
-
-count_t *new_count(int l)
+count_t *new_count(int l, int sp, int rc, int noov)
 {
+    int indexed_length = l;
+    if (sp != -1)
+        indexed_length = l - sp;
     count_t *count = (count_t *) malloc(sizeof(count_t));
-    count->size             = count_array_size(l);
-    count->count_table      = new_count_array(l);
-    count->last_position    = new_count_array(l);
-    count->palindromic      = new_count_array(l);
+    count->size             = count_array_size(indexed_length);
+    count->count_table      = new_count_array(indexed_length);
+    count->last_position    = new_count_array(indexed_length);
+    count->palindromic      = new_count_array(indexed_length);
     count->position_count   = 0;
-    count->total_count      = 0;
-    count->test_count       = 0;
+    count->occ_count        = 0;
+    count->oligo_length     = l;
+    count->monomer_length   = (l - sp) / 2;
+    count->spacing          = sp;
+    count->rc               = rc;
+    count->noov             = noov;
     return count;
 }
 
@@ -199,4 +144,45 @@ void free_count(count_t *count)
     free(count->last_position);
     free(count->palindromic);
     free(count);
+}
+
+stats_t *new_stats(count_t *count, markov_t *bg)
+{
+    stats_t *stats = (stats_t *) malloc(sizeof(stats_t));
+    stats->size     = count->size;
+    stats->p_table  = malloc(sizeof(double) * stats->size);
+    stats->pv_table = malloc(sizeof(double) * stats->size);
+    stats->ntests   = 0;
+    stats->N        = count->position_count;
+
+    // computes stats
+    char oligo[16];
+    int i;
+    for (i = 0; i < count->size; i++)
+    {
+        long n = count->count_table[i];
+        if (n == 0)
+            continue;
+
+        index2oligo(i, count->oligo_length, oligo);
+        double p = markov_P(bg, oligo, 0, count->oligo_length);
+        //INFO("oligo=%s p=%G", name, p);
+        // IF BG CONSTRUCTED ON 1STR
+        // if (count->rc && !count->palindromic[i])
+        //     p *= 2;
+        //n_exp = N * p;
+        stats->p_table[i]  = p;
+        stats->pv_table[i] = pbinom(n, stats->N, p);
+        stats->ntests += 1;
+        // ev = pv * count->test_count;
+        // sig = -log10(ev);
+    }
+    return stats;
+}
+
+void free_stats(stats_t *stats)
+{
+    free(stats->p_table);
+    free(stats->pv_table);
+    free(stats);
 }
