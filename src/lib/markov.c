@@ -2,11 +2,11 @@
 
 markov_t *new_markov(int order)
 {
+    int size = pow(4, order);
     markov_t *self = malloc(sizeof(markov_t));
     self->order = order;
-    int size = pow(4, order);
-    self->S = malloc(sizeof(double) * size);
-    self->T = malloc(sizeof(double) * (size * 4));
+    self->S     = malloc(sizeof(double) * size);
+    self->T     = malloc(sizeof(double) * (size * 4));
     int i;
     for (i = 0; i < size; i++)
         self->S[i] = 1e-100;
@@ -128,7 +128,6 @@ int oligo2index_rc(char *seq, int pos, int l)
 
 void index2oligo(int index, int l, char *buffer)
 {
-    // int value = 0;
     int S = 1;
     int i;
     buffer[l] = '\0';
@@ -141,7 +140,6 @@ void index2oligo(int index, int l, char *buffer)
 
 void index2oligo_char(int index, int l, char *buffer)
 {
-    // int value = 0;
     int S = 1;
     int i;
     buffer[l] = '\0';
@@ -154,7 +152,6 @@ void index2oligo_char(int index, int l, char *buffer)
 
 void index2oligo_rc_char(int index, int l, char *buffer)
 {
-    // int value = 0;
     int S = 1;
     int i;
     buffer[l] = '\0';
@@ -170,12 +167,12 @@ void skip_comments(FILE *fp)
 {
     while (!feof(fp))
     {
-        int mark = getc(fp);
+        int mark = fgetc(fp);
         ungetc(mark, fp);
         if (mark == ';' || mark == '#')
         {
             while (!feof(fp) && mark != '\n')
-                mark = getc(fp);
+                mark = fgetc(fp);
         }
         else
         {
@@ -189,7 +186,7 @@ void next_line(FILE *fp)
 {
     for (;;)
     {
-        int mark = getc(fp);
+        int mark = fgetc(fp);
         if (feof(fp) || mark == '\n')
             break;
     }
@@ -220,7 +217,8 @@ markov_t *load_markov(char *filename)
             break;
         char id[256];
         float freq;
-        fscanf(fp, "%s\t%*s\t%f", id, &freq);
+        int n = fscanf(fp, "%s\t%*s\t%f", id, &freq);
+        ENSURE(n == 2, "invalid bg file");
         next_line(fp);
         //INFO("%s %.3f", id, freq);
         if (self == NULL)
@@ -230,7 +228,6 @@ markov_t *load_markov(char *filename)
         }
         int prefix_index = oligo2index_char(id, 0, self->order);
         self->S[prefix_index] += freq;
-        //INFO("id=%s %d, %d", id, prefix_index, 4 * prefix_index + char2int(id[self->order]));
         self->T[4 * prefix_index + char2int(id[self->order])] = freq;
     }
     fclose(fp);
@@ -296,12 +293,13 @@ double markov_P(markov_t *self, char *seq, int pos, int length)
     int prefix = oligo2index(seq, pos, length - 1);
     if (prefix == -1)
         return 0.0;
+
     double p = self->S[prefix];
     // INFO("p=%.3f", p);
     int i;
     for (i = self->order; i < length; i++)
     {
-        int suffix = (int) seq[i]; //char2int(seq[i]);
+        int suffix = seq[i];
         int prefix = oligo2index(seq, i - self->order, self->order);
         if (suffix == -1 || prefix == -1)
             return 0.0;
