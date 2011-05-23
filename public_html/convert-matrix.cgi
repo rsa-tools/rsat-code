@@ -73,8 +73,10 @@ if ($query->param('pseudo_distribution') eq "equi_pseudo") {
 
 ################################################################
 ## Multiply
-if (&IsInteger($query->param('multiply'))) {
+if (&IsReal($query->param('multiply'))) {
     $parameters .= " -multiply ".$query->param('multiply');
+} else {
+  &RSAT::error::FatalError("Option 'Multiply counts' should be a Real number");
 }
 
 ################################################################
@@ -158,9 +160,11 @@ if ($query->param('output') eq "display") {
 
  ## prepare figures
     ### prepare data for piping
- #   open RESULT, "$command $parameters |";
+#  open RESULT, "$command $parameters |";
+
   &doit("$command $parameters"); ## DEBUG test
   open RESULT, "$result_file";  ## DEBUG
+
 
   print '<H4>Result</H4>';
   print '<PRE>';
