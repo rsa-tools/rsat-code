@@ -35,8 +35,16 @@ of interest.
 
 <P>
 Knowledge-based PSSM can be obtained from various transcription factor
-databases (e.g. <a target=_blank
-href=http://www.gene-regulation.com/pub/databases.html#transfac>TRANSFAC</a>).
+databases, for example: 
+<ul>
+<li><a target='_blank' href='http://jaspar.genereg.net/'>JASPAR</a> (Eukaryotes)</li>
+<li><a target='_blank' href='http://regulondb.ccg.unam.mx/'>RegulonDB</a> (<i>Escherichia coli K12</i>)</li>
+<li><a target='_blank' href='http://rulai.cshl.edu/SCPD/'>SCPD</a> (The Promoter Database of <i>Saccharomcyces cerevisiae</i>)</li>
+<li><a target='_blank'
+href='http://www.gene-regulation.com/pub/databases.html#transfac'>TRANSFAC</a>
+(full database access requires commercial license)</li>
+</ul>
+
 
 <a name=example></a><h3>Example</h3>
 
@@ -124,16 +132,13 @@ Hidden Markov Models (HMM), which are ou of scope for this tutorial.
 
 The RSAT include a program called <a target=tools
 href=../convert-matrix_form.cgi>convert-matrix</a>, which allows to
-extract a PSSM from the output files of different programs (<a
-target=tools href=../consensus_form.cgi>consensus</a>, <a
-target=tools href=../gibbs_form.cgi>gibbs</a>, <a target=_blank
-href=http://meme.sdsc.edu/meme/>MEME</a>, clustal).
+extract a PSSM from the output files of different programs
+(<a target=tools href=../consensus_form.cgi>consensus</a>,
+<a target=tools href=../gibbs_form.cgi>gibbs</a>, <a target=_blank
+href=http://meme.sdsc.edu/meme/>MEME</a>, clustal) or databases
+(<a target='_blank' href='http://jaspar.genereg.net/'>JASPAR</a>, <a target='_blank'
+href='http://www.gene-regulation.com/pub/databases.html#transfac'>TRANSFAC</a>).
 
-
-<p>I still did not find the time to write a tutorial for this program,
-but you can already read the <a target=tools
-href=../help.convert-matrix.html>manual</a>, and do your own test with
-the demo data set (click DEMO at the bottom of the form).
 
 <h3>Converting the counts into frequencies, weights and information</h3>
 
@@ -189,6 +194,10 @@ nucleotide information, and not the matrix header.</uL>
 
 <p><li>Make sure that the selected matrix format is <b><i>tab</i></b>.
 
+<p><li>Select a relevant <b>background model</b>. Withb the factor
+Abf1p, we will select <i>Genome subset</i>, <i>upstream-noorf</i> and
+the <i>Organism</i> <i>Saccharomyces cerevisiae</i>.
+
 
 <p><li>For the <b><i>Return fields</i></b>, select the following options:
 <ul>
@@ -199,7 +208,10 @@ nucleotide information, and not the matrix header.</uL>
 <li>margins
 <li>parameters
 </ul>
+
+
 <p><li>click <b>GO</b>.
+
 </ol>
 
 <h3>Matrix conversions</h3><ul>
@@ -256,10 +268,10 @@ row (column) is the sum of information contents of its cells.
 
 <p><li>PSSM can be used to detect occurrences of a motif in
 sequences. Matrix-based pattern matching will be introduced in the
-tutorial on <a href=tut_patser.html>patser</a>.</li></p>
+tutorial on <a href='tut_patser.html'>patser</a>.</li></p>
 
 <p><li>Since 2008, RSAT includes its own pattern matching
-tool, <a href=matrix-scan.cgi>matrix-scan</a>, for which we will write
+tool, <a href='../matrix-scan_form.cgi'>matrix-scan</a>, for which we will write
 a tutorial as soon as possible. This tool includes all the
 functionalities of patser plus a few more (Markov-chain background
 models, CRM prediction, ...).</li></p>
