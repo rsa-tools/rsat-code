@@ -38,7 +38,8 @@ The tools are organized in a modular way : rather than having a single
 form for the complete analysis, I found it more convenient to present
 separate forms for the successive steps of a given analysis. A typical
 analysis will thus consist in using successivbely different tools (for
-example <i>sequence retrieval</i> -> <i>motif discovery</i> -> <i>pattern matching</i> ->
+example <i>sequence retrieval</i> -> <i>motif discovery</i>
+-> <i>pattern matching</i> ->
 <i>feature-map</i>). For this purpose, the tools interconnected,
 allowing you to send automatically the result of one request as input
 for the next request (piping). The links between tools are illustrated
@@ -107,8 +108,15 @@ transcription factor (<b>genome-scale pattern matching</b>);</LI>
 
 <li><a href="tut_dna-pattern.html"><b><i>dna-pattern</i></b></a>: string-based pattern matching</li>
 
-<li><a href="tut_patser.html"><b><i>patser</i></b></a>: matrix-based pattern matching</li>
+<li><a href="tut_patser.html"><b><i>patser</i></b></a>: matrix-based pattern matching (obsolete)</li>
 
+<li><b>Detailed protocol for <i>matrix-scan</i></b>: 
+Turatsinze, J.V., Thomas-Chollier, M., Defrance, M. and van Helden,
+  J. (2008) Using RSAT to scan genome sequences for
+  transcription factor binding sites and cis-regulatory
+  modules. Nat Protoc, 3, 1578-1588.
+  <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed
+    18802439</a></li>
 
 <!--
 <li><b>Pattern matching against librairies of motifs</b>
@@ -133,6 +141,18 @@ transcription factor (<b>genome-scale pattern matching</b>);</LI>
 <li><a href="tut_dyad-analysis.html"><b><i>dyad-analysis</i></b></a>: detection of over-represented pairs of words</li>
 
 <li><a href="tut_position-analysis.html"><b><i>position-analysis</i></b></a>: detection of words having a positional bias in sequences aligned on some reference position.</li>
+
+
+<li><b>Detailed protocol for string-based motif discovery</b>: 
+<p><li>Defrance, M., Janky, R., Sand, O. and van Helden, J. (2008)
+Using RSAT oligo-analysis and dyad-analysis tools to discover
+regulatory signals in nucleic sequences. Nat Protoc, 3,
+1589-1603. <a
+target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/18802440'>Pubmed 18802440</a>
+</li></p>
+
+
+</li>
 
 </ul>
 <li><b>Matrix-based motif discovery</b>
