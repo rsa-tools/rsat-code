@@ -266,23 +266,36 @@ row (column) is the sum of information contents of its cells.
 
 <ol>
 
+<!--
 <p><li>PSSM can be used to detect occurrences of a motif in
 sequences. Matrix-based pattern matching will be introduced in the
 tutorial on <a href='tut_patser.html'>patser</a>.</li></p>
+-->
 
 <p><li>Since 2008, RSAT includes its own pattern matching
-tool, <a href='../matrix-scan_form.cgi'>matrix-scan</a>, for which we will write
-a tutorial as soon as possible. This tool includes all the
-functionalities of patser plus a few more (Markov-chain background
-models, CRM prediction, ...).</li></p>
+tool, <a href='../matrix-scan_form.cgi'>matrix-scan</a>, which permits
+to scan sequences with one or more matrices, under different
+background models, in order to detect biniding sites ad cis-regulatory
+modules (CRM). A detailed protocol has been published to explain the
+theoretical concepts and practical aspects related to sequence
+scanning with matrices.
+    <ul>
+      <p><li>Turatsinze, J.V., Thomas-Chollier, M., Defrance, M. and van
+	  Helden, J. (2008) Using RSAT to scan genome sequences for
+	  transcription factor binding sites and cis-regulatory modules. Nat
+	  Protoc, 3, 1578-1588.
+	  <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed
+	    18802439</a></li></p>
+    </ul>
+</li></p>
 
 <p><li>Several pattern-discovery programs allow to detect significant
 motifs represented as PSSM from a set of unaligned sequences. These
 programs have been used to predict regulatory elements in the
 regulatory regions of sets of co-regulated genes. Matrix-based pattern
-discovery will be discussed in the tutorials on the <a
-href=tut_gibbs.html>gibbs sampler</a> and <a
-href=tut_consensus.html>consensus</a>.</li></p>
+discovery are discussed in the tutorials on
+the <a href='tut_gibbs.html'>gibbs sampler</a>
+and <a href='tut_consensus.html'>consensus</a>.</li></p>
 </ol>
 
 <p>
