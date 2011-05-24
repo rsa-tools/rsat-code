@@ -252,12 +252,12 @@ sub CheckDependency {
 
   foreach my $type (@files_types) {
     my $file = $outfile{$type};
-    if ((-e $file) || (-e $file.".gz")) {
+    if ((-s $file) || (-s $file.".gz")) {
       &RSAT::message::Info("Checked existence of ", $type, "file required for task", $task, "file", $file)
 	if ($main::verbose >= 3);
       return(1);
     } else {
-      &RSAT::error::FatalError("Missing", $type, "file required for task", $task, "file", $file)
+      &RSAT::error::FatalError("Missing or empty ", $type, "file required for task", $task, "file", $file)
     }
   }
 }
@@ -1081,7 +1081,7 @@ sub ComputeFilterScan {
     $cmd .= " -uth rank 1 ";
     $cmd .= " -i ".$outfile{query_seq};
     foreach my $file (@matrix_files2) {
-	&RSAT::error::FatalError("Matrix file $file does not exist.Matrix file is mandatory.")  unless (-e $file ) ;
+	&RSAT::error::FatalError("Matrix file $file does not exist.Matrix file is mandatory.")  unless (-s $file ) ;
 	$cmd .= " -m ".$file;
     }
     $cmd .= " -bgfile ".$main::filter_bgfile ; 
@@ -1259,7 +1259,7 @@ sub CalcMAtrixTheorDistrib {
     }
 
     ## Check that the background model file exists
-    &RSAT::error::FatalError("File specified to calculate the score distribution in matrix-distrib does not exist")unless (-e  $main::bg_distrib ) ;
+    &RSAT::error::FatalError("File specified to calculate the score distribution in matrix-distrib does not exist")unless (-s  $main::bg_distrib ) ;
 
     ## Compute the theoretical distribution for the current matrix
     &RSAT::message::TimeWarn ("Computing matrix score distribution with background file", $main::bg_distrib) if ($main::verbose >=2);
@@ -1464,7 +1464,7 @@ sub OccurrenceSigGraph {
 	$cmd .= " -vline red ". $sig_max;
       }
 
-      if(-e $outfile{matrix_distrib}){ 
+      if(-s $outfile{matrix_distrib}){ 
 	  my $min_weight = &GetMinWeight();
 	  $cmd .= " -vline green ". $min_weight;
       }
