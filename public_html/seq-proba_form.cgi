@@ -30,14 +30,22 @@ $default{output}="display";
 $default{sequence_format} = "multi";
 $default{sequence} = "";
 
-## BG model
+$default{output}="display";
+$default{markov_order} = "2";
 $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
-$default{bg_method}="bgfile";
-#$default{bg_method}="markov";
-$checked{$default{bg_method}} = "CHECKED";
-$default{markov_order} = "2";
+$default{bg_choose}="rsat";
+$checked{$default{bg_choose}} = "CHECKED";
+$default{bg_taxo}="organism";
+$checked{$default{bg_taxo}} = "CHECKED";
+$default{decimals}="3";
 $default{organism} = "Saccharomyces cerevisiae";
+$default{strands} = "single strand";
+$default{noov} = "";
+
+#$default{bg_method}="bgfile";
+#$default{bg_method}="markov";
+#$checked{$default{bg_method}} = "CHECKED";
 
 ## Return fields
 @return_fields = qw(id proba_b log_proba len seq detail);
@@ -45,7 +53,8 @@ $default{id}="checked";
 $default{proba_b}="checked";
 $default{log_proba}="checked";
 $default{len}="checked";
-$default{seq}="";
+$default{seq}="checked";
+$default{detail}="";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -77,14 +86,23 @@ print "<hr>";
 ################################################################
 ## Background model
 print "<hr>";
+print "<h2>Background model</h2>\n";
 
-my %bg_params =("markov" => 1,
-	       );
-&GetBackgroundModel(\%bg_params);
+#my %bg_params =("markov" => 1);
+my %bg_params = ("markov" => 1,
+		 "title" => "RSAT pre-calculated background models",
+		 "title_choose" => 1,
+		 "noov" => 1,
+		 "strands"=> 1,
+		 "title2"=>"Custom background model",
+		 #"taxon" => 1,
+		 "sep_bg_pseudo" => 1
+		);
+&GetBackgroundModel(%bg_params);
 
 ################################################################
 #### Return fields
-print "<hr>";
+print "<hr/>";
 print "<p><b><a href='help.seq-proba.html#return'>Return fields</a></b>&nbsp;<br>\n";
 my $i = 0;
 foreach my $field (@return_fields) {

@@ -44,8 +44,8 @@ $parameters .= " -i $in_sequence_file -seq_format $sequence_format";
 
 ################################################################
 ## Background model method
-my $bg_method = $query->param('bg_method');
-if ($bg_method eq "bgfile") {
+my $bg_choose = $query->param('bg_choose');
+if ($bg_choose eq "rsat") {
   ## Select pre-computed background file in RSAT genome directory
   my $organism_name = $query->param("organism");
   my $noov = "ovlp";
@@ -57,7 +57,7 @@ if ($bg_method eq "bgfile") {
 			      noov=>$noov, str=>"-1str");
   $parameters .= " -bgfile ".$bgfile;
 
-} elsif ($bg_method =~ /upload/i) {
+} elsif ($bg_choose =~ /upload/i) {
   ## Upload user-specified background file
   $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
   my $upload_bgfile = $query->param('upload_bgfile');
@@ -78,10 +78,10 @@ if ($bg_method eq "bgfile") {
     &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
 } else {
-  &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+  &RSAT::error::FatalError($bg_choose," is not a valid method for background specification");
 }
 
-if ($bg_method =~ /upload/i) {
+if ($bg_choose =~ /upload/i) {
   push @result_files, ("Background file",$bgfile);
 }
 
