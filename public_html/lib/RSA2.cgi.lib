@@ -856,21 +856,23 @@ onclick="toggleMenu(';
 ##   no_bg_pseudo=>1             do not display bg pseudo option
 sub GetBackgroundModel {
 #  my ($params_ref) = shift;
-  my %params = @_;;
+  my %params = @_;
 #  my $simple = shift;
 
 
-  my $title = "Background model";
+  my $title = "RSAT pre-computed background model";
   if ($params{title}) {
     $title=$params{title};
   }
 
   if ($params{title_choose}) {
-    print ("<br><INPUT TYPE='radio' NAME='bg_choose' VALUE='rsat' $checked{'rsat'}>");
+    print ("<INPUT TYPE='radio' NAME='bg_choose' VALUE='rsat' $checked{'rsat'}>");
     print "<b>$title</b><br/>";
   } else {
     print "<p><B>$title</B><br>";
   }
+
+  print "<ul>";
 
   #### Markov order
   if ($params{markov}) {
@@ -915,29 +917,30 @@ sub GetBackgroundModel {
 			    -size=>5);
   }
 
-  #### Pre-defined background frequencies
-  print "<br/>";
-  unless ($params{title_choose}) {
-    print ("<INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
-  }
-  print ("<b>Genome subset</b> &nbsp; ",$query->popup_menu(-name=>'background',-Values=>["upstream-noorf","upstream"],-default=>$default{background}));
 
   ## Display option to select taxon-specific BG models
   if ($params{taxon}) {
     print "<br/>";
-    print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+#    print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
     print "<INPUT TYPE='radio' NAME='bg_taxo' VALUE='organism' $checked{organism}>";
     print &OrganismPopUpString();
     print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
     print "<INPUT TYPE='radio' NAME='bg_taxo' VALUE='taxon' $checked{taxon}>";
     &TaxonPopUp();
   } else {
+    print "<br/>";
     print  &OrganismPopUpString();
   }
 
+  #### Pre-defined background frequencies
+  unless ($params{title_choose}) {
+    print ("<INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
+  }
+  print ("<b>Sequence type</b> &nbsp; ",$query->popup_menu(-name=>'background',-Values=>["upstream-noorf","upstream"],-default=>$default{background}));
+
   ### Display strand option
   if ($params{strands}) {
-    print "<B><A HREF='help.convert-background-model.html#item__2d1str'>Count on</A></b>\n";
+    print "<B><A HREF='help.convert-background-model.html#item__2d1str'><br>Count on</A></b>\n";
     print $query->popup_menu(-name=>'strands',
 			     -Values=>[
 				       'single strand',
@@ -956,16 +959,19 @@ sub GetBackgroundModel {
   }
 
 
+  print "</ul>";
+
   ## Display a second title ????
   if ($params{title2}) {
     if ($params{title_choose}) {
-      print "<p><b> OR <b></p>";
+#      print "<p><b> OR <b></p>";
       print ("<p/><INPUT TYPE='radio' NAME='bg_choose' VALUE='file_upload' $checked{'file_upload'}>");
     }
     print "<B>$params{title2}</B><br>";
   }
 
   #### custom background model
+  print "<ul>\n";
   unless ($params{simple}) {
     unless ($params{title_choose}) {
       print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
@@ -987,6 +993,7 @@ sub GetBackgroundModel {
 			    -size=>30,
 			    -maxlength=>200);
 
+    print "</ul>\n";
 
     #### Pseudo-frequencies for the BG model
     unless ($params{no_bg_pseudo}) {
