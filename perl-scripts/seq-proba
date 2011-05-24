@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.16 2011/02/17 04:54:49 rsat Exp $
+# $Id: seq-proba,v 1.17 2011/05/24 05:05:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -160,7 +160,7 @@ package main;
     }
     push @header, "sequence" if ($return_fields{seq});
 
-    print $out "#", join ("\t", @header), "\n";
+    print $out "#", join ("\t", @header), "\n" unless ($return_fields{detail});
 
     ################################################################
     ##### Read sequences and calculate their probabilities
@@ -191,12 +191,13 @@ package main;
       ## Report sequence
       push @return_fields, $current_seq if ($return_fields{seq});
 
-      print $out join ("\t", @return_fields), "\n";
-
       ## Report computation details
       if (($return_fields{detail}) && (scalar(@bg_models) == 1)) {
 	print $out "\n", $detail, "\n";
+	print $out "#", join ("\t", @header), "\n";
       }
+      print $out join ("\t", @return_fields), "\n";
+
     }
     close $main::in if ($main::infile{input});
 
