@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.69 2011/04/06 08:28:20 jvanheld Exp $
+# $Id: compare-classes,v 1.70 2011/05/25 05:31:48 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -230,6 +230,14 @@ if (($return_fields{dotprod}) && !($score_col)) {
     &RSAT::error::FatalError("To calculate a dot product, you need to specify a score column (option -sc).");
 }
 
+## Special treatment for members
+if ($return_fields{members}) {
+  $return_fields{common} = 1;
+  $return_fields{Q_only} = 1;
+  $return_fields{R_only} = 1;
+}
+
+
 ## Logarithm base
 local $log_base = log($base); ## Calculate it only once
 local $log10 = log(10); ## Calculate it only once
@@ -267,13 +275,8 @@ if ($calc_fields{freq}) {
     $calc_fields{occ} = 1;
 }
 
-# if ($calc_fields{members}) {
-#     $calc_fields{common} = 1;
-#     $calc_fields{Q_only} = 1;
-#     $calc_fields{R_only} = 1;
-# }
 if (($calc_fields{Q_only}) || ($calc_fields{R_only}) || ($calc_fields{common})) {
-    $calc_fields{members} = 1;
+  $calc_fields{members} = 1;
 }
 
 if ($main::verbose >= 2) {
