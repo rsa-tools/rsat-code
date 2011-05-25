@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.97 2011/05/18 18:26:15 amedina Exp $
+# $Id: footprint-scan,v 1.98 2011/05/25 22:26:45 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.97 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -734,7 +734,7 @@ package main;
     local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
     local $tf=$matrix_table_hash{$m_suffix}{"tf"} if ($matrix_table_hash{$m_suffix}{"tf"}) ;
 
-    unless (-e $matrix_file){
+    unless (-s $matrix_file){
 	&RSAT::message::Warning("Matrix file does not exist. Matrix file is mandatory.", $matrix_file)   ;
 	&RSAT::message::Warning("Analyzing next matrix.")   ;
 	next;
