@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.102 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: compare-matrices,v 1.103 2011/05/26 21:17:53 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.102 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -741,13 +741,13 @@ package main;
     $main::outfile{html_index} = $main::outfile{output_prefix}."_index.html";
     push @outfiles, "html_index";
     $main::html_index = &OpenOutputFile($main::outfile{html_index});
-    my $header = &PrintHtmlResultHeader(program=>"compare-classes");
+    my $header = &PrintHtmlResultHeader(program=>"compare-matrices");
     #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
     print $main::html_index $header;
 
     ## Report command
     print $html_index "<p><tt><b>Command:</b> compare-matrices ";
-    &PrintArguments($main::html_index);
+    &PrintArguments($main::html_index, 1);
     print $html_index "</tt></p>\n";
 
     ## Matrix alignments
