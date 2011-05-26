@@ -18,7 +18,9 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$SCRIPTS/dna-pattern";
-$tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate();
+$prefix = "dna-pattern";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;

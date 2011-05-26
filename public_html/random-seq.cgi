@@ -22,7 +22,10 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/random-seq";
-$tmp_file_name = sprintf "random-seq.%s", &AlphaDate();
+$prefix = "random-seq";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "random-seq.%s", &AlphaDate();
+@result_files = ();
 
 $size_limit = 5e+6;
 
@@ -93,6 +96,7 @@ if ($query->param('proba') eq "alphabet") {
 
     ## Print residue frequencies in a file
     $alphabet_file = $TMP."/".$tmp_file_name.".alphabet";
+    push @result_files, ("residue priors",$alphabet_file);
     open ALPHA, ">".$alphabet_file;
     foreach my $letter (keys %freq) {
 	print ALPHA $letter, "\t", $freq{$letter}, "\n";
@@ -134,6 +138,7 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 ### execute the command ###
 if ($query->param('output') eq "display") {
     $sequence_file = "$TMP/$tmp_file_name.res";
+    push @result_files, ("sequence",$sequence_file);
 
     open RESULT, "$command $parameters |";
 
@@ -155,6 +160,7 @@ if ($query->param('output') eq "display") {
     close RESULT;
 
     ### prepare data for piping
+    &PrintURLTable(@result_files);
     &PipingFormForSequence();
     print "<HR SIZE = 3>";
 
