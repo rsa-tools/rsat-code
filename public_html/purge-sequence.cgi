@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.11 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.12 2011/05/26 05:11:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -26,8 +26,11 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$SCRIPTS/purge-sequence";
-$tmp_file_name = sprintf "purge-sequence.%s", &AlphaDate;
+$prefix = "purge-sequence";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "purge-sequence.%s", &AlphaDate;
 $out_format = "fasta";
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -47,11 +50,12 @@ $query = new CGI;
 ### Input sequence file ####
 ($in_sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
 $parameters = " -i $in_sequence_file ";
+push @result_files, ("Input sequences",$in_sequence_file);
 
+## Output file (purged sequences)
 $sequence_file = "$TMP/$tmp_file_name.res";
-#$parameters .= " -o $sequence_file ";
-#&DelayedRemoval($sequence_file);
-    
+push @result_files, ("Purged sequences",$sequence_file);
+
 
 #### add reverse complement
 if ($query->param("both_strands")) {
@@ -92,14 +96,13 @@ if (($query->param('output') =~ /display/i) ||
     }
 
     print '<H2>Result</H2>';
-    
+
     ### open the mirror file ###
-    $mirror_file = "$TMP/$tmp_file_name.res";
-    if (open MIRROR, ">$mirror_file") {
+    if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
-	&DelayedRemoval($mirror_file);
+	&DelayedRemoval($sequence_file);
     }
-    
+
     ### Print result on the web page
     print "<PRE>";
     while (<RESULT>) {
@@ -118,6 +121,7 @@ if (($query->param('output') =~ /display/i) ||
     }
 
     ### prepare data for piping
+    &PrintURLTable(@result_files);
     &PipingFormForSequence();
     print "<HR SIZE = 3>";
 #    ### prepare data for piping
@@ -133,108 +137,108 @@ print $query->end_html;
 exit(0);
 
 
-################################################################
-#
-# Pipe the result to other programs
-#
-sub PipingForm {
-  print <<End_of_form;
-<HR SIZE = 3>
-<TABLE class='nextstep'>
+# ################################################################
+# #
+# # Pipe the result to other programs
+# #
+# sub PipingForm {
+#   print <<End_of_form;
+# <HR SIZE = 3>
+# <TABLE class='nextstep'>
 
-<TR VALIGN="top" ALIGN="center">
-    <TD COLSPAN=5>
-	<H3>Next step</H3>
-    </TD>
+# <TR VALIGN="top" ALIGN="center">
+#     <TD COLSPAN=5>
+# 	<H3>Next step</H3>
+#     </TD>
 
-</TR>
+# </TR>
 
-<TR VALIGN="top" ALIGN="center">
+# <TR VALIGN="top" ALIGN="center">
 
-    <TD>
-	<B>motif discovery</B><BR>
-	(unknown patterns)
-    </TD>
+#     <TD>
+# 	<B>motif discovery</B><BR>
+# 	(unknown patterns)
+#     </TD>
 
-    <TD>
-	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="oligonucleotide analysis">
-	</FORM>
-    </TD>
+#     <TD>
+# 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
+# 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+# 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+# 	<INPUT type="submit" value="oligonucleotide analysis">
+# 	</FORM>
+#     </TD>
 
-    <TD>
-	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="dyad analysis">
-	</FORM>
-    </TD>
+#     <TD>
+# 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
+# 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+# 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+# 	<INPUT type="submit" value="dyad analysis">
+# 	</FORM>
+#     </TD>
 
-    <TD>
-	<FORM METHOD="POST" ACTION="consensus_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="consensus">
-	</FORM>
-    </TD>
+#     <TD>
+# 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
+# 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+# 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+# 	<INPUT type="submit" value="consensus">
+# 	</FORM>
+#     </TD>
 
-    <TD>
-	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="gibbs sampler">
-	</FORM>
-    </TD>
+#     <TD>
+# 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
+# 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+# 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+# 	<INPUT type="submit" value="gibbs sampler">
+# 	</FORM>
+#     </TD>
 
-</TR>
+# </TR>
 
-<!--
-<TR VALIGN="top" ALIGN="center">
+# <!--
+# <TR VALIGN="top" ALIGN="center">
 
-    <TD BGCOLOR=		#FFEEDD>
-	<B>Pattern matching</B><BR>
-	(known patterns)
-    </TD>
+#     <TD BGCOLOR=		#FFEEDD>
+# 	<B>Pattern matching</B><BR>
+# 	(known patterns)
+#     </TD>
 
-    <TD>
-	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="dna-pattern (IUPAC)">
-	</FORM>
-    </TD>
+#     <TD>
+# 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
+# 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+# 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+# 	<INPUT type="submit" value="dna-pattern (IUPAC)">
+# 	</FORM>
+#     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
-        <b><font color=red>New</a></b>
-        <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
-        <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-        <INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-        <INPUT type="submit" value="matrix-scan (matrices)">
-        </FORM>
-    </TD>
+#     <TD VALIGN=BOTTOM ALIGN=CENTER>
+#         <b><font color=red>New</a></b>
+#         <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
+#         <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+#         <INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+#         <INPUT type="submit" value="matrix-scan (matrices)">
+#         </FORM>
+#     </TD>
 
 
-    <TD>
-	<FORM METHOD="POST" ACTION="patser_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="patser (matrices)";
-	</FORM>
-    </TD>
+#     <TD>
+# 	<FORM METHOD="POST" ACTION="patser_form.cgi">
+# 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+# 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+# 	<INPUT type="submit" value="patser (matrices)";
+# 	</FORM>
+#     </TD>
 
-    <TD>
-    &nbsp;
-    </TD>
+#     <TD>
+#     &nbsp;
+#     </TD>
 
-    <TD>
-    &nbsp;
-    </TD>
+#     <TD>
+#     &nbsp;
+#     </TD>
 
-</TR>
--->
+# </TR>
+# -->
 
-</TABLE>
-End_of_form
-}
+# </TABLE>
+# End_of_form
+# }
