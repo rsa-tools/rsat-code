@@ -38,12 +38,10 @@ local $parameters = " -v 0";
 ################################################################
 ## File prefix
 
-#$prefix = "matrix-quality";
-#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#system("rm -f $tmp_file_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 #my $date = &AlphaDate();
-my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality", 1);
-
+#my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality", 1);
+$prefix = "matrix-quality";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
 $file_prefix = `basename $tmp_file_name`;
 chomp($file_prefix);
