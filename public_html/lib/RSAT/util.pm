@@ -703,9 +703,12 @@ sub hex2rgb {
 ################################################################
 ## Return a unique name for a temporary file in the $TMP directory
 ## Usage:
-##  my $temp_file_name = &RSAT::util::make_temp_file();
+##  my $temp_file_name = &RSAT::util::make_temp_file($tmp_dir, $tmp_prefix, $add_date);
+##    $tmp_dir: if not specified, the default RSAT temporary dir is used
+##    $tmp_prefix: prefix for the file name
+##    $add_date (value 0 or 1): if 1, the date is added to the suffix
 sub make_temp_file {
-  my ($tmp_dir, $tmp_prefix) = @_;
+  my ($tmp_dir, $tmp_prefix, $add_date) = @_;
 
 #   &RSAT::message::Debug("&RSAT::util::make_temp_file()", 
 # 			"\n\ttmp_dir=".$tmp_dir,
@@ -728,10 +731,17 @@ sub make_temp_file {
   $tmp_dir = $main::TMP unless ($tmp_dir);
   &CheckOutDir($tmp_dir);
 
+  ## Add date if required
+  if ($add_date) {
+    $tmp_prefix .= "_";
+    $tmp_prefix .= &AlphaDate();
+  }
+
   ## request the temporary file to the system
-  my $mktmp_cmd = "mktemp ".$tmp_dir."/".$tmp_prefix.".XXXXXX";
+  my $mktmp_cmd = "mktemp ".$tmp_dir."/".$tmp_prefix."_XXXXXX";
   my $temp_file = `$mktmp_cmd`;
   chomp($temp_file);
+
 
   ## Ensure that everyone can read the temporary file
   system("chmod a+r $temp_file");
