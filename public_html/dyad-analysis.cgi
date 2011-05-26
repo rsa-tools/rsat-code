@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.42 2011/04/08 04:55:34 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.43 2011/05/26 05:11:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -30,7 +30,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $dyad_analysis_command = "$SCRIPTS/dyad-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
-$tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
+$prefix = "dyad-analysis";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;

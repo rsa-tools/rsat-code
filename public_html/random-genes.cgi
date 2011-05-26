@@ -18,8 +18,12 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/random-genes";
-$tmp_file_name = sprintf "random-genes.%s", &AlphaDate;
+$prefix = "random-genes";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = &RSAT::util::make_temp_file("","random-genes", 1);
+#$tmp_file_name = sprintf "random-genes.%s", &AlphaDate;
 $result_file = "$TMP/$tmp_file_name.res";
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -78,6 +82,7 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo});
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
+
     &PipingWarning();
 
     ### prepare data for piping
@@ -92,6 +97,13 @@ if ($query->param('output') eq "display") {
     print '</PRE>';
     close(RESULT);
 
+    open RES_FILE, ">".$result_file;
+    print RES_FILE $genes;
+    close RES_FILE;
+    push @result_files, ("random genes",$result_file);
+
+## STILL TO BE DONE: WRITE A COPY OF GENE LIST IN A FILE
+    &PrintURLTable(@result_files);
     &PipingForm();
 
     print "<HR SIZE = 3>";

@@ -26,7 +26,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $oligo_analysis_command = $SCRIPTS."/oligo-analysis";
 $convert_seq_command = $SCRIPTS."/convert-seq";
 $purge_sequence_command = $SCRIPTS."/purge-sequence";
-$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
+$prefix = "oligo-analysis";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;

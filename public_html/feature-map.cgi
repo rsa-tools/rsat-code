@@ -19,8 +19,11 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map ";
-$tmp_file_name = sprintf "feature-map.%s", &AlphaDate;
-$tmp_color_file = sprintf "color-file.%s", &AlphaDate();
+$prefix = "feature-map";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+$tmp_color_path = &RSAT::util::make_temp_file("","color_file", 1); $tmp_color_file = &ShortFileName($tmp_color_path);
+#$tmp_file_name = sprintf "feature-map.%s", &AlphaDate;
+#$tmp_color_file = sprintf "color-file.%s", &AlphaDate();
 
 $features_from_swissprot_cmd = "$SCRIPTS/features-from-swissprot";
 $features_from_msf_cmd = "$SCRIPTS/features-from-msf";

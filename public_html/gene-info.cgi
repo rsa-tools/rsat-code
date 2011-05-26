@@ -17,8 +17,11 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/gene-info";
-$tmp_file_name = sprintf "gene-info.%s", &AlphaDate();
+$prefix = "gene-info";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "gene-info.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -35,11 +38,13 @@ $parameters .= "";
 ################################################################
 #### queries
 if ( $query->param('queries') =~ /\S/) {
-    open QUERY, ">$TMP/$tmp_file_name";
-    print QUERY $query->param('queries');
-    close QUERY;
-    &DelayedRemoval("$TMP/$tmp_file_name");
-    $parameters .= " -i $TMP/$tmp_file_name";
+  $query_file = $TMP."/".$tmp_file_name;
+  open QUERY, ">".$query_file;
+  print QUERY $query->param('queries');
+  close QUERY;
+  &DelayedRemoval($query_file);
+  $parameters .= " -i ".$query_file;
+  push @result_files, ("query",$query_file);
 } else {
     &cgiError("You should enter at least one query in the box\n");
 }
@@ -83,7 +88,9 @@ if ($query->param('output') eq "display") {
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
+    push @result_files, ("gene info",$result_file);
 
+    &PrintURLTable(@result_files);
     &PipingForm();
 
     print "<HR SIZE = 3>";
