@@ -17,7 +17,9 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
+$prefix = "retrieve-seq";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -156,14 +158,15 @@ if ($query->param('genes') eq "all") {
     $gene_selection =~ s/\r/\n/g;
     my @gene_selection = split ("\n", $gene_selection);
     if ($gene_selection =~ /\S/) {
-	open QUERY, ">$TMP/$tmp_file_name";
+	open QUERY, ">$tmp_file_path";
 	foreach my $row (@gene_selection) {
-	    $row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option. 
-	    print QUERY $row, "\n";
+	  chomp($row); ## Suppress newline character
+	  $row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option. 
+	  print QUERY $row, "\n";
 	}
 	close QUERY;
-	&DelayedRemoval("$TMP/$tmp_file_name");
-	$parameters .= " -i $TMP/$tmp_file_name";
+	&DelayedRemoval("$tmp_file_path");
+	$parameters .= " -i $tmp_file_path";
     } else {
 	&cgiError("You should enter at least one gene identifier in the query box..");
     }
@@ -184,7 +187,7 @@ if (($query->param('output') =~ /display/i) ||
     print '<H4>Result</H4>';
 
     ### open the sequence file on the server
-    $sequence_file = "$TMP/$tmp_file_name.res";
+    $sequence_file = "$tmp_file_path.res";
     if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
 	&DelayedRemoval($sequence_file);

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.38 2011/03/31 13:17:58 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.39 2011/05/26 05:11:19 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -26,7 +26,9 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = $SCRIPTS."/matrix-scan -v 1 ";
-$tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
+$prefix = "matrix-scan";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
 $result_file =  $TMP."/".$tmp_file_name.".ft";
 
 ### Read the CGI query

@@ -73,8 +73,8 @@ $parameters .= "-i $sequence_file ";
 ### control sequences file
 ($control_file, $sequence_format) = &MultiGetSequenceFile(2, $output_path."/".$output_prefix."control_seq", 0);
 
-if ($control_file){
-	$parameters .= "-ctrl $control_file ";
+if ($control_file) {
+  $parameters .= "-ctrl $control_file ";
 }
 
 
