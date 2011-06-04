@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.193 2011/04/06 19:46:40 jvanheld Exp $
+# $Id: matrix-scan,v 1.194 2011/06/04 05:45:32 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -759,7 +759,7 @@ package main;
   ## I SHOULD IMPLEMENT AN EFFICIENT DESTRUCTOR FOR RSAT::GenericObject
   ##
   ##  if (($calc_fields{rank}) || ($calc_fields{pval})) { ## I don't remember why I initially create sites when pval was required. Maybe for the perspective of computing eval. To be checked
-  if ($calc_fields{rank}) {
+  if (($calc_fields{rank}) || ($return_fields{crer})) {
     $create_sites = 1;
   }
 
@@ -1496,7 +1496,8 @@ package main;
 
     ################################################################
     ## Rank CRERs
-    if (($return_fields{crer})  && (@{$crer_per_seq{$seq_id}})) {
+    if (($return_fields{crer})  && 
+	(defined(@{$crer_per_seq{$seq_id}}))) {
       &RSAT::message::TimeWarn( "Returning individual CRER for sequence", $seq_id)
 	if ($main::verbose >= 4);
 
@@ -1515,6 +1516,7 @@ package main;
 	    @ranked_crers;
       }
 
+
       ################################################################
       ## Return the CRER
       my $rank = 0;
@@ -1532,6 +1534,8 @@ package main;
     }
 
 
+    ################################################################
+    ## Print sorted matches
     if (($return_fields{sites})  && (defined(@{$matches_per_seq{$seq_id}}))) {
       &RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id)
 	if ($main::verbose >= 4);
@@ -1582,7 +1586,7 @@ package main;
 	$rank++;
 	$match->force_attribute('rank', $rank);
 
-		 next if ((defined($lth_matrix->{$matrix_name}->{rank})) && ($rank < $lth_matrix->{$matrix_name}->{rank}));
+	next if ((defined($lth_matrix->{$matrix_name}->{rank})) && ($rank < $lth_matrix->{$matrix_name}->{rank}));
 #	next if ((defined($lth_matrix->{$matrix_name}->{rank})&&($rank < $lth_matrix->{$matrix_name}->{rank}))
 #		 ||(defined($lth{rank}->{"all_matrices"})&&($rank < $lth{rank}->{"all_matrices"})));
 	&print_match($match);
@@ -1592,8 +1596,9 @@ package main;
 #	||(defined($uth{rank}->{"all_matrices"})&&($rank >= $uth{rank}->{"all_matrices"})));
       }
     }
-  }
 
+
+  }
 
    #### QUICK SCAN #####
    if (($return_fields{sites}) && ($quick_scan)) {
@@ -1617,7 +1622,7 @@ package main;
 	   &QuickScan($matrix,"sites",$total_scored);
        }
     }
-
+x
 
   ################################################################
   ## Print sequence-size statistics
@@ -1987,7 +1992,6 @@ package main;
     }
 
   }
-
 
   ################################################################
   ## Report execution time and close output stream
@@ -3856,12 +3860,12 @@ Calculate the score of the CRER
       }
 
       #########################################################
-      ## calculate over-represantation sig with binomial distribution
+      ## Calculate enrichment sig with binomial distribution
       unless (&check_thresholds("crer_sites", $hit_sum,$first_matrix_name)) {
 	next;
       }
 
-      ## nb of trials (takes into account the end of sequence where
+      ## Nb of trials (takes into account the end of sequence where
       ## some positions are not scored with all matrices if they do
       ## not have the same width)
       my $n = 0;
@@ -3888,12 +3892,12 @@ Calculate the score of the CRER
 				       );
       $nb_of_binom_tests{$seq_id}++;
       $sum_binom_tests++;
-	
       my $crer_sig = "Inf";
       if ($crer_pval > 0) {
 	$crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
       }
-	
+
+      ## Check thresholds on CRER P-value and significance
       unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {
 	next;
       }
@@ -3901,11 +3905,11 @@ Calculate the score of the CRER
 	next;
       }
 
-      ##prepare output (ft format)
+      ## Prepare output (ft format)
       my $strand_binon = "D";
       $strand_binon = "DR" if ($main::both_strands);
 
-      ## calculate start and end positions
+      ## Calculate start and end positions
       my $start_pos = ($sub_window_end - ($last_hit - $k)) - $orig_pos;
       my $end_pos = $sub_window_end + $longest_matrix_size -1 - $orig_pos;
 
