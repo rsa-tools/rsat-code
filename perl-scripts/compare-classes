@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.71 2011/06/04 13:40:37 jvanheld Exp $
+# $Id: compare-classes,v 1.72 2011/06/04 13:41:03 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1630,7 +1630,7 @@ sub PrintOneComparison {
   my $r = $current_compa{r};
   my $q = $current_compa{q};
 
-#  &RSAT::message::Debug($r, $q) if ($main::verbose >= 0);
+#  &RSAT::message::Debug($r, $q) if ($main::verbose >= 10);
 #  my ($r, $q) = split "__VERSUS__", $compa_key;
   $rank++;
 
@@ -1983,7 +1983,7 @@ sub PrintOneMatrix {
 sub CalcMargins {
     my ($margin_key) = @_;
 
-    &RSAT::message::TimeWarn("Calculating margins for key\t".$margin_key) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Calculating margins for key\t".$margin_key) if ($main::verbose >= 2);
 
 #    my @query_classes = sort keys %query_classes;
 #    my @ref_classes = sort keys %ref_classes;
