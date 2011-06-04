@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.70 2011/05/25 05:31:48 jvanheld Exp $
+# $Id: compare-classes,v 1.71 2011/06/04 13:40:37 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -245,13 +245,26 @@ local $log2 = log(2); ## Calculate it only once
 
 ## ##############################################################
 ## Fields to calculate
-foreach my $field (@matrix_keys) {
-    my $calc_group = $calc_groups{$field};
-    $calc_fields{$calc_group} = 1;
+foreach my $field (keys %return_fields) {
+  $calc_fields{$field} = 1;
+  &RSAT::message::Debug("Calculating field", $field, "group", $calc_group, "because selected as output field") if ($main::verbose >= 2);
 }
 
-foreach my $field (keys %return_fields) {
-    $calc_fields{$field} = 1;
+foreach my $field (@matrix_keys) {
+  my $calc_group = $calc_groups{$field};
+  $calc_fields{$calc_group} = 1;
+  &RSAT::message::Debug("Calculating field", $field, "group", $calc_group, "because output matrix requested") if ($main::verbose >= 2);
+}
+
+foreach my $field (keys %lth) {
+  my $calc_group = $calc_groups{$field};
+  $calc_fields{$calc_group} = 1;
+  &RSAT::message::Debug("Calculating field", $field, "group", $calc_group, "because lth defined") if ($main::verbose >= 2);
+}
+foreach my $field (keys %uth) {
+  my $calc_group = $calc_groups{$field};
+  $calc_fields{$calc_group} = 1;
+  &RSAT::message::Debug("Calculating field", $field, "group", $calc_group, "because uth defined") if ($main::verbose >= 2);
 }
 
 ## Dependencies between fields
@@ -933,7 +946,7 @@ sub ReadArguments {
 	&RSAT::error::FatalError (join("\t", $sort_key, "Invalid sort key. Supported:", $supported_sort_fields));
       }
 
-      ### export a distance matrix
+      ### Export a matrix
     } elsif ($ARGV[$a] eq "-matrix") {
       $matrix_key = $ARGV[$a+1];
       push @matrix_keys, $matrix_key;
@@ -1265,7 +1278,7 @@ sub CompareClasses {
       ## ##############################################################
       ## Calculate frequencies
       if ($calc_fields{freq}) {
-	warn "; calculating frequencies for ", $compa_key, "\n" if ($verbose >= 5);
+	&RSAT::message::Debug("Calculating frequencies", $compa_key) if ($verbose >= 5);
 	my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
 	my $n_r = $ref_classes{$r}->get_size();	### number of elements in the reference class
 	#		my $c = $QR; ### number of common elements
@@ -1282,7 +1295,7 @@ sub CompareClasses {
 	$current_compa{'P(Q|R)'} = $QR/$n_r;
 	$current_compa{'P(R|Q)'} = $QR/$n_q;
 
-	#### check thresholds for query freq
+	#### Check thresholds for query proba
 	if ((defined($lth{'P(R|Q)'})) &&
 	    ($current_compa{'P(R|Q)'}< $lth{'P(R|Q)'})) {
 	  next;
@@ -1294,6 +1307,8 @@ sub CompareClasses {
 	#### check thresholds for reference freq
 	if ((defined($lth{'P(Q|R)'})) &&
 	    ($current_compa{'P(Q|R)'}< $lth{'P(Q|R)'})) {
+#	  &RSAT::message::Debug("Threshold", $compa_key, "P(Q|R)", "lth=".$lth{'P(Q|R)'},  "P(Q|R)=".$current_compa{'P(Q|R)'}) if ($main::verbose >= 10);
+
 	  next;
 	} elsif ((defined($uth{'P(Q|R)'})) &&
 		 ($current_compa{'P(Q|R)'} > $uth{'P(Q|R)'})) {
@@ -1864,102 +1879,102 @@ sub CreateGraph {
 ################################################################
 ## Print one comparison matrix
 sub PrintOneMatrix {
-    my ($matrix_key) = @_;
+  my ($matrix_key) = @_;
 
-    ## Calculate marggins if required
-    if ($margins) {
-	&CalcMargins($matrix_key);
+  ## Calculate margins if required
+  if ($margins) {
+    &CalcMargins($matrix_key);
+  }
+
+  #    my @query_classes = sort keys %query_classes;
+  #    my @ref_classes = sort keys %ref_classes;
+
+  ## Print the matrix type
+  print $out "; Matrix", "\t", $matrix_key, "\n" if ($main::verbose >= 1);
+
+  ## Print the matrix header
+  my $header = "#$matrix_key Q\R";
+  if ($infile{qnames}) {
+    ## replace class IDs by class names
+    foreach my $class (@query_classes) {
+      my $qname = $query_class{$class}->get_attribute("name");
+      if (defined($qname)) {
+	$header .= "\t".$qname; 
+      } else {
+	&Warning("There is no name associated to query class $r\n", 1),
+	  $header .= "\t".$class; 
+      }
     }
+  } else {
+    $header .= "\t";
+    $header .= join "\t", @query_classes;
+  }
 
-#    my @query_classes = sort keys %query_classes;
-#    my @ref_classes = sort keys %ref_classes;
+  ## Print header for the margin columns
+  if ($margins) {
+    $header .= "\t"."R_sum(".$matrix_key.")";
+    $header .= "\t"."R_avg(".$matrix_key.")";
+  }
 
-    ## Print the matrix type
-    print $out "; Matrix", "\t", $matrix_key, "\n" if ($main::verbose >= 1);
+  $header .= "\n";
+  print $out $header;
 
-    ## Print the matrix header
-    my $header = "#$matrix_key Q\R";
-    if ($infile{qnames}) {
-	## replace class IDs by class names
-	foreach my $class (@query_classes) {
-	    my $qname = $query_class{$class}->get_attribute("name");
-	    if (defined($qname)) {
-		$header .= "\t".$qname; 
-	    } else {
-		&Warning("There is no name associated to query class $r\n", 1),
-		$header .= "\t".$class; 
-	    }
-	}
+  #### Print the matrix
+  my $field_format = $field_formats{$matrix_key};
+  foreach my $r (@ref_classes) {
+    if ($infile{rnames}) {
+      my $rname = $ref_classes{$r}->get_attribute("name");
+      if ($rname) {
+	## Replace class ID by class name
+	print $out $rname;
+      } else {
+	&Warning("There is no name associated to reference class $r\n", 1),
+	  print $out $r;
+      }
     } else {
-	$header .= "\t";
-	$header .= join "\t", @query_classes;
+      print $out $r;
     }
-    
+    foreach my $q (@query_classes) {
+      my $compa_key = $r."__VERSUS__".$q;
+      %current_compa = %{$compa{$compa_key}};
+      if (defined($current_compa{$matrix_key})) {
+	print $out "\t", sprintf($field_format, $current_compa{$matrix_key});
+      } else {
+	print $out "\t", $null;
+      }
+    }
+
+    ## Print row margins
     if ($margins) {
-	$header .= "\t"."R_sum(".$matrix_key.")";
-	$header .= "\t"."R_avg(".$matrix_key.")";
+      print $out ("\t", join("\t", 
+			     sprintf("%6g", $sum_per_R{$matrix_key}{$r}),
+			     sprintf("%6g", $avg_per_R{$matrix_key}{$r}),
+			    ));
     }
+    print $out "\n";
+  }
 
-    $header .= "\n";
-    print $out $header;
-    
-    #### print the matrix
-    my $field_format = $field_formats{$matrix_key};
-    foreach my $r (@ref_classes) {
-	if ($infile{rnames}) {
-	    my $rname = $ref_classes{$r}->get_attribute("name");
-	    if ($rname) {
-		## Replace class ID by class name
-		print $out $rname; 
-	    } else {
-		&Warning("There is no name associated to reference class $r\n", 1),
-		print $out $r;
-	    }
-	} else {
-	    print $out $r;
-	}
-	foreach my $q (@query_classes) {
-	    my $compa_key = $r."__VERSUS__".$q;
-	    %current_compa = %{$compa{$compa_key}};
-	    if (defined($current_compa{$matrix_key})) {
-		print $out "\t", sprintf($field_format, $current_compa{$matrix_key});
-	    } else {
-		print $out "\t", $null;
-	    }
-	}
+  ## Print column margins
+  if ($margins) {
 
-	## Print row margins
-	if ($margins) {
-	    print $out ("\t", join("\t", 
-				  sprintf("%6g", $sum_per_R{$matrix_key}{$r}),
-				  sprintf("%6g", $avg_per_R{$matrix_key}{$r}),
-				 ));
-	}
-	print $out "\n";
+    ## marginal sum
+    print $out "Q_sum(",$matrix_key,")";
+    foreach my $q (@query_classes) {
+      print $out "\t",  sprintf("%6g", $sum_per_Q{$matrix_key}{$q});
     }
+    print $out "\t", sprintf("%6g", $sum{$matrix_key});
+    print $out "\t", ".";
+    print $out "\n";
 
-    ## Print column margins
-    if ($margins) {
-
-	## marginal sum
-	print $out "Q_sum(",$matrix_key,")";
-	foreach my $q (@query_classes) {
-	    print $out "\t",  sprintf("%6g", $sum_per_Q{$matrix_key}{$q});
-	}
-	print $out "\t", sprintf("%6g", $sum{$matrix_key});
-	print $out "\t", ".";
-	print $out "\n";
-
-	## marginal average
-	print $out "Q_avg(",$matrix_key,")";
-	foreach my $q (@query_classes) {
-	    print $out "\t",  sprintf("%6g", $avg_per_Q{$matrix_key}{$q});
-	}
-	print $out "\t", ".";
-	print $out "\t", sprintf("%6g", $avg{$matrix_key});
-	print $out "\n";
+    ## marginal average
+    print $out "Q_avg(",$matrix_key,")";
+    foreach my $q (@query_classes) {
+      print $out "\t",  sprintf("%6g", $avg_per_Q{$matrix_key}{$q});
     }
-
+    print $out "\t", ".";
+    print $out "\t", sprintf("%6g", $avg{$matrix_key});
+    print $out "\n";
+  }
 }
 
 
