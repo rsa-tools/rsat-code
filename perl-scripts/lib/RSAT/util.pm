@@ -927,12 +927,11 @@ sub PrintArguments {
       $argument_string .= " $a";
     }
   }
-  print $local_out $argument_string, "\n" if ($local_out);
-
   if ($hide_RSAT_path) {
     $argument_string = &hide_RSAT_path($argument_string);
   }
 
+  print $local_out $argument_string, "\n" if ($local_out);
   return $argument_string;
 }
 
