@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.192 2011/05/17 13:51:45 jvanheld Exp $
+# $Id: peak-motifs,v 1.193 2011/06/04 05:45:50 jvanheld Exp $
 #
 ############################################################
 
@@ -67,7 +67,7 @@ peak-motifs [-i inputfile] [-o outputfile] [-v #] [...]
 The program takes as input either one (test) or two sequence files
 (test versus control).
 
-All input sequences formats supported by convert-sequences are
+All sequences formats supported as input by I<convert-sequences> are
 supported.
 
 =head1 OUTPUT FORMAT
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.192 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.193 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
