@@ -270,22 +270,23 @@ sub binomial {
 
 
 ##############################################################
-## converts a natural logarithm (x) into e^x.
+## Converts a natural logarithm (x) into e^x.
+##
 ## This is performed by generating the output string, in order to
-## cirumvent a problem with very low values (<< e-70).
+## cirumvent a problem with the standard Perl function exp(), which
+## returns 0 for  values < e-322.
 sub LogToEng {
-    my ($log) = @_;
-    my $base = 10;
-    my $log_base = log($base);
-    $log /= log(10);
-    $eng = 10**(1+$log - int($log));
-    $eng .= "e";
-    if (int($log)-1 > 0) {
-        $eng .= "+";
-    }
-    $eng .= int($log)-1;
-    return($eng);
-
+  my ($log) = @_;
+  my $base = 10;
+  my $log_base = log($base);
+  $log /= log(10);
+  $eng = 10**(1+$log - int($log));
+  $eng .= "e";
+  if (int($log)-1 > 0) {
+    $eng .= "+";
+  }
+  $eng .= int($log)-1;
+  return($eng);
 }
 
 ##############################################################
@@ -527,118 +528,201 @@ sub negbin {
 ##############################################################
 ## Calculate negbin with mean and variance as parameters
 sub sum_of_negbin2 {
-    my ($mean, $variance, $from, $to) = @_;
-    
-    ### Check parameters
-    &Warning("Cannot calculate negbin with mean <= 0 and x >0") if (($mean <= 0) && ($to > 0));
-    &RSAT::error::FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
-    &RSAT::error::FatalError("negbin2: the variance should be positive") if ($variance < 0);
-    &RSAT::error::FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
+  my ($mean, $variance, $from, $to) = @_;
 
-    ### Convert mean and variance to p and k
-    my $p = $variance/$mean -1;
-    my $k = $mean/$p;
-    warn ("; Calculating p and k from mean and variance\n",
-	  ";\tp = ", $p, "\n",
-	  ";\tk = ", $k, "\n"
-	 ) if ($main::verbose >= 6);
+  ### Check parameters
+  &Warning("Cannot calculate negbin with mean <= 0 and x >0") if (($mean <= 0) && ($to > 0));
+  &RSAT::error::FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
+  &RSAT::error::FatalError("negbin2: the variance should be positive") if ($variance < 0);
+  &RSAT::error::FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
 
-    ### Calculate the negbin
-    my $sum_of_negbin = &sum_of_negbin($p, $k, $from, $to);
-    return ($p, $k, $sum_of_negbin);
-    
+  ### Convert mean and variance to p and k
+  my $p = $variance/$mean -1;
+  my $k = $mean/$p;
+  warn ("; Calculating p and k from mean and variance\n",
+	";\tp = ", $p, "\n",
+	";\tk = ", $k, "\n"
+       ) if ($main::verbose >= 6);
+
+  ### Calculate the negbin
+  my $sum_of_negbin = &sum_of_negbin($p, $k, $from, $to);
+  return ($p, $k, $sum_of_negbin);
 }
+
 ##############################################################
 ## sum_of_negbin($lambda, $from, $to)
 ## Calculates the Negbin probability for a given interval of values
 sub sum_of_negbin {
-    my ($p, $k, $from,$to) = @_;
-    my $sum_of_negbin;
-    my $prev_sum;
+  my ($p, $k, $from,$to) = @_;
+  my $sum_of_negbin;
+  my $prev_sum;
 
-    my $q = 1 + $p;
-    my $log_q = log($q);
-    my $log_p = log($p);
-    my $log_k = log($k);
-    my @log_negbins = ();
+  my $q = 1 + $p;
+  my $log_q = log($q);
+  my $log_p = log($p);
+  my $log_k = log($k);
+  my @log_negbins = ();
 
-    warn ("; Calculating negative binomial\n",
-	  ";\tp = ", $p, "\n",
-	  ";\tq = ", $q, "\n",
-	  ";\tk = ", $k, "\n",
-	  ";\tfrom = ", $from, "\n",
-	  ";\tto = ", $to, "\n",
-	 ) if ($main::verbose >= 10);
+  warn ("; Calculating negative binomial\n",
+	";\tp = ", $p, "\n",
+	";\tq = ", $q, "\n",
+	";\tk = ", $k, "\n",
+	";\tfrom = ", $from, "\n",
+	";\tto = ", $to, "\n",
+       ) if ($main::verbose >= 10);
 
-    
+  ## Calculate proba for 0 successes
+  my $log_negbin = - $log_q*$k;;
+  $sum_of_negbin = &LogToEng($log_negbin) if ($from == 0);
 
-    ## Calculate proba for 0 successes
-    my $log_negbin = - $log_q*$k;;
-    $sum_of_negbin = &LogToEng($log_negbin) if ($from == 0);
-
-    ## Use recursive formula
-    for my $i (1..$to) {
-	$prev_sum = $sum_of_negbin;
-	$log_negbin += $log_p + log($k+$i - 1) - $log_q - log($i);
-	if ($i >= $from) {
-	    $sum_of_negbin += &LogToEng($log_negbin);
-	}
-	warn join ("\t", $i, $log_negbin, &LogToEng($log_negbin), $sum_of_negbin), "\n" 
-	    if ($main::verbose >= 10);
-	last if (($sum_of_negbin > 0) && ($prev_sum == $sum_of_negbin));
+  ## Use recursive formula
+  for my $i (1..$to) {
+    $prev_sum = $sum_of_negbin;
+    $log_negbin += $log_p + log($k+$i - 1) - $log_q - log($i);
+    if ($i >= $from) {
+      $sum_of_negbin += &LogToEng($log_negbin);
     }
+    warn join ("\t", $i, $log_negbin, &LogToEng($log_negbin), $sum_of_negbin), "\n" 
+      if ($main::verbose >= 10);
+    last if (($sum_of_negbin > 0) && ($prev_sum == $sum_of_negbin));
+  }
 
-    return $sum_of_negbin;
+  return $sum_of_negbin;
 }
 
 
 ##############################################################
 ## Poisson distribution
 ##
-## usage poisson($successes,$expected)
+## Usage
+##   poisson($x,$lambda)
+##
+## Where
+##   $x is the observed number of successes
+##   $lambda is the number of successes expected by chance (the mean
+##           of the Poisson distribution)
+##
+## When the option $series is not null, the function computes the 3
+## distributions (density, CDF and P-value) for the whole range from 0
+## to x.
+##
 ## note: on our sun station, this algorithm works only for m < 746
-## direct calculation would be                  
+##
+## Note: the distribution is computed on the basis of a recursive
+## formula rather than the raw formula. This computation increases
+## precision and time efficiency.
+##
+## Raw formula:
 ##    p(x) = lambda^x exp(-lambda)/x!
-## We use a recursive formula 
+## Recursive formula:
 ##    p(x) = p(x-1) * lambda / x
+##
+## The implementation of this raw formula is iterative rather than
+## recursive to avoid embedded function calls.
+##
+## Equivalent R command for validation of the whole series:
+##   p=0.0001; n=500; s=120; m=p*n; data.frame(i=0:s, dpois=dpois(0:s,lambda=m),ppois=ppois(0:s,lambda=m),pval=ppois((0:s)-1,lambda=m,lower=F))
+##
 sub poisson {
     my ($x,$lambda, $series) = @_;
     if ($lambda <= 0) {
 	&RSAT::error::FatalError($lambda." is not a valid value for the expected mean of &poisson() . Must be strictly positive.");
     }
+
     my $log_lambda = log($lambda);
-    my $log_poi;
-    my @log_pois = ();
+    my $log_dpois;
+    my @log_dpois = ();
 
     if ($x == 0) {
-	$log_poi = -$lambda;
-	push @log_pois, $log_poi if ($series);
+	$log_dpois = -$lambda;
+	push @log_dpois, $log_dpois if ($series);
     } else {
 	## value for x==1
-	$log_poi = -$lambda + $log_lambda;
+	$log_dpois = -$lambda + $log_lambda;
 
 	if ($series) {
-	    push @log_pois, -$lambda; ## value for x==0
-	    push @log_pois, $log_poi; ## value for x==1
+	    push @log_dpois, -$lambda; ## value for x==0
+	    push @log_dpois, $log_dpois; ## value for x==1
 	}
     }
-    
+
     for my $i (2..$x) {
-	$log_poi += $log_lambda - log($i);
-	if ($series) {
-	    push @log_pois, $log_poi; ## value for x==$i
-	}
+      $log_dpois += $log_lambda - log($i);
+      if ($series) {
+	push @log_dpois, $log_dpois; ## value for x==$i
+      }
     }
 
+
+    ## Compute at once the density + cumulative density function (CDF)
     if ($series) {
-	my @pois = ();
-	foreach my $log_poi (@log_pois) {
-	    push @pois, &LogToEng($log_poi);
+      my @dpois = (); ## Poisson density
+      my @ppois = (); ## Cumulative density function (CDF)
+
+      foreach my $i (0..$#log_dpois) {
+#	my $dpois = &LogToEng($log_dpois[$i]);
+	$dpois = exp($log_dpois[$i]) || &LogToEng($log_dpois[$i]); ## The function &LogToEng is used here only if exp returns 0
+	push @dpois, $dpois;
+	$ppois[$i] = $dpois;
+	$ppois[$i] += $ppois[$i-1] if ($i >= 1); ## update CDF
+#	&RSAT::message::Debug($i, $dpois, $ppois[$i]) if ($main::verbose >= 10);
+      }
+
+      ################################################################
+      ## Compute the P-value
+
+      ## We first need to compute the right tail of the distribution.
+      ## The Poisson distribution extends to infinite, but we can stop
+      ## computing when the summed terms are below the precision
+      ## limit.
+      my @vpois = (); ## P-value, defined as P(X >= x)
+      my $dpois = 0;
+      my $last_dpois = $dpois[$#dpois];
+      $i = $#dpois;
+      my $after_last = 0;
+      do {
+	$i++;
+	$log_dpois += $log_lambda - log($i);
+	$dpois = exp($log_dpois) || &LogToEng($log_dpois); ## We use the tricky function &LogToEng only when the Perl exp() function fails (returns 0)
+	push @dpois, $dpois;
+#	&RSAT::message::Debug($i, $dpois, $last_dpois, $last_dpois - $dpois) if ($main::verbose >= #0);
+
+	## The basic idea for stopping cumulating is that the addition
+	## of a new term does not change the sum. This is however not
+	## sufficient: when P-values are very small, adding the next
+	## density term would not change the sum whereas adding the
+	## whole remaining right tail up to infinity would change
+	## it. We thus keep computing (and summing) the terms for 20
+	## more steps. Checked by comparing the result with R
+	if ($last_dpois + $dpois == $last_dpois) {
+	  $after_last++;
 	}
-	return @pois;
+      } until ($after_last > 20);
+
+      ################################################################
+      ## Due to the imprecision of the Perl sum, we loose precision
+      ## around 1e-285
+      foreach my $j (0..$#dpois) {
+	my $i = $#dpois - $j;
+	$vpois[$i] = $dpois[$i];
+	$vpois[$i] += $vpois[$i+1] if ($i < $#vpois);
+      }
+
+      ################################################################
+      ## Truncate the arrays to return only ther equired range (the
+      ## vector shad to be extended for computing the P-value).
+      @dpois = @dpois[0..$x];
+      @vpois = @vpois[0..$x];
+
+      my $dpois_ref = \@dpois;
+      my $ppois_ref = \@ppois;
+      my $vpois_ref = \@vpois;
+#      &RSAT::message::Debug($dpois_ref, $ppois_ref) if ($main::verbose >= 0);
+      return ($dpois_ref, $ppois_ref, $vpois_ref);
+
     } else {
-	my $poi = &LogToEng($log_poi);
-	return $poi;
+      my $dpois = &LogToEng($log_dpois);
+      return $dpois;
     }
 }
 
@@ -646,44 +730,44 @@ sub poisson {
 ## sum_of_poisson($lambda, $from, $to)
 ## Calculates the Poisson probability for a given interval of values
 sub sum_of_poisson {
-    my ($lambda,$from,$to) = @_;
-    my $poi;
-    if (($lambda <= 0) && (($from > 0) || ($to > 0))){
-	&Warning( "sum_of_poisson($lambda, $from, $to). Cannot calculate Poisson probability with lambda <= 0 and x > 0");
-	return("NA");
+  my ($lambda,$from,$to) = @_;
+#    my $dpois;
+  if (($lambda <= 0) && (($from > 0) || ($to > 0))){
+    &Warning( "sum_of_poisson($lambda, $from, $to). Cannot calculate Poisson probability with lambda <= 0 and x > 0");
+    return("NA");
+  }
+  my $log_lambda = log($lambda);
+
+  my $log_dpois;
+  my $sum_of_poi;
+  my $start;
+
+  $sum_of_poi = exp(-$lambda) if ($from ==0);
+
+  if ($to ==0) {
+    $log_dpois = -$lambda;
+  } else {
+    $log_dpois = -$lambda + $log_lambda;
+    $sum_of_poi += exp($log_dpois) if ($from <= 1);
+  }
+
+
+  if ($from <= 1) {
+    $start = 2;
+  } else {
+    $start = $from;
+    for my $i (2..$start-1) {
+      $log_dpois += $log_lambda - log($i);
     }
-    my $log_lambda = log($lambda);
+  }
 
-    my $log_poi;
-    my $sum_of_poi;
-    my $start;
-
-    $sum_of_poi = exp(-$lambda) if ($from ==0);
-
-    if ($to ==0) {
-	$log_poi = -$lambda;
-    } else {
-	$log_poi = -$lambda + $log_lambda;
-	$sum_of_poi += exp($log_poi) if ($from <= 1);
-    }
-
-
-    if ($from <= 1) {
-	$start = 2;
-    } else {
-	$start = $from;
-	for my $i (2..$start-1) {
-	    $log_poi += $log_lambda - log($i);
-	}
-    }
-
-    for my $i ($start..$to) {
-	$log_poi += $log_lambda - log($i);
-	$sum_of_poi += exp($log_poi);
-	last if (($i > $lambda) && ($sum_of_poi <= $prev_value));
-	$prev_value = $sum_of_poi;
-    }
-    return $sum_of_poi;
+  for my $i ($start..$to) {
+    $log_dpois += $log_lambda - log($i);
+    $sum_of_poi += exp($log_dpois);
+    last if (($i > $lambda) && ($sum_of_poi <= $prev_value));
+    $prev_value = $sum_of_poi;
+  }
+  return($sum_of_poi);
 }
 
 
