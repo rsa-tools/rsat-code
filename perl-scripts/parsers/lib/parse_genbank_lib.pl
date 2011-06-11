@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.42 2010/09/09 15:44:32 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.43 2011/06/11 12:28:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -91,12 +91,12 @@ sub ParseAllGenbankFiles {
 			  seq_dir=>$main::dir{sequences}
 			 );
     }
-  
+
 #    ## For Genes, use the GeneID as unique identifier
 #    foreach my $object ($genes->get_objects()) {
 #	$object->UseGeneIDasID();
 #    }
-  
+
 
     ## DEBUG NOTE: ParseFeatureNames and CheckObjectNames are
     ## apparently partly redundant. I should check and remove
@@ -178,7 +178,7 @@ sub ParseAllGenbankFiles {
 
     &InheritGeneNames($CDSs, $mRNAs);
 
-    ## Find a description for the different classes 
+    ## Find a description for the different classes
 
     ## VERY TRICKY: for the yeast Saccharomyces cerevisiae, the fields
     ## "note" and "product" are intermingled (28 March 2010 and
@@ -237,7 +237,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 
 =cut
 
-sub ParseGenbankFile {
+  sub ParseGenbankFile {
     my ($input_file,
 	$features,
 	$genes,
@@ -264,25 +264,25 @@ sub ParseGenbankFile {
 			     misc_RNA=>1,
 			     misc_feature=>1,
 			     gene=>1
-			     );
+			    );
 
     &RSAT::message::TimeWarn("Parsing gbk file",$input_file)
-	if ($main::verbose >= 1);
+      if ($main::verbose >= 1);
     &RSAT::message::TimeWarn("Parsing features", join (",", keys %features_to_parse))
-	if ($main::verbose >= 2);
-    &RSAT::message::TimeWarn(join("\t", "Sequence directory", $args{sequence_dir})) 
-	if ($main::verbose >= 2);
+      if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "Sequence directory", $args{sequence_dir}))
+      if ($main::verbose >= 2);
 
     open GBK, $input_file
-	|| die "Error: cannot open input file $input_file.\n";
+      || die "Error: cannot open input file $input_file.\n";
     my $l = 0;
     my $in_sequence = 0;
     my $in_features = 0;
     my $in_feature = 0;
     my $in_gene = 0;
     my $in_cds = 0;
-    my $current_feature = null;
-    my $current_contig = null;  
+    my $current_feature;
+    my $current_contig;
     my $taxid = "";
     my $organism = "";
     my $organism_name = "";
@@ -296,389 +296,393 @@ sub ParseGenbankFile {
 		    "COMMENT"=>1,
 		    "PUBMED"=>1,
 		    "MEDLINE"=>1,
-		    );
+		   );
 
 
-
+    my $l = 0;
     while (my $line = &ReadNextLine()) {
-	next unless ($line =~ /\S/);
-	unless (($in_features) ||
-		($in_sequence)){
-	    #### organism name
-	    if ($line =~ /^\s+ORGANISM\s+/) {
-		$organism_name = "$'";
-		&RSAT::message::Info("Organism name", $organism_name) if ($main::verbose >= 2);
-		$current_contig->set_attribute("organism", $organism_name);
-		$organism = $organisms->get_object($organism_name);
-		if ($organism) {
-		    warn "; Organism $organism already created\n" if ($main::verbose >= 3);
-		} else {
-		    $organism = $organisms->new_object();
-		    $organism->push_attribute("names", $organism_name);
-		    $organism->force_attribute("source", $args{source} || "Genbank");
-		    $organisms->index_names(); ### required to prevent creating several objects for the same organism
-		}
+      $l++;
+      &RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 0);
 
-		#### collect the taxonomy
-		my $taxonomy = "";
-		while ($line = &ReadNextLine()) {
-		    if ($line =~ /^\S/) {
-			$taxonomy = &trim($taxonomy);
-			$taxonomy =~ s/\s+/ /g;
-			$taxonomy =~ s/\.\s*$//;
-#			$current_contig->set_attribute("taxonomy", $taxonomy);
-			$organism->force_attribute("taxonomy", $taxonomy);
-			last;
-		    } else {
-			$taxonomy .= $line;
-			## A horrible fix for the fact that there is no clear
-			## separation between organism name and taxonomy
-			## For example
-			##      ORGANISM  Salmonella enterica subsp. enterica serovar Choleraesuis str.
-			##           SC-B67
-			##           Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacteriales;
-			##			 Enterobacteriaceae;
-			##
-			## I delete the taxonomy until there is at least one
-			## semilcolon in the string.
-			unless ($taxonomy =~ /;/) {
-			    $taxonomy = "";
-			}
-		    }
-		}
-	    }
-	    if ($line =~ /^([A-Z]+)\s+/) {
-		$current_contig_key = $1;
-		$current_contig_value = "$'";
-		chomp($current_contig_value);
-		$current_contig_value =~ s/\.\s*$//;
-		if ($contig_keys{$current_contig_key}) {
-		    warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
-		    $current_contig->push_attribute(lc($current_contig_key), $current_contig_value);
-		}
+      next unless ($line =~ /\S/);
+      unless (($in_features) ||
+	      ($in_sequence)){
+	#### organism name
+	if ($line =~ /^\s+ORGANISM\s+/) {
+	  $organism_name = "$'";
+	  &RSAT::message::Info("Organism name", $organism_name) if ($main::verbose >= 2);
+	  $current_contig->set_attribute("organism", $organism_name);
+	  $organism = $organisms->get_object($organism_name);
+	  if ($organism) {
+	    warn "; Organism $organism already created\n" if ($main::verbose >= 3);
+	  } else {
+	    $organism = $organisms->new_object();
+	    $organism->push_attribute("names", $organism_name);
+	    $organism->force_attribute("source", $args{source} || "Genbank");
+	    $organisms->index_names(); ### required to prevent creating several objects for the same organism
+	  }
 
-		## Use VERSION number as ID
-		if (lc($current_contig_key) eq "version") {
-		    @current_contig_values = split / +/, $current_contig_value;
-		    $current_contig->force_attribute("id", $current_contig_values[0]);
-		}
+	  #### collect the taxonomy
+	  my $taxonomy = "";
+	  while ($line = &ReadNextLine()) {
+	    if ($line =~ /^\S/) {
+	      $taxonomy = &trim($taxonomy);
+	      $taxonomy =~ s/\s+/ /g;
+	      $taxonomy =~ s/\.\s*$//;
+	      #			$current_contig->set_attribute("taxonomy", $taxonomy);
+	      $organism->force_attribute("taxonomy", $taxonomy);
+	      last;
+	    } else {
+	      $taxonomy .= $line;
+	      ## A horrible fix for the fact that there is no clear
+	      ## separation between organism name and taxonomy
+	      ## For example
+	      ##      ORGANISM  Salmonella enterica subsp. enterica serovar Choleraesuis str.
+	      ##           SC-B67
+	      ##           Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacteriales;
+	      ##			 Enterobacteriaceae;
+	      ##
+	      ## I delete the taxonomy until there is at least one
+	      ## semilcolon in the string.
+	      unless ($taxonomy =~ /;/) {
+		$taxonomy = "";
+	      }
+	    }
+	  }
+	}
+	if ($line =~ /^([A-Z]+)\s+/) {
+	  $current_contig_key = $1;
+	  $current_contig_value = "$'";
+	  chomp($current_contig_value);
+	  $current_contig_value =~ s/\.\s*$//;
+	  if ($contig_keys{$current_contig_key}) {
+	    warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
+	    $current_contig->push_attribute(lc($current_contig_key), $current_contig_value);
+	  }
 
-	    } elsif ($line =~ /^ {12}/) {
-		### suite of the current contig value
-		$current_contig_value .= " ".$'; ##'
-		warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
-		$current_contig->append_attribute(lc($current_contig_key), $current_contig_value);
-	    }
-	  
-	    if ($line =~ /^FEATURES/) {
-		$in_features = 1 ;
-		undef($current_contig_key);
-		undef($current_contig_value);
-		warn "; Reading features\n" if ($main::verbose >= 2);
-		next;
-	    }
+	  ## Use VERSION number as ID
+	  if (lc($current_contig_key) eq "version") {
+	    @current_contig_values = split / +/, $current_contig_value;
+	    $current_contig->force_attribute("id", $current_contig_values[0]);
+	  }
+
+	} elsif ($line =~ /^ {12}/) {
+	  ### suite of the current contig value
+	  $current_contig_value .= " ".$'; ##'
+	  warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
+	  $current_contig->append_attribute(lc($current_contig_key), $current_contig_value);
 	}
 
-	if  ($line =~ /^LOCUS/) {
-	    #### new contig
-	    @fields = split /\s+/, $line;
-	    &RSAT::message::Info(join("\t", "; New contig", $line)) if ($main::verbose >= 2);
-	    my $contig_name = $fields[1];
-	    my $length = $fields[2];
-	    my $type = $fields[4];      #### DNA or peptide
-	    my $form = $fields[5];      #### circular or linear
-	    my $taxo_group = $fields[6];      #### short taxonomic group
-	    my $contig_date = $fields[7];      #### date of the contig
-	    $current_contig = $contigs->new_object();
-	    $current_contig->push_attribute("names",$contig_name);
-	    if ($input_file =~ /[^\/]+\.gbk/) {
-		$current_contig->set_attribute("genbank_file", $&);
+	if ($line =~ /^FEATURES/) {
+	  $in_features = 1 ;
+	  undef($current_contig_key);
+	  undef($current_contig_value);
+	  warn "; Reading features\n" if ($main::verbose >= 2);
+	  next;
+	}
+      }
+
+      if ($line =~ /^LOCUS/) {
+	#### new contig
+	@fields = split /\s+/, $line;
+	&RSAT::message::Info("New contig", $line) if ($main::verbose >= 2);
+	my $contig_name = $fields[1];
+	my $length = $fields[2];
+	my $type = $fields[4];		#### DNA or peptide
+	my $form = $fields[5];		#### circular or linear
+	my $taxo_group = $fields[6];	#### short taxonomic group
+	my $contig_date = $fields[7];	#### date of the contig
+	$current_contig = $contigs->new_object();
+	$current_contig->push_attribute("names",$contig_name);
+	if ($input_file =~ /[^\/]+\.gbk/) {
+	  $current_contig->set_attribute("genbank_file", $&);
+	}
+	$current_contig->set_attribute("length", $length);
+	$current_contig->set_attribute("type", $type);
+	$current_contig->set_attribute("form", $form);
+	$current_contig->set_attribute("taxo_group", $taxo_group);
+	$current_contig->set_attribute("date", $contig_date);
+
+      } elsif ($line =~ /^BASE COUNT/) {
+	#### base count
+	#### currently ignored
+
+	################################################################
+	#### read the full sequence (at the end of the contig)
+      } elsif ($line =~ /^ORIGIN/) {
+	&RSAT::message::TimeWarn("Reading sequence") if ($main::verbose >= 2);
+	$in_features = 0;
+	$in_sequence = 1;
+	if ($args{no_seq}) {
+	  #### skip the sequence
+	  while (($line = &readNextLine()) && ($current_contig)) {
+	    if ($line =~ /^\/\/$/) {
+	      $current_contig = "";
+	      last;
 	    }
-	    $current_contig->set_attribute("length", $length);
-	    $current_contig->set_attribute("type", $type);
-	    $current_contig->set_attribute("form", $form);
-	    $current_contig->set_attribute("taxo_group", $taxo_group);
-	    $current_contig->set_attribute("date", $contig_date);
-	  
-	} elsif  ($line =~ /^BASE COUNT/) {
-	    #### base count
-	    #### currently ignored
-	  
-	    ################################################################
-	    #### read the full sequence (at the end of the contig)
-	} elsif  ($line =~ /^ORIGIN/) {
-	    warn "; Reading sequence\n" if ($main::verbose >= 2);
-	    $in_features = 0;
-	    $in_sequence = 1;
-	    if ($args{no_seq}) {
-		#### skip the sequence
-		while ($line = &readNextLine()) {
-		    if ($line =~ /^\/\/$/) {
-			$current_contig = null;
-			last;
-		    }
-		}
+	  }
 
-		################################################################
-		#### save the whole contig sequence in a file
-	    } elsif ($args{seq_dir}) {
-		my $seq_file = $current_contig->get_attribute("id").".raw";
-		$seq_file =~ s/:/_/g;
-		$current_contig->set_attribute("seq_dir", $args{seq_dir});
-		$current_contig->set_attribute("file", $seq_file);
-		my $seq_file_path = $args{seq_dir}."/".$seq_file;
+	  ################################################################
+	  ## Save the whole contig sequence in a file
+	} elsif ($args{seq_dir}) {
+	  my $seq_file = $current_contig->get_attribute("id").".raw";
+	  $seq_file =~ s/:/_/g;
+	  $current_contig->set_attribute("seq_dir", $args{seq_dir});
+	  $current_contig->set_attribute("file", $seq_file);
+	  my $seq_file_path = $args{seq_dir}."/".$seq_file;
 
-		&RSAT::message::Debug ("Contig sequence file", $current_contig, $contig_id, $seq_file) if ($main::verbose >= 2);
+	  &RSAT::message::Debug ("Contig sequence file", $current_contig, $contig_id, $seq_file) if ($main::verbose >= 2);
 
-		&RSAT::message::Info (join("\t", "Storing sequence ",
-					   $current_contig->get_attribute("id"),
-					   "in file", $seq_file_path))
-		    if ($main::verbose >= 2);
+	  &RSAT::message::Info (join("\t", "Storing sequence ",
+				     $current_contig->get_attribute("id"),
+				     "in file", $seq_file_path))
+	    if ($main::verbose >= 2);
 
-		open SEQ, ">".$seq_file_path
-		    || die "Error: cannot write sequence file $seq_file_path\n";
-		while ($line = &ReadNextLine()) {
-		    if ($line =~ /^\s+\d+\s+/) {
-			$sequence = "$'";
-			$sequence =~ s/\s//g;
-			print SEQ $sequence;
-		    } elsif ($line =~ /^\/\/$/) {
-			print SEQ "\n";
-			$in_sequence = 0;
-			$current_contig = null;
-			last;
-		    } else {
-			&ErrorMessage("Invalid sequence format, skipped\t$line\n");
-		    }
-		  
-#		    &RSAT::message::Debug("Sequence parsing", length($sequence), $sequence) if (main::verbose >= 10);
-		}
-		close SEQ;
+	  open SEQ, ">".$seq_file_path
+	    || die "Error: cannot write sequence file $seq_file_path\n";
 
-		$pwd = `pwd`;
-		&RSAT::message::Debug("Working dir", $pwd,  "Sequence saved in file", $seq_file_path) if ($main::verbose >= 2);
-
+	  while (($line = &ReadNextLine()) && ($current_contig)) {
+	    if ($line =~ /^\s+\d+\s+/) {
+	      $sequence = "$'";
+	      $sequence =~ s/\s//g;
+	      print SEQ $sequence;
+	    } elsif ($line =~ /^\/\/$/) {
+	      print SEQ "\n";
+	      $in_sequence = 0;
+	      $current_contig = "";
+#	      last;
 	    } else {
-		#### load sequence in memory and return it
-		while ($line = &ReadNextLine()) {
-		    if ($line =~ /^\s+\d+\s+/) {
-			$sequence .= "$'";
-		    } elsif ($line =~ /^\/\/$/) {
-			$in_sequence = 0;
-			$current_contig = null;
-			last;
-		    } else {
-			&ErrorMessage("Invalid sequence format, skipped\t$line\n");
-		    }
-		}
+	      &ErrorMessage("Invalid sequence format, skipped\t$line\n");
 	    }
 
-	    ################################################################
-	    #### new feature
-	} elsif ($line =~ /^ {5}(\S+)\s+/) {
+	    #		    &RSAT::message::Debug("Sequence parsing", length($sequence), $sequence) if (main::verbose >= 10);
+	  }
+	  close(SEQ);
+	  $pwd = `pwd`;
+	  chomp($pwd);
+	  &RSAT::message::Debug("Working dir", $pwd,  "Sequence saved in file", $seq_file_path) if ($main::verbose >= 2);
 
-	    $feature_type = $1;
-	    $value = "$'";
-
-	  
-	    #### parse feature  position
-	    $position = &trim($value);
-	    if ($position =~ /join\(/){
-		### check that the position is complete
-		my $start_line = $l;
-		my $next = "$'";;
-		my $end_expression = '\)';
-		if ($position =~ /join\(complement\(/){
-		    $end_expression = '\)\)';
-		}
-
-		unless ($next =~ /${end_expression}/) {
-		    do {
-			die "Error: position starting at line $l is not terminated properly.\n"
-			    unless $position_suite = &ReadNextLine();
-			$position_suite =~ s/^FT//;
-			$position .= &trim($position_suite);
-		    } until ($position =~ /${end_expression}/);
-		}
-	    }
-	  
-#	    &RSAT::message::Debug("feature type", $feature_type, $value, $position) if ($main::verbose >= 0);
-
-	    #### create an object for the new feature
-	    if ($features_to_parse{$feature_type}) {
-		&RSAT::message::Debug($l, "new feature", $feature_type, $position) if ($main::verbose >= 3);
-
-		if ($feature_type eq "gene") {
-		    $holder = $genes;
-		} elsif ($feature_type eq "mRNA") {
-		    $holder = $mRNAs;
-		} elsif ($feature_type eq "scRNA") {
-		    $holder = $scRNAs;
- 		} elsif ($feature_type eq "tRNA") {
- 		    $holder = $tRNAs;
- 		} elsif ($feature_type eq "rRNA") {
- 		    $holder = $rRNAs;
-		} elsif ($feature_type eq "repeat_region") {
-		    $holder = $repeat_regions;
-#		    &RSAT::message::Debug("repeat region", $feature_type) if ($main::verbose >= 0);
-#		    die "HELLO";
- 		} elsif ($feature_type eq "misc_RNA") {
- 		    $holder = $misc_RNAs;
- 		} elsif ($feature_type eq "misc_feature") {
- 		    $holder = $misc_features;
-		} elsif ($feature_type eq "CDS") {
-		    $holder = $CDSs;
-		} elsif ($feature_type eq "source") {
-		    $holder = $sources;
-		} else {
-		    $holder = $features;
-		}
-		$current_feature = $holder->new_object();
-
-		$current_feature->set_attribute("type",$feature_type);
-		unless ($feature_type eq "source") {
-		    $current_feature->set_attribute("organism",$organism_name);
-		    $current_feature->set_attribute("taxid",$taxid);
-		}
-#		$current_feature->force_attribute("id",$organism_name."_".$id); ### add organism name as prefix
-		$current_feature->set_attribute("contig",$current_contig->get_attribute("id"));
-		$current_feature->set_attribute("chrom_position",$position);
-
-		#### gene
-		if ($feature_type eq 'gene') {
-		    $last_gene = $current_feature;
-		  
-		    #### WARNING : this is VERY tricky : some gene
-		    #### names are annotated in the gene, and some in
-		    #### the CDS. I automatically add all the names of
-		    #### the gene to the CDS. This relies on the
-		    #### assumption that each CDS is preceeded by the
-		    #### corresponding gene.
-		} elsif (($feature_type eq 'CDS') ||
-			 ($feature_type eq 'mRNA') ||
-			 ($feature_type eq 'scRNA') ||
-			 ($feature_type eq 'tRNA') ||
-			 ($feature_type eq 'rRNA') ||
-			 ($feature_type eq 'misc_RNA')) {
-		  
-		    ## Link the current feature to its parent gene
-		    if ($last_gene) {
-			my $last_gene_id =  $last_gene->get_attribute("id");
-			$current_feature->set_attribute("gene_id", $last_gene_id);
-	
-#			&RSAT::message::Debug("\t", "feature", $current_feature->get_attribute("id"),
-#				   "parent gene", $last_gene->get_attribute("id"),
-#				   "gene_id", $last_gene_id,
-#				  ), "\n"if ($main::verbose >= 5);
-
-	
-			#### set the type of the last gene to the
-			#### current feature type, if it has not yet
-			#### been done
-			my $last_gene_type = $last_gene->get_attribute("type");
-			if (($last_gene_type eq "") ||
-			    ($last_gene_type eq $main::null) ||
-			    ($last_gene_type eq "gene")) {
-			    $last_gene->force_attribute("type", $feature_type);
-			}
-		    }
-		}
-
-
-		## Other feature types are currently ignored
-	    } else {
-		&RSAT::message::Info(join("\t", $l, "Ignoring feature", $feature_type, $position)) if ($main::verbose >= 2);
-		undef($current_feature);
-	    }
-	  
-	  
-	    #### new feature attribute
-	  
-	    ### A new feature attribute is detected by
-	    ### - 21 spaces
-	    ### - followed by a slash (/),
-	    ### - followed by a word (the name of the attribute),
-	    ### - followed by the attribute value
-	  
-	} elsif ($line =~ /^ {21}\/(\S+)=/) {
-	    $attribute_type=$1;
-	    $attribute_value=&trim("$'");
-	  
-	    #### string attributes : make sure that the entire string is parsed
-	    if ($attribute_value =~ /^\"/) {
-		unless ($attribute_value =~ /\"$/) {
-		    do {
-			$line = &ReadNextLine();
-			$line = &trim($line);
-			$attribute_value .= " ";
-			$attribute_value .= &trim($line);
-#			&RSAT::message::Debug("\t", $l, "Collecting string attribute", $attribute_type, $attribute_value), "\n" if ($main::verbose >= 10);
-		    } until ($line =~ /\"$/);
-		}
-		$attribute_value =~ s/^\"//;
-		$attribute_value =~ s/\"$//;
-	    }
-	    if ($current_feature) {
-		$current_feature->new_attribute_value($attribute_type, $attribute_value);
-#		&RSAT::message::Debug( "\t", $l, "\tadding attribute", $attribute_type, $attribute_value) if ($main::verbose >=3);
-
-
-		## Detect GeneID
-		if (($attribute_type eq "db_xref") && ($attribute_value =~ /^GeneID:(\d+)/i)){
-		    my $GeneID = $1;
-		    if ($GeneID) {
-			$current_feature->force_attribute("GeneID", $GeneID);
-			&RSAT::message::Warning(join("\t", "Assigning GeneID",$GeneID,
-						     "to feature", $current_feature->get_attribute("id"),
-						     "type",  $current_feature->get_attribute("type"),
-						    )) if ($main::verbose >= 5);
-			if (($current_feature->get_attribute("type") eq "gene") ) {
-			    $current_feature->ReplaceID("GeneID");
-			}
-		    } else {
-			&RSAT::message::Warning(join("\t", "Empty GeneID for feature", $current_feature->get_attribute("id")));
-		    }
-		}
-
-		#### detect taxid
-		if (($current_feature->get_attribute("type") eq "source") ) {
-		    if (($attribute_type eq "db_xref") && ($attribute_value =~ /taxon:(\d+)/)){
-			$taxid = $1;
-			$current_contig->force_attribute("taxid", $taxid);
-			$current_contig->force_attribute("taxid", $taxid);
-			$organism->force_attribute("id", $taxid);
-			foreach my $class ($contigs,
-					   $features,
-					   $genes,
-					   $mRNAs,
-					   $scRNAs,
-					   $tRNAs,
-					   $rRNAs,
-					   $repeat_regions,
-					   $misc_RNAs,
-					   $misc_features,
-					   $CDSs,
-					   $sources,
-					   $organisms) {
-			    $class->set_prefix($taxid);
-			}
-		    }
-		}
-
-	    } else {
-		&RSAT::message::Warning(join("\t", $l, "\tignoring attibute", $attribute_type, $attribute_value)) if ($main::verbose >=5);
-	    }
-	  
-	  
 	} else {
-	    &RSAT::message::Warning(join("\t", "file ".$short_name{$org}."line",$l,"tnot parsed",$line)) if ($main::verbose >= 2);
+	  #### load sequence in memory and return it
+	  while ($line = &ReadNextLine()) {
+	    if ($line =~ /^\s+\d+\s+/) {
+	      $sequence .= "$'";
+	    } elsif ($line =~ /^\/\/$/) {
+	      $in_sequence = 0;
+	      $current_contig = null;
+	      last;
+	    } else {
+	      &ErrorMessage("Invalid sequence format, skipped\t$line\n");
+	    }
+	  }
 	}
+
+	################################################################
+	#### new feature
+      } elsif ($line =~ /^ {5}(\S+)\s+/) {
+
+	$feature_type = $1;
+	$value = "$'";
+
+
+	#### parse feature  position
+	$position = &trim($value);
+	if ($position =~ /join\(/) {
+	  ### check that the position is complete
+	  my $start_line = $l;
+	  my $next = "$'";;
+	  my $end_expression = '\)';
+	  if ($position =~ /join\(complement\(/) {
+	    $end_expression = '\)\)';
+	  }
+
+	  unless ($next =~ /${end_expression}/) {
+	    do {
+	      die "Error: position starting at line $l is not terminated properly.\n"
+		unless $position_suite = &ReadNextLine();
+	      $position_suite =~ s/^FT//;
+	      $position .= &trim($position_suite);
+	    } until ($position =~ /${end_expression}/);
+	  }
+	}
+
+	#	    &RSAT::message::Debug("feature type", $feature_type, $value, $position) if ($main::verbose >= 0);
+
+	#### create an object for the new feature
+	if ($features_to_parse{$feature_type}) {
+	  &RSAT::message::Debug($l, "new feature", $feature_type, $position) if ($main::verbose >= 3);
+
+	  if ($feature_type eq "gene") {
+	    $holder = $genes;
+	  } elsif ($feature_type eq "mRNA") {
+	    $holder = $mRNAs;
+	  } elsif ($feature_type eq "scRNA") {
+	    $holder = $scRNAs;
+	  } elsif ($feature_type eq "tRNA") {
+	    $holder = $tRNAs;
+	  } elsif ($feature_type eq "rRNA") {
+	    $holder = $rRNAs;
+	  } elsif ($feature_type eq "repeat_region") {
+	    $holder = $repeat_regions;
+	    #		    &RSAT::message::Debug("repeat region", $feature_type) if ($main::verbose >= 0);
+	    #		    die "HELLO";
+	  } elsif ($feature_type eq "misc_RNA") {
+	    $holder = $misc_RNAs;
+	  } elsif ($feature_type eq "misc_feature") {
+	    $holder = $misc_features;
+	  } elsif ($feature_type eq "CDS") {
+	    $holder = $CDSs;
+	  } elsif ($feature_type eq "source") {
+	    $holder = $sources;
+	  } else {
+	    $holder = $features;
+	  }
+	  $current_feature = $holder->new_object();
+
+	  $current_feature->set_attribute("type",$feature_type);
+	  unless ($feature_type eq "source") {
+	    $current_feature->set_attribute("organism",$organism_name);
+	    $current_feature->set_attribute("taxid",$taxid);
+	  }
+	  #		$current_feature->force_attribute("id",$organism_name."_".$id); ### add organism name as prefix
+	  $current_feature->set_attribute("contig",$current_contig->get_attribute("id"));
+	  $current_feature->set_attribute("chrom_position",$position);
+
+	  #### gene
+	  if ($feature_type eq 'gene') {
+	    $last_gene = $current_feature;
+
+	    #### WARNING : this is VERY tricky : some gene
+	    #### names are annotated in the gene, and some in
+	    #### the CDS. I automatically add all the names of
+	    #### the gene to the CDS. This relies on the
+	    #### assumption that each CDS is preceeded by the
+	    #### corresponding gene.
+	  } elsif (($feature_type eq 'CDS') ||
+		   ($feature_type eq 'mRNA') ||
+		   ($feature_type eq 'scRNA') ||
+		   ($feature_type eq 'tRNA') ||
+		   ($feature_type eq 'rRNA') ||
+		   ($feature_type eq 'misc_RNA')) {
+
+	    ## Link the current feature to its parent gene
+	    if ($last_gene) {
+	      my $last_gene_id =  $last_gene->get_attribute("id");
+	      $current_feature->set_attribute("gene_id", $last_gene_id);
+
+	      #			&RSAT::message::Debug("\t", "feature", $current_feature->get_attribute("id"),
+	      #				   "parent gene", $last_gene->get_attribute("id"),
+	      #				   "gene_id", $last_gene_id,
+	      #				  ), "\n"if ($main::verbose >= 5);
+
+
+	      #### set the type of the last gene to the
+	      #### current feature type, if it has not yet
+	      #### been done
+	      my $last_gene_type = $last_gene->get_attribute("type");
+	      if (($last_gene_type eq "") ||
+		  ($last_gene_type eq $main::null) ||
+		  ($last_gene_type eq "gene")) {
+		$last_gene->force_attribute("type", $feature_type);
+	      }
+	    }
+	  }
+
+
+	  ## Other feature types are currently ignored
+	} else {
+	  &RSAT::message::Info(join("\t", $l, "Ignoring feature", $feature_type, $position)) if ($main::verbose >= 2);
+	  undef($current_feature);
+	}
+
+
+	#### new feature attribute
+
+	### A new feature attribute is detected by
+	### - 21 spaces
+	### - followed by a slash (/),
+	### - followed by a word (the name of the attribute),
+	### - followed by the attribute value
+
+      } elsif ($line =~ /^ {21}\/(\S+)=/) {
+	$attribute_type=$1;
+	$attribute_value=&trim("$'");
+
+	#### string attributes : make sure that the entire string is parsed
+	if ($attribute_value =~ /^\"/) {
+	  unless ($attribute_value =~ /\"$/) {
+	    do {
+	      $line = &ReadNextLine();
+	      $line = &trim($line);
+	      $attribute_value .= " ";
+	      $attribute_value .= &trim($line);
+	      #			&RSAT::message::Debug("\t", $l, "Collecting string attribute", $attribute_type, $attribute_value), "\n" if ($main::verbose >= 10);
+	    } until ($line =~ /\"$/);
+	  }
+	  $attribute_value =~ s/^\"//;
+	  $attribute_value =~ s/\"$//;
+	}
+	if ($current_feature) {
+	  $current_feature->new_attribute_value($attribute_type, $attribute_value);
+	  #		&RSAT::message::Debug( "\t", $l, "\tadding attribute", $attribute_type, $attribute_value) if ($main::verbose >=3);
+
+
+	  ## Detect GeneID
+	  if (($attribute_type eq "db_xref") && ($attribute_value =~ /^GeneID:(\d+)/i)) {
+	    my $GeneID = $1;
+	    if ($GeneID) {
+	      $current_feature->force_attribute("GeneID", $GeneID);
+	      &RSAT::message::Warning(join("\t", "Assigning GeneID",$GeneID,
+					   "to feature", $current_feature->get_attribute("id"),
+					   "type",  $current_feature->get_attribute("type"),
+					  )) if ($main::verbose >= 5);
+	      if (($current_feature->get_attribute("type") eq "gene") ) {
+		$current_feature->ReplaceID("GeneID");
+	      }
+	    } else {
+	      &RSAT::message::Warning(join("\t", "Empty GeneID for feature", $current_feature->get_attribute("id")));
+	    }
+	  }
+
+	  #### detect taxid
+	  if (($current_feature->get_attribute("type") eq "source") ) {
+	    if (($attribute_type eq "db_xref") && ($attribute_value =~ /taxon:(\d+)/)) {
+	      $taxid = $1;
+	      $current_contig->force_attribute("taxid", $taxid);
+	      $current_contig->force_attribute("taxid", $taxid);
+	      $organism->force_attribute("id", $taxid);
+	      foreach my $class ($contigs,
+				 $features,
+				 $genes,
+				 $mRNAs,
+				 $scRNAs,
+				 $tRNAs,
+				 $rRNAs,
+				 $repeat_regions,
+				 $misc_RNAs,
+				 $misc_features,
+				 $CDSs,
+				 $sources,
+				 $organisms) {
+		$class->set_prefix($taxid);
+	      }
+	    }
+	  }
+
+	} else {
+	  &RSAT::message::Warning(join("\t", $l, "\tignoring attibute", $attribute_type, $attribute_value)) if ($main::verbose >=5);
+	}
+
+
+      } else {
+	&RSAT::message::Warning("file ".$short_name{$org}."line",$l,"\tnot parsed",$line) if ($main::verbose >= 2);
+      }
     }
     close GBK;
-  
-  
+
+
     return ($file_description, $sequence);
-}
+  }
 
 
 ################################################################
@@ -784,10 +788,10 @@ sub ParseFeatureNames {
 				   $GeneID
 				   ), "\n" if ($verbose >= 4);
 	    $feature->push_attribute("names", $GeneID);
-	  
-	  
 
-	  
+
+
+
 	    ################################################################
 	    ## Some types of notes contain identifiers or synonyms
 	    my @notes = $feature->get_attribute("note");
@@ -812,7 +816,7 @@ sub ParseFeatureNames {
 		    ## For other genomes there is a note of type 'synonym:' (e.g. Arabidopsis thaliana),
 		    my $synonyms = $';  ##'
 		    $synonyms =~ s/;.*//; ## In A.thaliana there are comments after the synonym
-		  
+
 		    my @synonyms = split /, /, $synonyms;
 		    foreach my $new_name (@synonyms) {
 			$new_name = &trim($new_name);
@@ -822,11 +826,11 @@ sub ParseFeatureNames {
 				   ), "\n" if ($verbose >= 4);
 			$feature->push_attribute("names", $new_name);
 		    }
-		  
+
 		} elsif ($note !~ /\S/) {
 		    ## A single-word note is usually (but not always, I guess) a synonym
 		    $feature->push_attribute("names", $note);
-		  
+
 		} elsif ($org eq "Plasmodium_falciparum") {
 		    my @notes = $feature->get_attribute("note");
 		    foreach my $note (@notes) {
@@ -854,18 +858,18 @@ sub ParseFeatureNames {
 		    ($note =~ /^Accession ([\w_\-\.]+)/) ||
 		    ($note =~ /^(\S+)\,\s+len:/)
 		){
-		  
+
 		    $new_name = $1;
 		    $new_name =~ s/\;$//;
 		    $new_name =~ s/\:$//;
-		  
+
 		    #### add the new name
 		    &RSAT::message::Debug( "\t", "Adding name to feature",
 			       $feature->get_attribute("id"),
 			       $new_name
 			       ), "\n" if ($verbose >= 4);
 		    $feature->push_attribute("names", $new_name);
-		  
+
 		}
 
 	    }
@@ -892,13 +896,13 @@ sub CreateGenbankFeatures {
   my ($features, $genes, $mRNAs, $scRNA, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources,
       #	$repeat_regions,
       $contigs) = @_;
-  
+
   ## Index gene names
   #    &RSAT::message::TimeWarn("Indexing gene names") if ($main::verbose >= 2);
-  #    $genes->index_ids();  
-  #    $genes->index_names();  
-  
-  
+  #    $genes->index_ids();
+  #    $genes->index_names();
+
+
   #### extract taxid for each source object
   foreach my $source ($sources->get_objects()) {
     $source->get_taxid();
@@ -940,7 +944,7 @@ sub CreateGenbankFeatures {
   ## Create unified features
   &RSAT::message::TimeWarn("Creating unified features from parsed features")
     if ($main::verbose >= 2);
-  
+
   foreach my $parent_feature ($CDSs->get_objects(),
 			      $mRNAs->get_objects(),
 			      $scRNAs->get_objects(),
@@ -978,7 +982,7 @@ sub CreateGenbankFeatures {
 
     # 	################################################################
     # 	#### Define names for the new feature
-    # 	&RSAT::message::Debug ("feature",		 
+    # 	&RSAT::message::Debug ("feature",
     # 			       $created_feature->get_attribute("id"),
     # 			       "Adding gene names",
     # 			      ), "\n" if ($verbose >= 4);
@@ -992,13 +996,13 @@ sub CreateGenbankFeatures {
     # 		$created_feature->force_attribute("name",$gene_name);
     # 		$created_feature->push_attribute("names",$gene_name);
     # 	    }
-	  
+
     # 	    ## Identify the parent gene
     # 	    $ParsedGeneID = $parent_feature->get_attribute("GeneID");
     # 	    &RSAT::message::Debug("feature",
     # 				  $parent_feature->get_attribute("id"),
     # 				  "type", $parent_feature->get_attribute("type"),
-    # 				  "GeneID",$ParsedGeneID,		
+    # 				  "GeneID",$ParsedGeneID,
     # 				 ) if ($main::verbose >= 4);
     # 	    unless ($ParsedGeneID) {
     # 		&RSAT::message::Warning(join("\t", "There is no GeneID for feature",
@@ -1012,7 +1016,7 @@ sub CreateGenbankFeatures {
     # 					     "type", $parent_feature->get_attribute("type")));
     # 		next;
     # 	    }
-	  
+
     # 	    ## Add parent gene names to the current feature
     # 	    $gene = $genes->get_object($ParsedGeneID);
     # 	    if ($gene) {
@@ -1046,12 +1050,12 @@ sub CreateGenbankFeatures {
     ################################################################
     #### Inherit names from the parent feature
     foreach my $name ($parent_feature->get_attribute("names")) {
-  
 
-  
+
+
       $created_feature->push_attribute("names",$name);
     }
-    &RSAT::message::Debug ("\t",  "feature",		 
+    &RSAT::message::Debug ("\t",  "feature",
 			   $created_feature->get_attribute("id"),
 			   "Added names from original feature",
 			   $parent_feature->get_attribute("id"),
@@ -1060,33 +1064,33 @@ sub CreateGenbankFeatures {
 
     ################################################################
     #### Inherit cross-references from parent feature
-    &RSAT::message::Debug ("\t",  "feature",		 
+    &RSAT::message::Debug ("\t",  "feature",
 			   $created_feature->get_attribute("id"),
 			   "Cross references",
 			  ), "\n" if ($verbose >= 5);
 
-  
-  
+
+
     my @xrefs = $parent_feature->get_attribute("db_xref");
     $created_feature->set_array_attribute("db_xref", @xrefs);
 
 
 
     &ExtractCrossReferencesForFeature($created_feature);
-  
-  
+
+
 
     ################################################################
     ## Inherit locus tag from parent feature
     my @locus_tags = $parent_feature->get_attribute("locus_tag");
-  
 
-  
-  
+
+
+
     &RSAT::message::Debug( "\t",
 			   "parsed feature", $parent_feature->get_attribute("id"),
 			   "locus tag", join ";", @locus_tags) if ($main::verbose >= 5);
-  
+
     ## Add locus tags to the list of synonyms
     foreach my $locus_tag (@locus_tags) {
       &RSAT::message::Debug ("\t", "Feature", $created_feature->get_attribute("id"),
@@ -1094,8 +1098,7 @@ sub CreateGenbankFeatures {
 			       if ($main::verbose >= 5);
       $created_feature->push_attribute("locus_tags", $locus_tag);
       $created_feature->push_attribute("names", $locus_tag);
-      	    		    	  
-	  
+
     }
 
     ################################################################
@@ -1115,7 +1118,7 @@ sub CreateGenbankFeatures {
     }
 
     ################################################################
-    #### create a description for the new feature
+    ## Create a description for the new feature
 
     ## Use parent feature description
     my $description = $parent_feature->get_attribute("description");
@@ -1144,7 +1147,7 @@ sub CreateGenbankFeatures {
 	}
       }
     }
-    &RSAT::message::Debug ("\t", "feature",		 
+    &RSAT::message::Debug ("\t", "feature",
 			   $created_feature->get_attribute("id"),
 			   "description", $created_feature->get_attribute("description"),
 			  ), "\n" if ($verbose >= 5);
@@ -1209,7 +1212,7 @@ sub CheckObjectNames {
     foreach my $holder (@holders) {
 	&RSAT::message::TimeWarn("Checking object names for class",
 				 $holder->get_object_type()) if ($main::verbose >= 2);
-				
+
 	foreach my $object ($holder->get_objects()) {
 #	  &RSAT::message::Debug("Checking object names for object",
 #				$holder->get_object_type(),
@@ -1218,14 +1221,14 @@ sub CheckObjectNames {
 #				"gene=".$object->get_attribute("gene"),
 #				"names=", join(";", $object->get_attribute("names")),
 #				  ) if ($main::verbose >= 10);
-	  
+
 	    ## Make sure that the object has no null name
 	    my $primary_given = 0;
 	    my $primary_name = $object->get_attribute("name");
-	  
+
 	    if (($primary_name) && ($primary_name ne $main::null)) {
 		$primary_given = 1;
-		
+
 	    }
 
 
@@ -1262,7 +1265,7 @@ sub CheckObjectNames {
 # 		    $primary_given = 1;
 # 		}
 # 	    }
-	  
+
 # 	    ## The feature attribute "locus_tag" is used as name and
 # 	    ## becomes primary name if there is no attribute "gene".
 # 	    my @locus_tags = $object->get_attribute("locus_tag");
@@ -1276,7 +1279,7 @@ sub CheckObjectNames {
 # 		    $primary_given = 1;
 # 		}
 # 	    }
-	  
+
 	    ################################################################
 # 	    #### Add all the names of the parent gene to the current feature
 # 	    my $ParentGeneID = $object->get_attribute("GeneID");
@@ -1296,12 +1299,12 @@ sub CheckObjectNames {
 # 		$object->set_attribute("name",  $object->get_attribute("id"));
 # 		$primary_given = 1;
 # 	    }
-	  
+
 	    ## Make sure that object has no duplicate names
 	    $object->unique_names();
 	}
     }
-  
+
 }
 
 
@@ -1368,7 +1371,7 @@ sub ExtractCrossReferences {
   foreach my $class_holder (@class_holders) {
     &RSAT::message::TimeWarn("Extracting cross-references for class", $class_holder->get_object_type())
       if ($verbose >= 2);
-  
+
     foreach my $feature ($class_holder->get_objects()) {
       &ExtractCrossReferencesForFeature($feature);
     }
