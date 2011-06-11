@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.40 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: convert-seq,v 1.41 2011/06/11 12:34:35 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -24,7 +24,7 @@ $dotmask = 0;
 $top = 0;
 
 $accepted_input_string = join "\n\t\t\t", "", sort(keys %accepted_input_seq);
-$accepted_output_string = join "\n\t\t\t", "", sort(keys %accepted_output_seq); 
+$accepted_output_string = join "\n\t\t\t", "", sort(keys %accepted_output_seq);
 
 %args=(id_column=>1,
 	seq_column=>2,
@@ -84,14 +84,14 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     my $seq_len = length($current_seq);
 
     if (($top > 0) && ($seq_nb > $top)) {
-      &RSAT::message::Info("Exported the $top top sequences only (topion -top). Remaining sequences are ignored.") if ($main::verbose >= 1);
+      &RSAT::message::Info("Exported the $top top sequences only (option -top). Remaining sequences are ignored.") if ($main::verbose >= 1);
       last;
     }
 
     &RSAT::message::Info("Converting sequence", $seq_nb, $current_id, $seq_len."bp", $comments[0]) if ($main::verbose >= 2);
 
 
-#    ## Remove empty sequences 
+#    ## Remove empty sequences
 #    if (($noempty) && ($current_seq !~ /\S/)) {
 #	next;
 #    }
@@ -193,7 +193,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	    $rev_seq = lc($rev_seq);
 	} elsif ($uppercases) {
 	    $rev_seq = uc($rev_seq);
-	} 
+	}
 	if ($out_format eq "filelist") {
 	    $one_seq_file = "${current_id}.raw";
 	    open RAW, "> $one_seq_file";
@@ -253,7 +253,7 @@ CATEGORY
 	sequences
 
 USAGE
-        consert-seq [-i inputfile] [-o outputfile] [-v] 
+        consert-seq [-i inputfile] [-o outputfile] [-v]
 	          -id identifier
                   -from inputformat -to outputformat
                   [-lw line_width]
@@ -266,7 +266,7 @@ OPTIONS
 		This allows to place the command within a pipe.
 
 	-mask upper|lower|non-dna
-		Mask lowercases, uppercases, or non-dna characters, respecively. 
+		Mask lowercases, uppercases, or non-dna characters, respecively.
 
 		Masked characters are replaced by by N characters, or
 		by a dot (option -dotmask).
@@ -282,7 +282,7 @@ OPTIONS
 		where short intergenic sequences generally correspond
 		to intra-operon segments.
 
-	-skip_short min_seq_len 
+	-skip_short min_seq_len
 		Skip sequences shorter than the specified length. Same
 		functionality as -mask_short, except that short
 		sequences are not returned at all in the output.
@@ -291,6 +291,9 @@ OPTIONS
 		Skip sequences longer than the specified length. These
 		sequences are not returned at all in the output.
 
+	-top #
+		Export the # top sequences only.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -298,15 +301,15 @@ OPTIONS
 	-from   input format
 		    Supported input formats : $accepted_input_string
 
-	-id_col	   
+	-id_col
 		column containing sequence identifiers in tab format
 		(default: $args{id_column}).
 
-	-seq_col	   
+	-seq_col
 		column containing sequence sequences in tab format
 		(default: $args{seq_column}).
 
-	-comment_col	   
+	-comment_col
 		column containing sequence comments (sequence
 		description) in tab format (default:
 		$args{comment_column}).
@@ -314,13 +317,13 @@ OPTIONS
         -to     output format
 		    Supported output formats : $accepted_output_string
 
-        -lw #   line width. A carriage return is inserted every # 
+        -lw #   line width. A carriage return is inserted every #
                 characters within the output sequence.
-                Default is 60. A 0 value indicates that no carriage 
+                Default is 60. A 0 value indicates that no carriage
                 return must be inserted.
 
         -addrc  adds the reverse complement of each input sequence
-                to the output file. This is usefull for programs that 
+                to the output file. This is usefull for programs that
                 cannot handle reverse complement (like the Gibbs Sampler).
 
 	-lc	lowercase. the sequence is printed in lowercase.
@@ -331,7 +334,7 @@ OPTIONS
 		This is to filter out partly specified nucleotides.
 
  	-dotmask
-		convert masked characters into dots. 
+		convert masked characters into dots.
 		This is useful for programs like consensus, or
 		AlignACE, which do not support N characters in the
 		sequences.
@@ -420,11 +423,12 @@ consvert-seq options
 -i			inputfile
 -mask upper|lower	mask upper- or lowercases, respectively
 -mask non-dna		mask non-dna characters
--dotmask		convert masked characters into dots. 
+-dotmask		convert masked characters into dots.
 -dna			convert any non-acgt character into "n"
 -mask_short min_seq_len	Mask sequences shorter than the specified length
 -skip_short min_seq_len	Skip sequences shorter than the specified length
 -skip_long max_seq_len	Skip sequences longer than the specified length
+-top #	   		Export the # top sequences only.
 -noempty		Remove empty sequences from the set (same as -skip_short 1)
 -o			outputfile
 -from			input format (see below for accepted formats)
@@ -432,7 +436,7 @@ consvert-seq options
 -seq_col		column containing the sequence in tab-delimted format
 -comment_col		column containing comments (sequence description) in tab-delimted format
 -to			output format (see below for accepted formats)
--lw #			line width. 
+-lw #			line width.
 -addrc			add the reverse complement of each input sequence
 -lc			convert all letters to lowercase
 -uc			convert all letters to uppercase
@@ -441,7 +445,7 @@ consvert-seq options
 -nocheckid		Prevent to check sequence IDs for conversion to the format filelist.
 SUPPORTED FORMATS
     INPUT $accepted_input_string
-	
+
     OUTPUT $accepted_output_string
 End_shorthelp
   close HELP;
@@ -450,147 +454,147 @@ End_shorthelp
 
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
-    foreach $a (0..$#ARGV) {
-	
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
-	    
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
-	    
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
-	    
-	    ## Input file
-	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
+  foreach $a (0..$#ARGV) {
 
-	    ## mask upper or lower cases
-	} elsif ($ARGV[$a] eq "-mask") {
-	    $mask = $ARGV[$a+1];
-	    &CheckMask($mask);
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
 
-	    ## Remove empty sequences from the set
-	} elsif ($ARGV[$a] eq "-noempty") {
-#	    $noempty = 1;
-	    $skip_short = 1;
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
 
-	    ## mask short sequences
-	} elsif ($ARGV[$a] eq "-mask_short") {
-	    $mask_short = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", 
-					  $mask_short,
-					  "Invalid value for the minimal masking length. ". 
-					  "Must be a strictly positive natural number"))
-		unless &IsNatural($mask_short) && ($mask_short > 0);
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
 
-	    ## skip short sequences
-	} elsif ($ARGV[$a] eq "-skip_short") {
-	    $skip_short = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", 
-					  $skip_short,
-					  "Invalid value for the minimal skipping length. ". 
-					  "Must be a strictly positive natural number"))
-		unless &IsNatural($skip_short) && ($skip_short > 0);
+      ## Input file
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
 
-	    ## skip long sequences
-	} elsif ($ARGV[$a] eq "-skip_long") {
-	    $skip_long = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", 
-					  $skip_long,
-					  "Invalid value for the maximal skipping length. ". 
-					  "Must be a strictly positive natural number"))
-		unless &IsNatural($skip_long) && ($skip_long > 0);
+      ## mask upper or lower cases
+    } elsif ($ARGV[$a] eq "-mask") {
+      $mask = $ARGV[$a+1];
+      &CheckMask($mask);
 
-	    ## Only export the N top sequences of the input file
-	} elsif ($ARGV[$a] eq "-top") {
-	    $top = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", 
-					  $top,
-					  "Invalid value for the maximal skipping length. ". 
-					  "Must be a strictly positive natural number"))
-		unless &IsNatural($top) && ($top > 0);
+      ## Remove empty sequences from the set
+    } elsif ($ARGV[$a] eq "-noempty") {
+      #	    $noempty = 1;
+      $skip_short = 1;
 
+      ## mask short sequences
+    } elsif ($ARGV[$a] eq "-mask_short") {
+      $mask_short = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t",
+				    $mask_short,
+				    "Invalid value for the minimal masking length. ".
+				    "Must be a strictly positive natural number"))
+	unless &IsNatural($mask_short) && ($mask_short > 0);
 
-	} elsif ($ARGV[$a] eq "-id") {
-	    $seq_identifier = $ARGV[$a+1];
-	    
-	} elsif ($ARGV[$a] eq "-prefix") {
-	    $seq_prefix = $ARGV[$a+1];
-	    
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
-	    
+      ## skip short sequences
+    } elsif ($ARGV[$a] eq "-skip_short") {
+      $skip_short = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t",
+				    $skip_short,
+				    "Invalid value for the minimal skipping length. ".
+				    "Must be a strictly positive natural number"))
+	unless &IsNatural($skip_short) && ($skip_short > 0);
 
-	    ## Input formaat
-	} elsif ($ARGV[$a] eq "-from") {
-	    $in_format = lc($ARGV[$a+1]);
-	    
-	    ## Output format
-	} elsif ($ARGV[$a] eq "-to") {
-	    $out_format = lc($ARGV[$a+1]);
-	    
-	    ## ID column for the tab format
-	} elsif ($ARGV[$a] eq "-id_col") {
-	    $args{'id_column'} = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", 
-					  $args{"id_column"},
-					  "Invalid column specification for sequence ID. ". 
-					  "Must be a strictly positive natural number"))
-		unless &IsNatural($args{'id_column'}) && ($args{'id_column'} > 0);
+      ## skip long sequences
+    } elsif ($ARGV[$a] eq "-skip_long") {
+      $skip_long = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t",
+				    $skip_long,
+				    "Invalid value for the maximal skipping length. ".
+				    "Must be a strictly positive natural number"))
+	unless &IsNatural($skip_long) && ($skip_long > 0);
+
+      ## Only export the N top sequences of the input file
+    } elsif ($ARGV[$a] eq "-top") {
+      $top = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t",
+				    $top,
+				    "Invalid value for number of top sequences. ".
+				    "Must be a strictly positive natural number"))
+	unless &IsNatural($top) && ($top > 0);
 
 
-	    ## Sequence column for the tab format
-	} elsif ($ARGV[$a] eq "-seq_col") {
-	    $args{'seq_column'} = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", 
-					  $args{"seq_column"},
-					  "Invalid column specification for sequence. ". 
-					  "Must be a strictly positive natural number"))
-		unless &IsNatural($args{'seq_column'}) && ($args{'seq_column'} > 0);
+    } elsif ($ARGV[$a] eq "-id") {
+      $seq_identifier = $ARGV[$a+1];
 
-	    ## Comment column for the tab format
-	} elsif ($ARGV[$a] eq "-comment_col") {
-	    $args{'comment_column'} = $ARGV[$a+1];
-	    &RSAT::error::FatalError(join("\t", 
-					  $args{"comment_column"},
-					  "Invalid column specification for sequence COMMENT. ". 
-					  "Must be a strictly positive natural number"))
-		unless &IsNatural($args{'comment_column'}) && ($args{'comment_column'} > 0);
+    } elsif ($ARGV[$a] eq "-prefix") {
+      $seq_prefix = $ARGV[$a+1];
 
-	    ## Line width
-	} elsif ($ARGV[$a] eq "-lw") {
-	    $line_width = $ARGV[$a+1];
-	    
-	} elsif ($ARGV[$a] eq "-lc") {
-	    $uppercases = 0;
-	    $lowercases = 1;
-	    
-	} elsif ($ARGV[$a] eq "-uc") {
-	    $uppercases = 1;
-	    $lowercases = 0;
-	    
-	} elsif ($ARGV[$a] eq "-addrc") {
-	    $add_RC = 1;
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
 
-	} elsif ($ARGV[$a] eq "-dna") {
-	    $dna = 1;
 
-	} elsif ($ARGV[$a] eq "-dotmask") {
-	    $dotmask = 1;
-	    
-	    ## Prevent to check sequence IDs for conversion to file list
-	} elsif ($ARGV[$a] eq "-nocheckid") {
-	    $check_id = 0;
-	    
-	}
+      ## Input formaat
+    } elsif ($ARGV[$a] eq "-from") {
+      $in_format = lc($ARGV[$a+1]);
+
+      ## Output format
+    } elsif ($ARGV[$a] eq "-to") {
+      $out_format = lc($ARGV[$a+1]);
+
+      ## ID column for the tab format
+    } elsif ($ARGV[$a] eq "-id_col") {
+      $args{'id_column'} = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t",
+				    $args{"id_column"},
+				    "Invalid column specification for sequence ID. ".
+				    "Must be a strictly positive natural number"))
+	unless &IsNatural($args{'id_column'}) && ($args{'id_column'} > 0);
+
+
+      ## Sequence column for the tab format
+    } elsif ($ARGV[$a] eq "-seq_col") {
+      $args{'seq_column'} = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t",
+				    $args{"seq_column"},
+				    "Invalid column specification for sequence. ".
+				    "Must be a strictly positive natural number"))
+	unless &IsNatural($args{'seq_column'}) && ($args{'seq_column'} > 0);
+
+      ## Comment column for the tab format
+    } elsif ($ARGV[$a] eq "-comment_col") {
+      $args{'comment_column'} = $ARGV[$a+1];
+      &RSAT::error::FatalError(join("\t",
+				    $args{"comment_column"},
+				    "Invalid column specification for sequence COMMENT. ".
+				    "Must be a strictly positive natural number"))
+	unless &IsNatural($args{'comment_column'}) && ($args{'comment_column'} > 0);
+
+      ## Line width
+    } elsif ($ARGV[$a] eq "-lw") {
+      $line_width = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-lc") {
+      $uppercases = 0;
+      $lowercases = 1;
+
+    } elsif ($ARGV[$a] eq "-uc") {
+      $uppercases = 1;
+      $lowercases = 0;
+
+    } elsif ($ARGV[$a] eq "-addrc") {
+      $add_RC = 1;
+
+    } elsif ($ARGV[$a] eq "-dna") {
+      $dna = 1;
+
+    } elsif ($ARGV[$a] eq "-dotmask") {
+      $dotmask = 1;
+
+      ## Prevent to check sequence IDs for conversion to file list
+    } elsif ($ARGV[$a] eq "-nocheckid") {
+      $check_id = 0;
+
     }
+  }
 }
