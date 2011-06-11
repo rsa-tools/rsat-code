@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.54 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.55 2011/06/11 13:39:28 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -476,8 +476,8 @@ Note that when matrix-from-patterns is fed with pre-assembled patterns
 
 =item B<-sc #>
 
-Column containing the patterns cores. This argument is pased to
-I<pattern-assembly>.
+Column containing the pattern scores in the input pattern file. This
+argument is pased to I<pattern-assembly>.
 
 =cut
 
@@ -584,7 +584,13 @@ Supported methods:
 
 =over
 
-=item I<info-gibbs> (Default)
+=item I<matrix-scan-quick> (Default)
+
+Same principle as I<matrix-scan>. The program I<matrix-scan-quick> is
+100 times faster, but does not compute the P-values. For the time
+being, an arbitrary threshold is imposed on the weight score (w >= 7).
+
+=item I<info-gibbs> (slow)
 
 The significance matrices (obtained from I<pattern-assembly> are used
 as seeds by I<info-gibbs>, which runs a few iterations of gibbs
@@ -601,11 +607,6 @@ some matrices may fail to return any site below the P-value
 threshold. We therefore recommend to use the info-gibbs option.
 =item I<matrix-scan> (slow, obsolete)
 
-=item I<matrix-scan-quick> (in construction)
-
-Same principle as I<matrix-scan>. The program I<matrix-scan-quick> is
-100 times faster, but does not compute the P-values. For the time
-being, an arbitrary threshold is imposed on the weight score (w >= 7).
 
 =back
 
@@ -737,7 +738,7 @@ way. The option can be used iteratively on a command line to add up
 various parameters. Example:
   -scan_param '-uth Pval 1e-3' -scan_param '-uth rank 40' [...]
 
-If not parameters are specified, the Pval is set to 1e-4 by default,
+If no parameters are specified, the Pval is set to 1e-4 by default,
 without limit on the number of sites.
 
 =cut
@@ -963,8 +964,25 @@ __END__
 
 =head2 I<pattern-assembly>
 
+The program I<pattern-assembly> is used to assemble patterns according
+to their similarities.
+
 =head2 I<convert-matrix>
 
+The program I<convert-matrix> is used to convert the collected sites into
+PSSM.
+
 =head2 I<matrix-scan>
+
+The program I<matrix-scan> is used to build the count matrix from the
+significance matrix.
+
+=head1 WISH LIST
+
+=item B<-iter>
+
+Number of iterations for the expectation-maximization cycle (collect
+sites with matrix and update matrix from collected sites). Default: 1.
+
 
 =cut
