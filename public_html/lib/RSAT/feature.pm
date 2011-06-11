@@ -772,7 +772,7 @@ sub parse_from_row {
 
   ## dna-pattern
   if ($in_format eq "dnapat") {
-    $self->force_attribute("type", "dnapat");
+    $self->force_attribute("ft_type", "pattern");
   }
 
   ## bed format: convert to 1-based coordinates
