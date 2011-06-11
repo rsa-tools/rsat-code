@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.194 2011/06/04 05:45:32 jvanheld Exp $
+# $Id: matrix-scan,v 1.195 2011/06/11 12:30:57 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1622,7 +1622,6 @@ package main;
 	   &QuickScan($matrix,"sites",$total_scored);
        }
     }
-x
 
   ################################################################
   ## Print sequence-size statistics
