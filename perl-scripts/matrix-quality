@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.132 2011/02/17 05:07:46 rsat Exp $
+# $Id: matrix-quality,v 1.133 2011/06/11 13:40:12 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -392,16 +392,18 @@ package main;
     chomp($dir{output});
     &RSAT::util::CheckOutDir($dir{output});
 
+
+    ## Define name of the converted bg file
+    #$outfile{bg_file_inclusive} = $dir{output};
+    $outfile{bg_file_inclusive} = $outfile{prefix};
+    $outfile{bg_file_inclusive} .= &ShortFileName($infile{bg_file});
+    $outfile{bg_file_inclusive} =~ s|\.\w$||;
+    $outfile{bg_file_inclusive} .= "_inclusive.tab";
+
     ## Identify background model in the options
     foreach my $i (0..$#matrix_scan_options) {
       if ($matrix_scan_options[$i] eq "-bgfile") {
 	$infile{bg_file} = $matrix_scan_options[$i+1];
-	## Define name of the converted bg file
-	#$outfile{bg_file_inclusive} = $dir{output};
-	$outfile{bg_file_inclusive} = $outfile{prefix};
-	$outfile{bg_file_inclusive} .= &ShortFileName($infile{bg_file});
-	$outfile{bg_file_inclusive} =~ s|\.\w$||;
-	$outfile{bg_file_inclusive} .= "_inclusive.tab";
 	$matrix_scan_options[$i+1] = $outfile{bg_file_inclusive};
 	$matrix_scan_options[$i+1] .= " -bg_format inclusive" unless $quick;
       } elsif ($matrix_scan_options[$i] eq "-bg_format") {
@@ -459,7 +461,7 @@ package main;
     &PreVerbose() if ($main::verbose);
 
     ################################################################
-    ### Read background model to use for theorical distribution
+    ### Read background model to use for theoretical distribution
     #    if ($main::infile{bg_file}){
     $bg_model->load_from_file($main::outfile{bg_file_inclusive},"inclusive");
     #    }
@@ -582,7 +584,7 @@ package main;
 	&CrossValidation($matrix, @matrix_scan_options);
       }
 
-      ## Calculate the theorical distributions of LOO partial matrices
+      ## Calculate the theoretical distributions of LOO partial matrices
       if ($tasks{theor_cv}) {
     	our @th_distrib_files =();
     	foreach my $partial_matrix (@partial_matrix_files) {
@@ -732,7 +734,7 @@ package main;
 	    }
 	}
 
-      ## Remove the files containing theorical distribution computed from partial matrices
+      ## Remove the files containing theoretical distribution computed from partial matrices
       if (scalar(@partial_matrix_files) > 0) {
 	my $clean_partial_cmd = "rm -f ";
 	$clean_partial_cmd .= join (" ", @partial_matrix_files);
@@ -1133,26 +1135,24 @@ residue frequencies.
 		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
 			&& ($main::pseudo_counts >= 0));
 
-	    ## Background model for theorical score distribution
+	    ## Background model for theoretical score distribution
 # This option is to be specified if the option
 # -bgfile has not been specified.  (see other options section for more
 # details)
 
 =pod
 
-=item B<-th_prior background_file>
+=item B<-bgfile background_file>
 
-Background model to be used to calculate the matrix theorical
-distribution.  The matrix theorical distribution is calculated with
-I<matrix-distrib>.  
-
-
+Background model to be used to calculate the matrix theoretical
+distribution.  The matrix theoretical distribution is calculated with
+I<matrix-distrib>.
 
 =cut
-	} elsif ($arg eq "-th_prior") {
+	} elsif (($arg eq "-th_prior") || ($arg eq "-bgfile")) {
 		$main::infile{bg_file} = shift(@arguments);
 
-	    ## Format of Background model for theorical score distribution
+	    ## Format of Background model for theoretical score distribution
 # If the option -th_prior and -bg_file are used at the same time
 # the background format must be the same in both cases.
 
@@ -1487,11 +1487,11 @@ because matrix-quality specifies the return fields required for its
 statistics.
 
 If the option '-bgfile' is specified, the specified background model
-will be used to calculate the matrix theorical distribution. If
+will be used to calculate the matrix theoretical distribution. If
 another type of background model is specified for matrix-scan
 ('-bginput' or '-window'), use '-th_prior' option to specify the
 background model to be used for the calculation of the matrix
-theorical distribution.
+theoretical distribution.
 
 
 =cut
@@ -1939,7 +1939,7 @@ sub ScoreDistrib {
   ## From matrix-scan distribution : get occurence of each score, 
   ## recalculate the original list of scores and send it to classfreq
   ## to calculate the final distribution. This step enables to have the distribution
-  ## over the whole range of theorical weights (necessary for plot) and permits to merge
+  ## over the whole range of theoretical weights (necessary for plot) and permits to merge
   ## the results in case of several matrices sent to matrix-scan (permuted matrices)
 
   ## put the temporary distrib file in memory in an array
@@ -2318,10 +2318,10 @@ sub CompareDistrib {
       unless ($no_cv) {
 	if ($tasks{theor_cv}) {
 
-	  $outfile{th_distrib_compa} = $outfile{prefix}."_theorical_score_distrib_compa";
+	  $outfile{th_distrib_compa} = $outfile{prefix}."_theoretical_score_distrib_compa";
 
 	  ################################################################
-	  ## Compare the theorical distributions
+	  ## Compare the theoretical distributions
 	  my $distrib_compa_cmd = $SCRIPTS."/compare-scores ";
 	  $distrib_compa_cmd .= " -numeric";
 	  $distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
@@ -2333,7 +2333,7 @@ sub CompareDistrib {
 	  &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
 	  ################################################################
-	  ## draw a graph with the theorical distributions of partial and complete matrix
+	  ## draw a graph with the theoretical distributions of partial and complete matrix
 	  ## General options for all the graphs below
 	  $all_graph_options =~ s/$outfile{distrib_compa}/$outfile{th_distrib_compa}/g; 
 
@@ -2371,7 +2371,7 @@ sub CompareDistrib {
 sub CalcTheorScoreDistribution {
   my ($matrix_tab_file,  $out_file) = @_;
 
-  &RSAT::message::TimeWarn("Calculating theorical distribution for matrix", $matrix_tab_file)
+  &RSAT::message::TimeWarn("Calculating theoretical distribution for matrix", $matrix_tab_file)
     if ($main::verbose >= 1);
 
   my $matrix_distrib_cmd = $SCRIPTS."/matrix-distrib";
