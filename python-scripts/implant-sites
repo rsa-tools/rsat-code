@@ -29,6 +29,7 @@ ARGUMENTS
     -o #, --output=#      output results to #
                           if not specified, the standard output is used
     -s #, --sites=#       read sites from # (must be in FASTA format)
+    --noov                do not allow overlapping sites
     
 SEE ALSO
         random-motif
@@ -67,12 +68,12 @@ def find_allowed(sequences, site, forbidden):
     allowed = []
     for s in range(len(sequences)):
         for i in range(len(sequences[s]) - len(site)):
-            confict = False
+            conflict = False
             for j in range(len(site)):
                 if (s,i+j) in forbidden:
-                    confict = True
+                    conflict = True
                     break
-            if not confict:
+            if not conflict:
                 allowed.append((s,i))
     return allowed
 
@@ -82,12 +83,17 @@ def add_forbidden(forbidden, site, pos):
             forbidden[(s,i+j)] = True
     return forbidden
 
-def implant_all_sites(sequences, sites):
+def implant_all_sites(sequences, sites, noov):
     # find where to implant
     forbidden = {}
     positions = []
+    if not noov:
+        allowed = find_allowed(sequences, '', forbidden)
+
     for (name, site) in sites:
-        allowed = find_allowed(sequences, site, forbidden)
+        if noov:
+            allowed = find_allowed(sequences, site, forbidden)
+        #print(site)
         if len(allowed) == 0:
             sys.stderr.write('Warning: not all sites implanted\n')
             break
@@ -99,12 +105,12 @@ def implant_all_sites(sequences, sites):
     labels = [str(i+1) for i in range(len(sequences))]
     for i in range(len(positions)):
         (name, site) = sites[i]
-        print site
         (s, p) = positions[i]
         labels[s] += '[%s:%d:%s]' % (name.strip(), p + 1, site)
         sequence = sequences[s]
         sequence = list(sequence)
-        sequence[p:p + len(site)] = site
+        if p + len(site) <= len(sequence):
+            sequence[p:p + len(site)] = site
         sequences[s] = ''.join(sequence)
     return (labels, sequences)
 
@@ -112,8 +118,7 @@ def main(options, args):
     sequences = dna.read_fasta(options.input)
     sequences = [s.lower() for s in sequences]
     sites = read_sites(options)
-
-    (labels, sequences) = implant_all_sites(sequences, sites)
+    (labels, sequences) = implant_all_sites(sequences, sites, options.noov)
     dna.write_fasta(options.output, sequences, labels)
 
 # ===========================================================================
@@ -121,7 +126,7 @@ def main(options, args):
 # ===========================================================================
 if __name__ == '__main__':
     USAGE = '''%s -i sequences -s sites [-h]'''
-    VERSION = '2009.11'
+    VERSION = '2011.06'
     PROG_NAME = os.path.basename(sys.argv[0])
     
     parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
@@ -131,6 +136,7 @@ if __name__ == '__main__':
     parser.add_option("-s", "--sites", action="store", dest="sites", metavar="#", help="sites")
     parser.add_option("-h", "--help", action="store_true", dest="help")
     parser.add_option("--debug", action="store_true", dest="debug") 
+    parser.add_option("--noov", action="store_true", dest="noov") 
 
     (options, args) = parser.parse_args()
 
