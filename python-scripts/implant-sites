@@ -29,7 +29,7 @@ ARGUMENTS
     -o #, --output=#      output results to #
                           if not specified, the standard output is used
     -s #, --sites=#       read sites from # (must be in FASTA format)
-    -f #, --feature=#     store site positions in #
+    -f #, --features=#    store site positions in #
     --noov                do not allow overlapping sites
     
 SEE ALSO
