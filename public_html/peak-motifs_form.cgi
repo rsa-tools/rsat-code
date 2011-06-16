@@ -293,6 +293,7 @@ print '
 print "<p/><fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Discover motifs </a></b></legend>";
 
+
 print "<br/> <b>Continuous words</b> <br/>";
 
 #
@@ -356,6 +357,14 @@ print "<br>", $query->checkbox(-name=>'dyad-analysis',
 print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
 print "</p>";
 
+### 2str or 1str
+
+print "<br/> <b>Search on </b> ";
+my $strandPopup =  "<SELECT NAME='strand'>\n";
+$strandPopup .=  "<OPTION  SELECTED VALUE='-2str'>both strands</option>\n";
+$strandPopup .=  "<OPTION VALUE='-1str'>single strand</option>\n";
+$strandPopup .=  "</SELECT>";
+print $strandPopup;
 
 ### local-word-analysis => too slow to be put on the website until the program is optimized
 #

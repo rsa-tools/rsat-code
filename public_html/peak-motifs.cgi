@@ -114,6 +114,12 @@ if ($query->param('local-word-analysis_dyads') =~ /on/) {
 	## to add
 }
 
+### task specific parameters
+if ($query->param('strand')) {
+    $parameters .= " ".$query->param('strand')." ";
+}
+
+
 $parameters .= " -disco ".join(",",@disco_algo);
 
 ### task specific parameters
@@ -267,7 +273,7 @@ $parameters .= " -prefix $output_prefix";
 
 
 ### other default parmaters
-$parameters .= " -2str -noov -img_format png ";
+$parameters .= " -noov -img_format png ";
 
 ### output directory
 $parameters .= " -outdir $output_path";
