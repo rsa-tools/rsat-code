@@ -683,6 +683,17 @@ the orthologs. This method uses a threshold on the intergenic distance.
 
 =pod
 
+=item B<-dist_thr value> 
+
+Specify here the intergenic distance threshold in base pairs. Pair of adjacent genes with intergenic distance equal or less than this value are predicted to be within operon. (default : 55)
+
+=cut
+    } elsif ($arg eq "-dist_thr") {
+      $main::dist_thr = shift(@arguments);
+
+
+=pod
+
 =item B<-task>
 
 Specify a subset of tasks to be executed.
