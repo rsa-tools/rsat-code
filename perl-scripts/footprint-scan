@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.98 2011/05/25 22:26:45 amedina Exp $
+# $Id: footprint-scan,v 1.99 2011/06/20 21:47:45 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -345,7 +345,10 @@ package main;
   $main::crer=0; ## ON THE WISH LIST: when set to one, look for CRER over-representation
   local $skip_gene = 0;
   local %top_sig_row = ();
+
   local $batch_matrix=0;
+
+  local $dist_thr = 55;
 
   ##################
   ## Option for randomized genes 
@@ -1641,6 +1644,7 @@ sub RunFootprintScan {
   }
   &IndexOneFile("genes", $outfile{genes});
 
+
   &RetrieveQueryPromoters();
 
   ## Retrieve promoters of the query organism
@@ -1780,6 +1784,8 @@ sub GetOrthologsTF {
     print $genes $gene, "\t", $organism_name, "\n";
   }
   &IndexOneFile("genes", $outfile{genes});
+  $inferoperons_original=$infer_operons; # for the sake of getting the orthologs of TFs we don't need to infer operons
+  $infer_operons=0;
 
   &RetrieveQueryPromoters();
 
@@ -1805,7 +1811,6 @@ sub GetOrthologsTF {
       &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ")
 	  if ($main::verbose>=1);
   } 
-  
  
 
   ################################################################
@@ -1840,7 +1845,8 @@ sub GetOrthologsTF {
       &RSAT::message::Info("\treport file", $outfile{index});
     }
   }
-
+  $infer_operons= $inferoperons_original; ## recovver original value for infering operons for the query genes
+	
 }
 
 ################################################################
