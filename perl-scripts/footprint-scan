@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.99 2011/06/20 21:47:45 amedina Exp $
+# $Id: footprint-scan,v 1.100 2011/06/20 22:24:00 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -1645,6 +1645,9 @@ sub RunFootprintScan {
   &IndexOneFile("genes", $outfile{genes});
 
 
+  ## Predict operon leader genes of the query genes
+  &InferQueryOperons() if ($infer_operons);
+  
   &RetrieveQueryPromoters();
 
   ## Retrieve promoters of the query organism
