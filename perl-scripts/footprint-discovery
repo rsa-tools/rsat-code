@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.63 2011/04/28 12:37:31 rsat Exp $
+# $Id: footprint-discovery,v 1.64 2011/06/20 21:50:05 amedina Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -857,17 +857,6 @@ query gene, in the query organism. (will cancel -filter option if selected)
 
     } elsif ($arg eq "-no_filter") {
       $main::nofilter = 1;
-
-
-=pod
-
-=item B<-dist_thr value> 
-
-Specify here the intergenic distance threshold in base pairs. Pair of adjacent genes with intergenic distance equal or less than this value are predicted to be within operon. (default : 55)
-
-=cut
-    } elsif ($arg eq "-dist_thr") {
-      $main::dist_thr = shift(@arguments);
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
