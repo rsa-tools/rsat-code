@@ -10,7 +10,7 @@ SEQ=${RSAT}/public_html/demo_files/matrix_scan_demo_sequences.fasta
 MATRICES=${RSAT}/public_html/demo_files/matrix_scan_demo_matrices.tf
 QUICK=-quick
 RES_DIR=results
-SITES=${RES_DIR}/Eve12${QUICK}.site
+SITES=${RES_DIR}/Eve12${QUICK}_sites.ft
 BG_FILE=${RSAT}/data/genomes/Drosophila_melanogaster/oligo-frequencies/1nt_upstream-noorf_Drosophila_melanogaster-ovlp-1str.freq
 ORIGIN=genomic
 scan:
@@ -25,7 +25,6 @@ scan:
 		-return sites -uth pval 1e-4 \
 		-o ${SITES}
 	@echo ${SITES}
-
 
 quick:
 	${MAKE} scan QUICK=-quick
