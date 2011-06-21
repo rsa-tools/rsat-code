@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway_extractor.pl,v 1.6 2011/06/21 13:06:08 rsat Exp $
+# $Id: pathway_extractor.pl,v 1.7 2011/06/21 13:31:47 rsat Exp $
 #
 ############################################################
 
@@ -101,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
@@ -223,7 +223,7 @@ package main;
   my $seednum= 0;
   my @previousarray;
   foreach  my $val (@conversiontable) {
-	  
+
 	  @tempdata = split(/\t/,$val);
 	  if (@previousarray && !($tempdata[0] eq $previousarray[0])){
 	    print MYFILE "$previousarray[0]\t$groupid\n";
@@ -235,8 +235,11 @@ package main;
 	  print MYFILE $tempdata[2] ."\t".$tempdata[0]. "\n";
 	  @previousarray = @tempdata;
    } 
-  print MYFILE "$previousarray[0]\t$groupid\n";
- 
+
+  if(@conversiontable){
+    print MYFILE "$previousarray[0]\t$groupid\n";
+    $seednum++;
+  }
 if ($seednum > 1) {
     # NP_416366       1.1.1.49        GLU6PDEHYDROG-RXN
 
