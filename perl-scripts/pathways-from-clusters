@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.1 2011/05/13 15:39:00 rsat Exp $
+# $Id: pathways-from-clusters,v 1.2 2011/06/21 09:11:21 rsat Exp $
 #
 ############################################################
 
@@ -56,7 +56,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -67,9 +67,9 @@ package main;
     $main::out = STDOUT;
     
     $main::gprfile ="METACYC_GPR_EC.tab";	# GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
-    $main::grfile;				# GR Gene -> REACTION annotation
+    $main::grfile="";				# GR Gene -> REACTION annotation
     $main::graph = "";				# Graph Name 
-    $main::graphfile;				# File containing the graph
+    $main::graphfile="";				# File containing the graph
     $main::show;				# Open png image in gwenview
 
     ################################################################
@@ -118,7 +118,7 @@ package main;
 	    system "$pathway_infer_cmd\n";
 	    system "rm $tempfilename";
 	    @genelist =();
-	    exit(0); 
+# 	    exit(0); 
 	   }
 	   my $gene= $tempdata[0];
 	   $gene=~ s{\.[^.]+$}{}; # removes gene version
