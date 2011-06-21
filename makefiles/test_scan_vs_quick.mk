@@ -33,4 +33,6 @@ quick:
 slow:
 	${MAKE} scan QUICK=''
 
+all: quick slow
+
 
