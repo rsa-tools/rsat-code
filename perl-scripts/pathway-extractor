@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.5 2011/06/21 12:02:24 rsat Exp $
+# $Id: pathway-extractor,v 1.6 2011/06/21 13:06:08 rsat Exp $
 #
 ############################################################
 
@@ -101,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
@@ -174,7 +174,7 @@ package main;
   close $main::in if ($main::infile{input});
   chomp(@genesidlist);
   $genesid = (join "|^",@genesidlist );#
-
+  print join (@genesidlist,"|")."\n";
   my @grconversiontable;
   my %genelist=();
   if ($grfile){
@@ -220,12 +220,14 @@ package main;
   print MYFILE "# GENE groups parsed from file:". "\n"; 
   print MYFILE "# Organism: ". $organism. "\n";
   print MYFILE "# EC number grouping: true". "\n";
-  
+  my $seednum= 0;
   my @previousarray;
   foreach  my $val (@conversiontable) {
+	  
 	  @tempdata = split(/\t/,$val);
 	  if (@previousarray && !($tempdata[0] eq $previousarray[0])){
 	    print MYFILE "$previousarray[0]\t$groupid\n";
+	    $seednum++;
 	  }
   # 	print "$tempdata[1] eq $previousarray[1]\n";
 	  print MYFILE $tempdata[2] .">\t".$tempdata[2]. "\n";
@@ -235,129 +237,134 @@ package main;
    } 
   print MYFILE "$previousarray[0]\t$groupid\n";
  
+if ($seednum > 1) {
+    # NP_416366       1.1.1.49        GLU6PDEHYDROG-RXN
 
-  # NP_416366       1.1.1.49        GLU6PDEHYDROG-RXN
 
-
-#   chomp($tempfilename);
-  # Pathway inference
-  my $predicted_pathway_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "_pred_pathways.txt");
-  my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -f flat -n -E $outdir -p $outdir -b -d -g $graphfile -y con -v -o $predicted_pathway_filename";
-#graphtools.algorithms.Pathwayinference -A /home/rsat/rsa-tools/contrib/REA -K /home/rsat/rsa-tools/contrib/kwalks/bin -i /home/rsat/rsa-tools/public_html/data/Stored_networks/9a3af932-8bf1-4438-b899-81f2acf5ca35_batchfile.txt -z -p /home/rsat/rsa-tools/public_html/data/Stored_networks -o /home/rsat/rsa-tools/public_html/tmp/Pathwayinference_tmpGraph_20110510_ee51092f-4af0-4de4-91e3-de21d7b3803b_Result.tab -T pathsGraphs -O tab -g /home/rsat/rsa-tools/public_html/data/Stored_networks/Pathwayinference_tmpGraph_e2063b35-8dcf-468b-9e16-178fb30ed19c.tab -f tab -e ExclusionAttribute -y con -a takahashihybrid -d -b -u -I 1 -x 0.05
-  print $pathway_infer_cmd."\n";
-  print $predicted_pathway_filename."\n";
- system $pathway_infer_cmd;
-  open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
-  my $i = 0;
-  my $stop = "";
-  my $line;
-  my $reactionquery="";
-  my $cpdquery="";
-  while ($line=<INFILE>) {
-    #$line = $_;
-  chomp  ($line );
-  if (length($line)>0 && !($line=~m/^;/)){
-      my @tempdata = split(/\t/,$line);
-      
-      if ($tempdata[6] &&($tempdata[6] eq "Reaction")){
-  #       print "|".$line."|"."\n";
-	$tempdata[0]=~s/<$|>$//;
-	$i++;
-	$reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$5~\"".$organismid."\")||";
-      }elsif($tempdata[6] &&($tempdata[6] eq "Compound")){
-	$cpdquery = $cpdquery."(\$1~\"^".$tempdata[0]."\"&&\$2~\"Compound\")||";
+  #   chomp($tempfilename);
+    # Pathway inference
+    my $predicted_pathway_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "_pred_pathways.txt");
+    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -f flat -n -E $outdir -p $outdir -b -d -g $graphfile -y con -v -o $predicted_pathway_filename";
+  #graphtools.algorithms.Pathwayinference -A /home/rsat/rsa-tools/contrib/REA -K /home/rsat/rsa-tools/contrib/kwalks/bin -i /home/rsat/rsa-tools/public_html/data/Stored_networks/9a3af932-8bf1-4438-b899-81f2acf5ca35_batchfile.txt -z -p /home/rsat/rsa-tools/public_html/data/Stored_networks -o /home/rsat/rsa-tools/public_html/tmp/Pathwayinference_tmpGraph_20110510_ee51092f-4af0-4de4-91e3-de21d7b3803b_Result.tab -T pathsGraphs -O tab -g /home/rsat/rsa-tools/public_html/data/Stored_networks/Pathwayinference_tmpGraph_e2063b35-8dcf-468b-9e16-178fb30ed19c.tab -f tab -e ExclusionAttribute -y con -a takahashihybrid -d -b -u -I 1 -x 0.05
+    print $pathway_infer_cmd."\n";
+    print $predicted_pathway_filename."\n";
+   system $pathway_infer_cmd;
+    open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
+    my $i = 0;
+    my $stop = "";
+    my $line;
+    my $reactionquery="";
+    my $cpdquery="";
+    while ($line=<INFILE>) {
+      #$line = $_;
+    chomp  ($line );
+    if (length($line)>0 && !($line=~m/^;/)){
+	my @tempdata = split(/\t/,$line);
+	
+	if ($tempdata[6] &&($tempdata[6] eq "Reaction")){
+    #       print "|".$line."|"."\n";
+	  $tempdata[0]=~s/<$|>$//;
+	  $i++;
+	  $reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$5~\"".$organismid."\")||";
+	}elsif($tempdata[6] &&($tempdata[6] eq "Compound")){
+	  $cpdquery = $cpdquery."(\$1~\"^".$tempdata[0]."\"&&\$2~\"Compound\")||";
+	}
+      }elsif ($i>0){
+	last;
       }
-    }elsif ($i>0){
-      last;
+
     }
-
-  }
-  close (INFILE); 
-  # Searching all reaction information for reaction in the graph
-   $reactionquery =~s/\|+$//;
-   $cpdquery =~s/\|+$//;
-  my $command_ = "awk -F'\\t+' ' $reactionquery {print \$3\"\\t\"\$2\"\\t\"\$6}' $gprfile|sort +1|uniq";
-  print "$command_\n";
-  @conversiontable = qx ($command_);
-  $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $graphfile";
-  print "$command_\n";
-  my @conversionreactiontable = qx ($command_);
-  print "****************".join("\n", @conversionreactiontable)."\n";
-  push (@conversiontable,@conversionreactiontable);
-   
-  chomp(@conversiontable);
-  # Storing in a hash for faster search
-  my %reactioninfos=();
-  undef @previousarray;
- my @reacinfoarray=();
-  foreach my $content(@conversiontable){
-    my @currentarray = split(/\t/,$content);
-    if ( @previousarray && !($previousarray[0] eq $currentarray[0])){ 
-	my @truc = @reacinfoarray;
-	$reactioninfos{$previousarray[0]}=\@truc;
-	undef @reacinfoarray;
+    close (INFILE); 
+    # Searching all reaction information for reaction in the graph
+     $reactionquery =~s/\|+$//;
+     $cpdquery =~s/\|+$//;
+    my $command_ = "awk -F'\\t+' ' $reactionquery {print \$3\"\\t\"\$2\"\\t\"\$6}' $gprfile|sort +1|uniq";
+    print "$command_\n";
+    @conversiontable = qx ($command_);
+    $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $graphfile";
+    print "$command_\n";
+    my @conversionreactiontable = qx ($command_);
+    print "****************".join("\n", @conversionreactiontable)."\n";
+    push (@conversiontable,@conversionreactiontable);
+     
+    chomp(@conversiontable);
+    # Storing in a hash for faster search
+    my %reactioninfos=();
+    undef @previousarray;
+   my @reacinfoarray=();
+    foreach my $content(@conversiontable){
+      my @currentarray = split(/\t/,$content);
+      if ( @previousarray && !($previousarray[0] eq $currentarray[0])){ 
+	  my @truc = @reacinfoarray;
+	  $reactioninfos{$previousarray[0]}=\@truc;
+	  undef @reacinfoarray;
+      }
+      push (@reacinfoarray,\@currentarray);
+      @previousarray = @currentarray;
     }
-    push (@reacinfoarray,\@currentarray);
-    @previousarray = @currentarray;
-  }
-$reactioninfos{$previousarray[0]}=\@reacinfoarray;
-  open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
-  my $annot_graph_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.txt");
-  # my $outfilename = `mktemp $annot_graph_filename`;
-  open (OUTFILE, '>'.$annot_graph_filename);
-  print $main::groupdescriptor;
-  while (<INFILE>) {
-	  my($line) = $_;
-	  chomp($line);
-	  my @tempdatab = split(/\t/,$line);
-	  if (length($line)==0 || $line=~ m/^;/){
-	    print OUTFILE $line. "\n";
-	  } else{
-	  
-	    my $tempstring = $tempdatab[0];
-	    $tempstring=~s/<$|>$//;
-	    print "TEMPSTRING = $tempstring\n";
-	    my $values_ref = $reactioninfos{$tempstring};
-	    if (defined $values_ref){
-	      my @values = @{$values_ref};
-	      if ($tempdatab[6] && ($tempdatab[6] eq "Reaction")){
+  $reactioninfos{$previousarray[0]}=\@reacinfoarray;
+    open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
+    my $annot_graph_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.txt");
+    # my $outfilename = `mktemp $annot_graph_filename`;
+    open (OUTFILE, '>'.$annot_graph_filename);
+    print $main::groupdescriptor;
+    while (<INFILE>) {
+	    my($line) = $_;
+	    chomp($line);
+	    my @tempdatab = split(/\t/,$line);
+	    if (length($line)==0 || $line=~ m/^;/){
+	      print OUTFILE $line. "\n";
+	    } else{
+	    
+	      my $tempstring = $tempdatab[0];
+	      $tempstring=~s/<$|>$//;
+	      print "TEMPSTRING = $tempstring\n";
+	      my $values_ref = $reactioninfos{$tempstring};
+	      if (defined $values_ref){
+		my @values = @{$values_ref};
+		if ($tempdatab[6] && ($tempdatab[6] eq "Reaction")){
 
-		my $label="";
-		my $labelb;
-		foreach my $info_ref(@values){
-		  my @info = @{$info_ref};
+		  my $label="";
+		  my $labelb;
+		  foreach my $info_ref(@values){
+		    my @info = @{$info_ref};
 
-    #  	      print "JOIN=".join("\t", $myarray[0][0])."\n";
-		  my( $reacid,$ec,$genename) = @info;
-		  print "ec: $ec\n";
-		  if ($ec){
-		    chomp($genename);
-		    $label=$label."$genename,";
-		    if(!defined $labelb) {
-		      $labelb = "\\n$ec\\n($reacid)";
+      #  	      print "JOIN=".join("\t", $myarray[0][0])."\n";
+		    my( $reacid,$ec,$genename) = @info;
+		    print "ec: $ec\n";
+		    if ($ec){
+		      chomp($genename);
+		      $label=$label."$genename,";
+		      if(!defined $labelb) {
+			$labelb = "\\n$ec\\n($reacid)";
+		      }
 		    }
 		  }
+		  $tempdatab[3] = $label.$labelb;
+		}elsif ($tempdatab[6] &&($tempdatab[6] eq "Compound")){
+		 $tempdatab[3] =  $values[0][1];
 		}
-		$tempdatab[3] = $label.$labelb;
-	      }elsif ($tempdatab[6] &&($tempdatab[6] eq "Compound")){
-	       $tempdatab[3] =  $values[0][1];
 	      }
+	      print OUTFILE (join "\t",@tempdatab). "\n";
 	    }
-	    print OUTFILE (join "\t",@tempdatab). "\n";
-	  }
-   } 
-     close (MYFILE); 
+     } 
+       close (MYFILE); 
 
-  my $annot_graph_dot = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.dot");
-  my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $annot_graph_filename -o $annot_graph_dot";
-  system  $convert_graph_cmd;
-  my $dpng_file = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.png");
-  my $graph_image_cmd = "dot -Tpng -Kdot -o $dpng_file $annot_graph_dot";
-  system $graph_image_cmd;
-  #exit 0;
-  if($main::show){
-    system "gwenview $dpng_file &";
-  }
+    my $annot_graph_dot = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.dot");
+    my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $annot_graph_filename -o $annot_graph_dot";
+    system  $convert_graph_cmd;
+    my $dpng_file = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.png");
+    my $graph_image_cmd = "dot -Tpng -Kdot -o $dpng_file $annot_graph_dot";
+    system $graph_image_cmd;
+    #exit 0;
+    if($main::show){
+      system "gwenview $dpng_file &";
+    }
+}else{
+  print STDERR "NOT ENOUGH SEEDS. Min 2. I stop here!!";
+  exit(1);
+}
+
     ################################################################
     ## Insert here output printing
 
