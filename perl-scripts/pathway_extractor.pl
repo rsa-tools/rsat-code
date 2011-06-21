@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway_extractor.pl,v 1.4 2011/06/21 09:10:51 rsat Exp $
+# $Id: pathway_extractor.pl,v 1.5 2011/06/21 12:02:24 rsat Exp $
 #
 ############################################################
 
@@ -101,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
@@ -132,21 +132,19 @@ package main;
       $main::groupdescriptor = $main::infile{input};
       $main::groupdescriptor =~ s{.*/}{};      # removes path  
       $main::groupdescriptor=~ s{\.[^.]+$}{}; # removes extension 
-
     }
     }else{
       if (!$main::groupdescriptor){
 	$main::groupdescriptor ="stdin";
       }
     }
-    $main::groupdescriptor=~s/\s+/_/g;
-
+    $main::groupdescriptor=~s/(\s|\(|\))+/_/g;
     if (!$main::graph){
       $main::graph = $main::graphfile;
       $main::graph =~ s{.*/}{};      # removes path
       $main::graph=~ s{\.[^.]+$}{}; # removes extension
     }
-     $main::graph=~s/\s+/_/g;
+     $main::graph=~s/(\s|\(|\))+/_/g;
     ################################################################
     ## Read input
 #     ($main::in) = &OpenInputFile($main::infile{input});
@@ -198,7 +196,7 @@ package main;
   $organism = $tempdata[3];
   $organismid = $tempdata[4];
   my $groupid=( join "-",$organism,$organismid);
-  $groupid=~s/\s+/_/g;
+  $groupid=~s/(\s|\(|\))+/_/g;
   #  merging GR and GPR in one array
   if (@grconversiontable){
     foreach  my $val (@conversiontable) {
@@ -265,7 +263,7 @@ package main;
   #       print "|".$line."|"."\n";
 	$tempdata[0]=~s/<$|>$//;
 	$i++;
-	$reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$4~\"".$organism."\")||";
+	$reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$5~\"".$organismid."\")||";
       }elsif($tempdata[6] &&($tempdata[6] eq "Compound")){
 	$cpdquery = $cpdquery."(\$1~\"^".$tempdata[0]."\"&&\$2~\"Compound\")||";
       }
@@ -278,7 +276,7 @@ package main;
   # Searching all reaction information for reaction in the graph
    $reactionquery =~s/\|+$//;
    $cpdquery =~s/\|+$//;
-  my $command_ = "awk -F'\\t+' ' $reactionquery {print \$_}' $grfile|sort +2";
+  my $command_ = "awk -F'\\t+' ' $reactionquery {print \$3\"\\t\"\$2\"\\t\"\$6}' $gprfile|sort +1|uniq";
   print "$command_\n";
   @conversiontable = qx ($command_);
   $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $graphfile";
@@ -294,15 +292,15 @@ package main;
  my @reacinfoarray=();
   foreach my $content(@conversiontable){
     my @currentarray = split(/\t/,$content);
-    if ( @previousarray && !($previousarray[2] eq $currentarray[2])){ 
+    if ( @previousarray && !($previousarray[0] eq $currentarray[0])){ 
 	my @truc = @reacinfoarray;
-	$reactioninfos{$previousarray[2]}=\@truc;
+	$reactioninfos{$previousarray[0]}=\@truc;
 	undef @reacinfoarray;
     }
     push (@reacinfoarray,\@currentarray);
     @previousarray = @currentarray;
   }
-$reactioninfos{$previousarray[2]}=\@reacinfoarray;
+$reactioninfos{$previousarray[0]}=\@reacinfoarray;
   open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
   my $annot_graph_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.txt");
   # my $outfilename = `mktemp $annot_graph_filename`;
@@ -330,9 +328,9 @@ $reactioninfos{$previousarray[2]}=\@reacinfoarray;
 		  my @info = @{$info_ref};
 
     #  	      print "JOIN=".join("\t", $myarray[0][0])."\n";
-		  my($geneid, $ec,$reacid,$orgname,$orgid,$genename,$gensyn) = @info;
-		  print "GENEID: $geneid\n";
-		  if ($geneid){
+		  my( $reacid,$ec,$genename) = @info;
+		  print "ec: $ec\n";
+		  if ($ec){
 		    chomp($genename);
 		    $label=$label."$genename,";
 		    if(!defined $labelb) {
@@ -342,7 +340,6 @@ $reactioninfos{$previousarray[2]}=\@reacinfoarray;
 		}
 		$tempdatab[3] = $label.$labelb;
 	      }elsif ($tempdatab[6] &&($tempdatab[6] eq "Compound")){
-	       print ">>>>>>>>>>".$values[0][1]."\n";
 	       $tempdatab[3] =  $values[0][1];
 	      }
 	    }
