@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.3 2011/06/21 13:32:03 rsat Exp $
+# $Id: pathways-from-clusters,v 1.4 2011/06/22 08:02:50 rsat Exp $
 #
 ############################################################
 
@@ -56,7 +56,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -104,7 +104,7 @@ package main;
 	 
 	 chomp($line);
 	 if (!($line=~m/^;|^#/)){
- 	   print "$line\n";
+#  	   print "$line\n";
 	   my @tempdata = split(/\t/,$line);
 # 	   print "$tempdata[6] eq $oldoperonid\n";
 	   if ($oldoperonid && !($tempdata[6] eq $oldoperonid)){
