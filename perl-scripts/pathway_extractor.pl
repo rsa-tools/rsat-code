@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway_extractor.pl,v 1.11 2011/06/22 16:08:47 rsat Exp $
+# $Id: pathway_extractor.pl,v 1.12 2011/06/22 16:14:17 rsat Exp $
 #
 ############################################################
 
@@ -101,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
