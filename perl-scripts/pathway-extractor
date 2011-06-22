@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.8 2011/06/22 07:35:28 rsat Exp $
+# $Id: pathway-extractor,v 1.9 2011/06/22 08:02:27 rsat Exp $
 #
 ############################################################
 
@@ -101,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
@@ -174,7 +174,7 @@ package main;
   close $main::in if ($main::infile{input});
   chomp(@genesidlist);
   $genesid = (join "|^",@genesidlist );#
-  print join (@genesidlist,"|")."\n";
+#   print join (@genesidlist,"|")."\n";
   my @grconversiontable;
   my %genelist=();
   if ($grfile){
@@ -205,7 +205,7 @@ package main;
 	push(@grconversiontable, grep(/^$tempdata[0]/, @conversiontable))
       }
     }
-  print join( "\n",@conversiontable) ."\n"; 
+#   print join( "\n",@conversiontable) ."\n"; 
     @conversiontable=@grconversiontable;
     
   }
@@ -311,7 +311,7 @@ if ($seednum > 1) {
     my $annot_graph_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.txt");
     # my $outfilename = `mktemp $annot_graph_filename`;
     open (OUTFILE, '>'.$annot_graph_filename);
-    print $main::groupdescriptor;
+#     print $main::groupdescriptor;
     while (<INFILE>) {
 	    my($line) = $_;
 	    chomp($line);
@@ -322,7 +322,7 @@ if ($seednum > 1) {
 	    
 	      my $tempstring = $tempdatab[0];
 	      $tempstring=~s/<$|>$//;
-	      print "TEMPSTRING = $tempstring\n";
+# 	      print "TEMPSTRING = $tempstring\n";
 	      my $values_ref = $reactioninfos{$tempstring};
 	      if (defined $values_ref){
 		my @values = @{$values_ref};
@@ -365,7 +365,7 @@ if ($seednum > 1) {
       system "gwenview $dpng_file &";
     }
 }else{
-  print STDERR "NOT ENOUGH SEEDS. Min 2. I stop here!!";
+  print STDERR "NOT ENOUGH SEEDS. Min 2. I stop here!!\n";
   exit(1);
 }
 
