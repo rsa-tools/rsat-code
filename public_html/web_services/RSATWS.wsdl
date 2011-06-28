@@ -676,13 +676,6 @@ allowing to detect motifs with a higher significance.
 This option can also be convenient for performing quick tests, parameter selection and debugging before running the full analysis of large sequence sets.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="length" type="xsd:int" minOccurs="0">
-	    <xsd:annotation>
-	      <xsd:documentation>Oligonucleotide length for word-counting approaches (oligo-analysis, position-analysis, local-word-analysis, oligo-diff).
-In our experience, optimal results are obtained with hexanucleotides and heptanucleotides.
-Note: the monad length used for dyad-analysis is not affected by those options. Instead it is fixed to 3. Indeed, dyad-analysis can detect larger motifs by sampling various spacings between the two trinucleotide monads.</xsd:documentation>
-	    </xsd:annotation>
-	  </xsd:element>
 	  <xsd:element name="min_length" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Minimal oligonucleotide length. Use in combination with the next option (max_length).
