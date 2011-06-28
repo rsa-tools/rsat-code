@@ -33,7 +33,7 @@ $query = new CGI;
 &RSA_header("gene-info result", "results");
 
 #### read parameters ####
-$parameters .= "";
+$parameters = " -v 1";
 
 ################################################################
 #### queries
