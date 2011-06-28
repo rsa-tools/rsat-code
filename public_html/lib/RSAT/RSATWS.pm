@@ -1020,7 +1020,6 @@ sub peak_motifs_cmd {
     my $max_motif_number = $args{"max_motif_number"};
     my $ref_motif = $args{"ref_motif"};
     my $top_peaks = $args{"top_peaks"};
-    my $length = $args{"length"};
     my $min_length = $args{"min_length"};
     my $max_length = $args{"max_length"};
     my $markov = $args{"markov"};
@@ -1135,12 +1134,6 @@ sub peak_motifs_cmd {
 	$top_peaks =~ s/\'//g;
 	$top_peaks =~ s/\"//g;
 	$command .= " -top_peaks '".$top_peaks."'";
-    }
-
-    if ($length) {
-	$length =~ s/\'//g;
-	$length =~ s/\"//g;
-	$command .= " -l '".$length."'";
     }
 
     if ($min_length) {
