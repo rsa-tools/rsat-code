@@ -393,11 +393,9 @@ sub sum_of_binomials {
 ### varying from s to r.
 sub binomial_boe {
     my ($proba, $trials, $succ) = @_;
-    
     if ($main::verbose >=5) {
 	print join ("\t", "binomial_boe", "p=$proba", "t=$trials", "s=$succ"), "\n";
     }
-    
     return (sum_of_binomials($proba,$trials,$succ,$trials));
 }
 
@@ -1525,15 +1523,14 @@ sub ChiSquare {
     } else {
 	$answer = sprintf "%.5f", $chi_square;
     }
-    warn join("\t", 
-	      $answer, 
-	      $deg_freedom, 
-	      $left_group, 
-	      $right_group,
-	      $#expected,
-	      $expected[0],
-	      $expected[$#expected],
-	      ), "\n" if ($main::verbose >= 6);
+    &RSAT::message::Debug($answer,
+			  $deg_freedom,
+			  $left_group,
+			  $right_group,
+			  $#expected,
+			  $expected[0],
+			  $expected[$#expected],
+			 ) if ($main::verbose >= 6);
 
     &RSAT::message::Debug("chi2=",$answer, "df=".$deg_freedom, "left_group=".$left_group, "right_group=".$right_group, "obs:".scalar(@observed), "exp:".scalar(@expected))
       if ($main::verbose >= 5);
