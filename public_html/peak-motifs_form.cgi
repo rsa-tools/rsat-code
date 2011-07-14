@@ -90,9 +90,9 @@ print "The idea behind <i>peak-motifs</i> is that we detect <b>exceptional words
 <ul>
 <li> <b>global over-representation (oligo-analysis and dyad-analysis)</b>: a word/dyad is more frequent than expected from the background model. The over-repressentation is tested with a right-tailed binomial significance test.</li>
 
-<li> <b>positional bias (position-analysis)</b>: a word has a heterogeneous of occurrences in the input sequences, i.e. there are regions with higher frequency and other regions with lower frequencies than the average of the same word observed over the whole width of the sequences. Positional bias is tested with a chi-squared tests. 
+<li> <b>positional bias (position-analysis)</b>: a word has a heterogeneous of occurrences in the test sequences, i.e. there are regions with higher frequency and other regions with lower frequencies than the average of the same word observed over the whole width of the sequences. Positional bias is tested with a chi-squared tests. 
 </li>
-<li><b>local over-representation (local-word-analysis)</b>: the same test as for oligo-analysis (significance of the right tail of the binomial distribution) applied successfully to positional windows defined over the input set. 
+<li><b>local over-representation (local-word-analysis)</b>: the same test as for oligo-analysis (significance of the right tail of the binomial distribution) applied successfully to positional windows defined over the test set.
 </li>
 <br/>
 For position-analysis and local-word-analysis, the <b>sequences</b> are supposed to be <b>aligned</b> over some reference. For peaks, the reference is the summit (or <b>center</b>) of each sequence. ";
@@ -258,11 +258,11 @@ sub Panel1 {
 ##########################################
 sub Panel2 {
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>Reduce input peak sequences </b> </div>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>Reduce peak sequences</b> </div>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
 
   print "<p/><fieldset>\n";
-  print "<legend><b><a href='help.peak-motifs.html#tasks'>Restrict the input dataset  </a></b></legend>\n";
+  print "<legend><b><a href='help.peak-motifs.html#tasks'>Restrict the test dataset  </a></b></legend>\n";
 
   print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html#thresholds'>Number of top sequences to retain </a>&nbsp;</B>\n";
   print  $query->textfield(-name=>'top_sequences',
@@ -384,7 +384,7 @@ print $strandPopup;
 #print "<br/>";
 
 ### markov  order (common to all programs)
-print "<p><b><a href='help.oligo-analysis.html'> Markov order of the background model</a> </b><i>(only for single-input analysis, will be ignored if control set is provided)</i>\n";
+print "<p><b><a href='help.oligo-analysis.html'> Markov order of the background model</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
 $oligoPopup = "<br>";
 $oligoPopup .=  "<SELECT NAME='markov'>\n";
 $oligoPopup .=  "<OPTION  SELECTED VALUE='0'>0 (generally not ideal)</option>\n";
@@ -528,7 +528,7 @@ print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>Assembly versi
 print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
-print "<br/>&nbsp;&nbsp;&nbsp;&nbsp;<i>The 4th column of the BED file (feature name) correspond to the fasta headers of input sequences</i>";	
+print "<br/>&nbsp;&nbsp;&nbsp;&nbsp;<i>The 4th column of the BED file (feature name) corresponds to the fasta headers of sequences</i>";
 
 print "<br/>
 </fieldset><p/>";
