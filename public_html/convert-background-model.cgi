@@ -172,6 +172,7 @@ if ($query->param('output') eq "display") {
       $command2 .= "| ${SCRIPTS}/draw-heatmap -min 0 -max 1 ";
       $command2 .= " -out_format png";
       $command2 .= " -col_width 50 ";
+      $command2 .= " -rownames ";
       $command2 .= " -o ".${TMP}."/".$heatmap_file.".png";
 #      $command2 .= " -html ".${TMP}."/".$heatmap_file.".html";
       push @result_files, ("Heatmap", $heatmap_file.".png");
