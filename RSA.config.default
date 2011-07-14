@@ -37,59 +37,5 @@ unless ($ENV{RSAT}) {
 }
 $RSA = $ENV{RSAT};
 
-# ################################################################
-# # Default image export format (feature--map and XYgraph)
-# $IMG_FORMAT =   "png";
-
-# ################################################################
-# # Level of echoing for the web server. This is only used for debugging
-# # during the installation of the web server
-# $ECHO=0;
-
-# ################################################################
-# ## Load the list of supported organisms 
-# if (-e $RSA."/data/supported_organisms.pl") {
-#     require "$RSA/data/supported_organisms.pl";
-# }
-
-# ################################################################
-# # MEME installation dir (to find the test files)
-# $ENV{MEME_DIR}="$RSA/app_source/meme.3.0.4";
-
-# ###############################################################
-# # configuration for the parsers
-# #
-# $ENV{PARSER}="${RSA}/perl-scripts/parsers";
-
-# ################################################################
-# # Mirror of the NCBI/Genbank genome repository
-# #
-# $GENBANK_DIR=$RSA."/downloads/ftp.ncbi.nih.gov/genomes";
-
-
-# ################################################################
-# # SQL export format
-# $supported_dbms{oracle} = 1;
-# $supported_dbms{postgresql} = 1;
-# $supported_dbms{mysql} = 1;
-
-# $default{dbms} = "mysql";
-# $default{host} = "localhost";
-# $default{schema} = "rsat";
-# $default{user} = "rsat";
-# $default{password} = "rsat";
-
-# ### input directory. This directory must contain the mirror of the databases to be parsed
-# $Databases = $RSA."/downloads"; 
-
-# ### main output directory: the result is exported to subdirectories of  this directory
-# $parsed_data = $ENV{HOME}."/parsed_data"; 
-
-# ################################################################
-# # Initialization of the dates
-# $start_time = `date +%Y-%m-%d.%H%M%S`;
-# $delivery_date = `date +%Y%m%d`;
-# chomp $delivery_date;
-
 return 1;
 
