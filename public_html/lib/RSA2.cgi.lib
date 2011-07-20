@@ -757,6 +757,7 @@ sub GetMatrix {
 				'jaspar'=>1,
 				'meme'=>1,
 				'motifsampler'=>1,
+				'sequences' => 1,
 				'stamp'=>1,
 				'tab'=>1,
 				'transfac'=>1,
