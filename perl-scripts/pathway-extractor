@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.12 2011/06/22 16:14:17 rsat Exp $
+# $Id: pathway-extractor,v 1.13 2011/07/20 13:42:34 rsat Exp $
 #
 ############################################################
 
@@ -101,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
@@ -183,7 +183,7 @@ package main;
     @grconversiontable = qx ($seed_converter_cmd) ;
     chomp(@grconversiontable);
     @grconversiontable = sort(@grconversiontable);
-  print join( "\n",@grconversiontable) ."\n"; 
+#   print join( "\n",@grconversiontable) ."\n"; 
   }
    
   my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genesid."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $gprfile";
@@ -291,7 +291,7 @@ if ($seednum > 1) {
     $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $graphfile";
     print "$command_\n";
     my @conversionreactiontable = qx ($command_);
-    print "****************".join("\n", @conversionreactiontable)."\n";
+#     print "****************".join("\n", @conversionreactiontable)."\n";
     push (@conversiontable,@conversionreactiontable);
      
     chomp(@conversiontable);
@@ -302,7 +302,7 @@ if ($seednum > 1) {
     foreach my $content(@conversiontable){
       my @currentarray = split(/\t/,$content);
       if ( @previousarray && !($previousarray[0] eq $currentarray[0])){ 
-	  print $previousarray[0]."\n";
+# 	  print $previousarray[0]."\n";
 	  my @truc = @reacinfoarray;
 	  $reactioninfos{$previousarray[0]}=\@truc;
 	  undef @reacinfoarray;
@@ -339,7 +339,7 @@ if ($seednum > 1) {
 
       #  	      print "JOIN=".join("\t", $myarray[0][0])."\n";
 		    my( $reacid,$ec,$genename) = @info;
-		    print "ec: $ec\n";
+# 		    print "ec: $ec\n";
 		    if ($ec){
 		      chomp($genename);
 		      $label=$label."$genename,";
@@ -546,7 +546,7 @@ If no output file is specified, the current directory is used.
 =item	B<-t temp Directory>
 
 If no output file is specified, the current directory is used. 
-
+pathway_extractor.pl
 =cut
     } elsif ($arg eq "-t") {
       $main::tempdir = shift(@arguments);
