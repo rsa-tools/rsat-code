@@ -106,7 +106,7 @@ utilization. Motif comparisons and clustering.</p>
 <h1><a name="input_format">INPUT FORMAT</a></h1>
 <p>The program takes as input either one (test) or two sequence files
 (test versus control).</p>
-<p>All input sequences formats supported by convert-sequences are
+<p>All sequences formats supported in input by <i>convert-sequences</i> are
 supported.</p>
 <p>
 </p>
@@ -178,7 +178,7 @@ specified length around the sequence center (from -msl/2 to +msl/2).</p>
 <dt><strong><a name="top_peaks_n" class="item"><strong>-top_peaks N</strong></a></strong></dt>
 
 <dd>
-<p>Restrict the analysis to the N peaks at the top of the input sequence
+<p>Restrict the analysis to the N peaks at the top of the test sequence
 file. Some peak calling programs return the peaks sorted by score. In
 such case, the -top_peaks option allows to restrict the analysis to
 the highest scoring peaks. In some cases, the top-scoring peaks might
@@ -279,7 +279,7 @@ fatal errors.</p>
 <dt><strong><a name="purge" class="item"><em>purge</em></a></strong></dt>
 
 <dd>
-<p>Purge input sequences (test set and, if specified, control set) to
+<p>Purge test sequences (test set and, if specified, control set) to
 mask redundant fragments before applying pattern discovey
 algorithms. Sequence purging is necessary because redundant fragments
 would violate the hypothesis of independence underlying the binomial
@@ -351,7 +351,7 @@ heterodimers.</p>
 <p>By default, peak-motifs analyzes pairs of trinucleotides with
 any spacing between 0 and 20.</p>
 <p>The expected frequency of each dyad is estimated as the product of its
-monad frequencies in the input sequences (option -bg monads of
+monad frequencies in the test sequences (option -bg monads of
 dyad-analysis).</p>
 </dd>
 <dt><strong><a name="positions" class="item"><em>positions</em></a></strong></dt>
@@ -376,7 +376,7 @@ dinucleotides) in the test sequence set.</p>
 oligonucleotides and dyads.</p>
 <p>The program <em>local-word-analysis</em> (Matthieu Defrance,unpublished)
 tests the over-representation of each possible word (oligo, dyad)
-in positional windows in the input sequence set.</p>
+in positional windows in the test sequence set.</p>
 <p>Two types of background models are supported: (i) Markov model of
 order m estimated locally (within the window under consideration; (ii)
 the frequency observed for a word in the whole sequence set is used as
@@ -440,15 +440,15 @@ space.</p>
 <dt><strong><a name="meme_bg" class="item"><em>meme_bg</em></a></strong></dt>
 
 <dd>
-<p>Compute meme background model from the input sequences.</p>
+<p>Compute meme background model from the test sequences.</p>
 </dd>
 <dt><strong><a name="meme" class="item"><em>meme</em></a></strong></dt>
 
 <dd>
-<p>Run the motif discovery program MEME on the input sequences.</p>
+<p>Run the motif discovery program MEME on the test sequences.</p>
 <p><strong>Beware</strong>: the complexity of MEME is quadratic: the computing time
 increases as the square of sequence size. It is thus not recommended
-to use MEME for data sets exceeding 1Mb. If the input set contains
+to use MEME for data sets exceeding 1Mb. If the test set contains
 many peaks, the option -task meme can be combined with a restriction
 on the number of top peaks to be considered (e.g. -top_peaks 500).</p>
 </dd>
