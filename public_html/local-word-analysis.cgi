@@ -254,7 +254,7 @@ if ($purge) {
 $command .=  "$motif_command -i $sequence_file $parameters";
 
 #print '<style> <!-- pre {overflow: auto;} --></style>';
-print "<pre>command: $command<P>\n</pre>" if ($ENV{rsat_echo} >=1);
+print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>" if ($ENV{rsat_echo} >=1);
 
 #&SaveCommand("$command", "$TMP/$tmp_file_name");
 
@@ -277,22 +277,36 @@ if ($query->param('output') =~ /display/i) {
 	($query->param('return') ne "distrib") &&
 	(&IsReal($query->param('lth_occ_sig')))) {
 
-      ## Pattern-assembly
+      ## Assemble the significant patterns with pattern-assembly
       $assembly_file = "$TMP/$tmp_file_name.asmb";
-      $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -top 50";
+      $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
       if ($query->param('strand') =~ /single/) {
 	$pattern_assembly_command .= " -1str";
       } else {
 	$pattern_assembly_command .= " -2str";
       }
-      $pattern_assembly_command .= "  -i $result_file";
-      $pattern_assembly_command .= "  -o $assembly_file";
-      
+      if (&IsNatural($query->param('max_asmb_nb'))) {
+	$pattern_assembly_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
+      }
+      $pattern_assembly_command .= " -i ".$result_file;
+      $pattern_assembly_command .= " -o ".$assembly_file;
+
+#       ## Pattern-assembly
+#       $assembly_file = "$TMP/$tmp_file_name.asmb";
+#       $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -top 50";
+#       if ($query->param('strand') =~ /single/) {
+# 	$pattern_assembly_command .= " -1str";
+#       } else {
+# 	$pattern_assembly_command .= " -2str";
+#       }
+#       $pattern_assembly_command .= "  -i $result_file";
+#       $pattern_assembly_command .= "  -o $assembly_file";
+
       unless ($ENV{RSA_ERROR}) {
 
 	## Assemble the significant patterns
 	print "<H2>Pattern assembly</H2>\n";
-	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+	print "<PRE>pattern-assembly command: ", &RSAT::util::hide_RSAT_path($pattern_assembly_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	system "$pattern_assembly_command";
 	open ASSEMBLY, $assembly_file;
 	print "<PRE>\n";
