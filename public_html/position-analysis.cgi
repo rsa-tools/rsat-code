@@ -60,9 +60,9 @@ if ($purge) {
 @return_fields = ();
 
 ### threshold on occurrences
-$oth = $query->param('oth');
-&FatalError("$oth Invalid threshold on occurrences") unless &IsNatural($oth);
-$parameters .= " -oth ".$oth;
+$lth_occ = $query->param('lth_occ');
+&FatalError("$lth_occ Invalid threshold on occurrences") unless &IsNatural($lth_occ);
+$parameters .= " -lth_occ ".$lth_occ;
 
 
 #### chi2
@@ -145,48 +145,63 @@ if ((&IsInteger($offset)) && ($offset != 0)) {
   $parameters .= " -offset ".$offset;
 }
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+print "<PRE>command: ", &RSAT::util::hide_RSAT_path($command." ".$parameters), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') =~ /display/i) {
 
-    &PipingWarning();
-    
-    ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$command $parameters |";
-    
-    ### Print result on the web page
-    print '<H2>Result</H2>';
-    &PrintHtmlTable(RESULT, $result_file, true);
-    close(RESULT);
-    
-    #### oligonucleotide assembly ####
-    if (&IsReal($query->param('occ_significance_threshold'))) {
-	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
-	if ($query->param('strand') =~ /single/) {
-	    $pattern_assembly_command .= " -1str";
-	} else {
-	    $pattern_assembly_command .= " -2str";
-	}
-	
-	unless ($ENV{RSA_ERROR}) {
-	    print "<H2>Pattern assembly</H2>\n";
-	    open CLUSTERS, "$pattern_assembly_command -i $result_file |";
-	    print "<PRE>\n";
-	    while (<CLUSTERS>) {
-		s|$ENV{RSAT}/||g;
-		print;
-	    }
-	    print "</PRE>\n";
-	    close(CLUSTERS);
-	}
+  &PipingWarning();
+
+  ### execute the command ###
+  $result_file = "$TMP/$tmp_file_name.res";
+  open RESULT, "$command $parameters |";
+
+  ### Print result on the web page
+  print '<H2>Result</H2>';
+  &PrintHtmlTable(RESULT, $result_file, true);
+  close(RESULT);
+
+  #### oligonucleotide assembly ####
+  if (&IsReal($query->param('occ_significance_threshold'))) {
+
+    ## Assemble the significant patterns with pattern-assembly
+    $assembly_file = "$TMP/$tmp_file_name.asmb";
+    $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
+    if ($query->param('strand') =~ /single/) {
+      $pattern_assembly_command .= " -1str";
+    } else {
+      $pattern_assembly_command .= " -2str";
     }
 
-    &PipingForm();
-    print '<HR SIZE=3>';
+    #     if (&IsNatural($query->param('max_asmb_nb'))) {
+    #       $pattern_assembly_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
+    #     }
+    #     $pattern_assembly_command .= " -i ".$result_file;
+    #     $pattern_assembly_command .= " -o ".$assembly_file;
+    # 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
+    # 	if ($query->param('strand') =~ /single/) {
+    # 	    $pattern_assembly_command .= " -1str";
+    # 	} else {
+    # 	    $pattern_assembly_command .= " -2str";
+    # 	}
+
+    unless ($ENV{RSA_ERROR}) {
+      print "<H2>Pattern assembly</H2>\n";
+      open CLUSTERS, "$pattern_assembly_command  |";
+      print "<PRE>\n";
+      while (<CLUSTERS>) {
+	s|$ENV{RSAT}/||g;
+	print;
+      }
+      print "</PRE>\n";
+      close(CLUSTERS);
+    }
+  }
+
+  &PipingForm();
+  print '<HR SIZE=3>';
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
 }
 
 print $query->end_html;

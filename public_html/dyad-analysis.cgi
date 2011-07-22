@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.43 2011/05/26 05:11:19 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.44 2011/07/22 14:07:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -39,7 +39,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("dyad-analysis result", "results");
-&ListParameters if ($ENV{rsat_echo} >=2);
+&ListParameters if ($ENV{rsat_echo} >= 2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -191,7 +191,7 @@ if ($query->param('freq_estimate') eq 'background') {
 
 $command .= $parameters;
 
-print "<PRE><B>Command:</B> $command </PRE>" if ($ENV{rsat_echo});
+print "<PRE><B>Command:</B> ", &RSAT::util::hide_RSAT_path($command), "</PRE>" if ($ENV{rsat_echo});
 
 &SaveCommand($command, "$TMP/$tmp_file_name");
 
@@ -215,17 +215,21 @@ if ($query->param('output') eq "display") {
 
     ## Assemble the significant patterns with pattern-assembly
     $assembly_file = "$TMP/$tmp_file_name.asmb";
-    $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0 -top 50";
+    $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
     if ($query->param('strand') =~ /single/) {
       $pattern_assembly_command .= " -1str";
     } else {
       $pattern_assembly_command .= " -2str";
     }
-    $pattern_assembly_command .= "  -i $result_file";
-    $pattern_assembly_command .= "  -o $assembly_file";
+
+    if (&IsNatural($query->param('max_asmb_nb'))) {
+      $pattern_assembly_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
+    }
+    $pattern_assembly_command .= " -i ".$result_file;
+    $pattern_assembly_command .= " -o ".$assembly_file;
 
     print "<H2>Pattern assembly</H2>\n";
-    print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+    print "<PRE>pattern-assembly command: ", &RSAT::util::hide_RSAT_path($pattern_assembly_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
     system "$pattern_assembly_command";
     open ASSEMBLY, $assembly_file;
     print "<PRE>\n";
