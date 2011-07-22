@@ -1468,7 +1468,7 @@ sub EmailTheResult {
 
     #### Indicate the URL of the future result file
     my $submission_message = $mail_title."\n";
-    $submission_message .= "\n\nCommand: $clean_command\n\n";
+    $submission_message .= "\n\nCommand: ", &RSAT::util::hide_RSAT_path($clean_command), "\n\n";
     $submission_message .= "Your task has been submitted to the RSAT server.\n\n";
     $submission_message .= "After completion of the task, an email will be sent to ".$email_address.",\n"  unless ($no_email);
     $submission_message .= " and the result will become available at\n";
@@ -1491,7 +1491,7 @@ sub EmailTheResult {
     my $completion_mail_command = "mail -s \'".$mail_title." completion\'";
     my $completion_message;
     $completion_message .= $mail_title."\n";
-    $completion_message .= "\n\nCommand: $clean_command";
+    $completion_message .= "\n\nCommand: ", &RSAT::util::hide_RSAT_path($clean_command);
     $completion_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
     $completion_message .= "\nThe result file will remain there for $delay.";
     print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
@@ -2070,11 +2070,12 @@ sub PrintDyadReturnFields {
 ## Default parameters for matrix-from-patterns
 ## (shared by dyad-analysis and oligo-analysis Web interfaces)
 sub MatrixFromPatterns_defaults {
-  $default{to_matrix} = '1';
-  $default{flanks} = '2';
-  $default{min_weight} = '7.5';
-#  $default{gibbs_msps} = '1';
-#  $default{gibbs_iter} = '3';
+  $default{to_matrix} = 1;
+  $default{flanks} = 2;
+  $default{max_asmb_nb} = 5;
+  $default{min_weight} = 7.5;
+#  $default{gibbs_msps} = 1;
+#  $default{gibbs_iter} = 3;
 #  $default{gibbs_final} = '';
 }
 
@@ -2099,8 +2100,15 @@ sub MatrixFromPatterns_print_form {
 # 			  -default=>$default{gibbs_iter},
 # 			  -size=>3);
 
+  ## Max number of matrices
+  print "<br>\n";
+  print "&nbsp;"x12, "Max matrices";
+  print $query->textfield(-name=>'max_asmb_nb',
+			  -default=>$default{max_asmb_nb},
+			  -size=>2);
+
   ## Minimal weight score
-  print "&nbsp;"x4, "Min site weight score";
+  print "&nbsp;"x4, "Min site weight";
   print $query->textfield(-name=>'min_weight',
 			  -default=>$default{min_weight},
 			  -size=>3);
@@ -2122,7 +2130,7 @@ sub MatrixFromPatterns_run {
   $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
 
   ## Generate the command to extract matrices from patterns
-  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 -links -logo ";
+  $pssm_command = $SCRIPTS."/matrix-from-patterns -v 1 -links -logo ";
   #  $pssm_command .= " ".$str;
   $pssm_command .= " -seq ".$sequence_file;
   $pssm_command .= " -format $sequence_format";
@@ -2131,6 +2139,7 @@ sub MatrixFromPatterns_run {
   #  $pssm_command .= " -gibbs_iter ".$query->param('gibbs_iter');
   $pssm_command .= " -min_weight ".$query->param('min_weight');
   $pssm_command .= " -flanks ".$query->param('flanks');
+  $pssm_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
   #	  $pssm_command .= " -gibbs_final" if ($query->param('gibbs_final'));
   $pssm_command .= " -uth Pval 0.00025";
   $pssm_command .= " -bginput -markov 0";
@@ -2138,7 +2147,7 @@ sub MatrixFromPatterns_run {
 
   ## Run the command
   system "$pssm_command";
-  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+  print "<PRE>command to generate matrices (PSSM): ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
   push @result_files, ('significance matrices', $sig_matrix_file);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
   push @result_files, ('final matrices (tranfac format)', $pssm_file_tf);
@@ -2276,7 +2285,7 @@ sub display_matrices_web {
     $cmd .= " -logo_opt '-M' "; ## Small sample correction
     $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
     $cmd .= " -o ".$out_matrix_file;
-    print "<pre>Matrix conversion command: $cmd\n</pre>" if ($ENV{rsat_echo} >=1);
+    print "<pre>Matrix conversion command:," &RSAT::util::hide_RSAT_path($cmd), "\n</pre>" if ($ENV{rsat_echo} >=1);
     system "$cmd";
     &DelayedRemoval($out_matrix_file);
   }
