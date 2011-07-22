@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.55 2011/06/11 13:39:28 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.56 2011/07/22 14:11:12 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -449,7 +449,7 @@ I<pattern-assembly>.
 	} elsif ($arg eq "-toppat") {
 	  $main::top_pattern_nb = shift (@arguments);
 	  &RSAT::error::FatalError($top_pattern_nb, "is not a valid value for option -top_pattern_nb (should be Natural number).")
-	    unless (&IsNatural($max_asmb_nb));
+	    unless (&IsNatural($top_pattern_nb));
 
 
 =pod
@@ -484,7 +484,7 @@ argument is pased to I<pattern-assembly>.
 	} elsif ($arg eq "-sc") {
 	  $main::score_column = shift (@arguments);
 	  &RSAT::error::FatalError($score_column, "is not a valid value for option -sc (should be Natural number).")
-	    unless (&IsNatural($max_asmb_nb));
+	    unless (&IsNatural($score_column));
 
 =pod
 
@@ -497,8 +497,8 @@ parameter is passed to the program I<pattern-assembly>.
 =cut
 	} elsif ($arg eq "-subst") {
 	  $asmb_subst = shift(@arguments);
-	  &RSAT::error::FatalError($max_asmb_nb, "is not a valid value for option -max_asmb_nb (should be Natural number).")
-	    unless (&IsNatural($max_asmb_nb));
+	  &RSAT::error::FatalError($asmb_subst, "is not a valid value for option -max_asmb_nb (should be Natural number).")
+	    unless (&IsNatural($asmb_subst));
 
 
 	    ## Assembly file
