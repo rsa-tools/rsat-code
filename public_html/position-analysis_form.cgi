@@ -39,7 +39,7 @@ $default{sort} = 'checked';
 $default{check} = 'checked';
 $default{filter} = '';
 $default{lth} = "0";
-$default{oth} = "1";
+$default{lth_occ} = "1";
 
 ### print the form ###
 &RSA_header("position-analysis", "form");
@@ -169,8 +169,8 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 
 			  ### occurrences
 			  $query->td(["occurrences",
-				   $query->textfield(-name=>'oth',
-						     -default=>$default{oth},
+				   $query->textfield(-name=>'lth_occ',
+						     -default=>$default{lth_occ},
 						     -size=>5),
 				   '']),
 
