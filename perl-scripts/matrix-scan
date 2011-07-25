@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.196 2011/07/10 05:48:25 jvanheld Exp $
+# $Id: matrix-scan,v 1.197 2011/07/25 10:21:02 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1803,8 +1803,8 @@ package main;
       ################################################################
       ## Sort the matches
       my @ranked_matches = @{$matches_per_seq{$seq_id}};
-      &RSAT::message::Debug(scalar(@ranked_matches), "sites were predicted in sequence", $seq_id, join (";", @ranked_matches)) 
-	if ($main::verbose >= 3);
+      &RSAT::message::Debug(scalar(@ranked_matches), "sites were predicted in sequence", $seq_id)
+	if ($main::verbose >= 5);
       if (scalar(@ranked_matches) <= 0) {
 	&RSAT::message::Info("No match in sequence",
 			     $seq_id,
