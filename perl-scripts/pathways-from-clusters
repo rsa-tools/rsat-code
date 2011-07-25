@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.4 2011/06/22 08:02:50 rsat Exp $
+# $Id: pathways-from-clusters,v 1.5 2011/07/25 07:04:06 rsat Exp $
 #
 ############################################################
 
@@ -56,13 +56,13 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
     %main::outfile = ();
 
-    $main::verbose = 0;
+    $main::verbose = "";
     $main::in = STDIN;
     $main::out = STDOUT;
     
@@ -114,12 +114,12 @@ package main;
 	    open (MYFILE, '>>'.$tempfilename);
 	    print MYFILE join ("\n",@genelist). "\n";
 	    close (MYFILE);
-	    my $pathway_infer_cmd = "pathway_extractor.pl -i $tempfilename -g $main::graphfile  -b $main::grfile -a $main::gprfile -o $main::outdir";
+	    my $pathway_infer_cmd = "pathway_extractor.pl $main::verbose -i $tempfilename -g $main::graphfile  -b $main::grfile -a $main::gprfile -o $main::outdir";
 	    system "$pathway_infer_cmd\n";
 	    system "rm $tempfilename";
 	    @genelist =();
 # 	    exit(0); 
-	   }
+	   }0
 	   my $gene= $tempdata[0];
 	   $gene=~ s{\.[^.]+$}{}; # removes gene version
 	   push(@genelist,$gene);
@@ -176,18 +176,13 @@ sub ReadArguments {
 
 =over 4
 
-=item B<-v #>
+=item B<-v>
 
-Level of verbosity (detail in the warning messages during execution)
+Verbose mode
 
 =cut
     if ($arg eq "-v") {
-      if (&IsNatural($arguments[0])) {
-	$main::verbose = shift(@arguments);
-      } else {
-	$main::verbose = 1;
-      }
-
+	$main::verbose = "-v";
 
 =pod
 
