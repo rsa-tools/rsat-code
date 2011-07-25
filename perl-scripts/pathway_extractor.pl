@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway_extractor.pl,v 1.13 2011/07/20 13:42:34 rsat Exp $
+# $Id: pathway_extractor.pl,v 1.14 2011/07/25 07:03:45 rsat Exp $
 #
 ############################################################
 
@@ -100,15 +100,16 @@ package main;
 
     ################################################################
     ## Initialise parameters
+#
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();				# File name containing a list of genes ID
     $main::outdir = ".";			# output directory
     $main::tempdir= "";				# temporary directory
 
-    $main::verbose = 0;
+    $main::verbose = "";
     $main::in = STDIN;
     $main::out = STDOUT;
     
@@ -169,7 +170,6 @@ package main;
   if (!($outdir=~m/\/$/)) {
     $outdir = $outdir."/";
   }
-  
   
   @genesidlist = <$main::in>;
   close $main::in if ($main::infile{input});
@@ -251,7 +251,7 @@ if ($seednum > 1) {
       $tempdir=$outdir;
      }
     my $predicted_pathway_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "_pred_pathways.txt");
-    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -m 5 -C -f flat -n -p $main::tempdir -E $outdir -b -d -g $graphfile -y con -v -o $predicted_pathway_filename";
+    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -m 5 -C -f flat -n -p $main::tempdir -E $outdir -b -d -g $graphfile -y con $main::verbose -o $predicted_pathway_filename";
   #graphtools.algorithms.Pathwayinference -A /home/rsat/rsa-tools/contrib/REA -K /home/rsat/rsa-tools/contrib/kwalks/bin -i /home/rsat/rsa-tools/public_html/data/Stored_networks/9a3af932-8bf1-4438-b899-81f2acf5ca35_batchfile.txt -z -p /home/rsat/rsa-tools/public_html/data/Stored_networks -o /home/rsat/rsa-tools/public_html/tmp/Pathwayinference_tmpGraph_20110510_ee51092f-4af0-4de4-91e3-de21d7b3803b_Result.tab -T pathsGraphs -O tab -g /home/rsat/rsa-tools/public_html/data/Stored_networks/Pathwayinference_tmpGraph_e2063b35-8dcf-468b-9e16-178fb30ed19c.tab -f tab -e ExclusionAttribute -y con -a takahashihybrid -d -b -u -I 1 -x 0.05
     print $pathway_infer_cmd."\n";
     print $predicted_pathway_filename."\n";
@@ -379,7 +379,7 @@ if ($seednum > 1) {
     ################################################################
     ## Report execution time and close output stream
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    print $main::out $exec_time if ($main::verbose); ## only report exec time if verbosity is specified
     close $main::out if ($main::outfile{output});
 
     exit(0);
@@ -418,17 +418,13 @@ sub ReadArguments {
 
 =over 4
 
-=item B<-v #>
+=item B<-v>
 
-Level of verbosity (detail in the warning messages during execution)
+Verbose mode
 
 =cut
     if ($arg eq "-v") {
-      if (&IsNatural($arguments[0])) {
-	$main::verbose = shift(@arguments);
-      } else {
-	$main::verbose = 1;
-      }
+	$main::verbose = "-v";
 
 
 =pod
@@ -507,16 +503,16 @@ An gene annotation file with diredt link gene to reaction. Does not rely on the 
 Name of the Graph (default: Name of the graph file) 
 
 =cut
-    } elsif ($arg eq "-n") {
-      $main::graph = shift(@arguments);
-
-=pod
-
-=item	B<-d Graph file>
-
-Name of the Graph (default: Name of the graph file) 
-
-=cut
+#     } elsif ($arg eq "-n") {
+#       $main::graph = shift(@arguments);
+# 
+# =pod
+# 
+# =item	B<-d Graph file>
+# 
+# Name of the Graph (default: Name of the graph file) 
+# 
+# =cut
     } elsif ($arg eq "-d") {
       $main::groupdescriptor = shift(@arguments);
 
