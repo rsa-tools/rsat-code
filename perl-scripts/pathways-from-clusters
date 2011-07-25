@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.5 2011/07/25 07:04:06 rsat Exp $
+# $Id: pathways-from-clusters,v 1.6 2011/07/25 12:06:48 rsat Exp $
 #
 ############################################################
 
@@ -23,7 +23,7 @@ didier.croes@ulb.ac.be
 
 =head1 USAGE
 
-inferoperon_pathway_extractor.pl -h [-i inputfile] [-o outputdirectory] [-v verbosity] [-n name of the graph] -g graphfile -a gene2ec2reactions [-b gene2reaction]
+inferoperon_pathway_extractor.pl -h [-i inputfile] [-o outputdirectory] [-v] -g graphfile -a gene2ec2reactions [-b gene2reaction]
 
 =head1 INPUT FORMAT
 
@@ -56,7 +56,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -68,9 +68,9 @@ package main;
     
     $main::gprfile ="METACYC_GPR_EC.tab";	# GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
     $main::grfile="";				# GR Gene -> REACTION annotation
-    $main::graph = "";				# Graph Name 
+#     $main::graph = "";				# Graph Name 
     $main::graphfile="";				# File containing the graph
-    $main::show;				# Open png image in gwenview
+#     $main::show;				# Open png image in gwenview
 
     ################################################################
     ## Read argument values
@@ -255,26 +255,26 @@ An gene annotation file with diredt link gene to reaction. Does not rely on the 
       $main::grfile = shift(@arguments);
 =pod
 
-=item	B<-n Graph name>
+# =item	B<-n Graph name>
+# 
+# Name of the Graph (default: Name of the graph file) 
+# 
+# =cut
+#     } elsif ($arg eq "-n") {
+#       $main::graph = shift(@arguments);
+# 
+# =pod
 
-Name of the Graph (default: Name of the graph file) 
-
-=cut
-    } elsif ($arg eq "-n") {
-      $main::graph = shift(@arguments);
-
-=pod
-
-=item	B<-d Graph file>
-
-Name of the Graph (default: Name of the graph file) 
-
-=cut
-    } elsif ($arg eq "-d") {
-      $main::groupdescriptor = shift(@arguments);
-
-
-=pod
+# =item	B<-d Graph file>
+# 
+# Name of the Graph (default: Name of the graph file) 
+# 
+# =cut
+#     } elsif ($arg eq "-d") {
+#       $main::groupdescriptor = shift(@arguments);
+# 
+# 
+# =pod
 
 =item	B<-d Unique descriptor>
 
