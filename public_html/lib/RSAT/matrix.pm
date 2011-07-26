@@ -3294,7 +3294,7 @@ sub calcTheorScoreDistribBernoulli {
   ################################################################
   ## Compute the distribution of scores
   for my $c (0..($ncol-1)) {
-    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 4);
+    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 5);
     my %current_score_proba = ();
 
     foreach my $suffix (@alphabet) {
@@ -3530,7 +3530,7 @@ sub calcTheorScoreDistribMarkov {
   foreach my $initial_prefix (@prefixes) {
     $p++;
     &RSAT::message::Debug("Computing weight probabilities for prefix", $initial_prefix, $p."/".$prefix_nb)
-      if ($main::verbose >= 4);
+      if ($main::verbose >= 5);
     $prefixes{$initial_prefix} = 1;
     ## get frequency of the prefix, under matrix model
     ## treat separately each letter of the prefix
@@ -3569,7 +3569,7 @@ sub calcTheorScoreDistribMarkov {
   ################################################################
   ## Iteration on remaining columns of the matrix
   foreach my $c ($order..($ncol-1)) {
-    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 4);
+    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 5);
 
     my @curr_prefix = sort(keys(%prefixes));
     my @previous_scores = (keys(%distrib_proba));
@@ -3873,7 +3873,7 @@ sub makeLogo{
   my $max_logo_title=$ncol*3;
   if (length($logo_title) > $max_logo_title) {
     $logo_title = "...".substr($logo_title, -$max_logo_title);
-    &RSAT::message::Warning("truncating logo title", $logo_title) if ($main::verbose >= 4);
+    &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 4);
   }
 
   ## Legend on the X axis indicates number of sites
