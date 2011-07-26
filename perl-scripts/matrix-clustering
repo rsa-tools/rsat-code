@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-clustering,v 1.3 2011/02/17 04:54:49 rsat Exp $
+# $Id: matrix-clustering,v 1.4 2011/07/26 11:46:25 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -407,8 +407,9 @@ sub ClusterMotifs {
   unless ($mcl_dir) {
     &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
   }
+  my $mcl = $mcl_dir."/mcl";
   $cmd = "grep -v '^;' ".$main::outfile{pairwise_compa}.">".$main::outfile{pairwise_compa}.".mcl";
-  $cmd .= "; ".$mcl_dir."/mcl ".$main::outfile{pairwise_compa}.".mcl";
+  $cmd .= "; ".$mcl."/mcl ".$main::outfile{pairwise_compa}.".mcl";
   $cmd .= " -I 1.8 --abc -V all ";
   $cmd .= " -o ".$main::outfile{clusters_mcl};
   $cmd .= " >& /dev/null";
