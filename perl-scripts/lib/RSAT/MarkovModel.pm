@@ -1456,7 +1456,7 @@ sub to_prefix_suffix_table {
     my $row_name_len = &RSAT::stats::max(5,$self->get_attribute("order"));
 
     &RSAT::message::Debug("prefix/suffix table","type", 
-			    $type) if ($main::verbose >= 4);
+			    $type) if ($main::verbose >= 5);
 
     ## Print header
     $string .= join ("\t", "#pr\\suf",
@@ -1945,7 +1945,7 @@ sub segment_proba {
 			    sprintf("%5g",$self->{prefix_proba}->{$prefix}),
 			   );
 	$detail .= $detail_line."\n";
-	&RSAT::message::Info($detail_line) if ($main::verbose >= 4);
+	&RSAT::message::Info($detail_line) if ($main::verbose >= 5);
       }
 
       ################################################################
@@ -2010,14 +2010,14 @@ sub segment_proba {
 		      );
     $detail .= $detail_line."\n";
 
-    &RSAT::message::Info($detail_line) if ($main::verbose >= 4);
+    &RSAT::message::Info($detail_line) if ($main::verbose >= 5);
     #	&RSAT::message::Info("segment_proba", 
     #			      "prefix=".$word, 
     #			      "prefix=".$prefix, 
     #			      "suffix:".$suffix, 
     #			      "offset:".$c, 
     #			      "P(letter)=".$residue_proba, 
-    #			      "P(S)=".$segment_proba) if ($main::verbose >= 4);
+    #			      "P(S)=".$segment_proba) if ($main::verbose >= 5);
   }
     
   for my $col (0..$#residue_proba) {
