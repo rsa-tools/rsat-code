@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-two-sets,v 1.1 2011/07/26 12:19:18 rsat Exp $
+# $Id: compare-two-sets,v 1.2 2011/07/26 12:21:12 rsat Exp $
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-compare-lists
+compare-two-sets
 
 =head1 VERSION
 
@@ -19,7 +19,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-compare-lists is compares two sets and compute their intersection and some related statistics.
+compare-two-sets is compares two sets and compute their intersection and some related statistics.
 
 =head1 AUTHORS
 
@@ -37,7 +37,7 @@ Sylvain Brohée <sylvain@bigre.ulb.ac.be>
 
 template
 
-compare-lists -q query_file -r reference_file [-o outputfile] [-v #] [...]
+compare-two-sets -q query_file -r reference_file [-o outputfile] [-n elementsnb] [-random nb_of_randomizations] [-stats] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -49,7 +49,7 @@ The program returns some statistics and the intersection, the element present in
 
 =head1 SEE ALSO
 
-compare-classes is a program very comparable to compare-lists. The main difference is that it takes many lists as input.
+compare-classes is a program very comparable to compare-two-sets. The main difference is that it takes many lists as input.
 
 =head1 WISH LIST
 
@@ -73,7 +73,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -422,7 +422,7 @@ Returns only the intersection statistics.
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; compare-lists ";
+    print $main::out "; compare-two-sets ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
     if (%main::infile) {
