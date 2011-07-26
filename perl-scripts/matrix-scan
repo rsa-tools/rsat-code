@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.198 2011/07/26 09:41:37 jvanheld Exp $
+# $Id: matrix-scan,v 1.199 2011/07/26 11:19:48 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -867,6 +867,7 @@ package main;
       ## use count-words to calculate bginput
       my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_");
       $tmp_bg_file .= "_MotifSampler.txt";
+      &RSAT::message::TimeWarn("Creating background model file", $tmp_bg_file) if ($main::verbose >= 2);
       my $oligo_len = $main::markov+1;
       my $count_words_cmd = &RSAT::server::GetProgramPath("count-words",1); # die if cound-words not found
 
@@ -876,8 +877,7 @@ package main;
       $bg_cmd .= " | ".$SCRIPTS."/convert-background-model -from oligos -to MotifSampler";
       $bg_cmd .= " -o ".$tmp_bg_file;
       $bg_cmd .= " -bg_pseudo ".$bg_model->get_attribute("bg_pseudo");
-      &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 5);
-      &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
+      &doit($bg_cmd, $dry, $die_on_error, $verbose-1,0, $job_prefix);
       &RSAT::server::DelayedRemoval($tmp_bg_file);
       $bg_quick_file = $tmp_bg_file;
 
@@ -1579,16 +1579,14 @@ package main;
 
 
     if ($return_fields{crer}) {
-      &RSAT::message::Warning("Predicting CRMs by detecting CRERs") if ($main::verbose >= 4);
-
-
+      &RSAT::message::TimeWarn("Detecting CRERs") if ($main::verbose >= 3);
 
       ## Sort predicted sites (matches) per position
       if (defined(@{$matches_per_seq{$seq_id}})) {
 	my @matches_sorted_per_position =
 	  sort {$a->get_attribute('start') <=> $b->get_attribute('start')}
 	    @{$matches_per_seq{$seq_id}};
-	&RSAT::message::Debug("Sorted", scalar(@matches_sorted_per_position), "predicted sites in sequence", $seq_id) if ($main::verbose >= 3);
+	&RSAT::message::Info("Sorted", scalar(@matches_sorted_per_position), "predicted sites in sequence", $seq_id) if ($main::verbose >= 5);
 
 
 	## Parameters
