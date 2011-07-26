@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.193 2011/06/04 05:45:50 jvanheld Exp $
+# $Id: peak-motifs,v 1.194 2011/07/26 11:46:17 rsat Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.193 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.194 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1956,8 +1956,9 @@ sub ClusterMotifs {
   unless ($mcl_dir) {
     &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
   }
+  my $mcl = $mcl_dir."/mcl";
   $cmd = "grep -v '^;' ".$main::outfile{motifs_disco_compa}.">".$main::outfile{motifs_disco_compa}.".mcl";
-  $cmd .= "; ".$mcl_dir."/mcl ".$main::outfile{motifs_disco_compa}.".mcl";
+  $cmd .= "; ".$mcl."/mcl ".$main::outfile{motifs_disco_compa}.".mcl";
   $cmd .= " -I 1.8 --abc -V all ";
   $cmd .= " -o ".$main::outfile{motifs_disco_clusters_mcl};
   $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{motifs_disco_clusters_mcl};
