@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.17 2011/03/31 16:24:53 jvanheld Exp $
+# $Id: gene-info,v 1.18 2011/07/26 11:10:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -38,14 +38,15 @@ $match_description = 0;
 ## Check parameter values
 
 
-#### organism
+## Organism
 &RSAT::OrganismManager::check_name($organism_name);
 my $organism = new RSAT::organism();
 $organism->set_attribute("name", $organism_name);
 #&CheckOrganism($organism_name);
 
-#### accepted feature types
-$organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+## Accepted feature types
+$organism->DefineAcceptedFeatureTypes(sort(keys(%accepted_feature_types)));
+&RSAT::message::Info("Accepted feature types", sort(keys(%accepted_feature_types))) if ($main::verbose >= 0);
 
 ### open output file ###
 $out = &RSAT::util::OpenOutputFile($outputfile);
@@ -301,15 +302,15 @@ sub ReadArguments {
       ### list of options
     } elsif ($ARGV[$a] eq "-help") {
       &PrintOptions();
-	    
+
       #### organism
     } elsif ($ARGV[$a] eq "-org") {
       $organism_name =$ARGV[$a+1];
-	    
+
       #### full match only
     } elsif ($ARGV[$a] eq "-full") {
       $full = 1;
-	    
+
       #### feature types
     } elsif ($ARGV[$a] eq "-feattype") {
       my @feature_types = split ",", $ARGV[$a+1];
