@@ -138,6 +138,7 @@ sub readFromFile {
     ## assigned from the input file but we prefer to reassign them for
     ## the sake of consistency.
 
+    &RSAT::message::Info("Assigning matrix parameters") if ($main::verbose >= 3);
     my $matrix_nb = 0;
     foreach my $matrix (@matrices) {
 
@@ -194,6 +195,7 @@ sub readFromFile {
 
     if (defined($args{top})) {
       my $top = $args{top};
+      &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
       if ((&RSAT::util::IsNatural($top)) && ($top >= 1)) {
 	my $matrix_nb = scalar(@matrices);
 	if ($matrix_nb > $top) {
