@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.197 2011/07/25 10:21:02 jvanheld Exp $
+# $Id: matrix-scan,v 1.198 2011/07/26 09:41:37 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -892,17 +892,21 @@ package main;
   ################################################################
   ## Read the position-specific scoring matrices
   ################################################################
+
   ## Set prior matrix frequencies from the bg model and calculate
   ## derived statistics
   my %prior = $bg_model->get_attribute("suffix_proba");
   &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 4);
   my %matrix_sizes = ();
+
+  local $matrix_nb = 0;
   foreach my $matrix_file (@matrix_files) {
     my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 
-    foreach my $m (0..$#new_matrices) {
-      unless (($top_matrices > 0) && ($m >= $top_matrices)) {
-	my $matrix = $new_matrices[$m];
+    my $new_matrix_nb = scalar(@new_matrices);
+    foreach my $m (1..$new_matrix_nb) {
+      unless (($top_matrices > 0) && ($m > $top_matrices)) {
+	my $matrix = $new_matrices[$m-1];
 	$matrix->force_attribute("decimals", $decimals);
 	$matrix->set_attribute("scored", 0); ## Number of sequence segments for which the matrix calculated a score
 	$matrix->set_attribute("matches", 0); ## Initialize the match counter
@@ -912,6 +916,10 @@ package main;
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("n_treatment", $n_treatment);
 	$matrix->index_alphabet();
+
+	&RSAT::message::TimeWarn("\tComputing matrix parameters (consensus, distrib, ...) for matrix",
+				 $m."/".$new_matrix_nb, 
+				 $matrix->get_attribute("name")) if ($main::verbose >= 3);
 
 	## Use the matrix consensus as name
 	if ($consensus_name) {
@@ -981,8 +989,8 @@ package main;
 	unless ($bg_method eq "window") {
 	  ## Set the matrix prior
 	  $matrix->setMarkovModel($bg_model);
-	  &RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"),
-					%prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 4);
+	  &RSAT::message::TimeWarn("Setting matrix priors for matrix", $matrix->get_attribute("name"),
+					%prior, join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
 	  ## Calculate min and max weight values
 	  my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
 	  &RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
@@ -994,9 +1002,10 @@ package main;
 
 
 	push @matrices, $matrix;
+	$matrix_nb = scalar(@matrices);
 	$matrix_sizes{$matrix->get_attribute("name")} = $matrix->get_attribute("ncol");
 	&RSAT::message::TimeWarn("Read matrix",
-				 scalar(@matrices),
+				 $matrix_nb,
 				 $matrix->get_attribute("name"),
 				 $matrix->get_attribute("file")
 				) if ($main::verbose >= 4);
@@ -1009,6 +1018,7 @@ package main;
   ## Assign generic thresholds to each matrix This is done before
   ## reading the matrix-specific thresholds, so that the specific
   ## threshold will replace the generic ones.
+  &RSAT::message::TimeWarn("Assigning matrix thresholds") if ($main::verbose >= 3);
   foreach my $key (keys %lth) {
     my $thr_value = $lth{$key};
     foreach my $matrix (@matrices) {
@@ -1065,15 +1075,20 @@ package main;
   ################################################################
   ## Calculate pval distribution
   if (($calc_fields{pval})&&($bg_method ne "window")) {
+    &RSAT::message::TimeWarn("Computing matrix P-value distributions.") if ($main::verbose >= 2);
+    my $m=0;
     foreach my $matrix (@matrices) {
+      $m++;
+      &RSAT::message::TimeWarn("\tComputing P-value distribution for matrix", $m."/".$matrix_nb, $matrix->get_attribute("name")) if ($main::verbose >= 3);
       %{$pval{$matrix}} = $matrix->getTheorScoreDistrib("weights", "inv_cum");
     }
   }
 
   ################################################################
-  #### print verbose
+  ## Print verbose
   &Verbose() if ($main::verbose >= 1);
 
+  ################################################################
   ## Print header
   if ($return_fields{sites}) {
     my @out_fields =  qw(seq_id
@@ -1147,7 +1162,7 @@ package main;
 
   ################################################################
   ##### Scan the sequences
-  &RSAT::message::TimeWarn("Scanning sequences with", scalar(@matrices), "matrices") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Scanning sequences with", $matrix_nb, "matrices") if ($main::verbose >= 2);
 
   my ($in, $input_dir) = &OpenInputFile($main::infile{input});
   local($current_seq, $seq_id);
@@ -1294,11 +1309,11 @@ package main;
     ################################################################
     ## Detect sites
     &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,
-			     $seq_id,"len=".$seq_len, 
+			     $seq_id,"len=".$seq_len,
 			     "orig=".$origin, "offset=".$offset,
-			     $seq_id,  "with ".scalar(@matrices)." PSSM")
-      if (($main::verbose >= 4) || (($main::verbose >= 3) && (($sequence_number % 10) == 1)));
-    &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,
+			     "with ".$matrix_nb." PSSM")
+      if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 10) == 1)));
+    &RSAT::message::psWarn("Scanning sequence with ".$matrix_nb." PSSM", $sequence_number,
 			   $seq_id,"len=".$seq_len, 
 			   "orig=".$origin, "offset=".$offset,
 			   $seq_id) 
@@ -1564,233 +1579,276 @@ package main;
 
 
     if ($return_fields{crer}) {
-      &RSAT::message::Warning("Predicting CRMs by detecting CRERs") if ($main::verbose >= 3);
+      &RSAT::message::Warning("Predicting CRMs by detecting CRERs") if ($main::verbose >= 4);
 
-      ## Parameters
-      unless (defined($lth{crer_sites})) {
-	$lth{crer_sites} = 2;
-      }
 
-      ## Avoid mutually overlapping matches
-      if ((!defined($lth{crer_site_distance})) || ($lth{crer_site_distance} < 1)) {
-	$lth{crer_site_distance} = 1; ## in any case, avoid counting matches on the same position
-      }
-
-      ## Probability to observe at least one hit starting at this
-      ## position of the sequence for any of the input matrices.
-      ##    $m = nb of matrices
-      ##    $hit_p = proba to observe a hit by chance for a given matrix.
-      my $m = scalar(@matrices);
-
-      my $hit_p = $uth{pval};
-      my $hit_proba_any_matrix;
-      if ($main::both_strands) {
-	$hit_proba_any_matrix = &RSAT::stats::binomial_boe($hit_p,2*$m,1)
-      } else {
-	$hit_proba_any_matrix = &RSAT::stats::binomial_boe($hit_p,$m,1)
-      }
-#        &RSAT::message::Debug("m=".$m,
-#  			    "hit_p=".$hit_p,
-#  			    "1 - hit_p=".(1 - $hit_p),
-#  			    "(1 - hit_p)**(2*m)=".((1 - $hit_p)**(2*$m)),
-# 			     "hit_proba_any_matrix=".$hit_proba_any_matrix,
-# 			    ) if ($main::verbose >= 10);
-
-      ## Sequence-specific parameters
-      local $max_crer_size;
-      if (defined($uth{crer_size})) {
-	$max_crer_size = $uth{crer_size};
-      } else {
-	$max_crer_size = $seq_len;
-      }
 
       ## Sort predicted sites (matches) per position
-      my @matches_sorted_per_position =
-	sort {$a->get_attribute('start') <=> $b->get_attribute('start')}
-	  @{$matches_per_seq{$seq_id}};
-      &RSAT::message::Debug("Sorted", scalar(@matches_sorted_per_position), "predicted sites in sequence", $seq_id) if ($main::verbose >= 3);
-
-      ## Scan the vector of sorted matches per position.
-      foreach my $i (0..$#matches_sorted_per_position) {
-	my $start_match = $matches_sorted_per_position[$i];
-	my $start_match_start = $start_match->get_attribute("start");
-	my $last_match_start = $start_match_start;
-	my $discarded_sites = 0;
-
-	## Initialize cumulative scores
-	my $pval_prod =  $start_match->get_attribute("pval");
-	my $weight_sum = $start_match->get_attribute("score");
-	my $normw_sum = $start_match->get_attribute("normw");
-
-	## Initialize end match
-	my $j = $i+1;
-	while ($j <= $#matches_sorted_per_position) {
-	  my $end_match = $matches_sorted_per_position[$j];
-	  my $end_match_start = $end_match->get_attribute("start");
-	  my $end_match_end = $end_match->get_attribute("end");
-
-	  ## Calc CRER size and check thresholds
-	  my $crer_size = $end_match_end - $start_match_start + 1;
-	  unless (&check_thresholds("crer_size", $crer_size)) {
-	    $j++;
-	    next;
-	  }
+      if (defined(@{$matches_per_seq{$seq_id}})) {
+	my @matches_sorted_per_position =
+	  sort {$a->get_attribute('start') <=> $b->get_attribute('start')}
+	    @{$matches_per_seq{$seq_id}};
+	&RSAT::message::Debug("Sorted", scalar(@matches_sorted_per_position), "predicted sites in sequence", $seq_id) if ($main::verbose >= 3);
 
 
-	  ################################################################
-	  ## Skip overlapping sites, which may result from different effects:
-	  ## - self-overlapping motifs (e.g. GAGAGAGA)
-	  ## - palindromic motifs (e.g. CACGTG) or motifs overlapping
-	  ##   with their reverse complement (e.g. TCACGTG)
-	  ## - mutually overlapping motifs (e.g. CACGTG and CACGTk)
-	  my $site_distance = $end_match_start - $last_match_start;
-	  if ($site_distance < $lth{crer_site_distance}) {
-	    &RSAT::message::Debug("Skipping overlapping site", $j,
-				  "start=".$end_match_start,
-				  "last_match_start:".$last_match_start,
-				  "site_distance:".$site_distance, "< ".$lth{crer_site_distance}
-				 ) if ($main::verbose >= 4);
-	    $discarded_sites++;
-	    $j++;
-	    next;
-	  } elsif ((defined($uth{crer_site_distance})) && ($site_distance > $uth{crer_site_distance})) {
-	    &RSAT::message::Debug("Stopping CRER elongation at site", $j,
-				  "start=".$end_match_start,
-				  "last_match_start:".$last_match_start,
-				  "site_distance:".$site_distance, "> ".$uth{crer_site_distance}
-				 ) if ($main::verbose >= 4);
-	    last;
-	  } else {
-	    ## Update the end match
-	    $last_match_start = $end_match_start;
-	  }
-
-	  ## Check CRER size and stop the loop if it exceeds max size
-	  last if ($crer_size > $max_crer_size);
-
-	  ################################################################
-	  ## Compute various CRER scores
-
-	  ## Number of sites in the CRER
-	  my $crer_site_nb = $j - $i + 1 - $discarded_sites;
-	  unless ($crer_site_nb >=  $lth{crer_sites}) {
-	    $j++;
-	    next;
-	  }
-	  if ((defined($uth{crer_sites})) && ($crer_site_nb <=  $uth{crer_sites})) {
-	    last;
-	  }
-
-	  ## Site density (number of site / length)
-	  my $crer_density = $crer_site_nb / $crer_size;
-
-
-	  ################################################################
-	  ## Update cumulative scores
-
-	  ## Product of P-values for all the sites of the CRER
-	  $pval_prod *= $end_match->get_attribute("pval");;
-
-	  ## Sum of site weights
-	  $weight_sum += $end_match->get_attribute("score");
-
-	  ## Sum of site normalized weights
-	  $normw_sum += $end_match->get_attribute("normw") if ($calc_fields{normw});
-
-	  ## Prepare output (ft format)
-	  my $strand_binon = "D";
-	  $strand_binon = "DR" if ($main::both_strands);
-
-	  ################################################################
-	  ## Compute CRER P-value.
-	  ## Beware: computed slightly differently from before since we
-	  ## now discard overlapping matches.
-	  my $crer_nb_site_positions = $end_match_start - $start_match_start + 1; ## Beware, this is slightly different from crre_size, since it is the number of positions where a site can start.
-
-	  ## Number of trials for the binomial.  If the minimal site
-	  ## distance is >1, the number of trials must be corrected
-	  ## for the overlap segment after each counted site, except
-	  ## for the last site.
-	  my $n = $crer_nb_site_positions - (($crer_site_nb -1) *($lth{crer_site_distance} -1)); ## Max number of sites in the CRER (assuming overlap distance is 1, as a first simplification)
-
-# 	  &RSAT::message::Debug("Computing CRER binomial pval", 
-# 				"p=".$hit_proba_any_matrix,
-# 				"crer_nb_site_positions=".$crer_nb_site_positions,
-# 				"n=".$n,
-# 				"sites=".$crer_site_nb,
-# 			       ) if ($main::verbose >= 10);
-
-	  my $crer_pval = &sum_of_binomials($hit_proba_any_matrix, ## Proba of success at each trial i.e. the proba to observe a hit for at least one matrix at that sequence position
-					    $n,
-					    $crer_site_nb, ## Number of sites in the CRER
-					    $n,
-					   );
-	  $nb_of_binom_tests{$seq_id}++;
-	  $sum_binom_tests++;
-
-	  ## Check thresholds on crer_pval
-	  unless (&check_thresholds("crer_pval", $crer_pval)) {
-	    $j++;
-	    next;
-	  }
-
-	  ## Compute CRER significance
-	  my $crer_sig = "Inf";
-	  if ($crer_pval > 0) {
-	    $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
-	  }
-	  ## Check thresholds on CRER significance
-	  unless (&check_thresholds("crer_sig", $crer_sig)) {
-	    $j++;
-	    next;
-	  }
-
-	  ## Instantiate a new CRER object and specify its attributes
-	  my $crer = new RSAT::feature();
-	  $crer->force_attribute('seq_name', $seq_id);
-	  $crer->force_attribute('ft_type', 'CRER');
-	  if ($crer_ids) {
-	    $crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
-	  } else {
-	    $crer->force_attribute('feature_name', "crer");
-	  }
-	  $crer->force_attribute('strand',$strand_binon);
-	  $crer->force_attribute('start', $start_match_start);
-	  $crer->force_attribute('end', $end_match_end);
-	  $crer->force_attribute('hit_sum', $crer_site_nb);
-	  $crer->force_attribute('score', $crer_sig);
-	  $crer->force_attribute('crer_sig', $crer_sig);
-	  $crer->force_attribute('crer_pval', $crer_pval);
-	  $crer->force_attribute('pval_prod',$pval_prod);
-	  $crer->force_attribute('weight_sum',$weight_sum);
-	  $crer->force_attribute('crer_length',$crer_size);
-	  $crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
-	  $crer->force_attribute('density',$crer_density);
-	  $crer->force_attribute('description',
-				 join("; ",
-				      "L=".$crer_size,
-				      "n=".$crer_nb_site_positions,
-#				      "p=".$hit_proba_any_matrix,
-				      "sites:".$crer_site_nb,
-				      "discarded:".$discarded_sites,
-				      "dens:".sprintf("%.3f", $crer_density),
-				      "pval:".sprintf("%.3g", $crer_pval),
-				      "pval_prod:".sprintf("%.3g", $pval_prod),
-				      "weight_sum:".sprintf("%.2f", $weight_sum),
-#				      "sig:".sprintf("%.3g", $crer_sig),
-				     ));
-
-
-	  ## Print the CRER
-	  &print_crer($crer);
-#	  &print_match($crer);
-
-	  $j++;
-	  #	  $end_match = $matches_sorted_per_position[$j];
-	  #	  last if ($j > $#matches_sorted_per_position);
-	  #	  $end_match_start = $end_match->get_attribute("start");
-	  #	  $crer_nb_site_positions = $end_match_start - $start_match_start + 1;
+	## Parameters
+	unless (defined($lth{crer_sites})) {
+	  $lth{crer_sites} = 2;
 	}
+
+	## Avoid mutually overlapping matches
+	if ((!defined($lth{crer_site_distance})) || ($lth{crer_site_distance} < 1)) {
+	  $lth{crer_site_distance} = 1;	## in any case, avoid counting matches on the same position
+	}
+
+	## Probability to observe at least one hit starting at this
+	## position of the sequence for any of the input matrices.
+	##    $m = nb of matrices
+	##    $hit_p = proba to observe a hit by chance for a given matrix.
+	my $m = $matrix_nb;
+
+	my $hit_p = $uth{pval};
+	my $hit_proba_any_matrix;
+	if ($main::both_strands) {
+	  $hit_proba_any_matrix = &RSAT::stats::binomial_boe($hit_p,2*$m,1)
+	} else {
+	  $hit_proba_any_matrix = &RSAT::stats::binomial_boe($hit_p,$m,1)
+	}
+	#        &RSAT::message::Debug("m=".$m,
+	#  			    "hit_p=".$hit_p,
+	#  			    "1 - hit_p=".(1 - $hit_p),
+	#  			    "(1 - hit_p)**(2*m)=".((1 - $hit_p)**(2*$m)),
+	# 			     "hit_proba_any_matrix=".$hit_proba_any_matrix,
+	# 			    ) if ($main::verbose >= 10);
+
+	## Sequence-specific parameters
+	local $max_crer_size;
+	if (defined($uth{crer_size})) {
+	  $max_crer_size = $uth{crer_size};
+	} else {
+	  $max_crer_size = $seq_len;
+	}
+
+	## Scan the vector of sorted matches per position.
+	foreach my $i (0..$#matches_sorted_per_position) {
+	  my $start_match = $matches_sorted_per_position[$i];
+	  my $start_match_start = $start_match->get_attribute("start");
+	  my $last_match_start = $start_match_start;
+	  my $discarded_sites = 0;
+
+	  &RSAT::message::Debug("Starting CRER extension", 
+				$seq_id,
+				"i=".$i,
+				"start_match_start=".$start_match_start,
+			       )
+	    if ($main::verbose >= 5);
+
+
+	  ## Initialize cumulative scores
+	  my $pval_prod =  $start_match->get_attribute("pval");
+	  my $weight_sum = $start_match->get_attribute("score");
+	  my $normw_sum = $start_match->get_attribute("normw");
+
+	  ## Initialize end match
+	  my $j = $i+1;
+	  while ($j <= $#matches_sorted_per_position) {
+	    my $end_match = $matches_sorted_per_position[$j];
+	    my $end_match_start = $end_match->get_attribute("start");
+
+
+	    ################################################################
+	    ## Compute CRER size. No threshold checking yet, because we
+	    ## first need to evaluate if the new site will be retained
+	    ## or discarded.
+	    my $end_match_end = $end_match->get_attribute("end");
+	    my $crer_size = $end_match_end - $start_match_start + 1;
+
+	    ################################################################
+	    ## Skip overlapping sites, which may result from different effects:
+	    ## - self-overlapping motifs (e.g. GAGAGAGA)
+	    ## - palindromic motifs (e.g. CACGTG) or motifs overlapping
+	    ##   with their reverse complement (e.g. TCACGTG)
+	    ## - mutually overlapping motifs (e.g. CACGTG and CACGTk)
+	    my $site_distance = $end_match_start - $last_match_start;
+	    &RSAT::message::Debug("CRER extension", "i=".$i, "j=".$j,
+				  "start_match_start=".$start_match_start,
+				  "end_match_start=".$end_match_start,
+				  "crer_size=".$crer_size,
+				  "site_distance=".$site_distance,
+				 )
+	      if ($main::verbose >= 5);
+
+	    ## Check thresholds on site distance
+	    if ($site_distance < $lth{crer_site_distance}) {
+	      &RSAT::message::Debug("Skipping overlapping site", "j=".$j,
+				    "start=".$end_match_start,
+				    "last_match_start:".$last_match_start,
+				    "site_distance:".$site_distance, "< ".$lth{crer_site_distance}
+				   ) if ($main::verbose >= 5);
+	      $discarded_sites++;
+	      $j++;
+	      next;
+	    } elsif ((defined($uth{crer_site_distance})) && ($site_distance > $uth{crer_site_distance})) {
+	      &RSAT::message::Debug("Stopping CRER extension at site", $j,
+				    "start=".$end_match_start,
+				    "last_match_start:".$last_match_start,
+				    "site_distance:".$site_distance, "> ".$uth{crer_site_distance}
+				   ) if ($main::verbose >= 5);
+	      last;
+	    } else {
+	      ## Update the end match
+	      $last_match_start = $end_match_start;
+	    }
+
+	    ################################################################
+	    ## Check thresholds on CRER size. This must be done after
+	    ## having checked the site distances, because if the CRER
+	    ## size is smaller than the lower threshold, we
+	    ## nevertheless need to count the number of discarded
+	    ## sites for further CRER extension.
+
+	    ## Check CRER size.  We apply a different treatment for
+	    ## the upper and lower threshold: stop the loop if CRER
+	    ## size exceeds max size; skip the site but pursue CRER
+	    ## extension if the size is smaller than min size.
+	    if ($crer_size > $max_crer_size) {
+	      &RSAT::message::Debug("Stopping CRER extension because crer_size (".$crer_size.") exceeds upper threshold (".$max_crer_size.")") if ($main::verbose >= 5);
+	      last;
+	    }
+	    if ((defined($lth{crer_size})) && ($crer_size < $lth{crer_size})){
+	      &RSAT::message::Debug("Skipping CRER crer_size (".$crer_size.") smaller than lower threshold (".$lth{crer_size}.")") if ($main::verbose >= 5);
+
+	      $j++;
+	      next;
+	    }
+
+	    ################################################################
+	    ## Compute various CRER scores
+
+	    ## Number of sites in the CRER
+	    my $crer_site_nb = $j - $i + 1 - $discarded_sites;
+	    unless ($crer_site_nb >=  $lth{crer_sites}) {
+	      $j++;
+	      next;
+	    }
+	    if ((defined($uth{crer_sites})) && ($crer_site_nb <=  $uth{crer_sites})) {
+	      last;
+	    }
+
+	    ## Site density (number of site / length)
+	    my $crer_density = $crer_site_nb / $crer_size;
+
+
+	    ################################################################
+	    ## Update cumulative scores
+
+	    ## Product of P-values for all the sites of the CRER
+	    $pval_prod *= $end_match->get_attribute("pval");;
+
+	    ## Sum of site weights
+	    $weight_sum += $end_match->get_attribute("score");
+
+	    ## Sum of site normalized weights
+	    $normw_sum += $end_match->get_attribute("normw") if ($calc_fields{normw});
+
+	    ## Prepare output (ft format)
+	    my $strand_binon = "D";
+	    $strand_binon = "DR" if ($main::both_strands);
+
+	    ################################################################
+	    ## Compute CRER P-value.
+	    ## Beware: computed slightly differently from before since we
+	    ## now discard overlapping matches.
+	    my $crer_nb_site_positions = $end_match_start - $start_match_start + 1; ## Beware, this is slightly different from crre_size, since it is the number of positions where a site can start.
+
+	    ## Number of trials for the binomial.  If the minimal site
+	    ## distance is >1, the number of trials must be corrected
+	    ## for the overlap segment after each counted site, except
+	    ## for the last site.
+	    my $n = $crer_nb_site_positions - (($crer_site_nb -1) *($lth{crer_site_distance} -1)); ## Max number of sites in the CRER (assuming overlap distance is 1, as a first simplification)
+
+	    &RSAT::message::Debug("Computing CRER binomial pval", 
+				  "p=".$hit_proba_any_matrix,
+				  "crer_nb_site_positions=".$crer_nb_site_positions,
+				  "n=".$n,
+				  "sites=".$crer_site_nb,
+				  "discarded=".$discarded_sites,
+				 ) if ($main::verbose >= 5);
+
+	    my $crer_pval = &sum_of_binomials($hit_proba_any_matrix, ## Proba of success at each trial i.e. the proba to observe a hit for at least one matrix at that sequence position
+					      $n,
+					      $crer_site_nb, ## Number of sites in the CRER
+					      $n,
+					     );
+	    $nb_of_binom_tests{$seq_id}++;
+	    $sum_binom_tests++;
+
+	    ## Check thresholds on crer_pval
+	    unless (&check_thresholds("crer_pval", $crer_pval)) {
+	      $j++;
+	      next;
+	    }
+
+	    ## Compute CRER significance
+	    my $crer_sig = "Inf";
+	    if ($crer_pval > 0) {
+	      $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
+	    }
+	    ## Check thresholds on CRER significance
+	    unless (&check_thresholds("crer_sig", $crer_sig)) {
+	      $j++;
+	      next;
+	    }
+
+	    ## Instantiate a new CRER object and specify its attributes
+	    my $crer = new RSAT::feature();
+	    $crer->force_attribute('seq_name', $seq_id);
+	    $crer->force_attribute('ft_type', 'CRER');
+	    if ($crer_ids) {
+	      $crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
+	    } else {
+	      $crer->force_attribute('feature_name', "crer");
+	    }
+	    $crer->force_attribute('strand',$strand_binon);
+	    $crer->force_attribute('start', $start_match_start);
+	    $crer->force_attribute('end', $end_match_end);
+	    $crer->force_attribute('hit_sum', $crer_site_nb);
+	    $crer->force_attribute('score', $crer_sig);
+	    $crer->force_attribute('crer_sig', $crer_sig);
+	    $crer->force_attribute('crer_pval', $crer_pval);
+	    $crer->force_attribute('pval_prod',$pval_prod);
+	    $crer->force_attribute('weight_sum',$weight_sum);
+	    $crer->force_attribute('crer_length',$crer_size);
+	    $crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
+	    $crer->force_attribute('density',$crer_density);
+	    $crer->force_attribute('description',
+				   join("; ",
+					"L=".$crer_size,
+					"n=".$crer_nb_site_positions,
+					#				      "p=".$hit_proba_any_matrix,
+					"sites:".$crer_site_nb,
+					"discarded:".$discarded_sites,
+					"dens:".sprintf("%.3f", $crer_density),
+					"pval:".sprintf("%.3g", $crer_pval),
+					"pval_prod:".sprintf("%.3g", $pval_prod),
+					"weight_sum:".sprintf("%.2f", $weight_sum),
+					#				      "sig:".sprintf("%.3g", $crer_sig),
+				       ));
+
+
+	    ## Print the CRER
+	    &print_crer($crer);
+	    #	  &print_match($crer);
+
+	    $j++;
+	    #	  $end_match = $matches_sorted_per_position[$j];
+	    #	  last if ($j > $#matches_sorted_per_position);
+	    #	  $end_match_start = $end_match->get_attribute("start");
+	    #	  $crer_nb_site_positions = $end_match_start - $start_match_start + 1;
+	  }
+	}
+      } else {
+	&RSAT::message::Warning("No CRER prediction in sequence", $seq_id, "because there was not a single site") if ($main::verbose >= 3);
       }
     }
 
@@ -1880,7 +1938,7 @@ package main;
     my $m = 0;
     foreach my $matrix (@matrices) {
       $m++;
-      &RSAT::message::TimeWarn("Scanning sequences with matrix-scan-quick, matrix", $m."/".scalar(@matrices), $matrix->get_attribute("id"))
+      &RSAT::message::TimeWarn("Scanning sequences with matrix-scan-quick, matrix", $m."/".$matrix_nb, $matrix->get_attribute("id"))
 	if ($main::verbose >= 2);
       &QuickScan($matrix,"sites",$total_scored);
     }
