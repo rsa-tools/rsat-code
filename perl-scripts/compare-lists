@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-lists,v 1.1 2011/07/26 11:06:50 rsat Exp $
+# $Id: compare-lists,v 1.2 2011/07/26 11:48:19 rsat Exp $
 #
 ############################################################
 
@@ -73,7 +73,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -176,12 +176,17 @@ package main;
     print $main::out join "\t", ";", "Query only size", $qonly_size."\n";
     print $main::out join "\t", ";", "Reference only size", $ronly_size."\n";
     print $main::out join "\t", ";", "Total number of elements", $total_size."\n";
-    print $main::out join "\t", ";", "Hypergeometric p-value", $hyper_pval."\n";
-    print $main::out join "\t", ";", "Jaccard index", $jacindex."\n";
+    
+    my $round_pval = sprintf "%.2g", ($hyper_pval);
+    print $main::out join "\t", ";", "Hypergeometric p-value", $round_pval."\n";
+    my $round_jaccard = sprintf "%.2f", ($jacindex*100);
+    
+    print $main::out join "\t", ";", "Jaccard index", $round_jaccard."%\n";
     if ($rdm != -1) {
       my $mean_rdm_jac = &RSAT::stats::mean(@{$random_results{'jaccard'}});
       print $main::out join "\t", ";", "Nb of Random controls", $rdm."\n";
-      print $main::out join "\t", ";", "Jaccard index", $mean_rdm_jac."\n";
+      my $round_rdm_jac = sprintf "%.2f", ($mean_rdm_jac*100);
+      print $main::out join "\t", ";", "Random Jaccard index", $round_rdm_jac."%\n";
     }
     
     # results
