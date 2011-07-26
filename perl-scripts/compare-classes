@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.72 2011/06/04 13:41:03 jvanheld Exp $
+# $Id: compare-classes,v 1.73 2011/07/26 11:06:50 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1423,7 +1423,7 @@ sub CompareClasses {
 	my $p; ## Proba for a member to be found in common in the two classes
 	$nb_tests ++; ## Increment the counter for the number of tests
 	if ($replacement) {
-	  #### use binomial distribution of there are replacements
+	  #### use binomial distribution if there are replacements
 	  if ($symmetric) {
 	    #### test the joint probability to belong to both
 	    #### query and reference classes, for each element of
