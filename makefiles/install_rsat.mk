@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.41 2011/05/06 12:49:42 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.42 2011/07/27 14:28:55 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -80,10 +80,11 @@ install_perl_modules:
 	done
 
 ## Install a single Perl module
-PERL_MODULE=Postscript::Simple
+PERL_MODULE=PostScript::Simple
+PERL=`which perl`
 install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
-	@sudo perl -MCPAN -e 'install ${PERL_MODULE}'
+	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 ################################################################
 ## Install the BioPerl library
@@ -282,6 +283,7 @@ install_rnsc:
 	@echo "	export PATH=${RNSC_BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH ${RNSC_BIN_DIR}:\$$PATH"
+
 
 ################################################################
 ## Install BLAST
