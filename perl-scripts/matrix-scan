@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.199 2011/07/26 11:19:48 jvanheld Exp $
+# $Id: matrix-scan,v 1.200 2011/07/27 14:28:15 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1308,7 +1308,8 @@ package main;
 
     ################################################################
     ## Detect sites
-    &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,
+    &RSAT::message::TimeWarn("Scanning sequence", 
+			     $sequence_number,
 			     $seq_id,"len=".$seq_len,
 			     "orig=".$origin, "offset=".$offset,
 			     "with ".$matrix_nb." PSSM")
@@ -1579,7 +1580,7 @@ package main;
 
 
     if ($return_fields{crer}) {
-      &RSAT::message::TimeWarn("Detecting CRERs") if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("Detecting CRERs in seq", $sequence_number, $seq_id) if ($main::verbose >= 3);
 
       ## Sort predicted sites (matches) per position
       if (defined(@{$matches_per_seq{$seq_id}})) {
