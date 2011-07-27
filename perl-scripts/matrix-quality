@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.133 2011/06/11 13:40:12 jvanheld Exp $
+# $Id: matrix-quality,v 1.134 2011/07/27 02:41:54 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1796,6 +1796,7 @@ sub CalcSequenceDistrib {
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
   $matrix_scan_cmd .= " -decimals ".$decimals;
+  $matrix_scan_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
   $matrix_scan_cmd .= join(" ", "", @args);
 
   ## Sequence type-Specific options
