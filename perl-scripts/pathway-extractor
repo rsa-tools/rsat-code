@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.15 2011/07/25 15:41:06 jvanheld Exp $
+# $Id: pathway-extractor,v 1.16 2011/07/27 14:35:51 rsat Exp $
 #
 ############################################################
 
@@ -15,20 +15,50 @@
 
 =head1 DESCRIPTION
 
-This script uses the Pathwayinference program developped by Karoline
-Faust Pathwayinference connects multipe genes node sets in a given
-metabolic graph and returns the resulting pathway.
+This tool is a Perl Wrapper around the stand-alone application (PathwayInference) developed by
+Karoline Faust.
 
-Pathwayinference wraps a number of algorithms to infer pathways: one
-based on a k shortest paths algorithm (REA), one based on kWalks and a
-hybrid approach combining both. In addition, two Steiner tree
-algorithms are available (Takahashi-Matsuyama and Klein-Ravi), each of
-them alone or in combination with kWalks.  Pathwayinference can also
-be run in batch mode using seed node files
+The PathwayInference tool can also be used via the Web interface "Pathway Extraction" (http://
+rsat.ulb.ac.be/neat).
+
+The Perl wrapper performs several steps to enable the extraction of pathways from sets of
+functionally related genes (e.g. co-expressed, co-regulated, members of the same operon, …).
+
+1. Gene to reaction mapping. Identify the set of reactions ("seed reactions") catalyzed by the set of
+input genes ("seed genes"). The mapping relies on a user-specified file describing the mapping of
+genes to reactions (GPR, Gene-Protein-Reaction file).
+
+2. Pathway extraction (=Pathway inference). PathwayInference takes as input a network (typically
+a metabolic network made of compounds + reactions) and a set of "seed" nodes. The program
+attempts to return a subnetwork that interconnects the seed nodes at a minimal “cost", where the
+cost is a weighted sum of the intermediate compounds and reactions used to link the seed nodes
+(Faust, et al., 2011; Faust and van Helden, 2011).
+
+3. Annotation of the inferred pathway: identify the EC numbers, enzymes and genes associated to
+each reaction (seed + inferred reactions) of the inferred pathway. This documentation relies on the
+same GPR file as the gene to reaction mapping.
+
+This implementation requires no database or Internet connection and works with local files only.
+The PathwayInference tool wraps a number of algorithms to infer pathways: k shortest paths
+(REA), kWalks and a hybrid approach combining both (Faust, et al., 2010). In addition, two Steiner
+tree algorithms are available (Takahashi-Matsuyama and Klein-Ravi), each of them alone or in
+combination with kWalks.
 
 =head1 AUTHORS
 
-didier.croes@ulb.ac.be
+The java PathwInference tool was developed by Karoline Faust. This Perl wrapper was developed by
+Didier Croes. The doc was written by Didier Croes and Jacques van Helden.
+
+=head1 REFERENCES
+
+Faust, K., Croes, D. and van Helden, J. (2011). Prediction of metabolic pathways from genome-scale
+metabolic networks. Biosystems.
+
+Faust, K., Dupont, P., Callut, J. and van Helden, J. (2010). Pathway discovery in metabolic networks by
+subgraph extraction. Bioinformatics 26, 1211-8.
+
+Faust, K. and van Helden, J. (2011). Predicting metabolic pathways by sub-network extraction.
+Methods in Molecular Biology in press, 15.
 
 =head1 CATEGORY
 
@@ -36,53 +66,108 @@ Graph tool
 
 =head1 USAGE
 
-pathway_extractor -h -hp [-i inputfile] [-o outputdirectory] [-v verbosity] -g graphfile -a gene2ec2reactions [-b gene2reaction] [-d unique descriptor] [-t tempdi] [-show] 
+pathway_extractor -h -hp [-i inputfile] [-o outputdirectory] [-v verbosity] -g graphfile -a gene2ec2reactions [-d unique descriptor] [-t tempdir] [-show] 
 
 =head1 INPUT FORMAT
 
-=head2  1) Input file containing a list of gene ids: (Warning at least 2 gene ids must be present in -a -b and -g files)
-    NP_414739
-    NP_414740
-    NP_414741
-    NP_416617
-    NP_417417
-    NP_417481
-    NP_418232
-    NP_418272
-    NP_418273
-    NP_418373
-    NP_418374
-    NP_418375
-    NP_418376
-    NP_418437
-    NP_418443
-    b0666
-    b0673
-    b2814
-    b2815
-    b2816
-    b3171
+Warning: the same gene identifiers should be used in all input files.
+
+=head2 1) List of seed genes (gene identifiers):
+
+(Warning at least 2 gene ids must be present in the graph file see below) in this example we use gene
+IDs. Beware, the gene IDs must be compatible with the genome version installed on RSAT. Depending
+on the organism source, the IDs can correspond to RefSeq, EnsEMBL, or other references.
+
+Example of seed gene file:
+NP_414739
+NP_414740
+NP_414741
+NP_416617
+NP_417417
+NP_417481
+NP_418232
+NP_418272
+NP_418273
+NP_418373
+NP_418374
+NP_418375
+NP_418376
+NP_418437
+NP_418443
+
 ----------------------------------------------------------------    
 
-=head2   2)graphfile : see Pathwayinference tools
-   command : java graphtools.algorithms.Pathwayinference -h
+=head2 2)Graph file format:
+
+see Pathwayinference tools help
+
+java graphtools.algorithms.Pathwayinference –h
+
+The same result can be obtained by typing
+
+pathway_extractor.pl -hp
+
 ---------------------------------------------------------------- 
 
-=head2   3) -a gene2ec2reactions [-b gene2reaction]
-  gene_id ec_number       reaction_id     species_name    taxonomy_id     gene_name
-  O22340  4.2.3.- RXN-10482       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10483       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10566       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10567       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10568       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10600       Abies grandis   46611   (4S)-limonene synthase
+=head2 3) GPR (Gene Protein Reaction) (option -a)
 
-=head1 example:
+This file is used for the Gene to reaction mapping.
+At least -a file is mandatory. This file maps Gene to reaction through EC numbers thus one gene can
+be mapped to several reactions.
+The three first columns are mandatory (gene_id, ec_number, reaction_id). Additional columns can be
+provided for convenience, but are ignored.
 
-B<pathway_extractor.pl> -i met_genes -g MetaCyc_directed_141.txt  -b METACYC_GPR_NOEC.tab -a METACYC_GPR_EC.tab -o temp
+=head3 Example of GPR file.
 
-cat met_genes|B<pathway_extractor.pl> -g MetaCyc_directed_141.txt  -b METACYC_GPR_NOEC.tab -a METACYC_GPR_EC.tab -o temp
+gene_id ec_number       reaction_id     species_name    taxonomy_id     gene_name
+O22340  4.2.3.- RXN-10482       Abies grandis   46611   (4S)-limonene synthase
+O22340  4.2.3.- RXN-10483       Abies grandis   46611   (4S)-limonene synthase
+O22340  4.2.3.- RXN-10566       Abies grandis   46611   (4S)-limonene synthase
+O22340  4.2.3.- RXN-10567       Abies grandis   46611   (4S)-limonene synthase
+O22340  4.2.3.- RXN-10568       Abies grandis   46611   (4S)-limonene synthase
+O22340  4.2.3.- RXN-10600       Abies grandis   46611   (4S)-limonene synthase
 
+---------------------------------------------------------------- 
+
+=head1 EXAMPLES:
+
+=head2 With an input file
+
+=head3 Get methionine-related genes in Escherichia coli genome. This generates a file containing one line per gene and one column per attribute (ID, start, end, name, ...).
+
+gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q met. -o met_genes.tab
+
+=head3 Select the first column, containing gene Ids.
+
+grep -v "^;" met_genes.tab | cut -f 1 > met_genes_IDs.txt
+
+=head3 Extract a pathway connecting at best the reactions catalyzed by these gene products
+
+pathway_extractor.pl -i met_genes_IDs.txt -g data/networks/MetaCyc/MetaCyc_directed_141.txt -a data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt -o result_dir -t temp_dir
+
+---------------------------------------------------------------- 
+
+=head2 Using standard input
+
+=head3 The script pathway_extractor.pl can also use as input the STDIN. This allows to use it in aconcatenation of commands. For example, all the commands above could be combined in a single pipeline as follows.
+
+gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q met.| grep -v "^;" met_genes.tab | cut -f 1 | pathway_extractor.pl -g data/networks/MetaCyc/MetaCyc_directed_141.txt -a data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt -o result_dir -t temp_dir
+
+---------------------------------------------------------------- 
+
+=head1 OUTPUT FILES:
+
+*_converted_seeds.txt : pathway inference input file.
+
+*_pred_pathways.txt : result graph file of the pathway inference
+
+*_annot_pred_pathways.txt : : result file of the pathway inference with gene and EC annotation
+
+*_annot_pred_pathways.dot : result file in dot format, which can be converted to a figure using the
+automatic layout program dot (included in the software suite graphviz).
+
+*._annot_pred_pathways.png : png image file of the inferred pathway
+---------------------------------------------------------------- 
 
 =cut
 
@@ -106,7 +191,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();	     # File name containing a list of genes ID
@@ -188,8 +273,8 @@ package main;
   # my $working_dir = "";
   my $genesid;
   my @genesidlist;
-
-
+################################################################
+# GPR Mapping
   @genesidlist = <$main::in>;
   close $main::in if ($main::infile{input});
   chomp(@genesidlist);
@@ -197,7 +282,7 @@ package main;
   #   print join (@genesidlist,"|")."\n";
   my @grconversiontable;
   my %genelist=();
-  if ($grfile) {
+  if ($grfile) {## if annotated gene to reaction file (-b)
     my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genesid."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $grfile";
     @grconversiontable = qx ($seed_converter_cmd) ;
     chomp(@grconversiontable);
@@ -217,7 +302,8 @@ package main;
   $organismid = $tempdata[4];
   my $groupid=( join "-",$organism,$organismid);
   $groupid=~s/(\s|\(|\))+/_/g;
-  #  merging GR and GPR in one array
+
+#  merging GR and GPR in one array
   if (@grconversiontable) {
     foreach my $val (@conversiontable) {
       @tempdata = split(/\t/,$val);
@@ -229,12 +315,14 @@ package main;
     @conversiontable=@grconversiontable;
     
   }
+#  End of merging GR and GPR in one array
 
+# End of GPR mapping
+################################################################
 
-
-  # Creating reaction file
+################################################################
+# Creating reaction file fo pathway inference
   my $seed_converter_filename = $outdir.(join "_",$main::groupdescriptor,$groupid,$graph, "_converted_seeds.txt");
-  #   my $tempfilename = `mktemp $seed_converter_filename.XXXX`;
   open (MYFILE, '>'.$seed_converter_filename);
   print MYFILE "# Batch file created" . qx("date");
   print MYFILE "# GENE groups parsed from file:". "\n"; 
@@ -260,19 +348,23 @@ package main;
     print MYFILE "$previousarray[0]\t$groupid\n";
     $seednum++;
   }
+# END OF  Creating reaction file fo pathway inference
+################################################################
+
+################################################################
+# Running patywayinference
   if ($seednum > 1) {
-    # NP_416366       1.1.1.49        GLU6PDEHYDROG-RXN
-
-
-    #   chomp($tempfilename);
-    # Pathway inference
-
     my $predicted_pathway_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "_pred_pathways.txt");
     my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -m 5 -C -f flat -n -p $main::tempdir -E $outdir -b -d -g $graphfile -y con $main::verbose -o $predicted_pathway_filename";
-    #graphtools.algorithms.Pathwayinference -A /home/rsat/rsa-tools/contrib/REA -K /home/rsat/rsa-tools/contrib/kwalks/bin -i /home/rsat/rsa-tools/public_html/data/Stored_networks/9a3af932-8bf1-4438-b899-81f2acf5ca35_batchfile.txt -z -p /home/rsat/rsa-tools/public_html/data/Stored_networks -o /home/rsat/rsa-tools/public_html/tmp/Pathwayinference_tmpGraph_20110510_ee51092f-4af0-4de4-91e3-de21d7b3803b_Result.tab -T pathsGraphs -O tab -g /home/rsat/rsa-tools/public_html/data/Stored_networks/Pathwayinference_tmpGraph_e2063b35-8dcf-468b-9e16-178fb30ed19c.tab -f tab -e ExclusionAttribute -y con -a takahashihybrid -d -b -u -I 1 -x 0.05
     print $pathway_infer_cmd."\n";
     print $predicted_pathway_filename."\n";
     system $pathway_infer_cmd;
+
+# END of Running patywayinference
+################################################################
+
+################################################################
+# Loading results graph reactions
     open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
     my $i = 0;
     my $stop = "";
@@ -299,7 +391,11 @@ package main;
 
     }
     close (INFILE); 
-    # Searching all reaction information for reaction in the graph
+# End of Loading results graph reactions    
+################################################################
+
+################################################################
+# Searching all reactions information for the reaction that are in  the infered pathway graph
     $reactionquery =~s/\|+$//;
     $cpdquery =~s/\|+$//;
     my $command_ = "awk -F'\\t+' ' $reactionquery {print \$3\"\\t\"\$2\"\\t\"\$6}' $gprfile|sort|uniq";
@@ -328,6 +424,11 @@ package main;
       @previousarray = @currentarray;
     }
     $reactioninfos{$previousarray[0]}=\@reacinfoarray;
+# End of Searching all reactions information for the reaction that are in  the infered pathway graph
+################################################################
+
+################################################################
+# Adding description to the pathway graph
     open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
     my $annot_graph_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.txt");
     # my $outfilename = `mktemp $annot_graph_filename`;
@@ -374,10 +475,19 @@ package main;
       }
     } 
     close (MYFILE); 
+# End of Adding description to the pathway graph
+################################################################
 
+################################################################
+# Converting graph to dot graph format
     my $annot_graph_dot = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.dot");
     my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $annot_graph_filename -o $annot_graph_dot";
     system  $convert_graph_cmd;
+# End of Converting graph to dot graph format
+################################################################
+
+################################################################
+# Converting dot graph to image with graphviz dot
     my $dpng_file = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.png");
     my $graph_image_cmd = "dot -Tpng -Kdot -o $dpng_file $annot_graph_dot";
     system $graph_image_cmd;
@@ -389,11 +499,11 @@ package main;
     print STDERR "NOT ENOUGH SEEDS. Min 2. I stop here!!\n";
     exit(1);
   }
+# End of Converting dot graph to image with graphviz dot
+################################################################
 
   ################################################################
   ## Insert here output printing
-
-  ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $main::out $exec_time if ($main::verbose); ## only report exec time if verbosity is specified
@@ -405,6 +515,7 @@ package main;
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
+
 
 
 ################################################################
@@ -510,10 +621,10 @@ GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
 
 =pod
 
-=item	B<-b GR Gene -> REACTION annotation>
-
-An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
-
+# =item	B<-b GR Gene -> REACTION annotation>
+# 
+# An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
+# 
 =cut
     } elsif ($arg eq "-b") {
       $main::grfile = shift(@arguments);
