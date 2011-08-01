@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.17 2011/05/24 05:05:57 jvanheld Exp $
+# $Id: seq-proba,v 1.18 2011/08/01 19:37:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -183,7 +183,7 @@ package main;
       #Background probabilities
       my ($proba_array_ref, $proba_b, $detail);
       foreach my $bg_model (@bg_models) {
-	($proba_array_ref, $proba_b, $detail) = $bg_model->segment_proba($current_seq,$return_fields{detail});
+	($proba_b, $proba_array_ref, $detail) = $bg_model->segment_proba($current_seq,$return_fields{detail});
 	push @return_fields, sprintf("%.4e", $proba_b) if ($return_fields{proba_b});
 	push @return_fields, sprintf("%.2f", log($proba_b)/$log10) if ($return_fields{log_proba});
       }
