@@ -87,7 +87,7 @@ $default{organism}="Escherichia_coli_K12";
 $default{background} = "upstream-noorf";
 $default{bg_level} = "organism";
 $default{markov_order} = "1";
-$default{freq_estimate2}="background";
+$default{bg_method2}="background";
 $default{filter_pval}="1e-4";
 ## Default parameters for get-orthologs
 
@@ -534,7 +534,7 @@ sub ReturnTable {
 
 sub PrintScanBackgroundOptions {
    my $bgtag=shift(@_);
-    $checked{$default{'freq_estimate_'.$bgtag}} = "CHECKED";
+    $checked{$default{'bg_method_'.$bgtag}} = "CHECKED";
 
     print "<a href='help.oligo-analysis.html#exp_freq'><B>Background model</b></a>&nbsp;";
 
@@ -545,9 +545,9 @@ sub PrintScanBackgroundOptions {
   print ("<br><b>Estimate from input sequence</b>");
 
   ## Markov model
-  #$Freq_name="freq_estimate_".$bgtag;
-  print ("<br><input type='radio' NAME='freq_estimate' VALUE='Markov model (higher order dependencies)' $checked{'Markov model (higher order dependencies)'}>", "Markov model (higher order dependencies)");
-   # print ("<br><input type='radio' NAME='freq_estimate' VALUE='Markov model (higher order dependencies)' CHECKED >", "Markov model (higher order dependencies)");
+  #$Freq_name="bg_method_".$bgtag;
+  print ("<br><input type='radio' NAME='bg_method' VALUE='Markov model (higher order dependencies)' $checked{'Markov model (higher order dependencies)'}>", "Markov model (higher order dependencies)");
+   # print ("<br><input type='radio' NAME='bg_method' VALUE='Markov model (higher order dependencies)' CHECKED >", "Markov model (higher order dependencies)");
 
   print "&nbsp;&nbsp;order &nbsp;";
   print $query->textfield(-name=>'markov_order',
@@ -555,13 +555,13 @@ sub PrintScanBackgroundOptions {
 			  -size=>5);
 
   #### Lexicon partitioning
-  #print "<br><input type='radio' NAME='freq_estimate' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
+  #print "<br><input type='radio' NAME='bg_method' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
 
   #### Bernouilli model
-  #print "<br><input type='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
+  #print "<br><input type='radio' NAME='bg_method' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
 
   #### equiprobable residues
-  print "<br><input type='radio' NAME='freq_estimate' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
+  print "<br><input type='radio' NAME='bg_method' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
 
   #### custom expected frequency file
   print ("<a href='help.oligo-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
@@ -573,13 +573,13 @@ sub PrintScanBackgroundOptions {
 sub PrintGenomeSubsetBgOptionsFS {
     my $bgtag=shift(@_);
   $checked{$default{bg_level}} = "CHECKED";
-  $checked{$default{'freq_estimate'.$bgtag}} = "CHECKED";
+  $checked{$default{'bg_method'.$bgtag}} = "CHECKED";
 
   #### Calibrated on genome subsets
 
-  print( "<br><input type='radio' NAME='freq_estimate' VALUE='background' $checked{background} >");
+  print( "<br><input type='radio' NAME='bg_method' VALUE='background' $checked{background} >");
 
-# print( "<br><input type='radio' NAME='freq_estimate' VALUE='background'  >");
+# print( "<br><input type='radio' NAME='bg_method' VALUE='background'  >");
   print ("<b>Genome subset</b>");
 #  print "<ul>";
 
