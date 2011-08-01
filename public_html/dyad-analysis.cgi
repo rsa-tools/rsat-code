@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.44 2011/07/22 14:07:27 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.45 2011/08/01 19:39:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -125,7 +125,7 @@ $parameters .= " -spacing $spacing";
 
 ################################################################
 ## Background model
-if ($query->param('freq_estimate') eq 'background') {
+if ($query->param('bg_method') eq 'background') {
   ## Check genome subset
   %supported_background = (
 			   "upstream"=>1,
@@ -164,7 +164,7 @@ if ($query->param('freq_estimate') eq 'background') {
   #  $parameters .= " -org $organism";
   #}
   #    $parameters .= " -bg ".$query->param('background');
-} elsif ($query->param('freq_estimate') =~ /upload/i) {
+} elsif ($query->param('bg_method') =~ /upload/i) {
   $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
   $upload_freq_file = $query->param('upload_freq_file');
   if ($upload_freq_file) {
@@ -184,7 +184,7 @@ if ($query->param('freq_estimate') eq 'background') {
   }
 
 } else {
-  unless ($query->param('freq_estimate') eq 'monads') {
+  unless ($query->param('bg_method') eq 'monads') {
     &FatalError("Invalid expected frequency calibration");
   }
 }

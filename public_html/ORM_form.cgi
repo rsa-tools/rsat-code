@@ -30,7 +30,7 @@ $default{window_group} = 'checked';
 $default{purge} = 'checked';
 #$default{side} = 'over-represented';
 $default{align} = 'right';
-$default{freq_estimate} = "background";
+$default{bg_method} = "background";
 $default{bg_level} = "organism";
 
 
@@ -74,7 +74,7 @@ foreach $key (keys %default) {
     $default{$key} = $query->param($key);
   }
 } 
-$checked{$default{freq_estimate}} = "CHECKED";
+$checked{$default{bg_method}} = "CHECKED";
 
 ### print the form ###
 &RSA_header("ORM", "form");
@@ -204,13 +204,13 @@ print '<br />';
 print "<HR width=550 align=left>\n";
 
 #print "<A HREF='help.ORM.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
-#print $query->radio_group(-name=>'freq_estimate',
+#print $query->radio_group(-name=>'bg_method',
 #			  -Values=>['Equiprobable residues',
 #				    'Residue frequencies from input sequence',
 #				    'Markov Model (higher order dependencies)',
 #				    'Lexicon partitioning',
 #				    'Oligo frequencies from all intergenic regions'],
-#			  -default=>$default{freq_estimate});
+#			  -default=>$default{bg_method});
 #print "<BR>";
 
 &ReturnTable();
