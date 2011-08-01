@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+## CVS: fixed problem with protein sequences
+
 #### redirect error log to a file
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
@@ -48,15 +50,22 @@ $parameters .= " -sort";
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 push @result_files, ("input sequence",$sequence_file);
 
-$purge = $query->param('purge');
+## Sequence purging seems not to work with proteins -> only apply it
+## for DNA sequences
+my $sequence_type = lc($query->param('sequence_type'));
+if ($sequence_type eq "dna") {
+  $purge = $query->param('purge');
+}
+
+## Purge sequence if required, and start oligo-analysis command
 if ($purge) {
-    #### purge sequence option
-#    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
-    $command = "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged ";
-    $command .= " -dna" if (lc($query->param('sequence_type')) eq "dna");
-    $command .= "; $oligo_analysis_command -i ${sequence_file}.purged -format fasta ";
+  #### purge sequence option
+  #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
+  $command = "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged ";
+  $command .= " -seqtype ".$sequence_type if ($sequence_type eq "dna");
+  $command .= "; $oligo_analysis_command -i ${sequence_file}.purged -format fasta ";
 } else {
-    $command = "$oligo_analysis_command -i $sequence_file  ";
+  $command = "$oligo_analysis_command -i $sequence_file  ";
 }
 
 ### fields to return
@@ -243,18 +252,6 @@ if ($query->param('output') =~ /display/i) {
       $pattern_assembly_command .= " -i ".$result_file;
       $pattern_assembly_command .= " -o ".$assembly_file;
 
-      #       ## Pattern-assembly
-      #       $assembly_file = "$TMP/$tmp_file_name.asmb";
-      #       $top_patterns = 50;
-      #       $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1 -top ".$top_patterns;
-      #       if ($query->param('strand') =~ /single/) {
-      # 	$pattern_assembly_command .= " -1str";
-      #       } else {
-      # 	$pattern_assembly_command .= " -2str";
-      #       }
-      #       $pattern_assembly_command .= "  -i $result_file";
-      #       $pattern_assembly_command .= "  -o $assembly_file";
-
       unless ($ENV{RSA_ERROR}) {
 
 	## Assemble the significant patterns
@@ -274,7 +271,11 @@ if ($query->param('output') =~ /display/i) {
 
 	## Convert pattern-assembly result into PSSM
 	if ($query->param('to_matrix')) {
-	  &MatrixFromPatterns_run();
+	  if ($sequence_type eq "dna") {
+	    &MatrixFromPatterns_run();
+	  } else {
+	    &RSAT::message::Warning("Conversion to matrix is only supported for DNA sequences");
+	  }
 	}
       }
     }
