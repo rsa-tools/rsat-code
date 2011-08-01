@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.200 2011/07/27 14:28:15 jvanheld Exp $
+# $Id: matrix-scan,v 1.201 2011/08/01 00:32:35 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -208,9 +208,11 @@ oligonucleotides of length k. There is thus no need to use the option
 -markov when the background model is secified with a bg file.
 
 The RSAT data folder contains pre-calibrated background model files
-for all the supported organisms.
+for all the supported organisms.  Use the command
+I<choose-background-model> to get the path of an organism-specific
+background model file.
 
-$RSAT/public_html/data/genomes/My_organism/oligo-frequencies/
+Different formats are supported (option B-<bg_format>).
 
 =item I<-bginput>
 
@@ -245,9 +247,7 @@ frequencies, considered as estimates of prior frequencies. Since the
 absolute counts used for estimating those probabilities are not always
 available, we introduce the correction in terms of pseudo-frequencies.
 
-## Jean Valery & Morgane continuent l'explication
-
-S<P'(r|prefix)=((P(r|prefix) + b/A)/(SUMi[P(i|prefix)]+b)>
+S<P'(r|prefix)=((P(r|prefix) + (b/A)/(SUMi[P(i|prefix)]+b)>
 
 =head1 REFERENCES
 
@@ -2364,11 +2364,11 @@ matrix-scan options
 -pseudo	#	pseudo-count for the matrix (default value: 1). By default the pseudo is
                 distributed proportinally to residue prior
 -equi-pseudo #	the pseudo count is equally distributed
--bgfile		background model description file
+-bgfile		background model file
+-bg_format	background format (default: oligo-analysis). Supported: oligo-analysis, meme, MotifSampler
 -bginput	the background model is calculated on the input sequence
 -window	#	size of the sliding window on which the background model is be calculated
 -markov #	Markov order (required when -window or -bginput options are specified)
--bg_format	background format (default: oligo-analysis). Supported: oligo-analysis, meme, MotifSampler
 -bg_pseudo #	pseudo frequency for background model (must be a real between 0 and 1)
 -2str		scan both strands for DNA sequences.
 -1str		single-strand search for DNA sequences.
@@ -2481,8 +2481,8 @@ Background model file.
 
 Format for the background model file.
 
-Supported formats: all the input formats supported by
-convert-background-model.
+Supported formats: type I<convert-background-model -h> to obtain a
+list of supported background model formats.
 
 =cut
     } elsif ($arg eq "-bg_format") {
