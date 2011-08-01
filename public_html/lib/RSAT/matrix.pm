@@ -2889,7 +2889,7 @@ sub segment_proba {
 	&RSAT::message::Debug("Proba_residue_M",$col,sprintf("%.6f",$residue_proba[$col]))
 	    if ($main::verbose >= 5);
     }
-    return \@residue_proba,$segment_proba;
+    return $segment_proba, \@residue_proba;
 }
 
 
