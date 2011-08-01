@@ -1,10 +1,9 @@
 #!/usr/bin/perl
 
 
-
 ############################################################
 #
-# $Id: oligo-analysis,v 1.159 2011/08/01 00:32:07 jvanheld Exp $
+# $Id: oligo-analysis,v 1.160 2011/08/01 19:28:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -16,32 +15,33 @@ require "RSA.lib";
 require "RSA.seq.lib";
 require "RSA.disco.lib";
 require RSAT::Tree;
+require RSAT::MarkovModel;
 #require RSAT::TreeNode;
 
 ################################################################
-###### initialize parameters ##########
+#### initialize parameters ##########
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.159 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.160 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
 
-#### background models
+## background models
 %supported_bg = ('upstream'=>1,
 		 'upstreamL'=>1,
 		 'upstream-noorf'=>1,
 		 'intergenic'=>1,
-		 'bernoulli'=>1,
+		 'Bernoulli'=>1,
 		 'equi'=>1,
 		 'upstream-rm'=>1,
 		 'upstream-noorf-rm'=>1,
 		 'protein'=>1
 		 );
 $supported_bg = join ",", sort keys %supported_bg;
-$background_model = "bernoulli";  ## Default background model
+$background_model = "Bernoulli";  ## Default background model
 
-#### return fields
+## return fields
 %supported_return_fields = ('occ'=>1,
 			    'freq'=>1,
 			    'mseq'=>1,
@@ -104,7 +104,7 @@ foreach my $residue (@dna_alphabet) {
 $infile{accepted_patterns} = "";
 %accepted_patterns = ();
 
-#### read arguments ####
+## read arguments ####
 &ReadArguments();
 
 ##############################
@@ -113,7 +113,6 @@ $infile{accepted_patterns} = "";
 
 ################################################################
 ## Sequence type
-
 
 ## Special cases where we need to count patterns with zero occurrences
 if (($tail eq "left") ||
@@ -124,6 +123,7 @@ if (($tail eq "left") ||
 ################################################################
 ### Check output fields
 
+## Expected occurrences and frequencies
 if ($return{'exp'}) {
   $return{'exp_occ'} = 1;
   $return{'exp_freq'} = 1;
@@ -141,13 +141,13 @@ if (($return{'proba'}) ||
   $return{'exp_occ'} = 1;
 }
 
-if ($method =~  /calibration/i) {
+if ($bg_method =~  /calibration/i) {
     $return{'exp_occ'} = 1;
     $return{'exp_var'} = 1;
     $return{'fitted'} = 1;
 }
 
-#### conditions which require the calculation of the overlap coefficient
+## conditions which require the calculation of the overlap coefficient
 if ($return{'zscore'} && !($noov eq "-noov")) {
     $return{'ovlp'} = 1;
 }
@@ -162,11 +162,12 @@ if ($return{'mseq'} && $return{'proba'} && !($noov eq "-noov")) {
 
 ## minimum overlap distance
 if ($noov eq "-noov") {
-    $min_overlap_dist = $oligo_length;
+  $min_overlap_dist = $oligo_length;
 }
 
+################################################################
 ### Markov order
-if ($method eq "Markov chain") {
+if ($bg_method eq "Markov model estimated from input sequences") {
   if ($markov_order < 0){
     if ($oligo_length == 1) {
       $markov_order = 0;
@@ -174,7 +175,6 @@ if ($method eq "Markov chain") {
       $markov_order = $oligo_length + $markov_order;
     }
   }
-
 
   if (($markov_order > $oligo_length -2) &&
       ($markov_order > 0)){
@@ -185,9 +185,9 @@ if ($method eq "Markov chain") {
 }
 
 
+################################################################
 ### check input format
 &CheckInputSeqFormat($in_format);
-
 
 ################################################################
 ## Check if quick counting mode is possible
@@ -201,14 +201,14 @@ if ($infile{accepted_patterns}) {
   &ReadAcceptedPatterns($infile{accepted_patterns});
 }
 
-#### open sequence stream
+## open sequence stream
 ($in, $input_dir) = &OpenInputFile($infile{input});
 
 #die join "\t", "BOUM",  $infile{input}, $input_dir;
 
-#### open output stream
+################################################################
+## Open output stream
 $out = &OpenOutputFile($outputfile);
-
 
 ################################################################
 ## Count oligo occurrences
@@ -222,69 +222,90 @@ $alphabet_size = scalar(@alphabet);
 
 ################################################################
 ### Pre-defined frequency tables for background frequency calibration
-&RSAT::message::Info("Background model", $background_model, $method) if ($main::verbose >= 2);
+&RSAT::message::Info("Background model", $background_model, $bg_method) if ($main::verbose >= 2);
 if ($background_model eq "equi") {
-    $method = "Equiprobable residues";
-    my $residue_proba = 1/$alphabet_size;
-    foreach my $residue (@alphabet) {
-	$residue_proba{$residue} = $residue_proba;
-    };
+  $bg_method = "Equiprobable residues";
+  my $residue_proba = 1/$alphabet_size;
+  foreach my $residue (@alphabet) {
+    $residue_proba{$residue} = $residue_proba;
+  }
+  ;
 
 } elsif ($background_model eq "Markov") {
-    $method = "Markov chain";
 
-} elsif ($background_model eq "file") {
-    ## Read expected frequencies from a file
-    &ReadExpectedFrequencies($infile{'exp_freq'}, $sum_rc, $rescale_freq);
+  if ($bg_method eq "Background file") {
+    ## Load the Markov model from a background model file
+    $bg_model = new RSAT::MarkovModel();
+
+    ## Strand-sensitivity of the background model
+    if ($main::strand eq "-2str") {
+      $bg_model->set_attribute("strand", "insensitive");
+    } else {
+      $bg_model->set_attribute("strand", "sensitive");
+    }
+    $bg_model->load_from_file($infile{bg}, $bg_in_format);
+    $bg_model->check_missing_transitions();
+    $markov_order = $bg_model->get_attribute("order");
+
+  } else {
+    ## Estimate Markov chain directly from input sequences
+    $bg_method = "Markov model estimated from input sequences";
+  }
+
+} elsif ($background_model eq "exp_file") {
+  ## Read expected frequencies from a file containing frequencies
+  ## for oligonucleotides of the same size as those analyzed.
+  &ReadExpectedFrequencies($infile{'exp_freq'}, $sum_rc, $rescale_freq);
+
 
 } elsif (($background_model) &&
-	 ($background_model ne "bernoulli")) {
+	 ($background_model ne "Bernoulli")) {
 
-    ### localize oligo non-coding frequency file
-    $method = "Frequency file";
-    if ($sum_rc) {
-	$strands="-2str";
-    } else {
-	$strands="-1str";
-    }
+  ### localize oligo non-coding frequency file
+  $bg_method = "Frequency file";
+  if ($sum_rc) {
+    $strands="-2str";
+  } else {
+    $strands="-1str";
+  }
 
-    $infile{'exp_freq'} = &ExpectedFreqFile($org_or_taxon, 
+  $infile{'exp_freq'} = &ExpectedFreqFile($org_or_taxon, 
 					  $oligo_length, 
 					  $background_model,
 					  type=>"oligo",
 					  noov=>$noov, str=>$strands, taxon=>$taxon);
-    &ReadExpectedFrequencies($infile{'exp_freq'}, $sum_rc, $rescale_freq);
+  &ReadExpectedFrequencies($infile{'exp_freq'}, $sum_rc, $rescale_freq);
 
-    #### read alphabet from a file
+  ## read alphabet from a file
 } elsif ($infile{alphabet}) {
-    $method="Bernoulli with specific residue freqencies";
-    ($alpha) = &OpenInputFile($infile{alphabet});
-    while (<$alpha>) {
-	next if (/^;/);
-	next unless (/\S/);
-	if (/^(\S)\s+(\S+)/) {
-	    my $residue = $1;
-	    my $freq = $2;
-	    unless (&IsReal($freq)) {
-		&RSAT::error::FatalError("Invalid value for frequency: $freq. Must be a real number.");
-	    }
-	    unless ($freq >= 0) {
-		&RSAT::error::FatalError("Invalid value for frequency: $freq. Must be >=0.");
-	    }
-	    $residue_proba{$residue} = $freq;
+  $bg_method="Bernoulli with specific residue freqencies";
+  ($alpha) = &OpenInputFile($infile{alphabet});
+  while (<$alpha>) {
+    next if (/^;/);
+    next unless (/\S/);
+    if (/^(\S)\s+(\S+)/) {
+      my $residue = $1;
+      my $freq = $2;
+      unless (&IsReal($freq)) {
+	&RSAT::error::FatalError("Invalid value for frequency: $freq. Must be a real number.");
+      }
+      unless ($freq >= 0) {
+	&RSAT::error::FatalError("Invalid value for frequency: $freq. Must be >=0.");
+      }
+      $residue_proba{$residue} = $freq;
 
-	} else {
-	    &Warning("This line does not conform the alphabet format\t$_");
-	}
+    } else {
+      &Warning("This line does not conform the alphabet format\t$_");
     }
-    close $alpha;
+  }
+  close $alpha;
 }
 
 
 
 ################################################################
 ## Normalize alphabet (sum must be 1)
-if (($alphabet) && ($background_model ne "bernoulli")) {
+if (($alphabet) && ($background_model ne "Bernoulli")) {
     my $proba_sum = 0;
     foreach my $r (keys %residue_proba) {
 	$proba_sum += $residue_proba{$r};
@@ -300,8 +321,8 @@ if (($alphabet) && ($background_model ne "bernoulli")) {
 }
 
 ################################################################
-#### Read calibration from a file
-if ($method =~ /calibration/i) {
+## Read calibration from a file
+if ($bg_method =~ /calibration/i) {
     &RSAT::message::TimeWarn( join('\t', "Reading calibration file",$infile{calibration})) if ($main::verbose >= 1);
     &ReadCalibration($infile{calibration});
 }
@@ -312,13 +333,13 @@ if ($return{'table'}) {
   &SumReverseComplementsDistrib() if ($sum_rc);
   &PrintCountDistrib();
 } else {
-  &CalibrateSetFromSingleSequence() if ($method eq "Calibration per sequence");
-  &CalcSubWordFrequencies() if (($method eq "Markov chain") || ($method eq "lexicon"));
-  &CalcAlphabet() if ($background_model eq "bernoulli"); # || ($return{'zscore'}));
+  &CalibrateSetFromSingleSequence() if ($bg_method eq "Calibration per sequence");
+  &CalcSubWordFrequencies() if (($bg_method eq "Markov model estimated from input sequences") || ($bg_method eq "lexicon"));
+  &CalcAlphabet() if ($background_model eq "Bernoulli"); # || ($return{'zscore'}));
   &Degenerate() if ($one_var_position);
   &SumReverseComplements() if (($sum_rc) && !($quick_rc_counted));
   &CalcOccSum() unless ($quick_sums_counted);
-  &CalcFrequencies() if (($return{'freq'}) || ($method eq "Markov chain"));
+  &CalcFrequencies() if (($return{'freq'}) || ($bg_method eq "Markov model estimated from input sequences"));
   #&GroupRC() if ($group_rc);
   &SelectPalindroms() if (($palindroms_only) || ($return{'remark'}));
   &SelectAcceptedPatterns() if ($infile{accepted_patterns});
@@ -386,7 +407,7 @@ exit(0);
 
 
 ################################################################
-#### Read input sequences and count oligomers
+## Read input sequences and count oligomers
 sub CountOligos {
   if ($verbose >= 2) {
     &RSAT::message::TimeWarn("Counting oligo frequencies");
@@ -408,7 +429,7 @@ sub CountOligos {
 	@possible_oligos = sort keys %patterns;
     }
 
-    #### print verbose now for the tables
+    ## print verbose now for the tables
     if ($return{'table'}) {
       &Verbose() if ($verbose >= 1);
     }
@@ -448,9 +469,6 @@ sub CountOligos {
       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
 	     (($current_seq) || ($current_id))) {
 
-#	  &RSAT::message::Debug($current_seq) if ($main::verbose >= 0);
-#	  die "HELLO";
-
 	  ### remove tabs and blank spaces ###
 	  $current_seq = &FoldSequence($current_seq,0);
 
@@ -478,20 +496,20 @@ sub CountOligos {
 	      $residue_occ{$letter}++;
 	  }
 
-	  #### for Markov chains, count trailing oligomers of length shorter than $oligo_length ####
-	  if ($method eq "Markov chain") {
+	  ## For Markov chains, count trailing oligomers of length shorter than $oligo_length ####
+	  if ($bg_method eq "Markov model estimated from input sequences") {
 	      for $w (1..$oligo_length - 1) {
 		  $subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
 		  $sub_word[$w]{$subseq}->{occ}++;
 	      }
 	  }
 
-	  #### Count oligomers ####
+	  ## Count oligomers ####
 	  $offset = 0;
 	  my $current_pos = $last_pos;
 	  my $chunk=100000;
 
-	  #### The sequence is read from the end to the start, in order to progressively release memory
+	  ## The sequence is read from the end to the start, in order to progressively release memory
 	  while ($current_pos >=0) {
 	      if ($verbose >= 3 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
 		  $current_length = length($current_seq);
@@ -504,7 +522,7 @@ sub CountOligos {
 
 #	      &RSAT::message::Debug($pattern_seq) if ($main::verbose >= #0);
 
-	      #### prevent overlapping matches
+	      ## prevent overlapping matches
 	      if ($noov eq "-noov") {
 		if ((&IsNatural($last_pos{$pattern_seq})) &&
 		    ($last_pos{$pattern_seq} - $current_pos < $min_overlap_dist)) {
@@ -522,7 +540,7 @@ sub CountOligos {
 		  }
 		}
 
-		#### substract the forbidden positions from the nb of possible positions
+		## substract the forbidden positions from the nb of possible positions
 		$forbidden_pos = &min($min_overlap_dist-1,
 				      $last_pos - $current_pos);
 		$patterns{$pattern_seq}->{forbocc} += $forbidden_pos;
@@ -556,7 +574,7 @@ sub CountOligos {
 	      $current_pos--;
 	  }
 
-	  #### Update the counts of matching sequences (first occurrences)
+	  ## Update the counts of matching sequences (first occurrences)
 	  if ($return{'mseq'}) {
 	      foreach $pattern_seq (keys %current_mseq) {
 		  $patterns{$pattern_seq}->{mseq} += 1;
@@ -573,7 +591,7 @@ sub CountOligos {
 	  undef %last_pos;
 
 	  ################################################################
-	  #### Specific treatment for occurrence table
+	  ## Specific treatment for occurrence table
 	  if ($return{'table'}) {
 	      ## Make sure that all patterns are considered
 	      foreach my $pattern_seq (@possible_oligos) {
@@ -618,7 +636,7 @@ sub CountOligos {
 	      undef(%patterns);
 
 	      ################################################################
-	      #### Specific treatment for occurrence distribution
+	      ## Specific treatment for occurrence distribution
 	  } elsif ($return{'distrib'}) {
 	      foreach my $pattern_seq (@possible_oligos) {
 		  ## Check if no occurrences were found
@@ -639,7 +657,7 @@ sub CountOligos {
       }
   }
 
-  #### filter out undefined residues for DNA or protein sequences
+  ## filter out undefined residues for DNA or protein sequences
   if (($seq_type eq "DNA") || ($seq_type eq "protein")) {
     foreach $pattern_seq (keys %patterns) {
       if ((($seq_type eq "DNA") && ($pattern_seq =~ /[^atcg]/i)) ||
@@ -715,12 +733,12 @@ sub SumReverseComplements {
 
 	warn ("; Summing occurrences\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
 	if ($rc_pattern_seq eq $pattern_seq) {
-	    #### don't count twice the reverse palindroms !!!!!!!
+	    ## don't count twice the reverse palindroms !!!!!!!
 	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
 	    $occ_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ};
 	    $overlaps_2strands{$pattern_seq} = $patterns{$pattern_seq}->{overlaps};
 	} else {
-	    #### sum occurrences of each pattern with its reverse complement
+	    ## sum occurrences of each pattern with its reverse complement
 	    $occ_2strands{$rc_pattern_seq} = $occ_2strands{$pattern_seq} =
 		$patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern_seq}->{occ};
 	    $overlaps_2strands{$rc_pattern_seq} = $overlaps_2strands{$pattern_seq} =
@@ -765,7 +783,7 @@ sub SumReverseComplements {
 	    }
 	}
     }
-    &GroupRC(); #### remove the duplicate pattern (only retain the first by alphabetical order)
+    &GroupRC(); ## remove the duplicate pattern (only retain the first by alphabetical order)
 }
 
 ################################################################
@@ -784,10 +802,10 @@ sub SumReverseComplementsDistrib {
 
 	if ($rc_pattern_seq eq $pattern_seq) {
 	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
-	    #### don't count twice the reverse palindroms !!!!!!!
+	    ## don't count twice the reverse palindroms !!!!!!!
 	    $distrib_2strands{$pattern_seq} = $distrib{$pattern_seq};
 	} else {
-	    #### sum occurrences of each pattern with its reverse complement
+	    ## sum occurrences of each pattern with its reverse complement
 	    for my $occ ($min_occ..$max_occ) {
 		$distrib_2strands{$rc_pattern_seq}{$occ} = $distrib_2strands{$pattern_seq}{$occ} = $distrib{$pattern_seq}{$occ} + $distrib{$rc_pattern_seq}{$occ};
 	    }
@@ -858,10 +876,10 @@ sub CalcSubWordFrequencies {
 # 	    foreach $subseq (keys %{$sub_word[$w]}) {
 # 		$rc = &SmartRC($subseq);
 # 		if ($rc eq $subseq) {
-# 		    #### count  palindromic patterns only once !!!!!!!!!!!!
+# 		    ## count  palindromic patterns only once !!!!!!!!!!!!
 # 		    $sub_occ_2str[$w]{$subseq} = $sub_word[$w]{$subseq}->{occ};
 # 		} else {
-# 		    #### group each word with its erverse complement
+# 		    ## group each word with its erverse complement
 # 		    $sub_occ_2str[$w]{$subseq} = $sub_occ_2str[$w]{$rc} = $sub_word[$w]{$subseq}->{occ} + $sub_word[$w]{$rc}->{occ};
 # 		}
 # 	    }
@@ -898,13 +916,13 @@ sub CalcOccSum {
 }
 
 ################################################################
-#### Calculate relative frequencies
+## Calculate relative frequencies
 sub CalcFrequencies {
     if ($verbose >= 2) {
 	&RSAT::message::TimeWarn("Calculating relative frequencies");
     }
 
-    #### relative frequencies
+    ## relative frequencies
 #    if ($noov eq "-noov") {
 #	foreach $pattern_seq (keys %patterns) {
 #	    $patterns{$pattern_seq}->{obs_freq} = $patterns{$pattern_seq}->{occ}/$sum_noov;
@@ -915,7 +933,7 @@ sub CalcFrequencies {
 	}
 #    }
 
-    #### frequency of matching sequences
+    ## frequency of matching sequences
     if ($return{'mseq'}) {
 	foreach $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{ms_freq} = $patterns{$pattern_seq}->{mseq}/$sequence_number;
@@ -990,20 +1008,18 @@ sub Degenerate {
 
 
 ################################################################
-#### Expected oligomer frequencies
+## Expected oligomer frequencies
 sub CalcExpected {
-  if ($verbose >= 2) {
-    &RSAT::message::TimeWarn("Calculating expected frequencies");
-  }
+  &RSAT::message::TimeWarn("Calculating expected frequencies", $background_model, $bg_method) if ($main::verbose >= 2);
 
-  #### Calcualte the number of possible positions for each pattern
+  ## Calcualte the number of possible positions for each pattern
   foreach $pattern_seq (sort keys %patterns) {
     #	$patterns{$pattern_seq}->{forbocc} += $nb_possible_pos;
     $patterns{$pattern_seq}->{notforb} = $nb_possible_pos - $patterns{$pattern_seq}->{forbocc};
   }
 
   ### Expected frequency file
-  if ($method eq "Frequency file") {
+  if ($bg_method eq "Frequency file") {
     if ($one_var_position) {
       foreach $deg_pattern_seq (sort keys %patterns) {
 	$pattern = &IUPAC_to_regular($deg_pattern_seq);
@@ -1017,8 +1033,9 @@ sub CalcExpected {
     }
 
     ################################################################
-    ## Calculate expected frequencies according to a Markov chain model
-  } elsif ($method eq "Markov chain") {
+    ## Calculate expected frequencies according to a Markov chain
+    ## model estimated from the input sequences.
+  } elsif ($bg_method eq "Markov model estimated from input sequences") {
     foreach $pattern_seq (sort keys %patterns) {
       $patterns{$pattern_seq}->{'exp_freq'} = 1;
       for $offset (0..($oligo_length - $markov_order -1)) {
@@ -1032,9 +1049,18 @@ sub CalcExpected {
     }
 
     ################################################################
+    ## Calculate expected frequencies according to a Markov chain
+    ## model loaded from a file.
+  } elsif ($bg_method eq "Background file") {
+    foreach $pattern_seq (sort keys %patterns) {
+      ($patterns{$pattern_seq}->{'exp_freq'}) = $bg_model->segment_proba($pattern_seq,0);
+#      &RSAT::message::Debug("Seq proba from background model file", $pattern_seq, $patterns{$pattern_seq}->{'exp_freq'}) if ($main::verbose >= 10);
+    }
+
+    ################################################################
     ## Calculate expected frequencies from the expected
     ## occurrences in a calibration file
-  } elsif ($method =~ /calibration/i) {
+  } elsif ($bg_method =~ /calibration/i) {
     foreach $pattern_seq (sort keys %patterns) {
       if ($patterns{$pattern_seq}->{notforb} > 0) {
 	$patterns{$pattern_seq}->{'exp_freq'} = $patterns{$pattern_seq}->{'exp_occ'}/$patterns{$pattern_seq}->{notforb};
@@ -1045,7 +1071,7 @@ sub CalcExpected {
 
     ################################################################
     ## Equiprobable oligonucleotides
-  } elsif ($method =~ /equi/i) {
+  } elsif ($bg_method =~ /equi/i) {
     my $common_exp_freq = 1/($alphabet_size**$oligo_length);
     foreach $pattern_seq (sort keys %patterns) {
       $patterns{$pattern_seq}->{'exp_freq'} = $common_exp_freq;
@@ -1055,7 +1081,7 @@ sub CalcExpected {
     ################################################################
     ## Lexicon method (non-overlapping subdivisions of an oligo
     ## into 2 sub-oligos)
-  } elsif ($method eq "lexicon") {
+  } elsif ($bg_method eq "lexicon") {
     my $l  = 1;
     foreach $pattern_seq (@alphabet) {
       $sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{obs_freq};
@@ -1065,7 +1091,7 @@ sub CalcExpected {
 	$sub_word[$l]{$pattern_seq}->{'exp_freq'} = 0;
 	$sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{obs_freq};
 
-	#### all possible segmentations of the word
+	## all possible segmentations of the word
 	for my $s (1..$l-1) {
 	  my $prefix = substr($pattern_seq,0,$s);
 	  my $suffix = substr($pattern_seq,$s);
@@ -1081,7 +1107,7 @@ sub CalcExpected {
     $l = $oligo_length;
     foreach $pattern_seq (keys %patterns) {
       $patterns{$pattern_seq}->{'exp_freq'} = 0;
-      #### all possible segmentations of the word
+      ## all possible segmentations of the word
       for my $s (1..$l-1) {
 	my $prefix = substr($pattern_seq,0,$s);
 	my $suffix = substr($pattern_seq,$s);
@@ -1102,7 +1128,7 @@ sub CalcExpected {
     ################################################################
     ## Independent nucleotide probabilities
     ## calculate probability for ambiguous nucleotide codes  ####
-    #	$method = "alphabet";
+    #	$bg_method = "alphabet";
     if ($seq_type eq "DNA") {
       $residue_proba{'r'} = $residue_proba{'a'}+$residue_proba{'g'};
       $residue_proba{'y'} = $residue_proba{'c'}+$residue_proba{'t'};
@@ -1127,12 +1153,12 @@ sub CalcExpected {
   }
 
 
-  #### Correct expected frequencies with pseudo weight
-  if ($pseudo_weight > 0) {
-    $pseudo_frequency = $pseudo_weight/$nb_possible_oligos;
+  ## Correct expected frequencies with pseudo-frequency
+  if ($pseudo_freq > 0) {
+    $pseudo_freq_per_oligo = $pseudo_freq/$nb_possible_oligos;
     foreach $pattern_seq (keys %patterns) {
-      $patterns{$pattern_seq}->{'exp_freq'} *= 1 - $pseudo_weight;
-      $patterns{$pattern_seq}->{'exp_freq'} += $pseudo_frequency;
+      $patterns{$pattern_seq}->{'exp_freq'} *= 1 - $pseudo_freq;
+      $patterns{$pattern_seq}->{'exp_freq'} += $pseudo_freq_per_oligo;
     }
   }
 
@@ -1140,7 +1166,7 @@ sub CalcExpected {
   ################################################################
   ### sum expected frequencies for pairs of reverse complements
   if (($sum_rc) &&
-      ($method ne "Frequency file")) { #### this has alrady been treated when reading expected frequency file
+      ($bg_method ne "Frequency file")) { ## this has alrady been treated when reading expected frequency file
     foreach $pattern_seq (sort keys %patterns) {
       $rc = &SmartRC($pattern_seq);
       unless (defined($patterns{$rc}->{'exp_freq'})) {
@@ -1151,9 +1177,9 @@ sub CalcExpected {
   }
 
   ################################################################
-  #### expected number of occurrences and matching sequences ####
+  ## expected number of occurrences and matching sequences ####
   foreach $pattern_seq (sort keys %patterns) {
-    unless ($method =~ /calibration/i) {
+    unless ($bg_method =~ /calibration/i) {
       # 	    $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $patterns{$pattern_seq}->{notforb};
       $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $sum_occurrences;
       #	    $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $sum_noov;
@@ -1198,7 +1224,7 @@ sub CalcExpected {
 
 
 ################################################################
-#### calculate overlap coefficient
+## calculate overlap coefficient
 sub CalcOverlapCoefficient {
     foreach $pattern_seq (keys %patterns) {
 	$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq, %residue_proba);
@@ -1214,8 +1240,8 @@ sub CalcZscore {
     if ($return{'occ'}) {
 	foreach $pattern_seq (keys %patterns) {
 
-	    #### Calculate expected variance
-	    unless ($method =~ /calibration/i) {
+	    ## Calculate expected variance
+	    unless ($bg_method =~ /calibration/i) {
 		if ($noov eq "-noov") {
 		    ### With the option -noov, there is no problem of overlap
 		    ### The expected variance thus equals the expected occurrences
@@ -1243,7 +1269,7 @@ sub CalcZscore {
 
 
 ################################################################
-#### Calculate log likelihood
+## Calculate log likelihood
 sub CalcLikelihood {
 
     ### log likelihood for occurrences
@@ -1273,18 +1299,18 @@ sub CalcLikelihood {
 
 
 ################################################################
-#### Calculate probabilities
+## Calculate probabilities
 sub CalcProba {
   &RSAT::message::TimeWarn("Computing probabilities") if ($main::verbose >= 2);
 
-  #### converts threshold on occurence significance index into a
-  #### threshold on occurrence probability
+  ## converts threshold on occurence significance index into a
+  ## threshold on occurrence probability
   #    if (defined($lth{occ_sig})) {
   #	$uth{occ_P} = exp(-$lth{occ_sig}*log(10))/$nb_possible_oligos;
   #    }
 
-  #### converts threshold on mseq significance index into a
-  #### threshold on mseq probability
+  ## converts threshold on mseq significance index into a
+  ## threshold on mseq probability
   if (defined($lth{ms_sig})) {
     $uth{ms_P} = exp(-$lth{ms_sig}*log(10))/$nb_possible_oligos;
   }
@@ -1321,16 +1347,16 @@ sub CalcProba {
       $patterns{$pattern_seq}->{tail} = "right";
     }
 
-    if ($method =~ /calibration/i) {
+    if ($bg_method =~ /calibration/i) {
       if ($patterns{$pattern_seq}->{'exp_occ'} < $patterns{$pattern_seq}->{'exp_var'}) {
-	#### Fit a negative binomial
+	## Fit a negative binomial
 	($p, $k, $patterns{$pattern_seq}->{occ_P}) = &sum_of_negbin2($patterns{$pattern_seq}->{'exp_occ'},
 								     $patterns{$pattern_seq}->{'exp_var'},
 								     $occ_from,
 								     $occ_to);
 	$patterns{$pattern_seq}->{fitted} = "negbin";
       } else {
-	#### Fit a Poisson
+	## Fit a Poisson
 	$patterns{$pattern_seq}->{occ_P} = &sum_of_poisson($patterns{$pattern_seq}->{'exp_occ'},
 							   $occ_from,
 							   $occ_to);
@@ -1354,21 +1380,21 @@ sub CalcProba {
     ## Count the number of tests
     $main::nb_tested_patterns++;
 
-    #	#### check thresholds on occurrence probability ####
+    #	## check thresholds on occurrence probability ####
     #	&CheckPatternThresholds("occ_P", $pattern_seq);
     #	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
 
-    #### check thresholds on occurrence probability ####
+    ## check thresholds on occurrence probability ####
     #	&CheckPatternThresholds("occ_sig", $pattern_seq);
     #	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
 
-    #### matching seq probability
+    ## matching seq probability
     if ($return{'mseq'}) {
       ### probability of the observed number of matching sequences ####
       $avg_mseq_proba = $patterns{$pattern_seq}->{exp_ms}/$sequence_number;
       $patterns{$pattern_seq}->{ms_P} = &binomial_boe($avg_mseq_proba, $sequence_number, $patterns{$pattern_seq}->{mseq});
 
-      #### check threshold on mseq probability ####
+      ## check threshold on mseq probability ####
       if ($patterns{$pattern_seq}->{ms_P} > $uth{ms_P}) {
 	delete $patterns{$pattern_seq};
 	next;
@@ -1390,7 +1416,7 @@ sub CalcProba {
   ## Corrections or multi-testing
   &MultiTestCorrections($main::nb_tested_patterns, %patterns);
 
-  #### threshold filtering ####
+  ## threshold filtering ####
   &CheckThresholds("occ_P");
   &CheckThresholds("occ_E");
   &CheckThresholds("occ_sig");
@@ -1402,7 +1428,7 @@ sub CalcProba {
 
 
 ################################################################
-#### Print the header line before the result
+## Print the header line before the result
 sub PrintHeaderLine {
     $col_description{"seq"} = "oligomer sequence";
     $col_description{"sequence"} = "oligomer sequence";
@@ -1602,22 +1628,22 @@ sub Verbose {
 		printf $out "; %-29s\t%s\n", "Organism", $org_or_taxon;
 	      }
 	    }
-
-	    printf $out "; %-29s\t%s\n", "Method", $method;
+	    printf $out "; %-29s\t%s\n", "Background estimation method", $bg_method;
+	    printf $out "; %-29s\t%s\n", "Background file", $main::infile{bg} if ($bg_method eq "Background file");
+	    printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($background_model eq "Markov");
 	    printf $out "; %-29s\t%s\n", "Expected frequency file", $infile{'exp_freq'} if ($infile{'exp_freq'});
 	    printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
 	    printf $out "; %-29s\t%s\n", "Calibration file", $infile{calibration} if ($infile{calibration});
-	    printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
 	    printf $out "; %-29s\t%s\n", "Alphabet frequency file", $infile{alphabet} if ($infile{alphabet});
-	    if (($alphabet) || ($method eq "alphabet")){
+	    if (($alphabet) || ($bg_method eq "alphabet")){
 		print $out "; Alphabet\n";
 		foreach $key (sort keys %residue_proba) {
 		    print $out ";\t$key\t$residue_proba{$key}\n";
 		}
 	    }
-	    if ($pseudo_weight) {
-		printf $out "; %-29s\t%s\n", "Pseudo weight", $pseudo_weight;
-		printf $out "; %-29s\t%s\n", "Pseudo frequency", $pseudo_frequency;
+	    if ($pseudo_freq) {
+		printf $out "; %-29s\t%s\n", "Pseudo-frequency", $pseudo_freq;
+		printf $out "; %-29s\t%s\n", "Pseudo-frequency per oligo", $pseudo_freq_per_oligo;
 	    }
 
 	    printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
@@ -1659,7 +1685,7 @@ sub PrintResult {
     &RSAT::message::TimeWarn("Printing output file\t$outputfile");
   }
 
-  #### print verbose
+  ## print verbose
   &Verbose() if ($verbose >= 1);
 
   ### sort oligomers in function of significance or alphabetically
@@ -1675,9 +1701,9 @@ sub PrintResult {
 				  ($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}))
 			       } keys %patterns;
 	  } else {
-	    #### two-criteria sorting, sig is prioritary, but
-	    #### zscore is useful when the proba reaches
-	    #### calculation limits
+	    ## two-criteria sorting, sig is prioritary, but
+	    ## zscore is useful when the proba reaches
+	    ## calculation limits
 	    @sorted_keys = sort {(($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}) ||
 				  ($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}))
 			       } keys %patterns;
@@ -1870,7 +1896,7 @@ sub PrintResult {
 
 
 ################################################################
-#### read command-line arguments
+## read command-line arguments
 sub ReadArguments {
     my $arg;
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
@@ -1880,7 +1906,7 @@ sub ReadArguments {
 #    my $a = 0;
 #    while ($a <= $#ARGV) {
 
-	#### verbose
+	## verbose
 	if ($arg eq "-v") {
 	    if (&IsNatural($arguments[0])) {
 		$a++;
@@ -1897,7 +1923,7 @@ sub ReadArguments {
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
-	    #### input file
+	    ## input file
 	} elsif ($arg eq "-i") {
 	    $infile{input} = shift(@arguments);
 
@@ -1909,7 +1935,7 @@ sub ReadArguments {
 	} elsif ($arg eq "-format") {
 	    $in_format = lc(shift(@arguments));
 
-	    #### sequence type
+	    ## sequence type
 	} elsif ($arg =~ /^-seqtype/i) {
 	    $main::seq_type = lc(shift(@arguments));
 	    if ($seq_type =~ /^prot/) {
@@ -1917,11 +1943,11 @@ sub ReadArguments {
 		$group_rc = 0;
 		$seq_type = "protein";
 
-		#### DNA sequences
+		## DNA sequences
 	    } elsif ($seq_type =~ /^dna/) {
 		$seq_type = "DNA";
 
-		#### any other sequence type
+		## any other sequence type
 	    } elsif ($arg =~ /^other/) {
 		$sum_rc = 0;
 		$group_rc = 0;
@@ -1931,7 +1957,7 @@ sub ReadArguments {
 		&RSAT::error::FatalError($seq_typeis, "is not a valid sequence type.");
 	    }
 
-	    #### output file
+	    ## output file
 	} elsif ($arg eq "-o") {
 	    $outputfile = shift(@arguments);
 
@@ -1950,13 +1976,13 @@ sub ReadArguments {
 	    &CheckTaxon($org_or_taxon);
 
 	    ################################################################
-	    #### oligonucleotide counting options
+	    ## oligonucleotide counting options
 
-	    #### oligonucleotide length
+	    ## oligonucleotide length
 	} elsif ($arg eq "-l") {
 	    $oligo_length = shift(@arguments);
 
-	    #### strands
+	    ## strands
 	} elsif ($arg eq "-1str") {
 	    $sum_rc = 0;
 	    $group_rc = 0;
@@ -1966,7 +1992,7 @@ sub ReadArguments {
 	    $sum_rc = 1;
 	    $strands  = "-2str";
 
-	    #### reverse complement grouping or not
+	    ## reverse complement grouping or not
 	} elsif ($arg eq "-grouprc") {
 	    if ($sum_rc == 0) {
 		&FatalError("The option -grouprc is incompatible with the option -1str");
@@ -1977,15 +2003,15 @@ sub ReadArguments {
 	} elsif ($arg eq "-nogrouprc") {
 	    $group_rc = 0;
 
-	    #### Discard overlapping matches
+	    ## Discard overlapping matches
 	} elsif ($arg =~ /^-noov/) {
 	    $noov = "-noov";
 
-	    #### Count overlapping matches
+	    ## Count overlapping matches
 	} elsif ($arg =~ /^-ovlp/) {
 	    $noov = "-ovlp";
 
-	    #### return reverse palindroms only
+	    ## return reverse palindroms only
 	} elsif ($arg =~ /^-pal/) {
 	    $palindroms_only = 1;
 
@@ -1993,29 +2019,29 @@ sub ReadArguments {
 	} elsif ($arg =~ /^-accept/i) {
 	    $infile{accepted_patterns} = shift(@arguments);
 
-	    #### degenerate code: one N at any position
+	    ## degenerate code: one N at any position
 	} elsif ($arg eq "-oneN") {
 	    $one_var_position = 1;
 	    @degenerate_code = ('n');
 
-	    #### degenerate code: one degenerate at any position in each pattern
+	    ## degenerate code: one degenerate at any position in each pattern
 	} elsif ($arg eq "-onedeg") {
 	    $one_var_position = 1;
 	    @degenerate_code = ('r','y','w','s','m','k','h','b','v','d','n');
 
 	    ################################################################
-	    #### Estimation of expected oligonucleotide frequencies
+	    ## Estimation of expected oligonucleotide frequencies
 
 	    ## Background model file
 	} elsif ($arg eq "-bgfile") {
-	    &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "file"));
-	    $main::bg_method = "file";
+	    $background_model = "Markov";
+	    $bg_method = "Background file";
 	    $main::infile{bg} = shift(@arguments);
-	    
+
 	    ## Background model format
 	} elsif ($arg eq "-bg_format") {
 	    $main::bg_in_format = lc(shift(@arguments));
-	    
+
 	    ## Check background input format
 	    &RSAT::error::FatalError($main::bg_in_format,
 				     "Invalid input format.",
@@ -2023,23 +2049,23 @@ sub ReadArguments {
 		unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_in_format});
 
 
-	    #### expected frequency file
+	    ## expected frequency file
 	} elsif ($arg eq "-expfreq") {
-	    $method = "Frequency file";
-	    $background_model = "file";
+	    $bg_method = "Frequency file";
+	    $background_model = "exp_file";
 	    $infile{'exp_freq'} = shift(@arguments);
 
-	    #### calibration file, occ and var for N sequences
+	    ## calibration file, occ and var for N sequences
 	} elsif ($arg eq "-calibN") {
-	    $method = "Calibration per set";
+	    $bg_method = "Calibration per set";
 	    $infile{calibration} = shift(@arguments);
 
-	    #### calibration file, single-sequence occ and var
+	    ## calibration file, single-sequence occ and var
 	} elsif ($arg eq "-calib1") {
-	    $method = "Calibration per sequence";
+	    $bg_method = "Calibration per sequence";
 	    $infile{calibration} = shift(@arguments);
 
-	    #### rescale expected frequencies to have a sum of 1
+	    ## rescale expected frequencies to have a sum of 1
 	} elsif ($arg eq "-rescale") {
 	    $rescale_freq = 1;
 
@@ -2049,58 +2075,63 @@ sub ReadArguments {
 	    $background_model = "intergenic";
 #	    $rescale_freq = 1;
 
-	    ### specify a background model for estimating expected frequencies
+	    ################################################################
+	    ## specify the type of sequences serving to estimate the
+	    ## background model for organism-specific expected
+	    ## frequencies
 	} elsif ($arg eq "-bg") {
 	    $background_model = shift(@arguments);
 	    $background_model =~ s/ncf/intergenic/;
-	    $background_model =~ s/input/bernoulli/;
+	    $background_model =~ s/input/Bernoulli/;
 	    unless ($supported_bg{$background_model}) {
 		&RSAT::error::FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
 	    }
 
-	    #### lexicon
+	    ## lexicon
 	} elsif ($arg =~ /^-lex/i) { ### Markov chains
-	    $method = "lexicon";
+	    $bg_method = "lexicon";
 	    $return{'exp_freq'} = 1;
 	    $return{'segments'} = 1;
 
-	    #### Markov chain
+	    ## Markov chain
 	} elsif ($arg =~ /^-markov/i) { ### Markov chains
 	    $background_model = "Markov";
-	    $method = "Markov chain";
+	    $bg_method = "Markov model estimated from input sequences";
 	    $return{'exp_freq'} = 1;
 	    $markov_order = shift(@arguments);
 	    &RSAT::error::FatalError("The Markov order must be an integer value") 
 		unless (&IsInteger($markov_order));
 
-	    #### Markov chain
+	    ## Pseudo-counts
 	} elsif ($arg =~ /^-pseudo/i) { ### Markov chains
-	    $pseudo_weight = shift(@arguments);
-	    unless ( (&IsReal($pseudo_weight)) &&
-		     ($pseudo_weight <= 1) &&
-		     ($pseudo_weight >= 0)) {
-		&RSAT::error::FatalError ("Error: $pseudo_weight is not a valid value for pseudo frequency.",
-			     "Pseudo frequency must be a real value between 0 and 1.");
+	    $pseudo_freq = shift(@arguments);
+	    unless ( (&IsReal($pseudo_freq)) &&
+		     ($pseudo_freq <= 1) &&
+		     ($pseudo_freq >= 0)) {
+		&RSAT::error::FatalError ("Error: $pseudo_freq is not a valid value for pseudo-frequency.",
+			     "Pseudo-frequency must be a real value between 0 and 1.");
 	    }
 
-	    #### fiel with alphabet utilization
+	    ## fiel with alphabet utilization
 	} elsif ($arg eq "-afile") {
 	    $alphabet = 1;
 	    $infile{alphabet} = shift(@arguments);
 
-	    #### alphabet
+	    ## alphabet
 	} elsif ($arg eq "-a") {
 	    $alphabet = 1;
 	    if ($arguments[0] eq "input") {
 		shift(@arguments);
 		&RSAT::message::Warning("The option -a input is obsolete. Use -markov 0 instead");
 		$background_model = "Markov";
-		$method = "Markov chain";
+		$bg_method = "Markov model estimated from input sequences";
 		$return{'exp_freq'} = 1;
 		$markov_order = 0;
 #		$background_model = "input";
+
 	    } elsif (("$arguments[0] $arguments[1] $arguments[2] $arguments[3]" =~ /a:t (\S+) c:g (\S+)/i) 
 		     && ($1 >=0) && ($2 >=0) && ($1 + $2 > 0)) {
+		$bg_method = "alphabet";
 		$background_model = "alphabet";
 		$residue_proba{'a'} = $residue_proba{'t'} = $1/(2*($1+$2));
 		$residue_proba{'c'} = $residue_proba{'g'} = $2/(2*($1+$2));
@@ -2130,28 +2161,28 @@ sub ReadArguments {
 	    my $thr_value =  shift(@arguments);
 	    $uth{$thr_field} = $thr_value;
 
-	    #### threshold on matching sequences
+	    ## threshold on matching sequences
 	} elsif ($arg eq "-thms") {
 	    &Warning("Option -thms is deprecated. Please use '-lth mseq' instead.");
 	    $lth{mseq} = shift(@arguments);
 	    &RSAT::error::FatalError($lth{mseq}, "Invalid value for matching sequences. Must be an Integer mnuber.")
 		unless (&IsInteger($lth{mseq}));
 
-	    #### threshold on matching sequence frequency
+	    ## threshold on matching sequence frequency
 	} elsif ($arg eq "-thmsf") {
 	    &Warning("Option -thmsf is deprecated. Please use '-lth ms_freq' instead.");
 	    $lth{ms_freq} = shift(@arguments);
 	    &RSAT::error::FatalError($lth{ms_freq}, "Invalid value for matching sequence frequency. Must be a Real number.")
 		unless (&IsReal($lth{ms_freq}));
 
-	    #### threshold on occurrences
+	    ## threshold on occurrences
 	} elsif ($arg eq "-tho") {
 	    &Warning("Option -tho is deprecated. Please use '-lth occ' instead.");
 	    $lth{occ} = shift(@arguments);
 	    &RSAT::error::FatalError($lth{occ}, "Invalid value for matching sequences. Must be an Integer mnuber.")
 		unless (&IsInteger($lth{occ}));
 
-	    #### threshold on occurrence probability
+	    ## threshold on occurrence probability
 	} elsif ($arg eq "-thpo") {
 	    &Warning("Option -thpo is deprecated. Please use '-uth occ_P' instead.");
 	    $uth{occ_P} = shift(@arguments);
@@ -2159,7 +2190,7 @@ sub ReadArguments {
 	    &RSAT::error::FatalError($lth{occ_P}, "Invalid value for Proba threshold. Must be a Real number between 0 and 1.")
 		unless ((&IsReal($lth{occ_P})) && ($lth{occ_P} >= 0) && ($lth{occ_P} <= 1));
 
-	    #### threshold on obs/exp ratio
+	    ## threshold on obs/exp ratio
 	} elsif ($arg =~ /^-thrat/i) {
 	    &Warning("Option -thrat is deprecated. Please use '-lth ratio' instead.");
 	    $lth{ratio} = shift(@arguments);
@@ -2168,7 +2199,7 @@ sub ReadArguments {
 	    &RSAT::error::FatalError($lth{ratio}, "Invalid value for ratio threshold. Must be a positive Real number.")
 		unless ((&IsReal($lth{ratio})) && ($lth{ratio} >= 0));
 
-	    #### threshold on matching sequence probability
+	    ## threshold on matching sequence probability
 	} elsif ($arg eq "-thpms") {
 	    &Warning("Option -thpms is deprecated. Please use '-uth ms_P' instead.");
 	    $uth{ms_P} = shift(@arguments);
@@ -2178,7 +2209,7 @@ sub ReadArguments {
 		unless ((&IsReal($lth{ms_P})) && ($lth{ms_P} >= 0) && ($lth{ms_P} <= 1));
 
 
-	    #### threshold on occurrence significance
+	    ## threshold on occurrence significance
 	} elsif ($arg eq "-thosig") {
 	    &Warning("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
 	    $lth{occ_sig} = shift(@arguments);
@@ -2188,7 +2219,7 @@ sub ReadArguments {
 		unless (&IsReal($lth{occ_sig}));
 
 
-	    #### threshold on matching sequence significance
+	    ## threshold on matching sequence significance
 	} elsif ($arg eq "-thmssig") {
 	    &Warning("Option -thmssig is deprecated. Please use '-lth ms_sig' instead.");
 	    $lth{ms_sig} = shift(@arguments);
@@ -2199,7 +2230,7 @@ sub ReadArguments {
 
 
 	    ################################################################
-	    #### statistics to return
+	    ## statistics to return
 	} elsif ($arg eq "-return") {
 	    my $fields_to_return = shift(@arguments);
 	    chomp($fields_to_return);
@@ -2293,12 +2324,12 @@ sub ReadArguments {
 	    push(@output_fields, "occ");
 
 	    ################################################################
-	    #### sorting
+	    ## sorting
 	} elsif ($arg eq "-sort") {
 	    $sort_result = 1;
 
 	    ################################################################
-	    #### Left-tail or two-tail significance test
+	    ## Left-tail or two-tail significance test
 	} elsif ($arg eq "-under") {
 	    $tail = "left";
 
@@ -2332,7 +2363,7 @@ sub ReadArguments {
 
 
 ################################################################
-#### Print detailed help message
+## Print detailed help message
 sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
@@ -2501,8 +2532,9 @@ ARGUMENTS
 		frequency.
 
 	-pseudo \#
-		 pseudo-weight
-		 \# must be a real value between 0 and 1.
+                 Pseudo-frequency for the background model, where \#
+		 must be a real value between 0 and 1.
+
 		 This allows to circumvent the problem that the
 		 expected frequency file might be incomplete (due to
 		 a too small reference sequence set), in which case
@@ -2510,7 +2542,7 @@ ARGUMENTS
 		 frequency > 0, whereas the expected frequency is 0
 		 (leading to an impossible event). The expected
 		 frequency is corrected by a pseudo-frequency, which
-		 is the pseudo-weight divided by the number of
+		 is the pseudo-frequency divided by the number of
 		 possible patterns.
 
     COUNTING OPTIONS
@@ -3047,7 +3079,7 @@ End_of_help
 }
 
 ################################################################
-#### Princ option list
+## Princ option list
 sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_of_help;
@@ -3074,7 +3106,7 @@ oligo-analysis options
 -taxon			taxon (-org and -taxon are mutually exclusive)
 -markov	\#		estimate expected freq as a Markov chains of order \#
 -lexicon		exp word frequencies calculaed on the basis of word segments
--pseudo	\#		pseudo-weight (\# between 0 and 1)
+-pseudo	\#		pseudo-frequency for the background model (\# between 0 and 1)
 -return			fields to return. Supported: $supported_return_fields
 -table			return a table sequences (rows)/oligo occurrences (cols)
 -distrib		return occurrence distributions (one row per pattern)
@@ -3144,7 +3176,7 @@ sub PrintCountDistrib {
 
     my @output_patterns = sort keys %distrib;
 
-    #### Calculate maximum and minimum occurrence values
+    ## Calculate maximum and minimum occurrence values
     foreach my $pattern_seq (@output_patterns) {
 	my @sorted_values = sort {$a <=> $b} keys %{$distrib{$pattern_seq}};
 	$min{$pattern_seq} = $sorted_values[0];
@@ -3161,16 +3193,16 @@ sub PrintCountDistrib {
 			 ), "\n" if ($main::verbose >= 5);
     }
 
-    #### print verbose
+    ## print verbose
     &Verbose() if ($verbose >= 1);
 
-    #### Print the header
+    ## Print the header
     print $out join ("\t",
 		     "; pattern",
 		     "ID",
 		     $distrib_min..$distrib_max), "\n";
 
-    #### Print the result
+    ## Print the result
     foreach my $pattern_seq (@output_patterns) {
 	print $out $pattern_seq;
 	print $out "\t", &PatternID($pattern_seq, $sum_rc);
