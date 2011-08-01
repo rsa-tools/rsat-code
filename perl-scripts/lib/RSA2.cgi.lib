@@ -1874,17 +1874,18 @@ sub PrintOligoBackgroundOptions {
   #### equiprobable residues
   print "<br><input type='radio' NAME='bg_method' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
 
-  ## Custom expected frequency file
-  print ("<a href='help.oligo-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
-  print ("<br><input type='radio' NAME='bg_method' VALUE='freq_file_upload' $checked{'freq_file_upload'}>");
-  print ($query->filefield(-name=>'upload_freq_file',-default=>'starting value',-size=>30,-maxlength=>200));
-  print "<p>";
+#   ## Custom expected frequency file
+#   print ("<a href='help.oligo-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
+#   print ("<br><input type='radio' NAME='bg_method' VALUE='freq_file_upload' $checked{'freq_file_upload'}>");
+#   print ($query->filefield(-name=>'upload_freq_file',-default=>'starting value',-size=>30,-maxlength=>200));
+#   print "<p>";
 
   ## Custom background model file
 #  print ("<a href='help.oligo-analysis.html#upload_bgfile'><b>Upload your own background model</b></a><BR>");
 #  print ("<br><input type='radio' NAME='bg_method' VALUE='bgfile_upload' $checked{'bgfile_upload'}>");
 #  print ($query->filefield(-name=>'upload_bgfile',-default=>'starting value',-size=>30,-maxlength=>200));
 
+  print ("<b>Custom background model</b><br>");
   &DisplayBackgroundFileUpload();
   print "<p>\n";
 }
