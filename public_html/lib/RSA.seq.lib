@@ -1092,10 +1092,9 @@ sub ReadNextSequence {
       #	    $sequence = &FoldSequence($sequence, 0);
       #	    &CheckFormat($sequence, $sequence_format, $seq_type);
       return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-    } 
+    }
     return ("","") unless $gotit;
-	
-	
+
     ### file list ###
   } elsif ($sequence_format eq "filelist") {
     $found = 0;
@@ -1134,11 +1133,11 @@ sub ReadNextSequence {
     } else {
       die "\tError: cannot open sequence file $next_file\n";
     }
-	
+
     ### IntelliGenetics format ###
   } elsif ($sequence_format eq "ig") {
     while (<$SEQ>) {
-      if (/^;(.*)/) {		
+      if (/^;(.*)/) {
 	## comment line
 	@comments = (@comments, $1);
       } elsif (($seq_id eq "") && (/(\S+)\s/)) { 
@@ -1510,12 +1509,15 @@ sub parse_genomic_coordinates {
 ##    $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
 sub ReturnSequence {
   my ($sequence, $seq_id, $mask, @comments) = @_;
+#  &RSAT::message::Debug("SEQUENCE", $sequence) if ($main::verbose >= 0);
+#  die "HELLO";
+
   $sequence = &FoldSequence($sequence, 0);
   if ($mask) {
     &CheckMask($mask);
     if ($mask eq "lower") {
       $sequence =~ s/[a-z]/n/g;
-    } elsif ($mask eq "upper") {	
+    } elsif ($mask eq "upper") {
       $sequence =~ s/[A-Z]/N/g;
     } elsif ($mask eq "non-dna") {
       $sequence =~ s/[^acgt\|]/n/gi;
