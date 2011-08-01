@@ -458,14 +458,22 @@ sub GetSequenceFile {
     $convert_seq_command .= " -i ".$sequence_file;
     $convert_seq_command .= " -from  $sequence_format -to $required_format ";
 
-    ## Add reverse complement
-    if ($add_rc) {
-      $convert_seq_command .= " -addrc ";
+    my $sequence_type = lc($query->param('sequence_type'));
+
+    if ($sequence_type eq "dna") {
+      ## Add reverse complement
+      if ($add_rc) {
+	$convert_seq_command .= " -addrc ";
+      }
     }
 
     ## Mask
     if ($mask) {
-      $convert_seq_command .= " -mask ".$mask;
+      if (($sequence_type eq "protein") && ($mask eq "non-dna")) {
+	&RSAT::message::Warning("non-dna masking is not compatible with sequence type", $sequence_type);
+      } else {
+	$convert_seq_command .= " -mask ".$mask;
+      }
     }
 
     ## Skip short sequences
