@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.160 2011/08/01 19:28:47 jvanheld Exp $
+# $Id: oligo-analysis,v 1.161 2011/08/01 19:37:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,15 +19,15 @@ require RSAT::MarkovModel;
 #require RSAT::TreeNode;
 
 ################################################################
-#### initialize parameters ##########
+## Initialize parameters
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.160 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.161 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
 
-## background models
+## Background models
 %supported_bg = ('upstream'=>1,
 		 'upstreamL'=>1,
 		 'upstream-noorf'=>1,
@@ -41,7 +41,7 @@ local $taxon = 0; ## Specify it the background model is organism-specific or tax
 $supported_bg = join ",", sort keys %supported_bg;
 $background_model = "Bernoulli";  ## Default background model
 
-## return fields
+## Return fields
 %supported_return_fields = ('occ'=>1,
 			    'freq'=>1,
 			    'mseq'=>1,
@@ -107,9 +107,9 @@ $infile{accepted_patterns} = "";
 ## read arguments ####
 &ReadArguments();
 
-##############################
-### check parameter values ###
-##############################
+################################################################
+## CHECK PARAMETER VALUES
+################################################################
 
 ################################################################
 ## Sequence type
@@ -121,7 +121,7 @@ if (($tail eq "left") ||
 }
 
 ################################################################
-### Check output fields
+## Check output fields
 
 ## Expected occurrences and frequencies
 if ($return{'exp'}) {
@@ -155,7 +155,7 @@ if ($return{'mseq'} && $return{'proba'} && !($noov eq "-noov")) {
     $return{'ovlp'} = 1;
 }
 
-### check oligomer length
+## check oligomer length
 &RSAT::error::FatalError("You should specify an oligomer length.") unless (defined($oligo_length));
 &RSAT::error::FatalError("Oligomer length should be a natural number.") unless (&IsNatural($oligo_length));
 &RSAT::error::FatalError("Oligomer length should be strictly positive.") unless ($oligo_length > 0);
@@ -166,7 +166,7 @@ if ($noov eq "-noov") {
 }
 
 ################################################################
-### Markov order
+## Markov order
 if ($bg_method eq "Markov model estimated from input sequences") {
   if ($markov_order < 0){
     if ($oligo_length == 1) {
@@ -186,7 +186,7 @@ if ($bg_method eq "Markov model estimated from input sequences") {
 
 
 ################################################################
-### check input format
+## check input format
 &CheckInputSeqFormat($in_format);
 
 ################################################################
@@ -221,7 +221,7 @@ $alphabet_size = scalar(@alphabet);
 &RSAT::message::Info("Alphabet", $seq_type, $alphabet_size, join(",", @alphabet)) if ($main::verbose >= 3);
 
 ################################################################
-### Pre-defined frequency tables for background frequency calibration
+## Pre-defined frequency tables for background frequency calibration
 &RSAT::message::Info("Background model", $background_model, $bg_method) if ($main::verbose >= 2);
 if ($background_model eq "equi") {
   $bg_method = "Equiprobable residues";
@@ -724,7 +724,7 @@ sub PrintTableHeader {
 
 
 ################################################################
-### sum occurrences of reverse complement patterns
+## sum occurrences of reverse complement patterns
 sub SumReverseComplements {
     &RSAT::message::TimeWarn("Summing occurrences for pairs of reverse complements") if ($verbose >= 2);
 
@@ -787,7 +787,7 @@ sub SumReverseComplements {
 }
 
 ################################################################
-### sum occurrence distribution of reverse complement patterns
+## sum occurrence distribution of reverse complement patterns
 sub SumReverseComplementsDistrib {
     &RSAT::message::TimeWarn("Summing occurrence distributions for pairs of reverse complements") if ($verbose >= 2);
 
@@ -835,7 +835,7 @@ sub SumReverseComplementsDistrib {
 
 
 ################################################################
-### Calculate subword frequencies
+## Calculate subword frequencies
 sub CalcSubWordFrequencies {
     if ($verbose >= 2) {
 	&RSAT::message::TimeWarn("Calculating subword frequencies");
@@ -947,7 +947,7 @@ sub CalcFrequencies {
 
 
 ################################################################
-### residue frequencies from input sequences
+## residue frequencies from input sequences
 sub CalcAlphabet {
   %residue_proba = ();
   &RSAT::message::TimeWarn("Calculating residue frequencies from input sequences") if ($verbose >= 2);
@@ -969,7 +969,7 @@ sub CalcAlphabet {
 
 
 ################################################################
-### calculate occurrences with 1 degenerated position
+## calculate occurrences with 1 degenerated position
 sub Degenerate {
   if ($verbose >= 2) {
     &RSAT::message::TimeWarn("Neighborhood");
@@ -1678,7 +1678,7 @@ sub Verbose {
 
 
 ################################################################
-### Print the result
+## Print the result
 sub PrintResult {
   ### open output file ###
   if ($verbose >= 2) {
