@@ -37,7 +37,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("oligo-analysis result", "results");
-&ListParameters() if ($ENV{rsat_echo} >=2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### update log file ####
 &UpdateLogFile();
@@ -120,7 +120,7 @@ $parameters .= " -l $oligo_length";
 
 ################################################################
 ## Background model
-if ($query->param('freq_estimate') =~ /background/i) {
+if ($query->param('bg_method') =~ /background/i) {
 
   ## Check background subset
   %supported_background = (
@@ -155,8 +155,8 @@ if ($query->param('freq_estimate') =~ /background/i) {
     $freq_option .= " -taxon $taxon";
   }
 
-} elsif ($query->param('freq_estimate') =~ /upload/i) {
-  ## User-specific background model
+} elsif ($query->param('bg_method') eq 'freq_file_upload') {
+  ## User-specific expected freqency file (oligos of same sise as analyzed oligos)
   $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
   $upload_freq_file = $query->param('upload_freq_file');
   if ($upload_freq_file) {
@@ -176,22 +176,48 @@ if ($query->param('freq_estimate') =~ /background/i) {
     &FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
   }
 
-} elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
+} elsif ($query->param('bg_method') eq 'file_upload') {
+
+  ## User-specific background model (any Markov order)
+  $bgfile = "${TMP}/$tmp_file_name.bgfile";
+  $upload_bgfile = $query->param('upload_bgfile');
+  if ($upload_bgfile) {
+    ## Support compressed .gz files
+    if ($upload_bgfile =~ /\.gz$/) {
+      $bgfile .= ".gz";
+    }
+    $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+    open BG, ">$bgfile" ||
+      &cgiError("Cannot store background model file in temp dir.");
+    while (<$upload_bgfile>) {
+      print BG;
+    }
+    close BG;
+    $freq_option = " -bgfile ".$bgfile;
+
+    ## Background format
+    $freq_option .= " -bg_format ".$query->param('bg_format');
+
+  } else {
+    &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+  }
+
+} elsif ($query->param('bg_method') =~ /residue frequenc/i) {
   ## Bernoulli background model
   $freq_option = " -bg bernoulli";
 
-} elsif ($query->param('freq_estimate') =~ /markov/i) {
+} elsif ($query->param('bg_method') =~ /markov/i) {
   ## Markov model calibrated on input sequences
   $freq_option = " -markov";
   if (&IsNatural($query->param('markov_order'))) {
     $freq_option .= " ".$query->param('markov_order');
   }
 
-} elsif ($query->param('freq_estimate') =~ /lexicon/i) {
+} elsif ($query->param('bg_method') =~ /lexicon/i) {
   ## Lexicon background model
   $freq_option = " -lexicon";
 
-} elsif ($query->param('freq_estimate') =~ /equiprobable/i) {
+} elsif ($query->param('bg_method') =~ /equiprobable/i) {
   ## Equiprobable residues
   $freq_option = " -bg equi";
 
@@ -201,8 +227,8 @@ if ($query->param('freq_estimate') =~ /background/i) {
 $parameters .= "$freq_option";
 
 #### pseudo weight
-if (&IsReal($query->param('pseudo_weight'))) {
-    my $pseudo = $query->param('pseudo_weight');
+if (&IsReal($query->param('pseudo_freq'))) {
+    my $pseudo = $query->param('pseudo_freq');
     $parameters .= " -pseudo $pseudo";
 }
 
