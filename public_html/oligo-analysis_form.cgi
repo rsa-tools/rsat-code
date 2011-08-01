@@ -22,12 +22,12 @@ $default{sequence_file} = "";
 $default{upload_freq_file} = "";
 $default{sequence_type} = "dna";
 $default{oligo_length} = 6;
-$default{freq_estimate} = "Markov model (higher order dependencies)";
-##$default{freq_estimate} = "background";
+$default{bg_method} = "Markov model (higher order dependencies)";
+##$default{bg_method} = "background";
 $default{background} = "upstream-noorf";
 $default{bg_level} = "organism";
 $default{markov_order} = 2;
-$default{pseudo_weight} = "0.01";
+$default{pseudo_freq} = "0.01";
 $default{strand} = "both strands";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
@@ -147,10 +147,10 @@ print "<hr>\n";
 &PrintOligoBackgroundOptions();
 
 ################################################################
-#### pseudo-weights
-print ("<b><a href=help.oligo-analysis.html#pseudo>Pseudo-weight</a></b> &nbsp;",
-       $query->textfield(-name=>'pseudo_weight',
-			 -default=>$default{pseudo_weight},
+#### pseudo frequencies for the BG model
+print ("<b><a href=help.oligo-analysis.html#pseudo>Pseudo-frequency</a></b> &nbsp;",
+       $query->textfield(-name=>'pseudo_freq',
+			 -default=>$default{pseudo_freq},
 			 -size=>5));
 
 print "<hr>\n";
@@ -364,7 +364,7 @@ ATCAACCCATAGCAACTCATAAA
 ";
 print "<TD><B>";
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'freq_estimate', -default=>'background');
+print $query->hidden(-name=>'bg_method', -default=>'background');
 print $query->hidden(-name=>'background',-default=>"upstream-noorf");
 print $query->hidden(-name=>'bg_level',-default=>"organism");
 print $query->hidden(-name=>'gibbs_msps',-default=>"2");
