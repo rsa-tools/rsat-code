@@ -898,7 +898,7 @@ sub GetBackgroundModel {
   }
   print "<p>";
 
-
+  ################################################################
   ## Method to estimate the bg model
   print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
 
@@ -940,7 +940,7 @@ sub GetBackgroundModel {
 
   #### Pre-defined background frequencies
   unless ($params{title_choose}) {
-    print ("<INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
+    print ("<input type='radio' name='bg_method' value='bgfile' $checked{bgfile}>");
   }
   print ("<b>Sequence type</b> &nbsp; ",$query->popup_menu(-name=>'background',-Values=>["upstream-noorf","upstream"],-default=>$default{background}));
 
@@ -979,26 +979,8 @@ sub GetBackgroundModel {
   #### custom background model
   print "<ul>\n";
   unless ($params{simple}) {
-    unless ($params{title_choose}) {
-      print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
-    }
-    print "<a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
-    print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
 
-    #### bg format 
-    print $query->popup_menu(-name=>'bg_format',
-			     -Values=>[
-				       'oligo-analysis',
-				       'MotifSampler',
-				       'meme'
-				      ],
-			     -default=>$default{bg_format});
-
-    print $query->filefield(-name=>'upload_bgfile',
-			    -default=>'starting value',
-			    -size=>30,
-			    -maxlength=>200);
-
+    &DisplayBackgroundFileUpload();
     print "</ul>\n";
 
     #### Pseudo-frequencies for the BG model
@@ -1015,6 +997,32 @@ sub GetBackgroundModel {
 			      -size=>5);
     }
   }
+}
+
+################################################################
+## Display the list of supported background formats and a textbox or
+## file upload.
+sub DisplayBackgroundFileUpload {
+    unless ($params{title_choose}) {
+      print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
+    }
+
+    print "<a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
+    print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
+
+    #### bg format
+    print $query->popup_menu(-name=>'bg_format',
+			     -Values=>[
+				       'oligo-analysis',
+				       'MotifSampler',
+				       'meme'
+				      ],
+			     -default=>$default{bg_format});
+
+    print $query->filefield(-name=>'upload_bgfile',
+			    -default=>'starting value',
+			    -size=>30,
+			    -maxlength=>200);
 }
 
 
@@ -1556,14 +1564,14 @@ sub SelectFormat {
 #
 sub PipingFormForSequence {
 
-  $oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"background\">";
-  $dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"background\">";
+  $oligo_background_model = "<INPUT type=\"hidden\" NAME=\"bg_method\" VALUE=\"background\">";
+  $dyad_background_model = "<INPUT type=\"hidden\" NAME=\"bg_method\" VALUE=\"background\">";
 
     ## Choose organism-specific or alternative background
     if ($query->param('single_multi_org') eq 'multi') {
 
-#	$oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"Residue frequencies from input sequence\">";
-#	$dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"monads\">";
+#	$oligo_background_model = "<INPUT type=\"hidden\" NAME=\"bg_method\" VALUE=\"Residue frequencies from input sequence\">";
+#	$dyad_background_model = "<INPUT type=\"hidden\" NAME=\"bg_method\" VALUE=\"monads\">";
       $oligo_background_model .= "<INPUT type=\"hidden\" NAME=\"bg_level\" VALUE=\"taxon\">";
       $oligo_background_model .= "<INPUT type=\"hidden\" NAME=\"taxon\" VALUE=".$query->param('taxon').">";
       $dyad_background_model .= "<INPUT type=\"hidden\" NAME=\"bg_level\" VALUE=\"taxon\">";
@@ -1818,10 +1826,10 @@ End_of_form
 ## Background models based on a genome subset
 sub PrintGenomeSubsetBgOptions {
   $checked{$default{bg_level}} = "CHECKED";
-  $checked{$default{freq_estimate}} = "CHECKED";
+  $checked{$default{bg_method}} = "CHECKED";
 
   #### Calibrated on genome subsets
-  print( "<br><input type='radio' NAME='freq_estimate' VALUE='background' $checked{background}>");
+  print( "<br><input type='radio' NAME='bg_method' VALUE='background' $checked{background}>");
   print ("<b>Genome subset</b>");
 #  print "<ul>";
 
@@ -1841,7 +1849,7 @@ sub PrintGenomeSubsetBgOptions {
 ################################################################
 ## Background model options for oligo-analysis + ORM
 sub PrintOligoBackgroundOptions {
-  $checked{$default{freq_estimate}} = "CHECKED";
+  $checked{$default{bg_method}} = "CHECKED";
   print "<a href='help.oligo-analysis.html#exp_freq'><B>Background model</b></a>&nbsp;";
   &PrintGenomeSubsetBgOptions();
 
@@ -1850,7 +1858,7 @@ sub PrintOligoBackgroundOptions {
   print ("<br><b>Estimate from input sequence</b>");
 
   ## Markov model
-  print ("<br><input type='radio' NAME='freq_estimate' VALUE='Markov model (higher order dependencies)' $checked{'Markov model (higher order dependencies)'}>", "Markov model (higher order dependencies)");
+  print ("<br><input type='radio' NAME='bg_method' VALUE='Markov model (higher order dependencies)' $checked{'Markov model (higher order dependencies)'}>", "Markov model (higher order dependencies)");
 
   print "&nbsp;&nbsp;order &nbsp;";
   print $query->textfield(-name=>'markov_order',
@@ -1858,19 +1866,27 @@ sub PrintOligoBackgroundOptions {
 			  -size=>5);
 
   #### Lexicon partitioning
-  #print "<br><input type='radio' NAME='freq_estimate' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
+  #print "<br><input type='radio' NAME='bg_method' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
 
   #### Bernouilli model
-  #print "<br><input type='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
+  #print "<br><input type='radio' NAME='bg_method' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
 
   #### equiprobable residues
-  print "<br><input type='radio' NAME='freq_estimate' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
+  print "<br><input type='radio' NAME='bg_method' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
 
-  #### custom expected frequency file
+  ## Custom expected frequency file
   print ("<a href='help.oligo-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
-  print ("<br><input type='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}>");
+  print ("<br><input type='radio' NAME='bg_method' VALUE='freq_file_upload' $checked{'freq_file_upload'}>");
   print ($query->filefield(-name=>'upload_freq_file',-default=>'starting value',-size=>30,-maxlength=>200));
   print "<p>";
+
+  ## Custom background model file
+#  print ("<a href='help.oligo-analysis.html#upload_bgfile'><b>Upload your own background model</b></a><BR>");
+#  print ("<br><input type='radio' NAME='bg_method' VALUE='bgfile_upload' $checked{'bgfile_upload'}>");
+#  print ($query->filefield(-name=>'upload_bgfile',-default=>'starting value',-size=>30,-maxlength=>200));
+
+  &DisplayBackgroundFileUpload();
+  print "<p>\n";
 }
 
 
@@ -1879,7 +1895,7 @@ sub PrintOligoBackgroundOptions {
 sub LoadDyadDefault {
   ### default values for filling the form
   $default{organism} = "Saccharomyces cerevisiae";
-  $default{freq_estimate} = "background";
+  $default{bg_method} = "background";
   $default{background} = "upstream-noorf";
   $default{bg_level} = "organism";
   #$default{title} = "";
@@ -1935,17 +1951,17 @@ sub LoadDyadDefault {
 ################################################################
 ## Print background model optiosn for dyad-analysis
 sub PrintDyadBackgroundOptions {
-  $checked{$default{freq_estimate}} = "CHECKED";
+  $checked{$default{bg_method}} = "CHECKED";
   print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
 
   &PrintGenomeSubsetBgOptions();
 
-  print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='monads' $checked{monads}>","<b>Monad frequencies from the input sequence</b>");
+  print ( "<INPUT TYPE='radio' NAME='bg_method' VALUE='monads' $checked{monads}>","<b>Monad frequencies from the input sequence</b>");
 
   print "<BR>\n";
 
   print ("<a href='help.dyad-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
-  print ("<br><input type='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}>");
+  print ("<br><input type='radio' NAME='bg_method' VALUE='file_upload' $checked{'file_upload'}>");
   print ($query->filefield(-name=>'upload_freq_file',-default=>'starting value',-size=>30,-maxlength=>200));
   print "<p>";
 

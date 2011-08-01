@@ -174,7 +174,7 @@ if ($query->param('oligotype') =~ /dyad/i) {
 
 
 #### expected frequency estimation ####
-if ($query->param('freq_estimate') =~ /background/i) {
+if ($query->param('bg_method') =~ /background/i) {
     %supported_background = (
 			      "upstream"=>1,
 			      "upstream-noorf"=>1,
@@ -209,7 +209,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
 	$freq_option = " --bgoligo=$exp_freq_file.gz";
 
 
-  } elsif ($query->param('freq_estimate') =~ /upload/i) {
+  } elsif ($query->param('bg_method') =~ /upload/i) {
     $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
     $upload_freq_file = $query->param('upload_freq_file');
     if ($upload_freq_file) {
@@ -229,9 +229,9 @@ if ($query->param('freq_estimate') =~ /background/i) {
       &FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
     }
 
-} elsif ($query->param('freq_estimate') =~ /Equiprobable residues/i) {
+} elsif ($query->param('bg_method') =~ /Equiprobable residues/i) {
   $freq_option = " --markov=0";
-} elsif ($query->param('freq_estimate') =~ /markov/i) {
+} elsif ($query->param('bg_method') =~ /markov/i) {
   if (&IsNatural($query->param('markov_order'))) {
       $freq_option .= " --markov=".$query->param('markov_order');
   }
