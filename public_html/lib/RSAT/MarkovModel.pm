@@ -1897,10 +1897,27 @@ sub average_strands {
 
 =pod
 
-=item B<segment_proba($segment)>
+=item B<segment_proba($sequence)>
 
 Calculate the probability of a segment of sequence. The sequence segment must
 by larger than the Markov order + 1.
+
+Simple usage:
+
+ my ($seq_proba) = $bg_model->segment_proba($sequence);
+
+where $sequence is a DNA sequence (either the full sequence, or a
+segment of a larger sequence).
+
+Detailed output:
+
+ my ($seq_proba, $ref_residue_proba, $details) = $bg_model->segment_proba($sequence, $return_detail);
+
+where $return_detail is a boolean indicating whether the computation
+details (probabilities of sub-sequences) shoudl be returned,
+$ref_residue_proba is a reference to an array indicating the
+individual residue probailities, and $details a string dsplayed by the
+program seq-proba when the option -return detail is acivated.
 
 =cut
 sub segment_proba {
@@ -2019,12 +2036,17 @@ sub segment_proba {
     #			      "P(letter)=".$residue_proba, 
     #			      "P(S)=".$segment_proba) if ($main::verbose >= 5);
   }
-    
+
   for my $col (0..$#residue_proba) {
     &RSAT::message::Debug("Proba_residue_B",$col,sprintf("%.6f",$residue_proba[$col])) 
       if ($main::verbose >= 5);
   }
-  return (\@residue_proba, $segment_proba, $detail);
+
+  if ($return_detail) {
+    return ($segment_proba, \@residue_proba, $detail);
+  } else {
+    return ($segment_proba);
+  }
 }
 
 
