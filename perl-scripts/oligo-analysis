@@ -1,8 +1,10 @@
 #!/usr/bin/perl
 
+
+
 ############################################################
 #
-# $Id: oligo-analysis,v 1.158 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: oligo-analysis,v 1.159 2011/08/01 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,7 +21,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.158 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.159 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -212,13 +214,21 @@ $out = &OpenOutputFile($outputfile);
 ## Count oligo occurrences
 &CountOligos();
 
+################################################################
+## Define alphabet
 @alphabet = &alphabet($seq_type, $zeroocc);
+$alphabet_size = scalar(@alphabet);
+&RSAT::message::Info("Alphabet", $seq_type, $alphabet_size, join(",", @alphabet)) if ($main::verbose >= 3);
 
 ################################################################
 ### Pre-defined frequency tables for background frequency calibration
 &RSAT::message::Info("Background model", $background_model, $method) if ($main::verbose >= 2);
 if ($background_model eq "equi") {
     $method = "Equiprobable residues";
+    my $residue_proba = 1/$alphabet_size;
+    foreach my $residue (@alphabet) {
+	$residue_proba{$residue} = $residue_proba;
+    };
 
 } elsif ($background_model eq "Markov") {
     $method = "Markov chain";
@@ -388,14 +398,14 @@ sub CountOligos {
       ($zeroocc)
      ) {
     if ($seq_type eq "DNA") {
-      @possible_oligos = &all_oligos($oligo_length, @dna_alphabet);
-      &RSAT::message::Info("Reporting all oligonucleotides", scalar(@possible_oligos)) if ($main::verbose >= 2);
+	@possible_oligos = &all_oligos($oligo_length, @dna_alphabet);
+	&RSAT::message::Info("Reporting all oligonucleotides", scalar(@possible_oligos)) if ($main::verbose >= 2);
     } elsif ($seq_type eq "protein") {
-      @possible_oligos = &all_oligos($oligo_length, @protein_alphabet);
-      &RSAT::message::Info("Reporting all oligopeptides", "alphabet size", scalar(@protein_alphabet), "oligos", scalar(@possible_oligos)) if ($main::verbose >= 2);
+	@possible_oligos = &all_oligos($oligo_length, @protein_alphabet);
+	&RSAT::message::Info("Reporting all oligopeptides", "alphabet size", scalar(@protein_alphabet), "oligos", scalar(@possible_oligos)) if ($main::verbose >= 2);
     } else {
-      ## TO DO : CHECK WHETHER THIS WORKS WITH ANY TEXT
-      @possible_oligos = sort keys %patterns;
+	## TO DO : CHECK WHETHER THIS WORKS WITH ANY TEXT
+	@possible_oligos = sort keys %patterns;
     }
 
     #### print verbose now for the tables
@@ -437,6 +447,9 @@ sub CountOligos {
 
       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
 	     (($current_seq) || ($current_id))) {
+
+#	  &RSAT::message::Debug($current_seq) if ($main::verbose >= 0);
+#	  die "HELLO";
 
 	  ### remove tabs and blank spaces ###
 	  $current_seq = &FoldSequence($current_seq,0);
@@ -489,6 +502,7 @@ sub CountOligos {
 	      $pattern_seq = lc(substr($current_seq,$current_pos,$oligo_length));
 	      chop $current_seq;	### eat the tail to release memory
 
+#	      &RSAT::message::Debug($pattern_seq) if ($main::verbose >= #0);
 
 	      #### prevent overlapping matches
 	      if ($noov eq "-noov") {
@@ -1031,7 +1045,7 @@ sub CalcExpected {
 
     ################################################################
     ## Equiprobable oligonucleotides
-  } elsif ($method =~ /equiprobable/i) {
+  } elsif ($method =~ /equi/i) {
     my $common_exp_freq = 1/($alphabet_size**$oligo_length);
     foreach $pattern_seq (sort keys %patterns) {
       $patterns{$pattern_seq}->{'exp_freq'} = $common_exp_freq;
@@ -1858,167 +1872,186 @@ sub PrintResult {
 ################################################################
 #### read command-line arguments
 sub ReadArguments {
-    my $a = 0;
-    while ($a <= $#ARGV) {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+#    my $a = 0;
+#    while ($a <= $#ARGV) {
 
 	#### verbose
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
 		$a++;
-		$verbose = $ARGV[$a];
+		$verbose = shift(@arguments);
 	    } else {
 		$verbose = 1;
 	    }
 
-	} elsif ($ARGV[$a] eq "-vv") {
-	    $verbose = 2;
-
 	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
+	} elsif ($arg eq "-h") {
 	    &PrintHelp();
 
 	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
+	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
 	    #### input file
-	} elsif ($ARGV[$a] eq "-i") {
-	    $infile{input} = $ARGV[$a+1];
+	} elsif ($arg eq "-i") {
+	    $infile{input} = shift(@arguments);
 
 	    ## mask
-	} elsif ($ARGV[$a] eq "-mask") {
-	    $mask = $ARGV[$a+1];
+	} elsif ($arg eq "-mask") {
+	    $mask = shift(@arguments);
 	    &CheckMask($mask);
 
-	} elsif ($ARGV[$a] eq "-format") {
-	    $in_format = lc($ARGV[$a+1]);
+	} elsif ($arg eq "-format") {
+	    $in_format = lc(shift(@arguments));
 
 	    #### sequence type
-	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
-	    $a++;
-	    if ($ARGV[$a] =~ /^prot/i) {
+	} elsif ($arg =~ /^-seqtype/i) {
+	    $main::seq_type = lc(shift(@arguments));
+	    if ($seq_type =~ /^prot/) {
 		$sum_rc = 0;
 		$group_rc = 0;
 		$seq_type = "protein";
 
 		#### DNA sequences
-	    } elsif ($ARGV[$a] =~ /^dna/i) {
+	    } elsif ($seq_type =~ /^dna/) {
 		$seq_type = "DNA";
 
 		#### any other sequence type
-	    } elsif ($ARGV[$a] =~ /^other/i) {
+	    } elsif ($arg =~ /^other/) {
 		$sum_rc = 0;
 		$group_rc = 0;
 		$seq_type = "other";
 
 	    } else {
-		&RSAT::error::FatalError( "\tError: sequence type '$ARGV[$a]' is not supported");
+		&RSAT::error::FatalError($seq_typeis, "is not a valid sequence type.");
 	    }
 
 	    #### output file
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+	} elsif ($arg eq "-o") {
+	    $outputfile = shift(@arguments);
 
 	    ### organism (for selecting an organism-specific background model)
-	} elsif ($ARGV[$a] =~ /^-org/i) {
+	} elsif ($arg =~ /^-org/i) {
 	    if ($taxon) {
 		&RSAT::message::FatalError("Options -org and -taxon are mutually exclusive");
 	    }
-	    $org_or_taxon = $ARGV[$a+1];
+	    $org_or_taxon = shift(@arguments);
 	    &CheckOrganismName($org_or_taxon);
 
 	    ### taxon (for selecting a taxon-specific background model)
-	  } elsif ($ARGV[$a] =~ /^-taxon/i) {
+	  } elsif ($arg =~ /^-taxon/i) {
 	    $taxon = 1;
-	    $org_or_taxon = $ARGV[$a+1];
+	    $org_or_taxon = shift(@arguments);
 	    &CheckTaxon($org_or_taxon);
 
 	    ################################################################
 	    #### oligonucleotide counting options
 
 	    #### oligonucleotide length
-	} elsif ($ARGV[$a] eq "-l") {
-	    $oligo_length = $ARGV[$a+1];
+	} elsif ($arg eq "-l") {
+	    $oligo_length = shift(@arguments);
 
 	    #### strands
-	} elsif ($ARGV[$a] eq "-1str") {
+	} elsif ($arg eq "-1str") {
 	    $sum_rc = 0;
 	    $group_rc = 0;
 	    $strands  = "-1str";
 
-	} elsif ($ARGV[$a] eq "-2str") {
+	} elsif ($arg eq "-2str") {
 	    $sum_rc = 1;
 	    $strands  = "-2str";
 
 	    #### reverse complement grouping or not
-	} elsif ($ARGV[$a] eq "-grouprc") {
+	} elsif ($arg eq "-grouprc") {
 	    if ($sum_rc == 0) {
 		&FatalError("The option -grouprc is incompatible with the option -1str");
 	    }
 	    $sum_rc = 1;
 	    $group_rc = 1;
 
-	} elsif ($ARGV[$a] eq "-nogrouprc") {
+	} elsif ($arg eq "-nogrouprc") {
 	    $group_rc = 0;
 
 	    #### Discard overlapping matches
-	} elsif ($ARGV[$a] =~ /^-noov/) {
+	} elsif ($arg =~ /^-noov/) {
 	    $noov = "-noov";
 
 	    #### Count overlapping matches
-	} elsif ($ARGV[$a] =~ /^-ovlp/) {
+	} elsif ($arg =~ /^-ovlp/) {
 	    $noov = "-ovlp";
 
 	    #### return reverse palindroms only
-	} elsif ($ARGV[$a] =~ /^-pal/) {
+	} elsif ($arg =~ /^-pal/) {
 	    $palindroms_only = 1;
 
 	    ### analyze only selected oligos
-	} elsif ($ARGV[$a] =~ /^-accept/i) {
-	    $infile{accepted_patterns} = $ARGV[$a+1];
+	} elsif ($arg =~ /^-accept/i) {
+	    $infile{accepted_patterns} = shift(@arguments);
 
 	    #### degenerate code: one N at any position
-	} elsif ($ARGV[$a] eq "-oneN") {
+	} elsif ($arg eq "-oneN") {
 	    $one_var_position = 1;
 	    @degenerate_code = ('n');
 
 	    #### degenerate code: one degenerate at any position in each pattern
-	} elsif ($ARGV[$a] eq "-onedeg") {
+	} elsif ($arg eq "-onedeg") {
 	    $one_var_position = 1;
 	    @degenerate_code = ('r','y','w','s','m','k','h','b','v','d','n');
 
 	    ################################################################
-	    #### Estimation of expected frequencies
+	    #### Estimation of expected oligonucleotide frequencies
+
+	    ## Background model file
+	} elsif ($arg eq "-bgfile") {
+	    &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "file"));
+	    $main::bg_method = "file";
+	    $main::infile{bg} = shift(@arguments);
+	    
+	    ## Background model format
+	} elsif ($arg eq "-bg_format") {
+	    $main::bg_in_format = lc(shift(@arguments));
+	    
+	    ## Check background input format
+	    &RSAT::error::FatalError($main::bg_in_format,
+				     "Invalid input format.",
+				     "Supported: ", $RSAT::MarkovModel::supported_input_formats)
+		unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_in_format});
+
 
 	    #### expected frequency file
-	} elsif ($ARGV[$a] eq "-expfreq") {
+	} elsif ($arg eq "-expfreq") {
 	    $method = "Frequency file";
 	    $background_model = "file";
-	    $infile{'exp_freq'} = $ARGV[$a+1];
+	    $infile{'exp_freq'} = shift(@arguments);
 
 	    #### calibration file, occ and var for N sequences
-	} elsif ($ARGV[$a] eq "-calibN") {
+	} elsif ($arg eq "-calibN") {
 	    $method = "Calibration per set";
-	    $infile{calibration} = $ARGV[$a+1];
+	    $infile{calibration} = shift(@arguments);
 
 	    #### calibration file, single-sequence occ and var
-	} elsif ($ARGV[$a] eq "-calib1") {
+	} elsif ($arg eq "-calib1") {
 	    $method = "Calibration per sequence";
-	    $infile{calibration} = $ARGV[$a+1];
+	    $infile{calibration} = shift(@arguments);
 
 	    #### rescale expected frequencies to have a sum of 1
-	} elsif ($ARGV[$a] eq "-rescale") {
+	} elsif ($arg eq "-rescale") {
 	    $rescale_freq = 1;
 
 	    ### use oligo non-coding frequencies as expected frequencies
-	} elsif ($ARGV[$a] =~ /^-ncf/i) {
+	} elsif ($arg =~ /^-ncf/i) {
 	    &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
 	    $background_model = "intergenic";
 #	    $rescale_freq = 1;
 
 	    ### specify a background model for estimating expected frequencies
-	} elsif ($ARGV[$a] eq "-bg") {
-	    $background_model = $ARGV[$a+1];
+	} elsif ($arg eq "-bg") {
+	    $background_model = shift(@arguments);
 	    $background_model =~ s/ncf/intergenic/;
 	    $background_model =~ s/input/bernoulli/;
 	    unless ($supported_bg{$background_model}) {
@@ -2026,26 +2059,23 @@ sub ReadArguments {
 	    }
 
 	    #### lexicon
-	} elsif ($ARGV[$a] =~ /^-lex/i) { ### Markov chains
+	} elsif ($arg =~ /^-lex/i) { ### Markov chains
 	    $method = "lexicon";
 	    $return{'exp_freq'} = 1;
 	    $return{'segments'} = 1;
 
 	    #### Markov chain
-	} elsif ($ARGV[$a] =~ /^-markov/i) { ### Markov chains
+	} elsif ($arg =~ /^-markov/i) { ### Markov chains
 	    $background_model = "Markov";
 	    $method = "Markov chain";
 	    $return{'exp_freq'} = 1;
-	    if (&IsInteger($ARGV[$a+1])) {
-		$a++;
-		$markov_order = $ARGV[$a];
-	    } else {
-		&RSAT::error::FatalError("The Markov order must be an integer value");
-	    }
+	    $markov_order = shift(@arguments);
+	    &RSAT::error::FatalError("The Markov order must be an integer value") 
+		unless (&IsInteger($markov_order));
 
 	    #### Markov chain
-	} elsif ($ARGV[$a] =~ /^-pseudo/i) { ### Markov chains
-	    $pseudo_weight = $ARGV[++$a];
+	} elsif ($arg =~ /^-pseudo/i) { ### Markov chains
+	    $pseudo_weight = shift(@arguments);
 	    unless ( (&IsReal($pseudo_weight)) &&
 		     ($pseudo_weight <= 1) &&
 		     ($pseudo_weight >= 0)) {
@@ -2054,118 +2084,131 @@ sub ReadArguments {
 	    }
 
 	    #### fiel with alphabet utilization
-	} elsif ($ARGV[$a] eq "-afile") {
+	} elsif ($arg eq "-afile") {
 	    $alphabet = 1;
-	    $infile{alphabet} = $ARGV[$a+1];
+	    $infile{alphabet} = shift(@arguments);
 
 	    #### alphabet
-	} elsif ($ARGV[$a] eq "-a") {
+	} elsif ($arg eq "-a") {
 	    $alphabet = 1;
-	    if ($ARGV[$a+1] eq "yeast") {
-		$residue_proba{'a'} = $residue_proba{'t'} = 0.308512197555054;
-		$residue_proba{'c'} = $residue_proba{'g'} = 0.191487802444946;
-	    } elsif ($ARGV[$a+1] eq "input") {
-		&RSAT::message::Warning("The option -a input is obsolete. Use -bg input instead");
-		$background_model = "input";
-	    } elsif (("$ARGV[$a+1] $ARGV[$a+2] $ARGV[$a+3] $ARGV[$a+4]" =~ /a:t (\S+) c:g (\S+)/i) && ($1 >=0) && ($2 >=0) && ($1 + $2 > 0)) {
+	    if ($arguments[0] eq "input") {
+		shift(@arguments);
+		&RSAT::message::Warning("The option -a input is obsolete. Use -markov 0 instead");
+		$background_model = "Markov";
+		$method = "Markov chain";
+		$return{'exp_freq'} = 1;
+		$markov_order = 0;
+#		$background_model = "input";
+	    } elsif (("$arguments[0] $arguments[1] $arguments[2] $arguments[3]" =~ /a:t (\S+) c:g (\S+)/i) 
+		     && ($1 >=0) && ($2 >=0) && ($1 + $2 > 0)) {
+		$background_model = "alphabet";
 		$residue_proba{'a'} = $residue_proba{'t'} = $1/(2*($1+$2));
 		$residue_proba{'c'} = $residue_proba{'g'} = $2/(2*($1+$2));
 	    } else {
-		$residue_proba{'a'} = 0.25;
-		$residue_proba{'c'} = 0.25;
-		$residue_proba{'g'} = 0.25;
-		$residue_proba{'t'} = 0.25;
+		shift(@arguments);
+		$background_model = "equi";
 	    }
 
 	    ################################################################
-	    #### thresholds
+	    ## Thresholds
 
 	    ### Upper threshold
-	} elsif ($ARGV[$a] eq "-lth") {
-	    my $thr_field = $ARGV[$a+1];
-	    my $thr_value =  $ARGV[$a+2];
+	} elsif ($arg eq "-lth") {
+	    my $thr_field = shift(@arguments);
+	    my $thr_value =  shift(@arguments);
 	    unless ($supported_threshold{$thr_field}) {
 		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
 	    $lth{$thr_field} = $thr_value;
 
 	    ### Lower threshold
-	} elsif ($ARGV[$a] eq "-uth") {
-	    my $thr_field = $ARGV[$a+1];
-	    my $thr_value =  $ARGV[$a+2];
+	} elsif ($arg eq "-uth") {
+	    my $thr_field = shift(@arguments);
 	    unless ($supported_threshold{$thr_field}) {
 		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
+	    my $thr_value =  shift(@arguments);
 	    $uth{$thr_field} = $thr_value;
 
 	    #### threshold on matching sequences
-	} elsif (($ARGV[$a] eq "-thms") &&
-		 (&IsInteger($ARGV[$a+1]))) {
-	    $lth{mseq} = $ARGV[$a+1];
+	} elsif ($arg eq "-thms") {
 	    &Warning("Option -thms is deprecated. Please use '-lth mseq' instead.");
+	    $lth{mseq} = shift(@arguments);
+	    &RSAT::error::FatalError($lth{mseq}, "Invalid value for matching sequences. Must be an Integer mnuber.")
+		unless (&IsInteger($lth{mseq}));
 
 	    #### threshold on matching sequence frequency
-	} elsif (($ARGV[$a] eq "-thmsf") &&
-		 (&IsReal($ARGV[$a+1]))) {
-	    $lth{ms_freq} = $ARGV[$a+1];
+	} elsif ($arg eq "-thmsf") {
+	    &Warning("Option -thmsf is deprecated. Please use '-lth ms_freq' instead.");
+	    $lth{ms_freq} = shift(@arguments);
+	    &RSAT::error::FatalError($lth{ms_freq}, "Invalid value for matching sequence frequency. Must be a Real number.")
+		unless (&IsReal($lth{ms_freq}));
 
 	    #### threshold on occurrences
-	} elsif (($ARGV[$a] eq "-tho") &&
-		 (&IsInteger($ARGV[$a+1]))) {
-	    $lth{occ} = $ARGV[$a+1];
+	} elsif ($arg eq "-tho") {
 	    &Warning("Option -tho is deprecated. Please use '-lth occ' instead.");
+	    $lth{occ} = shift(@arguments);
+	    &RSAT::error::FatalError($lth{occ}, "Invalid value for matching sequences. Must be an Integer mnuber.")
+		unless (&IsInteger($lth{occ}));
 
 	    #### threshold on occurrence probability
-	} elsif (($ARGV[$a] eq "-thpo") &&
-		 (&IsReal($ARGV[$a+1]))
-		 && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
-	    $uth{occ_P} = $ARGV[$a+1];
-	    $return{'proba'} = 1;
+	} elsif ($arg eq "-thpo") {
 	    &Warning("Option -thpo is deprecated. Please use '-uth occ_P' instead.");
+	    $uth{occ_P} = shift(@arguments);
+	    $return{'proba'} = 1;
+	    &RSAT::error::FatalError($lth{occ_P}, "Invalid value for Proba threshold. Must be a Real number between 0 and 1.")
+		unless ((&IsReal($lth{occ_P})) && ($lth{occ_P} >= 0) && ($lth{occ_P} <= 1));
 
 	    #### threshold on obs/exp ratio
-	} elsif (($ARGV[$a] =~ /^-thrat/i) &&
-		 (&IsReal($ARGV[$a+1]))
-		 && ($ARGV[$a+1] >= 0)) {
-	    $lth{ratio} = $ARGV[$a+1];
+	} elsif ($arg =~ /^-thrat/i) {
+	    &Warning("Option -thrat is deprecated. Please use '-lth ratio' instead.");
+	    $lth{ratio} = shift(@arguments);
 	    $return{'exp_freq'} = 1;
 	    $return{'ratio'} = 1;
+	    &RSAT::error::FatalError($lth{ratio}, "Invalid value for ratio threshold. Must be a positive Real number.")
+		unless ((&IsReal($lth{ratio})) && ($lth{ratio} >= 0));
 
 	    #### threshold on matching sequence probability
-	} elsif (($ARGV[$a] eq "-thpms") &&
-		 (&IsReal($ARGV[$a+1]))
-		 && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
-	    $uth{ms_P} = $ARGV[$a+1];
+	} elsif ($arg eq "-thpms") {
+	    &Warning("Option -thpms is deprecated. Please use '-uth ms_P' instead.");
+	    $uth{ms_P} = shift(@arguments);
 	    $return{'mseq'} = 1;
 	    $return{'proba'} = 1;
+	    &RSAT::error::FatalError($lth{ms_P}, "Invalid value for matching sequences proba threshold. Must be a Real number between 0 and 1.")
+		unless ((&IsReal($lth{ms_P})) && ($lth{ms_P} >= 0) && ($lth{ms_P} <= 1));
 
 
 	    #### threshold on occurrence significance
-	} elsif ($ARGV[$a] eq "-thosig") {
-	    &RSAT::error::FatalError( "Error : significance threshold should be a real number\n") unless (&IsReal($ARGV[$a+1]));
-	    $lth{occ_sig} = $ARGV[$a+1];
+	} elsif ($arg eq "-thosig") {
+	    &Warning("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
+	    $lth{occ_sig} = shift(@arguments);
 	    $return{'occ'} = 1;
 	    $return{'proba'} = 1;
-	    &Warning("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
+	    &RSAT::error::FatalError($lth{occ_sig}, "Invalid value for significance threshold. Should be a Real number.") 
+		unless (&IsReal($lth{occ_sig}));
 
 
 	    #### threshold on matching sequence significance
-	} elsif (($ARGV[$a] eq "-thmssig") && (&IsReal($ARGV[$a+1]))) {
-	    $lth{ms_sig} = $ARGV[$a+1];
+	} elsif ($arg eq "-thmssig") {
+	    &Warning("Option -thmssig is deprecated. Please use '-lth ms_sig' instead.");
+	    $lth{ms_sig} = shift(@arguments);
 	    $return{'mseq'} = 1;
 	    $return{'proba'} = 1;
+	    &RSAT::error::FatalError($lth{ms_sig}, "Invalid value for matching sequence significance threshold. Should be a Real number.") 
+		unless (&IsReal($lth{ms_sig}));
 
 
 	    ################################################################
 	    #### statistics to return
-	} elsif ($ARGV[$a] eq "-return") {
-	    chomp($ARGV[$a+1]);
-	    my @fields_to_return = split ",", $ARGV[$a+1];
+	} elsif ($arg eq "-return") {
+	    my $fields_to_return = shift(@arguments);
+	    chomp($fields_to_return);
+	    my @fields_to_return = split ",", $fields_to_return;
 	    foreach $field (@fields_to_return) {
 		if ($field eq "occ") {
 		    $return{'occ'} = 1;
 		    push(@output_fields, "occurrences");
-
+		    
 		} elsif ($field eq "rank") {
 		    $return{'rank'} = 1;
 		    push(@output_fields, "rank");
@@ -2232,7 +2275,7 @@ sub ReadArguments {
 
 	    ################################################################
 	    ## Return a table with one row per sequence and one column per pattern
-	} elsif ($ARGV[$a] eq "-table") {
+	} elsif ($arg eq "-table") {
 	    if ($return{'distrib'}) {
 		&RSAT::error::FatalError("The options -table and -distrib are mutually incompatible");
 	    }
@@ -2242,7 +2285,7 @@ sub ReadArguments {
 
 	    ################################################################
 	    ## Return a table with one row per pattern and one column per occurrence value
-	} elsif ($ARGV[$a] eq "-distrib") {
+	} elsif ($arg eq "-distrib") {
 	    if ($return{'table'}) {
 		&RSAT::error::FatalError("The options -table and -distrib are mutually incompatible");
 	    }
@@ -2251,29 +2294,29 @@ sub ReadArguments {
 
 	    ################################################################
 	    #### sorting
-	} elsif ($ARGV[$a] eq "-sort") {
+	} elsif ($arg eq "-sort") {
 	    $sort_result = 1;
 
 	    ################################################################
 	    #### Left-tail or two-tail significance test
-	} elsif ($ARGV[$a] eq "-under") {
+	} elsif ($arg eq "-under") {
 	    $tail = "left";
 
-	} elsif ($ARGV[$a] =~ /^\-two_tail/) {
+	} elsif ($arg =~ /^\-two_tail/) {
 	    $tail = "two";
 
 	    ################################################################
 	    ## Also count patterns not observed
-	} elsif ($ARGV[$a] eq "-zeroocc") {
+	} elsif ($arg eq "-zeroocc") {
 	    $zeroocc = 1;
 
 	    ################################################################
 	    ## Delegate word counting to the C program count-words
 	    ## (developed by Matthieu Defrance)
-	} elsif ($ARGV[$a] eq "-quick") {
+	} elsif ($arg eq "-quick") {
 	    $quick_count = 1;
 	    ## Same as -quick, but first check if the quick mode is compatible with selected options, and use the slow mode otherwise
-	} elsif ($ARGV[$a] eq "-quick_if_possible") {
+	} elsif ($arg eq "-quick_if_possible") {
 	    $quick_count_if_possible = 1;
 
 	}
@@ -2314,11 +2357,10 @@ USAGE
 	oligo-analysis -l length [-i inputfile]  [-format input_format]
 		[-o outputfile]
 		[-return occ,freq,ratio,mseq,proba,zscore,like,rank]
-		[-expfreq exp_freq_file | -calibN calibration_file | -a alphabet | -markov \#]
+		[-bfile background_model_file | -expfreq exp_freq_file | -calibN calibration_file | -a alphabet | -markov \#]
 		[-1str | -2str] [-seqtype dna|prot|other][-grouprc | -nogrouprc]
-		[-thpo \#][-thratio \#][-thms \#]
-		[-thpms \#][-thmssig \#] [-oneN | -onedeg][-v]
-		[-lth parameter \#][-uth parameter \#]
+		[-oneN | -onedeg][-v]
+		[-lth parameter value][-uth parameter value]
         oligo-analysis [-h | -help]
 
 ARGUMENTS
@@ -3021,7 +3063,9 @@ oligo-analysis options
 -v \#            	verbose level
 -l              	oligomer length
 -a a:t \# c:g \#  	alphabet utilization
--expfreq        	file with expected frequency table
+-expfreq        	file with expected frequency table for all oligos of the analyzed length
+-bgfile			background model file
+-bg_format		background format (default: oligo-analysis). Supported: oligo-analysis, meme, MotifSampler
 -calibN			file with calibration table based on random gene sets (N genes per set)
 -calib1			file with calibration table based on single sequence analysis
 -ncf			(deprecated, use '-bg intergenic' instead)
@@ -3051,16 +3095,6 @@ oligo-analysis options
 -quick_if_possible    evaluate whether oligos should be counted in quick or slow mode
 -pal		      only return reverse palindroms
 
-Deprecated options:
--tho            threshold on occurence number (obsolete)
--thpo           threshold on occurence probability (obsolete)
--thratio	threshold on observed/expected occurrence ratio (obsolete)
--thosig         threshold on occurence significance index (obsolete)
--thms           threshold on matching sequence number (obsolete)
--thmsf		threshold on frequency of matching sequences  (obsolete)
--thpms          threshold on matching sequence proba (obsolete)
--thmssig        threshold on matching sequence significance index (obsolete)
--a input       	use alphabet from input sequence (deprecated, use -bg input instead)
 End_of_help
     close HELP;
     exit(0);
@@ -3171,12 +3205,12 @@ sub alphabet {
   my ($seq_type, $zeroocc) = @_;
   my @alphabet = ();
   $seq_type = $seq_type || "DNA"; ## Default value if not defined
-  if ($zeroocc) {
-    if ($seq_type eq "DNA") {
+#  if ($zeroocc) {
+  if ($seq_type eq "DNA") {
       @alphabet = @dna_alphabet;
-    } elsif ($seq_type eq "protein") {
+  } elsif ($seq_type eq "protein") {
       @alphabet =  @protein_alphabet;
-    }
+#  }
   } else {
     @alphabet = sort(keys(%residue_occ));
   }
