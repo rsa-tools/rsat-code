@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.33 2011/05/17 23:49:56 amedina Exp $
+# $Id: dyad-analysis_form.cgi,v 1.34 2011/08/01 19:39:21 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -23,8 +23,8 @@ $query = new CGI;
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
 $default{taxon} = "Saccharomycetales";
-$default{freq_estimate} = "monads";
-#$default{freq_estimate} = "background";
+$default{bg_method} = "monads";
+#$default{bg_method} = "background";
 $default{background} = "upstream-noorf";
 $default{bg_level} = "organism";
 #$default{title} = "";
