@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.201 2011/08/01 00:32:35 jvanheld Exp $
+# $Id: matrix-scan,v 1.202 2011/08/01 19:37:46 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3734,9 +3734,6 @@ sub score_segment {
   $matrix->{scored}++;
   $sequence_scores->{$seq_id}->{scored}++;
 
-  #  $proba_M = $matrix->segment_proba($segment);
-  #  $proba_B = $bg_model->segment_proba($segment);
-
   ## Calculate segment weight and  normalized weight
   my $score;
   my $normw = $null;
@@ -3747,16 +3744,29 @@ sub score_segment {
   my $Wmin =$null;
   my $Wmax =$null;
 
-  my ($ref_residue_proba_M, $proba_M) = $matrix->segment_proba($segment);
-  my ($ref_residue_proba_B, $proba_B)= $bg_model->segment_proba($segment);
-  my @residue_proba_M = @$ref_residue_proba_M;
-  my @residue_proba_B = @$ref_residue_proba_B;
 
-  &RSAT::error::FatalError(join("\t", "matrix-scan::score_segment",
-				"Error in residue proba calculation ", $segment,
-				"\nsize of background array:", scalar(@residue_proba_B),
-				"\nsize of matrix array:", scalar(@residue_proba_M)))
-    if (scalar(@residue_proba_M) != scalar(@residue_proba_B));
+#  my $proba_M = $matrix->segment_proba($segment);
+#  my $proba_B = $bg_model->segment_proba($segment);
+
+  ## Compute the conditional probabilities for the sequence segment
+   my ($proba_M) = $matrix->segment_proba($segment, 1);
+   my ($proba_B) = $bg_model->segment_proba($segment, 1);
+#   my ($proba_M, $ref_residue_proba_M) = $matrix->segment_proba($segment, 1);
+#   my ($proba_B, $ref_residue_proba_B)= $bg_model->segment_proba($segment, 1);
+#   &RSAT::message::Debug("Segment", $segment,
+# 			"proba_M=".$proba_M,
+# 			"proba_B=".$proba_B, 
+# 		       ) if ($main::verbose >= 0);
+#   die "HELLO";
+
+#   ## Check that the two probabilities were computed from sequences of the same lengths.
+#   my @residue_proba_M = @$ref_residue_proba_M;
+#   my @residue_proba_B = @$ref_residue_proba_B;
+#   &RSAT::error::FatalError(join("\t", "matrix-scan::score_segment",
+# 				"Error in residue proba calculation ", $segment,
+# 				"\nsize of background array:", scalar(@residue_proba_B),
+# 				"\nsize of matrix array:", scalar(@residue_proba_M)))
+#     if (scalar(@residue_proba_M) != scalar(@residue_proba_B));
 
   my $segment_weight = log($proba_M/$proba_B)/$log_base;
   $score = sprintf("%.${decimals}f", $segment_weight);
