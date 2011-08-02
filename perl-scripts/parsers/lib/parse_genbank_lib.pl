@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.43 2011/06/11 12:28:30 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.44 2011/08/02 12:50:03 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -302,7 +302,7 @@ The option no_seq=>1 prevents from parsing the sequence.
     my $l = 0;
     while (my $line = &ReadNextLine()) {
       $l++;
-      &RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
 
       next unless ($line =~ /\S/);
       unless (($in_features) ||
