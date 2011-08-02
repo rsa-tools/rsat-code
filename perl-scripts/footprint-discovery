@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.64 2011/06/20 21:50:05 amedina Exp $
+# $Id: footprint-discovery,v 1.65 2011/08/02 12:49:43 rsat Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.65 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -241,6 +241,7 @@ package main;
 			all
 			bg_model
 			operons
+			regulons
 			query_seq
 			filter_dyads
 			orthologs
