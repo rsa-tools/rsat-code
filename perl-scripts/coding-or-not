@@ -62,6 +62,7 @@ $organism->LoadFeatures($annotation_table);
 if ($return{stats}) {
     open STATS, ">${out_dir}/${organism_name}_stats.tab";
 }
+
 if ($return{seq}) {
     open NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments.$seq_format" if ($return{'ncs'});
     open DIVERGENT_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_divergent.$seq_format" if ($return{'div'});
