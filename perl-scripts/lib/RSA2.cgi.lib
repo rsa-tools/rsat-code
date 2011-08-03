@@ -866,13 +866,13 @@ sub GetBackgroundModel {
 #  my $simple = shift;
 
 
+  ## Title to display above background choice options
   my $title = "RSAT pre-computed background model";
   if ($params{title}) {
-    $title=$params{title};
+    $title = $params{title};
   }
-
   if ($params{title_choose}) {
-    print ("<INPUT TYPE='radio' NAME='bg_choose' VALUE='rsat' $checked{'rsat'}>");
+    print ("<input type='radio' name='bg_choose' value='rsat' $checked{'rsat'}>");
     print "<b>$title</b><br/>";
   } else {
     print "<p><B>$title</B><br>";
@@ -880,6 +880,7 @@ sub GetBackgroundModel {
 
   print "<ul>";
 
+  ################################################################
   #### Markov order
   if ($params{markov}) {
     print ("<b><a href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
@@ -905,19 +906,19 @@ sub GetBackgroundModel {
 
   ## Display option to estimate BG model from input matrix
   if ($params{from_matrix}) {
-    print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='from_matrix' $checked{'from_matrix'}>","<b>Estimate from input matrix</b>");
+    print ("<br><input type='radio' NAME='bg_method' VALUE='from_matrix' $checked{'from_matrix'}>","<b>Estimate from input matrix</b>");
   }
 
   ## Display option to estimate BG model from input sequences
   if ($params{bg_input}) {
     #### Input sequences
-    print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bginput' $checked{'bginput'}>","<b>Estimate from input sequences</b>");
+    print ("<br><input type='radio' name='bg_method' value='bginput' $checked{'bginput'}>","<b>Estimate from input sequences</b>");
   }
 
   ## Display option to estimate BG model from sliding window
   if ($params{bg_window}) {
     ## Sliding window
-    print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>","<b>Sliding window</b> &nbsp;");
+    print ("<br><input type='radio' NAME='bg_method' VALUE='window' $checked{'window'}>","<b>Sliding window</b> &nbsp;");
     print $query->textfield(-name=>'window_size',
 			    -default=>$default{window_size},
 			    -size=>5);
@@ -928,10 +929,10 @@ sub GetBackgroundModel {
   if ($params{taxon}) {
     print "<br/>";
 #    print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-    print "<INPUT TYPE='radio' NAME='bg_taxo' VALUE='organism' $checked{organism}>";
+    print "<input type='radio' NAME='bg_taxo' VALUE='organism' $checked{organism}>";
     print &OrganismPopUpString();
     print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-    print "<INPUT TYPE='radio' NAME='bg_taxo' VALUE='taxon' $checked{taxon}>";
+    print "<input type='radio' NAME='bg_taxo' VALUE='taxon' $checked{taxon}>";
     &TaxonPopUp();
   } else {
     print "<br/>";
@@ -971,7 +972,7 @@ sub GetBackgroundModel {
   if ($params{title2}) {
     if ($params{title_choose}) {
 #      print "<p><b> OR <b></p>";
-      print ("<p/><INPUT TYPE='radio' NAME='bg_choose' VALUE='file_upload' $checked{'file_upload'}>");
+      print ("<p/><input type='radio' NAME='bg_choose' VALUE='file_upload' $checked{'file_upload'}>");
     }
     print "<B>$params{title2}</B><br>";
   }
@@ -1004,11 +1005,11 @@ sub GetBackgroundModel {
 ## file upload.
 sub DisplayBackgroundFileUpload {
     unless ($params{title_choose}) {
-      print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
+      print "<input type='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
     }
 
-    print "<a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
-    print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
+    print "Upload your own file for the background model", "&nbsp;"x5;
+    print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;<a href='help.convert-background-model.html'>Format</a></b>&nbsp;";
 
     #### bg format
     print $query->popup_menu(-name=>'bg_format',
@@ -1957,7 +1958,7 @@ sub PrintDyadBackgroundOptions {
 
   &PrintGenomeSubsetBgOptions();
 
-  print ( "<INPUT TYPE='radio' NAME='bg_method' VALUE='monads' $checked{monads}>","<b>Monad frequencies from the input sequence</b>");
+  print ( "<input type='radio' NAME='bg_method' VALUE='monads' $checked{monads}>","<b>Monad frequencies from the input sequence</b>");
 
   print "<BR>\n";
 

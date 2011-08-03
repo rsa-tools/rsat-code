@@ -63,19 +63,21 @@ if ($return{stats}) {
     open STATS, ">${out_dir}/${organism_name}_stats.tab";
 }
 
-if ($return{seq}) {
-    open NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments.$seq_format" if ($return{'ncs'});
-    open DIVERGENT_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_divergent.$seq_format" if ($return{'div'});
-    open CONVERGENT_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_convergent.$seq_format" if ($return{'conv'});
-    open TANDEM_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_tandem.$seq_format" if ($return{'tandem'});
-    open C_SEQ, ">${out_dir}/${organism_name}_gene_segments.$seq_format" if ($return{'cs'});
-    open GENE_SEQ, ">${out_dir}/${organism_name}_gene_sequences.$seq_format" if ($return{'gene'});
+if ($return{'seq'}) {
+  &RSAT::message::TimeWarn("Opening output streams for sequence files (format: ${seq_format})") if ($main::verbose >= 3);
+  open NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments.$seq_format" if ($return{'ncs'});
+  open DIVERGENT_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_divergent.$seq_format" if ($return{'div'});
+  open CONVERGENT_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_convergent.$seq_format" if ($return{'conv'});
+  open TANDEM_NC_SEQ, ">${out_dir}/${organism_name}_intergenic_segments_tandem.$seq_format" if ($return{'tandem'});
+  open C_SEQ, ">${out_dir}/${organism_name}_gene_segments.$seq_format" if ($return{'cs'});
+  open GENE_SEQ, ">${out_dir}/${organism_name}_gene_sequences.$seq_format" if ($return{'gene'});
 }
 
 
 
 my @pos_field_header = qw(segm_type_nb contig left right length);
 if ($return{pos}) {
+  &RSAT::message::TimeWarn("Opening output streams for segment positions") if ($main::verbose >= 3);
     open C_POSITIONS, ">${out_dir}/${organism_name}_gene_segments.pos";
     print C_POSITIONS ";", join("\t", @pos_field_header, "feat_nb", "features"),  "\n";
     open NC_POSITIONS, ">${out_dir}/${organism_name}_intergenic_segments.pos";
@@ -122,7 +124,7 @@ foreach my $ctg (sort keys %contig) {
 
     ################################################################
     ### Return gene sequences
-    if (($return{'gene'}) && ($return{seq})) {
+    if (($return{'gene'}) && ($return{'seq'})) {
 	&RSAT::message::Info("Printing gene sequences") if ($main::verbose >= 2);
 	foreach $gene (@sorted_genes) {
 	    my $id = $gene->get_attribute("id");
@@ -185,7 +187,7 @@ foreach my $ctg (sort keys %contig) {
 	print NC_POSITIONS join ("\t", @pos_fields), "\n" if ($return{pos});
 	&RSAT::message::Debug(@pos_fields) if ($main::verbose >= 3);
 
-	if ($return{seq}) {
+	if ($return{'seq'}) {
 	    $seq_id = join ("_", @pos_fields);
 	    $current_seq = $sequence->get_sequence($nc_start,$nc_end);
 	    &PrintNextSequence(NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id) if ($return{'ncs'});
@@ -254,7 +256,7 @@ foreach my $ctg (sort keys %contig) {
 	print C_POSITIONS join ("\t", @pos_fields), "\n"  if ($return{pos});
 
 	## Export the current gene segment sequence
-	if (($return{'cs'}) && ($return{seq})) {
+	if (($return{'cs'}) && ($return{'seq'})) {
 	    $seq_id = join("_", @pos_fields);
 	    $current_seq = $sequence->get_sequence($gene_segment_left,$gene_segment_right);
 	    &PrintNextSequence(C_SEQ, $seq_format,$line_width,$current_seq,$seq_id);	    
@@ -283,7 +285,7 @@ foreach my $ctg (sort keys %contig) {
 			  );
 	    print NC_POSITIONS join("\t", @pos_fields), "\n" if ($return{pos});
 	    
-	    if (($return{'ncs'}) && ($return{seq})) {
+	    if (($return{'ncs'}) && ($return{'seq'})) {
 		$seq_id = join ("_", @pos_fields);
 		$current_seq = $sequence->get_sequence($nc_start,$nc_end);
 		&PrintNextSequence(NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id);
@@ -350,14 +352,14 @@ if ($return{stats}) {
 }
 
 ## Close output files
-close NC_SEQ if (($return{'ncs'}) && ($return{seq}));
-close DIVERGENT_NC_SEQ if (($return{'div'}) && ($return{seq}));
-close CONVERGENT_NC_SEQ if (($return{'conv'}) && ($return{seq}));
-close TANDEM_NC_SEQ if (($return{'tandem'}) && ($return{seq}));
+close NC_SEQ if (($return{'ncs'}) && ($return{'seq'}));
+close DIVERGENT_NC_SEQ if (($return{'div'}) && ($return{'seq'}));
+close CONVERGENT_NC_SEQ if (($return{'conv'}) && ($return{'seq'}));
+close TANDEM_NC_SEQ if (($return{'tandem'}) && ($return{'seq'}));
 close NC_POSITIONS if ($return{pos});;
-close C_SEQ  if (($return{'cs'}) && ($return{seq}));
+close C_SEQ  if (($return{'cs'}) && ($return{'seq'}));
 close C_POSITIONS if ($return{pos});;
-close GENE_SEQ if (($return{'gene'}) && ($return{seq}));
+close GENE_SEQ if (($return{'gene'}) && ($return{'seq'}));
 
 
 ################################################################
