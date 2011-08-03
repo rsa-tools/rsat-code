@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.100 2011/06/20 22:24:00 amedina Exp $
+# $Id: footprint-scan,v 1.101 2011/08/03 21:08:44 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.101 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -751,6 +751,7 @@ package main;
 	$batch=1;
 	$batch_cmd="";
 	my $cmd = "$SCRIPTS/footprint-scan ";
+	$cmd .= " -v "  $main::verbose;
 	$cmd .= " -m  ".$matrix_file;
 	$cmd .=" -matrix_format ".$matrix_format;
 	$cmd .= " -tf ".$tf;
