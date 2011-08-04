@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.202 2011/08/01 19:37:46 jvanheld Exp $
+# $Id: matrix-scan,v 1.203 2011/08/04 23:52:09 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -376,6 +376,8 @@ package main;
   local %crer_seed_pval = ();
   local %crer_seed_hits = ();
   local @crer_sum_hits = ();
+  local @crer_detail_fields;
+
   local %nb_of_binom_tests = ();
   local $sum_binom_tests = 0;
   ## By default, I use a single "recyclable"  feature object to avoid creating one object per match when this is not required
@@ -447,6 +449,7 @@ package main;
 				    weight_limits=>1, ## composition is atgc of the background model (useful for bg_window)
 				    crer0=>1, ## Cis Regulatory element Enriched Region => CRER) with the first version of the algorithm
 				    crer=>1, ## Cis Regulatory element Enriched Region => CRER)
+				    crer_details=>1, ## Table with detailed information about the CRERs
 
 				    distrib=>1,	## Dataset-wise distribution of scores
 				    occ_proba=>1, ## Probability of the number of occurrences o predicted sites
@@ -472,6 +475,7 @@ package main;
 				  'bg_residues'=>1,
 				  'weight_limits'=>1,
 				  'crer'=>1,
+				  'crer_details'=>1,
 				  # 'occ_proba'=>1,
 				  'matrix'=>1,
 				  'freq_matrix'=>1,
@@ -609,6 +613,31 @@ package main;
       &RSAT::error::FatalError("Computation of p_score requires a pval threshold defined with option -uth pval");
     }
 
+  }
+
+  ## CRER details
+  if ($return_fields{crer_details}) {
+    &RSAT::error::FatalError("Option -return crer_details requires -return crer") unless ($return_fields{crer});
+    &RSAT::error::FatalError("Option -return crer_details requires to specify an output file (option -o).") unless ($main::outfile{output});
+    @crer_detail_fields= qw(seq_name
+			    ft_type
+			    feature_name
+			    strand
+			    start
+			    end
+			    crer_size
+			    positions
+			    hit_sum
+			    discarded
+			    density
+			    crer_pval
+			    crer_sig
+			    pval_prod
+			    weight_sum
+			    crer_size
+			   );
+    push @crer_detail_fields, "normw_sum" if ($return_fields{normw});
+    push @crer_detail_fields, "rank" if ($return_fields{rank});
   }
 
   ## calculation of CRER requires a threshold on Pval, LogPval or sig
@@ -804,8 +833,18 @@ package main;
   }
 
   ################################################################
-  ### open output stream
+  ## Open output streams
   $main::out = &OpenOutputFile($main::outfile{output});
+
+  if ($return_fields{crer_details}) {
+    $main::outfile{crer_details} = $main::outfile{output};
+    $main::outfile{crer_details} =~ s/.tab$//;
+    $main::outfile{crer_details} =~ s/.ft$//;
+    $main::outfile{crer_details} .= "_crer_details.tab";
+    $main::CRER_DETAILS = &OpenOutputFile($main::outfile{crer_details});
+    &RSAT::message::Info("crer_details", $main::outfile{crer_details}) if ($main::verbose >= 3);
+    print $main::CRER_DETAILS "#", join ("\t", @crer_detail_fields), "\n";
+  }
 
   ################################################################
   ## Background model specification
@@ -1154,7 +1193,7 @@ package main;
 			  "crer_pval",
 			  "hit_pval_product",
 			  "weight_sum",
-			  "crer_length"
+			  "crer_size"
 			 );
     print $out "\tnormw_sum" if ($return_fields{normw});
     print $out "\n";
@@ -1441,7 +1480,7 @@ package main;
 	}
 
 	#############################
-	## CRER search
+	## CRER search (old implementation, maintained only for backward compatibility)
 	## This is done inside the loop on the position ($pos).
 	if ($return_fields{crer0}) {
 
@@ -1565,6 +1604,7 @@ package main;
 	next if ((defined($lth{rank})) && ($rank < $lth{rank}));
 	#next if ((defined($lth{rank})) && (&check_matrix_thresholds("rank", $rank);
 	&print_crer($crer);
+	undef($crer);
 	last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
       }
     }
@@ -1576,8 +1616,7 @@ package main;
     ## Compute CRERs in an alternative way, from the list of sorted
     ## matches, using from the algorithm developed
     ## by Julien Van Braekel (Master thesis in bioinformatics at ULB,
-    ## June 2011), adapted by Jacques van Helden.
-
+    ## June 2011), adapted and upgraded by Jacques van Helden.
 
     if ($return_fields{crer}) {
       &RSAT::message::TimeWarn("Detecting CRERs in seq", $sequence_number, $seq_id) if ($main::verbose >= 3);
@@ -1635,7 +1674,7 @@ package main;
 	  my $last_match_start = $start_match_start;
 	  my $discarded_sites = 0;
 
-	  &RSAT::message::Debug("Starting CRER extension", 
+	  &RSAT::message::Debug("Starting CRER extension",
 				$seq_id,
 				"i=".$i,
 				"start_match_start=".$start_match_start,
@@ -1679,16 +1718,19 @@ package main;
 
 	    ## Check thresholds on site distance
 	    if ($site_distance < $lth{crer_site_distance}) {
-	      &RSAT::message::Debug("Skipping overlapping site", "j=".$j,
+	      &RSAT::message::Debug("Skipping overlapping site", $seq_id, 
+				    "i=".$i, "j=".$j,
 				    "start=".$end_match_start,
 				    "last_match_start:".$last_match_start,
-				    "site_distance:".$site_distance, "< ".$lth{crer_site_distance}
+				    "site_distance:".$site_distance, "< ".$lth{crer_site_distance},
+				    "discarded", $discarded_sites,
 				   ) if ($main::verbose >= 5);
 	      $discarded_sites++;
 	      $j++;
 	      next;
 	    } elsif ((defined($uth{crer_site_distance})) && ($site_distance > $uth{crer_site_distance})) {
-	      &RSAT::message::Debug("Stopping CRER extension at site", $j,
+	      &RSAT::message::Debug("Stopping CRER extension at site", $seq_id,
+				    "i=".$i, "j=".$j,
 				    "start=".$end_match_start,
 				    "last_match_start:".$last_match_start,
 				    "site_distance:".$site_distance, "> ".$uth{crer_site_distance}
@@ -1766,7 +1808,8 @@ package main;
 	    ## for the last site.
 	    my $n = $crer_nb_site_positions - (($crer_site_nb -1) *($lth{crer_site_distance} -1)); ## Max number of sites in the CRER (assuming overlap distance is 1, as a first simplification)
 
-	    &RSAT::message::Debug("Computing CRER binomial pval", 
+	    &RSAT::message::Debug("Computing CRER binomial pval",
+				  $seq_id, "i=".$i, "j=".$j,
 				  "p=".$hit_proba_any_matrix,
 				  "crer_nb_site_positions=".$crer_nb_site_positions,
 				  "n=".$n,
@@ -1817,7 +1860,9 @@ package main;
 	    $crer->force_attribute('crer_pval', $crer_pval);
 	    $crer->force_attribute('pval_prod',$pval_prod);
 	    $crer->force_attribute('weight_sum',$weight_sum);
-	    $crer->force_attribute('crer_length',$crer_size);
+	    $crer->force_attribute('crer_size',$crer_size);
+	    $crer->force_attribute('discarded',$discarded_sites);
+	    $crer->force_attribute('positions',$crer_nb_site_positions);
 	    $crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
 	    $crer->force_attribute('density',$crer_density);
 	    $crer->force_attribute('description',
@@ -1837,13 +1882,11 @@ package main;
 
 	    ## Print the CRER
 	    &print_crer($crer);
+	    &print_crer_details($crer) if ($return_fields{crer_details});
 	    #	  &print_match($crer);
+	    undef($crer);
 
 	    $j++;
-	    #	  $end_match = $matches_sorted_per_position[$j];
-	    #	  last if ($j > $#matches_sorted_per_position);
-	    #	  $end_match_start = $end_match->get_attribute("start");
-	    #	  $crer_nb_site_positions = $end_match_start - $start_match_start + 1;
 	  }
 	}
       } else {
@@ -1920,7 +1963,8 @@ package main;
 
   }
 
-  #### QUICK SCAN #####
+  ################################################################
+  ## QUICK SCAN
   if (($return_fields{sites}) && ($quick_scan)) {
     ## approximate the number of scored segments for eval calculation
     my $total_scored = 0;
@@ -2317,6 +2361,7 @@ package main;
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
   close $main::out if ($main::outfile{output});
+  close $main::CRER_DETAILS if ($main::outfile{crer_details});
 
   exit(0);
 }
@@ -2741,8 +2786,6 @@ isolated N in the sequences.
       &RSAT::error::FatalError("Invalid value for the -n option. supported: ".$supported_n_treatment)
 	unless ($supported_n_treatment{$main::n_treatment});
 
-      ## Output file
-
 =pod
 
 =item	B<-o outputfile>
@@ -2755,7 +2798,6 @@ allows to use the command within a pipe.
     } elsif ($arg eq "-o") {
       $main::outfile{output} = shift(@arguments);
 
-      ## Pseudo weight
 
 =pod
 
@@ -3214,19 +3256,6 @@ for scanning.
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	}
       }
-
-      #	    ## crer_max
-      #=pod
-      #
-      #=item B<-crer_max #>
-      #
-      #Maximal size for a CRER. Default is 100. To be used with -return crer.
-      #
-      #=cut
-      #	} elsif ($arg eq "-crer_max") {
-      #	    $main::crer_seed_init = shift (@arguments);;
-      #	    &RSAT::error::FatalError("CRER max size should be a positive integer") unless (&IsNatural($main::crer_seed_init));
-
 
       ## Sort score distribution by decreasing sig value
 
@@ -3756,7 +3785,7 @@ sub score_segment {
 #   &RSAT::message::Debug("Segment", $segment,
 # 			"proba_M=".$proba_M,
 # 			"proba_B=".$proba_B, 
-# 		       ) if ($main::verbose >= 0);
+# 		       ) if ($main::verbose >= 5);
 #   die "HELLO";
 
 #   ## Check that the two probabilities were computed from sequences of the same lengths.
@@ -4262,7 +4291,7 @@ Calculate the score of the CRER
       $crer->force_attribute('crer_pval', $crer_pval);
       $crer->force_attribute('pval_prod',$pval_prod);
       $crer->force_attribute('weight_sum',$weight_sum);
-      $crer->force_attribute('crer_length',$end_pos - $start_pos + 1);
+      $crer->force_attribute('crer_size',$end_pos - $start_pos + 1);
       $crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
 
       # If the hits have to be ranked, store them rather than printing them immediately
@@ -4270,6 +4299,7 @@ Calculate the score of the CRER
 	push @{$crer_per_seq{$seq_id}} , $crer;
       } else {
 	&print_crer($crer);
+	undef($crer);
       }
 
     }
@@ -4287,7 +4317,6 @@ Calculate the score of the CRER
     }
   }
 
-################################################################
 
 =pod
 
@@ -4316,7 +4345,7 @@ sub print_crer {
 			     $crer->get_attribute('pval_prod')
 			    ),
 		     $crer->get_attribute('weight_sum'),
-		     $crer->get_attribute('crer_length')
+		     $crer->get_attribute('crer_size')
 		    );
     if ($return_fields{normw}) {
 	print $out "\t", $crer->get_attribute('normw_sum');
@@ -4324,8 +4353,39 @@ sub print_crer {
     print $out "\t", $crer->get_attribute('rank') if ($return_fields{rank});
 
     print $out "\n";
+}
 
-    undef $crer;
+=pod
+
+=item B<print_crer_details>
+
+Print the CRER in tab-delimited format, with detailed attribtues.
+
+=cut
+
+sub print_crer_details {
+    my ($crer) = @_;
+    my $null = 0;
+    my @crer_fields = ();
+
+    %field_format = ("discarded"=>"%d",
+		    "density"=>"%.5f",
+		    "crer_pval"=>"%.2e",
+		    "pval_prod"=>"%.2e",
+		    "crer_sig"=>"%.2f",
+		    );
+
+    foreach my $field (@crer_detail_fields) {
+      my $value = $crer->get_attribute($field);
+      if (defined($field_format{$field})) {
+	$value = sprintf($field_format{$field}, $value);
+      }
+      push @crer_fields,  $value;
+    }
+
+    print $main::CRER_DETAILS join ("\t",
+				    @crer_fields
+				   ), "\n";
 }
 
 # ################################################################
@@ -4997,10 +5057,6 @@ significant overlap.
 
 
 
-
-################################################################
-####################### IN DEVELOPMENT #########################
-################################################################
 
 
 # ################################################################
