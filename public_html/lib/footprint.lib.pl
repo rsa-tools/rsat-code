@@ -1304,7 +1304,7 @@ sub OccurrenceSig {
     } else {
       &CheckDependency("occ_sig", "purged");
     }
-    my $cmd = "matrix-scan";
+    my $cmd = "$SCRIPTS/matrix-scan";
     $cmd .= $ms_parameters;
     $cmd .= " -quick ";
     #$cmd .= " -m ".$matrix_file;
@@ -1520,7 +1520,7 @@ sub OrthoScan {
   if ($task{scan}) {
     &RSAT::message::TimeWarn("Scannig sequences to detect sites", $outfile{sites}) if ($main::verbose >= 2);
     &CheckDependency("scan", "seq");
-    my $cmd = "matrix-scan";
+    my $cmd = "$SCRIPTS/matrix-scan";
     $cmd .= $ms_parameters;
     $cmd .= " -quick ";
     $cmd .= " -return limits,sites,rank";
@@ -1544,7 +1544,7 @@ sub OrthoMap {
 
     &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 2);
     &CheckDependency("map", "sites");
-    my $cmd = "feature-map -i ".$outfile{sites};
+    my $cmd = "$SCRIPTS/feature-map -i ".$outfile{sites};
     $cmd .= " -scalebar -legend";
     $cmd .= " -mlen 400 -scorethick -minscore 0 -mspacing 2 -mapthick 16 -minfthick 1";
     $cmd .= " -title '".$title."'";
