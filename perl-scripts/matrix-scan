@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.204 2011/08/05 00:56:37 jvanheld Exp $
+# $Id: matrix-scan,v 1.205 2011/08/05 00:58:12 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1887,8 +1887,8 @@ package main;
 	    $crer->force_attribute('strand',$strand_binon);
 	    $crer->force_attribute('start', $start_match_start);
 	    $crer->force_attribute('end', $end_match_end);
-	    $crer->force_attribute('site_nb', $crer_site_nb);
-	    $crer->force_attribute('crer_sig', $crer_sig);	
+	    $crer->force_attribute('crer_site_nb', $crer_site_nb);
+	    $crer->force_attribute('crer_sig', $crer_sig);
 	    $crer->force_attribute('score', $crer_sig); ## Redundant, but useful for export with &print_match();
 	    $crer->force_attribute('crer_pval', $crer_pval);
 	    $crer->force_attribute('pval_prod',$pval_prod);
