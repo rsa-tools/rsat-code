@@ -70,8 +70,8 @@ sub auto_id {
 ## Initialize the object
 sub init {
     my ($self, %args) = @_;
-    my $class = ref($self);    
-    
+    my $class = ref($self);
+
     ### increment class counters
     $self->_incr_count;
     foreach $super (@{$class."::ISA"}) {
