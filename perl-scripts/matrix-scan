@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.203 2011/08/04 23:52:09 jvanheld Exp $
+# $Id: matrix-scan,v 1.204 2011/08/05 00:56:37 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -381,7 +381,7 @@ package main;
   local %nb_of_binom_tests = ();
   local $sum_binom_tests = 0;
   ## By default, I use a single "recyclable"  feature object to avoid creating one object per match when this is not required
-  local $crer = new RSAT::feature();
+#  local $crer = new RSAT::feature();
   local %crer_per_seq = ();
   local $warnings ="";
   local $crer_ids = 0;
@@ -619,25 +619,6 @@ package main;
   if ($return_fields{crer_details}) {
     &RSAT::error::FatalError("Option -return crer_details requires -return crer") unless ($return_fields{crer});
     &RSAT::error::FatalError("Option -return crer_details requires to specify an output file (option -o).") unless ($main::outfile{output});
-    @crer_detail_fields= qw(seq_name
-			    ft_type
-			    feature_name
-			    strand
-			    start
-			    end
-			    crer_size
-			    positions
-			    hit_sum
-			    discarded
-			    density
-			    crer_pval
-			    crer_sig
-			    pval_prod
-			    weight_sum
-			    crer_size
-			   );
-    push @crer_detail_fields, "normw_sum" if ($return_fields{normw});
-    push @crer_detail_fields, "rank" if ($return_fields{rank});
   }
 
   ## calculation of CRER requires a threshold on Pval, LogPval or sig
@@ -836,15 +817,6 @@ package main;
   ## Open output streams
   $main::out = &OpenOutputFile($main::outfile{output});
 
-  if ($return_fields{crer_details}) {
-    $main::outfile{crer_details} = $main::outfile{output};
-    $main::outfile{crer_details} =~ s/.tab$//;
-    $main::outfile{crer_details} =~ s/.ft$//;
-    $main::outfile{crer_details} .= "_crer_details.tab";
-    $main::CRER_DETAILS = &OpenOutputFile($main::outfile{crer_details});
-    &RSAT::message::Info("crer_details", $main::outfile{crer_details}) if ($main::verbose >= 3);
-    print $main::CRER_DETAILS "#", join ("\t", @crer_detail_fields), "\n";
-  }
 
   ################################################################
   ## Background model specification
@@ -1112,6 +1084,57 @@ package main;
   }
 
   ################################################################
+  ## Define fields of the detailed CRER table
+  if ($return_fields{crer_details}) {
+    @crer_detail_fields= qw(seq_name
+			    ft_type
+			    feature_name
+			    strand
+			    start
+			    end
+			    crer_site_nb
+			    crer_sig
+ 			    crer_pval
+			    pval_prod
+			    weight_sum
+			    crer_size
+			    positions
+			    discarded
+			    density
+			   );
+    push @crer_detail_fields, "normw_sum" if ($return_fields{normw});
+    push @crer_detail_fields, "rank" if ($return_fields{rank});
+    %field_format = ("discarded"=>"%d",
+		    "density"=>"%.5f",
+		    "crer_pval"=>"%.2e",
+		    "pval_prod"=>"%.2e",
+		    "crer_sig"=>"%.2f",
+		    );
+
+    ################################################################
+    ## Add hits per matrix as CRER attributes
+    foreach my $matrix (@matrices) {
+      my $matrix_name = $matrix->get_attribute("name");
+      push @crer_detail_fields, $matrix_name."_hits";
+      $field_format{$matrix_name."_hits"} = "%d";
+    }
+    push @crer_detail_fields,  "hit_sum";
+
+    ################################################################
+    ## Open output stream for CRER details
+    $main::outfile{crer_details} = $main::outfile{output};
+    $main::outfile{crer_details} =~ s/.tab$//;
+    $main::outfile{crer_details} =~ s/.ft$//;
+    $main::outfile{crer_details} .= "_crer_details.tab";
+    $main::CRER_DETAILS = &OpenOutputFile($main::outfile{crer_details});
+    &RSAT::message::Info("crer_details", $main::outfile{crer_details}) if ($main::verbose >= 3);
+    print $main::CRER_DETAILS "#", join ("\t", @crer_detail_fields), "\n";
+  }
+
+#  &RSAT::message::Debug("\@crer_detail_fields", join "; ", @crer_detail_fields) if ($main::verbose >= 5);
+
+
+  ################################################################
   ## Calculate pval distribution
   if (($calc_fields{pval})&&($bg_method ne "window")) {
     &RSAT::message::TimeWarn("Computing matrix P-value distributions.") if ($main::verbose >= 2);
@@ -1126,6 +1149,7 @@ package main;
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
+
 
   ################################################################
   ## Print header
@@ -1669,10 +1693,13 @@ package main;
 
 	## Scan the vector of sorted matches per position.
 	foreach my $i (0..$#matches_sorted_per_position) {
+	  my %crer_hits_per_matrix = ();
 	  my $start_match = $matches_sorted_per_position[$i];
 	  my $start_match_start = $start_match->get_attribute("start");
 	  my $last_match_start = $start_match_start;
 	  my $discarded_sites = 0;
+	  my $matrix_name = $start_match->get_attribute('feature_name');
+	  $crer_hits_per_matrix{$matrix_name."_hits"}++;
 
 	  &RSAT::message::Debug("Starting CRER extension",
 				$seq_id,
@@ -1692,7 +1719,6 @@ package main;
 	  while ($j <= $#matches_sorted_per_position) {
 	    my $end_match = $matches_sorted_per_position[$j];
 	    my $end_match_start = $end_match->get_attribute("start");
-
 
 	    ################################################################
 	    ## Compute CRER size. No threshold checking yet, because we
@@ -1739,6 +1765,13 @@ package main;
 	    } else {
 	      ## Update the end match
 	      $last_match_start = $end_match_start;
+
+	      ## Update the details
+	      if ($return_fields{crer_details}) {
+		my $matrix_name = $end_match->get_attribute('feature_name');
+		$crer_hits_per_matrix{$matrix_name."_hits"}++;
+#		&RSAT::message::Debug("AFTER crer match", $seq_id, "i=".$i, "j=".$j, $matrix_name, $crer_hits_per_matrix{$matrix_name."_hits"}) if ($main::verbose >= 5);
+	      }
 	    }
 
 	    ################################################################
@@ -1854,9 +1887,9 @@ package main;
 	    $crer->force_attribute('strand',$strand_binon);
 	    $crer->force_attribute('start', $start_match_start);
 	    $crer->force_attribute('end', $end_match_end);
-	    $crer->force_attribute('hit_sum', $crer_site_nb);
-	    $crer->force_attribute('score', $crer_sig);
-	    $crer->force_attribute('crer_sig', $crer_sig);
+	    $crer->force_attribute('site_nb', $crer_site_nb);
+	    $crer->force_attribute('crer_sig', $crer_sig);	
+	    $crer->force_attribute('score', $crer_sig); ## Redundant, but useful for export with &print_match();
 	    $crer->force_attribute('crer_pval', $crer_pval);
 	    $crer->force_attribute('pval_prod',$pval_prod);
 	    $crer->force_attribute('weight_sum',$weight_sum);
@@ -1879,6 +1912,18 @@ package main;
 					#				      "sig:".sprintf("%.3g", $crer_sig),
 				       ));
 
+	    ## Set hits per matrix for the current crer
+	    my $hit_sum = 0;
+	    foreach my $matrix (@matrices) {
+	      my $matrix_name = $matrix->get_attribute("name");
+	      if (defined($crer_hits_per_matrix{$matrix_name."_hits"})) {
+		$crer->set_attribute($matrix_name."_hits", $crer_hits_per_matrix{$matrix_name."_hits"});
+		$hit_sum +=  $crer_hits_per_matrix{$matrix_name."_hits"};
+	      } else {
+		$crer->set_attribute($matrix_name."_hits", 0);
+	      }
+	    }
+	    $crer->force_attribute('hit_sum', $hit_sum);
 
 	    ## Print the CRER
 	    &print_crer($crer);
@@ -3786,7 +3831,6 @@ sub score_segment {
 # 			"proba_M=".$proba_M,
 # 			"proba_B=".$proba_B, 
 # 		       ) if ($main::verbose >= 5);
-#   die "HELLO";
 
 #   ## Check that the two probabilities were computed from sequences of the same lengths.
 #   my @residue_proba_M = @$ref_residue_proba_M;
@@ -4368,24 +4412,22 @@ sub print_crer_details {
     my $null = 0;
     my @crer_fields = ();
 
-    %field_format = ("discarded"=>"%d",
-		    "density"=>"%.5f",
-		    "crer_pval"=>"%.2e",
-		    "pval_prod"=>"%.2e",
-		    "crer_sig"=>"%.2f",
-		    );
-
     foreach my $field (@crer_detail_fields) {
-      my $value = $crer->get_attribute($field);
+      my $value;
+      if (defined($crer->get_attribute($field))) {
+	$value = $crer->get_attribute($field);
+      } else {
+	$value = $null;
+      }
+
+      ## Format the value
       if (defined($field_format{$field})) {
 	$value = sprintf($field_format{$field}, $value);
       }
       push @crer_fields,  $value;
     }
 
-    print $main::CRER_DETAILS join ("\t",
-				    @crer_fields
-				   ), "\n";
+    print $main::CRER_DETAILS join ("\t", @crer_fields), "\n";
 }
 
 # ################################################################
