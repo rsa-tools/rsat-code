@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-two-sets,v 1.2 2011/07/26 12:21:12 rsat Exp $
+# $Id: compare-two-sets,v 1.3 2011/08/18 08:43:54 rsat Exp $
 #
 ############################################################
 
@@ -73,7 +73,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -261,9 +261,7 @@ sub compare_lists {
     }
   }
   foreach my $relem (keys %reference) {
-    if (defined $query{$relem}) {
-      push @common, $relem;
-    } else {
+    if (!defined $query{$relem}) {
       push @r_only, $relem;
     }      
   }
