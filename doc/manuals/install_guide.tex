@@ -300,18 +300,19 @@ can be installed with the command \program{cpan}.
 
 \section{Before installing Perl modules: install the GD library}
 
-The Perl module GD.pm requires the prior installation of the GD
-library. 
+The Perl module \program{GD.pm} requires prior installation of the
+\program{GD} library.
 
 \begin{itemize}
 
 \item On \emph{Linux} systems, this library can be installed with the
-  package manager of your distribution (e.g. \command{apt-get}).
-
+  package manager of your distribution (e.g. \texttt{apt-get},
+  \texttt{yast}, \ldots).
 
 \item On \emph{Mac OSX} systems, the installation of the GD library is
   quite tricky. The bet is to follow the installation protocol of the
-  libgd Web site: \url{http://www.libgd.org/DOC_INSTALL_OSX}.
+  libgd Web site \\
+  (\url{http://www.libgd.org/DOC_INSTALL_OSX}).
 
 \end{itemize}
 
@@ -323,17 +324,34 @@ administrator rights on the computer. If you don't have the root
 password, please consult your system administrator.
 
 \begin{lstlisting}
+## Acquire the system administrator rights
+sudo bash
+
+## Define the RSAT environment variable.
+## You must replace [PARENT_PATH] by the full directory of the folder
+## where rsa-tools directory has been installed
+export RSAT=[PARENT_PATH]/rsa-tools
+
 cd ${RSAT}
 
 ## Display the list of Perl modules that will be installed
-make -f makefiles/install_RSAT.mk list_perl_modules
+make -f makefiles/install_rsat.mk list_perl_modules
 
 ## Install the Perl modules
-make -f makefiles/install_RSAT.mk install_perl_modules
+make -f makefiles/install_rsat.mk install_perl_modules
 \end{lstlisting}
 %% closing $
 
-\section{Utilization of the Perl modules in \RSAT}
+Beware, \program{cpan} will frequently ask you to confirm the
+installation steps. you should thus check the CPAN process and answer
+"yes" at each prompt.
+
+In case some modules would not be properly installed with the above
+commands, you can try installing them manually (the list of required
+modules is listed in the next section).
+
+\section{List of Perl modules required for full functionalities of
+  \RSAT}
 
 For information, we describe hereafter the list of modules that will
 be installed with this command, and the reason why it is useful to
@@ -347,13 +365,25 @@ section.
 \item \program{GD.pm} Interface to Gd Graphics Library. Used by
   \program{XYgraph} and \program{feature-map}. 
 
-\item \program{PostScript::Simple} Produce PostScript files from Perl. Used by
-  \program{feature-map}.
+\item \program{PostScript::Simple} Produce PostScript files from
+  Perl. Used by \program{feature-map}.
 
-\item \program{Statistics::Distributions} is used to calculate some probability
-  distribution functions. In particular, it is used by the program
-  \program{position-analysis} to calculate the P-value of the
-  chi2. 
+\item \program{Util::Properties} is required to load property files,
+  which are used to specify the site-specific configuration of your
+  \RSAT server. Property filesa are also useful to write your own perl
+  clients for the Web service interface to \RSAT (RSATWS).
+
+\item \program{SOAP::WSDL}, \program{Module::Build::Compat} and
+  \program{Util::Properties} (already mentioned above) are required
+  for the Web services. \RSAT Web services is a convenient interface
+  that permits to write Perl scripts to run \RSAT queries on a remote
+  server. Some Perl scripts of the \RSAT stand-alone commands are
+  using SOAP to connect remote servers
+  (e.g. \program{supported-organisms}, \program{download-organism}).
+
+\item \program{Statistics::Distributions} is used to calculate some
+  probability distribution functions. In particular, it is used by the
+  program \program{position-analysis} to calculate the chi2 P-value.
 
   \textbf{Notes} 
   \begin{itemize}
@@ -362,22 +392,18 @@ section.
     1e-15. \program{Statistics::Distributions} can compute P-values
     down to 1e-65.
   \item For the discrete functions (binomial , Poisson,
-    hypergeometric) \RSAT relies on a custom library (
-    \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision
+    hypergeometric) \RSAT relies on a custom library
+    (\$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision
     of 1e-300.
   \end{itemize}
 
-\item \program{File::Spec}, \program{POSIX} and \program{Data::Dumper}
-  are required for some functions of \program{matrix-scan}.
-
-\item \program{Util::Properties} is required to load property files, which are
-  used to specify the site-specific configuration of your \RSAT
-  server. Property filesa are also useful to write your own perl
-  clients for the Web service interface to \RSAT (RSATWS).
 
 \item \program{Class::Std::Fast} and \program{Storable} are required
   to bring persistence to data structures like organisms. This library
   can be easyly installed via CPAN.
+
+\item \program{File::Spec}, \program{POSIX} and \program{Data::Dumper}
+  are required for some functions of \program{matrix-scan}.
 
 \item \program{XML::LibXML} is required for parsing and writing XML and uses
   the XML::Parser::Expat library. It is necessary for some RSAT
@@ -387,111 +413,13 @@ section.
   required by the program \program{retrieve-ensembl-seq} in order to
   access the ENSEMBL database.
 
-\item \program{SOAP::WSDL}, \program{Module::Build::Compat} and
-  \program{Util::Properties} (already mentioned above) are required
-  for the Web services. \RSAT Web services is a convenient interface
-  that permits to write Perl scripts to run \RSAT queries on a remote
-  server.
-
 \item \program{Bio::Perl} is required for the Ensembl API, which in
   turn is required for handling genomes installed on the ENSEMBL
   database (\url{http://www.ensembl.org/}).
 
 \end{enumerate}
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Compile C/C++ programs
-\section{Compiling C programs in \RSAT}
-
-Some of the tools available in \RSAT (\program{info-gibbs},
-\program{matrix-scan-quick}, \program{count-words}) are written in the
-\program{C} language. The distribution only contains the sources of
-these tools, because the binaries are operating system-dependent. The
-programs can be compiled in a very easy way.
-
-\begin{lstlisting}
-cd ${RSAT}
-make -f makefiles/init_RSAT.mk compile_all
-\end{lstlisting}
-
-This will compile and install the following programs in the directory
-\file{\$RSAT/bin}. 
-
-The installation directory can be changed by redefining the BIN
-variable. For instance, if you have the system adminstrator
-privileges, you could install the compiled programs in the standard
-directory for compiled packages (\file{/usr/local/bin}).
-
-\begin{lstlisting}
-cd ${RSAT}
-make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
-\end{lstlisting}
-
-
-\begin{itemize}
-\item \program{info-gibbs}: a gibbs sampling algorithm based on
-  optimization of the the information content of the motif
-  \cite{Defrance:2009}.
-
-\item \program{count-words}: an efficient algorithm for counting word
-  occurrences in DNA sequences. This program is much faster than
-  \program{oligo-analysis}, but it only returns the occurrences and
-  frequencies, whereas oligo-analysis returns over-representation
-  statistics and supports many additional
-  options. \program{count-words} is routinely used to compute word
-  frequencies in large genome sequences, for calibrating the Markov
-  models used by \program{oligo-analysis}.
-
-\item \program{matrix-scan-quick}: an efficient algorithm for scanning
-  sequences with a position-specific scoring matrix. As its name
-  indicates, \program{matrix-scan-quick} is \emph{much} faster than
-  the Perl script \program{matrix-scan}, but presents reduced
-  functionalities (only computes the weight, returns either a list of
-  sites or the weight score distribution).
-\end{itemize}
-
-
-\section{Compiling the Stubb for Web services}
-
-If you want to use the Web services, you need to compile the Stubb in
-order to synchronize the Perl modules of your client with the service
-specification of the server.
-
-
-\begin{lstlisting}
-## Change directory to the sample Perl Web services clients
-cd $RSAT/ws_clients/perl_clients
-
-## Compile the stubb.
-## Your computer will open a connection to the Web services server 
-## and collect the WSDL specifications of the supported services.
-make stubb
-
-## Test the connection to the Web services
-make test
-\end{lstlisting}
-
-%$
-
-\section{Importing and installing programs from third parties}
-
-In addition to the binaries incorporated in the suite itself, \RSAT
-uses some programs developed by third parties for specific
-tasks. Those programs can be downloaded and installed automatically
-using the makefile \file{install\_rsat.mk}.
-
-Before doing this, you must make sure that the program \program{wget}
-(For Linux: \url{http://www.gnu.org/software/wget/}; for Mac OSX
-\url{http://download.cnet.com/Wget/3000-18506_4-128268.html}).
-
-\begin{lstlisting}
-cd $RSAT
-make -f makefiles/install_rsat.mk install_ext_apps
-\end{lstlisting}
-%$
-
-\section{Libraries required to support EnsEMBL genomes}
+\section{Additional Perl modules required to support EnsEMBL genomes}
 \label{sect:ensembl_libraries}
 
 Since 2009, a series of \RSAT programs support a direct access to the
@@ -510,25 +438,6 @@ MySQL client on your machine.
 
 The first requirement is the \program{BioPerl} module, which has in
 principle been installed in Chapter~\ref{chap:perl_modules}).
-
-% To obtain BioPerl, you first need to install the program \program{git}
-% (\url{http://git-scm.com/}). You can then execute the following
-% instructions.
-
-% \begin{lstlisting}
-% ## For this example, we install Bioperl and EnsEMBL libraries 
-% ## in $RSAT/lib, but you can install it in some other place
-% mkdir -p $RSAT/lib
-% cd $RSAT/lib
-
-
-% ## Easy installation using GIT, protocol from http://www.bioperl.org/wiki/Using_Git
-% git clone git://github.com/bioperl/bioperl-live.git
-
-% ## To test the version of BioPerl that you are running, use:
-% perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
-% \end{lstlisting}
-% %%$
 
 To obtain EnsEMBL \footnote{Full instructions at
   \url{http://useast.ensembl.org/info/docs/api/api_cvs.html}}.
@@ -617,6 +526,82 @@ Detailed information about the EnsEMBL libraries can be obtained on
 the EnsEMBL web site
 (\footnote{\url{http://www.ensembl.org/info/using/api/api\_installation.html}}).
 
+\section{Compiling the Perl Stubb for Web services}
+
+If you want to use the Web services, you need to compile the Stubb in
+order to synchronize the Perl modules of your client with the service
+specification of the server.
+
+
+\begin{lstlisting}
+## Change directory to the sample Perl Web services clients
+cd $RSAT/ws_clients/perl_clients
+
+## Compile the stubb.
+## Your computer will open a connection to the Web services server 
+## and collect the WSDL specifications of the supported services.
+make stubb
+
+## Test the connection to the Web services
+make test
+\end{lstlisting}
+
+%$
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Compile C/C++ programs
+\chapter{Compiling C programs in \RSAT}
+
+Some of the tools available in \RSAT (\program{info-gibbs},
+\program{matrix-scan-quick}, \program{count-words}) are written in the
+\program{C} language. The distribution only contains the sources of
+these tools, because the binaries are operating system-dependent. The
+programs can be compiled in a very easy way.
+
+\begin{lstlisting}
+cd ${RSAT}
+make -f makefiles/init_RSAT.mk compile_all
+\end{lstlisting}
+
+This will compile and install the following programs in the directory
+\file{\$RSAT/bin}. 
+
+The installation directory can be changed by redefining the BIN
+variable. For instance, if you have the system adminstrator
+privileges, you could install the compiled programs in the standard
+directory for compiled packages (\file{/usr/local/bin}).
+
+\begin{lstlisting}
+cd ${RSAT}
+make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
+\end{lstlisting}
+
+
+\begin{itemize}
+\item \program{info-gibbs}: a gibbs sampling algorithm based on
+  optimization of the the information content of the motif
+  \cite{Defrance:2009}.
+
+\item \program{count-words}: an efficient algorithm for counting word
+  occurrences in DNA sequences. This program is much faster than
+  \program{oligo-analysis}, but it only returns the occurrences and
+  frequencies, whereas oligo-analysis returns over-representation
+  statistics and supports many additional
+  options. \program{count-words} is routinely used to compute word
+  frequencies in large genome sequences, for calibrating the Markov
+  models used by \program{oligo-analysis}.
+
+\item \program{matrix-scan-quick}: an efficient algorithm for scanning
+  sequences with a position-specific scoring matrix. As its name
+  indicates, \program{matrix-scan-quick} is \emph{much} faster than
+  the Perl script \program{matrix-scan}, but presents reduced
+  functionalities (only computes the weight, returns either a list of
+  sites or the weight score distribution).
+\end{itemize}
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -642,50 +627,76 @@ the EnsEMBL web site
 
 \chapter{Installing third-party programs}
 
-\section{complementary programs for the analysis of regulatory
+\section{Complementary programs for the analysis of regulatory
   sequences}
 
 The \RSAT distribution only contains the programs developed by the
 \RSAT \ team. 
 
-A few additional programs, developed by third parties, can be
-integrated in the package. All third-party programs may be loacated in
-the directory \emph{bin} directory of the \RSAT distribution. In order
-to obtain these programs, please download them from their original
-site.
+A few additional programs, developed by third parties, can optionally
+be integrated in the package. All third-party programs may be loacated
+in the directory \emph{bin} directory of the \RSAT distribution.  
 
-In particular, we recommend to install the following programs.
+In order to add functionalities to \RSAT, install some or all of these
+programs and include their binaries path rsa-tools/bin. If you are not
+familiar with the installation of unix programs, ask assistance to
+your system administrator.
+
+Some of those can be downloaded and installed automatically using the
+makefile \file{install\_rsat.mk}. Before doing this, you must make
+sure that the program \program{wget} (this program is supported on
+Linux \urlref{http://www.gnu.org/software/wget/} and Mac OSX
+\urlref{http://download.cnet.com/Wget/3000-18506_4-128268.html}
+systems).
+
+You can then run the following commands to install some of the
+third-party programs that are complementary to \RSAT.
+
+\begin{lstlisting}
+cd $RSAT
+make -f makefiles/install_rsat.mk install_ext_apps
+\end{lstlisting}
+%$
+
+Some other third-party programs will require a manual installation (in
+particular, \program{vmatch} and \program{mkvtree}).
+
 
 \begin{description}
-\item[\program{vmatch}]: developed by Stefan Kurtz, is used used by the
-program \program{purge-sequences}, for the detection of sequence repeats.
+\item[\program{vmatch}]: developed by Stefan Kurtz, is used used by
+  the program \program{purge-sequences}, to mask redundant sequences
+  that bias motif discovery statistics.
 
-\item[\program{seqlogo}]:  developed by Thomas D. Schneider, is used
-used by the program \program{convert-matrix} to generate logos. It can
-be downloaded from $<$http://weblogo.berkeley.edu/$>$. \program{seqlogo} is
-the command-line version of \program{WebLogo}.
+\item[\program{seqlogo}]: developed by Thomas D. Schneider, is used
+  used by the program \program{convert-matrix} to generate
+  logos. \program{seqlogo} is the command-line version of
+  \program{WebLogo}\urlref{http://weblogo.berkeley.edu/}.
 
-Download the source code archive and uncompress it. Copy the following
- files to the directory \emph{bin} of your \RSAT distribution:
-\program{seqlogo, logo.pm, template.pm} and \program{template.eps}.
+  Download the source code archive and uncompress it. Copy the
+  following files to the directory \emph{bin} of your \RSAT
+  distribution: \file{seqlogo}, \file{logo.pm}, \file{template.pm} and
+  \file{template.eps}.
 
-\program{seqlogo} requires a recent version of \program{gs}
-(ghostscript\urlref{http://www.ghostscript.com/}) to create PNG and
-PDF output, and \program{ImageMagic's
-  convert}\urlref{http://www.imagemagick.org/} to create GIFs.
+\item \program{seqlogo} requires a recent version of \program{gs}
+  (ghostscript\urlref{http://www.ghostscript.com/}) to create PNG and
+  PDF output, and \program{ImageMagic's
+    convert}\urlref{http://www.imagemagick.org/} to create GIFs.
 
-\item[\program{patser}]: developed by Jerry Hertz, is used for
-  matrix-based pattern matching.
+\item[matrix-based pattern discovery]: several third-party pattern
+  discovery programs can be optionally called from some \RSAT task
+  managers (e.g. \program{multiple-family-analysis},
+  \program{peak-motifs}). 
+  \begin{itemize}
+  \item \program{meme} (Tim Bailey)
+  \item \program{consensus} (Jerry Hertz)
+  \item \program{MotifSampler} (Gert Thijs)
+  \item \program{gibbs} (Andrew Neuwald)
+  \end{itemize}
 
-\item[matrix-based pattern discovery]: several other pattern discovery
-  programs have been embedded in the \RSAT program
-  \program{multiple-family-analysis}:
-\program{consensus} (Jerry Hertz),
-\program{meme} (Tim Bailey),
-\program{MotifSampler} (Gert Thijs),
-\program{gibbs} (Andrew Neuwald).
-
-
+  Their installation is not properly required for \RSAT functioning,
+  but it may be convenient to install them in order to compare the
+  results retured by alternative motif discovery approaches on the
+  same data sets.
 \end{description}
 
 
@@ -709,14 +720,7 @@ PDF output, and \program{ImageMagic's
   which are complementary to the \RSAT package.}
 \end{table}
 
-We particularly recommend the installation of \program{mkvtree} and
-\program{vmatch} (Stefan Kurtz), because these programs are used by
-the program purge-seq to discard redundant sequence fragments.
 
-In order to add functionalities to \RSAT, install some or all of these
-programs and include their binaries path rsa-tools/bin. If you are not
-familiar with the installation of unix programs, ask assistance to
-your system administrator.
 
 
 \section{Recommended programs for the Network Analysis Tools (NeAT)}
