@@ -62,6 +62,8 @@ The answer should be something like \result{/sbin/bash} or
   be found at root of your account.
 
 \begin{lstlisting}
+## Note: replace [PARENT_PATH] by the full path of the directory in
+## which the rsa-tools folder has been created
 setenv RSAT [PARENT_PATH]/rsa-tools
 set PATH=($RSAT/bin $PATH)
 set PATH=($RSAT/perl-scripts $PATH)
@@ -70,10 +72,15 @@ set CLASSPATH=($RSAT/java/lib/NeAT_javatools.jar=${CLASSPATH})
 \end{lstlisting}
 %% closing $
 
-\item \emph{If your shell is bash}, you should copy the following lines in a
-file named \file{.bash\_profile} at the root of your account.
+\item \emph{If your shell is bash}, you should copy the following
+  lines in a file named \file{.bash\_profile} at the root of your
+  account (depending on the Unix distribution, the bash custom
+  parameters may be declered in a file named \file{.bash\_profile} or)
+  \file{.bashrc}, in case of doubt ask your system administrator).
 
 \begin{lstlisting}
+## Note: replace [PARENT_PATH] by the full path of the directory in
+## which the rsa-tools folder has been created
 export RSAT=[PARENT_PATH]/rsa-tools
 export PATH=${RSAT}/bin:${PATH}
 export PATH=${RSAT}/perl-scripts:${PATH}
