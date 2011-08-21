@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.135 2011/08/21 11:46:46 jvanheld Exp $
+# $Id: convert-matrix,v 1.136 2011/08/21 12:17:10 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -239,7 +239,7 @@ if ($infile{prior}) {
   %prior = $bg_model->get_attribute("suffix_proba");
   foreach my $key (sort keys %prior) {
     my $residue = lc($key);
-    &RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 2);
+    &RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 3);
   }
 }
 
