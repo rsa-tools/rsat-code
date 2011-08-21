@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.133 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: convert-matrix,v 1.134 2011/08/21 11:46:02 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -37,6 +37,7 @@ $perm = 0;
 %args = (); ## Arguments for matrix reading
 %force_attribute = ();
 $top_matrices = "none";
+$skip_matrices = 0;
 $multiply = 1;
 
 local %infile = ();
@@ -303,13 +304,24 @@ if (scalar(@matrix_files >= 1)) {
   }
 }
 
-
-
 ## Check that there is at least one input matrix
 if (scalar(@matrices) < 1) {
   &RSAT::message::Warning("Input file contained not a single matrix");
 } else {
   &RSAT::message::TimeWarn("Read ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
+}
+
+
+## Skip matrix if requested
+if ($skip_matrices > 0) {
+  if (scalar(@matrices) > $skip_matrices) {
+    &RSAT::message::Warning("Skipping ".$skip_matrices." top matrices among ".scalar(@matrices)) if ($main::verbose >= 0);
+    @matrices = @matrices[$skip_matrices..$#matrices];
+    &RSAT::message::Info(scalar(@matrices), "matrices left after skipping") if ($main::verbose >= 0);
+  } else {
+    &RSAT::message::Warning("No matrix left after skipping ".$skip_matrices." top matrices among ".scalar(@matrices));
+    exit();
+  }
 }
 
 ################################################################
@@ -1195,8 +1207,14 @@ sub ReadArguments {
 	    ### Maximal number of matrices to return
 	} elsif ($ARGV[$a] eq "-top") {
 	    $top_matrices = $ARGV[$a+1];
-	    &FatalError(join("\t", $top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")) 
+	    &FatalError($top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")
 		unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
+
+	    ### Number of top matrices to skip
+	} elsif ($ARGV[$a] eq "-skip") {
+	    $skip_matrices = $ARGV[$a+1];
+	    &FatalError($skip_matrices, "Invalid value for the option -skip. Should be a strictly positive Natural number.")
+		unless ((&IsNatural($skip_matrices)) && ($skip_matrices >= 1));
 
 	    ## Sort matrices
 	} elsif ($ARGV[$a] eq "-sort") {
