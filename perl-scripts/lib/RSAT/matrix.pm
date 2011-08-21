@@ -288,7 +288,7 @@ sub init {
     ## initialize the matrix
     my $nrow = $self->nrow();
     my $ncol = $self->ncol();
-    warn "Initializing the matrix $nrow rows, $ncol columns\n" if ($main::verbose >= 5);
+    &RSAT::message::Info("Initializing the matrix $nrow rows, $ncol columns") if ($main::verbose >= 5);
     foreach my $r (1..$nrow) {
 	foreach my $c (1..$ncol) {
 	    $self->setCell($r,$c,0);
@@ -322,7 +322,7 @@ Empty the matrix
 =cut
 sub reset {
     my ($self) = @_;
-    warn "Resetting the matrix to empty\n" if ($main::verbose >= 5);
+    &RSAT::message::Info("Resetting the matrix to empty") if ($main::verbose >= 5);
     undef(@{$self->{alphabet}});
     undef(@{$self->{table}});
     $self->force_attribute("nrow", 0);
@@ -370,7 +370,7 @@ sub getPrior() {
     %prior = $self->get_attribute("prior");
   } else {
     if (scalar(keys %prior) <= 0) {
-      &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 4);
+      &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
       my @alphabet = $self->getAlphabet();
       my $alphabet_size = scalar(@alphabet);
       foreach my $letter (@alphabet) {
@@ -396,7 +396,7 @@ where keys are residues and values prior probabilities.
 sub setPrior {
     my ($self, %prior) = @_;
 
-    &RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 4);
+    &RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 5);
     $self->set_array_attribute("prior", %prior);
     $self->force_attribute("prior_specified", 1);
 
@@ -410,9 +410,9 @@ sub setPrior {
     ## Report the new prior
 #    if ($main::verbose >= 10) {
 #	%check = $self->getPrior();
-#	&RSAT::message::Info (join("\t", "&RSAT::matrix::setPrior", join(" ", %prior))) if ($main::verbose >= 4);
+#	&RSAT::message::Info (join("\t", "&RSAT::matrix::setPrior", join(" ", %prior))) if ($main::verbose >= 5);
 #	foreach my $letter (sort keys %check) {
-#	    warn join("\t", "; setPrior", $letter, $prior{$letter}), "\n";
+#	    &RSAT::message::Debug("setPrior", $letter, $prior{$letter});
 #	}
 #    }
 }
@@ -485,7 +485,7 @@ sub setInfoLogBase {
 
 #     } elsif ($some_defined == 0) {
 #       ## Prior proba not defined -> set to equiprobable
-#       &RSAT::message::Warning("Setting prior probabilities to equiprobable") if ($main::verbose >= 4);
+#       &RSAT::message::Warning("Setting prior probabilities to equiprobable") if ($main::verbose >= 5);
 #       my $equi_prior = 1/scalar(@alphabet);
 #       foreach my $residue (@alphabet) {
 # 	$prior{$residue} = $equi_prior;
@@ -512,12 +512,12 @@ sub addRow {
     ## Update number of rows
     my $nrow = $self->nrow()+1;
 	$self->force_attribute("nrow", $nrow);
-    warn ("Matrix: updating number of rows\t", $self->nrow(), "\n") if ($main::verbose >= 5);
+    &RSAT::message::Debug("Matrix: updating number of rows", $self->nrow()) if ($main::verbose >= 5);
 
     ## update number of colmuns
     my $row_size = scalar(@new_row);
     if ($row_size >= $self->ncol()) {
-	warn ("Matrix: updating number of columns\t", $row_size, "\n") if ($main::verbose >= 5);
+	&RSAT::message::Debug("Matrix: updating number of columns", $row_size) if ($main::verbose >= 5);
 	$self->force_attribute("ncol", scalar(@new_row));
     }
 
@@ -1630,7 +1630,7 @@ sub calcInformation {
 
     ## Caching
     if (($self->get_attribute("information_calculated")) && !($force)) {
-	&RSAT::message::Warning("Information already calculated before") if ($main::verbose >= 4);
+	&RSAT::message::Warning("Information already calculated before") if ($main::verbose >= 5);
 	return;
     }
 
@@ -1756,7 +1756,7 @@ sub calcLogoMatrix {
 
     ## Caching
     if (($self->get_attribute("logo_matrix_calculated")) && !($force)) {
-	&RSAT::message::Warning("Logo matrix already calculated before") if ($main::verbose >= 4);
+	&RSAT::message::Warning("Logo matrix already calculated before") if ($main::verbose >= 5);
 	return;
     }
 
@@ -1976,7 +1976,7 @@ sub calcFrequencies {
     ## Get or calculate prior residue probabilities
     my %prior = $self->getPrior();
     if (scalar(keys %prior) <= 0) {
-	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 4);
+	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
@@ -2073,11 +2073,10 @@ sub calcProbabilities {
     ## Get or calculate prior residue probabilities
     my %prior = $self->getPrior();
     if (scalar(keys %prior) <= 0) {
-	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 4);
+	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
-#	    warn join "\t", "|", $letter, $prior{$letter}, "\n" if ($main::verbose >= 10);
 	}
     }
 
@@ -2100,7 +2099,6 @@ sub calcProbabilities {
 	    my $occ = $matrix[$c][$r];
 	    $col_sum += $occ;
 	    $frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
-#	    warn join "\t", "freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum, "\n" if ($main::verbose >= 10);
 	}
 	for my $r (0..($nrow-1)) {
 	    if ($col_sum eq 0) {
@@ -2109,12 +2107,12 @@ sub calcProbabilities {
 		$crude_frequencies[$c][$r] = $matrix[$c][$r]/$col_sum;
 	    }
 	    $frequencies[$c][$r] /= ($col_sum + $pseudo);
-	    warn join( "\t", "freq", $r, $c, $pseudo,
-		       $col_sum,
-		       "a:".$matrix[$c][$r],
-		       "f:".$crude_frequencies[$c][$r],
-		       "f':".$frequencies[$c][$r]), "\n"
-			   if ($main::verbose >= 10);
+# 	    &RSAT::message::Debug("freq", $r, $c, $pseudo,
+# 				  $col_sum,
+# 				  "a:".$matrix[$c][$r],
+# 				  "f:".$crude_frequencies[$c][$r],
+# 				  "f':".$frequencies[$c][$r]))
+# 				    if ($main::verbose >= 10);
 	}
     }
 
@@ -2141,7 +2139,7 @@ sub calcConsensus {
 
     ## Caching
     if (($self->get_attribute("consensus_calculated")) && !($force)) {
-	warn "Consensus already calculated before\n" if ($main::verbose >= 4);
+	&RSAT::message::Warning("Consensus already calculated before") if ($main::verbose >= 5);
 	return;
     }
 
@@ -2672,8 +2670,8 @@ sub col_sum {
     my ($nrow, $ncol, @table) = @_;
 #    die join "\t", $nrow, $ncol, join( " ", @{$matrix[0]});
 
-    warn join("\t", "; Calculating sum per column for a table",$nrow, $ncol),"\n"
-	if ($main::verbose > 3);
+    &RSAT::message::Info("Calculating sum per column for a table",$nrow, $ncol)
+      if ($main::verbose > 5);
 
     my @col_sum = ();
     for my $c (0..($ncol-1)) {
@@ -2702,8 +2700,8 @@ Return a vector of the same length as the table width.
 sub col_max {
     my ($nrow, $ncol, @table) = @_;
 
-    warn join("\t", "; Calculating max per column",$nrow, $ncol),"\n"
-	if ($main::verbose > 3);
+    &RSAT::message::Info("Calculating max per column",$nrow, $ncol)
+	if ($main::verbose >= 5);
 
     my @col_max = ();
     for my $c (0..($ncol-1)) {
@@ -2732,9 +2730,8 @@ Return a vector of the same length as the table width.
 sub col_min {
     my ($nrow, $ncol, @table) = @_;
 
-    warn join("\t", "; Calculating min per column",$nrow, $ncol),"\n"
-	if ($main::verbose > 3);
-
+    &RSAT::message::Info("Calculating min per column",$nrow, $ncol)
+      if ($main::verbose > 5);
     my @col_min = ();
     for my $c (0..($ncol-1)) {
 	my @col_values = ();
@@ -2979,8 +2976,8 @@ sub proba_range {
     $self->set_parameter("min(P(S|M))", $proba_min);
     $self->set_parameter("max(P(S|M))", $proba_max);
     $self->set_parameter("proba_range", $proba_max-$proba_min);
-    &RSAT::message::Info(join("\t", "min(P(S|M))", $proba_min)) if ($main::verbose >= 4);
-    &RSAT::message::Info(join("\t", "max(P(S|M))", $proba_max)) if ($main::verbose >= 4);
+    &RSAT::message::Info(join("\t", "min(P(S|M))", $proba_min)) if ($main::verbose >= 5);
+    &RSAT::message::Info(join("\t", "max(P(S|M))", $proba_max)) if ($main::verbose >= 5);
     return ($proba_min, $proba_max);
 }
 
@@ -3037,7 +3034,7 @@ sub weight_range {
   $self->set_parameter("Wmin", $Wmin);
   $self->set_parameter("Wmax", $Wmax);
   $self->set_parameter("Wrange", $Wrange);
-  if ($main::verbose >= 4) {
+  if ($main::verbose >= 5) {
     &RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
     &RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
     &RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
@@ -3081,7 +3078,7 @@ sub weight_range {
 #     $self->set_parameter("Wmin", $tmp_Wmin);
 #     $self->set_parameter("Wmax", $tmp_Wmax);
 #     $self->set_parameter("Wrange", $tmp_Wrange);
-#     if ($main::verbose >= 4) {
+#     if ($main::verbose >= 5) {
 # 	&RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
 # 	&RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
 # 	&RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
@@ -3363,7 +3360,7 @@ for my $score (keys %score_proba) {
 #    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", ($c+1)."/".$ncol,
 #			     "prev scores: ", scalar(keys(%score_proba)),
 #			     "current scores:", scalar(keys(%current_score_proba)),
-#			    ) if (($main::verbose >= 4) || ($decimals >= 3));
+#			    ) if (($main::verbose >= 4) || ($decimals >= 4));
  #   %score_proba = %current_score_proba;
  # }
 

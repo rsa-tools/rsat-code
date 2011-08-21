@@ -165,11 +165,11 @@ sub readFromFile {
       ## Check that each matrix contains at least one row and one col
       if ($matrix->nrow() > 0) {
 	if ($matrix->ncol() > 0) {
-	  &RSAT::message::Info("Matrix read", 
+	  &RSAT::message::Info("Matrix read",
 			       "nrow = ".$matrix->nrow(),
 			       "ncol = ".$matrix->ncol(),
 			       "prior : ".join (" ", $matrix->getPrior()),
-			      ) if ($main::verbose >= 4);
+			      ) if ($main::verbose >= 5);
 
 	  ## Count number of sites per matrix
 	  my $site_nb = scalar($matrix->get_attribute("sequences"));
@@ -233,7 +233,7 @@ sub InitializeEquiPriors {
       #	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
     }
     $matrix->setPrior(%tmp_prior);
-    if ($main::verbose >= 4) {
+    if ($main::verbose >= 5) {
       &RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
       &RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
       &RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
@@ -326,7 +326,7 @@ sub _readFromTRANSFACFile {
       ## Start a new matrix (one TRANSFAC file contains several matrices)
     } elsif (/^AC\s+(\S+)/) {
       my $accession = $1;
-      &RSAT::message::Info("TRANSFAC accession number", $accession) if ($main::verbose >= 4);
+      &RSAT::message::Info("TRANSFAC accession number", $accession) if ($main::verbose >= 5);
       $current_matrix_nb++;
       $transfac_consensus = "";
       $matrix = new RSAT::matrix();
@@ -354,7 +354,7 @@ sub _readFromTRANSFACFile {
       ## Alphabet is parsed from the TRANSFAC matrix header (P0 row)
       my @alphabet = split /\s+/, $header;
       $matrix->setAlphabet_lc(@alphabet);
-      &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 4);
+      &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 5);
 
       ## Check that prior has been specified
       unless ($matrix->get_attribute("prior_specified")) {
@@ -380,7 +380,7 @@ sub _readFromTRANSFACFile {
 	    $matrix->push_attribute("site_ids", $site_id);
 	  }
 	}
-	&RSAT::message::Info("TRANSFAC site", $site_id, $site_sequence) if ($main::verbose >= 4);
+	&RSAT::message::Info("TRANSFAC site", $site_id, $site_sequence) if ($main::verbose >= 5);
 #      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 10);
 
       ## Count column of the matrix file (row in TRANSFAC format)
@@ -416,7 +416,7 @@ sub _readFromTRANSFACFile {
 	&RSAT::message::Info("TRANSFAC",
 			     "AC -> id", $matrix->get_attribute("id"),
 			     "ID -> name", $matrix->get_attribute("name")
-			    ) if ($main::verbose >= 4);
+			    ) if ($main::verbose >= 5);
 
 	## Bound factor
       } elsif (/^BF\s+/) {
@@ -427,14 +427,14 @@ sub _readFromTRANSFACFile {
 	  $factor_id = $1;
 	  $matrix->push_attribute("binding_factor", $factor_id); #'
 	}
-	&RSAT::message::Info("TRANSFAC binding factor", $factor_id, $factor_description) if ($main::verbose >= 4);
+	&RSAT::message::Info("TRANSFAC binding factor", $factor_id, $factor_description) if ($main::verbose >= 5);
 	$matrix->set_parameter("binding_factors", join(";", $matrix->get_attribute("binding_factor")));
-	&RSAT::message::Info("TRANSFAC binding factors", $matrix->get_attribute("binding_factors")) if ($main::verbose >= 4);
+	&RSAT::message::Info("TRANSFAC binding factors", $matrix->get_attribute("binding_factors")) if ($main::verbose >= 5);
 
 	## Short factor description
       } elsif (/^SD\s+/) {
 	$matrix->push_attribute("short_foactor_description", $'); #'
-	&RSAT::message::Info("TRANSFAC short factor desc", $factor_id, $factor_description) if ($main::verbose >= 4);
+	&RSAT::message::Info("TRANSFAC short factor desc", $factor_id, $factor_description) if ($main::verbose >= 5);
 
 	## Statistical basis
       } elsif (/^BA\s+/) {
@@ -452,7 +452,7 @@ sub _readFromTRANSFACFile {
       } elsif (/^(\S\S)\s+(.*)/) {
 	my $field = $1;
 	my $value = $2;
-	&RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 4);
+	&RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 5);
 
       } else {
 	&RSAT::message::Warning("Skipped invalid row", $_);
@@ -542,7 +542,7 @@ sub _readFromSTAMPFile {
 
       ## STAMP uses the description field as accession number
       $comment_nb = 0;
-      &RSAT::message::Info("STAMP accession", $accession) if ($main::verbose >= 4);
+      &RSAT::message::Info("STAMP accession", $accession) if ($main::verbose >= 5);
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
@@ -589,7 +589,7 @@ sub _readFromSTAMPFile {
       ## STAMP has no header to specify the alphabet. Columns are supposed to contain A,C,G,T respectively.
       my @alphabet = qw(A C G T);
       $matrix->setAlphabet_lc(@alphabet);
-      &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 4);
+      &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 5);
 
       ## Equiprobable alphabet
       ## Check that prior has been specified
@@ -615,7 +615,7 @@ sub _readFromSTAMPFile {
 	    $matrix->push_attribute("site_ids", $site_id);
 	  }
 	}
-	&RSAT::message::Info("TRANSFAC site", $site_id, $site_sequence) if ($main::verbose >= 4);
+	&RSAT::message::Info("TRANSFAC site", $site_id, $site_sequence) if ($main::verbose >= 5);
 #      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 10);
 
       ## Count column of the matrix file (row in TRANSFAC format)
@@ -637,7 +637,7 @@ sub _readFromSTAMPFile {
       } elsif (/^(\S\S)\s+(.*)/) {
 	my $field = $1;
 	my $value = $2;
-	&RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 4);
+	&RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 5);
 
 
       } else {
@@ -786,7 +786,7 @@ sub _readFromInfoGibbsFile {
 	$id = $id_prefix."_".$current_matrix_nb;
 	$matrix->set_attribute("AC", $id);
 	$matrix->set_attribute("id", $id);
-	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 4);
+	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 5);
 	next;
       }
 
@@ -825,7 +825,7 @@ sub _readFromInfoGibbsFile {
 # 	  #	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
 # 	}
 # 	$matrix->setPrior(%tmp_prior);
-# 	if ($main::verbose >= 4) {
+# 	if ($main::verbose >= 5) {
 # 	  &RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
 # 	  &RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
 # 	  &RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
@@ -888,12 +888,12 @@ sub _readFromOldInfoGibbsFile {
     if (/^VV\s+/) {
       ## InfoGibbs version
       $version = $';		# '
-      &RSAT::message::Info("InfoGibbs version", $version) if ($main::verbose >= 4);
+      &RSAT::message::Info("InfoGibbs version", $version) if ($main::verbose >= 5);
 
     } elsif (/^CM\s+/) {
       ## InfoGibbs command
       $command = $';		# '
-      &RSAT::message::Info("InfoGibbs command", $command) if ($main::verbose >= 4);
+      &RSAT::message::Info("InfoGibbs command", $command) if ($main::verbose >= 5);
 
     } elsif (/^PR\s+/) {
       my $prior_error = 0;
@@ -1044,7 +1044,7 @@ sub _readFromOldInfoGibbsFile {
       } elsif (/^(\S\S)\s+(.*)/) {
 	my $field = $1;
 	my $value = $2;
-	&RSAT::message::Warning("Unknown field, not parsed", "line ".$l, $field, $value) if ($main::verbose >= 4);
+	&RSAT::message::Warning("Unknown field, not parsed", "line ".$l, $field, $value) if ($main::verbose >= 5);
 
       } else {
 	&RSAT::message::Warning("skipped invalid row", "line ".$l, $_);
@@ -1112,7 +1112,7 @@ sub _readFromAlignACEFile {
       $matrix->set_parameter("alignace.expect", $expect);
       $matrix->set_parameter("alignace.undersample", $undersample);
       $matrix->set_parameter("alignace.oversample", $oversample);
-      &RSAT::message::Info("Starting to read matrix", $matrix_nb) if ($main::verbose >= 4);
+      &RSAT::message::Info("Starting to read matrix", $matrix_nb) if ($main::verbose >= 5);
 
       # default nucletodide alphabet
       $matrix->setAlphabet_lc("a","c","g","t");
@@ -1273,14 +1273,14 @@ sub _readFromGibbsFile {
 	$matrix->add_site(lc($site_seq), id=>$site_id, score=>1);
 
       } elsif ((/^Motif model/) && ($parse_model)) {
-	&RSAT::message::Debug("line ".$l, "Creating a new model matrix") if ($main::verbose >= 4);
+	&RSAT::message::Debug("line ".$l, "Creating a new model matrix") if ($main::verbose >= 5);
 #      if (/^\s*MOTIF\s+(\S+)/) {
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("program", "gibbs");
 	$matrix->set_parameter("command", $gibbs_command);
 	$matrix->set_parameter("seed", $seed);
 	push @matrices, $matrix;
-	&RSAT::message::Debug("Starting to read a motif") if ($main::verbose >= 4);
+	&RSAT::message::Debug("Starting to read a motif") if ($main::verbose >= 5);
 	$in_matrix = 1;
 	# default nucletodide alphabet
 	$matrix->setAlphabet_lc("a","c","g","t");
@@ -1423,7 +1423,7 @@ sub _readFromConsensusFile {
     } elsif (/letter\s+\d+:\s+(\S+).+prior frequency =\s+(\S+)/) {
       my $letter = lc($1);
       my $prior = $2;
-      &RSAT::message::Info ("Prior from consensus file", $letter, $prior) if ($main::verbose >= 4);
+      &RSAT::message::Info ("Prior from consensus file", $letter, $prior) if ($main::verbose >= 5);
       $prior{$letter} = $prior;
 
     } elsif ($current_matrix_nb >= 1) {
@@ -1452,7 +1452,7 @@ sub _readFromConsensusFile {
 	my $site_pos = $5;
 	my $site_sequence = $6;
 	$matrix->push_attribute("sequences", $site_sequence);
-	&RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 4);
+	&RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 5);
 
 	## Other matrix parameters
       } elsif (/number of sequences = (\d+)/) {
@@ -1527,7 +1527,7 @@ sub _readFromAssemblyFile {
       $matrix->setAlphabet_lc("A","C","G","T");
 #      $matrix->force_attribute("nrow", 4);
       $matrix->set_parameter("asmb.seed", $seed);
-      &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
+      &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 5);
 
     } elsif ($line =~ /^(\S+)\t(\S+)\s+(\S+)\s+isol/) {
       $current_matrix_nb++;
@@ -1581,7 +1581,7 @@ sub _readFromAssemblyFile {
       $matrix->add_site(lc($pattern), score=>$score, id=>$pattern, max_score=>1);
 
     } else {
-      &RSAT::message::Warning("&RSAT::Matrixreader::_readFromAssemblyFile", "line", $l, "not parsed", $_) if ($main::verbose >= 4);
+      &RSAT::message::Warning("&RSAT::Matrixreader::_readFromAssemblyFile", "line", $l, "not parsed", $_) if ($main::verbose >= 5);
     }
   }
   close $in if ($file);
@@ -1600,7 +1600,7 @@ Create a matrix from an isolated pattern string.
 sub _from_isolated {
   my ($pattern, $pattern_rc, $score, @matrices) = @_;
   unless (&RSAT::util::IsReal($score)) {
-    &RSAT::message::Warning($score, "is not a valid score value for pattern", $pattern) if ($main::verbose >= 4);
+    &RSAT::message::Warning($score, "is not a valid score value for pattern", $pattern) if ($main::verbose >= 5);
     $score = 1;
   }
   my $pattern_id = $pattern;
@@ -1619,7 +1619,7 @@ sub _from_isolated {
   $matrix->set_attribute("asmb.consensus.rc", $pattern_rc);
   $matrix->set_attribute("asmb..top.score", $score);
   $matrix->add_site(lc($pattern), score=>$score, id=>$pattern_id,, max_score=>1);
-  &RSAT::message::Debug("New matrix from isolated pattern", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
+  &RSAT::message::Debug("New matrix from isolated pattern", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 5);
   return $matrix;
 }
 
@@ -1728,7 +1728,7 @@ sub _readFromTabFile {
 # 	  #	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
 # 	}
 # 	$matrix->setPrior(%tmp_prior);
-# 	if ($main::verbose >= 4) {
+# 	if ($main::verbose >= 5) {
 # 	  &RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
 # 	  &RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
 # 	  &RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
@@ -1821,7 +1821,7 @@ sub _readFromClusterBusterFile {
 # 	#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
 #       }
 #       $matrix->setPrior(%tmp_prior);
-#       if ($main::verbose >= 4) {
+#       if ($main::verbose >= 5) {
 # 	&RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
 # 	&RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
 # 	&RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
@@ -1880,7 +1880,7 @@ sub _readFromJasparFile {
 	  $name = &RSAT::util::trim($postmatch);
 	  $name =~ s/\s+/_/g;
 	}
-	&RSAT::message::Debug("_readFromJasparFile", $id, $name) if ($main::verbose >= 4);
+	&RSAT::message::Debug("_readFromJasparFile", $id, $name) if ($main::verbose >= 5);
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("program", "jaspar");
 	$ncol = 0;
@@ -2353,7 +2353,7 @@ sub _readFromClustalFile {
 
     ## Read the sequences
     my %sequences = ();
-    warn "; Reading sequences\n" if ($main::verbose >= 4);
+    warn "; Reading sequences\n" if ($main::verbose >= 5);
     while (<$in>) {
 	next unless (/\S/);
 	s/\r//;
@@ -2376,7 +2376,7 @@ sub _readFromClustalFile {
     my %prior = ();
     my $ncol = 0;
     my $nrow = 0;
-    &RSAT::message::Info("Calculating profile matrix from sequences") if ($main::verbose >= 4);
+    &RSAT::message::Info("Calculating profile matrix from sequences") if ($main::verbose >= 5);
     foreach my $seq_id (sort keys %sequences) {
 	my $sequence = $sequences{$seq_id};
 	$sequence =~ s/\s+//g;
@@ -2440,7 +2440,7 @@ sub _readFromClustalFile {
 	    $row[$i] = 0 unless (defined($row[$i]));
 	}
 	$matrix->addRow(@row);
-	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 4); 
+	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 5); 
     }
     $matrix->setAlphabet_lc(@alphabet);
     $matrix->force_attribute("ncol", $ncol);
@@ -2451,7 +2451,7 @@ sub _readFromClustalFile {
 			   $ncol,
 			   $matrix->nrow(),
 			   $matrix->ncol())
-			     if ($main::verbose >= 4);
+			     if ($main::verbose >= 5);
     close $in if ($file);
 
     return (@matrices);
@@ -2530,7 +2530,7 @@ sub SortMatrices {
   }
 
   ## Check sorting (debugging)
-  if ($main::verbose >= 4) {
+  if ($main::verbose >= 5) {
     &RSAT::message::Info("Sorted", $nb_matrices, "matrices by", $sort_order, $sort_key);
     my $m = 0;
     foreach my $matrix (@matrices) {
