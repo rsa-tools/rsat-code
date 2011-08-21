@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.104 2011/08/21 09:48:41 jvanheld Exp $
+# $Id: compare-matrices,v 1.105 2011/08/21 10:05:09 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.104 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.105 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -540,6 +540,8 @@ package main;
 
   local $top1 = 0;
   local $top2 = 0;
+  local $skip1 = 0;
+  local $skip2 = 0;
 
   local $strand = "DR";
   local $distinct = 0;
@@ -841,10 +843,21 @@ package main;
     push @infiles, "mlist1";
   }
 
-  ## Select top motifs for the first file
+  ## Select top motifs for the first input file
   if (($main::top1 > 0) && ($main::top1 < scalar(@matrices1))){
     &RSAT::message::Warning("Selecting ".$main::top1." top motifs among ".scalar(@matrices1)." in file 1");
     @matrices1 = @matrices1[0..($main::top1-1)];
+  }
+
+  ## Skip initial matrices of the first input file if requested
+  if ($main::skip1 > 0) {
+    if ($main::skip1 >= scalar(@matrices1)) {
+      &RSAT::message::Warning("No matrix left in file1 after skipping ".$skip1." matrices");
+      exit(0);
+    } else {
+      &RSAT::message::Warning("Skipping ".$main::skip1." top motifs from file 1");
+      @matrices1 = @matrices1[$skip1..$#matrices1];
+    }
   }
 
   ## Second matrix set
@@ -873,6 +886,18 @@ package main;
   }
   my @matrices = @matrices1;
   push @matrices, @matrices2  unless ($single_input_file);
+
+
+  ## Skip initial matrices of the second input file if requested
+  if ($main::skip2 > 0) {
+    if ($main::skip2 >= scalar(@matrices2)) {
+      &RSAT::message::Warning("No matrix left in file2 after skipping ".$skip2." matrices");
+      exit(0);
+    } else {
+      &RSAT::message::Warning("Skipping ".$main::skip2." top motifs from file 2");
+      @matrices2 = @matrices2[$skip2..$#matrices2];
+    }
+  }
 
   local $matrix_nb1 = scalar(@matrices1);
   local $matrix_nb2 = scalar(@matrices2);
@@ -2450,6 +2475,9 @@ convert-background-model.
 Only analyze the first X motifs of the first file. This options is
 convenient for quick testing before starting the full analysis.
 
+It can also be combined with the option I<-skip1> to restrict the
+analysis to a subset of a large matrix library.
+
 =cut
     } elsif ($arg eq "-top1") {
       $main::top1 = shift(@arguments);
@@ -2462,10 +2490,39 @@ convenient for quick testing before starting the full analysis.
 Only analyze the first X motifs of the second file. This options is
 convenient for quick testing before starting the full analysis.
 
+It can also be combined with the option I<-skip2> to restrict the
+analysis to a subset of a large matrix library.
+
 =cut
     } elsif ($arg eq "-top2") {
       $main::top2 = shift(@arguments);
       &RSAT::error::FatalError($main::top2, "invalid value for the option -top2. Must be a strictly positive Natural number.") unless ((&IsNatural($main::top2)) && ($top2 > 0));
+
+=pod
+
+=item B<-skip1 X>
+
+Skip the first X motifs of the first input matrix file. This options
+can be combined with the option I<-top1> in order to restrict the
+analysis to a given subset of a large library.
+
+=cut
+    } elsif ($arg eq "-skip1") {
+      $main::skip1 = shift(@arguments);
+      &RSAT::error::FatalError($main::skip1, "invalid value for the option -skip1. Must be a strictly positive Natural number.") unless ((&IsNatural($main::skip1)) && ($skip1 > 0));
+
+=pod
+
+=item B<-skip2 X>
+
+Skip the first X motifs of the second input matrix file. This options
+can be combined with the option I<-top2> in order to restrict the
+analysis to a given subset of a large library.
+
+=cut
+    } elsif ($arg eq "-skip2") {
+      $main::skip2 = shift(@arguments);
+      &RSAT::error::FatalError($main::skip2, "invalid value for the option -skip2. Must be a strictly positive Natural number.") unless ((&IsNatural($main::skip2)) && ($skip2 > 0));
 
 
 =pod
