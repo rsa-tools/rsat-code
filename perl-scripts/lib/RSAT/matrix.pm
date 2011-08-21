@@ -3870,7 +3870,7 @@ sub makeLogo{
   my $max_logo_title=$ncol*3;
   if (length($logo_title) > $max_logo_title) {
     $logo_title = "...".substr($logo_title, -$max_logo_title);
-    &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 4);
+    &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 5);
   }
 
   ## Legend on the X axis indicates number of sites
@@ -3926,7 +3926,7 @@ sub makeLogo{
 
     my $logo_file = $logo_basename.".".$logo_format;
     push @logo_files, $logo_file;
-    &RSAT::message::Info("matrix", $self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 4);
+    &RSAT::message::Info("matrix", $self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 5);
     ## Remove the fake sequences, not necessary anymore
     &RSAT::server::DelayedRemoval($fake_seq_file);
 #    unlink ($fake_seq_file); ## The file removal  makes a problem that I don't understand
@@ -3996,7 +3996,7 @@ sub fake_seq_from_matrix {
     &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "Fake sequence", $col_seq) if ($main::verbose >= 6);
     push @seqs, $fake_seq;
   }
-  &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
+  &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 5);
 
   ## create a temporary sequence file which will be deleted after logo creation
   my $tmp_seq_file = &RSAT::util::make_temp_file($main::TMP, $self->get_attribute("id"));
