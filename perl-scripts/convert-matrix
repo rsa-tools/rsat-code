@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.134 2011/08/21 11:46:02 jvanheld Exp $
+# $Id: convert-matrix,v 1.135 2011/08/21 11:46:46 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -315,9 +315,9 @@ if (scalar(@matrices) < 1) {
 ## Skip matrix if requested
 if ($skip_matrices > 0) {
   if (scalar(@matrices) > $skip_matrices) {
-    &RSAT::message::Warning("Skipping ".$skip_matrices." top matrices among ".scalar(@matrices)) if ($main::verbose >= 0);
+    &RSAT::message::Warning("Skipping ".$skip_matrices." top matrices among ".scalar(@matrices)) if ($main::verbose >= 1);
     @matrices = @matrices[$skip_matrices..$#matrices];
-    &RSAT::message::Info(scalar(@matrices), "matrices left after skipping") if ($main::verbose >= 0);
+    &RSAT::message::Info(scalar(@matrices), "matrices left after skipping") if ($main::verbose >= 1);
   } else {
     &RSAT::message::Warning("No matrix left after skipping ".$skip_matrices." top matrices among ".scalar(@matrices));
     exit();
