@@ -192,7 +192,7 @@ sub calc_col_sum {
     my $nrow = $self->nrow();
     my @table = $self->getTable();
     &RSAT::message::Info(join("\t", "Calculating sum per column","rows:".$nrow, "columns:".$ncol))
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 5);
     foreach my $c (0..($ncol-1)) {
 	my $col_sum = 0;
 	for my $r (0..($nrow-1)) {
@@ -328,7 +328,7 @@ sub calc_row_sum {
     my $nrow = $self->nrow();
     my @table = $self->getTable();
     &RSAT::message::Info(join("\t", "Calculating sum per row","rows:".$nrow, "columns:".$ncol))
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 5);
     foreach my $r (0..($nrow-1)) {
 	my $row_sum = 0;
 	for my $c (0..($ncol-1)) {
