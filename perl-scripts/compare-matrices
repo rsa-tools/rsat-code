@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.103 2011/05/26 21:17:53 jvanheld Exp $
+# $Id: compare-matrices,v 1.104 2011/08/21 09:48:41 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.104 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -626,7 +626,7 @@ package main;
   ## Check that the two input files have been specified
   unless ((($infile{file1}) || ($infile{mlist1})) &&
 	  (($infile{file2}) || ($infile{mlist2}))) {
-    &RSAT::error::FatalError("You must define two input files, as one combination among options (-file1 or -mfile1) and (-file2 or -mlist2)");
+    &RSAT::error::FatalError("You must define two input files, using the options (-file1 or -mfile1) and (-file2 or -mlist2)");
   }
 
   ## Single input file (each matrix of the file will be compared to
@@ -1167,7 +1167,7 @@ package main;
   ## Iterate over matrices of the first list
   foreach my $matrix1 (@matrices1) {
     $m1++;
-    &RSAT::message::TimeWarn("File 1", "Analyzing matrix", $m1."/".scalar(@matrices1))  if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("File 1", "Comparing matrix", $m1."/".scalar(@matrices1), " with ".scalar(@matrices2)." matrices")  if ($main::verbose >= 2);
 
     ## Get the required information about the first matrix
     my $w1 = $matrix1->get_attribute("ncol");
@@ -1203,7 +1203,7 @@ package main;
 			       "file1", $m1."/".scalar(@matrices1),
 			       "file2", $m2."/".scalar(@matrices2),
 			      )
-	if ($main::verbose >= 4);
+	if ($main::verbose >= 3);
 
       ## Get identifier of the second matrix
       my $id2 = $matrix2->get_attribute("id") || "<NA>";
@@ -2976,14 +2976,14 @@ sub CheckThresholdValue {
   my ($key, $value) = @_;
   $key = lc($key); ## Ensure case-insensitivity
 
-  &RSAT::message::Debug("Checking threshold", $key, $value) if ($main::verbose >= 4);
+  &RSAT::message::Debug("Checking threshold", $key, $value) if ($main::verbose >= 5);
 
   ## Lower threshold
   if (defined($lth{$key})) {
     if ($value < $lth{$key}) {
       return (0);
     }
-    &RSAT::message::Debug("Passed lower threshold", $key, $value, "lth=".$lth{$key}) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Passed lower threshold", $key, $value, "lth=".$lth{$key}) if ($main::verbose >= 6);
   }
 
   ## Upper threshold
@@ -2991,7 +2991,7 @@ sub CheckThresholdValue {
     if ($value > $uth{$key}) {
       return (0);
     }
-    &RSAT::message::Debug("Passed upper threshold", $key, $value, "uth=".$uth{$key}) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Passed upper threshold", $key, $value, "uth=".$uth{$key}) if ($main::verbose >= 4);
   }
 
   return(1);
