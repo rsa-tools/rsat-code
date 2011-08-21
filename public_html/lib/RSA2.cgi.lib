@@ -1485,7 +1485,9 @@ sub EmailTheResult {
 
     #### Indicate the URL of the future result file
     my $submission_message = $mail_title."\n";
-    $submission_message .= "\n\nCommand: ", &RSAT::util::hide_RSAT_path($clean_command), "\n\n";
+    $submission_message .= "\n\nCommand: ";
+    $submission_message .= &RSAT::util::hide_RSAT_path($clean_command);
+    $submissions_message .= "\n\n";
     $submission_message .= "Your task has been submitted to the RSAT server.\n\n";
     $submission_message .= "After completion of the task, an email will be sent to ".$email_address.",\n"  unless ($no_email);
     $submission_message .= " and the result will become available at\n";
