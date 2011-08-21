@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.105 2011/08/21 10:05:09 jvanheld Exp $
+# $Id: compare-matrices,v 1.106 2011/08/21 12:16:48 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.105 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.106 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -497,7 +497,7 @@ package main;
 #  local $sort_field = "offset";
 #  $sort_field = "Icor";
 #  local $sort_field = "SW";
-  local $sort_field = "Ncor";
+  local $sort_field;
 
   ## Matches
   local %match_score = (); ## key = match ID, value = match score (sorting score)
@@ -662,11 +662,14 @@ package main;
 
   ## Check return fields
   if ($comparison_mode eq "profiles") {
-    if (scalar(keys(%return_field)) ==0) {
-      &RSAT::error::FatalError("With the profiles format, you must define at least one return field (option -return).",
-			       "\n\tSupported: $supported_return_fields");
-    }
+    $sort_field = "offset" unless ($sort_field);
+    $return_field{matrix_name} = 1;
+    $return_field{strand} = 1;
+    $return_field{offset} = 1;
+    $return_field{consensus} = 1;
+    $return_field{Ncor} = 1;
   } if ($comparison_mode eq "matches") {
+    $sort_field = "Ncor" unless ($sort_field);
     $return_field{matrix_name} = 1;
     $return_field{strand} = 1;
     $return_field{Ncor} = 1;
@@ -1523,7 +1526,7 @@ package main;
 	    my $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2; ## Variance of the first matrix
 	    my $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2; ## Variance of the second matrix
 	    $cov = $sum_f1f2/$n - $sum_f1*$sum_f2/($n**2); ## Warning : this covariance has nothing to do with the "natural covariance" of Pape
-	    if ($cov == 0) {
+	    if (($cov == 0) || ($v1*$v2==0)) {
 	      $cor = 0;
 	    } else {
 	      $cor = $cov/sqrt($v1*$v2);
@@ -1568,7 +1571,7 @@ package main;
 	    $lv1 = $sum_sq_l1/$n - ($sum_l1/$n)**2;
 	    $lv2 = $sum_sq_l2/$n - ($sum_l2/$n)**2;
 	    $lcov = $sum_l1l2/$n - $sum_l1*$sum_l2/($n**2);
-	    if ($lcov == 0) {
+	    if (($lcov == 0) || ($lv1*$lv2<=0)) {
 	      $logocor = 0;
 	    } else {
 	      $logocor = $lcov/sqrt($lv1*$lv2);
@@ -2481,7 +2484,7 @@ analysis to a subset of a large matrix library.
 =cut
     } elsif ($arg eq "-top1") {
       $main::top1 = shift(@arguments);
-      &RSAT::error::FatalError($main::top1, "invalid value for the option -top1. Must be a strictly positive Natural number.") unless ((&IsNatural($main::top1)) && ($top1 > 0));
+      &RSAT::error::FatalError($main::top1, "invalid value for the option -top1. Must be a positive Natural number.") unless ((&IsNatural($main::top1)) && ($top1 >= 0));
 
 =pod
 
@@ -2496,7 +2499,7 @@ analysis to a subset of a large matrix library.
 =cut
     } elsif ($arg eq "-top2") {
       $main::top2 = shift(@arguments);
-      &RSAT::error::FatalError($main::top2, "invalid value for the option -top2. Must be a strictly positive Natural number.") unless ((&IsNatural($main::top2)) && ($top2 > 0));
+      &RSAT::error::FatalError($main::top2, "invalid value for the option -top2. Must be a positive Natural number.") unless ((&IsNatural($main::top2)) && ($top2 >= 0));
 
 =pod
 
@@ -2509,7 +2512,7 @@ analysis to a given subset of a large library.
 =cut
     } elsif ($arg eq "-skip1") {
       $main::skip1 = shift(@arguments);
-      &RSAT::error::FatalError($main::skip1, "invalid value for the option -skip1. Must be a strictly positive Natural number.") unless ((&IsNatural($main::skip1)) && ($skip1 > 0));
+      &RSAT::error::FatalError($main::skip1, "invalid value for the option -skip1. Must be a positive Natural number.") unless ((&IsNatural($main::skip1)) && ($skip1 >= 0));
 
 =pod
 
@@ -2522,7 +2525,7 @@ analysis to a given subset of a large library.
 =cut
     } elsif ($arg eq "-skip2") {
       $main::skip2 = shift(@arguments);
-      &RSAT::error::FatalError($main::skip2, "invalid value for the option -skip2. Must be a strictly positive Natural number.") unless ((&IsNatural($main::skip2)) && ($skip2 > 0));
+      &RSAT::error::FatalError($main::skip2, "invalid value for the option -skip2. Must be a positive Natural number.") unless ((&IsNatural($main::skip2)) && ($skip2 >= 0));
 
 
 =pod
