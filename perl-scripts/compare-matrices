@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.107 2011/08/26 00:51:08 jvanheld Exp $
+# $Id: compare-matrices,v 1.108 2011/08/26 01:07:46 jvanheld Exp $
 #
 ############################################################
 
@@ -145,14 +145,20 @@ Total length of the alignent between matrices m1 and m2.
 
  W = w1 + w2 - w
 
-=item Relative length I<Wr>
+=item Relative lengths I<Wr, wr1, wr2>
 
 A measure of the mutual overlap between the aligned matrices.
 
-Wr = w / W
+  Wr = w / W
 
 This actually corresponds to the Jaccard coefficient (intersection /
 union), applied to the alignment lengths.
+
+The program also computes the width relative to each of the aligned
+matrices.
+
+  wr1 = w / w1
+  wr2 = w / w2
 
 =item I<s1, s2>
 
@@ -404,7 +410,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.107 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -511,6 +517,8 @@ package main;
 				 offset
 				 w
 				 Wr
+				 wr1
+				 wr2
 				 offset_rank
 				);
   local $supported_thresholds = join ",", @supported_thresholds;
@@ -1096,7 +1104,7 @@ package main;
   push (@header, "NsEucl") if ($return_field{NsEucl});
   push (@header, "dKL") if ($return_field{dKL});
   push (@header, "cov") if ($return_field{cov});
-  push (@header, "w1", "w2", "w", "W", "Wr") if ($return_field{width});
+  push (@header, "w1", "w2", "w", "W", "Wr", "wr1", "wr2") if ($return_field{width});
   push (@header, "strand") if ($return_field{strand});
   if ($return_field{pos}) {
     push (@header, "offset", "compa", "start1", "end1", "start2", "end2");
@@ -1143,6 +1151,8 @@ package main;
     $description{w} = "Alignment length (number of overlapping columns between matrix 1 and matrix 2, as a function of the offset)";
     $description{W} = "Total alignment length (overlapping + non-overlapping columns). W = w1 + w2 - w";
     $description{Wr} = "Relative alignment length (overlap divided by the total alignemnt length). Wr = w/W";
+    $description{wr1} = "Alignment length relative to the width of the first matrix. wr1 = w/w1";
+    $description{wr2} = "Alignment length relative to the width of the second matrix. wr2 = w/w2";
     $description{start1} = "Start position of the alignment in matrix 1";
     $description{end1} = "End position of the alignment in matrix 1";
     $description{start2} = "Start position of the alignment in matrix 2";
@@ -1323,9 +1333,15 @@ package main;
 	  my $end1 = &RSAT::stats::min($w1, $w2+$offset);
 	  my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$w2+1);
 	  my $w = $end1-$start1+1;
+	  next unless (&CheckThresholdValue("w", $w));
 	  my $total_len = $w1 + $w2 - $w;
 	  my $Wr = $w / $total_len;
-	  next unless (&CheckThresholdValue("w", $w));
+	  next unless (&CheckThresholdValue("Wr", $Wr));
+	  my $wr1 = $w / $w1;
+	  next unless (&CheckThresholdValue("wr1", $wr1));
+	  my $wr2 = $w / $w2;
+	  next unless (&CheckThresholdValue("wr2", $wr2));
+
 	  my $start2 = &RSAT::stats::max(1, 1- $offset);
 	  my $end2 = &RSAT::stats::min($start2+$w-1, $w2);
 #	  my $norm_factor = $w/&RSAT::stats::min($w1, $w2)
@@ -1659,7 +1675,11 @@ package main;
 	  push (@out_fields, sprintf("%.5f", $NsEucl)) if ($return_field{NsEucl});
 	  push (@out_fields, $dKL) if ($return_field{dKL});
 	  push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
-	  push (@out_fields, $matrix1->ncol(), $matrix2->ncol(), $w, $total_len, sprintf("%.4f", $Wr))if ($return_field{width});
+	  push (@out_fields, $matrix1->ncol(), $matrix2->ncol(), $w, $total_len, 
+		sprintf("%.4f", $Wr),
+		sprintf("%.4f", $wr1),
+		sprintf("%.4f", $wr2)
+	       )if ($return_field{width});
 	  push (@out_fields, $strand) if ($return_field{strand});
 	  if ($return_field{pos}) {
 	    push (@out_fields, $offset, $compa, $start1, $end1, $start2, $end2);
