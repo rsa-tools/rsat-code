@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.106 2011/08/21 12:16:48 jvanheld Exp $
+# $Id: compare-matrices,v 1.107 2011/08/26 00:51:08 jvanheld Exp $
 #
 ############################################################
 
@@ -404,7 +404,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.106 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.107 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -579,7 +579,9 @@ package main;
   }
 
   ## The sorting field must be returned
-  $return_field{$sort_field} = 1;
+  if ($sort_field) {
+    $return_field{$sort_field} = 1;
+  }
 
   ## Update the list of metrics to take into account for ranks and rank mean
   if ($return_field{match_rank}) {
