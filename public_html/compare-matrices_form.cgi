@@ -105,7 +105,7 @@ print "<hr>";
 
 ################################################################
 ## Selection of output fields and thresholds
-my @matching_scores = qw(w
+local @matching_scores = qw(w
 			 cor
 			 Ncor
                          logoDP
@@ -124,11 +124,31 @@ my @matching_scores = qw(w
 			 offset
 			);
 
+local %score_descriptions = ('w'=>'Width = number of aligned columns',
+			     'cor'=>'Pearson correlation (computed on residue occurrences in aligned columns)',
+			     'Ncor'=>'Relative width-normalized Pearson correlation',
+			     'logoDP'=>'dot product of sequence logos',
+			     'logocor'=>'correlation computed on sequence logos',
+			     'Nlogocor'=>'Relative width-normalized logocor',
+			     'Icor'=>'Pearson correlation computed on Information content',
+			     'NIcor'=>'Relative width-normalized Icor',
+			     'cov'=>'covariance between residues in aligned columns',
+			     'dEucl'=>'Euclidian distance between residue occurrences in aligned columns',
+			     'NdEucl'=>'Relative width-normalized dEucl',
+			     'NsEucl'=>'similarity derived from Relative width-normalized Euclidian distance',
+			     'SSD'=>'Sum of square deviations',
+			     'SW'=>'Sandelin-Wasserman',
+			     'NSW'=>'Relative width-normalized Sandelin-Wasserman',
+			     'match_rank'=>'rank of current match among all sorted matches',
+			     'offset'=>'offset between first and second matrices',
+			    );
+
 
 
 &ScoresAndThresholdsDiv("Matching scores and thresholds",
 			"help.compare-matrices.html#return_fields",
-			@matching_scores);
+			\@matching_scores,
+			\%score_descriptions);
 
 ################################################################
 ## Other selectable output fields
@@ -189,7 +209,7 @@ print $query->end_form;
 print "<td><b><a href='help.compare-matrices.html'>[MANUAL]</a></B></TD>\n";
 ##print "<td><b><a href='tutorials/tut_compare-matrices.html'>[TUTORIAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
+print "</tr></table></ul></ul>\n";
 
 print "</FONT>\n";
 
@@ -245,13 +265,15 @@ sub DatabaseChoice {
 ################################################################
 ## Display a collapsable div with selectable scores and thresholds
 sub ScoresAndThresholdsDiv {
-  my ($title, $help_file, @fields) = @_;
+  my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
+#  my ($title, $help_file, @fields) = @_;
   print "<p class=\"clear\"></p>\n";
   print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b> </div>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
   print "<p/><fieldset>\n";
 
-  &FieldsThresholdsTable($help_file, @fields);
+  &FieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
+#  &FieldsThresholdsTable($help_file, @fields);
 
   print "</fieldset><p/>";
   print '</div></div><p class="clear"></p>';
@@ -262,7 +284,9 @@ sub ScoresAndThresholdsDiv {
 ## Display a table with checkboxes and thresholds for a set of
 ## specified fields
 sub FieldsThresholdsTable {
-  my ($help_file, @fields) = @_;
+  my ($help_file, $field_ref, $field_descr_ref) = @_;
+  my @fields = @{$field_ref};
+  my %field_descr = %{$field_descr_ref};
   print "<table align='center'>\n";
   print $query->th([" <A HREF='".$help_file."'>Output<br>fields</A> ",
 		    " <A HREF='".$help_file."'>Lower<BR>Threshold</A> ",
@@ -282,6 +306,8 @@ sub FieldsThresholdsTable {
     print "<td>", $query->textfield(-name=>'uth_'.$field,
 				    -default=>$uth,
 				    -size=>5), "</td>\n";
+    print "<td>", $field_descr{$field}, "</td>\n";
+    print "</tr>\n";
   }
   print "</table>\n";
 }
