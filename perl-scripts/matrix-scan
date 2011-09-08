@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.205 2011/08/05 00:58:12 jvanheld Exp $
+# $Id: matrix-scan,v 1.206 2011/09/08 12:17:33 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2467,7 +2467,7 @@ matrix-scan options
 -lth/uth param # : lower/upper threshold on some parameters
 
 		Supported thresholds fields for the matches: score, pval,
-		sig, normw, proba_M, proba_B, rank, crer_sig, crer_pval, crer_sites, crer_size, rank, rank_pm
+		sig, normw, proba_M, proba_B, rank, crer_sig, crer_pval, crer_sites, crer_size, rank, rank_pm, crer_site_distance
 
 		Supported thresholds fields for score distributions: occ, occ_sum,
 		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
@@ -3035,7 +3035,7 @@ decimals).
 
 Threshold on some parameter (-lth: lower, -uth: upper threshold).
 
-Supported threshold fields for the matches : score pval sig normw proba_M proba_B rank crer_sig crer_pval crer_sites crer_size
+Supported threshold fields for the matches : score pval sig normw proba_M proba_B rank crer_sig crer_pval crer_sites crer_size crer_site_distance
 
 Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
 
