@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.108 2011/08/26 01:07:46 jvanheld Exp $
+# $Id: compare-matrices,v 1.109 2011/09/16 14:25:46 jvanheld Exp $
 #
 ############################################################
 
@@ -410,7 +410,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -1912,9 +1912,9 @@ package main;
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $main::out;
 
   if ($main::outfile{match_table_html}) {
-    close $main::out;
     $SCRIPTS = $SCRIPTS || $ENV{RSAT}."/perl-scripts";
     my $html_cmd =  $SCRIPTS."/text-to-html -i ".$main::outfile{match_table_txt};
     $html_cmd .= " -o ".$main::outfile{match_table_html};
