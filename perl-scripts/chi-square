@@ -4,8 +4,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-
-
+#use Math::CDF;## Required for computing the P-value
+use Statistics::Distributions; ## Required for computing the P-value
 
 $start_time = &RSAT::util::StartScript();
 
@@ -14,7 +14,6 @@ $start_time = &RSAT::util::StartScript();
 $test = "homogeneity";
 
 &ReadArguments();
-
 
 #### check argument values ####
 
@@ -37,7 +36,8 @@ if ($verbose) {
   }
 }
 
-### read a table of positive values ###
+################################################################
+## Read a table of positive values
 $row = 0;
 while (<$in>) {
   if (/\S/) {
@@ -71,9 +71,18 @@ $row_nb = $row;
 
 ($chi_square, $df) = &ChiSquare($test, $row_nb, $col_nb, @values);
 
+## Compute P-value
+if ($chi_square > 0) {
+  $Pval = sprintf("%.2e", &Statistics::Distributions::chisqrprob($df, $chi_square));
+#  $Pval2 = sprintf("%.2e", 1 - &Math::CDF::pchisq($chi_square,$df));
+} else {
+  $Pval = 1;
+#  $Pval2 = 1;
+}
+
 #### print output ####
-print $out "chi2\t", $chi_square, "\n";
-print $out "df\t", $df, "\n";
+print $out join ("\t", "#chi2", "df", "Pval"), "\n";
+print $out join ("\t", $chi_square, $df, $Pval), "\n";
 
 ###### close input file ######
 close $in unless ($inputfile eq "");
