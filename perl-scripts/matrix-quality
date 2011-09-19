@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.135 2011/09/19 12:56:17 jvanheld Exp $
+# $Id: matrix-quality,v 1.136 2011/09/19 13:51:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1150,8 +1150,8 @@ residue frequencies.
 =cut
 	} elsif ($arg eq "-pseudo") {
 	    $main::pseudo_counts = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
-					  "Invalid value for a pseudo-weight. Must be a positive real number."))
+	    &RSAT::error::FatalError(join("\t", $main::pseudo_counts,
+					  "Invalid value for pseudo-counts. Must be a positive real number."))
 		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
 			&& ($main::pseudo_counts >= 0));
 
@@ -1730,12 +1730,14 @@ sub CrossValidation {
       $matrix_scan_cmd .= " -seq_format fasta";
       $matrix_scan_cmd .= " -uth rank 1";
 #      $matrix_scan_cmd .= " -top_matrices 1";
+      $matrix_scan_cmd .= " -bg_pseudo ".$main::bg_pseudo if (defined($main::bg_pseudo)); ## BEWARE: bg_pseudo will not work with the quick version. Should we suppress this option from the program matrix-quality ?
     }
     $matrix_scan_cmd .= " -i ".$test_sites_file;
     $matrix_scan_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
     $matrix_scan_cmd .= " -decimals ".$decimals;
     $matrix_scan_cmd .= " -return sites";
+    $matrix_scan_cmd .= " -pseudo ".$main::pseudo_counts;
     $matrix_scan_cmd .= " -1str";
    # $matrix_scan_cmd .= join(" ", "", @args);
     if (defined($main::scanopt{$seq_type})) {
@@ -2402,9 +2404,7 @@ sub CalcTheorScoreDistribution {
   $matrix_distrib_cmd .= " -pseudo ".$main::pseudo_counts;
   $matrix_distrib_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
   $matrix_distrib_cmd .= " -bg_format inclusive";
-  if (defined($main::bg_pseudo)){
-  	$matrix_distrib_cmd .= " -bg_pseudo ".$main::bg_pseudo;
-  }
+  $matrix_distrib_cmd .= " -bg_pseudo ".$main::bg_pseudo if (defined($main::bg_pseudo));
   $matrix_distrib_cmd .= " -decimals ".$decimals;
   $matrix_distrib_cmd .= " -o ".$out_file;
 
@@ -2413,6 +2413,8 @@ sub CalcTheorScoreDistribution {
   	 if ($main::verbose >= 2);
   &doit($matrix_distrib_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
+
+
 ################################################################
 ## Calculate NWD
 ################################################################
