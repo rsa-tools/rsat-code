@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.134 2011/07/27 02:41:54 amedina Exp $
+# $Id: matrix-quality,v 1.135 2011/09/19 12:56:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -357,6 +357,19 @@ package main;
     ################################################################
     ## Check argument values
 
+    ## Check that all sequence files exist
+    foreach my $seq_type (sort keys %seqfile) {
+      my $seqfile = $seqfile{$seq_type};
+      &RSAT::error::FatalError("Sequence file", $seq_type, "does not exist", $seqfile)
+	unless (-e $seqfile);
+    }
+
+    ## Check that all other input files exist
+    foreach my $key (sort keys %infile) {
+      &RSAT::error::FatalError("Input file", $key, "does not exist", $infile{$key})
+	unless (-e $infile{$key});
+    }
+
     ## Report user-selected contradictory options
     if (($no_cv) && ($tasks{cv})) {
       &RSAT::message::Warning("Contradictory options: -no_cv and -task cv. Task skipped.");
@@ -380,18 +393,21 @@ package main;
     &RSAT::error::FatalError("You must define a matrix file, with either option -m or -ms")
       unless ($infile{matrix});
 
-
     ## Output prefix is mandatory
     &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
       unless ($outfile{prefix});
     $outfile{log} = $main::outfile{prefix}."_log.txt"; push @files_to_index, "log";
     $outfile{synthesis} = $main::outfile{prefix}."_synthesis.html";
 
+
+    ## Output prefix cannot end with a "/" (must be a file prefix, not a directory)
+    &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($outfile{prefix} =~ /\/$/);
+
     ## Create output directory if required
     $dir{output} = `dirname $outfile{prefix}`;
     chomp($dir{output});
+    &RSAT::message::TimeWarn("Checking output directory", $dir{output}) if ($main::verbose >= 0);
     &RSAT::util::CheckOutDir($dir{output});
-
 
     ## Define name of the converted bg file
     #$outfile{bg_file_inclusive} = $dir{output};
@@ -419,6 +435,7 @@ package main;
     unless ($infile{bg_file}) {
       &RSAT::error::FatalError("You must define a background model file for the theoretical distribution, with option -bgfile");
     }
+
 
     ## Convert BG file in inclusive format for matrix-scan-quick
     my $bg_convert_cmd = $SCRIPTS."/convert-background-model";
@@ -456,12 +473,12 @@ package main;
     }
 
     ################################################################
-    ### open output stream
+    ## Open output stream
     $main::out = &OpenOutputFile($outfile{log});
     &PreVerbose() if ($main::verbose);
 
     ################################################################
-    ### Read background model to use for theoretical distribution
+    ## Read background model to use for theoretical distribution
     #    if ($main::infile{bg_file}){
     $bg_model->load_from_file($main::outfile{bg_file_inclusive},"inclusive");
     #    }
@@ -934,6 +951,9 @@ leend of the plots), and the second next argument the file name.
 =cut
        } elsif ($arg eq "-seq") { 
 	 my $seq_type = shift(@arguments);
+	 ## Substitue special characters which cannot be used inside a file name
+	 $seq_type =~ s|/|_|g;
+	 $seq_type =~ s|:|_|g;
 	 $main::seqfile{$seq_type} =
 	   shift(@arguments);
          push @main::seq_types, $seq_type;
