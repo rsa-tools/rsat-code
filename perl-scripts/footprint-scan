@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.102 2011/08/03 21:52:11 amedina Exp $
+# $Id: footprint-scan,v 1.103 2011/09/20 02:04:42 jvanheld Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.102 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -994,10 +994,7 @@ package main;
 	  #	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
 
 	  print $synthesis_index "</tr>\n"; #finish line
-   
 	}
-
-
       }
     } else {
       &RunFootprintScan(@query_genes);
@@ -1016,7 +1013,6 @@ package main;
       close ($synthesis_index);
        &RSAT::message::Info("Synthesis table for matrix ",  $outfile{$m_suffix."_synthesis_tab"} ) if ($main::verbose >= 1);
        &RSAT::message::Info("Synthesis html table for matrix ",  $outfile{$m_suffix."_synthesis_html"} ) if ($main::verbose >= 1);
-      
     }
 
     ################################################################
