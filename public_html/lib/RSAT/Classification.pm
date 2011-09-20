@@ -376,8 +376,7 @@ sub read_profiles {
 
     ## Verbosity
     if ($main::verbose >= 1) {
-	&RSAT::message::TimeWarn(join("\t", 
-				  "Reading classification from profile file", $input_file) ) if ($main::verbose >= 2);
+	&RSAT::message::TimeWarn("Reading classification from profile file", $input_file) if ($main::verbose >= 2);
     }
 
     ## Load the classification
@@ -385,45 +384,45 @@ sub read_profiles {
     my @class_names = ();
     while (<$in>) {
 	$line++;
-	next if (/^;/);
-	next unless (/\S/);
-	chomp();
-	s/\r$//;
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines
+	s/\r//; ## Replace DOS-specific carriage return characters by Unix carriage return
+	chomp(); ## Suppres carriage return
 
-	## read class names from the header line, and create all the classes
+	## Read class names from the header line, and create all the classes
 	unless ($got_header) {
-	    if (/^\#/) {
-		$got_header = 1;
-		@class_names = split /\t/;
-		shift @class_names;
-#		&RSAT::message::Info(join("\t", "class names",join( "; ", @class_names))) if ($main::verbose >= 10);
-		foreach my $c (0..$#class_names) {
-		    my $class_name = $class_names[$c];
-		    ### Check class name
-		    if ($class_name eq "") {
-			&RSAT::error::FatalError(join("\t", "Error profile file", $class_file,  
-						      "line", $line, 
-						      "class nb", $c+1, 
-						      "file column", $c+2, 
-						      "empty class name in the header"));
-		    }
-		    
-		    #### create a new class if required
-		    if ($class{$class_name}) {
-			&RSAT::error::FatalError("The file contains several columns with the same name in the header\t".$classname);
-		    } else {
-			$class{$class_name} = new RSAT::Family(name=>$class_name);
-			$self->push_attribute("classes", $class{$class_name});
-		    }
-		}
-		next;
-	    } else {
-		&RSAT::error::FatalError("Reading classes from profile file. The first non-comment line should contain the header and start with #");
+	  if (/^\#/) {
+	    $got_header = 1;
+	    @class_names = split /\t/;
+	    shift @class_names;
+	    &RSAT::message::Debug("line", $line, "Header", "class names",join( "; ", @class_names)) if ($main::verbose >= 3);
+	    foreach my $c (0..$#class_names) {
+	      my $class_name = &RSAT::util::trim($class_names[$c]);
+
+	      ### Check class name
+	      unless ($class_name) {
+		&RSAT::error::FatalError("Profile file", $class_file,
+					 "line", $line,
+					 "class nb", $c+1,
+					 "file column", $c+2,
+					 "empty class name in the header");
 	    }
+
+	      ### Create a new class if required
+	    if ($class{$class_name}) {
+	      &RSAT::error::FatalError("The header contains several columns with the same name (".$classname.")");
+	    } else {
+	      $class{$class_name} = new RSAT::Family(name=>$class_name);
+	      $self->push_attribute("classes", $class{$class_name});
+	    }
+	  }
+	  next;
+	} else {
+	  &RSAT::error::FatalError("Reading classes from profile file. The first non-comment line should contain the header and start with #");
 	}
+      }
 
 	my @fields = split /\t/;
-	
 	### class members
 	$member_name = shift @fields;
 	&RSAT::message::Info(join("\t", "Treating row", $line, $member_name)) if ($main::verbose >= 3);
