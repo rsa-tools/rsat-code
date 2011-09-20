@@ -6,6 +6,7 @@ use strict;
 
 # import the modules we need for this test; XML::Compile is included on the server
 # by default.
+use XML::Compile::SOAP11;
 use XML::Compile::WSDL11;
 use XML::Compile::Transport::SOAPHTTP;
 
