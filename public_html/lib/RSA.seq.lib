@@ -5,7 +5,7 @@ require RSAT::pattern;
 
 package main;
 
-### initialization
+## initialization
 $accepted_input_seq{'tab'} = 1;
 $accepted_input_seq{'raw'} = 1;
 $accepted_input_seq{'multi'} = 1;
@@ -19,6 +19,7 @@ $accepted_input_seq{'ncbi'} = 1;
 $accepted_input_seq{'genbank'} = 1;
 $accepted_input_seq{'embl'} = 1;
 $accepted_input_seq{'maf'} = 1;
+$accepted_input_seq{'ft'} = 1;
 $accepted_input_seq = join ",", sort keys %accepted_input_seq;
 
 $accepted_output_seq{'raw'} = 1;
@@ -34,10 +35,10 @@ $accepted_output_seq = join ",", sort keys %accepted_output_seq;
 
 
 ################################################################
-#### extracts a substring but checks limits
+## extracts a substring but checks limits
 sub sub_sequence {
     my ($sequence, $offset, $len) = @_;
-    
+
     my $seq_len = length($sequence);
 
     if ($offset > $seq_len -1) {
@@ -55,25 +56,25 @@ sub sub_sequence {
 }
 
 ################################################################
-### based on the IUPAC code for partly specified nucleotides
-###	A			(Adenine)
-###	C			(Cytosine)
-###	G			(Guanine)
-###	T			(Thymine)
-###	R	= A or G        (puRines)
-###	Y	= C or T        (pYrimidines)
-###	W	= A or T        (Weak hydrogen bonding)
-###	S	= G or C        (Strong hydrogen bonding)
-###	M	= A or C        (aMino group at common position)
-###	K	= G or T        (Keto group at common position)
-###	H	= A, C or T     (not G)
-###	B	= G, C or T     (not A)
-###	V	= G, A, C       (not T)
-###	D	= G, A or T     (not C)
-###	N	= G, A, C or T  (aNy)
+## based on the IUPAC code for partly specified nucleotides
+##	A			(Adenine)
+##	C			(Cytosine)
+##	G			(Guanine)
+##	T			(Thymine)
+##	R	= A or G        (puRines)
+##	Y	= C or T        (pYrimidines)
+##	W	= A or T        (Weak hydrogen bonding)
+##	S	= G or C        (Strong hydrogen bonding)
+##	M	= A or C        (aMino group at common position)
+##	K	= G or T        (Keto group at common position)
+##	H	= A, C or T     (not G)
+##	B	= G, C or T     (not A)
+##	V	= G, A, C       (not T)
+##	D	= G, A or T     (not C)
+##	N	= G, A, C or T  (aNy)
 sub InitMatchScores {
     my %matching_residues = ();
-    
+
     ## Matches between non-ambiguous nucleotides
     my @nucleotides = qw (A C G T);
 
@@ -85,10 +86,10 @@ sub InitMatchScores {
 	    next if ($d2 gt $d1); ## Already treated since the match is reciprocal
 	    my @match1 = @{$IUPAC{$d1}};
 	    $match1 = scalar(@match1);
-	    
+
 	    my @match2 = @{$IUPAC{$d2}};
 	    $match2 = scalar(@match2);
-	    
+
 	    $match{$d1}{$d2} = 0; ## initialization
 	    $match{$d2}{$d1} = 0; ## initialization
 	    R1: foreach my $r1 (@match1) {
@@ -131,7 +132,7 @@ sub MaxMatchingWeight {
     my $len = length($expanded_seq);
     foreach my $offset (0..$len-1) {
 	my $base = uc(substr($expanded_seq,$offset,1));
-	
+
 	my @match = @{$IUPAC{$base}}; ## set of matching residues
 
 	## For the time begin, I just take the first matching
@@ -139,7 +140,7 @@ sub MaxMatchingWeight {
 	## the lowest prior probability
 	$top_matching_seq .= $match[0];
 #	&RSAT::message::Debug (";base: ",$base," matches: ",@match, "\t", $top_matching_seq,"\n");
-	
+
     }
 
 #    &RSAT::message::Debug(";seq: ",$seq, $expanded_seq," top_seq: ",$top_matching_seq) if ($main::verbose >= 10);
@@ -158,7 +159,7 @@ sub MaxMatchingWeight {
 =item CountMatches($seq1, $seq2)
 
 
-returns the number of matching positions between two sequences 
+returns the number of matching positions between two sequences
 of same length
 
 usage:
@@ -193,12 +194,12 @@ sub CountMatches {
     }
     if ($proba > 0) {
 	$weight = abs(log($proba))/log(4);
-    } 
+    }
     return ($matches, $weight, $proba, $length);
 }
 
 ################################################################
-=pod 
+=pod
 
 =item &BestMatch($seq1, $seq2);
 
@@ -228,7 +229,7 @@ sub BestMatch {
 	if ($offset < 0) {
 	    $of2 = -$offset; ## truncate left side of seq2
 	} elsif ($offset > 0) {
-	    $of1 = $offset; ## truncate left side of seq1	    
+	    $of1 = $offset; ## truncate left side of seq1
 	}
 	$sub1=substr($seq1, $of1);
 	$sub2=substr($seq2, $of2);
@@ -237,7 +238,7 @@ sub BestMatch {
 	    $best_matches = $matches;
 	    $best_weight = $weight;
 	    $best_proba = $proba;
-	    $best_length = $length, 
+	    $best_length = $length,
 	    $best_offset = $offset;
 	}
 	warn join ("\t", $offset, $of1, $sub1, $of2, $sub2, $weight), "\n" if ($main::verbose >= 10);
@@ -263,9 +264,9 @@ usage:
 sub CountMismatches {
     my ($seq1,$seq2,$max) = @_;
     my $mismatches = 0;
-    
+
     my $len1 = length($seq1);
-    
+
     foreach my $offset (0..$len1-1) {
 	my $base1 = uc(substr($seq1,$offset,1));
 	my $base2 = uc(substr($seq2,$offset,1));
@@ -291,7 +292,7 @@ start searching from an abitrary position. If no match is encountered,
 -1 is returned. IUPAC degenerate codes is supported for the pattern as
 well as the input sequence.
 
-usage: 
+usage:
     ($match_pos,$match_seq,$mismatches) = &NextMatch($input_seq, $pattern,$allowed_subst,$offset);
 
 =cut
@@ -317,14 +318,14 @@ sub NextMatch {
 } ### NetxMatch
 
 ################################################################
-### DNA sequence substitutions 
-### usage 
-### %subst_hash = Substitute($pattern, $allowed_subst, $IUPAC_output);
+## DNA sequence substitutions
+## usage
+## %subst_hash = Substitute($pattern, $allowed_subst, $IUPAC_output);
 ###
-### returns a hash of DNA sequences matching $pattern 
-### with >= $allowed_subst substitutions
-### the keys of the hash are the matching patterns,
-### the values give the number of substitutions
+## returns a hash of DNA sequences matching $pattern
+## with >= $allowed_subst substitutions
+## the keys of the hash are the matching patterns,
+## the values give the number of substitutions
 sub Substitute {
     local($l_pattern) = uc($_[0]);
     local($l_allowed_subst) = $_[1];
@@ -402,26 +403,26 @@ sub Substitute {
 }
 
 
-#### From a list of nucleotides, return the corresponding IUPAC degenerate 
-### based on the IUPAC code for partly specified nucleotides
-###	A			(Adenine)
-###	C			(Cytosine)
-###	G			(Guanine)
-###	T			(Thymine)
-###	R	= A or G        (puRines)
-###	Y	= C or T        (pYrimidines)
-###	W	= A or T        (Weak hydrogen bonding)
-###	S	= G or C        (Strong hydrogen bonding)
-###	M	= A or C        (aMino group at common position)
-###	K	= G or T        (Keto group at common position)
-###	H	= A, C or T     (not G)
-###	B	= G, C or T     (not A)
-###	V	= G, A, C       (not T)
-###	D	= G, A or T     (not C)
-###	N	= G, A, C or T  (aNy)
-#### usage:
-#### $deg_nucl = &degererate_nucleotide(@nucleotides);
-#### input nucleotides can themslve be compltely or partly spcified 
+## From a list of nucleotides, return the corresponding IUPAC degenerate
+## based on the IUPAC code for partly specified nucleotides
+##	A			(Adenine)
+##	C			(Cytosine)
+##	G			(Guanine)
+##	T			(Thymine)
+##	R	= A or G        (puRines)
+##	Y	= C or T        (pYrimidines)
+##	W	= A or T        (Weak hydrogen bonding)
+##	S	= G or C        (Strong hydrogen bonding)
+##	M	= A or C        (aMino group at common position)
+##	K	= G or T        (Keto group at common position)
+##	H	= A, C or T     (not G)
+##	B	= G, C or T     (not A)
+##	V	= G, A, C       (not T)
+##	D	= G, A or T     (not C)
+##	N	= G, A, C or T  (aNy)
+## usage:
+## $deg_nucl = &degererate_nucleotide(@nucleotides);
+## input nucleotides can themslve be compltely or partly spcified
 # sub degenerate_nucleotide {
 #     my @nucleotides = lc(@_);
 #     my $deg_nucl;
@@ -449,17 +450,17 @@ sub Substitute {
 # #	}
 # #    }
 
-    
+
 #     return $deg_nucl;
 # }
 
 
-### usage 
-### %ins_hash = Insert($pattern, $allowed_ins, $IUPAC_output)
-### returns a hash of DNA sequences matching $pattern 
-### with >= $allowed_ins insertions
-### the keys of the hash are the matching patterns,
-### the values give the number of insertions
+## usage
+## %ins_hash = Insert($pattern, $allowed_ins, $IUPAC_output)
+## returns a hash of DNA sequences matching $pattern
+## with >= $allowed_ins insertions
+## the keys of the hash are the matching patterns,
+## the values give the number of insertions
 sub Insert {
     local($l_pattern) = uc($_[0]);
     local($l_allowed_ins) = $_[1];
@@ -502,12 +503,12 @@ sub Insert {
 
 
 
-### usage 
-### %del_hash = Delete($pattern, $allowed_del, $IUPAC_output)
-### returns a hash of DNA sequences matching $pattern 
-### with >= $allowed_del deletions
-### the keys of the hash are the matching patterns,
-### the values give the number of deletions
+## usage
+## %del_hash = Delete($pattern, $allowed_del, $IUPAC_output)
+## returns a hash of DNA sequences matching $pattern
+## with >= $allowed_del deletions
+## the keys of the hash are the matching patterns,
+## the values give the number of deletions
 sub Delete {
 
     local($l_pattern) = uc($_[0]);
@@ -559,11 +560,11 @@ sub ExpandSeq {
 
 }
 
-### transform letter repeats into a single letter followed by a multiplier
-#### usage 
-### $compressed_pattern = compress_pattern($expanded_pattern,@letters_to_compress);
-### example: $compressed = &compress_pattern("aaannnnnnnccc","n");
-### returns aaan{7}ccc
+## transform letter repeats into a single letter followed by a multiplier
+## usage
+## $compressed_pattern = compress_pattern($expanded_pattern,@letters_to_compress);
+## example: $compressed = &compress_pattern("aaannnnnnnccc","n");
+## returns aaan{7}ccc
 sub compress_pattern {
     my ($expanded_pattern,@letters_to_compress) = @_;
     my $compressed_pattern = "";
@@ -573,7 +574,7 @@ sub compress_pattern {
     my $count = 0;
     my $letter = "";
     my %to_compress;
-    
+
     $expanded_pattern = lc($expanded_pattern);
     if ($#letters_to_compress > -1) {
 	foreach $letter (@letters_to_compress) {
@@ -582,10 +583,10 @@ sub compress_pattern {
     } else {
 	$compress_all = 1;
     }
-    
+
     foreach $pos (0..$epl) {
 	$current_letter = substr($expanded_pattern,$pos,1);
-	if (($current_letter eq $last_letter) && 
+	if (($current_letter eq $last_letter) &&
 	    (($to_compress{$current_letter}) ||
 	     ($compress_all))) {
 	    $count++;
@@ -615,7 +616,7 @@ sub ReverseIUPAC {
     foreach my $d (sort keys %IUPAC) {
 	my @nucleotides = sort(@{$IUPAC{$d}});
 	foreach my $n (@nucleotides) {
-	    push @{$revIUPAC{$n}}, $d; 
+	    push @{$revIUPAC{$n}}, $d;
 	}
     }
     return %revIUPAC;
@@ -649,11 +650,11 @@ sub IUPAC {
 }
 
 ################################################################
-### Convert a DNA sequence with IUPAC ambiguous codes
-### into a regular expression 
+## Convert a DNA sequence with IUPAC ambiguous codes
+## into a regular expression
 sub IUPAC_to_regular {
     my ($regular) = @_;
-    
+
     my %IUPAC = &IUPAC();
     foreach my $N (sort keys %IUPAC) {
 	## only replace ambiguous code
@@ -667,13 +668,12 @@ sub IUPAC_to_regular {
 	my $expr_lc = lc($expr_uc);
 	$regular =~ s/$n/[${expr_lc}]/g;
 
-# 	warn join( "\t", 
+# 	warn join( "\t",
 # 		   $N,
 # 		   $expr_uc,
 # 		   $n,
 # 		   $expr_lc,
 # 		   join( ";", @{$IUPAC{$N}}),
-		   
 # 	     ), "\n" if ($main::verbose >= 10);
     }
     return $regular;
@@ -681,11 +681,11 @@ sub IUPAC_to_regular {
 
 
 ################################################################
-### Convert a DNA sequence with regular expressions into IUPAC
-### ambiguous codes
+## Convert a DNA sequence with regular expressions into IUPAC
+## ambiguous codes
 sub regular_to_IUPAC {
     my ($regular) = @_;
-    
+
     ## Ignore non-letter characters
     $regular =~ s/\.//g;
     $regular =~ s/\[\-/\[/g;
@@ -719,13 +719,13 @@ sub regular_to_IUPAC {
 }
 
 ################################################################
-#### overlap coefficient ####
-### calculates the overlap coefficient, calculated following
-### Pevzner et al.(1989). J. Biomol. Struct & Dynamics 5:1013-1026
-### and adapted for the overlapping with reverse complement
-### usage: OverlapCoeff($pattern)
-### returns a value of 1 for non-overlapping patterns, and greater for 
-### self-overlapping patterns
+## overlap coefficient ####
+## calculates the overlap coefficient, calculated following
+## Pevzner et al.(1989). J. Biomol. Struct & Dynamics 5:1013-1026
+## and adapted for the overlapping with reverse complement
+## usage: OverlapCoeff($pattern)
+## returns a value of 1 for non-overlapping patterns, and greater for
+## self-overlapping patterns
 sub OverlapCoeff {
     my ($word, %residue_proba) = @_;
     my $word_length = length($word);
@@ -733,11 +733,11 @@ sub OverlapCoeff {
     my $rc_word = "";
     my $comp_word = "";
 
-    #### check that nucleotide probabilities were defined
+    ## check that nucleotide probabilities were defined
     foreach $base (sort keys %residue_proba) {
 	$residue_proba_sum += $residue_proba{$base};
     }
-    #### if not, assume equiprobable nucleotides
+    ## if not, assume equiprobable nucleotides
     if  ($residue_proba_sum == 0) {
 	$residue_proba{'a'} = 0.25;
 	$residue_proba{'c'} = 0.25;
@@ -759,7 +759,7 @@ sub OverlapCoeff {
 	}
     }
 
-    ### reverse complement overlaps 
+    ### reverse complement overlaps
     if ($sum_strands) {
 	$rc_word = ReverseComplement($word);
 	for $i (0..$word_length-1) {
@@ -813,7 +813,7 @@ sub ReverseComplement {
     $complement =~ s/temp/\]/g;
     $complement =~ tr/a-z/A-Z/;
     ### multiplier
-    while (($complement =~ /(\}\d+\{)/) 
+    while (($complement =~ /(\}\d+\{)/)
 	   || ($complement =~ /(\}\d+,\d+\{)/) ) {
 	$rev_mul = reverse $1;
 	$complement =~ s/$1/$rev_mul/g;
@@ -842,10 +842,10 @@ sub ReverseComplement {
 }# ReverseComplement
 
 
-#### usage
-####    Palindromic($sequence)
-#### returns true if a sequence is palindromic, i.e., if 
-#### it is equal to its reverse complement
+## usage
+##    Palindromic($sequence)
+## returns true if a sequence is palindromic, i.e., if
+## it is equal to its reverse complement
 sub Palindromic {
     local($seq) = lc($_[0]);
     local($rc) = lc(&ReverseComplement($seq));
@@ -858,23 +858,23 @@ sub Palindromic {
 
 }
 
-###### print next sequence #####
-##### prints DNA sequence in various formats 
-##### See the hash %accepted_output_seq for a list of accepted formats
-##### Usage: 
-##### PrintNextSequence(OUTFILE, $format,$line_width,$sequence,$seq_id, @comments)
-##### where 
-#####       OUTFILE is a file handle
-#####       $format is one of the accepted formats
-#####       $line_width indicates the number of nucleotides beofre 
-#####                   each carriage return
-#####                   a 0 value means no carriage return
-#####       $sequence is the sequence
-#####       $seq_id is an identifier for the sequence 
-#####               (required or not depending on the format)
-#####       @comments is a list of comments (one element per line)
-#####                 comments are only supported for some formats such as
-#####                 IG or Wconsensus 
+################################################################
+## Print one DNA sequence in various formats
+## See the hash %accepted_output_seq for a list of accepted formats
+## Usage:
+##   PrintNextSequence(OUTFILE, $format,$line_width,$sequence,$seq_id, @comments)
+## where
+##       OUTFILE is a file handle
+##       $format is one of the accepted formats
+##       $line_width indicates the number of nucleotides beofre
+##                   each carriage return
+##                   a 0 value means no carriage return
+##       $sequence is the sequence
+##       $seq_id is an identifier for the sequence
+##               (required or not depending on the format)
+##       @comments is a list of comments (one element per line)
+##                 comments are only supported for some formats such as
+##                 IG or Wconsensus
 sub PrintNextSequence {
     local($OUTFILE) =  shift;
     local($out_format) = lc(shift);
@@ -892,7 +892,7 @@ sub PrintNextSequence {
 
     $sequence = &FoldSequence($sequence,$line_width);
 
-    if ($out_format eq "ig") {          #### IntelliGenetics format
+    if ($out_format eq "ig") {          ## IntelliGenetics format
 	foreach $line (@comments) {
 	    print $OUTFILE ";$line\n";
 	}
@@ -900,8 +900,8 @@ sub PrintNextSequence {
 	print $OUTFILE $sequence;
 	print $OUTFILE "1\n";
 
-	#### fastA format
-    } elsif ($out_format eq "fasta") {  
+	## fastA format
+    } elsif ($out_format eq "fasta") {
 	my $first_comment = $comments[0] || "";
 	print $OUTFILE  ">".$seq_id;
 	if ($first_comment) {
@@ -912,8 +912,8 @@ sub PrintNextSequence {
 	print $OUTFILE $sequence;
 	print $OUTFILE "\n";
 
-	#### feature format
-    } elsif ($out_format eq "ft") {  
+	## feature format
+    } elsif ($out_format eq "ft") {
 
 	## Quick and dirty: the arguments specifically required for the ft
 	## cormat are passed as coments, in a specific order.
@@ -924,8 +924,8 @@ sub PrintNextSequence {
 	my $right_end = shift (@comments);
 	my $comment = join ("\t", @comments);
 
-	print $OUTFILE join ("\t", 
-			     $map_id, 
+	print $OUTFILE join ("\t",
+			     $map_id,
 			     $seq_type,
 			     $seq_id,
 			     $strand,
@@ -935,7 +935,7 @@ sub PrintNextSequence {
 			     $comment,
 			     ), "\n";
 
-    } elsif (($out_format eq "wc") || ($out_format eq "wconsensus")) {     #### wconsensus format
+    } elsif (($out_format eq "wc") || ($out_format eq "wconsensus")) {     ## wconsensus format
 	foreach $line (@comments) {
 	    print $OUTFILE ";$line\n";
 	}
@@ -946,6 +946,7 @@ sub PrintNextSequence {
 	}
 	print $OUTFILE "\\$sequence\\";
 	print $OUTFILE "\n";
+
     } elsif ($out_format eq "tab") {
 	print $OUTFILE join "\t", $seq_id, $sequence;
 	my $comments = join "; ", @comments;
@@ -953,34 +954,35 @@ sub PrintNextSequence {
 	    print $OUTFILE "\t".$comments;
 	}
 	print $OUTFILE "\n";
+
     } elsif ($out_format eq "raw") {
 	print $OUTFILE "$sequence\n";
+
     } elsif ($out_format eq "multi") {
 	print $OUTFILE "$sequence\n";
     }
 }
 
 
-#### checks whether the sequence format is supported
-#### Usage:
-####     &CheckInputSeqFormat($format)
-#### Returns 1 if the format is accepted for input sequence,
-#### exits otherwise
+## checks whether the sequence format is supported
+## Usage:
+##     &CheckInputSeqFormat($format)
+## Returns 1 if the format is accepted for input sequence,
+## exits otherwise
 sub CheckInputSeqFormat {
   local($sequence_format) = lc($_[0]);
   if ($accepted_input_seq{$sequence_format}) {
     return 1;
   } else {
-    print "$sequence_format: invalid format for input sequence\n";
-    exit;
+    &RSAT::error::FatalError("$sequence_format: invalid format for input sequence. Supported: $accepted_input_seq");
   }
 }
 
-#### checks whether the sequence format is supported
-#### Usage:
-####     &CheckOutputSeqFormat($format)
-#### Returns 1 if the format is accepted for output sequence,
-#### exits otherwise
+## checks whether the sequence format is supported
+## Usage:
+##     &CheckOutputSeqFormat($format)
+## Returns 1 if the format is accepted for output sequence,
+## exits otherwise
 sub CheckOutputSeqFormat {
     local($sequence_format) = lc($_[0]);
     if ($accepted_output_seq{$sequence_format}) {
@@ -991,9 +993,9 @@ sub CheckOutputSeqFormat {
     }
 }
 
-### checks that a sequence only contains letters from a to z
-### usage 
-###    CheckFormat($sequence,$expected_format, $seq_type);
+## checks that a sequence only contains letters from a to z
+## usage
+##    CheckFormat($sequence,$expected_format, $seq_type);
 sub CheckFormat {
     my ($l_sequence, $expected_format, $seq_type) = @_;
     $expected_format = lc($expected_format);
@@ -1001,12 +1003,12 @@ sub CheckFormat {
     $expected_format = "raw" if ($expected_format eq "multi");
     $expected_format = "raw" if ($expected_format eq "filelist");
     local($apparent_format) = "";
-    
+
     if (($seq_type !~ /other/i) && ($l_sequence =~ /([^a-z\s])/i)) {
 	$apparent_format = "unknown";
 	$problem = $1;
 	$position = length($`);
-	
+
 	if ($l_sequence =~ /\\/) {
 	    $apparent_format = "wconsensus";
 	} elsif ($l_sequence =~ />/) {
@@ -1029,8 +1031,8 @@ sub CheckFormat {
 ## ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $seq_format, $input_dir, $seq_type, $mask)
 ## where
 ## where   FILE is a file handle
-##         $format is one of the accepted sequence formats 
-##                 (see CheckFormat) 
+##         $format is one of the accepted sequence formats
+##                 (see CheckFormat)
 ##         $input_dir is the input directory
 ##         $seq_type
 ##         $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
@@ -1075,7 +1077,7 @@ sub ReadNextSequence {
       return ("","");
     }
 
-    #### multi: several raw sequences in the same file, separated by a newline
+    ## multi: several raw sequences in the same file, separated by a newline
   } elsif ($sequence_format eq "multi") {
     $seq_counter++;
     if ((defined($inputfile)) && ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/ )) {
@@ -1105,8 +1107,8 @@ sub ReadNextSequence {
 	$next_file = $1;   ### file name is the first word of the line
 	$found = 1;
       }
-    } 
-    &RSAT::message::Debug("ReadNextSequence", $next_file, "input directory", $input_dir) 
+    }
+    &RSAT::message::Debug("ReadNextSequence", $next_file, "input directory", $input_dir)
       if ($main::verbose >= 4);
 
     unless (-e $next_file) {
@@ -1116,7 +1118,7 @@ sub ReadNextSequence {
     }
     if ((-e $next_file) && (open NEXT_SEQ, $next_file)) {
       warn "; Reading file $next_file\n" if ($verbose >= 4);
-      #### extract the sequence file name without path ####
+      ## extract the sequence file name without path ####
       if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
 	$seq_id = $2;
       } else {
@@ -1140,10 +1142,10 @@ sub ReadNextSequence {
       if (/^;(.*)/) {
 	## comment line
 	@comments = (@comments, $1);
-      } elsif (($seq_id eq "") && (/(\S+)\s/)) { 
+      } elsif (($seq_id eq "") && (/(\S+)\s/)) {
 	## identifier for the next sequence
 	$seq_id = $1;
-      } elsif (/(.*)[12]/) {	
+      } elsif (/(.*)[12]/) {
 	## end of the current sequence
 	$sequence .= $1;
 	#		$sequence = &FoldSequence($sequence, 0);
@@ -1174,13 +1176,27 @@ sub ReadNextSequence {
     }
     return ("","");	     ### when input file has been totally read
 
+  } elsif ($sequence_format eq "ft") {
+    while (<$SEQ>) {
+      next if (/^--/);
+      next if (/^;/);
+      next if (/^\#/);
+      next unless (/\S/);
+      chomp();
+      my @fields = split "\t";
+      my $seq_id = $fields[2];
+      my $sequence = $fields[6];
+      return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+    }
+    return ("","");	     ### when input file has been totally read
+
     ### Wconsensus format ###
   } elsif (($sequence_format eq "wc") || ($sequence_format eq "wconsensus")) {
     while (<$SEQ>) {
       if (/^;(.*)/) {
 	## comment line
 	@comments = (@comments, $1);
-      } elsif (($seq_id eq "") && (/(\S+)\s+\\(.*)/)) { 
+      } elsif (($seq_id eq "") && (/(\S+)\s+\\(.*)/)) {
 	$seq_id = $1;
 	$the_rest = $2;
 	if ($the_rest =~ /(.*)\\/) {
@@ -1188,7 +1204,7 @@ sub ReadNextSequence {
 	} else {
 	  $end_of_seq = 0;
 	  $sequence = $the_rest;
-	  do { 
+	  do {
 	    if ($next_line = <$SEQ>) {
 	      if ($next_line=~ /(.*)\\/) {
 		$end_of_seq = 1;
@@ -1319,11 +1335,11 @@ sub ReadNextSequence {
     @comments = ();
     $in_sequence = 0;
     while (<$SEQ>) {
-      if (/^\/\/$/) {		
+      if (/^\/\/$/) {
 	## end of record
 	$sequence = &FoldSequence($sequence, 0);
 	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-      } elsif (/^\s*(\S+).+\.\.\s*$/) {	
+      } elsif (/^\s*(\S+).+\.\.\s*$/) {
 	## dividing line
 	$seq_id = $1;
 	$sequence = "";
@@ -1349,7 +1365,7 @@ sub ReadNextSequence {
     $sequence = "";
     @comments = ();
     $in_sequence = 0;
-	
+
     while (<$SEQ>) {
       #  	    $l++;
       #  	    if (($verbose >= 5) && ($l%100000 == 0)){
@@ -1376,19 +1392,19 @@ sub ReadNextSequence {
       } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
 	$position = $1;
 	$sequence .= $2;
-      } 
+      }
     }
-	
+
     #	$sequence = &FoldSequence($sequence, 0);
     return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	
+
     ### EMBL format ###
   } elsif ($sequence_format eq "embl") {
     $seq_id = "";
     $sequence = "";
     @comments = ();
     $in_sequence = 0;
-	
+
     while (<$SEQ>) {
       chomp;
       if (/^\/\/$/) {		### end of record
@@ -1406,7 +1422,7 @@ sub ReadNextSequence {
       } elsif (($in_sequence) && (/^(.+)\s+(\d+)\s*$/)) { ### sequence
 	$position = $2;
 	$sequence .= $1;
-      } 
+      }
     }
 
     #	$sequence = &FoldSequence($sequence, 0);
@@ -1501,7 +1517,7 @@ sub parse_genomic_coordinates {
 
 ################################################################
 ## Check a sequence, mask cases if required, and return it
-## Usage: 
+## Usage:
 ##    &ReturnSequence($sequence, $seq_id, $mask, @comments)
 ## Arguments:
 ##    $sequence: identifier of the sequence
@@ -1543,24 +1559,24 @@ sub CheckMask {
 }
 
 ## ##############################################################
-#### Read a multiple sequence file, 
-#### according to the output format from PILEUP (GCG package)
+## Read a multiple sequence file,
+## according to the output format from PILEUP (GCG package)
 ####
-#### Usage:
-#### ======
-#### %seq_hash = ReadMsf(FILE);
+## Usage:
+## ======
+## %seq_hash = ReadMsf(FILE);
 ####
 sub ReadMSF {
   local $SEQ = $_[0];
   local(%seq_hash);
   local($id);
   local($started) = 0;
-  
+
   while (<$SEQ>) {
     if (/\/\//) {
       $started = 1;
     } elsif (/^\s*(\d+)\s+(\d+)\s+$/) {
-           ### position 
+           ### position
 	} elsif (($started) && (/(\S+)\s+(.+)/)) {
 	    $id = $1;
 	    $seq_hash{$id} .= $2;
@@ -1572,17 +1588,18 @@ sub ReadMSF {
   return %seq_hash;
 }
 
-####### fold sequence ##########
-### usage &FoldSequence($sequence, $line_width)
-### remove all blank spaces from a sequence, 
-### and insert return carriages every $l characters
-### no carriage return is inserted if $l = 0
+################################################################
+## Fold sequence
+## usage &FoldSequence($sequence, $line_width)
+## remove all blank spaces from a sequence,
+## and insert return carriages every $l characters
+## no carriage return is inserted if $l = 0
 sub FoldSequence {
     my ($in_seq, $lw) = @_;
     my $out_seq = $in_seq;
     $out_seq =~ s/\s+//g;  ### remove blank spaces, tabs and newlines
 
-    #### insert newline characters for output ####
+    ## insert newline characters for output ####
     if ($lw > 0) {
       $out_seq =~ s/(\S{$lw})/$1\n/g;
     }
@@ -1601,10 +1618,10 @@ sub CleanDNA {
   return $_sequence;
 }
 
-### usage : $dist = EditDistance($string1,$string2);
-### usage : $dist = EditDistance($string1,$string2,1); ### hyperverbose
-### usage : $dist = EditDistance($string1,$string2,1,1); ### case sensitive 
-### $main::hyperverbose -> print matrix
+## usage : $dist = EditDistance($string1,$string2);
+## usage : $dist = EditDistance($string1,$string2,1); ### hyperverbose
+## usage : $dist = EditDistance($string1,$string2,1,1); ### case sensitive
+## $main::hyperverbose -> print matrix
 sub EditDistance {
     use strict;
     my ($string1,$string2,$hyperverbose, $cs) = @_;
@@ -1618,28 +1635,28 @@ sub EditDistance {
     my %weight = ();
     my $i = 0;
     my $j = 0;
-    
+
     my @l1 = split "", $string1;
     my @l2 = split "", $string2;
     my @prev_line = ();
     my @current_line = ();
-    
+
     ### initialization
-    $weight{substitution} = 1; 
-    $weight{insertion} = 1; 
-    $weight{deletion} = 1; 
+    $weight{substitution} = 1;
+    $weight{insertion} = 1;
+    $weight{deletion} = 1;
     $weight{end_space} = 0; ### Gusfield p 228-229
-    
+
     $current_line[0] = 0;
     for $j (1..$len2) {
 	$current_line[$j] = $current_line[$j-1] + $weight{end_space};
     }
-    
+
     if ($hyperverbose) {
 	warn "- - ", join(" ",@l2), "\n";
 	warn "- ", join(" ",@current_line), "\n";
     }
-    
+
     ### run trhough the array and calculate distance
     for $i (1..$len1) {
 	@prev_line = @current_line;
@@ -1648,10 +1665,10 @@ sub EditDistance {
 	$current_line[0] = $prev_line[0] + $weight{end_space};
 	for $j (1..$len2) {
 	    my $match = $prev_line[$j-1];
-	    
+
 	    $match += $weight{substitution} unless ($l1[$i-1] eq $l2[$j-1]);
-	    
-	    ($current_line[$j]) = sort { 
+
+	    ($current_line[$j]) = sort {
 		$a <=> $b } (
 			     $prev_line[$j] + $weight{insertion},
 			     $current_line[$j-1] + $weight{deletion},
@@ -1661,7 +1678,7 @@ sub EditDistance {
 	warn ($l1[$i-1], " ", join(" ",@current_line), "\n")
 	    if ($hyperverbose);
     }
-    
+
     return $current_line[$len2]; ### this is the edit distance
 }
 
@@ -1690,8 +1707,8 @@ sub all_oligos {
 
 
 ################################################################
-# Read patterns from a file (or from the standard input) 
-# and returns a list of RSAT::pattern objects. 
+# Read patterns from a file (or from the standard input)
+# and returns a list of RSAT::pattern objects.
 #
 sub ReadPatterns {
   my (%args) = @_;
@@ -1705,7 +1722,7 @@ sub ReadPatterns {
 
   &RSAT::message::Info("Reading patterns from file $pattern_file") if ($verbose >= 4);
 
-  #### single pattern specified on the command line
+  ## single pattern specified on the command line
   if ($pattern_seq) {
     if ($pattern_id) {
       $pattern_id = $pattern_id;
@@ -1723,8 +1740,8 @@ sub ReadPatterns {
       next if ($line =~ /^#/);
       next unless ($line =~ /\S/);
       if ($line =~ /^;/) {
-	#### for piping with oligo-analysis and dyad-analysis
-	#### take occ_sig as the score column
+	## for piping with oligo-analysis and dyad-analysis
+	## take occ_sig as the score column
 	if (!(defined($score_column)) &&
 	    (
 	     ($line =~ /^;\s+(\d+)\s+occ_sig\s+/) || ## for oligo-analysis, dyad-analysis, orm.py
@@ -1765,9 +1782,9 @@ sub ReadPatterns {
 	  }
 	}
       } else {
-	$pattern_score = 1;	#### default score
+	$pattern_score = 1;	## default score
       }
-      #### expand pattern sequence
+      ## expand pattern sequence
       if ($args{expand}) {
 	$pattern_seq = &ExpandSeq($pattern_seq);
       }
@@ -1778,10 +1795,10 @@ sub ReadPatterns {
 					 );
 
       push @patterns, $new_pattern;
-      warn join ("\t", 
-		 "; read pattern", 
-		 $pattern_id, 
-		 $pattern_seq, 
+      warn join ("\t",
+		 "; read pattern",
+		 $pattern_id,
+		 $pattern_seq,
 		 $pattern_score), "\n" if ($verbose >=4);
     }
     close $pattern_stream;
@@ -1790,9 +1807,9 @@ sub ReadPatterns {
 }
 
 ################################################################
-### The first time the routine is called with a given pattern the
-### reverse complement is calculated and the result is cached in a hash
-### table for further calls.
+## The first time the routine is called with a given pattern the
+## reverse complement is calculated and the result is cached in a hash
+## table for further calls.
 sub SmartRC {
     my $direct_seq = lc($_[0]);
     unless (defined($SmartRC{$direct_seq})) {
