@@ -11,10 +11,14 @@ $start_time = &RSAT::util::StartScript();
 $in_format = "fasta";
 $verbose = 0;
 
-&ReadArguments;
+&ReadArguments();
 
 
-#### check argument values ####
+################################################################
+## Check argument values
+
+&CheckInputSeqFormat($in_format);
+
 
 
 ### open output file ###
