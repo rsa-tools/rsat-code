@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.109 2011/09/16 14:25:46 jvanheld Exp $
+# $Id: compare-matrices,v 1.110 2011/09/21 13:46:42 spinelli Exp $
 #
 ############################################################
 
@@ -291,7 +291,7 @@ respective matrices.
  v2 = 1/n * SUM{i=1->r} SUM{j=1->w} (f2{i,j} - f2m)^2
  cor = cov/ sqrt(v1*v2)
 
-=head2 Normalized correlation (Ncor)
+=head2 Normalized correlation (Ncor, Ncor1, Ncor2)
 
 The normalized correlation prevents matches covering only a small
 fraction of the matrix (e.g. matches between the last column of the
@@ -323,6 +323,15 @@ alignment (w) relative to the length of the shorter motif.
 
 This however tends to favour matches between very short motifs (4-5
 residues) which cover only a fraction of the query motif.
+
+=head3 Ncor1, Ncor2
+
+In addition to Ncor, we define separate normalized correlations relative
+to w1 and w2 resp. 
+
+Ncor1 = cor * w / w1
+
+Ncor2 = cor * w / w2
 
 =head2 Correlation of the information content (Icor)
 
@@ -410,7 +419,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -427,7 +436,7 @@ package main;
   ## Supported metrics for comparing matrices
   local @supported_metrics = (
 			      "cor", ## Coefficient of correlation
-			      "Ncor", ## Normalized coefficient of correlation
+			      "Ncor", "Ncor1", "Ncor2", ## Normalized coefficients of correlation
 			      "logoDP", ##  Dot product between sequence logo values (column info * frequency)
 			      "logocor", ## Correlation between sequence logo values (column info * frequency)
 			      "Nlogocor", ## Normalized correlation between sequence logo values (column info * frequency)
@@ -481,6 +490,8 @@ package main;
   local %supported_sort_field = ("offset"=>"asc",
 				 "cor"=>"desc",
 				 "Ncor"=>"desc",
+				 "Ncor1"=>"desc",
+				 "Ncor2"=>"desc",
 				 "logoDP"=>"desc",
 				 "logocor"=>"desc",
 				 "Nlogocor"=>"desc",
@@ -721,6 +732,8 @@ package main;
   $calc_field{Icor} = 1 if ($calc_field{NIcor});
 #  $calc_field{Wcor} = 1 if ($calc_field{NWcor});
   $calc_field{cor} = 1 if ($calc_field{Ncor});
+  $calc_field{cor} = 1 if ($calc_field{Ncor1});
+  $calc_field{cor} = 1 if ($calc_field{Ncor2});
   $calc_field{cov} = 1 if ($calc_field{cor});
   $calc_field{NdEucl} = 1 if ($calc_field{NsEucl});
   $calc_field{dEucl} = 1 if ($calc_field{NdEucl});
@@ -1089,6 +1102,8 @@ package main;
   }
   push (@header, "cor") if ($return_field{cor});
   push (@header, "Ncor") if ($return_field{Ncor});
+  push (@header, "Ncor1") if ($return_field{Ncor1});
+  push (@header, "Ncor2") if ($return_field{Ncor2});
   push (@header, "logoDP") if ($return_field{logoDP});
   push (@header, "logocor") if ($return_field{logocor});
   push (@header, "Nlogocor") if ($return_field{Nlogocor});
@@ -1167,6 +1182,8 @@ package main;
     $description{cov} = "Covariance";
     $description{cor} = "Pearson coefficient of correlation between frequency matrices";
     $description{Ncor} = "Normalized correlation. Ncor = cor * ".$norm_factor_descr;
+    $description{Ncor1} = "Normalized correlation. Ncor1 = cor * w / w1";
+    $description{Ncor2} = "Normalized correlation. Ncor2 = cor * w / w2";
     $description{Icor} = "Pearson correlation between the information content matrices. ";
     $description{NIcor} = "Normalized Pearson correlation between the information content matrices. NIcor = Icor * ".$norm_factor_descr;
     $description{logoDP} = "Dot product between the logo matrices.";
@@ -1272,6 +1289,8 @@ package main;
       my %cov = ();	    ## Covariances as a function of the offset
       my %cor = ();		## Correlations
       my %Ncor = ();		## Normalized correlations
+      my %Ncor1 = ();		## Normalized correlations relative to w1
+      my %Ncor2 = ();		## Normalized correlations relative to w2
       my %Icor = (); ## Correlations between information content
       my %NIcor = (); ## Normalized correlations between information content
       my %logoDP = (); ## Dot product between logo matrices
@@ -1392,6 +1411,8 @@ package main;
 	  ## Correlation
 	  my $cor = 0;
 	  my $Ncor = 0;
+	  my $Ncor1 = 0;
+	  my $Ncor2 = 0;
 	  my $sum_f1 = 0;
 	  my $sum_f2 = 0;
 	  my $sum_f1f2 = 0;
@@ -1550,17 +1571,23 @@ package main;
 	      $cor = $cov/sqrt($v1*$v2);
 	    }
 	    $Ncor = $cor * $norm_factor;
+	    $Ncor1 = $cor * $w / $w1 if($calc_field{Ncor1});
+	    $Ncor2 = $cor * $w / $w2 if($calc_field{Ncor2});
 	  }
 
 	  ## Check thresholds on covariance, correlation and normalized correlation
 	  next unless (&CheckThresholdValue("cov", $cov));
 	  next unless (&CheckThresholdValue("cor", $cor));
 	  next unless (&CheckThresholdValue("Ncor", $Ncor));
+	  next unless (&CheckThresholdValue("Ncor1", $Ncor1));
+	  next unless (&CheckThresholdValue("Ncor2", $Ncor2));
 
 	  ## Index values for sorting
 	  $score{cov}{$compa_id} = $cov;
 	  $score{cor}{$compa_id} = $cor;
 	  $score{Ncor}{$compa_id} = $Ncor;
+	  $score{Ncor1}{$compa_id} = $Ncor1;
+	  $score{Ncor2}{$compa_id} = $Ncor2;
 
 
 	  ## Compute information correlation
@@ -1660,6 +1687,8 @@ package main;
 	  }
 	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
 	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
+	  push (@out_fields, sprintf("%.3f", $Ncor1)) if ($return_field{Ncor1});
+	  push (@out_fields, sprintf("%.3f", $Ncor2)) if ($return_field{Ncor2});
 	  push (@out_fields, sprintf("%.3f", $logoDP)) if ($return_field{logoDP});
 	  push (@out_fields, sprintf("%.3f", $logocor)) if ($return_field{logocor});
 	  push (@out_fields, sprintf("%.3f", $Nlogocor)) if ($return_field{Nlogocor});
@@ -2571,7 +2600,7 @@ detail).
 
 =over
 
-=item I<-format matches> (default)
+=item I<-mode matches> (default)
 
 Return matches between any matrix of the file1 and any matrix of
 file2.
@@ -2591,7 +2620,7 @@ strand (with the option -strand DR) that maximizes the default score
 (Ncor). Alternative scores can be used as optimality criteria with the
 option -sort.
 
-=item I<-format profiles>
+=item I<-mode profiles>
 
 Return a table with one row for each possible alignment offset between
 two matrices, and various columns indicating the matching parameters
@@ -2739,6 +2768,14 @@ Pearsons coefficient of correlatiojn.
 Normalized correlation (default sorting criterion for the matching
 mode).
 
+=item I<Ncor1>
+
+Normalized correlation relative to w1.
+
+=item I<Ncor2>
+
+Normalized correlation relative to w2.
+
 =item I<cov>
 
 Covariance.
@@ -2867,6 +2904,10 @@ Supported sort fields:
 =item I<offset>, ascending (default sorting criterion for the profile mode)
 
 =item I<Ncor>, decreasing (default sorting criterion for the matching mode)
+
+=item I<Ncor1>, decreasing
+
+=item I<Ncor2>, decreasing
 
 =item I<cor>, decreasing
 
