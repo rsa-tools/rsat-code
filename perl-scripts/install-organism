@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.106 2011/08/03 09:59:42 jvanheld Exp $
+# $Id: install-organism,v 1.107 2011/09/21 23:20:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -21,6 +21,7 @@ $config_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
 $verbose = 0;
 $batch = 0;
 $die_on_error = 1;
+$seq_format = "ft";
 $img_format = $ENV{rsat_img_format} || "png";
 $noov="";
 $strands="-1str";
@@ -258,7 +259,7 @@ sub Verbose {
 ## Update configuration file
 sub UpdateConfig {
 
-  ### read taxonomy from the parsing result
+  ## read taxonomy from the parsing result
   local $organism_table = $dir{install}."/genome/organism.tab";
   ($org_handle) = &OpenInputFile($organism_table);
   my $taxonomy_field = 2;
@@ -286,7 +287,7 @@ sub UpdateConfig {
   close $org_handle;
 
 
-  #### default limits of upstream region for retrieve-seq
+  ## default limits of upstream region for retrieve-seq
   unless (defined($up_from)) {
     if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
       $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
@@ -338,13 +339,13 @@ sub UpdateConfigPerl {
 				   "\n\tprevious config will be commented")) if ($main::verbose >= 2);
   }
 
-  #### read previous config
+  ## read previous config
   open CONFIG, $config_to_update;
   while ($line = <CONFIG>) {
     chomp $line;
     last if ($line =~ /return/);
     if (($line =~ /supported_organism\{\'$organism_short_name\'\}/) && ($line !~ /^\#/)) {
-      #### comment the previous config
+      ## comment the previous config
       if ($comment_previous_config) {
 	$previous_config .= "# ${line} # reinstalled on\t${date}\n";
       }
@@ -354,7 +355,7 @@ sub UpdateConfigPerl {
   }
   close CONFIG;
 
-  #### write new config
+  ## write new config
   &RSAT::message::Info ("Updating supported organisms", $config_to_update) if ($verbose >= 1);
   open CONFIG, ">$config_to_update" 
     || die "Error: cannot write config file $config_to_update\n";
@@ -377,7 +378,7 @@ sub UpdateConfigPerl {
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$up_from.";\n";
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$up_to.";\n";
 
-  #### Replace absolute paths by relative paths
+  ## Replace absolute paths by relative paths
   ##   $new_org_config =~ s|$ENV{RSAT}\/|\$ENV\{RSAT\}\/|g;
   $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
   $new_org_config =~ s|\/\/|/|g;
@@ -421,7 +422,7 @@ sub UpdateConfigTab {
 sub CreatePhylogeny {
     my $taxonomy = "";
 
-    ### read taxonomy from the parsing result
+    ## read taxonomy from the parsing result
     $organism_table = $dir{install}."/genome/organism.tab";
 
     ($org_handle) = &OpenInputFile($organism_table);
@@ -473,7 +474,7 @@ sub CreatePhylogeny {
 sub IntergenicSegments {
     chdir $dir{genome};
 
-    #### retrieve intergenic sequences
+    ## retrieve intergenic sequences
     my $command = "coding-or-not ";
     $command .= "-v 1 " if ($verbose >= 1);
     $command .= "-org $organism_short_name -return ncs,cs,pos,seq,stats";
@@ -507,32 +508,39 @@ sub IntergenicSegments {
 ### extract the complete set of upstream sequences
 sub AllUpstream {
   &RSAT::message::TimeWarn("Retrieving all upstream sequences") if ($verbose >= 1);
-  #    chdir $dir{genome};
 
   foreach my $masking (@masking_modes) {
     foreach my $noorf ("", "-noorf") {
       my $seq_type = "upstream${noorf}${masking}";
-      my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}.fasta";
-      my $format = "fasta";
+      my $seq_file = $dir{genome}."/".${organism_short_name}."_".${seq_type};
+      my @seq_formats = qw(fasta ft);
+      #      my @seq_formats = qw(ft);
 
-      #### retrieve intergenic sequences
-      my $command = "retrieve-seq ${noorf} ${masking} -format $format";
-      $command .= " -type upstream -all -org $organism_short_name ";
-      $command .= " -all -o $seq_file\n\n";
+      ## Retrieve sequences in two formats:
+      ## fasta is used for computing oligo and dyad frequencies
+      ## ft is convenient for retrieve-seq-multigenome
+      foreach $format (@seq_formats) {
+	my $command = "retrieve-seq -all";
+	$command .= " -type upstream -org ".$organism_short_name;
+	$command .= " ".${noorf};
+	$command .= " ".${masking};
+	$command .= " -format ".$format;
+	$command .= " -o ".$seq_file.".".$format;
+	&doit($command, $dry_run, $die_on_error, $verbose);
+	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 0);
+      }
+
+      ## Compute sequence length distributions and generate a frequency plot
+      &SeqLengthDistribution($seq_file.".fasta", "fasta", $seq_type, 50) if ($noorf);
+
+      ## compress sequence file
+      $command = "gzip -f ".$seq_file.".fasta";
       &doit($command, $dry_run, $die_on_error, $verbose);
 
-      #### Compute sequence length distributions and generate a frequency plot
-      &SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
-
-      #### compress sequence file
-      $command = "gzip -f $seq_file";
-      &doit($command, $dry_run, $die_on_error, $verbose);
-
-      #### purge sequences
-      &PurgeSequences($seq_file) if ($purged_frequencies);
+      ## purge sequences
+      &PurgeSequences($seq_file.".fasta", "fasta") if ($purged_frequencies);
     }
   }
-
   chdir $dir{main};
 }
 
@@ -540,7 +548,7 @@ sub AllUpstream {
 ## draw an histogram of sequence lengths
 sub SeqLengthDistribution {
     my ($seq_file, $format, $seq_type, $ci) = @_;
-    &RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $format, $seq_type, $ci) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $format, $seq_type, $ci) if ($main::verbose >= 2);
     $ci = 50 unless $ci;
     $format = "fasta" unless $format;
     my $classfreq_from = 0;
@@ -581,7 +589,7 @@ sub PurgeSequences {
   $purged_seq_file .= "_purged.$format";
   my $command = "purge-sequence -i $seq_file -format $format -ml 300 -mis 9 -2str -o $purged_seq_file";
   &doit($command, $dry_run, $die_on_error, $verbose);
-  #### compress purged sequence file
+  ## compress purged sequence file
   $command = "gzip -f $purged_seq_file";
   &doit($command, $dry_run, $die_on_error, $verbose);
 }
@@ -1138,38 +1146,38 @@ sub ReadArguments {
 		$verbose = 1;
 	    }
 	    
-	    #### dry run
+	    ## dry run
 	} elsif ($ARGV[$a] eq "-n") {
 	    $dry_run = 1;
 	    $verbose = 1;
 
-	    ### detailed help
+	    ## detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp();
 	    
-	    ### list of options
+	    ## list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
-	    #### output file
+	    ## output file
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 
-	    ### data source
+	    ## data source
 	} elsif ($ARGV[$a] eq "-source") {
 	    $source = $ARGV[$a+1];
 
-	    ### organism
+	    ## organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_short_name = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-organism") {
 	    $organism_full_name = $ARGV[$a+1];
 
-	    #### synonyms
+	    ## synonyms
 	} elsif ($ARGV[$a] =~ /-syn/) {
 	    $infile{synonyms} = $ARGV[$a+1];
 
-	    #### Specify the limits of upstream regions
+	    ## Specify the limits of upstream regions
 	} elsif ($ARGV[$a] eq "-up_from") {
 	    $up_from = $ARGV[$a+1];
 	    &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be integer)")) unless (&IsInteger($up_from));
@@ -1185,31 +1193,31 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-date") {
 	    $force_date = $ARGV[$a+1];
 
-	    #### installation dir
+	    ## installation dir
 	} elsif ($ARGV[$a] =~ /^-dir/) {
 	    $dir{install} = $ARGV[$a+1];
 
-	    #### Genbank dir
+	    ## Genbank dir
 	} elsif ($ARGV[$a] =~ /^-genbank/) {
 	    $dir{genbank} = $ARGV[$a+1];
 
-	    #### ENSEMBL dir
+	    ## ENSEMBL dir
 	} elsif ($ARGV[$a] =~ /^-ensembl/) {
 	    $dir{ensembl} = $ARGV[$a+1];
 
-	    #### Sequence source
+	    ## Sequence source
 	} elsif ($ARGV[$a] eq "-source") {
 	    $source = $ARGV[$a+1];
 
-	    #### Batch mode
+	    ## Batch mode
 	} elsif ($ARGV[$a] eq "-batch") {
 	    $batch = 1;
 
-	    #### Masking modes
+	    ## Masking modes
 	} elsif ($ARGV[$a] eq "-rm") {
 	    push @masking_modes, "-rm";;
 
-	    #### task selection
+	    ## task selection
 	} elsif (($ARGV[$a] =~ /^-task/) 
 		 || ($ARGV[$a] =~ /^-step/)) {
 	    my @requested_tasks = split ",", $ARGV[$a+1];
@@ -1222,18 +1230,18 @@ sub ReadArguments {
 		}
 	    }
 
-	    ### image format
+	    ## image format
 	  } elsif ($ARGV[$a] eq "-img_format") {
 	    $img_format = lc($ARGV[$a+1]);
 
-	    #### local configuration file specified with an environment variable
+	    ## local configuration file specified with an environment variable
 	} elsif ($ARGV[$a] =~ /^-local/) {
 	    unless ($ENV{'RSA_LOCAL_CONFIG'}) {
 		die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
 	    }
 	    $local_config = 1;
 
-	    #### alternative configuration file
+	    ## alternative configuration file
 	} elsif ($ARGV[$a] =~ /^-config/) {
 	    $ENV{'RSA_LOCAL_CONFIG'}  = $ARGV[$a+1];
 	    unless ($ENV{'RSA_LOCAL_CONFIG'}) {
@@ -1306,7 +1314,7 @@ sub CleanUp {
   &RSAT::message::TimeWarn("&CleanUp()") if ($main::verbose >= 0);
   chdir $dir{genome};
 
-  #### delete files with intergenic and gene segment sequences
+  ## delete files with intergenic and gene segment sequences
   my @files = ();
   foreach my $seq_type qw(intergenic gene upstream upstream-noorf) {
     foreach my $format qw(wc fasta) {
