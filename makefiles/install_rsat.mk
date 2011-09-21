@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.42 2011/07/27 14:28:55 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.43 2011/09/21 22:21:05 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -82,9 +82,40 @@ install_perl_modules:
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
 PERL=`which perl`
+SUDO=sudo
 install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
-	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
+	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
+
+
+################################################################
+## This library allows you to install the Perl libraries locally, if you are not system administrator
+LOCAL_LIB_URL=http://search.cpan.org/CPAN/authors/id/A/AP/APEIRON/local-lib-1.008004.tar.gz
+LOCAL_LIB_DIR=lib/perl_lib/locallib
+
+local_lib: download_local_lib install_local_lib config_local_lib
+
+download_local_lib:
+	@echo "Downloading Perl module local::lib"
+	(mkdir -p ${LOCAL_LIB_DIR}; cd ${LOCAL_LIB_DIR}; wget ${LOCAL_LIB_URL}; tar -xzf local-lib-1.008004.tar.gz)
+
+install_local_lib:
+	@echo "Installing Perl module local::lib"
+	(mkdir -p ${RSAT}/lib/perl5; ln -s ${RSAT}/lib/perl5 ${HOME}/perl5)
+	(cd ${LOCAL_LIB_DIR}/local-lib-1.008004;  perl Makefile.PL --bootstrap; make; make test; make install)
+
+config_local_lib:
+	@echo "Adding path to Perl module local::lib in ${HOME}/.bashrc"
+	@echo ''  >>~/.bashrc
+	@echo '################################################################'  >>~/.bashrc
+	@echo '## Perl local::lib module'  >>~/.bashrc
+	@echo 'eval $$(perl -I$$HOME/perl5/lib/perl5 -Mlocal::lib)' >>~/.bashrc
+
+install_one_perl_module_locally:
+	${MAKE} SUDO='' install_one_perl_module
+
+install_perl_modules_locally:
+	${MAKE} SUDO='' install_perl_modules
 
 ################################################################
 ## Install the BioPerl library
