@@ -46,6 +46,7 @@ Object for handling organisms supported in RSAT.
 
 
 ################################################################
+
 =pod
 
 =item B<supported_org_fields()>
@@ -59,6 +60,7 @@ sub supported_org_fields {
 }
 
 ################################################################
+
 =pod
 
 =item B<load_supported_organisms>
@@ -162,6 +164,7 @@ sub load_supported_organisms {
 
 
 ################################################################
+
 =pod
 
 =item B<export_supported_organisms>
@@ -180,6 +183,7 @@ sub export_supported_organisms {
 }
 
 ################################################################
+
 =pod
 
 =item B<supported_organism_table>
@@ -288,6 +292,7 @@ sub supported_organism_table {
 }
 
 ################################################################
+
 =pod
 
 =item is_supported
@@ -307,6 +312,7 @@ sub is_supported {
 
 
 ################################################################
+
 =pod
 
 =item B<get_supported_organisms>
@@ -320,6 +326,7 @@ sub get_supported_organisms {
 }
 
 ################################################################
+
 =pod
 
 =item check_name
@@ -342,6 +349,7 @@ sub check_name {
 
 
 ################################################################
+
 =pod
 
 =item serial_file_name()
@@ -367,6 +375,7 @@ sub serial_file_name {
 
 
 ################################################################
+
 =pod
 
 =item load_and_serialize()
@@ -388,6 +397,7 @@ sub load_and_serialize {
 }
 
 ################################################################
+
 =pod
 
 =item is_serialized()
