@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.14 2011/09/22 06:45:48 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.15 2011/09/22 11:12:50 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -27,7 +27,7 @@ jvanheld@bigre.ulb.ac.be
 util
 
 =head1 USAGE
-    
+
 retrieve-seq-multigenome [-i inputfile] [-o outputfile] [-v]
 
 =head1 INPUT FORMAT
@@ -39,7 +39,7 @@ following columns:
 
 =item 1. gene ID or name
 
-Identifier oor synonyms are supported. 
+Identifier oor synonyms are supported.
 
 =item 2. Organism name
 
@@ -92,11 +92,26 @@ local $out = STDOUT;
 local $gene_col = 1;
 local $org_col = 2;
 
+local $quick_mode = 0;
+
+
+
+## Parameters for the procedure &doit() used in quick mode.
+my $dry = 0;
+my $die_on_error = 1;
+my $batch = 0;
+my $job_prefix = "";
+
 &ReadArguments();
 
 ################################################################
 ## Check argument values
 
+
+## Output file is manatory in quick mode
+if ($quick_mode) {
+  &RSAT::error::FatalError("Output file (option -o) is mandatory in quick mode.") unless ($outfile{output});
+}
 
 ################################################################
 ## Open output stream
@@ -104,55 +119,78 @@ $out = &OpenOutputFile($outfile{output});
 
 ################################################################
 ## Read input
-#($in) = &OpenInputFile($infile{input});
-#while (<$in>) {
-#    next if (/^;/); ## Skip comment lines
-#    next if (/^#/);## Skip comment lines
-#    next unless (/\S/);## Skip empty lines
-#    my @fields = split "\t";
-#    push @genes, $fields[0];
-#    push @genes, $fields[1];
-#}
-#close $in if ($infile{input});
-%genes_per_org = &ReadClasses($infile{input},0,undef,1,$gene_col, $org_col);
+($in) = &OpenInputFile($infile{input});
+while (<$in>) {
+   next if (/^;/); ## Skip comment lines
+   next if (/^#/);## Skip comment lines
+   next unless (/\S/);## Skip empty lines
+   my ($query, $org) = split "\t";
+   push @{$genes_per_org{$org}}, $query;
+}
+close $in if ($infile{input});
+#%genes_per_org = &ReadClasses($infile{input},0,undef,1,$gene_col, $org_col);
+
+
 
 ################################################################
 ## Print verbose
 &Verbose() if ($verbose);
 
+close $out if ($quick_mode);
+
 ################################################################
 ## Execute the command
 
-## Print output
 foreach my $org (sort(keys( %genes_per_org))) {
-  my $geneset = $genes_per_org{$org};
-  my @genes = $geneset->get_members();
-  if (scalar(@genes) > 0) {
-    my $command = "$retrieve_seq_cmd -org ".$org;
-    unless ($label_specified) {
-      $command .= " -label ".$default_label;
-    }
+#  my $geneset = $genes_per_org{$org};
+#  my @genes = $geneset->get_members();
 
-    foreach my $arg (@to_pass) {
-      if ($arg =~ /\s/) {
-	$command .= " '".$arg."'";
-      } else {
-	$command .= " ".$arg;
+  my @genes = @{$genes_per_org{$org}};
+  if (scalar(@genes) > 0) {
+    if ($quick_mode) {
+      my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$org."/genome";
+      my $seq_file = $genome_dir."/".$org."_upstream-noorf.ft";
+      &RSAT::message::TimeWarn ("Extracting sequences from pre-computed upstream sequences", $seq_file);
+      foreach my $gene (@genes) {
+#	$command = "grep '$gene' ".$seq_file;
+	$command = "awk -F'\\t' '\$3 == \"".$gene."\"";
+	$command .= '{print ">"$10"\t"$9"\n"$7}\' ';
+	$command .= " ".$seq_file;
+	$command .= ">> ".$outfile{output};
+	&RSAT::message::TimeWarn($command)  if ($main::verbose >= 1);
+	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       }
+
+    } else {
+
+      my $command = "$retrieve_seq_cmd -org ".$org;
+      unless ($label_specified) {
+	$command .= " -label ".$default_label;
+      }
+
+      foreach my $arg (@to_pass) {
+	if ($arg =~ /\s/) {
+	  $command .= " '".$arg."'";
+	} else {
+	  $command .= " ".$arg;
+	}
+      }
+      $command .= " -q ";
+      $command .= join(" -q ", @genes);
+      &RSAT::message::TimeWarn($command)  if ($main::verbose >= 1);
+      print $out `$command`;
     }
-    $command .= " -q ";
-    $command .= join(" -q ", @genes);
-    warn "\n", $command, "\n",  if ($main::verbose >= 1);
-    print $out `$command`;
   }
 }
 
 ################################################################
 ## Close output stream
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+if ($quick_mode) {
+  open $out, ">>".$outfile{output};
+}
 print $main::out $exec_time if ($main::verbose >= 1);
 close $out if ($outfile{output});
-
 
 exit(0);
 
@@ -163,7 +201,7 @@ exit(0);
 
 
 ################################################################
-## Display full help message 
+## Display full help message
 sub PrintHelp {
     system "pod2text -c $0";
     exit()
@@ -176,7 +214,7 @@ sub PrintOptions {
 }
 
 ################################################################
-#### Read arguments 
+#### Read arguments
 sub ReadArguments {
   my $arg = 0;
   while ($arg = shift (@ARGV)) {
@@ -213,7 +251,7 @@ Display full help message
 =cut
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ## List of options
 
 =pod
@@ -225,7 +263,7 @@ Same as -h
 =cut
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
-	    
+
 
 	    ## Input file
 
@@ -239,7 +277,7 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-i") {
 	    $infile{input} = shift(@ARGV);
-	    
+
 	    ## Output file
 
 =pod
@@ -252,31 +290,58 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-o") {
 	    $outfile{output} = shift(@ARGV);
-	    
+
 	    ## Gene column
 
 =pod
 
 =item	B<-gene_col gene_column>
 
-Number of the column containing the gene names/identifiers (default: 1).
+Number of the column containing the gene names/identifiers in the
+query file (default: 1).
 
 =cut
 	} elsif ($arg eq "-gene_col") {
 	    $gene_col = shift(@ARGV);
-	    
+
 	    ## Organism column
 
 =pod
 
 =item	B<-org_col organism_column>
 
-Number of the column containing the organisms (default: 2)
+Number of the column containing the organisms in the query file
+(default: 2)
 
 =cut
 	} elsif ($arg eq "-org_col") {
 	    $org_col = shift(@ARGV);
-	    
+
+
+=pod
+
+=item B<-quick>
+
+Quick mode. Instead of iteratiely running the command I<retrieve-seq>
+for each organism, the quick mode uses pre-computed upstream sequence
+files in "features" format (.ft), located in
+$RSAT/data/genomes/${ORG}/genome. Sequences are extracted from those
+tab-delimited files with the system command I<awk>, supported on Unix
+systems.
+
+Quick mode assumes that
+
+=over
+
+=item queries are formulated as IDs
+
+=item upstream sequences have been pre-installed in features format the
+   $RSAT genome folder
+
+=cut
+
+	} elsif ($arg eq "-quick") {
+	    $main::quick_mode = 1;
 
 	    ## Other arguments are passed to retrieve-seq
 
@@ -284,7 +349,7 @@ Number of the column containing the organisms (default: 2)
 
 =item B<other parameters>
 
-All other parameters are passed to the command retrieve-seq. 
+All other parameters are passed to the command retrieve-seq.
 
 See the manual of retrieve-seq for a description of supported parameters.
 
@@ -309,28 +374,29 @@ See the manual of retrieve-seq for a description of supported parameters.
 ################################################################
 #### verbose message
 sub Verbose {
-    warn "; retrieve-seq-multigenome ";
-    &PrintArguments($out);
-    if (%main::infile) {
-	warn "; Input files\n";
-	while (($key,$value) = each %infile) {
-	    warn ";\t$key\t$value\n";
-	}
+  warn "; retrieve-seq-multigenome ";
+  &PrintArguments($out);
+  if (%main::infile) {
+    warn "; Input files\n";
+    while (($key,$value) = each %infile) {
+      warn ";\t$key\t$value\n";
     }
-    if (%main::outfile) {
-	warn "; Output files\n";
-	while (($key,$value) = each %outfile) {
-	    warn ";\t$key\t$value\n";
-	}
+  }
+  if (%main::outfile) {
+    warn "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      warn ";\t$key\t$value\n";
     }
+  }
 
-    ## report genes per organism
-    warn "; Gene sets\n";
-    foreach my $org (keys(%genes_per_org)) {
-	my $geneset = $genes_per_org{$org};
-	warn ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
-    }
-
+  ## report genes per organism
+  warn "; Gene sets\n";
+  foreach my $org (keys(%genes_per_org)) {
+#    my $geneset = $genes_per_org{$org};
+#    warn ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
+  my @genes = @{$genes_per_org{$org}};
+    warn join ("\t", ";", sprintf("%-35s", $org), scalar(@genes)." genes", join ("; ", @genes)), "\n";
+  }
 }
 
 
