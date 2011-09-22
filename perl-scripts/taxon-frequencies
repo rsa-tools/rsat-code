@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.45 2011/04/10 13:49:58 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.46 2011/09/22 20:53:07 jvanheld Exp $
 #
 ############################################################
 
@@ -219,7 +219,7 @@ package main;
     }
   }
 
-  &RSAT::message::Info("Computing taxon-frequencies for", scalar(@taxa),"taxa") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Computing taxon-frequencies for", scalar(@taxa),"taxa") if ($main::verbose >= 1);
   if ($main::verbose >= 3) {
     my $t = 0;
     foreach my $taxon (@taxa) {
