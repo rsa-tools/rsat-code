@@ -888,8 +888,6 @@ sub PrintNextSequence {
     if (($out_format eq "multi")  || ($out_format eq "ft")) {
 	$line_width = 0;
     }
-
-
     $sequence = &FoldSequence($sequence,$line_width);
 
     if ($out_format eq "ig") {          ## IntelliGenetics format
