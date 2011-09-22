@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.84 2011/04/10 13:49:58 jvanheld Exp $
+# $Id: retrieve-seq,v 1.85 2011/09/22 11:07:06 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -50,7 +50,7 @@ $prefix = "";
 			      reg_left
 			      reg_right);
 foreach my $field (@supported_label_fields) {
-    $supported_label_fields{$field}++;
+  $supported_label_fields{$field}++;
 }
 $supported_label_fields = join ",", @supported_label_fields;
 @label_fields = ();
@@ -418,7 +418,8 @@ foreach our $query (@queries) {
     my $location = join (":", $organism_name, $ctg, $reg_left."-".$reg_right, $orf_strand);
     my $feature_types = join(",", $organism->get_attribute("feature_types"));
     if ($out_format eq "ft") {
-	@comments = ($ctg, $sequence_type, $orf_strand, $reg_left, $reg_right, $organism_name, $location);
+      my $ortho_label = join ("|", $current_id, $organism_name, $name);
+	@comments = ($ctg, $sequence_type, $orf_strand, $reg_left, $reg_right, $organism_name, $location, $ortho_label);
 
       } elsif (!$no_comments) {
 	if ($sequence_type eq "random fragments") {
@@ -942,23 +943,23 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-label") {
 	    my @fields = (split(",", lc($ARGV[$a+1])));
 	    foreach my $field (@fields) {
-		if ($supported_label_fields{$field}) {
-		    push @label_fields, $field;
-		} elsif ($field eq "gene") {
-		    &RSAT::message::Warning('label field "gene" is obsolete. Please use "-label name" instead.');
-		    push @label_fields, "name";		    
-		} elsif ($field eq "orf") {
-		    &RSAT::message::Warning('label field "orf" is obsolete. Please use "-label id" instead.');
-		    push @label_fields, "id";		    
-		} elsif ($field eq "orf_gene") {
-		    &RSAT::message::Warning('label field "orf_gene" is obsolete. Please use "-label id,name" instead.');
-		    push @label_fields, ("id","name");		    
-		} elsif ($field eq "full") {
-#		    &RSAT::message::Warning('label field "full" is obsolete. Please select manually the desired fields. Supported: '.$supported_label_fields);
-		    push @label_fields, @supported_label_fields;
-		} else {
-		    &RSAT::error::FatalError("$field is not a valid field for sequence label. Supported: $supported_label_fields.");
-		}
+	      if ($supported_label_fields{$field}) {
+		push @label_fields, $field;
+	      } elsif ($field eq "gene") {
+		&RSAT::message::Warning('label field "gene" is obsolete. Please use "-label name" instead.');
+		push @label_fields, "name";		    
+	      } elsif ($field eq "orf") {
+		&RSAT::message::Warning('label field "orf" is obsolete. Please use "-label id" instead.');
+		push @label_fields, "id";
+	      } elsif ($field eq "orf_gene") {
+		&RSAT::message::Warning('label field "orf_gene" is obsolete. Please use "-label id,name" instead.');
+		push @label_fields, ("id","name");		    
+	      } elsif ($field eq "full") {
+		#		    &RSAT::message::Warning('label field "full" is obsolete. Please select manually the desired fields. Supported: '.$supported_label_fields);
+		push @label_fields, @supported_label_fields;
+	      } else {
+		&RSAT::error::FatalError("$field is not a valid field for sequence label. Supported: $supported_label_fields.");
+	      }
 	    }
 	    
 	    #### Label field separator
