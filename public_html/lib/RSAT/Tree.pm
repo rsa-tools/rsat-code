@@ -667,7 +667,6 @@ sub create_newick {
       &create_newick($self,$childid, 1);
     }
   }
-  
   my @species = @{$newick_results{$taxonid}};
 
 
