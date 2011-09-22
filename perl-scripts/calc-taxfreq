@@ -15,9 +15,9 @@
 
 # use strict;
 BEGIN {
-    if ($0 =~ /([^(\/)]+)$/) {
-	push (@INC, "$`lib/");
-    }
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
 }
 require "RSA.lib";
 use RSAT::Tree;
@@ -140,16 +140,18 @@ my %bg_params = ('bg'=>$bg,
 
 ################################################################
 #### Select a list of organism with their taxonomy
-    ## Create a tree with the taxonomy
-    my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+
+
+## Create a tree with the taxonomy
+my $tree = new RSAT::Tree();
+$tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
 #    print $tree->as_indented_text("--",$root_taxon,"text","all",undef);
 
 ################################################################
 #### Get frequencies files for all organisms belonging to the same taxon
 #foreach my $taxon ($tree->RSAT::Tree::get_all_descendents("DFS","node",undef,undef)){
 foreach my $taxon ($tree->get_node_by_id($root_name),$tree->get_node_by_id($root_name)->get_all_descendents("DFS","node",undef,undef)){
-    
+
   # get organisms
   my @organisms = $taxon->get_all_descendents("DFS","leaf",undef,undef);
   &RSAT::message::TimeWarn(join("\t","Taxon :",
