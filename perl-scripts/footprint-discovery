@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.65 2011/08/02 12:49:43 rsat Exp $
+# $Id: footprint-discovery,v 1.66 2011/09/22 20:53:28 jvanheld Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.65 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.66 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -379,7 +379,7 @@ package main;
       $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
       &RSAT::util::CheckOutDir($dir{bg_model});
 
-      &RSAT::message::Warning("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
       if ($task{bg_model}) {
@@ -393,7 +393,7 @@ package main;
     } else {
       &RSAT::error::FatalError($bg_model, "Invalid background model. Supported: ", $supported_bg_models) unless ($supported_bg_model{$bg_model});
     }
-    &RSAT::message::Info("Background model file", $infile{bg_model}) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Background model file", $infile{bg_model}) if ($main::verbose >= 3);
   }
 
 
@@ -403,7 +403,7 @@ package main;
   local $q = 0;
   if ($main::sep_genes) {
     local $query_nb = scalar(@query_genes);
-    foreach my $current_gene (@query_genes) {
+    foreach our $current_gene (@query_genes) {
       $q++;
      #  if (($skip > 0) && ($q <= $skip)) {
 # 	  &RSAT::message::Info("Skipping gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
@@ -447,8 +447,6 @@ package main;
   ## Close the main index stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
   print $main_index "</table>\n";
-
-
   print $main_index "<h2>File index</h2>\n";
   print $main_index "<p><table>\n";
   foreach my $key (@to_index) {
@@ -606,7 +604,7 @@ sub RunFootprintDisco {
   ################################################################
   ## Close query-specific output streams
   my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
-  print $main::out $query_exec_time if ($main::verbose >= 1);
+  print $out $query_exec_time if ($main::verbose >= 1);
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
 
@@ -820,7 +818,7 @@ Precises that the background model that will be used for dyad-analysis will be a
 =cut
     } elsif ($arg eq "-bg_model") {
       $main::bg_model = shift(@arguments);
-      
+
 	  ## Background model file
 
 =pod
@@ -833,8 +831,8 @@ This option must be used in combination with the option -bg_model file
 =cut
     } elsif ($arg eq "-bgfile") {
       $main::bgfile = shift(@arguments);
-      
-	  ## Dyads filtering
+
+	  ## Dyad filtering
 
 =pod
 
@@ -897,13 +895,13 @@ sub Verbose {
   }
 
   if (%main::infile) {
-    print $main::out "; Input files\n";
+    print $out "; Input files\n";
     while (my ($key,$value) = each %main::infile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
   if (%main::outfile) {
-    print $main::out "; Output files\n";
+    print $out "; Output files\n";
     while (my ($key,$value) = each %main::outfile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
