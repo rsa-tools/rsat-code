@@ -381,9 +381,9 @@ sub InitQueryOutput {
     $promoter = "ortho";
   }
   $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab"; ##
-  #  $outfile{seq_notclean} = $outfile{prefix}."_".$promoter."_seq_notclean.fasta"; 
+  $outfile{seq_notclean} = $outfile{prefix}."_".$promoter."_seq_notclean.fasta"; 
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta"; 
-  #  $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
+  # $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
   return($outfile_prefix, $query_prefix);
 }
@@ -1188,14 +1188,16 @@ sub RetrieveOrthoSeq {
   if ($task{ortho_seq}) {
     &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 2);
     &CheckDependency("ortho_seq", "bbh");
-    my $cmd = $SCRIPTS."/retrieve-seq-multigenome -ids_only";
+    my $cmd = $SCRIPTS."/retrieve-seq-multigenome -v 1 -ids_only -quick";
     $cmd .= " -i ".$outfile{bbh};
     $cmd .= " -noorf";
     $cmd .= " -feattype CDS,mRNA,tRNA,scRNA,misc_RNA" ;
-#    $cmd .= " -o ". $outfile{seq_notclean} ;
-#    &one_command($cmd);
-    $cmd .= "| ".$SCRIPTS."/convert-seq";
-#    $cmd .= " -i ".$outfile{seq_notclean};
+    $cmd .= " -o ". $outfile{seq_notclean} ;
+    &one_command($cmd);
+
+    ## Clearn non-dna characters
+    $cmd = $SCRIPTS."/convert-seq";
+    $cmd .= " -i ".$outfile{seq_notclean};
     $cmd .= " -mask non-dna ";
     $cmd .= " -from fasta ";
     $cmd .= " -to fasta ";
