@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.110 2011/09/22 10:13:55 jvanheld Exp $
+# $Id: install-organism,v 1.111 2011/09/22 10:15:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -1231,14 +1231,8 @@ sub ReadArguments {
     } elsif ($arg eq "-org") {
 
       my $organism_short_name = shift(@arguments);
-<<<<<<< install-organism
-      &RSAT::error::FatalError( $organism__short_name, "Invalid short name: cannot contain spaces") if ($organism_short_name =~ /\s/);
-      push @main::organisms, $organism_short_name;
-      &RSAT::message::Debug("organism", $organism_short_name, scalar(@organisms)) if ($main::verbose >= 0);
-=======
       &RSAT::error::FatalError( $organism_short_name, "Invalid short name: cannot contain spaces") if ($organism_short_name =~ /\s/);
       push @organisms, $organism_short_name;
->>>>>>> 1.109
 
       ## Taxon
     } elsif ($arg eq "-taxon") {
