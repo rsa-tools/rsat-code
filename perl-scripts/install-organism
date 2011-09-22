@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.108 2011/09/22 06:44:40 jvanheld Exp $
+# $Id: install-organism,v 1.109 2011/09/22 09:20:40 amedina Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -139,7 +139,7 @@ if (scalar(@taxa) > 0) {
 
 
 ## Check that at least one organism has been specified
-&RSAT::error::FatalError("At least one organism should be specified, with the option -org or -taxon") unless (scalar(@organisms) > 1);
+&RSAT::error::FatalError("At least one organism should be specified, with the option -org or -taxon") unless (scalar(@organisms) >= 1);
 
 ## Some options are incompatible with multiple organisms
 if  (scalar(@organisms) > 1) {
@@ -1224,8 +1224,9 @@ sub ReadArguments {
 
       ## Organism name in one word (spaces replaced  by underscores)
     } elsif ($arg eq "-org") {
+
       my $organism_short_name = shift(@arguments);
-      &RSAT::error::FatalError( $organism__short_name, "Invalid short name: cannot contain spaces") if ($organism_short_name =~ /\s/);
+      &RSAT::error::FatalError( $organism_short_name, "Invalid short name: cannot contain spaces") if ($organism_short_name =~ /\s/);
       push @organisms, $organism_short_name;
 
       ## Taxon
