@@ -1,17 +1,27 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.107 2011/09/21 23:20:55 jvanheld Exp $
+# $Id: install-organism,v 1.108 2011/09/22 06:44:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
 ############################################################
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
 
+
+# use strict;
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
 }
 require "RSA.lib";
 require RSAT::util;
+use RSAT::Tree;
+use RSAT::TreeNode;
+
+if ($0 =~ /([^(\/)]+)$/) {
+  push (@INC, "$`lib/");
+}
 
 ## initialisation
 
@@ -91,135 +101,159 @@ if ($task{all}) {
 #################### check argument values #####################
 ################################################################
 
-### if new data is parsed from Genbank, automatically update the config
-#$task{config} = 1 if ($task{parse}); 
-
-## check organism name
-unless ($organism_short_name) {
-    print "Enter organism short name : ";
-    $organism_short_name = <STDIN>;
-    $organism_short_name = &trim($organism_short_name);
-    die "\n\tError : invalid short name '$organism_short_name' \n\tshort name cannot contain spaces\n\n"
-	if ($organism_short_name =~ /\s/);
-    die "\n\tError: you should specify a short name for your organism\n\n"
-	unless ($organism_short_name =~ /\S/);
-}
-
-unless ($organism_full_name) {
-    if ($organism_short_name =~ /\_/) {
-	$organism_full_name = $organism_short_name;
-	$organism_full_name =~ s/\_/ /g;
-    } else {
-	print "Enter organism full name : ";
-	$organism_full_name = <STDIN>;
-	$organism_full_name = &trim($organism_full_name);
-	die "\n\tError: you should specify a full name for the organism\n\n"
-	    unless ($organism_full_name =~ /\S/);
-    }
-}
-
-
+## Consistency between tasks
 if ($task{oligos} || $task{dyads}) {
-    unless (($task{upstream_freq}) ||
-	    ($task{intergenic_freq}) ||
-	    ($task{protein_freq}) ||
-	    ($task{genome_freq}) ||
-	    ($task{ensembl_freq})) {
-	
-	&RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type among the following. ", 
-				 "\n\tupstream_freq,intergenic_freq,genome_freq,protein_freq,ensembl_freq");
-    }
+  unless (($task{upstream_freq}) ||
+	  ($task{intergenic_freq}) ||
+	  ($task{protein_freq}) ||
+	  ($task{genome_freq}) ||
+	  ($task{ensembl_freq})) {
+    &RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type among the following. ",
+			     "\n\tupstream_freq,intergenic_freq,genome_freq,protein_freq,ensembl_freq");
+  }
+}
+if (($task{protein_freq}) && !($task{oligos})){
+  &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
+}
+
+## If a taxon has been specified, collect the list of organisms
+if (scalar(@taxa) > 0) {
+  if ($task{parse}) {
+    &RSAT::message::Warning("With the option -taxon, the parse option will only re-parse previously installed organisms from the selected taxon");
+  }
+
+  $tree = new RSAT::Tree();
+  $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+
+  foreach my $taxon (@taxa) {
+      my $taxon_node = $tree->get_node_by_id($taxon);
+      my @taxon_organisms = $taxon_node->get_all_descendents("DFS","leaf",undef,undef);
+      &RSAT::message::TimeWarn("Collected", scalar(@taxon_organisms), "organisms for taxon", $taxon, $taxon_node) if ($main::verbose >= 0);
+      foreach my $org_node (@taxon_organisms) {
+	  my $short_organism_name = $org_node->getid();
+	  push @organisms, $short_organism_name;
+      }
+  }
+  @organisms = sort (@organisms);
+}
+
+
+## Check that at least one organism has been specified
+&RSAT::error::FatalError("At least one organism should be specified, with the option -org or -taxon") unless (scalar(@organisms) > 1);
+
+## Some options are incompatible with multiple organisms
+if  (scalar(@organisms) > 1) {
+  &RSAT::message::FatalError("The option -organism is not valid when multiple organisms are selected.") if ($organism_full_name);
+  &RSAT::message::FatalError("The option -dir is not valid when multiple organisms are selected.") if ($install_dir);
+  &RSAT::message::FatalError("The option -syn is not valid when multiple organisms are selected.") if ($outfile{synonyms});
 }
 
 ################################################################
 ## Input directory
 if ($task{parse}) {
-    unless ($dir{genbank}) {
-	if ($ENV{GENBANK_DIR}) {
-	    $dir{genbank} = $ENV{GENBANK_DIR};
-	} elsif ($GENBANK_DIR) {
-	    $dir{genbank} = $GENBANK_DIR;
-	} else {
-	    &RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
-	}
+  unless ($dir{genbank}) {
+    if ($ENV{GENBANK_DIR}) {
+      $dir{genbank} = $ENV{GENBANK_DIR};
+    } elsif ($GENBANK_DIR) {
+      $dir{genbank} = $GENBANK_DIR;
+    } else {
+      &RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
     }
-    unless (-d $dir{genbank}) {
-	&RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
-    }
+  }
+  unless (-d $dir{genbank}) {
+    &RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
+  }
 }
 
 ################################################################
-##################### installation directories #################
-################################################################
-umask 0002;
-if ($dir{install}) {
+## Iterate installation over selected organisms
+$i = 0;
+foreach our $organism_short_name (@organisms) {
+  $i++;
+  &RSAT::message::TimeWarn("Installing organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
+
+  ################################################################
+  ## Automatic full name specification
+  unless ($organism_full_name) {
+    if ($organism_short_name =~ /\_/) {
+      $organism_full_name = $organism_short_name;
+      $organism_full_name =~ s/\_/ /g;
+    }
+  }
+
+  ################################################################
+  ## Installation directories
+  umask 0002;
+  if ($install_dir) {
+    $dir{install} = $install_dir;
     &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 1);
-} elsif ($supported_organism{$organism_short_name}->{'data'}) {
+  } elsif ($supported_organism{$organism_short_name}->{'data'}) {
     $dir{install} = $supported_organism{$organism_short_name}->{'data'};
     &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 1);
-} else {
+  } else {
     $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
     &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 1);
+  }
+
+  &RSAT::util::CheckOutDir($dir{install});
+
+  $dir{genome} = "$dir{install}/genome";
+  &RSAT::util::CheckOutDir($dir{genome});
+
+  $dir{oligos} = "$dir{install}/oligo-frequencies";
+  &RSAT::util::CheckOutDir($dir{oligos});
+
+  $outfile{features} = "$dir{genome}/feature.tab";
+  $outfile{synonyms} = "$dir{genome}/feature_names.tab";
+  $outfile{genome} = "$dir{genome}/contigs.txt";
+
+
+  ################################################################
+  ###################### Installation tasks ######################
+  ################################################################
+
+  ## Open an output stream for messages
+  our $out = &OpenOutputFile($outputfile);
+  &Verbose() if ($verbose >= 1);
+
+  &ParseGenome() if ($task{parse});
+
+  &UpdateConfig() if ($task{config});
+
+  &CreatePhylogeny() if ($task{phylogeny});
+
+  &StartAndStopCodons() if ($task{start_stop});
+
+  &IntergenicSegments() if ($task{genome_segments});
+
+  &AllUpstream() if ($task{allup});
+
+  &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
+
+  &CleanUp if ($task{clean});
+
+  ## Touch the installation dir to indicate the last modification date
+  $dir{main};
+  chdir($dir{main});
+  &RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
+  system "touch $dir{install}";
+
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+
+  close $out if ($outputfile);
 }
-
-&RSAT::util::CheckOutDir($dir{install});
-
-$dir{genome} = "$dir{install}/genome";
-&RSAT::util::CheckOutDir($dir{genome});
-
-$dir{oligos} = "$dir{install}/oligo-frequencies";
-&RSAT::util::CheckOutDir($dir{oligos});
-
-$outfile{features} = "$dir{genome}/feature.tab" unless ($outfile{features});
-$outfile{synonyms} = "$dir{genome}/feature_names.tab" unless ($outfile{synonyms});
-$outfile{genome} = "$dir{genome}/contigs.txt" unless ($outfile{genome});
-
-
-################################################################
-###################### Installation tasks ######################
-################################################################
-
-## Open an output stream for messages
-$out = &OpenOutputFile($outputfile);
-&Verbose() if ($verbose >= 1);
-
-&ParseGenome() if ($task{parse});
-
-&UpdateConfig() if ($task{config});
-
-&CreatePhylogeny() if ($task{phylogeny});
-
-&StartAndStopCodons() if ($task{start_stop});
-
-&IntergenicSegments() if ($task{genome_segments});
-
-&AllUpstream() if ($task{allup});
-
-&CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
-
-&CleanUp if ($task{clean});
-
-close $out if ($outputfile);
-
-## Touch the installation dir to indicate the last modification date
-$dir{main};
-chdir($dir{main});
-&RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
-system "touch $dir{install}";
-
-my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-print $main::out $exec_time if ($main::verbose >= 1);
 exit(0);
 
 
 
 ################################################################
-#####################     subroutines     ######################
+##################  SUBROUTINE DEFINITIONS  ####################
 ################################################################
 
 
 ################################################################
-## display verbosity message
+## Display verbosity message
 sub Verbose {
     print $out "; install-organism ";
     &PrintArguments($out);
@@ -247,7 +281,8 @@ sub Verbose {
     printf $out ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
     printf $out ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
     printf $out ";    %-25s\t%s\n", "Genbank dir", $dir{genbank};
-    printf $out ";    %-25s\t%s\n", "installation dir", $dir{install};
+    printf $out ";    %-25s\t%s\n", "Installation directory", $dir{install};
+    printf $out ";    %-25s\t%s\n", "Genome directory", $dir{genome};
     printf $out ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
     printf $out ";    %-25s\t%s\n", "feature table", $outfile{features};
     printf $out ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
@@ -268,7 +303,6 @@ sub UpdateConfig {
     next unless (/\S/);
     if (/^-- field\s+(\d)	taxonomy/) {
       $taxonomy_field = $1;
-      
     } elsif (/^--/) {
       next;
     } else {
@@ -524,6 +558,7 @@ sub AllUpstream {
 	$command .= " -type upstream -org ".$organism_short_name;
 	$command .= " ".${noorf};
 	$command .= " ".${masking};
+	$command .= " -label ID";
 	$command .= " -format ".$format;
 	$command .= " -o ".$seq_file.".".$format;
 	&doit($command, $dry_run, $die_on_error, $verbose);
@@ -926,6 +961,24 @@ OPTIONS
 	-org	organism name without spaces 
 	        (e.g. Saccharomyces_cerevisiae)
 
+		The option -org can be used iteratively on the same
+		command line to iterate the installation over multiple
+		organisms.
+
+       -taxon  taxon name (mutually exclusive with -org)
+
+		The installation will iterate over all organisms of
+		the selected taxon. Note that the command will only
+		apply to the organisms previously declared with the
+		command install-organism -task config. The option
+		-taxon is thus convenient for re-running installation
+		tasks on previously installed organisms rather than
+		for installing new genomes downloaded e.g. from NCBI.
+
+		The option -taxon can be used iteratively on the same
+		command line to iterate the installation over multiple
+		taxa.
+
 
     OPTIONAL ARGUMENTS
 	-organism
@@ -1112,6 +1165,7 @@ install_organism options
 -v		verbose
 -n		dry run (print commands without executing them)
 -org		organism name without spaces (e.g. Saccharomyces_cerevisiae);
+-taxon		iterate installation tasks over all the previously installed organisms of a taxon
 -organism	full organism name (e.g. Saccharomyces cerevisiae)
 -source		data source (e.g. ncbi);
 -dir		absolute path of the installation directory
@@ -1137,127 +1191,136 @@ End_short_help
 ################################################################
 ## Read arguments 
 sub ReadArguments {
-    foreach my $a (0..$#ARGV) {
-	### verbose ###
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
-	    
-	    ## dry run
-	} elsif ($ARGV[$a] eq "-n") {
-	    $dry_run = 1;
-	    $verbose = 1;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
 
-	    ## detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
-	    
-	    ## list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
-	    
-	    ## output file
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+    #    foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$verbose = shift(@arguments);
+      } else {
+	$verbose = 1;
+      }
 
-	    ## data source
-	} elsif ($ARGV[$a] eq "-source") {
-	    $source = $ARGV[$a+1];
+      ## dry run
+    } elsif ($arg eq "-n") {
+      $dry_run = 1;
+      $verbose = 1;
 
-	    ## organism
-	} elsif ($ARGV[$a] eq "-org") {
-	    $organism_short_name = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-organism") {
-	    $organism_full_name = $ARGV[$a+1];
+      ## detailed help
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
 
-	    ## synonyms
-	} elsif ($ARGV[$a] =~ /-syn/) {
-	    $infile{synonyms} = $ARGV[$a+1];
+      ## list of options
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
 
-	    ## Specify the limits of upstream regions
-	} elsif ($ARGV[$a] eq "-up_from") {
-	    $up_from = $ARGV[$a+1];
-	    &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be integer)")) unless (&IsInteger($up_from));
-	    &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be negative)")) if ($up_from >= 0);
+      ## output file
+    } elsif ($arg eq "-o") {
+      $outputfile = shift(@arguments);
 
-	} elsif ($ARGV[$a] eq "-up_to") {
-	    $up_to = $ARGV[$a+1];
-	    &FatalError(join ("\t", $up_to, "Invalid value for the to parameter (must be integer)")) unless (&IsInteger($up_to));
 
-	} elsif ($ARGV[$a] eq "-prefid") {
-	    $parse_options .= join(" " , " -prefid", $ARGV[$a+1], $ARGV[$a+2]);
+      ## Organism name in one word (spaces replaced  by underscores)
+    } elsif ($arg eq "-org") {
+      my $organism_short_name = shift(@arguments);
+      &RSAT::error::FatalError( $organism__short_name, "Invalid short name: cannot contain spaces") if ($organism_short_name =~ /\s/);
+      push @organisms, $organism_short_name;
 
-	} elsif ($ARGV[$a] eq "-date") {
-	    $force_date = $ARGV[$a+1];
+      ## Taxon
+    } elsif ($arg eq "-taxon") {
+      push @taxa, shift(@arguments);
 
-	    ## installation dir
-	} elsif ($ARGV[$a] =~ /^-dir/) {
-	    $dir{install} = $ARGV[$a+1];
+      ## Full organism name (may include spaces)
+    } elsif ($arg eq "-organism") {
+      $organism_full_name = shift(@arguments);
 
-	    ## Genbank dir
-	} elsif ($ARGV[$a] =~ /^-genbank/) {
-	    $dir{genbank} = $ARGV[$a+1];
+      ## synonyms
+    } elsif ($arg =~ /-syn/) {
+      $infile{synonyms} = shift(@arguments);
 
-	    ## ENSEMBL dir
-	} elsif ($ARGV[$a] =~ /^-ensembl/) {
-	    $dir{ensembl} = $ARGV[$a+1];
+      ## Specify the limits of upstream regions
+    } elsif ($arg eq "-up_from") {
+      $up_from = shift(@arguments);
+      &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be integer)")) unless (&IsInteger($up_from));
+      &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be negative)")) if ($up_from >= 0);
 
-	    ## Sequence source
-	} elsif ($ARGV[$a] eq "-source") {
-	    $source = $ARGV[$a+1];
+    } elsif ($arg eq "-up_to") {
+      $up_to = shift(@arguments);
+      &FatalError(join ("\t", $up_to, "Invalid value for the to parameter (must be integer)")) unless (&IsInteger($up_to));
 
-	    ## Batch mode
-	} elsif ($ARGV[$a] eq "-batch") {
-	    $batch = 1;
+    } elsif ($arg eq "-prefid") {
+      $parse_options .= join(" " , " -prefid", shift(@arguments), $ARGV[$a+2]);
 
-	    ## Masking modes
-	} elsif ($ARGV[$a] eq "-rm") {
-	    push @masking_modes, "-rm";;
+    } elsif ($arg eq "-date") {
+      $force_date = shift(@arguments);
 
-	    ## task selection
-	} elsif (($ARGV[$a] =~ /^-task/) 
-		 || ($ARGV[$a] =~ /^-step/)) {
-	    my @requested_tasks = split ",", $ARGV[$a+1];
-	    foreach my $task (@requested_tasks) {
-		next unless $task;
-		if ($supported_task{$task}) {
-		    $task{$task} = 1;
-		} else {
-		    &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
-		}
-	    }
+      ## installation dir
+    } elsif ($arg =~ /^-dir/) {
+      $install_dir = shift(@arguments);
 
-	    ## image format
-	  } elsif ($ARGV[$a] eq "-img_format") {
-	    $img_format = lc($ARGV[$a+1]);
+      ## Genbank dir
+    } elsif ($arg =~ /^-genbank/) {
+      $dir{genbank} = shift(@arguments);
 
-	    ## local configuration file specified with an environment variable
-	} elsif ($ARGV[$a] =~ /^-local/) {
-	    unless ($ENV{'RSA_LOCAL_CONFIG'}) {
-		die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
-	    }
-	    $local_config = 1;
+      ## ENSEMBL dir
+    } elsif ($arg =~ /^-ensembl/) {
+      $dir{ensembl} = shift(@arguments);
 
-	    ## alternative configuration file
-	} elsif ($ARGV[$a] =~ /^-config/) {
-	    $ENV{'RSA_LOCAL_CONFIG'}  = $ARGV[$a+1];
-	    unless ($ENV{'RSA_LOCAL_CONFIG'}) {
-		die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
-	    }
-	    $local_config = 1;
+      ## data source
+    } elsif ($arg eq "-source") {
+      $source = shift(@arguments);
 
+      ## Batch mode
+    } elsif ($arg eq "-batch") {
+      $batch = 1;
+
+      ## Masking modes
+    } elsif ($arg eq "-rm") {
+      push @masking_modes, "-rm";;
+
+      ## task selection
+    } elsif (($arg =~ /^-task/) 
+	     || ($arg =~ /^-step/)) {
+      my @requested_tasks = split ",", shift(@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
 	}
+      }
+
+      ## image format
+    } elsif ($arg eq "-img_format") {
+      $img_format = lc(shift(@arguments));
+
+      ## local configuration file specified with an environment variable
+    } elsif ($arg =~ /^-local/) {
+      unless ($ENV{'RSA_LOCAL_CONFIG'}) {
+	die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
+      }
+      $local_config = 1;
+
+      ## alternative configuration file
+    } elsif ($arg =~ /^-config/) {
+      $ENV{'RSA_LOCAL_CONFIG'}  = shift(@arguments);
+      unless ($ENV{'RSA_LOCAL_CONFIG'}) {
+	die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
+      }
+      $local_config = 1;
+
     }
+  }
 }
 
 ################################################################
 ## Retrieve start and stop codons and calculate word occurrences
 ## (for checking)
 sub StartAndStopCodons {
-  &RSAT::message::TimeWarn("&StartAndStopCodons()") if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("&StartAndStopCodons()") if ($main::verbose >= 1);
   #    my $label =  "orf";
   my $label =  "id,ctg,reg_left,reg_right,orf_strand";
   my $prefix = $dir{genome}."/".${organism_short_name};
