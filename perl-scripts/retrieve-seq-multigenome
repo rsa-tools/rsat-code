@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.15 2011/09/22 11:12:50 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.16 2011/09/22 18:21:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -322,9 +322,9 @@ Number of the column containing the organisms in the query file
 
 =item B<-quick>
 
-Quick mode. Instead of iteratiely running the command I<retrieve-seq>
+Quick mode. Instead of iteratively running the command I<retrieve-seq>
 for each organism, the quick mode uses pre-computed upstream sequence
-files in "features" format (.ft), located in
+files in "features" format (.ft), stored in
 $RSAT/data/genomes/${ORG}/genome. Sequences are extracted from those
 tab-delimited files with the system command I<awk>, supported on Unix
 systems.
@@ -333,10 +333,19 @@ Quick mode assumes that
 
 =over
 
-=item queries are formulated as IDs
+=item queries are formulated as IDs (not gene names). Note that this
+corresponds to the default output format of I<get-orthologs>, the
+program usually evoked to obtain the lists of orthologs used as input
+for I<retrieve-seq-multigenome>.
 
-=item upstream sequences have been pre-installed in features format the
-   $RSAT genome folder
+=item Upstream sequences have been pre-installed in features format
+the $RSAT genome folder. This is automatically done with the command
+I<install-organism -task allup>.
+
+=item Sequences have the default length and are truncated to avoid
+overlap with upstream orfs (option I<-noorf> is active). All
+additional parameters (e.g. -from, -to, ...) are ignored instead of
+being passed to I<retrieve-seq> as in slow mode.
 
 =cut
 
