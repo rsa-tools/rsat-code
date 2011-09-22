@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.13 2011/02/17 04:54:49 rsat Exp $
+# $Id: retrieve-seq-multigenome,v 1.14 2011/09/22 06:45:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -70,7 +70,7 @@ require RSAT::Family;
 
 
 ################################################################
-#### initialise parameters
+## Initialise parameters
 if (defined($SCRIPTS)) {
     $retrieve_seq_cmd = "$SCRIPTS/retrieve-seq"; ## for the web browser, the full path is necessary
 } else {
@@ -95,15 +95,15 @@ local $org_col = 2;
 &ReadArguments();
 
 ################################################################
-#### check argument values
+## Check argument values
 
 
 ################################################################
-### open output stream
+## Open output stream
 $out = &OpenOutputFile($outfile{output});
 
 ################################################################
-##### read input
+## Read input
 #($in) = &OpenInputFile($infile{input});
 #while (<$in>) {
 #    next if (/^;/); ## Skip comment lines
@@ -117,37 +117,38 @@ $out = &OpenOutputFile($outfile{output});
 %genes_per_org = &ReadClasses($infile{input},0,undef,1,$gene_col, $org_col);
 
 ################################################################
-#### print verbose
+## Print verbose
 &Verbose() if ($verbose);
 
 ################################################################
-###### execute the command
-###### print output
+## Execute the command
+
+## Print output
 foreach my $org (sort(keys( %genes_per_org))) {
-    my $geneset = $genes_per_org{$org};
-    my @genes = $geneset->get_members();
-    if (scalar(@genes) > 0) {
-	my $command = "$retrieve_seq_cmd -org ".$org;
-	unless ($label_specified) {
-	    $command .= " -label ".$default_label;
-	} 
-	foreach my $arg (@to_pass) {
-	    if ($arg =~ /\s/) {
-		$command .= " '".$arg."'";
-	    } else {
-		$command .= " ".$arg;
-	    }
-	}
-	$command .= " -q ";
-	$command .= join(" -q ", @genes);
-	warn "\n", $command, "\n",  if ($main::verbose >= 1);
-	print $out `$command`;
+  my $geneset = $genes_per_org{$org};
+  my @genes = $geneset->get_members();
+  if (scalar(@genes) > 0) {
+    my $command = "$retrieve_seq_cmd -org ".$org;
+    unless ($label_specified) {
+      $command .= " -label ".$default_label;
     }
+
+    foreach my $arg (@to_pass) {
+      if ($arg =~ /\s/) {
+	$command .= " '".$arg."'";
+      } else {
+	$command .= " ".$arg;
+      }
+    }
+    $command .= " -q ";
+    $command .= join(" -q ", @genes);
+    warn "\n", $command, "\n",  if ($main::verbose >= 1);
+    print $out `$command`;
+  }
 }
 
-
 ################################################################
-###### close output stream
+## Close output stream
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
 print $main::out $exec_time if ($main::verbose >= 1);
 close $out if ($outfile{output});
@@ -157,19 +158,19 @@ exit(0);
 
 
 ################################################################
-################### subroutine definition ######################
+################### SUBROUTINE DEFINITION ######################
 ################################################################
 
 
 ################################################################
-#### display full help message 
+## Display full help message 
 sub PrintHelp {
     system "pod2text -c $0";
     exit()
 }
 
 ################################################################
-#### display short help message
+## Display short help message
 sub PrintOptions {
     &PrintHelp();
 }
@@ -177,10 +178,11 @@ sub PrintOptions {
 ################################################################
 #### Read arguments 
 sub ReadArguments {
-    my $arg = 0;
-    while ($arg = shift (@ARGV)) {
-    
+  my $arg = 0;
+  while ($arg = shift (@ARGV)) {
+
 	## Verbosity
+
 =pod
 
 
@@ -199,8 +201,9 @@ Level of verbosity (detail in the warning messages during execution)
 	    } else {
 		$verbose = 1;
 	    }
-	    
+
 	    ## Help message
+
 =pod
 
 =item B<-h>
@@ -212,6 +215,7 @@ Display full help message
 	    &PrintHelp();
 	    
 	    ## List of options
+
 =pod
 
 =item B<-help>
@@ -224,6 +228,7 @@ Same as -h
 	    
 
 	    ## Input file
+
 =pod
 
 =item B<-i inputfile>
@@ -236,6 +241,7 @@ allows to use the command within a pipe.
 	    $infile{input} = shift(@ARGV);
 	    
 	    ## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -248,6 +254,7 @@ allows to use the command within a pipe.
 	    $outfile{output} = shift(@ARGV);
 	    
 	    ## Gene column
+
 =pod
 
 =item	B<-gene_col gene_column>
@@ -259,6 +266,7 @@ Number of the column containing the gene names/identifiers (default: 1).
 	    $gene_col = shift(@ARGV);
 	    
 	    ## Organism column
+
 =pod
 
 =item	B<-org_col organism_column>
@@ -271,6 +279,7 @@ Number of the column containing the organisms (default: 2)
 	    
 
 	    ## Other arguments are passed to retrieve-seq
+
 =pod
 
 =item B<other parameters>
