@@ -75,16 +75,19 @@ widely used web server).
 In summary, the configuration includes the following steps.
 
 \begin{enumerate}
-\item Open the apache configuration file \file{/etc/httpd/httpd.conf}
+\item Open the apache configuration file (if your Web server is
+  Apache2, the config is defined in \file{/etc/apache2/httpd.conf}).
 
-\item Specify an alias for rsa-tools in the appropriate section.
+\item Specify an alias for rsa-tools in the appropriate section. You
+  can find the appropriate section by searching similar elements (for
+  example Alias, ScriptAlias).
 
 \begin{lstlisting}
-Alias /rsa-tools /home/myaccount/rsa-tools/public_html/
+Alias /rsat [RSAT_PARENT_PATH]/rsa-tools/public_html/
 \end{lstlisting}
 
-  (you need of course to adapt this command according to your own
-  \RSAT directory)
+<b>Beware:</b> you need of course to adapt [RSAT\_PARENT\_PATH] to
+indicate the parent directory of your \RSAT installation.
 
 \item Associate .cgi extension to CGI scripts
 
@@ -99,13 +102,13 @@ AddHandler cgi-script .cgi
 \item Give authorization to execute CGI scripts in the rsa-tools directory
 
 \begin{lstlisting}
-ScriptAlias /rsa-tools/ /home/myaccount/rsa-tools/public_html/
+ScriptAlias /rsat/ [RSAT_PARENT_PATH]/rsa-tools/public_html/
 \end{lstlisting}
 
 \item Specify the access options for the rsa-tools directory.
 
 \begin{lstlisting}
-<Directory "/home/myaccount/rsa-tools/public_html/">
+<Directory "[RSAT_PARENT_PATH]/rsa-tools/public_html/">
    AllowOverride None
    AddHandler cgi-script .cgi
    Options ExecCGI Indexes
@@ -158,7 +161,7 @@ By default, the RSAT web server is configured to be used from the
 machine on which it is installed. 
 
 \begin{lstlisting}
-$WWW_RSA = 	"http://localhost/rsa-tools/";
+$WWW_RSA = 	"http://localhost/rsat/";
 \end{lstlisting}
 
 If you want to give access from external machines, you need to adapt
@@ -167,7 +170,7 @@ machine. Let us assume that your mahine has the address
 www.myserver. You should then edit the row as follows.
 
 \begin{lstlisting}
-$WWW_RSA = 	"http://www.myserver/rsa-tools/";
+$WWW_RSA = 	"http://www.myserver/rsat/";
 \end{lstlisting}
 
 \subsubsection{Setting the environment variable RSAT}
@@ -189,7 +192,7 @@ above line in the following way.
 
 \begin{lstlisting}
 unless ($ENV{RSAT}) {
-    $ENV{RSAT} = "/home/myaccount/rsa-tools";
+    $ENV{RSAT} = "[RSAT_PARENT_PATH]/rsat";
 }
 \end{lstlisting}
 
@@ -198,7 +201,7 @@ unless ($ENV{RSAT}) {
 
 To test the werb server, open a web browser and connect your \RSAT server
 
-\url{http://www.myserver/rsa-tools/} 
+\url{http://www.myserver/rsat/} 
 
 Of course you  need to adapt the URL according to your IP address.
 
@@ -227,7 +230,7 @@ address of the client machine. We do not want to store any additional
 information (e.g. selected organism, lists of genes), for obvious
 confidentiality reasons.
 
-The log files are saved in the directory \file{rsa-tools/logs}. There
+The log files are saved in the directory \file{\$RSAT/logs}. There
 is one file per month.
 
 
@@ -243,7 +246,7 @@ The \RSAT package includes a make script to clean old files in the
 temporary directory.
 
 \begin{lstlisting}
-cd rsa-tools
+cd $RSAT
 make -f makefiles/server.mk clean_tmp
 \end{lstlisting}
 
@@ -276,7 +279,7 @@ EDITOR or VISUAL).
 \item Add the following line to the \file{crontab} file. 
 
 \begin{lstlisting}
-02 04 * * * make -f /home/myaccount/rsa-tools/makefiles/server.mk clean_tmp
+02 04 * * * make -f [RSAT_PARENT_PATH]/rsa-tools/makefiles/server.mk clean_tmp
 \end{lstlisting}
 
 This will execute the make script \file{server.mk}, with the target
