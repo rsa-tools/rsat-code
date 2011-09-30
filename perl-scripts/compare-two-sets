@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-two-sets,v 1.4 2011/09/30 08:38:13 rsat Exp $
+# $Id: compare-two-sets,v 1.5 2011/09/30 09:46:59 rsat Exp $
 #
 ############################################################
 
@@ -76,7 +76,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -160,8 +160,8 @@ package main;
         RSAT::message::Info("Random Control $i") if ($main::verbose > 4);
         my $rdm_query_ref = &create_rdm_hash($total_size, $query_size);
         my $rdm_reference_ref = &create_rdm_hash($total_size, $reference_size);
-        %rdm_query = %{$rdm_query_ref};
-        %rdm_reference = %{$rdm_reference_ref};
+#         %rdm_query = %{$rdm_query_ref};
+#         %rdm_reference = %{$rdm_reference_ref};
         my ($rdm_common_ref, $rdm_q_only_ref, $rdm_r_only_ref) = &compare_lists($rdm_query_ref, $rdm_reference_ref);
         
         my @rdm_common = @{$rdm_common_ref};
@@ -333,11 +333,11 @@ sub create_venn_diagramm {
   $p->setfont("Arial", 12);
   $p->circle(4.5, 5.5, 1.5);
   $p->text(3.5, 5.5, $ref_size);
-  $p->text(2.8,7.3, $query_name);
+  $p->text(2.4,7.3, $query_name);
 
   # reference circle
   $p->circle(6.3, 5.5, 1.5);
-  $p->text(7.1, 5.5, $q_size);
+  $p->text(6.9, 5.5, $q_size);
   $p->text(6.1, 7.3, $ref_name);
   
   # inter size
