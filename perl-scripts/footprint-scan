@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.103 2011/09/20 02:04:42 jvanheld Exp $
+# $Id: footprint-scan,v 1.104 2011/09/30 09:11:36 amedina Exp $
 #
 ############################################################
 
@@ -320,7 +320,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.104 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -832,8 +832,9 @@ package main;
     ## Analyze query genes separately or altogether
     if ($main::sep_genes) {
       if ($task{synthesis}) {
-	($synthesis_index, $synthesis_table) = &OpenSynthesisPerMatrix ;
+	($synthesis_index, $synthesis_table,$synthesis_all_table) = &OpenSynthesisPerMatrix ;
 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
+	print $synthesis_all_table join ("\t", "#gene","TF","significance","score"),"\n"; ## Header for the complete report table
       }
 
 #      &RSAT::message::Debug("query_genes", scalar(@query_genes), join(";", @query_genes)) if ($main::;
@@ -1858,13 +1859,16 @@ sub OpenSynthesisPerMatrix {
   &RSAT::util::CheckOutDir($dir{synthesis});
   $prefix{$m_suffix."_synthesis"} = join( "/",$dir{synthesis},"synthesis_per_matrix");
   $outfile{$m_suffix."_synthesis_tab"} = $prefix{$m_suffix."_synthesis"}.".tab";
+  $outfile{$m_suffix."_synthesis_all"} = $prefix{$m_suffix."_synthesis"}."_all.tab";
   $outfile{$m_suffix."_synthesis_html"} = $prefix{$m_suffix."_synthesis"}.".html";
 
   my $synthesis_index = &OpenOutputFile($outfile{$m_suffix."_synthesis_html"});
   my $synthesis_table = &OpenOutputFile($outfile{$m_suffix."_synthesis_tab"});
+  my $synthesis_all_table = &OpenOutputFile($outfile{$m_suffix."_synthesis_all"});
+
 
   &RSAT::message::Info("Synthesis per matrix", $prefix{$m_suffix."_synthesis"});
-  return ($synthesis_index, $synthesis_table)  ;
+  return ($synthesis_index, $synthesis_table, $synthesis_all_table)  ;
 }
 
 
