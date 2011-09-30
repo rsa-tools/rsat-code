@@ -1339,12 +1339,14 @@ sub Select_interaction{
  	my ($occ_sig_file) = &OpenInputFile($outfile{occ_sig});
 	my %scores_occ_th=(); # hash to store all scores avobe the pval threshold, 
 	                       #$score and that also pass the threshold set on occ, for selecting possible interactions
+	my %all_scores_occ_th=(); ## All scores are reported to select the highest for all genes even if they don't pass the threshold
 	my $score_column=1;
 	my $occ_column=10;
 	
 	################
 	# Read the occ significance file and select the scores and corresponding occurence significance,
 	&RSAT::message::TimeWarn ("Reading Occurrence significance table to select genes with a probabliy conserved interactions", $outfile{occ_sig}) if ($main::verbose >=2 ) ;
+	my @zero_sig=();
 	while (<$occ_sig_file>) {
 	    chomp;
 	    next if ($_=~/^;/);		# skip comment lines
@@ -1354,14 +1356,24 @@ sub Select_interaction{
 	    my @fields = split /\t+/;
 	    my $one_score=$fields[$score_column];
 	    my $one_occ_sig=$fields[$occ_column];
-                ## store the ones that pass both thresholds in the hash
+	 
+	    #store even if they don't pass the threhold
+	    $all_scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
+	    if ( $one_score==0){
+		push(@zero_sig,$one_occ_sig);
+		&RSAT::message::Debug("Zero occurrence significance", $one_occ_sig, "Associated score",$one_score,$current_gene) if ($main::verbose >= 0);
+	    }
+	    
+	    ## store the ones that pass both thresholds in the hash
+	    
 	    if ($one_score>=$min_weight && $one_occ_sig >= $main::occ_th ){
 		$scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
 		&RSAT::message::Debug("Occ_sig ", $one_occ_sig, "Score",$one_score,$current_gene) if ($main::verbose >= 5);
 	    }
-	   
+	    
 	}
 
+	#Sort scores that pass the threholds
 	my @sorted_scores=sort (keys %scores_occ_th);
 
 	if (scalar(@sorted_scores) >0 ){ #If there are occ significances that passed th threshold
@@ -1378,6 +1390,39 @@ sub Select_interaction{
 	    }
 	}
     
+	#Sort all scores to report all interactios
+	#Report either the score that passed the threshold or anything else if there where none scores that passed the thresholds
+
+
+	if($top_sig{$current_gene} ){
+	    &RSAT::message::Debug("ALL Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
+	    print $synthesis_all_table join("\t",$m_suffix, $current_gene,  $top_sig{$current_gene}, $top_score{$current_gene} )."\n";
+	    
+	}else{
+	    
+	    my @all_sorted_scores=sort ( keys %all_scores_occ_th);	    	    
+	    
+	    if (scalar(@all_sorted_scores) >0 ){ #If there are occ significances that passed th threshold
+		my $all_highest_occ_sig=pop (@all_sorted_scores);
+		my @all_sorted_highest_occ_score=sort (keys %{$all_scores_occ_th{$all_highest_occ_sig}});
+		
+		if (scalar(@all_sorted_highest_occ_score) >0 ){ #If there are scores that passed the pvalue threshold
+		    my $all_highest_occ_score=pop(@all_sorted_highest_occ_score); 
+		    if($all_highest_occ_score<0){ # In case the highest significance is associated to a negative value, use the significance reported for the score zero
+			$all_highest_occ_sig=0;
+			@zero_sig=sort(@zero_sig);
+			$all_highest_occ_score=pop(@zero_sig);
+		    }
+		   
+		    &RSAT::message::Debug("ALL Top sig", $current_gene,  $all_highest_occ_sig , "score",  $all_highest_occ_score ) if ($main::verbose >= 0);
+		    print $synthesis_all_table  join("\t",$m_suffix, $current_gene,  $all_highest_occ_sig,  $all_highest_occ_score )."\n";
+		
+		}
+	    }
+	}
+	
+
+	
 }
 
 
