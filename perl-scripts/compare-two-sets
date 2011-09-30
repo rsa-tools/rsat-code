@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-two-sets,v 1.3 2011/08/18 08:43:54 rsat Exp $
+# $Id: compare-two-sets,v 1.4 2011/09/30 08:38:13 rsat Exp $
 #
 ############################################################
 
@@ -37,15 +37,18 @@ Sylvain Brohée <sylvain@bigre.ulb.ac.be>
 
 template
 
-compare-two-sets -q query_file -r reference_file [-o outputfile] [-n elementsnb] [-random nb_of_randomizations] [-stats] [-v #] [...]
+compare-two-sets -q query_file -r reference_file [-o outputfile] [-n elementsnb] [-random nb_of_randomizations] [-stats] [-venn vennoutput] [-ref_name refname] [-query_name queryname] [-v #] [...]
 
 =head1 INPUT FORMAT
+
 
 The query file and the reference file consist in a set of element names. The first word of each line is considered as being the element name.
 
 =head1 OUTPUT FORMAT
 
 The program returns some statistics and the intersection, the element present in the reference set and not in the query set as well as the elements present in the query set but not in the reference set.
+
+Using the -venn option, you can specify a file name which will contain a Venn diagramm representing the set comparaison test.
 
 =head1 SEE ALSO
 
@@ -63,7 +66,7 @@ BEGIN {
 }
 require "RSA.lib";
 require "RSA.stat.lib";
-
+require PostScript::Simple;
 
 ################################################################
 ## Main package
@@ -73,11 +76,12 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
     %main::outfile = ();
+
 
     $main::verbose = 0;
     $main::in = STDIN;
@@ -85,6 +89,10 @@ package main;
     $n = -1;
     $rdm = -1;
     $statsonly = 0;
+    $venn = 0;
+    
+    my %vennargs = ();
+
 
     ################################################################
     ## Read argument values
@@ -94,6 +102,10 @@ package main;
     ## Check argument values
     &FatalError("File ".$main::infile{query}." does not exist") if (!-e $main::infile{query});
     &FatalError("File ".$main::infile{reference}." does not exist") if (!-e $main::infile{reference});
+    
+    
+    $query_name = $main::infile{query} if (!$query_name);
+    $reference_name = $main::infile{reference} if (!$reference_name);
 
     ################################################################
     ## Open output stream
@@ -169,6 +181,8 @@ package main;
     ################################################################
     ## Insert here output printing
     # stats
+    print $main::out join "\t", ";", "Query name", $query_name."\n";
+    print $main::out join "\t", ";", "Reference name", $reference_name."\n";
     print $main::out join "\t", ";", "Query size", $query_size."\n";
     print $main::out join "\t", ";", "Reference size", $reference_size."\n";
     print $main::out join "\t", ";", "Intersection size", $inter_size."\n";
@@ -187,6 +201,7 @@ package main;
       print $main::out join "\t", ";", "Nb of Random controls", $rdm."\n";
       my $round_rdm_jac = sprintf "%.2f", ($mean_rdm_jac*100);
       print $main::out join "\t", ";", "Random Jaccard index", $round_rdm_jac."%\n";
+      $vennargs{rdmjac} = $round_rdm_jac."%";
     }
     
     # results
@@ -199,6 +214,18 @@ package main;
       print $main::out (join "\n", @r_only)."\n";;
     }
     
+    if ($venn) {
+      $vennargs{ref_size} = $ronly_size;
+      $vennargs{query_size} = $qonly_size;
+      $vennargs{inter_size} = $inter_size;
+      $vennargs{query_name} = $query_name;
+      $vennargs{ref_name} = $reference_name;
+      $vennargs{pval} = $round_pval;
+      $vennargs{jaccard} = $round_jaccard."%";
+      $vennargs{output} = $main::outfile{venn};
+      
+      &create_venn_diagramm(\%vennargs);
+    }
     
 
     ################################################################
@@ -283,6 +310,48 @@ sub create_rdm_hash {
   }
   return \%results;
 }
+
+
+# this function creates a ps file representing a Venn Diagramm
+sub create_venn_diagramm {
+  # get arguments
+  my $args_ref = shift;
+  my %args = %{$args_ref};
+  my $ref_size = $args{ref_size};
+  my $q_size = $args{query_size};
+  my $inter_size = $args{inter_size};
+  my $ref_name = $args{ref_name} || 'R';
+  my $query_name = $args{query_name} || 'Q';
+  my $jaccard = $args{jaccard};
+  my $pval = $args{pval};
+  my $rdm_jac = $args{rdmjac};
+  my $output_file = $args{output};
+  # draw the figures
+  my $p = new PostScript::Simple(xsize => 300, ysize => 300, colour => 1, eps => 0, units => "cm");  
+  # query circle
+  $p->setcolour("black");
+  $p->setfont("Arial", 12);
+  $p->circle(4.5, 5.5, 1.5);
+  $p->text(3.5, 5.5, $ref_size);
+  $p->text(2.8,7.3, $query_name);
+
+  # reference circle
+  $p->circle(6.3, 5.5, 1.5);
+  $p->text(7.1, 5.5, $q_size);
+  $p->text(6.1, 7.3, $ref_name);
+  
+  # inter size
+  $p->text(5.1, 5.5, $inter_size);
+  
+  # stats
+  $p->setfont("Arial", 10);
+  $p->text(4.7, 3.5, "pval : $pval");
+  $p->text(4.2, 3.1, "Jaccard index : $jaccard");
+  $p->text(3.3, 2.7, "Random Jaccard index : $rdm_jac") if ($rdm_jac);
+  
+  $p->output($output_file);
+}
+
 ################################################################
 ## Display short help message
 sub PrintOptions {
@@ -351,6 +420,24 @@ List of items. Only the first word of each line is considered.
 
 =pod
 
+=item B<-query_name query_name>
+
+Name of the query set. If not used, the name of the file will be used on the venn diagramm
+
+=cut
+    } elsif ($arg eq "-query_name") {
+      $query_name = shift(@arguments);
+      
+=item B<-ref_name reference_name>
+
+Name of the reference set. If not used, the name of the file will be used on the venn diagramm
+
+=cut
+    } elsif ($arg eq "-ref_name") {
+      $reference_name = shift(@arguments);
+
+=pod
+
 =item B<-q query_file>
 
 List of items. Only the first word of each line is considered.
@@ -369,6 +456,21 @@ allows to use the command within a pipe.
 =cut
     } elsif ($arg eq "-o") {
       $main::outfile{output} = shift(@arguments);
+      
+      
+=pod
+
+=item	B<-venn vennoutput_file>
+
+Use this option to draw a postscript venn diagramm representing the comparaison. Specify the name of the outputfile
+
+
+=cut
+    } elsif ($arg eq "-venn") {
+      $main::outfile{venn} = shift(@arguments);
+      $venn = 1;
+      
+      
 =pod
 
 =item	B<-n total>
