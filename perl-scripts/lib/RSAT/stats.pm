@@ -773,7 +773,7 @@ sub sum_of_poisson {
 ### Hypergeometric formula.
 ###
 ### Usage:
-###     $proba = &hypergeometric($m, $n, $k, $x)
+###     $proba = &RSAT::stats::hypergeometric($m, $n, $k, $x)
 ### where
 ###   $m = number of black balls in the urn
 ###   $n = total number of balls in the urn
@@ -805,7 +805,7 @@ sub sum_of_poisson {
 ###
 ### This routine also calculates the sum of hypergeometrics, when an
 ### argument 'to' is added.
-###   $p = &hypergeometric($m, $n, $k, $from, to=>$to);
+###   $p = &RSAT::stats::hypergeometric($m, $n, $k, $from, to=>$to);
 ###
 sub hypergeometric {
     my($m, $n, $k, $x, %args) = @_;
@@ -1036,16 +1036,8 @@ sub hypergeometric {
 ##############################################################
 ## sum_of_hypergeometrics($m, $n, $k, $from, $to)
 ##
-## REMARK: I checked this routine by comparing results with R, and
-## there is a difference with some test cases, e.g. : 
-##
-## sum_of_hypergeometrics(44,60,44,43,44) = 4.71230301093258e-12
-## in R:
-##     > sum(dhyper(43:44,44,16,44))
-##     [1] 4.712303e-12 (this is OK)
-## but 
-##     > phyper(42,44,16,44,lower.tail=F)
-##     [1] 4.738072e-12 (this seems not OK)
+## Usage:
+##   my $proba = &RSAT::stats::sum_of_hypergeometrics($m, $n, $k, $from, $to);
 sub sum_of_hypergeometrics {
     my ($m, $n, $k, $from, $to) = @_;
 
