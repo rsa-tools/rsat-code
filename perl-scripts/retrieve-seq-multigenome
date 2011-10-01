@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.16 2011/09/22 18:21:29 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.17 2011/10/01 06:21:05 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -116,6 +116,7 @@ if ($quick_mode) {
 ################################################################
 ## Open output stream
 $out = &OpenOutputFile($outfile{output});
+$log = STDOUT;
 
 ################################################################
 ## Read input
@@ -186,11 +187,11 @@ foreach my $org (sort(keys( %genes_per_org))) {
 ################################################################
 ## Close output stream
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-if ($quick_mode) {
-  open $out, ">>".$outfile{output};
-}
-print $main::out $exec_time if ($main::verbose >= 1);
-close $out if ($outfile{output});
+print $log $exec_time if ($main::verbose >= 1);
+
+## Close output file if required
+close $out if (($outfile{output}) && !($quick_mode));
+
 
 exit(0);
 
@@ -383,28 +384,28 @@ See the manual of retrieve-seq for a description of supported parameters.
 ################################################################
 #### verbose message
 sub Verbose {
-  warn "; retrieve-seq-multigenome ";
-  &PrintArguments($out);
+  print $log "; retrieve-seq-multigenome ";
+  &PrintArguments($log);
   if (%main::infile) {
-    warn "; Input files\n";
+    print $log "; Input files\n";
     while (($key,$value) = each %infile) {
-      warn ";\t$key\t$value\n";
+      print $log ";\t$key\t$value\n";
     }
   }
   if (%main::outfile) {
-    warn "; Output files\n";
+    print $log "; Output files\n";
     while (($key,$value) = each %outfile) {
-      warn ";\t$key\t$value\n";
+      print $log ";\t$key\t$value\n";
     }
   }
 
   ## report genes per organism
-  warn "; Gene sets\n";
+  print $log "; Gene sets\n";
   foreach my $org (keys(%genes_per_org)) {
 #    my $geneset = $genes_per_org{$org};
-#    warn ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
+#    print $log ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
   my @genes = @{$genes_per_org{$org}};
-    warn join ("\t", ";", sprintf("%-35s", $org), scalar(@genes)." genes", join ("; ", @genes)), "\n";
+    print $log join ("\t", ";", sprintf("%-35s", $org), scalar(@genes)." genes", join ("; ", @genes)), "\n";
   }
 }
 
