@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.47 2010/11/29 07:45:25 rsat Exp $
+# $Id: mirror.mk,v 1.48 2011/10/02 16:32:21 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -164,12 +164,45 @@ medicel:
 		${RSYNC} data/$${org} ${MEDICEL}/data/;	\
 	done
 
+# ################################################################
+# ## Clean temporary directory
+# CLEAN_LIMIT=3
+# clean_tmp:
+# 	@echo "Cleaning temporary directory	${RSAT}/tmp"
+# 	@echo "Measuring disk usage before cleaning"
+# 	@echo "Before cleaning	" `du -sh public_html/tmp`
+# 	@echo "Removing all files older than ${CLEAN_LIMIT} days"
+# 	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_LIMIT} -type f -exec rm -f {} \;	
+# 	@echo "Measuring disk usage after cleaning"
+# 	@echo "After cleaning	" `du -sh public_html/tmp`
+# 	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@bigre.ulb.ac.be
+
+
 ################################################################
-#### clean temporary directory
-CLEAN_DATE=3
+## Clean temporary directory
+CLEAN_LIMIT=3
 clean_tmp:
-	@echo "Before cleaning	" `du -sk public_html/tmp`
-	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -f {} \;	
-	@echo "After cleaning	" `du -sk public_html/tmp`
+	@echo "Cleaning temporary directory	`hostname` ${RSAT}/tmp"
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Free disk before cleaning" 
+	@df -h ${RSAT}/tmp/
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Measuring disk usage before cleaning"
+	@echo "Before cleaning	" `du -sh public_html/tmp`
+	@touch ${RSAT}/public_html/tmp
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Removing all files older than ${CLEAN_LIMIT} days"
+	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_LIMIT} -type f -exec rm -f {} \;	
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Measuring disk usage after cleaning"
+	@echo "After cleaning	" `du -sh public_html/tmp`
 	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@bigre.ulb.ac.be
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Free disk after cleaning" 
+	@df -h ${RSAT}/tmp/
 
