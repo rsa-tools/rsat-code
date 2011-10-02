@@ -77,6 +77,7 @@ sub PrintOrthoSelectionSection {
 			       Bacillus_subtilis
 			       Brucella_melitensis
                                Dickeya_dadantii_3937_uid52537
+                               Escherichia_coli_ETEC_H10407
 			       Escherichia_coli_K12
 			       Klebsiella_pneumoniae_MGH_78578
 			       Mycoplasma_pneumoniae
