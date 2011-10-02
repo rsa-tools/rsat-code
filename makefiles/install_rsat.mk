@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.45 2011/10/02 05:20:39 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.46 2011/10/02 20:25:26 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -234,12 +234,17 @@ BED_INSTALL_DIR=${BED_GIT_DIR}
 BED_BIN_DIR=${BED_INSTALL_DIR}/bin
 compile_bedtools:
 	@echo
-	@echo "Installing BEDTools ${BED_VERSION}"
+	@echo "Installing bedtools from ${BED_INSTALL_DIR}"
 	@echo
+	@mkdir -p ${BED_INSTALL_DIR}
 	(cd ${BED_INSTALL_DIR}; make clean; make all) #; make test; make install)
 
 BIN=${RSAT}/bin
 install_bedtools:
+	@echo
+	@echo "Synchronizing bedtools from ${BEN_BIN_DIR} to ${BIN}"
+	@echo
+	@mkdir -p ${BIN}
 	rsync -ruptvl ${BED_BIN_DIR}/* ${BIN}
 
 ################################################################
