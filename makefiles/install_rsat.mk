@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.44 2011/10/01 06:19:34 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.45 2011/10/02 05:20:39 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -211,12 +211,14 @@ install_gnuplot:
 ## BEDTools is a collection of utilities for comparing, summarizing,
 ## and intersecting genomic features in BED, GTF/GFF, VCF and BAM
 ## formats.
+bedtools: git_bedtools compile_bedtools install_bedtools
+
 BED_VERSION=2.13.3
 BED_ARCHIVE=BEDTools.v${BED_VERSION}.tar.gz
 BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE}
 BED_BASE_DIR=${RSAT}/app_sources/BEDTools
 BED_DISTRIB_DIR=${BED_BASE_DIR}/BEDTools-Version-${BED_VERSION}
-download_bed:
+download_bedtools:
 	@echo
 	@echo "Downloading BEDTools ${BED_VERSION}"
 	@echo
@@ -224,30 +226,21 @@ download_bed:
 	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE})
 	@echo ${BED_DISTRIB_DIR}
 
-git_bed:
-	git clone git://github.com/arq5x/bedtools.git
+BED_GIT_DIR=${RSAT}/app_sources/bedtools
+git_bedtools:
+	(cd ${RSAT}/app_sources; git clone git://github.com/arq5x/bedtools.git)
 
-BED_INSTALL_DIR=${BED_DISTRIB_DIR}_installed
+BED_INSTALL_DIR=${BED_GIT_DIR}
 BED_BIN_DIR=${BED_INSTALL_DIR}/bin
-install_meme:
+compile_bedtools:
 	@echo
 	@echo "Installing BEDTools ${BED_VERSION}"
 	@echo
-	@mkdir -p ${BED_INSTALL_DIR}
-	(cd ${BED_DISTRIB_DIR}; ./configure --prefix=${BED_INSTALL_DIR} --with-url="http://localhost/meme")
-	(cd ${BED_DISTRIB_DIR}; make clean; make ; make test; make install)
-	@echo "Please edit the RSAT configuration file"
-	@echo "	${RSAT}/RSAT_config.props"
-	@echo "and copy-paste the following lines to specify the BED bin pathway"
-	@echo "	meme_dir=${BED_BIN_DIR}"
-	@echo "	BED_DIRECTORY=${BED_BIN_DIR}"
-	@echo "This will allow RSAT programs to idenfity meme path on this server."
-	@echo
-	@echo "You can also add the BED bin directory in your path."
-	@echo "If your shell is bash"
-	@echo "	export PATH=${BED_BIN_DIR}:\$$PATH"
-	@echo "If your shell is csh or tcsh"
-	@echo "	setenv PATH ${BED_BIN_DIR}:\$$PATH"
+	(cd ${BED_INSTALL_DIR}; make clean; make all) #; make test; make install)
+
+BIN=${RSAT}/bin
+install_bedtools:
+	rsync -ruptvl ${BED_BIN_DIR}/* ${BIN}
 
 ################################################################
 ## Install MEME (Tim Bailey)
