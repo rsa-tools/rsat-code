@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.111 2011/09/22 10:15:07 jvanheld Exp $
+# $Id: install-organism,v 1.112 2011/10/02 05:22:00 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -30,7 +30,7 @@ $config_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
 @oligo_lengths=(6,1,2,3,4,5,7,8);
 $verbose = 0;
 $batch = 0;
-$die_on_error = 1;
+$die_on_error = 0;
 $seq_format = "ft";
 $img_format = $ENV{rsat_img_format} || "png";
 $noov="";
