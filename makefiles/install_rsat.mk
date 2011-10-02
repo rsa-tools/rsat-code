@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.47 2011/10/02 20:28:24 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.48 2011/10/02 20:30:50 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -28,7 +28,7 @@ WGET = wget -np -rNL
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
-
+APP_SRC_DIR=${RSAT}/app_sources
 
 ################################################################
 ## Install the applications developed by third-parties and which are required
@@ -38,6 +38,7 @@ install_ext_apps:
 	${MAKE} download_mcl install_mcl
 	${MAKE} download_rnsc install_rnsc
 	${MAKE} download_meme install_meme
+	${MAKE} bedtools
 #	${MAKE} download_blast install_blast
 #	${MAKE} download_gs install_gs
 #	${MAKE} download_gnuplot install_gnuplot
@@ -216,7 +217,7 @@ bedtools: git_bedtools compile_bedtools install_bedtools
 BED_VERSION=2.13.3
 BED_ARCHIVE=BEDTools.v${BED_VERSION}.tar.gz
 BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE}
-BED_BASE_DIR=${RSAT}/app_sources/BEDTools
+BED_BASE_DIR=${APP_SRC_DIR}/BEDTools
 BED_DISTRIB_DIR=${BED_BASE_DIR}/BEDTools-Version-${BED_VERSION}
 download_bedtools:
 	@echo
@@ -226,10 +227,10 @@ download_bedtools:
 	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE})
 	@echo ${BED_DISTRIB_DIR}
 
-BED_GIT_DIR=${RSAT}/app_sources/bedtools
+BED_GIT_DIR=${APP_SRC_DIR}/bedtools
 git_bedtools:
 	@mkdir -p ${BEN_GIT_DIR}
-	(cd ${RSAT}/app_sources; git clone git://github.com/arq5x/bedtools.git)
+	(cd ${APP_SRC_DIR}; git clone git://github.com/arq5x/bedtools.git)
 
 BED_INSTALL_DIR=${BED_GIT_DIR}
 BED_BIN_DIR=${BED_INSTALL_DIR}/bin
@@ -250,7 +251,7 @@ install_bedtools:
 
 ################################################################
 ## Install MEME (Tim Bailey)
-MEME_BASE_DIR=${RSAT}/app_sources/MEME
+MEME_BASE_DIR=${APP_SRC_DIR}/MEME
 MEME_VERSION=4.6.1
 #MEME_VERSION=current
 MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
@@ -288,7 +289,7 @@ install_meme:
 
 ################################################################
 ## Install the graph-based clustering algorithm MCL
-MCL_BASE_DIR=${RSAT}/app_sources/mcl
+MCL_BASE_DIR=${APP_SRC_DIR}/mcl
 MCL_VERSION=09-308
 MCL_ARCHIVE=mcl-${MCL_VERSION}.tar.gz
 MCL_URL=http://www.micans.org/mcl/src/${MCL_ARCHIVE}
@@ -323,7 +324,7 @@ install_mcl:
 
 ################################################################
 ## Install the graph-based clustering algorithm RNSC
-RNSC_BASE_DIR=${RSAT}/app_sources/rnsc
+RNSC_BASE_DIR=${APP_SRC_DIR}/rnsc
 RNSC_VERSION=09-308
 RNSC_ARCHIVE=rnsc.zip
 RNSC_URL=http://www.cs.utoronto.ca/~juris/data/rnsc/rnsc.zip
@@ -368,7 +369,7 @@ install_blast: install_blast_${OS}
 ################################################################
 ## Install the BLAST on linux
 ARCHITECTURE=32
-BLAST_BASE_DIR=${RSAT}/app_sources/blast
+BLAST_BASE_DIR=${APP_SRC_DIR}/blast
 BLAST_LINUX_ARCHIVE=blast-*-ia${ARCHITECTURE}-linux.tar.gz
 BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
 BLAST_BIN_DIR=${RSAT}/bin
@@ -399,7 +400,7 @@ install_blast_linux:
 
 ################################################################
 ## Install the BLAST on MAC
-BLAST_BASE_DIR=${RSAT}/app_sources/blast
+BLAST_BASE_DIR=${APP_SRC_DIR}/blast
 BLAST_MAC_ARCHIVE=blast-*-universal-macosx.tar.gz
 BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
 BLAST_BIN_DIR=${RSAT}/bin
@@ -436,7 +437,7 @@ install_blast_mac:
 APP_DIR=${RSAT}/applications
 PROGRAM=consensus
 PROGRAM_DIR=${APP_DIR}/${PROGRAM}
-PROGRAM_ARCHIVE=`ls -1t ${RSAT}/app_sources/${PROGRAM}* | head -1`
+PROGRAM_ARCHIVE=`ls -1t ${APP_SRC_DIR}/${PROGRAM}* | head -1`
 uncompress_program:
 	@echo installing ${PROGRAM_ARCHIVE} in dir ${PROGRAM_DIR}
 	@mkdir -p ${PROGRAM_DIR}
@@ -551,7 +552,7 @@ _compile_perl_scripts:
 tophat: download_tophat install_tophat
 
 
-TOPHAT_BASE_DIR=${RSAT}/app_sources/TopHat
+TOPHAT_BASE_DIR=${APP_SRC_DIR}/TopHat
 TOPHAT_VERSION=1.2.0
 TOPHAT_ARCHIVE=tophat-${TOPHAT_VERSION}.tar.gz
 TOPHAT_URL=http://tophat.cbcb.umd.edu/downloads/${TOPHAT_ARCHIVE}
