@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.48 2011/10/02 20:30:50 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.49 2011/10/02 21:48:24 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -229,7 +229,7 @@ download_bedtools:
 
 BED_GIT_DIR=${APP_SRC_DIR}/bedtools
 git_bedtools:
-	@mkdir -p ${BEN_GIT_DIR}
+	@mkdir -p ${BED_GIT_DIR}
 	(cd ${APP_SRC_DIR}; git clone git://github.com/arq5x/bedtools.git)
 
 BED_INSTALL_DIR=${BED_GIT_DIR}
