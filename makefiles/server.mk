@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.27 2011/05/08 20:57:44 jvanheld Exp $
+# $Id: server.mk,v 1.28 2011/10/02 16:32:21 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -136,13 +136,32 @@ from_cifn:
 
 
 ################################################################
-#### clean temporary directory
-CLEAN_DATE=3
+## Clean temporary directory
+CLEAN_LIMIT=3
 clean_tmp:
-	@echo `date` Cleaning temporary directory on `hostname` 
-	@echo "Before cleaning	" `du -sk ${RSAT}/public_html/tmp`
-	touch ${RSAT}/public_html/tmp
-	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -rf {} \;	
-	@echo "After cleaning	" `du -sk ${RSAT}/public_html/tmp`
-	@echo "Disk free" 
-	@df `pwd`   
+	@echo "Cleaning temporary directory	`hostname` ${RSAT}/tmp"
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Free disk before cleaning" 
+	@df -h ${RSAT}/tmp/
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Measuring disk usage before cleaning"
+	@echo "Before cleaning	" `du -sh public_html/tmp`
+	@touch ${RSAT}/public_html/tmp
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Removing all files older than ${CLEAN_LIMIT} days"
+	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_LIMIT} -type f -exec rm -f {} \;	
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Measuring disk usage after cleaning"
+	@echo "After cleaning	" `du -sh public_html/tmp`
+	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@bigre.ulb.ac.be
+	@echo
+	@date "+%Y/%m/%d %H:%M:%S"
+	@echo "Free disk after cleaning" 
+	@df -h ${RSAT}/tmp/
+
+
+
