@@ -372,7 +372,7 @@ sub MultiSequenceChoice {
 							 'upper',
 							 'lower',
 							 'non-dna'],
-					       -default=>"non-dna");
+					       -default=>"none");
   	$sequenceChoiceString .=  "<BR>\n";
     
   }
@@ -549,8 +549,7 @@ sub MultiGetSequenceFile {
     }
   }
   
-  
-  ## Mask option
+   ## Mask option
   my $mask = "";
   if ($query->param('mask')) {
     unless ($query->param('mask') eq "none") {
@@ -573,6 +572,8 @@ sub MultiGetSequenceFile {
       
     }
   }
+  
+  
 
   #### sequence file will be deleted
   &DelayedRemoval($sequence_file);
