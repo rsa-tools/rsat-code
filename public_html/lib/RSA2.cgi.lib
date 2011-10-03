@@ -365,6 +365,15 @@ sub MultiSequenceChoice {
 						-size=>45,
 						-maxlength=>200);
     $sequenceChoiceString .=  "<BR>\n";
+     #### Mask option
+  	$sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
+  	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
+					       -Values=>['none',
+							 'upper',
+							 'lower',
+							 'non-dna'],
+					       -default=>"non-dna");
+  	$sequenceChoiceString .=  "<BR>\n";
     
   }
     
@@ -537,6 +546,31 @@ sub MultiGetSequenceFile {
     } else {
       $sequence_file = '';
       $sequence_format = '';
+    }
+  }
+  
+  
+  ## Mask option
+  my $mask = "";
+  if ($query->param('mask')) {
+    unless ($query->param('mask') eq "none") {
+      $mask = $query->param('mask');
+      &CheckMask($mask);
+      my $converted_seq_file = $sequence_file.".masked";
+      
+    my $convert_seq_command = "$SCRIPTS/convert-seq ";
+    $convert_seq_command .= " -i ".$sequence_file;
+    $convert_seq_command .= " -from  $sequence_format -to $sequence_format ";
+    $convert_seq_command .= " -mask ".$mask;
+    $convert_seq_command .= " -o ".$converted_seq_file;
+
+    ## Execute the sequence conversion
+    system($convert_seq_command);
+
+    print "<PRE>$convert_seq_command</PRE>\n" if ($ENV{rsat_echo} >= 1);
+    &DelayedRemoval($converted_seq_file);
+    $sequence_file = $converted_seq_file;
+      
     }
   }
 
