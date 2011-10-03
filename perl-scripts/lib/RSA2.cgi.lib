@@ -367,7 +367,7 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  "<BR>\n";
      #### Mask option
   	$sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
-  	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
+  	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask'.$seq_num,
 					       -Values=>['none',
 							 'upper',
 							 'lower',
@@ -551,9 +551,9 @@ sub MultiGetSequenceFile {
   
    ## Mask option
   my $mask = "";
-  if ($query->param('mask')) {
-    unless ($query->param('mask') eq "none") {
-      $mask = $query->param('mask');
+  if ($query->param('mask'.$seq_num)) {
+    unless ($query->param('mask'.$seq_num) eq "none") {
+      $mask = $query->param('mask'.$seq_num);
       &CheckMask($mask);
       my $converted_seq_file = $sequence_file.".masked";
       
@@ -566,7 +566,7 @@ sub MultiGetSequenceFile {
     ## Execute the sequence conversion
     system($convert_seq_command);
 
-    print "<PRE>$convert_seq_command</PRE>\n" if ($ENV{rsat_echo} >= 1);
+    print "<PRE>$convert_seq_command</PRE>\n" if ($ENV{rsat_echo} >= 0);
     &DelayedRemoval($converted_seq_file);
     $sequence_file = $converted_seq_file;
       
