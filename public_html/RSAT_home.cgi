@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.63 2011/10/01 06:23:05 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.64 2011/10/03 12:54:15 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -107,10 +107,12 @@ print <<EndText;
 
     <ul>
 	<p><li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
+	
+	<p><li><font color="red">New !</font> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li>
 
-     <p><li><font color="red">New !</font> <a target='_top' href='http://rsat.ulb.ac.be/rsat/tutorial_ECCB_2010/'>Supporting
+     <!--p><li><font color="red">New !</font> <a target='_top' href='http://rsat.ulb.ac.be/rsat/tutorial_ECCB_2010/'>Supporting
      material</a> of the 3rd Tutorial presented at </a> of <a target='_blank' href='http://www.eccb10.org/'>ECCB
-     2010</a> (Sunday Sept 26).</li></p>
+     2010</a> (Sunday Sept 26).</li></p>-->
 
      <p><li> <font color='red'>Check the latest news in </font> <a
     href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our forum </b></a></li></p>
