@@ -560,7 +560,7 @@ sub MultiGetSequenceFile {
       
     my $convert_seq_command = "$SCRIPTS/convert-seq ";
     $convert_seq_command .= " -i ".$sequence_file;
-    $convert_seq_command .= " -from  $sequence_format -to $sequence_format ";
+    $convert_seq_command .= " -from  $sequence_format -to fasta ";
     $convert_seq_command .= " -mask ".$mask;
     $convert_seq_command .= " -o ".$converted_seq_file;
 
