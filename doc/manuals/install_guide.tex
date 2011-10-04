@@ -125,6 +125,21 @@ external users is the compressed archive. If you are not member of the
 BiGRe laboratory, please skip the section \textit{Installation from
   the CVS repository}.
 
+\section{Installation from a compressed archive}
+
+After having sent the signed license, you should have received an
+email with the login and password to the \RSAT download site. 
+
+Download the latest version of the \RSAT distribution. Uncompress the
+archive containing the programs. The archive is distributed
+\texttt{tar} format. The \texttt{.tar.gz} file can be uncompressed
+with the command \program{tar}, which are part of the default unix
+installation.
+
+\begin{lstlisting}
+tar -xpzf rsa-tools_yyyymmdd.tar.gz
+\end{lstlisting}
+
 \section{Downloading \RSAT from the CVS server}
 
 \textbf{Warning:} we currently cannot manage user profiles in our CVS
@@ -183,18 +198,6 @@ cd rsa-tools
 cvs update -d
 \end{lstlisting}
 
-\section{Installation from a compressed archive}
-
-Uncompress the archive containing the programs. The archive is
-distributed \texttt{tar} format.
-
-The \texttt{.tar.gz} file can be uncompressed with the command
-\program{tar}, which are part of the default unix installation.
-
-\begin{lstlisting}
-tar -xpzf rsa-tools_yyyymmdd.tar.gz
-\end{lstlisting}
-
 \chapter{Initializing \RSAT}
 
 \input{ug_configuration.tex}
@@ -213,7 +216,7 @@ facilitate this step. You just need go to the rsa-tools directory, and
 start the appropriate make file.
 
 \begin{lstlisting}
-cd $RSAT
+cd $RSAT ; 
 make -f makefiles/init_RSAT.mk init
 \end{lstlisting}
 % $
@@ -383,7 +386,8 @@ section.
 
 \item \program{Statistics::Distributions} is used to calculate some
   probability distribution functions. In particular, it is used by the
-  program \program{position-analysis} to calculate the chi2 P-value.
+  programs \program{position-analysis} and \program{chi-square} to
+  calculate the chi2 P-value.
 
   \textbf{Notes} 
   \begin{itemize}
@@ -453,13 +457,13 @@ cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
 
 ## Download the current version of EnsEMBL
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-61 ensembl
-## (you need to adapt the branch number, e.g. 61, as it updates).
+  checkout -r branch-ensembl-64 ensembl
+## (you need to adapt the branch number, e.g. 64, as it updates).
 
 ## Download the current version of the EnsEMBL module for comparative genomics
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-61 ensembl-compara
-## (you need to adapt the branch number, e.g. 61, as it updates).
+  checkout -r branch-ensembl-64 ensembl-compara
+## (you need to adapt the branch number, e.g. 64, as it updates).
 \end{lstlisting}
 %%$ 
 
@@ -561,7 +565,7 @@ these tools, because the binaries are operating system-dependent. The
 programs can be compiled in a very easy way.
 
 \begin{lstlisting}
-cd ${RSAT}
+cd $RSAT;
 make -f makefiles/init_RSAT.mk compile_all
 \end{lstlisting}
 
@@ -574,7 +578,7 @@ privileges, you could install the compiled programs in the standard
 directory for compiled packages (\file{/usr/local/bin}).
 
 \begin{lstlisting}
-cd ${RSAT}
+cd $RSAT;
 make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
 \end{lstlisting}
 
@@ -653,7 +657,7 @@ You can then run the following commands to install some of the
 third-party programs that are complementary to \RSAT.
 
 \begin{lstlisting}
-cd $RSAT
+cd $RSAT;
 make -f makefiles/install_rsat.mk install_ext_apps
 \end{lstlisting}
 %$
@@ -748,9 +752,9 @@ To install kWalks, type:
 
 
 \begin{lstlisting}
-cd $RSAT/contrib/kwalks; 
-tar xzvf kwalks.tgz; 
-cd src; 
+cd $RSAT/contrib; 
+tar -xzvf kwalks/kwalks.tgz; 
+cd $RSAT/contrib/kwalks/src; 
 make clean; make
 \end{lstlisting}
 

@@ -120,8 +120,12 @@ in our tutorials.
 download-organism -v 1 -org Saccharomyces_cerevisiae
 \end{lstlisting}
 
-In principle, the download should start immediately, and last for a
-few minutes.
+In principle, the download should start immediately. \emph{Beware},
+the data volume to be downloaded is important, because the genome
+comes together with extra files (blast hits with other genoems,
+oligonucleotide and dyad frequencies). Depending on the network
+bandwidth, the download of a genome may take several minutes or tens
+of minutes. 
 
 After the task is completed, you can check if the configuration file
 has been correctly updated by typing the command.
@@ -217,7 +221,6 @@ Sequences can be retrieved from Ensembl with the command
 
 You can for example retrieve the 2kb sequence upstream of the
 transcription start site of the gene \gene{PAX6} of the mouse. 
-
 
 \begin{lstlisting}
 retrieve-ensembl-seq.pl -org Mus_musculus -q PAX6 \
