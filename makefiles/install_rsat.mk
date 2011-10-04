@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.49 2011/10/02 21:48:24 rsat Exp $
+# $Id: install_rsat.mk,v 1.50 2011/10/04 09:16:44 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -35,10 +35,10 @@ APP_SRC_DIR=${RSAT}/app_sources
 ## or useful for RSAT.
 install_ext_apps:
 	${MAKE} download_seqlogo install_seqlogo
+	${MAKE} bedtools
+	${MAKE} download_meme install_meme
 	${MAKE} download_mcl install_mcl
 	${MAKE} download_rnsc install_rnsc
-	${MAKE} download_meme install_meme
-	${MAKE} bedtools
 #	${MAKE} download_blast install_blast
 #	${MAKE} download_gs install_gs
 #	${MAKE} download_gnuplot install_gnuplot
@@ -212,34 +212,36 @@ install_gnuplot:
 ## BEDTools is a collection of utilities for comparing, summarizing,
 ## and intersecting genomic features in BED, GTF/GFF, VCF and BAM
 ## formats.
-bedtools: git_bedtools compile_bedtools install_bedtools
+#bedtools: git_bedtools compile_bedtools install_bedtools
+bedtools: download_bedtools compile_bedtools install_bedtools
 
 BED_VERSION=2.13.3
 BED_ARCHIVE=BEDTools.v${BED_VERSION}.tar.gz
 BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE}
 BED_BASE_DIR=${APP_SRC_DIR}/BEDTools
-BED_DISTRIB_DIR=${BED_BASE_DIR}/BEDTools-Version-${BED_VERSION}
+BED_DOWNLOAD_DIR=${BED_BASE_DIR}/BEDTools-Version-${BED_VERSION}
 download_bedtools:
 	@echo
 	@echo "Downloading BEDTools ${BED_VERSION}"
 	@echo
 	@mkdir -p ${BED_BASE_DIR}
 	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE})
-	@echo ${BED_DISTRIB_DIR}
+	@echo ${BED_DOWNLOAD_DIR}
 
 BED_GIT_DIR=${APP_SRC_DIR}/bedtools
 git_bedtools:
 	@mkdir -p ${BED_GIT_DIR}
 	(cd ${APP_SRC_DIR}; git clone git://github.com/arq5x/bedtools.git)
 
-BED_INSTALL_DIR=${BED_GIT_DIR}
-BED_BIN_DIR=${BED_INSTALL_DIR}/bin
+#BED_SRC_DIR=${BED_GIT_DIR}
+BED_SRC_DIR=${BED_DOWNLOAD_DIR}
+BED_BIN_DIR=${BED_SRC_DIR}/bin
 compile_bedtools:
 	@echo
-	@echo "Installing bedtools from ${BED_INSTALL_DIR}"
+	@echo "Installing bedtools from ${BED_SRC_DIR}"
 	@echo
-	@mkdir -p ${BED_INSTALL_DIR}
-	(cd ${BED_INSTALL_DIR}; make clean; make all) #; make test; make install)
+	@mkdir -p ${BED_SRC_DIR}
+	(cd ${BED_SRC_DIR}; make clean; make all) #; make test; make install)
 
 BIN=${RSAT}/bin
 install_bedtools:
