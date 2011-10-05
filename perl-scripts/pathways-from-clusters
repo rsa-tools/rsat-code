@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.6 2011/07/25 12:06:48 rsat Exp $
+# $Id: pathways-from-clusters,v 1.7 2011/10/05 11:00:44 rsat Exp $
 #
 ############################################################
 
@@ -56,7 +56,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -81,6 +81,7 @@ package main;
     if (!($outdir=~m/\/$/)) {
       $outdir = $outdir."/";
     }
+    &RSAT::util::CheckOutDir($outdir);
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -95,7 +96,7 @@ package main;
     &Verbose() if ($main::verbose);
 
     ################################################################
-    ## Execute the command
+    ## Parse infer operon file and launch pathway extractor
      print $outdir;
      my $oldoperonid;
      my @genelist;
@@ -109,17 +110,22 @@ package main;
 # 	   print "$tempdata[6] eq $oldoperonid\n";
 	   if ($oldoperonid && !($tempdata[6] eq $oldoperonid)){
 	    $oldoperonid=~s/\s+/_/g;
-	    my $tempfilename = `mktemp $outdir$oldoperonid.XXXX`;
+	    my $tempfilename = $outdir.$oldoperonid."_original_seeds.txt";
 	    chomp ($tempfilename);
-	    open (MYFILE, '>>'.$tempfilename);
+	    open (MYFILE, '>'.$tempfilename);
 	    print MYFILE join ("\n",@genelist). "\n";
 	    close (MYFILE);
-	    my $pathway_infer_cmd = "pathway_extractor.pl $main::verbose -i $tempfilename -g $main::graphfile  -b $main::grfile -a $main::gprfile -o $main::outdir";
+	    my $grfilecmd = "";
+	    if ($main::grfile){ # if there is a file with direct link from gene to reaction
+	      $grfilecmd = "-b $main::grfile";
+	    }
+	    my $pathway_infer_cmd = "pathway_extractor.pl $main::verbose -i $tempfilename -g $main::graphfile $grfilecmd -a $main::gprfile -t $main::outdir -o $main::outdir";
+	    print "$pathway_infer_cmd\n";
 	    system "$pathway_infer_cmd\n";
 	    system "rm $tempfilename";
 	    @genelist =();
 # 	    exit(0); 
-	   }0
+	   }
 	   my $gene= $tempdata[0];
 	   $gene=~ s{\.[^.]+$}{}; # removes gene version
 	   push(@genelist,$gene);
@@ -253,8 +259,6 @@ An gene annotation file with diredt link gene to reaction. Does not rely on the 
 =cut
     } elsif ($arg eq "-b") {
       $main::grfile = shift(@arguments);
-=pod
-
 # =item	B<-n Graph name>
 # 
 # Name of the Graph (default: Name of the graph file) 
@@ -265,22 +269,25 @@ An gene annotation file with diredt link gene to reaction. Does not rely on the 
 # 
 # =pod
 
-# =item	B<-d Graph file>
-# 
-# Name of the Graph (default: Name of the graph file) 
-# 
-# =cut
 #     } elsif ($arg eq "-d") {
 #       $main::groupdescriptor = shift(@arguments);
 # 
 # 
 # =pod
+# 
+# =item	B<-d Unique descriptor>
+# 
+# Unique name to differenciate output files. If not set With -i, the name of the input file will be used.  
+# 
+# =cut
+=pod
 
-=item	B<-d Unique descriptor>
+=item	B<-g Graph file>
 
-Unique name to differenciate output files. If not set With -i, the name of the input file will be used.  
+Name of the Graph (default: Name of the graph file) 
 
 =cut
+
     } elsif ($arg eq "-g") {
       $main::graphfile = shift(@arguments);
 =pod
@@ -294,7 +301,7 @@ If no output file is specified, the current directory is used.
       $main::outdir = shift(@arguments);
 
     } else {
-      &FatalError(join("\t", "Invalid option", $arg));
+      &FatalError(join("\t", "Invalid inferoperon_pathway_extractor option", $arg));
 
     }
   }
