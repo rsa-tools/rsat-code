@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.16 2011/07/27 14:35:51 rsat Exp $
+# $Id: pathway-extractor,v 1.17 2011/10/05 11:01:05 rsat Exp $
 #
 ############################################################
 
@@ -99,7 +99,7 @@ NP_418443
 
 =head2 2)Graph file format:
 
-see Pathwayinference tools help
+see Pathwayinference tools helppathway_extractor
 
 java graphtools.algorithms.Pathwayinference –h
 
@@ -191,7 +191,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();	     # File name containing a list of genes ID
@@ -444,6 +444,7 @@ package main;
 	    
 	my $tempstring = $tempdatab[0];
 	$tempstring=~s/<$|>$//;
+	$tempdatab[0] = $tempstring;#remove directionality from reaction node id to merge the nodes
 	# 	      print "TEMPSTRING = $tempstring\n";
 	my $values_ref = $reactioninfos{$tempstring};
 	if (defined $values_ref) {
@@ -469,6 +470,8 @@ package main;
 	    $tempdatab[3] = $label.$labelb;
 	  } elsif ($tempdatab[6] &&($tempdatab[6] eq "Compound")) {
 	    $tempdatab[3] =  $values[0][1];
+	  } else {
+	    $tempdatab[1]=~s/<$|>$//;
 	  }
 	}
 	print OUTFILE (join "\t",@tempdatab). "\n";
@@ -682,7 +685,7 @@ pathway_extractor.pl
       $main::tempdir = shift(@arguments);
 
     } else {
-      &FatalError(join("\t", "Invalid option", $arg));
+      &FatalError(join("\t", "Invalid pathway_extractor option", $arg));
 
     }
   }
