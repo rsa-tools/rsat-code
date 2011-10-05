@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.50 2011/10/04 09:16:44 rsat Exp $
+# $Id: install_rsat.mk,v 1.51 2011/10/05 06:37:39 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -254,7 +254,7 @@ install_bedtools:
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${APP_SRC_DIR}/MEME
-MEME_VERSION=4.6.1
+MEME_VERSION=4.7.0
 #MEME_VERSION=current
 MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
 MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
