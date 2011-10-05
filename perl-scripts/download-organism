@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.21 2011/02/17 04:54:49 rsat Exp $
+# $Id: download-organism,v 1.22 2011/10/05 06:43:59 jvanheld Exp $
 #
 ############################################################
 
@@ -128,7 +128,7 @@ package main;
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
   $get_command = "wget";
-  $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
   $rsat_server_login = "rsat\@rsat.ulb.ac.be";
@@ -217,11 +217,15 @@ package main;
 
   ################################################################
   ## Download the genomes
+  my $org_nb = scalar(@organisms);
+  $i = 0;
   foreach my $org (@organisms) {
+    $i++;
+
     ## download one genome
     my $cmd = "";
     if ($get_command eq "wget") {
-      &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Downloading genome", $i."/".$org_nb, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
       $cmd .= "wget --reject 'index.html*' ";
       if ($main::verbose <= 2) {
 	## quiet mode for wget
@@ -243,7 +247,7 @@ package main;
       $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
     } elsif ($get_command eq "rsync") {
       my $remote_genome = $rsat_server_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/'*'";
-      &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server\n", $remote_genome) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Downloading genome", $i."/".$org_nb, $org, "from the RSAT server\n", $remote_genome) if ($main::verbose >= 1);
       $cmd .= "rsync -e ssh -ruptvl -z ";
       $cmd .= " --exclude jobs --exclude '*~'";
       $cmd .= " ".$remote_genome;
