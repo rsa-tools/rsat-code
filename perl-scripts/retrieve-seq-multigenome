@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.17 2011/10/01 06:21:05 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.18 2011/10/06 15:27:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -111,6 +111,7 @@ my $job_prefix = "";
 ## Output file is manatory in quick mode
 if ($quick_mode) {
   &RSAT::error::FatalError("Output file (option -o) is mandatory in quick mode.") unless ($outfile{output});
+  &RSAT::message::TimeWarn ("Extracting sequences from pre-computed upstream sequences") if ($main::verbose >= 1);
 }
 
 ################################################################
@@ -151,14 +152,14 @@ foreach my $org (sort(keys( %genes_per_org))) {
     if ($quick_mode) {
       my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$org."/genome";
       my $seq_file = $genome_dir."/".$org."_upstream-noorf.ft";
-      &RSAT::message::TimeWarn ("Extracting sequences from pre-computed upstream sequences", $seq_file);
+      &RSAT::message::TimeWarn ($org, "Extracting sequences from pre-computed upstream sequences", $seq_file) if ($main::verbose >= 2);
       foreach my $gene (@genes) {
 #	$command = "grep '$gene' ".$seq_file;
 	$command = "awk -F'\\t' '\$3 == \"".$gene."\"";
 	$command .= '{print ">"$10"\t"$9"\n"$7}\' ';
 	$command .= " ".$seq_file;
 	$command .= ">> ".$outfile{output};
-	&RSAT::message::TimeWarn($command)  if ($main::verbose >= 1);
+	&RSAT::message::Debug($command)  if ($main::verbose >= 5);
 	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       }
 
@@ -400,13 +401,16 @@ sub Verbose {
   }
 
   ## report genes per organism
-  print $log "; Gene sets\n";
+  print $log "; Orthologs found per organism\n" if ($main::verbose >= 2);
+  my $ortho_found_orgs = 0;
   foreach my $org (keys(%genes_per_org)) {
-#    my $geneset = $genes_per_org{$org};
-#    print $log ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
-  my @genes = @{$genes_per_org{$org}};
-    print $log join ("\t", ";", sprintf("%-35s", $org), scalar(@genes)." genes", join ("; ", @genes)), "\n";
+    #    my $geneset = $genes_per_org{$org};
+    #    print $log ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
+    my @genes = @{$genes_per_org{$org}};
+    $ortho_found_orgs++ if scalar(@genes > 0);
+    print $log join ("\t", ";", sprintf("%-35s", $org), scalar(@genes)." genes", join ("; ", @genes)), "\n" if ($main::verbose >= 2);
   }
+  print $log join ("\t", "; Orhologs found in ".$ortho_found_orgs." organisms\n");
 }
 
 

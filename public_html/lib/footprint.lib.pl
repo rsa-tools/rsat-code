@@ -1029,7 +1029,7 @@ sub LinkOneFile {
 sub InferQueryOperons {
   &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 2);
   &CheckDependency("operons", "genes");
-  my $cmd = "$SCRIPTS/get-leader-multigenome ";
+  my $cmd = $SCRIPTS."/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -o ".$outfile{leader_qgenes};
   $cmd .= " -uth interg_dist ".$dist_thr;
