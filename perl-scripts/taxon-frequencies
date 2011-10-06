@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.46 2011/09/22 20:53:07 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.47 2011/10/06 14:18:21 rsat Exp $
 #
 ############################################################
 
@@ -156,6 +156,14 @@ package main;
   my @noov = ();
   my @background_models = ();
 
+  ## Check pattern type
+  @supported_pattern_types = qw (dyad oligo);
+  %supported_pattern_types = ();
+  foreach my $type (@supported_pattern_types) {
+      $supported_pattern_type{$type} = 1;
+  }
+  $supported_pattern_types = join(",", @supported_pattern_types);
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -184,6 +192,7 @@ package main;
     @noov = $noov;
     @background_models = $background_model;
   }
+  
 
   ################################################################
   ## Load the taxonomical tree of organisms supported in RSAT
@@ -843,6 +852,7 @@ Pattern type. Supported: oligo, dyad.
 =cut
 	} elsif ($arg eq "-type") {
 	  $pattern_type = shift @arguments;
+          &RSAT::error::FatalError($pattern_type, "Invalid pattern type. Supported: ".$supported_pattern_types) unless ($supported_pattern_type{$pattern_type});
 
 	  ## Oligonucleotide length
 =pod
