@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.85 2011/09/22 11:07:06 jvanheld Exp $
+# $Id: retrieve-seq,v 1.86 2011/10/06 14:18:06 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -279,7 +279,7 @@ $feature_index = $organism->get_attribute("name_index");
 ################################################################
 #### retrieve the sequences ####
 my $q = 0;
-&RSAT::message::TimeWarn("Retrieving sequences") if ($verbose >= 1);
+&RSAT::message::TimeWarn("Retrieving sequences") if ($verbose >= 2);
 foreach our $query (@queries) {
   $q++;
   if (($main::verbose >= 2) && ($q % 1000 == 1)) {
