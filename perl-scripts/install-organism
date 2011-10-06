@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.112 2011/10/02 05:22:00 rsat Exp $
+# $Id: install-organism,v 1.113 2011/10/06 14:14:17 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -791,12 +791,13 @@ sub CalcOligoFreq {
     @strands = ("");
   }
 
-  ## uncompress sequence file if required because the option -quick
+  ## Uncompress sequence file if required because the option -quick
   ## currently does not support compressed files
   my $uncompressed = 0;
   if (!(-e $seq_file) && (-e $seq_file.".gz")) {
       &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 0);
       my $command = "gunzip ".$seq_file.".gz";
+      my $job_prefix = ${organism_short_name}."_compress";
       $uncompressed = 1;
       &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
       $seq_file =~ s/\.gz$//;
@@ -806,9 +807,9 @@ sub CalcOligoFreq {
     foreach my $strands (@strands) {
       foreach my $oligo_length (@current_oligo_lengths) {
 	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 1);
-	$job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
-	$out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
-	my $command = "$SCRIPTS/oligo-analysis  ".$quick."  -v 1 ${strands} -i $seq_file -format $seq_format ";
+	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
+	my $out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
+	my $command = $SCRIPTS."/oligo-analysis  ".$quick."  -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
 	$command .= " -seqtype ".$oligo_seq_type;
 	$command .= " ".$noov;
@@ -825,6 +826,7 @@ sub CalcOligoFreq {
   if ($uncompressed) {
       &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 0);
       my $command = "gzip ".$seq_file;
+      my $job_prefix = ${organism_short_name}."_uncompress";
       &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
   }
 }
@@ -839,10 +841,10 @@ sub CalcOligoDistrib {
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
       foreach my $oligo_length (@oligo_lengths) {
-	$job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
+	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	#### Calculate occurrence distributions in the sequence file
 	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
-	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
+	my $command = $SCRIPTS."/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna";
@@ -887,6 +889,7 @@ sub CalcDyadFreq {
   if (!(-e $seq_file) && (-e $seq_file.".gz")) {
       &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 0);
       my $command = "gunzip ".$seq_file.".gz";
+      my $job_prefix = ${organism_short_name}."_uncompress";
       $uncompressed = 1;
       &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
       $seq_file =~ s/\.gz$//;
@@ -897,19 +900,19 @@ sub CalcDyadFreq {
     foreach my $strands (@strands) {
       foreach my $monad_length (@monad_lengths) {
 	&RSAT::message::TimeWarn("Calculating dyad frequencies",$seq_file, $seq_format, $seq_type, "l=".$monad_length, $noov, $strands) if ($main::verbose >= 1);
-	$job_prefix = ${organism_short_name}."_dyad_".$monad_length;
+	my $job_prefix = ${organism_short_name}."_dyad_".$monad_length;
 	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
-	my $command = "$SCRIPTS/dyad-analysis ".$quick." -v 1 -i $seq_file -format $seq_format";
+	my $command = $SCRIPTS."/dyad-analysis ".$quick." -v 1 -i $seq_file -format $seq_format";
 	$command .= " -timeout 240000 ";
 	$command .= " -type any -seqtype dna";
-	$command .= " $strands";
-	$command .= " $noov";
-	$command .= " -sp ${min_spacing}-${max_spacing}";
+	$command .= " ".$strands;
+	$command .= " ".$noov;
+	$command .= " -sp ".$min_spacing."-".$max_spacing;
 	$command .= " -l $monad_length";
 	$command .= " -return freq,occ";
-	$command .= " -o $dyad_file";
-	$command .= "; gzip -f $dyad_file ";
+	$command .= " -o ".$dyad_file;
+	$command .= "; gzip -f ".$dyad_file;
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
       }
     }
@@ -919,6 +922,7 @@ sub CalcDyadFreq {
   if ($uncompressed) {
       &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 0);
       my $command = "gzip ".$seq_file;
+      my $job_prefix = ${organism_short_name}."_compress";
       &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
   }
 }
@@ -1326,27 +1330,31 @@ sub ReadArguments {
 ## Retrieve start and stop codons and calculate word occurrences
 ## (for checking)
 sub StartAndStopCodons {
-  &RSAT::message::TimeWarn("&StartAndStopCodons()") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("&StartAndStopCodons()", $organism_short_name) if ($main::verbose >= 1);
   #    my $label =  "orf";
   my $label =  "id,ctg,reg_left,reg_right,orf_strand";
   my $prefix = $dir{genome}."/".${organism_short_name};
-  my $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
+  my $job_prefix = ${organism_short_name}."_start_codons";
+  my $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
   $command .= "-type upstream -feattype CDS -from 0 -to 2  \ ";
   $command .= "-format wc -nocomment -label $label \ ";
   $command .= " -o ".$prefix."_start_codons.wc";
-  $command .= " ; oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+  $command .= " ; ".$SCRIPTS."/oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
   $command .= " -i ".$prefix."_start_codons.wc";
   $command .= " -o ".$prefix."_start_codon_frequencies";
-  &doit($command, $dry_run, $die_on_error, $verbose);
+  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+#  &doit($command, $dry_run, $die_on_error, $verbose);
 
-  $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
+  $job_prefix = ${organism_short_name}."_stop_codons";
+  $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
   $command .= "-type downstream  -feattype CDS -from 0 -to -2  \ ";
   $command .= "-format wc -nocomment -label $label \ ";
   $command .= " -o ".$prefix."_stop_codons.wc";
-  $command .= " ; oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+  $command .= " ; ".$SCRIPTS."/oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
   $command .= " -i ".$prefix."_stop_codons.wc";
   $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
-  &doit($command, $dry_run, $die_on_error, $verbose);
+  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+#  &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 
