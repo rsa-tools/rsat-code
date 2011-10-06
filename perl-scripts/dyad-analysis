@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.75 2011/02/17 05:15:54 rsat Exp $
+# $Id: dyad-analysis,v 1.76 2011/10/06 14:14:37 rsat Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -20,7 +20,7 @@ require "RSA.disco.lib";
 #### Initialise parameters
 local $start_time = &RSAT::util::StartScript();
 
-local $program_version = do { my @r = (q$Revision: 1.75 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "dyads";
 
 %supported_return_field = (proba=>1,
@@ -1373,16 +1373,16 @@ sub PrintVerbose {
     &PrintArguments($out);
     print $out "; Citation: van Helden et al. (2000). Nucleic Acids Res. 28(8):1808-18.\n";
     printf $main::out "; %-29s\t%s\n", "Program version", $program_version;
-    printf $out "; %-29s\t%s\n", "Input file", $infile{input} if ($infile{input});
+    printf $out "; %-29s\t%s\n", "Input file", &RSAT::util::hide_RSAT_path($infile{input}) if ($infile{input});
     if ($infile{accepted_patterns}) {
-	printf $out "; %-29s\t%s\n", "Accepted dyad file", $infile{accepted_patterns};
+	printf $out "; %-29s\t%s\n", "Accepted dyad file", &RSAT::util::hide_RSAT_path($infile{accepted_patterns});
 	printf $out "; %-29s\t%s\n", "Accepted dyads", scalar(keys(%accepted_patterns));
     }
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
     printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
     printf $out "; %-29s\t%s\n", "Masked characters", $mask if ($mask);
     printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
-    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
+    printf $out "; %-29s\t%s\n", "Output file", &RSAT::util::hide_RSAT_path($outputfile) if ($outputfile);
     printf $out "; %-29s\t%s\n", "default return values", join(",", keys(%default_return_fields));
     printf $out "; %-29s\t%s\n", "return values", join(",", keys(%return_fields));
 
@@ -1489,9 +1489,9 @@ sub PrintVerbose {
     if ($mncf) {
 	print $out ";\tMonad frequencies in intergenic region\n";
 	printf $out ";\t%-29s\t%s\n", "organism", $org_or_taxon;
-	printf $out ";\t%-29s\t%s\n", "exp. monad freq. file", $infile{monad_exp_freq};
+	printf $out ";\t%-29s\t%s\n", "exp. monad freq. file", &RSAT::util::hide_RSAT_path($infile{monad_exp_freq});
     } elsif ($infile{exp_freq}) {
-	printf $out ";\t%-22s\t%s\n", "exp. freq. file", $infile{exp_freq};
+	printf $out ";\t%-22s\t%s\n", "exp. freq. file", &RSAT::util::hide_RSAT_path($infile{exp_freq});
     } else {
 	print $out ";\tMonad calibration from input sequences\n";
     }
