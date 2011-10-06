@@ -769,28 +769,36 @@ sub doit {
   chomp $wd;
 
   if ($batch) {
+    ## Define the shell
+    my $shell = $ENV{CLUSTER_SHELL} || $ENV{SHELL};
+
     ## Store the command in a sh script (the job)
     my $job_dir = "jobs";
     $job_dir .= "/".`date +%Y%m%d`;
     chomp($job_dir);
+    &CheckOutDir($job_dir);
+
     my $job_prefix = $job_prefix || "doit";
     &RSAT::util::CheckOutDir($job_dir);
-    my $job = `mktemp ${job_dir}/${job_prefix}.XXXXXX`;
-    chomp $job;
-    open JOB, ">$job";
-    print JOB "( cd ", $wd;
-    print JOB "; date > ", $job, ".started"; ## Write a file called [job].started indicating the time when the job was started
-    print JOB "; hostname >> ", $job,".started"; 
-    print JOB "; ", $command;
-    print JOB "; date > ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
-    print JOB "; hostname >> ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
-    print JOB " )", "\n";
+    $job_file = `mktemp ${job_dir}/${job_prefix}.XXXXXX`;
+    chomp $job_file;
+    my $job_script = "";
+    $job_script .=  "#!".$shell."\n";
+    $job_script .= "(cd ".$wd;
+    $job_script .=  "; date > ".$job_file.".started"; ## Write a file called [job].started indicating the time when the job was started
+    $job_script .=  "; hostname >> ".$job_file.".started"; 
+    $job_script .=  "; ".$command;
+    $job_script .=  "; date > ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
+    $job_script .=  "; hostname >> ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
+    $job_script .=  " )"."\n";
+    open JOB, ">$job_file" || die "Cannot write job file ".$job_file;
+    print JOB $job_script;
     close JOB;
-    &RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "wd", $wd, "Job written in file", $job_file)) if ($verbose >= 2);
 
-    my $job_name = $job;
+    my $job_name = $job_file;
     $job_name =~ s/\//_/g;
-    my $job_log = $wd."/".$job.".log";
+    my $job_log = $wd."/".$job_file.".log";
 
 
     ################################################################
@@ -819,7 +827,7 @@ sub doit {
     my $cluster_queue = $ENV{CLUSTER_QUEUE};
 
     ## Treatment of the user feed-back
-    my $batch_mail=$ENV{BATCH_MAIL} || "a";
+    my $batch_mail = $ENV{BATCH_MAIL} || "a";
 
     ## optional: restrict the jobs to selected nodes
     ## Example: -l nodes=1:k2.6 
@@ -834,7 +842,14 @@ sub doit {
       ## qsub command functionning using Torque
 #      my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.bigre.ulb.ac.be"; ## for torque only
 #      $qsub_cmd = "qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}";
-      $qsub_cmd = "qsub ".$selected_nodes." -m ".$batch_mail." -N ${job} -j oe -o ${job}.log ${job}";
+      $qsub_cmd = "qsub ".$selected_nodes;
+      $qsub_cmd .= " -m ".$batch_mail;
+      $qsub_cmd .= " -N ".$job_file;
+      $qsub_cmd .= " -j oe ";
+      $qsub_cmd .= " -o ".$job_file.".log";
+      $qsub_cmd .= " ".$job_file;
+
+      &RSAT::message::Debug("qsub command for torque", $qsub_cmd) if ($main::verbose >= 2);
 
     } else {
       ## qsub command functionning using Sun Grid Engine (BiGRe)
@@ -845,7 +860,7 @@ sub doit {
 			 "-N ", $job_name,
 			 "-o ".$job_log, 
 			 $qsub_options,
-			 $job);
+			 $job_file);
     }
     &doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
 
