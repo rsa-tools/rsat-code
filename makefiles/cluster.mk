@@ -15,7 +15,11 @@ MAKEFILE=${RSAT}/makefiles/cluster.mk
 #AMD_2006=`seq -w 100 130 | awk '{print "n"$$1}' | grep -v n102 | grep -v n105 | grep -v n106 | grep -v n112 | grep -v n114 | grep -v n116 | grep -v n121 | grep -v 121 | grep -v n#123 | grep -v 125 | xargs`
 #NODES = ${AMD_1500} ${NODES_XEON1} ${NODES_XEON2} ${AMD_2006}
 #NODES = ${NODES_XEON1} ${NODES_XEON2}
-NODES=n151
+#NODES=n151
+NODES=n01 \
+	`seq -f 'n%g' 57 64` \
+	`seq -f 'n%g' 140 143` \
+	n151 n152 
 list_nodes:
 	@echo "NODES"
 	@echo ${NODES}
@@ -24,7 +28,7 @@ list_nodes:
 ## List the nodes representative of the different architectures,
 ## i.e. those on which the C programs need to be compiled separately
 #COMPILE_NODES=n29 n103 n70 n25
-COMPILE_NODES=n151
+COMPILE_NODES=n57 n60 
 list_compile_nodes:
 	@echo "COMPILE_NODES"
 	@echo ${COMPILE_NODES}
@@ -37,6 +41,7 @@ compile_nodes:
 
 ## Run a command on a single node
 NODE_CMD=hostname
+NODE=n57
 one_node:
 	@echo "NODE=${NODE}	NODE_CMD=${NODE_CMD}"
 	@ssh ${NODE} '${NODE_CMD}'
