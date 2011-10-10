@@ -76,7 +76,7 @@ if ($force_lines && (!$lines && scalar @lines == 0)) {
 
 if (($img_format eq "eps")||($img_format eq "pdf")) {
 
-  if (($x_grid_step1) || ($y_grid_step1) || ($x_grid_step2) || ($y_grid_step2)) {
+  if (($xgstep1) || ($ygstep1) || ($xgstep2) || ($ygstep2)) {
     &RSAT::message::Warning("grid options -gstep are not yet compatible with eps format => no grid.") ;
     #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
     #     $img_format = "png";
@@ -282,8 +282,8 @@ if ($main::verbose >= 2) {
   print ";	graph X size	$graph_x_size\n";
   print ";	left		$left\n";
   print ";	right		$right\n";
-  print ";	1st X grid step	$x_grid_step1\n";
-  print ";	2nd X grid step	$x_grid_step2\n";
+  print ";	1st X grid step	$xgstep1\n";
+  print ";	2nd X grid step	$xgstep2\n";
   print ";Y data\n";
   print ";	first Y legend  ", $y_legend1, "\n";
   print ";	second Y legend ", $y_legend2, "\n";
@@ -305,8 +305,8 @@ if ($main::verbose >= 2) {
   print ";	Y axis size	$y_axis_size\n";
   print ";	Y scale		$y_scale\n";
   print ";	graph Y size	$graph_y_size\n";
-  print ";	1st Y grid step	$y_grid_step1\n";
-  print ";	2nd Y grid step	$y_grid_step2\n";
+  print ";	1st Y grid step	$ygstep1\n";
+  print ";	2nd Y grid step	$ygstep2\n";
 }
 
 ### create new image ####
@@ -319,8 +319,8 @@ $image->filledRectangle(0,0,$graph_x_size, $graph_y_size, $bg_color);
 #### second grid (only when the axis is not in log
 unless ($xlog) {
   ### second X grid
-  if ($x_grid_step2 > 0) {
-    for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step2) {
+  if ($xgstep2 > 0) {
+    for ($g = $x_axis_min; $g <= $x_axis_max; $g += $xgstep2) {
       $grid_pos = $left + ($g-$x_axis_min)*$x_scale;
       $image->line($grid_pos, $bottom, $grid_pos, $top, $grid2_color);
     }
@@ -329,8 +329,8 @@ unless ($xlog) {
 
 unless ($ylog) {
   ### second Y grid
-  if ($y_grid_step2 > 0) {
-    for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step2) {
+  if ($ygstep2 > 0) {
+    for ($g = $y_axis_min; $g <= $y_axis_max; $g += $ygstep2) {
       $grid_pos = &YPixelPos($g);
       $image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
     }
@@ -338,7 +338,7 @@ unless ($ylog) {
 }
 
 ### first X grid
-if ($x_grid_step1 > 0) {
+if ($xgstep1 > 0) {
     if ($xlog) {
 	$min_log = int($x_axis_min);
 	$max_log = int($x_axis_max)+1;
@@ -350,7 +350,7 @@ if ($x_grid_step1 > 0) {
 	    $image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
 	}
     } else {
-	for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step1) {
+	for ($g = $x_axis_min; $g <= $x_axis_max; $g += $xgstep1) {
 	    $grid_value = $g;
 	    $grid_text = sprintf("%6g", $grid_value);
 	    $grid_pos = &XPixelPos($g);
@@ -361,7 +361,7 @@ if ($x_grid_step1 > 0) {
 }
 
 #### first Y grid
-if ($y_grid_step1 > 0) {
+if ($ygstep1 > 0) {
     if ($ylog) {
 	$min_log = int($y_axis_min);
 	$max_log = int($y_axis_max)+1;
@@ -374,7 +374,7 @@ if ($y_grid_step1 > 0) {
 	    $image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
 	}
     } else {
-	for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step1) {
+	for ($g = $y_axis_min; $g <= $y_axis_max; $g += $ygstep1) {
 	    $grid_value = $g;
 	    $grid_text = sprintf("%6g", $grid_value);
 	    $grid_pos = &YPixelPos($g);
@@ -1645,11 +1645,11 @@ sub CalcLimits {
   }
 
   ## Automatic grid size
-  if ($x_grid_step1 eq "") {
-    ($x_grid_min, $x_grid_step1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
+  if ($xgstep1 eq "") {
+    ($x_grid_min, $xgstep1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
   }
-  if ($y_grid_step1 eq "") {
-    ($y_grid_min, $y_grid_step1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
+  if ($ygstep1 eq "") {
+    ($y_grid_min, $ygstep1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
   }
 
   #### graph dimensions
@@ -2043,19 +2043,19 @@ sub ReadArguments {
 
       ### grid steps ###
     } elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
-      $y_grid_step1 = $ARGV[$a+1];
-      $x_grid_step1 = $ARGV[$a+1];
+      $ygstep1 = $ARGV[$a+1];
+      $xgstep1 = $ARGV[$a+1];
     } elsif (($ARGV[$a] eq "-xgstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
-      $x_grid_step1 = $ARGV[$a+1];
+      $xgstep1 = $ARGV[$a+1];
     } elsif (($ARGV[$a] eq "-ygstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
-      $y_grid_step1 = $ARGV[$a+1];
+      $ygstep1 = $ARGV[$a+1];
     } elsif (($ARGV[$a] eq "-gstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
-      $y_grid_step2 = $ARGV[$a+1];
-      $x_grid_step2 = $ARGV[$a+1];
+      $ygstep2 = $ARGV[$a+1];
+      $xgstep2 = $ARGV[$a+1];
     } elsif (($ARGV[$a] eq "-xgstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
-      $x_grid_step2 = $ARGV[$a+1];
+      $xgstep2 = $ARGV[$a+1];
     } elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
-      $y_grid_step2 = $ARGV[$a+1];
+      $ygstep2 = $ARGV[$a+1];
 
       ### min and max values to represent ###
     } elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
