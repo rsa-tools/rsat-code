@@ -1,0 +1,653 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: random-peaks,v 1.1 2011/10/10 08:51:10 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+random-peaks
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Select random genomic fragments that fit a set of input peaks accoding to two criteria.
+
+=over
+
+=item sequence lengths
+
+Random fragments are selected with the same lengths as the input peaks
+(whose length is computed with the program I<sequence-lengths>).
+
+=item filtering on oligonucleotide frequency (optional)
+
+Optionally, the random regions can be filtered in order to approximate
+the frequency observed in the input peaks for a specified
+oligonucleotide (the "filter oligo"). 
+
+Since strict fitting of the distribution would be difficult to
+achieve, we approximate it by retaining random fragments for which the
+frequency of the filter oligo falls within an accepted window. The
+limits of the accepted windows are automatically computed as:
+
+I<min_freq = m - s>
+
+I<max_freq = m + s>
+
+Where I<m> is the average and I<s> the standard deviation of the oligo
+frequency observed in the input sequences. Beware: this mean is
+unweighted: we first compte the frequency of oligo in each input
+sequence, and then the mean and standard deviation of these values
+(small peaks contribute equally to large peaks).
+
+=head1 AUTHORS
+
+Jacques.van.Helden@ulb.ac.be
+
+=head1 CATEGORY
+
+=over
+
+=item random models
+
+=item ChIP-seq
+
+=back
+
+=head1 USAGE
+
+random-peaks -i input_peaks -org organism_name -o output_prefix [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The program takes as input a sequence file (fasta format) containing a
+list of peaks.
+
+=head1 OUTPUT FORMAT
+
+The output consists of a list of files, including
+
+=over
+
+=item I<[output_prefix]_in_seq_stats.tab>
+
+Length and GC content of each input sequence (one row per sequence,
+one column per information).
+
+=item I<[output_prefix]_input_length_distrib.tab>
+
+=item I<[output_prefix]_input_length_distrib.png>
+
+Distribution of input sequence lengths, in tab delimited format (.tab
+extension) and as graphics (.png extension).
+
+=item I<[output_prefix]_GC_distrib.tab>
+
+=item I<[output_prefix]_GC_distrib.png>
+
+Distribution of input sequence GC content, in tab delimited format
+(.tab extension) and as graphics (.png extension).
+
+
+=back
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use RSAT::util;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $organism = "";
+
+  our $verbose = 0;
+  our $out = STDOUT;
+
+  our @supported_tasks = qw(
+			    all
+			    in_seqlen
+			    in_composition
+			    filter_distrib
+			    rand_regions
+			   );
+  our $supported_tasks = join ",", @supported_tasks;
+  our %supported_task  =();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
+
+  our %task = ();
+  our $cmd = "";	     ## string with the command to be executed
+
+  ## Parameters of the analysis
+  our %param = ();
+  $param{oligo_len} = 1;
+  $param{strand} = "-2str";
+  $param{noov} = "-noov";
+
+  our @filter_oligos = ();
+
+  our $img_format = "png";
+
+  ## Job management options
+  our $job_prefix = "fpdisco";
+  our $die_on_error = 1;
+  our $batch = 0;
+  our $dry = 0;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ## Tasks
+
+  if ($task{all}) {
+    foreach my $t (@supported_tasks) {
+      $task{$t} = 1;
+    }
+  }
+  unless (scalar(keys(%task)) > 0) {
+    foreach my $task (@supported_tasks) {
+      $task{$task} = 1;
+    }
+  }
+
+  ################################################################
+  ## Check argument values
+
+  ## Input file is mandatory
+  &RSAT::error::FatalError("Input file is mandatory (option -i)")
+    unless ($infile{input});
+
+  ## Output prefix is mandatory
+  &RSAT::error::FatalError("Output prefix is mandatory (option -o)")
+    unless ($outfile{prefix});
+
+  ## Organism is mandatory
+  &RSAT::error::FatalError("You must specify an organism (option -org)")
+    unless ($organism);
+
+  ## Set output file names
+  &SetFileNames();
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Compute input sequence lengths
+  &ComputeInSeqLen() if ($task{in_seqlen});
+
+  ################################################################
+  ## Compute (oligo)nucleotide composition of input peaks
+  &ComputeInputComposition() if ($task{in_composition});
+
+  ################################################################
+  ## Compute distribution of each filter oligonucleotide
+  &ComputeFilterDistrib() if ($task{filter_distrib});
+
+  ################################################################
+  ## Select random regions
+  &SelectRandRegions() if ($task{rand_regions});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Send the command to a batch queue (e.g. PC cluster)
+  if ($batch) {
+    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  }
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+Mandatory option.
+
+Inuput peak sequences (in fasta format).
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o output_prefix>
+
+
+Mandatory option.
+
+Prefix of the output file. the prefix can contain a directory (the
+folder will be created if it does not exist).
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{prefix} = shift(@arguments);
+
+=pod
+
+=item	B<-org organism>
+
+
+Mandatory option.
+
+Name of the organism from which the random genomic segments have to be
+retrieved.
+
+=cut
+    } elsif ($arg eq "-org") {
+      $main::organism = shift(@arguments);
+
+=pod
+
+=item	B<-ol oligo_len>
+
+Oligonucleotide length for the filtering.
+
+The frequencies of specified oligonucleotides will be computed for the
+input sequences, and will be usable for imposing filters.
+
+=cut
+    } elsif ($arg eq "-ol") {
+      $main::param{oligo_len} = shift(@arguments);
+
+=pod
+
+=item	B<-filter oligo>
+
+"Filter oligonucleotide", i.e. the oligonucleotide on which random
+regions will be filtered (see details above).
+
+B<Important:> the oligonucleotide has to be specified exactly in the
+same way as in the oligo-analysis output format. Thus, in two-strands
+count mode, the two reverse complementary values have to be provided.
+
+
+The option can be used iteratively to impose multiple filters.
+
+B<Examples>
+
+=over
+
+The following command applies a filter on the frequency of C+G
+nucleotides (irrespective of their strand):
+
+I<random-peaks -2str -ol 1 -filter 'c|g' [other options]>
+
+B<Beware>: the pipe character '|' can be problematic on Unix systems, it
+  has thus to be quoted. Alternatively, it can be replaced by a '+' .  
+
+I<random-peaks -2str -ol 1 -filter 'c+g' [other options]>
+
+This differs from the following command, which will impose a filter on
+the CpG frequency in single-strand count mode:
+
+I<random-peaks -1str -ol 2 -filter 'cg' [other options]>
+
+The next command imposes a filter on the CpG frequency in
+both-strands count mode:
+
+I<random-peaks -2str -ol 2 -filter 'cg+cg' [other options]>
+
+Note that in both strands mode, reverse palindromic oligonucleotides
+have to be specified twice (I<'cg|cg'> or I<'cg+cg'>) because the
+filter has to exactly fit the oligo-analysis header.
+
+=back
+
+=cut
+    } elsif ($arg eq "-filter") {
+      my $filter_oligo = shift(@arguments);
+      $filter_oligo =~ s/\+/\|/;
+      push @filter_oligos, $filter_oligo;
+
+=pod
+
+=item	B<-1str|-2str>
+
+Strands for counting oligonucleotide frequencies.
+
+The default is double-strand analysis, since ChIP-seq results have no
+particular strand orientation. It might however make sense to use the
+option -1str for specific analyses.
+
+=cut
+    } elsif ($arg eq "-1str") {
+      $main::param{strand} = "-1str";
+    } elsif ($arg eq "-2str") {
+      $main::param{strand} = "-2str";
+
+=pod
+
+=item B<-noov | -ovlp>
+
+Treatment of self-overlapping for counting oligonucleotide
+frequencies: overlapping occurrences can be either take into account
+(-ovlp) or not (-noov).
+
+=cut
+    } elsif ($arg eq "-noov") {
+      $main::param{noov} = "-noov";
+    } elsif ($arg eq "-ovlp") {
+      $main::param{noov} = "-ovlp";
+
+=pod
+
+=item B<-task>
+
+Specify a subset of tasks to be executed.
+
+By default, the program runs all necessary tasks. However, in some
+cases, it can be useful to select one or several tasks to be executed
+separately.
+
+Beware: task selection requires expertise, because most tasks depends
+on the prior execution of some other tasks in the workflow. Selecting
+tasks before their prerequisite tasks have been completed will provoke
+fatal errors.
+
+B<Default tasks>
+
+=over
+
+=item I<seqlen>
+
+Compute sequence lengths and their distribution.
+
+=item I<composition>
+
+Compute nucleotide composition of input sequences.
+
+=back
+
+=cut
+    } elsif ($arg eq "-task") {
+      my @requested_tasks = split ",", shift (@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
+	}
+      }
+
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; random-peaks ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+
+  printf $out ";\t%-13s\t%s\n", "Organism", $organism;
+
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+################################################################
+## Define the names of all output files (some may required even if
+## only some tasks are called).
+sub SetFileNames {
+  ################################################################
+  ## Create output directory if required
+  $outfile{output} = $outfile{prefix}."_log.tab";
+  ($dir{output}, $outfile{short_prefix}) = &RSAT::util::SplitFileName($outfile{output});
+  &RSAT::util::CheckOutDir($dir{output});
+
+  $outfile{in_seqlen} = $outfile{prefix}."_in_seqlen.tab";
+  $outfile{in_seq_stats} = $outfile{prefix}."_in_seq_stats.tab";
+
+  $outfile{in_composition} = $outfile{prefix}."_in_seq_".$main::param{oligo_len}."nt".$main::param{strand}.$main::param{noov}."_composition.tab";
+
+  $outfile{rand_fragments_coord} = $outfile{prefix}."_rand_regions_coord.bed";
+  $outfile{rand_fragments_seq} = $outfile{prefix}."_rand_regions_seq.fasta";
+
+  foreach my $oligo (@filter_oligos) {
+    $outfile{"in_freq_distrib_".$oligo."_prefix"} = $outfile{prefix}."_in_freq_distrib_".$oligo;
+    $outfile{"in_freq_distrib_".$oligo."_prefix"} =~ s/\|/+/g;
+    $outfile{"in_freq_distrib_".$oligo."_tab"} = $outfile{"in_freq_distrib_".$oligo."_prefix"}.".tab";
+    $outfile{"in_freq_distrib_".$oligo."_".$img_format} = $outfile{"in_freq_distrib_".$oligo."_prefix"}.".".$img_format;
+
+  }
+
+
+}
+
+################################################################
+## Compute input sequence lengths
+sub ComputeInSeqLen {
+  &RSAT::message::TimeWarn("Computing input sequence lengths") if ($main::verbose >= 2);
+  &RSAT::error::FatalError("Cannot read input sequence file", $infile{input}) unless (-r $infile{input});
+  $cmd = $SCRIPTS."/sequence-lengths -v 1";
+  $cmd .= " -i ".$infile{input};
+  $cmd .= " -o ".$outfile{in_seqlen};
+  &RSAT::util::one_command($cmd, 1);
+}
+
+################################################################
+## Compute oligonucleotide of input sequences
+sub ComputeInputComposition {
+  &RSAT::message::TimeWarn("Computing input sequence composition") if ($main::verbose >= 2);
+  &RSAT::error::FatalError("Cannot read input sequence file", $infile{input}) unless (-r $infile{input});
+  $cmd = $SCRIPTS."/oligo-analysis -v 1";
+  $cmd .= " -i ".$infile{input};
+  $cmd .= " -l ".$main::param{oligo_len};
+  $cmd .= " ".$main::param{strand};
+  $cmd .= " ".$main::param{noov};
+  $cmd .= " -return freq -table";
+  $cmd .= " -o ".$outfile{in_composition};
+  &RSAT::util::one_command($cmd, 1) ;
+}
+
+################################################################
+## Compute distribution of frequencies for filter oligos
+sub ComputeFilterDistrib {
+  &RSAT::message::TimeWarn("Computing distribution of filter oligonucleotides") if ($main::verbose >= 2);
+
+  ## Check that composition file exists
+  &RSAT::error::FatalError("Cannot read composition file", $outfile{in_composition}) unless (-r $outfile{in_composition});
+
+  ## Identify filter columns from the header line of the composition file
+  my $compo_header = `grep "^#" $outfile{in_composition}`;
+  #    $compo_header =~ s/\|/\:/g;
+  &RSAT::message::Debug("Composition header ", "'".$compo_header."'") if ($main::verbose >= 5);
+  &RSAT::error::FatalError("Composition file has no header line (should start with #)", $outfile{in_composition}) unless ($compo_header =~ /\S/);
+  my %compo_col = ();
+  chomp($compo_header);
+  $compo_header =~ s/^#//;
+  @compo_header_fields = split ("\t", $compo_header);
+  &RSAT::message::Debug("Composition file header fields", @compo_header_fields) if ($main::verbose >= 5);
+  foreach my $f (0..$#compo_header_fields) {
+    $compo_col{$compo_header_fields[$f]} = $f+1;
+  }
+
+  ## Guess a reasonable class interval for frequencies
+  my $exp_mean = 4**(-$main::param{oligo_len});
+  my $exp_sd = $exp_mean;
+  my $class_interval = sprintf("%2g", $exp_sd/10);
+  &RSAT::message::Info("Class interval", $class_interval) if ($main::verbose >= 0);
+
+  ## Compute the frequency distribution for each filter oligonucleotide
+  foreach my $oligo (@filter_oligos) {
+    &RSAT::message::TimeWarn("Computing oligo freq distribution", $oligo) if ($main::verbose >= 0);
+    &RSAT::error::FatalError($oligo,
+			     "Invalid filtering oligonucleotide: not found in the header of composition file", 
+			     $outfile{in_composition})
+      unless (defined($compo_col{$oligo}));
+    $cmd = $SCRIPTS."/classfreq -v 1";
+    $cmd .= " -i ".$outfile{in_composition};
+    $cmd .= " -min 0";
+    $cmd .= " -col ". $compo_col{$oligo};
+    $cmd .= " -ci ".$class_interval;
+    $cmd .= " -o ".$outfile{"in_freq_distrib_".$oligo."_tab"};
+    &RSAT::util::one_command($cmd, 1);
+
+    $cmd = $SCRIPTS."/XYgraph";
+    $cmd .= " -i ".$outfile{"in_freq_distrib_".$oligo."_tab"};
+    $cmd .= " -xcol 3 -ycol 7,8,9";
+    $cmd .= " -lines";
+    $cmd .= " -xmin 0 -xsize 600";
+    $cmd .= " -ymin 0 -ymax 1 -ysize 400";
+    $cmd .= " -title '".$oligo." frequency distribution'";
+    $cmd .= " -xleg1 '".$oligo." frequency'";
+    $cmd .= " -yleg1 'Fraction of peaks'";
+    $cmd .= " -o ".$outfile{"in_freq_distrib_".$oligo."_".$img_format};
+    &RSAT::util::one_command($cmd, 1);
+
+  }
+}
+
+################################################################
+## Select random regions
+sub SelectRandRegions {
+  &RSAT::message::TimeWarn("Selecting random regions") if ($main::verbose >= 2);
+  $cmd = $SCRIPTS."/random-genome-fragments -v 1";
+  $cmd .= " -lf ".$outfile{in_seqlen};
+  $cmd .= " -org ".$organism;
+  $cmd .= " -return seq -o ".$outfile{rand_fragments_seq};
+  #    $cmd .= " -return coord -coord_format bed -o ".$outfile{rand_fragments_coord};
+  &RSAT::util::one_command($cmd, 1);
+}
+
+__END__
