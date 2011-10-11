@@ -1844,7 +1844,6 @@ sub PrintHTMLmap {
     ###### end of the HTML file #####
     print "</map>";
     print <<EndZoomForm;
-    
     <FORM METHOD="POST" ACTION="$ENV{rsat_www}/feature-map.cgi">
 	<BLOCKQUOTE>
         <TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 VALIGN="top"><TR><TD VALIGN="top">
