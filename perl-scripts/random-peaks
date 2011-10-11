@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-peaks,v 1.3 2011/10/11 09:17:16 jvanheld Exp $
+# $Id: random-peaks,v 1.4 2011/10/11 20:07:26 jvanheld Exp $
 #
 ############################################################
 
@@ -152,7 +152,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -183,13 +183,13 @@ package main;
 
   ## Parameters of the analysis
   our %param = ();
-  $param{oligo_len} = 1;
-  $param{strand} = "-2str";
-  $param{noov} = "-noov";
-  $param{filter_width}=0.5;
-  $param{repetitions}=3;
-  $param{img_format} = "png";
-  $param{seqlen_ci} = 50;
+  $param{oligo_len} = 1; push @param_list, "oligo_len";
+  $param{strand} = "-2str"; push @param_list, "strand";
+  $param{noov} = "-noov"; push @param_list, "noov";
+  $param{filter_width}=0.5; push @param_list, "filter_width";
+  $param{repetitions}=3; push @param_list, "repetitions";
+  $param{img_format} = "png"; push @param_list, "img_format";
+  $param{seqlen_ci} = 50; push @param_list, "seqlen_ci";
   our $filter_oligos;
 
 
@@ -197,7 +197,7 @@ package main;
   our $job_prefix = "fpdisco";
   our $die_on_error = 1;
   our $batch = 0;
-  our $dry = 0;
+  our $dry = 1;
 
   ################################################################
   ## Read argument values
@@ -590,6 +590,12 @@ sub Verbose {
 
   printf $out ";\t%-13s\t%s\n", "Organism", $organism;
 
+  ## Print parameter values
+  print $out "; Parameter values\n";
+  foreach my $param_name (@param_list) {
+    print $out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
+  }
+
   ## Diectories
   print $main::out "; Directories\n";
   foreach my $key (sort(keys(%dir))) {
@@ -614,11 +620,6 @@ sub Verbose {
   }
 
 
-  ## Print parameter values
-  print $out "; Parameter values\n";
-  foreach my $param_name (@param_list) {
-    print $out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
-  }
 }
 
 
@@ -705,6 +706,7 @@ sub ComputeSeqLen {
 ## Compute oligonucleotide of peak sequences
 sub ComputeOligoComposition {
   my ($seq_type) = @_;
+  &RSAT::message::TimeWarn("Computing sequence composition", $seq_type) if ($main::verbose >= 2);
 #  my ($seq_file, $oligo_file) = @_;
   my $seq_file = $outfile{$seq_type."_seq"};
   &RSAT::error::FatalError("&ComputeOligoComposition", "Undefined sequence file", $seq_file) unless ($seq_file);
@@ -712,7 +714,7 @@ sub ComputeOligoComposition {
 
   ## Compute 1nt and 2nt composition
   for my $ol (1..2) {
-    &RSAT::message::TimeWarn("Computing global ".$ol."nt composition in file", $seq_file) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Computing global ".$ol."nt composition in file", $seq_file) if ($main::verbose >= 2);
 
     ## Compute transition table
     my $transitions =  $outfile{$seq_type."_".$ol."nt_transitions"};
@@ -735,7 +737,7 @@ sub ComputeOligoComposition {
   }
 
   ## Compute sequence-wise frequencies
-  &RSAT::message::TimeWarn("Computing sequence-wise ".$main::param{oligo_len}."nt composition in file", $seq_file) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Computing sequence-wise ".$main::param{oligo_len}."nt composition in file", $seq_file) if ($main::verbose >= 2);
   my $oligo_file =  $outfile{$seq_type."_compo"};
   $cmd = $SCRIPTS."/oligo-analysis -v 1";
   $cmd .= " -i ".$seq_file;
@@ -749,29 +751,14 @@ sub ComputeOligoComposition {
 
 
 ################################################################
-## Identify filter parameters from the sequence-wise composition
-## distribution
-sub FilterParameters {
-#  my ($seq_type) = @_;
-  my $seq_type = "peak"; ## Parameters are always estimated from peaks
-  &RSAT::message::TimeWarn("Estimating filter parameter for seq type", $seq_type) if ($main::verbose >= 0);
-
-  ## Compute accepted frequency range from peak sequences
-  my $distrib_file = $outfile{"peak_freq_distrib_".$filter_oligo."_tab"};
-  &RSAT::error::FatalError("Cannot read distrib file", $distrib_file) unless (-r $distrib_file);
-  &RSAT::message::TimeWarn("Estimating mean from distrib file", $distrib_file) if ($main::verbose >= 2);
-  $param{filter_avg} = `grep '; mean' $distrib_file | cut -f 2`;
-  chomp($param{filter_avg});
-  $param{filter_std} = `grep '; std' $distrib_file | cut -f 2`;
-  chomp($param{filter_std});
-  $param{filter_seqnb} = `grep '; count' $distrib_file | cut -f 2`;
-
-  $param{filter_lth} = &RSAT::stats::max(0, $param{filter_avg} - $main::param{filter_width}*$param{filter_std});
-  $param{filter_uth} = &RSAT::stats::min(1, $param{filter_avg} + $main::param{filter_width}*$param{filter_std});
-
+## Identify filter oligon column in sequence-wise oligo freq file
+sub FindFilterColumn {
+  my ($seq_type) = @_;
   my $compo_file = $outfile{$seq_type."_compo"};
+  &RSAT::message::TimeWarn("Finding filter column for seq type", $seq_type, $compo_file) if ($main::verbose >= 2);
+
   my $compo_header = `grep "^#" $compo_file`;
-  #    $compo_header =~ s/\|/\:/g;
+  #    $compo_header =~ s/\|/\+/g;
   &RSAT::message::Debug("Composition header ", "'".$compo_header."'") if ($main::verbose >= 5);
   &RSAT::error::FatalError("Composition file has no header line (should start with #)", $compo_file) unless ($compo_header =~ /\S/);
   my %compo_col = ();
@@ -782,26 +769,44 @@ sub FilterParameters {
   foreach my $f (0..$#compo_header_fields) {
     $compo_col{$compo_header_fields[$f]} = $f+1;
   }
-
+  $main::param{filter_column} = $compo_col{$filter_oligo}; push @param_list, "filter_column";
   &RSAT::error::FatalError($filter_oligo,
 			   "Invalid filtering oligonucleotide: not found in the header of composition file", 
 			   $compo_file)
     unless (defined($compo_col{$filter_oligo}));
-  $param{filter_column} = $compo_col{$filter_oligo};
+}
 
+################################################################
+## Identify filter parameters from the sequence-wise composition
+## distribution
+sub FilterParameters {
+  my ($seq_type) = @_;
+#  my $seq_type = "peak"; ## Parameters are always estimated from peaks
+  &RSAT::message::TimeWarn("Estimating filter parameter for seq type", $seq_type) if ($main::verbose >= 2);
+
+  ## Compute accepted frequency range from peak sequences
+  my $distrib_file = $outfile{$seq_type."_freq_distrib_".$filter_oligo."_tab"};
+  &RSAT::error::FatalError("Cannot read distrib file", $seq_type, $distrib_file) unless (-r $distrib_file);
+  &RSAT::message::TimeWarn("Estimating mean from distrib file", $distrib_file) if ($main::verbose >= 2);
+  $param{filter_avg} = `grep '; mean' $distrib_file | cut -f 2`;   chomp($param{filter_avg}); push @param_list, "filter_avg";
+  $param{filter_std} = `grep '; std' $distrib_file | cut -f 2`; chomp($param{filter_std}); push @param_list, "filter_std"; 
+  $param{filter_seqnb} = `grep '; count' $distrib_file | cut -f 2`;  chomp($param{filter_seqnb}); push @param_list, "filter_seqnb";
+
+  $param{filter_lth} = &RSAT::stats::max(0, $param{filter_avg} - $main::param{filter_width}*$param{filter_std});  push @param_list, "filter_lth";
+  $param{filter_uth} = &RSAT::stats::min(1, $param{filter_avg} + $main::param{filter_width}*$param{filter_std}); push @param_list, "filter_uth";
 
   &RSAT::message::Info("Filtering parameters",
+		       "\n\tseq_type", $seq_type,
 		       "\n\tdistrib file", $distrib_file,
-		       "\n\tcompo file", $compo_file,
-		       "\n\tfilter column=".$param{filter_column},
-		       "\n\tmean=".$param{filter_seqnb},
+#		       "\n\tcompo file", $compo_file,
+#		       "\n\tfilter column=".$param{filter_column},
+		       "\n\tseqnb=".$param{filter_seqnb},
 		       "\n\tmean=".$param{filter_avg},
 		       "\n\tstd=".$param{filter_std},
 		       "\n\twidth=".$param{filter_width},
 		       "\n\tlth=".$param{filter_lth},
 		       "\n\tuth=".$param{filter_uth},
 		      ) if ($main::verbose >= 3);
-
 }
 
 ################################################################
@@ -818,24 +823,29 @@ sub ComputeFilterDistrib {
   ## Check that composition file exists
   &RSAT::error::FatalError("Cannot read composition file", $compo_file) unless (-r $compo_file);
 
-  ## Identify filter parameters from the peak composition file
+  ## Identify filter parameters from the sequence-wise oligo freqency
+  &FindFilterColumn($seq_type);
 #  &FilterParameters($seq_type);
-  &FilterParameters("peak");
+#  &FilterParameters("peak");
 
   ## Guess a reasonable class interval for frequencies
-  my $exp_mean = 4**(-$main::param{oligo_len});
-  my $exp_sd = $exp_mean;
-  my $class_interval = sprintf("%2g", $exp_sd/10);
-  &RSAT::message::Info("Class interval", $class_interval) if ($main::verbose >= 0);
+  unless (defined($param{class_interval})) {
+    my $exp_mean = 4**(-$main::param{oligo_len});
+    my $exp_sd = $exp_mean;
+    my $class_interval = sprintf("%2g", $exp_sd/10);
+    $param{class_interval} = $class_interval; 
+  }
+  push @param_list, "class_interval";
+  &RSAT::message::Info("Class interval", $param{class_interval}) if ($main::verbose >= 3);
 
   ## Compute the frequency distribution for each filter oligonucleotide
-  &RSAT::message::TimeWarn("Computing oligo freq distribution", $filter_oligo) if ($main::verbose >= 0);
+#  &RSAT::message::TimeWarn("Computing oligo freq distribution", $filter_oligo) if ($main::verbose >= 0);
 
   $cmd = $SCRIPTS."/classfreq -v 1";
   $cmd .= " -i ".$compo_file;
   $cmd .= " -min 0";
   $cmd .= " -col ".$param{filter_column};
-  $cmd .= " -ci ".$class_interval;
+  $cmd .= " -ci ".$param{class_interval};
   $cmd .= " -o ".$distrib_table;
   &RSAT::util::one_command($cmd, 1);
 
@@ -859,23 +869,27 @@ sub FilterRandRegions {
 
   ## Identify the column of the oligo composition file that contains
   ## the frequencies of the filter oligo
+  &FindFilterColumn("peak");
   &FilterParameters("peak");
 
   ## Filter sequences according to filter oligo frequency
   my $compo_file = $outfile{"rand_unfiltered_compo"};
   &RSAT::error::FatalError("Cannot read composition file", $compo_file) unless (-r $compo_file);
-  $cmd = "grep -v '^;' ".$compo_file;
+  $cmd = "grep '^#' ".$compo_file;
+  $cmd .= " >".$outfile{"rand_filtered_compo"};
+  $cmd .= "; grep -v '^;' ".$compo_file;
   $cmd .= "| awk '";
   $cmd .= "\$".$param{filter_column}.">".$param{filter_lth};
-  $cmd .= " &&";
+  $cmd .= " && ";
   $cmd .= "\$".$param{filter_column}."<".$param{filter_uth};
   $cmd .= "'";
   $cmd .= " | head -n ".$param{filter_seqnb};
-  $cmd .= " >".$outfile{"rand_filtered_compo"};
+  $cmd .= " >>".$outfile{"rand_filtered_compo"};
   &RSAT::util::one_command($cmd, 1);
 
+
   ## Compute number of selected regions
-  $main::param{selected_regions} = `wc -l $outfile{"rand_filtered_compo"} | awk '{print \$1'}`;
+  $main::param{selected_regions} = `wc -l $outfile{"rand_filtered_compo"} | awk '{print \$1'}`; push @param_list, "selected_regions";
   chomp($main::param{selected_regions});
   $main::param{selected_regions} = &trim($main::param{selected_regions});
   &RSAT::message::Info("Selected regions", $param{selected_regions}) if ($main::verbose >= 1);
@@ -919,11 +933,11 @@ sub HTMLReport {
   chomp($synthesis_path);
 
 
-  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>0);
+  print $syn &PrintHtmlResultHeader(program=>"random-peaks", "title"=>$main::param{title}, "result_toc"=>0);
 
   ## Print the command line
   print $syn "<pre>";
-  print $syn "<b>Command:</b>  peak-motifs ";
+  print $syn "<b>Command:</b> random-peaks ";
   &PrintArguments($syn, 1);
 
   ## Parameter values
@@ -1018,6 +1032,15 @@ sub HTMLReport {
   print $syn "<hr>\n<h2>Input/output files</h2>\n";
 
   print $syn "<p><table class='sortable'>\n";
+
+  ## Parameters
+  if (scalar(@param_list) > 0) {
+    print $syn "<tr><th colspan=2>","Parameters","</th></tr>";
+    foreach my $key (@param_list) {
+      my $value = $main::param{$key};
+      print $syn "<tr><td>".$key."</td><td>".$value."</td></tr>";
+    }
+  }
 
   ## Input file(s)
   if (scalar(@infiles) > 0) {
