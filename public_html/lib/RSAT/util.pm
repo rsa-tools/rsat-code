@@ -917,7 +917,7 @@ sub one_command {
     }
   } else {
     print $main::out ("\n", "; ", &AlphaDate(), "\n", $cmd, "\n\n") if (($print_out) || ($main::verbose >= 3));
-    &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    &doit($cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
   }
 }
 
