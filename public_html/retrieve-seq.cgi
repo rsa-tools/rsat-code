@@ -31,7 +31,6 @@ $query = new CGI;
 ### print the header
 &RSA_header("retrieve-seq result", 'results');
 
-
 #### update log file ####
 &UpdateLogFile();
 
