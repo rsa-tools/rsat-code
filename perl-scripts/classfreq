@@ -5,8 +5,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 
-$start_time = &RSAT::util::StartScript();
-$threshold = 0;
+our $start_time = &RSAT::util::StartScript();
+our $threshold = 0;
 
 
 ##### read arguments #####
@@ -19,26 +19,75 @@ foreach $a (0..$#ARGV) {
   } elsif ($ARGV[$a] eq "-i") {
     $inputfile = $ARGV[$a+1];
   } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];  
+    $outputfile = $ARGV[$a+1];
   } elsif ($ARGV[$a] eq "-v") {
-    $verbose = 1;  
+    $verbose = 1;
+
+=pod
+
+=item B<-ci>
+
+Class interval.
+
+=cut
 
 
   } elsif ($ARGV[$a] eq "-ci") {
-    $class_interval = $ARGV[$a+1];  
+    $class_interval = $ARGV[$a+1];
+
+=pod
+
+=item B<-min>
+
+Min value to be taken into account (smaller values are ignored).
+
+=cut
 
   } elsif (($ARGV[$a] eq "-min") && (&IsReal($ARGV[$a+1]))) {
-    $usermin = $ARGV[$a+1];  
+    $usermin = $ARGV[$a+1];
+
+=pod
+
+=item B<-max>
+
+Max value to be taken into account (higher values are ignored).
+
+=cut
 
   } elsif (($ARGV[$a] eq "-max") && (&IsReal($ARGV[$a+1]))) {
-    $usermax = $ARGV[$a+1];  
+    $usermax = $ARGV[$a+1];
+
+=pod
+
+=item B<-from>
+
+Min value to be reported (lower values are taken into account in the
+computation, but not exported in the result table).
+
+=cut
 
   } elsif (($ARGV[$a] eq "-from") && (&IsReal($ARGV[$a+1]))) {
-    $display_from = $ARGV[$a+1];  
+    $display_from = $ARGV[$a+1];
 
+
+=pod
+
+=item B<-to>
+
+Max value to be reported (higher values are taken into account in the
+computation, but not exported in the result table).
+
+=cut
   } elsif (($ARGV[$a] eq "-to") && (&IsReal($ARGV[$a+1]))) {
-    $display_to = $ARGV[$a+1];  
+    $display_to = $ARGV[$a+1];
 
+=pod
+
+=item B<-col>
+
+Column containing the numbers to analyze.
+
+=cut
   } elsif (($ARGV[$a] eq "-col") && (&IsNatural($ARGV[$a+1]))) {
     push @cols, $ARGV[$a+1];
   }
@@ -52,7 +101,7 @@ $sum = 0;
 $sumofsquares = 0;
 ## @ListOfNumbers = ();
 while($current_line = <$in>) {
-  next if ($current_line =~ /^;/); ### skip comment lines 
+  next if ($current_line =~ /^;/); ### skip comment lines
   chomp $current_line;
   if (scalar(@cols) >= 1) {
     @current_linecp = split("\t", $current_line);
@@ -190,11 +239,11 @@ foreach $c (0.. $#ListOfClasses) {
 
     ### print class result
     if (($ListOfClasses[$c] >= $display_from) && ($ListOfClasses[$c] <= $display_to))  {
-	if (($ListOfClasses[$c] <= 1.0e-12) && 
+	if (($ListOfClasses[$c] <= 1.0e-12) &&
 	    ($ListOfClasses[$c] >= -1.0e-12)) {
 	    $ListOfClasses[$c] =0;
 	}
-	if (($ListOfClasses[$c] + $class_interval <= 1.0e-13) && 
+	if (($ListOfClasses[$c] + $class_interval <= 1.0e-13) &&
 	    ($ListOfClasses[$c] + $class_interval >= -1.0e-13)) {
 	    $ListOfClasses[$c] = - $class_interval;
 	}
@@ -210,7 +259,7 @@ foreach $c (0.. $#ListOfClasses) {
 	    $format = "\t%.2g";
 	  } else {
 	    $format = "\t%6.5f";
-	  } 
+	  }
 	  $out_line .= sprintf $format, $rel;
 	  $out_line .= sprintf $format, $rel_cum;
 	  $out_line .= sprintf $format, $inv_rel_cum;
@@ -326,11 +375,11 @@ OUTPUT
         - cumulated relative frequency (inclusive)
         - inverted cumulated relative frequency (inclusive)
 
-	With the option -v, the list of class frequencies is followed by a 
+	With the option -v, the list of class frequencies is followed by a
 	short statistical report on the data.
 
-	Within each class are counted all numbers that are 
-	- greater or equal to the lower limit, and 
+	Within each class are counted all numbers that are
+	- greater or equal to the lower limit, and
 	- strictly smaller than the upper limit of the class
 	(lowerlimit <= x < upperlimit).
 
@@ -357,28 +406,28 @@ OPTIONS
 
 	-ci	class interval. If not specified, takes the value
 			(max - min)/20
-		so that 21 classes are specified. 
+		so that 21 classes are specified.
 
 	-col	column to which apply the program. This option can
 		be used iteratively.
 
-	-min #	nusmbers strictly smaller than # are not taken into account. 
+	-min #	nusmbers strictly smaller than # are not taken into account.
 		# also determines the lower limit of the first class.
 
 	-max #	numbers strictly greater than # are not taken into account.
 
 	-from #	inferior limit for the classes to display
 		values lower than this limit are however taken into account
-		in the calculation of statistics (mean, variance, ...) and of 
+		in the calculation of statistics (mean, variance, ...) and of
 		class frequencies (In contrast with the -min option).
 
 	-to #	superior limit for the classes to display
 		values higher than this limit are however taken into account
-		in the calculation of statistics (mean, variance, ...) and of 
+		in the calculation of statistics (mean, variance, ...) and of
 		class frequencies (In contrast with the -max option).
 
 	-v	verbose.
-		Return some statistics over the data : 
+		Return some statistics over the data :
 		- total # of elements,
 		- mean value
 		- standard deviation (std)
@@ -394,11 +443,11 @@ OPTIONS
 	        observation (-thr 1).
 
 EXAMPLES
-	To get the distribution of all numbers x such that 0 <= x <= 1000, 
+	To get the distribution of all numbers x such that 0 <= x <= 1000,
 	grouped within classes of interval 100 :
 		classfreq -i myfile -ci 100 -min 0 -max 1000
-	Note that the limits of the last class will be [1000, 1100[, though 
-	this class will only contain the occurences of 1000 (since numbers 
+	Note that the limits of the last class will be [1000, 1100[, though
+	this class will only contain the occurences of 1000 (since numbers
 	greater than 1000 are discarded).
 
 ";
@@ -418,7 +467,7 @@ sub PrintOptions {
 -o      output file
 -v      verbose
 -ci	class interval.
--col	column 
+-col	column
 -min #	minimum value
 -max #	maximum value
 -from	inferior limit of classes to display
