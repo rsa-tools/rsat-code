@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.22 2011/02/17 04:54:49 rsat Exp $
+# $Id: matrix-distrib,v 1.23 2011/10/11 22:39:16 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -139,6 +139,7 @@ package main;
   local $null = "NA";
   local $info_log_base = exp(1);
 
+  local $top_matrices = 0;
 
   ## bg formats
   $bg_format = "oligo-analysis";
@@ -226,13 +227,11 @@ package main;
     	$bg_model->set_attribute('order', 0);
     	$bg_model->set_hash_attribute("suffix_proba", %prior);
     	$bg_model->set_attribute("strand","sensitive");
-   
    }
-       
+
   ## Read the input matrices
   foreach my $matrix_file (@matrix_files) {	
   	 my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
-  	
   	foreach my $m (0..$#new_matrices) { 
   		my $matrix = $new_matrices[$m];
     	$matrix->set_parameter("pseudo", $pseudo);
@@ -245,11 +244,15 @@ package main;
     	$matrix->force_attribute("sep", $sep);
     	$matrix->setInfoLogBase($info_log_base);
     	$matrix->setMarkovModel($bg_model);
-    	
     	push @matrices, $matrix;
   	}
   }
-  
+
+  if (($top_matrices > 0) && ($top_matrices < scalar(@matrices))) {
+    &RSAT::message::Warning("Selecting ".$top_matrices." top matrices among ".scalar(@matrices));
+    @matrices = @matrices[0..($top_matrices -1)];
+  }
+
   ################################################################
   #### print verbose
   &Verbose() if ($main::verbose);
@@ -258,7 +261,7 @@ package main;
   ## Calculate theorical distribution of scores
   foreach my $matrix (@matrices) {
   	 &RSAT::message::Info("Calculating theorical distribution from matrix", $matrix) if ($main::verbose >= 2);
-  	
+
   ## Return weight distribution
   $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
   my %weight_proba = $matrix->getTheorScoreDistrib("weights");
@@ -361,15 +364,15 @@ sub PrintOptions {
 sub ReadArguments {
 #    foreach my $a (0..$#ARGV) {
     my $arg = "";
-    
+
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    
+
 
     while ($arg = shift (@arguments)) {
 
 	## Verbosity
+
 =pod
-	    
 
 =head1 OPTIONS
 
@@ -386,8 +389,9 @@ Level of verbosity (detail in the warning messages during execution)
 	    } else {
 		$main::verbose = 1;
 	    }
-	    
+
 	    ## Help message
+
 =pod
 
 =item B<-h>
@@ -397,8 +401,9 @@ Display full help message
 =cut
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ## List of options
+
 =pod
 
 =item B<-help>
@@ -410,6 +415,7 @@ Same as -h
 	    &PrintOptions();
 
 	    ## Input file
+
 =pod
 
 =item B<-m matrixfile>
@@ -425,9 +431,25 @@ multiple matrices.
 
 =pod
 
+=item B<-top top_matrix_nb>
+
+Restrict the analysis to the N top matrices of the input file. This
+option is useful when the input file contains multiple matrices (for
+example fo the Web interface, where the program supports a single
+matrix).
+
+=cut
+	} elsif ($arg eq "-top") {
+	    $main::top_matrices = shift(@arguments);
+	    &RSAT::error::FatalError($top_matrices , "is not a valid value for option -top. Should be a strictly positive Integer.") 
+	      unless (&IsNatural($main::top_matrices) && ($main::top_matrices > 0));
+
+
+=pod
+
 =item B<-mlist matrix_list>
 
-Matrix list. 
+Matrix list.
 
 Indicate a file containing a list of matrices to be used for scanning
 the region. This facilitates the scanning of a sequence with a library
@@ -440,8 +462,7 @@ same row is ignored.
 =cut
 	} elsif ($arg eq "-mlist") {
 	    $main::infile{matrix_list} = shift(@arguments);
-	    
-	    ## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -453,7 +474,6 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
 
-	    ## Matrix format
 =pod
 
 =item B<-matrix_format matrix_format>
@@ -468,7 +488,7 @@ Matrix format. Default is tab.
 					  "Supported: ", $main::supported_matrix_formats))
 		unless ($main::supported_matrix_format{$main::matrix_format});
 
-	    ## Pseudo-frequency for the PSSM
+
 =pod
 
 =item B<-pseudo #>
@@ -483,6 +503,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 		unless (&IsReal($main::pseudo));
 
 		##bg file
+
 =pod
 
 =item B<-bgfile background_file>
@@ -494,6 +515,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 	    $main::infile{bgfile} = shift(@arguments);
 
 	    ## Background model format
+
 =pod
 
 =item B<-bg_format background_format>
@@ -507,9 +529,10 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 	    &RSAT::error::FatalError(join("\t", $main::bg_format,
 					  "Invalid input format.",
 					  "Supported: ", $main::bg_format))
-		unless ($main::supported_bg_format{$main::bg_format});    
+		unless ($main::supported_bg_format{$main::bg_format});
 
 	    ## Pseudo-frequency for the background model
+
 =pod
 
 =item B<-bg_pseudo #>
@@ -528,6 +551,7 @@ L+squareroot of L
 
 
 	    ## Number of decimals
+
 =pod
 
 =item B<-decimals #>
@@ -542,6 +566,7 @@ Number of decimals to print or the transition probabilities.
 		unless (&IsNatural($main::decimals));
 
 	    ## Convert the bg model to 2 strands
+
 =pod
 
 =cut
@@ -578,10 +603,9 @@ sub Verbose {
 	    print $main::out ";\t$key\t$value\n";
 	}
       }
-    
+
     ## Pseudo counts
-    
-      
+
     ## Background model
     if (defined($bg_model)) {
    	printf $main::out "; Background model\n";
