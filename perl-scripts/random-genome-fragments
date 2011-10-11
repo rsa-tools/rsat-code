@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.26 2011/10/10 08:51:20 jvanheld Exp $
+# $Id: random-genome-fragments,v 1.27 2011/10/11 12:24:50 jvanheld Exp $
 #
 ############################################################
 
@@ -16,7 +16,9 @@ random-genome-fragments
 
 =head1 DESCRIPTION
 
-Select a set of fragments with random positions in a given genome, and return their coordinates and/or sequences.
+Select a set of fragments with random positions in a given genome, and
+return their coordinates and/or sequences.
+
 The supported organisms are etiher installed in RSAT or from Ensembl.
 Makes use of EnsEMBL API (www.ensembl.org) for EnsEMBL genomes.
 
@@ -28,13 +30,25 @@ morgane@bigre.ulb.ac.be
 
 sequences
 
+genomes
+
+random controls
+
 =head1 USAGE
 
-random-genome-fragments -org organism -l length -r repetitions [-o outputfile] [-v # -rm -lf length_file] [..]
+
+Fixed fragment length:
+
+I<random-genome-fragments -org organism -l fragment_length -n nb_fragments [-o outputfile] [-v # -rm] [...]>
+
+Fragment lengths fit a sequence length file.
+
+I<random-genome-fragments -org organism -lf length_file [-rep repetitions] [-o outputfile] [-v # -rm] [...]>
 
 =head1 OUTPUT FORMATS
 
-The program outputs a file containing the genomic coordinates or the sequences.
+The program returns a file containing the genomic coordinates or the
+sequences.
 
 =cut
 
@@ -66,25 +80,26 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  local $start_time = &RSAT::util::StartScript();
+  our $start_time = &RSAT::util::StartScript();
 
-  %main::outfile = ();
-  %main::infile = ();
+  our %outfile = ();
+  our %infile = ();
 
-  $main::verbose = 0;
+  our $verbose = 0;
   #$main::out = STDOUT;
 
-  $main::dry = 0;
-  $main::die_on_error = 1;
-  $main::batchmode = 0;
+  our $dry = 0;
+  our $die_on_error = 1;
+  our $batchmode = 0;
 
-  $main::out_format = "ft";
-  $main::rm = 0;
-  @main::lengths =();
-  @main::contig_names = ();
-  @main::files2remove =();
-  $main::null = "";
-  $main::assembly_version = "";
+  our $out_format = "ft";
+  our $rm = 0;
+  our @lengths =();
+  our @contig_names = ();
+  our @files2remove =();
+  our $repetitions = 1;
+  our $null = "";
+  our $assembly_version = "";
 
   ## Return fields
   local %supported_return_fields = (
@@ -101,7 +116,7 @@ package main;
   ################################################################
   ## File with template sequences
   if ($main::infile{reference_file}) {
-    ## run sequence-lengths
+    ## Compute sequence lengths
     my $job_prefix = "random-genome-fragments";
     my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate;
     $main::infile{length_file} = "$TMP/$tmp_file_name".".lengths";
@@ -124,19 +139,29 @@ package main;
       my @fields = split ("\t",$line);
       my $length = $fields[1];
       if (&IsNatural($length)) {
-	push @main::lengths, $length;
+	push @lengths, $length;
       }
     }
     close $len_handle;
-    $main::nb_fragment = $#main::lengths +1;
+
+    ## Repeat length list if requested
+    if ($repetitions > 1) {
+      my @rep_lengths = @lengths;
+      for my $r (1..$repetitions) {
+	push @rep_lengths, @lengths;
+      }
+      @lengths = @rep_lengths;
+    }
+
+    $main::nb_fragments = scalar(@lengths);
   } else {
 
-    #### check sequence lengths and repetitions
-    unless (&IsNatural($main::length_fragment)) {
+    ## Check sequence lengths and repetitions
+    unless (&IsNatural($main::fragment_len)) {
       &RSAT::error::FatalError ("You should specify the sequence length");
     }
 
-    unless ($main::nb_fragment >=1) {
+    unless ($main::nb_fragments >=1) {
       &RSAT::error::FatalError( "Number of repetitions should be >=1");
     }
   }
@@ -224,7 +249,7 @@ package main;
   ################################################################
   ## get random positions
 
-  for (my $i=1; $i<=$main::nb_fragment; $i++) {
+  for (my $i=1; $i<=$main::nb_fragments; $i++) {
 
     ## 1- get a random contig
     my $rand_contig = int(rand ($#main::contig_names+1));
@@ -242,10 +267,10 @@ package main;
       if ($main::verbose >= 2);
 
     my $rand_fragment_size;
-    if ($main::length_fragment) {
-      $rand_fragment_size = $main::length_fragment;
+    if ($main::fragment_len) {
+      $rand_fragment_size = $main::fragment_len;
     } else {
-      $rand_fragment_size = $main::lengths[$i-1];
+      $rand_fragment_size = $lengths[$i-1];
     }
     my $contig_last_rand_pos = $contig_length - $rand_fragment_size;
 
@@ -263,7 +288,7 @@ package main;
     }
     ##exclude the contig from the analysis, if it is too difficult to get a fragment of the correct size.
     if ($rand_start < 1) {
-      &RSAT::message::Info(join ("\t", "Excluding", $rand_contig_name, "from contigs due to repetitive negative starts. Contig length:",$contig_length," fragment size:",$main::length_fragment) )
+      &RSAT::message::Info(join ("\t", "Excluding", $rand_contig_name, "from contigs due to repetitive negative starts. Contig length:",$contig_length," fragment size:",$main::fragment_len) )
 	if ($main::verbose >= 2);
       splice(@main::contig_names, $rand_contig, 1);
       $i--;
@@ -287,7 +312,7 @@ package main;
     if (($main::organism_name)&&($return_fields{seq})) {
       my $current_seq = $main::contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
       my @comments = join("; ",
-			  "random sequence $i of $main::nb_fragment",
+			  "random sequence $i of $main::nb_fragments",
 			  "length: $rand_fragment_size",
 			  "$rand_contig_name",
 			  "$rand_start:$rand_end:$rand_strand"
@@ -530,14 +555,18 @@ Uses a local EnsEMBL server. (Advanced users)
 
 =pod
 
-=item	B<-r repetitions>
+=item	B<-n Number of fragments>
 
-Allows to generate a set r of sequences, each of length l.
+Generate a set of I<n> random fragments, each of length I<l>.
 
+This option is incompatible with options -lw and -rep.
 
 =cut
+      } elsif ($arg eq "-n") {
+	$main::nb_fragments = shift(@arguments);
       } elsif ($arg eq "-r") {
-	$main::nb_fragment = shift(@arguments);
+	$main::nb_fragments = shift(@arguments);
+	&RSAT::message::Warning("Option -r is obsolete, please use -n instead");
 
 	### length of fragments
 
@@ -547,10 +576,11 @@ Allows to generate a set r of sequences, each of length l.
 
 Sequence length of random genomic fragments.
 
+This option is incompatible with options -lw and -rep.
+
 =cut
       } elsif ($arg eq "-l") {
-	$main::length_fragment = shift(@arguments);
-
+	$main::fragment_len = shift(@arguments);
 
 
 
@@ -558,22 +588,25 @@ Sequence length of random genomic fragments.
 
 =item	B<-iseq reference_sequences>
 
-Allows to generate random sequences with the same
-lengths as a set of reference sequences. The difference with the -lf option is that
-the sequence lengths are automatically calculated.
+Generate random sequences with the same lengths as a set of reference
+sequences. The difference with the -lf option is that the sequence
+lengths are automatically calculated.
+
+This option is incompatible with options -l and -n.
 
 =cut
       } elsif ($arg eq "-iseq") {
 	$main::infile{reference_file} = shift(@arguments);
 
 
+
 =pod
 
 =item	B<-lf length file>
 
-Allows to generate random sequences with the same
-lengths as a set of reference sequences. The sequence
-length file can be obtained with the command I<sequence-lengths>
+Generate random sequences with the same lengths as a set of reference
+sequences. The sequence length file can be obtained with the command
+I<sequence-lengths>
 
 The length file contains two columns :
 
@@ -585,13 +618,28 @@ The length file contains two columns :
 
 =back
 
+This option is incompatible with options -l and -n.
+
 =cut
       } elsif ($arg eq "-lf") {
 	$main::infile{length_file} = shift(@arguments);
 
+
+=pod
+
+=item	B<-rep repetitions>
+
+The list of sequence lengths is repeated I<r> times.
+
+This option supposed that the option -lf or -iseq has been used. It is
+is incompatible with options -l and -n.
+
+=cut
+      } elsif ($arg eq "-rep") {
+	$main::repetitions = shift(@arguments);
+
       } else {
 	&FatalError(join("\t", "Invalid option", $arg));
-
       }
   }
 }
@@ -601,7 +649,7 @@ The length file contains two columns :
 sub Verbose {
   print $main::out "; random-genome-fragments ";
   &PrintArguments($main::out);
-  print $main::out "; Number of random fragments $main::nb_fragment\n";
+  print $main::out "; Number of random fragments $main::nb_fragments\n";
   if ($main::out_format eq "bed") {
     print $main::out "; Warning: the genomic intervals in this BED file are 0-based, to be compliant with UCSC, and related programs to retrieve sequences (Galaxy). Chromosome thus start at position 0 (not 1).\n";
   }
@@ -613,9 +661,9 @@ sub Verbose {
   }
 }
 
-#########################################
-## CLASSES
-#########################################
+################################################################
+## CLASS DEFINITIONS
+################################################################
 
 package Ensembl_genome;
 {

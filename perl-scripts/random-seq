@@ -5,221 +5,232 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-## Start time
-local $start_time = &RSAT::util::StartScript();
-
-#### initialise parameters ####
-$out_format = "fasta";
-$seq_nb = 1;
-$line_width = 70;
-$sequence_type = "dna";
-
 ################################################################
-## Supported background models
-%supported_bg = (
-		 'equi'=>1,
-		 'intergenic'=>1,
-		 'upstream'=>1,
-		 'upstream-noorf'=>1,
-		 'protein'=>1,
-		 );
-$supported_bg = join(",", sort keys %supported_bg);
+## Main package
+package main;
+{
+    ## Start time
+    $start_time = &RSAT::util::StartScript();
 
-&ReadArguments();
+    ## Initialise parameters ####
+    $out_format = "fasta";
+    $seq_nb = 1;
+    $repetitions = 1;
+    $line_width = 70;
+    $sequence_type = "dna";
 
+    ################################################################
+    ## Supported background models
+    %supported_bg = (
+	'equi'=>1,
+	'intergenic'=>1,
+	'upstream'=>1,
+	'upstream-noorf'=>1,
+	'protein'=>1,
+	);
+    $supported_bg = join(",", sort keys %supported_bg);
 
-################################################################
-#
-# Check alphabet
-#
-if ($sequence_type eq "dna") {
-    @letters = qw ( A C G T );
-} elsif ($sequence_type =~ /^prot/) {
-    @letters = qw ( a c d e f g h i k l m n p q r s t v w y );
+    &ReadArguments();
+
+    ################################################################
+    ## Check alphabet
+    if ($sequence_type eq "dna") {
+	@letters = qw ( A C G T );
+    } elsif ($sequence_type =~ /^prot/) {
+	@letters = qw ( a c d e f g h i k l m n p q r s t v w y );
 #    @letters = qw ( A C D E F G H I K L M N P Q R S T V W Y );
-} elsif ($sequence_type =~ /^other/) {
-    @letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
-		"n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", 
-		" ", ".", ",", ":", ";");
-} else {
-    &RSAT::error::FatalError($sequence_type, "is not a valid sequence type. Supported: dna,protein,other");
-}
-
-if (%alphabet) {
-    %freq = %alphabet
-} else {
-    foreach $letter (@letters) {
-	$freq{$letter} = 1/($#letters + 1);
+    } elsif ($sequence_type =~ /^other/) {
+	@letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
+		    "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", 
+		    " ", ".", ",", ":", ";");
+    } else {
+	&RSAT::error::FatalError($sequence_type, "is not a valid sequence type. Supported: dna,protein,other");
     }
-}
 
-
-################################################################
-## Check argument values
-
-## Output formaat
-&CheckOutputSeqFormat($out_format);
-
-################################################################
-## File with the specification of sequence lengths
-if ($length_file) {
-    ($len_handle, $input_dir) = &OpenInputFile($length_file);
-#    open LEN, $length_file;
-    while (<$len_handle>) {
-	chomp;
-	next if (/^;/);
-	next if (/^--/);
-	next if (/^#/);
-	next unless (/\S/);
-	my @fields = split "\t";
-	$length = $fields[1];
-	if (&IsNatural($length)) {
-	  push @lengths, $length;
+    if (%alphabet) {
+	%freq = %alphabet;
+    } else {
+	foreach $letter (@letters) {
+	    $freq{$letter} = 1/($#letters + 1);
 	}
     }
-    close $len_handle;
-    $seq_nb = $#lengths +1;
-} else {
 
-    #### check sequence lengths and repetitions
-    unless (&IsNatural($seq_length)) {
-	&RSAT::error::FatalError ("You should specify the sequence length");
-    } 
-    
-    unless ($seq_nb >=1) {
-	&RSAT::error::FatalError( "Number of repetitions should be >=1");
+
+    ################################################################
+    ## Check argument values
+
+    ## Output formaat
+    &CheckOutputSeqFormat($out_format);
+
+    ################################################################
+    ## File with the specification of sequence lengths
+    if ($length_file) {
+	($len_handle, $input_dir) = &OpenInputFile($length_file);
+	#    open LEN, $length_file;
+	while (<$len_handle>) {
+	    chomp;
+	    next if (/^;/);
+	    next if (/^--/);
+	    next if (/^#/);
+	    next unless (/\S/);
+	    my @fields = split "\t";
+	    $length = $fields[1];
+	    if (&IsNatural($length)) {
+		push @lengths, $length;
+	    }
+	}
+	close $len_handle;
+
+	## Repeat sequence length list if requested
+	if ($repetitions > 1) {
+	    my @rep_lengths = @lengths;
+	    for my $r (1..$repetitions) {
+		push @rep_lengths, @lengths;
+	    }
+	    @lengths = @rep_lengths;
+	}
+	
+
+	$seq_nb = $#lengths +1;
+    } else {
+
+	#### check sequence lengths and number of sequences
+	unless (&IsNatural($seq_length)) {
+	    &RSAT::error::FatalError ("You should specify the sequence length");
+	}
+	unless ($seq_nb >=1) {
+	    &RSAT::error::FatalError( "Number of sequences should be >=1 (option -n)");
+	}
     }
-}
- 
-################################################################
-## Background model
-if ($background_model eq "equi") {
-    $method = "equiprobable residues";
 
-} elsif ($background_model) {
-  
-  ### Localize frequency file in the RSAT data directory for the specified organism
-  $method = "Frequency file";
-  $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model, 
-				       $noov=>"-ovlp", str=>"-1str");
-}
+    ################################################################
+    ## Background model
+    if ($background_model eq "equi") {
+	$method = "equiprobable residues";
 
+    } elsif ($background_model) {
 
-################################################################
-## Calculate residue probabilities (Markov or Bernoulli model)
-if ($exp_freq_file) {
-
-    ## Load Markov model from an oligonucleotide frequency file
-    &CalcConditionalProbabilities($exp_freq_file);
-
-} else {
-
-    ## Calculate cumulated frequencies for individual residues
-    $cum_letter_freq[0] = $freq{$letters[0]};
-    for $l (1..$#letters) {
-	$cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
+	### Localize frequency file in the RSAT data directory for the specified organism
+	$method = "Frequency file";
+	$exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model, 
+					   $noov=>"-ovlp", str=>"-1str");
     }
-    unless ($cum_letter_freq[$#letters] > 0) {
-	&RSAT::error::FatalError( "Invalid alphabet specification.");
+
+
+    ################################################################
+    ## Calculate residue probabilities (Markov or Bernoulli model)
+    if ($exp_freq_file) {
+
+	## Load Markov model from an oligonucleotide frequency file
+	&CalcConditionalProbabilities($exp_freq_file);
+
+    } else {
+
+	## Calculate cumulated frequencies for individual residues
+	$cum_letter_freq[0] = $freq{$letters[0]};
+	for $l (1..$#letters) {
+	    $cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
+	}
+	unless ($cum_letter_freq[$#letters] > 0) {
+	    &RSAT::error::FatalError( "Invalid alphabet specification.");
+	}
+	for $l (0..$#letters) {
+	    $freq{$letters[$l]} /= $cum_letter_freq[$#letters];
+	    $cum_letter_freq[$l] /= $cum_letter_freq[$#letters];
+	}
     }
-    for $l (0..$#letters) {
-	$freq{$letters[$l]} /= $cum_letter_freq[$#letters];
-	$cum_letter_freq[$l] /= $cum_letter_freq[$#letters];
+
+
+
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outputfile);
+
+    ################################################################
+    ## Verbose
+    &Verbose() if ($verbose);
+
+    ## Initialize the random seed
+    if (defined($seed)) {
+	srand($seed);
+    } else {
+	srand (time);
     }
-}
 
 
+    ################################################################
+    ## Generate the random sequence
+    for $r (1..$seq_nb) {
+	### initialization
+	my $current_seq_length = $lengths[$r-1] || $seq_length;
+	
+	$sequence = "";
+	$seq_id = "rand_$r";
+	my @comments = ();
+	my $comment = join ("; ", "random sequence ".$r."/".$seq_nb,
+			    "type: ".$sequence_type,
+			    "length: ".$current_seq_length,
+	    );
+	if ($background_model) {
+	    $comment .= "; bg model: ".$background_model;
+	    $comment .= "; organism: ".$organism_name if ($organism_name);
+	}
+	push @comments, $comment;
 
-################################################################
-## open output stream
-$out = &OpenOutputFile($outputfile);
-
-################################################################
-## Verbose
-&Verbose() if ($verbose);
-
-## Initialize the random seed
-if (defined($seed)) {
-    srand($seed);
-} else {
-    srand (time);
-}
-
-
-################################################################
-## Generate the random sequence
-for $r (1..$seq_nb) {
-  ### initialization
-  my $current_seq_length = $lengths[$r-1] || $seq_length;
-
-  $sequence = "";
-  $seq_id = "rand_$r";
-  my @comments = ();
-  my $comment = join ("; ", "random sequence ".$r."/".$seq_nb,
-		      "type: ".$sequence_type,
-		      "length: ".$current_seq_length,
-		     );
-  if ($background_model) {
-      $comment .= "; bg model: ".$background_model;
-      $comment .= "; organism: ".$organism_name if ($organism_name);
-  }
-  push @comments, $comment;
-
-  if ($exp_freq_file) {
-    $rand = int (rand $#subword_keys);
+	if ($exp_freq_file) {
+	    $rand = int (rand $#subword_keys);
 
 
-    ## Note: the selection of the first word of a sequence should
-    ## be improved. Currently, the first prefix (corresponding to
-    ## the markov order) is chosen in an equiprobable way. this
-    ## does not really matter as far as the sequences are larger
-    ## much larger than the markov order, which is usually the
-    ## case
-    $subword = $subword_keys[$rand]; ## Subword
-    $sequence .= uc($subword); ## First subword is printed in uppercases
+	    ## Note: the selection of the first word of a sequence should
+	    ## be improved. Currently, the first prefix (corresponding to
+	    ## the markov order) is chosen in an equiprobable way. this
+	    ## does not really matter as far as the sequences are larger
+	    ## much larger than the markov order, which is usually the
+	    ## case
+	    $subword = $subword_keys[$rand]; ## Subword
+	    $sequence .= uc($subword); ## First subword is printed in uppercases
 
-    for $i ((length($sequence)+1)..$current_seq_length) {
-      #	    @cum_letter_freq = @{$cum_letter_freq{$subword}};
-      $rand = rand;
-      $l = 0;
-      #      do {
-      #	$l++;
-      #      } until (($l > $#letters) || ($cum_letter_freq{$subword}[$l] >= $rand));
+	    for $i ((length($sequence)+1)..$current_seq_length) {
+		#	    @cum_letter_freq = @{$cum_letter_freq{$subword}};
+		$rand = rand;
+		$l = 0;
+		#      do {
+		#	$l++;
+		#      } until (($l > $#letters) || ($cum_letter_freq{$subword}[$l] >= $rand));
 
-      while ($l <= $#letters) {
-	if ($cum_letter_freq{$subword}[$l] >= $rand) {
-	  last;
+		while ($l <= $#letters) {
+		    if ($cum_letter_freq{$subword}[$l] >= $rand) {
+			last;
+		    } else {
+			$l++;
+		    }
+		}
+		$next_letter = $letters[$l];
+		$sequence .= $next_letter;
+		$subword = lc(substr($subword.$next_letter,1));
+	    }
+	    
 	} else {
-	  $l++;
+	    for $i (1..$current_seq_length) {
+		$rand = rand();
+		$l = -1;
+		do {
+		    $l++;
+		} until (($l > $#letters) || ($cum_letter_freq[$l] >= $rand));
+		$next_letter = $letters[$l];
+		$sequence .= $next_letter;
+	    }
 	}
-      }
-      $next_letter = $letters[$l];
-      $sequence .= $next_letter;
-      $subword = lc(substr($subword.$next_letter,1));
+	&PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
     }
-    
-  } else {
-    for $i (1..$current_seq_length) {
-      $rand = rand();
-      $l = -1;
-      do {
-	$l++;
-      } until (($l > $#letters) || ($cum_letter_freq[$l] >= $rand));
-      $next_letter = $letters[$l];
-      $sequence .= $next_letter;
-    }
-  }
-  &PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
+
+    ## Close output file
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $out if ($outputfile);
+
+    exit(0);
 }
-
-###### close output file ######
-my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-print $main::out $exec_time if ($main::verbose >= 1);
-close $out if ($outputfile);
-
-
-exit(0);
-
 
 ################################################################
 ## Read arguments
@@ -250,10 +261,6 @@ sub ReadArguments {
       ## Number of sequences
     } elsif ($ARGV[$a] eq "-n") {
       $seq_nb = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-r") {
-      $seq_nb = $ARGV[$a+1];
-      &RSAT::message::Warning ("option -r is deprecated, you should use -n instead.");
 
     } elsif ($ARGV[$a] eq "-expfreq") {
       $exp_freq_file = $ARGV[$a+1];
@@ -317,6 +324,11 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-lf") {
       $length_file =$ARGV[$a+1];
 
+      ## Number of repetition for length file
+    } elsif ($ARGV[$a] eq "-rep") {
+      $repetitions = $ARGV[$a+1];
+
+
     }
   }
 }
@@ -343,8 +355,10 @@ CATEGORY
 OPTIONS
     OUTPUT OPTIONS
 	-l	sequence length
-	-n	repetitions. Allows to generate a set r of sequences,
-		each of length l.
+
+	-n	Number of sequences.
+                Generate a set of n sequences, each of length l.
+
 	-v	verbose.
 	-o outputfile
 		if not specified, the standard output is used.
@@ -458,13 +472,30 @@ OPTIONS
 		order is m = k-1.
 
 	-lf	length file 
-		Allows to generate random sequences with the same
-		lengths as a set of reference sequences. The sequence
-		length file can be obtained with the command
+
+		Generate random sequences with the same lengths as a
+		set of reference sequences. 
+
+		This option is incompatible with the options -l and -n.
+
+		The sequence length file can be obtained with the
+		command
 			sequence-lengths
+
 		The length file contains two columns : 
 		    - sequence ID (ignored)
 		    - sequence length
+
+	-rep	Number of repetitions
+
+		The list if sequence lengths is repeated rep times.
+
+		This option only serves when a length file is used to
+		specify sequence-sise lengths.
+
+		This option is incompatible with the options -l and
+		-n.
+
 WEB VERSION
 	http://bigre.ulb.ac.be/bioinformatics/rsa-tools/
 
@@ -481,7 +512,7 @@ sub PrintOptions {
 random-seq options
 ==================
 -l		sequence length
--n		repetitions (number of sequences)
+-n		number of sequences
 -v		verbose
 -o		outputfile
 -format		output format
@@ -494,8 +525,9 @@ random-seq options
 -bg		background model (supported: $supported_bg)
 -org		organism
 -markov		markov order (incompatible with -ol)
--ol		oligo length (incompatible with -markov)
--lf		length file
+-ol		Oligo length (incompatible with -markov)
+-lf		Length file (incompatible with options -l and -n)
+-rep		Number of repetitions (incompatible with options -l and -n)
 End_short_help
     close HELP;
     exit(0);
@@ -506,9 +538,14 @@ End_short_help
 sub Verbose {
   print $out "; random-seq ";
   &PrintArguments($out);
-  print $out "; sequence length	        $seq_length\n";
-  print $out "; number of sequences     $seq_nb\n";
-  print $out "; format			$out_format\n";
+  if ($length_file) {
+      print $out "; Sequence length file	        $length_file\n";
+      print $out "; Repetitions          	        $repetitions\n";
+  } else {
+      print $out "; sequence length                     $seq_length\n";
+  }
+  print $out "; Number of sequences     $seq_nb\n";
+  print $out "; Sequence format         $out_format\n";
   if ($outputfile) {
     print $out "; Output file	$outputfile\n";
   }
