@@ -17,7 +17,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/matrix-distrib -v 1";
+$command = $SCRIPTS."/matrix-distrib -v 1 -top 1";
 $prefix = "matrix-distrib";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = sprintf "matrix-distrib.%s", &AlphaDate();
