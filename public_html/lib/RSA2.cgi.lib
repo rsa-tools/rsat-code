@@ -2398,5 +2398,51 @@ sub PrintURLTable {
   print "</table>";
 }
 
+
+################################################################
+## Print a table row with link to a file (if it exists, otherwise
+## print the file name in red).
+sub PrintFileLink {
+  my ($key, $file, $ref_path, $handler) = @_;
+
+  ## HTML output with links
+  print ($handler "<tr>\n");
+  print ($handler "<td>", $key, "</td>\n");
+  print ($handler "<td>\n");
+  if (-e $file) {
+    &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
+    my $link = &RSAT::util::RelativePath($ref_path, $file);
+    print $handler "<a href='".$link."'>".$file."</a><br>\n";
+  } else {
+    print $handler "<font color='red'>".$file."</font><br>\n";
+  }
+  print ($handler "</td>\n");
+  print ($handler "</tr>\n");
+}
+
+
+################################################################
+## Taking as input a key-file list, print a HTML table cell with a
+## list of links to the files
+sub PrintFileLinks {
+  my (@files) = @_;
+  print $syn "<td>\n";
+  my $key;
+  my $file;
+  while ($key = shift (@files)){
+    last unless $key;
+    $file = shift(@files);
+#    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 5);
+    if (-e $file) {
+      my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+      print $syn "<a href='".$link."'>[".$key."]</a><br>\n";
+    } else {
+      print $syn "<font color='red'>[".$key."]</font><br>\n";
+    }
+  }
+  print $syn "</td>\n";
+}
+
+
 1; # return true
 

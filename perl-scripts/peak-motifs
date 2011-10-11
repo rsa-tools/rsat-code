@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.194 2011/07/26 11:46:17 rsat Exp $
+# $Id: peak-motifs,v 1.195 2011/10/11 09:21:25 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.194 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.195 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -989,13 +989,15 @@ sub PurgeSeq {
 ## Compute sequence lengths
 sub SequenceLengths {
   my ($seq_type) = @_;
+
   &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/sequence-lengths";
   #  $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
   $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen'};
-  $cmd .= " ; cut -f 2 ".$main::outfile{$seq_type.'_seqlen'};
-  $cmd .= " | ".$SCRIPTS."/classfreq -v 1 -ci ".$main::param{profiles_ci};
+  $cmd .= " ; ".$SCRIPTS."/classfreq -v 1 -col 2";
+  $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen'};
+  $cmd .= " -ci ".$main::param{profiles_ci};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib'};
   &one_command($cmd, 1);
 
@@ -1096,7 +1098,7 @@ sub CompositionProfiles {
     $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_".$seq_type."_profiles"}.' | sort | '.$SCRIPTS.'/transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
     $cmd .= " -format ".$main::param{img_format};
-    $cmd .= " -lines -pointsize 0 -legend -header";
+    $cmd .= " -legend -lines -pointsize 0 -legend -header";
     if (-e $color_file) {
       $cmd .= " -colors ".$color_file;
     } else {
@@ -3037,28 +3039,6 @@ sub PrintFileLinks_New {
 }
 
 ################################################################
-## Taking as input a key-file list, print a HTML table cell with a
-## list of links to the files
-sub PrintFileLinks {
-  my (@files) = @_;
-  print $syn "<td>\n";
-  my $key;
-  my $file;
-  while ($key = shift (@files)){
-    last unless $key;
-    $file = shift(@files);
-#    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 5);
-    if (-e $file) {
-      my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-      print $syn "<a href='".$link."'>[".$key."]</a><br>\n";
-    } else {
-      print $syn "<font color='red'>[".$key."]</font><br>\n";
-    }
-  }
-  print $syn "</td>\n";
-}
-
-################################################################
 ## Add a header row to the synthetic table
 sub SyntheticTableAddHeaderRow {
   my ($header) = @_;
@@ -4488,27 +4468,6 @@ sub CheckArguments {
 
 
 ################################################################
-## Print a table row with link to a file (if it exists, otherwise
-## print the file name in red).
-sub PrintFileLink {
-  my ($key, $file) = @_;
-
-  ## HTML output with links
-  print ($links "<tr>\n");
-  print ($links "<td>", $key, "</td>\n");
-  print ($links "<td>\n");
-  if (-e $file) {
-    &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
-    my $link = &RSAT::util::RelativePath($main::outfile{links}, $file);
-    print $links "<a href='".$link."'>".$file."</a><br>\n";
-  } else {
-    print $links "<font color='red'>".$file."</font><br>\n";
-  }
-  print ($links "</td>\n");
-  print ($links "</tr>\n");
-}
-
-################################################################
 ## Report parameters and input/output files.
 ##
 ## This has to be executed after the processing because the verbose
@@ -4552,7 +4511,7 @@ sub ReportParamsAndFiles {
     foreach my $key (sort keys  %main::infile) {
       my $file = $main::infile{$key};
       printf $main::out ";\t%-22s\t%s\n", $key, $file; ## Text output
-      &PrintFileLink($key, $file); ## HTML output
+      &PrintFileLink($key, $file, $main::outfile{links}, $links); ## HTML output
     }
   }
 
@@ -4563,7 +4522,7 @@ sub ReportParamsAndFiles {
     foreach my $key (@outdir) {
       my $dir = $main::dir{$key};
       printf $main::out ";\t%-30s\t%s\n", $key, $dir; ## Text output
-      &PrintFileLink($key, $dir); ## HTML output
+      &PrintFileLink($key, $dir, $main::outfile{links}, $links); ## HTML output
     }
   }
 
@@ -4574,7 +4533,7 @@ sub ReportParamsAndFiles {
     foreach my $key (sort keys  %main::outfile) {
       my $file = $main::outfile{$key};
       printf $main::out ";\t%-30s\t%s\n", $key, $file; ## Text output
-      &PrintFileLink($key, $file); ## HTML output
+      &PrintFileLink($key, $file, $main::outfile{links}, $links); ## HTML output
     }
   }
 
