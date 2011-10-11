@@ -1296,7 +1296,7 @@ sub CalcMAtrixTheorDistrib {
 ## Detect over-representation of matching occurrecnes (hits) of the motif
 sub OccurrenceSig {
     &CalcMAtrixTheorDistrib() if (($bg_method eq "input" )||($bg_method eq "window") );
-    
+
     if ($task{occ_sig}) {
     ## Compute observed distribution of hits + estimate the hit
     ## significance for each weight score
