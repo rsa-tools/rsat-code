@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-peaks,v 1.2 2011/10/10 11:56:58 jvanheld Exp $
+# $Id: random-peaks,v 1.3 2011/10/11 09:17:16 jvanheld Exp $
 #
 ############################################################
 
@@ -19,19 +19,20 @@ $program_version
 
 =head1 DESCRIPTION
 
-Select random genomic fragments that fit a set of input peaks accoding to two criteria.
+Select random genomic fragments that fit a set of peaks accoding to
+two criteria.
 
 =over
 
 =item sequence lengths
 
-Random fragments are selected with the same lengths as the input peaks
+Random fragments are selected with the same lengths as the peaks
 (whose length is computed with the program I<sequence-lengths>).
 
 =item filtering on oligonucleotide frequency (optional)
 
 Optionally, the random regions can be filtered in order to approximate
-the frequency observed in the input peaks for a specified
+the frequency observed in the peaks for a specified
 oligonucleotide (the "filter oligo"). 
 
 Since strict fitting of the distribution would be difficult to
@@ -48,7 +49,7 @@ I<accepted = ]min_accepted_freq..max_accepted_freq[
 Where
 
 I<m> is the average and I<s> the standard deviation of the oligo
-frequency observed in the input sequences.
+frequency observed in the peak sequences.
 
 I<w> is the relative width of the acceptability window.
 
@@ -62,7 +63,7 @@ masked: since all letters are N, the frequencies of DNA
 oligonucleotides are all 0).
 
 Beware: the mean and standard deviation are unweighted: we first
-compute the frequency of oligo in each input sequence, and then the
+compute the frequency of oligo in each peak sequence, and then the
 mean and standard deviation of these values (small peaks contribute
 equally to large peaks).
 
@@ -84,12 +85,11 @@ Jacques.van.Helden@ulb.ac.be
 
 =head1 USAGE
 
-random-peaks -i input_peaks -org organism_name -o output_prefix [-v #] [...]
+random-peaks -i peak_sequences -org organism_name -o output_prefix [-v #] [...]
 
 =head1 INPUT FORMAT
 
-The program takes as input a sequence file (fasta format) containing a
-list of peaks.
+The program takes as input a file of peak sequences (fasta format).
 
 =head1 OUTPUT FORMAT
 
@@ -97,23 +97,19 @@ The output consists of a list of files, including
 
 =over
 
-=item I<[output_prefix]_in_seq_stats.tab>
 
-Length and GC content of each input sequence (one row per sequence,
-one column per information).
+=item I<[output_prefix]_peak_length_distrib.tab>
 
-=item I<[output_prefix]_input_length_distrib.tab>
+=item I<[output_prefix]_peak_length_distrib.png>
 
-=item I<[output_prefix]_input_length_distrib.png>
-
-Distribution of input sequence lengths, in tab delimited format (.tab
+Distribution of peak sequence lengths, in tab delimited format (.tab
 extension) and as graphics (.png extension).
 
 =item I<[output_prefix]_GC_distrib.tab>
 
 =item I<[output_prefix]_GC_distrib.png>
 
-Distribution of input sequence GC content, in tab delimited format
+Distribution of peak sequence GC content, in tab delimited format
 (.tab extension) and as graphics (.png extension).
 
 
@@ -121,7 +117,19 @@ Distribution of input sequence GC content, in tab delimited format
 
 =head1 SEE ALSO
 
+=head2 random-genome-fragments
+
+I<random-peaks> is essentially a workshop built around
+I<random-genome-fragments> that filters the fragments in order to fit
+a window of accepted frequency for the frequency of one selected
+oligonucleotide (e.g. G+C, CpG, ...).
+
 =head1 WISH LIST
+
+=head2 -auto_rep
+
+Automatic definition of the number of repetitions, in order to obtain
+exactly the same number of peaks as in the peaks.
 
 =cut
 
@@ -144,7 +152,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -157,7 +165,7 @@ package main;
 
   our @supported_tasks = qw(
 			    all
-			    input_seq
+			    peak_seq
 			    rand_regions
 			    rand_filter
 			    synthesis
@@ -168,6 +176,8 @@ package main;
     $supported_task{$task} = 1;
   }
 
+  our @seq_types = ("peak", "rand_unfiltered", "rand_filtered");
+
   our %task = ();
   our $cmd = "";	     ## string with the command to be executed
 
@@ -177,10 +187,11 @@ package main;
   $param{strand} = "-2str";
   $param{noov} = "-noov";
   $param{filter_width}=0.5;
-
+  $param{repetitions}=3;
+  $param{img_format} = "png";
+  $param{seqlen_ci} = 50;
   our $filter_oligos;
 
-  our $img_format = "png";
 
   ## Job management options
   our $job_prefix = "fpdisco";
@@ -208,9 +219,9 @@ package main;
   ################################################################
   ## Check argument values
 
-  ## Input file is mandatory
-  &RSAT::error::FatalError("Input file is mandatory (option -i)")
-    unless ($infile{input});
+  ## Peak file is mandatory
+  &RSAT::error::FatalError("Peak file is mandatory (option -i)")
+    unless ($infile{peak_seq});
 
   ## Output prefix is mandatory
   &RSAT::error::FatalError("Output prefix is mandatory (option -o)")
@@ -228,11 +239,11 @@ package main;
   $out = &OpenOutputFile($outfile{output});
 
   ################################################################
-  ## Analyse input sequences
-  if ($task{input_seq}) {
-    &ComputeSeqLen("in");
-    &ComputeOligoComposition("in");
-    &ComputeFilterDistrib("in");
+  ## Analyse peak sequences
+  if ($task{peak_seq}) {
+    &ComputeSeqLen("peak");
+    &ComputeOligoComposition("peak");
+    &ComputeFilterDistrib("peak");
   }
 
   ################################################################
@@ -248,6 +259,9 @@ package main;
   ## Compute oligonucleotide composition of random regions
   if ($task{rand_filter}) {
     &FilterRandRegions();
+    &ComputeSeqLen("rand_filtered");
+    &ComputeOligoComposition("rand_filtered");
+    &ComputeFilterDistrib("rand_filtered");
   }
 
 
@@ -345,7 +359,7 @@ Same as -h
 
 =pod
 
-=item B<-i inputfile>
+=item B<-i peak_file>
 
 Mandatory option.
 
@@ -353,7 +367,7 @@ Inuput peak sequences (in fasta format).
 
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{input} = shift(@arguments);
+      $main::infile{peak_seq} = shift(@arguments);
 
 
 =pod
@@ -391,7 +405,7 @@ retrieved.
 Oligonucleotide length for the filtering.
 
 The frequencies of specified oligonucleotides will be computed for the
-input sequences, and will be usable for imposing filters.
+peak sequences, and will be usable for imposing filters.
 
 =cut
     } elsif ($arg eq "-ol") {
@@ -443,7 +457,7 @@ filter has to exactly fit the oligo-analysis header.
 
 =cut
     } elsif ($arg eq "-filter") {
-      $main::filter_oligo = shift(@arguments);
+      $main::filter_oligo = lc(shift(@arguments));
       $main::filter_oligo =~ s/\+/\|/;
 
 =pod
@@ -493,6 +507,26 @@ deviations around the mean frequency of the filter oligo).
 
 =pod
 
+=item	B<-rep repetitions>
+
+Number of repetitions for I<random-genome-fragments>. This option
+allows to manually compensate for the reduction of peak number
+resulting from the filtering on oligonucleotide frequencies.
+
+The number of repetitions should increase when the filte width
+decreases.
+
+In a future version, we will work on an automatic definition of the
+number of repetitions, in order to obtain exactly the same number of
+peaks as in the peak file.
+
+=cut
+      } elsif ($arg eq "-rep") {
+	$main::param{repetitions} = shift(@arguments);
+
+
+=pod
+
 =item B<-task>
 
 Specify a subset of tasks to be executed.
@@ -516,7 +550,7 @@ Compute sequence lengths and their distribution.
 
 =item I<composition>
 
-Compute nucleotide composition of input sequences.
+Compute nucleotide composition of peak sequences.
 
 =back
 
@@ -558,7 +592,7 @@ sub Verbose {
 
   ## Diectories
   print $main::out "; Directories\n";
-  foreach my $key (@outdir) {
+  foreach my $key (sort(keys(%dir))) {
     my $dir = $main::dir{$key};
     printf $main::out ";\t%-30s\t%s\n", $key, $dir; ## Text output
   }
@@ -594,58 +628,115 @@ sub Verbose {
 sub SetFileNames {
   ################################################################
   ## Create output directory if required
-  $outfile{output} = $prefix{outfile}."_log.tab";
-  $outfile{synthesis} = $prefix{outfile}."_report.html";
-  ($dir{output}, $prefix{short_outfile}) = &RSAT::util::SplitFileName($outfile{output});
+  $outfile{output} = $prefix{outfile}."_log.tab"; push @outfiles, "output";
+  $outfile{synthesis} = $prefix{outfile}."_report.html"; push @outfiles, "synthesis";
+  ($dir{output}, $prefix{short_outfile}) = &RSAT::util::SplitFileName($outfile{output}); push @outdir, "output";
   &RSAT::util::CheckOutDir($dir{output});
 
   ## Sequence files
-  $outfile{in_seq} = $infile{input}; ## A trick to handle all seq types (input and output) in the same way for file naming.
-  $outfile{rand_unfiltered_seq} = $prefix{outfile}."_rand_unfiltered_seq.fasta";
-  $outfile{rand_filtered_seq} = $prefix{outfile}."_rand_filtered_seq.fasta";
-#  $outfile{rand_unfiltered_coord} = $prefix{outfile}."_rand_unfiltered_coord.bed";
+  $outfile{peak_seq} = $infile{peak_seq};    push @infiles, "peak_seq"; ## A trick to handle all seq types (input and output) in the same way for file naming.
+  $outfile{rand_unfiltered_seq} = $prefix{outfile}."_rand_unfiltered_seq.fasta"; push @outfiles, "rand_unfiltered_seq";
+#  $outfile{rand_unfiltered_coord} = $prefix{outfile}."_rand_unfiltered_coord.bed"; push @outfiles, "rand_unfiltered_coord";
+  $outfile{rand_filtered_seq} = $prefix{outfile}."_rand_filtered_seq.fasta"; push @outfiles, "rand_filtered_seq";
 
-  foreach my $seq_type ("in", "rand_unfiltered", "rand_filtered") {
-#  foreach my $seq_type ("in", "rand_unfiltered") {
+  foreach my $seq_type (@seq_types) {
     ## Sequence lengths
-    $outfile{$seq_type."_seqlen"} = $prefix{outfile}."_".$seq_type."_seqlen.tab";
+    $outfile{$seq_type."_seqlen"} = $prefix{outfile}."_".$seq_type."_seqlen.tab"; push @outfiles, $seq_type."_seqlen";
+    $outfile{$seq_type."_seqlen_distrib"} = $prefix{outfile}."_".$seq_type."_seqlen_distrib.tab"; push @outfiles, $seq_type."_seqlen_distrib";
+    $outfile{$seq_type."_seqlen_graph"} = $prefix{outfile}."_".$seq_type."_seqlen.".$main::param{img_format}; push @outfiles, $seq_type."_seqlen_graph";
 
     ## Sequence composition
     my $oligo_suffix = $main::param{oligo_len}."nt".$main::param{strand}.$main::param{noov};
-    $outfile{$seq_type."_compo"} = $prefix{outfile}."_".$seq_type."_".$oligo_suffix."_composition.tab";
+    $outfile{$seq_type."_compo"} = $prefix{outfile}."_".$seq_type."_".$oligo_suffix."_composition.tab"; push @outfiles, $seq_type."_compo";
+    for my $ol (1..2) {
+      $oligo_suffix = $ol."nt".$main::param{strand}.$main::param{noov};
+      $outfile{$seq_type."_".$ol."nt_transitions"} = $prefix{outfile}."_".$seq_type."_".$oligo_suffix."_transitions.tab"; push @outfiles, $seq_type."_".$ol."nt_transitions";
+      $outfile{$seq_type."_".$ol."nt_heatmap"} = $prefix{outfile}."_".$seq_type."_".$oligo_suffix."_heatmap.".$main::param{img_format}; push @outfiles, $seq_type."_".$ol."nt_heatmap";
+    }
 
     ## Frequency distributions for filter oligo
     $prefix{$seq_type."_freq_distrib_".$filter_oligo} = $prefix{outfile}."_".$seq_type."_freq_distrib_".$filter_oligo;
     $prefix{$seq_type."_freq_distrib_".$filter_oligo} =~ s/\|/+/g;
-    $outfile{$seq_type."_freq_distrib_".$filter_oligo."_tab"} = $prefix{$seq_type."_freq_distrib_".$filter_oligo}.".tab";
-    $outfile{$seq_type."_freq_distrib_".$filter_oligo."_".$img_format} = $prefix{$seq_type."_freq_distrib_".$filter_oligo}.".".$img_format;
+    $outfile{$seq_type."_freq_distrib_".$filter_oligo."_tab"} = $prefix{$seq_type."_freq_distrib_".$filter_oligo}.".tab"; push @outfiles,  $seq_type."_freq_distrib_".$filter_oligo."_tab";
+    $outfile{$seq_type."_freq_distrib_".$filter_oligo."_graph"} = $prefix{$seq_type."_freq_distrib_".$filter_oligo}.".".$param{img_format}; push @outfiles, $seq_type."_freq_distrib_".$filter_oligo."_graph";
   }
 }
 
 ################################################################
-## Compute input sequence lengths
+## Compute peak sequence lengths
 sub ComputeSeqLen {
   my ($seq_type) = @_;
   my $seq_file = $outfile{$seq_type."_seq"};
-  my $seqlen_file = $outfile{$seq_type."_seqlen"};
-  &RSAT::error::FatalError("Cannot read sequence file", $seq_file) unless (-r $infile{input});
+  &RSAT::error::FatalError("Cannot read sequence file", $seq_file) unless (-r $seq_file);
   &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 2);
+
+  ## Compute list of sequence lengths
+  my $seqlen_file = $outfile{$seq_type."_seqlen"};
   $cmd = $SCRIPTS."/sequence-lengths -v 1";
   $cmd .= " -i ".$seq_file;
   $cmd .= " -o ".$seqlen_file;
   &RSAT::util::one_command($cmd, 1);
+
+  ## Compute sequence length distribution
+  my $seqlen_distrib = $outfile{$seq_type."_seqlen_distrib"};
+  $cmd = $SCRIPTS."/classfreq -v 1 -col 2";
+  $cmd .= " -i ".$seqlen_file;
+  $cmd .= " -ci ".$main::param{seqlen_ci};
+  $cmd .= " -o ".$seqlen_distrib;
+  &RSAT::util::one_command($cmd, 1);
+
+  ## Draw a XY graph with sequence length distribution
+  my $seqlen_graph = $outfile{$seq_type."_seqlen_graph"};
+  $cmd = $SCRIPTS."/XYgraph";
+  $cmd .= " -i ".$seqlen_distrib;
+  $cmd .= " -lines -pointsize 0 -legend";
+  $cmd .= " -format ".$main::param{img_format};
+  my $title = $seq_type." length distribution ";
+  $cmd .= " -title '".$title."'";
+  $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of regions'";
+  $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence length'";
+  $cmd .= " -xmin 0 -ymin 0";
+  $cmd .= " -o ".$seqlen_graph;
+  &RSAT::util::one_command($cmd, 1);
+
 }
 
 ################################################################
-## Compute oligonucleotide of input sequences
+## Compute oligonucleotide of peak sequences
 sub ComputeOligoComposition {
   my ($seq_type) = @_;
 #  my ($seq_file, $oligo_file) = @_;
   my $seq_file = $outfile{$seq_type."_seq"};
-  my $oligo_file =  $outfile{$seq_type."_compo"};
-  &RSAT::error::FatalError("&ComuteOligoComposition", "Undefined sequence file", $seq_file) unless ($seq_file);
-  &RSAT::message::TimeWarn("Computing ".$main::param{oligo_len}."nt composition in file", $seq_file) if ($main::verbose >= 0);
+  &RSAT::error::FatalError("&ComputeOligoComposition", "Undefined sequence file", $seq_file) unless ($seq_file);
   &RSAT::error::FatalError("&ComuteOligoComposition", "Cannot read sequence file", $seq_file) unless (-r $seq_file);
+
+  ## Compute 1nt and 2nt composition
+  for my $ol (1..2) {
+    &RSAT::message::TimeWarn("Computing global ".$ol."nt composition in file", $seq_file) if ($main::verbose >= 0);
+
+    ## Compute transition table
+    my $transitions =  $outfile{$seq_type."_".$ol."nt_transitions"};
+    $cmd = $SCRIPTS."/oligo-analysis -v 1";
+    $cmd .= " -i ".$seq_file;
+    $cmd .= " -l ".$ol;
+    $cmd .= " ".$main::param{strand};
+    $cmd .= " ".$main::param{noov};
+    $cmd .= " -return occ,freq";
+    $cmd .= " | convert-background-model -from oligos -to transitions ";
+    $cmd .= " -o ".$transitions; 
+    &RSAT::util::one_command($cmd, 1) ;
+
+    ## Draw a heatmap of transitions
+    my $heatmap =  $outfile{$seq_type."_".$ol."nt_heatmap"};
+    $cmd = "cut -f 1-5,7 ".$transitions;
+    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+    $cmd .= " -o ".$heatmap;
+    &RSAT::util::one_command($cmd, 1) ;
+  }
+
+  ## Compute sequence-wise frequencies
+  &RSAT::message::TimeWarn("Computing sequence-wise ".$main::param{oligo_len}."nt composition in file", $seq_file) if ($main::verbose >= 0);
+  my $oligo_file =  $outfile{$seq_type."_compo"};
   $cmd = $SCRIPTS."/oligo-analysis -v 1";
   $cmd .= " -i ".$seq_file;
   $cmd .= " -l ".$main::param{oligo_len};
@@ -658,12 +749,27 @@ sub ComputeOligoComposition {
 
 
 ################################################################
-## Identify the column of the oligonucleotide file that contains
-## frequencies of the filter oligo
-sub FindFilterCol {
-  my ($seq_type) = @_;
-  my $compo_file = $outfile{$seq_type."_compo"};
+## Identify filter parameters from the sequence-wise composition
+## distribution
+sub FilterParameters {
+#  my ($seq_type) = @_;
+  my $seq_type = "peak"; ## Parameters are always estimated from peaks
+  &RSAT::message::TimeWarn("Estimating filter parameter for seq type", $seq_type) if ($main::verbose >= 0);
 
+  ## Compute accepted frequency range from peak sequences
+  my $distrib_file = $outfile{"peak_freq_distrib_".$filter_oligo."_tab"};
+  &RSAT::error::FatalError("Cannot read distrib file", $distrib_file) unless (-r $distrib_file);
+  &RSAT::message::TimeWarn("Estimating mean from distrib file", $distrib_file) if ($main::verbose >= 2);
+  $param{filter_avg} = `grep '; mean' $distrib_file | cut -f 2`;
+  chomp($param{filter_avg});
+  $param{filter_std} = `grep '; std' $distrib_file | cut -f 2`;
+  chomp($param{filter_std});
+  $param{filter_seqnb} = `grep '; count' $distrib_file | cut -f 2`;
+
+  $param{filter_lth} = &RSAT::stats::max(0, $param{filter_avg} - $main::param{filter_width}*$param{filter_std});
+  $param{filter_uth} = &RSAT::stats::min(1, $param{filter_avg} + $main::param{filter_width}*$param{filter_std});
+
+  my $compo_file = $outfile{$seq_type."_compo"};
   my $compo_header = `grep "^#" $compo_file`;
   #    $compo_header =~ s/\|/\:/g;
   &RSAT::message::Debug("Composition header ", "'".$compo_header."'") if ($main::verbose >= 5);
@@ -683,6 +789,19 @@ sub FindFilterCol {
     unless (defined($compo_col{$filter_oligo}));
   $param{filter_column} = $compo_col{$filter_oligo};
 
+
+  &RSAT::message::Info("Filtering parameters",
+		       "\n\tdistrib file", $distrib_file,
+		       "\n\tcompo file", $compo_file,
+		       "\n\tfilter column=".$param{filter_column},
+		       "\n\tmean=".$param{filter_seqnb},
+		       "\n\tmean=".$param{filter_avg},
+		       "\n\tstd=".$param{filter_std},
+		       "\n\twidth=".$param{filter_width},
+		       "\n\tlth=".$param{filter_lth},
+		       "\n\tuth=".$param{filter_uth},
+		      ) if ($main::verbose >= 3);
+
 }
 
 ################################################################
@@ -692,15 +811,16 @@ sub ComputeFilterDistrib {
   my ($seq_type) = @_;
   my $compo_file = $outfile{$seq_type."_compo"};
   my $distrib_table = $outfile{$seq_type."_freq_distrib_".$filter_oligo."_tab"};
-  my $distrib_graph = $outfile{$seq_type."_freq_distrib_".$filter_oligo."_".$img_format};
+  my $distrib_graph = $outfile{$seq_type."_freq_distrib_".$filter_oligo."_graph"};
 
   &RSAT::message::TimeWarn("Computing distribution of filter oligo",$filter_oligo," in file", $seq_type) if ($main::verbose >= 2);
 
   ## Check that composition file exists
   &RSAT::error::FatalError("Cannot read composition file", $compo_file) unless (-r $compo_file);
 
-  ## Identify filter column from the header line of the composition file
-  &FindFilterCol($seq_type);
+  ## Identify filter parameters from the peak composition file
+#  &FilterParameters($seq_type);
+  &FilterParameters("peak");
 
   ## Guess a reasonable class interval for frequencies
   my $exp_mean = 4**(-$main::param{oligo_len});
@@ -725,9 +845,10 @@ sub ComputeFilterDistrib {
   $cmd .= " -lines";
   $cmd .= " -xmin 0 -xsize 600";
   $cmd .= " -ymin 0 -ymax 1 -ysize 400";
-  $cmd .= " -title '".$filter_oligo." frequency distribution'";
+  $cmd .= " -title '".$seq_type." ".$filter_oligo." frequency distribution'";
   $cmd .= " -xleg1 '".$filter_oligo." frequency'";
   $cmd .= " -yleg1 'Fraction of peaks'";
+  $cmd .= " -format ".$param{img_format};
   $cmd .= " -o ".$distrib_graph;
   &RSAT::util::one_command($cmd, 1);
 }
@@ -736,43 +857,20 @@ sub ComputeFilterDistrib {
 ## Filter Random regions according to the filter oligo frequency
 sub FilterRandRegions {
 
-  ## Compute accepted frequency range from input sequences
-  my $distrib_file = $outfile{"in_freq_distrib_".$filter_oligo."_tab"};
-  &RSAT::error::FatalError("Cannot read distrib file", $distrib_file) unless (-r $distrib_file);
-  &RSAT::message::TimeWarn("Estimating mean from distrib file", $distrib_file) if ($main::verbose >= 2);
-  $param{filter_avg} = `grep '; mean' $distrib_file | cut -f 2`;
-  chomp($param{filter_avg});
-  $param{filter_std} = `grep '; std' $distrib_file | cut -f 2`;
-  chomp($param{filter_std});
-
-  $param{filter_lth} = &RSAT::stats::max(0, $param{filter_avg} - $main::param{filter_width}*$param{filter_std});
-  $param{filter_uth} = &RSAT::stats::min(1, $param{filter_avg} + $main::param{filter_width}*$param{filter_std});
-
-
   ## Identify the column of the oligo composition file that contains
   ## the frequencies of the filter oligo
-  &FindFilterCol("in");
+  &FilterParameters("peak");
 
-  ## Filter sequences according 
+  ## Filter sequences according to filter oligo frequency
   my $compo_file = $outfile{"rand_unfiltered_compo"};
   &RSAT::error::FatalError("Cannot read composition file", $compo_file) unless (-r $compo_file);
-
-  &RSAT::message::Info("Filtering parameters",
-		       "\n\tdistrib file", $distrib_file,
-		       "\n\tcompo file", $compo_file,
-		       "\n\tfilter column=".$param{filter_column},
-		       "\n\tmean=".$param{filter_avg},
-		       "\n\tstd=".$param{filter_std},
-		       "\n\twidth=".$param{filter_width},
-		       "\n\tlth=".$param{filter_lth},
-		       "\n\tuth=".$param{filter_uth},
-		      ) if ($main::verbose >= 2);
   $cmd = "grep -v '^;' ".$compo_file;
   $cmd .= "| awk '";
   $cmd .= "\$".$param{filter_column}.">".$param{filter_lth};
   $cmd .= " &&";
   $cmd .= "\$".$param{filter_column}."<".$param{filter_uth};
   $cmd .= "'";
+  $cmd .= " | head -n ".$param{filter_seqnb};
   $cmd .= " >".$outfile{"rand_filtered_compo"};
   &RSAT::util::one_command($cmd, 1);
 
@@ -782,6 +880,13 @@ sub FilterRandRegions {
   $main::param{selected_regions} = &trim($main::param{selected_regions});
   &RSAT::message::Info("Selected regions", $param{selected_regions}) if ($main::verbose >= 1);
 
+
+  ## Create the filtered sequence file
+  $cmd = $SCRIPTS."/seq-select";
+  $cmd .= " -i ".$outfile{rand_unfiltered_seq};
+  $cmd .= " -ids ".$outfile{"rand_filtered_compo"};
+  $cmd .= " -o ".$outfile{rand_filtered_seq};
+  &RSAT::util::one_command($cmd, 1);
 }
 
 ################################################################
@@ -791,8 +896,9 @@ sub RandRegions {
 
   ## Select random regions and retrieve their sequences
   $cmd = $SCRIPTS."/random-genome-fragments -v 1";
-  $cmd .= " -lf ".$outfile{in_seqlen};
+  $cmd .= " -lf ".$outfile{peak_seqlen};
   $cmd .= " -org ".$organism;
+  $cmd .= " -rep ".$main::param{repetitions};
   $cmd .= " -return seq -o ".$outfile{rand_unfiltered_seq};
   #    $cmd .= " -return coord -coord_format bed -o ".$outfile{rand_unfiltered_coord};
   &RSAT::util::one_command($cmd, 1);
@@ -804,11 +910,16 @@ sub RandRegions {
 sub HTMLReport {
   &RSAT::message::TimeWarn("Generating HTML report", $outfile{synthesis}) if ($main::verbose >= 2);
 
+  ## Identify filter parameters from the composition file
+  &FilterParameters("peak");
+
   ## Open the HTML file
   my $syn = &OpenOutputFile($main::outfile{synthesis});
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
-  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1);
+
+
+  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>0);
 
   ## Print the command line
   print $syn "<pre>";
@@ -823,12 +934,95 @@ sub HTMLReport {
   print $syn "</pre>";
 
 
+
+  ################################################################
+  ## Generate a synthetic table summarizing the principal result types
+  ## (rows) for each sequence type (columns).
+  print $syn "<hr>\n<h2>Result summary</h2>\n";
+  my $table =  "<p><table class='sortable'>\n";
+  $table .=  "<tr>";
+  $table .=  "<th></th>\n";
+
+  ## Table header
+  foreach my $seq_type (@seq_types) {
+    $table .=  "<th>".$seq_type."</th>\n";
+  }
+  $table .= "</tr>";
+
+  ## Sequence length distribution
+  $table .= "<tr>";
+  $table .= "<th>Sequence lengths</th>";
+  foreach my $seq_type (@seq_types) {
+    my $tab = &RSAT::util::RelativePath($main::outfile{synthesis}, $outfile{$seq_type."_seqlen_distrib"});
+    $table .= "<td style='border-bottom-style:none;border-right-style:none;'>";
+    $table .= "<a  href='".$tab."'>[tab]</a> \n";
+
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $outfile{$seq_type."_seqlen_graph"});
+    $table .= "<a  href='".$img."'>[".$param{img_format}."]<br>\n<img border=1 width=300 src='".$img."'></a>";
+
+    $table .= "</td>";
+  }
+  $table .= "</tr>";
+
+
+  ## Sequence composition
+  for my $ol (1..2) {
+    $table .= "<tr>";
+    $table .= "<th>".$ol."nt composition</th>";
+    foreach my $seq_type (@seq_types) {
+      my $tab = &RSAT::util::RelativePath($main::outfile{synthesis}, $outfile{$seq_type."_".$ol."nt_transitions"});
+
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>";
+      $table .= "<a  href='".$tab."'>[tab]</a> \n";
+
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $outfile{$seq_type."_".$ol."nt_heatmap"});
+      $table .= "<a  href='".$img."'>[".$param{img_format}."]<br>\n<img border=1 width=300 src='".$img."'></a>";
+
+      $table .= "</td>";
+    }
+    $table .= "</tr>";
+  }
+
+  ## Oligo distributions
+  $table .= "<tr>";
+  $table .= "<th>Filter oligo distribution";
+  $table .= "<br>Filter oligo=".$filter_oligo;
+  $table .= "<br>Max seq nb=".$main::param{filter_seqnb};
+  $table .= "<br>".$filter_oligo." mean freq: ".$main::param{filter_avg};
+  $table .= "<br>".$filter_oligo." freq st dev: ".$main::param{filter_std};
+  $table .= "<br>Filter width: ".$main::param{filter_width};
+  $table .= "<br>".$filter_oligo."min accepted freq: ".$main::param{filter_lth};
+  $table .= "<br>".$filter_oligo."max accepted freq: ".$main::param{filter_uth};
+  $table .= "</th>";
+  foreach my $seq_type (@seq_types) {
+    my $tab = &RSAT::util::RelativePath($main::outfile{synthesis}, $outfile{$seq_type."_freq_distrib_".$filter_oligo."_tab"});
+
+    $table .= "<td style='border-bottom-style:none;border-right-style:none;'>";
+    $table .= "<a  href='".$tab."'>[tab]</a> \n";
+
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $outfile{$seq_type."_freq_distrib_".$filter_oligo."_graph"});
+    $table .= "<a  href='".$img."'>[".$param{img_format}."]<br>\n<img border=1 width=300 src='".$img."'></a>";
+
+    $table .= "</td>";
+  }
+  $table .= "</tr>";
+
+  ## Close synthetic table
+  $table .=  "</tr>";
+  $table .=  "<p></table>\n";
+  print $syn $table;
+
+
+  ################################################################
+  ## Table with links to all the result files
+  print $syn "<hr>\n<h2>Input/output files</h2>\n";
+
   print $syn "<p><table class='sortable'>\n";
 
   ## Input file(s)
-  if (%main::infile) {
+  if (scalar(@infiles) > 0) {
     print $syn "<tr><th colspan=2>","Input files","</th></tr>";
-    foreach my $key (sort keys  %main::infile) {
+    foreach my $key (@infiles) {
       my $file = $main::infile{$key};
       &PrintFileLink($key, $file, $main::outfile{synthesis}, $syn); ## HTML output
     }
@@ -843,17 +1037,22 @@ sub HTMLReport {
     }
   }
 
+
   ## Output files
-  if (%main::outfile) {
+  if (scalar(@outfiles) > 0)  {
     print $syn "<tr><th colspan=2>","Output files","</th></tr>";
-    foreach my $key (sort keys  %main::outfile) {
+    foreach my $key (@outfiles) {
       my $file = $main::outfile{$key};
+#      &RSAT::message::Debug($key, $file) if ($main::verbose >= 0);
       &PrintFileLink($key, $file, $main::outfile{synthesis}, $syn); ## HTML output
     }
   }
 
+
   ## Close the HTML report file
   print $syn "</table>\n";
+  print $syn "<hr>\n";
+
   print $syn "</body>";
   print $syn "</html>";
   close $syn;
