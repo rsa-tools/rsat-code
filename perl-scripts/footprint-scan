@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.105 2011/10/06 15:27:36 jvanheld Exp $
+# $Id: footprint-scan,v 1.106 2011/10/11 12:25:59 jvanheld Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.105 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.106 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -634,13 +634,13 @@ package main;
   if (scalar(@matrix_files)>0) {
     my $mcount =1;
     foreach my $m_option_matrices (@matrix_files) {
-	if ((!$m_suffix) && $main::tf ){
-	    $matrix_suffix= $main::tf ;
-	}
-	else {
-	    $matrix_suffix="Matrix";
-	}
-	$matrix_suffix.="_rand" if ($main::rand); #If -rand option is selected, add a suffix to the matrix suffix to id this out files
+      if ((!$m_suffix) && $main::tf ){
+	$matrix_suffix= $main::tf ;
+      }
+      else {
+	$matrix_suffix="Matrix";
+      }
+      $matrix_suffix.="_rand" if ($main::rand); #If -rand option is selected, add a suffix to the matrix suffix to id this out files
 
       if (scalar(@matrix_files)==1) {
 	$matrix_table_hash{$matrix_suffix}{"file"}= $m_option_matrices;
@@ -1844,7 +1844,6 @@ sub GetOrthologsTF {
     }
   }
   $infer_operons= $inferoperons_original; ## recovver original value for infering operons for the query genes
-	
 }
 
 ################################################################
@@ -1953,10 +1952,8 @@ sub OpenMatricesReport{
 
     ################
     ## Write header for Matrices Report table
-    
-    my @header_matrices ="MatrixID";
+    my @header_matrices =qw (matrix_id matrix_name);
     push(@header_matrices,"TFname") if ($main::tf);
-    
     my @header_tab_matrices =(@header_matrices,"IUPAC","num_regulated_genes","report");
     my @header_html_matrices =(@header_matrices,"report","IUPAC","num_regulated_genes");
 
@@ -1995,78 +1992,75 @@ sub OpenMatricesReport{
     print $matrices_synthesis_index $header_index;
     print $matrices_synthesis_index "</tr>\n";
     return($matrices_synthesis_index,$matrices_synthesis_table);
-    
 }
+
+
+################################################################
+## Add one matrix to the synthetic report
 sub AddOneMatrixToMatricesReport{
-    my ($msuf,$m_file,$m_format,$m_report,$m_tf,$matrices_synthesis_index,$matrices_synthesis_table)=@_; # Matrix suffix,file,format,report and tf if is the case
-    &RSAT::message::Info("Adding information for matrix", $msuf, " to the matrices report " ) if ($main::verbose >= 1);
+  my ($msuf,$m_file,$m_format,$m_report,$m_tf,$matrices_synthesis_index,$matrices_synthesis_table)=@_; # Matrix suffix,file,format,report and tf if is the case
+  &RSAT::message::Info("Adding information for matrix", $msuf, " to the matrices report " ) if ($main::verbose >= 1);
 
-    my $num_reg_genes= scalar(keys %top_sig);
+  my $num_reg_genes= scalar(keys %top_sig);
 
-   
-  
-    
-    @motifs = &RSAT::MatrixReader::readFromFile($m_file, $m_format);
-    
-    my $motif_nb = scalar(@motifs);
-    
-    &RSAT::message::Info("Reading information for matrix  ", $msuf , "Matrices in file", $msuf) if ($main::verbose >= 1);
+  @motifs = &RSAT::MatrixReader::readFromFile($m_file, $m_format);
 
-    my $matrix =shift(@motifs) ;
-    
-    my $motif_id = $matrix->get_attribute("id");
-    ## We compute the consensus and logos here with the same background model as used for sequence scanning
-    $matrix->calcConsensus();
-    my $consensus = $matrix->get_attribute("consensus.IUPAC");
-    my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+  my $motif_nb = scalar(@motifs);
+
+  &RSAT::message::Info("Reading information for matrix  ", $msuf , "Matrices in file", $msuf) if ($main::verbose >= 1);
+
+  my $matrix =shift(@motifs) ;
+  my $motif_id = $matrix->get_attribute("id");
+  ## We compute the consensus and logos here with the same background model as used for sequence scanning
+  $matrix->calcConsensus();
+  my $consensus = $matrix->get_attribute("consensus.IUPAC");
+  my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
   #  my $consensus_for_html=  "<span class='menulink'><a href='#discovered_motifs_".$mot."'>Motif ".$mot."</a></span>: <a href='".$link."'>[matrix]</a> ".$colored_consensus."<br/> ";
-    
-    ################
-    ## Print information the the tab delimited table
-    if($m_tf){
-	print  $matrices_synthesis_table join("\t",$msuf,$m_tf,$consensus,$num_reg_genes,$m_report)."\n";
-    }else{
-    	print  $matrices_synthesis_table join("\t",$msuf,$consensus,$num_reg_genes,$m_report)."\n";
-    }
-    
-    ################
-    ## Prepare links for the html index
-    my $syn_dir = `dirname $m_report`;
-    chomp($syn_dir);
-    my $file = $m_report; $file =~ s|${syn_dir}/||g;
-    $file=join("/",$msuf,$file);
-    my $m_report_link= join("", " <a href='", $file, "'>[matrix_report]</a>");
+  my $motif_name = $matrix->get_attribute("name");
 
-    ################
-    ## Print information for the matrix in the HTML  
-    my $html_sep="<\/th>\n<th>";
-    
-    #Creat the header for the html matrix-wise report
-    print  $matrices_synthesis_index "<tr>\n"; #initialize line
+  ################
+  ## Print information the the tab delimited table
+  if ($m_tf) {
+    print  $matrices_synthesis_table join("\t",$msuf,$m_tf,$consensus,$num_reg_genes,$m_report)."\n";
+  } else {
+    print  $matrices_synthesis_table join("\t",$msuf,$consensus,$num_reg_genes,$m_report)."\n";
+  }
 
-    my $matrix_report_line_hml="";
+  ################
+  ## Prepare links for the html index
+  my $syn_dir = `dirname $m_report`;
+  chomp($syn_dir);
+  my $file = $m_report; $file =~ s|${syn_dir}/||g;
+  $file=join("/",$msuf,$file);
+  my $m_report_link= join("", " <a href='", $file, "'>[matrix_report]</a>");
 
-     if($m_tf){
-	 $matrix_report_line_hml="<td>".join("</td>\n<td>",$msuf,$m_tf,$m_report_link,$colored_consensus,$num_reg_genes)."</td>";
-    }
-    else{
-	 $matrix_report_line_hml="<td>".join("</td>\n<td>",$msuf,$m_report_link,$colored_consensus,$num_reg_genes)."</td>";
-	 
-     }
-    print  $matrices_synthesis_index  $matrix_report_line_hml."</tr>\n"; #finish line
+  ################
+  ## Print information for the matrix in the HTML
+  my $html_sep="<\/th>\n<th>";
+
+  #Create the header for the HTML matrix-wise report
+  print  $matrices_synthesis_index "<tr>\n"; #initialize line
+
+  my $matrix_report_line_hml="";
+
+  if ($m_tf) {
+    $matrix_report_line_hml="<td>".join("</td>\n<td>",$msuf,$m_tf,$m_report_link,$colored_consensus,$num_reg_genes)."</td>";
+  } else {
+    $matrix_report_line_hml="<td>".join("</td>\n<td>",$msuf,$m_report_link,$colored_consensus,$num_reg_genes)."</td>";
+  }
+  print  $matrices_synthesis_index  $matrix_report_line_hml."</tr>\n"; #finish line
 
 }
+
+################################################################
+## Close the tab and HTML report files
 sub CloseMatricesReport{
-    
-    
     print $matrices_synthesis_index  "</table>\n";
     print $matrices_synthesis_index  "</body>\n";
     print $matrices_synthesis_index  "</html>\n";
 
     &RSAT::message::Info("Report table for matrices  ",  $outfile{"all_matrices_synthesis_tab"} ) if ($main::verbose >= 1);
     &RSAT::message::Info("Report HTML table for matrices ", $outfile{"all_matrices_synthesis_html"} ) if ($main::verbose >= 1);
-      
-
 
     ################
     ## Close Matrices report html and table

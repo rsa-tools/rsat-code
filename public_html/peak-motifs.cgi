@@ -133,7 +133,7 @@ if ($query->param('top_sequences')){
 	$parameters .= " -top_peaks ".$query->param('top_sequences');
     } else {
 	&FatalError("Number of top peaks is incorrect");
-    }	
+    }
 }
 
 if ($query->param('max_seq_len')){
@@ -141,7 +141,7 @@ if ($query->param('max_seq_len')){
 	$parameters .= "  -max_seq_len ".$query->param('max_seq_len')*2; ## here the program needs the length of the fragments, so x2
     } else {
 	&FatalError("Incorrect maximal sequence length. Check your parameters for data restriction");
-    }	
+    }
 }
 
 ################################################################
