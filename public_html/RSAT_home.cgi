@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.64 2011/10/03 12:54:15 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.65 2011/10/11 12:52:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -177,7 +177,8 @@ print <<EndText;
 <tr>
 
   <td align=center>
-  <a href="http://liv.hgen.slu.se/rsa-tools/" target="_top">
+  <a href="http://bongcam1.hgen.slu.se/rsat/" target="_top">
+<!--  <a href="http://liv.hgen.slu.se/rsa-tools/" target="_top">-->
   <b>Uppsala - Sweden</b><br>
   <IMG SRC="images/uppsala_lcb.jpg" HEIGHT=80 BORDER=0><br>
   http://bongcam1.hgen.slu.se/rsat/</a>
