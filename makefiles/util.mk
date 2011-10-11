@@ -36,11 +36,14 @@ JOB_PREFIX=job
 #JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
 JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
 ## CCG configuration:  MASTER=kayab.ccg.unam.mx QUEUE=default QUEUE_MANAGER=torque
-QUEUE_MANAGER=sge
-QUEUE=rsat
+QUEUE_MANAGER=torque
+QUEUE=submission
+
+#QUEUE=rsat
 #QUEUE=medium
-MASTER=cluster
-CLUSTER_ADDRESS=${QUEUE}@${MASTER}
+#MASTER=cluster
+#QUEUE_MANAGER=sge
+#CLUSTER_ADDRESS=${QUEUE}@${MASTER}
 #QSUB_OPTIONS=-l proc=xeon
 #QSUB_OPTIONS=
 command_queue:
@@ -54,7 +57,7 @@ command_queue_torque:
 		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; 		\
 		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
 		chmod u+x ${JOB_DIR}/$${job} ;				\
-		qsub -m a -q ${CLUSTER_ADDRESS} -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
+		qsub -m a -q ${QUEUE} -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
 	done
 
 ## Send a jobs to a cluster using the SGE queue management system
