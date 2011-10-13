@@ -2048,6 +2048,7 @@ sub ReadColors {
 	next unless (/\S/); ## Skip empty lines
 	next if (/^\#/); ## Skip header lines
 	next if (/^;/); ## Skip comment lines
+	s/\r//; ## Suppress windows-specific carriage return char
 	chomp();
 	s/\s+/\t/;
 	my @fields = split(/\t/);
@@ -2069,7 +2070,7 @@ sub ReadColors {
 	    $feature_color{$id} = $image->colorAllocate($r,$g,$b);
 #	    &RSAT::message::Debug("feature-specific color", $id, $r, $g, $b, $feature_color{$id}) if ($main::verbose >= 0);
 	} else {
-	    &RSAT::message::Warning("Color file: skipped line", $l, "because it does not start with a valid R,G,B color specification");
+	    &RSAT::message::Warning("Color file: skipped line", $l, "because the second column does not contain a valid R,G,B color specification");
 	}
     }
     close($color_file);
