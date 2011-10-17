@@ -1335,14 +1335,43 @@ sub OccurrenceSig {
 sub Select_interaction{
 	&CheckDependency("synthesis","matrix_distrib");
 	my $min_weight = &GetMinWeight();
-	my $select_interaction=0;
  	my ($occ_sig_file) = &OpenInputFile($outfile{occ_sig});
 	my %scores_occ_th=(); # hash to store all scores avobe the pval threshold, 
 	                       #$score and that also pass the threshold set on occ, for selecting possible interactions
 	my %all_scores_occ_th=(); ## All scores are reported to select the highest for all genes even if they don't pass the threshold
-	my $score_column=1;
-	my $occ_column=10;
+	my $score_column=1; #perl count, 2 for bash
+	my $occ_sig_column=10; #perl count, 11 for bash
+	my $select_interaction=0;
 	
+
+	################
+	# Calcule the number of sites satisfying the user-specified upper threshold on P-value: " occ_at_th "
+	# report the inv_cum value for the weight
+	my $occ_column=3; #count for bash. Number of sites with a score equal to the min_weight 
+	my $exp_occ_column=8;  #count for bash. Expected number of sites with a score equal to the min_weight 
+	my $sig_occ_column=11; #count for bash. Significance of the number of sites with a score equal to the min_weight 
+
+	##reocver the values for the weights around the minweight value
+	## Upper  bound on weight       
+	$cmd= "sort -n -k ". ($score_column+1) ." ". $outfile{occ_sig};
+	$cmd .= "| grep -v '^;' ";
+	$cmd .= "| grep -v '^#' ";
+	$cmd .= "| awk '\$".($score_column+1)." > ".$min_weight."'";
+	$cmd .= "| head -1";
+	$cmd .= "|cut -f ".($score_column+1).",".$occ_column.",".$exp_occ_column.",".$sig_occ_column;
+	#print "$cmd ";<STDIN>;
+	my $upper_occ_at_th = `$cmd`;
+	chomp($upper_occ_at_th);
+	my ($weight_near_th, $occ_at_th,$exp_at_th,$sig_at_th) = split('\t', $upper_occ_at_th );
+	&RSAT::message::Debug("weight_near_th=".$weight_near_th,
+			      "occ_at_th=".$occ_at_th,
+			      "exp_at_th=".$exp_at_th,
+			      "sig_at_th=".$sig_at_th,
+	    ) if ($main::verbose >= 0);
+	$values_at_th{$current_gene}=join("\t",$weight_near_th,$occ_at_th,$exp_at_th,$sig_at_th);
+
+	&RSAT::message::Info("occ_at_th_minweight", $occ_at_minweigth, "\n","weigth_near_th", $weigth_near_th ) if ($main::verbose >= 4); 
+
 	################
 	# Read the occ significance file and select the scores and corresponding occurence significance,
 	&RSAT::message::TimeWarn ("Reading Occurrence significance table to select genes with a probabliy conserved interactions", $outfile{occ_sig}) if ($main::verbose >=2 ) ;
@@ -1355,7 +1384,7 @@ sub Select_interaction{
 	    next unless (/\S/);	# skip empty lines
 	    my @fields = split /\t+/;
 	    my $one_score=$fields[$score_column];
-	    my $one_occ_sig=$fields[$occ_column];
+	    my $one_occ_sig=$fields[$occ_sig_column];
 	 
 	    #store even if they don't pass the threhold
 	    $all_scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
@@ -1368,7 +1397,7 @@ sub Select_interaction{
 	    
 	    if ($one_score>=$min_weight && $one_occ_sig >= $main::occ_th ){
 		$scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
-		&RSAT::message::Debug("Occ_sig ", $one_occ_sig, "Score",$one_score,$current_gene) if ($main::verbose >= 5);
+		&RSAT::message::Debug("Occ_sig ", $one_occ_sig, "Score",$one_score,$current_gene) if ($main::verbose >=5);
 	    }
 	    
 	}
@@ -1391,12 +1420,12 @@ sub Select_interaction{
 	}
     
 	#Sort all scores to report all interactios
-	#Report either the score that passed the threshold or anything else if there where none scores that passed the thresholds
+	#Report either the score that passed the threshold or the zero scores if there where none scores that passed the thresholds
 
 
 	if($top_sig{$current_gene} ){
 	    &RSAT::message::Debug("ALL Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
-	    print $synthesis_all_table join("\t",$m_suffix, $current_gene,  $top_sig{$current_gene}, $top_score{$current_gene} )."\n";
+	    $report_top_scores= join("\t", $top_sig{$current_gene}, $top_score{$current_gene} );
 	    
 	}else{
 	    
@@ -1415,12 +1444,14 @@ sub Select_interaction{
 		    }
 		   
 		    &RSAT::message::Debug("ALL Top sig", $current_gene,  $all_highest_occ_sig , "score",  $all_highest_occ_score ) if ($main::verbose >= 0);
-		    print $synthesis_all_table  join("\t",$m_suffix, $current_gene,  $all_highest_occ_sig,  $all_highest_occ_score )."\n";
-		
+		    ## Print information in the table for all the interactions
+		       $report_top_scores= join("\t",$all_highest_occ_sig,  $all_highest_occ_score);
 		}
 	    }
 	}
 	
+	print $synthesis_all_table  join("\t",$m_suffix, $current_gene, $weight_near_th,$occ_at_th,$exp_at_th,$sig_at_th, $report_top_scores )."\n";
+
 
 	
 }
