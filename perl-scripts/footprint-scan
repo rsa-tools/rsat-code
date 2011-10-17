@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.106 2011/10/11 12:25:59 jvanheld Exp $
+# $Id: footprint-scan,v 1.107 2011/10/17 13:47:22 amedina Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.106 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.107 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -380,6 +380,7 @@ package main;
   local $occ_sig_graph_opt = "";
   local $pval=1e-4;
   local $occ_th=5;
+  local %values_at_th=(); # Hash to store values at pval threshold
 
   local $bg_distrib="";
 
@@ -831,7 +832,8 @@ package main;
       if ($task{synthesis}) {
 	($synthesis_index, $synthesis_table,$synthesis_all_table) = &OpenSynthesisPerMatrix ;
 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
-	print $synthesis_all_table join ("\t", "#gene","TF","significance","score"),"\n"; ## Header for the complete report table
+	print $synthesis_all_table join ("\t", "#gene","TF","weight_at_th","occ_at_th","exp_at_th","sig_at_th","top_sig","score_at_topsig"),"\n"; ## Header for the complete report table
+
       }
 
       #      &RSAT::message::Debug("query_genes", scalar(@query_genes), join(";", @query_genes)) if ($main::;
@@ -940,7 +942,7 @@ package main;
 	  ################
 	  ## Print gene info and results in the text tab delimited table
 	  #my @gene_table_fields=$gene, $gene_sig, $g,$gene_info_line,  $occ_sig_file{$gene} ;  #the rank ($g) makes no sense if the $sort_creteria is alphabthic
-	  my @gene_table_fields=($gene, $gene_sig, $gene_info_line,  $occ_sig_file{$gene}) ;
+	  my @gene_table_fields=($gene, $gene_sig,$values_at_th{$gene}, $gene_info_line,  $occ_sig_file{$gene}) ;
 	  print  $synthesis_table join("\t",@gene_table_fields  ). "\n";
 
 	  ################
@@ -948,6 +950,8 @@ package main;
 	  my $html_sep="<\/td>\n<td>";
 
 	  $gene_sig =~ s/\t+/$html_sep/g; # substitute the tab separator used for the table by the html table separator
+	  $gene_values_at_th=$values_at_th{$gene};
+	  $gene_values_at_th=~s/\t+/$html_sep/g;
 
 	  print $synthesis_index "<tr>\n"; #initialize line
 
@@ -955,6 +959,7 @@ package main;
 	  $file=$query_indexes{$gene}; $file =~ s|${syn_dir}/||g;
 	  print $synthesis_index "<td>"."<a href='", $file, "'>".$gene."</a>";
 	  print $synthesis_index $html_sep. $gene_sig."</td>"; 
+	   print $synthesis_index $html_sep. $gene_values_at_th."</td>"; 
 
 	  ################
 	  ## Add figures and links to figures and results tables
@@ -1891,9 +1896,10 @@ sub MatrixReportHeader {
     # $occ_sig_header =~ s/occ_sig_rank//;
 #     $occ_sig_header =~ s/^#//;
     #$occ_sig_header =~ s/occ_sig_rank/gene_rank/; #the rank makes no sense if the $sort_creteria is alphabthic
-    
+    @header_values_at_th=("weight_at_th","occ_at_th","exp_at_th","sig_at_th");
     #Write header for the table
-    print $synthesis_table join("\t", "#gene", @header_occ_gene,@info_fields,"file"), "\n";
+    print $synthesis_table join("\t", "#gene",@header_occ_gene, @header_values_at_th,@info_fields,"file"), "\n";
+
 
     ################
     ## Initiatie the Html file
@@ -1926,7 +1932,7 @@ sub MatrixReportHeader {
     $occ_sig_header=~s/\t/$html_sep/g;
 
     #Creat the header for the html matrix-wise report
-    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields)."</th>";
+    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields)."</th>";
     $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";
