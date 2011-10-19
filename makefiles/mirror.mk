@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.48 2011/10/02 16:32:21 rsat Exp $
+# $Id: mirror.mk,v 1.49 2011/10/19 06:28:14 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -178,20 +178,21 @@ medicel:
 # 	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@bigre.ulb.ac.be
 
 
+
 ################################################################
 ## Clean temporary directory
 CLEAN_LIMIT=3
 clean_tmp:
-	@echo "Cleaning temporary directory	`hostname` ${RSAT}/tmp"
+	@echo "Cleaning temporary directory	`hostname` ${RSAT}/public_html/tmp/"
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Free disk before cleaning" 
-	@df -h ${RSAT}/tmp/
+	@df -h ${RSAT}/public_html/tmp/
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Measuring disk usage before cleaning"
 	@echo "Before cleaning	" `du -sh public_html/tmp`
-	@touch ${RSAT}/public_html/tmp
+	@touch ${RSAT}/public_html/tmp/
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Removing all files older than ${CLEAN_LIMIT} days"
@@ -204,5 +205,4 @@ clean_tmp:
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Free disk after cleaning" 
-	@df -h ${RSAT}/tmp/
-
+	@df -h ${RSAT}/public_html/tmp/
