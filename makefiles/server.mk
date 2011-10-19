@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.28 2011/10/02 16:32:21 rsat Exp $
+# $Id: server.mk,v 1.29 2011/10/19 06:28:14 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -139,16 +139,16 @@ from_cifn:
 ## Clean temporary directory
 CLEAN_LIMIT=3
 clean_tmp:
-	@echo "Cleaning temporary directory	`hostname` ${RSAT}/tmp"
+	@echo "Cleaning temporary directory	`hostname` ${RSAT}/public_html/tmp/"
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Free disk before cleaning" 
-	@df -h ${RSAT}/tmp/
+	@df -h ${RSAT}/public_html/tmp/
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Measuring disk usage before cleaning"
 	@echo "Before cleaning	" `du -sh public_html/tmp`
-	@touch ${RSAT}/public_html/tmp
+	@touch ${RSAT}/public_html/tmp/
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Removing all files older than ${CLEAN_LIMIT} days"
@@ -161,7 +161,7 @@ clean_tmp:
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Free disk after cleaning" 
-	@df -h ${RSAT}/tmp/
+	@df -h ${RSAT}/public_html/tmp/
 
 
 
