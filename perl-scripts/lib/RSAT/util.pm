@@ -839,8 +839,7 @@ sub doit {
     ################################################################
     ## Choose the queue manager depending on the local configuration
     if (lc($qsub_manager) eq "torque") {
-      ## qsub command functionning using Torque
-#      my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.bigre.ulb.ac.be"; ## for torque only
+      ## qsub command functionning using Torque (e.g. new-hydra.ulb.ac.be)
 #      $qsub_cmd = "qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}";
       $qsub_cmd = "qsub ".$selected_nodes;
       $qsub_cmd .= " -m ".$batch_mail;
