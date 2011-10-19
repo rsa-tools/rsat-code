@@ -85,7 +85,7 @@ sub Info {
     my (@info_message) = @_;
     my $message = join "\t", @info_message;
     if (defined($ENV{RSA_OUTPUT_CONTEXT}) 
-	 && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	&& ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 	$message =~ s/\n/<br>\n/g;
 	&cgiMessage($message);
     } else {
@@ -144,11 +144,17 @@ Warning with time
 
 =cut
 sub TimeWarn {
-    my $message = "; ";
+    my $message = "";
     $message .= join( "\t", &RSAT::util::AlphaDate(), @_);
     chomp($message);
-    $message .= "\n";
-    warn ($message);
+    if (defined($ENV{RSA_OUTPUT_CONTEXT}) 
+	&& ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	$message =~ s/\n/<br>\n/g;
+	&cgiMessage($message, "TimeWarn");
+    } else {
+	$message .= "\n";
+	warn ("; ".$message);
+    }
 }
 
 ################################################################
