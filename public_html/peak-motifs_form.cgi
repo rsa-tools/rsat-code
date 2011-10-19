@@ -225,7 +225,6 @@ sub Panel1 {
  
   print "<table>
   <tr><td colspan='2' style='text-align:center;'>";
-  
    print "<b>Title</B>\n";
   print $query->textfield(-name=>'title',
 			  -default=>$default{title},
@@ -238,16 +237,18 @@ sub Panel1 {
   
   <tr><td style='padding-right:15px;border-right:1px solid #2D282E;'>";
   
+  print "<span class=\"tool\">";
+   &MultiSequenceChoice("Peak sequences",1);
+  print "<span class=\"tip\"> Provide here your peak sequences<p />This is the <b>only mandatory input </b> of the whole form</span></span>";
 
-  &MultiSequenceChoice("Peak sequences",1);
-  
     print "<p/>\n";
 	print "</td><td style='padding-left:15px;'>";
   print "<p><b>Optional:</b> <i>control dataset for differential analysis (test vs control)</i></p>\n";
 
  print "<p/>\n";
-
+ print "<span class=\"tool\">";
   &MultiSequenceChoice("Control sequences",2);
+   print "<span class=\"tip\"> Provide a second peak sequences set ONLY if you perform a differential analysis (mutant vs wild type, ...)</span></span>";
   print "<p/>\n";
 
   print "</td></tr></table>";
@@ -258,8 +259,11 @@ sub Panel1 {
 ##########################################
 sub Panel2 {
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>Reduce peak sequences</b> </div>\n";
+
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\">   <span class=\"tool\"><b>Reduce peak sequences</b><span class=\"tip\"> Panel for selecting only top peaks or cut sequences.</span></span> </div>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
+  print "";
+
 
   print "<p/><fieldset>\n";
   print "<legend><b><a href='help.peak-motifs.html#tasks'>Restrict the test dataset  </a></b></legend>\n";
@@ -286,8 +290,11 @@ sub Panel2 {
 
 ##########################################
 sub Panel3 {
+print "
+<div class=\"menu_heading_closed\" onclick=\"toggleMenu('102')\" id=\"heading102\">
+ <span class=\"tool\"><b>Change motif discovery parameters</b><span class=\"tip\"> Select the algorithms and background here.</span></span> </div>\n";
+
 print '
-<div class="menu_heading_closed" onclick="toggleMenu(\'102\')" id="heading102"><b>Change motif discovery parameters </b> </div>
 <div id="menu102" class="menu_collapsible">';
 
 print "<p/><fieldset>
@@ -414,10 +421,11 @@ sub Panel4 {
   print '
 <br/>
 <div>';
-  print '
-<div class="menu_heading_closed" onclick="toggleMenu(\'103\')" id="heading103">
-<b>Compare discovered motifs with databases (e.g. against Jaspar) or custom reference motifs</b></div>
-<div id="menu103" class="menu_collapsible">';
+  print "
+<div class=\"menu_heading_closed\" onclick=\"toggleMenu('103')\" id=\"heading103\">
+
+ <span class=\"tool\"><b>Compare discovered motifs with databases (e.g. against Jaspar) or custom reference motifs</b><span class=\"tip\"> Discovered motifs will be compared to known motifs. <p/> Select here the known motifs collections and/or provide your own.</span></span> </div>\n
+<div id=\"menu103\" class=\"menu_collapsible\">";
 
   ## Tasks
   print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Compare motifs </a></b></legend>";
@@ -461,9 +469,11 @@ sub Panel4 {
 
 ##########################################
  sub Panel5  {
-print '
-<div class="menu_heading_closed" onclick="toggleMenu(\'104\')" id="heading104"> <b>Locate motifs and export as UCSC custom track</b> </div>
-<div id="menu104" class="menu_collapsible">';
+print "
+<div class=\"menu_heading_closed\" onclick=\"toggleMenu('104')\" id=\"heading104\"> 
+<span class=\"tool\"><b>Locate motifs and export as UCSC custom track</b><span class=\"tip\"> Input peaks are scanned with the discovered motifs to obtain their exact position. These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...) </span></span> </div>\n
+
+<div id=\"menu104\" class=\"menu_collapsible\">";
 
 
 
