@@ -3,6 +3,35 @@
 	display: block;
 }
 
+/* TOOL TIPS */
+
+/* css/tooltip.css -- fancy tooltips */
+
+span.tool {
+  position: relative;   /* this is key */
+  cursor: help;
+}
+ 
+span.tool span.tip {
+  display: none;        /* so is this */
+  margin-left: -999em;
+  position: absolute;
+}
+ 
+span.tool:hover span.tip {
+  			display: block;
+  			border-radius: 5px 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px; 
+			box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1); -webkit-box-shadow: 5px 5px rgba(0, 0, 0, 0.1); -moz-box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
+			font-family: Verdana, Helvetica, Arial, sans-serif;
+			position: absolute; left: 1em; bottom: 10px; z-index: 100;
+			margin-left: 0; width: 250px;
+			background: #9FDAEE; border: 1px solid #2BB0D7;
+			padding: 0.5em 0.8em 0.8em 2em;
+			color: #2D282E;
+			font-style: bold;
+			font-size: 120%;
+}
+
 /* BODY  */
 body {
 	font-family: Verdana, Helvetica, Arial, sans-serif;
