@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.136 2011/08/21 12:17:10 jvanheld Exp $
+# $Id: convert-matrix,v 1.137 2011/10/20 06:42:22 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -398,7 +398,7 @@ foreach my $matrix (@matrices) {
     } else {
       my $id = $matrix->get_attribute("id") || $matrix->get_attribute("identifier");
       my $ac = $matrix->get_attribute("accession") || $matrix->get_attribute("AC") || $id;
-      &RSAT::message::Debug("ac=".$ac, "id=".$id);
+      &RSAT::message::Debug("ac=".$ac, "id=".$id) if ($main::verbose >= 0);
       $logo_file .= $ac || $id;
       $logo_file .= "_logo";
     }
@@ -1206,9 +1206,10 @@ sub ReadArguments {
 
 	    ### Maximal number of matrices to return
 	} elsif ($ARGV[$a] eq "-top") {
-	    $top_matrices = $ARGV[$a+1];
-	    &FatalError($top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")
-		unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
+	  $top_matrices = $ARGV[$a+1];
+	  $args{top} = $top_matrices;
+	  &FatalError($top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")
+	    unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
 
 	    ### Number of top matrices to skip
 	} elsif ($ARGV[$a] eq "-skip") {
