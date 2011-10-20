@@ -56,7 +56,7 @@
     $error = 1;
     error("You must submit an input graph");
   }
-  
+//   print "lala";
   if (!$error) { 
   
     $graph = trim_text($graph);
