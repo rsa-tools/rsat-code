@@ -12,6 +12,8 @@ use RSAT::feature;
 
 ### class attributes
 
+################################################################
+
 =pod
 
 =head1 NAME
@@ -209,6 +211,7 @@ sub readFromFile {
 }
 
 ################################################################
+
 =pod
 
 =item InitializeEquiPriors
@@ -654,6 +657,7 @@ sub _readFromSTAMPFile {
 
 
 ################################################################
+
 =pod
 
 =item _readFromInfoGibbsFile($file)
@@ -666,8 +670,6 @@ C<readFromFile($file, "InfoGibbs")>.
 sub _readFromInfoGibbsFile {
     my ($file, %args) = @_;
     &RSAT::message::Info ("Reading matrices from info-gibbs file", $file) if ($main::verbose >= 3);
-
-#  return _readFromTabFile($file);
 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
@@ -839,6 +841,7 @@ sub _readFromInfoGibbsFile {
 }
 
 ################################################################
+
 =pod
 
 =item _readFromOldInfoGibbsFile($file)
@@ -1067,6 +1070,7 @@ sub _readFromOldInfoGibbsFile {
 }
 
 ################################################################
+
 =pod
 
 =item _readFromAlignACEFile($file)
@@ -1172,6 +1176,7 @@ sub _readFromAlignACEFile {
 
 
 ################################################################
+
 =pod
 
 =item _readFromGibbsFile($file)
@@ -1363,6 +1368,7 @@ sub _readFromGibbsFile {
 
 
 ################################################################
+
 =pod
 
 =item _readFromConsensusFile($file)
@@ -1490,6 +1496,8 @@ sub _readFromConsensusFile {
   return @matrices;
 }
 
+################################################################
+
 =pod
 
 =item _readFromAssemblyFile($file)
@@ -1590,6 +1598,7 @@ sub _readFromAssemblyFile {
 }
 
 ################################################################
+
 =pod
 
 =item _from_isolated($pattern, $pattern_rc, $score, @matrices)
@@ -1624,6 +1633,7 @@ sub _from_isolated {
 }
 
 ################################################################
+
 =pod
 
 =item _readFromTabFile($file)
@@ -1636,15 +1646,10 @@ sub _readFromTabFile {
     my ($file, %args) = @_;
     &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
 
-    ## open input stream
+    ## Open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
-#    if ($file) {
-#	open INPUT, $file;
-#	$in = INPUT;
-#    }
 
-
-    ## read header
+    ## Read header
     if ($args{header}) {
 	$header = <$in>;
 	$header =~ s/\r//;
@@ -1719,21 +1724,6 @@ sub _readFromTabFile {
 	    $current_matrix_nb--;
 	}
 	&InitializeEquiPriors(@matrices);
-#       foreach my $matrix (@matrices) {
-# 	my @alphabet = $matrix->getAlphabet();
-# 	my %tmp_prior = ();
-# 	my $prior = 1/scalar(@alphabet);
-# 	foreach my $residue (@alphabet) {
-# 	  $tmp_prior{$residue} = $prior;
-# 	  #	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
-# 	}
-# 	$matrix->setPrior(%tmp_prior);
-# 	if ($main::verbose >= 5) {
-# 	  &RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
-# 	  &RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
-# 	  &RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
-# 	}
-#     }
     } else {
       @matrices = ();
     }
@@ -1743,7 +1733,9 @@ sub _readFromTabFile {
 
 
 
+
 ################################################################
+
 =pod
 
 =item _readFromClusterBusterFile($file)
@@ -1831,8 +1823,112 @@ sub _readFromClusterBusterFile {
     return (@matrices);
 }
 
+################################################################
+
+=pod
+
+=item _readFromUniprobeFile($file)
+
+Read a matrix from a file in Uniprobe format. This method is called by
+the method C<readFromFile($file, "uniprobe")>.
+
+=cut
+sub _readFromUniprobeFile {
+    my ($file, %args) = @_;
+    &RSAT::message::Info(join("\t", "Reading matrix from Uniprobe file\t",$file)) if ($main::verbose >= 3);
+
+
+    ## open input stream
+    my ($in, $dir) = &main::OpenInputFile($file);
+
+    ## Initialize the matrix list
+    my @matrices = ();
+    my $matrix;
+    my $current_matrix_nb = 0;
+    my $l = 0;
+    my $ncol = 0;
+    my $multiply = 100; ## Uniprobe matrices are provided in relative frequencies
+
+    my $in_matrix = 0;
+#    my @alphabet = qw(a c g t); ## The alphabet will be read from the matrix
+
+    while ($line = <$in>) {
+      $l++;
+#      next unless ($line =~ /\S/); ## Skip empty lines
+      chomp($line); ## Suppress newline character
+      $line =~ s/\r//; ## Suppress Windows-specific carriage return
+      $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+
+      ## Read frequencies for one residue
+      if ($line =~ /^(\S)\:\s*/) {
+	if ($in_matrix) {
+	  my $residue = lc($1);
+	  my @fields = split(/\s+/, $line);
+	  shift(@fields);
+	  $matrix->addIndexedRow($residue, @fields);
+	  &RSAT::message::Debug("Added row", $residue, join ":", @fields), if ($main::verbose >= 5);
+	  next;
+	} else {
+	  &RSAT::error::FatalError("This file does not seem to be in Uniprobe format");
+	}
+
+	## New matrix identifier
+      } elsif  ((!$in_matrix) && ($line =~ /^(\S+)/)) {
+
+	## Stop reading if the number of matrices to read has been restricted
+	if (defined($args{top})) {
+	  if (scalar(@matrices) >= $args{top}) {
+	    &RSAT::message::Warning("Stop reading after",
+				    $current_matrix_nb, scalar(@matrices),
+				    "top matrices (-top $args{top}), but the file seems to contain more.") if ($main::verbose >= 2);
+	    last;
+	  }
+	}
+
+	## Create a new matrix
+	$current_matrix_nb++;
+	$in_matrix = 1;
+	my $name = $1;
+	$matrix = new RSAT::matrix();
+	$matrix->set_parameter("program", "uniprobe");
+	$ncol = 0;
+	$matrix->force_attribute("id", $name);
+	$matrix->set_attribute("name", $name);
+	$matrix->set_attribute("AC", $name);
+	$matrix->set_attribute("accession", $name);
+
+#	$matrix->setAlphabet_lc(@alphabet);
+#	$matrix->force_attribute("nrow", 4);
+	push @matrices, $matrix;
+	&RSAT::message::Info("line ".$l, "matrix ".$current_matrix_nb, $name) if ($main::verbose >= 4);
+	next;
+
+	## Blank rows separate multiple matrices
+      } elsif ($line !~ /\S/) {
+	&RSAT::message::Debug("Separator line between matrices") if ($main::verbose >= 5);
+#	print($matrix->to_tab());
+	$in_matrix = 0;
+      }
+
+    }
+    close $in if ($file);
+
+
+    ## Multiply the matrix frequencies to obtain numbers > 1
+#    &RSAT::message::Info("Multiplying Uniprobe frequencies by ".$multiply) if ($main::verbose >= 10);
+#    foreach my $marix (@matrices) {
+#      $matrix->multiply($multiply);
+#    }
+
+    ## Initialize prior as equiprobable alphabet
+    &InitializeEquiPriors(@matrices);
+
+    return (@matrices);
+}
+
 
 ################################################################
+
 =pod
 
 =item _readFromJasparFile($file)
@@ -1914,6 +2010,7 @@ sub _readFromJasparFile {
 
 
 ################################################################
+
 =pod
 
 =item _readFromMEMEFile($file)
@@ -2029,6 +2126,8 @@ sub _readFromMEMEFile {
 #  return $matrices[0];
 }
 
+
+################################################################
 
 =pod
 
@@ -2158,6 +2257,7 @@ sub _readFromFeatureFile {
 
 
 ################################################################
+
 =pod
 
 =item _readFromMotifSamplerFile($file)
@@ -2249,6 +2349,7 @@ sub _readFromMotifSamplerFile {
 }
 
 ################################################################
+
 =pod
 
 =item _readFromMotifSamplerMatrixFile($file)
@@ -2320,6 +2421,7 @@ sub _readFromMotifSamplerMatrixFile {
 
 
 ################################################################
+
 =pod
 
 =item _readFromClustalFile($file)
@@ -2440,7 +2542,7 @@ sub _readFromClustalFile {
 	    $row[$i] = 0 unless (defined($row[$i]));
 	}
 	$matrix->addRow(@row);
-	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 5); 
+	&RSAT::message::Debug("Adding row", $r, $res, join ":", @row), if ($main::verbose >= 5);
     }
     $matrix->setAlphabet_lc(@alphabet);
     $matrix->force_attribute("ncol", $ncol);
@@ -2460,6 +2562,7 @@ sub _readFromClustalFile {
 
 
 ################################################################
+
 =pod
 
 =item B<SortMatrices>
