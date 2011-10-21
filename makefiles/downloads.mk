@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.37 2010/10/26 23:18:27 jvanheld Exp $
+# $Id: downloads.mk,v 1.38 2011/10/21 22:57:07 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -50,9 +50,10 @@ GENBANK_DIRS =					\
 	refseq 
 
 NCBI_DIR=Saccharomyces_cerevisiae
-NCBI_EXCLUDE=										\
+NCBI_EXCLUDE=	\
 		--exclude '*_alt_*'							\
 		--exclude Assembled_chromosomes						\
+		--exclude IDS								\
 		--exclude SNP								\
 		--exclude maps								\
 		--exclude CLONEEND							\
@@ -62,8 +63,10 @@ NCBI_EXCLUDE=										\
 		--exclude WGS_BACTERIA							\
 		--exclude ARCHIVE							\
 		--exclude BACENDS							\
+		--exclude CLONEEND							\
 		--exclude Bacteria.OLD							\
 		--exclude '*.tar.gz'						
+
 one_ncbi_dir_from_mirror:
 	@mkdir -p ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
 	rsync ${NCBI_EXCLUDE}						\
