@@ -1,6 +1,9 @@
 ################################################################
 ## Some utilities
 
+## Load site-specific options for the cluster + other parameters
+include ${RSAT}/RSAT_config.mk
+
 ## level of verbosity
 V=1
 
@@ -35,17 +38,8 @@ JOB_DIR=`pwd`/jobs/${HOUR}
 JOB_PREFIX=job
 #JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
 JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
-## CCG configuration:  MASTER=kayab.ccg.unam.mx QUEUE=default QUEUE_MANAGER=torque
-QUEUE_MANAGER=torque
-QUEUE=submission
 
-#QUEUE=rsat
-#QUEUE=medium
-#MASTER=cluster
-#QUEUE_MANAGER=sge
-#CLUSTER_ADDRESS=${QUEUE}@${MASTER}
-#QSUB_OPTIONS=-l proc=xeon
-#QSUB_OPTIONS=
+
 command_queue:
 	${MAKE} command_queue_${QUEUE_MANAGER}
 
