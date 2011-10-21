@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.44 2011/08/02 12:50:03 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.45 2011/10/21 22:56:53 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -539,7 +539,8 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  }
 	  $current_feature = $holder->new_object();
 
-	  $current_feature->set_attribute("type",$feature_type);
+	  $current_feature->set_attribute("type",$feature_type) ;
+
 	  unless ($feature_type eq "source") {
 	    $current_feature->set_attribute("organism",$organism_name);
 	    $current_feature->set_attribute("taxid",$taxid);
@@ -595,7 +596,6 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  undef($current_feature);
 	}
 
-
 	#### new feature attribute
 
 	### A new feature attribute is detected by
@@ -623,6 +623,14 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  $attribute_value =~ s/\"$//;
 	}
 	if ($current_feature) {
+
+
+#	  &RSAT::message::Debug("new attribute", $attribute_type, $attribute_value) if ($main::verbose >= 10);
+
+	  ## the attribute "type" is reserved, since all the features have a type (source, gene, CDS, ...).
+	  if ($attribute_type eq "type") {
+	      $attribute_type = "type2";
+	  }
 	  $current_feature->new_attribute_value($attribute_type, $attribute_value);
 	  #		&RSAT::message::Debug( "\t", $l, "\tadding attribute", $attribute_type, $attribute_value) if ($main::verbose >=3);
 
