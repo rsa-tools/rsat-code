@@ -76,6 +76,17 @@ command_now:
 
 
 ################################################################
+## Watch the number of jobs in the cluster queue
+watch_jobs:
+	@hostname
+	@date
+	@echo "`qstat | wc -l`	Jobs"
+	@echo "`qstat | grep ' R ' | wc -l`	Running"
+	@echo "`qstat | grep ' Q ' | wc -l`	Queued" 
+	@echo "`qstat | grep ' C ' | wc -l`	Completed"
+
+
+################################################################
 ## Iterate over all organisms
 iterate_organisms:
 	@echo "Iterating task ${ORG_TASK} over organisms"
