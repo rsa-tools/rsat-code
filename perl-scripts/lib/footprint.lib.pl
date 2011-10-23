@@ -872,11 +872,11 @@ Deprecated, replaced by the task "index".
 
 =item B<-synthesis>
 
-This option generate synthetic tables (in tab-delimited text and html)
-for all the results. It should be combined with the option
--sep_genes. The synthetic tables contain one row per gene, and one
+This option generated synthetic tables (in tab-delimited text and
+html) for all the results. It should be combined with the option
+I<-sep_genes>. The synthetic tables contain one row per gene, and one
 column per parameter. They summarize the results (maximal
-significance, top-ranking motifs) and give pointers to the separate
+significance, top-ranking motifs) and give pointers to the detailed
 result files.
 
 =cut
