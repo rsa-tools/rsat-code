@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.29 2011/10/19 06:28:14 rsat Exp $
+# $Id: server.mk,v 1.30 2011/10/24 12:46:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -36,9 +36,10 @@ CCG = jvanheld@kayab.ccg.unam.mx:rsa-tools
 TAGC = jvanheld@139.124.66.43:rsa-tools
 LIV = jvanheld@liv.hgen.slu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
-MILLIWAYS=jvanheld@milliways.bi.up.ac.za:rsa-tools
+#PRETORIA=jvanheld@milliways.bi.up.ac.za:rsa-tools
+PRETORIA=jvanheld@anjie.bi.up.ac.za:rsa-tools
 MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${TORONTO} ${CCG} 
-LOG_SERVERS= ${BIGRE2} ${LIV} ${CCG} ${MILLIWAYS} ${BIGRE} ${TORONTO} 
+LOG_SERVERS= ${BIGRE2} ${LIV} ${CCG} ${PRETORIA} ${BIGRE} ${TORONTO} 
 
 ################################################################
 ## distribution
