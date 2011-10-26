@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.110 2011/09/21 13:46:42 spinelli Exp $
+# $Id: compare-matrices,v 1.111 2011/10/26 13:41:57 jvanheld Exp $
 #
 ############################################################
 
@@ -419,7 +419,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -540,7 +540,7 @@ package main;
 
   ## Comparison mode
   local $comparison_mode = "matches";
-  local @supported_comparison_modes = qw(matches profiles);
+  local @supported_comparison_modes = qw(matches profiles scan);
   local %supported_comparison_mode = ();
   foreach my $format (@supported_comparison_modes) {
     $supported_comparison_mode{$format} = 1;
@@ -682,13 +682,17 @@ package main;
 #   }
 
   ## Check return fields
-  if ($comparison_mode eq "profiles") {
+  if (($comparison_mode eq "profiles") || ($comparison_mode eq "scan")) {
     $sort_field = "offset" unless ($sort_field);
     $return_field{matrix_name} = 1;
     $return_field{strand} = 1;
     $return_field{offset} = 1;
     $return_field{consensus} = 1;
     $return_field{Ncor} = 1;
+
+    ## For the scanning mode, we impose some thresholds to control the number of 
+    if ($comparison_mode eq "scan") {
+    }
   } if ($comparison_mode eq "matches") {
     $sort_field = "Ncor" unless ($sort_field);
     $return_field{matrix_name} = 1;
