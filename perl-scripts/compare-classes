@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.73 2011/07/26 11:06:50 rsat Exp $
+# $Id: compare-classes,v 1.74 2011/10/26 15:57:21 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -790,6 +790,26 @@ PROBABILITIES
         chanc alone, a ositive value that they are
         significant. Higher sig values indicate a higher
         significance.
+
+
+    Jaccard similarity
+
+    	The Jaccard similarity is the ratio between the intersection
+    	and the union of two classes. 
+
+	    jac_sim = (Q and R)/(Q or R)
+
+	It gives a good intuition of the mutual coverage of the two
+	classes, but can be biased by small number effects. For
+	instance, if we have a population of 10 elements with 2
+	elements in class Q, 2 elements in class R 1 element, and 1 at
+	intersection, the Jaccard similarity will give 33%. This might
+	however be less significant than a jac_sim of 25% between a
+	class Q of 100 elements and a class R of 25 elements, in a
+	population of 1000 elements. The hypergeometric P-value should
+	thus generally be considered as the most relevant indicator
+	for the significance of the mutual overlap.
+
 
 OUTPUT FORMAT
 
