@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.137 2011/10/20 06:42:22 jvanheld Exp $
+# $Id: convert-matrix,v 1.138 2011/10/26 15:52:28 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -352,7 +352,6 @@ foreach my $matrix (@matrices) {
 
   ## Compute reverse complement
   $matrix->reverse_complement() if ($rc);
-
   $matrix->force_attribute("pseudo", $pseudo_weight);
   $matrix->force_attribute("equi_pseudo", $equi_pseudo);
   $matrix->force_attribute("decimals", $decimals);
@@ -454,7 +453,7 @@ foreach my $matrix (@matrices) {
     $id_nb =~ s/ /0/g;
     $id .= $id_nb;
 
-    $outfile{'matrix_'.$m} = $output_prefix.$id_nb.".".$output_format;
+    $outfile{'matrix_'.$m} = $output_prefix."_m".$id_nb.".".$output_format;
     $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
     print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}), "\n";
 
@@ -598,6 +597,13 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
+  	-split
+		Split a single multi-matrices input file in a set of
+		separate files. The output file names start with the
+		prefix specificed by the option -o, followed by a
+		suffix indicating the order of the matrix in the input
+		file (m1, m2, ...).
 
 	-prior [deprecated, use -bgfile] prior frequency file
 
@@ -816,10 +822,10 @@ INPUT/OUTPUT FORMATS
 	at the corresponding position of the matrix.
 	e.g.:
 	
-	a	|	7	9	0	0	16	0	1	0	0	11	6	9	6	1	8
-	c	|	5	1	4	16	0	15	0	0	0	3	5	5	0	2	0
-	g	|	4	4	1	0	0	0	15	0	16	0	3	0	0	2	0
-	t	|	0	2	11	0	0	1	0	16	0	2	2	2	10	11	8
+	a	|	0	16	0	1	0	0	11
+	c	|	16	0	15	0	0	0	3
+	g	|	0	0	0	15	0	16	0
+	t	|	1	0	0	1	0	16	0	2
 	
 
         The tab format accepts a user-specific set of return fields
@@ -1144,10 +1150,11 @@ convert-matrix options
 ----------------
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
+-v		verbose
 -i		input file
 -mlist 	matrix_list
 -o		output file
--v		verbose
+-split		Split a single multi-matrices input file in a set of separate files. 
 -from		input matrix format. Supported: $supported_input_formats
 -to		output matrix format. Supported: $supported_output_formats
 -return		return type(s). Supported: $supported_return_fields
