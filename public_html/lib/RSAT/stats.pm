@@ -1259,12 +1259,13 @@ sub FisherExactTest {
 ##
 ## Applicability
 ## =============
-## One condition of applicability for the chi-square test is that each 
-## class should contain a "sufficient" number of expected observations. 
+## One condition of applicability for the chi-square test is that each
+## class should contain a "sufficient" number of expected observations.
 ## One commonly takes 5 as the minimal number of expected observations per class.
 ## When the condition of acceptability is not met, our ChiSquare function
-## returns the calculated value surrounded by parenthesis, in order to 
+## returns the calculated value surrounded by parenthesis, in order to
 ## warn the user that the chi2 value is not valid.
+
 sub ChiSquare {
     my($test, $row_nb, $col_nb, @values) = @_;
     my $N;
