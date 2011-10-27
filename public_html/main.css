@@ -28,8 +28,9 @@ span.tool:hover span.tip {
 			background: #9FDAEE; border: 1px solid #2BB0D7;
 			padding: 0.5em 0.8em 0.8em 2em;
 			color: #2D282E;
-			font-style: bold;
-			font-size: 120%;
+			font-style: normal;
+			font-weight: normal;
+			font-size: 11px;
 }
 
 /* BODY  */
