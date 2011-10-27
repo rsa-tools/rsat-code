@@ -239,7 +239,7 @@ sub Panel1 {
   
   print "<span class=\"tool\">";
    &MultiSequenceChoice("Peak sequences",1);
-  print "<span class=\"tip\"> Provide here your peak sequences<p />This is the <b>only mandatory input </b> of the whole form</span></span>";
+  print "<span class=\"tip\"> Provide here your <b>peak sequences</b><p />This is the <b>only mandatory input </b> of the whole form</span></span>";
 
     print "<p/>\n";
 	print "</td><td style='padding-left:15px;'>";
@@ -248,7 +248,7 @@ sub Panel1 {
  print "<p/>\n";
  print "<span class=\"tool\">";
   &MultiSequenceChoice("Control sequences",2);
-   print "<span class=\"tip\"> Provide a second peak sequences set ONLY if you perform a differential analysis (mutant vs wild type, ...)</span></span>";
+   print "<span class=\"tip\"> Provide a second peak sequences set ONLY if you perform a <b>differential analysis</b> (mutant vs wild type, ...)</span></span>";
   print "<p/>\n";
 
   print "</td></tr></table>";
@@ -471,7 +471,7 @@ sub Panel4 {
  sub Panel5  {
 print "
 <div class=\"menu_heading_closed\" onclick=\"toggleMenu('104')\" id=\"heading104\"> 
-<span class=\"tool\"><b>Locate motifs and export as UCSC custom track</b><span class=\"tip\"> Input peaks are scanned with the discovered motifs to obtain their exact position. These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...) </span></span> </div>\n
+<span class=\"tool\"><b>Locate motifs and export as UCSC custom track</b><span class=\"tip\"> Input peaks are scanned with the discovered motifs to obtain their exact position. <br/> These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...) </span></span> </div>\n
 
 <div id=\"menu104\" class=\"menu_collapsible\">";
 
