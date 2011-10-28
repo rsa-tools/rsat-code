@@ -1404,7 +1404,7 @@ sub Select_interaction{
 
 	#Sort scores that pass the threholds
 	my @all_notsorted_scores= keys (%scores_occ_th);
-	my @sorted_scores=sort {a<=>b}  @all_notsorted_scores;
+	my @sorted_scores=sort {$a<=>$b}  @all_notsorted_scores;
 
 	if (scalar(@sorted_scores) >0 ){ #If there are occ significances that passed th threshold
 	    my $highest_occ_sig=pop (@sorted_scores);
