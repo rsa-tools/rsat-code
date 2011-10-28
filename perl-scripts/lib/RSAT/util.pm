@@ -4,6 +4,7 @@
 #
 package RSAT::util;
 
+use POSIX;
 use RSAT::GenericObject;
 use RSAT::message;
 use RSAT::error;
@@ -108,6 +109,44 @@ sub round {
 # 	return int($my_real) + 1;
 #     }
     return($my_int);
+}
+
+
+################################################################
+
+=pod
+
+=item number_with_zeros
+
+Usage:
+
+my $number_string = &RSAT::util::number_with_zeros($value, digits=>$digits);
+
+my $number_string = &RSAT::util::number_with_zeros($value, maxval=>$maxval);
+
+Print a Natural number with a fixed number of digits. If neccessary, append
+leading zeros. This ensures consistency between alphabetical and numerical
+order. It can be useful for naming a succession of files.
+
+=cut
+
+sub number_with_zeros {
+    my ($value, %args) = @_;
+    my $digits;
+
+    if (defined($args{digits})) {
+	$digits = $args{digits};
+    } elsif (defined($args{maxval})) {
+	$digits = POSIX::ceil(log($args{maxval})/log(10));
+    } else {
+	&RSAT::error::FatalError("&RSAT::util::number_with_zeros()", "arguments must include either digist=>\$digits or maxval=>\$maxval")
+    }
+
+    &RSAT::error::FatalError("&RSAT::util::number_with_zeros()", $digits, "Invalid value for digit, should be Natural.")
+	unless (&IsNatural($digits));
+    my $digits_number = sprintf "%${digits}s", $value;
+    $digits_number =~ s/ /0/g;
+    return($digits_number);
 }
 
 ################################################################
