@@ -548,32 +548,28 @@ sub MultiGetSequenceFile {
       $sequence_format = '';
     }
   }
-  
-   ## Mask option
+
+  ## Mask option
   my $mask = "";
   if ($query->param('mask'.$seq_num)) {
     unless ($query->param('mask'.$seq_num) eq "none") {
       $mask = $query->param('mask'.$seq_num);
       &CheckMask($mask);
       my $converted_seq_file = $sequence_file.".masked";
-      
-    my $convert_seq_command = "$SCRIPTS/convert-seq ";
-    $convert_seq_command .= " -i ".$sequence_file;
-    $convert_seq_command .= " -from  fasta -to fasta ";
-    $convert_seq_command .= " -mask ".$mask;
-    $convert_seq_command .= " -o ".$converted_seq_file;
+      my $convert_seq_command = "$SCRIPTS/convert-seq ";
+      $convert_seq_command .= " -i ".$sequence_file;
+      $convert_seq_command .= " -from  $sequence_format -to fasta ";
+##    $convert_seq_command .= " -from  fasta -to fasta ";
+      $convert_seq_command .= " -mask ".$mask;
+      $convert_seq_command .= " -o ".$converted_seq_file;
+      ## Execute the sequence conversion
+      system($convert_seq_command);
 
-    ## Execute the sequence conversion
-    system($convert_seq_command);
-
-    print "<PRE>$convert_seq_command</PRE>\n" if ($ENV{rsat_echo} >= 0);
-    &DelayedRemoval($converted_seq_file);
-    $sequence_file = $converted_seq_file;
-      
+      print "<PRE>$convert_seq_command</PRE>\n" if ($ENV{rsat_echo} >= 0);
+      &DelayedRemoval($converted_seq_file);
+      $sequence_file = $converted_seq_file;
     }
   }
-  
-  
 
   #### sequence file will be deleted
   &DelayedRemoval($sequence_file);
@@ -1292,6 +1288,9 @@ sub PrintHtmlResultHeader {
 
   ## HTML Header and title
   $header .=  "<html>\n";
+#  if (defined($args{refresh})) {
+#    $header .= '<meta http-equiv="refresh" content="10; url=http://www.tizag.com" />';
+#  }
   $header .=  "<head>\n";
   $header .=  "<title>".$program." ".$title."</title>\n";
 
@@ -2188,7 +2187,7 @@ sub MatrixFromPatterns_print_form {
 ## Run matrix-from-patterns and display the result on the Web page
 sub MatrixFromPatterns_run {
   my $pssm_prefix = $tmp_file_name."_pssm";
-  my $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
+  my $sig_matrix_file = $pssm_prefix."_sig_matrices.tf";
 #  $gibbs_matrix_file = $pssm_prefix."_gibbs_matrices.txt";
   $pssm_file_tab = $pssm_prefix."_count_matrices.txt"; ## has to be global for the piping form
   $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
