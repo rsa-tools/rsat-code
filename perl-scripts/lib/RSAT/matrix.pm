@@ -777,23 +777,27 @@ sub to_TRANSFAC {
     my $output_format = $args{format};
     $output_format = lc($output_format);
 
-    ## TRANSFAC accession number corresponds to what we call ID
-    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("id");
 
-    if ($accession) {
-      $to_print .= "AC  ".$accession."\n";
-      $to_print .= "XX\n";
+    ## TRANSFAC accession number corresponds to what we call ID
+    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("id") || $self->get_attribute("identifier");;
+    unless ($accession) {
+      $accession = "matrix";
     }
 
     ## TRANSFAC accession number corresponds to what we call name
-    my $id = $self->get_attribute("name") || $self->get_attribute("id");
-    unless ($id) {
-      $id = $accession;
-    }
-    if ($id) {
-      $to_print .= "ID  ".$id."\n";
-      $to_print .= "XX\n";
-    }
+    my $id = $self->get_attribute("name") || $self->get_attribute("id") || $accession;
+
+    &RSAT::message::Debug("&RSAT::matrix::to_TRANSFAC()",
+			  "ID", $id,
+			  "AC", $accession) if ($main::verbose >= 5);
+
+    ## Print accession number
+    $to_print .= "AC  ".$accession."\n";
+    $to_print .= "XX\n";
+
+    ## Print identifier
+    $to_print .= "ID  ".$id."\n";
+    $to_print .= "XX\n";
 
     ## Description
     ## If the description field is empty, use matrix consensus.
