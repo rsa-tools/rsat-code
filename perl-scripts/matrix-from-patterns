@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.56 2011/07/22 14:11:12 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.57 2011/10/28 06:14:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -112,7 +112,7 @@ package main;
 {
 
     ################################################################
-    #### initialise parameters
+    ## Initialise parameters
 
     ## Check if required programs are found in the path
     local $matrix_scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
@@ -198,7 +198,7 @@ package main;
     } else {
       $outfile{assembly} = $outfile{output}.".asmb";
     }
-    $outfile{sig_matrices} = $outfile{output}."_sig_matrices.txt";
+    $outfile{sig_matrices} = $outfile{output}."_sig_matrices.tf";
     $outfile{sig_matrices_split} = $outfile{output}."_sig_matrices_split";
     $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
     $outfile{count_matrices_tf} = $outfile{output}."_count_matrices.tf"; ## Count matrices in transfac format
@@ -234,7 +234,6 @@ package main;
 	&RSAT::message::Warning("Not a single pattern was found in file", $infile{patterns}) if ($main::verbose >= 1);
 	&terminate();
       }
-
       &RSAT::message::TimeWarn("Assembling the patterns") if ($main::verbose >= 2);
       my $assembly_cmd = $SCRIPTS."/pattern-assembly -v 1 -i ".$infile{patterns};
       $assembly_cmd .= " ".$strands;
@@ -279,7 +278,7 @@ package main;
     ## Convert assembled patterns into significance matrices
     &RSAT::message::TimeWarn("Converting assemblies to significance matrices") if ($main::verbose >= 2);
     my $convert_cmd = $SCRIPTS."/convert-matrix -v 1 -i ".$outfile{assembly};
-    $convert_cmd .= " -from assembly -to tab";
+    $convert_cmd .= " -from assembly -to tf";
     $convert_cmd .= " -return counts";
     $convert_cmd .= " -flanks ".$flanks;
     $convert_cmd .= " -top ".$max_asmb_nb;
@@ -287,6 +286,10 @@ package main;
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
     &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
+
+    ################################################################
+    ## Convert significance matrices into count matrices
+    &RSAT::message::TimeWarn("Converting sig matrices to count matrices") if ($main::verbose >= 2);
     if ($collect_method eq "matrix-scan") {
       &ScanForSites();
     } elsif ($collect_method eq "matrix-scan-quick") {
@@ -774,12 +777,29 @@ sub Verbose {
 sub QuickScanForSites {
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan-quick)") if ($main::verbose >= 2);
 
-  my $cmd = $SCRIPTS."/convert-matrix -from tab -to tab -split ";
-  $cmd .= " -i ".$outfile{sig_matrices};
-  $cmd .= " -o ".$outfile{sig_matrices_split};
+  ## Split the sig matrix file into separated tab-delimited files (one per matrix, required for matrix-scan-quick)
+  my $cmd = $SCRIPTS."/convert-matrix ";
+  $cmd .= " -from tf -i ".$outfile{sig_matrices};
+  $cmd .= " -to tab -split  -o ".$outfile{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
   &RSAT::message::Debug("Splitting sig matrix file", $outfile{sig_matrices_split}) if ($main::verbose >= 3);
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ## Get the list of files containing the individual matrices
+  my @split_files = ();
+  my ($in) = &OpenInputFile($outfile{sig_matrices_split});
+  while (<$in>) {
+    next if (/^;/); ## Skip comment lines
+    next if (/^#/); ## Skip header lines
+    next unless (/\S/); ## Skip empty lines
+    chomp();
+    my ($nb, $id, $file) = split('\t');
+#    &RSAT::message::Debug("split recollection", $nb, $id, $file) if ($main::verbose >= 10);
+    push @split_files, $file;
+    push @split_ids, $id;
+  }
+  close $in;
+
 
   ## Specific parameters for matrix-scan
   my $quick_scan_parameters = " -t ".$lth{weight};
@@ -800,15 +820,18 @@ sub QuickScanForSites {
   unlink($outfile{'sig_sites'});
 
   ## Append the sites for each matrix in a feature file
-  for my $m (1..$max_asmb_nb) {
+  for my $m (0..scalar(@split_files)) {
+    my $matrix_file = $split_files[$m];
+    my $matrix_id = $split_ids[$m];
+
     my $matrix_name;
     if ($main::matrix_prefix) {
       $matrix_name = $main::matrix_prefix."_m".$m;
     } else {
-      $matrix_name = "matrix_m".$m;
+      $matrix_name = $matrix_id;
     }
+#    my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
 
-    my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
     &RSAT::message::Debug("\n\tScanning sequences (quick) with sig matrix", $m, $matrix_file) if ($main::verbose >= 3);
     if (-e $matrix_file) {
 #      $matrix_scan_cmd = $ENV{RSAT_BIN}."/matrix-scan-quick";
@@ -823,6 +846,9 @@ sub QuickScanForSites {
       &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     }
   }
+
+
+
   ## Extract count matrices from the sites collected with the sig matrices
   &sites_to_matrix($outfile{sig_sites});
 }
