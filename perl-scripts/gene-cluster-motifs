@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.298 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.299 2011/10/28 06:16:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.298 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.299 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Paths of the programs called by gene-cluster-motifs
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -2739,11 +2739,11 @@ sub IndexPatterns {
 	  $table[$row][$col] .= &LinkToFile($pattern_file.".html", "html", $base);
 #	  $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
 	}
-	$table[$row][$col] .= &LinkToFile($pssm_file."_sig_matrices.txt", "sig matrix", $base);
+	$table[$row][$col] .= &LinkToFile($pssm_file."_sig_matrices.tf", "sig matrix", $base);
 	$table[$row][$col] .= &LinkToFile($pssm_file."_count_matrices.tf", "PSSM-tf", $base);
 	$table[$row][$col] .= &LinkToFile($pssm_file."_count_matrices.txt", "PSSM-tab", $base);
 	$table[$row][$col] .= &LinkToFile($pssm_file.".".$img_format, "scan map", $base);
-#	$table[$row][$col] .= "<a href=".$base.$pssm_file."_sig_matrices.txt>[sig matrix]</a>\n";
+#	$table[$row][$col] .= "<a href=".$base.$pssm_file."_sig_matrices.tf>[sig matrix]</a>\n";
 #	$table[$row][$col] .= "<a href=".$base.$pssm_file."_count_matrices.txt>[count matrix]</a>\n";
 #	$table[$row][$col] .= "<a href=".$base.$pssm_file.".$img_format>[scan map]</a>\n";
 

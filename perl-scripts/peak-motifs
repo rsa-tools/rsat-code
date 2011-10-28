@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.195 2011/10/11 09:21:25 jvanheld Exp $
+# $Id: peak-motifs,v 1.196 2011/10/28 06:16:46 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.195 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.196 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -837,7 +837,7 @@ sub SetOutFileNames {
     $main::outfile{$pattern_type.'_pssm'} .= "_pssm";
     $main::outfile{$pattern_type.'_2pssm'} = $main::outfile{$pattern_type.'_pssm'}."_log.txt"; push @timelog_keys, $pattern_type.'_2pssm';
     $main::outfile{$pattern_type.'_asmb'} = $main::outfile{$pattern_type.'_pssm'}.".asmb";
-    $main::outfile{$pattern_type.'_pssm_sig'} = $main::outfile{$pattern_type.'_pssm'}."_sig_matrices.txt";
+    $main::outfile{$pattern_type.'_pssm_sig'} = $main::outfile{$pattern_type.'_pssm'}."_sig_matrices.tf";
     $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_counts'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.txt";
     $main::outfile{$pattern_type.'_pssm_tf'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.tf";
