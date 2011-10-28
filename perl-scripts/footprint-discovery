@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.66 2011/09/22 20:53:28 jvanheld Exp $
+# $Id: footprint-discovery,v 1.67 2011/10/28 06:15:47 jvanheld Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.66 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.67 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -501,7 +501,7 @@ sub RunFootprintDisco {
   $outfile{map} = $outfile{dyad_prefix}.".".${map_format};
   if ($to_matrix) {
     $outfile{pssm_prefix} = $outfile{dyad_prefix}."_pssm";
-    $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.txt";
+    $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.tf";
     $outfile{count_PSSM} = $outfile{pssm_prefix}."_count_matrices.txt";
   }
 
