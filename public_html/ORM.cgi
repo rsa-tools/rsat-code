@@ -338,7 +338,7 @@ if ($query->param('output') =~ /display/i) {
 
 	## Convert pattern-assembly result into PSSM 
 	$pssm_prefix = $TMP."/".$tmp_file_name."_pssm";
-	$sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
+	$sig_matrix_file = $pssm_prefix."_sig_matrices.tf";
 	$pssm_file = $pssm_prefix."_count_matrices.txt";
 	$pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
 	$pssm_command .= " -seq ".$sequence_file;
