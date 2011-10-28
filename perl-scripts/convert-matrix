@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.139 2011/10/28 05:30:47 jvanheld Exp $
+# $Id: convert-matrix,v 1.140 2011/10/28 05:54:25 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -449,14 +449,16 @@ foreach my $matrix (@matrices) {
     ## Use the same number of digits for all matrices so that the
     ## alphabetical order ot the splitted files corresponds to the
     ## numerical order of the matrices.
+#    my $id_nb = &RSAT::util::number_with_zeros($m, 'maxval'=>scalar(@matrices));
     my $id_nb = sprintf "%${id_digits}s", $m;
     $id_nb =~ s/ /0/g;
     $id .= $id_nb;
 
     $outfile{'matrix_'.$m} = $output_prefix."_m".$id_nb.".".$output_format;
     $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
-    print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}), "\n";
 
+    ## Print the name of the file containing each matrix in the main output file
+    print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}), "\n";
   } else {
     $current_out = $out;
   }
