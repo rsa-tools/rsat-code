@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.138 2011/10/26 15:52:28 jvanheld Exp $
+# $Id: convert-matrix,v 1.139 2011/10/28 05:30:47 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1439,27 +1439,36 @@ sub Verbose {
 ## Choose the name of a matrix
 sub SetMatrixName {
   my ($matrix, $m, $matrix_file, $input_format) = @_;
-  my $matrix_name;
-  my $matrix_ac = $matrix->get_attribute("accession");
+
+  ## Make sure that the matrix has the mandatory attribute "id"
   my $matrix_id = $matrix->get_attribute("id");
-  if ($matrix_ac) {
-    $matrix_name = $matrix_ac;
-  } elsif ($matrix_file) {
-    $matrix_name = &RSAT::util::ShortFileName($matrix_file);
-    $matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
-    $matrix_name =~ s/\.txt$//; ## suppress .txt extension
-#    if (scalar(@matrices) > 0) {
-      $matrix_name .= "_m".$m;
-#    }
-    &RSAT::message::Debug("Matrix", $m."/".scalar(@matrices), "name", $matrix_name) if ($main::verbose >= 5);
-  } else {
-    $matrix_name = "matrix";
-#    if (scalar(@matrices) > 0) {
-      $matrix_name .= "_m".$m;
-#    }
+  unless ($matrix_id) {
+    if ($matrix_file) {
+      ($matrix_id) =  &RSAT::util::ShortFileName($matrix_file);
+      $matrix_id =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
+      $matrix_id =~ s/\.txt$//; ## suppress .txt extension
+      $matrix_id .= "_m".$m;
+      &RSAT::message::Debug("Matrix", $m."/".scalar(@matrices), "name", $matrix_id) if ($main::verbose >= 5);
+    } else {
+      $matrix_id = "matrix";
+      $matrix_id .= "_m".$m;
+    }
+    $matrix->force_attribute("id", $matrix_id);
   }
-  unless (defined($matrix->get_attribute("name"))){
-    $matrix->set_attribute("name", $matrix_name);
+
+  ## Get accession number (preferred name for TRANSFAC input format)
+  my $matrix_ac = $matrix->get_attribute("accession") || $matrix->get_attribute("AC");
+  unless ($matrix_ac) {
+    $matrix_ac = $matrix_id;
+    $matrix->force_attribute("AC", $matrix_ac);
+    $matrix->force_attribute("accession", $matrix_ac);
+  }
+
+  ## Check that the matrix has a name
+  my $matrix_name = $matrix->get_attribute("name");
+  unless ($matrix_name){
+    $matrix_name = $matrix_ac;
+    $matrix->force_attribute("name", $matrix_name);
   }
   &RSAT::message::Info($m,
 		       "name=".$matrix->get_attribute("name"),
