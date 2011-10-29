@@ -1210,7 +1210,8 @@ sub FisherExactTest {
 
 
 ##############################################################
-## calculates Pearson chi-square statistics for a table of numbers
+## Calculates Pearson chi-square statistics for a table of numbers
+##
 ## Usage
 ## =====
 ## $chi_square = &ChiSquare($test,$row_nb, $col_nb, @values);
@@ -1338,7 +1339,7 @@ sub ChiSquare {
 	for $row (1..$row_nb) {
 	    for $col (1..$col_nb) {
 		$exp = $row_sum[$col] * $col_sum[$row] / $N;
-		$not_valid = 1 if ($exp < 5);   
+		$not_valid = 1 if ($exp < 5);
 		$offset = ($row-1) * $col_nb + $col -1;
 		$obs = $values[$offset];
 		if ($exp == 0) {
@@ -1368,9 +1369,9 @@ sub ChiSquare {
 
 	#### Group tails to fulfill the condition of applicability
 	if ($group_tails) {
-	    warn  ("Before grouping", 
-		   "\n\texpected\t", join(":", @expected), 
-		   "\n\tobserved\t", join(":", @observed), "\n")
+	  &RSAT::message::Debug("Before grouping",
+		   "\nexpected", join(":", @expected),
+		   "\nobserved", join(":", @observed))
 		if ($main::verbose >= 10);
 	    ## Group left tail
 	    do {
@@ -1442,7 +1443,6 @@ sub ChiSquare {
 		  "\n\tobserved\t", join(":", @observed), "\n")
 		if ($main::verbose >= 10);
 
-	    
 	    @values = (@observed, @expected);
 	}
 
@@ -1452,11 +1452,11 @@ sub ChiSquare {
 	    $exp = $expected[$col-1];
 	    $not_valid = 1 if ($exp < 5);
 	    if ($exp == 0) {
-		$chi_square = "NA.exp0";
+		$chi_square = "ERR_exp0";
 		warn join ("Cannot calculate the observed chi2 because class $col has an expected value of 0\n"), "\n" if ($main::verbose >= 2);
 		last;
 	    } else {
-		$chi_square +=   (($obs - $exp)**2)/$exp;
+		$chi_square +=  (($obs - $exp)**2)/$exp;
 	    }
 	    warn join ("\t", $obs, $exp, $not_valid, $chi_square), "\n" if ($main::verbose >= 10);
 	}
@@ -1509,12 +1509,12 @@ sub ChiSquare {
 	    }
 
 	    my $answer = $chi_square;
-	    if ($chi_square =~ /NA/) {
-	$answer = $chi_square;
-    } elsif ($not_valid) {
-	$answer = sprintf "{%.3f}", $chi_square;
+    if (!&RSAT::util::IsReal($chi_square)) {
+      $answer = $chi_square;
+#    } elsif ($not_valid) {
+#      $answer = sprintf "{%.3f}", $chi_square;
     } else {
-	$answer = sprintf "%.5f", $chi_square;
+      $answer = sprintf "%.5f", $chi_square;
     }
     &RSAT::message::Debug($answer,
 			  $deg_freedom,
