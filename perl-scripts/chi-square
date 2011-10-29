@@ -70,7 +70,7 @@ while (<$in>) {
 $row_nb = $row;
 
 ## Compute value of ch2_obs
-($chi_square, $df) = &ChiSquare($test, $row_nb, $col_nb, @values);
+($chi_square, $df, $left_group, $right_group) = &ChiSquare($test, $row_nb, $col_nb, @values);
 
 ## Compute P-value
 if ($chi_square > 0) {
@@ -82,8 +82,8 @@ if ($chi_square > 0) {
 }
 
 #### print output ####
-print $out join ("\t", "#chi2", "df", "Pval"), "\n";
-print $out join ("\t", $chi_square, $df, $Pval), "\n";
+print $out join ("\t", "#chi2", "df", "Pval", "Lgroup", "Rgroup"), "\n";
+print $out join ("\t", $chi_square, $df, $Pval, $left_group, $right_group), "\n";
 
 ###### close input file ######
 close $in unless ($inputfile eq "");
