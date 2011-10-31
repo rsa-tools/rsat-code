@@ -695,6 +695,7 @@ sub parse_from_row {
   }
   if ($in_format eq "galaxy_seq")  {
     $self->set_attribute("ft_type", "");
+    $row =~ s/^\s*>//;
     $self->set_attribute("feature_name", $row);
   }
 
