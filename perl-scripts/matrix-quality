@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.138 2011/11/01 17:56:00 amedina Exp $
+# $Id: matrix-quality,v 1.139 2011/11/01 18:26:25 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -420,7 +420,7 @@ package main;
     ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($prefix{main});
 #    $dir{output} = `dirname $prefix{main}`;
 #    chomp($dir{output});
-    &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{output});
 
     ## Define name of the converted bg file
@@ -484,7 +484,7 @@ package main;
     &doit($bg_convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &RSAT::message::TimeWarn("Converted background model to inclusive format", $outfile{bg_file_inclusive}) if ($main::verbose >= 1);
     push @files_to_index, "bg_file_inclusive";
-    &RSAT::message::Debug("Adding file to index ",  "bg_file_inclusive",   $outfile{bg_file_inclusive}) if ($main::verbose >= 0);
+    &RSAT::message::Debug("Adding file to index ",  "bg_file_inclusive",   $outfile{bg_file_inclusive}) if ($main::verbose >= 15);
 
 
     ## Read background model to use for theoretical distribution
@@ -742,7 +742,7 @@ package main;
       ################################################################
       ## Compute empirical distribution in the input sequence files
       foreach my $seq_type (@local_seq_types) {
-	&RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 0);
+	&RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 1);
 
 	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
 
@@ -1813,7 +1813,7 @@ sub CrossValidation {
     $partial_matrix->setAlphabet_lc(@alphabet);
 
 #    $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
-    &RSAT::message::Debug (" Cross validation "."partial matrix name:" .$partial_matrix_name ) if ($main::verbose >= 0) ;
+    &RSAT::message::Debug (" Cross validation "."partial matrix name:" .$partial_matrix_name ) if ($main::verbose >= 1) ;
     push @partial_matrices, $partial_matrix;
     for my $i (1..$n) {
       my $sites_nb = $i;
@@ -2370,7 +2370,7 @@ sub CompareDistrib {
     $distrib_compa_cmd .= " -files ";
     $distrib_compa_cmd .= join(" ", $outfile{'matrix_theoretical_distrib'}, @distrib_files);
     &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 1);
   }
 
   if ($tasks{graphs}) {
@@ -2836,7 +2836,7 @@ sub PostVerbose {
 ## Summarize results in a HTML report
 sub GenerateHTMLReport {
     local $synthesis_per_matrix_file=$_[0];
-    &RSAT::message::Debug("Generating report per matrix", $synthesis_per_matrix_file) if ($main::verbose >= 0);
+    &RSAT::message::Debug("Generating report per matrix", $synthesis_per_matrix_file) if ($main::verbose >=1);
     
   ################################################################
   ## Open HTML outstream
