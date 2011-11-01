@@ -38,10 +38,12 @@ local $parameters = " -v 0";
 ################################################################
 ## File prefix
 
+#$prefix = "matrix-quality";
+#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#system("rm -f $tmp_file_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 #my $date = &AlphaDate();
-#my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality", 1);
-$prefix = "matrix-quality";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality", 1);
+
 #$tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
 $file_prefix = `basename $tmp_file_name`;
 chomp($file_prefix);
@@ -176,7 +178,7 @@ if ($bg_method eq "from_matrix") {
   $bg_file = &ExpectedFreqFile($organism_name,
 			       $oligo_length, $background_model,
 			       noov=>$noov, str=>"-1str");
-  $parameters .= " -bgfile ".$bg_file;
+  $parameters .= " -bgfile ".$bg_file.".gz";
    $parameters .= " -bg_format ".'oligo-analysis';
 } elsif ($bg_method =~ /upload/i) {
   ## Upload user-specified background file
