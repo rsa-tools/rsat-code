@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.137 2011/09/19 13:57:12 jvanheld Exp $
+# $Id: matrix-quality,v 1.138 2011/11/01 17:56:00 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -256,8 +256,10 @@ package main;
 {
 
     ################################################################
-    #### Initialise parameters
+    #### Initialize parameters
     local $start_time = &RSAT::util::StartScript();
+
+    $top_matrices = 0; ## 0 value means no restriction on the number of matrices
 
     ## Format for the graphs
     @image_formats = ();
@@ -267,7 +269,7 @@ package main;
     @logo_formats = ("png");
     $logo_formats = "";
 
-    @distrib_files = ();
+#    @distrib_files = (); declared fore each matrix
     %file_nb = ();
     @matrix_scan_options = ();
     @alphabet = ("a","c","g","t");
@@ -296,7 +298,7 @@ package main;
 
     $main::verbose = 0;
     $main::out = STDOUT;
-    $main::html_title=0;
+    $main::html_title="";
     $main::nwd_seq_type=0;
 
     ## Parameters for the &doit() command
@@ -395,23 +397,35 @@ package main;
 
     ## Output prefix is mandatory
     &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
-      unless ($outfile{prefix});
-    $outfile{log} = $main::outfile{prefix}."_log.txt"; push @files_to_index, "log";
-    $outfile{synthesis} = $main::outfile{prefix}."_synthesis.html";
+      unless ($prefix{main});
 
 
     ## Output prefix cannot end with a "/" (must be a file prefix, not a directory)
-    &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($outfile{prefix} =~ /\/$/);
+    &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($prefix{main} =~ /\/$/);
 
-    ## Create output directory if required
-    $dir{output} = `dirname $outfile{prefix}`;
-    chomp($dir{output});
-    &RSAT::message::TimeWarn("Checking output directory", $dir{output}) if ($main::verbose >= 0);
+    ## Open main log and synthesis file handles
+    $outfile{log} = $main::prefix{main}."_log.txt"; 
+    #push @files_to_index, "log"; # this log file is the general one.
+    $outfile{synthesis} = $main::prefix{main}."_synthesis.html";
+    
+
+    ################################################################
+    ## Generate the general HTML report 
+    if ($tasks{synthesis}) {
+	&OpenGeneralHTMLReport($outfile{synthesis});
+    }
+
+
+    ## Create main output directory if required
+    ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($prefix{main});
+#    $dir{output} = `dirname $prefix{main}`;
+#    chomp($dir{output});
+    &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 0);
     &RSAT::util::CheckOutDir($dir{output});
 
     ## Define name of the converted bg file
     #$outfile{bg_file_inclusive} = $dir{output};
-    $outfile{bg_file_inclusive} = $outfile{prefix};
+    $outfile{bg_file_inclusive} = $prefix{main};
     $outfile{bg_file_inclusive} .= &ShortFileName($infile{bg_file});
     $outfile{bg_file_inclusive} =~ s|\.\w$||;
     $outfile{bg_file_inclusive} .= "_inclusive.tab";
@@ -431,25 +445,6 @@ package main;
     }
     &RSAT::message::Info("matrix-scan options", join(" ", @matrix_scan_options)) if ($main::verbose >= 3);
 
-    ## Background model file is mandatory
-    unless ($infile{bg_file}) {
-      &RSAT::error::FatalError("You must define a background model file for the theoretical distribution, with option -bgfile");
-    }
-
-
-    ## Convert BG file in inclusive format for matrix-scan-quick
-    my $bg_convert_cmd = $SCRIPTS."/convert-background-model";
-    $bg_convert_cmd .= " -i ".$infile{bg_file};
-    $bg_convert_cmd .= " -from ".$bg_format;
-    $bg_convert_cmd .= " -to inclusive";
-    $bg_convert_cmd .= " -o ".$outfile{bg_file_inclusive};
-    &doit($bg_convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    &RSAT::message::TimeWarn("Converted background model to inclusive format", $outfile{bg_file_inclusive}) if ($main::verbose >= 1);
-    push @files_to_index, "bg_file_inclusive";
-
-    ## Name of the tab-delimited file containing only the top matrix, which will be used for scanning
-    $outfile{matrix_tab} = $outfile{prefix}."_matrix.tab";
-    push @files_to_index, "matrix_tab";
 
     ## Graph image formats : png is default
     unless (scalar(@image_formats)>0) {
@@ -465,19 +460,33 @@ package main;
     $logo_formats = join ",", @logo_formats; ## For the logo
     &RSAT::message::Info("Image formats for logos: ".join (",", sort(@logo_formats))) if ($main::verbose >= 2);
 
-     ## NWD 
- 
+     ## NWD
     $tasks{nwd}=1 if ($main::nwd_seq_type) ;
     if ($tasks{nwd} && (!$main::nwd_seq_type)){
 	&RSAT::error::FatalError("For NWD task you have to specify the seq_type");
     }
 
     ################################################################
-    ## Open output stream
-    $main::out = &OpenOutputFile($outfile{log});
-    &PreVerbose() if ($main::verbose);
+    ## Background file
 
-    ################################################################
+    ## Background model file is mandatory
+    unless ($infile{bg_file}) {
+      &RSAT::error::FatalError("You must define a background model file for the theoretical distribution, with option -bgfile");
+    }
+
+
+    ## Convert BG file in inclusive format for matrix-scan-quick
+    my $bg_convert_cmd = $SCRIPTS."/convert-background-model";
+    $bg_convert_cmd .= " -i ".$infile{bg_file};
+    $bg_convert_cmd .= " -from ".$bg_format;
+    $bg_convert_cmd .= " -to inclusive";
+    $bg_convert_cmd .= " -o ".$outfile{bg_file_inclusive};
+    &doit($bg_convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &RSAT::message::TimeWarn("Converted background model to inclusive format", $outfile{bg_file_inclusive}) if ($main::verbose >= 1);
+    push @files_to_index, "bg_file_inclusive";
+    &RSAT::message::Debug("Adding file to index ",  "bg_file_inclusive",   $outfile{bg_file_inclusive}) if ($main::verbose >= 0);
+
+
     ## Read background model to use for theoretical distribution
     #    if ($main::infile{bg_file}){
     $bg_model->load_from_file($main::outfile{bg_file_inclusive},"inclusive");
@@ -486,298 +495,424 @@ package main;
       $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
     }
 
+
     ################################################################
-    ## Read input matrix
+    ## Open output stream
+    $main::out = &OpenOutputFile($outfile{log});
+    &PreVerbose() if ($main::verbose);
+
+
+    ################################################################
+    ## Read input matrix file (can contain 1 or more matrices)
     local $matrix_file = $infile{matrix};
     &RSAT::message::TimeWarn("Reading matrix", $matrix_file) if ($main::verbose >= 1);
     my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 
     ## Check the number of parsed matrices
-    if (scalar(@matrices) > 1) {
-      &RSAT::message::Warning("File",  $matrix_file, 
-			      "contains ".scalar(@matrices)." matrices. ",
-			      "Only the first one will be evaluated.");
-    }
-    local $matrix = shift (@matrices);
-    $matrix->set_attribute("pseudo", $pseudo_counts);
-    $matrix->set_attribute("decimals", $decimals);
-    $matrix->set_attribute("file", $matrix_file);
-    local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-    $matrix_name =~ s/\.\S+$//;	## suppress the extension from the file name
-    #$matrix->set_attribute("name", $matrix_name);
-    $matrix->force_attribute("name", $matrix_name);
-    $matrix->setMarkovModel($bg_model) if ($main::outfile{bg_file_inclusive}) ;
-    my $m_width= $matrix->get_attribute("ncol");
-    
-    
-    ################################################################
-    ## Compute min and max weight values for score distributions
-    local ($Wmin, $Wmax)  = $matrix->weight_range();
-    &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
-    $main::html_title=" $matrix_name " unless $main::html_title;
-
-
-    ################################################################
-    ## Export matrix in various formats
-
-    ## Define file names here because we need them for the index, even
-    ## if we don't run the export task
-    $outfile{matrix_info} = $outfile{prefix}."_matrix_info.txt";  push @files_to_index, "matrix_info";
-    #    $outfile{matrix_rc} = $outfile{prefix}."_matrix_rc"; push @files_to_index, "matrix_rc";
-    $outfile{matrix_logo}= $outfile{prefix}."_".$matrix_name."_logo" ; 
-    #    $outfile{matrix_logo_rc}=$outfile{prefix}."_".$matrix_name."_logo_rc";
-    foreach my $logo_format (@logo_formats) {
-      $outfile{"matrix_logo_".$logo_format} = $outfile{matrix_logo}."_m1.".$logo_format; push @files_to_index, "matrix_logo_".$logo_format;
-      $outfile{"matrix_logo_rc_".$logo_format} = $outfile{matrix_logo}."_m1_rc.".$logo_format; push @files_to_index, "matrix_logo_rc_".$logo_format;
-    }
-    $main::outfile{matrix_sites} = $outfile{prefix}."_matrix_sites.fasta"; push @files_to_index, "matrix_sites";
-    $main::seqfile{matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites});
-
-    ## Export input sites with the matrix
-    if ($main::infile{matrix_sites}) {
-      unshift @main::seq_types, "matrix_sites"; ## Matrix sites are the first ones to be analyzed and to appear in graph legends
-#      push @main::seq_types, "matrix_sites";
-
-      ## Specific options for scanning matrix sites
-      $scanopt{matrix_sites} = "" unless ($scanopt{matrix_sites});
-      $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
-      $scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation used to build the matrix
-#      unless ($quick) {
-#      }
-
-      &ExportInputSites($matrix, $matrix_file) if ($tasks{export_matrix});
+    &RSAT::message::Warning("File",  $matrix_file, 
+			    "contains ".scalar(@matrices)." matrices.");
+    if (($top_matrices > 0) && (scalar(@matrices) > $top_matrices)) {
+      &RSAT::message::Warning("Only the first ".$top_matrices ."will be evaluated (option -top).");
+      @matrices = @matrices[0..($top_matrices-1)];
+      &RSAT::message::Debug("Remaining matrices", scalar(@matrices)) if ($main::verbose >= 5);
     }
 
-    ## Export the matrix in tab-delimited format
-    &ExportTabMatrix($matrix) if ($tasks{export_matrix});
-
-    ## Export the matrix in tab-delimited format with additional information + the logos
-    &ExportMatrixInfo($matrix) if ($tasks{export_matrix});
-
-    ## Shuffle the columns of the matrix (permutation test)
-    &PermuteMatrixColumns();
-
-    ################################################################
-    ## Calculate theoretical distribution of probabilities
-    $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab"; push @files_to_index, "theoretical_distrib";
-    &CalcTheorScoreDistribution($outfile{matrix_tab},$main::outfile{'theoretical_distrib'}) if ($tasks{theor});
-
-    ################################################################
-    ## Calculate empirical score distributions in the different sequence sets
-
-    ################################################################
-    ## Calculate the Leave-one-out score distribution for the matrix sites
-    my @matrix_sites = $matrix->get_attribute("sequences");
-    if (scalar(@matrix_sites) == 0) {
-      &RSAT::message::Warning("Cannot perform cross-validation because the matrix file does not contain any site.");
-      $tasks{cv}=0;
-      $no_cv=1;
+    ## Multiple matrices are incompatible with the option -seq matrix_sites
+    if ((scalar(@matrices) > 1) && ($main::seqfile{matrix_sites})) {
+      &RSAT::message::Warning("The option -seq matrix_sites is not compatible with multiple matrices. Only the first matrix will be retained for analysis.");
+      @matrices = shift(@matrices);
     }
 
-    unless ($no_cv) {
-      $cv_type = "";
-      if ($kfold > 0) {
-	$cv_type = $kfold."-fold";
-      } else {
-	$cv_type .= "loo";
-      }
-      $cv_suffix = "_cv_".$cv_type;
+    ################################################################
+    ## Evaluate the quality of each matrix of the input file
+    my $m = 0; ## Matrix counter
+    my %matrix_index = (); ## %matrix_index indexes matrix numbers (value) as a function of matrix names (keys)
+    foreach my $matrix (@matrices) {
+      $m++;
 
-
-
-      $outfile{partial_matrices_cv} = $outfile{prefix}."_partial_matrices${cv_suffix}.tf"; push @files_to_index, "partial_matrices_cv";
-      $outfile{matrix_sites_cv} = $outfile{prefix}."_matrix_sites${cv_suffix}.tab"; push @files_to_index, "matrix_sites_cv";
-      $outfile{matrix_sites_cv_distrib} = $outfile{prefix}."_scan_matrix_sites${cv_suffix}_score_distrib.tab" ;push @files_to_index, "matrix_sites_cv_distrib";
-   
+      ################
+      #Initialize storing arrays
+      local @files_to_index=();
+      local @partial_matrix_files=();
+      local @th_distrib_files=();
+      local @perm_distrib_files=();
+      local @distrib_files=(); ## check something named  @main::distrib_files
+      local @temporary_distrib_files=();
+      local @local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
       
-   
+      
 
-      if (($tasks{cv}) || ($tasks{compare}) || ($tasks{graphs})) {
-	push @distrib_files, $outfile{matrix_sites_cv_distrib}; $file_nb{matrix_sites_cv_distrib} = scalar(@distrib_files);
+      ## Redefine the matrix name (in case it would have been modified above)
+      $matrix->set_attribute("pseudo", $pseudo_counts);
+      $matrix->set_attribute("decimals", $decimals);
+      $matrix->set_attribute("file", $matrix_file);
+      $matrix->force_attribute("matrix.nb", $m);
+      $matrix->setMarkovModel($bg_model) if ($main::outfile{bg_file_inclusive}) ;
+      my $m_width= $matrix->get_attribute("ncol");
+
+      ################################################################
+      ## Define matrix name.
+      ##
+      ## This is crucial because the name will serve as sub-folder.
+      ## We thus need a name that is
+      ## - unambiguous (two matrices cannot have the same name)
+      ## - without system-problematic characters (/, $).
+      ##
+#      local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+#      $matrix_name =~ s/\.\S+$//;	## suppress the extension from the file name
+      local $matrix_name = $matrix->get_attribute("name") ||
+	$matrix->get_attribute("id");
+      unless ($matrix_name =~ /\S/) {
+	$matrix_name = "matrix_".$m;
       }
-  
+
+      $matrix_name =~ s/\//_/; ## Avoid slashes in matrix names because this would make problem for subfolder definitions
+      $matrix_name =~ s/\$/_/; ## Avoid $ in matrix names because the following word would be interpreted as a variable in Unix system
+
+      ## Check if another matrix with the same name has already been indexed)
+      if (defined($matrix_index{$matrix_name})) {
+	&RSAT::message::Warning("Matrix file contains sevral matrices with name",
+				$matrix_name, ". Adding suffix m_".$m);
+	$matrix_name .= "_m".$m;
+      } else {
+	$matrix_index{$matrix_name} = $m;
+      }
+      $matrix->force_attribute("name", $matrix_name);
+      &RSAT::message::TimeWarn("Analyzing matrix", $m, $matrix_name) if ($main::verbose >= 1);
+      
+      ################################################################
+      ## Define matrix-specific output directory (subfolder)
+      $dir{matrix_output} = $dir{output}."/".$matrix_name;
+      ## Create matrix-specific output directory if required
+      &RSAT::message::TimeWarn("Checking matrix output directory", $dir{matrix_output}) if ($main::verbose >= 0);
+      &RSAT::util::CheckOutDir($dir{matrix_output});
+
+      ## Define matrix-specific prefix
+      $matrix_prefix{$matrix_name} = $dir{matrix_output}."/".$short_prefix;
+
+      ## Open matrix-specific log and synthesis file handles
+      $outfile{matrix_log} = $main::matrix_prefix{$matrix_name}."_log.txt"; push @files_to_index, "matrix_log";
+      $main::out = &OpenOutputFile($outfile{matrix_log});
+      &RSAT::message::Debug("Adding file to index ",   "matrix_log", $main::matrix_prefix{$matrix_name}."_log.txt" ) if ($main::verbose >= 15);
+      
+
+
+      $outfile{matrix_synthesis} = $main::matrix_prefix{$matrix_name}."_synthesis.html";
+
+
+      ## Name of the tab-delimited file containing only the top matrix, which will be used for scanning
+      $outfile{matrix_tab} = $matrix_prefix{$matrix_name}."_matrix.tab";
+      push @files_to_index, "matrix_tab";
+      &RSAT::message::Debug("Adding file to index ",  "matrix_tab" , $matrix_prefix{$matrix_name}."_matrix.tab" ) if ($main::verbose >= 15);
+      
+
+
+      $outfile{matrix_transfac} = $matrix_prefix{$matrix_name}."_matrix.tf";
+      push @files_to_index, "matrix_transfac";
+      &RSAT::message::Debug("Adding file to index ",  "matrix_transfac",  $matrix_prefix{$matrix_name}."_matrix.tf" ) if ($main::verbose >= 15);
+      
+
+
+      ################################################################
+      ## Compute min and max weight values for score distributions
+      local ($Wmin, $Wmax)  = $matrix->weight_range();
+      &RSAT::message::Info($matrix_name, "Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
+      local $local_html_title="";
+      if ($main::html_title){
+	  $local_html_title=$main::html_title."\t $matrix_name ";
+      }else {
+	  $local_html_title=" $matrix_name "; 
+      }
+
      
-      if ($tasks{cv} ) {
-	&CrossValidation($matrix, @matrix_scan_options);
+      ################################################################
+      ## Export matrix in various formats
+
+      ## Define file names here because we need them for the index, even
+      ## if we don't run the export task
+      $outfile{matrix_info} = $matrix_prefix{$matrix_name}."_matrix_info.txt";  push @files_to_index, "matrix_info";
+      &RSAT::message::Debug("Adding file to index ",  "matrix_info",  $matrix_prefix{$matrix_name}."_matrix_info.txt" ) if ($main::verbose >= 15);
+
+      #    $outfile{matrix_rc} = $matrix_prefix{$matrix_name}."_matrix_rc"; push @files_to_index, "matrix_rc";
+      $outfile{matrix_logo}= $matrix_prefix{$matrix_name}."_".$matrix_name."_logo" ; 
+      $matrix_info_general_index{$matrix_name}{logo}=$outfile{matrix_logo};
+      $matrix_info_general_index{$matrix_name}{synthesis}=$outfile{matrix_synthesis};
+      
+      #    $outfile{matrix_logo_rc}=$matrix_prefix{$matrix_name}."_".$matrix_name."_logo_rc";
+      foreach my $logo_format (@logo_formats) {
+	$outfile{"matrix_logo_".$logo_format} = $outfile{matrix_logo}."_m1.".$logo_format; push @files_to_index, "matrix_logo_".$logo_format;
+	&RSAT::message::Debug("Adding file to index ",   "matrix_logo_".$logo_format ,  $outfile{matrix_logo}."_m1.".$logo_format ) if ($main::verbose >= 15);
+	$outfile{"matrix_logo_rc_".$logo_format} = $outfile{matrix_logo}."_m1_rc.".$logo_format; push @files_to_index, "matrix_logo_rc_".$logo_format;
+	&RSAT::message::Debug("Adding file to index ",  "matrix_logo_rc_".$logo_format, $outfile{matrix_logo}."_m1_rc.".$logo_format ) if ($main::verbose >= 15);
+      }
+      $outfile{matrix_sites} = $matrix_prefix{$matrix_name}."_matrix_sites.fasta"; push @files_to_index, "matrix_sites";
+      $main::seqfile{matrix_sites} = $outfile{matrix_sites} if ($infile{matrix_sites});
+      &RSAT::message::Debug("Adding file to index ",  "matrix_sites", $outfile{matrix_sites}  ) if ($main::verbose >= 15);
+      
+
+      ## Export input sites with the matrix
+      if ($main::infile{matrix_sites}) {
+	unshift @local_seq_types, "matrix_sites"; ## Matrix sites are the first ones to be analyzed and to appear in graph legends
+	#      push @main::seq_types, "matrix_sites";
+
+	## Specific options for scanning matrix sites
+	$scanopt{matrix_sites} = "" unless ($scanopt{matrix_sites});
+	$scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
+	$scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation used to build the matrix
+	#      unless ($quick) {
+	#      }
+	&ExportInputSites($matrix, $matrix_file) if ($tasks{export_matrix});
       }
 
-      ## Calculate the theoretical distributions of LOO partial matrices
-      if ($tasks{theor_cv}) {
-    	our @th_distrib_files =();
-    	foreach my $partial_matrix (@partial_matrix_files) {
-	  my $distrib_outfile = $partial_matrix;
-	  $distrib_outfile =~ s/\.tab/\_theor_score_distrib\.tab/;
-	  &CalcTheorScoreDistribution($partial_matrix,$distrib_outfile);
-	  push (@th_distrib_files, $distrib_outfile);
-    	}
+      ################################################################
+      ## Export matrix in various formats
+      if ($tasks{export_matrix}) {
+	## Export the matrix in tab-delimited format
+	&ExportTabMatrix($matrix);
+
+	## Export the matrix in TRANSFAC format
+	&ExportTransfacMatrix($matrix);
+
+	## Export the matrix in tab-delimited format with additional information + the logos
+	&ExportMatrixInfo($matrix);
       }
-    }
 
-    ################################################################
-    ## Compute empirical distribution in the input sequence files
-    foreach my $seq_type (@seq_types) {
-      &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 2);
+      ## Shuffle the columns of the matrix (permutation test)
+      &PermuteMatrixColumns();
 
-      &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
+      ################################################################
+      ## Calculate theoretical distribution of probabilities
+      $outfile{'matrix_theoretical_distrib'} = $main::matrix_prefix{$matrix_name}."_theor_score_distrib.tab"; push @files_to_index, "matrix_theoretical_distrib";
+      &RSAT::message::Debug("Adding file to index ",  "matrix_theoretical_distrib", $outfile{'matrix_theoretical_distrib'}  ) if ($main::verbose >= 15);
 
-      ## Score sequences with the permuted matrices
-      if (($seqfile{$seq_type}) &&
-	  (defined($perm_nb{$seq_type})) &&
-	  ($perm_nb{$seq_type} > 0)) {
+      &CalcTheorScoreDistribution($outfile{matrix_tab},$outfile{'matrix_theoretical_distrib'}) if ($tasks{theor});
 
+      ################################################################
+      ## Calculate empirical score distributions in the different sequence sets
 
-	## Calculate the separate distributions for each permuted matrix
-	## (this highlights the variability but the graph is noisy)
-	my @perm_distrib_files = ();
-	for my $i (1..$perm_nb{$seq_type}) {
-	  $perm_suffix = $seq_type."_perm_col_".$i;
-	  if (defined($scanopt{$seq_type})) {
-	    $scanopt{$perm_suffix} = $scanopt{$seq_type};
-	    #	      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
+      ################################################################
+      ## Calculate the Leave-one-out score distribution for the matrix sites
+      my @matrix_sites = $matrix->get_attribute("sequences");
+      if (scalar(@matrix_sites) == 0) {
+	&RSAT::message::Warning("Cannot perform cross-validation because the matrix file does not contain any site.");
+	$tasks{cv}=0;
+	$no_cv=1;
+      }
+
+      unless ($no_cv) {
+	$cv_type = "";
+	if ($kfold > 0) {
+	  $cv_type = $kfold."-fold";
+	} else {
+	  $cv_type .= "loo";
+	}
+	$cv_suffix = "_cv_".$cv_type;
+
+	$outfile{partial_matrices_cv} = $matrix_prefix{$matrix_name}."_partial_matrices${cv_suffix}.tf"; push @files_to_index, "partial_matrices_cv";
+	&RSAT::message::Debug("Adding file to index ",  "partial_matrices_cv", $outfile{partial_matrices_cv}  ) if ($main::verbose >= 15);
+	$outfile{matrix_sites_cv} = $matrix_prefix{$matrix_name}."_matrix_sites${cv_suffix}.tab"; push @files_to_index, "matrix_sites_cv";
+	&RSAT::message::Debug("Adding file to index ",  "matrix_sites_cv", $outfile{matrix_sites_cv}  ) if ($main::verbose >= 15);
+	$outfile{matrix_sites_cv_distrib} = $matrix_prefix{$matrix_name}."_scan_matrix_sites${cv_suffix}_score_distrib.tab" ;push @files_to_index, "matrix_sites_cv_distrib";
+	&RSAT::message::Debug("Adding file to index ",  "matrix_sites_cv_distrib", $outfile{matrix_sites_cv_distrib}  ) if ($main::verbose >= 15);
+
+	if (($tasks{cv}) || ($tasks{compare}) || ($tasks{graphs})) {
+	  push @distrib_files, $outfile{matrix_sites_cv_distrib}; $file_nb{matrix_sites_cv_distrib} = scalar(@distrib_files);
+	}
+
+	if ($tasks{cv} ) {
+	  &CrossValidation($matrix, @matrix_scan_options);
+	}
+
+	## Calculate the theoretical distributions of LOO partial matrices
+	&RSAT::message::Debug("Calculating the theoretical distribution for ",scalar(@partial_matrix_files) ,"partial matrices") if ($main::verbose >= 3);
+	
+	if ($tasks{theor_cv}) {
+	  our @th_distrib_files =();
+
+	  foreach my $partial_matrix (@partial_matrix_files) {
+	    my $distrib_outfile = $partial_matrix;
+	    $distrib_outfile =~ s/\.tab/\_theor_score_distrib\.tab/;
+	    &CalcTheorScoreDistribution($partial_matrix,$distrib_outfile);	    
+	    push (@th_distrib_files, $distrib_outfile);
 	  }
-	  push @perm_distrib_files, &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, $perm_separate_distrib,  @matrix_scan_options) ;
 	}
-
-	## Compute the distribution for all the permutation tests
-#	unless ($perm_separate_distrib) {
-
-	## Define the output file for the regrouped permutation tests
-	my $perm_suffix = $seq_type.'_'.$perm_nb{$seq_type}.'perm';
-	$outfile{$perm_suffix} =  $outfile{prefix}."_scan_".$perm_suffix."_score_distrib.tab"; push @files_to_index, $perm_suffix;
-	push @main::distrib_files, $outfile{$perm_suffix}; $main::file_nb{$perm_suffix} = scalar(@distrib_files);
-
-	## Run compare-scores to compute the dCDF of the mergeed permutation test
-	my $merge_cmd = $SCRIPTS."/compare-scores -v 1 ";
-	$merge_cmd .= " -ic 1 -numeric -sc 2";
-	$merge_cmd .= " -files ";
-	$merge_cmd .= join " ", @perm_distrib_files;
-	my $last_col = scalar(@perm_distrib_files) + 1;
-	$merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
-	&RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 3);
-
-	## Compute the cumulative and decreasing cumlative
-	## distributions
-	my @weights = ();
-	my @occ = ();
-	my @cum_occ = ();
-	my %merged_occ = ();
-	my $cum_occ = 0;
-	open MERGE, "$merge_cmd |";
-	while (<MERGE>) {
-	  chomp();
-	  next if /^;/;
-	  next if /^#/;
-	  next unless /\S/;
-	  my @fields = split /\t/, $_;
-	  my $weight = $fields[4];
-	  my $occ = $fields[2];
-	  $cum_occ += $occ;
-	  push @weights, $weight;
-	  push @occ, $occ;
-	  push @cum_occ, $cum_occ;
-	}
-	close MERGE;
-	my $total_occ = $cum_occ[$#cum_occ];
-
-	## Print the merged distribution
-	my $merged_distrib = &OpenOutputFile($outfile{$perm_suffix});
-	print $merged_distrib join ("\t", "#weight", "occ", "cum", "dcum", "dCDF"), "\n";
-	for my $i (0..$#weights) {
-	  my $dcum_occ = $total_occ - $cum_occ[$i]+$occ[$i];
-	  my $dcdf = $dcum_occ / $total_occ;
-	  print $merged_distrib join ("\t", 
-				      $weights[$i],
-				      $occ[$i],
-				      $cum_occ[$i],
-				      $dcum_occ,
-				      sprintf("%7g", $dcdf)
-				     ), "\n";
-	}
-	close $merged_distrib;
-	&RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 2);
-#      }
-
-	## Calculate the merged distribution for permuted matrices
-	## THIS IS NOT SUPPORTED ANYMORE SINCE matrix-scan-quick ONLY ACCEPTS ONE MATRIX
-	# } else {
-	#	my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
-	#	if (defined($scanopt{$seq_type})) {
-	#	  $scanopt{$perm_suffix} = $scanopt{$seq_type};
-	#	  $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
-	#	}
-	#	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'}, "tab", $perm_suffix,   @matrix_scan_options) ;
-	# }
       }
-    }
+      
 
-    ## Compare the distributions
-    &CompareDistrib($distrib_score_col, @distrib_files); # the column of interest is rel_ic (inv_cum_freq)
+      ################################################################
+      ## Compute empirical distribution in the input sequence files
+      foreach my $seq_type (@local_seq_types) {
+	&RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 0);
+
+	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
+
+	## Score sequences with the permuted matrices
+	if (($seqfile{$seq_type}) &&
+	    (defined($perm_nb{$seq_type})) &&
+	    ($perm_nb{$seq_type} > 0)) {
 
 
-    #### print verbosity
-    &PostVerbose() if ($main::verbose);
-    
-    ################################################################
-    ##Calculate NWD 
-    &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab") if $tasks{nwd} ;
+	  ## Calculate the separate distributions for each permuted matrix
+	  ## (this highlights the variability but the graph is noisy)
+	 # my @perm_distrib_files = ();
+	  for my $i (1..$perm_nb{$seq_type}) {
+	    $perm_suffix = $seq_type."_perm_col_".$i;
+	    if (defined($scanopt{$seq_type})) {
+	      $scanopt{$perm_suffix} = $scanopt{$seq_type};
+	      #	      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
+	    }
+	    push @perm_distrib_files, &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, $perm_separate_distrib,  @matrix_scan_options) ;
+	  }
 
-    ################################################################
-    ## Synthesis results in a HTML file
-    if ($tasks{synthesis}) {
-      &GenerateHTMLReport();
+	  ## Compute the distribution for all the permutation tests
+	  #	unless ($perm_separate_distrib) {
+
+	  ## Define the output file for the regrouped permutation tests
+	  my $perm_suffix = $seq_type.'_'.$perm_nb{$seq_type}.'perm';
+	  $outfile{$perm_suffix} =  $matrix_prefix{$matrix_name}."_scan_".$perm_suffix."_score_distrib.tab"; push @files_to_index, $perm_suffix;
+	  &RSAT::message::Debug("Adding file to index ",  $perm_suffix, $outfile{$perm_suffix}  ) if ($main::verbose >= 15);
+	  push @distrib_files, $outfile{$perm_suffix}; $file_nb{$perm_suffix} = scalar(@distrib_files);
+
+	  ## Run compare-scores to compute the dCDF of the mergeed permutation test
+	  my $merge_cmd = $SCRIPTS."/compare-scores -v 1 ";
+	  $merge_cmd .= " -ic 1 -numeric -sc 2";
+	  $merge_cmd .= " -files ";
+	  $merge_cmd .= join " ", @perm_distrib_files;
+	  my $last_col = scalar(@perm_distrib_files) + 1;
+	  $merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
+	  &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 3);
+
+	  ## Compute the cumulative and decreasing cumlative
+	  ## distributions
+	  my @weights = ();
+	  my @occ = ();
+	  my @cum_occ = ();
+	  my %merged_occ = ();
+	  my $cum_occ = 0;
+	  open MERGE, "$merge_cmd |";
+	  while (<MERGE>) {
+	    chomp();
+	    next if /^;/;
+	    next if /^#/;
+	    next unless /\S/;
+	    my @fields = split /\t/, $_;
+	    my $weight = $fields[4];
+	    my $occ = $fields[2];
+	    $cum_occ += $occ;
+	    push @weights, $weight;
+	    push @occ, $occ;
+	    push @cum_occ, $cum_occ;
+	  }
+	  close MERGE;
+	  my $total_occ = $cum_occ[$#cum_occ];
+
+	  ## Print the merged distribution
+	  my $merged_distrib = &OpenOutputFile($outfile{$perm_suffix});
+	  print $merged_distrib join ("\t", "#weight", "occ", "cum", "dcum", "dCDF"), "\n";
+	  for my $i (0..$#weights) {
+	    my $dcum_occ = $total_occ - $cum_occ[$i]+$occ[$i];
+	    my $dcdf = $dcum_occ / $total_occ;
+	    print $merged_distrib join ("\t", 
+					$weights[$i],
+					$occ[$i],
+					$cum_occ[$i],
+					$dcum_occ,
+					sprintf("%7g", $dcdf)
+				       ), "\n";
+	  }
+	  close $merged_distrib;
+	  &RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 2);
+	  #      }
+
+	  ## Calculate the merged distribution for permuted matrices
+	  ## THIS IS NOT SUPPORTED ANYMORE SINCE matrix-scan-quick ONLY ACCEPTS ONE MATRIX
+	  # } else {
+	  #	my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
+	  #	if (defined($scanopt{$seq_type})) {
+	  #	  $scanopt{$perm_suffix} = $scanopt{$seq_type};
+	  #	  $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
+	  #	}
+	  #	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'}, "tab", $perm_suffix,   @matrix_scan_options) ;
+	  # }
+	}
+      }
+      ## Compare the (single) theoretical and (multiple) empirical distributions
+      &CompareDistrib($distrib_score_col, @distrib_files); # the column of interest is rel_ic (inv_cum_freq)
+
+
+      #### print verbosity
+      &PostVerbose() if ($main::verbose);
+
+      ################################################################
+      ##Calculate NWD 
+      &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab") if $tasks{nwd} ;
+
+      ################################################################
+      ## Synthesis results in a HTML file
+      if ($tasks{synthesis}) {
+	  &GenerateHTMLReport($outfile{matrix_synthesis});
+	  &Add_info_to_GeneralHTML_Report;
+      }
+      
+      ################################################################
+      ###### Clean some temporary files
+
+      if ($tasks{clean}) {
+	## Remove the single permuted matrix files (all matrices are stored in another file)
+	if (defined($perm_nb_max)) {
+	  for my $i (1..$perm_nb_max) {
+	    my $perm_file = $outfile{'matrix_perm_col_'.$i};
+	    if ($perm_file) {
+	      my $clean_cmd = "rm -f ".$perm_file;
+	      &doit($clean_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	    }
+	  }
+	}
+
+	## Remove the files containing theoretical distribution computed from partial matrices
+	if (scalar(@partial_matrix_files) > 0) {
+	  my $clean_partial_cmd = "rm -f ";
+	  $clean_partial_cmd .= join (" ", @partial_matrix_files);
+	  &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	}
+
+	## Remove the files containing the partial matrices
+	if (scalar(@th_distrib_files) > 0) {
+	  my $clean_partial_cmd = "rm -f ";
+	  $clean_partial_cmd .= join (" ", @th_distrib_files);
+	  &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	}
+
+	## Remove the temporary distribution files
+	if (scalar(@temporary_distrib_files) > 0) {
+	  my $clean_partial_cmd = "rm -f ";
+	  $clean_partial_cmd .= join (" ", @temporary_distrib_files);
+	  &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	}
+      }
+
+      ## Give the warning about the output prefix
+      if ($main::verbose >= 1) {
+	&RSAT::message::Info("Matrix-specific matrix output directory", $dir{matrix_output});
+	&RSAT::message::Info("Matrix-specific matrix log file", $outfile{matrix_log});
+	&RSAT::message::Info("Matrix-specific matrix synthesis file", $outfile{matrix_synthesis});
+      }
+
     }
 
     ################################################################
     ## Close output stream
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
     print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-    close $main::out if ($main::outfile{prefix});
-    
-    
-    
+    close $main::out if ($main::prefix{main});
 
-    ################################################################
-    ###### Clean some temporary files
-
-    if ($tasks{clean}) {
-      ## Remove the single permuted matrix files (all matrices are stored in another file)
-	if(defined($perm_nb_max)){
-	    for my $i (1..$perm_nb_max) {
-		my $perm_file = $outfile{'matrix_perm_col_'.$i};
-		if ($perm_file) {
-		    my $clean_cmd = "rm -f ".$perm_file;
-		    &doit($clean_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-		}
-	    }
-	}
-
-      ## Remove the files containing theoretical distribution computed from partial matrices
-      if (scalar(@partial_matrix_files) > 0) {
-	my $clean_partial_cmd = "rm -f ";
-	$clean_partial_cmd .= join (" ", @partial_matrix_files);
-	&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-      }
-
-      ## Remove the files containing the partial matrices
-      if (scalar(@th_distrib_files) > 0) {
-	my $clean_partial_cmd = "rm -f ";
-	$clean_partial_cmd .= join (" ", @th_distrib_files);
-	&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-      }
-
-      ## Remove the temporary distribution files
-      if (scalar(@temporary_distrib_files) > 0) {
-    	my $clean_partial_cmd = "rm -f ";
-    	$clean_partial_cmd .= join (" ", @temporary_distrib_files);
-    	&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-      }
-    }
+    &CloseGeneralHTMLReport($outfile{synthesis});
 
     ## Give the warning about the output prefix
     if ($main::verbose >= 1) {
-      &RSAT::message::Info("Output directory", $dir{output});
-      &RSAT::message::Info("Log file", $outfile{log});
-      &RSAT::message::Info("Synthesis file", $outfile{synthesis});
+      &RSAT::message::Info("Main output directory", $dir{output});
+      &RSAT::message::Info("Main log file", $outfile{log});
+      &RSAT::message::Info("Main synthesis file", $outfile{synthesis});
     }
 
     exit(0);
@@ -926,7 +1061,26 @@ If the file includes several matrices, it will only take the first one.
 	  $main::infile{matrix_sites} = shift(@arguments);
 #	  push @seq_types, 'matrix_sites';
 
-	    ## Matrix format
+
+=pod
+
+=item B<-top top_matrices>
+
+Maximal number of matrices to analyze.
+
+Some input formats can contain several matrices in a single file
+(e.g. transfac, consensus, meme, MotifSampler). By default, all the
+matrices are parsed and exported. The option -top allows to restrict
+the number of matrices to be exported.
+
+
+=cut
+
+	} elsif ($arg eq "-top") {
+	    $top_matrices = shift(@arguments);
+	    &RSAT::error::FatalError($top_matrices, "Invalid value for option -top. Must be a strictly positive Natural number")
+	      unless ((&IsNatural($top_matrices)) && ($top_matrices > 0));
+
 
 =pod
 
@@ -1223,7 +1377,7 @@ Scores of the positive sequence set.
 
 =cut
 	} elsif ($arg eq "-o") {
-	    $main::outfile{prefix} = shift(@arguments);
+	    $main::prefix{main} = shift(@arguments);
 
 	    ## Options for the graphs
 
@@ -1650,13 +1804,16 @@ sub CrossValidation {
     ## Build a partial matrix with the other sites
     my $partial_matrix_name = $matrix->get_attribute("name");
     $partial_matrix_name .= "_cv_".$group;
+  
     my $partial_matrix = new RSAT::matrix();
     $partial_matrix->init();
-    $partial_matrix->set_attribute("name", $partial_matrix_name);
-    $partial_matrix->set_attribute("number", $group);
+    $partial_matrix->force_attribute("name", $partial_matrix_name); #changed to force_attribute, set_attribute returned an error
+    $partial_matrix->force_attribute("number", $group); ; #changed to force_attribute, set_attribute returned an error
     $partial_matrix->set_attribute("ncol", $matrix_width);
     $partial_matrix->setAlphabet_lc(@alphabet);
+
 #    $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
+    &RSAT::message::Debug (" Cross validation "."partial matrix name:" .$partial_matrix_name ) if ($main::verbose >= 0) ;
     push @partial_matrices, $partial_matrix;
     for my $i (1..$n) {
       my $sites_nb = $i;
@@ -1672,27 +1829,28 @@ sub CrossValidation {
 	&RSAT::message::Debug("Partial matrix", "group=".$group."/".$k, "discarding site", $i, $site) if ($main::verbose >= 5);
       }
     }
+    
     $partial_matrix->treat_null_values();
     &RSAT::message::TimeWarn("Built partial matrix", $group."/".scalar(@sites)) if ($main::verbose >= 4);
 
 
     ## Print test site(s) in a file
-    my $test_sites_file = $outfile{prefix}."_test_sites_".$group.".fasta";
+    my $test_sites_file = $matrix_prefix{$matrix_name}."_test_sites_".$group.".fasta";
     $test_sites_handle = &OpenOutputFile($test_sites_file);
     print $test_sites_handle $test_sites_fasta;
     close $test_sites_handle;
 
-    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $test_sites_file, $test_sites_fasta) if ($main::verbose >= 5);
+    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $test_sites_file, $test_sites_fasta) if ($main::verbose >= 4);
 
     ## Save the partial matrix in a file
-    my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$group.".tab";
+    my $partial_matrix_file = $matrix_prefix{$matrix_name}."_partial_matrix_".$group.".tab";
     push @partial_matrix_files,  $partial_matrix_file;
     if ($main::verbose >= 1) {
-      my @partial_matrix_sites = $partial_matrix->get_attribute("sequences");
-      printf $main::out (";\t%s\t%d sites\t%s\n",
+	my @partial_matrix_sites = $partial_matrix->get_attribute("sequences");
+	printf $main::out (";\t%s\t%d sites\t%s\n",
 			 $partial_matrix_name,
-			 scalar(@partial_matrix_sites),
-			 $partial_matrix_file);
+			   scalar(@partial_matrix_sites),
+			   $partial_matrix_file);
     }
     my $partial_matrix_handle = &OpenOutputFile($partial_matrix_file);
     $tmp_verbose = $verbose;
@@ -1705,8 +1863,9 @@ sub CrossValidation {
     close $partial_matrix_handle;
     &RSAT::message::TimeWarn("Exported partial matrix to tab file", $partial_matrix_file) if ($main::verbose >= 5);
 
+
     ## Save the partial matrix in a separate file in TRANSFAC format, in order to get the sites together with the matrix
-#    my $partial_matrix_file_tf = $outfile{prefix}."_partial_matrix_".$group.".tf";
+#    my $partial_matrix_file_tf = $matrix_prefix{$matrix_name}."_partial_matrix_".$group.".tf";
 #    $partial_matrix_handle = &OpenOutputFile($partial_matrix_file_tf);
 #    $tmp_verbose = $verbose;
 #    $verbose = 0;
@@ -1792,12 +1951,13 @@ sub CalcSequenceDistrib {
   }
 
   ## Define the output file for the current sequence type
-  $main::outfile{'empirical_distrib_'.$seq_type} = $outfile{prefix}."_scan_".$seq_type."_score_distrib.tab"; 
+  $outfile{'empirical_distrib_'.$seq_type} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_score_distrib.tab"; 
 
   ## Add the file to the list for the comparison of distributions
   if ($index) {
     push @files_to_index, 'empirical_distrib_'.$seq_type;
-    push @main::distrib_files, $outfile{'empirical_distrib_'.$seq_type}; $main::file_nb{$seq_type} = scalar(@distrib_files);
+    &RSAT::message::Debug("Adding file to index ",  'empirical_distrib_'.$seq_type, $outfile{'empirical_distrib_'.$seq_type}  ) if ($main::verbose >= 15);
+    push @distrib_files, $outfile{'empirical_distrib_'.$seq_type}; $file_nb{$seq_type} = scalar(@distrib_files);
   }
 
 
@@ -1888,7 +2048,7 @@ sub AddSequenceDistribOptions_classfreq {
     ## in case matrix-scan scores need to be kept
     if ($main::export_hits) {
       ## store matrix-scan result in a file
-      my $seq_type_scores = $outfile{prefix}."_scan_".$seq_type."_scores.tab";
+      my $seq_type_scores = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_scores.tab";
       $main::outfile{$seq_type_scores} = $seq_type_scores;
       $matrix_scan_cmd .= " -o ".$main::outfile{$seq_type_scores};
       ## launch classfreq on this input file
@@ -1909,7 +2069,7 @@ sub ScanSequences {
   my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
 
   ## Define the output file fpor the current sequence type
-  $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type."_distrib_matrixscan.tab";
+  $main::outfile{$seq_type} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_distrib_matrixscan.tab";
 
   ## Scan the sequences if requested
   return unless  ($tasks{scan});
@@ -1948,7 +2108,7 @@ sub ScanSequences {
 sub ScoreDistrib {
   my ($seq_type, $Wmin, $Wmax) = @_;
 
-  $main::outfile{$seq_type."_distrib_tmp"} = $outfile{prefix}."_scan_".$seq_type."_distrib_tmp.tab";
+  $main::outfile{$seq_type."_distrib_tmp"} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_distrib_tmp.tab";
   my $classfreq_min = sprintf("%.${decimals}f", $Wmin);
   &RSAT::message::TimeWarn("Calculating score distribution for sequences of type",
 			   $seq_type,
@@ -1971,7 +2131,7 @@ sub ScoreDistrib {
   my @matrix_distrib = <$in_matrix_scan_distrib> ;
   close $in_matrix_scan_distrib;
   ## prepare the temporary score output
-  $main::outfile{$seq_type."_distrib_score_tmp"} = $outfile{prefix}."_scan_".$seq_type."_distrib_score_tmp.tab";
+  $main::outfile{$seq_type."_distrib_score_tmp"} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_distrib_score_tmp.tab";
   $distrib_score_handle = &OpenOutputFile($main::outfile{$seq_type."_distrib_score_tmp"});
 
   my @matrix_scan_scores = ();
@@ -2008,7 +2168,7 @@ sub ScoreDistrib {
   push (@temporary_distrib_files,  $main::outfile{$seq_type."_distrib_tmp"});
 
   ## prepare the complete distribution output
-  $main::outfile{$seq_type."_distrib"} = $outfile{prefix}."_scan_".$seq_type."_distrib.tab";	
+  $main::outfile{$seq_type."_distrib"} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_distrib.tab";	
 
   my $classfreq_cmd = $SCRIPTS."/classfreq -v 1 ";
   $classfreq_cmd .= " -i ".$main::outfile{$seq_type."_distrib_score_tmp"};
@@ -2047,6 +2207,26 @@ sub ExportTabMatrix {
 
 
 ################################################################
+## Export the matrix in transfac format. This will be used
+## for permuting the matrix.
+sub ExportTransfacMatrix {
+  my ($matrix) = @_;
+
+  &RSAT::message::TimeWarn("Exporting matrix in transfac format",  $outfile{matrix_transfac})
+    if ($main::verbose >= 1);
+
+  my $verbose_bk = $verbose;
+  $verbose = 0;
+  $matrix_handle = &OpenOutputFile($main::outfile{matrix_transfac});
+  print $matrix_handle $matrix->toString(type=>"counts",
+					 format=>"transfac",
+					);
+  close $matrix_handle;
+  $verbose = $verbose_bk;
+}
+
+
+################################################################
 ## Export the matrix in tab-delimited format with additional
 ## information + the logos.
 sub ExportMatrixInfo {
@@ -2056,8 +2236,7 @@ sub ExportMatrixInfo {
   &RSAT::message::TimeWarn("Exporting matrix information",  $outfile{matrix_info})
     if ($main::verbose >= 1);
   my $cmd = $SCRIPTS."/convert-matrix -v 1";
-  $cmd .= " -i ".$matrix_file;
-  $cmd .= " -from ".$matrix_format;
+  $cmd .= " -from transfac -i ".$main::outfile{matrix_transfac};
   $cmd .= " -to tab -o ".$outfile{matrix_info};
   $cmd .= " -bgfile ".$outfile{bg_file_inclusive};
   $cmd .= " -bg_format inclusive";
@@ -2097,7 +2276,7 @@ sub ExportMatrixInfo {
 ## for permuting the matrix.
 sub PermuteMatrixColumns {
   ## Define the permutation number for each sequence type and the max permutation number
-  foreach my $seq_type (@seq_types) {
+  foreach my $seq_type (@local_seq_types) {
     unless (defined($perm_nb{$seq_type})) {
       $perm_nb{$seq_type} = 0;
       }
@@ -2112,21 +2291,21 @@ sub PermuteMatrixColumns {
 
   ## Define the names of the column-permuted matrices (required for the index)
   for my $i (1..$perm_nb_max) {
-    $outfile{'matrix_perm_col_'.$i} = $outfile{prefix}."_matrix_perm_col_".$i.".tab";
+    $outfile{'matrix_perm_col_'.$i} = $matrix_prefix{$matrix_name}."_matrix_perm_col_".$i.".tab";
   }
 
   ## Define file names for sequence type-specific permuted matrices
   ## (each sequence type can have its particular number of
   ## permutations)
   print $main::out "; Sequence sets (name, permutations, file)";
-  foreach my $seq_type (@seq_types) {
+  foreach my $seq_type (@local_seq_types) {
 #    &RSAT::message::Debug("Defining file names for column-permuted matrices",
 #			  "seq_type=".$seq_type,
 #			  "perm_nb=".$perm_nb{$seq_type},
 #			 ) if ($main::verbose >= 5);
 
     print $main::out join("\t", ";", $seq_type, $perm_nb{$seq_type}, $seqfile{$seq_type}), "\n";
-    $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'} = $outfile{prefix}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
+    $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'} = $matrix_prefix{$matrix_name}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
     push @files_to_index, 'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm' if ($perm_nb{$seq_type} > 0);
   }
 
@@ -2134,8 +2313,8 @@ sub PermuteMatrixColumns {
 
     ## Remove previous version of the column-permuted matrix files
     ## before appending the new permuted columns
-    foreach my $seq_type (@seq_types) {
-      #    $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'} = $outfile{prefix}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
+    foreach my $seq_type (@local_seq_types) {
+      #    $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'} = $matrix_prefix{$matrix_name}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
       $init_matrix_cmd = "rm -f ".$outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'};
       &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
     }
@@ -2144,7 +2323,7 @@ sub PermuteMatrixColumns {
     for my $i (1..$perm_nb_max) {
 
       ## Perform one column permutation
-#      $outfile{'matrix_perm_col_'.$i} = $outfile{prefix}."_matrix_perm_col_".$i.".tab";
+#      $outfile{'matrix_perm_col_'.$i} = $matrix_prefix{$matrix_name}."_matrix_perm_col_".$i.".tab";
       my $permute_matrix_cmd = $SCRIPTS."/permute-table -rownames -entire_col";
       $permute_matrix_cmd .= " -i ".$outfile{matrix_tab};
       $permute_matrix_cmd .= " -o ".$outfile{'matrix_perm_col_'.$i};
@@ -2170,7 +2349,7 @@ sub PermuteMatrixColumns {
 sub CompareDistrib {
   my ($score_column, @distrib_files) = @_;
 
-  $outfile{distrib_compa} = $outfile{prefix}."_score_distrib_compa";
+  $outfile{distrib_compa} = $matrix_prefix{$matrix_name}."_score_distrib_compa";
 
   if ($tasks{compare}) {
     &RSAT::message::TimeWarn("Comparing score distributions",  $outfile{distrib_compa})
@@ -2184,13 +2363,14 @@ sub CompareDistrib {
     $distrib_compa_cmd .= " -numeric";
     $distrib_compa_cmd .= " -sc1 4"; # score column for the theoretical distribution
     $distrib_compa_cmd .= " -sc ".$score_column; # score column for the observed distributions
-    $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_scan_";
-    $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
+    $distrib_compa_cmd .= " -suppress ".$matrix_prefix{$matrix_name}."_scan_";
+    $distrib_compa_cmd .= " -suppress ".$matrix_prefix{$matrix_name}."_";
     $distrib_compa_cmd .= " -suppress _score_distrib.tab";
     $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
     $distrib_compa_cmd .= " -files ";
-    $distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @distrib_files);
+    $distrib_compa_cmd .= join(" ", $outfile{'matrix_theoretical_distrib'}, @distrib_files);
     &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 0);
   }
 
   if ($tasks{graphs}) {
@@ -2207,7 +2387,7 @@ sub CompareDistrib {
 
       ## Alternative options for the large graphs and for the icons, respectively
       my $large_graph_options = " -title1 '".$matrix_name."'";
-#      $large_graph_options .= " -title2 ".$outfile{prefix};
+#      $large_graph_options .= " -title2 ".$matrix_prefix{$matrix_name};
       $large_graph_options .= " -legend ";
       $large_graph_options .= " -xsize 800 -ysize 400 ";
       $large_graph_options .= " -xleg1 'matrix score' ";
@@ -2342,18 +2522,18 @@ sub CompareDistrib {
       unless ($no_cv) {
 	if ($tasks{theor_cv}) {
 
-	  $outfile{th_distrib_compa} = $outfile{prefix}."_theoretical_score_distrib_compa";
+	  $outfile{th_distrib_compa} = $matrix_prefix{$matrix_name}."_theoretical_score_distrib_compa";
 
 	  ################################################################
 	  ## Compare the theoretical distributions
 	  my $distrib_compa_cmd = $SCRIPTS."/compare-scores ";
 	  $distrib_compa_cmd .= " -numeric";
 	  $distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
-	  $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
+	  $distrib_compa_cmd .= " -suppress ".$matrix_prefix{$matrix_name}."_";
 	  $distrib_compa_cmd .= " -suppress .tab";
 	  $distrib_compa_cmd .= " -o ".$outfile{th_distrib_compa}.".tab";
 	  $distrib_compa_cmd .= " -files ";
-	  $distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @th_distrib_files);
+	  $distrib_compa_cmd .= join(" ", $outfile{'matrix_theoretical_distrib'}, @th_distrib_files);
 	  &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
 	  ################################################################
@@ -2423,7 +2603,8 @@ sub CalcTheorScoreDistribution {
 
 sub Calculate_NWD {
     my ($m_width, $comp_distrib_file)= @_; 
-    $outfile{distrib_nwd} = $outfile{prefix}."_score_distrib_".$main::nwd_seq_type."_nwd.tab"; push @files_to_index, "distrib_nwd";
+    $outfile{distrib_nwd} = $matrix_prefix{$matrix_name}."_score_distrib_".$main::nwd_seq_type."_nwd.tab"; push @files_to_index, "distrib_nwd";
+    &RSAT::message::Debug("Adding file to index ", "distrib_nwd",  $matrix_prefix{$matrix_name}."_score_distrib_".$main::nwd_seq_type."_nwd.tab") if ($main::verbose >= 15);
     $main::out_nwd = &OpenOutputFile($outfile{distrib_nwd});
     #die "width " . $m_width. "file " . $comp_distrib_file;
     my $dists;
@@ -2635,9 +2816,9 @@ sub PostVerbose {
     }
   }
 
-  if (scalar(@seq_types) > 0) {
+  if (scalar(@local_seq_types) > 0) {
     print $main::out "; Matrix permutations per sequence type\n";
-    foreach my $seq_type (@seq_types) {
+    foreach my $seq_type (@local_seq_types) {
       printf $main::out ";\t%-21s\t%d\n", $seq_type , $perm_nb{$seq_type};
     }
   }
@@ -2654,103 +2835,173 @@ sub PostVerbose {
 ################################################################
 ## Summarize results in a HTML report
 sub GenerateHTMLReport {
-
+    local $synthesis_per_matrix_file=$_[0];
+    &RSAT::message::Debug("Generating report per matrix", $synthesis_per_matrix_file) if ($main::verbose >= 0);
+    
   ################################################################
   ## Open HTML outstream
-  $main::synthesis = &OpenOutputFile($outfile{synthesis});
-  print $main::synthesis "<html>\n";
-  print $main::synthesis "<head>\n";
-  print $main::synthesis "<title>matrix-quality result: ",$matrix_name,"</title>\n";
-  print $main::synthesis "</head>\n\n";
-  print $main::synthesis "<body>\n\n";
+  my $synthesis_per_matrix = &OpenOutputFile($synthesis_per_matrix_file);
+   
+  print $synthesis_per_matrix "<html>\n";
+  print $synthesis_per_matrix "<head>\n";
+  print $synthesis_per_matrix "<title>matrix-quality result: ",$matrix_name,"</title>\n";
+  print $synthesis_per_matrix "</head>\n\n";
+  print $synthesis_per_matrix "<body>\n\n";
 
   ## Print the command
-  print $main::synthesis "<h1>matrix-quality result: ", $main::html_title,"</h1>\n\n";
-  print $main::synthesis "<b>Command:</b>\n";
-  print $main::synthesis "<pre>matrix-quality ";
-  &PrintArguments($main::synthesis);
-  print $main::synthesis "</pre>";
-
-  ## Subroutines for indexing one image
-  sub index_one_image {
-    my ($image, @opts) = @_;
-    my $opt = (join " ", @opts);
-    my $short_image = &RSAT::util::ShortFileName($image);
-    #	my $image_format = "png";
-    #	print $main::synthesis "<a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a>\n\n";
-    print $main::synthesis "<a href='",$short_image,"'><img ".$opt." border=1 src='",$short_image, "'></a>\n\n";
-  }
-
-  ## Subroutines for indexing one file in the lin table
-  sub index_one_file {
-    my ($description, $file) = @_;
-    print $main::synthesis "<tr>";
-    print $main::synthesis "<td>", $description,"</td>\n";
-    if ($file) {
-      if (-e ($file)) {
-	my ($link, $shared_path) = &RSAT::util::RelativePath($outfile{synthesis}, $file);
-	#	  my $short_file = &RSAT::util::ShortFileName($file);
-	print $main::synthesis "<td><a href='",$link,"'>", $link,"</a></td>\n";
-	&RSAT::message::Debug("Indexing one file", $description, $file, $link, $shared_path) if ($main::verbose >= 5);
-      } else {
-	print $main::synthesis "<td><font color='red'>Missing file: </font>".$file."</a></td>\n";
-      }
-    } else {
-      print $main::synthesis "<td>Undefined</td>\n";
-    }
-
-    print $main::synthesis "</tr>\n\n";
-  }
+  print $synthesis_per_matrix "<h1>matrix-quality result: ", $local_html_title,"</h1>\n\n";
+  print $synthesis_per_matrix "<b>Command:</b>\n";
+  print $synthesis_per_matrix "<pre>matrix-quality ";
+  &PrintArguments($synthesis_per_matrix);
+  print $synthesis_per_matrix "</pre>";
 
 
   ## Display the distributions
-  print $main::synthesis "\n<h3>Figures</h3>\n";
-  print $main::synthesis "\n<h4>Matrix logo</h4>\n";
-  &index_one_image($outfile{matrix_logo_png}, 'height=120');
-  &index_one_image($outfile{matrix_logo_rc_png}, 'height=120');
-  print $main::synthesis "\n<h4>Decreasing cumulative distributions (dCDF)</h4>\n";
-  &index_one_image($outfile{distrib_compa}.".png");
-  print $main::synthesis "\n<h4>Decreasing cumulative distributions (dCDF), logarithmic Y axis</h4>\n";
-  &index_one_image($outfile{distrib_compa}."_logy".".png");
-  print $main::synthesis "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
-  &index_one_image($outfile{distrib_compa}."_roc_xlog".".png");
+  print $synthesis_per_matrix "\n<h3>Figures</h3>\n";
+  print $synthesis_per_matrix "\n<h4>Matrix logo</h4>\n";
+  &index_one_image($synthesis_per_matrix,$outfile{matrix_logo_png}, 'height=120');
+  &index_one_image($synthesis_per_matrix,$outfile{matrix_logo_rc_png}, 'height=120');
+  print $synthesis_per_matrix "\n<h4>Decreasing cumulative distributions (dCDF)</h4>\n";
+  &index_one_image($synthesis_per_matrix,$outfile{distrib_compa}.".png");
+  print $synthesis_per_matrix "\n<h4>Decreasing cumulative distributions (dCDF), logarithmic Y axis</h4>\n";
+  &index_one_image($synthesis_per_matrix,$outfile{distrib_compa}."_logy".".png");
+  print $synthesis_per_matrix "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
+  &index_one_image($synthesis_per_matrix,$outfile{distrib_compa}."_roc_xlog".".png");
 
   ## Type the matrix information
-  print $main::synthesis "\n<h3>Matrix information</h3>\n";
-  print $main::synthesis "<pre>\n";
-  print $main::synthesis `cat $outfile{matrix_info}`;
-  print $main::synthesis "</pre>\n";
+  print $synthesis_per_matrix "\n<h3>Matrix information</h3>\n";
+  print $synthesis_per_matrix "<pre>\n";
+  print $synthesis_per_matrix `cat $outfile{matrix_info}`;
+  print $synthesis_per_matrix "</pre>\n";
 
   ## List the output files
-  print $main::synthesis "\n<h3>Result files</h3>\n";
-  print $main::synthesis "<p><table border=1 cellpadding=3 cellpsacing=3>";
+  print $synthesis_per_matrix "\n<h3>Result files</h3>\n";
+  print $synthesis_per_matrix "<p><table border=1 cellpadding=3 cellpsacing=3>";
 
   ## Compress all the results in a zip archive
+  ## This will compress only the archives for one matrix
   if ($main::archive) {
-    $outfile{zip_archive} =$main::outfile{prefix}."_dir.zip"; push @files_to_index, "zip_archive";
-    $zip_command=" zip ".$outfile{zip_archive}."  ".$main::outfile{prefix}."* ";
+    $outfile{zip_archive} = $main::matrix_prefix{$matrix_name}."_dir.zip"; push @files_to_index, "zip_archive";
+    &RSAT::message::Debug("Adding file to index ", "zip_archive",  $main::prefix{main}."_dir.zip") if ($main::verbose >= 15);
+    $zip_command=" zip ".$outfile{zip_archive}."  ". $main::matrix_prefix{$matrix_name}."* ";
     &doit($zip_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     #	&index_one_file("Output directory",$outfile{zip_archive} );
   }
   #      } else{
 
-  &index_one_file("Output directory", $dir{output});
+  &index_one_file($synthesis_per_matrix,$synthesis_per_matrix_file,"Output directory",  $dir{matrix_output});
 
   foreach my $key (@files_to_index) {
-      &RSAT::message::Debug("Indexing file ",$key, $outfile{$key}) if ($main::verbose >= 10); 
-    &index_one_file($key, $outfile{$key});
+      &RSAT::message::Debug("Indexing file ",$key, $outfile{$key}) if ($main::verbose >= 15); 
+    &index_one_file($synthesis_per_matrix,$synthesis_per_matrix_file,$key, $outfile{$key});
   }
 
-  foreach my $seq_type (@seq_types) {
-    &index_one_file($seq_type, $outfile{'empirical_distrib_'.$seq_type});
-  }
+  # foreach my $seq_type (@local_seq_types) {
+  #   &index_one_file($synthesis_per_matrix,$seq_type, $outfile{'empirical_distrib_'.$seq_type});
+  # }
 
-  &index_one_file("Log file", $outfile{log});
-  print $main::synthesis "</table>";
+  # &index_one_file( $synthesis_per_matrix,"Log file", $outfile{matrix_log});
+  # print $synthesis_per_matrix "</table>";
 
   ## Close the index file
-  print $main::synthesis "</body></html>\n";
-  close $main::synthesis;
+  print $synthesis_per_matrix "</body></html>\n";
+  close $synthesis_per_matrix;
+   # print "Finishing one index"; <STDIN>;
+    
+}
+
+## Subroutines for indexing one image
+sub index_one_image {
+    my ($html_file_h, $image, @opts) = @_;
+    my $opt = (join " ", @opts);
+    my $short_image = &RSAT::util::ShortFileName($image);
+    #	my $image_format = "png";
+    #	print $synthesis_per_matrix "<a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a>\n\n";
+    print $html_file_h "<a href='",$short_image,"'><img ".$opt." border=1 src='",$short_image, "'></a>\n\n";
+}
+
+## Subroutines for indexing one file in the lin table
+sub index_one_file {
+    my ( $html_file_h, $html_file_name, $description, $file) = @_;
+    print $html_file_h "<tr>";
+    print $html_file_h "<td>", $description,"</td>\n";
+    if ($file) {
+	if (-e ($file)) {
+	    my ($link, $shared_path) = &RSAT::util::RelativePath($html_file_name, $file);
+	    #	  my $short_file = &RSAT::util::ShortFileName($file);
+	    print $html_file_h "<td><a href='",$link,"'>", $link,"</a></td>\n";
+	    &RSAT::message::Debug("Indexing one file", $description, $file, $link, $shared_path) if ($main::verbose >= 5);
+	} else {
+	    print $html_file_h "<td><font color='red'>Missing file: </font>".$file."</a></td>\n";
+	}
+    } else {
+	print $html_file_h "<td>Undefined</td>\n";
+    }
+    print $html_file_h "</tr>\n\n";
+}
+
+
+sub OpenGeneralHTMLReport{
+    my $synthesis_general_file=$_[0];
+    &RSAT::message::Debug("Generating report per matrix", $synthesis_general_file) if ($main::verbose >= 3);
+    ################################################################
+    ## Open HTML outstream
+    $synthesis_general = &OpenOutputFile($synthesis_general_file);
+    
+    print $synthesis_general "<html>\n";
+    print $synthesis_general "<head>\n";
+    print $synthesis_general "<title>matrix-quality result</title>\n";
+    print $synthesis_general "</head>\n\n";
+    print $synthesis_general "<body>\n\n";
+    
+    ## Print the command
+    print $synthesis_general "<h1>matrix-quality result: ", $main::html_title,"</h1>\n\n";
+    print $synthesis_general "<b>Command:</b>\n";
+    print $synthesis_general "<pre>matrix-quality ";
+    &PrintArguments($synthesis_general);
+    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
+    print  $synthesis_general "<tr>";
+    print  $synthesis_general "<th>Matrix name</th>" ;
+    print  $synthesis_general "<th>Logo</th>";
+    print  $synthesis_general "<th>HTML report</th>" ;
+
+}
+
+sub CloseGeneralHTMLReport{
+    my $synthesis_general_file=$_[0];
+    print  $synthesis_general   "</table>";
+    print $synthesis_general "</pre>";
+    ## Close the index file
+    print $synthesis_general "</body></html>\n";
+    close $synthesis_general;   
+}
+
+sub Add_info_to_GeneralHTML_Report{
+    print $synthesis_general "<tr>" ;
+    print $synthesis_general "<td>".$matrix_name."</td>" ;
+    
+    ################
+    #index logo
+    if (-e $outfile{matrix_logo_png}){
+	my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis}, $outfile{matrix_logo_png});
+	print $synthesis_general  "<td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n"."</td>";
+	&RSAT::message::Debug("Indexing one file to general report",$matrix_name,"Logo",   $outfile{matrix_logo_png}, $link, $shared_path) if ($main::verbose >= 5);
+    } else {
+	print $synthesis_general "<td><font color='red'>Missing file: </font>".$outfile{matrix_synthesis}."</a></td>\n";
+    }
+
+    ################
+    #index report html link
+    if (-e $outfile{matrix_synthesis}){
+	my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis}, $outfile{matrix_synthesis});
+	print $synthesis_general  "<td><a href='",$link,"'>", "report","</a></td>\n";
+	&RSAT::message::Debug("Indexing one file to general report",$matrix_name,"report",  $outfile{matrix_synthesis}, $link, $shared_path) if ($main::verbose >= 5);
+    } else {
+	print $synthesis_general "<td><font color='red'>Missing file: </font>".$outfile{matrix_synthesis}."</a></td>\n";
+    }
+    
+    print  $synthesis_general "</tr>";
+
 }
 
 __END__
