@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.196 2011/10/28 06:16:46 jvanheld Exp $
+# $Id: peak-motifs,v 1.197 2011/11/03 11:02:12 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.196 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.197 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -284,13 +284,14 @@ package main;
       ## Sequence composition
       &CompositionProfiles($seq_type);
 
-      ## Build background models from control sequences
-      if (($main::infile{ctrl_seq})) {
-	&ComputeBgModels($main::infile{ctrl_seq});
-      }
-
     }
   }
+
+  ## Build background models from control sequences
+  if (($main::infile{ctrl_seq})) {
+    &ComputeBgModels($main::infile{ctrl_seq});
+  }
+
 
   &SynthesisSequenceComposition() if ($progressive_synthesis);
 
