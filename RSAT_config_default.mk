@@ -17,4 +17,6 @@ QUEUE_MANAGER=sge
 ## Name of the queue where the jobs have to be sent
 QUEUE=
 
+## Email address of RSAT administrator
+RSAT_ADMIN_EMAIL=your.address@your.domain
 
