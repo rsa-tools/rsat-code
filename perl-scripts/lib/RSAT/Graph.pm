@@ -336,9 +336,9 @@ sub to_dot {
 
 =item B<to_gdl()>
 
-Return the graph in gdl (Graph Data Linker) format.  This is an XML
-description of the graph object used by the Snow system
-(http://www.scmbb.ulb.ac.be/biomaze/).
+Return the graph in gdl (Graph Data Linker) format.  This was an XML
+description of the graph object used by the Snow system. It is now
+obsolete, since the Snow team has stopped activities in 2008.
 
 =cut
 sub to_gdl {
@@ -347,7 +347,6 @@ sub to_gdl {
   my ($self) = @_;
   my $gdl = "";
   &RSAT::message::TimeWarn("Exporting graph in GDL format") if ($main::verbose >= 0); 
-  
   return $gdl;
 }
 
