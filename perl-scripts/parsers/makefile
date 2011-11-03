@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: makefile,v 1.9 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: makefile,v 1.10 2011/11/03 03:27:54 jvanheld Exp $
 #
 # Time-stamp: <2002-12-23 15:49:11 jvanheld>
 #
@@ -147,15 +147,15 @@ parse_glaxo:
 
 ################################################################
 #
-# Synchronize the parsers between brol and SCMBB
+# Synchronize the parsers between brol and BIGRE
 #
-SCMB_PROGRAMS=jvanheld@${SERVER}:amaze_programs/
-SCMB_PARSER=${SCMB_PROGRAMS}/amaze_parser
-rsync_to_scmb:
-	${RSYNC} --delete --exclude SWISS --exclude swiss ${PARSER} ${SCMB_PROGRAMS}
+BIGRE_PROGRAMS=jvanheld@${SERVER}:amaze_programs/
+BIGRE_PARSER=${BIGRE_PROGRAMS}/amaze_parser
+rsync_to_bigre:
+	${RSYNC} --delete --exclude SWISS --exclude swiss ${PARSER} ${BIGRE_PROGRAMS}
 
-rsync_from_scmb:
-	rsync -uptvl ${SCMB_PARSER}/'*' . 
+rsync_from_bigre:
+	rsync -uptvl ${BIGRE_PARSER}/'*' . 
 
 ################################################################
 #
@@ -170,4 +170,4 @@ DELIVERY_DATE=`date +%Y%m%d`
 deliver:
 	${RSYNC} --delete							\
 		${PARSED_DATA}/${DELIVERY_DIR}/${DELIVERY_DATE}${SUFFIX}	\
-		${SCMB_PARSED_DATA}/${DELIVERY_DIR}
+		${BIGRE_PARSED_DATA}/${DELIVERY_DIR}
