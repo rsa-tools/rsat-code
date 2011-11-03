@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.30 2011/10/24 12:46:58 jvanheld Exp $
+# $Id: server.mk,v 1.31 2011/11/03 03:27:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -158,7 +158,7 @@ clean_tmp:
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Measuring disk usage after cleaning"
 	@echo "After cleaning	" `du -sh public_html/tmp`
-	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@bigre.ulb.ac.be
+	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' ${RSAT_ADMIN_EMAIL}
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Free disk after cleaning" 
