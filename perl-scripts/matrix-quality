@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.139 2011/11/01 18:26:25 amedina Exp $
+# $Id: matrix-quality,v 1.140 2011/11/04 22:37:05 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1813,7 +1813,7 @@ sub CrossValidation {
     $partial_matrix->setAlphabet_lc(@alphabet);
 
 #    $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
-    &RSAT::message::Debug (" Cross validation "."partial matrix name:" .$partial_matrix_name ) if ($main::verbose >= 1) ;
+    &RSAT::message::Debug (" Cross validation "."partial matrix name:" .$partial_matrix_name ) if ($main::verbose >= 10) ;
     push @partial_matrices, $partial_matrix;
     for my $i (1..$n) {
       my $sites_nb = $i;
