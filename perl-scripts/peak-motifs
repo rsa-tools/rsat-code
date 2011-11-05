@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.197 2011/11/03 11:02:12 jvanheld Exp $
+# $Id: peak-motifs,v 1.198 2011/11/05 11:24:24 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.197 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.198 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -498,7 +498,7 @@ sub DefaultParameters {
   $main::param{scan_sites_options} .= " -origin center -return sites";
 
   ## Options used for enrichment in matrix hits but not for site detection
-  $main::param{scan_enrich_min_score} = 0;
+  $main::param{scan_enrich_min_score} = -5;
   $main::param{scan_enrich_markov} = 2;
   $main::param{scan_enrich_options} = " -lth score ".$main::param{scan_enrich_min_score};
   $main::param{scan_enrich_options} .= " -bginput -markov ".$main::param{scan_enrich_markov};
@@ -1020,7 +1020,7 @@ sub SequenceLengths {
   ## Convert the genomic coordinates
   ## if these are embeded in the fasta headers
   if ($main::param{seq_source}) {
-    &RSAT::message::TimeWarn("Converting input fasta headers to BED file") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Converting fasta headers to BED file") if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/convert-features";
     $cmd .= " -from ".$main::param{seq_source}."_seq -i ".$infile{test_seq};
     $cmd .= " -to bed ";
@@ -1045,7 +1045,7 @@ sub CompositionProfiles {
   for my $ol (@profiles_oligo_lengths) {
 
     ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
-    ## from the input sequence
+    ## from the sequences
     $cmd = $BIN."/count-words -v 1";
     $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -l ".$ol;
@@ -1236,7 +1236,7 @@ sub OligoDiff {
     my $cmd = $SCRIPTS."/oligo-diff -v 3";
     $cmd .= " -test ".$main::outfile{"test_purged"};
     $cmd .= " -ctrl ".$main::outfile{"ctrl_purged"};
-    $cmd .= " -nopurge"; ## The input sequences have already been purged
+    $cmd .= " -nopurge"; ## The sequences have already been purged
     $cmd .= " -l ".$len;
     $cmd .= " ".$main::param{strand};
     $cmd .= " ".$main::param{disco_noov};
@@ -1412,7 +1412,7 @@ sub CalcMemeOptions {
   $meme_options = ""; ## Must be a global variable
   $meme_suffix = ""; ## Must be a global variable
 
-  ## input file
+  ## sequence file
   $meme_options .= " ".$main::outfile{"test_purged"};
 
   ## strands
@@ -1443,7 +1443,7 @@ sub CalcDremeOptions {
   $dreme_options = ""; ## Must be a global variable
   $dreme_suffix = ""; ## Must be a global variable
 
-  ## input file
+  ## sequence file
   $dreme_options .= " -p ".$main::outfile{"test_purged"};
 
   ## strands: there is apparently no strand option in the current release of DREME (MEME 4.6.1)
@@ -1592,9 +1592,9 @@ sub RefMotifs {
   ## Convert the reference motif to TRANSFAC format, because this
   ## format holds information about the motif name, ID etc.
   ##
-  ## The conversion is done even if input is TRANSFAC, because we need
-  ## to compute the IUPAC consensus and matrix parameters with our own
-  ## background model.
+  ## The conversion is done even if the matrices are in TRANSFAC,
+  ## because we need to compute the IUPAC consensus and matrix
+  ## parameters with our own background model.
 
 #  if ((lc($main::param{ref_motifs_format}) eq "transfac") ||
 #      (lc($main::param{ref_motifs_format}) eq "tf")) {
@@ -2198,7 +2198,7 @@ sub MatrixFromPatterns {
 
 
 ################################################################
-## Compute the profile of enrichment of the input peaks in hits
+## Compute the profile of enrichment of the test peaks in hits
 ## for a given matrix (reference or discovered motif)
 sub MotifEnrichment {
   my ($seq_file, $matrix_file, $out_file, $graph_file) = @_;
@@ -2308,8 +2308,8 @@ sub ScanSequences {
 
 
     ################################################################
-    ## Analyze enrichment of input sequences for the discovered motif
-    &RSAT::message::Debug("Estimating enrichment of input sequences for motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
+    ## Analyze enrichment of test sequences for the discovered motif
+    &RSAT::message::Debug("Estimating enrichment of test sequences for motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     &MotifEnrichment($main::outfile{"test_converted"}, $main::outfile{$motif_id."_tf"},
 		     $main::outfile{$motif_id.'_pssm_enrichment'},
 		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
@@ -2785,7 +2785,7 @@ sub SynthesisByMotif {
 	$browser_url .= "&hgt.customText=".$BED_URL;
 	$browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
 
-	&SyntheticTableAddRow_New("Predicted sites on input peaks",
+	&SyntheticTableAddRow_New("Predicted sites on test peaks",
 				  $table,
 				  "view in genome browser ", [$browser_url,,
 							     ],
@@ -2799,7 +2799,7 @@ sub SynthesisByMotif {
 						]
 				 );
       } else {			## without UCSC track
-	&SyntheticTableAddRow_New("Predicted sites on input peaks",
+	&SyntheticTableAddRow_New("Predicted sites on test peaks",
 				  $table,
 				  "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
 					   ],
@@ -3731,7 +3731,7 @@ specified length around the sequence center (from -msl/2 to +msl/2).
 
 =item B<-top_peaks N>
 
-Restrict the analysis to the N peaks at the top of the input sequence
+Restrict the analysis to the N peaks at the top of the test sequence
 file. Some peak calling programs return the peaks sorted by score. In
 such case, the -top_peaks option allows to restrict the analysis to
 the highest scoring peaks. In some cases, the top-scoring peaks might
@@ -3912,7 +3912,7 @@ By default, peak-motifs analyzes pairs of trinucleotides with
 any spacing between 0 and 20.
 
 The expected frequency of each dyad is estimated as the product of its
-monad frequencies in the input sequences (option -bg monads of
+monad frequencies in the sequences (option -bg monads of
 dyad-analysis).
 
 =item I<positions>
@@ -3937,8 +3937,8 @@ Run I<local-word-analysis> to detect locally over-represented
 oligonucleotides and dyads.
 
 The program I<local-word-analysis> (Matthieu Defrance,unpublished)
-tests the over-representation of each possible word (oligo, dyad)
-in positional windows in the input sequence set.
+tests the over-representation of each possible word (oligo, dyad) in
+positional windows in the sequence set.
 
 Two types of background models are supported: (i) Markov model of
 order m estimated locally (within the window under consideration; (ii)
@@ -3999,8 +3999,8 @@ Run all the default tasks.
 
 =item I<purge>
 
-Purge input sequences (test set and, if specified, control set) to
-mask redundant fragments before applying pattern discovey
+Purge sequences (test set and, if specified, control set) to mask
+redundant fragments before applying pattern discovey
 algorithms. Sequence purging is necessary because redundant fragments
 would violate the hypothesis of independence underlying the binomial
 significance test, resulting in a large number of false positive
@@ -4056,11 +4056,11 @@ selection of motif discovery algorithm(s).
 
 =item I<meme>
 
-Run the motif discovery program MEME on the input sequences.
+Run the motif discovery program MEME on the test sequences.
 
 B<Beware>: the complexity of MEME is quadratic: the computing time
 increases as the square of sequence size. It is thus not recommended
-to use MEME for data sets exceeding 1Mb. If the input set contains
+to use MEME for data sets exceeding 1Mb. If the sequence set contains
 many peaks, the option -task meme can be combined with a restriction
 on the number of top peaks to be considered (e.g. -top_peaks 500).
 
@@ -4130,7 +4130,7 @@ space.
 
 =item I<meme_bg>
 
-Compute meme background model from the input sequences.
+Compute meme background model from the test sequences.
 
 =back
 
@@ -4318,7 +4318,7 @@ sub CheckArguments {
   &RSAT::message::TimeWarn("Checking arguments") if ($main::verbose >= 2);
 
 
-  ## Input sequence file
+  ## Test sequence file
   if ($infile{test_seq}) {
     unless (-e $infile{test_seq}) {
       &FatalError("Test sequence file does not exist", $infile{test_seq});
@@ -4581,6 +4581,13 @@ J. (2008). Using RSAT to scan genome sequences for transcription
 factor binding sites and cis-regulatory modules. Nat Protoc 3,
 1578-88.
 
+=item I<matrix-quality>
+
+Medina-Rivera, A., Abreu-Goodger, C., Thomas-Chollier, M., Salgado,
+H., Collado-Vides, J. and van Helden, J. (2011). Theoretical and
+empirical quality assessment of transcription factor-binding
+motifs. Nucleic Acids Res 39, 808-24.
+
 =back
 
 =head1 SEE ALSO
@@ -4628,9 +4635,20 @@ Add a task to run Weeder on the peak sequences.
 
  weederlauncher.out input organism large S M T5
 
+=item B<matrix_quality>
+
+Run I<matrix-quality> to evaluate the enrichment of each discovered
+motif in the test sequences, by comparing its score distribution with
+the theoretical distribution. The motif-specific character of the
+enrichment is further assessed by computing score distribution with
+randomized matrices generated by permuting the columns of the
+discovered motif. A "good" motif should show a clear enrichment (more
+high-scoring hits than expected theoretically), whereas the
+column-permuted matrices should fit the theoretical distribution.
+
 =item B<all_oligos>
 
-Run oligo-analysis without any threshold in order to produce a plot of
+Run I<oligo-analysis> without any threshold in order to produce a plot of
 observed versus expected occurrences for all the
 oligonucleotides. This analysis is performed with the option
 -two_tails, which detects both under- and over-represented patterns.
