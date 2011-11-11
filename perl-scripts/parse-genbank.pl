@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.67 2011/02/17 05:07:46 rsat Exp $
+# $Id: parse-genbank.pl,v 1.68 2011/11/11 06:46:25 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -199,6 +199,17 @@ package main;
 		&RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the CHR_* subdirectories");
 	    }
 	}
+
+	## Remove alternative haplotypes (e.g. in Apis_mellifera).
+	my @noalt = ();
+	foreach my $file (@genbank_files) {
+	    if ($file =~ /_alt_/) {
+		&RSAT::message::Warning("Ignoring alternative haplotype file", $file);
+	    } else {
+		push @noalt, $file;
+	    }
+	}
+	@genbank_files = @noalt;
     }
 
     if ($#genbank_files < 0) {
