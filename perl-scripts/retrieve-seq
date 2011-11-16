@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.86 2011/10/06 14:18:06 rsat Exp $
+# $Id: retrieve-seq,v 1.87 2011/11/16 21:09:02 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -82,7 +82,6 @@ if ($organism_name) {
     &RSAT::error::FatalError("You must either specify an organism (-org), or an input sequence file (-seq)");
 }
 $organism->set_attribute("name", $organism_name);
-
 
 #### accepted feature types
 $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
