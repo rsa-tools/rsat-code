@@ -528,7 +528,7 @@ BIGRE=jvanheld@${SERVER}:${SERVER_DIR}
 TO_SYNC=data
 TO_SYNC_DIR=`dirname ${TO_SYNC}`
 RSYNC_CMD=${RSYNC} ${OPT} ${TO_SYNC} ${BIGRE}/${TO_SYNC_DIR}/
-to_scmbb:
+to_bigre:
 	@echo ${RSYNC_CMD}
 	@${RSYNC_CMD}
 
