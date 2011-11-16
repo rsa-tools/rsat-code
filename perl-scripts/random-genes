@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: random-genes,v 1.25 2011/02/17 04:54:49 rsat Exp $
+# $Id: random-genes,v 1.26 2011/11/16 21:08:06 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -28,11 +28,11 @@ local %outfile = ();
 local $verbose = 0;
 local $out = STDOUT;
 local $n = 0; #### number of genes to return
-local $repeat = 1; #### number of repetitions of the input families (with option -fam)
-local $groups = 1; #### number of gene families to return
-#local $infile{family} = "";
-local @families = ();
-local %family_count = ();
+local $repeat = 1; #### number of repetitions of the input groups (with option -fam)
+local $groups = 1; #### number of gene groups to return
+#local $infile{group} = "";
+local @groups = ();
+local %group_count = ();
 local $pairs = 0;
 local %accepted_feature_types = ();
 
@@ -58,32 +58,31 @@ $organism->LoadFeatures($annotation_table);
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
 
-##### read family file
-if ($infile{family}) {
-    ($fam) = &OpenInputFile($infile{family});
-    while (<$fam>) {
-	chomp;
-	next if (/^;/);
-	next if (/^\#/);
-	next unless (/\S/);
-	my ($gene, $family) = split "\t";
-	if ($family) {
-	    $n++;
-	    $family_count{$family}++;
-	}
+##### read group file
+if ($infile{group}) {
+  ($fam) = &OpenInputFile($infile{group});
+  while (<$fam>) {
+    chomp;
+    next if (/^;/);
+    next if (/^\#/);
+    next unless (/\S/);
+    my ($gene, $group) = split "\t";
+    if ($group) {
+      $n++;
+      $group_count{$group}++;
     }
-    close $fam;
-    @families = keys %family_count;
-
+  }
+  close $fam;
+  @groups = keys %group_count;
 
 } elsif ($groups >= 1) {
   for my $r (1..$groups) {
-      $family_count{"RAND".$r}=$n;
+    $group_count{"RAND".$r}=$n;
   } 
-  @families = keys %family_count;
+  @groups = keys %group_count;
 }
 # warn join ("\t", "genes: $n", 
-# 	   "families: ", scalar(@families)
+# 	   "groups: ", scalar(@groups)
 # 	   ), "\n";
 
 #### verbose 
@@ -98,30 +97,30 @@ if ($seed) { ### defined seed
 
 ###### print output ##
 ## number of digits for group suffix
-my $fam_digits = POSIX::ceil(log(scalar(@families)+1)/log(10));
+my $grp_digits = POSIX::ceil(log(scalar(@groups)+1)/log(10));
 
 ## number of digits for repeat suffix
 my $rep_digits = POSIX::ceil(log($repeat+1)/log(10));
-if ($#families > -1) {
-  for my $f (0..$#families) {
+if ($#groups > -1) {
+  for my $f (0..$#groups) {
     for my $r (1..$repeat) {
-      my $fam = $families[$f];
-      my $count = $family_count{$fam};
+      my $fam = $groups[$f];
+      my $count = $group_count{$fam};
 
-      $rand_family_name = "rand";
-      my $group_suffix = sprintf "%${fam_digits}d", $f+1;
+      $rand_group_name = "rand";
+      my $group_suffix = sprintf "%${grp_digits}d", $f+1;
       $group_suffix =~s/ /0/g;
-      $rand_family_name .= $group_suffix;
-#      $rand_family_name .= $f+1;
+      $rand_group_name .= $group_suffix;
+#      $rand_group_name .= $f+1;
       if ($repeat > 1) {
 	my $rep_suffix = sprintf "%${rep_digits}d", $r;
 	$rep_suffix =~s/ /0/g;
-	$rand_family_name .= "_rep".$rep_suffix;
-#	$rand_family_name .= ".".$r;
+	$rand_group_name .= "_rep".$rep_suffix;
+#	$rand_group_name .= ".".$r;
       }
       @random_orfs = $organism->SelectRandomGenes($count, $replace);
       foreach $orf (@random_orfs) {
-	print $out $orf, "\t", $rand_family_name. "\n";
+	print $out $orf, "\t", $rand_group_name. "\n";
       }
     } 
   }
@@ -151,7 +150,7 @@ exit(0);
 
 #### display full help message #
 sub PrintHelp {
-    $HELP_FAMILY_FILE = &help_message("class file");
+    $HELP_GROUP_FILE = &help_message("class file");
     open HELP, "| more";
     print HELP <<End_of_help;
 NAME
@@ -166,14 +165,14 @@ DESCRIPTION
 	There are several modes of utilization.
 
 	   (1) -n	returns random genes.
-           (2) -g       groups. Create a family file with g groups of n
+           (2) -g       groups. Create a group file with g groups of n
 			genes (n must be specified)
 	   (3) -pairs	returns random pairs of genes.
-	   (4) -fam	takes a family file (see multiple-family-analysis)
-			as input, and return another family file with
-			the same number of families, the same number
-			of random genes per family as in the input
-			file. This allows to deal with families of
+	   (4) -fam	takes a group file (see multiple-group-analysis)
+			as input, and return another group file with
+			the same number of groups, the same number
+			of random genes per group as in the input
+			file. This allows to deal with groups of
 			different sizes in the same file, and to
 			perform negative controls in exactly the same
 			conditions as the test.
@@ -205,29 +204,29 @@ OPTIONS
 
     Exporting g groups of n genes
 	-n #	number of random genes to return
-	-g #	groups (number of random families).
+	-g #	groups (number of random groups).
 
     Exporting pairs of genes
 	-pairs #
 		number of random pairs of genes to return. Each row of
 		the output contains two genes, separated by a tab.
 
-    Using a family file as template
-	-fam family file
+    Using a group file as template
+	-fam group file
 		A 2-column file containing gene names in the first
-		column and family (cluster) name in the second column.
-		(same format as for multiple-family-analysis).
+		column and group (cluster) name in the second column.
+		(same format as for multiple-group-analysis).
 		The program returns a file of the same size as the
 		input, where input genes have been substituted by 
 		random genes.
 	-repeat #
 		(requires the option -fam)
-		Number of repetitions for each input family. 
-		This option generates, for each input family, R output
+		Number of repetitions for each input group. 
+		This option generates, for each input group, R output
 		random gene selections of the same size.
 
 FILE FORMATS
-    $HELP_FAMILY_FILE
+    $HELP_GROUP_FILE
 End_of_help
   close HELP;
   exit;
@@ -248,9 +247,9 @@ random-genes options
 -feattype	accepted feature types. Supported: $supported_feature_types
 -replace	random selection with replacement
 -n		number of genes
--g #		groups (number of random families).
+-g #		groups (number of random groups).
 -pairs		number of pairs of genes
--fam		family file
+-fam		group file
 -repeat		number of repetitions (only with the option -fam)
 End_short_help
   close HELP;
@@ -304,9 +303,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-replace") {
 	    $replace = 1;
 	    
-	    ### family file 
+	    ### group file 
 	} elsif ($ARGV[$a] eq "-fam") {
-	    $infile{family} = $ARGV[$a+1];
+	    $infile{group} = $ARGV[$a+1];
 	    
 	    ### number of genes
 	} elsif ($ARGV[$a] eq "-n") {
@@ -330,7 +329,7 @@ sub ReadArguments {
 		&RSAT::error::FatalError("$groups\tInvalid number of groups. Should be a natural number.");
 	    }
 	    
-	    ### number of repetitions of the families from a family file (with the option -fam)
+	    ### number of repetitions of the groups from a group file (with the option -fam)
 	} elsif ($ARGV[$a] eq "-repeat") {
 	    $repeat = $ARGV[$a+1];
 	    unless (&IsNatural($repeat)) {
@@ -366,7 +365,7 @@ sub Verbose {
     }
 
     printf $out "; %-14s\t%s\n", "organism", $organism_name;
-    printf $out "; %-14s\t%d\n", "Number of families", scalar(@families) if ($infile{family});
+    printf $out "; %-14s\t%d\n", "Number of groups", scalar(@groups) if ($infile{group});
     printf $out "; %-14s\t%d\n", "Number of repetitions", $repeat if ($repeat > 1);
     printf $out "; %-14s\t%d\n", "Number of pairs", $pairs if ($pairs);
     printf $out "; %-14s\t%d\n", "Number of genes", $n;
