@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.199 2011/11/06 06:42:16 rsat Exp $
+# $Id: peak-motifs,v 1.200 2011/11/16 21:02:35 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.199 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.200 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1096,7 +1096,10 @@ sub CompositionProfiles {
     ## Draw a XY graph with composition profiles
     my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
     my $col_nb = 4**$ol + 1;
-    $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_".$seq_type."_profiles"}.' | '.$SCRIPTS.'/transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
+    $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_".$seq_type."_profiles"};
+    $cmd .= ' | cut -f 1,10-10000'; ## suppress columns preceding the position frequencies
+    $cmd .= ' | '.$SCRIPTS.'/transpose-table';
+#    $cmd .= ' | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -legend -lines -pointsize 0 -legend -header";
