@@ -137,10 +137,11 @@ sub number_with_zeros {
     if (defined($args{digits})) {
 	$digits = $args{digits};
     } elsif (defined($args{maxval})) {
-	$digits = POSIX::ceil(log($args{maxval})/log(10));
+	$digits = POSIX::ceil(log($args{maxval}+1)/log(10));
     } else {
 	&RSAT::error::FatalError("&RSAT::util::number_with_zeros()", "arguments must include either digist=>\$digits or maxval=>\$maxval")
     }
+#    &RSAT::message::Debug("&RSAT::util::number_with_zeros()", $digits) if ($main::verbose >= 10);
 
     &RSAT::error::FatalError("&RSAT::util::number_with_zeros()", $digits, "Invalid value for digit, should be Natural.")
 	unless (&IsNatural($digits));
