@@ -1387,7 +1387,7 @@ sub ChiSquare {
 		for my $col (1..($left_group-1)) {
 		    $left_obs += shift @observed;
 		    $left_exp += shift @expected;
-#		    warn join ("\t", "Grouping left tail", $left_group, $col, $left_obs, $left_exp), "\n" if ($verbose >= 10);
+#		    warn join ("\t", "Grouping left tail", $left_group, $col, $left_obs, $left_exp), "\n" if ($main::verbose >= 10);
 		}
 		$observed[0] += $left_obs;
 		$expected[0] += $left_exp;
@@ -1409,12 +1409,12 @@ sub ChiSquare {
 	    do {
 		$right_group++;
 		$right_sum += $expected[$col_nb -$right_group];
-		warn join ("\t", "Right group",
-			   $right_group, 
-			   $right_sum, 
-			   $col_nb, 
-			   $col_nb -$right_group, 
-			   $expected[$col_nb -$right_group]), "\n" if ($verbose >= 10);
+		&RSAT::message::Debug("Right group",
+				      $right_group,
+				      $right_sum,
+				      $col_nb, 
+				      $col_nb -$right_group,
+				      $expected[$col_nb -$right_group]) if ($main::verbose >= 10);
 	    } until (($right_group >= $col_nb) || 
 		     (($expected[$col_nb -$right_group -1] >= 5) && ($right_sum >= 5)));
 #	    } until ((($expected[$col_nb -$right_group -1] >= 5) || ($right_group >= $col_nb)) &&
@@ -1425,7 +1425,7 @@ sub ChiSquare {
 		for my $col (1..($right_group-1)) {
 		    $right_obs += pop @observed;
 		    $right_exp += pop @expected;
-		    warn join ("\t", "Grouping right tail", $right_group, $col, $right_obs, $right_exp), "\n" if ($verbose >= 10);
+		    &RSAT::message::Debug("Grouping right tail", $right_group, $col, $right_obs, $right_exp) if ($main::verbose >= 10);
 		}
 		$observed[$#observed] += $right_obs;
 		$expected[$#expected] += $right_exp;
@@ -1433,7 +1433,7 @@ sub ChiSquare {
 			   "sum=$right_sum",
 			   $observed[$#observed],
 			   $expected[$#expected],
-			  ), "\n" if ($main::verbose >= 6); 
+			  ), "\n" if ($main::verbose >= 6);
 	    }
 	    ## recalculate the number of columns after right grouping
 	    $col_nb = scalar(@expected);
