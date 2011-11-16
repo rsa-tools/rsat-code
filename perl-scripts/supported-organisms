@@ -135,7 +135,6 @@ if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newic
    print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $taxon, @return_fields); ## Export the table with header and absolute paths
 }
 
-
 ################################################################
 ## Report execution time and close output stream
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
