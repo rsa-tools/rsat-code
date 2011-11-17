@@ -185,6 +185,8 @@ sub RSA_header {
     $css_body_class = shift;
   }
 
+#    <link rel="stylesheet" type="text/css" href="main.css" media="screen,projection" />
+#    <link rel="stylesheet" type="text/css" href="print.css" media="print" />
 
 #  print &html_header();
   print $query->header();
@@ -204,7 +206,7 @@ sub RSA_header {
                                  ],
 			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
-                             		-media => 'screen' });
+                             		-media => 'screen,projection,print' });
   print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
 }
 
