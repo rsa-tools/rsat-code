@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.67 2011/10/28 06:15:47 jvanheld Exp $
+# $Id: footprint-discovery,v 1.68 2011/11/18 07:49:14 rsat Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.67 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.68 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -879,7 +879,7 @@ sub Verbose {
   } else {
     $header_verbose .= sprintf "; %-22s\t%s\n", "Reference taxon", $taxon;
   }
-  $header_verbose .= sprintf "; %s\n", "Promoters from predicted operon leader genes" if ($infer_operons);
+  $header_verbose .= sprintf "; %s\n", "Promoters from predicted operon leader genes (dist $dist_thr)" if ($infer_operons);
   if (scalar(@current_query_genes) == 1) {
     $header_verbose .= sprintf "; %-22s\t%s\n", "Query gene", $current_query_genes[0];
   } elsif (scalar(@current_query_genes) <= 10) {
@@ -887,6 +887,9 @@ sub Verbose {
   } else {
     $header_verbose .= sprintf "; %-22s\t%s\n", "Query genes", scalar(@current_query_genes);
   }
+  $header_verbose .= sprintf "; %s\n", "Skipping $skip first genes (option -skip)" if ($skip > 0);
+  $header_verbose .= sprintf "; %s\n", "Stopping after $last genes (option -last)" if ($last > 0);
+
   $header_verbose .= sprintf "; %-22s\t%s\n", "Background model", $bg_model;
   if ($filter) {
       $header_verbose .= sprintf "; %s\n", "Dyad filtering ON";
@@ -1113,14 +1116,13 @@ sub CoregulationNetwork {
 
 #######################################################################
 ## Returns the number of jobs running currently for the current user
-
 sub get_job_nb {
       my $batchuser = `whoami`;
       chomp $batchuser;
       my $jobnb = `qstat -u $batchuser | wc -l`;
       chomp $jobnb;
       $jobnb -= 2;
-      &RSAT::message::TimeWarn("$jobsnb are in the queue for user $batchuser") if ($main::verbose >= 4);
+      &RSAT::message::TimeWarn("$jobnb jobs in the queue for user $batchuser") if ($main::verbose >= 4);
       return $jobnb;
 }
 __END__
