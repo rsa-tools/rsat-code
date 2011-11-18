@@ -522,7 +522,7 @@ print "<br/>";
 
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
        "<b>Yes; sequences fetched from <a href=''>Galaxy</a></b>",
-       "(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
+       " (fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
 
 print "<br/>";
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes; use the following BED file.</b>");
