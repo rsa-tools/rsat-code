@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.68 2011/11/18 07:49:14 rsat Exp $
+# $Id: footprint-discovery,v 1.69 2011/11/18 10:27:23 rsat Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.68 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.69 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -594,7 +594,7 @@ sub RunFootprintDisco {
       $jobnb = &get_job_nb();
     }
     while ($jobnb > 2000) {
-      &RSAT::message::TimeWarn("Already $jobnb jobs on queue... waiting 30 seconds before submitting new jobs") if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Already $jobnb jobs on queue... waiting 30 seconds before submitting new jobs") if ($main::verbose >= 0);
       sleep(60);
       $jobnb = &get_job_nb();
     }
@@ -1119,7 +1119,7 @@ sub CoregulationNetwork {
 sub get_job_nb {
       my $batchuser = `whoami`;
       chomp $batchuser;
-      my $jobnb = `qstat -u $batchuser | wc -l`;
+      my $jobnb = `qstat -u $batchuser | grep -v ' C ' | wc -l`;
       chomp $jobnb;
       $jobnb -= 2;
       &RSAT::message::TimeWarn("$jobnb jobs in the queue for user $batchuser") if ($main::verbose >= 4);
