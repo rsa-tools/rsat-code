@@ -157,7 +157,7 @@ sub CheckFootprintParameters {
 
   ################################################################
   ## For generating matrix-wise synthesis we need gene names and description
-  if ($task{synthesis}) {
+  if (($task{synthesis}) || ($task{index})){
     &RSAT::message::TimeWarn("Loading features and calculating gene neighbours for organism", $organism_name) if ($main::verbose >= 2);
     $organism->LoadFeatures();
     $organism->CalcNeighbourLimits();
@@ -787,6 +787,11 @@ orhtologs (using I<dyad-analysis>).
 
 Draw feature maps showing the location of over-represented dyads in
 upstream sequences of promoters (using I<feature-map>).
+
+=item I<network>
+
+Infer a co-regulation network from the footprints, as described in
+Brohee et al. (2011).
 
 =item I<index>
 
