@@ -295,11 +295,14 @@ sub ReportExecutionTime {
   my $time_report;
   my $done_time = &AlphaDate();
   my $elapsed = times;
+  my $hostname = `hostname`;
+  chomp($hostname);
 
   ## Report the execution time string only if verbosity >= 1.
-  $time_report =  "; Job started\t".$start_time."\n";
-  $time_report .=  "; Job done\t".$done_time."\n";
-  $time_report .=  "; Seconds\t".$elapsed."\n";
+  $time_report  = "; Host name\t".$hostname."\n";
+  $time_report .= "; Job started\t".$start_time."\n";
+  $time_report .= "; Job done\t".$done_time."\n";
+  $time_report .= "; Seconds\t".$elapsed."\n";
 
   ## If specified in the server configuration, report task + execution
   ## time in log file.
