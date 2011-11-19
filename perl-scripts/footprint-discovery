@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.70 2011/11/19 07:22:39 rsat Exp $
+# $Id: footprint-discovery,v 1.71 2011/11/19 07:25:13 rsat Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.70 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.71 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -605,7 +605,6 @@ sub RunFootprintDisco {
   ################################################################
   ## Close query-specific output streams
   if ($main::verbose >= 1) {
-      print $out "; Host name\t", `hostname`;;
       my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
       print $out $query_exec_time;
   }
