@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.69 2011/11/18 10:27:23 rsat Exp $
+# $Id: footprint-discovery,v 1.70 2011/11/19 07:22:39 rsat Exp $
 #
 ############################################################
 
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.69 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.70 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -345,8 +345,9 @@ package main;
     ## Background model file
     $infile{bg_model} = $dir{bg_model}."/";
     $infile{bg_model} .= "dyads_3nt_sp0-20_upstream-noorf_org_list".$noov.$strands.".freq";
+#    dyads_3nt_sp0-20_upstream-noorf_Actinobacteria-noov-1str.freq.gz
     if ($task{bg_model}) {
-      my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3";
+      my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
       $cmd .= " -org_list ".$orglist_file;
       $cmd .= " > ".$infile{bg_model};
       &doit($cmd);
@@ -383,7 +384,7 @@ package main;
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
       if ($task{bg_model}) {
-	my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3";
+	my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
 	$cmd .= " -taxon ".$taxon;
 	$cmd .= " > ".$infile{bg_model};
 	&doit($cmd);
@@ -603,8 +604,11 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Close query-specific output streams
-  my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
-  print $out $query_exec_time if ($main::verbose >= 1);
+  if ($main::verbose >= 1) {
+      print $out "; Host name\t", `hostname`;;
+      my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
+      print $out $query_exec_time;
+  }
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
 
