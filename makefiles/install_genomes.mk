@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.42 2011/08/03 09:30:13 rsat Exp $
+# $Id: install_genomes.mk,v 1.43 2011/11/20 23:49:40 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -56,7 +56,7 @@ install_one_organism:
 	@${MAKE} one_install_command 
 
 ## Install a set of selected organuisms
-SELECTED_ORGANISMS=Mycoplasma_genitalium Escherichia_coli_K12
+SELECTED_ORGANISMS=Mycoplasma_genitalium_G37_uid57707 Escherichia_coli_K_12_substr__MG1655_uid57779
 install_selected_organisms:
 	@for org in ${SELECTED_ORGANISMS}; do				\
 		${MAKE} install_one_organism ORG=$${org};	\
@@ -67,7 +67,7 @@ one_install_command:
 #	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" 
 
 ### Prokaryote with a small genome for quick testing
-PRO=Mycoplasma_genitalium
+PRO=Mycoplasma_genitalium_G37_uid57707
 
 ### All the prokaryote in NCBI genome directory
 PROKARYOTES = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -u | xargs `
