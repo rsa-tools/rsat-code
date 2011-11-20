@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.72 2011/11/20 08:06:51 jvanheld Exp $
+# $Id: footprint-discovery,v 1.73 2011/11/20 09:02:37 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ Enterobacteriales.
  footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter  \
-		-to_matrix -bg_model taxfreq -q lexA
+		-bg_model taxfreq -q lexA
 
 =head2 Analysis of a few genes
 
@@ -68,7 +68,7 @@ Enterobacteriales.
  footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter  \
-		-to_matrix -bg_model taxfreq \
+		-bg_model taxfreq \
                 -sep_genes -q lexA -q recA -q uvrA
 
 Note the option -sep_genes indicating that the genes have to be
@@ -83,7 +83,7 @@ Iterate footprint discovery for each gene separately.
  footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter \
-		-to_matrix -bg_model taxfreq -all_genes -sep_genes
+		-bg_model taxfreq -all_genes -sep_genes
 
 
 =head1 INPUT FORMAT
@@ -223,7 +223,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -239,7 +239,7 @@ package main;
   local $filter = 1; ## Only report dyads present in the query promoter
   local $bg_model = "taxfreq"; ## Background model for motif discovery (Supported:taxfreq or monads)
   local $bgfile = 0;
-  local $to_matrix = 0;		## Convert assembled dyads into PSSM
+#  local $to_matrix = #;		## Convert assembled dyads into PSSM
   local %lth = (occ=>1,occ_sig=>0); ## Lower thresholds
   local %uth = (rank=>50);	    ## Upper thresholds
   local $strands = "-2str"; ## Strands for motif discovery and pattern matching
@@ -509,11 +509,12 @@ sub RunFootprintDisco {
   $outfile{dyads_html} = $outfile{dyad_prefix}.".html";
   $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
   $outfile{map} = $outfile{dyad_prefix}.".".${map_format};
-  if ($to_matrix) {
+#  if ($to_matrix) {
     $outfile{pssm_prefix} = $outfile{dyad_prefix}."_pssm";
     $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.tf";
-    $outfile{count_PSSM} = $outfile{pssm_prefix}."_count_matrices.txt";
-  }
+    $outfile{count_PSSM_txt} = $outfile{pssm_prefix}."_count_matrices.txt";
+    $outfile{count_PSSM_tf} = $outfile{pssm_prefix}."_count_matrices.tf";
+#  }
 
 
   ################################################################
@@ -536,7 +537,7 @@ sub RunFootprintDisco {
   foreach my $gene (@current_query_genes) {
     print $genes $gene, "\t", $organism_name, "\n";
   }
-  &IndexOneFile("genes", $outfile{genes});
+  &IndexOneFile("Query genes", $outfile{genes});
 
   ################################################################
   ## Print verbose
@@ -593,7 +594,7 @@ sub RunFootprintDisco {
     $cmd .= " -o ".$outfile{map};
     &one_command($cmd);
   }
-  &IndexOneFile("feature map", $outfile{map}, image=>1);
+  &IndexOneFile("Feature map", $outfile{map}, image=>1);
 
 
   ################################################################
@@ -770,17 +771,18 @@ fields.
     } elsif ($arg eq "-return") {
       push @dyad_return_fields, shift (@arguments);
 
-=pod
-
-=item B<-to_matrix>
-
-Convert assembled patterns into position-specific scoring matrices
-(PSSM).  Caution ! This conversion can take time if the sequence set
-is large and if there are many assemblies.
-
-=cut
-    } elsif ($arg eq "-to_matrix") {
-      $main::to_matrix = 1;
+# =pod
+#
+# =item B<-to_matrix>
+#
+# Convert assembled patterns into position-specific scoring matrices
+# (PSSM).  Caution ! This conversion can take time if the sequence set
+# is large and if there are many assemblies.
+#
+# =cut
+     } elsif ($arg eq "-to_matrix") {
+       &RSAT::message::Warning("The option -to_matrix is obsolete, dyads are now always converted to matrices");
+       #       $main::to_matrix = 1;
 
 
 	    ## Background model
@@ -984,7 +986,7 @@ sub DyadAnalysis {
 
     ################################################################
     ## Convert assembled dyads into a position-specific scoring matrix
-    if ($to_matrix) {
+#    if ($to_matrix) {
       &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 2);
       &CheckDependency("pssm", "asmb");
       &CheckDependency("pssm", "seq");
@@ -998,13 +1000,14 @@ sub DyadAnalysis {
       $cmd .= " -logo";
       $cmd .= " -o ".$outfile{pssm_prefix};
       &one_command($cmd);
-      &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM});
-      &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM});
-    }
+#    }
   }
-  &IndexOneFile("dyads", $outfile{dyads});
-  &IndexOneFile("dyads [htm]", $outfile{dyads_html});
-  &IndexOneFile("assembled dyads", $outfile{asmb});
+  &IndexOneFile("Dyads (tab format)", $outfile{dyads});
+  &IndexOneFile("<b>Dyads</b> (html format)", $outfile{dyads_html});
+  &IndexOneFile("Assembled dyads", $outfile{asmb});
+  &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
+  &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
+  &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
 }
 
 ################################################################
