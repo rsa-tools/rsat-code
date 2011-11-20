@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.89 2011/11/20 08:06:06 jvanheld Exp $
+# $Id: retrieve-seq,v 1.90 2011/11/20 23:30:38 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -196,8 +196,8 @@ if ($sequence_type eq "random fragments") {
 
 #### no overlapping with upstream orfs
 if ($noorf) {
-    &RSAT::message::TimeWarn("Calculating neighbour ORF limits") if ($verbose >= 1);
-    $organism->CalcNeighbourLimits();
+  &RSAT::message::TimeWarn("Calculating neighbour ORF limits") if ($verbose >= 1);
+  $organism->CalcNeighbourLimits();
 }
 
 ################################################################
@@ -327,16 +327,16 @@ foreach our $query (@queries) {
     ### upstream region
     if ($sequence_type eq "upstream") {
 	if ($noorf) {
-	    my $upstr_size = $current_feature->get_attribute("upstr_size");
-	    $current_from = &max(-$upstr_size, $from);
-	    &RSAT::message::Debug("upstream size",
-				  "ft:".$current_feature,
-				  "id:".$current_feature->get_attribute("id"),
-				  "size:".$current_feature->get_attribute("upstr_size"),
-				  "size:".$upstr_size,
-				  "limit".$current_feature->get_attribute("upstr_limit"),
-				  "current_from", $current_from)
-		if ($main::verbose >= 10);
+	  my $upstr_size = $current_feature->get_attribute("upstr_size");
+	  $current_from = &max(-$upstr_size, $from);
+	  &RSAT::message::Debug("upstream size",
+				"ft:".$current_feature,
+				"id:".$current_feature->get_attribute("id"),
+				"size:".$current_feature->get_attribute("upstr_size"),
+				"size:".$upstr_size,
+				"limit:".$current_feature->get_attribute("upstr_limit"),
+				"current_from", $current_from)
+	    if ($main::verbose >= 10);
 	}
 
 	if ($orf_strand eq "D") {
@@ -506,7 +506,7 @@ foreach our $query (@queries) {
       $current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
       #	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
     } else {
-      &RSAT::message::Warning($query, $id, "left limit (".$reg_left.")cannot be larger than right limit (".$reg_right.")");
+      &RSAT::message::Warning($query, $id, "left limit (".$reg_left.") cannot be larger than right limit (".$reg_right.")") if ($main::verbose >= 3);
       $current_seq = "";
     }
     $current_seq = uc($current_seq);
