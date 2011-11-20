@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.88 2011/11/20 08:00:15 jvanheld Exp $
+# $Id: retrieve-seq,v 1.89 2011/11/20 08:06:06 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -501,7 +501,7 @@ foreach our $query (@queries) {
 	  "reg_right: ".$reg_right,
 	  "reg_size: ".$reg_size,
 	 )
-	if ($main::verbose >= 0);
+	if ($main::verbose >= 4);
     if ($reg_left <= $reg_right) {
       $current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
       #	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);

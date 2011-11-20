@@ -145,7 +145,7 @@ sub get_sequence {
 			$to,
 			$strand,
 			$sequence)
-    if ($main::verbose >= 0);
+    if ($main::verbose >= 3);
 
   ################################################################
   ## Treat out-of-bonds cases
@@ -159,7 +159,7 @@ sub get_sequence {
 	until ($to >= 0) {
 	  $to += $self->get_length();
 	}
-	&RSAT::message::Warning("Negative coordinates converted to end coordinates", $from, $to) if ($main::verbose >= 0);
+	&RSAT::message::Warning("Negative coordinates converted to end coordinates", $from, $to) if ($main::verbose >= 3);
 	$sequence =  $self->get_sequence($from,$to);
       } else {
 	&RSAT::message::Warning("Cannot retrieve sub-sequence with negative limits for non-circular sequences", $self->get_id(), $from, $to);
