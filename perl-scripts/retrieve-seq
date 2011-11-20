@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.90 2011/11/20 23:30:38 jvanheld Exp $
+# $Id: retrieve-seq,v 1.91 2011/11/20 23:38:32 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -414,7 +414,7 @@ foreach our $query (@queries) {
 
     ## Comments to be added to the sequence
     ## Specific treatment of comments for the ft format
-    my $location = join (":", $organism_name, $ctg, $reg_left."-".$reg_right, $orf_strand);
+    my $location = join (":", $organism_name, $ctg, $reg_left.":".$reg_right, $orf_strand);
     my $feature_types = join(",", $organism->get_attribute("feature_types"));
     if ($out_format eq "ft") {
       my $ortho_label = join ("|", $current_id, $organism_name, $name);
