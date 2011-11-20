@@ -28,32 +28,32 @@ $strand = "D";
 my %fragments = ();
 my %fragments_per_seq = ();
 if ($fragment_file) {
-    ## Fragment file
-    if (($from ne $null) || ($to ne $null)) {
-	&RSAT::message::FatalError("The option -frag is incompatible with the options -from and -to");
-    }
-    my ($in, $input_dir) = &OpenInputFile($fragment_file);
-    my $l = 0;
-    while (<$in>) {
-	$l++;
-	chomp();
-	s/\r//;
-	next if (/^;/);
-	next if (/^#/);
-	next unless (/\S/);
-	my ($frag_id, $seq_id, $frag_from, $frag_to, $frag_strand) = split "\t";
-	push @{$fragments_per_seq{$seq_id}}, $frag_id;
-	$fragment{$frag_id}->{seq_id} = $seq_id;
-	$fragment{$frag_id}->{from} = $frag_from;
-	$fragment{$frag_id}->{to} = $frag_to;
-	$fragment{$frag_id}->{strand} = $frag_strand;
-    }
-    close $in;
+  ## Fragment file
+  if (($from ne $null) || ($to ne $null)) {
+    &RSAT::message::FatalError("The option -frag is incompatible with the options -from and -to");
+  }
+  my ($in, $input_dir) = &OpenInputFile($fragment_file);
+  my $l = 0;
+  while (<$in>) {
+    $l++;
+    chomp();
+    s/\r//;
+    next if (/^;/);
+    next if (/^#/);
+    next unless (/\S/);
+    my ($frag_id, $seq_id, $frag_from, $frag_to, $frag_strand) = split "\t";
+    push @{$fragments_per_seq{$seq_id}}, $frag_id;
+    $fragment{$frag_id}->{seq_id} = $seq_id;
+    $fragment{$frag_id}->{from} = $frag_from;
+    $fragment{$frag_id}->{to} = $frag_to;
+    $fragment{$frag_id}->{strand} = $frag_strand;
+  }
+  close $in;
 
 } else {
-    ## Same from and to for all the sequences
-    &RSAT::error::FatalError("You must specify the starting position (option -from)") if ($from eq $null);
-    &RSAT::error::FatalError("You must specify the ending position (option -to)") if ($to eq $null);
+  ## Same from and to for all the sequences
+  &RSAT::error::FatalError("You must specify the starting position (option -from)") if ($from eq $null);
+  &RSAT::error::FatalError("You must specify the ending position (option -to)") if ($to eq $null);
 }
 
 ### open input file ###
@@ -64,20 +64,20 @@ $out = &OpenOutputFile($outputfile);
 
 #### verbose ####
 if ($main::verbose >= 1) {
-    print $out "; sub-sequence result\n";
-    if ($inputfile ne "") {
-	print $out "; Input file	$inputfile\n";
-    }
-    if ($outputfile ne "") {
-	print $out "; Output file	$outputfile\n";
-    }
-    print $out "; Input format\t$in_format\n";
-    print $out "; Output format\t$out_format\n";
-    print $out "; From\t$from\n";
-    print $out "; To\t$to\n";
-    if ($strand eq "R") {
-	print $out "; Output is the reverse complement of input sequence\n";
-    }
+  print $out "; sub-sequence result\n";
+  if ($inputfile ne "") {
+    print $out "; Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out "; Output file	$outputfile\n";
+  }
+  print $out "; Input format\t$in_format\n";
+  print $out "; Output format\t$out_format\n";
+  print $out "; From\t$from\n";
+  print $out "; To\t$to\n";
+  if ($strand eq "R") {
+    print $out "; Output is the reverse complement of input sequence\n";
+  }
 }
 
 
@@ -85,25 +85,25 @@ if ($main::verbose >= 1) {
 ## Extract the sequence fragment
 while ((($current_seq, $seq_id) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
        (($current_seq ne "") || ($seq_id ne ""))) {
-    $current_seq =~ s/\s//g;
-    local $seq_len = length($current_seq);
-    
-    &RSAT::message::TimeWarn(join("\t", "Read sequence", $seq_id, $seq_len)) if ($main::verbose >= 2);
-    
-    if ($fragment_file) {
-	my $frag_list = $fragments_per_seq{$seq_id};
-	my @fragments = @$frag_list;
-	foreach my $frag_id (@fragments) {
-	    my $fragment = $fragment{$frag_id};
-	    my $frag_from = $fragment->{from};
-	    my $frag_to = $fragment->{to};
-	    my $frag_strand = $fragment->{strand};
-#	    &RSAT::message::Debug($seq_id, $frag_id, $frag_from, $frag_to, $frag_strand) if ($main::verbose >= 3);
-	    &OneFragment($frag_from, $frag_to, $frag_strand, $frag_id);
-	}
-    } else {
-	&OneFragment($from, $to, $strand, $seq_id);
+  $current_seq =~ s/\s//g;
+  local $seq_len = length($current_seq);
+
+  &RSAT::message::TimeWarn(join("\t", "Read sequence", $seq_id, $seq_len)) if ($main::verbose >= 2);
+
+  if ($fragment_file) {
+    my $frag_list = $fragments_per_seq{$seq_id};
+    my @fragments = @$frag_list;
+    foreach my $frag_id (@fragments) {
+      my $fragment = $fragment{$frag_id};
+      my $frag_from = $fragment->{from};
+      my $frag_to = $fragment->{to};
+      my $frag_strand = $fragment->{strand};
+      #	    &RSAT::message::Debug($seq_id, $frag_id, $frag_from, $frag_to, $frag_strand) if ($main::verbose >= 3);
+      &OneFragment($frag_from, $frag_to, $frag_strand, $frag_id);
     }
+  } else {
+    &OneFragment($from, $to, $strand, $seq_id);
+  }
 }
 
 ###### close input file ######
@@ -122,79 +122,93 @@ exit(0);
 ################################################################
 
 sub OneFragment {
-    my ($current_from, $current_to, $current_strand, $current_id) = @_;
+  my ($current_from, $current_to, $current_strand, $current_id) = @_;
 
-    ## Swap from and to if required
-    if ($current_from > $current_to) {
-	my $tmp = $current_from;
-	$current_from = $current_to;
-	$current_to = $tmp;
-    }
+  ## Swap from and to if required
+  if ($current_from > $current_to) {
+    my $tmp = $current_from;
+    $current_from = $current_to;
+    $current_to = $tmp;
+  }
 
-    ## Compute the origin
-    my $ref_pos = 0;
-    if ($origin eq "center") {
-	$ref_pos = &round(($seq_len+1)/2);
-    } elsif ($origin eq "end") {
-	$ref_pos = $seq_len + 1;
-    }
+  ## Compute the origin
+  my $ref_pos = 0;
+  if ($origin eq "center") {
+    $ref_pos = &round(($seq_len+1)/2);
+  } elsif ($origin eq "end") {
+    $ref_pos = $seq_len + 1;
+  }
 
-    ## Compute the from and end position for the current sequence
-    if ($current_from eq $null) {
-	$sequence_from eq 1;
+  ## Compute the from and end position for the current sequence
+  if ($current_from eq $null) {
+    $sequence_from eq 1;
+  } else {
+    $sequence_from = $ref_pos + $current_from;
+  }
+
+  if ($current_to eq $null) {
+    $sequence_to eq $seq_len;
+  } else {
+    $sequence_to = $ref_pos + $current_to;
+  }
+
+
+  my $sub_seq = "";
+  my $current_length;
+
+  ## Negative coordinates indicate the end of the sequence
+  ##
+  ## NOTE: not perfect, i don't treat the case where the absolute
+  ## value of the negative coordinates are larger than sequence length
+  ## (I should adapt this by taking the mod).
+  if ($current_from < 0) {
+    $sequence_from = $seq_len + $current_from + 1;
+    if ($current_to < 0) {
+      ## Both from and to are negative -> get fragment
+      $sequence_to = $seq_len + $current_to + 1;
+      $current_length = $current_to - $current_from + 1;
+      $sub_seq = substr($current_seq, $sequence_from -1, $current_length);
     } else {
-	$sequence_from = $ref_pos + $current_from;
+      ## Concatenate a piece of end fragment + a piece of start
+      ## fragment
+
+      ## Get the end fragment
+      $sub_seq = substr($current_seq, $sequence_from -1, $seq_len - $current_from + 1);
+
+      ## Get the start fragment
+      $sub_seq .= substr($current_seq, 0, $sequence_to);
+
+      $sequence_to = $current_to;
     }
-
-    if ($current_to eq $null) {
-	$sequence_to eq $seq_len;
-    } else {
-	$sequence_to = $ref_pos + $current_to;
-    }
-
-#    if ($current_from < 0) {
-#	$sequence_from = $seq_len + $current_from + 1;
-#    } else {
-#	$sequence_from = $current_from;
-#    }
-
-#     if ($current_to < 0) {
-# 	$sequence_to = $seq_len + $current_to + 1;
-#     } else {
-# 	$sequence_to = $current_to;
-#     }
-
-#    $sequence_from = &min($sequence_from, $seq_len);
-#    $sequence_to = &max($sequence_to, 1);
-
-
-    my $sub_seq = "";
-    my $current_length = 0;
+  } else {
     if (($sequence_from <= $seq_len) && ($sequence_to >= 1)){
-	## Check that the limits fall within the sequence
-	$sequence_from = &max($sequence_from, 1);
-	$sequence_to = &min($sequence_to, $seq_len);
-	$current_length = $sequence_to - $sequence_from + 1;
-	$sub_seq = substr($current_seq, $sequence_from -1, $current_length);
-#    } else {
-#	$sequence_from = $null;
-#	$sequence_to = $null;
+      ## Check that the limits fall within the sequence
+      $sequence_from = &max($sequence_from, 1);
+      $sequence_to = &min($sequence_to, $seq_len);
+      $current_length = $current_to - $current_from + 1;
+      $sub_seq = substr($current_seq, $sequence_from -1, $current_length);
+      #    } else {
+      #	$sequence_from = $null;
+      #	$sequence_to = $null;
+    } else {
+      &RSAT::message::Warning($current_id, $sequence_from.":".$sequence_to, "NOT TREATED");
     }
-    push @comments, join(" ", "sub-sequence from", $sequence_from, "to", $sequence_to, "seq_len=".$seq_len, "subseq_len=".$current_length);
-    if ($limits) {
-	$current_id .= "_".$current_from."_".$current_to;
-    }
+  }
+  $current_length = length($sub_seq);
+  push @comments, join(" ", "sub-seq", $current_from.":".$current_to, $sequence_from.":".$sequence_to, "seq_len=".$seq_len, "subseq_len=".$current_length);
+  if ($limits) {
+    $current_id .= "_".$current_from."_".$current_to;
+  }
 
-    if ($current_strand eq "R") {
-	$sub_seq = &ReverseComplement($sub_seq);
-    }
-    &RSAT::message::Debug("Fragment", $current_id, 
-			  "cfrom=".$current_from, "cto=".$current_to, 
-			  "sfrom=".$sequence_from, "sto=".$sequence_to, 
-			  "strand=".$current_strand, $out_format) if ($main::verbose >= 3);
-
-    &PrintNextSequence($out, $out_format, $line_width, $sub_seq, $current_id, @comments);
-    @comments = ();
+  if ($current_strand eq "R") {
+    $sub_seq = &ReverseComplement($sub_seq);
+  }
+  &RSAT::message::Debug("Fragment", $current_id, 
+			"cfrom=".$current_from, "cto=".$current_to, 
+			"sfrom=".$sequence_from, "sto=".$sequence_to, 
+			"strand=".$current_strand, $out_format) if ($main::verbose >= 3);
+  &PrintNextSequence($out, $out_format, $line_width, $sub_seq, $current_id, @comments);
+  @comments = ();
 }
 
 ################################################################
