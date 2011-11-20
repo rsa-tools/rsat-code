@@ -954,7 +954,11 @@ sub PrintNextSequence {
 	print $OUTFILE "\n";
 
     } elsif ($out_format eq "raw") {
-	print $OUTFILE "$sequence\n";
+      ## Beware: raw sequences CANNOT contain carriage return even at
+      ## the end of the file, because this would create a problem with
+      ## retrieve-seq: the carriage return would be counted as part of
+      ## the sequence length by &RSAT::SequenceOnDisk::get_length().
+      print $OUTFILE "$sequence";
 
     } elsif ($out_format eq "multi") {
 	print $OUTFILE "$sequence\n";
