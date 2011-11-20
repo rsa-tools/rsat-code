@@ -154,9 +154,9 @@ arguments to the embedded RSAT::Sequence object.
 
 =cut
 sub get_sequence {
-    my ($self, @args) = @_;
-    my $sequence_object = $self->get_sequence_object();
-    return $sequence_object->get_sequence(@args);
+  my ($self, @args) = @_;
+  my $sequence_object = $self->get_sequence_object();
+  return $sequence_object->get_sequence(@args);
 }
 
 ################################################################
