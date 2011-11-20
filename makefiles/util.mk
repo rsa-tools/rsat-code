@@ -82,7 +82,7 @@ watch_jobs: watch_jobs_${QUEUE_MANAGER}
 watch_jobs_torque:
 	@hostname
 	@date
-	@echo "`qstat | wc -l`	Jobs"
+	@echo "`qstat | grep -v '^---'| grep -v '^job-ID' | wc -l`	Jobs"
 	@echo "`qstat | grep ' R ' | wc -l`	Running"
 	@echo "`qstat | grep ' Q ' | wc -l`	Queued" 
 	@echo "`qstat | grep ' C ' | wc -l`	Completed"
@@ -90,7 +90,7 @@ watch_jobs_torque:
 watch_jobs_sge:
 	@hostname
 	@date
-	@echo "`qstat | wc -l`	Jobs"
+	@echo "`qstat | grep -v '^---'| grep -v '^job-ID' | wc -l`	Jobs"
 	@echo "`qstat | grep ' r ' | wc -l`	Running"
 	@echo "`qstat | grep ' Eqw ' | wc -l`	Errors" 
 
