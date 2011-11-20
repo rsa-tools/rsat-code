@@ -932,8 +932,8 @@ sub OpenQueryReport {
   print $index "<hr size=2 color='#000088'>";
   print $index "<blockquote>";
   print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
-  &IndexOneFile("log", $outfile{log});
-  &IndexOneFile("input", $infile{genes}) if (($infile{genes}) && !($main::sep_genes));
+  &IndexOneFile("Log", $outfile{log});
+  &IndexOneFile("Input", $infile{genes}) if (($infile{genes}) && !($main::sep_genes));
 }
 
 
@@ -1040,7 +1040,7 @@ sub InferQueryOperons {
   $cmd .= " -uth interg_dist ".$dist_thr;
   &one_command($cmd) if ($task{operons});
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  &IndexOneFile("leader query genes", $outfile{leader_qgenes});
+  &IndexOneFile("Operon leaders for query genes", $outfile{leader_qgenes});
 }
 
 
@@ -1064,7 +1064,7 @@ sub RetrieveQueryPromoters {
     &RSAT::message::Info("Retrieve seq command", $cmd) if ($main::verbose >= 5);
     &one_command($cmd);
   }
-  &IndexOneFile("query sequence", $outfile{query_seq});
+  &IndexOneFile("Query sequence", $outfile{query_seq});
 }
 
 ################################################################
@@ -1082,7 +1082,7 @@ sub ComputeFilterDyads {
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
-  &IndexOneFile("filter dyads", $outfile{filter_dyads});
+  &IndexOneFile("Filter dyads", $outfile{filter_dyads});
 }
 
 ################################################################
@@ -1108,7 +1108,7 @@ sub ComputeFilterScan {
     $cmd .= " -o ".$outfile{filter_scan};
     &one_command($cmd) if ($task{filter_scan});
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-    &IndexOneFile("filter scan", $outfile{filter_scan});
+    &IndexOneFile("Filter scan", $outfile{filter_scan});
 
     my $filterg=`grep -v ";" $outfile{filter_scan}  | grep -v "#" | cut -f1`;
     chomp($filterg);
@@ -1117,7 +1117,7 @@ sub ComputeFilterScan {
     print  $filter_genes $filterg;
     close $filter_genes if ($outfile{genes} && $main::filter);
     &RSAT::message::Info("Filter genes  ", $outfile{genes} ) if ($main::verbose >= 1);  
-    &IndexOneFile("filter genes", $outfile{genes});
+    &IndexOneFile("Filter genes", $outfile{genes});
     $main::skip_gene = 1 unless ($filterg=~/\w/);
 }
 
@@ -1166,7 +1166,7 @@ sub GetOrthologs {
       close $out;
       &RSAT::message::Info("Orthologs for gene(s)",$genes, "specified by the user can be found in " , $outfile{orthologs}) if ($main::verbose >= 2);
   }
-  &IndexOneFile("orthologs", $outfile{orthologs});
+  &IndexOneFile("Orthologs", $outfile{orthologs});
 }
 
 
@@ -1183,7 +1183,7 @@ sub InferOrthoOperons {
     &one_command($cmd) ;
   }
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  &IndexOneFile("leader genes", $outfile{bbh});
+  &IndexOneFile("Operon leader genes", $outfile{bbh});
 }
 
 
@@ -1237,7 +1237,7 @@ sub PurgeOrthoSeq {
     $cmd .= " -o ". $outfile{purged} ;
     &one_command($cmd);
   }
-  &IndexOneFile("purged sequences", $outfile{purged});
+  &IndexOneFile("Purged sequences", $outfile{purged});
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 }
 
@@ -1329,7 +1329,7 @@ sub OccurrenceSig {
 
     &one_command($cmd);
   }
-  &IndexOneFile("occ sig", $outfile{occ_sig});
+  &IndexOneFile("Occ sig", $outfile{occ_sig});
 }
 
 ################################################################
@@ -1356,8 +1356,8 @@ sub Select_interaction{
 	my $exp_occ_column=8;  #count for bash. Expected number of sites with a score equal to the min_weight 
 	my $sig_occ_column=11; #count for bash. Significance of the number of sites with a score equal to the min_weight 
 
-	##reocver the values for the weights around the minweight value
-	## Upper  bound on weight       
+	## Recover the values for the weights around the minweight value
+	## Upper  bound on weight
 	$cmd= "sort -n -k ". ($score_column+1) ." ". $outfile{occ_sig};
 	$cmd .= "| grep -v '^;' ";
 	$cmd .= "| grep -v '^#' ";
@@ -1372,7 +1372,7 @@ sub Select_interaction{
 			      "occ_at_th=".$occ_at_th,
 			      "exp_at_th=".$exp_at_th,
 			      "sig_at_th=".$sig_at_th,
-	    ) if ($main::verbose >= 0);
+	    ) if ($main::verbose >= 4);
 	$values_at_th{$current_gene}=join("\t",$weight_near_th,$occ_at_th,$exp_at_th,$sig_at_th);
 
 	&RSAT::message::Info("occ_at_th_minweight", $occ_at_minweigth, "\n","weigth_near_th", $weigth_near_th ) if ($main::verbose >= 4); 
@@ -1567,13 +1567,13 @@ sub OccurrenceSigGraph {
 	  &RSAT::message::Warning("File with the theoretical score distribution for the matrix is not available and the weigth equivalent to the threhold p-value will no be drawn", $outfile{matrix_distrib});
       }
     }
-      
+
     ## options added  from comand line
     $cmd .= " ".$occ_sig_graph_opt;
     &one_command($cmd);
   }
-  &IndexOneFile("occ sig graph", $outfile{occ_sig_graph}, image =>1);
-  &IndexOneFile("occ freq graph", $outfile{occ_freq_graph}, image =>1);
+  &IndexOneFile("Occ sig graph", $outfile{occ_sig_graph}, image =>1);
+  &IndexOneFile("Occ freq graph", $outfile{occ_freq_graph}, image =>1);
 
 }
 
@@ -1613,7 +1613,7 @@ sub OrthoScan {
     $cmd .= " ".$scan_opt; #Default -uth pval 1e-3
     &one_command($cmd);
   }
-  &IndexOneFile("sites", $outfile{sites});
+  &IndexOneFile("Sites", $outfile{sites});
 }
 
 ################################################################
@@ -1637,7 +1637,7 @@ sub OrthoMap {
     $cmd .= " ".$map_opt;
     &one_command($cmd);
   }
-  &IndexOneFile("map", $outfile{map});
+  &IndexOneFile("Map", $outfile{map});
 }
 
 
