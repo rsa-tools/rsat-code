@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.87 2011/11/16 21:09:02 jvanheld Exp $
+# $Id: retrieve-seq,v 1.88 2011/11/20 08:00:15 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -104,7 +104,7 @@ if ($input_sequence_file) {
     #### automatic selection of genome file (and feature file)
     $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
   } else {
-    &RSAT::error::FatalError("You should specify an organism name.", 
+    &RSAT::error::FatalError("You should specify an organism name.",
 			     "Run the command supported-organism to obtain the list of supported organisms.");
   }
 }
@@ -118,7 +118,7 @@ if ($sequence_type eq "upstream") {
     }
     if (defined($supported_organism{$organism_name}->{'up_from'})) {
 	$default{from} = $supported_organism{$organism_name}->{'up_from'};
-    } else { 
+    } else {
 	$default{from} = -500;
     }
 } elsif ($sequence_type eq "downstream") {
@@ -141,7 +141,7 @@ if ($to < $from) {
 $seq_length = abs($to - $from + 1);
 
 ################################################################
-## organism data 
+## organism data
 
 my %contig = $organism->get_attribute("contigs");
 
@@ -158,14 +158,14 @@ if ($sequence_type eq "random fragments") {
     @ctg_len;
     $ctg_start[0] = 0;
     for my $c (0..$#ctgs) {
-	$ctg_len[$c] = $contig{$ctgs[$c]}->get_length();
-	$ctg_start[$c+1] = $ctg_start[$c] +  $ctg_len[$c];
-	warn join ("\t", ";\tcontig", $c+1, $ctgs[$c], $ctg_len[$c], $ctg_start[$c], $ctg_start[$c+1]), "\n" 
-	    if ($verbose >= 2);
+      $ctg_len[$c] = $contig{$ctgs[$c]}->get_length();
+      $ctg_start[$c+1] = $ctg_start[$c] +  $ctg_len[$c];
+      &RSAT::message::Debug( "Contig", $c+1, $ctgs[$c], $ctg_len[$c], $ctg_start[$c], $ctg_start[$c+1])
+	if ($verbose >= 3);
     }
     $genome_len = $ctg_start[$#ctgs+1];
     &RSAT::message::Info("genome length", $genome_len)
-	if ($verbose >= 2);
+      if ($verbose >= 2);
 
 } else {
 
@@ -209,8 +209,8 @@ if ($noorf) {
 if ($return_all) {
     @queries = $organism->get_attribute("features");
     if (scalar(@queries < 1)) {
-	&RSAT::message::Warning(join("\t", "There is not a single feature of type", 
-				     join(" or ", sort (keys(%accepted_feature_types))), 
+	&RSAT::message::Warning(join("\t", "There is not a single feature of type",
+				     join(" or ", sort (keys(%accepted_feature_types))),
 				     "annotated in the genome of", $organism_name));
 	exit();
     }
@@ -257,7 +257,7 @@ $out = &OpenOutputFile($outputfile);
 if ($output_features) {
     $out_ft_handle = &OpenOutputFile($output_features);
     ## header of the output feature file
-    print $out_ft_handle "#", join ("\t", 
+    print $out_ft_handle "#", join ("\t",
 				    "contig",
 				    "type",
 				    "id",
@@ -291,7 +291,7 @@ foreach our $query (@queries) {
 
     #### check the validity of the query
     my $current_feature;
-    if ($return_all) { 
+    if ($return_all) {
 	## In this case the query is provided as an object. I switch
 	## current feature and query for the sequence comments
 	$current_feature = $query;
@@ -301,7 +301,7 @@ foreach our $query (@queries) {
    } elsif ($feature_index->contains(uc($query))) {
        $current_feature = $feature_index->get_first_value(uc($query));
    } else {
-	my $warn_message = ";WARNING\tinvalid query $query"; 
+	my $warn_message = ";WARNING\tinvalid query $query";
 	push @warnings, $warn_message;
 	next;
     }
@@ -329,16 +329,16 @@ foreach our $query (@queries) {
 	if ($noorf) {
 	    my $upstr_size = $current_feature->get_attribute("upstr_size");
 	    $current_from = &max(-$upstr_size, $from);
-	    &RSAT::message::Debug("upstream size", 
+	    &RSAT::message::Debug("upstream size",
 				  "ft:".$current_feature,
 				  "id:".$current_feature->get_attribute("id"),
 				  "size:".$current_feature->get_attribute("upstr_size"),
-				  "size:".$upstr_size, 
+				  "size:".$upstr_size,
 				  "limit".$current_feature->get_attribute("upstr_limit"),
-				  "current_from", $current_from) 
+				  "current_from", $current_from)
 		if ($main::verbose >= 10);
-	} 
-	
+	}
+
 	if ($orf_strand eq "D") {
 	    $reg_left = $orf_left + $current_from;
 	    $reg_right = $orf_left + $current_to;
@@ -346,14 +346,14 @@ foreach our $query (@queries) {
 	    $reg_right = $orf_right - $current_from;
 	    $reg_left = $orf_right - $current_to;
 	}
-	
+
 	### downstream region
     } elsif ($sequence_type eq "downstream") {
 	if ($noorf) {
 	    my $downstr_size = $current_feature->get_attribute("downstr_size");
 	    $current_to = &min($downstr_size, $to);
-	} 
-	
+	}
+
 	if ($orf_strand eq "D") {
 	    $reg_left = $orf_right + $current_from;
 	    $reg_right = $orf_right + $current_to;
@@ -361,12 +361,12 @@ foreach our $query (@queries) {
 	    $reg_right = $orf_left - $current_from;
 	    $reg_left = $orf_left - $current_to;
 	}
-	
+
 	### ORF (wargning: this does not splice out introns
     } elsif ($sequence_type eq "unspliced ORF") {
 	$reg_left = $orf_left;
 	$reg_right = $orf_right;
-	
+
 	#### select random genommic positions
 	## THIS IS NOT WORKING ANYMORE
     } elsif ($sequence_type eq "random fragments") {
@@ -377,7 +377,7 @@ foreach our $query (@queries) {
 	my $c = 0;
 	warn join("\t", $seq_length, $position, $max_pos, $genome_len), "\n" if ($verbose >= 3);
 	while ($position > ($ctg_len[$c] - $seq_length + 1)) {
-	    $position -= $ctg_len[$c]  - $seq_length + 1; 
+	    $position -= $ctg_len[$c]  - $seq_length + 1;
 	    $c++;
 	}
 	$ctg = $ctgs[$c];
@@ -422,11 +422,11 @@ foreach our $query (@queries) {
 
       } elsif (!$no_comments) {
 	if ($sequence_type eq "random fragments") {
-	  @comments = (join("; ","random fragment", 
+	  @comments = (join("; ","random fragment",
 			    "size: ".$reg_size,
 			    "location: ".$location)) unless ($no_comments);
 	} else {
-	  ## in fasta format, only the first comment line is printed 
+	  ## in fasta format, only the first comment line is printed
 	  $first_comment_line = join("; ", $query,
 				     $sequence_type." from ".$current_from." to ".$current_to,
 				     "size: ".$reg_size,
@@ -444,7 +444,7 @@ foreach our $query (@queries) {
 	    } elsif ($sequence_type eq "downstream") {
 	      my $downstr_neighbour = $current_feature->get_attribute("downstr_neighbour");
 	      $downstr_neighbour_id = "<NULL>";
-	      if (($downstr_neighbour) && ($downstr_neighbour ne "<NULL>")) { 
+	      if (($downstr_neighbour) && ($downstr_neighbour ne "<NULL>")) {
 		$downstr_neighbour_id = $downstr_neighbour->get_attribute("id");
 	      }
 	      $first_comment_line .= "; downstream neighbour: ".$downstr_neighbour_id;
@@ -465,7 +465,7 @@ foreach our $query (@queries) {
     ## Export the feature if requested
     if ($output_features) {
 	if ($reg_left <= $reg_right) {
-	    print $out_ft_handle join ("\t", 
+	    print $out_ft_handle join ("\t",
 				       $ctg,
 				       $sequence_type,
 				       $id,
@@ -474,7 +474,7 @@ foreach our $query (@queries) {
 				       $reg_right,
 				       ), "\n";
 	} else {
-	    push @ft_warnings, join ("\t", 
+	    push @ft_warnings, join ("\t",
 				     ";".$ctg,
 				     $sequence_type,
 				     $id,
@@ -493,7 +493,7 @@ foreach our $query (@queries) {
 	  "ctg: ".$ctg,
 	  "contig: ".$contig{$ctg},
 	  "orf_left:".$orf_left,
-	  "orf_right: ".$orf_right, 
+	  "orf_right: ".$orf_right,
 	  "orf_strand: ".$orf_strand,
 	  "current_from: ".$current_from,
 	  "current_to: ".$current_to,
@@ -501,12 +501,13 @@ foreach our $query (@queries) {
 	  "reg_right: ".$reg_right,
 	  "reg_size: ".$reg_size,
 	 )
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 0);
     if ($reg_left <= $reg_right) {
       $current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
       #	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
     } else {
-	$current_seq = "";
+      &RSAT::message::Warning($query, $id, "left limit (".$reg_left.")cannot be larger than right limit (".$reg_right.")");
+      $current_seq = "";
     }
     $current_seq = uc($current_seq);
 
@@ -515,7 +516,7 @@ foreach our $query (@queries) {
 }
 
 
-print $out (join "\n", @warnings), "\n" 
+print $out (join "\n", @warnings), "\n"
     unless $no_warn;
 
 ## Report execution time
@@ -524,7 +525,7 @@ print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time i
 close $out;
 
 if ($output_features) {
-  print $out_ft_handle (join "\n", @ft_warnings), "\n" 
+  print $out_ft_handle (join "\n", @ft_warnings), "\n"
     unless $no_warn;
   close $out_ft_handle;
 }
@@ -539,13 +540,13 @@ exit(0);
 ################################################################
 #### detailed help message
 sub PrintHelp {
-    
+
     my $supported_organisms = &ListSupportedOrganisms("sizes");
     open(HELP, "| more");
     print HELP<<End_help;
 USAGE
-	retrieve-seq -type type -org organism	
-			[-from] [-to] [-format seqformat] [-lw line_width] 
+	retrieve-seq -type type -org organism
+			[-from] [-to] [-format seqformat] [-lw line_width]
 			[-o outpufile] -q query_orf | -i query file | -all
 
 DESCRIPTION
@@ -588,14 +589,14 @@ OPTIONS
 			introns
 			coding
 
-		The sub-option 
+		The sub-option
 		    -type random
 		requires to use the -n for specifying the number of sequences.
-	-n number of sequecnes (only with -type random) 
+	-n number of sequecnes (only with -type random)
 	-q query
 		The query should be an orf identifier (eg 'metR').
 		The query is case-insensitive.
-		Multiple queries can be entered by reiteratively using the -q 
+		Multiple queries can be entered by reiteratively using the -q
 		option.
         -i     query file. The first word of each line is taken as a query.
                 This option is incompatible with -q.
@@ -612,15 +613,15 @@ OPTIONS
 		in addition to the sequences, export a feature file with the
 		chromosomal location of the retrieved sequences.
 
-        -from #1 -to #2 
+        -from #1 -to #2
                 where #1 and #2 are numbers. #2 should be higher than #1.
-                limits of the region to extract, relative to orf start 
+                limits of the region to extract, relative to orf start
                 (=position 0). Use negative values for upstream sequence.
-                        example: -from -800 -to -1 
+                        example: -from -800 -to -1
                         will extract the 800 bp upstream the orf start.
 			 (this is the default)
 
-	-format	allows to select different output formats, with the following 
+	-format	allows to select different output formats, with the following
 		options:
 		IG	IntelliGenetics (default format)
 		WC	wconsensus format
@@ -628,17 +629,17 @@ OPTIONS
 			nor comments.
                 FastA
 
-	-lw ##	Line width. A newline character will be inserted in the 
-		sequence every ## bases. Default is 60. 
+	-lw ##	Line width. A newline character will be inserted in the
+		sequence every ## bases. Default is 60.
 		-lw 0 will prevent newline insertion.
 
         -label label_fields
-	       Field(s) to be used in the sequence label. 
+	       Field(s) to be used in the sequence label.
 	       Default: name.
 	       Supported: $supported_label_fields
 
 	       Multiple fields can be specified, separated by commas
-	       in the command line. 
+	       in the command line.
 
 	       Example:
 			-label org,name,id
@@ -650,7 +651,7 @@ OPTIONS
 	-labelsep
 		Separator between label fields. Default: $label_sep
 
-	-noorf	prevent overlap with neighbout genes. 
+	-noorf	prevent overlap with neighbout genes.
 
 		When this option is active, the sequence size is
 		adapted to avoid including coding sequences of the
@@ -664,7 +665,7 @@ OPTIONS
 		limit for collecting upstream sequences, the part of
 		coding sequences included it the result is likely to
 		add up to the noise, without bringing any additional
-		signal. 
+		signal.
 
 		More importantly, coding and non-coding sequences
 		generally have very different background models. The
@@ -680,7 +681,7 @@ OPTIONS
 		For bacterial sequences, it is essential to prevent
 		overlap with upstream genes, because intergenic
 		distances are often very short, especially between
-		pairs of genes comprised in the same operon. 
+		pairs of genes comprised in the same operon.
 
 
 	-rm     Use the repeat masked version of the genome.  Attention :
@@ -702,24 +703,24 @@ OPTIONS
 		Prevents warning when a gene cannot be identified.
 
 	-randsels #
-		Select a random set of # genes in the genome annotations. 
+		Select a random set of # genes in the genome annotations.
 		This option ois obsolete, it has been replaced by a
 		separate command: random-genes. The option is
 		maintained for backward compatibility.
 
-	-lf	length file 
+	-lf	length file
 		(only with the option '-type random')
 		Allows to generate random sequences with the same
 		lengths as a set of reference sequences. The sequence
 		length file can be obtained with the command
 			sequence-lengths
-		The length file contains two columns : 
+		The length file contains two columns :
 		    - sequence ID (ignored)
 		    - sequence length
 
-	-features	
+	-features
 		alternate feature table. This option allows to speify
-		an alternate file where the ORF locations are found. 
+		an alternate file where the ORF locations are found.
 		See below for a description of the feature file format.
 
 INPUT FORMATS
@@ -749,9 +750,9 @@ EXAMPLES
 	retrieve-seq -type upstream -org Escherichia_coli_K12 \\
 		     -q metJ -q meta -q metb		      \\
 		     -from +59 -to -200 -noorf
-	
-	will return the sequence of 260 nucleotides, 200of which 
-	extracted upstream the start codon, and the 60 following being 
+
+	will return the sequence of 260 nucleotides, 200of which
+	extracted upstream the start codon, and the 60 following being
 	the beginning of the coding sequence.
 
 End_help
@@ -760,7 +761,7 @@ End_help
 }
 
 ################################################################
-#### list of options    
+#### list of options
 sub PrintShortHelp {
   open(HELP, "| more");
   print HELP<<End_short_help;
@@ -773,21 +774,21 @@ retrieve-seq options
 -feattype	accepted feature types. Supported: $supported_feature_types
 -type		upstream | downstream | orf | random
 -n		number of sequences (only with -type random)
--randsels #	Select a random set of # genes in the genome annotations. 
--lf		length file 
+-randsels #	Select a random set of # genes in the genome annotations.
+-lf		length file
 -i		query file. This option is incompatible with -q.
 -q		query
 -ids_only	queries are provideed as IDs, do not load synonyms
 -all		returns all genomic upstream regions
--o		followed by the name of the outputfile. 
+-o		followed by the name of the outputfile.
 -oft		output features file
--from #1 -to #2	limits of the region to extract, relative to orf start 
+-from #1 -to #2	limits of the region to extract, relative to orf start
 -format		output sequence format. accepted: $accepted_output_seq
 -lw ##		Line width. -lw 0 will prevent newline insertion.
 -label 		label field(s) (Supported: $supported_label_fields)
 -labelsep	separator between label fields. Default: $label_sep
 -noorf		the upstream sequence can only contain non-coding sequence.
--rm		Use the repeat masked version of the genome. 
+-rm		Use the repeat masked version of the genome.
 -nowarn		prevents warning when a gene can not be identified
 -imp_pos	admit imprecise positions.
 -nocom		do not print comments  (start, end position, ...) besides each gene identifier
@@ -804,7 +805,7 @@ sub ReadArguments {
 	### output file name
 	if ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
-	    
+
 	    ### output feature file
 	} elsif ($ARGV[$a] eq "-oft") {
 	    $output_features = $ARGV[$a+1];
@@ -814,20 +815,20 @@ sub ReadArguments {
 	    &PrintHelp;
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintShortHelp;
-	    
+
 	    ### output sequence format
 	} elsif ($ARGV[$a] eq "-format") {
 	    $out_format = lc($ARGV[$a+1]);
-	    
+
 	    ### limits of the region to retrieve
 	} elsif ($ARGV[$a] eq "-from") {
 	    $from = $ARGV[$a+1];
-	    &RSAT::error::FatalError($from, "Invalid value for the option -from, should  be a Integer number.") unless (&IsInteger($from)); 
+	    &RSAT::error::FatalError($from, "Invalid value for the option -from, should  be a Integer number.") unless (&IsInteger($from));
 
 	} elsif ($ARGV[$a] eq "-to") {
 	    $to = $ARGV[$a+1];
-	    &RSAT::error::FatalError($to, "Invalid value for the option -to, should  be a Integer number.") unless (&IsInteger($to)); 
-	    
+	    &RSAT::error::FatalError($to, "Invalid value for the option -to, should  be a Integer number.") unless (&IsInteger($to));
+
 	    ### verbose
 	} elsif ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
@@ -843,7 +844,7 @@ sub ReadArguments {
 	    #### input file (one query per line)
 	} elsif ($ARGV[$a] eq "-i") {
 	    $query_file =$ARGV[$a+1];
-	    
+
 	    #### specific input file for random selections (one sequence length per line)
 	} elsif ($ARGV[$a] eq "-lf") {
 	    $length_file =$ARGV[$a+1];
@@ -857,12 +858,12 @@ sub ReadArguments {
 	    unless ($random_orfs > 0) {
 		&RSAT::error::FatalError("The number of ORFs must be > 0");
 	    }
-	    &RSAT::message::Warning("The option -randsel is obsolete. Please use the program random-genes instead"); 
-	    
-	    ### return all genomic  upstream regions	
+	    &RSAT::message::Warning("The option -randsel is obsolete. Please use the program random-genes instead");
+
+	    ### return all genomic  upstream regions
 	} elsif ($ARGV[$a] eq "-all") {
 	    $return_all = 1;
-	    
+
 	    ### Query is a list of IDs (no necessity to load gene names and synonyms)
 	} elsif ($ARGV[$a] eq "-ids_only") {
 	    $ids_only = 1;
@@ -909,35 +910,35 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-type") {
 	    if ($ARGV[$a+1] =~ /^up/i) {
 		$sequence_type = "upstream";
-		
+
 	    } elsif ($ARGV[$a+1] =~ /^down/i) {
 		$sequence_type = "downstream";
-		
+
 	    } elsif ($ARGV[$a+1] =~ /^orf/i) {
 		$sequence_type = "unspliced ORF";
 		$default{from} = "start";
 		$default{to} = "stop";
-		
+
 	    } elsif ($ARGV[$a+1] =~ /^rand/i) {
 		$sequence_type = "random fragments";
 		&RSAT::error::FatalError("The option -type random is not supported anymore. ");
-		
+
 #	    } elsif ($ARGV[$a+1] =~ /^exon/i) {
 #		$sequence_type = "exons";
-#		
+#
 #	    } elsif ($ARGV[$a+1] =~ /^intron/i) {
 #		$sequence_type = "introns";
-		
+
 	    } else {
-		die ("Error: unsupported sequence type: '$ARGV[$a+1]'", 
+		die ("Error: unsupported sequence type: '$ARGV[$a+1]'",
 		     "\n");
 	    }
-	    
-	    
+
+
 	    #### line width
 	} elsif (($ARGV[$a] eq "-lw") && ($ARGV[$a+1] >= 0)) {
 	    $line_width = $ARGV[$a+1];
-	    
+
 	    #### use identifiers rather than gene names
 	} elsif ($ARGV[$a] eq "-label") {
 	    my @fields = (split(",", lc($ARGV[$a+1])));
@@ -946,13 +947,13 @@ sub ReadArguments {
 		push @label_fields, $field;
 	      } elsif ($field eq "gene") {
 		&RSAT::message::Warning('label field "gene" is obsolete. Please use "-label name" instead.');
-		push @label_fields, "name";		    
+		push @label_fields, "name";	
 	      } elsif ($field eq "orf") {
 		&RSAT::message::Warning('label field "orf" is obsolete. Please use "-label id" instead.');
 		push @label_fields, "id";
 	      } elsif ($field eq "orf_gene") {
 		&RSAT::message::Warning('label field "orf_gene" is obsolete. Please use "-label id,name" instead.');
-		push @label_fields, ("id","name");		    
+		push @label_fields, ("id","name");	
 	      } elsif ($field eq "full") {
 		#		    &RSAT::message::Warning('label field "full" is obsolete. Please select manually the desired fields. Supported: '.$supported_label_fields);
 		push @label_fields, @supported_label_fields;
@@ -960,13 +961,13 @@ sub ReadArguments {
 		&RSAT::error::FatalError("$field is not a valid field for sequence label. Supported: $supported_label_fields.");
 	      }
 	    }
-	    
+
 	    #### Label field separator
 	} elsif ($ARGV[$a] eq "-labelsep") {
 	    $label_sep = $ARGV[$a+1];
-	    
+
 	    #### do not allow overlapping coding sequences
-	} elsif (($ARGV[$a] =~ /^-nocds/i) || 
+	} elsif (($ARGV[$a] =~ /^-nocds/i) ||
 		 ($ARGV[$a] =~ /^-noorf/i)) {
 	    $noorf = 1;
 
@@ -977,19 +978,19 @@ sub ReadArguments {
 	    #### do not print the comments field
 	} elsif ($ARGV[$a] =~ /^-nocom/i) {
 	    $no_comments = 1;
-	    
+
 	    #### admit imprecise positions
 	} elsif ($ARGV[$a] =~ /^-imp_pos/i) {
 	    $imp_pos = 1;
-	    
+
 	    #### do not warn
 	} elsif ($ARGV[$a] =~ /^-nowarn/i) {
 	    $no_warn = 1;
-	    
+
 	    #### alternative feature file
 	} elsif ($ARGV[$a] =~ /^-feat/i) {
 	    $annotation_table = $ARGV[$a+1];
-	    
+
 	}
     }
 }
