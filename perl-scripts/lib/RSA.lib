@@ -239,7 +239,7 @@ sub ReadCalibration {
 
     }
     close $cal if ($calibration_file);
-    
+
     #### check if reverse complements were included in the expected freq file;
     #### if not, infer them from the direct strand 
     foreach my $pattern_seq (sort keys %patterns) {
