@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.113 2011/10/06 14:14:17 rsat Exp $
+# $Id: install-organism,v 1.114 2011/11/25 18:41:25 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -101,7 +101,7 @@ if ($task{all}) {
 
 
 ################################################################
-#################### check argument values #####################
+#################### Check parameter values #####################
 ################################################################
 
 ## Consistency between tasks
@@ -1001,7 +1001,7 @@ OPTIONS
 		BEWARE : you should provide the absolute path of the
 		installation directory, not the relative path.
 
-	-batch  run some tasks (for examplethe calibration of oligos
+	-batch  run some tasks (for example the calibration of oligos
 		and dyads) in batch mode.  This options works on our
 		lab cluster, but could be adapted for other
 		configurations by adapting the method &doit() in the
