@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.75 2011/11/26 15:38:54 jvanheld Exp $
+# $Id: footprint-discovery,v 1.76 2011/11/26 15:41:51 jvanheld Exp $
 #
 ############################################################
 
@@ -223,7 +223,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.75 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -660,7 +660,7 @@ sub RunFootprintDisco {
   ## Report the significant dyads
   my $top_id = "";
   my $top_sig = "NA";
-  my $top_sig_color = '#000000';
+  my $sig_color = '#000000';
   $dyad_nb = 0; ## Re-initialize the number of dyads
   local %header_col = ();
 
@@ -704,15 +704,17 @@ sub RunFootprintDisco {
   print $main_index "<td>", $ortholog_nb, "</td>\n";
   print $main_index "<td><tt>", $top_id, "</tt></td>\n";
 
-  if (($status ne "OK") || ($top_sig <= 1)) {
-    $top_sig_color = '#BBBBBB';
+  if ($status ne "OK") {
+    $sig_color = '#BBBBBB';
+  } elsif ($top_sig <= 1) {
+    $sig_color = '#888888';
   } elsif ($top_sig >= 5) {
-    $top_sig_color = '#00AA00';
+    $sig_color = '#00AA00';
   } else {
-    $top_sig_color = '#000000';
+    $sig_color = '#000000';
   }
-  print $main_index "<td>", "<font color='".$top_sig_color."'>", $top_sig, "</font>",,"</td>\n";
-  print $main_index "<td>", "<font color='".$top_sig_color."'>", $dyad_nb, "</font>",,"</td>\n";
+  print $main_index "<td>", "<font color='".$sig_color."'>", $top_sig, "</font>",,"</td>\n";
+  print $main_index "<td>", "<font color='".$sig_color."'>", $dyad_nb, "</font>",,"</td>\n";
 #  print $main_index "<td>", $dyad_nb, "<td>";
 
   print $main_index "</tr>\n";
