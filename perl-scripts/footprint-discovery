@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.73 2011/11/20 09:02:37 jvanheld Exp $
+# $Id: footprint-discovery,v 1.74 2011/11/26 04:31:21 rsat Exp $
 #
 ############################################################
 
@@ -223,7 +223,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -601,12 +601,13 @@ sub RunFootprintDisco {
   ## Send the command to a batch queue (e.g. PC cluster)
   if ($batch) {
     my $jobnb = 0;
+    my $delay = 30;
     if (($q-1) % 500 == 0) {
       $jobnb = &get_job_nb();
     }
-    while ($jobnb > 2000) {
-      &RSAT::message::TimeWarn("Already $jobnb jobs on queue... waiting 30 seconds before submitting new jobs") if ($main::verbose >= 0);
-      sleep(60);
+    while ($jobnb > 10000) {
+      &RSAT::message::TimeWarn("Already $jobnb jobs in queue ... waiting $delay seconds before submitting new jobs") if ($main::verbose >= 0);
+      sleep($delay);
       $jobnb = &get_job_nb();
     }
     &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
