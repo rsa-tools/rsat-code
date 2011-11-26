@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.108 2011/11/26 15:43:03 jvanheld Exp $
+# $Id: footprint-scan,v 1.109 2011/11/26 18:29:05 jvanheld Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -357,7 +357,7 @@ package main;
   local $dist_thr = 55;
 
   ##################
-  ## Option for randomized genes 
+  ## Option for randomized genes
   $main::rand = 0;
 
 
@@ -387,7 +387,7 @@ package main;
   ## Feature maps
   local $map_opt = "";
 
-  ## Filter 
+  ## Filter
   $main::no_purge=0;
   $main::filter=0;
   $main::filter_pval=0;
@@ -470,11 +470,11 @@ package main;
   ## PArameters for matrix-wise report tables
   local $sort_criterion = "sig"; ## Supported: sig | alpha | list;
   local @info_fields = qw(name
-                            upstr_neighb_name 
+                            upstr_neighb_name
                             descr); #### TO DEBUG: UPSTR_NEIGHB_NAME DOES NOT WORK
-  
+
   #up_neighb_name
-  #    
+  #
   #    upstr_neighb_id
 
 
@@ -493,31 +493,24 @@ package main;
   ################################################################
   ## Check argument values
 
-  #### Organism
-  #  &RSAT::OrganismManager::check_name($organism_name);
-  #   my $organism = new RSAT::organism();
-  #   $organism->set_attribute("name", $organism_name);
-  #   $organism->check_name($organism_name);
-
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
-  
   ################################################################
-  ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems 
+  ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems
 
-  ## Check compatibility between -batch and -task all 
+  ## Check compatibility between -batch and -task all
   if (  ((scalar(keys(%task)) == 0) || ($task{all} ) ) && ($batch)  ) {
       &RSAT::error::FatalError("Execution of all tasks is incompatible with \"-batch\" option, you should execute each tasks independently, to avoid dependency files problems. See help \"-task\" to consult all possible tasks ");
   }
-  
+
   ## Check compatibility between -batch and -task synthesis
   if ($task{synthesis} && ($batch || $batch_matrix)) {
     &RSAT::error::FatalError("Synthesis task is incompatible with \"-batch\" and \"-batch_matrix\" option, no other tasks where specified") if (scalar(keys(%task)) == 1);
     &RSAT::message::Warning("Synthesis task is incompatible with \"-batch\"  and \"-batch_matrix\" option, all other tasks will be performed");
     $task{synthesis}=0;
   }
-  
+
 
   ################################################################
   ## Check the compatibility between matrix input modes.
@@ -608,12 +601,12 @@ package main;
       my $matrix_mt_format = $fields[2];
 
        #If -rand option is selected, add a suffix to the matrix suffix to id this out files
-      if ($main::rand){  
+      if ($main::rand){
       $matrix_table_hash{$matrix_mt_suffix."_rand"}{"file"}= $matrix_file;
       $matrix_table_hash{$matrix_mt_suffix."_rand"}{"format"}= $matrix_mt_format;
       $matrix_table_hash{$matrix_mt_suffix."_rand"}{"tf"}= $matrix_mt_suffix    if ($main::tf eq "file") ;
       }
-      else{ 
+      else{
 	   $matrix_table_hash{$matrix_mt_suffix}{"file"}= $matrix_file;
 	   $matrix_table_hash{$matrix_mt_suffix}{"format"}= $matrix_mt_format;
 	   $matrix_table_hash{$matrix_mt_suffix}{"tf"}= $matrix_mt_suffix    if ($main::tf eq "file") ;
@@ -767,7 +760,7 @@ package main;
 
     ## Initialize variable that keeps the current file with othorlogs for the current TF
     $main::tf_ortho_file=() if $tf;
-    ################ 
+    ################
     ## Obtain the score related to the threshold p-value for selecting the recovered interactions
     ## if a bg_file is given this calculus be done per matrix, if -bginput is used the calculaiton
     ## is done by Matrix-query_gene pair before calculationg the OccurrenceSig
@@ -935,7 +928,7 @@ package main;
 	    $occ_sig_header=1;
 	  }
 
-	  ### Get the information related to the most significant score per query gene. This information is the first line of the 
+	  ### Get the information related to the most significant score per query gene. This information is the first line of the
 	  ## the occ_sig.tab file
 	  my $gene_sig=$top_sig_row{$gene}; # Query gene significance
 
@@ -946,7 +939,7 @@ package main;
 	  print  $synthesis_table join("\t",@gene_table_fields  ). "\n";
 
 	  ################
-	  ## Print query gene information and result in the Matrix-wise HTML report 
+	  ## Print query gene information and result in the Matrix-wise HTML report
 	  my $html_sep="<\/td>\n<td>";
 
 	  $gene_sig =~ s/\t+/$html_sep/g; # substitute the tab separator used for the table by the html table separator
@@ -958,30 +951,30 @@ package main;
 	  #Gene (link to query index) and columns with information about ocurrence
 	  $file=$query_indexes{$gene}; $file =~ s|${syn_dir}/||g;
 	  print $synthesis_index "<td>"."<a href='", $file, "'>".$gene."</a>";
-	  print $synthesis_index $html_sep. $gene_sig."</td>"; 
-	   print $synthesis_index $html_sep. $gene_values_at_th."</td>"; 
+	  print $synthesis_index $html_sep. $gene_sig."</td>";
+	   print $synthesis_index $html_sep. $gene_values_at_th."</td>";
 
 	  ################
 	  ## Add figures and links to figures and results tables
 	  my $links = "";
 
-	  ##Link to significance file 
+	  ##Link to significance file
 	  if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
 	    my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>"."\n";
-	  } 
+	  }
 	  # else {
 # 	      my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
 # 	      print $synthesis_index  "<td>". "<FONT COLOR=\"red\">". join("", " <a href='", $file, "'>[sig]</a>") ."</FONT>"." </td>"."\n";
 # 	  }
-	  ##Link and display to  significance graph 
+	  ##Link and display to  significance graph
 	  if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
 	    my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
 	    print $synthesis_index   join("", " <a href='", $file, "'>[sigplot]</a>")." </td>"."\n";
 	  }
 
-	  ##Link and Display  frequency plot 
+	  ##Link and Display  frequency plot
 	  if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
 	    my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>",,"<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
@@ -1544,7 +1537,7 @@ row specifies one matrix.
 =item B<-batch_matrix >
 
 Generate one footprint-scan command per matrix and post it on the queue of a PC
-cluster. 
+cluster.
 
 =cut
 
@@ -1647,7 +1640,7 @@ sub RunFootprintScan {
 
   ## Predict operon leader genes of the query genes
   &InferQueryOperons() if ($infer_operons);
-  
+
   &RetrieveQueryPromoters();
 
   ## Retrieve promoters of the query organism
@@ -1667,8 +1660,8 @@ sub RunFootprintScan {
 
   ################################################################
   ## Identify ortholog genes
-  
- 
+
+
   &GetOrthologs();
 
   ################################################################
@@ -1690,7 +1683,7 @@ sub RunFootprintScan {
   ## Estimate over-representation in hits for all threshold values
   &OccurrenceSig();
   ## Evaluate if the gene occurrence significance in the given p-value can pass the threshold for selecting conserved interactions based on overrepresentation
- 
+
   &OccurrenceSigGraph();
   #&GetTopSig() if (($task{synthesis}) && !($batch)); ## With the Select_interaction
                                                           ## subrutine this one is no longer necesary
@@ -1698,22 +1691,22 @@ sub RunFootprintScan {
   ## Scan sequences to detect hits
   &OrthoScan();
   &OrthoMap();
-  
-  
+
+
   if ($task{synthesis} && !($batch)){
       $selected_interaction=&Select_interaction;
-    
-      
+
+
       ## Index occ sig files for the synthetic table
       $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
       $occ_freq_graph_file{$current_gene} = $outfile{occ_freq_graph} if (-e $outfile{occ_freq_graph});
       $occ_sig_graph_file{$current_gene} = $outfile{occ_sig_graph} if (-e $outfile{occ_sig_graph});
       $gene_list{$current_gene} = $outfile{genes} if (-e $outfile{genes} );
-      
+
       ## Index scan files for the synthetic table
       $map_file{$current_gene} = $outfile{map} if (-e $outfile{map});
   }
-  
+
 
   ################################################################
   ## Finish verbose
@@ -1795,7 +1788,7 @@ sub GetOrthologsTF {
   ## Print verbose
   &Verbose() if ($verbose);
 
- 
+
   ################################################################
   ## Identify ortholog genes
   if ($task{orthologs_tf}){
@@ -1812,8 +1805,8 @@ sub GetOrthologsTF {
       system ($org_column);
       &RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ")
 	  if ($main::verbose>=1);
-  } 
- 
+  }
+
 
   ################################################################
   ## Finish verbose
@@ -1909,7 +1902,7 @@ sub MatrixReportHeader {
     $html_title .= " ".$organism_name if ($organism_name);
     $html_title .= " ".$bg_model if ($bg_model);
     $html_title .= " ".$m_suffix ;
-    
+
     ## Write style and title
     print $synthesis_index "<head><title>", $html_title , "</title>";
     print $synthesis_index &sorttable_script();
@@ -1965,7 +1958,7 @@ sub OpenMatricesReport{
     print $matrices_synthesis_table join("\t",@header_tab_matrices), "\n";
 
     ################
-    ## Header and Style for HTML matrices report 
+    ## Header and Style for HTML matrices report
     ##Title includes information about the parameters used in the program
     print $matrices_synthesis_index "<html>\n";
     my $html_title = "footprint-scan";
