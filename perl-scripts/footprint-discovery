@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.74 2011/11/26 04:31:21 rsat Exp $
+# $Id: footprint-discovery,v 1.75 2011/11/26 15:38:54 jvanheld Exp $
 #
 ############################################################
 
@@ -223,7 +223,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.75 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -331,7 +331,6 @@ package main;
 
 
   ## Background model file for dyad-analysis
-  
   if ($bg_model eq "file") {
     &RSAT::error::FatalError("The option '-bg_model file' requires to specify a file with the option '-bgfile'")
       unless ($bgfile);
@@ -415,16 +414,8 @@ package main;
     local $query_nb = scalar(@query_genes);
     foreach our $current_gene (@query_genes) {
       $q++;
-     #  if (($skip > 0) && ($q <= $skip)) {
-# 	  &RSAT::message::Info("Skipping gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
-# 	  next;
-#       }
       &RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
       &RunFootprintDisco($current_gene);
-      # if (($last > 0) && ($q >= $last)) {
-# 	  &RSAT::message::Info("Stopped after gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
-# 	  last;
-#       }
     }
   } else {
       $q = 1;
@@ -472,6 +463,7 @@ package main;
   print $main_index "</body>\n";
   print $main_index "</html>\n";
   close ($main_index);
+  &RSAT::message::TimeWarn("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
 
   exit(0);
 }
@@ -500,6 +492,8 @@ sub RunFootprintDisco {
 
   local ($outfile_prefix, $query_prefix) = &InitQueryOutput();
 
+  local $status = "OK";
+
   ## Output files for dyad-analysis
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
 
@@ -517,7 +511,6 @@ sub RunFootprintDisco {
 #  }
 
 
-  ################################################################
   ## Index files for the main index
   $main_index{$query_prefix}{dyads} = $outfile{dyads};
 
@@ -528,12 +521,15 @@ sub RunFootprintDisco {
     }
   }
 
-  ################################################################
   ## Open the file to store the HTML index
   &OpenQueryReport("footprint-discovery");
 
   ################################################################
   ## Print query genes in the gene file
+  if (scalar(@current_query_genes) <1) {
+    ## Skip the rest if the query contains not a single gene
+    $status = "No query genes";
+  }
   foreach my $gene (@current_query_genes) {
     print $genes $gene, "\t", $organism_name, "\n";
   }
@@ -547,37 +543,54 @@ sub RunFootprintDisco {
   &InferQueryOperons() if ($infer_operons);
 
   ## Dyad filter tasks
+  local $query_prom_len;
   unless ($nofilter) {
     ## Retrieve promoters of the query organism
     &RetrieveQueryPromoters();
+    $query_prom_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{query_seq} | grep -v '^#' | cut -f 2`;
+    chomp($status);
 
-    ## Detect all dyads in promoters of query genes for dyad filtering
-    &ComputeFilterDyads();
+    if ($query_prom_len < 1) {
+      ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
+      $status = "Query promoter has length 0";
+    } else {
+      ## Detect all dyads in promoters of query genes for dyad filtering
+      &ComputeFilterDyads();
+    }
   }
 
   ################################################################
   ## Identify ortholog genes
-  &GetOrthologs();
+  local $ortholog_nb = "NA";
+  if ($status eq "OK") {
+    $ortholog_nb = &GetOrthologs();
+    if ($ortholog_nb < 1) {
+      $status = "No ortholog";
+    }
+  }
 
   ################################################################
   ## Predict operon leader genes for the orthologous genes
-  &InferOrthoOperons() if ($infer_operons);
+  &InferOrthoOperons() if (($status eq "OK") && ($infer_operons));
 
   ################################################################
   ## Retrieve sequences from orthologs
-  &RetrieveOrthoSeq();
+  &RetrieveOrthoSeq() if ($status eq "OK");
 
   ################################################################
   ## Purge sequences
-  &PurgeOrthoSeq();
+  &PurgeOrthoSeq() if ($status eq "OK");
 
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
-  &DyadAnalysis();
+  local $dyad_nb = &DyadAnalysis() if ($status eq "OK");
+  if (($status eq "OK") && ($dyad_nb < 1)) {
+    $status = "No significant dyad";
+  }
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
-  if ($task{map}) {
+  if (($status eq "OK") && ($task{map})) {
     my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
     &CheckDependency("map", "dyads");
     &CheckDependency("map", "seq");
@@ -594,7 +607,7 @@ sub RunFootprintDisco {
     $cmd .= " -o ".$outfile{map};
     &one_command($cmd);
   }
-  &IndexOneFile("Feature map", $outfile{map}, image=>1);
+  &IndexOneFile("Feature map", $outfile{map}, image=>1) if ($status eq "OK");
 
 
   ################################################################
@@ -614,7 +627,7 @@ sub RunFootprintDisco {
   }
 
   ################################################################
-  ## Close query-specific output streams
+  ## Close query-specific output stream
   if ($main::verbose >= 1) {
       my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
       print $out $query_exec_time;
@@ -622,9 +635,15 @@ sub RunFootprintDisco {
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
 
-  ## Close the index file
+  ## Choose the color according to status
+  my $status_color = "#00AA00";
+  unless ($status eq "OK") {
+    $status_color = "#CC0000";
+  }
+
+  ## Close query-specific index file
   print $index "</table>\n";
-  print $index "</blockquote>";
+  print $index "Query status: <font color='>", $status_color, "'>", $status, "</font>\n";
   print $index "<hr size=2 color='#000088'>";
   print $index "</body>";
   print $index "</html>";
@@ -641,7 +660,8 @@ sub RunFootprintDisco {
   ## Report the significant dyads
   my $top_id = "";
   my $top_sig = "NA";
-  my $dyad_nb = 0;
+  my $top_sig_color = '#000000';
+  $dyad_nb = 0; ## Re-initialize the number of dyads
   local %header_col = ();
 
   if (-e $outfile{dyads}) {
@@ -668,7 +688,7 @@ sub RunFootprintDisco {
 
       $dyad_nb++;
 
-      ## Report top significance
+      ## Report top significant dyad
       if ($dyad_nb == 1) {
 	my @fields = split "\t";
 	$top_id = $fields[$header_col{"identifier"}];
@@ -679,16 +699,28 @@ sub RunFootprintDisco {
     close $dyads;
   }
 
+  print $main_index "<td><font color='", $status_color,"'>", $status, "</font></td>\n";
+  print $main_index "<td>", $query_prom_len, "</td>\n" unless ($nofilter);
+  print $main_index "<td>", $ortholog_nb, "</td>\n";
   print $main_index "<td><tt>", $top_id, "</tt></td>\n";
-  print $main_index "<td>", $top_sig, "</td>\n";
-  print $main_index "<td>", $dyad_nb, "<td>";
+
+  if (($status ne "OK") || ($top_sig <= 1)) {
+    $top_sig_color = '#BBBBBB';
+  } elsif ($top_sig >= 5) {
+    $top_sig_color = '#00AA00';
+  } else {
+    $top_sig_color = '#000000';
+  }
+  print $main_index "<td>", "<font color='".$top_sig_color."'>", $top_sig, "</font>",,"</td>\n";
+  print $main_index "<td>", "<font color='".$top_sig_color."'>", $dyad_nb, "</font>",,"</td>\n";
+#  print $main_index "<td>", $dyad_nb, "<td>";
 
   print $main_index "</tr>\n";
 }
 
 
 ################################################################
-## Display full help message 
+## Display full help message
 sub PrintHelp {
 #    system "pod2text -c $0";
     system "cat $0 $ENV{RSAT}/perl-scripts/lib/footprint.lib.pl | pod2text -c";
@@ -938,6 +970,8 @@ sub Verbose {
 ################################################################
 ## Run dyad-analysis
 sub DyadAnalysis {
+  my $dyad_nb = 0; ## The method returns the number of significant dyads
+
   if ($task{dyads}) {
     &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
     &CheckDependency("dyads", "purged");
@@ -976,18 +1010,26 @@ sub DyadAnalysis {
     &one_command($cmd);
 
     ################################################################
-    ## Assemble significant dyads
-    &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
-    &CheckDependency("asmb", "dyads");
-    $cmd = "$SCRIPTS/pattern-assembly -v 1";
-    $cmd .= " -i ".$outfile{dyads};
-    $cmd .= " -subst 0 -maxfl 1 -toppat 50";
-    $cmd .= " -o ".$outfile{asmb};
-    &one_command($cmd);
+    ## Make sure that there is at least one significant dyad before
+    ## doing the assembly and conversion to matrix
+    $dyad_nb = &CountDyads();
+    if ($dyad_nb < 1) {
+      $status = "No significant dyad" if ($status eq "OK");
+    } else {
 
-    ################################################################
-    ## Convert assembled dyads into a position-specific scoring matrix
-#    if ($to_matrix) {
+      ################################################################
+      ## Assemble significant dyads
+      &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
+      &CheckDependency("asmb", "dyads");
+      $cmd = "$SCRIPTS/pattern-assembly -v 1";
+      $cmd .= " -i ".$outfile{dyads};
+      $cmd .= " -subst 0 -maxfl 1 -toppat 50";
+      $cmd .= " -o ".$outfile{asmb};
+      &one_command($cmd);
+
+      ################################################################
+      ## Convert assembled dyads into a position-specific scoring matrix
+      #    if ($to_matrix) {
       &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 2);
       &CheckDependency("pssm", "asmb");
       &CheckDependency("pssm", "seq");
@@ -1001,14 +1043,29 @@ sub DyadAnalysis {
       $cmd .= " -logo";
       $cmd .= " -o ".$outfile{pssm_prefix};
       &one_command($cmd);
-#    }
+    }
+  } else {
+    ## Even if the task dyads has not been selected, we count the previous number of significant dyads
+    $dyad_nb = &CountDyads();
   }
   &IndexOneFile("Dyads (tab format)", $outfile{dyads});
   &IndexOneFile("<b>Dyads</b> (html format)", $outfile{dyads_html});
-  &IndexOneFile("Assembled dyads", $outfile{asmb});
-  &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
-  &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
-  &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
+  if ($dyad_nb >= 1) {
+    &IndexOneFile("Assembled dyads", $outfile{asmb});
+    &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
+    &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
+    &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
+  }
+  return($dyad_nb);
+}
+
+sub CountDyads {
+  my $dyad_nb = 0;
+  if (-e $outfile{dyads}) {
+    $dyad_nb = `grep -v '^;' $outfile{dyads} | grep -v '^#' | wc -l`;
+    chomp($dyad_nb);
+  }
+  return($dyad_nb);
 }
 
 ################################################################
