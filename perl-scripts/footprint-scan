@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.107 2011/10/17 13:47:22 amedina Exp $
+# $Id: footprint-scan,v 1.108 2011/11/26 15:43:03 jvanheld Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.107 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -1730,7 +1730,6 @@ sub RunFootprintScan {
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
   print $index "</table>\n";
-  print $index "</blockquote>";
   print $index "<hr size=2 color='#000088'>";
   print $index "</body>";
   print $index "</html>";
@@ -1831,7 +1830,6 @@ sub GetOrthologsTF {
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
   print $index "</table>\n";
-  print $index "</blockquote>";
   print $index "<hr size=2 color='#000088'>";
   print $index "</body>";
   print $index "</html>";
