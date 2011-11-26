@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.76 2011/11/26 15:41:51 jvanheld Exp $
+# $Id: footprint-discovery,v 1.77 2011/11/26 20:40:45 rsat Exp $
 #
 ############################################################
 
@@ -223,7 +223,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -1192,13 +1192,13 @@ sub CoregulationNetwork {
 #######################################################################
 ## Returns the number of jobs running currently for the current user
 sub get_job_nb {
-      my $batchuser = `whoami`;
-      chomp $batchuser;
-      my $jobnb = `qstat -u $batchuser | grep -v ' C ' | wc -l`;
-      chomp $jobnb;
-      $jobnb -= 2;
-      &RSAT::message::TimeWarn("$jobnb jobs in the queue for user $batchuser") if ($main::verbose >= 4);
-      return $jobnb;
+    my $batchuser = `whoami`;
+    chomp $batchuser;
+    my $jobnb = `qstat -u $batchuser | grep -v ' C ' | wc -l`;
+    chomp $jobnb;
+    $jobnb -= 2;
+    &RSAT::message::TimeWarn("$jobnb jobs in the queue for user $batchuser") if ($main::verbose >= 4);
+    return $jobnb;
 }
 __END__
 
