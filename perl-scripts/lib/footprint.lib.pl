@@ -224,7 +224,7 @@ sub CheckFootprintParameters {
     if (scalar(@query_genes) > $last) {
 #      @query_genes = @query_genes[0..($last-1)];
       @query_genes= splice(@query_genes,0,$last);
-      &RSAT::message::Warning("Truncated the end of the gene list (last $last)", "Remaining genes", scalar(@query_genes), join(";", @query_genes));
+      &RSAT::message::Warning("Truncated the end of the gene list (last $last)", "Remaining genes", scalar(@query_genes));
     } else {
       &RSAT::message::Warning("Cannot apply option -last $last because query list is too short (".scalar(@query_genes).")");
     }
@@ -233,7 +233,7 @@ sub CheckFootprintParameters {
     if (scalar(@query_genes) > $skip) {
 #      @query_genes = @query_genes[$skip..$#query_genes];
       @query_genes= splice(@query_genes,$skip, (scalar(@query_genes) - $skip));
-      &RSAT::message::Warning("Truncated the beginning of the gene list (skip $skip)", "Remaining genes", scalar(@query_genes), join(";", @query_genes));
+      &RSAT::message::Warning("Truncated the beginning of the gene list (skip $skip)", "Remaining genes", scalar(@query_genes));
     } else {
       &RSAT::error::FatalError("No gene left after applying the option -skip $skip (gene list contains ".scalar(@query_genes)." genes)");
     }
@@ -930,7 +930,6 @@ sub OpenQueryReport {
   $html_title2 .= "; ".$taxon if $taxon;
   print $index "<h2 align=center>",$html_title2 , "</h2>\n";
   print $index "<hr size=2 color='#000088'>";
-  print $index "<blockquote>";
   print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
   &IndexOneFile("Log", $outfile{log});
   &IndexOneFile("Input", $infile{genes}) if (($infile{genes}) && !($main::sep_genes));
@@ -988,6 +987,9 @@ sub OpenMainIndex {
   print $main_index "<tr>\n";
   print $main_index "<th>","Query nb","</th>\n";
   print $main_index "<th>","Query","</th>\n";
+  print $main_index "<th>","Status","</th>\n";
+  print $main_index "<th>","Query promoter length","</th>\n";
+  print $main_index "<th>","Orthologs","</th>\n";
   print $main_index "<th>","Top dyad","</th>\n";
   print $main_index "<th>","Max sig","</th>\n";
   print $main_index "<th>","Nb dyads","</th>\n";
@@ -1145,28 +1147,28 @@ sub GetOrthologs {
     $cmd .= " -uth e_value 1e-05";
     $cmd .= " -return e_value";
     $cmd .= " -only_blast";	## only use genome having blast files
-
     $cmd .= " -rand " if ($main::rand);
-
-
     $cmd .= " -o ".$outfile{orthologs};
-
-    
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  }
-  elsif ($main::orthologs_list_file){
-      #here introduce addaptation for the file so it can be used on next steps
+
+  } elsif ($main::orthologs_list_file){
+
+      # here introduce addaptation for the file so it can be used on next steps
       my $genes=`cut -f1 $outfile{genes} |xargs`;
       chomp($genes);
       $genes=~s/\s+/\|/g;
       my $orthologs=`egrep "$genes" $main::orthologs_list_file | perl -ane 'print "\$F[1]\t\$F[2]\t\$F[0]\t$organism_name\n"' `;
       my $out= &OpenOutputFile($outfile{orthologs});
-      print $out $orthologs; 
+      print $out $orthologs;
       close $out;
       &RSAT::message::Info("Orthologs for gene(s)",$genes, "specified by the user can be found in " , $outfile{orthologs}) if ($main::verbose >= 2);
   }
+
+  my $ortholog_nb = `grep -v '^;' $outfile{orthologs} | grep -v '^#' | wc -l `;
+  chomp($ortholog_nb);
   &IndexOneFile("Orthologs", $outfile{orthologs});
+  return($ortholog_nb);
 }
 
 
