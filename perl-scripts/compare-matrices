@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.111 2011/10/26 13:41:57 jvanheld Exp $
+# $Id: compare-matrices,v 1.112 2011/11/27 04:17:14 jvanheld Exp $
 #
 ############################################################
 
@@ -181,12 +181,12 @@ position).
 
 =item I<f1{i,j}>
 
-Frequency of residue I<r> in the I<jth> column of the aligned subset of the
+Frequency of I<ith> residue in the I<jth> column of the aligned subset of the
 first matrix (taking the offset into account).
 
 =item I<f2{i,j}>
 
-Frequency of residue r in the jth column of the aligned subset of the
+Frequency of I<ith> residue in the I<jth> column of the aligned subset of the
 second matrix (taking the offset into account).
 
 =item I<f1m, f2m>
@@ -419,7 +419,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.112 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -690,9 +690,14 @@ package main;
     $return_field{consensus} = 1;
     $return_field{Ncor} = 1;
 
-    ## For the scanning mode, we impose some thresholds to control the number of 
+    ## For the scanning mode, we impose some thresholds to return all
+    ## the hits of a small matrix (example: JASPAR motif) in a larger
+    ## matrix (e.g. a matrix representing a region conserve between
+    ## species).
     if ($comparison_mode eq "scan") {
+      &RSAT::error::FatalError("The mode scan still needs to be implemented");
     }
+
   } if ($comparison_mode eq "matches") {
     $sort_field = "Ncor" unless ($sort_field);
     $return_field{matrix_name} = 1;
@@ -773,7 +778,7 @@ package main;
     $main::outfile{html_index} = $main::outfile{output_prefix}."_index.html";
     push @outfiles, "html_index";
     $main::html_index = &OpenOutputFile($main::outfile{html_index});
-    my $header = &PrintHtmlResultHeader(program=>"compare-matrices");
+    my $header = &PrintHtmlResultHeader(program=>"compare-matrices", refresh_time=>120);
     #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
     print $main::html_index $header;
 
@@ -3038,8 +3043,6 @@ sub Verbose {
 ## Generate a HTML index with links to all input/output files
 sub IndexFiles {
   &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
-
-
 
 #   ## Input files
 #   print $html_index "<h2>Input files</h2>";
