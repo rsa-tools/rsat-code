@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.91 2011/11/20 23:38:32 rsat Exp $
+# $Id: retrieve-seq,v 1.92 2011/11/27 03:46:09 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -270,7 +270,7 @@ if ($output_features) {
 #### verbose
 &Verbose() if ($verbose);
 
-## Get the index of GenomeFeatures by names and ID
+## Get the index of genome features by names and ID
 $feature_index = $organism->get_attribute("name_index");
 
 #&RSAT::message::Debug("Feature keys", scalar(keys (%feature_index))) if ($main::verbose >= 10);
