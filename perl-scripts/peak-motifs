@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.200 2011/11/16 21:02:35 jvanheld Exp $
+# $Id: peak-motifs,v 1.201 2011/11/27 03:46:39 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.200 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.201 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -4488,7 +4488,8 @@ sub ReportParamsAndFiles {
 
   ## Open HTML file for links
   local $links = &OpenOutputFile($main::outfile{links});
-  &PrintHtmlResultHeader($links);
+  print $links &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1);
+#  &PrintHtmlResultHeader($links);
 
   ## Read the list of directories and files for the discovered motifs
   &ReadMotifTable();
