@@ -110,14 +110,12 @@ sub SelectReferenceOrganisms {
       $main::org_selection_prefix=$taxon;
   }
   elsif ($main::orglist_file){
-      $main::org_selection_prefix="org_list";
+    $main::org_selection_prefix="org_list";
   }
   elsif ($main::orthologs_list_file){
-      $main::org_selection_prefix="orthologs_list";
+    $main::org_selection_prefix="orthologs_list";
   }
-  
   $main::org_selection_prefix.="_orthologs_randome_selection"     if($main::rand);
-  
 
   return @ref_organisms;
 }
@@ -157,11 +155,13 @@ sub CheckFootprintParameters {
 
   ################################################################
   ## For generating matrix-wise synthesis we need gene names and description
-  if (($task{synthesis}) || ($task{index})){
+#  if (($task{synthesis}) || ($task{index})){
     &RSAT::message::TimeWarn("Loading features and calculating gene neighbours for organism", $organism_name) if ($main::verbose >= 2);
     $organism->LoadFeatures();
+#    $organism->LoadFeatures($annotation_table, $imp_pos);
+    $organism->LoadSynonyms();
     $organism->CalcNeighbourLimits();
-  }
+#  }
 
   ################################################################
   ## Read query genes from input file
@@ -188,7 +188,7 @@ sub CheckFootprintParameters {
     }
     close $in;
   }
-  if ( $main::orthologs_list_file) { 
+  if ($main::orthologs_list_file) {
       my $genes=`grep -v "#" $main::orthologs_list_file | grep -v ";" | cut -f1 | sort -u`;
       chomp($genes);
       my @fields = split (/\s+/,$genes);
@@ -1123,9 +1123,20 @@ sub GetOrthologs {
       &RSAT::message::Info("Orthologs for gene(s)",$genes, "specified by the user can be found in " , $outfile{orthologs}) if ($main::verbose >= 2);
   }
 
-  my $ortholog_nb = `grep -v '^;' $outfile{orthologs} | grep -v '^#' | wc -l `;
-  chomp($ortholog_nb);
   &IndexOneFile("Orthologs", $outfile{orthologs});
+
+  ## Count number of orthologs for the index files
+  my $ortholog_nb = "NA";
+  if (-e $outfile{orthologs}) {
+    $ortholog_nb = `grep -v '^;' $outfile{orthologs} | grep -v '^#' | wc -l `;
+    chomp($ortholog_nb);
+    if ($ortholog_nb < 1) {
+      $status = "No ortholog";
+    }
+  } else {
+    &RSAT::message::Warning("Missing orthologs file", $outfile{orthologs}) if ($main::verbose >= 1);
+    $main::status = "Missing file: ".$outfile{orthologs};
+  }
   return($ortholog_nb);
 }
 
