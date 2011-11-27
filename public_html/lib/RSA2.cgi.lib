@@ -1290,7 +1290,8 @@ sub PrintHtmlResultHeader {
   my (%args) = @_;
   my $header = "";
   my $program = $args{program} || "RSAT";
-  my $title = $main::param{title} || "result";
+#  my $title = $args{title} || $main::param{title} || "result";
+  my $title = $args{title} || "result";
   my $result_toc = $args{result_toc};
 
   ## HTML Header and title
