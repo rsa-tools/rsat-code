@@ -1025,6 +1025,19 @@ sub RetrieveQueryPromoters {
     &one_command($cmd);
   }
   &IndexOneFile("Query sequence", $outfile{query_seq});
+
+  ## Compute length of query sequences (in order to filter out genes with 0 length promoters)
+  if (-e $outfile{query_seq}) {
+    $query_prom_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{query_seq} | grep -v '^#' | cut -f 2`;
+    chomp($query_prom_len);
+    if ($query_prom_len < 1) {
+      ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
+      $main::status = "Query promoter has length 0";
+    }
+  } else {
+    $main::status = "Missing file:  $outfile{query_seq}";
+  }
+  return($query_prom_len);
 }
 
 ################################################################
@@ -1131,7 +1144,7 @@ sub GetOrthologs {
     $ortholog_nb = `grep -v '^;' $outfile{orthologs} | grep -v '^#' | wc -l `;
     chomp($ortholog_nb);
     if ($ortholog_nb < 1) {
-      $status = "No ortholog";
+      $main::status = "No ortholog";
     }
   } else {
     &RSAT::message::Warning("Missing orthologs file", $outfile{orthologs}) if ($main::verbose >= 1);
@@ -1183,6 +1196,21 @@ sub RetrieveOrthoSeq {
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
   &IndexOneFile("$promoter sequences", $outfile{seq});
+
+
+  ## Compute length of orthologous sequences (in order to filter out genes with 0 length sequences)
+  if (-e $outfile{seq}) {
+    $ortho_seq_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{seq} | grep -v '^#' | cut -f 2`;
+    chomp($ortho_seq_len);
+    if ($ortho_seq_len < 1) {
+      ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
+      $main::status = "Orthologous sequences have length 0.";
+    }
+  } else {
+    $main::status = "Missing file:  $outfile{seq}";
+  }
+  return($ortho_seq_len);
+
 }
 
 
@@ -1209,6 +1237,13 @@ sub PurgeOrthoSeq {
     &one_command($cmd);
   }
   &IndexOneFile("Purged sequences", $outfile{purged});
+
+  ## Check if purged sequence file exists
+  unless (-e $outfile{purged}) {
+    &RSAT::message::Warning("Missing purged sequence file", $outfile{purged}) if ($main::verbose >= 0);
+    $status = "Missing file: ".$outfile{purged};
+  }
+
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 }
 
