@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.79 2011/11/27 04:17:14 jvanheld Exp $
+# $Id: footprint-discovery,v 1.80 2011/11/27 21:14:16 jvanheld Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.79 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.80 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -418,14 +418,15 @@ package main;
     $feature_index = $organism->get_attribute("name_index");
 
     local $query_nb = scalar(@query_genes);
-    foreach our $current_gene (@query_genes) {
+    foreach our $query (@query_genes) {
       $q++;
-      &RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
-      if ($feature_index->contains(uc($current_gene))) {
-	$current_feature = $feature_index->get_first_value(uc($current_gene));
+      &RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $query) if ($main::verbose >= 1);
+      if ($feature_index->contains(uc($query))) {
+	our $current_feature = $feature_index->get_first_value(uc($query));
+	our $current_gene = $query; ## needs to be declared globally for some methods of footprint.lib.pl (not very clean, I know)
 	&RunFootprintDisco($current_gene);
       } else {
-	&RSAT::message::Warning("Query", $q."/".$query_nb, "Unknown gene", $current_gene) if ($main::verbose >= 1);
+	&RSAT::message::Warning("Query", $q."/".$query_nb, "Unknown gene", $query) if ($main::verbose >= 1);
 	$status = "Unknown gene name";
       }
     }
@@ -558,32 +559,17 @@ sub RunFootprintDisco {
   local $query_prom_len = "NA";
   unless ($nofilter) {
     ## Retrieve promoters of the query organism
-    &RetrieveQueryPromoters();
-
-    if (-e $outfile{query_seq}) {
-      $query_prom_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{query_seq} | grep -v '^#' | cut -f 2`;
-      chomp($query_prom_len);
-      if ($query_prom_len < 1) {
-	## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
-	$status = "Query promoter has length 0";
-      } else {
-	## Detect all dyads in promoters of query genes for dyad filtering
-	&ComputeFilterDyads();
-      }
-    } else {
-      $status = "Missing file:  $outfile{query_seq}";
+    $query_prom_len = &RetrieveQueryPromoters();
+    if ($status eq "OK") {
+      ## Detect all dyads in promoters of query genes for dyad filtering
+      &ComputeFilterDyads();
     }
   }
 
   ################################################################
   ## Identify ortholog genes
   local $ortholog_nb = "NA";
-  if ($status eq "OK") {
-    $ortholog_nb = &GetOrthologs();
-    if ($ortholog_nb < 1) {
-      $status = "No ortholog";
-    }
-  }
+  $ortholog_nb = &GetOrthologs() if ($status eq "OK");
 
   ################################################################
   ## Predict operon leader genes for the orthologous genes
@@ -591,7 +577,8 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Retrieve sequences from orthologs
-  &RetrieveOrthoSeq() if ($status eq "OK");
+  local $ortho_seq_len = "NA";
+  $ortho_seq_len = &RetrieveOrthoSeq() if ($status eq "OK");
 
   ################################################################
   ## Purge sequences
@@ -599,10 +586,8 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
-  local $dyad_nb = &DyadAnalysis() if ($status eq "OK");
-  if (($status eq "OK") && ($dyad_nb < 1)) {
-    $status = "No significant dyad";
-  }
+  local $dyad_nb = "NA";
+  $dyad_nb = &DyadAnalysis() if ($status eq "OK");
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
@@ -675,7 +660,7 @@ sub RunFootprintDisco {
   print $main_index "<td>", $current_feature->get_attribute("name"), "</td>\n" if ($main::sep_genes);
 
   ## Report the significant dyads
-  my $top_id = "";
+  my $top_id = "NA";
   my $top_sig = "NA";
   my $sig_color = '#000000';
   $dyad_nb = 0; ## Re-initialize the number of dyads
@@ -719,6 +704,7 @@ sub RunFootprintDisco {
   print $main_index "<td><font color='", $status_color,"'>", $status, "</font></td>\n";
   print $main_index "<td>", $query_prom_len, "</td>\n" unless ($nofilter);
   print $main_index "<td>", $ortholog_nb, "</td>\n";
+  print $main_index "<td>", $ortho_seq_len, "</td>\n";
   print $main_index "<td><tt>", $top_id, "</tt></td>\n";
 
   if ($status ne "OK") {
@@ -1067,23 +1053,34 @@ sub DyadAnalysis {
     ## Even if the task dyads has not been selected, we count the previous number of significant dyads
     $dyad_nb = &CountDyads();
   }
+
   &IndexOneFile("Dyads (tab format)", $outfile{dyads});
   &IndexOneFile("<b>Dyads</b> (html format)", $outfile{dyads_html});
-  if ($dyad_nb >= 1) {
+
+  if ((&IsNatural($dyad_nb)) && ($dyad_nb >= 1)) {
     &IndexOneFile("Assembled dyads", $outfile{asmb});
     &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
     &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
     &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
   }
+
   return($dyad_nb);
 }
 
 sub CountDyads {
-  my $dyad_nb = 0;
+  my $dyad_nb = "NA";
   if (-e $outfile{dyads}) {
     $dyad_nb = `grep -v '^;' $outfile{dyads} | grep -v '^#' | wc -l`;
     chomp($dyad_nb);
+    ## Detect if there is no significant dyad
+    if (($status eq "OK") && ($dyad_nb < 1)) {
+      $status = "No significant dyad";
+    }
+  } else {
+    &RSAT::message::Warning("Missing dyad file", $outfile{dyads});
+    $status = "Missing dyad file:".$outfile{dyads};
   }
+
   return($dyad_nb);
 }
 
@@ -1238,6 +1235,7 @@ sub OpenMainIndex {
   print $main_index "<th>","Status","</th>\n";
   print $main_index "<th>","Query promoter length","</th>\n";
   print $main_index "<th>","Orthologs","</th>\n";
+  print $main_index "<th>","Sum ortholog sequence sizes","</th>\n";
   print $main_index "<th>","Top dyad","</th>\n";
   print $main_index "<th>","Max sig","</th>\n";
   print $main_index "<th>","Nb dyads","</th>\n";

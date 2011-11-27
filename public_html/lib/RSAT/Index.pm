@@ -27,18 +27,17 @@ to the same name).
 =cut
 
 
-################################################################
+
 =pod
 
 =item get_values
 
-Given a key, return the list of associated values 
+Given a key, return the list of associated values.
 
 =cut
 sub get_values {
     my ($self, $key) = @_;
     my @values = ();
-    
     if (defined(@{$self->{$key}})) {
 	@values = @{$self->{$key}};
 #    } else {
@@ -52,7 +51,7 @@ sub get_values {
 }
 
 
-################################################################
+
 =pod
 
 =item get_first_value
@@ -66,12 +65,13 @@ sub get_first_value {
     return $values[0];
 }
 
-################################################################
+
 =pod
 
 =item contains
 
-returns true if the index contains the specified key.
+Returns true if the index contains the specified key.
+
 =cut
 sub contains {
     my ($self, $key) = @_;
@@ -82,12 +82,11 @@ sub contains {
     }
 }
 
-################################################################
 =pod
 
 =item contains_pair
 
-Returns true if the index contain the specified key-value pair. 
+Returns true if the index contain the specified key-value pair.
 
 Usage: if ($index->contains_key($key, $value)) { ... }
 
@@ -98,11 +97,10 @@ sub contains_pair {
 	foreach my $indexed_value ($self->get_value($key)) {
 	    return 1 if ($value eq $indexed_value);
 	}
-    } 
+    }
     return 0;
 }
 
-################################################################
 =pod
 
 =item set_values
@@ -117,7 +115,6 @@ sub set_values {
     @{$self->{$key}} = @values;
 }
 
-################################################################
 =pod
 
 =item add_value
