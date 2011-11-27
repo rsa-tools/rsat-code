@@ -913,22 +913,22 @@ sub OpenQueryReport {
   my $outfile_prefix = $dir{query_prefix};
   $index_report_per_query{$outfile_prefix} = $outfile{index};
   $index = &OpenOutputFile($outfile{index});
-  print $index "<html>\n";
+#  print $index "<html>\n";
   $html_title = $outfile_prefix;
   $html_title .= " ".$taxon." " if ($taxon);
   $html_title .= " ".$organism_name if ($organism_name);
   $html_title .= " ".$bg_model if ($bg_model);
   $html_title .= "Adaptive BG model, window size ".$window_size if ($window_size);
-  print $index "<head><title>", $html_title , "</title></head>\n" ;
-  print $index "<body>\n";
-  print $index "<hr size=4 color='#000088'>";
-
-  print $index "<h1 align=center>",$program_name, " result</h1>"  ;
+#  print $index "<head><title>", $html_title , "</title></head>\n" ;
+#  print $index "<body>\n";
+#  print $index "<hr size=4 color='#000088'>";
+#  print $index "<h1 align=center>",$program_name, " result</h1>"  ;
+  print $index &PrintHtmlResultHeader("program"=>$program_name, "title"=>$html_title);
   $html_title2 = "<i>".$organism_name."</i>";
   $html_title2 .= " ".$bg_model unless ($program_name eq "footprint-scan");
   $html_title2 .= " ".$query_prefix;
   $html_title2 .= "; ".$taxon if $taxon;
-  print $index "<h2 align=center>",$html_title2 , "</h2>\n";
+#  print $index "<h2 align=center>",$html_title2 , "</h2>\n";
   print $index "<hr size=2 color='#000088'>";
   print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
   &IndexOneFile("Log", $outfile{log});
@@ -954,48 +954,6 @@ sub MainIndexFileName {
   my $main_prefix = &MainPrefix();
   $outfile{main_index_file} = $main_prefix."_result_index.html";
   return($outfile{main_index_file});
-}
-
-################################################################
-## Main index. This is a HTML table with links to the query-specific
-## results: one row per query, one column per output type.
-sub OpenMainIndex {
-  &RSAT::util::CheckOutDir($dir{output_root});
-
-  $outfile{main_index} = $dir{output_root}."/".&MainIndexFileName();
-
-  &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
-
-  my $main_index = &OpenOutputFile($outfile{main_index});
-  print $main_index "<html>\n";
-  $html_title = "footprint-discovery";
-  $html_title .= " ".$taxon if ($taxon);
-  $html_title .= " ".$organism_name if ($organism_name);
-  $html_title .= " ".$bg_model if ($bg_model);
-  print $main_index "<head><title>", $html_title , "</title></head>\n" ;
-  print $main_index &sorttable_script();
-  print $main_index "<body>\n";
-  print $main_index "<h1>", $html_title, "</h1\n";
-  print $main_index "<p><b>Command:</b> footprint-discovery";
-  $arguments =  &RSAT::util::hide_RSAT_path(&PrintArguments());
-  print $main_index $arguments;
-  print $main_index "</p>\n";
-
-  ## Open the index table
-  print $main_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
-#  print $main_index "<table cellspacing=0 cellpadding=3 border=0>\n";
-  print $main_index "<tr>\n";
-  print $main_index "<th>","Query nb","</th>\n";
-  print $main_index "<th>","Query","</th>\n";
-  print $main_index "<th>","Status","</th>\n";
-  print $main_index "<th>","Query promoter length","</th>\n";
-  print $main_index "<th>","Orthologs","</th>\n";
-  print $main_index "<th>","Top dyad","</th>\n";
-  print $main_index "<th>","Max sig","</th>\n";
-  print $main_index "<th>","Nb dyads","</th>\n";
-  print $main_index "</tr>\n";
-
-  return ($main_index);
 }
 
 
