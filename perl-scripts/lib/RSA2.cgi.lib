@@ -1296,9 +1296,6 @@ sub PrintHtmlResultHeader {
 
   ## HTML Header and title
   $header .=  "<html>\n";
-#  if (defined($args{refresh})) {
-#    $header .= '<meta http-equiv="refresh" content="10; url=http://www.tizag.com" />';
-#  }
   $header .=  "<head>\n";
   $header .=  "<title>".$program." ".$title."</title>\n";
 
@@ -1307,6 +1304,11 @@ sub PrintHtmlResultHeader {
   $header .=  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
   $header .=  "</style>\n";
 #  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
+
+  ## Refresh time if required
+  if (defined($args{refresh_time})) {
+    $header .= "<meta http-equiv='refresh' content='".$args{refresh_time}."' />\n";
+  }
 
   ## Java scripts
   $header .=  sorttable_script();
@@ -1330,9 +1332,13 @@ sub PrintHtmlResultHeader {
   if ($result_toc) {
     $header .=  "<div id='Menu_space'>\n";
     $header .=  "<div id='Menu_wait'>\n";
-    $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>
-  <p style='text-align:center;color:green'>Results will progressively appear on this page <br/>
-  <b>Please regularly refresh the page until this message disappears.</b></p>\n";
+    $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
+    $header .= "<p style='text-align:center;color:green'>Results will progressively appear on this page <br/>\n";
+    if (defined($args{refresh_time})) {
+      $header .= "<b>This page should be automatically refreshed every ".$args{refresh_time}." seconds until this message disappears.</b></p>\n";
+    } else {
+      $header .= "<b>Please regularly refresh the page until this message disappears.</b></p>\n";
+    }
     $header .=  "</div>\n";
     $header .=  "</div>\n";
   }
