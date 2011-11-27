@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.78 2011/11/27 03:43:14 jvanheld Exp $
+# $Id: footprint-discovery,v 1.79 2011/11/27 04:17:14 jvanheld Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.78 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.79 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -1217,15 +1217,10 @@ sub OpenMainIndex {
   &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
 
   my $main_index = &OpenOutputFile($outfile{main_index});
-#  print $main_index "<html>\n";
-#  $html_title = "footprint-discovery";
-  $html_title = " ".$taxon if ($taxon);
+  $html_title = $taxon if ($taxon);
   $html_title .= " ".$organism_name if ($organism_name);
   $html_title .= " ".$bg_model if ($bg_model);
-#  print $main_index "<head><title>", $html_title , "</title></head>\n" ;
-#  print $main_index &sorttable_script();
-#  print $main_index "<body>\n";
-  print $main_index &PrintHtmlResultHeader(program=>"footprint-discovery", title=>"$html_title");
+  print $main_index &PrintHtmlResultHeader(program=>"footprint-discovery", title=>"$html_title", refresh_time=>300);
 
 #  print $main_index "<h1>", $html_title, "</h1\n";
   print $main_index "<p><b>Command:</b> footprint-discovery";
