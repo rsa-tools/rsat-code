@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.202 2011/11/27 04:11:36 jvanheld Exp $
+# $Id: peak-motifs,v 1.203 2011/11/27 05:04:51 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.202 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.203 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -244,11 +244,11 @@ package main;
   local $motifs_read = 0; ## flag indicating if the motifs have been read (since the method ReadDiscoveredMotifs may be called from several places
 
   ## Those variables need to be global for motif post-processing and indexing
-  local @motif_ids;
-  local @motif_dirs;
-  local @motif_prefixes;
-  local @motif_files;
-  local $motif_nb;
+  local @motif_ids = ();
+  local @motif_dirs = ();
+  local @motif_prefixes = ();
+  local @motif_files = ();
+  local $motif_nb = 0;
 
   local $progressive_synthesis = 1;
   local $syn;
@@ -333,17 +333,23 @@ package main;
   ## HTML synthesis by algorithm
   &SynthesisMotifsByAlgo() if ($progressive_synthesis);
 
-  &MotifsVersusReference() if ((defined($main::infile{ref_motifs}))
-			       && ($task{motifs_vs_ref}));
+  ## Check the number of discovered motifs before running further analyses
+  &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
+  if ($motif_nb > 0) {
+    &MotifsVersusReference() if ((defined($main::infile{ref_motifs}))
+				 && ($task{motifs_vs_ref}));
 
-  &MotifsVersusDatabase() if ((scalar(@motif_databases) > 0)
-			      && ($task{motifs_vs_db}));
+    &MotifsVersusDatabase() if ((scalar(@motif_databases) > 0)
+				&& ($task{motifs_vs_db}));
 
-  &ScanSequences() if ($task{scan});
+    &ScanSequences() if ($task{scan});
 
-  &SynthesisByMotif() if ($progressive_synthesis);
+    &SynthesisByMotif() if ($progressive_synthesis);
 
-  &SynthesisMotifCompa() if ($progressive_synthesis);
+    &SynthesisMotifCompa() if ($progressive_synthesis);
+  } else {
+    &RSAT::message::Warning("Not a single discovered motif. Reduginc the order of the Markov model may increase sensitivity.");
+  }
 
   ## Write the time spent by each program in a time table
   if ($task{timelog}) {
@@ -819,6 +825,13 @@ sub SetOutFileNames {
   }
 
   ################################################################
+  ## We desactivate the graph display becayse the layout is really too
+  ## ugly. Users will be suggested to open the graph with Cytoscape
+  ## until we find the time to implement a nice graph layout
+  ## procedure.
+  $main::param{display_graphs} = 0;
+
+  ################################################################
   ## Comparison between significance of the discovered patterns
   $pattern_type = "merged_words";
   $main::outfile{merged_words} = &OutFileName("results/".$pattern_type, ".tab", "merged_words");
@@ -936,6 +949,7 @@ sub SetOutFileNames {
       $main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton_html"} = &OutFileName("results/discovered_vs_db", ".html", "motifs_vs_db_".$db_name."_alignments_1ton");
     }
   }
+
 }
 
 ################################################################
@@ -1769,7 +1783,7 @@ sub ReadDiscoveredMotifs {
   ## Read the motifs and compute their consensus
   if (-e $main::outfile{motifs_discovered}) {
     @motifs = &RSAT::MatrixReader::readFromFile($main::outfile{motifs_discovered}, "transfac");
-    my $motif_nb = scalar(@motifs);
+#    my $motif_nb = scalar(@motifs);
 
     foreach my $matrix (@motifs) {
       my $motif_id = $matrix->get_attribute("id");
@@ -1950,13 +1964,19 @@ sub ClusterMotifs {
   $cmd .= " -o ".$main::outfile{motifs_disco_compa_gml};
   &one_command($cmd, 1);
 
-  ## Generate a figure of the motif comparison graph
-  $cmd = $SCRIPTS."/display-graph";
-  $cmd .= " -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
-  $cmd .= " -ewidth";
-  $cmd .= " -layout none";
-  $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
-  &one_command($cmd, 1);
+  ## We desactivate the graph display becayse the layout is really too
+  ## ugly. Users will be suggested to open the graph with Cytoscape
+  ## until we find the time to implement a nice graph layout
+  ## procedure.
+  if ($main::param{display_graphs}) {
+    ## Generate a figure of the motif comparison graph
+    $cmd = $SCRIPTS."/display-graph";
+    $cmd .= " -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
+    $cmd .= " -ewidth";
+    $cmd .= " -layout none";
+    $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
+    &one_command($cmd, 1);
+  }
 
   ## Use MCL to partition the motif graph into clusters
   my $mcl_dir = $ENV{mcl_dir};
@@ -1998,14 +2018,19 @@ sub ClusterMotifs {
   $cmd .= " -o ".$main::outfile{motifs_disco_clusters_graph_gml};
   &one_command($cmd, 1);
 
-  ## Generate a figure of the motif comparison graph
-  $cmd = $SCRIPTS."/display-graph";
-  $cmd .= " -in_format gml -i ".$main::outfile{motifs_disco_clusters_graph_gml};
-  $cmd .= " -ewidth";
-  $cmd .= " -layout none";
-  $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_clusters_graph_png};
-  &one_command($cmd, 1);
-
+  ## We desactivate the graph display becayse the layout is really too
+  ## ugly. Users will be suggested to open the graph with Cytoscape
+  ## until we find the time to implement a nice graph layout
+  ## procedure.
+  if ($main::param{display_graphs}) {
+    ## Generate a figure of the motif comparison graph
+    $cmd = $SCRIPTS."/display-graph";
+    $cmd .= " -in_format gml -i ".$main::outfile{motifs_disco_clusters_graph_gml};
+    $cmd .= " -ewidth";
+    $cmd .= " -layout none";
+    $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_clusters_graph_png};
+    &one_command($cmd, 1);
+  }
 }
 
 
@@ -2045,7 +2070,7 @@ sub MotifsVersusReference {
   ################################################################
   ## Compare separately each discovered motif to reference motif(s)
   &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
-  my $motif_nb = scalar(@motif_ids);
+#  my $motif_nb = scalar(@motif_ids);
 
   &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with reference motif(s)") if ($main::verbose >= 2);
 
@@ -2095,13 +2120,19 @@ sub MotifsVersusReference {
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref_gml"};
   &one_command($cmd, 1);
 
-  ## Generate a figure of the motif comparison graph
-  $cmd = $SCRIPTS."/display-graph";
-  $cmd .= " -in_format gml -i ".$main::outfile{"motifs_vs_ref_gml"};
-  $cmd .= " -ewidth";
-  $cmd .= " -layout none";
-  $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_ref_png"};
-  &one_command($cmd, 1);
+  ## We desactivate the graph display becayse the layout is really too
+  ## ugly. Users will be suggested to open the graph with Cytoscape
+  ## until we find the time to implement a nice graph layout
+  ## procedure.
+  if ($main::param{display_graphs}) {
+    ## Generate a figure of the motif comparison graph
+    $cmd = $SCRIPTS."/display-graph";
+    $cmd .= " -in_format gml -i ".$main::outfile{"motifs_vs_ref_gml"};
+    $cmd .= " -ewidth";
+    $cmd .= " -layout none";
+    $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_ref_png"};
+    &one_command($cmd, 1);
+  }
 }
 
 ################################################################
@@ -2111,7 +2142,7 @@ sub MotifsVersusDatabase {
     ################################################################
     ## Compare separately each discovered motif to reference motif(s)
     &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
-    my $motif_nb = scalar(@motif_ids);
+#    my $motif_nb = scalar(@motif_ids);
 
     &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with database", $db_name) if ($main::verbose >= 2);
     foreach my $i (0..$#motif_ids) {
@@ -2164,13 +2195,19 @@ sub MotifsVersusDatabase {
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_gml"};
     &one_command($cmd, 1);
 
-    ## Generate a figure of the motif comparison graph
-    $cmd = $SCRIPTS."/display-graph";
-    $cmd .= " -in_format gml -i ".$main::outfile{"motifs_vs_db_".$db_name."_gml"};
-    $cmd .= " -ewidth";
-    $cmd .= " -layout none";
-    $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_db_".$db_name."_png"};
-    &one_command($cmd, 1);
+    ## We desactivate the graph display becayse the layout is really too
+    ## ugly. Users will be suggested to open the graph with Cytoscape
+    ## until we find the time to implement a nice graph layout
+    ## procedure.
+    if ($main::param{display_graphs}) {
+      ## Generate a figure of the motif comparison graph
+      $cmd = $SCRIPTS."/display-graph";
+      $cmd .= " -in_format gml -i ".$main::outfile{"motifs_vs_db_".$db_name."_gml"};
+      $cmd .= " -ewidth";
+      $cmd .= " -layout none";
+      $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_db_".$db_name."_png"};
+      &one_command($cmd, 1);
+    }
   }
 }
 
@@ -2246,7 +2283,8 @@ sub ScanSequences {
   &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
 
   &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
-  my $motif_nb = scalar(@motif_ids);
+#  my $motif_nb = scalar(@motif_ids);
+
   foreach my $i (0..$#motif_ids) {
     my $m = $i+1;
     my $motif_id = $motif_ids[$i];
@@ -2484,7 +2522,7 @@ sub ResultTOC {
   $result_toc .=  "<a href='#seq_composition'>Sequence composition & statistics </a><br/>";
   $result_toc .=  "<a href='#ref_motifs'>Reference motifs</a><br/>" if (defined($main::infile{ref_motifs}));
   @motifs = &ReadDiscoveredMotifs();
-  my $motif_nb = scalar(@motifs);
+#  my $motif_nb = scalar(@motifs);
 
   $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - </a>".$motif_nb."<br/>";
   $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - </a>".$motif_nb."<br/>";
@@ -2625,6 +2663,7 @@ sub SynthesisByMotif {
   &ReadMotifTable();
 
   @motifs = &ReadDiscoveredMotifs();
+#  my $motif_nb = scalar(@motifs);
 
 #   ## Load background model for computing the consensus and logo of each motif
 #   &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
@@ -2643,7 +2682,6 @@ sub SynthesisByMotif {
 
 
   ## Treat each motif
-  my $motif_nb = scalar(@motifs);
   for my $m (1..$motif_nb) {
     my $matrix = $motifs[$m-1];
     my $motif_id = $matrix->get_attribute("id");
@@ -2840,7 +2878,7 @@ sub OpenSynthesis {
   $syn = &OpenOutputFile($main::outfile{synthesis});
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
-  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>60);
+  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>300);
 }
 
 
@@ -3462,16 +3500,20 @@ sub SynthesisPatternDisco {
 			 );
 
   } else {
-    &SyntheticTableAddRow($pattern_type,
-			  "<font color='red'red>Missing files</font>",
-			  $pattern_type,$main::outfile{$pattern_type},
-			  "assembly",$main::outfile{$pattern_type.'_asmb'},
-			  "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-			  "matrices",$main::outfile{$pattern_type.'_pssm_counts'},
-#			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
-#			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
-#			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
-			 );
+    if (-e $main::outfile{$pattern_type}) {
+      &SyntheticTableAddRow($pattern_type,
+			    "<font color='red'red>Not a single significant pattern</font>",
+			    $pattern_type,$main::outfile{$pattern_type},
+			   );
+    } else {
+      &SyntheticTableAddRow($pattern_type,
+			    "<font color='red'red>Missing files</font>",
+			    $pattern_type,$main::outfile{$pattern_type},
+			    "assembly",$main::outfile{$pattern_type.'_asmb'},
+			    "sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
+			    "matrices",$main::outfile{$pattern_type.'_pssm_counts'},
+			   );
+  }
   }
 }
 
@@ -3491,19 +3533,24 @@ sub SynthesisWordCompa {
 ################################################################
 ## Synthesis of motif comparisons
 sub SynthesisMotifsVsMotifs {
-  my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{motifs_disco_compa_png});
+  my $txt = "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
+  if ($main::param{display_graphs}) {
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{motifs_disco_compa_png});
+    $txt .= "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>"
+  }
+
   &SyntheticTableAddRow("Motif comparisons",
-			"<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
+			$txt,
 			"motifs", $main::outfile{motifs_discovered},
 			"table (txt)",$main::outfile{motifs_disco_compa},
 			"table (html)",$main::outfile{motifs_disco_compa_html},
 			"gml (for CytoScape)",$main::outfile{motifs_disco_compa_gml},
-			"png (low resolution)",$main::outfile{motifs_disco_compa_png},
+#			"png (low resolution)",$main::outfile{motifs_disco_compa_png},
 			"MCL clusters" ,$main::outfile{motifs_disco_clusters_tab},
 			"intra-cluster degree", $main::outfile{motifs_disco_compa_cluster_intra_degree},
 			"MCL cluster graph (tab)", $main::outfile{motifs_disco_clusters_graph},
 			"MCL cluster graph (gml)", $main::outfile{motifs_disco_clusters_graph_gml},
-			"MCL cluster graph (png)", $main::outfile{motifs_disco_clusters_graph_png},
+#			"MCL cluster graph (png)", $main::outfile{motifs_disco_clusters_graph_png},
 		       );
 }
 
@@ -3511,10 +3558,15 @@ sub SynthesisMotifsVsMotifs {
 ## Synthesis of comparisons betwween discovered motifs and reference motif
 sub SynthesisMotifsVersusReference {
   &SyntheticTableAddHeaderRow("Discovered motifs versus reference motif");
-  my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_ref_png"});
+
+  my $txt = "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
+  if ($main::param{display_graphs}) {
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_ref_png"});
+    $txt .= "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>"
+  }
 
   &SyntheticTableAddRow_New("Motifs versus reference motif",
-			    "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
+			    $txt,
 			    "Reference motif",["matrix",$main::infile{ref_motifs}],
 			    "table", ["html",$main::outfile{"motifs_vs_ref_html"},
 				      "txt",$main::outfile{"motifs_vs_ref"}
@@ -3534,9 +3586,13 @@ sub SynthesisMotifsVersusReference {
 sub SynthesisMotifsVersusDatabase {
   &SyntheticTableAddHeaderRow("Discovered motifs versus transcription factor databases");
   foreach my $db_name (@motif_databases) {
-    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_db_".$db_name."_png"});
+    my $txt = "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
+    if ($main::param{display_graphs}) {
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_db_".$db_name."_png"});
+      $txt .= "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>"
+    }
     &SyntheticTableAddRow_New("Motifs versus ".$db_name." database",
-			      "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
+			      $txt,
 			      "table", ["html",$main::outfile{"motifs_vs_db_".$db_name."_html"},
 					"txt",$main::outfile{"motifs_vs_db_".$db_name}
 				       ],
