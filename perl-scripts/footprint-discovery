@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.77 2011/11/26 20:40:45 rsat Exp $
+# $Id: footprint-discovery,v 1.78 2011/11/27 03:43:14 jvanheld Exp $
 #
 ############################################################
 
@@ -43,7 +43,8 @@ Motif discovery
 =head1 USAGE
 
 footprint-discovery [-i inputfile] -o [output_prefix] \
-     -taxon \
+     -org query_organism
+     -taxon ref_taxon \
      -q query_gene [-q query_gene2 ...] \
      [-v #] [...]
 
@@ -223,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.78 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -285,6 +286,7 @@ package main;
   ## Parameters for promoter retrieval
   local $taxon;			## Reference taxon
   local $organism_name;		## Query organism
+  local $organism;              ## Object containing the organism
   local @query_genes = ();	## list of query genes
   local $infer_operons = 0;     ## Infer operon leader genes
   local $dist_thr = 55;	        ## Distance threshold for operon inference
@@ -411,11 +413,21 @@ package main;
   ## Analyze query genes separately or altogether
   local $q = 0;
   if ($main::sep_genes) {
+    ## Get the index of genome features by names and ID, which will be
+    ## used to indicate gene names in the indexes
+    $feature_index = $organism->get_attribute("name_index");
+
     local $query_nb = scalar(@query_genes);
     foreach our $current_gene (@query_genes) {
       $q++;
       &RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $current_gene) if ($main::verbose >= 1);
-      &RunFootprintDisco($current_gene);
+      if ($feature_index->contains(uc($current_gene))) {
+	$current_feature = $feature_index->get_first_value(uc($current_gene));
+	&RunFootprintDisco($current_gene);
+      } else {
+	&RSAT::message::Warning("Query", $q."/".$query_nb, "Unknown gene", $current_gene) if ($main::verbose >= 1);
+	$status = "Unknown gene name";
+      }
     }
   } else {
       $q = 1;
@@ -543,19 +555,23 @@ sub RunFootprintDisco {
   &InferQueryOperons() if ($infer_operons);
 
   ## Dyad filter tasks
-  local $query_prom_len;
+  local $query_prom_len = "NA";
   unless ($nofilter) {
     ## Retrieve promoters of the query organism
     &RetrieveQueryPromoters();
-    $query_prom_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{query_seq} | grep -v '^#' | cut -f 2`;
-    chomp($status);
 
-    if ($query_prom_len < 1) {
-      ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
-      $status = "Query promoter has length 0";
+    if (-e $outfile{query_seq}) {
+      $query_prom_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{query_seq} | grep -v '^#' | cut -f 2`;
+      chomp($query_prom_len);
+      if ($query_prom_len < 1) {
+	## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
+	$status = "Query promoter has length 0";
+      } else {
+	## Detect all dyads in promoters of query genes for dyad filtering
+	&ComputeFilterDyads();
+      }
     } else {
-      ## Detect all dyads in promoters of query genes for dyad filtering
-      &ComputeFilterDyads();
+      $status = "Missing file:  $outfile{query_seq}";
     }
   }
 
@@ -656,6 +672,7 @@ sub RunFootprintDisco {
   ## Link to the query-specific index file
 #  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
   print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
+  print $main_index "<td>", $current_feature->get_attribute("name"), "</td>\n" if ($main::sep_genes);
 
   ## Report the significant dyads
   my $top_id = "";
@@ -706,10 +723,10 @@ sub RunFootprintDisco {
 
   if ($status ne "OK") {
     $sig_color = '#BBBBBB';
-  } elsif ($top_sig <= 1) {
+  } elsif ($top_sig <= 2) {
     $sig_color = '#888888';
   } elsif ($top_sig >= 5) {
-    $sig_color = '#00AA00';
+    $sig_color = '#0000CC';
   } else {
     $sig_color = '#000000';
   }
@@ -1187,6 +1204,51 @@ sub CoregulationNetwork {
   &RSAT::message::TimeWarn("Gene neighbours", $outfile{gene_neighbours}) if ($main::verbose >= 2);
   push @to_index, "gene_neighbours";
 
+}
+
+################################################################
+## Main index. This is a HTML table with links to the query-specific
+## results: one row per query, one column per output type.
+sub OpenMainIndex {
+  &RSAT::util::CheckOutDir($dir{output_root});
+
+  $outfile{main_index} = $dir{output_root}."/".&MainIndexFileName();
+
+  &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
+
+  my $main_index = &OpenOutputFile($outfile{main_index});
+#  print $main_index "<html>\n";
+#  $html_title = "footprint-discovery";
+  $html_title = " ".$taxon if ($taxon);
+  $html_title .= " ".$organism_name if ($organism_name);
+  $html_title .= " ".$bg_model if ($bg_model);
+#  print $main_index "<head><title>", $html_title , "</title></head>\n" ;
+#  print $main_index &sorttable_script();
+#  print $main_index "<body>\n";
+  print $main_index &PrintHtmlResultHeader(program=>"footprint-discovery", title=>"$html_title");
+
+#  print $main_index "<h1>", $html_title, "</h1\n";
+  print $main_index "<p><b>Command:</b> footprint-discovery";
+  $arguments =  &RSAT::util::hide_RSAT_path(&PrintArguments());
+  print $main_index $arguments;
+  print $main_index "</p>\n";
+
+  ## Open the index table
+  print $main_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
+#  print $main_index "<table cellspacing=0 cellpadding=3 border=0>\n";
+  print $main_index "<tr>\n";
+  print $main_index "<th>","Query nb","</th>\n";
+  print $main_index "<th>","Query","</th>\n";
+  print $main_index "<th>","Query name","</th>\n";
+  print $main_index "<th>","Status","</th>\n";
+  print $main_index "<th>","Query promoter length","</th>\n";
+  print $main_index "<th>","Orthologs","</th>\n";
+  print $main_index "<th>","Top dyad","</th>\n";
+  print $main_index "<th>","Max sig","</th>\n";
+  print $main_index "<th>","Nb dyads","</th>\n";
+  print $main_index "</tr>\n";
+
+  return ($main_index);
 }
 
 #######################################################################
