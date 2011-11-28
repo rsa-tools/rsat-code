@@ -207,7 +207,7 @@ sub RSA_header {
 			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
-  print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
+  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</a> - $title</h3>";
 }
 
 ## ##############################################################
