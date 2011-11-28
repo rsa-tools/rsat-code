@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.204 2011/11/27 13:36:14 jvanheld Exp $
+# $Id: peak-motifs,v 1.205 2011/11/28 15:40:58 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.204 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.205 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -299,6 +299,7 @@ package main;
   if (defined($main::infile{ref_motifs})) {
     &RefMotifs() if ($task{ref_motifs});
   }
+
   &SynthesisRefMotifs() if ($progressive_synthesis);
 
   ## Run motif discovery algorithms
@@ -348,7 +349,7 @@ package main;
 
     &SynthesisMotifCompa() if ($progressive_synthesis);
   } else {
-    &RSAT::message::Warning("Not a single discovered motif. Reduginc the order of the Markov model may increase sensitivity.");
+    &RSAT::message::Warning("Not a single discovered motif. Reducing the order of the Markov model may increase sensitivity.");
   }
 
   ## Write the time spent by each program in a time table
@@ -3259,7 +3260,12 @@ sub SynthesisRefMotifs {
     }
 
     ## Read reference motifs
-    my @ref_motifs = &RSAT::MatrixReader::readFromFile($main::outfile{ref_motifs_transfac}, "transfac");
+    my @ref_motifs = ();
+    if (-e $main::outfile{ref_motifs_transfac}) {
+      @ref_motifs = &RSAT::MatrixReader::readFromFile($main::outfile{ref_motifs_transfac}, "transfac");
+    } else {
+      &RSAT::message::Warning("Reference motifs have not been treated yet (You should run 'peak-motifs [options] -task ref_motifs)'");
+    }
 
     ## Print a HTML table with reference motifs (loos and consensus)
     print $syn &open_menu_heading($menu_nb++, "<a name='ref_motifs'></a><h3>Reference motifs</h3>", 0);
@@ -4358,7 +4364,7 @@ Class interval for I<position-analysis>.
 
       ## Other parameters are not accepted
     } else {
-      &FatalError(join("\t", "Invalid option", $arg));
+      &RSAT::error::FatalError(join("\t", "Invalid option", $arg));
 
     }
 
@@ -4381,23 +4387,23 @@ sub CheckArguments {
   ## Test sequence file
   if ($infile{test_seq}) {
     unless (-e $infile{test_seq}) {
-      &FatalError("Test sequence file does not exist", $infile{test_seq});
+      &RSAT::error::FatalError("Test sequence file does not exist", $infile{test_seq});
     }
     @main::seq_types = ("test");
   } else {
-    &FatalError("You must define the test sequence set (option -i)");
+    &RSAT::error::FatalError("You must define the test sequence set (option -i)");
   }
 
   if ($main::param{seq_source}) {
   	unless ($main::param{seq_source} eq "galaxy") {
-      &FatalError("-from option: this sequence source is not supported", $main::param{seq_source});
+      &RSAT::error::FatalError("-from option: this sequence source is not supported", $main::param{seq_source});
     }
   }
 
   ## If control file has been specified, check that it exists
   if ($infile{ctrl_seq}) {
     unless (-e $infile{ctrl_seq}) {
-      &FatalError("Control sequence file does not exist", $infile{ctrl_seq});
+      &RSAT::error::FatalError("Control sequence file does not exist", $infile{ctrl_seq});
     }
     push @main::seq_types, ("ctrl");
   }
@@ -4406,7 +4412,7 @@ sub CheckArguments {
   ## oligo-diff
   if ($disco{oligo_diff}) {
     unless ($infile{ctrl_seq}) {
-      &FatalError("The option -disco oligo_diff requires to specify a control sequence file (option -ctrl)");
+      &RSAT::error::FatalError("The option -disco oligo_diff requires to specify a control sequence file (option -ctrl)");
     }
   }
 
@@ -4415,12 +4421,12 @@ sub CheckArguments {
     &RSAT::util::CheckOutDir($main::dir{output});
     push @outdir, "output";
   } else {
-    &FatalError("You must define the output directory (option -outdir)");
+    &RSAT::error::FatalError("You must define the output directory (option -outdir)");
   }
 
   ## Prefix
   unless ($main::param{prefix}) {
-    &FatalError("You must define a prefix for the output files (option -prefix)");
+    &RSAT::error::FatalError("You must define a prefix for the output files (option -prefix)");
   }
 
   ## Title
