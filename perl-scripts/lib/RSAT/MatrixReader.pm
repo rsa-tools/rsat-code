@@ -197,10 +197,10 @@ sub readFromFile {
 
     if (defined($args{top})) {
       my $top = $args{top};
-      &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
       if ((&RSAT::util::IsNatural($top)) && ($top >= 1)) {
 	my $matrix_nb = scalar(@matrices);
 	if ($matrix_nb > $top) {
+	  &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
 	  foreach my $m (($top+1)..$matrix_nb) {
 	    pop @matrices;
 	  }
