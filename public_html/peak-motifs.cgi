@@ -158,10 +158,10 @@ if (scalar(@selected_db) > 0) {
 
 ################################################################
 ## Custom collection motifs (not reference)
-if ($query->param('perso_motif')) {
-  my $persomotif_file = $output_path."/".$output_prefix."_perso_motif.tf";
+if ($query->param('custom_motif_db')) {
+  my $persomotif_file = $output_path."/".$output_prefix."_custom_motif_db.tf";
 
-  $upload_persomotif = $query->param('perso_motif');
+  $upload_persomotif = $query->param('custom_motif_db');
   if ($upload_persomotif) {
     my $type = $query->uploadInfo($upload_persomotif)->{'Content-Type'};
     if ($upload_persomotif =~ /\.gz$/) {
@@ -178,8 +178,8 @@ if ($query->param('perso_motif')) {
   
   ### name
     my $dbname_perso="";
-if ($query->param('perso_motif_name')){
-  $dbname_perso = $query->param('perso_motif_name');
+if ($query->param('custom_motif_db_name')){
+  $dbname_perso = $query->param('custom_motif_db_name');
 
   ## Suppress characters that may cause problems when used in file names
   $dbname_perso =~ s/\s+/_/g;

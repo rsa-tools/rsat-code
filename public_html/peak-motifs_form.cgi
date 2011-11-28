@@ -48,7 +48,7 @@ $checked{$default{visualize}} = "CHECKED";
 
 ## motif database
 $default{compare_motif_database}="jaspar_core_vertebrates";
-$default{perso_motif_name}="title for this collection";
+$default{custom_motif_db_name}="title for this collection";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -82,10 +82,10 @@ print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/oly/'>Olivier
 print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>\n";
 print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
 print "</CENTER>";
-print "</BLOCKQUOTE>\n";
+#print "</BLOCKQUOTE>\n";
 print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\"><font color='#0D73A7'>Information on the methods used in peak-motifs</font> </div>\n";
  print "<div id=\"menu105\" class=\"menu_collapsible\">\n";
-print "<BLOCKQUOTE>\n";
+#print "<BLOCKQUOTE>\n";
 print "The idea behind <i>peak-motifs</i> is that we detect <b>exceptional words</b> based on <b>distinct and complementary criteria</b>:
 <ul>
 <li> <b>global over-representation (oligo-analysis and dyad-analysis)</b>: a word/dyad is more frequent than expected from the background model. The over-repressentation is tested with a right-tailed binomial significance test.</li>
@@ -96,7 +96,7 @@ print "The idea behind <i>peak-motifs</i> is that we detect <b>exceptional words
 </li>
 <br/>
 For position-analysis and local-word-analysis, the <b>sequences</b> are supposed to be <b>aligned</b> over some reference. For peaks, the reference is the summit (or <b>center</b>) of each sequence. ";
-print "</BLOCKQUOTE>\n";
+#print "</BLOCKQUOTE>\n";
 print "</div></p>\n";
 
 
@@ -144,7 +144,6 @@ print $query->end_form;
 
 my $descr1 = "<H4>Comment on the demonstration example 1 :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
-
 $descr1 .= "In this demonstration, we apply time- and memory-efficient
 motif discovery algorithms to discover over-represented motifs in a
 set of 1000 peak regions bound by the mouse transcription factor Oct4
@@ -177,10 +176,8 @@ print $query->end_form;
 
 my $descr2 = "<H4>Comment on the demonstration example 2 :</H4>\n";
 $descr2 .= "<blockquote class ='demo'>";
-
 $descr2 .= "In this demonstration, we run a differential analysis (test vs control)
 to discover the motifs that are over-represented in one tissue (heart) compared to another tissue (limb), for a same transcription factor (p300) (Blow et al, 2010)</p>\n";
-
 $descr2 .= "</blockquote>";
 
 
@@ -391,13 +388,13 @@ print $strandPopup;
 #print "<br/>";
 
 ### markov  order (common to all programs)
-print "<p><b><a href='help.oligo-analysis.html'> Markov order of the background model</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
+print "<p><b><a href='help.oligo-analysis.html'> Markov order (m) of the background model for oligo-analysis (k-mers)</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
 $oligoPopup = "<br>";
 $oligoPopup .=  "<SELECT NAME='markov'>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='0'>0 (generally not ideal)</option>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='-3'>oligo length -3 (intermediate size data sets)</option>\n";
-$oligoPopup .=  "<OPTION VALUE='-2'>oligo length -2 (more stringent for large data sets e.g. > 1Mb)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='0'>m=0 (generally not ideal)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>m=1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='-3'>m=k-3 (intermediate size data sets)</option>\n";
+$oligoPopup .=  "<OPTION VALUE='-2'>m=k-2 (more stringent for large data sets e.g. > 1Mb)</option>\n";
 $oligoPopup .=  "</SELECT>";
 print $oligoPopup;
 print "</p>";
@@ -445,10 +442,10 @@ sub Panel4 {
 
   print "<p/> ";
   print "<a href=''><b>Add your own motif database:</b></a><br/>";
-  print  $query->textfield(-name=>'perso_motif_name',
-			   -default=>$default{perso_motif_name},
+  print  $query->textfield(-name=>'custom_motif_db_name',
+			   -default=>$default{custom_motif_db_name},
 			   -size=>20);
-  print $query->filefield(-name=>'perso_motif',
+  print $query->filefield(-name=>'custom_motif_db',
 			-size=>10);
   print "Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
  ##
@@ -521,16 +518,22 @@ print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b
 print "<br/>";
 
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
-       "<b>Yes; sequences fetched from <a href=''>Galaxy</a></b>",
-       " (fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
+       "<b>Peak coordinates specified in the headers of the test sequence file (<a href=''>Galaxy</a> format)</b>",
+       "<br>","&nbsp;"x7,"(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
+#print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
+#       "<b>Yes; sequences fetched from <a href=''>Galaxy</a></b>",
+#       " (fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
 
 print "<br/>";
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes; use the following BED file.</b>");
-print "<br/>";
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Peak coordinates provided in a custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
+print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
+#print "<br/>";
+#print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes; use the following BED file.</b>");
+#print "<br/>";
 
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>BED file with peak coordinates</a>&nbsp;</B>\n";
-print $query->filefield(-name=>'bed_file',
+#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>BED file with peak coordinates</a>&nbsp;</B>\n";
+print "&nbsp;"x7, $query->filefield(-name=>'bed_file',
 			-size=>10);
 
 ### assembly
@@ -538,7 +541,6 @@ print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>Assembly versi
 print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
-print "<br/>&nbsp;&nbsp;&nbsp;&nbsp;<i>The 4th column of the BED file (feature name) corresponds to the fasta headers of sequences</i>";
 
 print "<br/>
 </fieldset><p/>";
