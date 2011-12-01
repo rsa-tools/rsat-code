@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.205 2011/11/28 15:40:58 jvanheld Exp $
+# $Id: peak-motifs,v 1.206 2011/12/01 01:34:45 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.205 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.206 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -156,6 +156,7 @@ package main;
 		    "merge_motifs",
 		    "split_motifs",
 		    "collect_motifs",
+		    "motifs_vs_motifs",
 #		      "cluster_motifs",
 		    "motifs_vs_ref",
 		    "motifs_vs_db",
@@ -329,6 +330,8 @@ package main;
   ## Motif-wise analysis
   &SplitMotifs() if ($task{split_motifs});
 
+  &MotifsVersusMotifs() if ($task{motifs_vs_motifs});
+
 #  &ClusterMotifs() if ($task{cluster_motifs});
 
   ## HTML synthesis by algorithm
@@ -369,7 +372,13 @@ package main;
   ## onclude the HTML synthesis file.
   &Archive(1) if ($task{archive});
 
-  &Synthesis() if ($task{synthesis});
+  &CloseSynthesis() if ($progressive_synthesis); ## Needs to be closed before re-building the report
+
+  ## For the final synthesis, re-write the whole synthesis file
+  if ($task{synthesis}) {
+    $progressive_synthesis = 0;
+    &Synthesis();
+  }
 
   if ($main::verbose >= 1) {
     &RSAT::message::TimeWarn("Log file", $main::outfile{log}) if ($main::verbose >= 2);
@@ -563,7 +572,8 @@ sub DefaultParameters {
   $main::param{matrix_compa_sort_field} = "Ncor"; ## sorting field
 
   my $motif_compa_options =  "";
-  $motif_compa_options .= " -DR -mode matches";
+  $motif_compa_options .= " -mode matches";
+  $motif_compa_options .= " -DR";
   $motif_compa_options .= " -uth offset_rank 1"; ## Only report the best matching shift between a pair of matrices
   $motif_compa_options .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $motif_compa_options .= " -lth Wr ".$main::param{matrix_compa_min_Wr}; ## Min relative width of the alignment
@@ -847,20 +857,20 @@ sub SetOutFileNames {
 
   ## Conversion from patterns to matrices + logos
   foreach my $pattern_type (@pattern_types) {
-    $main::outfile{$pattern_type.'_pssm'} = $main::outfile{$pattern_type};
-    $main::outfile{$pattern_type.'_pssm'} =~ s/\.tab$//;
-    $main::outfile{$pattern_type.'_pssm'} .= "_pssm";
-    $main::outfile{$pattern_type.'_2pssm'} = $main::outfile{$pattern_type.'_pssm'}."_log.txt"; push @timelog_keys, $pattern_type.'_2pssm';
-    $main::outfile{$pattern_type.'_asmb'} = $main::outfile{$pattern_type.'_pssm'}.".asmb";
-    $main::outfile{$pattern_type.'_pssm_sig'} = $main::outfile{$pattern_type.'_pssm'}."_sig_matrices.tf";
-    $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
-    $main::outfile{$pattern_type.'_pssm_counts'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.txt";
-    $main::outfile{$pattern_type.'_pssm_tf'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.tf";
+    $main::prefix{$pattern_type.'_pssm'} = $main::outfile{$pattern_type};
+    $main::prefix{$pattern_type.'_pssm'} =~ s/\.tab$//;
+    $main::prefix{$pattern_type.'_pssm'} .= "_pssm";
+    $main::outfile{$pattern_type.'_2pssm'} = $main::prefix{$pattern_type.'_pssm'}."_log.txt"; push @timelog_keys, $pattern_type.'_2pssm';
+    $main::outfile{$pattern_type.'_asmb'} = $main::prefix{$pattern_type.'_pssm'}.".asmb";
+    $main::outfile{$pattern_type.'_pssm_sig'} = $main::prefix{$pattern_type.'_pssm'}."_sig_matrices.tf";
+#    $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::prefix{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
+    $main::outfile{$pattern_type.'_pssm_counts'} = $main::prefix{$pattern_type.'_pssm'}."_count_matrices.txt";
+    $main::outfile{$pattern_type.'_pssm_tf'} = $main::prefix{$pattern_type.'_pssm'}."_count_matrices.tf";
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
       $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb} =
-	$main::outfile{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb.".".$main::param{img_format};
+	$main::prefix{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb.".".$main::param{img_format};
       $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb} =
-	$main::outfile{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb."_rc.".$main::param{img_format};
+	$main::prefix{$pattern_type.'_pssm'}."_count_matrices_logo_m".$logo_nb."_rc.".$main::param{img_format};
     }
     push @timelog_keys, $pattern_type;
     push @timetable_keys, $pattern_type;
@@ -902,20 +912,24 @@ sub SetOutFileNames {
   $main::outfile{motifs_discovered_table} = &OutFileName("results/discovered_motifs", ".tab", "motifs_discovered_table");
 
   ## Comparisons between discovered motifs
-  $main::outfile{motifs_disco_compa} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa");
-  $main::outfile{motifs_disco_compa_html} = &OutFileName("results/discovered_motifs", ".html", "motifs_disco_compa");
+  $main::outfile{"motifs_disco_compa"} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa");
+  $main::outfile{"motifs_disco_compa_html"} = &OutFileName("results/discovered_motifs", ".html", "motifs_disco_compa");
   push @timelog_keys, "motifs_disco_compa";
-  $main::outfile{motifs_disco_compa_gml} = &OutFileName("results/discovered_motifs", ".gml", "motifs_disco_compa");
-  $main::outfile{motifs_disco_compa_png} = &OutFileName("results/discovered_motifs", ".png", "motifs_disco_compa");
+  $main::outfile{"motifs_disco_compa_gml"} = &OutFileName("results/discovered_motifs", ".gml", "motifs_disco_compa");
+  $main::outfile{"motifs_disco_compa_png"} = &OutFileName("results/discovered_motifs", ".png", "motifs_disco_compa") if ($main::param{display_graphs});
+  $main::outfile{"motifs_disco_compa_alignments_1ton"} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa_alignments_1ton");
+  $main::outfile{"motifs_disco_compa_alignments_1ton_html"} = &OutFileName("results/discovered_motifs", ".html", "motifs_disco_compa_alignments_1ton");
 
   ## Motif clustering
-  $main::outfile{motifs_disco_clusters_mcl} = &OutFileName("results/discovered_motifs", ".mcl", "motifs_disco_clusters");
-  $main::outfile{motifs_disco_clusters_tab} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_clusters");
-  $main::outfile{motifs_disco_clusters_graph} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_clusters_graph");
-  $main::outfile{motifs_disco_clusters_graph_gml} = &OutFileName("results/discovered_motifs", ".gml", "motifs_disco_clusters_graph");
-  $main::outfile{motifs_disco_clusters_graph_png} = &OutFileName("results/discovered_motifs", ".png", "motifs_disco_clusters_graph");
-  $main::outfile{motifs_disco_compa_cluster_intra_degree} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa_cluster_intra_degree");
+  if ($task{cluster_motifs}) { ## THIS IS TEMPORARILY INACTIVATED UNTIL I FINALIZE MOTIF CLUSTERING
+    $main::outfile{motifs_disco_clusters_mcl} = &OutFileName("results/discovered_motifs", ".mcl", "motifs_disco_clusters");
+    $main::outfile{motifs_disco_clusters_tab} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_clusters");
+    $main::outfile{motifs_disco_clusters_graph} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_clusters_graph");
+    $main::outfile{motifs_disco_clusters_graph_gml} = &OutFileName("results/discovered_motifs", ".gml", "motifs_disco_clusters_graph");
+    $main::outfile{motifs_disco_clusters_graph_png} = &OutFileName("results/discovered_motifs", ".png", "motifs_disco_clusters_graph") if ($main::param{display_graphs});
+    $main::outfile{motifs_disco_compa_cluster_intra_degree} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa_cluster_intra_degree");
   #    $main::outfile{motifs_disco_ref} = &OutFileName("results/discovered_motifs", ".tf", "motifs_disco_ref");
+  }
 
 
   if (defined($main::infile{ref_motifs})) {
@@ -923,8 +937,8 @@ sub SetOutFileNames {
     $main::outfile{"ref_motifs"} = &OutFileName("data/ref_motifs", ".".$main::param{ref_motifs_format}, "ref_motifs");
     $main::outfile{"ref_motifs_transfac"} = &OutFileName("data/ref_motifs", ".tf", "ref_motifs");
     $main::outfile{"ref_motifs_tab"} = &OutFileName("data/ref_motifs", ".tab", "ref_motifs_tab");
-    $main::outfile{"ref_motifs_logo"} = &OutFileName("data/ref_motifs", "", "ref_motifs_logo");
-    $main::outfile{"ref_motifs_enriched"} = &OutFileName("data/ref_motifs", "tab", "ref_motifs_enriched");
+    $main::prefix{"ref_motifs_logo"} = &OutFileName("data/ref_motifs", "", "ref_motifs_logo");
+##    $main::outfile{"ref_motifs_enriched"} = &OutFileName("data/ref_motifs", ".tab", "ref_motifs_enriched"); ## TO DO: ANALYZE THE ENRICHMENT OF REFERENCE MOTIFS
 
     ## Comparison betweeen discovered motifs and reference motif
     $main::prefix{"motifs_vs_ref_prefix"} = &OutFileName("results/discovered_vs_ref", "", "motifs_vs_ref");
@@ -932,7 +946,7 @@ sub SetOutFileNames {
     $main::outfile{"motifs_vs_ref_html"} = &OutFileName("results/discovered_vs_ref", ".html", "motifs_vs_ref");
     push @timelog_keys, "motifs_vs_ref";
     $main::outfile{"motifs_vs_ref_gml"} = &OutFileName("results/discovered_vs_ref", ".gml", "motifs_vs_ref");
-    $main::outfile{"motifs_vs_ref_png"} = &OutFileName("results/discovered_vs_ref", ".png", "motifs_vs_ref");
+    $main::outfile{"motifs_vs_ref_png"} = &OutFileName("results/discovered_vs_ref", ".png", "motifs_vs_ref") if ($main::param{display_graphs});
     $main::outfile{"motifs_vs_ref_alignments_1ton"} = &OutFileName("results/discovered_vs_ref", ".tab", "motifs_vs_ref_alignments_1ton");
     $main::outfile{"motifs_vs_ref_alignments_1ton_html"} = &OutFileName("results/discovered_vs_ref", ".html", "motifs_vs_ref_alignments_1ton");
   }
@@ -945,7 +959,7 @@ sub SetOutFileNames {
       $main::outfile{"motifs_vs_db_".$db_name."_html"} = &OutFileName("results/discovered_vs_db", ".html", "motifs_vs_db_".$db_name);
       push @timelog_keys, "motifs_vs_db_".$db_name;
       $main::outfile{"motifs_vs_db_".$db_name."_gml"} = &OutFileName("results/discovered_vs_db", ".gml", "motifs_vs_db_".$db_name);
-      $main::outfile{"motifs_vs_db_".$db_name."_png"} = &OutFileName("results/discovered_vs_db", ".png", "motifs_vs_db_".$db_name);
+      $main::outfile{"motifs_vs_db_".$db_name."_png"} = &OutFileName("results/discovered_vs_db", ".png", "motifs_vs_db_".$db_name) if ($main::param{display_graphs});
       $main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton"} = &OutFileName("results/discovered_vs_db", ".tab", "motifs_vs_db_".$db_name."_alignments_1ton");
       $main::outfile{"motifs_vs_db_".$db_name."_alignments_1ton_html"} = &OutFileName("results/discovered_vs_db", ".html", "motifs_vs_db_".$db_name."_alignments_1ton");
     }
@@ -1241,7 +1255,7 @@ sub OligoAnalysis {
       $cmd .= " -pseudo ".$main::param{disco_pseudo};;
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
     }
   }
 }
@@ -1269,7 +1283,7 @@ sub OligoDiff {
     #    $cmd .= " -pseudo ".$main::param{disco_pseudo};;
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
   }
 }
 
@@ -1310,7 +1324,7 @@ sub DyadAnalysis {
   $cmd .= " | perl -pe 's/n\\{0\\}//g'"; ## Suppress zero spacings for merging with oligos
   $cmd .= " >".$main::outfile{$pattern_type};
   &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type, 0);
+  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
 }
 
 ################################################################
@@ -1340,7 +1354,7 @@ sub PositionAnalysis {
     $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type, 0);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
   }
 }
 
@@ -1378,7 +1392,7 @@ sub LocalDyads {
   # $cmd .= " -pseudo ".$main::param{disco_pseudo};;
   $cmd .= " > ".$main::outfile{$pattern_type};
   &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
+  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
 }
 
 
@@ -1419,7 +1433,7 @@ sub LocalWords {
       #   $cmd .= " -pseudo ".$main::param{disco_pseudo};
       $cmd .= " > ".$main::outfile{$pattern_type};
       &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 0);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
 #    }
   }
 }
@@ -1638,7 +1652,7 @@ sub RefMotifs {
   $cmd .= " -to tab";
   $cmd .= " -return counts,logo";
   $cmd .= "  -bg_format motifsampler -bgfile ".$main::param{scan_bg_file};
-  $cmd .= " -logo_file ".$main::outfile{ref_motifs_logo};
+  $cmd .= " -logo_file ".$main::prefix{"ref_motifs_logo"};
   $cmd .= " -o ".$main::outfile{ref_motifs_tab};
   &one_command($cmd, 1);
 }
@@ -1708,7 +1722,7 @@ sub MergeWords {
   ## Extract position-specific scoring matrices from the merged words
   if ($disco{merged_words}) {
       my $pattern_type = "merged_words";
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type, 4);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 4);
   }
 }
 
@@ -1814,27 +1828,31 @@ sub ReadDiscoveredMotifs {
 sub SetFileNamesForMotif {
   my ($motif_id) = @_;
 
-  my $motif_dir = $dir{output}."/results/discovered_motifs/".$motif_id;
-  $motif_dir = "results/discovered_motifs/".$motif_id;
+  ## Define a specific sub-directory for each motif type (algorithm)
+  my $motif_subdir = "results/discovered_motifs/".$motif_id;
+
+  ## Only index the output directories once because this routine may be
+  ## called several times (by &SplitMotifs() and &ReadMotifTable()).
+  unless (defined($main::dir{$motif_id})) {
+    $main::dir{$motif_id.'_subdir'} = $subdir; 
+
+    ## Path for indexing
+    my $motif_dir = $dir{output}."/".$motif_subdir;
+    $main::dir{$motif_id} = $motif_dir; push @outdir, $motif_id;
+  }
 
   ## Prefix for motif files
-  $main::prefix{$motif_id."_prefix"} = &OutFileName($motif_dir, "", $motif_id);
+  $main::prefix{$motif_id."_prefix"} = &OutFileName($motif_subdir, "", $motif_id);
 
   ## Output file for the motif (transfac format)
-  ($main::outfile{$motif_id.'_tf'}, $subdir) = &OutFileName($motif_dir, ".tf", $motif_id);
+  ($main::outfile{$motif_id.'_tf'}, $subdir) = &OutFileName($motif_subdir, ".tf", $motif_id);
 #  $main::outfile{$motif_id.'_tf'} = $motif_file;
   #      &RSAT::message::Debug("motif subdir", $motif_id, $subdir) if ($main::verbose >= 5);
 
 
-  ## Only index once the output directories because this routine may be
-  ## called several times (by &SplitMotifs() and &ReadMotifTable()).
-  unless (defined($main::dir{$motif_id})) {
-    $main::dir{$motif_id} = $motif_dir; push @outdir, $motif_id;
-    $main::dir{$motif_id.'_subdir'} = $subdir
-  }
 #  $main::prefix{$motif_id."_prefix"} = $motif_prefix;
 
-#  $main::outfile{$motif_id."_tab"} = &OutFileName($motif_dir, ".tab", $motif_id);
+#  $main::outfile{$motif_id."_tab"} = &OutFileName($motif_subdir, ".tab", $motif_id);
 
   ## Tab-delimited matrix file
   $main::outfile{$motif_id."_tab"} = $main::prefix{$motif_id."_prefix"}.".tab";
@@ -1936,33 +1954,32 @@ sub SplitMotifs {
 
 ################################################################
 ## Compare each discovered motifs to each other, and with the
-## reference motif, identify clusters of similar motifs, and build
-## consensus motifs.
-sub ClusterMotifs {
+## reference motif
+sub MotifsVersusMotifs {
 
   ## Comparison between discovered matrices, and with the reference motif
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose;
   $cmd .= " -format transfac -file ".$main::outfile{motifs_discovered};
-#  $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
-#  $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
-  $cmd .= " -DR -distinct";
-  $cmd .= " -sort cor";
-  $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
-  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
-  $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
-  $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus";
-  $cmd .= " -o ".$main::outfile{motifs_disco_compa};
-  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{motifs_disco_compa};
-  $cmd .= " -o ".$main::outfile{motifs_disco_compa_html};
+  $cmd .= " -distinct";
+  $cmd .= $main::param{motif_compa_options};
+#  $cmd .= " -DR -mode matches";
+#  $cmd .= " -sort cor";
+#  $cmd .= " -uth offset_rank 1"; ## Only report the best matching shift between a pair of matrices
+#  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
+#  $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
+#  $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
+#  $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus";
+  $cmd .= " -o ".$main::outfile{"motifs_disco_compa"};
+  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_disco_compa"};
+  $cmd .= " -o ".$main::outfile{"motifs_disco_compa_html"};
   &one_command($cmd, 1);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{motifs_disco_compa};
+  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{"motifs_disco_compa"};
   $cmd .= " -ewidth -ecolors fire";
   $cmd .= " -layout spring";
   $cmd .= " -from tab -to gml -scol 3 -tcol 4 -wcol 5";
-  $cmd .= " -o ".$main::outfile{motifs_disco_compa_gml};
+  $cmd .= " -o ".$main::outfile{"motifs_disco_compa_gml"};
   &one_command($cmd, 1);
 
   ## We desactivate the graph display becayse the layout is really too
@@ -1972,12 +1989,18 @@ sub ClusterMotifs {
   if ($main::param{display_graphs}) {
     ## Generate a figure of the motif comparison graph
     $cmd = $SCRIPTS."/display-graph";
-    $cmd .= " -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
+    $cmd .= " -in_format gml -i ".$main::outfile{"motifs_disco_compa_gml"};
     $cmd .= " -ewidth";
     $cmd .= " -layout none";
-    $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
+    $cmd .= " -out_format png -o ".$main::outfile{"motifs_disco_compa_png"};
     &one_command($cmd, 1);
   }
+}
+
+################################################################
+## Identify clusters of similar motifs, and build
+## consensus motifs.
+sub ClusterMotifs {
 
   ## Use MCL to partition the motif graph into clusters
   my $mcl_dir = $ENV{mcl_dir};
@@ -1985,8 +2008,8 @@ sub ClusterMotifs {
     &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
   }
   my $mcl = $mcl_dir."/mcl";
-  $cmd = "grep -v '^;' ".$main::outfile{motifs_disco_compa}.">".$main::outfile{motifs_disco_compa}.".mcl";
-  $cmd .= "; ".$mcl."/mcl ".$main::outfile{motifs_disco_compa}.".mcl";
+  $cmd = "grep -v '^;' ".$main::outfile{"motifs_disco_compa"}.">".$main::outfile{"motifs_disco_compa"}.".mcl";
+  $cmd .= "; ".$mcl."/mcl ".$main::outfile{"motifs_disco_compa"}.".mcl";
   $cmd .= " -I 1.8 --abc -V all ";
   $cmd .= " -o ".$main::outfile{motifs_disco_clusters_mcl};
   $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{motifs_disco_clusters_mcl};
@@ -1997,7 +2020,7 @@ sub ClusterMotifs {
   ## Split the motif graph into clusters as defined by MCL, and
   ## compute the intra-cluster degree (k) and weighted degree (wk) of
   ## each node
-  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{motifs_disco_compa};
+  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{"motifs_disco_compa"};
   $cmd .= " -in_format tab -scol 3 -tcol 4 -wcol 5 -return clusters ";
   $cmd .= " -clusters ".$main::outfile{motifs_disco_clusters_tab};
   $cmd .= " -out_format tab -o ".$main::outfile{motifs_disco_clusters_graph};
@@ -2409,10 +2432,18 @@ sub ScanSequences {
 sub TimeTable {
   my $timetable = &OpenOutputFile($main::outfile{timetable});
   foreach my $key (@timetable_keys) {
-    my $file = $main::outfile{$key}."_time.txt";
+    my $time_file;
+    if (defined($main::outfile{$key})) {
+      $time_file = $main::outfile{$key}."_time.txt";
+    } elsif (defined($main::prefix{$key})) {
+      $time_file = $main::prefix{$key}."_time.txt";
+    } else {
+      &RSAT::message::Warning("&TimeTable()", "Neither output file nor prefix has been defined for key", $key) if ($main::verbose >= 1);
+      next;
+    }
     my $time = "NA";
-    if (-e $file) {
-      my ($in) = &OpenInputFile($file);
+    if (-e $time_file) {
+      my ($in) = &OpenInputFile($time_file);
       while (<$in>) {
 	if (/real\s+(\S+)/) {
 	  $time = $1;
@@ -2425,7 +2456,7 @@ sub TimeTable {
 	}
       }
     } else {
-      &RSAT::message::Warning("Missing time file", $file) if ($main::verbose >= 2);
+      &RSAT::message::Warning("Missing time file", $time_file) if ($main::verbose >= 2);
     }
     print $timetable $key, "\t", $time, "\n";
     &RSAT::message::Info("TimeTable", $key, $time) if ($main::verbose >= 4);
@@ -2450,13 +2481,13 @@ sub TimeLog {
 #  foreach my $pattern_type (@pattern_types) {
 #    foreach my $key ($pattern_type, $pattern_type."_2pssm") {
   foreach my $key (@timelog_keys) {
-    my $file = $main::outfile{$key};
+    my $time_file = $main::outfile{$key};
     my $start = "NA";
     my $done = "NA";
     my $elapsed = "NA";
     my $seconds = "NA";
-    if (-e $file) {
-      my ($in) = &OpenInputFile($file);
+    if (-e $time_file) {
+      my ($in) = &OpenInputFile($time_file);
       while (<$in>) {
 	if (/^;\s*Job started\s+(\S+)/i) {
 	  $start = $1;
@@ -2484,7 +2515,7 @@ sub TimeLog {
 	      + ($done_day - $start_day)*86400;
       }
     }
-    print $timelog join("\t", $start, $done, $elapsed, $seconds, $key, $prefix, $file), "\n";
+    print $timelog join("\t", $start, $done, $elapsed, $seconds, $key, $prefix, $time_file), "\n";
   }
   #}
   close $timelog;
@@ -2866,6 +2897,14 @@ sub SynthesisByMotif {
 ################################################################
 ## Open the HTML page for the synthesis
 sub OpenSynthesis {
+
+  my $refresh_time;
+  if ($progressive_synthesis) {
+    $refresh_time = 120;
+  } else {
+    $refresh_time = 0;
+  }
+
   ## Create a directory to store the arrow icons
   $main::dir{images_html} = $dir{output}."/images_html";
   &RSAT::util::CheckOutDir($main::dir{images_html});
@@ -2879,7 +2918,7 @@ sub OpenSynthesis {
   $syn = &OpenOutputFile($main::outfile{synthesis});
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
-  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>300);
+  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>$refresh_time);
 }
 
 
@@ -2891,10 +2930,10 @@ sub SynthesisMotifCompa {
 
 
   ## Word comparisons
-  &SynthesisWordCompa() if ($task{merge_words});
+  &SynthesisWordCompa(); # if ($task{merge_words});
 
   ## Comparison between discovered motifs
-#  &SynthesisMotifsVsMotifs();
+  &SynthesisMotifsVsMotifs();
 
   ## Comparison between discovered motifs and reference motif
   &SynthesisMotifsVersusReference() if (defined($main::infile{ref_motifs}));
@@ -3018,15 +3057,19 @@ sub Synthesis {
   &SynthesisParamsAndFiles() unless ($progressive_synthesis);
 
   ## End of the HTML file
-  print $syn &ResultTOC();
-  print $syn "</body>\n";
-  print $syn "</html>\n";
-  close $syn;
+  &CloseSynthesis();
 
   ## Add the HTML synthesis report to the archive
   &Archive(0, $main::outfile{synthesis}) if ($task{archive});
 
   &RSAT::message::TimeWarn("Synthetic report", $main::outfile{synthesis}) if ($main::verbose >= 2);
+}
+
+sub CloseSynthesis {
+  print $syn &ResultTOC();
+  print $syn "</body>\n";
+  print $syn "</html>\n";
+  close $syn;
 }
 
 ################################################################
@@ -3275,9 +3318,9 @@ sub SynthesisRefMotifs {
     my $logo_table = "<table class='whitebg' align='center' style='border-style:none;'>";
 
     ## get the names of all reference logo files
-    my @logo_files = glob($main::outfile{ref_motifs_logo}."_m*.".$main::param{img_format});
+    my @logo_files = glob($main::prefix{"ref_motifs_logo"}."_m*.".$main::param{img_format});
     @logo_files = grep {!/_rc\./} @logo_files;
-    #    my @logo_files = glob($main::outfile{ref_motifs_logo}."_m\d+.".$main::param{img_format});
+    #    my @logo_files = glob($main::prefix{"ref_motifs_logo"}."_m\d+.".$main::param{img_format});
 
     ## Prepare a table with the logos
     for my $i (1..scalar(@logo_files)) {
@@ -3297,7 +3340,7 @@ sub SynthesisRefMotifs {
       my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
       $logo_table .= $colored_consensus."<br/>";
 
-      my $logo_file = $main::outfile{ref_motifs_logo}."_m".$i.".".$main::param{img_format};
+      my $logo_file = $main::prefix{"ref_motifs_logo"}."_m".$i.".".$main::param{img_format};
       if (-e $logo_file) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
 	$logo_table .= "<a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
@@ -3311,7 +3354,7 @@ sub SynthesisRefMotifs {
       my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc, bold=>1, iupac=>$main::param{iupac_coloring});
       $logo_table .= $colored_consensus_rc."<br/>";
 
-      my $logo_file_rc = $main::outfile{ref_motifs_logo}."_m".$i."_rc.".$main::param{img_format};
+      my $logo_file_rc = $main::prefix{"ref_motifs_logo"}."_m".$i."_rc.".$main::param{img_format};
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
 	$logo_table .= "<a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
@@ -3526,10 +3569,16 @@ sub SynthesisPatternDisco {
 ################################################################
 ## Synthesis of word comparisons
 sub SynthesisWordCompa {
-  my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{merged_words_heatmap});
+  &SyntheticTableAddHeaderRow("Word significance table");
+  my $txt = "";
+  if ($main::param{display_graphs}) {
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{merged_words_heatmap});
+    $txt .= "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>",
+  }
+
 
   &SyntheticTableAddRow("Word comparisons",
-			"<a  href='".$img."'><img border='".$param{img_border}."' height=150 src='".$img."'></a>",
+			$txt,
 			"tab",$main::outfile{merged_words},
 			"html",$main::outfile{merged_words_html},
 			"heatmap",$main::outfile{merged_words_heatmap},
@@ -3539,41 +3588,66 @@ sub SynthesisWordCompa {
 ################################################################
 ## Synthesis of motif comparisons
 sub SynthesisMotifsVsMotifs {
-  my $txt = "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
+  &SyntheticTableAddHeaderRow("Comparisons between discovered motifs");
+
+  my $txt = ""; # "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
   if ($main::param{display_graphs}) {
-    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{motifs_disco_compa_png});
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_disco_compa_png"});
     $txt .= "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>"
   }
 
-  &SyntheticTableAddRow("Motif comparisons",
-			$txt,
-			"motifs", $main::outfile{motifs_discovered},
-			"table (txt)",$main::outfile{motifs_disco_compa},
-			"table (html)",$main::outfile{motifs_disco_compa_html},
-			"gml (for CytoScape)",$main::outfile{motifs_disco_compa_gml},
-#			"png (low resolution)",$main::outfile{motifs_disco_compa_png},
-			"MCL clusters" ,$main::outfile{motifs_disco_clusters_tab},
-			"intra-cluster degree", $main::outfile{motifs_disco_compa_cluster_intra_degree},
-			"MCL cluster graph (tab)", $main::outfile{motifs_disco_clusters_graph},
-			"MCL cluster graph (gml)", $main::outfile{motifs_disco_clusters_graph_gml},
-#			"MCL cluster graph (png)", $main::outfile{motifs_disco_clusters_graph_png},
-		       );
+#   ## List of files
+#   my @links = ("motifs", $main::outfile{motifs_discovered},
+# 	       "table (txt)",$main::outfile{"motifs_disco_compa"},
+# 	       "table (html)",$main::outfile{"motifs_disco_compa_html"},
+# 	       "gml (for CytoScape)",$main::outfile{"motifs_disco_compa_gml"},
+# 	       #			"png (low resolution)",$main::outfile{"motifs_disco_compa_png"},
+# 	      );
+
+#   ## TEMPORARILY INACTIVATED UNTIL I FINALIZE MOTIF CLUSTERING
+#   if ($task{cluster_motifs}) {
+#     push @links, ("MCL clusters" ,$main::outfile{motifs_disco_clusters_tab},
+# 		  "intra-cluster degree", $main::outfile{motifs_disco_compa_cluster_intra_degree},
+# 		  "MCL cluster graph (tab)", $main::outfile{motifs_disco_clusters_graph},
+# 		  "MCL cluster graph (gml)", $main::outfile{motifs_disco_clusters_graph_gml},
+# 		  #			"MCL cluster graph (png)", $main::outfile{motifs_disco_clusters_graph_png},
+# 		 );
+#   }
+
+#  &SyntheticTableAddRow("Discovered motifs versus discovered motifs",
+#			$txt,
+#			@links);
+
+  &SyntheticTableAddRow_New("Discovered motifs versus discovered motifs",
+			    $txt,
+			    "Discovered motif(s)",["tf",$main::outfile{motifs_discovered}],
+			    "table", ["html",$main::outfile{"motifs_disco_compa_html"},
+				      "txt",$main::outfile{"motifs_disco_compa"}
+				     ],
+			    "alignments (logo)", [ "html",$main::outfile{"motifs_disco_compa_alignments_1ton_html"},
+						   "text",$main::outfile{"motifs_disco_compa_alignments_1ton"}
+						 ],
+
+			    "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_disco_compa_gml"},
+#				       "png (low resolution)",$main::outfile{"motifs_disco_compa_png"}
+				     ]
+			   );
 }
 
 ################################################################
 ## Synthesis of comparisons betwween discovered motifs and reference motif
 sub SynthesisMotifsVersusReference {
-  &SyntheticTableAddHeaderRow("Discovered motifs versus reference motif");
+  &SyntheticTableAddHeaderRow("Discovered motifs versus reference motif(s)");
 
-  my $txt = "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
+  my $txt =""; # "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
   if ($main::param{display_graphs}) {
     my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_ref_png"});
     $txt .= "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>"
   }
 
-  &SyntheticTableAddRow_New("Motifs versus reference motif",
+  &SyntheticTableAddRow_New("Motifs versus reference motif(s)",
 			    $txt,
-			    "Reference motif",["matrix",$main::infile{ref_motifs}],
+			    "Reference motif(s)",["matrix",$main::infile{ref_motifs}],
 			    "table", ["html",$main::outfile{"motifs_vs_ref_html"},
 				      "txt",$main::outfile{"motifs_vs_ref"}
 				     ],
@@ -3582,7 +3656,7 @@ sub SynthesisMotifsVersusReference {
 						 ],
 
 			    "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_vs_ref_gml"},
-				       "png (low resolution)",$main::outfile{"motifs_vs_ref_png"}
+#				       "png (low resolution)",$main::outfile{"motifs_vs_ref_png"}
 				     ]
 			   );
 }
@@ -3592,7 +3666,7 @@ sub SynthesisMotifsVersusReference {
 sub SynthesisMotifsVersusDatabase {
   &SyntheticTableAddHeaderRow("Discovered motifs versus transcription factor databases");
   foreach my $db_name (@motif_databases) {
-    my $txt = "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
+    my $txt = ""; # "<p>Network files (gml, tab) can be open with CytoScape<p></n>";
     if ($main::param{display_graphs}) {
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{"motifs_vs_db_".$db_name."_png"});
       $txt .= "<a  href='".$img."'><img border='".$param{img_border}."' height=300 src='".$img."'></a>"
@@ -3607,7 +3681,7 @@ sub SynthesisMotifsVersusDatabase {
 						   ],
 
 			      "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_vs_db_".$db_name."_gml"},
-					 "png (low resolution)",$main::outfile{"motifs_vs_db_".$db_name."_png"}
+#					 "png (low resolution)",$main::outfile{"motifs_vs_db_".$db_name."_png"}
 				       ]
 			     );
   }
@@ -3744,9 +3818,9 @@ specification of the bed format.
 Control peak sequence file (optional).
 
 The control sequence file is used:
-- as control sequence for oligo-diff
-- to estimate the background models for oligo-analysis and
-  dyad-analysis.
+- as control sequence for I<oligo-diff>
+- to estimate the background models for I<oligo-analysis> and
+  I<dyad-analysis>.
 
 Control sequences are supposed to contain a large number of sequences
 without particular enrichment for any motif. The choice of appropriate
@@ -3823,22 +3897,21 @@ large sequence sets.
 
 =item B<-ref_motifs reference_motif>
 
-Reference motif (optional).
+Reference motifs (optional).
 
-In some cases, we already dispose of a reference motif, for example
-the motif annotated in some transcription factor database
-(e.g. RegulonDB, Jaspar, TRANSFAC)
- for the transcription factor of
-interest. These annotations may come from low-throughput experiments,
-and rely on a poor number of sites, but the reference motif may
-nevertheless be informative, because it is based on several
-independent studies.
+In some cases, we already dispose of some reference motif(s), for
+example motif(s) annotated in some transcription factor database
+(e.g. RegulonDB, Jaspar, TRANSFAC) for the transcription factor of
+interest. Even though these annotations may come from low-throughput
+experiments, and rely on a poor number of sites, such reference
+motif(s) may be informative to check correspondence between discovered
+motifs an prior knowledge.
 
-Each discovered motif can be compared to the reference motif, in order
-to evaluate its correspondence with the binding motif of the factor of
-interest.
+Each discovered motif can be compared to the reference motif(s), in
+order to evaluate its correspondence with the binding motif of the
+factor of interest.
 
-Reference motifs should be provided in TRANSFAC format (see
+Reference motif(s) should be provided in TRANSFAC format (see
 I<convert-matrix> for interconversions between matrix formats).
 
 =cut
@@ -4444,7 +4517,12 @@ sub CheckArguments {
 
   ## Synthesis file
   $main::outfile{synthesis} = &OutFileName("", ".html", "synthesis");
+
+  ## Conditions under which progressive synthesis is not required
   $progressive_synthesis = 0 unless ($task{synthesis});
+  if ((scalar(keys(%task)) == 1) && ($task{synthesis})) {
+    $progressive_synthesis = 0;
+  }
 
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
@@ -4589,6 +4667,8 @@ sub ReportParamsAndFiles {
     print $links "<tr><th colspan=2>","Directories","</th></tr>";
     foreach my $key (@outdir) {
       my $dir = $main::dir{$key};
+      $dir .= "/";
+      $dir =~ s|/+|/|g;
       printf $main::out ";\t%-30s\t%s\n", $key, $dir; ## Text output
       &PrintFileLink($key, $dir, $main::outfile{links}, $links); ## HTML output
     }
@@ -4685,11 +4765,6 @@ motifs. Nucleic Acids Res 39, 808-24.
 Print guidelines for explaining the motifs, comparison tables and
 graphs at the bottom of the result page.
 
-=item B<background models from ctrl sequences>
-
-Estimate background models from control sequences, for oligo-analysis,
-dyad-analysis, and local-word-analysis. This should in principle
-reduce the rate of false positive.
 
 =item B<motif_cluster>
 
@@ -4712,6 +4787,11 @@ randomized matrices generated by permuting the columns of the
 discovered motif. A "good" motif should show a clear enrichment (more
 high-scoring hits than expected theoretically), whereas the
 column-permuted matrices should fit the theoretical distribution.
+
+=item B<-task ref_motif_enrichment>
+
+Compute the enrichment of test (and optionally control) sequences for
+the reference motifs.
 
 =item B<all_oligos>
 
