@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway_extractor.pl,v 1.18 2011/12/01 10:10:47 rsat Exp $
+# $Id: pathway_extractor.pl,v 1.19 2011/12/01 10:47:12 rsat Exp $
 #
 ############################################################
 
@@ -191,7 +191,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();	     # File name containing a list of genes ID
@@ -622,12 +622,13 @@ GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
     } elsif ($arg eq "-a") {
       $main::gprfile = shift(@arguments);
 
-=pod
+
 
 # =item	B<-b GR Gene -> REACTION annotation>
 # 
 # An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
-# 
+#
+=pod 
 =cut
     } elsif ($arg eq "-b") {
       $main::grfile = shift(@arguments);
@@ -679,7 +680,6 @@ If no output file is specified, the current directory is used.
 =item	B<-t temp Directory>
 
 If no output file is specified, the current directory is used. 
-pathway_extractor.pl
 =cut
     } elsif ($arg eq "-t") {
       $main::tempdir = shift(@arguments);
