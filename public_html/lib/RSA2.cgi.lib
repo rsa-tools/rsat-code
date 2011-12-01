@@ -1536,9 +1536,7 @@ sub EmailTheResult {
 
     #### Indicate the URL of the future result file
     my $submission_message = $mail_title."\n";
-    $submission_message .= "\n\nCommand: ";
-    $submission_message .= &RSAT::util::hide_RSAT_path($clean_command);
-    $submissions_message .= "\n\n";
+    $submission_message .= "\n\nCommand: ".$clean_command;
     $submission_message .= "Your task has been submitted to the RSAT server.\n\n";
     $submission_message .= "After completion of the task, an email will be sent to ".$email_address.",\n"  unless ($no_email);
     $submission_message .= " and the result will become available at\n";
@@ -1561,7 +1559,7 @@ sub EmailTheResult {
     my $completion_mail_command = "mail -s \'".$mail_title." completion\'";
     my $completion_message;
     $completion_message .= $mail_title."\n";
-    $completion_message .= "\n\nCommand: ", &RSAT::util::hide_RSAT_path($clean_command);
+    $completion_message .= "\n\nCommand: ".$clean_command;
     $completion_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
     $completion_message .= "\nThe result file will remain there for $delay.";
     print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
