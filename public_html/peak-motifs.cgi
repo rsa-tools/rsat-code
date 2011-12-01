@@ -62,7 +62,7 @@ if ($query->param('title')){
 }
 
 ## default
-@tasks = ("purge", "seqlen", "composition", "disco", "collect_motifs","timelog", "archive", "synthesis");
+@tasks = ("purge", "seqlen", "composition", "disco", "collect_motifs", "motifs_vs_motifs", "timelog", "archive", "synthesis");
 
 
 ### peak sequences file
@@ -145,11 +145,7 @@ if ($query->param('max_seq_len')){
 }
 
 ################################################################
-## Motif databases supported on the RSAT Web site
-#if ($query->param('compare_motif_db') =~ /on/) {
-#    push(@tasks, "motifs_vs_db");
-
-## load the files containing the databases
+## Compare discovered motifs with motif databases
 my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
 if (scalar(@selected_db) > 0) {
   $parameters .= $mat_db_params;
