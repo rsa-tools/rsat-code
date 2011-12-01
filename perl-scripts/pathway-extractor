@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.19 2011/12/01 10:47:12 rsat Exp $
+# $Id: pathway-extractor,v 1.20 2011/12/01 10:54:28 rsat Exp $
 #
 ############################################################
 
@@ -191,7 +191,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();	     # File name containing a list of genes ID
@@ -680,6 +680,7 @@ If no output file is specified, the current directory is used.
 =item	B<-t temp Directory>
 
 If no output file is specified, the current directory is used. 
+
 =cut
     } elsif ($arg eq "-t") {
       $main::tempdir = shift(@arguments);
