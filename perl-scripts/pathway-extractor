@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.20 2011/12/01 10:54:28 rsat Exp $
+# $Id: pathway-extractor,v 1.21 2011/12/01 14:48:59 jvanheld Exp $
 #
 ############################################################
 
@@ -109,41 +109,63 @@ pathway_extractor.pl -hp
 
 ---------------------------------------------------------------- 
 
-=head2 3) GPR (Gene Protein Reaction) (option -a)
 
-This file is used for the Gene to reaction mapping.
-At least -a file is mandatory. This file maps Gene to reaction through EC numbers thus one gene can
-be mapped to several reactions.
-The three first columns are mandatory (gene_id, ec_number, reaction_id). Additional columns can be
-provided for convenience, but are ignored.
 
-=head3 Example of GPR file.
+=head2 Seed mapping file
 
-gene_id ec_number       reaction_id     species_name    taxonomy_id     gene_name
-O22340  4.2.3.- RXN-10482       Abies grandis   46611   (4S)-limonene synthase
-O22340  4.2.3.- RXN-10483       Abies grandis   46611   (4S)-limonene synthase
-O22340  4.2.3.- RXN-10566       Abies grandis   46611   (4S)-limonene synthase
-O22340  4.2.3.- RXN-10567       Abies grandis   46611   (4S)-limonene synthase
-O22340  4.2.3.- RXN-10568       Abies grandis   46611   (4S)-limonene synthase
-O22340  4.2.3.- RXN-10600       Abies grandis   46611   (4S)-limonene synthase
+The seed mapping file makes the link between different types of seeds
+(genes, EC numbers, proteins, compound names) and nodes of the network
+(reactions or compounds depending on the seed type).
 
----------------------------------------------------------------- 
+=head3 Gene-EC-reaction (GER) file (option I<-ger>)
 
-=head1 EXAMPLES:
+Mandatory.
+
+The GER file makes the link between genes and reactions, passing
+through EC numbers.
+
+This file is used for the reaction to gene mapping (backward).
+
+The three first columns are mandatory (gene_id, ec_number,
+reaction_id). Additional columns can be provided for convenience, but
+are ignored.
+
+=head3 Example of GERfile
+
+
+ geneID	ec_number       reaction_id     species_name    taxonomy_id     gene_name
+ O22340	4.2.3.-	 RXN-10482       Abies grandis   46611   (4S)-limonene synthase
+ O22340	4.2.3.-	 RXN-10483       Abies grandis   46611   (4S)-limonene synthase
+ O22340	4.2.3.-	 RXN-10566       Abies grandis   46611   (4S)-limonene synthase
+ O22340	4.2.3.-	 RXN-10567       Abies grandis   46611   (4S)-limonene synthase
+ O22340	4.2.3.-	 RXN-10568       Abies grandis   46611   (4S)-limonene synthase
+ O22340	4.2.3.-	 RXN-10600       Abies grandis   46611   (4S)-limonene synthase
+ ...
+
+=head1 EXAMPLES
 
 =head2 With an input file
 
-=head3 Get methionine-related genes in Escherichia coli genome. This generates a file containing one line per gene and one column per attribute (ID, start, end, name, ...).
+=head3 Motivation
 
-gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q met. -o met_genes.tab
+Get methionine-related genes in Escherichia coli genome. This
+generates a file containing one line per gene and one column per
+attribute (ID, start, end, name, ...).
 
-=head3 Select the first column, containing gene Ids.
 
-grep -v "^;" met_genes.tab | cut -f 1 > met_genes_IDs.txt
+=head3 Commands
 
-=head3 Extract a pathway connecting at best the reactions catalyzed by these gene products
+This script assumes
 
-pathway_extractor.pl -i met_genes_IDs.txt -g data/networks/MetaCyc/MetaCyc_directed_141.txt -a data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt -o result_dir -t temp_dir
+Extract all E.coli genes whose name starts with met
+ gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -full -q '^met.*' -o met_genes.tab
+
+Select the first column, containing gene Ids.
+ grep -v "^;" met_genes.tab | cut -f 1 > met_genes_IDs.txt
+
+Extract a pathway connecting at best the reactions catalyzed by these gene products
+  pathway_extractor.pl -i met_genes_IDs.txt \
+     -g data/networks/MetaCyc/MetaCyc_directed_141.txt -a data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt -o result_dir -t temp_dir
 
 ---------------------------------------------------------------- 
 
@@ -191,7 +213,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();	     # File name containing a list of genes ID
