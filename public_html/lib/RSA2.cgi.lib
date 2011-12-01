@@ -1508,6 +1508,8 @@ sub EmailTheResult {
     my $no_email = $args{no_email} || 0;
 
     my $clean_command = &RSAT::util::hide_RSAT_path($command);
+    ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
+    $clean_command =~ s|\$|\\\$|;
 
     my $script_name = $0;
     $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g; ## Avoid providing the full path of the RSAT package
@@ -1545,10 +1547,8 @@ sub EmailTheResult {
     ## Print the task submission message the Web page
     $html_submission_message = $submission_message;
     $html_submission_message =~ s|(http://\S+)|<a target='_blank' href='$1'>$1</a>|gm;
+    $html_submission_message =~ s|\\\$|\$|gm;
     &Info($html_submission_message);
-
-    ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
-    $clean_command =~ s|\$|\\\$|;
 
     ## Send an email for confirmation of task submission
     unless ($no_email) {
