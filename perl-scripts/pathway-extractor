@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.17 2011/10/05 11:01:05 rsat Exp $
+# $Id: pathway-extractor,v 1.18 2011/12/01 10:10:47 rsat Exp $
 #
 ############################################################
 
@@ -191,7 +191,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();	     # File name containing a list of genes ID
@@ -261,7 +261,7 @@ package main;
   ## Check the existence of the temp directory and create it if
   ## required
   if (!$tempdir) {
-    $tempdir=$tempdir;
+    $tempdir=$outdir;
   }
   if (!($tempdir=~m/\/$/)) {
     $tempdir = $tempdir."/";
