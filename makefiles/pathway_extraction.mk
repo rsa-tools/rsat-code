@@ -19,8 +19,11 @@ gene_ids:
 	@echo ${QUERY}_genes_IDs.txt
 
 ## Extract a pathway connecting at best the reactions catalyzed by these gene products
-NETWORK=${RSAT}//public_html/data/metabolic_networks/networks/MetaCyc/MetaCyc_directed_141.txt
-OUTDIR=results/${ORG}/${QUERY}
+METAB_DB=MetaCyc
+METAB_NETWORK=MetaCyc_directed_141
+NETWORK=${RSAT}//public_html/data/metabolic_networks/networks/${METAB_DB}/${METAB_NETWORK}.txt
+#OUTDIR=results/${ORG}/${QUERY}
+OUTDIR=${OUTDIR}/${QUERY}_${ORG}_${METAB_NETWORK}_pred_pathways.dot
 extract_pathway:
 	pathway-extractor -i ${QUERY}_genes_IDs.txt \
 		-g ${NETWORK} \
@@ -28,7 +31,6 @@ extract_pathway:
 		-o ${OUTDIR} \
 		-t temp_dir
 
-OUT_DIR=${OUTDIR}/${QUERY}_genes_IDs_Escherichia_coli_strain_K12_-83333_MetaCyc_directed_141_annot_pred_pathways.dot
 
 VIEWER=dotty
 view_pathway:
