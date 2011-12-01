@@ -1306,8 +1306,12 @@ sub PrintHtmlResultHeader {
 #  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
 
   ## Refresh time if required
-  if (defined($args{refresh_time})) {
-    $header .= "<meta http-equiv='refresh' content='".$args{refresh_time}."' />\n";
+  my $refresh_time = 0;
+  if ((defined($args{refresh_time}))
+      && (&IsNatural($args{refresh_time}))
+      && ($args{refresh_time} > 0)) {
+    $refresh_time = $args{refresh_time};
+    $header .= "<meta http-equiv='refresh' content='".$refresh_time."' />\n";
   }
 
   ## Java scripts
@@ -1332,12 +1336,10 @@ sub PrintHtmlResultHeader {
   if ($result_toc) {
     $header .=  "<div id='Menu_space'>\n";
     $header .=  "<div id='Menu_wait'>\n";
-    $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
-    $header .= "<p style='text-align:center;color:green'>Results will progressively appear on this page <br/>\n";
-    if (defined($args{refresh_time})) {
-      $header .= "<b>This page should be automatically refreshed every ".$args{refresh_time}." seconds until this message disappears.</b></p>\n";
-    } else {
-      $header .= "<b>Please regularly refresh the page until this message disappears.</b></p>\n";
+    if ($refresh_time > 0) {
+      $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
+      $header .= "<p style='text-align:center;color:green'>Results will progressively appear on this page <br/>\n";
+      $header .= "<b>This page should be automatically refreshed every ".$refresh_time." seconds until this message disappears.</b></p>\n";
     }
     $header .=  "</div>\n";
     $header .=  "</div>\n";
