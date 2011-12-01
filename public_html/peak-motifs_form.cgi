@@ -276,7 +276,7 @@ sub Panel2 {
   print  $query->textfield(-name=>'max_seq_len',
 			   -default=>$default{max_seq_len},
 			   -size=>3);
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<b>bp around the center of each peak </b>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b>bp on each site of peak centers</b>\n";
 
 
   print "</fieldset><p/>";
@@ -289,7 +289,7 @@ sub Panel2 {
 sub Panel3 {
 print "
 <div class=\"menu_heading_closed\" onclick=\"toggleMenu('102')\" id=\"heading102\">
- <span title=\"Select the algorithms and background here.\"><b>Change motif discovery parameters</b></span> </div>\n";
+ <span title=\"Select the algorithms and background here.\"><b>Motif discovery parameters</b></span> </div>\n";
 
 print '
 <div id="menu102" class="menu_collapsible">';
@@ -468,7 +468,7 @@ sub Panel4 {
  sub Panel5  {
 print "
 <div class=\"menu_heading_closed\" onclick=\"toggleMenu('104')\" id=\"heading104\"> 
-<span title=\"Input peaks are scanned with the discovered motifs to obtain their exact position. These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...)\"><b>Locate motifs and export as UCSC custom track</b></span> </div>\n
+<span title=\"Input peaks are scanned with the discovered motifs to obtain their exact position. These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...)\"><b>Scan sequences with motifs to predict sites</b></span> </div>\n
 
 <div id=\"menu104\" class=\"menu_collapsible\">";
 
@@ -518,14 +518,14 @@ print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b
 print "<br/>";
 
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
-       "<b>Peak coordinates specified in the headers of the test sequence file (<a href=''>Galaxy</a> format)</b>",
+       "<b>Peak coordinates specified in fasta headers of the test sequence file (<a href=''>Galaxy</a> format)</b>",
        "<br>","&nbsp;"x7,"(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
 #print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
 #       "<b>Yes; sequences fetched from <a href=''>Galaxy</a></b>",
 #       " (fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
 
 print "<br/>";
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Peak coordinates provided in a custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
+print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Peak coordinates provided as a custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
 print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
 #print "<br/>";
 #print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes; use the following BED file.</b>");
