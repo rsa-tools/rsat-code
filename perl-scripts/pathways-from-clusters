@@ -1,40 +1,68 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.7 2011/10/05 11:00:44 rsat Exp $
+# $Id: pathways-from-clusters,v 1.8 2011/12/01 14:48:54 jvanheld Exp $
 #
 ############################################################
+
 
 ## use strict;
 
 =pod
 
-=head1 Infer Operon Pathway Extractor
+=head1 NAME
 
-=head1 VERSION 1.0
+pathways-from-clusters
+
+=head1 VERSION
+
+$program_version
 
 =head1 DESCRIPTION
 
-Connection genes in a metabolic graph from infer Operon output file. 
+Run pathway-extractor on clusters of elements (genes, proteins, EC
+numbers or molecules).
+
+The primary use of the tool is to extract metabolic pathways from
+groups of functionally related genes (co-expression clusters, operons,
+directons, clusters extracted from phylogenetic profiles, ...).
+
+In the current version, pathways-from-cluster assumes that clusters
+are made of genes only. Gene identifiers are mapped to reaction via a
+GER file (Gene-EC-Reaction).
 
 =head1 AUTHORS
 
-didier.croes@ulb.ac.be
+Didier Croes ()didier.croes@ulb.ac.be)
+
+Revised by Jacques van Helden (van-helden.j@univmed.fr)
 
 =head1 USAGE
 
-inferoperon_pathway_extractor.pl -h [-i inputfile] [-o outputdirectory] [-v] -g graphfile -a gene2ec2reactions [-b gene2reaction]
+pathways-from-clusters -h [-i inputfile] [-o outputdirectory] [-v] -g graphfile -ger gene2ec2reactions
 
-=head1 INPUT FORMAT
+=head1 INPUT FORMATS
 
-=head2   1) -a gene2ec2reactions [-b gene2reaction]
-  gene_id ec_number       reaction_id     species_name    taxonomy_id     gene_name
-  O22340  4.2.3.- RXN-10482       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10483       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10566       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10567       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10568       Abies grandis   46611   (4S)-limonene synthase
-  O22340  4.2.3.- RXN-10600       Abies grandis   46611   (4S)-limonene synthase
+=head2 Network file (option I<-g>)
+
+Tab-delimited description of the graph. See pathway-extractor for
+detailed description.
+
+=head2 Seed mapping file
+
+Tab-delimited description indicating the relationship between seed
+names (e.g. gene names) and reaction IDs.  See pathway-extractor for
+detailed description.
+
+=head1 SEE ALSO
+
+=item I<pathway-extractor>
+
+The program I<pathways-from-clusters> is a wrapper around
+I<pathway-extractor>.
+
+=head1 WISH LIST
+
 
 =cut
 
@@ -56,21 +84,39 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
     %main::outfile = ();
+    %main::dir = ();
 
     $main::verbose = "";
     $main::in = STDIN;
     $main::out = STDOUT;
     
-    $main::gprfile ="METACYC_GPR_EC.tab";	# GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+    $main::infile{gpr} ="METACYC_GPR_EC.tab";	# GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
     $main::grfile="";				# GR Gene -> REACTION annotation
 #     $main::graph = "";				# Graph Name 
-    $main::graphfile="";				# File containing the graph
+    $main::infile{graph}="";				# File containing the graph
 #     $main::show;				# Open png image in gwenview
+
+    $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
+
+    ## Job management options
+    local $job_prefix = "fpdisco";
+    local $die_on_error = 1;
+    local $batch = 0;
+    local $dry = 0;
+
+    ## Task management
+    @supported_tasks = qw(clean);
+    $supported_tasks = join ",", @supported_tasks;
+    %supported_task = ();
+    foreach my $task (@supported_tasks) {
+	$supported_task{$task} = 1;
+    }
+    %task = ();  ## List of tasks to be executed
 
     ################################################################
     ## Read argument values
@@ -78,62 +124,96 @@ package main;
 
     ################################################################
     ## Check argument values
-    if (!($outdir=~m/\/$/)) {
-      $outdir = $outdir."/";
+
+    ## Mandatory input files
+    unless (defined($infile{graph})) {
+	&RSAT::error::FatalError("You must define a graph file (option -graph)");
     }
-    &RSAT::util::CheckOutDir($outdir);
+    unless (defined($infile{clusters})) {
+	&RSAT::error::FatalError("You must define a cluster file (option -clusters)");
+    }
+    unless (defined($infile{ger})) {
+	&RSAT::error::FatalError("You must define a gene-EC-reaction file (option -ger)");
+    }
+
+
+    ## Output directory is a mandatory argument
+    unless (defined($dir{output})) {
+	&RSAT::error::FatalError("You must define the output directory (option -o)");
+    }
+
+    ## output directory must be terminated by a /
+    $dir{output} .= "/" unless ($dir{output} =~ /\/$/);
+
+    ## Check if output directory exists. If not, create it. 
+    &RSAT::util::CheckOutDir($dir{output});
+
+
+
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
 
     ################################################################
     ## Read input
-    ($main::in) = &OpenInputFile($main::infile{input});
-   
+    ($main::in) = &OpenInputFile($main::infile{clusters});
+    
 
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
 
     ################################################################
-    ## Parse infer operon file and launch pathway extractor
-     print $outdir;
-     my $oldoperonid;
-     my @genelist;
-     my $line;
-     while ($line=<$main::in>) {
-	 
-	 chomp($line);
-	 if (!($line=~m/^;|^#/)){
+    ## Parse cluster and launch pathway-extractor for each cluster
+    ## separately.
+    print $dir{output};
+    my $oldclusterid;
+    my @genelist;
+    my $line;
+    while ($line=<$main::in>) {
+	
+	chomp($line);
+	if (!($line=~m/^;|^#/)){
 #  	   print "$line\n";
-	   my @tempdata = split(/\t/,$line);
-# 	   print "$tempdata[6] eq $oldoperonid\n";
-	   if ($oldoperonid && !($tempdata[6] eq $oldoperonid)){
-	    $oldoperonid=~s/\s+/_/g;
-	    my $tempfilename = $outdir.$oldoperonid."_original_seeds.txt";
-	    chomp ($tempfilename);
-	    open (MYFILE, '>'.$tempfilename);
-	    print MYFILE join ("\n",@genelist). "\n";
-	    close (MYFILE);
-	    my $grfilecmd = "";
-	    if ($main::grfile){ # if there is a file with direct link from gene to reaction
-	      $grfilecmd = "-b $main::grfile";
-	    }
-	    my $pathway_infer_cmd = "pathway_extractor.pl $main::verbose -i $tempfilename -g $main::graphfile $grfilecmd -a $main::gprfile -t $main::outdir -o $main::outdir";
-	    print "$pathway_infer_cmd\n";
-	    system "$pathway_infer_cmd\n";
-	    system "rm $tempfilename";
-	    @genelist =();
+	    my @tempdata = split(/\t/,$line);
+# 	   print "$tempdata[6] eq $oldclusterid\n";
+	    if ($oldclusterid && !($tempdata[6] eq $oldclusterid)){
+		$oldclusterid=~s/\s+/_/g;
+		my $tempfilename = $dir{output}.$oldclusterid."_original_seeds.txt";
+		chomp ($tempfilename);
+		open (MYFILE, '>'.$tempfilename);
+		print MYFILE join ("\n",@genelist). "\n";
+		close (MYFILE);
+		my $grfilecmd = "";
+		if ($main::grfile){ # if there is a file with direct link from gene to reaction
+		    $grfilecmd = "-b $main::grfile";
+		}
+		my $pathway_infer_cmd = $SCRIPTS."/pathway-extractor";
+		$pathway_infer_cmd .= " -v ".$main::verbose;
+		$pathway_infer_cmd .= " -i ".$tempfilename;
+		$pathway_infer_cmd .= " -g ".$main::infile{graph};
+		$pathway_infer_cmd .= "  ".$grfilecmd;
+		$pathway_infer_cmd .= " -a ".$main::infile{gpr};
+		$pathway_infer_cmd .= " -t ".$main::dir{output};
+		$pathway_infer_cmd .= " -o ".$main::dir{output};
+		&RSAT::message::Info("Patwhay extractor command: ", $pathway_infer_cmd);
+
+		&doit($pathway_infer_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+#	    system "$pathway_infer_cmd\n";
+
+		system "rm $tempfilename" if ($task{clean});
+
+		@genelist =();
 # 	    exit(0); 
-	   }
-	   my $gene= $tempdata[0];
-	   $gene=~ s{\.[^.]+$}{}; # removes gene version
-	   push(@genelist,$gene);
-	   $oldoperonid = $tempdata[6];
-	 }
-	  
+	    }
+	    my $gene= $tempdata[0];
+	    $gene=~ s{\.[^.]+$}{}; # removes gene version
+	    push(@genelist,$gene);
+	    $oldclusterid = $tempdata[6];
+	}
+	
     }
-    close $main::in if ($main::infile{input});
+    close $main::in if ($main::infile{clusters});
 
 
 
@@ -220,14 +300,7 @@ Display full PathwayInference help message
 =cut
     } elsif ($arg eq "-hp") {
       system "java graphtools.algorithms.Pathwayinference -h";
-=pod
 
-=item B<-show>
-
-execute gwenview to display the pathway results in png format
-=cut
-    } elsif ($arg eq "-show") {
-     $main::show ="true";
 
 =pod
 
@@ -238,17 +311,17 @@ allows to use the command within a pipe.
 
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{input} = shift(@arguments);
+      $main::infile{clusters} = shift(@arguments);
     
 =pod
 
-=item	B<-a GPR Genes file Default (METACYC_GPR_EC.tab)>
+=item	B<-ger gene2ec2reaction.tab>
 
-GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+GER file (Gene -> EC -> REACTION). annotation file path. 
 
 =cut
-    } elsif ($arg eq "-a") {
-      $main::gprfile = shift(@arguments);
+    } elsif ($arg eq "-ger") {
+      $main::infile{gpr} = shift(@arguments);
     
 =pod
 
@@ -259,27 +332,8 @@ An gene annotation file with diredt link gene to reaction. Does not rely on the 
 =cut
     } elsif ($arg eq "-b") {
       $main::grfile = shift(@arguments);
-# =item	B<-n Graph name>
-# 
-# Name of the Graph (default: Name of the graph file) 
-# 
-# =cut
-#     } elsif ($arg eq "-n") {
-#       $main::graph = shift(@arguments);
-# 
-# =pod
 
-#     } elsif ($arg eq "-d") {
-#       $main::groupdescriptor = shift(@arguments);
-# 
-# 
-# =pod
-# 
-# =item	B<-d Unique descriptor>
-# 
-# Unique name to differenciate output files. If not set With -i, the name of the input file will be used.  
-# 
-# =cut
+
 =pod
 
 =item	B<-g Graph file>
@@ -287,9 +341,10 @@ An gene annotation file with diredt link gene to reaction. Does not rely on the 
 Name of the Graph (default: Name of the graph file) 
 
 =cut
-
     } elsif ($arg eq "-g") {
-      $main::graphfile = shift(@arguments);
+      $main::infile{graph} = shift(@arguments);
+
+
 =pod
 
 =item	B<-o output Directory>
@@ -298,10 +353,61 @@ If no output file is specified, the current directory is used.
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::outdir = shift(@arguments);
+      $main::dir{output} = shift(@arguments);
+
+
+=pod
+
+=item B<-task>
+
+Specify a subset of tasks to be executed.
+
+By default, the program runs all necessary tasks. However, in some
+cases, it can be useful to select one or several tasks to be executed
+separately.
+
+Beware: task selection requires expertise, because most tasks depends
+on the prior execution of some other tasks in the workflow. Selecting
+tasks before their prerequisite tasks have been completed will provoke
+fatal errors.
+
+B<Default tasks>
+
+=over
+
+=item I<clean> (default)
+
+Remove temporary files. This option is incompatible with the option
+I<-batch>.
+
+=back
+
+=cut
+    } elsif ($arg eq "-task") {
+	my @requested_tasks = split ",", shift (@arguments);
+	foreach my $task (@requested_tasks) {
+	    next unless $task;
+	    if ($supported_task{$task}) {
+		$task{$task} = 1;
+	    } else {
+		&RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
+	    }
+	}
+
+=pod
+
+=item B<-batch>
+
+Generate one command per query gene, and post it on the queue of a PC
+cluster.
+
+=cut
+  } elsif ($arg eq "-batch") {
+    $main::batch = 1;
+
 
     } else {
-      &FatalError(join("\t", "Invalid inferoperon_pathway_extractor option", $arg));
+      &FatalError(join("\t", "Invalid option", $arg));
 
     }
   }
