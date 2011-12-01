@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.21 2011/12/01 14:48:59 jvanheld Exp $
+# $Id: pathway-extractor,v 1.22 2011/12/01 14:58:16 jvanheld Exp $
 #
 ############################################################
 
@@ -15,50 +15,58 @@
 
 =head1 DESCRIPTION
 
-This tool is a Perl Wrapper around the stand-alone application (PathwayInference) developed by
-Karoline Faust.
+This tool is a Perl Wrapper around the stand-alone application
+(PathwayInference) developed by Karoline Faust.
 
-The PathwayInference tool can also be used via the Web interface "Pathway Extraction" (http://
-rsat.ulb.ac.be/neat).
+The PathwayInference tool can also be used via the Web interface
+"Pathway Extraction" (http:// rsat.ulb.ac.be/neat).
 
-The Perl wrapper performs several steps to enable the extraction of pathways from sets of
-functionally related genes (e.g. co-expressed, co-regulated, members of the same operon, …).
+The Perl wrapper performs several steps to enable the extraction of
+pathways from sets of functionally related genes (e.g. co-expressed,
+co-regulated, members of the same operon, …).
 
-1. Gene to reaction mapping. Identify the set of reactions ("seed reactions") catalyzed by the set of
-input genes ("seed genes"). The mapping relies on a user-specified file describing the mapping of
+1. Gene to reaction mapping. Identify the set of reactions ("seed
+reactions") catalyzed by the set of input genes ("seed genes"). The
+mapping relies on a user-specified file describing the mapping of
 genes to reactions (GPR, Gene-Protein-Reaction file).
 
-2. Pathway extraction (=Pathway inference). PathwayInference takes as input a network (typically
-a metabolic network made of compounds + reactions) and a set of "seed" nodes. The program
-attempts to return a subnetwork that interconnects the seed nodes at a minimal “cost", where the
-cost is a weighted sum of the intermediate compounds and reactions used to link the seed nodes
-(Faust, et al., 2011; Faust and van Helden, 2011).
+2. Pathway extraction (=Pathway inference). PathwayInference takes as
+input a network (typically a metabolic network made of compounds +
+reactions) and a set of "seed" nodes. The program attempts to return a
+subnetwork that interconnects the seed nodes at a minimal “cost",
+where the cost is a weighted sum of the intermediate compounds and
+reactions used to link the seed nodes (Faust, et al., 2011; Faust and
+van Helden, 2011).
 
-3. Annotation of the inferred pathway: identify the EC numbers, enzymes and genes associated to
-each reaction (seed + inferred reactions) of the inferred pathway. This documentation relies on the
+3. Annotation of the inferred pathway: identify the EC numbers,
+enzymes and genes associated to each reaction (seed + inferred
+reactions) of the inferred pathway. This documentation relies on the
 same GPR file as the gene to reaction mapping.
 
-This implementation requires no database or Internet connection and works with local files only.
-The PathwayInference tool wraps a number of algorithms to infer pathways: k shortest paths
-(REA), kWalks and a hybrid approach combining both (Faust, et al., 2010). In addition, two Steiner
-tree algorithms are available (Takahashi-Matsuyama and Klein-Ravi), each of them alone or in
-combination with kWalks.
+This implementation requires no database or Internet connection and
+works with local files only.  The PathwayInference tool wraps a number
+of algorithms to infer pathways: k shortest paths (REA), kWalks and a
+hybrid approach combining both (Faust, et al., 2010). In addition, two
+Steiner tree algorithms are available (Takahashi-Matsuyama and
+Klein-Ravi), each of them alone or in combination with kWalks.
 
 =head1 AUTHORS
 
-The java PathwInference tool was developed by Karoline Faust. This Perl wrapper was developed by
-Didier Croes. The doc was written by Didier Croes and Jacques van Helden.
+The java PathwInference tool was developed by Karoline Faust. This
+Perl wrapper was developed by Didier Croes. The doc was written by
+Didier Croes and Jacques van Helden.
 
 =head1 REFERENCES
 
-Faust, K., Croes, D. and van Helden, J. (2011). Prediction of metabolic pathways from genome-scale
-metabolic networks. Biosystems.
+Faust, K., Croes, D. and van Helden, J. (2011). Prediction of
+metabolic pathways from genome-scale metabolic networks. Biosystems.
 
-Faust, K., Dupont, P., Callut, J. and van Helden, J. (2010). Pathway discovery in metabolic networks by
-subgraph extraction. Bioinformatics 26, 1211-8.
+Faust, K., Dupont, P., Callut, J. and van Helden, J. (2010). Pathway
+discovery in metabolic networks by subgraph extraction. Bioinformatics
+26, 1211-8.
 
-Faust, K. and van Helden, J. (2011). Predicting metabolic pathways by sub-network extraction.
-Methods in Molecular Biology in press, 15.
+Faust, K. and van Helden, J. (2011). Predicting metabolic pathways by
+sub-network extraction.  Methods in Molecular Biology in press, 15.
 
 =head1 CATEGORY
 
@@ -105,7 +113,7 @@ java graphtools.algorithms.Pathwayinference –h
 
 The same result can be obtained by typing
 
-pathway_extractor.pl -hp
+pathway-extractor -hp
 
 ---------------------------------------------------------------- 
 
@@ -155,8 +163,6 @@ attribute (ID, start, end, name, ...).
 
 =head3 Commands
 
-This script assumes
-
 Extract all E.coli genes whose name starts with met
  gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -full -q '^met.*' -o met_genes.tab
 
@@ -164,16 +170,19 @@ Select the first column, containing gene Ids.
  grep -v "^;" met_genes.tab | cut -f 1 > met_genes_IDs.txt
 
 Extract a pathway connecting at best the reactions catalyzed by these gene products
-  pathway_extractor.pl -i met_genes_IDs.txt \
-     -g data/networks/MetaCyc/MetaCyc_directed_141.txt -a data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt -o result_dir -t temp_dir
+  pathway-extractor -i met_genes_IDs.txt \
+     -g data/networks/MetaCyc/MetaCyc_directed_141.txt \
+     -ger ${RSAT}/data/metabolic_networks/GER_files/GPR_Uniprot_112011_Escherichia_coli_K12.tab \
+     -o result_dir \
+     -t temp_dir
 
 ---------------------------------------------------------------- 
 
 =head2 Using standard input
 
-=head3 The script pathway_extractor.pl can also use as input the STDIN. This allows to use it in aconcatenation of commands. For example, all the commands above could be combined in a single pipeline as follows.
+=head3 The script pathway-extractor can also use as input the STDIN. This allows to use it in aconcatenation of commands. For example, all the commands above could be combined in a single pipeline as follows.
 
-gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q met.| grep -v "^;" met_genes.tab | cut -f 1 | pathway_extractor.pl -g data/networks/MetaCyc/MetaCyc_directed_141.txt -a data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt -o result_dir -t temp_dir
+gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q met.| grep -v "^;" met_genes.tab | cut -f 1 | pathway-extractor -g data/networks/MetaCyc/MetaCyc_directed_141.txt -a data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt -o result_dir -t temp_dir
 
 ---------------------------------------------------------------- 
 
@@ -213,7 +222,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();	     # File name containing a list of genes ID
@@ -224,7 +233,7 @@ package main;
   $main::in = STDIN;
   $main::out = STDOUT;
     
-  $main::gprfile ="METACYC_GPR_EC.tab";	# GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+  $main::infile{gpr} ="METACYC_GPR_EC.tab";	# GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
   $main::grfile="";		# GR Gene -> REACTION annotation
   $main::graph = "";		# Graph Name 
   $main::graphfile="";		# File containing the graph
@@ -312,7 +321,7 @@ package main;
     #   print join( "\n",@grconversiontable) ."\n"; 
   }
    
-  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genesid."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $gprfile";
+  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genesid."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $infile{gpr}";
   print $seed_converter_cmd."\n";
 
   my @conversiontable = qx ($seed_converter_cmd) ;
@@ -420,7 +429,7 @@ package main;
 # Searching all reactions information for the reaction that are in  the infered pathway graph
     $reactionquery =~s/\|+$//;
     $cpdquery =~s/\|+$//;
-    my $command_ = "awk -F'\\t+' ' $reactionquery {print \$3\"\\t\"\$2\"\\t\"\$6}' $gprfile|sort|uniq";
+    my $command_ = "awk -F'\\t+' ' $reactionquery {print \$3\"\\t\"\$2\"\\t\"\$6}' $infile{gpr}|sort|uniq";
     print "$command_\n";
     @conversiontable = qx ($command_);
     $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $graphfile";
@@ -636,13 +645,13 @@ allows to use the command within a pipe.
 
 =pod
 
-=item	B<-a GPR Genes file Default (METACYC_GPR_EC.tab)>
+=item	B<-ger GER Genes file>
 
-GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+Gene -> EC -> REACTION (GER) annotation file.
 
 =cut
-    } elsif ($arg eq "-a") {
-      $main::gprfile = shift(@arguments);
+    } elsif ($arg eq "-ger") {
+      $main::infile{gpr} = shift(@arguments);
 
 
 
