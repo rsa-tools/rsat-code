@@ -22,15 +22,15 @@ gene_ids:
 METAB_DB=MetaCyc
 METAB_NETWORK=MetaCyc_directed_141
 NETWORK=${RSAT}//public_html/data/metabolic_networks/networks/${METAB_DB}/${METAB_NETWORK}.txt
-#OUTDIR=results/${ORG}/${QUERY}
-OUTDIR=${OUTDIR}/${QUERY}_${ORG}_${METAB_NETWORK}_pred_pathways.dot
+OUTDIR=results/${ORG}/${QUERY}
+OUT_PREFIX=${OUTDIR}/${QUERY}_genes_IDs_${ORG}_MetaCyc_directed_141_annot_pred_pathways
 extract_pathway:
 	pathway-extractor -i ${QUERY}_genes_IDs.txt \
 		-g ${NETWORK} \
 		-ger ${RSAT}/data/metabolic_networks/GER_files/GPR_Uniprot_112011_${ORG}.tab \
 		-o ${OUTDIR} \
 		-t temp_dir
-
+	@echo ${OUT_PREFIX}*
 
 VIEWER=dotty
 view_pathway:
