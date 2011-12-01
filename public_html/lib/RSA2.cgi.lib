@@ -1508,6 +1508,7 @@ sub EmailTheResult {
     my $no_email = $args{no_email} || 0;
 
     my $clean_command = &RSAT::util::hide_RSAT_path($command);
+    $clean_command =~ s|\$|\\\$|;
 
     my $script_name = $0;
     $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g; ## Avoid providing the full path of the RSAT package
