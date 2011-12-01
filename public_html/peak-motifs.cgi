@@ -62,7 +62,7 @@ if ($query->param('title')){
 }
 
 ## default
-@tasks = ("purge", "seqlen", "composition", "disco", "collect_motifs", "motifs_vs_motifs", "timelog", "archive", "synthesis");
+@tasks = ("purge", "seqlen", "composition", "disco", "merge_words", "collect_motifs", "motifs_vs_motifs", "timelog", "archive", "synthesis");
 
 
 ### peak sequences file
