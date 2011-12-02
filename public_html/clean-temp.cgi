@@ -40,8 +40,9 @@ $query = new CGI;
 ## Parameters
 my $clean_limit = 3;
 $clean_temp_command = "echo '<br>started'; date; \n";
-$clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp -mtime +".${clean_limit}." -type f -exec rm -f {} \\; ; \n";
-$clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp -name '*_serial_*' -type f -exec rm -f {} \\; ; \n";
+$clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp/ -mtime +".${clean_limit}." -type f -exec rm -f {} \\; ; \n";
+$clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp/ -mtime +".${clean_limit}." -type d -exec rm -rf {} \\; ; \n";
+$clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp/ -name '*_serial_*' -type f -exec rm -f {} \\; ; \n";
 $clean_temp_command .= "echo '<br>done\n'; date; \n";
 
 
