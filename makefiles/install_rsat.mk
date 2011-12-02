@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.51 2011/10/05 06:37:39 rsat Exp $
+# $Id: install_rsat.mk,v 1.52 2011/12/02 05:17:50 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -288,6 +288,37 @@ install_meme:
 	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH ${MEME_BIN_DIR}:\$$PATH"
+
+################################################################
+## Install a clustering algorithm "cluster"
+
+################################################################
+## Install the graph-based clustering algorithm MCL
+CLUSTER_BASE_DIR=${APP_SRC_DIR}/cluster
+CLUSTER_VERSION=1.50
+CLUSTER_ARCHIVE=cluster-${CLUSTER_VERSION}.tar.gz
+CLUSTER_URL= http://bonsai.hgc.jp/~mdehoon/software/cluster/${CLUSTER_ARCHIVE}
+CLUSTER_DISTRIB_DIR=${CLUSTER_BASE_DIR}/cluster-${CLUSTER_VERSION}
+download_cluster:
+	@echo
+	@echo "Downloading CLUSTER"
+	@mkdir -p ${CLUSTER_BASE_DIR}
+	wget -nd  --directory-prefix ${CLUSTER_BASE_DIR} -rNL ${CLUSTER_URL}
+	(cd ${CLUSTER_BASE_DIR}; tar -xpzf ${CLUSTER_ARCHIVE})
+	@echo ${CLUSTER_DISTRIB_DIR}
+#	tar xvfz cluster-1.50.tar.gz
+#	(cd cluster-1.50; ./configure --without-x; make clean; make )
+
+CLUSTER_INSTALL_DIR=${RSAT}
+CLUSTER_BIN_DIR=${CLUSTER_INSTALL_DIR}/bin
+install_cluster:
+	@echo
+	@echo "Installing CLUSTER"
+	@mkdir -p ${CLUSTER_INSTALL_DIR}
+	(cd ${CLUSTER_DISTRIB_DIR}; ./configure --without-x --prefix=${CLUSTER_INSTALL_DIR} ; \
+	make clean; make ; make install)
+
+
 
 ################################################################
 ## Install the graph-based clustering algorithm MCL
