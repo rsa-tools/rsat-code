@@ -39,17 +39,19 @@ $query = new CGI;
 
 ## Parameters
 my $clean_limit = 3;
-my $err_file = &RSAT::util::make_temp_file("","clean-temp", 1);
-$err_file .= ".txt";
-$clean_temp_command = 'find '.$ENV{RSAT}.'/public_html/tmp/ -mtime +'.${clean_limit}.' -type f -exec rm -f {} >& '.$err_file.' \;';
+$clean_temp_command = "echo '<br>started'; date; \n";
+$clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp -mtime +".${clean_limit}." -type f -exec rm -f {} \\; ; \n";
+$clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp -name '*_serial_*' -type f -exec rm -f {} \\; ; \n";
+$clean_temp_command .= "echo '<br>done\n'; date; \n";
 
-&RSAT::message::TimeWarn("Cleaning temporary directory from files older than ".$clean_limit." days.");
+
+&RSAT::message::TimeWarn("Cleaning temporary directory from files older than ".$clean_limit." days + all serialized files");
 
 print "<PRE>\n";
 print $clean_temp_command if ($ENV{rsat_echo} >= 0);
 print "</PRE>\n";
 
-system($clean_temp_command);
+$err = system($clean_temp_command);
 
 &RSAT::message::TimeWarn("Cleaning finished");
 
