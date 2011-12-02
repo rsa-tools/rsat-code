@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.23 2011/12/02 07:25:17 jvanheld Exp $
+# $Id: pathway-extractor,v 1.24 2011/12/02 22:03:19 jvanheld Exp $
 #
 ############################################################
 
@@ -227,7 +227,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input/output files
@@ -295,7 +295,7 @@ package main;
   unless ($dir{output} =~ /\/$/) {
     $dir{output} = $dir{output}."/";
   }
-  $dir{output} =~s |//|/|g; ## Suppress double backslashes
+  $dir{output} =~s |//|/|g; ## Suppress double slashes
   &RSAT::util::CheckOutDir($dir{output});
 
   ## Check the existence of the temp directory and create it if
@@ -310,6 +310,9 @@ package main;
 
   ################################################################
   ## GPR Mapping
+
+  ## DIDIER: the GPR mapping should be redone with the new program match-names.
+
   &RSAT::message::TimeWarn("Mapping seeds to reactions") if ($verbose >= 1);
   @genes_id_list = <$in>;
   close $in if ($infile{input});
@@ -362,6 +365,7 @@ package main;
   $outfile{gr} = "";		# GR Gene -> REACTION annotation
   $outfile{prefix} = $dir{output}."/";
   $outfile{prefix} .= join("_", $group_descriptor, $groupid, $graph, "pred_pathways");
+  $outfile{prefix} =~ s|//|/|g; ## Suppress double slashes
 
   $outfile{predicted_pathway} = $outfile{prefix}.".txt";
   $outfile{graph_png} = $outfile{prefix}."_annot.png";
