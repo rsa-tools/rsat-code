@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.22 2011/12/01 14:58:16 jvanheld Exp $
+# $Id: pathway-extractor,v 1.23 2011/12/02 07:25:17 jvanheld Exp $
 #
 ############################################################
 
@@ -74,7 +74,8 @@ Graph tool
 
 =head1 USAGE
 
-pathway_extractor -h -hp [-i inputfile] [-o outputdirectory] [-v verbosity] -g graphfile -a gene2ec2reactions [-d unique descriptor] [-t tempdir] [-show] 
+pathway_extractor -h -hp [-i inputfile] [-o output_directory] [-v verbosity] \
+    -g infile{graph} -a gene2ec2reactions [-d unique_descriptor] [-t temp_directory] [-show]
 
 =head1 INPUT FORMAT
 
@@ -82,9 +83,11 @@ Warning: the same gene identifiers should be used in all input files.
 
 =head2 1) List of seed genes (gene identifiers):
 
-(Warning at least 2 gene ids must be present in the graph file see below) in this example we use gene
-IDs. Beware, the gene IDs must be compatible with the genome version installed on RSAT. Depending
-on the organism source, the IDs can correspond to RefSeq, EnsEMBL, or other references.
+(Warning at least 2 gene ids must be present in the graph file see
+below) in this example we use gene IDs. Beware, the gene IDs must be
+compatible with the genome version installed on RSAT. Depending on the
+organism source, the IDs can correspond to RefSeq, EnsEMBL, or other
+references.
 
 Example of seed gene file:
 NP_414739
@@ -103,7 +106,7 @@ NP_418376
 NP_418437
 NP_418443
 
-----------------------------------------------------------------    
+----------------------------------------------------------------
 
 =head2 2)Graph file format:
 
@@ -115,7 +118,7 @@ The same result can be obtained by typing
 
 pathway-extractor -hp
 
----------------------------------------------------------------- 
+----------------------------------------------------------------
 
 
 
@@ -139,7 +142,6 @@ reaction_id). Additional columns can be provided for convenience, but
 are ignored.
 
 =head3 Example of GERfile
-
 
  geneID	ec_number       reaction_id     species_name    taxonomy_id     gene_name
  O22340	4.2.3.-	 RXN-10482       Abies grandis   46611   (4S)-limonene synthase
@@ -176,15 +178,19 @@ Extract a pathway connecting at best the reactions catalyzed by these gene produ
      -o result_dir \
      -t temp_dir
 
----------------------------------------------------------------- 
+----------------------------------------------------------------
 
 =head2 Using standard input
 
 =head3 The script pathway-extractor can also use as input the STDIN. This allows to use it in aconcatenation of commands. For example, all the commands above could be combined in a single pipeline as follows.
 
-gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q met.| grep -v "^;" met_genes.tab | cut -f 1 | pathway-extractor -g data/networks/MetaCyc/MetaCyc_directed_141.txt -a data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt -o result_dir -t temp_dir
+ gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q 'met.*' \
+   | grep -v "^;" met_genes.tab | cut -f 1 \
+   | pathway-extractor -g data/networks/MetaCyc/MetaCyc_directed_141.txt \
+       -ger data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt \
+       -o result_dir -t temp_dir
 
----------------------------------------------------------------- 
+----------------------------------------------------------------
 
 =head1 OUTPUT FILES:
 
@@ -198,7 +204,7 @@ gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q me
 automatic layout program dot (included in the software suite graphviz).
 
 *._annot_pred_pathways.png : png image file of the inferred pathway
----------------------------------------------------------------- 
+----------------------------------------------------------------
 
 =cut
 
@@ -212,7 +218,6 @@ BEGIN {
 require "RSA.lib";
 
 
-
 ################################################################
 ## Main package
 package main;
@@ -222,23 +227,33 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
-  %main::infile = ();	     # File name containing a list of genes ID
-  $main::outdir = ".";				# output directory
-  $main::tempdir= "";				# temporary directory
+  ## Input/output files
+  our %infile = ();	     # File name containing a list of genes ID
+  our %outfile = ();
 
-  $main::verbose = "";
-  $main::in = STDIN;
-  $main::out = STDOUT;
-    
-  $main::infile{gpr} ="METACYC_GPR_EC.tab";	# GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
-  $main::grfile="";		# GR Gene -> REACTION annotation
-  $main::graph = "";		# Graph Name 
-  $main::graphfile="";		# File containing the graph
-  $main::show = 0;			# Open png image in gwenview
-  $main::groupdescriptor=""; # Unique name to differenciate output files
+  ## Directories
+  our %dir = ();
+  $dir{output} = "."; # output directory
+  $dir{temp}= "";     # temporary directory
+
+  our $verbose = "";
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  $infile{gpr} ="METACYC_GPR_EC.tab"; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+  $graph = "";		# Graph Name
+  $infile{graph}="";		# File containing the graph
+  $show = 0;		# Open png image in gwenview
+  $group_descriptor= ""; # Unique name to differenciate output files
+
+  my $organism = "Unknown";
+  my $organism_id;
+  # my $working_dir = "";
+  my $genes_id;
+  my @genes_id_list;
 
   ################################################################
   ## Read argument values
@@ -246,83 +261,73 @@ package main;
 
   ################################################################
   ## Check argument values
-    
-    
-  if (defined $main::infile{input}) {
-    ($main::in) = &OpenInputFile($main::infile{input});
-    if (!$main::groupdescriptor) {
-      $main::groupdescriptor = $main::infile{input};
-      $main::groupdescriptor =~ s{.*/}{};     # removes path  
-      $main::groupdescriptor=~ s{\.[^.]+$}{}; # removes extension 
+
+  if (defined $infile{input}) {
+    ($in) = &OpenInputFile($infile{input});
+    if (!$group_descriptor) {
+      $group_descriptor = $infile{input};
+      $group_descriptor =~ s{.*/}{};     # removes path
+      $group_descriptor=~ s{\.[^.]+$}{}; # removes extension
     }
   } else {
-    if (!$main::groupdescriptor) {
-      $main::groupdescriptor ="stdin";
+    if (!$group_descriptor) {
+      $group_descriptor ="stdin";
     }
   }
-  $main::groupdescriptor=~s/(\s|\(|\))+/_/g;
-  if (!$main::graph) {
-    $main::graph = $main::graphfile;
-    $main::graph =~ s{.*/}{};	    # removes path
-    $main::graph=~ s{\.[^.]+$}{};   # removes extension
+  $group_descriptor=~s/(\s|\(|\))+/_/g;
+  if (!$graph) {
+    $graph = $infile{graph};
+    $graph =~ s{.*/}{};	    # removes path
+    $graph=~ s{\.[^.]+$}{};   # removes extension
   }
-  $main::graph=~s/(\s|\(|\))+/_/g;
-  ################################################################
-  ## Read input
-  #     ($main::in) = &OpenInputFile($main::infile{input});
-  #     while (<$main::in>) {
-  # 
-  #     }
-  #     
+  $graph=~s/(\s|\(|\))+/_/g;
+
 
   ################################################################
   ## Print verbose
-  &Verbose() if ($main::verbose);
+  &Verbose() if ($verbose);
 
   ################################################################
   ## Execute the command
 
   ## Check the existence of the output directory and create it if
   ## required
-  if (!($outdir=~m/\/$/)) {
-    $outdir = $outdir."/";
+  unless ($dir{output} =~ /\/$/) {
+    $dir{output} = $dir{output}."/";
   }
-  &RSAT::util::CheckOutDir($outdir);
+  $dir{output} =~s |//|/|g; ## Suppress double backslashes
+  &RSAT::util::CheckOutDir($dir{output});
 
   ## Check the existence of the temp directory and create it if
   ## required
-  if (!$tempdir) {
-    $tempdir=$outdir;
+  $dir{temp}=$dir{output} unless ($dir{temp});
+  if (!($dir{temp}=~m/\/$/)) {
+    $dir{temp} = $dir{temp}."/";
   }
-  if (!($tempdir=~m/\/$/)) {
-    $tempdir = $tempdir."/";
-  }
-  &RSAT::util::CheckOutDir($tempdir);
+  &RSAT::util::CheckOutDir($dir{temp});
 
-  my $organism = "Unknown";
-  my $organismid;
-  # my $working_dir = "";
-  my $genesid;
-  my @genesidlist;
-################################################################
-# GPR Mapping
-  @genesidlist = <$main::in>;
-  close $main::in if ($main::infile{input});
-  chomp(@genesidlist);
-  $genesid = (join "|^",@genesidlist );	#
-  #   print join (@genesidlist,"|")."\n";
+
+
+  ################################################################
+  ## GPR Mapping
+  &RSAT::message::TimeWarn("Mapping seeds to reactions") if ($verbose >= 1);
+  @genes_id_list = <$in>;
+  close $in if ($infile{input});
+  chomp(@genes_id_list);
+  $genes_id = (join "|^",@genes_id_list );	#
+  &RSAT::message::Info("Gene IDs", join("; ", @genes_id_list)) if ($verbose >= 3);
   my @grconversiontable;
   my %genelist=();
-  if ($grfile) {## if annotated gene to reaction file (-b)
-    my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genesid."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $grfile";
+  if ($outfile{gr}) {	    ## if annotated gene to reaction file (-b)
+    my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genes_id."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $outfile{gr}";
     @grconversiontable = qx ($seed_converter_cmd) ;
     chomp(@grconversiontable);
     @grconversiontable = sort(@grconversiontable);
-    #   print join( "\n",@grconversiontable) ."\n"; 
+    &RSAT::message::Debug("Gene IDs", join("; ", @grconversiontable)) if ($verbose >= 3);
   }
-   
-  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genesid."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $infile{gpr}";
-  print $seed_converter_cmd."\n";
+  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genes_id."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $infile{gpr}";
+
+  &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
 
   my @conversiontable = qx ($seed_converter_cmd) ;
   chomp(@conversiontable);
@@ -330,11 +335,11 @@ package main;
   # getting organism information
   my @tempdata = split(/\t/,$conversiontable[0]);
   $organism = $tempdata[3];
-  $organismid = $tempdata[4];
-  my $groupid=( join "-",$organism,$organismid);
+  $organism_id = $tempdata[4];
+  my $groupid=( join "-",$organism,$organism_id);
   $groupid=~s/(\s|\(|\))+/_/g;
 
-#  merging GR and GPR in one array
+  ##  merging GR and GPR in one array
   if (@grconversiontable) {
     foreach my $val (@conversiontable) {
       @tempdata = split(/\t/,$val);
@@ -342,21 +347,39 @@ package main;
 	push(@grconversiontable, grep(/^$tempdata[0]/, @conversiontable))
       }
     }
-    #   print join( "\n",@conversiontable) ."\n"; 
+    #   print join( "\n",@conversiontable) ."\n";
     @conversiontable=@grconversiontable;
-    
+
   }
-#  End of merging GR and GPR in one array
+  #  End of merging GR and GPR in one array
 
-# End of GPR mapping
-################################################################
+  # End of GPR mapping
+  ################################################################
 
-################################################################
-# Creating reaction file fo pathway inference
-  my $seed_converter_filename = $outdir.(join "_",$main::groupdescriptor,$groupid,$graph, "_converted_seeds.txt");
-  open (MYFILE, '>'.$seed_converter_filename);
-  print MYFILE "# Batch file created" . qx("date");
-  print MYFILE "# GENE groups parsed from file:". "\n"; 
+
+  ################################################################
+  ## Define output file names
+  $outfile{gr} = "";		# GR Gene -> REACTION annotation
+  $outfile{prefix} = $dir{output}."/";
+  $outfile{prefix} .= join("_", $group_descriptor, $groupid, $graph, "pred_pathways");
+
+  $outfile{predicted_pathway} = $outfile{prefix}.".txt";
+  $outfile{graph_png} = $outfile{prefix}."_annot.png";
+  $outfile{graph_dot} = $outfile{prefix}."_annot.dot";
+  $outfile{graph_annot} = $outfile{prefix}."_annot.txt";
+  $outfile{seeds_converted} = $outfile{prefix}."_seeds_converted.txt";
+#  my $outfile{graph_png} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.png");
+#  my $outfile{graph_dot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.dot");
+#  my $outfile{graph_annot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.txt");
+#  my $outfile{seeds_converted} = $dir{output}.(join "_",$group_descriptor,$groupid,$graph, "_converted_seeds.txt");
+
+  ################################################################
+  # Creating reaction file fo pathway inference
+  &RSAT::message::TimeWarn("Creating reaction file for pathway inference") if ($verbose >= 1);
+#  my $outfile{seeds_converted} = $dir{output}.(join "_",$group_descriptor,$groupid,$graph, "_converted_seeds.txt");
+  open (MYFILE, '>'.$outfile{seeds_converted});
+  print MYFILE "# Batch file created", &RSAT::util::AlphaDate();
+  print MYFILE "# GENE groups parsed from file:". "\n";
   print MYFILE "# Organism: ". $organism. "\n";
   print MYFILE "# EC number grouping: true". "\n";
   my $seednum= 0;
@@ -373,30 +396,49 @@ package main;
     print MYFILE $tempdata[2] ."<\t".$tempdata[2]. "\n";
     print MYFILE $tempdata[2] ."\t".$tempdata[0]. "\n";
     @previousarray = @tempdata;
-  } 
+  }
 
   if (@conversiontable) {
     print MYFILE "$previousarray[0]\t$groupid\n";
     $seednum++;
   }
-# END OF  Creating reaction file fo pathway inference
-################################################################
+  # END OF  Creating reaction file fo pathway inference
+  ################################################################
 
-################################################################
-# Running patywayinference
+
+  ## TO DO WITH DIDIER: CHECK SEED NUMBER AND SEND WARNING IF TOO BIG.
+  ##
+  ## Define a parameter max{seed_numbers}. By default, program dies
+  ## with error if seeds exceed max{seed_number}, but the max can be
+  ## increased by the user with the option -max seeds #.
+
   if ($seednum > 1) {
-    my $predicted_pathway_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "_pred_pathways.txt");
-    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference -i $seed_converter_filename -m 5 -C -f flat -n -p $main::tempdir -E $outdir -b -d -g $graphfile -y con $main::verbose -o $predicted_pathway_filename";
-    print $pathway_infer_cmd."\n";
-    print $predicted_pathway_filename."\n";
-    system $pathway_infer_cmd;
+    ################################################################
+    # Running PatywayInference
+    &RSAT::message::TimeWarn("Running pathway inference with ", $seednum, "seeds") if ($verbose >= 1);
+#    $outfile{predicted_pathway} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "_pred_pathways.txt");
+    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference";
+    $pathway_infer_cmd .= " -i ".$outfile{seeds_converted};
+    $pathway_infer_cmd .= " -m 5 -C -f flat -n";
+    $pathway_infer_cmd .= " -p ".$dir{temp};
+    $pathway_infer_cmd .= " -E ".$dir{output};
+    $pathway_infer_cmd .= " -b -d -g";
+    $pathway_infer_cmd .= " ".$infile{graph};
+    $pathway_infer_cmd .= " -y con ".$verbose;
+    $pathway_infer_cmd .= " -o $outfile{predicted_pathway}";
+    &RSAT::message::TimeWarn("Pathway inference command", $pathway_infer_cmd) if ($verbose >= 2);
+    &RSAT::message::Info("Predicted pathway file", $outfile{predicted_pathway}) if ($verbose >= 1);
+    &doit($pathway_infer_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-# END of Running patywayinference
-################################################################
+    ## TO DO WITH DIDIER: redirect STDERR/STDOUD to log and err files in the output directory
 
-################################################################
-# Loading results graph reactions
-    open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
+    # END of Running patywayinference
+    ################################################################
+
+    ################################################################
+    # Loading reactions from extracted  graph
+    &RSAT::message::TimeWarn("Loading reactions from extracted graph") if ($verbose >= 1);
+    open (INFILE, '<'.$outfile{predicted_pathway}) or die "couldn't open the file!";
     my $i = 0;
     my $stop = "";
     my $line;
@@ -407,45 +449,49 @@ package main;
       chomp  ($line );
       if (length($line)>0 && !($line=~m/^;/)) {
 	my @tempdata = split(/\t/,$line);
-	
 	if ($tempdata[6] &&($tempdata[6] eq "Reaction")) {
 	  #       print "|".$line."|"."\n";
 	  $tempdata[0]=~s/<$|>$//;
 	  $i++;
-	  $reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$5~\"".$organismid."\")||";
+	  $reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$5~\"".$organism_id."\")||";
 	} elsif ($tempdata[6] &&($tempdata[6] eq "Compound")) {
 	  $cpdquery = $cpdquery."(\$1~\"^".$tempdata[0]."\"&&\$2~\"Compound\")||";
 	}
       } elsif ($i>0) {
 	last;
       }
-
     }
-    close (INFILE); 
-# End of Loading results graph reactions    
-################################################################
+    close (INFILE);
+    # End of Loading results graph reactions
+    ################################################################
 
-################################################################
-# Searching all reactions information for the reaction that are in  the infered pathway graph
+    ################################################################
+    # Searching all reactions information for the reaction that are in  the inferred pathway graph
+    &RSAT::message::TimeWarn("Searching information about extracted reactions") if ($verbose >= 1);
     $reactionquery =~s/\|+$//;
     $cpdquery =~s/\|+$//;
+
     my $command_ = "awk -F'\\t+' ' $reactionquery {print \$3\"\\t\"\$2\"\\t\"\$6}' $infile{gpr}|sort|uniq";
-    print "$command_\n";
+#    print "$command_\n";
+    &RSAT::message::TimeWarn($command_) if ($verbose >= 3);
     @conversiontable = qx ($command_);
-    $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $graphfile";
-    print "$command_\n";
+
+
+    $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $infile{graph}";
+    &RSAT::message::TimeWarn($command_) if ($verbose >= 3);
     my @conversionreactiontable = qx ($command_);
     #     print "****************".join("\n", @conversionreactiontable)."\n";
     push (@conversiontable,@conversionreactiontable);
-     
+
     chomp(@conversiontable);
-    # Storing in a hash for faster search
+
+    ## Storing reaction infos in a hash for faster search
     my %reactioninfos=();
     undef @previousarray;
     my @reacinfoarray=();
     foreach my $content (@conversiontable) {
       my @currentarray = split(/\t/,$content);
-      if ( @previousarray && !($previousarray[0] eq $currentarray[0])) { 
+      if ( @previousarray && !($previousarray[0] eq $currentarray[0])) {
 	# 	  print $previousarray[0]."\n";
 	my @truc = @reacinfoarray;
 	$reactioninfos{$previousarray[0]}=\@truc;
@@ -455,16 +501,18 @@ package main;
       @previousarray = @currentarray;
     }
     $reactioninfos{$previousarray[0]}=\@reacinfoarray;
-# End of Searching all reactions information for the reaction that are in  the infered pathway graph
-################################################################
 
-################################################################
-# Adding description to the pathway graph
-    open (INFILE, '<'.$predicted_pathway_filename) or die "couldn't open the file!";
-    my $annot_graph_filename = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.txt");
-    # my $outfilename = `mktemp $annot_graph_filename`;
-    open (OUTFILE, '>'.$annot_graph_filename);
-    #     print $main::groupdescriptor;
+    # End of Searching all reactions information for the reaction that are in  the infered pathway graph
+    ################################################################
+
+    ################################################################
+    # Adding description to the pathway graph
+    &RSAT::message::TimeWarn("Adding descriptions to pathway graph") if ($verbose >= 1);
+    open (INFILE, '<'.$outfile{predicted_pathway}) or die "couldn't open the file!";
+#    my $outfile{graph_annot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.txt");
+    # my $outfilename = `mktemp $outfile{graph_annot}`;
+    open (OUTFILE, '>'.$outfile{graph_annot});
+    #     print $group_descriptor;
     while (<INFILE>) {
       my($line) = $_;
       chomp($line);
@@ -472,10 +520,10 @@ package main;
       if (length($line)==0 || $line=~ m/^;/) {
 	print OUTFILE $line. "\n";
       } else {
-	    
+
 	my $tempstring = $tempdatab[0];
 	$tempstring=~s/<$|>$//;
-	$tempdatab[0] = $tempstring;#remove directionality from reaction node id to merge the nodes
+	$tempdatab[0] = $tempstring; #remove directionality from reaction node id to merge the nodes
 	# 	      print "TEMPSTRING = $tempstring\n";
 	my $values_ref = $reactioninfos{$tempstring};
 	if (defined $values_ref) {
@@ -507,41 +555,44 @@ package main;
 	}
 	print OUTFILE (join "\t",@tempdatab). "\n";
       }
-    } 
-    close (MYFILE); 
-# End of Adding description to the pathway graph
-################################################################
+    }
+    close (MYFILE);
+    # End of Adding description to the pathway graph
+    ################################################################
 
-################################################################
-# Converting graph to dot graph format
-    my $annot_graph_dot = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.dot");
-    my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $annot_graph_filename -o $annot_graph_dot";
+    ################################################################
+    # Converting graph to dot format
+    &RSAT::message::TimeWarn("Converting graph to dot format") if ($verbose >= 1);
+#    my $outfile{graph_dot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.dot");
+    my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $outfile{graph_annot} -o $outfile{graph_dot}";
     system  $convert_graph_cmd;
-# End of Converting graph to dot graph format
-################################################################
+    # End of Converting graph to dot graph format
+    ################################################################
 
-################################################################
-# Converting dot graph to image with graphviz dot
-    my $dpng_file = $outdir.(join "_",$main::groupdescriptor, $groupid, $graph, "annot_pred_pathways.png");
-    my $graph_image_cmd = "dot -Tpng -Kdot -o $dpng_file $annot_graph_dot";
+    ################################################################
+    # Converting dot graph to image with graphviz dot
+    &RSAT::message::TimeWarn("Creating graph image with graphviz dot") if ($verbose >= 1);
+#    my $outfile{graph_png} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.png");
+    my $graph_image_cmd = "dot -Tpng -Kdot -o $outfile{graph_png} $outfile{graph_dot}";
     system $graph_image_cmd;
     #exit 0;
-    if ($main::show) {
-      system "gwenview $dpng_file &";
+    if ($show) {
+      system "gwenview $outfile{graph_png} &";
     }
   } else {
     print STDERR "NOT ENOUGH SEEDS. Min 2. I stop here!!\n";
     exit(1);
   }
-# End of Converting dot graph to image with graphviz dot
-################################################################
+  # End of Converting dot graph to image with graphviz dot
+  ################################################################
 
   ################################################################
   ## Insert here output printing
   ## Report execution time and close output stream
+  &RSAT::message::TimeWarn("Ending") if ($verbose >= 1);
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $main::out $exec_time if ($main::verbose); ## only report exec time if verbosity is specified
-  close $main::out if ($main::outfile{output});
+  print $out $exec_time if ($verbose); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
 
   exit(0);
 }
@@ -553,20 +604,20 @@ package main;
 
 
 ################################################################
-## Display full help message 
+## Display full help message
 sub PrintHelp {
-    system "pod2text -c $0";
-    exit()
+  system "pod2text -c $0";
+  exit()
 }
 
 ################################################################
 ## Display short help message
 sub PrintOptions {
-    &PrintHelp();
+  &PrintHelp();
 }
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
   my $arg;
   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
@@ -586,7 +637,11 @@ Verbose mode
 
 =cut
     if ($arg eq "-v") {
-	$main::verbose = "-v";
+      if (&IsNatural($arguments[0])) {
+	$verbose = shift(@arguments);
+      } else {
+	$verbose = 1;
+      }
 
 
 =pod
@@ -630,7 +685,7 @@ execute gwenview to display the pathway results in png format
 
 =cut
     } elsif ($arg eq "-show") {
-     $main::show = 1;
+     $show = 1;
 
 =pod
 
@@ -641,7 +696,7 @@ allows to use the command within a pipe.
 
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{input} = shift(@arguments);
+      $infile{input} = shift(@arguments);
 
 =pod
 
@@ -651,50 +706,50 @@ Gene -> EC -> REACTION (GER) annotation file.
 
 =cut
     } elsif ($arg eq "-ger") {
-      $main::infile{gpr} = shift(@arguments);
-
-
+      $infile{gpr} = shift(@arguments);
 
 # =item	B<-b GR Gene -> REACTION annotation>
-# 
+#
 # An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
 #
-=pod 
-=cut
-    } elsif ($arg eq "-b") {
-      $main::grfile = shift(@arguments);
+#
+# =pod
+#
+# =cut
+#     } elsif ($arg eq "-b") {
+#       $outfile{gr} = shift(@arguments);
+
+# =pod
+
+# =item	B<-n Graph name>
+#
+# Name of the Graph (default: Name of the graph file).
+#
+# =cut
+#     } elsif ($arg eq "-n") {
+#       $graph = shift(@arguments);
+#
 
 =pod
 
-=item	B<-n Graph name>
+=item	B<-d group descriptor>
 
-Name of the Graph (default: Name of the graph file) 
+??? (Check with Didier)
 
 =cut
-#     } elsif ($arg eq "-n") {
-#       $main::graph = shift(@arguments);
-# 
-
-# =pod
-# 
-# =item	B<-d Graph file>
-# 
-# Name of the Graph (default: Name of the graph file) 
-# 
-# =cut
     } elsif ($arg eq "-d") {
-      $main::groupdescriptor = shift(@arguments);
+      $group_descriptor = shift(@arguments);
 
 
 =pod
 
 =item	B<-d Unique descriptor>
 
-Unique name to differenciate output files. If not set With -i, the name of the input file will be used.  
+Unique name to differenciate output files. If not set With -i, the name of the input file will be used.
 
 =cut
     } elsif ($arg eq "-g") {
-      $main::graphfile = shift(@arguments);
+      $infile{graph} = shift(@arguments);
 
 =pod
 
@@ -704,17 +759,17 @@ If no output file is specified, the current directory is used.
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::outdir = shift(@arguments);
+      $dir{output} = shift(@arguments);
 
 =pod
 
 =item	B<-t temp Directory>
 
-If no output file is specified, the current directory is used. 
+If no output file is specified, the current directory is used.
 
 =cut
     } elsif ($arg eq "-t") {
-      $main::tempdir = shift(@arguments);
+      $dir{temp} = shift(@arguments);
 
     } else {
       &FatalError(join("\t", "Invalid pathway_extractor option", $arg));
@@ -732,19 +787,19 @@ If no output file is specified, the current directory is used.
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; template ";
-    &PrintArguments($main::out);
-    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
-    if (%main::infile) {
-	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+    print $out "; template ";
+    &PrintArguments($out);
+    printf $out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%infile) {
+	print $out "; Input files\n";
+	while (my ($key,$value) = each %infile) {
+	  printf $out ";\t%-13s\t%s\n", $key, $value;
 	}
     }
-    if (%main::outfile) {
-	print $main::out "; Output files\n";
-	while (my ($key,$value) = each %main::outfile) {
-	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+    if (%outfile) {
+	print $out "; Output files\n";
+	while (my ($key,$value) = each %outfile) {
+	  printf $out ";\t%-13s\t%s\n", $key, $value;
 	}
     }
 }
