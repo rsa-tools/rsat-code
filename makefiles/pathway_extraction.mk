@@ -43,7 +43,7 @@ one_pathway:
 	@echo "Extracting pathways from genes ${QUERY}_genes_IDs.txt"
 	pathway-extractor -i ${QUERY}_genes_IDs.txt \
 		-g ${GRAPH_FILE} \
-		-ger ${RSAT}/data/metabolic_networks/GER_files/GPR_Uniprot_112011_${ORG}.tab \
+		-ger ${RSAT}/data/metabolic_networks/GER_files/GER_Uniprot_${ORG}.tab \
 		-o ${OUTDIR} \
 		-t temp_dir
 	@echo
