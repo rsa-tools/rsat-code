@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.74 2011/10/26 15:57:21 jvanheld Exp $
+# $Id: compare-classes,v 1.75 2011/12/03 12:25:34 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -208,7 +208,7 @@ $field_formats{'IC'} = "%.4f";
 &ReadArguments();
 
 ################################################################
-#### check argument values
+## Check argument values
 unless ($infile{query_classes}) {
     &RSAT::error::FatalError("You must specify a file containing query classes");
 }
@@ -318,23 +318,33 @@ $out = &OpenOutputFile($outfile{output});
 
 
 ## Reference classes
-%ref_classes = &ReadClasses($infile{ref_classes},0,"",1,1,2, $score_col);
+&RSAT::message::TimeWarn("Reading reference classes\t".$infile{ref_classes}) if ($main::verbose >= 2);
+%ref_classes = &ReadClasses($infile{ref_classes},0,"",1,1,2, $score_col, %args_readclasses_r);
 @ref_classes = sort {$ref_classes{$b}->get_size() <=> $ref_classes{$a}->get_size()} keys %ref_classes;
 $nb_ref_classes = scalar(@ref_classes);
 &RSAT::message::Info((join("\t", "Reference classes", $nb_ref_classes))) if ($main::verbose >= 2);
 
+
 ## Query classes
 if ($infile{input}) {
-    %query_classes = %ref_classes;
-    @query_classes = @ref_classes;
+  &RSAT::message::TimeWarn("Reference classes are used as query classes (comparison between all pairs of classes.") if ($main::verbose >= 2);
+  %query_classes = %ref_classes;
+  @query_classes = @ref_classes;
 } else {
-    %query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col);
-    @query_classes = sort {$query_classes{$b}->get_size() <=> $query_classes{$a}->get_size()} keys %query_classes;
+  &RSAT::message::TimeWarn("Reading query classes\t".$infile{query_classes}) if ($main::verbose >= 2);
+  %query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col, %args_readclasses_q);
+  @query_classes = sort {$query_classes{$b}->get_size() <=> $query_classes{$a}->get_size()} keys %query_classes;
 }
 $nb_query_classes = scalar(@query_classes);
 &RSAT::message::Info((join("\t", "Query classes", $nb_query_classes))) if ($main::verbose >= 2);
 
+
+
 ## Read ref class names
+##
+## (note: if query and reference class files are identical, the
+## reference class names are automatically available for query classes
+## and reciprocally).
 if ($infile{rnames}) {
   &RSAT::message::TimeWarn("Reading reference names\t".$infile{rnames}) if ($main::verbose >= 2);
   my ($in) = &OpenInputFile($infile{rnames});
@@ -900,10 +910,6 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-q") {
       $infile{query_classes} = $ARGV[$a+1];
 
-      ### reference class names
-    } elsif ($ARGV[$a] eq "-rnames") {
-      $infile{rnames} = $ARGV[$a+1];
-
       ### query class names
     } elsif ($ARGV[$a] eq "-qnames") {
       $infile{qnames} = $ARGV[$a+1];
@@ -911,6 +917,10 @@ sub ReadArguments {
       ### reference file
     } elsif ($ARGV[$a] eq "-r") {
       $infile{ref_classes} = $ARGV[$a+1];
+
+      ### reference class names
+    } elsif ($ARGV[$a] eq "-rnames") {
+      $infile{rnames} = $ARGV[$a+1];
 
       ### catalog
     } elsif ($ARGV[$a] eq "-cat") {
@@ -939,6 +949,38 @@ sub ReadArguments {
       $infile{ref_classes} = $ARGV[$a+1];
       $infile{query_classes} = $ARGV[$a+1];
       $infile{input} = $ARGV[$a+1];
+
+      ## Max number of lines to read for the query file
+    } elsif ($ARGV[$a] eq "-max_lines_q") {
+      my $max_lines_q = $ARGV[$a+1];
+      unless ((&IsNatural($max_lines_q)) && ($max_lines_q >= 1)) {
+	&RSAT::error::FatalError($max_lines_q, "Invalid value for option -max_lines_q: must be a strictly positive Integer.");
+      }
+      $args_readclasses_q{max_lines} = $max_lines_q;
+
+      ## Max number of lines to read for the reference file
+    } elsif ($ARGV[$a] eq "-max_lines_r") {
+      my $max_lines_r = $ARGV[$a+1];
+      unless ((&IsNatural($max_lines_r)) && ($max_lines_r >= 1)) {
+	&RSAT::error::FatalError($max_lines_r, "Invalid value for option -max_lines_r: must be a strictly positive Integer.");
+      }
+      $args_readclasses_r{max_lines} = $max_lines_r;
+
+
+      ## Max number of lines to read for both query and reference files
+    } elsif ($ARGV[$a] eq "-max_lines") {
+      my $max_lines = $ARGV[$a+1];
+      unless ((&IsNatural($max_lines)) && ($max_lines >= 1)) {
+	&RSAT::error::FatalError($max_lines, "Invalid value for option -max_lines: must be a strictly positive Integer.");
+      }
+      $args_readclasses_q{max_lines} = $max_lines;
+      $args_readclasses_r{max_lines} = $max_lines;
+
+      ### Quick reading mode TESTING
+    } elsif ($ARGV[$a] eq "-quick") {
+      $args_readclasses_q{quick} = 1;
+      $args_readclasses_r{quick} = 1;
+
 
       ### Score column
     } elsif ($ARGV[$a] eq "-sc") {
