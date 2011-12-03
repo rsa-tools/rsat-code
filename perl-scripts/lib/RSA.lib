@@ -836,6 +836,106 @@ sub ReadFamilies {
     &ReadClasses(@_);
 }
 
+
+################################################################
+## Quick reading mode for classification (elements-clusters) files.
+sub ReadClasses_quick {
+  my ($class_file, %args) = @_;
+  my ($handle) = &OpenInputFile($class_file);
+
+#   my $member_column = 1;
+#   my $class_column = 2;
+
+#   my $member_col_index = $member_column - 1;
+#   my $class_col_index = $class_column - 1;
+
+  my $l = 0;
+  while (<$handle>) {
+    $l++;
+    s/\r/\n/; ## Suppress Windows-specific carriage return characters, which are toxic to Unix systems
+    next unless (/\S/); ## Skip header line
+    next if (/^--/); ## Skip comment lines
+    next if (/^;/); ## Skip comment lines
+    next if (/^#/); ## Skip header line
+    chomp(); ## Suppress carriage return
+
+    ## Check if the max number of lines has been reached
+    if ((defined($args{max_lines})) && ($l > $args{max_lines})) {
+      &RSAT::message::Warning("Stopping after $l line (reached specified number of top lines $args{max_lines}");
+      last;
+    }
+
+    ## Report number of lines read
+    if (($main::verbose >= 2) && ($l % 100000 ==0)) {
+	&RSAT::message::TimeWarn( "Read", $l, "lines from family file",$family_file);
+	if ($main::verbose >= 3) {
+	  &RSAT::message::psWarn( "Read", $l, "lines from family file",$family_file);
+	}
+      }
+
+    #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+    my ($member_name, $family_name) = split /\t/, $_;
+#    my (@fields) = split /\t/, $_;
+
+    ### Check member name
+#    $member_name = $fields[$member_col_index];
+#    $member_name = uc($member_name);
+#    $member_name = &trim($member_name) if ($args{trim});
+#    $member_name = &trim(uc($fields[$member_col_index]));
+#     unless ($member_name =~ /\S/) {
+#       &RSAT::message::Warning("Error family file", 
+# 			      $family_file,  "line", 
+# 			      $l, "member not specified") if ($main::verbose >= 1);
+#       next;
+#     }
+
+    ### Check family name
+#    $family_name = $fields[$class_col_index];
+#    $family_name = &trim($family_name) if ($args{trim});
+#     unless ($family_name) {
+#       &RSAT::message::Warning("Error family file", 
+# 			      $family_file,  "line", 
+# 			      $l, "family not specified") if ($main::verbose >= 1);
+#       next;
+#     }
+
+#       ## Substitute problematic characters
+#       unless ($no_subst) {
+# 	$subst_char = ".";
+# 	$family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
+# 	$family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
+# 	$family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
+# 	$family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
+# 	$family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
+#       }
+
+    $class_index{$family_name}{$member_name}++;
+
+  }
+
+  if ($main::verbose >= 2) {
+    &RSAT::message::psWarn( "Read", $l, "lines from family file",$family_file);
+  }
+
+  ## Cast the result in Class objects
+  my @family_names = keys(%class_index);
+  &RSAT::message::TimeWarn("Creating", scalar(@family_names), "classes");
+  foreach my $family_name (@family_names) {
+    $family{$family_name} = new RSAT::Family(name=>$family_name);
+
+    my @members = keys(%{$class_index{$family_name}});
+    &RSAT::message::Info("Class", $family_name,  scalar(@members), "members") if ($main::verbose >= 5);
+    $family{$family_name}->set_members(@members);
+  }
+
+  &RSAT::message::TimeWarn("Finished reading", scalar(@family_names), "classes");
+
+#  die "&ReacClasses()", "NOT YET IMPLEMENTED", "\n";
+
+  return(%family);
+
+}
+
 ## ############################################################
 ## Read a file with class composition (groups, families, sets).
 ##
@@ -870,141 +970,151 @@ sub ReadFamilies {
 ## 6) class_column: column containing the class names/IDs (default: 2)
 ##
 sub ReadClasses {
-    my ($family_file, $get_orf_id, $organism, $no_subst,$member_column, $class_column, $score_column) = @_;
+  my ($family_file, $get_orf_id, $organism, $no_subst,$member_column, $class_column, $score_column, %args) = @_;
 
-    ## Check score column
-    if ($score_column) {
-	unless (&IsNatural($score_column)) {
-	    &RSAT::error::FatalError(join("\t", $score_column, "Invalid specification of score column for the procedure ReadClasses()"));
-	}
+  if ($args{quick}) {
+    return (&ReadClasses_quick($family_file, %args));
+  }
+
+  ## Check score column
+  if ($score_column) {
+    unless (&IsNatural($score_column)) {
+      &RSAT::error::FatalError(join("\t", $score_column, "Invalid specification of score column for the procedure ReadClasses()"));
+    }
+  }
+
+  ## Check member column
+  if ($member_column) {
+    unless (&IsNatural($member_column)) {
+      &RSAT::error::FatalError(join("\t", $member_column, "Invalid specification of member column for the procedure ReadClasses"));
+    }
+  } else {
+    $member_column=1;
+  }
+
+  ## Check class column
+  if ($class_column) {
+    unless (&IsNatural($class_column)) {
+      &RSAT::error::FatalError(join("\t", $class_column, "Invalid specification of class column for the procedure ReadClasses"));
+    }
+  } else {
+    $class_column=2;
+  }
+
+  &RSAT::message::TimeWarn(join ("\t", "Reading family file",$family_file))
+    if ($main::verbose >=2);
+  my %family = ();
+  my ($fam) = &OpenInputFile($family_file);
+
+  my $l = 0;
+  while (<$fam>) {
+    s/\r/\n/g; ## Suppress Windows-specific carriage return characters, which are toxic to Unix systems
+    my @lines = split (/\n/, $_);
+
+
+    ## Check if the max number of lines has been reached
+    if ((defined($args{max_lines})) && ($l > $args{max_lines})) {
+      &RSAT::message::Warning("Stopping after $l line (reached specified number of top lines $args{max_lines}");
+      last;
     }
 
-    ## Check member column
-    if ($member_column) {
-	unless (&IsNatural($member_column)) {
-	    &RSAT::error::FatalError(join("\t", $member_column, "Invalid specification of member column for the procedure ReadClasses"));
-	}
-    } else {
-	$member_column=1;
-    }
-
-    ## Check class column
-    if ($class_column) {
-	unless (&IsNatural($class_column)) {
-	    &RSAT::error::FatalError(join("\t", $class_column, "Invalid specification of class column for the procedure ReadClasses"));
-	}
-    } else {
-	$class_column=2;
-    }
-
-    &RSAT::message::TimeWarn(join ("\t", "Reading family file",$family_file))
-	if ($main::verbose >=2);
-    
-    my %family = ();
-    my ($fam) = &OpenInputFile($family_file);
-
-    my $l = 0;
-    while (<$fam>) {
-      s/\r/\n/g; ## Suppress Windows-specific carriage return characters, which are toxic to Unix systems
-      my @lines = split (/\n/, $_);
-      foreach my $line (@lines) {
-	$l++;
-	if (($main::verbose >= 2) && ($l % 2000 ==0)) {
-	  &RSAT::message::TimeWarn( "Read", $l, "lines from family file",$family_file);
-	  if ($l % 10000 == 0) {
-	    &RSAT::message::psWarn( "Read", $l, "lines from family file",$family_file);
-	  }
-	}
-	next if ($line =~ /^--/);
-	next if ($line =~ /^;/);
-	next if ($line =~ /^\#/);
-	next unless ($line =~ /\S/);
-	chomp($line);
-#	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
-	my @fields = split /\t/, $line;
-
-	### family member
-	$member_name = &trim(uc($fields[$member_column -1]));
-	unless ($member_name =~ /\S/) {
-	  &RSAT::message::Warning("Error family file", 
-				  $family_file,  "line", 
-				  $l, "member not specified") if ($main::verbose >= 1);
-	  next;
-	}
-
-	### family name
-	$family_name = &trim($fields[$class_column - 1]);
-	unless ($family_name) {
-	  &RSAT::message::Warning("Error family file", 
-				  $family_file,  "line", 
-				  $l, "family not specified") if ($main::verbose >= 1);
-	  next;
-	}
-
-	## Substitute problematic characters
-	unless ($no_subst) {
-	  $subst_char = ".";
-	  $family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
-	  $family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
-	  $family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
-	  $family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
-	  $family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
-	}
-
-	#### create a new family if required
-	unless ($family{$family_name}) {
-	  $family{$family_name} = new RSAT::Family(name=>$family_name);
-	}
-
-	################################################################
-	## Identify the gene on the basis of its name
-	my $member_key = "";
-	if (($get_orf_id) && ($organism)) {
-	  ### identify the gene on the basis of its name
-	  my $feature = $organism->get_feature_for_name($member_name);
-	  if ($feature) {
-	    $member_key = $feature->get_attribute("id");
-	  } else {
-	    &RSAT::message::Warning(join ("\t", "organism", $organism->get_attribute("name"), 
-					  "has no feature with name", $member_name));
-	  }
-	  #	    $member_key = $orf_id{$member_name};
-	} else {
-	  $member_key = $member_name;
-	}
-	
-	if ($member_key) {
-	  if ($score_column) {
-	    ### score
-	    local $score = &trim($fields[$score_column - 1]);
-	    unless (&IsReal($score)) {
-	      &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
-					    "family file", $family_file,  
-					    "line", $l,
-					    "member", $member_name,
-					  "family", $family_name,
-					   ));
-	    }
-	    $family{$family_name}->new_member($member_key, 0, score=>$score);
-	    #		&RSAT::message::Debug("member score", $family_name, $member_name, $score) if ($main::verbose >= 10);
-	  } else {
-	    $family{$family_name}->new_member($member_key);
-	  }
-	  &RSAT::message::Warning( join ("\t",  ";", $family_name,
-					 $member_name,
-					 $member_key,
-					 $name{$id}) ) if ($main::verbose >= 5);
-	  #	    &RSAT::message::Debug("Scores", $family_name, $family{$family_name}->get_attribute("scores")) if ($main::verbose >= 10);
-	} else {
-	  &RSAT::message::Warning ($member_name." unknown gene name");
+    foreach my $line (@lines) {
+      $l++;
+      if (($main::verbose >= 2) && ($l % 2000 ==0)) {
+	&RSAT::message::TimeWarn( "Read", $l, "lines from family file",$family_file);
+	if ($l % 10000 == 0) {
+	  &RSAT::message::psWarn( "Read", $l, "lines from family file",$family_file);
 	}
       }
+      next if ($line =~ /^--/);
+      next if ($line =~ /^;/);
+      next if ($line =~ /^\#/);
+      next unless ($line =~ /\S/);
+      chomp($line);
+      #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+      my @fields = split /\t/, $line;
+
+      ### family member
+      $member_name = &trim(uc($fields[$member_column -1]));
+      unless ($member_name =~ /\S/) {
+	&RSAT::message::Warning("Error family file", 
+				$family_file,  "line", 
+				$l, "member not specified") if ($main::verbose >= 1);
+	next;
+      }
+
+      ### family name
+      $family_name = &trim($fields[$class_column - 1]);
+      unless ($family_name) {
+	&RSAT::message::Warning("Error family file", 
+				$family_file,  "line", 
+				$l, "family not specified") if ($main::verbose >= 1);
+	next;
+      }
+
+      ## Substitute problematic characters
+      unless ($no_subst) {
+	$subst_char = ".";
+	$family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
+	$family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
+	$family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
+	$family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
+	$family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
+      }
+
+      #### create a new family if required
+      unless ($family{$family_name}) {
+	$family{$family_name} = new RSAT::Family(name=>$family_name);
+      }
+
+      ################################################################
+      ## Identify the gene on the basis of its name
+      my $member_key = "";
+      if (($get_orf_id) && ($organism)) {
+	### identify the gene on the basis of its name
+	my $feature = $organism->get_feature_for_name($member_name);
+	if ($feature) {
+	  $member_key = $feature->get_attribute("id");
+	} else {
+	  &RSAT::message::Warning(join ("\t", "organism", $organism->get_attribute("name"), 
+					"has no feature with name", $member_name));
+	}
+	#	    $member_key = $orf_id{$member_name};
+      } else {
+	$member_key = $member_name;
+      }
+
+      if ($member_key) {
+	if ($score_column) {
+	  ### score
+	  local $score = &trim($fields[$score_column - 1]);
+	  unless (&IsReal($score)) {
+	    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
+					  "family file", $family_file,  
+					  "line", $l,
+					  "member", $member_name,
+					  "family", $family_name,
+					 ));
+	  }
+	  $family{$family_name}->new_member($member_key, 0, score=>$score);
+	  #		&RSAT::message::Debug("member score", $family_name, $member_name, $score) if ($main::verbose >= 10);
+	} else {
+	  $family{$family_name}->new_member($member_key);
+	}
+	&RSAT::message::Warning( join ("\t",  ";", $family_name,
+				       $member_name,
+				       $member_key,
+				       $name{$id}) ) if ($main::verbose >= 5);
+	#	    &RSAT::message::Debug("Scores", $family_name, $family{$family_name}->get_attribute("scores")) if ($main::verbose >= 10);
+      } else {
+	&RSAT::message::Warning ($member_name." unknown gene name");
+      }
     }
-    close $fam if ($family_file);
-
-
-    return %family;
   }
+  close $fam if ($family_file);
+
+  return %family;
+}
 
 
 # ################################################################
