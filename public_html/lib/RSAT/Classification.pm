@@ -103,7 +103,7 @@ Read the classification from a mcl text file.
 sub read_mcl {
     my ($self, $input_file) = @_;
     ($main::in) = &RSAT::util::OpenInputFile($input_file);
-    
+
     ## Load the classification
     my $class_number = 0;
     while (<$main::in>) {
