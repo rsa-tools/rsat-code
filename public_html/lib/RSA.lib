@@ -842,6 +842,7 @@ sub ReadFamilies {
 sub ReadClasses_quick {
   my ($class_file, %args) = @_;
   my ($handle) = &OpenInputFile($class_file);
+  my %class_index = ();
 
 #   my $member_column = 1;
 #   my $class_column = 2;
@@ -919,7 +920,7 @@ sub ReadClasses_quick {
 
   ## Cast the result in Class objects
   my @family_names = keys(%class_index);
-  &RSAT::message::TimeWarn("Creating", scalar(@family_names), "classes");
+  &RSAT::message::TimeWarn("Creating", scalar(@family_names), "classes") if ($main::verbose >= 3);
   foreach my $family_name (@family_names) {
     $family{$family_name} = new RSAT::Family(name=>$family_name);
 
@@ -928,9 +929,7 @@ sub ReadClasses_quick {
     $family{$family_name}->set_members(@members);
   }
 
-  &RSAT::message::TimeWarn("Finished reading", scalar(@family_names), "classes");
-
-#  die "&ReacClasses()", "NOT YET IMPLEMENTED", "\n";
+  &RSAT::message::TimeWarn("Finished reading", scalar(@family_names), "classes") if ($main::verbose >= 3);
 
   return(%family);
 
