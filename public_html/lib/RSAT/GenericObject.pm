@@ -222,7 +222,7 @@ sub push_attribute {
 }
 
 ################################################################
-# set the value of an array attribute to the specified array
+## Set the value of an array attribute to the specified array
 sub set_array_attribute {
     my ($self,$attr,@values) = @_;
     my $class = ref($self) || $self;
