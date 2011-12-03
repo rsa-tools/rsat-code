@@ -36,9 +36,10 @@ Class used to store a family (cluster) of genes.
 
 
 ################################################################
+
 =pod
 
-item get_members()
+=item get_members()
 
 Return the list of members
 
@@ -50,9 +51,10 @@ sub get_members {
 }
 
 ################################################################
+
 =pod
 
-item get_size()
+=item get_size()
 
 return the number of members
 
@@ -64,9 +66,10 @@ sub get_size {
 }
 
 ################################################################
+
 =pod
 
-item new_member($new_member, $allow_duplicates)
+=item new_member($new_member, $allow_duplicates)
 
 Add a member to the family, if it has not yet been inserted.
 
@@ -100,15 +103,34 @@ sub new_member {
   }
   if (defined($args{score})) {
     $self->add_hash_attribute("scores", $new_member, $args{score});
-    #	&RSAT::message::Debug("Family", $self->get_attribute("name"), "member", $new_member, "score", $args{score}) if ($main::verbose >= 0);
+    #	&RSAT::message::Debug("Family", $self->get_attribute("name"), "member", $new_member, "score", $args{score}) if ($main::verbose >= 10);
   }
+}
+
+################################################################
+
+=pod
+
+=item set_members(@members)
+
+Set the member list for the class.
+
+It is more efficient to set the list in one shot than to call
+iteratively the method &new_member().
+
+=cut
+
+sub set_members {
+  my ($self, @members) = @_;
+  $self->set_array_attribute("members", @members);
 }
 
 
 ################################################################
+
 =pod
 
-item is_member($member)
+=item is_member($member)
 
 Check whether an element is already member of the family.
 
