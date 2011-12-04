@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.206 2011/12/01 01:34:45 jvanheld Exp $
+# $Id: peak-motifs,v 1.207 2011/12/04 22:25:01 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.206 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.207 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -4296,7 +4296,6 @@ generally corresponds to mutually overlapping several patterns (dyads,
 words).
 
 =cut
-
     } elsif ($arg eq "-nmotifs") {
       $main::param{matrix_nmotifs} = shift (@arguments);
       $main::param{dreme_m} = $main::param{matrix_nmotifs};
