@@ -72,32 +72,58 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("peak-motifs", "form");
-print "<CENTER>";
-print "Pipeline for discovering motifs in massive ChIP-seq peak sequences.<P>\n";
-print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/defrance/'>Matthieu Defrance</a><sup>ci</sup>\n";
-print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/oly/'>Olivier Sand</a><sup>i</sup>\n";
-print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>\n";
-print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
-print "</CENTER>";
-#print "</BLOCKQUOTE>\n";
-print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\"><font color='#0D73A7'>Information on the methods used in peak-motifs</font> </div>\n";
- print "<div id=\"menu105\" class=\"menu_collapsible\">\n";
-#print "<BLOCKQUOTE>\n";
-print "The idea behind <i>peak-motifs</i> is that we detect <b>exceptional words</b> based on <b>distinct and complementary criteria</b>:
-<ul>
-<li> <b>global over-representation (oligo-analysis and dyad-analysis)</b>: a word/dyad is more frequent than expected from the background model. The over-repressentation is tested with a right-tailed binomial significance test.</li>
 
-<li> <b>positional bias (position-analysis)</b>: a word has a heterogeneous of occurrences in the test sequences, i.e. there are regions with higher frequency and other regions with lower frequencies than the average of the same word observed over the whole width of the sequences. Positional bias is tested with a chi-squared tests. 
-</li>
-<li><b>local over-representation (local-word-analysis)</b>: the same test as for oligo-analysis (significance of the right tail of the binomial distribution) applied successfully to positional windows defined over the test set.
-</li>
+print <<end_part_1;
+<CENTER>
+<p>Pipeline for discovering motifs in massive ChIP-seq peak sequences.</p>
+
+<p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
+<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>,
+<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>cit</sup>,
+<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/defrance/'>Matthieu Defrance</a><sup>ci</sup>,
+<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/oly/'>Olivier Sand</a><sup>i</sup>,
+<a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>,
+and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>,
+</center>
+
+<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\">
+
+<font color='#0D73A7'>Information on the methods used in peak-motifs</font> </div>
+ <div id=\"menu105\" class=\"menu_collapsible\">
+
+The idea behind <i>peak-motifs</i> is that we detect <b>exceptional
+words</b> based on <b>distinct and complementary criteria</b>:
+
+<ul>
+
+  <li> <b>global over-representation (oligo-analysis and
+  dyad-analysis)</b>: a word/dyad is more frequent than expected from
+  the background model. The over-repressentation is tested with a
+  right-tailed binomial significance test.</li>
+
+  <li> <b>positional bias (position-analysis)</b>: a word has a
+  heterogeneous of occurrences in the test sequences, i.e. there are
+  regions with higher frequency and other regions with lower
+  frequencies than the average of the same word observed over the
+  whole width of the sequences. Positional bias is tested with a
+  chi-squared tests. </li>
+
+  <li><b>local over-representation (local-word-analysis)</b>: the same
+  test as for oligo-analysis (significance of the right tail of the
+  binomial distribution) applied successfully to positional windows
+  defined over the test set.</li>
+
+</ul>
+
 <br/>
-For position-analysis and local-word-analysis, the <b>sequences</b> are supposed to be <b>aligned</b> over some reference. For peaks, the reference is the summit (or <b>center</b>) of each sequence. ";
-#print "</BLOCKQUOTE>\n";
-print "</div></p>\n";
+
+For position-analysis and local-word-analysis, the <b>sequences</b>
+are supposed to be <b>aligned</b> over some reference. For peaks, the
+reference is the summit (or <b>center</b>) of each sequence.
+
+</div></p>
+end_part_1
+
 
 
 
@@ -148,14 +174,8 @@ $descr1 .= "In this demonstration, we apply time- and memory-efficient
 motif discovery algorithms to discover over-represented motifs in a
 set of 1000 peak regions bound by the mouse transcription factor Oct4
 (Chen et al., 2008)</p>\n";
-
-#$descr1 .= "Discovered motifs are compared to JASPAR vertebrate
-#motifs, and sequences are scanned to predict binding sites.</p>\n";
-
 $descr1 .= "</blockquote>";
 
-#print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
-#$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
 $demo_seq=`cat demo_files/peak-motifs_demo.fa`;
 print "<TD><b>";
@@ -166,18 +186,19 @@ print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar')
 print $query->hidden(-name=>'max_seq_len',-default=>'');
 print $query->hidden(-name=>'top_sequences',-default=>'');
 print $query->hidden(-name=>'visualize',-default=>"galaxy");
-#print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
 print $query->submit(-label=>"DEMO single");
 print "</B></TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo differential (test vs control)
+## Data for the demo differential (test vs control)
 
 my $descr2 = "<H4>Comment on the demonstration example 2 :</H4>\n";
 $descr2 .= "<blockquote class ='demo'>";
-$descr2 .= "In this demonstration, we run a differential analysis (test vs control)
-to discover the motifs that are over-represented in one tissue (heart) compared to another tissue (limb), for a same transcription factor (p300) (Blow et al, 2010)</p>\n";
+$descr2 .= "In this demonstration, we run a differential analysis
+  (test vs control) to discover the motifs that are over-represented in
+  one tissue (heart) compared to another tissue (limb), for a same
+  transcription factor (p300) (Blow et al, 2010)</p>\n";
 $descr2 .= "</blockquote>";
 
 
@@ -546,9 +567,9 @@ print "<br/>
 </fieldset><p/>";
 
 #########
-print '	
-</div>
-</div>
-<p class="clear"></p>';
+print '
+</div>\n
+</div>\n
+<p class="clear"></p>\n';
 
  }
