@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.38 2011/10/21 22:57:07 rsat Exp $
+# $Id: downloads.mk,v 1.39 2011/12/04 22:26:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -161,8 +161,9 @@ expasy:
 		${WGET} ${EXPASY}/$${dir} ;	\
 	done
 
+UNIPROT=ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/
 uniprot:
-	${WGET} ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/
+	${WGET} ${UNIPROT}/uniprot_sprot.*.gz
 
 ################################################################
 #

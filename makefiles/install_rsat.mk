@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.52 2011/12/02 05:17:50 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.53 2011/12/04 22:26:24 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -63,6 +63,7 @@ PERL_MODULES= \
 	DBD::mysql \
 	DBI \
 	SOAP::WSDL \
+	SOAP::Lite \
 	Module::Build::Compat \
 	GD \
 	DB_File \
@@ -81,7 +82,8 @@ install_perl_modules:
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
-PERL=`which perl`
+#PERL=`which perl`
+PERL='/usr/bin/perl'
 SUDO=sudo
 install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
