@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.18 2011/10/06 15:27:24 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.19 2011/12/05 12:51:40 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -130,9 +130,6 @@ while (<$in>) {
    push @{$genes_per_org{$org}}, $query;
 }
 close $in if ($infile{input});
-#%genes_per_org = &ReadClasses($infile{input},0,undef,1,$gene_col, $org_col);
-
-
 
 ################################################################
 ## Print verbose
