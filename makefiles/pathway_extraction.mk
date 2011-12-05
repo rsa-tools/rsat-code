@@ -80,22 +80,53 @@ PFAM_LINKS_DIR=/no_backup/MICROME_RESULTS/data/pfam_links/
 UNIPROT_EC=${PFAM_LINKS_DIR}/uniprot2ec.tab
 EC_NAMES=${PFAM_LINKS_DIR}/EC_names.tab
 EC_EC_DIR=results/ec_vs_ec
-EC_VS_EC=${EC_EC_DIR}/EC_vs_EC
+EC_VS_EC=${EC_EC_DIR}/EC_vs_EC${SUFFIX}
 ec_vs_ec:
 ## TO BE ADDED TO THE COMMAND BELOW
-##	-rnames ${EC_NAMES}.tab
 	@mkdir -p ${EC_EC_DIR}
 	compare-classes -v ${V} -i ${UNIPROT_EC} \
+		-rnames ${EC_NAMES} \
 		-triangle -distinct \
 		-lth QR 1 \
 		-return occ,freq,jac_sim,proba,rank \
 		-lth sig 0 \
 		-quick ${OPT} \
-		-o ${EC_VS_EC}.tab	
+		-o ${EC_VS_EC}.tab
 	@echo ${EC_VS_EC}.tab
 	@text-to-html -i ${EC_VS_EC}.tab \
 		-o ${EC_VS_EC}.html
 	@echo ${EC_VS_EC}.html
+	@${MAKE} ec_vs_ec_graph_gml
+	@${MAKE} ec_vs_ec_graph_dot
+
+ec_vs_ec_graph_gml:
+	convert-graph -i  ${EC_VS_EC}.tab -from tab -to gml -scol 1 -tcol 2 -wcol 19 -ewidth -ecolors fire -min 0 -max 1 -o ${EC_VS_EC}.gml
+	@echo ${EC_VS_EC}.gml
+
+ec_vs_ec_graph_dot:
+	convert-graph -i  ${EC_VS_EC}.tab -from tab -to dot -scol 1 -tcol 2 -wcol 19 -ewidth -ecolors fire -min 0 -max 1 -o ${EC_VS_EC}.dot
+	@echo ${EC_VS_EC}.dot
+
+ec_vs_ec_clusters:
+	convert-graph -from tab -to tab -wcol 19 -scol 1 -tcol 2 -i  ${EC_VS_EC}.tab -o ${EC_VS_EC}_graph_for_mcl.tab
+	mcl  $RSAT/public_html/tmp/mcl-input-graph.ecNPMZr2AC -I 2.5 --abc -V all -o $RSAT/public_html/tmp/mcl-out.HEa9fYryRe
+
+# Cluster conversion
+$RSAT/perl-scripts/convert-classes -from mcl -to tab -i $RSAT/public_html/tmp/convert-classes-input.dcUbEl472g
+
+# Contingency table
+$RSAT/perl-scripts/contingency-table  -col1 2 -col2 1 -i $RSAT/public_html/tmp/contingency-table-input.iAFVO5yhSM
+
+# Class frequencies
+$RSAT/perl-scripts/classfreq -v 1 -col 2 -ci 1 -i $RSAT/public_html/tmp/classfreq-input.vTcz2jqVz6
+
+# Cluster size distrib. plot
+$RSAT/perl-scripts/XYgraph -format png -title1 'Cluster size distribution' -lines -xleg1 'Cluster size' -yleg1 'Number of clusters' -xmin 0 -xcol 2 -ycol 4 -i $RSAT/public_html/tmp/xygraph-input.EgaWQTP9bY -o $RSAT/public_html/tmp/xygraph.VsO5d4B8II.png
+
+## quick test for ec_vs_ec
+TOP_QUICK=10000
+ec_vs_ec_test:
+	${MAKE} V=2 OPT='-max_lines ${TOP_QUICK}' SUFFIX='_top${TOP_QUICK}'  ec_vs_ec_graph_dot
 
 
 ################################################################
@@ -124,11 +155,12 @@ PFAM_EC_DIR=results/pfam_vs_ec
 PFAM_VS_EC=${PFAM_EC_DIR}/PFAM_vs_EC
 pfam_vs_ec:
 ## TO BE ADDED TO THE COMMAND BELOW
-##	-names ${PFAM_NAMES}.tab -rnames ${EC_NAMES}.tab
+##	-names ${PFAM_NAMES}.tab \
 	@mkdir -p ${PFAM_EC_DIR}
 	compare-classes -v ${V} \
 		-q ${UNIPROT_PFAM} \
 		-r ${UNIPROT_EC} \
+		-rnames ${EC_NAMES} \
 		-lth QR 1 \
 		-return occ,freq,jac_sim,proba,rank \
 		-quick ${OPT} \
