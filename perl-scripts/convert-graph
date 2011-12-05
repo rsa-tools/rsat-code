@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.63 2011/05/10 14:56:27 rsat Exp $
+# $Id: convert-graph,v 1.64 2011/12/05 23:50:13 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -764,7 +764,7 @@ Supported : green, blue, red, fire, grey.
 =cut
 	} elsif ($arg eq "-ecolors") {
 	    $edge_colors = shift(@arguments);
-	    &RSAT::error::FatalError("$edge_colors\tInvalid color gradient. Supported: $supported_edge_colors")
+	    &RSAT::error::FatalError("$edge_colors\tInvalid color gradient (option -ecolors). Supported: $supported_edge_colors")
 		unless ($supported_edge_colors{$edge_colors});
 
 
