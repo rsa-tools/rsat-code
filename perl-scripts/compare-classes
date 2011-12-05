@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.75 2011/12/03 12:25:34 jvanheld Exp $
+# $Id: compare-classes,v 1.76 2011/12/05 23:50:09 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -19,15 +19,15 @@ require RSAT::GraphNode;
 require RSAT::GraphArc;
 
 ################################################################
-#### initialise parameters
+#### initialize parameters
 local $start_time = &RSAT::util::StartScript();
 local $replacement = 0;
 local $symmetric = 0;
 local $distinct = 0;
 local @matrix_keys = ();
 local $margins = 0;
-local $dot_file = "";
-local $gml_file = "";
+local $outfile{dot} = "";
+local $outfile{gml} = "";
 local $nb_tests = 0;
 local $nb_ref_classes = 0;
 local $nb_query_classes = 0;
@@ -205,6 +205,11 @@ $field_formats{'H(R|Q)'} = "%.4f";
 $field_formats{'I(Q,R)'} = "%.4f";
 $field_formats{'IC'} = "%.4f";
 
+
+%compa = ();
+
+################################################################
+## Read command line arguments
 &ReadArguments();
 
 ################################################################
@@ -303,8 +308,11 @@ if ($main::verbose >= 2) {
 ## overflow for large comparisons. preventing it increases the
 ## efficiency, but in this case it is not possible to sort results
 ## anymore.
-if (($sort_key) || 
-   (scalar(@matrix_keys) > 0)) {
+if (($sort_key) ||
+    ($outfile{gml}) ||
+    ($outfile{dot}) ||
+    (scalar(@matrix_keys) > 0)
+   ) {
   $store_comparisons = 1;
 }
 
@@ -340,11 +348,26 @@ $nb_query_classes = scalar(@query_classes);
 
 
 
-## Read ref class names
+################################################################
+## Check consistency between reference and query class names in single
+## input mode (option -i).
 ##
 ## (note: if query and reference class files are identical, the
 ## reference class names are automatically available for query classes
 ## and reciprocally).
+if ($infile{input}) {
+  if (($infile{rnames}) && ($infile{qnames})) {
+    unless ($infile{qnames} eq $infile{rnames}) {
+      &RSAT::error::FatalError("When a single input file is used (option -i), the options -rnames and -qnames should not indicate different files");
+    }
+  } elsif ($infile{rnames}) {
+    $infile{qnames} = $infile{rnames};
+  } elsif ($infile{qnames}) {
+    $infile{rnames} = $infile{qnames};
+  }
+}
+
+## Read reference class names
 if ($infile{rnames}) {
   &RSAT::message::TimeWarn("Reading reference names\t".$infile{rnames}) if ($main::verbose >= 2);
   my ($in) = &OpenInputFile($infile{rnames});
@@ -460,17 +483,17 @@ close $out if ($outfile{output});
 
 
 ## export graph in gml format
-if ($gml_file) {
+if ($outfile{gml}) {
     my $graph = &CreateGraph("gml");
-    $gml_handle = &OpenOutputFile($gml_file);
+    $gml_handle = &OpenOutputFile($outfile{gml});
     $gml = $graph->to_gml();
     print $gml_handle $gml;
 }
 
 ## export graph in dot format
-if ($dot_file) {
+if ($outfile{dot}) {
     my $graph = &CreateGraph("dot");
-    $dot_handle = &OpenOutputFile($dot_file);
+    $dot_handle = &OpenOutputFile($outfile{dot});
     $dot = $graph->to_dot();
     print $dot_handle $dot;
 }
@@ -558,6 +581,25 @@ OPTIONS
     -qnames class_name_file
         File containing names for the query classes.
         Same format as for -rnames.
+
+    -max_lines_q #
+	Max number of lines to read for the query file.
+
+        This option can be used for quick testing, in order to check
+        that all parameters are tuned as wished, before running the
+        analysis on full datasets. Note that analysis of a subset of
+        the input files will affect all the statistics, this option
+        should thus be used for quick testing only, and no conclusion
+        should be drawn from the results.
+
+    -max_lines_q # 
+        Max number of lines to read for the reference file.
+        See -max_lines_r for details.
+
+    -max_lines #
+        Max number of lines to read for both query and reference
+        files.
+        See -max_lines_r for details.
 
     -cat catalog
         Compare the query file to pre-defined catalogs
@@ -648,13 +690,13 @@ ${field_description_text}
     	logarithm base (Default: $base) used for entropy-based
     	metrics.
 
-    -dot dot_file
+    -dot outfile{dot}
         Export a graph with the associations in a dot
         file. Dot files can be visualized and modified with
         the GraphViz package (http://www.graphviz.com/), which
         contains several methods of automatic layout.
 
-    -gml gml_file
+    -gml outfile{gml}
         Export a graph with the associations in a gml
         file, which can be visualized and modified with
         various visualization packages, including
@@ -862,6 +904,9 @@ compare-classes options
 -qnames         query class names
 -o              output file
 -v              verbose
+-max_lines_q	max number of lines to read for the query file
+-max_lines_q	max number of lines to read for the reference file
+-max_lines	max number of lines to read for both query and reference files
 -return         return fields (supported $supported_return_fields)
 -lth            lower threshold on a given field
 -uth            upper threshold on a given field
@@ -1024,11 +1069,11 @@ sub ReadArguments {
 
       ### dot file
     } elsif ($ARGV[$a] eq "-dot") {
-      $dot_file = $ARGV[$a+1];
+      $outfile{dot} = $ARGV[$a+1];
 
       ### gml file
     } elsif ($ARGV[$a] eq "-gml") {
-      $gml_file = $ARGV[$a+1];
+      $outfile{gml} = $ARGV[$a+1];
 
       ### prevent to compare each class with itself
     } elsif ($ARGV[$a] eq "-distinct") {
@@ -1087,92 +1132,90 @@ sub ReadArguments {
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $out "; compare-classes ";
-    &PrintArguments($out);
-    if ((%main::infile)) {
-        print $out "; Input files\n";
-        while (($key,$value) = each %infile) {
-            print $out ";\t$key\t$value\n";
-        }
-    }
+  print $out "; compare-classes ";
+  &PrintArguments($out);
 
-#     ## Number of query classes and elements per class
-#     printf $out "; %-29s\t%d\n", "Query classes (nq)", $nb_query_classes;
-#     if ($verbose >= 2) {
-# 	foreach my $f (@query_classes) {
-# 	    printf $out ";\t%d\t%s\n", $query_classes{$f}->get_size(), $query_classes{$f}->get_attribute("name");
-# 	}
-#     }
-    ## Number of query classes and elements per class
-    my $max_classes_to_display = 50;
-    printf $out "; %-29s\t%d\n", "Query classes (nq)", $nb_query_classes;
-    if ($verbose >= 1) {
-      printf $out ";\t%s\t%s\t%s\n", "nb", "size", "name";
-      for my $i (0..$#query_classes) {
-	if ($i >= $max_classes_to_display) {
-	  print $out  ";\t...\t...",scalar(@query_classes)-100," more query classes\n";
-	  last;
-	} else {
-	  my $key = @query_classes[$i];
-	  printf $out ";\t%d\t%d\t%s\n", $i+1, $query_classes{$key}->get_size(), $query_classes{$key}->get_attribute("name");
-	}
+  ## Input files
+  if ((%main::infile)) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+
+  ## Output files
+  if ((%main::outfile)) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+
+  ## Number of query classes and elements per class
+  my $max_classes_to_display = 50;
+  printf $out "; %-29s\t%d\n", "Query classes (nq)", $nb_query_classes;
+  if ($verbose >= 1) {
+    printf $out ";\t%s\t%s\t%s\n", "nb", "size", "name";
+    for my $i (0..$#query_classes) {
+      if ($i >= $max_classes_to_display) {
+	print $out  ";\t...\t...",scalar(@query_classes)-100," more query classes\n";
+	last;
+      } else {
+	my $key = @query_classes[$i];
+	printf $out ";\t%d\t%d\t%s\n", $i+1, $query_classes{$key}->get_size(), $query_classes{$key}->get_attribute("name");
       }
     }
+  }
 
-    ## Number of reference classes and elements per class
-    printf $out "; %-29s\t%d\n", "Reference classes (nr)", $nb_ref_classes;
-    if ($verbose >= 1) {
-      printf $out ";\t%s\t%s\t%s\n", "nb", "size", "name";
-      for my $i (0..$#ref_classes) {
-	if ($i >= $max_classes_to_display) {
-	  print $out  ";\t...\t...",scalar(@ref_classes)-100," more reference classes\n";
-	  last;
-	} else {
-	  my $key = @ref_classes[$i];
-	  printf $out ";\t%d\t%d\t%s\n", $i+1, $ref_classes{$key}->get_size(), $ref_classes{$key}->get_attribute("name");
-	}
+  ## Number of reference classes and elements per class
+  printf $out "; %-29s\t%d\n", "Reference classes (nr)", $nb_ref_classes;
+  if ($verbose >= 1) {
+    printf $out ";\t%s\t%s\t%s\n", "nb", "size", "name";
+    for my $i (0..$#ref_classes) {
+      if ($i >= $max_classes_to_display) {
+	print $out  ";\t...\t...",scalar(@ref_classes)-100," more reference classes\n";
+	last;
+      } else {
+	my $key = @ref_classes[$i];
+	printf $out ";\t%d\t%d\t%s\n", $i+1, $ref_classes{$key}->get_size(), $ref_classes{$key}->get_attribute("name");
       }
     }
+  }
 
-    printf $out "; %-29s\t%d\n", "Elements  in ref classes", scalar (keys(%ref_member_index));
-    printf $out "; %-29s\t%d\n", "Elements in query classes", scalar (keys(%query_member_index));
-    printf $out "; %-29s\t%d\n", "Elements in query+ref classes", scalar (keys(%member_index));
-    printf $out "; %-29s\t%d\n", "Population size", $population_size;
-    printf $out "; %-29s\t%d\n", "Comparisons (".$nb_compa_formula.")", $nb_compa;
-    printf $out "; %-24s (%s)\t%d\n", "Multi-testing correction", $multi_cor, $correction;
-    printf $out "; %-29s\t%f\n", "Logarithm base for entropy", $base if ($return_fields{entropy});
-    print $out "; Sampling with replacement (binommial proba)\n" if ($replacement);
-    printf $out "; %-29s\t%s\n", "Sort key", $sort_key if ($sort_key);
-    print $out "; Symmetric comparison\n" if ($symmetric);
+  printf $out "; %-29s\t%d\n", "Elements  in ref classes", scalar (keys(%ref_member_index));
+  printf $out "; %-29s\t%d\n", "Elements in query classes", scalar (keys(%query_member_index));
+  printf $out "; %-29s\t%d\n", "Elements in query+ref classes", scalar (keys(%member_index));
+  printf $out "; %-29s\t%d\n", "Population size", $population_size;
+  printf $out "; %-29s\t%d\n", "Comparisons (".$nb_compa_formula.")", $nb_compa;
+  printf $out "; %-24s (%s)\t%d\n", "Multi-testing correction", $multi_cor, $correction;
+  printf $out "; %-29s\t%f\n", "Logarithm base for entropy", $base if ($return_fields{entropy});
+  print $out "; Sampling with replacement (binommial proba)\n" if ($replacement);
+  printf $out "; %-29s\t%s\n", "Sort key", $sort_key if ($sort_key);
+  print $out "; Symmetric comparison\n" if ($symmetric);
 
 
-    print $out "; Thresholds\tlower\tupper\n";
-    my %th_keys = (%lth, %uth);
-    foreach $f (sort keys %th_keys) {
-        print $out ";\t$f";
-        if (defined($lth{$f})) {
-            printf $out "\t%-5g", $lth{$f};
-        } else {
-            print $out "\tNA";
-        }
-        if (defined($uth{$f})) {
-            printf $out "\t%-5g", $uth{$f};
-        } else {
-            print $out "\tNA";
-        }
-        print $out "\n";
+  ## Threshold values
+  print $out "; Thresholds\tlower\tupper\n";
+  my %th_keys = (%lth, %uth);
+  foreach $f (sort keys %th_keys) {
+    print $out ";\t$f";
+    if (defined($lth{$f})) {
+      printf $out "\t%-5g", $lth{$f};
+    } else {
+      print $out "\tNA";
     }
-
-    if (scalar(@matrix_keys) >= 1) {
-	print $out "; matrix\t", join ";", @matrix_keys, "\n";
+    if (defined($uth{$f})) {
+      printf $out "\t%-5g", $uth{$f};
+    } else {
+      print $out "\tNA";
     }
+    print $out "\n";
+  }
 
-    if ((%main::outfile)) {
-        print $out "; Output files\n";
-        while (($key,$value) = each %outfile) {
-            print $out ";\t$key\t$value\n";
-        }
-    }
+  if (scalar(@matrix_keys) >= 1) {
+    print $out "; matrix\t", join ";", @matrix_keys, "\n";
+  }
+
 }
 
 
@@ -1232,27 +1275,29 @@ sub CompareClasses {
       my @R_only = ();
       my @Q_only = ();
 
-      #### collect members of the query class
+      ## Collect members of the query class
       my @query_members = $query_classes{$q}->get_members();
       my $Q = scalar(@query_members);
 
-      #### check if the number of ref members is above the threshold    
+      ## Check if the number of query members is below the thresholds on Q or QR
       next if ((defined($lth{'Q'})) && ($Q < $lth{Q}));
       next if ((defined($lth{'QR'})) && ($Q < $lth{'QR'}));
 
-      #### compare query and reference classes
+      ## Compare query and reference classes
       my %matching_elements = ();
       foreach my $m (@query_members) {
 	if ($ref_member{$m}) {
-	  push @common, $m; ### elements common to reference and query class
+	  ## Elements common to reference and query class
+	  push @common, $m; 
 	  $matching_elements{$m}++;
 	} else {
-	  push @Q_only, $m; ### elements found in the query family only
+	  ## Elements found in the query family only
+	  push @Q_only, $m;
 	}
       }
       my @keys = sort keys %matching_elements;
 
-      #### identify elements found in the reference class only
+      ## Identify elements found in the reference class only
       if ($calc_fields{R_only}) {
 	foreach $m (sort($ref_classes{$r}->get_members())) {
 	  unless ($matching_elements{$m}) {
@@ -1260,7 +1305,6 @@ sub CompareClasses {
 	  }
 	}
       }
-
 
       ## QR : intersection between group R and group Q
       my $QR = scalar(@common);
@@ -1273,8 +1317,6 @@ sub CompareClasses {
       $current_compa{'R!Q'} = $R - $QR;
       $current_compa{'Q!R'} = $Q - $QR;
       $current_compa{'!Q!R'} = $population_size - $QvR;
-
-
 
       #### check thresholds for number of common members
       if ((defined($lth{'QR'})) &&
@@ -1299,12 +1341,9 @@ sub CompareClasses {
 	      my $q_score = $query_scores{$element};
 	      my $dp_element = $r_score*$q_score;
 	      $dp += $dp_element;
-#	      $prodrts += sqrt($dp_element);
 	  }
 
-#	  &RSAT::message::Debug($dp, $prodrts) if ($main::verbose >= 10);
 	  $current_compa{dotprod} = $dp;
-#	  $current_compa{prodrts} = $prodrts;
 
 	  ## Check threshold on dot product
 	  if ((defined($lth{'dotprod'})) &&
@@ -1316,7 +1355,6 @@ sub CompareClasses {
 	      next;
 	  }
 	  undef $dp;
-#	  undef $prodrts;
       }
 
       ################################################################
@@ -1337,14 +1375,12 @@ sub CompareClasses {
 	}
       }
 
-      ## ##############################################################
+      ################################################################
       ## Calculate frequencies
       if ($calc_fields{freq}) {
 	&RSAT::message::Debug("Calculating frequencies", $compa_key) if ($verbose >= 5);
 	my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
 	my $n_r = $ref_classes{$r}->get_size();	### number of elements in the reference class
-	#		my $c = $QR; ### number of common elements
-
 
 	$current_compa{'F(R)'} = $n_r/$population_size;
 	$current_compa{'F(Q)'} = $n_q/$population_size;
@@ -1450,7 +1486,7 @@ sub CompareClasses {
       }
 
       ################################################################
-      #### Calculate probabilities
+      ## Calculate probabilities
       if ($calc_fields{proba}) {
 	#### check population size
 	my $n = $population_size;
@@ -1537,7 +1573,7 @@ sub CompareClasses {
 
 
       ## Print the comparison in order to free memory
-      if ($store_comparisons){
+      if ($store_comparisons) {
 	  %{$compa{$compa_key}} = %current_compa;
       } else {
 	  &PrintOneComparison(%current_compa);
@@ -1654,19 +1690,19 @@ sub PrintResult {
     #### Sort the result
     if ($sort_key eq "name") {
       ## alphabetical order
-      @sorted_keys = sort (keys %compa); 
+      @sorted_keys = sort (keys %compa);
 
     } elsif (($sort_key eq 'E_val') ||
 	     ($sort_key eq 'P_val')) {
       ## numerical ascendent
-      @sorted_keys = sort {$compa{$a}->{$sort_key} <=> $compa{$b}->{$sort_key}} (keys %compa); 
+      @sorted_keys = sort {$compa{$a}->{$sort_key} <=> $compa{$b}->{$sort_key}} (keys %compa);
 
     } elsif ($sort_key) {
       ## numerical descendent
-      @sorted_keys = sort {$compa{$b}->{$sort_key} <=> $compa{$a}->{$sort_key}} (keys %compa); 
+      @sorted_keys = sort {$compa{$b}->{$sort_key} <=> $compa{$a}->{$sort_key}} (keys %compa);
     } else {
       ## alphabetical order
-      @sorted_keys = sort (keys %compa); 
+      @sorted_keys = sort (keys %compa);
     }
 
     #### class combinations
@@ -1861,8 +1897,9 @@ sub CreateGraph {
   my $graph = new RSAT::Graph();
   $graph->set_attribute("label", "compare-classes result");
 
-  #### class combinations
+  ## Class combinations
   my %node_obj = ();		## Index of node objects
+
   foreach my $compa_key (keys %compa) {
     my ($r, $q) = split "__VERSUS__", $compa_key;
     my $ref_id;
