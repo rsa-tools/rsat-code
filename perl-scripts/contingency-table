@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.16 2011/03/28 13:01:38 jvanheld Exp $
+# $Id: contingency-table,v 1.17 2011/12/06 01:04:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -127,9 +127,9 @@ if ($margin) {
 ## Print the column margins (sum of each column)
 if ($margin) {
   if ($density) {
-    print $out "Margin freq";
+    print $out "; Margin freq";
   } else {
-    print $out "Sum";
+    print $out "; Sum";
   }
   print $out "\t", $total;
   foreach my $col_value (@col_values) {
