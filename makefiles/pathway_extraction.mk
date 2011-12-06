@@ -107,21 +107,29 @@ ec_vs_ec_graph_dot:
 	convert-graph -i  ${EC_VS_EC}.tab -from tab -to dot -scol 1 -tcol 2 -wcol 19 -ewidth -ecolors fire -min 0 -max 1 -o ${EC_VS_EC}.dot
 	@echo ${EC_VS_EC}.dot
 
-ec_vs_ec_clusters:
-	convert-graph -from tab -to tab -wcol 19 -scol 1 -tcol 2 -i  ${EC_VS_EC}.tab -o ${EC_VS_EC}_graph_for_mcl.tab
-	mcl  $RSAT/public_html/tmp/mcl-input-graph.ecNPMZr2AC -I 2.5 --abc -V all -o $RSAT/public_html/tmp/mcl-out.HEa9fYryRe
-
-# Cluster conversion
-$RSAT/perl-scripts/convert-classes -from mcl -to tab -i $RSAT/public_html/tmp/convert-classes-input.dcUbEl472g
-
-# Contingency table
-$RSAT/perl-scripts/contingency-table  -col1 2 -col2 1 -i $RSAT/public_html/tmp/contingency-table-input.iAFVO5yhSM
-
-# Class frequencies
-$RSAT/perl-scripts/classfreq -v 1 -col 2 -ci 1 -i $RSAT/public_html/tmp/classfreq-input.vTcz2jqVz6
-
-# Cluster size distrib. plot
-$RSAT/perl-scripts/XYgraph -format png -title1 'Cluster size distribution' -lines -xleg1 'Cluster size' -yleg1 'Number of clusters' -xmin 0 -xcol 2 -ycol 4 -i $RSAT/public_html/tmp/xygraph-input.EgaWQTP9bY -o $RSAT/public_html/tmp/xygraph.VsO5d4B8II.png
+################################################################
+## Extract clusters from an association graph (EC versus EC, PFAM
+## versus EC, ...)
+GRAPH=${EC_VS_EC}
+clusters_from_graph:
+	convert-graph -from tab -to tab -wcol 19 -scol 1 -tcol 2 -i  ${GRAPH}.tab -o ${GRAPH}_graph_for_mcl.tab
+	@echo ${GRAPH}_graph_for_mcl.tab
+	mcl ${GRAPH}_graph_for_mcl.tab -I 2.5 --abc -V all -o ${GRAPH}_mcl_clusters.mcl
+	@echo ${GRAPH}_mcl_clusters.mcl
+	convert-classes -from mcl -to tab -i ${GRAPH}_mcl_clusters.mcl -o ${GRAPH}_mcl_clusters.tab
+	@echo ${GRAPH}_mcl_clusters.tab
+	contingency-table -v 1 -margin -col1 2 -col2 1 -i ${GRAPH}_mcl_clusters.tab -o ${GRAPH}_mcl_cluster_sizes.tab
+	@echo ${GRAPH}_mcl_cluster_sizes.tab
+	classfreq -v 1 -col 2 -ci 1 -i ${GRAPH}_mcl_cluster_sizes.tab -o ${GRAPH}_mcl_cluster_size_distrib.tab 
+	@echo ${GRAPH}_mcl_cluster_size_distrib.tab 
+	XYgraph -format png -title1 'Cluster size distribution' -lines -xleg1 'Cluster size' -yleg1 'Number of clusters' -xmin 0 -xcol 2 -ycol 4 \
+		-i ${GRAPH}_mcl_cluster_size_distrib.tab \
+		-o ${GRAPH}_mcl_cluster_size_distrib.png
+	@echo ${GRAPH}_mcl_cluster_size_distrib.png
+	XYgraph -format png -title1 'Cluster size distribution' -lines -xleg1 'Cluster size' -yleg1 'Number of clusters' -xmin 0 -xcol 2 -ycol 4 -ylog 2 -xlog 2 \
+		-i ${GRAPH}_mcl_cluster_size_distrib.tab \
+		-o ${GRAPH}_mcl_cluster_size_distrib_xylog2.png
+	@echo ${GRAPH}_mcl_cluster_size_distrib_xylog2.png
 
 ## quick test for ec_vs_ec
 TOP_QUICK=10000
