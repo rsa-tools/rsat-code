@@ -112,6 +112,7 @@ sub InitMatchScores {
 }
 
 ################################################################
+
 =pod
 
 =item MaxMatchingWeight
@@ -199,6 +200,7 @@ sub CountMatches {
 }
 
 ################################################################
+
 =pod
 
 =item &BestMatch($seq1, $seq2);
@@ -248,6 +250,7 @@ sub BestMatch {
 }
 
 ################################################################
+
 =pod
 
 =item  &CountMismatches($seq1,$seq2,$max);
@@ -282,6 +285,7 @@ sub CountMismatches {
 
 
 ################################################################
+
 =pod
 
 =item  &NextMatch($input_seq, $pattern,$allowed_subst,$offset);
@@ -1438,6 +1442,7 @@ sub ReadNextSequence {
 
 
 ################################################################
+
 =pod
 
 =item parse_genomic_coordinates
@@ -1470,7 +1475,10 @@ sub parse_genomic_coordinates {
     ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
     $genome_format = "retrieve-seq";
 
+
   } elsif ($comments =~ /(\w+_\w+)-\S+.+location: chromosome:(\S+) (\d+) (\d+) ([DR])/) {
+    ## Sequence format from retrieve-ensembl-seq
+
 #  } elsif ($comments =~ /(\w+_\w+).*chromosome:(\S+)/) {
     my $chromosome;
     ($seq_org, $chromosome, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
@@ -1485,25 +1493,30 @@ sub parse_genomic_coordinates {
     $browser_url = "http://www.ensembl.org/${seq_org}/Location/View?r=${seq_chrom}:${seq_start}-${seq_end}";
 #    $browser_url .= "contigviewbottom=url:http://rsat.bigre.ulb.ac.be/rsat/tmp/BED_FILE_NAME.bed=normal";
 
-  } elsif ($comments =~ /(\w+):(\S+):(\d+)\-(\d+)/) {
-    ## Parse genomic coordinates in the UCSC format
-    ($seq_org, $seq_chrom, $seq_start, $seq_end) = ($1, $2, $3, $4);
-    $genome_format = "UCSC";
-
   } elsif ($comments =~ /(\w+).+range=(\S+):(\d+)\-(\d+).*strand=(\S+)/) {
-    ($seq_org,$seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4);
+    ## Genomic coordinates in the UCSC format.
+    $genome_format = "UCSC";
+    ($seq_org,$seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
+    $seq_strand =~ s/\+/D/;
+    $seq_strand =~ s/\-/R/;
+
+  } elsif ($comments =~ /(\w+):(\S+):(\d+)\-(\d+)/) {
+    ## Genomic coordinates in the UCSC format.
+    ## TO DO: CHECK DIFFERENCE BETWEEN THIS FORMAT AND THE PREVIOUS ONE !!!
+    ($seq_org, $seq_chrom, $seq_start, $seq_end) = ($1, $2, $3, $4);
     $genome_format = "UCSC";
 
   } else {
     &RSAT::message::Warning("Could not parse genomic coordinates for sequence", $seq_id, join("; ", @seq_comments));
   }
-  &RSAT::message::Debug("&parse_genomic_coordinates",
+
+  &RSAT::message::Debug('&parse_genomic_coordinates()',
 			"format:".$genome_format,
 			"org:".$seq_org,
 			"chrom:".$seq_chrom,
 			"start:".$seq_start,
 			"end:".$seq_end,
-			"strand:".$seq_strand) if ($main::verbose >= 4);
+			"strand:".$seq_strand) if ($main::verbose >= 0);
 
   if ($genome_format eq "UCSC") {
     $seq_org =~ s/\_.*//;
