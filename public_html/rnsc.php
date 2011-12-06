@@ -194,11 +194,12 @@
     ## Load the parameters of the program into an array
     $cc_input_file = storeFile($cc_server);
     $ct_parameters = array(
-      "request" => array(
+       "request" => array(
         "inputfile" => $cc_input_file,
         "col1" => 2,
         "col2" => 1,
-        )
+        "margin" => 1,
+          )
       );
     $ct_echoed = $client->contingency_table($ct_parameters);
     $ct_response = $ct_echoed->response;
