@@ -1516,7 +1516,7 @@ sub parse_genomic_coordinates {
 			"chrom:".$seq_chrom,
 			"start:".$seq_start,
 			"end:".$seq_end,
-			"strand:".$seq_strand) if ($main::verbose >= 0);
+			"strand:".$seq_strand) if ($main::verbose >= 10);
 
   if ($genome_format eq "UCSC") {
     $seq_org =~ s/\_.*//;
@@ -1540,7 +1540,7 @@ sub parse_genomic_coordinates {
 ##    $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
 sub ReturnSequence {
   my ($sequence, $seq_id, $mask, @comments) = @_;
-#  &RSAT::message::Debug("SEQUENCE", $sequence) if ($main::verbose >= 0);
+#  &RSAT::message::Debug("SEQUENCE", $sequence) if ($main::verbose >= 10);
 #  die "HELLO";
 
   $sequence = &FoldSequence($sequence, 0);
