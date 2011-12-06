@@ -488,9 +488,8 @@ sub Panel4 {
 ##########################################
  sub Panel5  {
 print "
-<div class=\"menu_heading_closed\" onclick=\"toggleMenu('104')\" id=\"heading104\"> 
-<span title=\"Input peaks are scanned with the discovered motifs to obtain their exact position. These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...)\"><b>Scan sequences with motifs to predict sites</b></span> </div>\n
-
+<div class=\"menu_heading_closed\" onclick=\"toggleMenu('104')\" id=\"heading104\">
+<span title=\"Input peaks are scanned with the discovered motifs to obtain their exact position. These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...)\"><b>Locate motifs and export predicted sites as custom UCSC tracks</b></span> </div>
 <div id=\"menu104\" class=\"menu_collapsible\">";
 
 
@@ -502,7 +501,7 @@ print "<fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Locate motifs </a></b></legend>";
 print $query->checkbox(-name=>'matrix-scan-quick',
 		       -checked=>$default{matrix-scan-quick},
-		       -label=>'');  
+		       -label=>'');
 print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href='help.matrix-scan.html'>[matrix-scan]</a>\n";
 
 print "<br/>";
@@ -567,9 +566,9 @@ print "<br/>
 </fieldset><p/>";
 
 #########
-print '
+print "
 </div>\n
 </div>\n
-<p class="clear"></p>\n';
+<p class='clear'></p>\n";
 
  }
