@@ -843,7 +843,6 @@ sub ReadClasses_quick {
   my ($class_file, %args) = @_;
   my ($handle) = &OpenInputFile($class_file);
   my %class_index = ();
-#  my %class = ();
 
 #   my $member_column = 1;
 #   my $class_column = 2;
@@ -920,6 +919,7 @@ sub ReadClasses_quick {
   }
 
   ## Cast the result in Class objects
+  my %class = ();
   my @class_names = keys(%class_index);
   &RSAT::message::TimeWarn("Creating", scalar(@class_names), "classes") if ($main::verbose >= 3);
   foreach my $class_name (@class_names) {
@@ -1113,7 +1113,7 @@ sub ReadClasses {
   }
   close $fam if ($class_file);
 
-  return %class;
+  return (%class);
 }
 
 
