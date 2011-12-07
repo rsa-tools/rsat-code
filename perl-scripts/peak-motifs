@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.212 2011/12/07 11:49:56 morgane Exp $
+# $Id: peak-motifs,v 1.213 2011/12/07 11:55:09 morgane Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.212 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.213 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2831,7 +2831,7 @@ sub SynthesisByMotif {
       	my $max_nb_sites = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq -c | sort -r | head -n 1`;
       	chomp ($max_nb_sites);
       	$max_nb_sites =~ s/^\s+//;
-      	$max_nb_sites =~ s/(\s+.*)$/ \($1\)/;
+      	$max_nb_sites =~ s/(\s+.*)$/<br\/>&nbsp\($1\)/;
     	
       my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
