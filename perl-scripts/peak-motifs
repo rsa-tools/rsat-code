@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.207 2011/12/04 22:25:01 jvanheld Exp $
+# $Id: peak-motifs,v 1.208 2011/12/07 11:15:41 morgane Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.207 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.208 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2821,11 +2821,19 @@ sub SynthesisByMotif {
     ## Scan results
     my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
     if (-e $scan_file) {
+    	## get information on % peaks with a motif and max number sites/peaks
+    	my $nb_peak_matching_motif = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq | wc -l`;
+    	## Get number of peaks from sequence length distribution
+      	my $peak_nb = `grep '; count' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      	chomp($peak_nb);
+      	$peak_nb =~ s/.*count\s*//;
+    	
       my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb peaks with predicted sites:".$nb_peak_matching_motif." (".($nb_peak_matching_motif*100/$peak_nb)."%) <br></td>";     
       $table .= "</tr></table>";
 
       ## Display UCSC track
