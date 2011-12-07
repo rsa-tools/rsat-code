@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.76 2011/12/05 23:50:09 jvanheld Exp $
+# $Id: compare-classes,v 1.77 2011/12/07 23:55:30 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -433,7 +433,7 @@ foreach my $q (@query_classes) {
 if ($population_size == 0 ) {
     $population_size = scalar(keys %member_index);
 }
-&RSAT::message::Info((join("\t", "Population size", $population_size))) if ($main::verbose >= 2);
+&RSAT::message::Info(("Population size", $population_size)) if ($main::verbose >= 2);
 
 ################################################################
 ## Number of possible comparisons
@@ -480,7 +480,6 @@ if ($multi_cor eq "nc")  {
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
 print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $out if ($outfile{output});
-
 
 ## export graph in gml format
 if ($outfile{gml}) {
@@ -1763,9 +1762,10 @@ sub PrintOneComparison {
   ## Reference and query IDs
   print $out join "\t", ($r, $q);
 
-  ## Names 
+
+  ## Names
   if ($return_fields{rname}) {
-    my $rname =  $query_classes{$r}->get_attribute("name") || $r;
+    my $rname =  $ref_classes{$r}->get_attribute("name") || $r;
     print $out "\t", $rname;
   }
   if ($return_fields{qname}) {
