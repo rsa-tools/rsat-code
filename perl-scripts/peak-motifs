@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.215 2011/12/08 10:25:14 morgane Exp $
+# $Id: peak-motifs,v 1.216 2011/12/08 11:09:02 morgane Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.215 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.216 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2867,13 +2867,18 @@ sub SynthesisByMotif {
       	my $peak_nb = `grep '; count' $main::outfile{test_seqlen_distrib}`;
       	chomp($peak_nb);
       	$peak_nb =~ s/.*count\s*//;
+      	## calculate percentage
+      	my $site_peak_percent = $nb_peak_matching_motif*100/$peak_nb;
+      	$site_peak_percent = sprintf("%.2f", $site_peak_percent);
+      	
+      	
     	
       my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_per_peak_graph'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peaks<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";	
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'><u>Nb peaks with predicted sites:</u> ".$nb_peak_matching_motif." (".($nb_peak_matching_motif*100/$peak_nb)."%) <br>
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'><u>Nb peaks with predicted sites:</u> ".$nb_peak_matching_motif." (".$site_peak_percent."%) <br>
       <u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>
       <u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>";     
 #      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
