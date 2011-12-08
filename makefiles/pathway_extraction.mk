@@ -82,22 +82,47 @@ EC_NAMES=${PFAM_LINKS_DIR}/EC_names.tab
 EC_EC_DIR=results/ec_vs_ec${SUFFIX}
 EC_VS_EC=${EC_EC_DIR}/EC_vs_EC
 ec_vs_ec:
+	@echo
+	@echo "EC versus EC"
 	@mkdir -p ${EC_EC_DIR}
 	compare-classes -v ${V} -i ${UNIPROT_EC} \
 		-rnames ${EC_NAMES} \
 		-triangle -distinct \
-		-lth QR 1 \
 		-return occ,freq,jac_sim,proba,rank \
-		-lth sig 0 \
+		-lth QR 1 \
 		-quick ${OPT} \
 		-o ${EC_VS_EC}.tab
-	@echo ${EC_VS_EC}.tab
-	@text-to-html -i ${EC_VS_EC}.tab \
-		-o ${EC_VS_EC}.html
-	@echo ${EC_VS_EC}.html
-	@${MAKE} GRAPH=${EC_VS_EC} graph clusters_from_graph
+	@echo "	${EC_VS_EC}.tab"
+	@${MAKE} format GRAPH=${EC_VS_EC}
+	@${MAKE} filters GRAPH=${EC_VS_EC}
+
+## Format result (HTML, GML, DOT)
+GRAPH=${EC_VS_EC}
+format:
+	@echo "HTML formatting"
+	@text-to-html -i ${GRAPH}.tab \
+		-o ${GRAPH}.html
+	@echo "	${GRAPH}.html"
+	@${MAKE} GRAPH=${GRAPH} graph clusters_from_graph
 
 
+FILTER_STAT=sig
+FILTER_COL=24
+FILTER_MIN=0
+FILTERED=${GRAPH}_${FILTER_STAT}${FILTER_MIN}
+filter:
+	@echo
+	@echo "Filtering	${FILTER_STAT} >= ${FILTER_MIN}"
+	@grep '^;' ${GRAPH}.tab > ${FILTERED}.tab
+	@grep '^#' ${GRAPH}.tab >> ${FILTERED}.tab
+	grep -v '^;' ${GRAPH}.tab | grep -v '^#' | awk -F '\t' '$$${FILTER_COL} >= ${FILTER_MIN}'  >> ${FILTERED}.tab
+	@echo "	${FILTERED}.tab"
+	@${MAKE} format GRAPH=${FILTERED}
+
+filters:
+	@${MAKE} filter GRAPH=${EC_VS_EC} FILTER_MIN=1
+	@${MAKE} filter GRAPH=${EC_VS_EC} FILTER_MIN=0
+	@${MAKE} filter GRAPH=${EC_VS_EC} FILTER_MIN=-1
 
 ################################################################
 ## Establish the link between PFAM domains and EC numbers.
@@ -129,64 +154,69 @@ PFAM_NAMES=${PFAM_LINKS_DIR}/Pfam_names.tab
 UNIPROT_PFAM=${PFAM_LINKS_DIR}/uniprot2pfam.tab
 PFAM_EC_DIR=results/pfam_vs_ec${SUFFIX}
 PFAM_VS_EC=${PFAM_EC_DIR}/PFAM_vs_EC
+MIN_QR=5
+MIN_JACSIM=0.01
+MIN_SIG=0
 pfam_vs_ec:
+	@echo
+	@echo "PFAM versus EC"
 	@mkdir -p ${PFAM_EC_DIR}
 	compare-classes -v ${V} \
-		-q ${UNIPROT_PFAM} -qnames ${PFAM_NAMES} \
-		-r ${UNIPROT_EC} -rnames ${EC_NAMES} \
-		-lth QR 5 -lth jac_sim 0.1 -lth sig 0 \
+		-q ${UNIPROT_PFAM} \
+		-r ${UNIPROT_EC} \
+		-qnames ${PFAM_NAMES} \
+		-rnames ${EC_NAMES} \
 		-return occ,freq,jac_sim,proba,rank \
+		-lth QR ${MIN_QR} -lth jac_sim ${MIN_JACSIM} -lth sig ${MIN_SIG} \
 		-quick ${OPT} \
 		-o ${PFAM_VS_EC}.tab
-	@echo ${PFAM_VS_EC}.tab
-	@text-to-html -i ${PFAM_VS_EC}.tab \
-		-o ${PFAM_VS_EC}.html
-	@echo ${PFAM_VS_EC}.html
-	${MAKE} graph GRAPH=${PFAM_VS_EC}
+	@echo "	${PFAM_VS_EC}.tab"
+	@${MAKE} format GRAPH=${PFAM_VS_EC}
+	@${MAKE} filters GRAPH=${PFAM_VS_EC}
 
-it:
-	@${MAKE} GRAPH=${PFAM_VS_EC} graph clusters_from_graph
 
 ################################################################
 ## quick test for ec_vs_ec or pfam_vs_ec
-TOP_QUICK=10000
+TOP_QUICK=100000
 TEST_TASK=pfam_vs_ec
 quick_test:
-	${MAKE} V=2 OPT='-max_lines ${TOP_QUICK}' SUFFIX='_top${TOP_QUICK}'  ${TEST_TASK}
+	${MAKE} V=2 OPT='-max_lines ${TOP_QUICK}' SUFFIX='_top${TOP_QUICK}'  ${TEST_TASK} MIN_SIG=-10 MIN_JACSIM=0 MIN_QR=1
 
 
 ################################################################
 ## Convert association table into a graph
-GRAPH=${EC_VS_EC}
 graph: graph_gml graph_dot
 
 graph_gml:
+	@echo "Graph conversion to GML"
 	convert-graph -i  ${GRAPH}.tab -from tab -to gml -scol 1 -tcol 2 -wcol 19 -ewidth -ecolors fire -min 0 -max 1 -o ${GRAPH}.gml
-	@echo ${GRAPH}.gml
+	@echo "	${GRAPH}.gml"
 
 graph_dot:
+	@echo "Graph conversion to DOT"
 	convert-graph -i  ${GRAPH}.tab -from tab -to dot -scol 1 -tcol 2 -wcol 19 -ewidth -ecolors fire -min 0 -max 1 -o ${GRAPH}.dot
-	@echo ${GRAPH}.dot
+	@echo "	${GRAPH}.dot"
 
 ################################################################
 ## Extract clusters from an association graph (EC versus EC, PFAM
 ## versus EC, ...)
 clusters_from_graph:
+	@echo "MCL clustering"
 	convert-graph -from tab -to tab -wcol 19 -scol 1 -tcol 2 -i  ${GRAPH}.tab -o ${GRAPH}_graph_for_mcl.tab
-	@echo ${GRAPH}_graph_for_mcl.tab
-	mcl ${GRAPH}_graph_for_mcl.tab -I 2.5 --abc -V all -o ${GRAPH}_mcl_clusters.mcl
-	@echo ${GRAPH}_mcl_clusters.mcl
+	@echo "	${GRAPH}_graph_for_mcl.tab"
+	mcl ${GRAPH}_graph_for_mcl.tab -I 2.5 --abc -V all -o ${GRAPH}_mcl_clusters.mcl >& /dev/null
+	@echo "	${GRAPH}_mcl_clusters.mcl"
 	convert-classes -from mcl -to tab -i ${GRAPH}_mcl_clusters.mcl -o ${GRAPH}_mcl_clusters.tab
-	@echo ${GRAPH}_mcl_clusters.tab
+	@echo "	${GRAPH}_mcl_clusters.tab"
 	contingency-table -v 1 -margin -col1 2 -col2 1 -i ${GRAPH}_mcl_clusters.tab -o ${GRAPH}_mcl_cluster_sizes.tab
-	@echo ${GRAPH}_mcl_cluster_sizes.tab
+	@echo "	${GRAPH}_mcl_cluster_sizes.tab"
 	classfreq -v 1 -col 2 -ci 1 -i ${GRAPH}_mcl_cluster_sizes.tab -o ${GRAPH}_mcl_cluster_size_distrib.tab 
-	@echo ${GRAPH}_mcl_cluster_size_distrib.tab 
+	@echo "	${GRAPH}_mcl_cluster_size_distrib.tab"
 	XYgraph -format png -title1 'Cluster size distribution' -lines -xleg1 'Cluster size' -yleg1 'Number of clusters' -xmin 0 -xcol 2 -ycol 4 \
 		-i ${GRAPH}_mcl_cluster_size_distrib.tab \
 		-o ${GRAPH}_mcl_cluster_size_distrib.png
-	@echo ${GRAPH}_mcl_cluster_size_distrib.png
+	@echo "	${GRAPH}_mcl_cluster_size_distrib.png"
 	XYgraph -format png -title1 'Cluster size distribution' -lines -xleg1 'Cluster size' -yleg1 'Number of clusters' -xmin 0 -xcol 2 -ycol 4 -ylog 2 -xlog 2 \
 		-i ${GRAPH}_mcl_cluster_size_distrib.tab \
 		-o ${GRAPH}_mcl_cluster_size_distrib_xylog2.png
-	@echo ${GRAPH}_mcl_cluster_size_distrib_xylog2.png
+	@echo "	${GRAPH}_mcl_cluster_size_distrib_xylog2.png"
