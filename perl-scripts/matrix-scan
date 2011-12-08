@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.206 2011/09/08 12:17:33 jvanheld Exp $
+# $Id: matrix-scan,v 1.207 2011/12/08 00:13:17 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1284,15 +1284,38 @@ package main;
       $orig_pos = $main::offset;
     } elsif ($origin eq "genomic") {
       ($ref_org, $ref_chrom, $ref_start, $ref_end, $ref_strand, $genome_format, $browser_url) = &parse_genomic_coordinates($seq_id, @seq_comments);
-      if ((defined($ref_strand)) && ($ref_strand eq "D")) {
-	$orig_pos = -$ref_start +1 + $main::offset;
-	#      } elsif ($ref_strand eq "R") {
-      } else {
-	$ref_strand = "DR";
-	$orig_pos = -$ref_end +1 + $main::offset;
-	#      } else {
-	#	&RSAT::error::FatalError($ref_strand, "Invalid strand specification for genomic coordinates");
+
+      unless ($ref_strand) {
+	$ref_strand = "D";
+	&RSAT::message::Warning("Genomic coordinates did not contain the reference strands");
       }
+
+      if ($ref_strand eq "R") {
+	$orig_pos = -$ref_end +1 + $main::offset;
+      } elsif ($ref_strand eq "D") {
+	$orig_pos = -$ref_start +1 + $main::offset;
+      } else {
+	&RSAT::error::FatalError($ref_strand, "Invalid strand specification for genomic coordinates. Supported: D or R.");
+      }
+      $seq_id = $ref_chrom;
+
+      ################################################################
+      ## THE CODE BELOW CONTAINED A BUG REPORTED BY CARL HERRMANN ON
+      ## DEC 4 2011.  Coordinates (of the demo1 + other tests) were
+      ## systematically shifted rightward by L bp (L=sequence length).
+#       if ((defined($ref_strand)) && ($ref_strand eq "D")) {
+# 	$orig_pos = -$ref_start +1 + $main::offset;
+# 	#      } elsif ($ref_strand eq "R") {
+#       } else {
+# 	$ref_strand = "DR";
+# 	$orig_pos = -$ref_end +1 + $main::offset;
+# #	$orig_pos = -$ref_end +1 + $main::offset;
+# 	#      } else {
+# 	#	&RSAT::error::FatalError($ref_strand, "Invalid strand specification for genomic coordinates");
+#       }
+      ## END BUG
+      ################################################################
+
       $seq_id = $ref_chrom;
 
       &RSAT::message::Debug("Reference for genomic coordinates",
