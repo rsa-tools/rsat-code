@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.65 2011/10/11 12:52:58 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.66 2011/12/09 09:43:57 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -107,8 +107,10 @@ print <<EndText;
 
     <ul>
 	<p><li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
+
+	<p><li><font color="red"><b>New !</b> </font> <b>Peak-motifs</b> is now published in NAR <a href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full' target=_blank>[view article]</a></li>
 	
-	<p><li><font color="red">New !</font> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li>
+	<p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li>
 
      <!--p><li><font color="red">New !</font> <a target='_top' href='http://rsat.ulb.ac.be/rsat/tutorial_ECCB_2010/'>Supporting
      material</a> of the 3rd Tutorial presented at </a> of <a target='_blank' href='http://www.eccb10.org/'>ECCB
