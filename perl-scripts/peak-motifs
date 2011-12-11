@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.216 2011/12/08 11:09:02 morgane Exp $
+# $Id: peak-motifs,v 1.217 2011/12/11 09:37:46 rsat Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.216 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.217 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2375,8 +2375,8 @@ sub ScanSequences {
     &one_command($cmd, 1);
     
     ################################################################
-    ## Distribution of sites per peaks and %peaks with motifs
-    &RSAT::message::Debug("Calculates distribution of sites per peaks", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
+    ## Distribution of sites per peak and %peaks with motifs
+    &RSAT::message::Debug("Calculates distribution of sites per peak", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/contingency-table";
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites'};
     $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
@@ -2877,7 +2877,7 @@ sub SynthesisByMotif {
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_per_peak_graph'});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peaks<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";	
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";	
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'><u>Nb peaks with predicted sites:</u> ".$nb_peak_matching_motif." (".$site_peak_percent."%) <br>
       <u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>
       <u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>";     
