@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.217 2011/12/11 09:37:46 rsat Exp $
+# $Id: peak-motifs,v 1.218 2011/12/11 09:57:15 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.217 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.218 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1869,8 +1869,8 @@ sub SetFileNamesForMotif {
   $main::outfile{$motif_id.'_pssm_sites_genomic'} = $main::prefix{$motif_id."_prefix"}."_sites_genomic.bed";
   $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.tab";
   $main::outfile{$motif_id.'_pssm_site_distrib_graph'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.".$main::param{img_format};
-  $main::outfile{$motif_id.'_pssm_site_per_peak'} = $main::prefix{$motif_id."_prefix"}."_site_per_peak.tab";
-  $main::outfile{$motif_id.'_pssm_site_per_peak_graph'} = $main::prefix{$motif_id."_prefix"}."_site_per_peak.".$main::param{img_format};
+  $main::outfile{$motif_id.'_pssm_sites_per_peak'} = $main::prefix{$motif_id."_prefix"}."_sites_per_peak.tab";
+  $main::outfile{$motif_id.'_pssm_sites_per_peak_graph'} = $main::prefix{$motif_id."_prefix"}."_sites_per_peak.".$main::param{img_format};
 
   ## Enrichment in binding sites
   $main::outfile{$motif_id.'_pssm_enrichment'} = $main::prefix{$motif_id."_prefix"}."_scan_mkv".$main::param{scan_enrich_markov}."_enrichment.tab";
@@ -2373,30 +2373,28 @@ sub ScanSequences {
     $cmd .= " -title1 'Predicted sites : $motif_id'";
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
     &one_command($cmd, 1);
-    
+
     ################################################################
     ## Distribution of sites per peak and %peaks with motifs
-    &RSAT::message::Debug("Calculates distribution of sites per peak", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
+    &RSAT::message::Debug("Calculating distribution of sites per peak", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/contingency-table";
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites'};
     $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
     $cmd .= " -ci 1";
-    $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_per_peak'};
+    $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites_per_peak'};
     &one_command($cmd, 1);
-    
+
     ## Draw the graph of predicted site positions (occurrences per window)
     &RSAT::message::Debug("Drawing sites per peak distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/XYgraph";
     $cmd .= " -format ".$main::param{img_format};
-    $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_per_peak'};
+    $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites_per_peak'};
     $cmd .= " -lines -xcol 1 -ycol 4 ";
-    $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
-    $cmd .= " -xsize 400 -xcol 1 -xleg1 'Number of sites'";
+    $cmd .= " -ysize 200 -ycol 4,6 -yleg1 'Number of peaks' -legend";
+    $cmd .= " -xsize 400 -xcol 1 -xleg1 'Number of sites' -xgstep1 5 -xgstep2 1";
     $cmd .= " -title1 'Nb Predicted sites : $motif_id'";
-    $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_per_peak_graph'};
+    $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites_per_peak_graph'};
     &one_command($cmd, 1);
-    
-
 
     ################################################################
     ## Analyze enrichment of test sequences for the discovered motif
@@ -2848,11 +2846,11 @@ sub SynthesisByMotif {
     if (-e $scan_file) {
     	## get information on % peaks with a motif and max number sites/peaks
     	#my $nb_peak_matching_motif = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq | wc -l`;
-    	my $nb_peak_matching_motif = `grep '; count' $main::outfile{$motif_id.'_pssm_site_per_peak'}`;
+    	my $nb_peak_matching_motif = `grep '; count' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
     	chomp($nb_peak_matching_motif);
       	$nb_peak_matching_motif =~ s/.*count\s*//;
       	## Get mean number of predicted sites per peak
-    	my $mean_peak_matching_motif = `grep '; mean' $main::outfile{$motif_id.'_pssm_site_per_peak'}`;
+    	my $mean_peak_matching_motif = `grep '; mean' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
     	chomp($mean_peak_matching_motif);
       	$mean_peak_matching_motif =~ s/.*mean\s*//;
         $mean_peak_matching_motif = sprintf("%.2f", $mean_peak_matching_motif);
@@ -2862,7 +2860,7 @@ sub SynthesisByMotif {
       	chomp ($max_nb_sites);
       	$max_nb_sites =~ s/^\s+//;
       	$max_nb_sites =~ s/\s+(.*)$/<br\/>&nbsp\($1\)/;
-      	
+
       	## Get number of peaks from sequence length distribution
       	my $peak_nb = `grep '; count' $main::outfile{test_seqlen_distrib}`;
       	chomp($peak_nb);
@@ -2870,19 +2868,20 @@ sub SynthesisByMotif {
       	## calculate percentage
       	my $site_peak_percent = $nb_peak_matching_motif*100/$peak_nb;
       	$site_peak_percent = sprintf("%.2f", $site_peak_percent);
-      	
-      	
-    	
-      my $table = "<table><tr>";
-      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
-      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_per_peak_graph'});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";	
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'><u>Nb peaks with predicted sites:</u> ".$nb_peak_matching_motif." (".$site_peak_percent."%) <br>
-      <u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>
-      <u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>";     
-#      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
-#      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+
+	my $table = "<table><tr>";
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
+	$table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
+	$img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_per_peak_graph'});
+	$table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+	$table .= join("", "<td style='border-bottom-style:none;border-right-style:none;'>",
+		       "<u>Nb peaks with at least one predicted site:</u> ",
+		       $nb_peak_matching_motif,
+		       " (".$site_peak_percent."%) <br>",
+		       "<u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>",
+		       "<u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>");
+	# $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
+	#      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $table .= "</tr></table>";
 
       ## Display UCSC track
@@ -2925,7 +2924,7 @@ sub SynthesisByMotif {
 					   ],
 				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
 						  ],
-				  "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_site_per_peak'},
+				  "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
 						  ],
 
 				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
@@ -2939,7 +2938,7 @@ sub SynthesisByMotif {
 					   ],
 				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
 						  ],
-				   "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_site_per_peak'},
+				   "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
 						  ],
 				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
 				   "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
