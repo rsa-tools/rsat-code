@@ -919,78 +919,88 @@ sub peak_motifs {
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
     unless ($output_choice) {
-	$output_choice = 'both';
+	$output_choice = 'ticket';
     }
 
-    my $command = $self->peak_motifs_cmd(%args);
+#    my $command = $self->peak_motifs_cmd(%args);
 
-    my $date = &RSAT::util::AlphaDate();
-    $date =~ s/\n//;
+#    my $date = &RSAT::util::AlphaDate();
+#    $date =~ s/\n//;
 
-    my $output_directory = sprintf "peak-motifs.%s", $date;
-#    my $output_directory = sprintf "peak-motifs_TESTS_OLY";
-    my $output_prefix = "peak-motifs";
-    my $output_path = $TMP."/".$output_directory;
-    $output_path =~ s|\/\/|\/|g;
-    system("mkdir -p $output_path");
+##    my $output_directory = sprintf "peak-motifs.%s", $date;
+    # my $output_directory = sprintf "peak-motifs_TESTS_OLY";
+    # my $output_prefix = "peak-motifs";
+    # my $output_path = $TMP."/".$output_directory;
+    # $output_path =~ s|\/\/|\/|g;
+    # system("mkdir -p $output_path");
 
-    $command .= " -outdir '".$output_path."'";
-    $command .= " -prefix '".$output_prefix."'";
+    # $command .= " -outdir '".$output_path."'";
+    # $command .= " -prefix '".$output_prefix."'";
 
-    local(*HIS_IN, *HIS_OUT, *HIS_ERR);
-    my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
-    my @outlines = <HIS_OUT>;    # Read till EOF.
-    my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+    # local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+    # my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+    # my @outlines = <HIS_OUT>;    # Read till EOF.
+    # my @errlines = <HIS_ERR>;    # XXX: block potential if massive
 
-#    my $result = join('', @outlines);
-    my $stderr;
+##    my $result = join('', @outlines);
+    # my $stderr;
 
-    foreach my $errline(@errlines) {
-	## Some errors and RSAT warnings are not considered as fatal errors
-	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING') || ($errline =~'Odd number of elements in hash assignment')) {
-	    $stderr .= $errline;
-	}
+    # foreach my $errline(@errlines) {
+    # 	## Some errors and RSAT warnings are not considered as fatal errors
+    # 	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING') || ($errline =~'Odd number of elements in hash assignment')) {
+    # 	    $stderr .= $errline;
+    # 	}
 	## RSAT warnings are added at the end of results
-#	if ($errline =~'WARNING') {
-#	    $result .= $errline;
-#	}
-    }
-    $stderr = &error_handling($stderr, 1);
-    close HIS_OUT;
-    close HIS_ERR;
+##	if ($errline =~'WARNING') {
+##	    $result .= $errline;
+##	}
+    # }
+    # $stderr = &error_handling($stderr, 1);
+    # close HIS_OUT;
+    # close HIS_ERR;
 
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-    }
+    # if ($stderr) {
+    # 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    # }
 
-#    my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
-#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-#   $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
-#    my $tmp_outdir = $output_path;
-#    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-    my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
-    $tmp_outzip =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    # my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
+    # $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+##   $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+##    my $tmp_outdir = $output_path;
+##    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    # my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
+    # $tmp_outzip =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
 
-    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
+    # &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outzip),
-			                                         SOAP::Data->name('command' => $command)))
-				->attr({'xmlns' => ''});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $command),
-								 SOAP::Data->name('client' => $tmp_outzip)))
-				->attr({'xmlns' => ''});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outzip),
-								 SOAP::Data->name('command' => $command),
-								 SOAP::Data->name('client' => $tmp_outzip)))
-				->attr({'xmlns' => ''});
-    }
-}
+    # if ($output_choice eq 'server') {
+    # 	return SOAP::Data->name('response' => {'command' => $command,
+    # 				               'server' => $tmp_outzip});
+    # } elsif ($output_choice eq 'client') {
+    # 	return SOAP::Data->name('response' => {'command' => $command,
+    # 			 		       'client' => $tmp_outzip});
+    # } elsif ($output_choice eq 'both') {												              return SOAP::Data->name('response' => {'server' => $tmp_outzip,								                                                  'command' => $command,
+    # 							'client' => $tmp_outzip});
+    # }
 
-sub peak_motifs_cmd {
-    my ($self, %args) =@_;
+##    if ($output_choice eq 'server') {
+##	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outzip),
+##			                                         SOAP::Data->name('command' => $command)))
+##				->attr({'xmlns' => ''});
+##    } elsif ($output_choice eq 'client') {
+##	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $command),
+##								 SOAP::Data->name('client' => $tmp_outzip)))
+##				->attr({'xmlns' => ''});
+##    } elsif ($output_choice eq 'both') {
+##	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outzip),
+##								 SOAP::Data->name('command' => $command),
+##								 SOAP::Data->name('client' => $tmp_outzip)))
+##				->attr({'xmlns' => ''});
+##    }
+##}
+
+#sub peak_motifs_cmd {
+#    my ($self, %args) =@_;
     if ($args{"test"}) {
 	my $test = $args{"test"};
 	chomp $test;
@@ -1030,35 +1040,35 @@ sub peak_motifs_cmd {
     my $class_int = $args{"class_int"};
 
     ## List of motif database files
-#    my $motif_db_ref = $args{"motif_db"};
-#    my $motif_db = "";
-#    if ($motif_db_ref =~ /ARRAY/) {
-#       my @motif_db = @{$motif_db_ref};
-#       foreach $db (@motif_db) {
-# 	$db =~s/\'//g;
-# 	$db =~s/\"//g;
-# 	@_db = split / /, $db;
+##    my $motif_db_ref = $args{"motif_db"};
+##    my $motif_db = "";
+##    if ($motif_db_ref =~ /ARRAY/) {
+##       my @motif_db = @{$motif_db_ref};
+##       foreach $db (@motif_db) {
+## 	$db =~s/\'//g;
+## 	$db =~s/\"//g;
+## 	@_db = split / /, $db;
 
-# 	$tmp_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
-# 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
-# 	print TMP_IN $_db[2];
-# 	close TMP_IN;
+## 	$tmp_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+## 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
+## 	print TMP_IN $_db[2];
+## 	close TMP_IN;
 
-# 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
-#       }
-#     } elsif ($motif_db_ref) {
-# 	@_db = split / /, $motif_db_ref;
+## 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
+##       }
+##     } elsif ($motif_db_ref) {
+## 	@_db = split / /, $motif_db_ref;
 
-# 	$tmp_motif_infile = `mktemp $TMP/chip-motifs.XXXXXXXXXX`;
-# 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
-# 	print TMP_IN $_db[2];
-# 	close TMP_IN;
+## 	$tmp_motif_infile = `mktemp $TMP/chip-motifs.XXXXXXXXXX`;
+## 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
+## 	print TMP_IN $_db[2];
+## 	close TMP_IN;
 
-# 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
-#     }
+## 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
+##     }
 
-#    my $output_dir = $args{"output_dir"};
-#    my $output_prefix = $args{"output_prefix"};
+##    my $output_dir = $args{"output_dir"};
+##    my $output_prefix = $args{"output_prefix"};
     my $graph_title = $args{"graph_title"};
     my $image_format = $args{"image_format"};
     my $disco = $args{"disco"};
@@ -1178,8 +1188,9 @@ sub peak_motifs_cmd {
         $command .= " -ctrl '".$tmp_control_infile."'";
     }
 
-    return $command;
+#    return $command;
 #    &run_WS_command($command, $output_choice, "peak-motifs", ".tab");
+    &run_WS_command($command, $output_choice, "peak-motifs");
 }
 
 ##########
@@ -2324,10 +2335,10 @@ sub footprint_discovery_cmd {
     if ($output_prefix) {
       $output_prefix =~ s/\'//g;
       $output_prefix =~ s/\"//g;
-      $command .= " -o ../tmp/'".$output_prefix."'";
+      $command .= " -o '../tmp/".$output_prefix."'";
   } else {
       $output_prefix = "footprints/".$taxon."/".$organism."/".$query."/".$bg_model;
-      $command .= " -o ../tmp/'".$output_prefix."'";
+      $command .= " -o '../tmp/".$output_prefix."'";
   }
 
     if ($query) {
