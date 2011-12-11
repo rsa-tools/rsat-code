@@ -194,7 +194,7 @@ easily. For this, you need to change your directory to the rsa-tools
 directory, and use the \texttt{cvs} command in the following way.
 
 \begin{lstlisting}
-cd rsa-tools
+cd rsa-tools; 
 cvs update -d
 \end{lstlisting}
 
@@ -225,16 +225,28 @@ make -f makefiles/init_RSAT.mk init
 % Config file
 \section{Adapting \RSAT \  local configuration}
 
-The \RSAT distribution comes with a template configuration file named
-\file{RSAT\_config\_default.props} and located in the \file{rsa-tools}
-directory.
+\subsection{Creating site-specific configuration files}
 
-Copy this file to create your own config file \file{RSAT\_config.props}.
+The \RSAT distribution comes with two template configuration files
+located in the \file{rsa-tools} directory:
+\begin{itemize}
+\item \file{RSAT\_config\_default.props} 
+\item \file{RSAT\_config\_default.mk}
+\end{itemize}
+
+You must copy these two file to create site-specific configuration
+files \file{RSAT\_config.props} and \file{RSAT\_config.mk}, which will
+be further edited.
 
 \begin{lstlisting}
 cp RSAT_config_default.props RSAT_config.props
+cp RSAT_config_default.mk RSAT_config.mk
 \end{lstlisting}
 
+\emph{Beware:} this operation should be done only once. If you redo
+the copy commands after having edited the files, you will loose all
+your editing result (this is the reason why the operation is done
+manually rather than automatically).
 
 \subsection{Editing the \RSAT\ local configuration file}
 
@@ -242,6 +254,9 @@ You need to edit the file \file{RSAT\_config.props} and specify the
 parameters of your local configuration. In particular, \emph{it is
   crucial to specify the full path of the variable RSAT}, which
 specifies the RSAT main directory.
+
+Then, edit the file \file{RSAT\_config.props} and specify the email of
+the RSAT administrator (likely you).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Check the RSAT paths
@@ -376,13 +391,14 @@ section.
   \RSAT server. Property filesa are also useful to write your own perl
   clients for the Web service interface to \RSAT (RSATWS).
 
-\item \program{SOAP::WSDL}, \program{Module::Build::Compat} and
-  \program{Util::Properties} (already mentioned above) are required
-  for the Web services. \RSAT Web services is a convenient interface
-  that permits to write Perl scripts to run \RSAT queries on a remote
-  server. Some Perl scripts of the \RSAT stand-alone commands are
-  using SOAP to connect remote servers
-  (e.g. \program{supported-organisms}, \program{download-organism}).
+\item \program{SOAP::WSDL}, \program{SOAP::Lite},
+  \program{Module::Build::Compat} and \program{Util::Properties}
+  (already mentioned above) are required for the Web services. \RSAT
+  Web services is a convenient interface that permits to write Perl
+  scripts to run \RSAT queries on a remote server. Some Perl scripts
+  of the \RSAT stand-alone commands are using SOAP to connect remote
+  servers (e.g. \program{supported-organisms},
+  \program{download-organism}).
 
 \item \program{Statistics::Distributions} is used to calculate some
   probability distribution functions. In particular, it is used by the
