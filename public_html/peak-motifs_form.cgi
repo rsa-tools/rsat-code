@@ -77,6 +77,7 @@ print <<end_part_1;
 <CENTER>
 <p>Pipeline for discovering motifs in massive ChIP-seq peak sequences.</p>
 
+<!--
 <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
 <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>,
 <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>cit</sup>,
@@ -84,7 +85,16 @@ print <<end_part_1;
 <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/oly/'>Olivier Sand</a><sup>i</sup>,
 <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>,
 and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>,
+-->
+<p>Reference: Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand,
+  O., Thieffry, D. and van Helden, J. (2011). RSAT peak-motifs: motif
+  analysis in full-size ChIP-seq datasets Nucleic Acids Research
+  doi:10.1093/nar/gkr1104, 9.  [<a target='_blank'
+  href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full?keytype=ref&ijkey=zOvloLjtKzL73F8'>Open
+  access</a>]
 </center>
+
+<hr>
 
 <div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\">
 
@@ -122,6 +132,7 @@ are supposed to be <b>aligned</b> over some reference. For peaks, the
 reference is the summit (or <b>center</b>) of each sequence.
 
 </div></p>
+<hr>
 end_part_1
 
 
@@ -532,7 +543,7 @@ print "</fieldset><p/>";
 ## UCSC custom track
 ##
 print "<fieldset>
-<legend><b><a href='help.peak-motifs.html#tasks'>Visualize motifs in genome browser </a></b></legend>";
+<legend><b><a href='help.peak-motifs.html#tasks'>Visualize peaks and sites in genome browser </a></b></legend>";
 
 print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b>No</b>");
 print "<br/>";
