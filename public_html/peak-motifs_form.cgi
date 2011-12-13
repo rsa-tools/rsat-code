@@ -149,6 +149,7 @@ print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 
 ################# Peak sequences
  &Panel1();
+
 ################# Restriction of data
  &Panel2();
 
@@ -251,7 +252,6 @@ exit(0);
 sub Panel1 {
 
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
- 
   print "<table>
   <tr><td colspan='2' style='text-align:center;'>";
    print "<b>Title</B>\n";
