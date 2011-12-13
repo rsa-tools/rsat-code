@@ -535,17 +535,17 @@ sub MultiGetSequenceFile {
     ### Fetch sequence from an URL
   } elsif ($query->param('sequence_url'.$seq_num) =~ /\S/) {
     my $url = $query->param('sequence_url'.$seq_num);
+    &RSAT::message::Info("Fetching sequence from URL ".$url) if ($main::verbose >= 0);
     if (open SEQ, ">$sequence_file") {
       my $seq = get($url);
       if ($seq =~ /\S/) {
 	print SEQ $seq;
 	close SEQ;
-#	&RSAT::message::Info("Fetched sequence from URL ".$url) if ($main::verbose >= 10);
-	print "<pre>", $seq, "</pre>\n";
       } else {
 	&RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
       }
     }
+    &RSAT::message::Info("Fetched sequence from URL ".$url) if ($main::verbose >= 10);
 
     ### Read sequence from the textarea "sequence"
   } elsif ($query->param('sequence'.$seq_num) =~ /\S/) {
