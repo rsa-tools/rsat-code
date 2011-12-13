@@ -918,89 +918,100 @@ sub peak_motifs {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
-    unless ($output_choice) {
-	$output_choice = 'ticket';
-    }
+#    unless ($output_choice) {
+	$output_choice = 'server';
+#    }
 
-#    my $command = $self->peak_motifs_cmd(%args);
+    my $command = $self->peak_motifs_cmd(%args);
 
-#    my $date = &RSAT::util::AlphaDate();
-#    $date =~ s/\n//;
+    my $date = &RSAT::util::AlphaDate();
+    $date =~ s/\n//;
 
-##    my $output_directory = sprintf "peak-motifs.%s", $date;
-    # my $output_directory = sprintf "peak-motifs_TESTS_OLY";
-    # my $output_prefix = "peak-motifs";
-    # my $output_path = $TMP."/".$output_directory;
-    # $output_path =~ s|\/\/|\/|g;
-    # system("mkdir -p $output_path");
+    my $output_directory = sprintf "peak-motifs.%s", $date;
+    my $output_prefix = "peak-motifs";
+    my $output_path = $TMP."/".$output_directory;
+    $output_path =~ s|\/\/|\/|g;
+    system("mkdir -p $output_path");
 
-    # $command .= " -outdir '".$output_path."'";
-    # $command .= " -prefix '".$output_prefix."'";
+    $command .= " -outdir '".$output_path."'";
+    $command .= " -prefix '".$output_prefix."'";
 
-    # local(*HIS_IN, *HIS_OUT, *HIS_ERR);
-    # my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
-    # my @outlines = <HIS_OUT>;    # Read till EOF.
-    # my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+#     if ($output_choice eq 'ticket') {
+# 	my $ticket = $output_directory;
+# 	$ticket =~ s/$TMP\///;
+# # 	my $error_file = $tmp_outfile.".err";
+# 	my $error_file = $output_path.".err";
+# 	# Both stdout (1) and stderr (2) need to be redirected to allow background (&) mode
+# #      `$command 1>$tmp_outfile 2>$error_file &`;
+# 	`$command &>$error_file &`;
+# 	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
+# 								 SOAP::Data->name('command' => $command)))
+# 	    ->attr({'xmlns' => ''});
+#     }
+
+    my $tmp_synthesis = $output_path."/".$output_prefix."_synthesis.html";
+    $tmp_synthesis =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
+    $tmp_outzip =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    my $result_url = $output_path;
+    $result_url =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    my $error_file = $output_path.".err";
+    my $error_url = $error_file;
+    $error_url =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+
+    my $response = "The server is now processing your request.\n";
+    $reponse .= "You can follow its status while running at the following URL\n";
+    $response .= "\t$tmp_synthesis\n";
+    $response .= "Once it will be finished, the result will become available at the following URL\n";
+    $response .= "\t$result_url\n";
+    $response .= "A zipped archive will also be available at the following URL\n";
+    $response .= "\t$tmp_outzip\n";
+    $response .= "Otherwise, check the following page for error track\n";
+    $response .= "\t$error_url\n";
+
+    `$command &>$error_file &`;
+
+    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
+
+    if ($output_choice eq 'server') {
+     	return SOAP::Data->name('response' => {'command' => $command,
+     				               'server' => $response});
+     } elsif ($output_choice eq 'client') {
+     	return SOAP::Data->name('response' => {'command' => $command,
+    			 		       'client' => $response});
+     } elsif ($output_choice eq 'both') {												      return SOAP::Data->name('response' => {'server' => $response,								                                                  'command' => $command,
+					      'client' => $response});
+     }
+
+     local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+     my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+     my @outlines = <HIS_OUT>;    # Read till EOF.
+     my @errlines = <HIS_ERR>;    # XXX: block potential if massive
 
 ##    my $result = join('', @outlines);
-    # my $stderr;
+     my $stderr;
 
-    # foreach my $errline(@errlines) {
-    # 	## Some errors and RSAT warnings are not considered as fatal errors
-    # 	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING') || ($errline =~'Odd number of elements in hash assignment')) {
-    # 	    $stderr .= $errline;
-    # 	}
+     foreach my $errline(@errlines) {
+     	## Some errors and RSAT warnings are not considered as fatal errors
+     	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING') || ($errline =~'Odd number of elements in hash assignment')) {
+     	    $stderr .= $errline;
+     	}
 	## RSAT warnings are added at the end of results
 ##	if ($errline =~'WARNING') {
 ##	    $result .= $errline;
 ##	}
-    # }
-    # $stderr = &error_handling($stderr, 1);
-    # close HIS_OUT;
-    # close HIS_ERR;
+     }
+     $stderr = &error_handling($stderr, 1);
+     close HIS_OUT;
+     close HIS_ERR;
 
-    # if ($stderr) {
-    # 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-    # }
+     if ($stderr) {
+     	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+     }
+}
 
-    # my $tmp_outfile = $output_path."/".$output_prefix."_synthesis.html";
-    # $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-##   $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
-##    my $tmp_outdir = $output_path;
-##    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-    # my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
-    # $tmp_outzip =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-
-    # &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
-
-    # if ($output_choice eq 'server') {
-    # 	return SOAP::Data->name('response' => {'command' => $command,
-    # 				               'server' => $tmp_outzip});
-    # } elsif ($output_choice eq 'client') {
-    # 	return SOAP::Data->name('response' => {'command' => $command,
-    # 			 		       'client' => $tmp_outzip});
-    # } elsif ($output_choice eq 'both') {												              return SOAP::Data->name('response' => {'server' => $tmp_outzip,								                                                  'command' => $command,
-    # 							'client' => $tmp_outzip});
-    # }
-
-##    if ($output_choice eq 'server') {
-##	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outzip),
-##			                                         SOAP::Data->name('command' => $command)))
-##				->attr({'xmlns' => ''});
-##    } elsif ($output_choice eq 'client') {
-##	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $command),
-##								 SOAP::Data->name('client' => $tmp_outzip)))
-##				->attr({'xmlns' => ''});
-##    } elsif ($output_choice eq 'both') {
-##	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outzip),
-##								 SOAP::Data->name('command' => $command),
-##								 SOAP::Data->name('client' => $tmp_outzip)))
-##				->attr({'xmlns' => ''});
-##    }
-##}
-
-#sub peak_motifs_cmd {
-#    my ($self, %args) =@_;
+sub peak_motifs_cmd {
+    my ($self, %args) =@_;
     if ($args{"test"}) {
 	my $test = $args{"test"};
 	chomp $test;
@@ -1188,9 +1199,9 @@ sub peak_motifs {
         $command .= " -ctrl '".$tmp_control_infile."'";
     }
 
-#    return $command;
+    return $command;
 #    &run_WS_command($command, $output_choice, "peak-motifs", ".tab");
-    &run_WS_command($command, $output_choice, "peak-motifs");
+#    &run_WS_command($command, $output_choice, "peak-motifs");
 }
 
 ##########
