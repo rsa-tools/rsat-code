@@ -17,7 +17,7 @@ ARCHIVE=rsa-tools/${ARCHIVE_PREFIX}
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
 TAR_EXCLUDE=--exclude CVS
-TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default rsa-tools/RSAT_config_default.props
+TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default rsa-tools/RSAT_config_default.props  rsa-tools/RSAT_config_default.mk
 TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar 
 
 ################################################################
