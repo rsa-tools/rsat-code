@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use CGI;
+use LWP::Simple;
 
 package main;
 require RSAT::OrganismManager;
@@ -79,7 +80,7 @@ sub PrintOrthoSelectionSection {
 			       Saccharomyces_cerevisiae
 			       Bacillus_subtilis_168_uid57675
 
-                               Bacillus_subtilis 
+                               Bacillus_subtilis
                                Brucella_melitensis
                                Dickeya_dadantii_3937_uid52537
                                Escherichia_coli_ETEC_H10407
@@ -107,7 +108,7 @@ sub PrintOrthoSelectionSection {
 			 -default=>$default{queries},
 			 -rows=>3,
 			 -columns=>40);
-  ### option to upload a file with the gene list from the client machine 
+  ### option to upload a file with the gene list from the client machine
   print "<BR>Upload gene list from file<BR>\n";
   print $query->filefield(-name=>'uploaded_file',
 			  -default=>'',
@@ -195,7 +196,7 @@ sub RSA_header {
   ### print the header of the result page
   print $query->start_html(-title=>"RSA-tools : $title",
 			   -class => "$css_body_class",
-			   -author=>'jvanheld@bigre.ulb.ac.be',	   
+			   -author=>'jvanheld@bigre.ulb.ac.be',
 			   -script=>[
                                     { -type => 'text/javascript',
                                       -src      => 'RSAT_menu.js'
@@ -222,7 +223,7 @@ sub SelectOutput {
     } else {
       if ($default_output eq 'server') {
 	push @values, 'server'
-      } 
+      }
       push @values, ('display','email');
     }
     print "<B>Output</B>&nbsp;";
@@ -238,7 +239,7 @@ sub SelectOutput {
 
 
 ################################################################
-### print a selection between diferent modes of sequence entry 
+### print a selection between diferent modes of sequence entry
 ### in a HTML form
 ### - sequences copy-pasted in a textarea
 ### - sequences uploaded from a file on the client side
@@ -254,7 +255,7 @@ sub SequenceChoice {
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
   if ($sequence_file = $query->param(sequence_file)) {
-    ### sequence file is already on the server machine 
+    ### sequence file is already on the server machine
     ### (piped from a previous script)
     $sequence_url = $sequence_file;
     $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
@@ -270,7 +271,7 @@ sub SequenceChoice {
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     $sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
     $sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format',
-						 -Values=>['fasta', 
+						 -Values=>['fasta',
 							   'ig',
 							   'wconsensus',
 							   'raw',
@@ -287,7 +288,7 @@ sub SequenceChoice {
 					       -columns=>55);
     $sequenceChoiceString .=  "<BR>\n";
 
-    ### option to upload the sequence file from the client machine 
+    ### option to upload the sequence file from the client machine
     $sequenceChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
     $sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
 						-default=>'',
@@ -323,10 +324,11 @@ sub MultiSequenceChoice {
   $sequenceChoiceString .=  "<B>$seq_title</B>";
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
-    
+
   if ($sequence_file = $query->param(sequence_file)) {
-    ### sequence file is already on the server machine 
-    ### (piped from a previous script)
+
+    ## Sequence file is already on the server machine
+    ## (piped from a previous script)
     $sequence_url = $sequence_file;
     $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
     $sequenceChoiceString .=  "<a href=$sequence_url>";
@@ -335,54 +337,47 @@ sub MultiSequenceChoice {
     $sequence_format = $query->param(sequence_format);
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
+
   } else {
-    
-    #### sequence format (pop-up menu)
-    $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-    #$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
-    #  $sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format'.$seq_num,
-    # 						 -Values=>['fasta', 
-    # 							   'ig',
-    # 							   'wconsensus',
-    # 							   'raw',
-    # 							   'ncbi',
-    # 							   "tab",
-    # 							   'multi'],
-    # 						 -default=>$sequence_format);
 
-    #  $sequence_format = $query->param(sequence_format, "fasta");
-
-    #    $sequenceChoiceString .= $query->param(sequence_format);
-    ### text area to copy-paste the sequence
-    $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;\n";
-    $sequenceChoiceString .=  "Paste your sequence in fasta format in the box below<BR>\n";
-
+    ## text area to copy-paste the sequence
+    $sequenceChoiceString .=  "&nbsp;"x5;
+    $sequenceChoiceString .=  "Paste your sequence (fasta format)<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
 					       -default=>$default{sequence},
 					       -rows=>4,
 					       -columns=>55);
     $sequenceChoiceString .=  "<BR>\n";
-    
-    ### option to upload the sequence file from the client machine 
+
+    ## Option to upload the sequence file from the client machine
     $sequenceChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
     $sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file'.$seq_num,
 						-default=>'',
 						-size=>45,
 						-maxlength=>200);
     $sequenceChoiceString .=  "<BR>\n";
-     #### Mask option
-  	$sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
-  	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask'.$seq_num,
-					       -Values=>['none',
-							 'upper',
-							 'lower',
-							 'non-dna'],
-					       -default=>"none");
-  	$sequenceChoiceString .=  "<BR>\n";
-    
+
+    ## Option to fetch sequence file from an URL
+    $sequenceChoiceString .=  "&nbsp;"x3;
+    $sequenceChoiceString .=  "URL of a sequence file available on a Web server (e.g. Galaxy).<BR>\n";
+    $sequenceChoiceString .=  $query->textfield(-name=>'sequence_url'.$seq_num,
+						-default=>$default{sequence_url},
+						-size=>62);
+    $sequenceChoiceString .= "<br>\n";
+
+    #### Mask option
+    $sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
+    $sequenceChoiceString .=  $query->popup_menu(-name=>'mask'.$seq_num,
+						 -Values=>['none',
+							   'upper',
+							   'lower',
+							   'non-dna'],
+						 -default=>"none");
+    $sequenceChoiceString .=  "<BR>\n";
+
   }
-    
-    
+
+
   print($sequenceChoiceString);
 }
 
@@ -412,7 +407,7 @@ sub GetSequenceFile {
     &cgiError("Invalid sequence format : '$sequence_format'.");
   }
 
-  unless ($sequence_file = $query->param('sequence_file')) { 
+  unless ($sequence_file = $query->param('sequence_file')) {
     ### sequence file already on the server side
     ### create a new temporary sequence file
     $sequence_file = "$main::TMP/$tmp_file_name.seq";
@@ -465,7 +460,7 @@ sub GetSequenceFile {
     unless ($required_format) {
       $required_format = $sequence_format;
     }
-    unless ($accepted_output_seq{$required_format}) { 
+    unless ($accepted_output_seq{$required_format}) {
       &cgiError("Invalid sequence format : ${required_format}.");
     }
     my $converted_seq_file = $sequence_file.".".$required_format;
@@ -537,7 +532,22 @@ sub MultiGetSequenceFile {
     }
     close SEQ;
 
-    ### read sequence from the textarea "sequence"
+    ### Fetch sequence from an URL
+  } elsif ($query->param('sequence_url'.$seq_num) =~ /\S/) {
+    my $url = $query->param('sequence_url'.$seq_num);
+    if (open SEQ, ">$sequence_file") {
+      my $seq = get($url);
+      if ($seq =~ /\S/) {
+	print SEQ $seq;
+	close SEQ;
+#	&RSAT::message::Info("Fetched sequence from URL ".$url) if ($main::verbose >= 10);
+	print "<pre>", $seq, "</pre>\n";
+      } else {
+	&RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
+      }
+    }
+
+    ### Read sequence from the textarea "sequence"
   } elsif ($query->param('sequence'.$seq_num) =~ /\S/) {
     if (open SEQ, ">$sequence_file") {
       print SEQ $query->param('sequence'.$seq_num);
@@ -585,7 +595,7 @@ sub MultiGetSequenceFile {
 #### warn the users to wait for complete result before clicking on piping buttons
 sub PipingWarning {
     my $message = "One or several button(s) will appear at the bottom of this page, ";
-    $message .= "allowing you to send the result as input for a subsequent query."; 
+    $message .= "allowing you to send the result as input for a subsequent query.";
     &cgiMessage($message, "Information");
 }
 
@@ -634,7 +644,7 @@ sub OrganismPopUpEnsembl {
     $name = ucfirst($org);
     $name =~ s/_/ /;
 	if ((lc($org) eq lc($default{organism_ens})) ||
-        (lc($name) eq lc($default{organism_ens}))) { 
+        (lc($name) eq lc($default{organism_ens}))) {
 		$org = lc($org);
 	    $organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
 	}elsif (lc($org) =~ /^;/) {
@@ -813,12 +823,12 @@ sub GetMatrix {
   ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
   ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
   ## I SHOULD CHECK LATER
-  ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format; 
+  ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
   my @supported_input_formats = sort(keys( %supported_input_format));
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
-  #### matrix format 
+  #### matrix format
   print $query->popup_menu(-name=>'matrix_format',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
@@ -1136,7 +1146,7 @@ sub MatrixDBcheckBox {
     if ($choice_mode eq "checkbox") {
       print $query->checkbox(-name=>$mat_line[0],
 			     -checked=>$status,
-			     -label=>$mat_line[3]); 
+			     -label=>$mat_line[3]);
     } elsif ($choice_mode eq "radiobox") {
       print( "<input type='radio' NAME='db_choice' VALUE='",$mat_line[0],"' $status>");
       print "$mat_line[3]";
@@ -1196,11 +1206,11 @@ sub html_header {
   my $sorttable = shift;
   if (!defined($sorttable)) {
     $sorttable = 1;
-  } 
-  # $sorttable is a optional argument. By default, the table contains a 
-  # java script that allows the HTML table 
-  # to be sorted by clicking on the top of the row. 
-  #If $sorttable is equal to 0, then this script will not be included. 
+  }
+  # $sorttable is a optional argument. By default, the table contains a
+  # java script that allows the HTML table
+  # to be sorted by clicking on the top of the row.
+  #If $sorttable is equal to 0, then this script will not be included.
   #In some cases this has no sense to sort the table.
   my $header = "";
   $header .=  "<html>\n";
@@ -1353,15 +1363,15 @@ sub PrintHtmlResultHeader {
 ##
 ## usage
 ##   PrintHtmlTable(FILE_HANDLE,$mirror_file)
-## reads the content of FILEHANDLE and displays 
+## reads the content of FILEHANDLE and displays
 ## it in the form of a HTML table.
-## if $mirror_file is specified, a copy of the input text (without HTML formatting)  
+## if $mirror_file is specified, a copy of the input text (without HTML formatting)
 ## is saved on the hard drive
 ##
 ## global variables
 ## ================
-## The fixed font type can be switched off 
-## by specifiying a global variable 
+## The fixed font type can be switched off
+## by specifiying a global variable
 ##       $font{variable} = 1;
 sub PrintHtmlTable {
   my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border, $autolink) = @_;
@@ -1403,7 +1413,7 @@ sub PrintHtmlTable {
 
     if ($mirror) {
       print MIRROR $_
-	unless ((/^;/) && !($mirror_verbose)); 
+	unless ((/^;/) && !($mirror_verbose));
     }
     if (/^\s*$/) {			#nothing on the line
     } elsif (/^;WARNING/) {		# warning
@@ -1513,7 +1523,7 @@ sub EmailTheResult {
 
     my $script_name = $0;
     $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g; ## Avoid providing the full path of the RSAT package
-    $script_name =~ s|\.cgi$||; 
+    $script_name =~ s|\.cgi$||;
 
     unless ($mail_title) {
       $mail_title = join " ", "[RSAT]", $script_name, &AlphaDate();
@@ -1592,23 +1602,23 @@ sub SelectFormat {
     my($in_format) = lc($_[0]);
 
     #### update the sequence format in a web form
-    $form =~  s/ selected>Wconsensus/>Wconsensus/i; 
-    $form =~  s/ selected>Fasta/>Fasta/i; 
-    $form =~  s/ selected>NCBI/>NCBI/i; 
-    $form =~  s/ selected>IG/>IG/i; 
-    $form =~  s/ selected>raw/>raw/i; 
-    $form =~  s/ selected>multi/>multi/i; 
+    $form =~  s/ selected>Wconsensus/>Wconsensus/i;
+    $form =~  s/ selected>Fasta/>Fasta/i;
+    $form =~  s/ selected>NCBI/>NCBI/i;
+    $form =~  s/ selected>IG/>IG/i;
+    $form =~  s/ selected>raw/>raw/i;
+    $form =~  s/ selected>multi/>multi/i;
     if ($in_format =~ /fasta/i) {
-	$form =~  s/\>Fasta/ SELECTED\>Fasta/i; 
+	$form =~  s/\>Fasta/ SELECTED\>Fasta/i;
     } elsif ($in_format =~ /multi/i) {
-	$form =~  s/\>multi/ SELECTED\>multi/i; 
+	$form =~  s/\>multi/ SELECTED\>multi/i;
     } elsif ($in_format =~ /raw/i) {
-	$form =~  s/\>raw/ SELECTED\>raw/i; 
+	$form =~  s/\>raw/ SELECTED\>raw/i;
     } elsif ($in_format =~ /^wc/i) {
-	$form =~  s/\>Wconsensus/ SELECTED\>Wconsensus/i; 
+	$form =~  s/\>Wconsensus/ SELECTED\>Wconsensus/i;
     } elsif ($in_format =~ /ig/i) {
-	$form =~  s/\>IG/ SELECTED\>IG/i; 
-    }    
+	$form =~  s/\>IG/ SELECTED\>IG/i;
+    }
 }
 
 
@@ -1800,7 +1810,7 @@ sub PipingFormForSequence {
 	<b><font color=red>New !</font></b>
 	Position-specific scoring matrices
     </td>
-    
+
     <td align=center>
         <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
@@ -2373,7 +2383,7 @@ sub display_matrices_web {
   ### Print result on the web page
   print '<h4>Matrices</h4>';
   print "<pre>";
-#  print `cat $out_matrix_file`; 
+#  print `cat $out_matrix_file`;
   my ($res) = &OpenInputFile($out_matrix_file);
   while (<$res>) {
     next if ($_ =~ /logo file:(.*)\.pdf$/);
@@ -2397,7 +2407,7 @@ sub display_matrices_web {
 ################################################################
 ## Print a HTML table with links to one or several result files
 ##
-## Usage: 
+## Usage:
 ## &PrintResultURL(tab=>result_file.tab,html=>result_file.html, ...);
 sub PrintURLTable {
   my (@files) = @_;
