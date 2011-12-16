@@ -35,11 +35,12 @@ $default{"position-analysis"}="checked";
 $default{'local-word-analysis'}="";
 $default{'local-word-analysis_dyads'} ="";
 $default{"position-analysis_dyads"} ="";
-$default{matrix-scan-quick}="checked";
+$default{'matrix-scan-quick'}="checked";
 $default{compare_motif_db}="checked";
 $default{title}="title for this analysis";
 $default{max_seq_len}="";
 $default{top_sequences}="";
+$default{nmotifs} = 3;
 
 
 $default{visualize}="none";
@@ -94,8 +95,6 @@ and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>C
   access</a>]
 </center>
 
-<hr>
-
 <div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\">
 
 <font color='#0D73A7'>Information on the methods used in peak-motifs</font> </div>
@@ -132,7 +131,6 @@ are supposed to be <b>aligned</b> over some reference. For peaks, the
 reference is the summit (or <b>center</b>) of each sequence.
 
 </div></p>
-<hr>
 end_part_1
 
 
@@ -330,45 +328,32 @@ print "<p/><fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Discover motifs </a></b></legend>";
 
 
-print "<br/> <b>Continuous words</b> <br/>";
+################################################################
+## Single words
+print "<br> <b>Continuous words</b>";
 
-#
+print "<ul>\n";
+
 ### oligo analysis
-#
+print "<br>";
 print $query->checkbox(-name=>'oligo-analysis',
 		       -checked=>$default{"oligo-analysis"},
 		       -label=>'');  
 print "&nbsp;<b>Discover over-represented words</b> <a href='help.oligo-analysis.html'> [oligo-analysis]</a>\n";
-print "<br/>";
 
 
-### dyad sizes and spacer
-#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</a>&nbsp;</B>\n";
-#	$oligoPopup = "";
-#    $oligoPopup .=  "<SELECT NAME='dyad-option'>\n";
-#	$oligoPopup .=  "<OPTION  VALUE='4'>4 {0,20} 4</option>\n";
-#	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>3 {0,20} 3</option>\n";
-#    $oligoPopup .=  "</SELECT>";
-#    print $oligoPopup;
-#print "<br/>";
-
-#
-### local-word-analysis
-#
-print $query->checkbox(-name=>'local-word-analysis',
-		       -checked=>$default{'local-word-analysis'},
-		       -label=>'');  
-print "&nbsp;<b>Discover words with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
-print "<br/>";
-
-#
 ### position-analysis
-#
+print "<br>";
 print $query->checkbox(-name=>'position-analysis',
 		       -checked=>$default{"position-analysis"},
-		       -label=>'');  
-print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
+		       -label=>'');
+print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.position-analysis.html'>[position-analysis]</a>\n";
 
+### local-word-analysis
+print "<br>", $query->checkbox(-name=>'local-word-analysis',
+		       -checked=>$default{'local-word-analysis'},
+		       -label=>'');
+print "&nbsp;<b>Discover words with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
 
 ## Word size
 print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer length</a>&nbsp;</b> for the three programs above\n";
@@ -382,20 +367,51 @@ print $query->checkbox(-name=>'oligo_length7',
 		       -label=>'7'); 
 print "&nbsp;"x2;
 print "<br><i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
-print "</p>";
+
+
+## Markov  order (for oligo-analysis in single strand mode)
+print "<br><p><b><a href='help.oligo-analysis.html'> Markov order (m) of the background model for oligo-analysis (k-mers)</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
+$oligoPopup = "<br>";
+$oligoPopup .=  "<SELECT NAME='markov'>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='0'>m=0 (generally not ideal)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>m=1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
+$oligoPopup .=  "<OPTION  SELECTED VALUE='-3'>m=k-3 (intermediate size data sets)</option>\n";
+$oligoPopup .=  "<OPTION VALUE='-2'>m=k-2 (more stringent for large data sets e.g. > 1Mb)</option>\n";
+$oligoPopup .=  "</SELECT>";
+print $oligoPopup;
+
+print "</ul>\n";
+
 
 ################################################################
 ## dyad-analysis
-print "<p> <b>Spaced words pairs</b>";
-print "<br>", $query->checkbox(-name=>'dyad-analysis',
+print "<p> <b>Spaced word pairs (dyads)</b>";
+print "<ul>\n";
+print $query->checkbox(-name=>'dyad-analysis',
 			       -checked=>$default{"dyad-analysis"},
 			       -label=>'');
 print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
-print "</p>";
+print "</ul>\n";
+
+
+### dyad sizes and spacer
+#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</a>&nbsp;</B>\n";
+#	$oligoPopup = "";
+#    $oligoPopup .=  "<SELECT NAME='dyad-option'>\n";
+#	$oligoPopup .=  "<OPTION  VALUE='4'>4 {0,20} 4</option>\n";
+#	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>3 {0,20} 3</option>\n";
+#    $oligoPopup .=  "</SELECT>";
+#    print $oligoPopup;
+#print "<br/>";
+
+## Number of motifs per algorithm
+print "<b>Number of motifs per algorithm</b>\n";
+print $query->popup_menu(-name=>'nmotifs',
+			 -Values=>[1,2,3,4,5,6,7,8,9,10],
+			 -default=>$default{nmotifs});
 
 ### 2str or 1str
-
-print "<br/> <b>Search on </b> ";
+print "<br/><b>Search on </b> ";
 my $strandPopup =  "<SELECT NAME='strand'>\n";
 $strandPopup .=  "<OPTION  SELECTED VALUE='-2str'>both strands</option>\n";
 $strandPopup .=  "<OPTION VALUE='-1str'>single strand</option>\n";
@@ -419,17 +435,6 @@ print $strandPopup;
 #print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
 #print "<br/>";
 
-### markov  order (common to all programs)
-print "<p><b><a href='help.oligo-analysis.html'> Markov order (m) of the background model for oligo-analysis (k-mers)</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
-$oligoPopup = "<br>";
-$oligoPopup .=  "<SELECT NAME='markov'>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='0'>m=0 (generally not ideal)</option>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>m=1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='-3'>m=k-3 (intermediate size data sets)</option>\n";
-$oligoPopup .=  "<OPTION VALUE='-2'>m=k-2 (more stringent for large data sets e.g. > 1Mb)</option>\n";
-$oligoPopup .=  "</SELECT>";
-print $oligoPopup;
-print "</p>";
 
 ### threshold (common to all programs)
 #print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.oligo-analysis.html#thresholds'>Lower threshold on significance</a>&nbsp;</B>\n";
@@ -478,14 +483,16 @@ sub Panel4 {
 			   -default=>$default{custom_motif_db_name},
 			   -size=>20);
   print $query->filefield(-name=>'custom_motif_db',
-			-size=>10);
-  print "Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
- ##
- print"</p>";
-   print "<a href=''><b>Add known reference motifs for this experiment:</b></a><br/>";
+			  -size=>10);
+#  print "<br>Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
+
+ ## Reference motifs
+  print"</p>";
+  print "<a href=''><b>Add known reference motifs for this experiment:</b></a><br/>";
   print $query->filefield(-name=>'ref_motif',
-			-size=>10);
-  print "Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
+			  -size=>10);
+  print "<br>Database and reference motifs (matrices) should be in <b>Transfac format</b>";
+  print "<br>(other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
  
  
   print "</fieldset><p/>";
