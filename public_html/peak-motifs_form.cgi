@@ -187,7 +187,8 @@ $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
 #$demo_seq=`cat demo_files/peak-motifs_demo.fa`;
-$demo_url= "http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_demo.fa";
+#$demo_url= "http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_demo.fa";
+$demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 #print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
@@ -213,9 +214,11 @@ $descr2 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
 #$demo_seq=`cat demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa`;
-$demo_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa";
+#$demo_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa";
+$demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa";
 #$ctrl_seq=`cat demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa`;
-$ctrl_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa";
+#$ctrl_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa";
+$ctrl_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa";
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr2);
 #print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
