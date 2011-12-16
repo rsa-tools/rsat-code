@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.218 2011/12/11 09:57:15 jvanheld Exp $
+# $Id: peak-motifs,v 1.219 2011/12/16 01:54:47 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.218 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.219 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1139,7 +1139,16 @@ sub CompositionProfiles {
    }
     #    $cmd .= " -symbols "; ## THIS OPTION IS NOT WORKING ANYMORE : THE LEGEND DISPLAYS SYMBOLS BUT NOT THE GRAPH. THIS HAS TO BE FIXED
 
-    my $title = $ol."nt composition profiles : ";
+    my $title;
+    if ($ol == 1) {
+      $title = "Nucleotide";
+    } elsif ($ol == 2) {
+      $title = "Nucleotide";
+    } else {
+      $title = $ol."-mer oligonucleotide";
+    }
+    $title .= " composition profiles : ";
+
     $title .= "; ".$seq_type." sequence";
     $title .= "; ".$main::param{title} if ($main::param{title});
     $cmd .= " -title '".$title."'";
