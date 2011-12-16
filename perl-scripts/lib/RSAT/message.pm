@@ -124,13 +124,13 @@ sub cgiMessage {
     my ($message, $message_type, $color) = @_;
     $color = "#00BB00" unless ($color); ## PROBLEM: THIS COLOR IS NOW IGNORED -> EITHER SUPPRESS OR RESTORE
     $message_type = "Information" unless ($message_type);
-    print  "<h4 >$message_type</h4>",
-	    "<blockquote class='",lc($message_type),"'>",
+    print  ("<blockquote class='",lc($message_type),"'>",
 	    "\n",
+	    "<b>",$message_type,": </b>",
 	    $message,
 	    "\n",
 	    "</blockquote>",
-	    "<BR><HR SIZE=3>\n";
+	    "<br><hr size=3>\n");
 }
 
 
