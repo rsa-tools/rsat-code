@@ -146,11 +146,10 @@ neat_ws_tmp=http://rsat.ulb.ac.be/rsat/tmp/
 ## URL for java-based NeAT web services. The same remark as above holds,
 ## please check the RSAT web server install guide to install the additional
 ## programs before changing this variable.
-neat_java_ws=http://rsat.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
+neat_java_ws=http://wwwsup.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
 
 ## The java programs on the Web interface are currently supported only at the
 ## ULB server.
-#neat_java_host=http://rsat.ulb.ac.be/
 neat_java_host=http://wwwsup.scmbb.ulb.ac.be/
 
 # if forwarding to apache is not activated, indicate the tomcat port
