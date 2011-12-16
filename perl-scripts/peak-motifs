@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.221 2011/12/16 07:18:33 jvanheld Exp $
+# $Id: peak-motifs,v 1.222 2011/12/16 09:44:09 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.221 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.222 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -671,8 +671,10 @@ sub SetOutFileNames {
     #    }
 
     ## BED file from fasta header (e.g. Galaxy)
-    $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
-    push @bed_files, $main::outfile{$seq_type."_seq_coord"};
+    if (($main::infile{coord})||($main::param{seq_source})) {
+      $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
+      push @bed_files, $main::outfile{$seq_type."_seq_coord"};
+    }
 
     ## Merged sites
     $main::outfile{"merged_sites"} = &OutFileName("results/sites", ".tab", "all_motifs_seqcoord");
@@ -1882,8 +1884,10 @@ sub SetFileNamesForMotif {
   ## Predicted sites (sequence scanning)
   $main::outfile{$motif_id.'_pssm_sites'} = $main::prefix{$motif_id."_prefix"}."_sites.tab";
   push @site_files, $main::outfile{$motif_id.'_pssm_sites'};
-  $main::outfile{$motif_id.'_pssm_sites_genomic'} = $main::prefix{$motif_id."_prefix"}."_sites_genomic.bed";
-  push @bed_files, $main::outfile{$motif_id.'_pssm_sites_genomic'};
+  if (($main::infile{coord})||($main::param{seq_source})) {
+    $main::outfile{$motif_id.'_pssm_sites_genomic'} = $main::prefix{$motif_id."_prefix"}."_sites_genomic.bed";
+    push @bed_files, $main::outfile{$motif_id.'_pssm_sites_genomic'};
+  }
   $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.tab";
   $main::outfile{$motif_id.'_pssm_site_distrib_graph'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.".$main::param{img_format};
   $main::outfile{$motif_id.'_pssm_sites_per_peak'} = $main::prefix{$motif_id."_prefix"}."_sites_per_peak.tab";
@@ -2422,16 +2426,20 @@ sub ScanSequences {
   }
 
   ################################################################
-  ## Generate a single .bed file with all the peaks + sites
-  my $merge_bed_cmd = "cat ";
-  $merge_bed_cmd .= join " ", @bed_files;
-  $merge_bed_cmd .= " > ".$main::outfile{merged_sites_bed};
-  &one_command($merge_bed_cmd, 1);
+  ## Generate a single file with the predicted sites for all
+  ## discovered motifs (+ peaks if genomic coordinates)
 
   my $merge_sites_cmd = "cat ";
   $merge_sites_cmd .= join " ", @site_files;
   $merge_sites_cmd .= " > ".$main::outfile{merged_sites};
   &one_command($merge_sites_cmd, 1);
+
+  if (($main::infile{coord})||($main::param{seq_source})) {
+    my $merge_bed_cmd = "cat ";
+    $merge_bed_cmd .= join " ", @bed_files;
+    $merge_bed_cmd .= " > ".$main::outfile{merged_sites_bed};
+    &one_command($merge_bed_cmd, 1);
+  }
 }
 
 
@@ -2861,7 +2869,8 @@ sub SynthesisByMotif {
       ################################################################
       ## Display UCSC track
       ## If from fasta sequence: first get assembly
-      if ($main::param{seq_source}) {
+      if (($main::infile{coord})||($main::param{seq_source})) {
+#      if ($main::param{seq_source}) {
       	## also store the genome assembly
       	$genome_assembly = ` grep '^>' $infile{test_seq} | head -n 1 ` ;
       	chomp($genome_assembly);
@@ -2987,13 +2996,17 @@ sub SynthesisMergedSites {
   ## Scan results
   my $scan_file = $main::outfile{merged_sites};
   if (-e $scan_file) {
-    ## UCSC link to genomic location of predicted sites
-    my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{merged_sites_bed});
-    my $browser_url = "<a target='_blank' href='";
-    $browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
-    $browser_url .= "db=".$genome_assembly;
-    $browser_url .= "&hgt.customText=".$BED_URL;
-    $browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+
+    my $browser_url = "";
+    if (($main::infile{coord})||($main::param{seq_source})) {
+      ## UCSC link to genomic location of predicted sites
+      my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{merged_sites_bed});
+      $browser_url = "<a target='_blank' href='";
+      $browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+      $browser_url .= "db=".$genome_assembly;
+      $browser_url .= "&hgt.customText=".$BED_URL;
+      $browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+    }
 
     ## Print the link table
     print $syn &open_menu_heading($menu_nb++, "<a name='merged_sites'></a><h3>Motif locations (sites)</h3>", 0);
@@ -4542,7 +4555,7 @@ sub CheckArguments {
   }
 
   if ($main::param{seq_source}) {
-  	unless ($main::param{seq_source} eq "galaxy") {
+    unless ($main::param{seq_source} eq "galaxy") {
       &RSAT::error::FatalError("-from option: this sequence source is not supported", $main::param{seq_source});
     }
   }
