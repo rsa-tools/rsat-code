@@ -254,7 +254,7 @@ sub SequenceChoice {
   $sequenceChoiceString .=  "<B>Sequence</B>";
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
-  if ($sequence_file = $query->param(sequence_file)) {
+  if ($sequence_file = $query->param("sequence_file")) {
     ### sequence file is already on the server machine
     ### (piped from a previous script)
     $sequence_url = $sequence_file;
@@ -325,7 +325,7 @@ sub MultiSequenceChoice {
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
 
-  if ($sequence_file = $query->param(sequence_file)) {
+  if ($sequence_file = $query->param("sequence_file")) {
 
     ## Sequence file is already on the server machine
     ## (piped from a previous script)
@@ -361,7 +361,7 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  "&nbsp;"x3;
     $sequenceChoiceString .=  "URL of a sequence file available on a Web server (e.g. Galaxy).<BR>\n";
     $sequenceChoiceString .=  $query->textfield(-name=>'sequence_url'.$seq_num,
-						-default=>$default{sequence_url},
+						-default=>$default{'sequence_url'.$seq_num},
 						-size=>62);
     $sequenceChoiceString .= "<br>\n";
 
@@ -535,9 +535,10 @@ sub MultiGetSequenceFile {
     ### Fetch sequence from an URL
   } elsif ($query->param('sequence_url'.$seq_num) =~ /\S/) {
     my $url = $query->param('sequence_url'.$seq_num);
-    &RSAT::message::Info("Fetching sequence from URL ".$url) if ($main::verbose >= 0);
+    &RSAT::message::Info("Fetching sequences from URL ".$url) if ($main::verbose >= 0);
+    my $seq = "";
     if (open SEQ, ">$sequence_file") {
-      my $seq = get($url);
+      $seq = get($url);
       if ($seq =~ /\S/) {
 	print SEQ $seq;
 	close SEQ;
@@ -545,7 +546,8 @@ sub MultiGetSequenceFile {
 	&RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
       }
     }
-    &RSAT::message::Info("Fetched sequence from URL ".$url) if ($main::verbose >= 10);
+    my $seq_kb = sprintf("%d", length($seq)/1000);
+    &RSAT::message::Info("Fetched ".$seq_kb." kb file from ".$url) if ($main::verbose >= 0);
 
     ### Read sequence from the textarea "sequence"
   } elsif ($query->param('sequence'.$seq_num) =~ /\S/) {
@@ -1549,9 +1551,9 @@ sub EmailTheResult {
     #### Indicate the URL of the future result file
     my $submission_message = $mail_title."\n";
     $submission_message .= "\n\nCommand: ".$clean_command;
-    $submission_message .= "Your task has been submitted to the RSAT server.\n\n";
-    $submission_message .= "After completion of the task, an email will be sent to ".$email_address.",\n"  unless ($no_email);
-    $submission_message .= " and the result will become available at\n";
+    $submission_message .= "\n\nYour task has been submitted to the RSAT server.";
+    $submission_message .= "\n\nAfter completion of the task, an email will be sent to ".$email_address, "." unless ($no_email);
+    $submission_message .= "\n\nThe result will become available at\n";
     $submission_message .= "\t".${result_URL}."\n\n";
 
     ## Print the task submission message the Web page
