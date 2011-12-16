@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.220 2011/12/16 02:05:46 jvanheld Exp $
+# $Id: peak-motifs,v 1.221 2011/12/16 07:18:33 jvanheld Exp $
 #
 ############################################################
 
@@ -107,13 +107,14 @@ package main;
   ## Initialize parameters
   local $start_time = &RSAT::util::StartScript();
   local $die_on_error = 1;
+  local $genome_assembly ="";
 
   ## Check that the RSAT paths of the programs required for the script are specified
   $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.220 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.221 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -350,6 +351,8 @@ package main;
     &ScanSequences() if ($task{scan});
 
     &SynthesisByMotif() if ($progressive_synthesis);
+
+    &SynthesisMergedSites() if ($progressive_synthesis);
 
     &SynthesisMotifCompa() if ($progressive_synthesis);
   } else {
@@ -592,8 +595,6 @@ sub OutFileName {
   my ($subdir, $extension, @name_elements) = @_;
   my $dir = $main::dir{output};
   if ($subdir) {
-    #    $dir = join ("/", $main::dir{output}, $subdir);
-#    &RSAT::util::CheckOutDir($dir);
     $dir = &CheckSubDir($subdir);
   }
   my $out_file_name = $dir;
@@ -673,6 +674,10 @@ sub SetOutFileNames {
     $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
     push @bed_files, $main::outfile{$seq_type."_seq_coord"};
 
+    ## Merged sites
+    $main::outfile{"merged_sites"} = &OutFileName("results/sites", ".tab", "all_motifs_seqcoord");
+    $main::outfile{"merged_sites_bed"} = &OutFileName("results/sites", ".bed", "all_motifs_seqcoord");
+
     ################################################################
     ## Compositional Profiles
     for my $ol (@profiles_oligo_lengths) {
@@ -701,7 +706,6 @@ sub SetOutFileNames {
       $main::outfile{$ol."nt_".$seq_type."_profiles_graph"} .= ".".$main::param{img_format};
     }
   }
-
 
 
   ################################################################
@@ -1877,7 +1881,9 @@ sub SetFileNamesForMotif {
 
   ## Predicted sites (sequence scanning)
   $main::outfile{$motif_id.'_pssm_sites'} = $main::prefix{$motif_id."_prefix"}."_sites.tab";
+  push @site_files, $main::outfile{$motif_id.'_pssm_sites'};
   $main::outfile{$motif_id.'_pssm_sites_genomic'} = $main::prefix{$motif_id."_prefix"}."_sites_genomic.bed";
+  push @bed_files, $main::outfile{$motif_id.'_pssm_sites_genomic'};
   $main::outfile{$motif_id.'_pssm_site_distrib'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.tab";
   $main::outfile{$motif_id.'_pssm_site_distrib_graph'} = $main::prefix{$motif_id."_prefix"}."_site_distrib.".$main::param{img_format};
   $main::outfile{$motif_id.'_pssm_sites_per_peak'} = $main::prefix{$motif_id."_prefix"}."_sites_per_peak.tab";
@@ -2414,50 +2420,20 @@ sub ScanSequences {
 		     $main::outfile{$motif_id.'_pssm_enrichment'},
 		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
   }
+
+  ################################################################
+  ## Generate a single .bed file with all the peaks + sites
+  my $merge_bed_cmd = "cat ";
+  $merge_bed_cmd .= join " ", @bed_files;
+  $merge_bed_cmd .= " > ".$main::outfile{merged_sites_bed};
+  &one_command($merge_bed_cmd, 1);
+
+  my $merge_sites_cmd = "cat ";
+  $merge_sites_cmd .= join " ", @site_files;
+  $merge_sites_cmd .= " > ".$main::outfile{merged_sites};
+  &one_command($merge_sites_cmd, 1);
 }
 
-
-# ################################################################
-# ## Scan peak sequences with the discovered motif
-# ##
-# ## BEWARE: THIS IS NOT YET WORKING, BECAUSE matrix-scan-quick ONLY
-# ## USES THE FIRST MATRIX OF EACH FILE.
-# sub old_ScanSequences {
-#   $main::param{scan_min_score} = 7.5;
-#   &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
-# #  foreach my $seq_type (@seq_types) {
-#     foreach my $pattern_type (@pattern_types) {
-#       my $cmd = $BIN."/matrix-scan-quick -v 1";
-#       $cmd .= " -i ".$main::outfile{$seq_type."_converted"};
-#       $cmd .= " -m ".$main::outfile{$pattern_type.'_pssm_counts'};
-#       $cmd .= " -bgfile ".$main::param{scan_bg_file};
-#       $cmd .= " ".$main::param{scan_strands};
-#       $cmd .= " -origin center -return sites";
-#       $cmd .= " -t ".$main::param{scan_min_score};
-#       $cmd .= " >".$main::outfile{$pattern_type.'_pssm_sites'};
-#       &one_command($cmd, 1, $main::outfile{$pattern_type.'_pssm_sites'}."_time.txt");
-
-#       ## Compute the positional distribution of sites
-#       $cmd = "awk '{print \(\$6\+\$5\)/2}'";
-#       $cmd .= " ".$main::outfile{$pattern_type.'_pssm_sites'};
-#       $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
-#       $cmd .= " -ci ".$main::param{profiles_ci};
-#       $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_site_distrib'};
-#       &one_command($cmd, 1);
-
-#       ## Draw the graph of predicted site positions
-#       $cmd = $SCRIPTS."/XYgraph";
-#       $cmd .= " -format ".$main::param{img_format};
-#       $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_site_distrib'};
-#       $cmd .= " -lines -xcol 3 -ycol 4";
-#       $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
-#       $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak center'";
-#       $cmd .= " -title1 'Predicted sites : $pattern_type'";
-#       $cmd .= " -o ".$main::outfile{$pattern_type.'_pssm_site_distrib_graph'};
-#       &one_command($cmd, 1);
-#     }
-# #  }
-# }
 
 
 ################################################################
@@ -2615,9 +2591,10 @@ sub ResultTOC {
       last;
        }
  }
- $result_toc .=  " </td> ";
+  $result_toc .=  " </td> ";
   $result_toc .=  " </tr></table> ";
 
+  $result_toc .=  "<a href='#merged_sites'>Motif locations (sites)</a><br/>";
   $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
   $result_toc .=  "<a href='#logs'>Logs & Commands</a><br/>";
   $result_toc .=  "</div>";
@@ -2729,23 +2706,9 @@ sub SynthesisByMotif {
   &ReadMotifTable();
 
   @motifs = &ReadDiscoveredMotifs();
-  #  my $motif_nb = scalar(@motifs);
-
-  #   ## Load background model for computing the consensus and logo of each motif
-  #   &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
-  #   local $bg_model = new RSAT::MarkovModel();
-
-  #   if (-e $main::param{scan_bg_file}) {
-  #     $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
-  #   } else {
-  #     &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet")
-  #       if ($main::verbose >= 1);
-  #     return;
-  #   }
 
   ## Options for generating logos
   my $logo_opt = "";
-
 
   ## Treat each motif
   for my $m (1..$motif_nb) {
@@ -2898,7 +2861,6 @@ sub SynthesisByMotif {
       ################################################################
       ## Display UCSC track
       ## If from fasta sequence: first get assembly
-      my $genome_assembly ="";
       if ($main::param{seq_source}) {
       	## also store the genome assembly
       	$genome_assembly = ` grep '^>' $infile{test_seq} | head -n 1 ` ;
@@ -2917,7 +2879,7 @@ sub SynthesisByMotif {
 	my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
 	#	my $BED_URL = join ("/", 
 	#			    $ENV{rsat_www},
-	#			    "tmp", 
+	#			    "tmp",
 	#			    &RSAT::util::ShortFileName($main::dir{output}),
 	#			    &RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'}));
 	#	$BED_URL =~ s|/+|/|g;
@@ -3019,6 +2981,33 @@ sub SynthesisMotifCompa {
   print $syn &close_menu_heading();
 }
 
+################################################################
+## Report results of motif comparisons
+sub SynthesisMergedSites {
+  ## Scan results
+  my $scan_file = $main::outfile{merged_sites};
+  if (-e $scan_file) {
+    ## UCSC link to genomic location of predicted sites
+    my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{merged_sites_bed});
+    my $browser_url = "<a target='_blank' href='";
+    $browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+    $browser_url .= "db=".$genome_assembly;
+    $browser_url .= "&hgt.customText=".$BED_URL;
+    $browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+
+    ## Print the link table
+    print $syn &open_menu_heading($menu_nb++, "<a name='merged_sites'></a><h3>Motif locations (sites)</h3>", 0);
+    print $syn "<table class='whitebg'>\n";
+    &SyntheticTableAddRow("Prediced sites on test peaks (all motifs)",
+			  $browser_url,
+			  "tab",$main::outfile{merged_sites},
+			  "bed",$main::outfile{merged_sites_bed},
+			 );
+
+    print $syn "</table><p>\n";
+    print $syn &close_menu_heading();
+  }
+}
 
 ################################################################
 ## Report the list if input/output files. This has to be done at the
@@ -3123,6 +3112,9 @@ sub Synthesis {
 
   ## Discovered motifs (by motif)
   &SynthesisByMotif() unless ($progressive_synthesis);
+
+  ## Motif locations (merged sites)
+  &SynthesisMergedSites() unless ($progressive_synthesis);
 
   ## Motif comparisons
   &SynthesisMotifCompa() unless ($progressive_synthesis);
@@ -3289,15 +3281,15 @@ sub SynthesisSequenceComposition {
 
     if ((($main::infile{coord})&&(-e $main::infile{coord}))
       	||(($main::outfile{"test_seq_coord"})&&(-e $main::outfile{"test_seq_coord"}))) {
+
       ## UCSC link
-#      my $BED_URL = $ENV{rsat_www}."/tmp/";
-	my $BED_URL = join ("/", 
-			    $ENV{rsat_www},
-			    "tmp",
-			    &RSAT::util::ShortFileName($main::dir{output}));
-	$BED_URL .= "/";
-	$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
-	$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
+      my $BED_URL = join ("/", 
+			  $ENV{rsat_www},
+			  "tmp",
+			  &RSAT::util::ShortFileName($main::dir{output}));
+      $BED_URL .= "/";
+      $BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
+      $BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
       my $browser_url = "<a target='_blank' href='";
       $browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
       $browser_url .= "db=".$genome_assembly;
