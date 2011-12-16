@@ -78,8 +78,8 @@ if ($control_file) {
 }
 
 
-
-### tasks
+################################################################
+## Motif discovery parameters
 
 ## motif-disco
 my $oligo_params = "";
@@ -93,7 +93,7 @@ foreach my $i (6..7){
 $oligo_params .= " 	-minol ".$oligo_lengths[0]." -maxol ".$oligo_lengths[-1]." ";
 $parameters .= $oligo_params;
 
-## motif disco algo
+## motif disco algorithm
 my @disco_algo =();
 if ($query->param('oligo-analysis') =~ /on/) {
     push(@disco_algo, "oligos");
@@ -110,32 +110,40 @@ if ($query->param('local-word-analysis') =~ /on/) {
 if ($query->param('position-analysis') =~ /on/) {
     push(@disco_algo, "positions");
 }
+
 if ($query->param('local-word-analysis_dyads') =~ /on/) {
-	## to add
+  ## TO BE ADDED WHEN THE PROGRAM WILL BE FASTER
 }
 
-### task specific parameters
+## Strands
 if ($query->param('strand')) {
     $parameters .= " ".$query->param('strand')." ";
 }
 
+## Number of motifs per algorithm
+if (&IsNatural($query->param('nmotifs'))) {
+  $parameters .= " -nmotifs ".$query->param('nmotifs')." ";
+}
 
+
+## Motif discovery algorithms
 $parameters .= " -disco ".join(",",@disco_algo);
 
-### task specific parameters
+## Markov order for oligo-analysis
 if (&IsNatural($query->param('markov'))) {
-    $parameters .= " -max_markov ".$query->param('markov')." -min_markov ".$query->param('markov');
+  $parameters .= " -max_markov ".$query->param('markov')." -min_markov ".$query->param('markov');
 }
 
-### restrict the input dataset
+## Number of top peaks
 if ($query->param('top_sequences')){
-    if (&IsNatural($query->param('top_sequences'))) {
-	$parameters .= " -top_peaks ".$query->param('top_sequences');
-    } else {
-	&FatalError("Number of top peaks is incorrect");
-    }
+  if (&IsNatural($query->param('top_sequences'))) {
+    $parameters .= " -top_peaks ".$query->param('top_sequences');
+  } else {
+    &FatalError("Number of top peaks is incorrect");
+  }
 }
 
+## Max peak length (clipping)
 if ($query->param('max_seq_len')){
     if (&IsNatural($query->param('max_seq_len'))) {
 	$parameters .= "  -max_seq_len ".$query->param('max_seq_len')*2; ## here the program needs the length of the fragments, so x2
