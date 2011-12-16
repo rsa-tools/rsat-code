@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.219 2011/12/16 01:54:47 jvanheld Exp $
+# $Id: peak-motifs,v 1.220 2011/12/16 02:05:46 jvanheld Exp $
 #
 ############################################################
 
@@ -113,7 +113,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.219 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.220 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -222,6 +222,7 @@ package main;
   local %supported_seq_source = ("galaxy"=>1);
   local @supported_seq_sources = sort (keys (%supported_seq_source));
   local $supported_seq_sources = join( ",", @supported_seq_sources);
+  local @bed_files = (); ## List of bed files to upload on UCSC
 
   ## Motif databases
   @motif_databases = ();
@@ -670,6 +671,7 @@ sub SetOutFileNames {
 
     ## BED file from fasta header (e.g. Galaxy)
     $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
+    push @bed_files, $main::outfile{$seq_type."_seq_coord"};
 
     ################################################################
     ## Compositional Profiles
@@ -1143,7 +1145,7 @@ sub CompositionProfiles {
     if ($ol == 1) {
       $title = "Nucleotide";
     } elsif ($ol == 2) {
-      $title = "Nucleotide";
+      $title = "Dinucleotide";
     } else {
       $title = $ol."-mer oligonucleotide";
     }
@@ -2727,19 +2729,19 @@ sub SynthesisByMotif {
   &ReadMotifTable();
 
   @motifs = &ReadDiscoveredMotifs();
-#  my $motif_nb = scalar(@motifs);
+  #  my $motif_nb = scalar(@motifs);
 
-#   ## Load background model for computing the consensus and logo of each motif
-#   &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
-#   local $bg_model = new RSAT::MarkovModel();
+  #   ## Load background model for computing the consensus and logo of each motif
+  #   &RSAT::message::Info("Loading background model fril file", $main::param{scan_bg_file}) if ($main::verbose >= 3);
+  #   local $bg_model = new RSAT::MarkovModel();
 
-#   if (-e $main::param{scan_bg_file}) {
-#     $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
-#   } else {
-#     &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet")
-#       if ($main::verbose >= 1);
-#     return;
-#   }
+  #   if (-e $main::param{scan_bg_file}) {
+  #     $bg_model->load_from_file($main::param{scan_bg_file}, "motifsampler");
+  #   } else {
+  #     &RSAT::message::Warning("Cannot generate synthesis by motifs because the background model has not been computed yet")
+  #       if ($main::verbose >= 1);
+  #     return;
+  #   }
 
   ## Options for generating logos
   my $logo_opt = "";
@@ -2750,10 +2752,10 @@ sub SynthesisByMotif {
     my $matrix = $motifs[$m-1];
     my $motif_id = $matrix->get_attribute("id");
     &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $motif_id) if ($main::verbose >= 3);
-#    $matrix->setMarkovModel($bg_model);
+    #    $matrix->setMarkovModel($bg_model);
 
     ## We compute the consensus and logos here with the same background model as used for sequence scanning
-#    $matrix->calcConsensus();
+    #    $matrix->calcConsensus();
     my $consensus = $matrix->get_attribute("consensus.IUPAC");
     my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
     my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
@@ -2766,15 +2768,15 @@ sub SynthesisByMotif {
     print $syn "<tr>\n";
     print $syn "<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
     print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n";
-	print $syn "<td><table align='center' ><tr>";
+    print $syn "<td><table align='center' ><tr>";
     ## Sequence logo
     my $file = $main::outfile{$motif_id."_logo"};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;' >", $colored_consensus, "<br>\n",
-	     "<a href='", $logo_link, "'>",
-	     "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
-	     "' src='",$logo_link,"'>","</a>","</td>\n");
+		  "<a href='", $logo_link, "'>",
+		  "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
+		  "' src='",$logo_link,"'>","</a>","</td>\n");
     } else {
       print $syn "<td><font color='red'>No logo</font>","</td>\n";
     }
@@ -2784,18 +2786,18 @@ sub SynthesisByMotif {
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;border-right-style:none;' >", $colored_consensus_rc, "<br>\n",
-		 "<a href='", $logo_link, "'>",
-		 "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
-		 "' src='",$logo_link,"'>","</a>","</td>\n");
+		  "<a href='", $logo_link, "'>",
+		  "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
+		  "' src='",$logo_link,"'>","</a>","</td>\n");
     } else {
       print $syn "<font color='red'>No logo</font>","</td>\n";
     }
     print $syn "</tr></table></td>\n";
-	  &PrintFileLinks_New(
-	  	"matrix", ["tab format",$main::outfile{$motif_id."_tab"},
-	  					"transfac format",$main::outfile{$motif_id."_tf"}
-	  					]
-			 );
+    &PrintFileLinks_New(
+			"matrix", ["tab format",$main::outfile{$motif_id."_tab"},
+				   "transfac format",$main::outfile{$motif_id."_tf"}
+				  ]
+		       );
     print $syn "</tr>\n";
 
     ## Motif comparison results
@@ -2829,18 +2831,18 @@ sub SynthesisByMotif {
 	print $syn $db_match_table, "\n";
 	if ($match_nb > 0) {
 	  &PrintFileLinks_New(
-	  	"match table", ["html",$prefix.".html",
-	  					"text",$prefix.".tab"
-	  					],
-	  	"alignments (logos)", ["html", $prefix."_alignments_1ton.html",
-	  					"text",$prefix."_alignments_1ton.tab"
-	  					],
-			 );
+			      "match table", ["html",$prefix.".html",
+					      "text",$prefix.".tab"
+					     ],
+			      "alignments (logos)", ["html", $prefix."_alignments_1ton.html",
+						     "text",$prefix."_alignments_1ton.tab"
+						    ],
+			     );
 	} else {
 	  print $syn "<td>No match</td>\n";
 	}
 	print $syn "</tr>\n";
-      }  else {
+      } else {
 	print $syn "<tr>\n";
 	print $syn "<td>", $db_name, "</td>\n";
 	print $syn "<td>", "<font color='red'>File not found</font>", "</td>\n";
@@ -2853,46 +2855,47 @@ sub SynthesisByMotif {
     ## Scan results
     my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
     if (-e $scan_file) {
-    	## get information on % peaks with a motif and max number sites/peaks
-    	#my $nb_peak_matching_motif = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq | wc -l`;
-    	my $nb_peak_matching_motif = `grep '; count' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
-    	chomp($nb_peak_matching_motif);
-      	$nb_peak_matching_motif =~ s/.*count\s*//;
-      	## Get mean number of predicted sites per peak
-    	my $mean_peak_matching_motif = `grep '; mean' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
-    	chomp($mean_peak_matching_motif);
-      	$mean_peak_matching_motif =~ s/.*mean\s*//;
-        $mean_peak_matching_motif = sprintf("%.2f", $mean_peak_matching_motif);
+      ## get information on % peaks with a motif and max number sites/peaks
+      #my $nb_peak_matching_motif = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq | wc -l`;
+      my $nb_peak_matching_motif = `grep '; count' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
+      chomp($nb_peak_matching_motif);
+      $nb_peak_matching_motif =~ s/.*count\s*//;
+      ## Get mean number of predicted sites per peak
+      my $mean_peak_matching_motif = `grep '; mean' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
+      chomp($mean_peak_matching_motif);
+      $mean_peak_matching_motif =~ s/.*mean\s*//;
+      $mean_peak_matching_motif = sprintf("%.2f", $mean_peak_matching_motif);
 
-      	## Get max number of predicted sites per peak
-      	my $max_nb_sites = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq -c | sort -r | head -n 1`;
-      	chomp ($max_nb_sites);
-      	$max_nb_sites =~ s/^\s+//;
-      	$max_nb_sites =~ s/\s+(.*)$/<br\/>&nbsp\($1\)/;
+      ## Get max number of predicted sites per peak
+      my $max_nb_sites = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq -c | sort -r | head -n 1`;
+      chomp ($max_nb_sites);
+      $max_nb_sites =~ s/^\s+//;
+      $max_nb_sites =~ s/\s+(.*)$/<br\/>&nbsp\($1\)/;
 
-      	## Get number of peaks from sequence length distribution
-      	my $peak_nb = `grep '; count' $main::outfile{test_seqlen_distrib}`;
-      	chomp($peak_nb);
-      	$peak_nb =~ s/.*count\s*//;
-      	## calculate percentage
-      	my $site_peak_percent = $nb_peak_matching_motif*100/$peak_nb;
-      	$site_peak_percent = sprintf("%.2f", $site_peak_percent);
+      ## Get number of peaks from sequence length distribution
+      my $peak_nb = `grep '; count' $main::outfile{test_seqlen_distrib}`;
+      chomp($peak_nb);
+      $peak_nb =~ s/.*count\s*//;
+      ## calculate percentage
+      my $site_peak_percent = $nb_peak_matching_motif*100/$peak_nb;
+      $site_peak_percent = sprintf("%.2f", $site_peak_percent);
 
-	my $table = "<table><tr>";
-	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
-	$table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
-	$img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_per_peak_graph'});
-	$table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
-	$table .= join("", "<td style='border-bottom-style:none;border-right-style:none;'>",
-		       "<u>Nb peaks with at least one predicted site:</u> ",
-		       $nb_peak_matching_motif,
-		       " (".$site_peak_percent."%) <br>",
-		       "<u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>",
-		       "<u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>");
-	# $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
-	#      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      my $table = "<table><tr>";
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
+      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_per_peak_graph'});
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      $table .= join("", "<td style='border-bottom-style:none;border-right-style:none;'>",
+		     "<u>Nb peaks with at least one predicted site:</u> ",
+		     $nb_peak_matching_motif,
+		     " (".$site_peak_percent."%) <br>",
+		     "<u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>",
+		     "<u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>");
+      # $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
+      #      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
       $table .= "</tr></table>";
 
+      ################################################################
       ## Display UCSC track
       ## If from fasta sequence: first get assembly
       my $genome_assembly ="";
@@ -2910,14 +2913,14 @@ sub SynthesisByMotif {
       }
 
       if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
-	  ## UCSC link to genomic location of predicted sites
-	  my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
-#	my $BED_URL = join ("/", 
-#			    $ENV{rsat_www},
-#			    "tmp", 
-#			    &RSAT::util::ShortFileName($main::dir{output}),
-#			    &RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'}));
-#	$BED_URL =~ s|/+|/|g;
+	## UCSC link to genomic location of predicted sites
+	my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
+	#	my $BED_URL = join ("/", 
+	#			    $ENV{rsat_www},
+	#			    "tmp", 
+	#			    &RSAT::util::ShortFileName($main::dir{output}),
+	#			    &RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'}));
+	#	$BED_URL =~ s|/+|/|g;
 	my $browser_url = "<a target='_blank' href='";
 	$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
 	$browser_url .= "db=".$genome_assembly;
@@ -2934,10 +2937,10 @@ sub SynthesisByMotif {
 				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
 						  ],
 				  "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
-						  ],
+						    ],
 
 				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
-				     "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
+						  "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
 						]
 				 );
       } else {			## without UCSC track
@@ -2947,10 +2950,10 @@ sub SynthesisByMotif {
 					   ],
 				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
 						  ],
-				   "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
-						  ],
+				  "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
+						    ],
 				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
-				   "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
+						  "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
 						]
 				 );
       }
@@ -3341,7 +3344,16 @@ sub SynthesisSequenceComposition {
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Position profile<br><a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a></td>";
       $table .= "</tr></table>";
-      &SyntheticTableAddRow_New($ol."nt composition",
+      my $title;
+      if ($ol == 1) {
+	$title = "Nucleotide";
+      } elsif ($ol == 2) {
+	$title = "Dinucleotide";
+      } else {
+	$title = $ol."-mer oligonucleotide";
+      }
+      $title .= " composition profiles : ";
+      &SyntheticTableAddRow_New($title,
 				$table,
 				$ol."nt", ["freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
 					   "transitions",$main::outfile{$ol."nt_".$seq_type."_transitions"}
