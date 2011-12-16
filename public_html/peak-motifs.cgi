@@ -67,7 +67,6 @@ if ($query->param('title')){
 
 ### peak sequences file
 ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $output_path."/".$output_prefix."peak_seq", 1);
-
 $parameters .= "-i $sequence_file ";
 
 ### control sequences file

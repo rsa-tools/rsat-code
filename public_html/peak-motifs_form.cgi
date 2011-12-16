@@ -44,7 +44,7 @@ $default{nmotifs} = 3;
 
 
 $default{visualize}="none";
-$checked{$default{visualize}} = "CHECKED";	
+$checked{$default{visualize}} = "CHECKED";
 
 
 ## motif database
@@ -153,13 +153,13 @@ print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 
 ################# Motif discovery parameters
  &Panel3();
- 
+
 ################# Database comparison
  &Panel4();
 
 ################# sites and visualization
  &Panel5();
- 
+
 ################################################################
 ### send results by email only
 print "<p>\n";
@@ -176,8 +176,7 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo single
-
+## Data for the demo single-set analysis
 my $descr1 = "<H4>Comment on the demonstration example 1 :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
 $descr1 .= "In this demonstration, we apply time- and memory-efficient
@@ -187,10 +186,12 @@ set of 1000 peak regions bound by the mouse transcription factor Oct4
 $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
-$demo_seq=`cat demo_files/peak-motifs_demo.fa`;
+#$demo_seq=`cat demo_files/peak-motifs_demo.fa`;
+$demo_url= "http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_demo.fa";
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
-print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
+#print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
+print $query->hidden(-name=>'sequence_url1',-default=>$demo_url);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
 print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar');
 print $query->hidden(-name=>'max_seq_len',-default=>'');
@@ -201,8 +202,7 @@ print "</B></TD>\n";
 print $query->end_form;
 
 ################################################################
-## Data for the demo differential (test vs control)
-
+## Data for the demo of differential analysis (test vs control)
 my $descr2 = "<H4>Comment on the demonstration example 2 :</H4>\n";
 $descr2 .= "<blockquote class ='demo'>";
 $descr2 .= "In this demonstration, we run a differential analysis
@@ -213,12 +213,16 @@ $descr2 .= "</blockquote>";
 
 
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
-$demo_seq=`cat demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa`;
-$ctrl_seq=`cat demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa`;
+#$demo_seq=`cat demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa`;
+$demo_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa";
+#$ctrl_seq=`cat demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa`;
+$ctrl_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa";
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr2);
-print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
-print $query->hidden(-name=>'sequence2',-default=>$ctrl_seq);
+#print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
+print $query->hidden(-name=>'sequence_url1',-default=>$demo_url);
+#print $query->hidden(-name=>'sequence2',-default=>$ctrl_seq);
+print $query->hidden(-name=>'sequence_url2',-default=>$ctrl_url);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
 print $query->hidden(-name=>'sequence_format2',-default=>'fasta');
 print $query->hidden(-name=>'title',-default=>'p300 heart versus limb Blow2010');
@@ -258,12 +262,12 @@ sub Panel1 {
 			  -size=>25);
 
  # print "</div>\n";
-  
+
   print "</td>
   </tr>
-  
+
   <tr><td style='padding-right:15px;border-right:1px solid #2D282E;'>";
-  
+
   print "<span title=\"Provide here your peak sequences.This is the only mandatory input of the whole form\">";
    &MultiSequenceChoice("Peak sequences",1);
 	print "</span>";
@@ -338,7 +342,7 @@ print "<ul>\n";
 print "<br>";
 print $query->checkbox(-name=>'oligo-analysis',
 		       -checked=>$default{"oligo-analysis"},
-		       -label=>'');  
+		       -label=>'');
 print "&nbsp;<b>Discover over-represented words</b> <a href='help.oligo-analysis.html'> [oligo-analysis]</a>\n";
 
 
@@ -360,11 +364,11 @@ print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer length</a>
 
 print $query->checkbox(-name=>'oligo_length6',
 		       -checked=>$default{oligo_length6},
-		       -label=>'6'); 
+		       -label=>'6');
 print "&nbsp;"x2;
 print $query->checkbox(-name=>'oligo_length7',
 		       -checked=>$default{oligo_length7},
-		       -label=>'7'); 
+		       -label=>'7');
 print "&nbsp;"x2;
 print "<br><i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
 
@@ -422,7 +426,7 @@ print $strandPopup;
 #
 #print $query->checkbox(-name=>'local-word-analysis_dyads',
 #		       -checked=>$default{'local-word-analysis_dyads'},
-#		       -label=>'');  
+#		       -label=>'');
 #print "&nbsp;<b>Discover spaced word pairs with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
 #print "<br/>";
 
@@ -431,7 +435,7 @@ print $strandPopup;
 #
 #print $query->checkbox(-name=>'position-analysis_dyads',
 #		       -checked=>$default{"position-analysis_dyads"},
-#		       -label=>'');  
+#		       -label=>'');
 #print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.local-word-analysis.html'>[position-analysis]</a>\n";
 #print "<br/>";
 
@@ -444,7 +448,7 @@ print $strandPopup;
 #print "<br/>";
 print "</fieldset><p/>";
 
-print '	
+print '
 </div></div>';
 
 }
@@ -493,8 +497,8 @@ sub Panel4 {
 			  -size=>10);
   print "<br>Database and reference motifs (matrices) should be in <b>Transfac format</b>";
   print "<br>(other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
- 
- 
+
+
   print "</fieldset><p/>";
 
   print '
@@ -504,89 +508,58 @@ sub Panel4 {
 }
 
 ##########################################
- sub Panel5  {
-print "
-<div class=\"menu_heading_closed\" onclick=\"toggleMenu('104')\" id=\"heading104\">
-<span title=\"Input peaks are scanned with the discovered motifs to obtain their exact position. These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...)\"><b>Locate motifs and export predicted sites as custom UCSC tracks</b></span> </div>
-<div id=\"menu104\" class=\"menu_collapsible\">";
+
+sub Panel5  {
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu('104')\" id=\"heading104\">";
+  print "<span title=\"Input peaks are scanned with the discovered motifs to obtain their exact position.\n";
+  print "These putative binding sites can be visualized on genome browsers (Ensembl, UCSC genome browser,...)\">\n";
+  print "<b>Locate motifs and export predicted sites as custom UCSC tracks</b></span>";
+
+  print "</div>";
+  print "<div id=\"menu104\" class=\"menu_collapsible\">";
 
 
-
-#
-### matrix-scan
-#
-print "<fieldset>
-<legend><b><a href='help.peak-motifs.html#tasks'>Locate motifs </a></b></legend>";
-print $query->checkbox(-name=>'matrix-scan-quick',
-		       -checked=>$default{matrix-scan-quick},
-		       -label=>'');
-print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href='help.matrix-scan.html'>[matrix-scan]</a>\n";
-
-print "<br/>";
-
-#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.matrix-scan.html'>Background model: Markov order</a>&nbsp;</B>\n";
-#	$oligoPopup = "";
-#    $oligoPopup .=  "<SELECT NAME='markov-scan'>\n";
-#	$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>0</option>\n";
-#	$oligoPopup .=  "<OPTION  SELECTED VALUE='2'>1</option>\n";
-#	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>2</option>\n";
-#    $oligoPopup .=  "</SELECT>";
-#   print $oligoPopup;
-    
-#print "<br/>";
-
-### threshold (common to all programs)
-#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.matrix-scan.html'>Upper threshold on P-value</a>&nbsp;</B>\n";
-#print  $query->textfield(-name=>'uth_pval',
-#							      -default=>$default{uth_pval},
-#							      -size=>4);
+  ### matrix-scan
+  print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Locate motifs </a></b></legend>";
+  print $query->checkbox(-name=>'matrix-scan-quick',
+			 -checked=>$default{'matrix-scan-quick'},
+			 -label=>'');
+  print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href='help.matrix-scan.html'>[matrix-scan]</a>\n";
+  print "<br/>";
 
 
-
-print "</fieldset><p/>";
-
-
-################################################################
-## UCSC custom track
-##
-print "<fieldset>
-<legend><b><a href='help.peak-motifs.html#tasks'>Visualize peaks and sites in genome browser </a></b></legend>";
-
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b>No</b>");
-print "<br/>";
-
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
-       "<b>Peak coordinates specified in fasta headers of the test sequence file (<a href=''>Galaxy</a> format)</b>",
-       "<br>","&nbsp;"x7,"(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
-#print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
-#       "<b>Yes; sequences fetched from <a href=''>Galaxy</a></b>",
-#       " (fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
-
-print "<br/>";
-print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Peak coordinates provided as a custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
-print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
-#print "<br/>";
-#print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Yes; use the following BED file.</b>");
-#print "<br/>";
+  print "</fieldset><p/>";
 
 
-#print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>BED file with peak coordinates</a>&nbsp;</B>\n";
-print "&nbsp;"x7, $query->filefield(-name=>'bed_file',
-			-size=>10);
+  ################################################################
+  ## Visualize UCSC custom track
+  print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Visualize peaks and sites in genome browser </a></b></legend>";
 
-### assembly
-print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>Assembly version (UCSC)</a>&nbsp;</B>\n";
-print  $query->textfield(-name=>'assembly',
+  print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b>No</b>");
+  print "<br/>";
+
+  print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
+	 "<b>Peak coordinates specified in fasta headers of the test sequence file (<a href=''>Galaxy</a> format)</b>",
+	 "<br>","&nbsp;"x7,"(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
+
+  print "<br/>";
+  print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Peak coordinates provided as a custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
+  print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
+
+  print "&nbsp;"x7, $query->filefield(-name=>'bed_file',
+				      -size=>10);
+
+  ### assembly
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>Assembly version (UCSC)</a>&nbsp;</B>\n";
+  print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
 
-print "<br/>
-</fieldset><p/>";
+  print "<br/></fieldset><p/>";
 
-#########
-print "
-</div>\n
-</div>\n
-<p class='clear'></p>\n";
+  ## Close divisions
+  print "</div>\n";
+  print "</div>\n";
+  print "<p class='clear'></p>\n";
 
  }
