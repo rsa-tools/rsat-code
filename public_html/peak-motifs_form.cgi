@@ -211,7 +211,6 @@ $descr2 .= "In this demonstration, we run a differential analysis
   transcription factor (p300) (Blow et al, 2010)</p>\n";
 $descr2 .= "</blockquote>";
 
-
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
 #$demo_seq=`cat demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa`;
 $demo_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa";
@@ -233,7 +232,6 @@ print $query->hidden(-name=>'visualize',-default=>"galaxy");
 print $query->submit(-label=>"DEMO test vs ctrl");
 print "</B></TD>\n";
 print $query->end_form;
-
 
 ##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
 print "<td><b><a href='help.peak-motifs.html'>[MANUAL]</a></B></TD>\n";
