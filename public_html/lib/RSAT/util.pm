@@ -495,37 +495,37 @@ Usage: &RSAT::util::ChechOutDir($my_dir);
 
 =cut
 sub CheckOutDir {
-    my ($output_dir, $umask) = @_;
+  my ($output_dir, $umask) = @_;
 
-    unless ($output_dir) {
-	warn "; CheckOutDir\tNo directory has been specified\n" if ($main::verbose >= 1);
-	return;
-    }
+  unless ($output_dir) {
+    &RSAT::message::Warning("&RSAT::util::CheckOutDir()", "No directory has been specified.", "Command ignored.") if ($main::verbose >= 1);
+    return;
+  }
 
-    $umask = 0002 unless ($umask);
-    umask($umask);
-    if ($main::verbose >= 4) {
-	my $wd = `pwd`;
-	warn "; Current directory\t", $wd, "\n";
-    }
+  $umask = 0002 unless ($umask);
+  umask($umask);
+  if ($main::verbose >= 4) {
+    my $wd = `pwd`;
+    &RSAT::message::Info("Current directory", $wd);
+  }
 
-    if ($output_dir) {
-	if (-d $output_dir) {
-	    warn "; Directory $output_dir already exists\n" if ($main::verbose >= 4);
-	    return;
-	}
-	warn "; Creating directory $output_dir\n" if ($main::verbose >= 3);
-	mkdir ($output_dir, 0755);
-	unless (-d $output_dir) {
-	    warn "Creating directory with all parents $output_dir\n" if ($main::verbose >= 3);
-	    system "mkdir -p $output_dir"; ## create output directory with all parents
-	}
-	unless (-d $output_dir) {
-	    &RSAT::error::FatalError("Cannot create output directory $output_dir");
-	}
-    } else {
-	$output_dir = ".";
+  if ($output_dir) {
+    if (-d $output_dir) {
+      &RSAT::message::Warning("&RSAT::util::CheckOutDir()", "Directory $output_dir already exists") if ($main::verbose >= 4);
+      return;
     }
+    &RSAT::message::Info("Creating directory", $output_dir) if ($main::verbose >= 3);
+    mkdir ($output_dir, 0755);
+    unless (-d $output_dir) {
+      &RSAT::message::Info("Creating directory with all parents", $output_dir) if ($main::verbose >= 3);
+      system "mkdir -p $output_dir"; ## create output directory with all parents
+    }
+    unless (-d $output_dir) {
+      &RSAT::error::FatalError("Cannot create output directory $output_dir");
+    }
+  } else {
+    $output_dir = ".";
+  }
 }
 
 ################################################################
@@ -909,7 +909,7 @@ sub doit {
   } else {
     ## Verbose
     if (($dry) || ($verbose >= 2)) {
-      warn "\n";
+#      warn "\n";
       &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 4);
       &RSAT::message::TimeWarn($command);
     }
@@ -958,7 +958,7 @@ sub one_command {
       $main::batch_cmd = "$cmd";
     }
   } else {
-    print $main::out ("\n", "; ", &AlphaDate(), "\n", $cmd, "\n\n") if (($print_out) || ($main::verbose >= 3));
+    print $main::out ("\n", "; ", &AlphaDate(), "\n", &hide_RSAT_path($cmd), "\n\n") if (($print_out) || ($main::verbose >= 3));
     &doit($cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
   }
 }
