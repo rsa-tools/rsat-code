@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.222 2011/12/16 09:44:09 jvanheld Exp $
+# $Id: peak-motifs,v 1.223 2011/12/18 12:44:28 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.222 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.223 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -275,6 +275,13 @@ package main;
   ################################################################
   ## Open output stream
   $main::out = &OpenOutputFile($main::outfile{log});
+
+  ## Print the full command to the log file, for reproducibility +
+  ## debugging
+  print $main::out "; ", &RSAT::util::AlphaDate(), "\n";
+  print $main::out "peak-motifs ";
+  &PrintArguments($main::out, 1);
+  print $main::out "\n\n";
 
   &OpenSynthesis() if ($progressive_synthesis);
 
@@ -627,7 +634,11 @@ sub CheckSubDir {
 ################################################################
 ## Set output file names
 sub SetOutFileNames {
-  ## Purged sequences
+
+
+  ################################################################
+  ## Output file names for peaks and their composition analysis (apply
+  ## to both test and control sequences).
   foreach my $seq_type (@seq_types) {
     my @seq_suffix = ();
     if (defined($main::param{max_seq_len})) {
@@ -636,11 +647,15 @@ sub SetOutFileNames {
     if (defined($main::param{top_peaks})) {
       push @seq_suffix, "top".$main::param{top_peaks};
     }
-#    if (defined($main::param{max_seq_len})) {
+
+
+    ## Converted sequences
     $main::outfile{$seq_type."_converted"} = &OutFileName("data/sequences",
 							  ".fasta",
 							  $seq_type,
 							  @seq_suffix);
+
+    ## Purged sequences
     $main::outfile{$seq_type."_purged"} = &OutFileName("data/sequences",
 						       ".fasta",
 						       $seq_type,
@@ -649,36 +664,21 @@ sub SetOutFileNames {
 						       "ml".$main::param{purge_match_length},
 						       "mis".$main::param{purge_mismatches},
 						      );
-    #    $seqfile{$seq_type} = $main::outfile{$seq_type."_converted"};
-    #  } else {
-    #      $main::outfile{$seq_type."_purged"} = &OutFileName("data/sequences",
-    # ".fasta",
-    #							  #							 $seq_type,
-    #							 "purged",
-    #							 "ml".$main::param{purge_match_length},
-    #							 "mis".$main::param{purge_mismatches});
-    $seqfile{$seq_type} = $main::infile{$seq_type."_seq"};
-    #    }
 
-    ## Sequence lengths
-    $main::outfile{$seq_type."_seqlen"} = &OutFileName("data/sequences", ".tab", $seq_type."_seqlen");
-    $main::outfile{$seq_type."_seqlen_distrib"} = &OutFileName("data/sequences", ".tab", $seq_type."_seqlen_distrib");
-    $main::outfile{$seq_type."_seqlen_distrib_graph"} = &OutFileName("data/sequences", ".".$param{img_format}, $seq_type."_seqlen_distrib");
-    #    if ($infile{ctrl_seq}) {
-    #	$main::outfile{"ctrl_seqlen"} = &OutFileName("data/sequences", ".tab", "ctrl_seqlen");
-    #	$main::outfile{"ctrl_seqlen_distrib"} = &OutFileName("data/sequences", ".tab", "ctrl_seqlen_distrib");
-    #	$main::outfile{"ctrl_seqlen_distrib_graph"} = &OutFileName("data/sequences", $param{img_format}, "ctrl_seqlen_distrib");
-    #    }
+#    ## Prefix for sequence files
+#    $seqfile{$seq_type} = $main::infile{$seq_type."_seq"};
 
-    ## BED file from fasta header (e.g. Galaxy)
+
+    ## BED files for loading the peaks in genome browser (e.g. UCSC)
     if (($main::infile{coord})||($main::param{seq_source})) {
       $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
       push @bed_files, $main::outfile{$seq_type."_seq_coord"};
     }
 
-    ## Merged sites
-    $main::outfile{"merged_sites"} = &OutFileName("results/sites", ".tab", "all_motifs_seqcoord");
-    $main::outfile{"merged_sites_bed"} = &OutFileName("results/sites", ".bed", "all_motifs_seqcoord");
+    ## Sequence lengths
+    $main::outfile{$seq_type."_seqlen"} = &OutFileName("data/sequences", ".tab", $seq_type."_seqlen");
+    $main::outfile{$seq_type."_seqlen_distrib"} = &OutFileName("data/sequences", ".tab", $seq_type."_seqlen_distrib");
+    $main::outfile{$seq_type."_seqlen_distrib_graph"} = &OutFileName("data/sequences", ".".$param{img_format}, $seq_type."_seqlen_distrib");
 
     ################################################################
     ## Compositional Profiles
@@ -709,6 +709,10 @@ sub SetOutFileNames {
     }
   }
 
+  ################################################################
+  ## Merged sites
+  $main::outfile{"merged_sites"} = &OutFileName("results/sites", ".tab", "all_motifs_seqcoord");
+  $main::outfile{"merged_sites_bed"} = &OutFileName("results/sites", ".bed", "all_motifs_seqcoord");
 
   ################################################################
   ## Background model for matrix scanning
@@ -980,7 +984,8 @@ sub SetOutFileNames {
 sub PurgeSeq {
   my ($seq_type) = @_;
 
-  my $seq_file = $seqfile{$seq_type};
+#  my $seq_file = $seqfile{$seq_type};
+  my $seq_file = $main::infile{$seq_type."_seq"};
 
   ## Convert sequences to standard fasta format, mask non-DNA seqences
   ## selectd top peaks if required, and truncate sequences to max
@@ -1056,15 +1061,25 @@ sub SequenceLengths {
   ################################################################
   ## Convert the genomic coordinates
   ## if these are embeded in the fasta headers
-  if ($main::param{seq_source}) {
+  if (($main::param{seq_source})
+      && ($seq_type eq "test") ## TO DISCUSS: SHOULD WE ALSO EXPORT CONTROL PEAKS IN BED FORMAT ? CAN BE PROBLEMATIC BECAUSE A USER CAN ENTER GALAXY-FORMATTED SEQ FOR TEST BUT NOT FOR CONTROL. IN THE MEAN TIME I DESACTIVATE THIS OPTION
+     ) {
     &RSAT::message::TimeWarn("Converting fasta headers to BED file") if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/convert-features";
-    $cmd .= " -from ".$main::param{seq_source}."_seq -i ".$infile{test_seq};
+    $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
+    $cmd .= " -from ".$main::param{seq_source}."_seq"; ## e.g. galaxy_seq
     $cmd .= " -to bed ";
     my $bed_prefix = $main::param{title};
-    my $new_bed_header= "track name=\"peaks\" description=\"RSAT peak-motifs ".$bed_prefix.": peaks\" visibility=2 use_score=1 color=13,115,67";
-    $cmd .= " | sed '1s/^.*/".$new_bed_header."/' "; ## change first line
-    $cmd .= " > ".$main::outfile{"test_seq_coord"};
+    $bed_prefix .= " ".$seq_type;
+    my $bed_color;
+    if ($seq_type eq "ctrl") {
+      $bed_color = "128,128,128";
+    } else {
+      my $bed_color = "13,115,67";
+    }
+    my $bed_header= "track name=\"".$seq_type."_peaks\" description=\"RSAT peak-motifs ".$bed_prefix.": peaks\" visibility=2 use_score=1 color=".$bed_color;
+    $cmd .= " | sed '1s/^.*/".$bed_header."/' "; ## change first line
+    $cmd .= " > ".$main::outfile{$seq_type."_seq_coord"};
     &one_command($cmd,1);
   }
 }
@@ -2365,8 +2380,8 @@ sub ScanSequences {
       $cmd .= " -origin center ";
       $cmd .= " -to bed ";
       my $bed_prefix = $main::param{title};
-      my $new_bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs ".$bed_prefix.": ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
-      $cmd .= " | sed '1s/^.*/".$new_bed_header."/' ";## change first line
+      my $bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs ".$bed_prefix.": ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
+      $cmd .= " | sed '1s/^.*/".$bed_header."/' ";## change first line
       $cmd .= " > ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
       &one_command($cmd,1);
     }
