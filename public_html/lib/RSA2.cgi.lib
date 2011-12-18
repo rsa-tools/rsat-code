@@ -317,7 +317,6 @@ sub SequenceChoice {
 #################################
 #Multiple Sequence choice
 sub MultiSequenceChoice {
-
   my $seq_title = shift(@_);
   my $seq_num = shift(@_);
   my $sequenceChoiceString = "";
@@ -508,7 +507,6 @@ sub GetSequenceFile {
 ########################
 # MultiGetSequenceFile
 sub MultiGetSequenceFile {
-
   my ($seq_num, $sequence_file, $required_opt) = @_ ;
 
   ### sequence file format
@@ -518,7 +516,8 @@ sub MultiGetSequenceFile {
 #    &cgiError("Invalid sequence format : '$sequence_format'.");
 #  }
 
-  ### upload sequence file from the client side
+  ################################################################
+  ## Upload sequence file from the client
   my $upload_file = $query->param('uploaded_file'.$seq_num);
   if ($upload_file) {
     if ($upload_file =~ /\.gz$/) {
