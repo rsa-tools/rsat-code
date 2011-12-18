@@ -37,7 +37,7 @@ $default{'local-word-analysis_dyads'} ="";
 $default{"position-analysis_dyads"} ="";
 $default{'matrix-scan-quick'}="checked";
 $default{compare_motif_db}="checked";
-$default{title}="title for this analysis";
+$default{title}="";
 $default{max_seq_len}="";
 $default{top_sequences}="";
 $default{nmotifs} = 3;
@@ -49,7 +49,7 @@ $checked{$default{visualize}} = "CHECKED";
 
 ## motif database
 $default{compare_motif_database}="jaspar_core_vertebrates";
-$default{custom_motif_db_name}="title for this collection";
+$default{custom_motif_db_name}="custom_motif_collection";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -164,7 +164,7 @@ print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 ### send results by email only
 print "<p>\n";
 #&SelectOutput('email', email_only=>1);
-&SelectOutput();
+&SelectOutput('email');
 print "<i>Note: email output is preferred for very large datasets or many comparisons with motifs collections</i>\n";
 
 ################################################################
@@ -257,7 +257,7 @@ sub Panel1 {
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
   print "<table>
   <tr><td colspan='2' style='text-align:center;'>";
-   print "<b>Title</B>\n";
+  print "<b>Title</b> <font color='red'>(mandatory)</font>\n";
   print $query->textfield(-name=>'title',
 			  -default=>$default{title},
 			  -size=>25);
@@ -270,7 +270,7 @@ sub Panel1 {
   <tr><td style='padding-right:15px;border-right:1px solid #2D282E;'>";
 
   print "<span title=\"Provide here your peak sequences.This is the only mandatory input of the whole form\">";
-   &MultiSequenceChoice("Peak sequences",1);
+   &MultiSequenceChoice("Peak sequences <font color='red'>(mandatory)</font>",1);
 	print "</span>";
     print "<p/>\n";
 	print "</td><td style='padding-left:15px;'>";
