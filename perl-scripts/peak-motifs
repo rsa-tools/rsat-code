@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.223 2011/12/18 12:44:28 jvanheld Exp $
+# $Id: peak-motifs,v 1.224 2011/12/18 13:04:48 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.223 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.224 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -669,12 +669,6 @@ sub SetOutFileNames {
 #    $seqfile{$seq_type} = $main::infile{$seq_type."_seq"};
 
 
-    ## BED files for loading the peaks in genome browser (e.g. UCSC)
-    if (($main::infile{coord})||($main::param{seq_source})) {
-      $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
-      push @bed_files, $main::outfile{$seq_type."_seq_coord"};
-    }
-
     ## Sequence lengths
     $main::outfile{$seq_type."_seqlen"} = &OutFileName("data/sequences", ".tab", $seq_type."_seqlen");
     $main::outfile{$seq_type."_seqlen_distrib"} = &OutFileName("data/sequences", ".tab", $seq_type."_seqlen_distrib");
@@ -708,6 +702,20 @@ sub SetOutFileNames {
       $main::outfile{$ol."nt_".$seq_type."_profiles_graph"} .= ".".$main::param{img_format};
     }
   }
+
+  ################################################################
+  ## BED files for loading test peaks in genome browser (e.g. UCSC)
+  ##
+  if (($main::infile{coord}) || ($main::param{seq_source})) {
+    ## TO DISCUSS: SHOULD WE ALSO EXPORT CONTROL PEAKS IN BED FORMAT ?
+    ## CAN BE PROBLEMATIC BECAUSE A USER CAN ENTER GALAXY-FORMATTED SEQ
+    ## FOR TEST BUT NOT FOR CONTROL. IN THE MEAN TIME I DESACTIVATE THIS
+    ## OPTION.
+    $seq_type = "test";
+    $main::outfile{$seq_type."_seq_coord"} = &OutFileName("data/sequences", ".bed", $seq_type."_seqcoord");
+    push @bed_files, $main::outfile{$seq_type."_seq_coord"};
+  }
+
 
   ################################################################
   ## Merged sites
@@ -1061,9 +1069,13 @@ sub SequenceLengths {
   ################################################################
   ## Convert the genomic coordinates
   ## if these are embeded in the fasta headers
+  ##
+  ## TO DISCUSS: SHOULD WE ALSO EXPORT CONTROL PEAKS IN BED FORMAT ?
+  ## CAN BE PROBLEMATIC BECAUSE A USER CAN ENTER GALAXY-FORMATTED SEQ
+  ## FOR TEST BUT NOT FOR CONTROL. IN THE MEAN TIME I DESACTIVATE THIS
+  ## OPTION.
   if (($main::param{seq_source})
-      && ($seq_type eq "test") ## TO DISCUSS: SHOULD WE ALSO EXPORT CONTROL PEAKS IN BED FORMAT ? CAN BE PROBLEMATIC BECAUSE A USER CAN ENTER GALAXY-FORMATTED SEQ FOR TEST BUT NOT FOR CONTROL. IN THE MEAN TIME I DESACTIVATE THIS OPTION
-     ) {
+      && ($seq_type eq "test")) {
     &RSAT::message::TimeWarn("Converting fasta headers to BED file") if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/convert-features";
     $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
@@ -1075,7 +1087,7 @@ sub SequenceLengths {
     if ($seq_type eq "ctrl") {
       $bed_color = "128,128,128";
     } else {
-      my $bed_color = "13,115,67";
+      $bed_color = "13,115,67";
     }
     my $bed_header= "track name=\"".$seq_type."_peaks\" description=\"RSAT peak-motifs ".$bed_prefix.": peaks\" visibility=2 use_score=1 color=".$bed_color;
     $cmd .= " | sed '1s/^.*/".$bed_header."/' "; ## change first line
@@ -2444,16 +2456,45 @@ sub ScanSequences {
   ## Generate a single file with the predicted sites for all
   ## discovered motifs (+ peaks if genomic coordinates)
 
-  my $merge_sites_cmd = "cat ";
-  $merge_sites_cmd .= join " ", @site_files;
-  $merge_sites_cmd .= " > ".$main::outfile{merged_sites};
-  &one_command($merge_sites_cmd, 1);
+  ## File in tab-delimited format, compatible with feature-maps
+  if (scalar (@site_files) > 0) {
+    my @checked_site_files = ();
+    foreach my $file (@site_files) {
+      if (-e $file) {
+	push @checked_site_files, $file;
+      } else {
+	&RSAT::message::Warning("&ScanSequences()", "site merging", "file does not exist", $file) if ($main::verbose >= 1);
+      }
+    }
+    if (scalar(@checked_site_files) > 0) {
+      my $merge_sites_cmd = "cat ";
+      $merge_sites_cmd .= join " ", @checked_site_files;
+      $merge_sites_cmd .= " > ".$main::outfile{merged_sites};
+      &one_command($merge_sites_cmd, 1);
+    }
+  }
 
+
+  ## File in bed format, for uploading in Genome Browsers (e.g. UCSC)
   if (($main::infile{coord})||($main::param{seq_source})) {
-    my $merge_bed_cmd = "cat ";
-    $merge_bed_cmd .= join " ", @bed_files;
-    $merge_bed_cmd .= " > ".$main::outfile{merged_sites_bed};
-    &one_command($merge_bed_cmd, 1);
+    if (scalar (@bed_files) > 0) {
+      my @checked_bed_files = ();
+      foreach my $file (@bed_files) {
+	if (-e $file) {
+	  push @checked_bed_files, $file;
+	} else {
+	  &RSAT::message::Warning("&ScanSequences()", "bed merging", "file does not exist", $file) if ($main::verbose >= 1);
+	}
+      }
+
+      if (scalar(@checked_bed_files) > 0) {
+	my $merge_beds_cmd = "cat ";
+	$merge_beds_cmd .= join " ", @checked_bed_files;
+	$merge_beds_cmd .= " > ".$main::outfile{merged_sites_beds};
+	&one_command($merge_beds_cmd, 1);
+      }
+    }
+
   }
 }
 
