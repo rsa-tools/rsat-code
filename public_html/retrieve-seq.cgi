@@ -25,7 +25,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &S
 $query = new CGI;
 
 
-#$ENV{rsat_echo}=2;
+$ENV{rsat_echo}=1;
 
 
 ### print the header
