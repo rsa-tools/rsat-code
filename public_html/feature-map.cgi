@@ -295,8 +295,6 @@ if ($ENV{rsat_echo} >= 2) {
     exit(0)
 } 
 
-print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
-
 ### execute the command
 system "$feature_map_command $parameters ";
 &DelayedRemoval($feature_file);
