@@ -17,6 +17,8 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
+$ENV{rsat_echo}=1;
+
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map ";
 $prefix = "feature-map";
@@ -292,6 +294,8 @@ if ($ENV{rsat_echo} >= 2) {
     print $query->end_html();
     exit(0)
 } 
+
+print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
 
 ### execute the command
 system "$feature_map_command $parameters ";
