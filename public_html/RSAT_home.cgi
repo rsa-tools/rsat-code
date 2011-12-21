@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.66 2011/12/09 09:43:57 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.67 2011/12/21 15:07:17 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -24,7 +24,6 @@ print $query->start_html(-class => "info",
 			 -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
-
 print "<blockquote>";
 
 print <<EndText;
@@ -162,11 +161,21 @@ print <<EndText;
   </td>
 
   <td>
+  <a href="http://mamaze.ulb.ac.be/rsat/" target="_top">
+  <b>Brussels - Belgium</b><br>
+  <IMG SRC="images/frites.jpg" HEIGHT=80 BORDER=0><br>
+  http://mamaze.ulb.ac.be/rsat/</a>
+  </td>
+
+
+  <td>
   <a href="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
   <b>Brussels (2) - Belgium</b><br>
   <IMG SRC="images/Atomium_icon_80.png" HEIGHT=80 BORDER=0><br>
   http://wwwsup.scmbb.ulb.ac.be/rsat/</a>
   </td>
+
+</tr><tr>
 
   <td ALIGN=CENTER>
   <a href="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
@@ -174,9 +183,6 @@ print <<EndText;
   <IMG SRC="images/zapata.jpg" HEIGHT=80 BORDER=0><br>
   http://embnet.ccg.unam.mx/rsa-tools/</a>
   </td>
-
-</tr>
-<tr>
 
   <td align=center>
   <a href="http://bongcam1.hgen.slu.se/rsat/" target="_top">
@@ -195,14 +201,14 @@ print <<EndText;
 <br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
   </td>
 
+  </tr><tr>
+
   <td align=center>
   <a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
   <b>ENS Paris - France</b><br>
   <IMG SRC="images/paris.jpg" height=80 border=0><br>
   http://rsat01.biologie.ens.fr/rsa-tools/</a></font>
   </td>
-
-  </tr><tr>
 
   <td align=center>
   <a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
