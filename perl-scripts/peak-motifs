@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.225 2011/12/18 13:09:45 jvanheld Exp $
+# $Id: peak-motifs,v 1.226 2012/01/08 21:03:24 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.225 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.226 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1116,7 +1116,8 @@ sub CompositionProfiles {
     $cmd .= " -1str";
     $cmd .= " ".$main::param{profiles_noov} if ($main::param{profiles_noov} eq "-noov"); ## The option -ovlp is not supported by count-words
     $cmd .= " > ".$main::outfile{$ol."nt_".$seq_type."_freq"};
-    &one_command($cmd, 1,$main::outfile{$ol."nt_".$seq_type."_freq"}."_time.txt");
+
+    &one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_freq"}."_time.txt");
 
     ## Convert background model in INCLUSIVE format for matrix-scan-quick
     $cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
