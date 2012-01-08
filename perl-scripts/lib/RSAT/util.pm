@@ -853,6 +853,7 @@ sub doit {
     my $qsub_manager="";
     if (defined($ENV{QSUB_MANAGER})) {
       $qsub_manager=$ENV{QSUB_MANAGER};
+
     } else {
       $ENV{QSUB_MANAGER} = "sge";
       &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($verbose >= 1);
@@ -916,7 +917,9 @@ sub doit {
 
     ## Send the command to the queue
     unless ($dry) {
-      my $error = system $command;
+
+#	&RSAT::message::Debug("Running command", $command) if ($main::verbose >= 3);
+      my $error = system($command);
       if ($die_on_error) {
 	if ($error == -1) {
 	  &RSAT::error::FatalError("Could not execute the command\n\t$command");
@@ -945,10 +948,16 @@ sub doit {
 ## measured and stored in this file.
 ##
 sub one_command {
-  my ($cmd, $print_out, $time_file) = @_;
+  my ($cmd, $print_out, $time_file, $err_file) = @_;
 
+  ## Store execution time in a file
   if ($time_file) {
-    $cmd = " time (".$cmd.") >& ".$time_file;
+      $cmd = 'time -o '.$time_file.' '.$cmd;
+  }
+
+  ## Store STDERR in a file
+  if ($err_file) {
+      $cmd = $cmd." >&".$err_file;
   }
 
   if ($main::batch) {
