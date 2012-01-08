@@ -9,7 +9,7 @@ MAKEFILE=${RSAT}/makefiles/distribution.mk
 MAKE = make -sk -f ${MAKEFILE}
 
 ## Archive file
-DATE=`date +%Y%m%d`
+DATE=`date +%Y-%m-%d`
 ARCHIVE_PREFIX=rsa-tools_${DATE}
 ARCHIVE_PREFIX_METAB=metabolic-tools_${DATE}
 ARCHIVE=rsa-tools/${ARCHIVE_PREFIX}
@@ -105,9 +105,9 @@ zip_archive:
 
 ################################################################
 ## Publish the tar archive of the whole distribution
-PUB_LOGIN=jvanheld
-PUB_SERVER=rsat.bigre.ulb.ac.be
-PUB_DIR=/home/jvanheld/public_html/rsat_distrib/
+PUB_LOGIN=rsat
+PUB_SERVER=mamaze.ulb.ac.be
+PUB_DIR=/home/${PUB_LOGIN}/public_html/rsat_distrib/
 PUB_FORMAT=tar.gz
 clean_distrib_site:
 	ssh ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsa-tools_*.tar.gz ${PUB_DIR}/previous_versions/"
