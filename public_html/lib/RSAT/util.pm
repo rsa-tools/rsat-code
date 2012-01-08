@@ -948,17 +948,19 @@ sub doit {
 ## measured and stored in this file.
 ##
 sub one_command {
-  my ($cmd, $print_out, $time_file, $err_file) = @_;
+#  my ($cmd, $print_out, $time_file, $err_file) = @_;
+  my ($cmd, $print_out, $time_file) = @_;
 
   ## Store execution time in a file
   if ($time_file) {
-      $cmd = 'time -o '.$time_file.' '.$cmd;
+#      $cmd = 'time -o '.$time_file.' '.$cmd;
+      $cmd = 'time ('.$cmd.') >& '.$time_file;
   }
 
-  ## Store STDERR in a file
-  if ($err_file) {
-      $cmd = $cmd." >&".$err_file;
-  }
+#   ## Store STDERR in a file
+#   if ($err_file) {
+#       $cmd = $cmd." >&".$err_file;
+#   }
 
   if ($main::batch) {
     if ($main::batch_cmd =~/\S/) {
