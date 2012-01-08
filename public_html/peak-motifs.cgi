@@ -59,11 +59,21 @@ if ($query->param('title')){
   $title =~ s/\//_/g;
   $title =~ s/:/_/g;
   $parameters .= " -title '".$title."' ";
+} else {
+  &RSAT::error::FatalError("You must enter a title for this analysis");
 }
 
-## default
-@tasks = ("purge", "seqlen", "composition", "disco", "merge_words", "collect_motifs", "motifs_vs_motifs", "timelog", "archive", "synthesis");
-
+## Default tasks
+@tasks = ("purge",
+	  "seqlen",
+	  "composition",
+	  "disco",
+	  "merge_words",
+	  "collect_motifs",
+	  "motifs_vs_motifs",
+	  "timelog",
+	  "archive",
+	  "synthesis");
 
 ### peak sequences file
 ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $output_path."/".$output_prefix."peak_seq", 1);
