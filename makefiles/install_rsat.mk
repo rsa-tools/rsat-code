@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.54 2011/12/13 01:04:51 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.55 2012/01/08 19:49:59 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -62,6 +62,9 @@ PERL_MODULES= \
 	XML::LibXML \
 	DBD::mysql \
 	DBI \
+	XML::Compile::SOAP11 \
+	XML::Compile::WSDL11 \
+	XML::Compile::Transport::SOAPHTTP \
 	SOAP::WSDL \
 	SOAP::Lite \
 	Module::Build::Compat \
