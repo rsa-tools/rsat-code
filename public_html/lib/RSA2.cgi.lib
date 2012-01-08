@@ -1551,7 +1551,7 @@ sub EmailTheResult {
     my $submission_message = $mail_title."\n";
     $submission_message .= "\n\nCommand: ".$clean_command;
     $submission_message .= "\n\nYour task has been submitted to the RSAT server.";
-    $submission_message .= "\n\nAfter completion of the task, an email will be sent to ".$email_address, "." unless ($no_email);
+    $submission_message .= "\n\nAfter completion of the task, an email will be sent to ".$email_address unless ($no_email);
     $submission_message .= "\n\nThe result will become available at\n";
     $submission_message .= "\t".${result_URL}."\n\n";
 
