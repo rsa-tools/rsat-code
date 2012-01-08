@@ -17,7 +17,7 @@ use MyInterfaces::RSATWebServices::RSATWSPortType;
 warn "\nThis demo script gets the list of supported organisms from the remote RSAT server\n\n";
 
 ## WSDL location
-my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+my $server = $ARGV[0] || 'http://rsat.ulb.ac.be/rsat/web_services';
 
 ## Service call
 my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
