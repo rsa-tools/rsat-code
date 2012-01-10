@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="progression.xsl"?>
+<pipeline elapsedTime="4.15" endTime="Oct 03 2011 13:48:35" name="Validation_SimpleTest" startTime="Oct 03 2011 13:48:31" status="Finished">
+  <component branch="" displayName="Parsing of BED format input file" name="BEDProcessor" rank="1" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_1_BEDProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Generation of random MSA" name="GenerateMSAProcessor" rank="2" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_2_GenerateMSAProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Implantation of motif sites in MSA" name="ImplantSitesProcessor" rank="3" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_3_ImplantSitesProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Detection of conserved regions in MSA" name="BlockProcessor" rank="4" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_4_BlockProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Identification of motifs in conserved regions" name="MotifProcessor" rank="5" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_5_MotifProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Classification of identified motifs" name="ClassificationProcessor" rank="6" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_6_ClassificationProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Analysis of identified motifs scaterring" name="HistogramProcessor" rank="7" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_7_HistogramProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Export identified motifs to BED formated file" name="BEDOutputProcessor" rank="8" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_8_BEDOutputProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Analysis of identified motifs co-locations" name="CoLocationAnalysisProcessor" rank="9" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_9_CoLocationAnalysisProcessor_output.xml" status="Resumed" />
+  <component branch="" displayName="Generation of final result package" elapsedTime="00:00:04" name="FinalOutputProcessor" rank="10" result="/home/spinelli/dev/TestFiles/output/Validation_SimpleTest/Validation_SimpleTest_10_FinalOutputProcessor_output.xml" status="Executed" />
+</pipeline>
