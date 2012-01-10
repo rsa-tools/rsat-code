@@ -1,0 +1,26 @@
+
+<!ELEMENT pipelines  ( pipeline )+>
+<!ATTLIST pipelines
+ outputdir CDATA #REQUIRED
+>
+
+<!ELEMENT pipeline  ( component, node)*>
+<!ATTLIST pipeline name CDATA #REQUIRED
+>
+
+<!ELEMENT node  ( branch )+>
+
+<!ELEMENT branch  ( component )+>
+<!ATTLIST branch name CDATA
+>
+
+<!ELEMENT component  ( param )*>
+<!ATTLIST component
+ processor CDATA #REQUIRED
+>
+
+<!ELEMENT param  EMPTY>
+<!ATTLIST param
+ name CDATA #REQUIRED
+ value CDATA #REQUIRED
+>
