@@ -16,36 +16,35 @@
 
 
 <P>
-The aim of those tutorials is to give a theoretical and practical
-introduction to the Regulatory Sequence Analysis Tools
-(<b>RSAT</b>). The most convenient way to follow the tutorial is to
-display the current page in a separate window, and to use the tools
-with the current one.
+The aim of these tutorials is to give a theoretical and practical
+introduction to the <b>Regulatory Sequence Analysis Tools</b>
+(<b>RSAT</b>) software suite. The most convenient way to follow the
+tutorial is to display the current page in a separate window, and to
+use the tools with the current one.
 
 <p>
 <a target=_blank href=tutorials.html>(click here for opening a new
 window with the tutorial pages)</a>
 
 <P>
-RSAT home page displays two frames. The left frame contains a menu,
-presenting the available tools. Each time you click on a tool in the
-left frame, the right frame shows you the form for the corresponding
-tool. 
-
+The RSAT home page displays two frames. The frame on the left contains
+a menu, presenting the available tools. Each time you click on a tool
+name, the right frame displays the form for the corresponding tool.
 
 <p>
 The tools are organized in a modular way : rather than having a single
-form for the complete analysis, I found it more convenient to present
+form for the complete analysis, we found it more convenient to present
 separate forms for the successive steps of a given analysis. A typical
 analysis will thus consist in using successivbely different tools (for
 example <i>sequence retrieval</i> -> <i>motif discovery</i>
 -> <i>pattern matching</i> ->
-<i>feature-map</i>). For this purpose, the tools interconnected,
+<i>feature-map</i>). For this purpose, the tools are interconnected,
 allowing you to send automatically the result of one request as input
 for the next request (piping). The links between tools are illustrated
-in the flow chart below.  An advantage of this modulaar approach is
-that you can directly enter at any step of an analysis with external
-data of your own.
+in the flow chart below.  An advantage of this modular organization is
+that you can either follow a full pipeline throught the tools, or
+directly enter at any step of an analysis with external data of your
+own.
 
 <p style="text-align:center">
 <a href="../images/RSAT_flowchart_2011.pdf"><img width="100%" border="1" src="../images/RSAT_flowchart_2011.png"></a></center>
@@ -55,27 +54,33 @@ data of your own.
 
 <P>
 We will analyze some practical examples to get familiar with the
-different tools, and the way they are interconnected.
+different tools, and the way they are interconnected.</p>
 
-The tutorial contains different parts, illustrating the typical
-situations one can face when analysing regulatory sequences :
+<p>The tutorial contains different parts, illustrating the typical
+situations that can be encountered when analysing regulatory sequences :
 
 <OL>
 
-<p><li> You know the regulatory motif (e.g. the consensus for a
-transcriptional factor), and you know the genes: you look for the
-matching positions within the upstream regions from your genes
-(<b>pattern matching</b>);</LI>
+<p><li><b>Pattern matching: </b> you know the regulatory motif
+(e.g. the consensus for a transcriptional factor), and you are
+interested by one or several particular sequences (e.g. promoters of a
+gene of interest, or binding fragments obtained from ChIP-on-chip
+experiments): you look for the matching positions within the
+sequences.</li></p>
 
-<p><li> You know the genes, you ignore the regulatory motif : you look
-for elements shared by a set of functionally related upstream
-sequences, which could reveal unknown regulatory sites (<b>pattern
-discovery</b>).</LI>
+<p><li><b>Genome-scale pattern matching: </b> you know the regulatory
+motif, and you would like to scan the genome to detect genes having
+this motif in their regulatory regions, which may be considered as
+potential target genes for the transcription factor of interest. </li></p>
 
-<p><li> You know the regulatory motif, you ignore the genes : you want
-to scan the genome to detect genes having this motif in their
-regulatory regions, which are potential target genes for your
-transcription factor (<b>genome-scale pattern matching</b>);</LI>
+<p><li><b>Motif discovery</b> (or <b>pattern discovery</b>). You know
+the sequences, you ignore the regulatory motif : you dispose of a set
+of functionally related regulatory sequences (e.g. promoters of
+co-expressed genes, or peaks collected from ChIP-seq experiments), and
+you suspect that they are enriched in binding site for one or seveal
+transcription factors. You thus want to detect a motif "<i>ab
+initio</i>" from the sequences.</li></p>
+
 
 </OL>
 
