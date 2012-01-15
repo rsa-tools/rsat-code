@@ -1,5 +1,5 @@
 .clear {
-	clear: both;
+	clear: h;
 	display: block;
 }
 
@@ -46,15 +46,15 @@ body {
 }
 
 body.info {
-	background: #ffffff;
+    background: #ffffff;
 }
 
 body.form {
-	background: #FFFFFF;
+    background: #FFFFFF;
 }
 
 body.results {
-	background: #ffffff;
+    background: #ffffff;
 }
 
 /* Links  */
