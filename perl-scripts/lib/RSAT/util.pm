@@ -303,6 +303,11 @@ sub ReportExecutionTime {
   $time_report .= "; Job started\t".$start_time."\n";
   $time_report .= "; Job done\t".$done_time."\n";
   $time_report .= "; Seconds\t".$elapsed."\n";
+  my ($user,$system,$cuser,$csystem) = times;
+  $time_report .= ";\tuser\t".$user."\n";
+  $time_report .= ";\tsystem\t".$system."\n";
+  $time_report .= ";\tcuser\t".$cuser."\n";
+  $time_report .= ";\tcsystem\t".$csystem."\n";
 
   ## If specified in the server configuration, report task + execution
   ## time in log file.
