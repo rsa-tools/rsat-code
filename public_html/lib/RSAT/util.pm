@@ -806,10 +806,12 @@ sub make_temp_file {
 sub doit {
   my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix) = @_;
   my $wd = `pwd`;
+  chomp($wd);
+
+  ## Fix scope problem with the variable $main::verbose
   unless(defined($verbose)) {
     $verbose = $main::verbose;
   }
-  chomp $wd;
 
   if ($batch) {
     ## Define the shell
@@ -895,7 +897,7 @@ sub doit {
       &RSAT::message::Debug("qsub command for torque", $qsub_cmd) if ($main::verbose >= 2);
 
     } else {
-      ## qsub command functionning using Sun Grid Engine (BiGRe)
+      ## qsub command functionning using Sun Grid Engine (note: this is the cluster management system installed at the BiGRe lab, 2012)
 	$qsub_cmd = join(" ", "qsub", 
 			 "-m",$batch_mail,
 			 "-q ", $cluster_queue, 
@@ -917,7 +919,6 @@ sub doit {
 
     ## Send the command to the queue
     unless ($dry) {
-
 #	&RSAT::message::Debug("Running command", $command) if ($main::verbose >= 3);
       my $error = system($command);
       if ($die_on_error) {
@@ -954,7 +955,15 @@ sub one_command {
   ## Store execution time in a file
   if ($time_file) {
 #      $cmd = 'time -o '.$time_file.' '.$cmd;
-      $cmd = 'time ('.$cmd.') >& '.$time_file;
+
+      ## The time command has operating-system specific parameters. To
+      ## fix this, I first ask the operating system.
+      my $OS = `uname -a`;
+      if ($OS =~ /Darwin/i) {
+	  $cmd = 'time ('.$cmd.') >& '.$time_file;
+      } else {
+	  $cmd = 'time -o '.$time_file.' '.$cmd;
+      }
   }
 
 #   ## Store STDERR in a file
