@@ -956,7 +956,9 @@ sub one_command {
   if ($time_file) {
 
       ## The time command has operating-system specific parameters. To
-      ## fix this, I first ask the operating system.
+      ## fix this, I first get the operating system and adapt the
+      ## command accordingly. This is really tricky, I recognize. I
+      ## should try to use some Perl function to get elapsed tiem.
       my $OS = `uname -a`;
       &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 3);
       if ($OS =~ /ubuntu/i) {
