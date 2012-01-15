@@ -127,10 +127,10 @@ sub UpdateLogFile {
   }
 
   &RSAT::message::Debug("&RSAT::server::UpdateLogFile()",
-			   "<p>script=".$script_name,
-			   "<p>message=".$message,
-			   "<p>log=".$log_file,
-			   "<p>Args=", join (", ", @_),
+			"<p>script=".$script_name,
+			"<p>message=".$message,
+			"<p>log=".$log_file,
+			"<p>email=".$user_email,
 			 ) if ($main::verbose >= 5);
 
   if (open LOG, ">>".$log_file) {
