@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.18 2011/07/26 11:10:09 jvanheld Exp $
+# $Id: gene-info,v 1.19 2012/01/15 00:23:31 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -46,7 +46,7 @@ $organism->set_attribute("name", $organism_name);
 
 ## Accepted feature types
 $organism->DefineAcceptedFeatureTypes(sort(keys(%accepted_feature_types)));
-&RSAT::message::Info("Accepted feature types", sort(keys(%accepted_feature_types))) if ($main::verbose >= 0);
+&RSAT::message::Info("Accepted feature types", sort(keys(%accepted_feature_types))) if ($main::verbose >= 2);
 
 ### open output file ###
 $out = &RSAT::util::OpenOutputFile($outputfile);
