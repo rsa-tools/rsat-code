@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.207 2011/12/08 00:13:17 jvanheld Exp $
+# $Id: matrix-scan,v 1.208 2012/01/15 02:25:18 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3745,7 +3745,7 @@ sub QuickScan {
 
     #################################
     ## run matrix-scan-quick
-    &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 2);
     open QUICK, "$quick_cmd 2>/dev/null |";
     my $l=0;
     my $comments="";
