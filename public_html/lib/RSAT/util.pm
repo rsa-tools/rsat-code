@@ -954,15 +954,15 @@ sub one_command {
 
   ## Store execution time in a file
   if ($time_file) {
-#      $cmd = 'time -o '.$time_file.' '.$cmd;
 
       ## The time command has operating-system specific parameters. To
       ## fix this, I first ask the operating system.
       my $OS = `uname -a`;
-      if ($OS =~ /Darwin/i) {
-	  $cmd = 'time ('.$cmd.') >& '.$time_file;
-      } else {
+      &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 3);
+      if ($OS =~ /ubuntu/i) {
 	  $cmd = 'time -o '.$time_file.' '.$cmd;
+      } else {
+	  $cmd = 'time ('.$cmd.') >& '.$time_file;
       }
   }
 
