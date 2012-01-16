@@ -23,6 +23,7 @@
 <li><a href='#prerequisite'>Prerequisite</a>
 <li><a href='#intro'>Introduction</a>
 <li><a href='#convert_matrix'>Converting and analyzing PSSM</a>
+<li><a href='#exercises'>Additional exercises</a>
 <li><a href='#next'>Next steps</a>
 </ol>
 
@@ -137,37 +138,37 @@ dependencies can be represented with more elaborated methods, such as
 Hidden Markov Models (HMM), which are ou of scope for this tutorial.
 
 
-</ul><h2><a 'name'=convert_matrix></a>Converting and analyzing PSSM</h2><ul>
+</ul><h2><a 'name'=convert_matrix></a>Converting and analyzing PSSM</h2>
 
-The RSAT include a program called <a target=tools
-href=../convert-matrix_form.cgi>convert-matrix</a>, which allows to
+<p>The RSAT include a program called <a target='tools'
+href='../convert-matrix_form.cgi'>convert-matrix</a>, which allows to
 extract a PSSM from the output files of different programs
 (<a target=tools href=../consensus_form.cgi>consensus</a>,
 <a target=tools href=../gibbs_form.cgi>gibbs</a>, <a target=_blank
 href=http://meme.sdsc.edu/meme/>MEME</a>, clustal) or databases
 (<a target='_blank' href='http://jaspar.genereg.net/'>JASPAR</a>, <a target='_blank'
-href='http://www.gene-regulation.com/pub/databases.html#transfac'>TRANSFAC</a>).
+href='http://www.gene-regulation.com/pub/databases.html#transfac'>TRANSFAC</a>).</p>
 
 
 <h3>Converting the counts into frequencies, weights and information</h3>
 
-We will import a matrix representing the binding specificity of the
-yeast transcription factor Abf1p, and analyze the different parameters
-which characterize this PSSM.
+<p>We will import a matrix representing the binding specificity of the
+  yeast transcription factor Abf1p, and analyze the different parameters
+  which characterize this PSSM.</p>
 
+<div class='tut'>
 <ol>
-
-<p><li>Connect <a href="http://rulai.cshl.edu/SCPD/" target=_blank>
-SCPD</a>, the Saccharomyces cerevisiae promoter database. To access
-the list of sites by factor from the SCPD home page, click on the
-Section "<a target=_blank
-href=http://rulai.cshl.edu/cgi-bin/SCPD/getfactorlist>Regulatory
-elements and transcriptional factors</a>".
-
-<p><li>Click on the link to <a target=_blank
-href=http://rulai.cshl.edu/cgi-bin/SCPD/getfactor?ABF1,BAF1>ABF1</a>,
-and then on the button <b>Get matrix</b>. The following PSSM is
-displayed.
+    <p><li>Connect <a href="http://rulai.cshl.edu/SCPD/" target=_blank>
+	SCPD</a>, the Saccharomyces cerevisiae promoter database. To access
+      the list of sites by factor from the SCPD home page, click on the
+      Section "<a target=_blank
+		  href=http://rulai.cshl.edu/cgi-bin/SCPD/getfactorlist>Regulatory
+	elements and transcriptional factors</a>".
+	
+	<p><li>Click on the link to <a target=_blank
+				       href=http://rulai.cshl.edu/cgi-bin/SCPD/getfactor?ABF1,BAF1>ABF1</a>,
+	    and then on the button <b>Get matrix</b>. The following PSSM is
+	    displayed.
 
 <pre>
 >ABF17121SCPD
@@ -177,117 +178,164 @@ T  14   0   2   1   6   2   7   3   0   0   0   0
 G   0   0   0   0   2   3   1   2   3   0   1  13
 C   0  14   1  11   3   2   3   4   6   0  13   0. 
 </pre>
+</ol>
+</div>
 
-<p>Some basic questions
+<p><b>Some basic questions</b></p>
 
-<ul>
-<li>What is the alphabet size ?
+<div class='exo'>
+  <ul>
+    <li>What is the alphabet size ?
+      
+    <li>What is the matrix width ?
+      
+    <li>How many inding sites were used to build this matrix ? 
+      
+    <li>How many Abf1p binding sites are currently stored in SCPD (click on the button <b>Get sites</b>)?
+  </ul>
+</div>
+  
 
-<li>What is the matrix width ?
+<p>We will now analyze the content of this matrix with the
+  program <i>convert-matrix</i>.</p>
 
-<li>How many inding sites were used to build this matrix ? 
+<div class='tut'>
+  <ol>
+  <p><li>In the left menu of the RSAT page, select the
+      form <a target='tools'
+      href='../convert-matrix_form.cgi'><b>convert matrix</b></a>
+      under the title <b>Matrix tools</b>.
+  </li></p>
+      
+  <p><li>Copy the ABF1 matrix from SCPD to the text area in the
+      form. 
+  
+      <ul><b>Beware</b>, you should only copy the 4 rows containing the
+	nucleotide information, and not the matrix header.</uL>
+  </li></p>
 
-<li>How many Abf1p binding sites are currently stored in SCPD (click on the button <b>Get sites</b>)?
-</ul>
+  <p><li>Make sure that the selected matrix format is <b><i>tab</i></b>.
+  </li></p>
+	      
+  <p><li>Select a relevant <b>background model</b>. With the
+      factor Abf1p, check the option
+      <i>Organism-specific</i>, select the
+      organism <i>Saccharomyces cerevisiae</i>, and the sequence
+      type <i>upstream-noorf</i>.	
+  </li></p>
+  
 
-<p><li>We will now analyze the content of this matrix with the
-program <i>convert-matrix</i>. In the left menu of the RSAT page,
-select the form <a target=tools
-href=../convert-matrix_form.cgi><b>convert matrix</b></a>.
+  <p><li>For the <b><i>Return fields</i></b>, select the following options:
+      <ul>
+	<li>counts</li>
+	<li>frequencies</li>
+	<li>weights</li>
+	<li>info</li>
+	<li>margins</li>
+	<li>parameters</li>
+	<li>logo</li>
+      </ul>
+  </li></p>
 
-<p><li>Copy the ABF1 matrix from SCPD to the text area in the
-form. 
+  <p><li>Click <b>GO</b>.
+  </li></p>
 
-<ul><b>Beware</b>, you should only copy the 4 rows containing the
-nucleotide information, and not the matrix header.</uL>
-
-<p><li>Make sure that the selected matrix format is <b><i>tab</i></b>.
-
-<p><li>Select a relevant <b>background model</b>. Withb the factor
-Abf1p, we will select <i>Genome subset</i>, <i>upstream-noorf</i> and
-the <i>Organism</i> <i>Saccharomyces cerevisiae</i>.
-
-
-<p><li>For the <b><i>Return fields</i></b>, select the following options:
-<ul>
-<li>counts
-<li>frequencies
-<li>weights
-<li>info
-<li>margins
-<li>parameters
-</ul>
-
-
-<p><li>click <b>GO</b>.
+</div>
 
 </ol>
 
-<h3>Matrix conversions</h3><ul>
+<h3>Matrix conversions</h3>
 
-The original matrix was converted into different formats. We will briefly
-comment these formats. 
+<p>The original matrix was converted into different formats. We will
+briefly comment these formats. </p>
 
-<h4><i>Counts</i></h4><ul>
+<h4><i>Counts</i></h4>
 
-This is the promary information obtained from SCPD. Counts represent
-the absolute frequencies of each residue at each position of the
-alignment of the annotated binding sites for the transcription factor
-Abf1p.
+<p><b><i>Counts</i></b> are the primary information obtained from
+SCPD. They represent the number of occurrences (absolute frequency) of
+each residue at each position of the alignment of the annotated
+binding sites for the transcription factor Abf1p.</p>
 
-</ul><h4><i>Frequencies</i></h4><ul> 
+<h4><i>Frequencies</i></h4>
 
-You will notice that the frequency matrix does not faithfully reflect
+<p><b><i>Relative frequencies</i></b> are obtained by dividing the counts of each
+cell of the matrix by the sum of counts in its column.</p>
+
+<p>You will notice that the frequency matrix does not faithfully reflect
 the relative frequencies calculated from the counts. In particular,
 the cells of the original matrix with count values of 0 have values
-larger than 0 in the frequency matrix.
+larger than 0 in the frequency matrix.</p>
 
 <p>You can check this by coming back to the convert-matrix form (click
 the <i>Back</i> button of your brower), and redoing the conversion
-with a value of 0 for the option <i><b>pseudo-weight</b></i>.
+with a value of 0 for the option <i><b>pseudo-weight</b></i> (note:
+this is only for illustrative purposes, it is generally recommended to
+use a pseudo-weight of at least 1).</p>
 
-</ul><h4><i>Weights</i></h4><ul> 
+<h4><i>Weights</i></h4>
 
-The weight is the score described above, i.e. the log-likelihood between 
-<ul>
-<li><i>P(S|M)</i>, the probability to observe the sequence <i>S</i>
-given the motif model (matrix) <i>M</i>, and
-
-<li><i>P(S|B)</i>, the probability to observe the sequence <i>S</i>
-given the background model <i>B</i>.
-</ul>
+<p>The <b><i>weight</i></b> is the score described above, i.e. the
+log-likelihood between
+  <ul>
+    <li><i>P(S|M)</i>, the probability to observe the sequence <i>S</i>
+      given the motif model (matrix) <i>M</i>, and
+      
+    <li><i>P(S|B)</i>, the probability to observe the sequence <i>S</i>
+      given the background model <i>B</i>.
+  </ul>
+</p>
 
 <p>Positive weights indicate that the residue is considered to favour
 the binding of the transcription factor, negative weights that it is
-unfavorable.
+unfavorable.</p>
 
-</ul><h4><i>Info</i></h4><ul> 
+<h4><i>Information</i></h4>
 
-The information content of each cell of the matrix is calculated by
+<p>The <b><i>information content</i></b> of each cell of the matrix is calculated by
 multiplying the weight by the frequency. The information content of a
-row (column) is the sum of information contents of its cells.
+row (column) is the sum of information contents of its cells.</p>
 
 </ul>
 
-<a name='next'></a>
-</ul><h2>Next steps</h2><ul>
+<a name='exercises'></a><h2>Additional exercises</h2>
 
+<div class='exo'>
+  <ol>
+    <li>In the <a target='_blank'
+				    href='http://jaspar.genereg.net/'>JASPAR</a>
+				    database, retrieve the matrices
+				    MA0039.1 and MA0039.2. These
+				    matrices both represent the TFBS
+				    of the mouse transcription factor
+				    Klf4. However their numbers are
+				    quite different. Make a guess
+				    about the origin of the data that
+				    served to build these two
+				    matrices. </li>
+    <li>With the
+      tool <a target='tools'
+	      href='../convert-matrix_form.cgi'>convert-matrix</a>
+  </ol>
+</div>
+
+<a name='next'></a>
+<h2>Next steps</h2>
 
 <ol>
 
-<!--
 <p><li>PSSM can be used to detect occurrences of a motif in
-sequences. Matrix-based pattern matching will be introduced in the
-tutorial on <a href='tut_patser.html'>patser</a>.</li></p>
--->
+    sequences. The theory underlying matrix-based pattern matching
+    will be introduced in the slides
+    <a
+    href='../course/pdf_files/02.3.pattern_matching_matrices.pdf>02.3.pattern_matching_matrices.pdf</p>.
 
-<p><li>Since 2008, RSAT includes its own pattern matching
-tool, <a href='../matrix-scan_form.cgi'>matrix-scan</a>, which permits
-to scan sequences with one or more matrices, under different
-background models, in order to detect biniding sites ad cis-regulatory
-modules (CRM). A detailed protocol has been published to explain the
-theoretical concepts and practical aspects related to sequence
-scanning with matrices.
+<p><li>The suite RSAT includes a matrix-based pattern matchin
+    tool, <a href='../matrix-scan_form.cgi'>matrix-scan</a>, which
+    permits to scan sequences with one or more matrices, under
+    different background models, in order to predict binding sites ad
+    cis-regulatory modules (CRM). A detailed protocol has been
+    published to explain the theoretical concepts and practical
+    aspects related to sequence scanning with matrices.
     <ul>
       <p><li>Turatsinze, J.V., Thomas-Chollier, M., Defrance, M. and van
 	  Helden, J. (2008) Using RSAT to scan genome sequences for
@@ -299,12 +347,13 @@ scanning with matrices.
 </li></p>
 
 <p><li>Several pattern-discovery programs allow to detect significant
-motifs represented as PSSM from a set of unaligned sequences. These
-programs have been used to predict regulatory elements in the
-regulatory regions of sets of co-regulated genes. Matrix-based pattern
-discovery are discussed in the tutorials on
-the <a href='tut_gibbs.html'>gibbs sampler</a>
-and <a href='tut_consensus.html'>consensus</a>.</li></p>
+    motifs represented as PSSM from a set of unaligned sequences. These
+    programs have been used to predict regulatory elements in the
+    regulatory regions of sets of co-regulated genes. Matrix-based pattern
+    discovery are discussed in the tutorials on
+    the <a href='tut_gibbs.html'>gibbs sampler</a>
+    and <a href='tut_consensus.html'>consensus</a>.
+</li></p>
 </ol>
 
 <p>
