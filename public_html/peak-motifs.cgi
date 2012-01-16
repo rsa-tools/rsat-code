@@ -99,7 +99,7 @@ foreach my $i (6..7){
     }
 }
 @oligo_lengths = sort @oligo_lengths;
-$oligo_params .= " 	-minol ".$oligo_lengths[0]." -maxol ".$oligo_lengths[-1]." ";
+$oligo_params .= " -minol ".$oligo_lengths[0]." -maxol ".$oligo_lengths[-1]." ";
 $parameters .= $oligo_params;
 
 ## motif disco algorithm
