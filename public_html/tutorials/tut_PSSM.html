@@ -303,15 +303,16 @@ row (column) is the sum of information contents of its cells.</p>
   <ol>
     <li>In the <a target='_blank'
 				    href='http://jaspar.genereg.net/'>JASPAR</a>
-				    database, retrieve the matrices
-				    MA0039.1 and MA0039.2. These
-				    matrices both represent the TFBS
-				    of the mouse transcription factor
-				    Klf4. However their numbers are
-				    quite different. Make a guess
-				    about the origin of the data that
-				    served to build these two
-				    matrices. </li>
+				    database, retrieve the two
+				    alternative matrices for Klf4 (IDs
+				    MA0039.1 and MA0039.2, see tip
+				    below). These matrices both
+				    represent the TFBS of the mouse
+				    transcription factor Klf4. However
+				    their numbers are quite
+				    different. Make a guess about the
+				    origin of the data that served to
+				    build these two matrices. </li>
     <li>Convert each matrix with the tool <a target='tools'
 					     href='../convert-matrix_form.cgi'>convert-matrix</a>,
 					     to extract the
@@ -324,6 +325,25 @@ row (column) is the sum of information contents of its cells.</p>
       progressively larger values (0,1, 10, 100, 1000, 10000) and
       analyze the impact on the frequencies, total information
       content, and shape of the sequence logo.</li>
+  </ol>
+</div>
+
+<div class='tips'>
+  <h4>Tips</h4>
+  <ol>
+    <li>For some transcription factors, Jaspar contains several
+    databases built from different datasets. There are for example two
+    matrices for the mouse factor Klf4, denoted by the identifiers
+    MA0039.1 and MA0039.2, respectively.  By default, the Web
+    itnerface only returns the most recent version of the matrix. In
+    order to access all the versions:
+      <ul>
+	<li>search by name (with Klf4) will return the matrix MA0039.2; </li>
+	<li>click on the sequence logo of the Klf4 matrix;</li>
+	<li>in the detailed information window, click <i>Show me all
+	    versions</i></li>
+      </ul>
+    </li>
   </ol>
 </div>
 
