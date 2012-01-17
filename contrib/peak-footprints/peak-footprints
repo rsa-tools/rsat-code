@@ -127,25 +127,25 @@ def main( argv):
             # Launch manager for a direct execution
             result = pipeline_manager.execute( pipeline_filepath, verbosity, resume, working_dir)
         if result == False:
-            if Log.isInitialized:
+            if Log.isInitialized():
                 Log.log( "Error occured during pipelines execution. See logs for more details") 
             print "Error occured during pipelines execution. See logs for more details"
             return 2
     except ConfigException, conf_exce:
         print "Unable to initialize Pipeline Manager. From:\n\t---> " + str( conf_exce)
-        if Log.isInitialized:
+        if Log.isInitialized():
             Log.log( "Unable to initialize Pipeline Manager. From:\n\t---> " + str( conf_exce)) 
         else:
             print "Unable to initialize Pipeline Manager. From:\n\t---> " + str( conf_exce)
         return 2
     except ParsingException, par_exce:
-        if Log.isInitialized:
+        if Log.isInitialized():
             Log.log( "Error occured during Pipelines preparation. From:\n\t---> " + str( par_exce))
         else:
             print "Error occured during Pipelines preparation. From:\n\t---> " + str( par_exce)
         return 2
     except ExecutionException, exe_exce:
-        if Log.isInitialized:
+        if Log.isInitialized():
             Log.log( "Error occured during Pipelines execution. From:\n\t---> " + str( exe_exce))
         else:
             print "Error occured during Pipelines execution. From:\n\t---> " + str( exe_exce)
