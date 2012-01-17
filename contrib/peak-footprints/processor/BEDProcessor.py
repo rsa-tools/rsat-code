@@ -1,5 +1,5 @@
 
-import os, shutil
+import os, random, shutil
 
 from processor.Processor import Processor
 from processor.io.BedSeqCommStruct import BedSeqCommStruct
@@ -17,11 +17,15 @@ from utils.exception.ParsingException import ParsingException
 #   Species : the species of the described sequences
 #   PeakFile (optional): the path to the file giving information on the maximum of the peak 
 #                        for each sequence in the BED file. Used in case of BED file represent ChIP-seq peaks result.
+#   PeakNumber (optional): indicates the number of peak to consider in the given BED file. Peaks are uniformly 
+#                          randomly chosen through all the peaks.
+
 class BEDProcessor( Processor):
     
     INPUT_BED_FILE_PARAM = "BEDFile"
     INPUT_PEAK_FILE = "PeakFile"
     SPECIES_PARAM = "Species"
+    PEAK_NUMBER = "PeakNumber"
     
     # --------------------------------------------------------------------------------------
     def __init__(self):
@@ -72,9 +76,15 @@ class BEDProcessor( Processor):
         bed_filepath = self.getParameter( BEDProcessor.INPUT_BED_FILE_PARAM)
         species = self.getParameter( BEDProcessor.SPECIES_PARAM)
         peak_filepath = self.getParameter( BEDProcessor.INPUT_PEAK_FILE, False)
+        peak_number = self.getParameterAsint( BEDProcessor.PEAK_NUMBER, False)
         
         # Parse the BED file and get the BED sequences ordered by species and chromosom
         bedseq_dictionnary = BEDParser.getBEDSequenceDictionnary( species, bed_filepath)
+        
+        # Extract the desired number of peak if a limit has been defined
+        if peak_number != None:
+            bedseq_dictionnary = self.extractPeaks( bedseq_dictionnary, peak_number)
+        
         
         # Parse the peak info file if exists
         if peak_filepath != None and len( peak_filepath) > 0:
@@ -119,10 +129,41 @@ class BEDProcessor( Processor):
         return output_commstruct
 
 
+    # --------------------------------------------------------------------------------------
+    # Extract the given number of peak from the given peak dictionnary
+    def extractPeaks( self, bedseq_dictionnary, peak_number):
+        
+        new_dictionnary = {}
+        count = 0
+        while count < peak_number:
+            # Randomly choose a chromosom
+            chrom_list = bedseq_dictionnary.keys()
+            chrom_index = int( random.uniform(0, len( chrom_list)))
+            chrom = chrom_list[ chrom_index]
+            # Randomly choose a peak in the chrom
+            peak_list = bedseq_dictionnary.get( chrom)
+            peak_index = int( random.uniform(0, len( peak_list)))
+            peak = peak_list[ peak_index]
+            if not new_dictionnary.has_key( chrom):
+                new_dictionnary[ chrom] = []
+            new_dictionnary[ chrom].append( peak)
+            count = count +1
+            peak_list.pop( peak_index)
+            if len( peak_list) == 0:
+                bedseq_dictionnary.pop( chrom)
+                
+            ## if bedseq_dictionnary.has_key( chrom):
+            ##    print " --> chrom " + str( chrom) + " peak list size = " + str( len( bedseq_dictionnary[ chrom]))
+            ##else:
+            ##    print " --> chrom " + str( chrom) + " peak list size = 0"
+            ##print " --> new chrom " + str( chrom) + " peak list size = " + str( len( new_dictionnary[ chrom]))
+
+        return new_dictionnary
+
 
     # --------------------------------------------------------------------------------------
     # Compute and output to file and graph the sequence size histogram
-    def outputSequenceSizeHistogram(self, bedseq_dictionnary, output_comm_struct):
+    def outputSequenceSizeHistogram( self, bedseq_dictionnary, output_comm_struct):
         
         sizes = []
         
