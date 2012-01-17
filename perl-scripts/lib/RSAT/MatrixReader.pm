@@ -43,6 +43,7 @@ formats.
 			   'infogibbs'=>1,
 			   'info-gibbs'=>1,
 			   'jaspar'=>1,
+			   'mscan'=>1,
 			   'meme'=>1,
 			   'motifsampler'=>1,
 			   'stamp'=>1,
@@ -107,8 +108,8 @@ sub readFromFile {
     } elsif ($format eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
     } elsif ($format eq "cluster-buster") {
-	@matrices = _readFromClusterBusterFile($file, %args);
-    } elsif ($format eq "jaspar") {
+      @matrices = _readFromClusterBusterFile($file, %args);
+    } elsif (($format eq "jaspar") || ($format eq "mscan")) {
 	@matrices = _readFromJasparFile($file, %args);
     } elsif ($format eq "uniprobe") {
 	@matrices = _readFromUniprobeFile($file, %args);
@@ -2000,12 +2001,19 @@ sub _readFromJasparFile {
 	$line =~ s/\s+/\t/;
 	my @fields = split /\t/, $line;
 
-	## residue associated to the row
+	## The residue associated to the row
 	my $residue = "";
 	my $first_value = lc($fields[0]);
 	if ($first_value =~ /\d+/) {
+	  ## In MSCAN format, the first field of each row contains
+	  ## the first cell of the matrix, instead of the residue (cf
+	  ## JASPAR format).
+	  ## http://www.cisreg.ca/cgi-bin/mscan/MSCAN
 	  $residue = shift (@temp_alphabet);
 	} else {
+	  ## In Jaspar format, the residue is explicitly written at
+	  ## the beginning of each row.
+	  ## See: http://jaspar.cgb.ki.se/
 	  $residue = lc(shift @fields);
 	}
 	$matrix->addIndexedRow($residue, @fields);
