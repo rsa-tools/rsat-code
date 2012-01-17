@@ -2,7 +2,7 @@
 
 #from Bio.AlignIO import MafIO
 
-import sys, getopt,  os,  time
+import sys, getopt
 import math
 
 from utils.exception.ConfigException import ConfigException
@@ -30,15 +30,13 @@ def main( argv):
 
     try:
         opts, args = getopt.getopt( argv, "hi:o:v:fs", ["help", "input=", "output=", "verbosity=", "force",  "server"])
-        print "opts = " + str( opts)
-        print "args = " + str( args)
     except getopt.error, msg:
         print msg
         usage()
         print "For help use --help option"
         return 2
         
-    if len( opts) == 0 or len( args) == 0:
+    if len( opts) == 0:
         usage()
         return 2       
         
