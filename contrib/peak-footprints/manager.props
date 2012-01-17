@@ -1,0 +1,36 @@
+# Full path to the folder where the log files and the 'output' folder 
+# containing all the outputs will be created
+# base_output_dir=/home/spinelli/dev/TestFiles
+base_output_dir=/no_backup/rsa-tools/public_html/tmp/peak-footprints_output
+
+# (Mode server only) Folder where tickets containing commands to send in queue will be copied
+#listening_dir=/home/spinelli/dev/TestFiles/input/tickets
+listening_dir=/no_backup/rsa-tools/logs/peak-motifs_logs
+
+# Full path to the RSAT install directory
+rsat_dir=/no_backup/rsa-tools/
+
+# Name of the default motif database in RSAT
+rsat_default_motif_database=jaspar_core_vertebrates_2009_10.tf
+
+
+################################################################
+## Optional parameters
+
+## MEME/tomtom was tested in the initial phase of the project, but
+## compare-matrices is faster and more flexible. It is still supported
+## for the sake of comparisons of the results.
+meme_dir=/Tools/meme
+
+################################################################
+## The following parameters are not (yet) taken into
+## consideration. Wein future versions, we envisage to add support for
+## alternative multiple alignment algorithms (clustal or mafft).
+
+# Clustal executable name. If executable path is not in the PATH,
+# a full path to the clustalW executable file must be provided.
+clustalw_command=/home/s.pinelli/Tools/clustalw2/clustalw2
+
+# Name of the MAFFT script or executable file. If the MAFFT bin directory is not in the PATH,
+# a full path must be provided. Default value for this option is 'mafft --auto'
+mafft_command=/home/spinelli/Tools/mafft/bin/mafft-linsi
