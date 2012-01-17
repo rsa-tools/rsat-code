@@ -34,7 +34,7 @@ class BEDOutputProcessor( Processor):
     SCORE_MIN = "ScoreMin"
     SCORE_MAX = "ScoreMax"
     
-    COLORS = [ "255,0,0", "0,255,0", "0,0,255", "255,255,0", "0,255,255" , "255,0,255", "255,125,125", "125,255,125", "125,125,255"]
+    COLORS = [ "0,0,255", "0,255,255", "0,255,0", "255,255,0", "255,0,0"]
 
     
     # --------------------------------------------------------------------------------------
@@ -129,6 +129,8 @@ class BEDOutputProcessor( Processor):
                 for msa in input_commstruct.bedToMA[ bed_seq]:
                     for motif in msa.motifs:
                         motif_name = motif.name
+                        if not input_commstruct.motifStatistics.has_key( motif_name):
+                            continue
                         if motif_name in motif_id.keys():
                             out_name = motif_id[ motif_name]
                             chromosom = bed_seq.chromosom
@@ -219,8 +221,10 @@ class BEDOutputProcessor( Processor):
     # Assign a color according to the given score 
     def getColorForScore( self, score, score_min, score_max):
         
-        level = int( ((score - score_min) / float( score_max - score_min)) *100) + 155
+        # Color = RED proportionnal to score 
+        ##level = int( ((score - score_min) / float( score_max - score_min)) *100) + 155
+        ##return str(level) + ",0,0"
         
-        return str(level) + ",0,0"
-        
+        # Color = purple, blue, yellow, green, orange, red respect to the score
+        return self.COLORS[ int((score - score_min) / float( score_max - score_min) * len( self.COLORS))]
         
