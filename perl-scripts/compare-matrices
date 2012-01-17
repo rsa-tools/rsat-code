@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.112 2011/11/27 04:17:14 jvanheld Exp $
+# $Id: compare-matrices,v 1.113 2012/01/17 07:17:48 jvanheld Exp $
 #
 ############################################################
 
@@ -277,7 +277,7 @@ the somewhat arbitrary choice of the pseudo-count value.
 
 =head2 Covariance (cov)
 
- cov = 1/n * SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f1m) * (f2{i,j} - f2m)
+ cov = 1/(r*w) * SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f1m) * (f2{i,j} - f2m)
 
 Beware : this is the classical covariance defined in statistical
 textbooks. It has nothing to do with the "natural covariance" of Pape
@@ -419,7 +419,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.112 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
