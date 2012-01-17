@@ -31,15 +31,17 @@ class PipelineManager:
         
         self.config = {}
         install_path = None
-        # Test if the project is installed in RSAT
+        # Try to detect the RSAT install dir and test if the project is installed in RSAT
+        self.config[ Constants.RSAT_DIR_PARAM] = ""
         if Constants.RSAT_PATH_ENV_VAR in os.environ.keys():
             rsat_path = os.environ[ Constants.RSAT_PATH_ENV_VAR]
             if rsat_path != None and len( rsat_path) > 0:
+                self.config[ Constants.RSAT_DIR_PARAM] = rsat_path
                 install_path = os.path.join( rsat_path, Constants.PROJECT_PATH_IN_RSAT)
                 if not os.path.exists( install_path):
                     print "Project not installed in RSA-Tools"
                     install_path = None
-        
+                
         # If Project is not in RSAT, test if the project as its own environment variable set
         if (install_path == None or len( install_path) == 0 ) and (Constants.PROJECT_INSTALL_PATH_ENV_VAR in os.environ.keys()):
             install_path = os.environ[ Constants.PROJECT_INSTALL_PATH_ENV_VAR]
