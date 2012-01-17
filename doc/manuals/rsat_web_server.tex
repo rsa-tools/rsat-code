@@ -39,8 +39,10 @@ genomes, as described in the \RSAT installation guide.
 
 The Regulatory Sequence Analysis Tools include a web server, which
 offers a user-friendly interface for biologists. The main server is
-available for academic users at \url{http://rsat.ulb.ac.be/rsat/}. A
-few additional mirrors have been installed in different countries.
+available for academic users at \\
+\url{http://rsat.ulb.ac.be/rsat/}
+
+A few additional mirrors have been installed in different countries.
 
 \subsection{Web server pages}
 
@@ -59,7 +61,7 @@ server, and activated in the Apache configuration files.
 If your server is running under Mac OSX, you need to install a recent
 version (at least v5) of the php module, which can be found at the following site. 
 
-\url{href=http://www.entropy.ch/software/macosx/php/}
+\url{http://www.entropy.ch/software/macosx/php/}
 
 \subsection{Configuration of the Apache server}
 
@@ -136,8 +138,6 @@ You can try the following commands, and if they don'r work check the
 documentation of your web server.
 
 \begin{lstlisting}
-sudo httpd restart
-
 sudo apachectl restart
 \end{lstlisting}
 
@@ -147,7 +147,6 @@ If you want to install a web server, you need to edit two variables on
 the file \file{RSA.config}. Open this file with a text editor, and
 specify the variables \texttt{\$config\_site} and \texttt{\$WWW\_RSA}
 according to your local configuration.
-
 
 \subsection{Configuring the RSAT options for the web server}
 
