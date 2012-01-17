@@ -46,12 +46,12 @@ class PipelineManager:
         
         # Test if a config_path has been found. If not, take the current working dir as path
         if config_path != None and len( config_path) > 0:
-            self.config[ Constants.CONFIG_DIR_PARAM] = config_path
+            self.config[ Constants.INSTALL_DIR_PARAM] = config_path
         else:
             print "PipelineManager.init : No " + Constants.PROJECT_INSTALL_PATH_ENV_VAR + " environment variable set : using current directory"
-            self.config[ Constants.CONFIG_DIR_PARAM] = os.getcwd()
+            self.config[ Constants.INSTALL_DIR_PARAM] = os.getcwd()
             
-        self.readConfig( os.path.join( self.config[ Constants.CONFIG_DIR_PARAM], Constants.MANAGER_CONFIG_FILE_NAME))
+        self.readConfig( os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], Constants.MANAGER_CONFIG_FILE_NAME))
         
         self.initVariables()
         
@@ -86,12 +86,19 @@ class PipelineManager:
     # Initialize some variables
     def initVariables( self):
 
-        RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)
+        # Add the RSAT path to the base output dir path retrieved from the manager.props
+        self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM)) 
         
-        jaspar_path = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR")
-        RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( jaspar_path, self.getParameter( Constants.RSAT_JASPAR_MOTIF_DATABASE_PARAM))
+        # Add the RSAT path to the listening dir path retrieved from the manager.props
+        self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM)) 
+
+        # Set the path used by the RSATUtils class
+        RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)        
+        #jaspar_path = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR")
+        #RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( jaspar_path, self.getParameter( Constants.RSAT_JASPAR_MOTIF_DATABASE_PARAM))
         
-        MotifUtils.JASPAR_FLAT_DB_PATH = os.path.join( self.getParameter( Constants.CONFIG_DIR_PARAM), "resources/jaspar/motif")
+        # Set the path to the Jaspar TF details files
+        MotifUtils.JASPAR_FLAT_DB_PATH = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), "resources/jaspar/motif")
 
     
     # --------------------------------------------------------------------------------------
@@ -174,7 +181,7 @@ class PipelineManager:
     def outputServerQueue(self):
         
         try:
-            queue_file_path = os.path.join( self.config[ Constants.CONFIG_DIR_PARAM], PipelineManager.SERVER_QUEUE_FILE_NAME)
+            queue_file_path = os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], PipelineManager.SERVER_QUEUE_FILE_NAME)
             queue_file = open( queue_file_path, "w")
             for infos in self.serverQueue:
                 for info in infos:
@@ -190,7 +197,7 @@ class PipelineManager:
     # Read the server queue file content to initialize the queue
     def initServerQueue(self):
         
-        queue_file_path = os.path.join( self.config[ Constants.CONFIG_DIR_PARAM], PipelineManager.SERVER_QUEUE_FILE_NAME)
+        queue_file_path = os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], PipelineManager.SERVER_QUEUE_FILE_NAME)
         if os.path.exists( queue_file_path):
             try:
                 commands_list = []
@@ -261,7 +268,7 @@ class PipelineManager:
                 raise ParsingException( "PipelineManager.executePipelines : Canceling execution of pipelines. From:\n\t---> " + str( exe_exce))
 
             # Initialize the ProgressionManager
-            ProgressionManager.initialize( pipelines, self.getParameter( Constants.OUTPUT_DIR_PARAM), self.getParameter( Constants.CONFIG_DIR_PARAM))
+            ProgressionManager.initialize( pipelines, self.getParameter( Constants.OUTPUT_DIR_PARAM), self.getParameter( Constants.INSTALL_DIR_PARAM))
 
             # Execute the pipelines
             Log.trace( "**************************************************")
@@ -282,7 +289,7 @@ class PipelineManager:
                     FileUtils.createDirectory( pipeline_output)
                     Log.initLog( pipeline_output)
                 ProgressionManager.setPipelineStatus( pipeline, ProgressionManager.RUNNING_STATUS)
-                shutil.copy( os.path.join( self.config[ Constants.CONFIG_DIR_PARAM], os.path.join( Constants.PROGRESSION_XSL_PATH, Constants.PROGRESSION_XSL_FILE)), pipeline_output)
+                shutil.copy( os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], os.path.join( Constants.PROGRESSION_XSL_PATH, Constants.PROGRESSION_XSL_FILE)), pipeline_output)
 
                 # Fill the queue with the pipeline first components
                 component_queue_list = pipeline.firstComponents
