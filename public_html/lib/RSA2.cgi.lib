@@ -813,6 +813,7 @@ sub GetMatrix {
 				'gibbs'=> 1,
 				'infogibbs'=>1,
 				'jaspar'=>1,
+				'mscan'=>1,
 				'meme'=>1,
 				'motifsampler'=>1,
 				'sequences' => 1,
