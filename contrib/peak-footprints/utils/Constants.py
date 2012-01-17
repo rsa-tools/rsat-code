@@ -7,7 +7,7 @@ class Constants:
     RSAT_PATH_ENV_VAR = "RSAT"
     PROJECT_PATH_IN_RSAT = "contrib/peak-footprints"
     PROJECT_INSTALL_PATH_ENV_VAR = "FOOTPRINTING_PATH"
-    MANAGER_CONFIG_FILE_NAME = "manager.config"
+    MANAGER_CONFIG_FILE_NAME = "manager.props"
     OUTPUT_DIR_NAME = "output"
     LOG_FILE_NAME = "logs.txt"
     TRACE_FILE_NAME = "traces.txt"
