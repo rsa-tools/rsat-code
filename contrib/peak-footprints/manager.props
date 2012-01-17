@@ -1,17 +1,17 @@
-# Full path to the folder where the log files and the 'output' folder 
-# containing all the outputs will be created
-# base_output_dir=/home/spinelli/dev/TestFiles
-base_output_dir=/no_backup/rsa-tools/public_html/tmp/peak-footprints_output
-
-# (Mode server only) Folder where tickets containing commands to send in queue will be copied
-#listening_dir=/home/spinelli/dev/TestFiles/input/tickets
-listening_dir=/no_backup/rsa-tools/logs/peak-motifs_logs
-
 # Full path to the RSAT install directory
 rsat_dir=/no_backup/rsa-tools/
 
+# Path to the folder where the log files and the 'output' folder 
+# containing all the outputs will be created. This path must be relative to RSAT install dir
+base_output_dir=public_html/tmp/peak-footprints_output
+
+# (Mode server only) Folder where tickets containing commands to send in queue will be copied
+# This path must be relative to RSAT install dir
+listening_dir=logs/peak-motifs_logs
+
+
 # Name of the default motif database in RSAT
-rsat_default_motif_database=jaspar_core_vertebrates_2009_10.tf
+#rsat_default_motif_database=jaspar_core_vertebrates_2009_10.tf
 
 
 ################################################################
