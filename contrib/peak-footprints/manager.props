@@ -1,6 +1,3 @@
-# Full path to the RSAT install directory
-rsat_dir=/no_backup/rsa-tools/
-
 # Path to the folder where the log files and the 'output' folder 
 # containing all the outputs will be created. This path must be relative to RSAT install dir
 base_output_dir=public_html/tmp/peak-footprints_output
