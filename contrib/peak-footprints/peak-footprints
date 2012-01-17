@@ -37,6 +37,11 @@ def main( argv):
         usage()
         print "For help use --help option"
         return 2
+        
+    if len( opts) == 0 or len( args) == 0:
+        usage()
+        return 2       
+        
     for opt, arg in opts:
         # Help option
         if opt in ("-h", "--help"):
@@ -70,54 +75,9 @@ def main( argv):
         # Other
         else:
             usage()
-            return 2
-
-
-    # Pipeline test
-    if pipeline_filepath == None or len( pipeline_filepath) == 0:
-        ##Unitary test pipelines
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/multinode_pipeline_1.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/TestBEDProcessor_1_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/TestMAFIndexerProcessor_1_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/TestMAFProcessor_1_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/TestAXTProcessor_1_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/TestBlockProcessor_1_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/TestBlockProcessor_InputFile_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/TestBlockProcessor_MergeMotif_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/test/TestMotifProcessor_1_pipeline.xml"
+            return 2        
         
-        ##Validation test pipelines
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/validation/Validation_testFalsePositive.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/validation/Validation_testFalsePositive_WithCompare.xml"
         
-        ##Indexation pipelines
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/mm9_testMAFIndexer_pipeline.xml"
-        
-        ##Tests on MM9 CHR19
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testBED_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testMAFIndexer_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testMAF_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testAXT_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testMSA_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testBlock_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testDualBlock_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testMotifRSAT_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testMotifTOMTOM_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testDualMotif_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testOnlyMotifRSAT_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testOnlyMotifTOMTOM_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testOnlyHistogram_pipeline.xml"
-        pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testHistogram_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testCompareStatistics_pipeline.xml"
-        
-        ##Tests on MM9 CHR18 and CHR19
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr18_19_testBlock_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr18_19_testDualBlock_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr18_19_testMAF_pipeline.xml"
-        #pipeline_filepath = "/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr18_19_testHistogram_pipeline.xml"
-    
-    #resume = False
-    
     try:
         pipeline_manager = PipelineManagerFactory.getManager()
         if server == True:
