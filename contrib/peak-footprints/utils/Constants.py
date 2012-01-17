@@ -15,7 +15,7 @@ class Constants:
 
     # --------------------------------------------------------------------------------------
     #Manager Config parameters
-    CONFIG_DIR_PARAM = "config_dir"
+    INSTALL_DIR_PARAM = "config_dir"
     BASE_OUTPUT_DIR_PARAM = "base_output_dir"
     LISTENING_DIR_PARAM = "listening_dir"
     OUTPUT_DIR_PARAM = "output_dir"
