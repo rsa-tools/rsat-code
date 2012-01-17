@@ -1952,7 +1952,10 @@ sub _readFromJasparFile {
 #	$in = INPUT;
 #    }
 
-    ## Initialize the matrix list
+    ## Special treatment for the alphabet: sometimes indicated in the first column, sometimes not.
+    my @temp_alphabet = qw(A C G T);
+
+    ## Initialize the matrix LIST
     my @matrices = ();
     my $matrix;
     my $current_matrix_nb = 1;
@@ -1969,17 +1972,17 @@ sub _readFromJasparFile {
       ## Create a new matrix if required
       if  ($line =~ /^\>(\S+)/) {
 	my $id = $1;
-	my $postmatch = $';
-#'
+	my $postmatch = $'; #'
 	my $name = $id;
 	if ($postmatch =~ /\S+/) {
 	  $name = &RSAT::util::trim($postmatch);
 	  $name =~ s/\s+/_/g;
 	}
-	&RSAT::message::Debug("_readFromJasparFile", $id, $name) if ($main::verbose >= 5);
 	$matrix = new RSAT::matrix();
+	&RSAT::message::Debug("_readFromJasparFile", $id, $name, $matrix) if ($main::verbose >= 5);
 	$matrix->set_parameter("program", "jaspar");
 	$ncol = 0;
+	@temp_alphabet = qw(A C G T);
 
 	## For TRANSFAC, the accession number is the real identifier, whereas the identifier is a sort of name
 	$matrix->set_attribute("id", $id);
@@ -1996,10 +1999,17 @@ sub _readFromJasparFile {
 	$line =~ s/\]//;
 	$line =~ s/\s+/\t/;
 	my @fields = split /\t/, $line;
+
 	## residue associated to the row
-	my $residue = lc(shift @fields);
+	my $residue = "";
+	my $first_value = lc($fields[0]);
+	if ($first_value =~ /\d+/) {
+	  $residue = shift (@temp_alphabet);
+	} else {
+	  $residue = lc(shift @fields);
+	}
 	$matrix->addIndexedRow($residue, @fields);
-#	&RSAT::message::Debug($line, join(";", @fields)) if ($main::verbose >= 10);
+	&RSAT::message::Debug($line, $first_value,  join(";", @fields)) if ($main::verbose >= 5);
       }
     }
     close $in if ($file);
