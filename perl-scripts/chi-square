@@ -125,13 +125,13 @@ NAME
 	chi-square
 
         1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
-	
+
 USAGE
         chi-square [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
 	Calculates the chi square value for a given table of numerical values.
-	
+
 CATEGORY
 	statistics
 
@@ -141,30 +141,30 @@ OPTIONS
 	-v	verbose
 		returns a data report, i.e. a table with the input values
 		and the marginal sums.
-		
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
 	-o outputfile
 		if not specified, the standard output is used.
-		This allows to place the command within a pipe.		
+		This allows to place the command within a pipe.
 	-test goodfit | independence | homogeneity
-		the hypothesis to test can be indenpendence or 
-		goodness of fit. 
-		In case of goodness of fit, the table must contain exactly 
+		the hypothesis to test can be indenpendence or
+		goodness of fit.
+		In case of goodness of fit, the table must contain exactly
 		2 lines, the second line providing the expected frequencies.
 		By default, the test oh homogeneity is performed.
-	
+
 INPUT FORMAT
-	The input must be a table containing exclusively numerical 
-	values. Within each row, the values are separated by a single 
+	The input must be a table containing exclusively numerical
+	values. Within each row, the values are separated by a single
 	tabulation. All rows must contain the same number of values.
 	All values must be positive numbers.
 	Blank lines are ignored.
 
 OUTPUT FORMAT
-	The output is a single number comprized between 0 and 1, 
-	indicating the probability for the hypothesis of homogeneity 
+	The output is a single number comprized between 0 and 1,
+	indicating the probability for the hypothesis of homogeneity
 	to be true.
 
 FORMULA
@@ -172,7 +172,7 @@ FORMULA
 	              (obs_j - exp_j)^2
 	 ChiSq = SUM  ----------------
 	          j      (exp_j)
-	
+
 
 	Applicability
 	=============
@@ -186,14 +186,14 @@ FORMULA
 
 
 REFERENCE
-	chi square is described in about any textbook of 
+	chi square is described in about any textbook of
 	statistics. I read the definition in:
 		B.W. Lindgren (1976). Statistical Theory.
-		Macmillan Publishers co. 3rd edition. 	
-	
+		Macmillan Publishers co. 3rd edition.
+
 EXAMPLES
        chi-square -v -i mydata -o myresult
-	
+
 End_of_help
   close HELP;
   exit;
@@ -204,28 +204,28 @@ End_of_help
 #### read arguments ####
 sub ReadArguments {
     foreach $a (0..$#ARGV) {
-	
+
 	if ($ARGV[$a] eq "-v") {
 	    $verbose = 1;
 	    $report_data = 1;
-	    
+
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
-	    
+
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
-	    
+
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
-	    
+
 	} elsif ($ARGV[$a] eq "-test") {
 	    $test = $ARGV[$a+1];
-	    
+
 	}
     }
 }
