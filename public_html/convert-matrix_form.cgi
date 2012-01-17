@@ -126,13 +126,13 @@ print "&nbsp;<A HREF='help.convert-matrix.html#logo'><B>", "logo", "</B></A>&nbs
 print "&nbsp;&nbsp; (<b>options</b>:";
 print $query->checkbox(-name=>'error_bar',
 		       -checked=>$default{error_bar},
-		       -label=>'Error bar');    
+		       -label=>'Error bar');
 
-print $query->checkbox(-name=>'small_correc',
+print '&nbsp;'x3, $query->checkbox(-name=>'small_correc',
 		       -checked=>$default{small_correc},
-		       -label=>'Small sample correction');    
+		       -label=>'Small sample correction');
 
-print $query->checkbox(-name=>'stretch',
+print '&nbsp;'x3, $query->checkbox(-name=>'stretch',
 		       -checked=>$default{stretch},
 		       -label=>'Stretching of logos to entire length'); 
 print ")<br>\n";
