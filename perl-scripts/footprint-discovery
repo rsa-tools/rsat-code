@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.80 2011/11/27 21:14:16 jvanheld Exp $
+# $Id: footprint-discovery,v 1.81 2012/01/17 07:18:49 jvanheld Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.80 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -506,6 +506,7 @@ sub RunFootprintDisco {
   local ($outfile_prefix, $query_prefix) = &InitQueryOutput();
 
   local $status = "OK";
+  local $refresh_time = 10;
 
   ## Output files for dyad-analysis
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
@@ -516,13 +517,12 @@ sub RunFootprintDisco {
   $outfile{dyads_html} = $outfile{dyad_prefix}.".html";
   $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
   $outfile{map} = $outfile{dyad_prefix}.".".${map_format};
-#  if ($to_matrix) {
-    $outfile{pssm_prefix} = $outfile{dyad_prefix}."_pssm";
-    $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.tf";
-    $outfile{count_PSSM_txt} = $outfile{pssm_prefix}."_count_matrices.txt";
-    $outfile{count_PSSM_tf} = $outfile{pssm_prefix}."_count_matrices.tf";
-#  }
 
+  ## Conversion to matrix
+  $outfile{pssm_prefix} = $outfile{dyad_prefix}."_pssm";
+  $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.tf";
+  $outfile{count_PSSM_txt} = $outfile{pssm_prefix}."_count_matrices.txt";
+  $outfile{count_PSSM_tf} = $outfile{pssm_prefix}."_count_matrices.tf";
 
   ## Index files for the main index
   $main_index{$query_prefix}{dyads} = $outfile{dyads};
@@ -1217,7 +1217,7 @@ sub OpenMainIndex {
   $html_title = $taxon if ($taxon);
   $html_title .= " ".$organism_name if ($organism_name);
   $html_title .= " ".$bg_model if ($bg_model);
-  print $main_index &PrintHtmlResultHeader(program=>"footprint-discovery", title=>"$html_title", refresh_time=>300);
+  print $main_index &PrintHtmlResultHeader(program=>"footprint-discovery", title=>"$html_title", refresh_time=>$refresh_time);
 
 #  print $main_index "<h1>", $html_title, "</h1\n";
   print $main_index "<p><b>Command:</b> footprint-discovery";
