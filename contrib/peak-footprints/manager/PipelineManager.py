@@ -30,23 +30,23 @@ class PipelineManager:
     def __init__( self):
         
         self.config = {}
-        config_path = None
+        install_path = None
         # Test if the project is installed in RSAT
         if Constants.RSAT_PATH_ENV_VAR in os.environ.keys():
-            config_path = os.environ[ Constants.RSAT_PATH_ENV_VAR]
-            if config_path != None and len( config_path) > 0:
-                config_path = os.path.join( config_path, Constants.PROJECT_PATH_IN_RSAT)
-                if not os.path.exists( config_path):
+            rsat_path = os.environ[ Constants.RSAT_PATH_ENV_VAR]
+            if rsat_path != None and len( rsat_path) > 0:
+                install_path = os.path.join( rsat_path, Constants.PROJECT_PATH_IN_RSAT)
+                if not os.path.exists( install_path):
                     print "Project not installed in RSA-Tools"
-                    config_path = None
+                    install_path = None
         
         # If Project is not in RSAT, test if the project as its own environment variable set
-        if (config_path == None or len( config_path) == 0 ) and (Constants.PROJECT_INSTALL_PATH_ENV_VAR in os.environ.keys()):
-            config_path = os.environ[ Constants.PROJECT_INSTALL_PATH_ENV_VAR]
+        if (install_path == None or len( install_path) == 0 ) and (Constants.PROJECT_INSTALL_PATH_ENV_VAR in os.environ.keys()):
+            install_path = os.environ[ Constants.PROJECT_INSTALL_PATH_ENV_VAR]
         
-        # Test if a config_path has been found. If not, take the current working dir as path
-        if config_path != None and len( config_path) > 0:
-            self.config[ Constants.INSTALL_DIR_PARAM] = config_path
+        # Test if a install_path has been found. If not, take the current working dir as path
+        if install_path != None and len( install_path) > 0:
+            self.config[ Constants.INSTALL_DIR_PARAM] = install_path
         else:
             print "PipelineManager.init : No " + Constants.PROJECT_INSTALL_PATH_ENV_VAR + " environment variable set : using current directory"
             self.config[ Constants.INSTALL_DIR_PARAM] = os.getcwd()
