@@ -239,7 +239,7 @@ files \file{RSAT\_config.props} and \file{RSAT\_config.mk}, which will
 be further edited.
 
 \begin{lstlisting}
-cp RSAT_config_default.props RSAT_config.props
+cp RSAT_config_default.props RSAT_config.props ; 
 cp RSAT_config_default.mk RSAT_config.mk
 \end{lstlisting}
 
@@ -328,7 +328,8 @@ The Perl module \program{GD.pm} requires prior installation of the
   \texttt{yast}, \ldots).
 
 \item On \emph{Mac OSX} systems, the installation of the GD library is
-  quite tricky. The bet is to follow the installation protocol of the
+  quite tricky. The best way I found is to follow the installation
+  protocol of the
   libgd Web site \\
   (\url{http://www.libgd.org/DOC_INSTALL_OSX}).
 
@@ -343,20 +344,20 @@ password, please consult your system administrator.
 
 \begin{lstlisting}
 ## Acquire the system administrator rights
-sudo bash
+sudo bash;
 
 ## Define the RSAT environment variable.
 ## You must replace [PARENT_PATH] by the full directory of the folder
 ## where rsa-tools directory has been installed
-export RSAT=[PARENT_PATH]/rsa-tools
+export RSAT=[PARENT_PATH]/rsa-tools;
 
-cd ${RSAT}
+cd ${RSAT};
 
 ## Display the list of Perl modules that will be installed
-make -f makefiles/install_rsat.mk list_perl_modules
+make -f makefiles/install_rsat.mk list_perl_modules;
 
 ## Install the Perl modules
-make -f makefiles/install_rsat.mk install_perl_modules
+make -f makefiles/install_rsat.mk install_perl_modules;
 \end{lstlisting}
 %% closing $
 
@@ -391,13 +392,23 @@ section.
   \RSAT server. Property filesa are also useful to write your own perl
   clients for the Web service interface to \RSAT (RSATWS).
 
-\item \program{SOAP::WSDL}, \program{SOAP::Lite},
-  \program{Module::Build::Compat} and \program{Util::Properties}
-  (already mentioned above) are required for the Web services. \RSAT
-  Web services is a convenient interface that permits to write Perl
-  scripts to run \RSAT queries on a remote server. Some Perl scripts
-  of the \RSAT stand-alone commands are using SOAP to connect remote
-  servers (e.g. \program{supported-organisms},
+\item 
+  The following modules are required for the Web services. 
+
+  \begin{itemize}
+    \item \program{XML::Compile::SOAP11},
+    \item \program{XML::Compile::WSDL11},
+    \item \program{XML::Compile::Transport::SOAPHTTP},
+    \item \program{SOAP::WSDL}, 
+    \item \program{SOAP::Lite},
+    \item \program{Module::Build::Compat},
+    \item \program{Util::Properties} (already mentioned above) 
+  \end{itemize}
+
+  \RSAT Web services is a convenient interface that permits to write
+  Perl scripts to run \RSAT queries on a remote server. Some Perl
+  scripts of the \RSAT stand-alone commands are using SOAP to connect
+  remote servers (e.g. \program{supported-organisms},
   \program{download-organism}).
 
 \item \program{Statistics::Distributions} is used to calculate some
@@ -436,6 +447,10 @@ section.
 \item \program{Bio::Perl} is required for the Ensembl API, which in
   turn is required for handling genomes installed on the ENSEMBL
   database (\url{http://www.ensembl.org/}).
+
+\item \program{LWP::Simple} is used by the Web interface, to fetch
+  sequences from remote servers (URL of the sequence file specified in
+  a text field).
 
 \end{enumerate}
 
@@ -683,12 +698,14 @@ particular, \program{vmatch} and \program{mkvtree}).
 
 
 \begin{description}
-\item[\program{vmatch}]: developed by Stefan Kurtz, is used used by
-  the program \program{purge-sequences}, to mask redundant sequences
-  that bias motif discovery statistics.
+\item[\program{vmatch} and \program{mkvtree}]: developed by Stefan
+  Kurtz, are used by the program \program{purge-sequences}, to mask
+  redundant sequences that bias motif discovery statistics.
 
 \item[\program{seqlogo}]: developed by Thomas D. Schneider, is used
-  used by the program \program{convert-matrix} to generate
+  used by the programs \program{convert-matrix},
+  \program{compare-matrices}, \program{peak-motifs},
+  \program{matrix-quality} and a few others, to generate
   logos. \program{seqlogo} is the command-line version of
   \program{WebLogo}\urlref{http://weblogo.berkeley.edu/}.
 
