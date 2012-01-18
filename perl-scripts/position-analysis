@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.62 2011/06/11 13:38:36 jvanheld Exp $
+# $Id: position-analysis,v 1.63 2012/01/18 17:33:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -621,7 +621,7 @@ sub CalcChi {
     foreach my $class ($min_calc_class..$max_calc_class) {
       push @chi_values, $exp_occ{$oligo_seq}{$class};
     }
-    ($pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}) = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
+    ($pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}) = &ChiSquare("goodfit", 2, $calc_class_nb, 1, @chi_values);
     #	&RSAT::message::Debug($oligo_seq, "chi2=".$pattern{$oligo_seq}->{chi_square}, "df=".$pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
 
     ## Compute P-value
