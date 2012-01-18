@@ -2,23 +2,14 @@
 from utils.exception.ParsingException import ParsingException
 
 from xml.etree.ElementTree import parse
+from xml.etree.ElementTree import Element, ElementTree
 
 from Pipeline import Pipeline
 from Component import Component
 
+from utils.log.Log import Log
+
 class PipelineXMLParser:
-    
-    PIPELINE_TAG = "pipeline"
-    PIPELINE_NAME_ATT = "name"
-    NODE_TAG = "node"
-    BRANCH_TAG = "branch"
-    BRANCH_NAME_ATT = "name"
-    COMPONENT_TAG = "component"
-    COMPONENT_PROCESSOR_ATT = "processor"
-    COMPONENT_INPUT_FILE_ATT = "inputFile"
-    PARAM_TAG = "param"
-    PARAM_NAME_ATT = "name"
-    PARAM_VALUE_ATT = "value"
     
     RANK = 0
 
@@ -177,5 +168,72 @@ class PipelineXMLParser:
                 return None
 
 
+    # --------------------------------------------------------------------------------------
+    # Export the pipelines to an XML file
+    @staticmethod
+    def toXMLFile(self, pipelines):
+        
+        pipelines_element = Element( PipelineXMLParser.PIPELINES_TAG)
+        
+        for pipeline in pipelines:
+            pipeline_element = Element( PipelineXMLParser.PIPELINE_TAG)
+            pipelines_element.append( pipeline_element)
+            pipeline_element.attrib[ PipelineXMLParser.PIPELINE_NAME_ATT] = pipeline.name
+            
+            for component in pipeline.componentList:
+                component_element = Element( PipelineXMLParser.COMPONENT_TAG)
+                pipeline_element.append( component_element)
+                component_element.attrib[ PipelineXMLParser.COMPONENT_PROCESSOR_ATT] = component.processorName
+                for param_name, param_value in component.parameters.iteritems():
+                    param_element = Element( PipelineXMLParser.PARAM_TAG)
+                    component_element.append( param_element)
+                    param_element.attrib[ PipelineXMLParser.PARAM_NAME_ATT] = str( param_name)
+                    param_element.attrib[ PipelineXMLParser.PARAM_VALUE_ATT] = str( param_value)
+
+        try:
+            PipelineXMLParser.indent( pipelines_element, 0)
+            ElementTree( pipelines_element).write( "test_export_pipeline.xml")
+        except IOError, exce:
+            Log.log( "PipelineXMLParser.toXMLFile : Unable to write Pipelines to XML file. From:\n\t---> " + str( exce))
+        except ParsingException, par_exce:
+            Log.log( "PipelineXMLParser.toXMLFile : Unable to save Pipelines to XML file. From:\n\t---> " + str( par_exce))
+
+
+    # --------------------------------------------------------------------------------------
+    # Add indentation to the ElementTree in order to have a pretty print
+    # in the XML file (used by subclasses)
+    @staticmethod
+    def indent(self, elem, level=0):
+            
+        i = "\n" + level*"  "
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + "  "
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+            for elem in elem:
+                PipelineXMLParser.indent(elem, level+1)
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i   
+
+    # --------------------------------------------------------------------------------------
+    # XML Tag used in Pipeline declaration
+    
+    PIPELINES_TAG = "pipelines"
+    PIPELINE_TAG = "pipeline"
+    PIPELINE_NAME_ATT = "name"
+    NODE_TAG = "node"
+    BRANCH_TAG = "branch"
+    BRANCH_NAME_ATT = "name"
+    COMPONENT_TAG = "component"
+    COMPONENT_PROCESSOR_ATT = "processor"
+    COMPONENT_INPUT_FILE_ATT = "inputFile"
+    PARAM_TAG = "param"
+    PARAM_NAME_ATT = "name"
+    PARAM_VALUE_ATT = "value"
+    
     
 # eflag: FileType = Python2
