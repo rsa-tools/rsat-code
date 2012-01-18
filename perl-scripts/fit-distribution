@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.23 2012/01/17 07:17:13 jvanheld Exp $
+# $Id: fit-distribution,v 1.24 2012/01/18 17:33:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -234,7 +234,7 @@ package main;
 			   ) if ($main::verbose >= 10);
 
       ## Perform a chi-square test
-      ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, scalar(@counts), @counts, @expected);
+      ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, scalar(@counts), 1, @counts, @expected);
 
       $obs_grouped = join ":", @{$obs_ref};
       $exp_grouped = join ":", @{$exp_ref};

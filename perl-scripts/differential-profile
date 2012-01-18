@@ -489,7 +489,7 @@ for $pos (1..$max_length) {
 	    push @int_values, $expected_occ;
         }
         if ($stat eq "chi") {
-            ($chi_square, $df) = &ChiSquare("good fit",2,$#residue_list + 1, @int_values);
+            ($chi_square, $df) = &ChiSquare("goodness", 2, $#residue_list + 1, 1, @int_values);
             $line[$pos] .= sprintf "\t%7.2f", $chi_square;
 #        } elsif ($stat eq "likelihood") {
 #            $log_likelihood = &LogLikelihood("good fit",2,$#residue_list + 1, @int_values);
@@ -516,7 +516,7 @@ for $pos (1..$max_length) {
         $line[$pos] .= sprintf "\t%7.1f", $info;
         $histo_value = $histo_scale*$info;
     } else {
-        ($chi_square, $df) = &ChiSquare("homogeneity",$profile_nb,$#residue_list + 1, @diff_values);
+        ($chi_square, $df) = &ChiSquare("homogeneity",$profile_nb,$#residue_list + 1, 0, @diff_values);
         $line[$pos] .= sprintf "\t%7.2f", $chi_square;
         $histo_value = $histo_scale*$chi_square;
     }
