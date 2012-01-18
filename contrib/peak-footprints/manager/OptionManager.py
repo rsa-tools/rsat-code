@@ -109,8 +109,6 @@ class OptionManager:
                 
                 while opt[0] == "-":
                     opt = opt[1:]
-                    
-                print "opt = " + opt + " -> arg = " + arg
                 
                 # Add the BED file path
                 if opt == OptionManager.INPUT_PEAKS:
