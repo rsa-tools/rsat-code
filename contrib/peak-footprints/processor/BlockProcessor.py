@@ -28,6 +28,7 @@ class BlockProcessor( Processor):
     
     WINDOW_SIZE_PARAM = "WindowSize"
     CONSERVATION_LIMIT_PARAM = "ConservationLimit"
+    REFERENCE_SPECIES_PARAM = "ReferenceSpecies"
     DESIRED_SPECIES_LIST_PARAM = "DesiredSpeciesList"
     
     ALGORITHM_PARAM = "Algorithm"
@@ -76,7 +77,9 @@ class BlockProcessor( Processor):
     @staticmethod
     def getRequiredParameters():
         
-        return ( BlockProcessor.WINDOW_SIZE_PARAM, BlockProcessor.CONSERVATION_LIMIT_PARAM)
+        return ( BlockProcessor.WINDOW_SIZE_PARAM,\
+                BlockProcessor.CONSERVATION_LIMIT_PARAM,\
+                BlockProcessor.REFERENCE_SPECIES_PARAM)
 
 
 
@@ -95,12 +98,16 @@ class BlockProcessor( Processor):
         algo = self.getParameter( BlockProcessor.ALGORITHM_PARAM, False)
         if algo != None:
             self.algorithm = algo.lower()
-            
+        
+        referenceSpecies = self.getParameter( BlockProcessor.REFERENCE_SPECIES_PARAM)
+        
         desired_species_line = self.getParameter( BlockProcessor.DESIRED_SPECIES_LIST_PARAM, False)
         Log.trace( "BlockProcessor.execute : Chosen Algorithm is '" + self.algorithm + "'")
         
+        self.desiredSpeciesList = []
+        self.desiredSpeciesList.append( referenceSpecies)
         if desired_species_line != None:
-            self.desiredSpeciesList = desired_species_line.split()
+            self.desiredSpeciesList.extend( desired_species_line.split())
         
         # Prepare the processor output dir
         out_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
