@@ -107,6 +107,11 @@ class OptionManager:
                 
                 print "opt = " + opt + " -> arg = " + arg
                 
+                while opt[0] == "-":
+                    opt = opt[1:]
+                    
+                print "opt = " + opt + " -> arg = " + arg
+                
                 # Add the BED file path
                 if opt == OptionManager.INPUT_PEAKS:
                     OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.INPUT_BED_FILE_PARAM, arg)

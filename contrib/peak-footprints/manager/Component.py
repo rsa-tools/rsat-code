@@ -103,7 +103,7 @@ class Component:
     # previous runs. If so, the class of the output CommStruct is retrieved and the Component is declared as 'resumed'
     # If not, the processor is run and the component declared as 'executed'
     def start( self, pipeline_out, runtime_params, resume = False):
-                
+
         self.outputDir = pipeline_out
         self.runtimeParameters = runtime_params
         
