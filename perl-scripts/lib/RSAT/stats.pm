@@ -22,7 +22,7 @@ RSAT::stats
 
 =head1 DESCRIPTION
 
-A method class with statistical procedures and functions. 
+A method class with statistical procedures and functions.
 
 =head1 METHODS
 
@@ -47,7 +47,7 @@ sub permute {
     for my $i (0..$#array) {
 	my $rand = int(rand($n-$i));
 	push @permuted, splice(@array, $rand, 1);
-	warn join("\t", "RSAT::stats::permute", $i, "rand=".$rand, $#array, $#permuted), "\n" if ($main::verbose >= 10);
+	&RSAT::message::Debug("&RSAT::stats::permute()", $i, "rand=".$rand, $#array, $#permuted)  if ($main::verbose >= 10);
     }
     return @permuted;
 }
@@ -206,7 +206,7 @@ sub checked_sum {
     my $sum = 0;
     foreach $value (@values) {
 	$sum += $value if (&RSAT::util::IsReal($value));
-    } 
+    }
     return $sum;
 }
 
@@ -221,7 +221,7 @@ sub checked_avg {
 	    $valid_values++;
 	    $sum += $value;
 	}
-    } 
+    }
     if ($valid_values > 0) {
 	return ($sum/$valid_values);
     } else {
@@ -245,7 +245,7 @@ sub checked_avg {
 ### function. This allows to compute small numbers as low as ~1e-300,
 ### instead of the classical 1e-15 limit of computation for floating
 ### point numbers.
-### 
+###
 sub binomial {
     my($proba, $trials, $succ) = @_;
     my($q) = 1 - $proba;
@@ -333,8 +333,8 @@ sub sum_of_binomials {
     }
 
 
-    #### Limit cases : the result is trivial, so there is no need to
-    #### compute sum for obtaining the result
+    ## Limit cases : the result is trivial, so there is no need to
+    ## compute sum for obtaining the result
     if ($proba == 0) {
 	if ($from == 0) {
 	    return 1;
@@ -351,7 +351,7 @@ sub sum_of_binomials {
     }
 
 
-    #### initialize
+    ## initialize
     my $q = 1 - $proba;
     my $logproba = log($proba);
     my $logq = log($q);
@@ -403,14 +403,14 @@ sub binomial_boe {
 ##############################################################
 ### usage: &binomial_approx($proba,$trials,$successes)
 ### this is the entropy approximation for the sum of binomials
-### note that the approximation is only valid for s/r > p 
+### note that the approximation is only valid for s/r > p
 sub binomial_approx {
     my ($proba, $trials, $successes) = @_;
     my $beta = $successes/$trials;
     my $alpha = $proba;
 
-    if (($beta >= $alpha) && 
-	($beta <1) && 
+    if (($beta >= $alpha) &&
+	($beta <1) &&
 	($beta > 0)) {
 	$b_approx = exp(-$trials*($beta*log(abs($beta/$alpha)) + (1-$beta)*log(abs((1-$beta)/(1-$alpha)))));
     } else {
@@ -429,12 +429,12 @@ sub binomial_approx {
 ##		  s        s    k+s
 ##	P(X=s) = C      * p  / q
 ##  	          k+s-1
-##  
+##
 ##  	 where	s is the number of successful trials,
 ##		p is a real value comprized between 0 and 1
 ##		q = 1 + p
-##  	
-##	This distribution is aggregative, with a mean 
+##
+##	This distribution is aggregative, with a mean
 ##	     m = kp
 ##	and a variance
 ##	     v = kpq
@@ -442,7 +442,7 @@ sub binomial_approx {
 ##	Instead of p and k, the mean (m) and variance (v) can be
 ##	provided; p and k are then calculated from these parameters as
 ##	follows.
-##	
+##
 ##		q = v/m
 ##		p = 1-q = 1-v/m
 ##		k = m/p = 1/(v = m)
@@ -459,7 +459,7 @@ sub binomial_approx {
 ## Calculate negbin with mean and variance as parameters
 sub negbin2 {
     my ($x, $mean, $variance, $series) = @_;
-    
+
     ### Check parameters
     &RSAT::error::FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
     &RSAT::error::FatalError("negbin2: the variance should be positive") if ($variance < 0);
@@ -468,7 +468,7 @@ sub negbin2 {
     ### Convert mean and variance to p and k
     my $p = $variance/$mean -1;
     my $k = $mean/$p;
-    warn ("; Calculating p and k from mean and variance\n",
+    &RSAT::message::Info("Calculating p and k from mean and variance",
 	  ";\tp = ", $p, "\n",
 	  ";\tk = ", $k, "\n"
 	 ) if ($main::verbose >= 6);
@@ -476,7 +476,7 @@ sub negbin2 {
     ### Calculate the negbin
     my @negbin = &negbin($x, $p, $k, $series);
     return ($p, $k, @negbin);
-    
+
 }
 
 ##############################################################
@@ -490,11 +490,11 @@ sub negbin {
     my $log_k = log($k);
     my @log_negbins = ();
 
-    warn ("; Calculating negative binomial\n",
-	  ";\tp = ", $p, "\n",
-	  ";\tq = ", $q, "\n",
-	  ";\tk = ", $k, "\n",
-	  ";\tx = ", $x, "\n",
+    &RSAT::message::Info("Calculating negative binomial\n",
+	  "; p = ", $p, "\n",
+	  "; q = ", $q, "\n",
+	  "; k = ", $k, "\n",
+	  "; x = ", $x, "\n",
 	 ) if ($main::verbose >= 6);
 
     ## Calculate proba for 0 successes
@@ -580,7 +580,7 @@ sub sum_of_negbin {
     if ($i >= $from) {
       $sum_of_negbin += &LogToEng($log_negbin);
     }
-    warn join ("\t", $i, $log_negbin, &LogToEng($log_negbin), $sum_of_negbin), "\n" 
+    warn join ("\t", $i, $log_negbin, &LogToEng($log_negbin), $sum_of_negbin), "\n"
       if ($main::verbose >= 10);
     last if (($sum_of_negbin > 0) && ($prev_sum == $sum_of_negbin));
   }
@@ -715,7 +715,7 @@ sub poisson {
       my $dpois_ref = \@dpois;
       my $ppois_ref = \@ppois;
       my $vpois_ref = \@vpois;
-#      &RSAT::message::Debug($dpois_ref, $ppois_ref) if ($main::verbose >= 0);
+#      &RSAT::message::Debug($dpois_ref, $ppois_ref) if ($main::verbose >= 10);
       return ($dpois_ref, $ppois_ref, $vpois_ref);
 
     } else {
@@ -819,21 +819,21 @@ sub hypergeometric {
 	&RSAT::error::FatalError("Hypergeometric, recursion reached depth limit $max_depth\n");
     }
 
-    #### initialization
+    ## initialization
     my $to;
     my $proba = 0;
     my $log_proba = 0;
 
-    #### sum of hypergeometrics
+    ## sum of hypergeometrics
     if (defined($args{to})) {
 	$to = $args{to};
     } else {
 	$to = $x;
     }
 
-    #### some verbosity
-     warn join ( "\t", 
-  		"Hypergeometric", 
+    ## some verbosity
+     warn join ( "\t",
+  		"Hypergeometric",
   		"m=$m",
   		"w=$w",
   		"n=$n",
@@ -845,7 +845,7 @@ sub hypergeometric {
  		"prev=$args{previous_value}"
  	      ), "\n" if ($main::verbose >= 6);
 
-    #### incompatible parameter values
+    ## incompatible parameter values
     if ($k > $n) {
 	&RSAT::error::FatalError("Sample ($k) cannot be larger than number of balls in the urn ($n)");
     }
@@ -862,9 +862,9 @@ sub hypergeometric {
 	&RSAT::error::FatalError( "Number of black balls in the sample ($x) must be strictly positive\n");
     }
 
-    #### In the case of impossible events, a probability of 0 is
-    #### returned, unless the routine is called with an argument
-    #### &hypergeometric(..., check=>1)
+    ## In the case of impossible events, a probability of 0 is
+    ## returned, unless the routine is called with an argument
+    ## &hypergeometric(..., check=>1)
     if ($x > $m) {
 	if ($args{check}) {
 	    &RSAT::error::FatalError("Number of black balls in the sample ($x) cannot be larger than number of black balls in the urn ($m)");
@@ -943,7 +943,7 @@ sub hypergeometric {
 #      }
 
     } else {
-      #### calculate value for 0 successes
+      ## calculate value for 0 successes
       $log_proba = 0;
       for my $i (($w - $k + 1)..($n - $m)) {
 	$log_proba += log($i);
@@ -967,8 +967,8 @@ sub hypergeometric {
 	      ), "\n" if ($main::verbose >= 6);
 
     ################################################################
-    #### recursive calculation of the hypergeometric density for $x
-    #### (if cumulative, $x is the first value of the sum)
+    ## recursive calculation of the hypergeometric density for $x
+    ## (if cumulative, $x is the first value of the sum)
     if ($start <= $x) {
       for my $i ($start..$x) {
 	$log_proba += log($m - $i + 1);
@@ -1015,8 +1015,8 @@ sub hypergeometric {
     }
     $proba = &min($proba, 1); ### floating point calculation errors
 
-#     warn join ( "\t", 
-# 		"Hypergeometric", 
+#     warn join ( "\t",
+# 		"Hypergeometric",
 # 		"m=$m",
 # 		"w=$w",
 # 		"n=$n",
@@ -1025,7 +1025,7 @@ sub hypergeometric {
 # 		"to=$to",
 # 		"depth=$args{depth}",
 # 		"log(p)=$log_proba",
-# 		"proba=$proba"		    
+# 		"proba=$proba"
 # 	      ), "\n" if ($main::verbose >= 6);
 
 #    my $proba = exp($log_proba);
@@ -1041,7 +1041,7 @@ sub hypergeometric {
 sub sum_of_hypergeometrics {
     my ($m, $n, $k, $from, $to) = @_;
 
-    #### minimum number of ùmarked balls in the selection
+    ## minimum number of ùmarked balls in the selection
     if ($n - $m - $k < 0) {
 	$min_x = $k + $m - $n;
     } else {
@@ -1049,7 +1049,7 @@ sub sum_of_hypergeometrics {
     }
     $from = &max($from, $min_x);
 
-    #### maximum number of marked balls in the selection
+    ## maximum number of marked balls in the selection
     $to = &min($to,$m);
 
     warn join( "\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to", "min_x=$min_x"), "\n" if ($main::verbose >= 6);
@@ -1103,11 +1103,11 @@ sub factorial {
 ##          N!PROD(PROD(nij!))
 ##
 ## the input data are reported together with all marginal sums
-## by setting a global variable called $report_data to 1 
+## by setting a global variable called $report_data to 1
 sub FisherExactTest {
     my ($row_nb, $col_nb, @values) = @_;
     my $N;
-    my $row; 
+    my $row;
     my $col;
     my @col_sum;
     my @row_sum;
@@ -1121,7 +1121,7 @@ sub FisherExactTest {
     my $left_sum = 0;
     my $right_group = 0;
     my $right_sum = 0;
-    
+
     ## Check parameters
     if (($row_nb < 2) || ($col_nb < 2)) {
 	&RSAT::error::FatalError( ";FisherExactTest: at least 2 rows and 2 columns are required for the Fisher exact test"); # too few rows or columns
@@ -1137,7 +1137,7 @@ sub FisherExactTest {
     }
 
 
-    #### calculate marginal sums ni+, n+j, and N ###
+    ## calculate marginal sums ni+, n+j, and N
     $N = 0;
     for $row (1..$row_nb) {
 	$col_sum[$row] = 0;
@@ -1155,7 +1155,7 @@ sub FisherExactTest {
 	}
     }
 
-    #### calculate the probability ####
+    ## calculate the probability
     $log_proba = 0;
     for $row (1..$row_nb) {
 
@@ -1182,7 +1182,7 @@ sub FisherExactTest {
     $proba = exp($log_proba);
     $log10_proba = $log_proba / log(10);
 
-    ### data report ###
+    ### data report
     if ($report_data) {
 	print $out ";Fisher's exact test with $row_nb rows and $col_nb col ($val_nb values)\n";
 	print $out ";DATA REPORT\n";
@@ -1209,68 +1209,103 @@ sub FisherExactTest {
 } ### end FisherExactTest
 
 
-##############################################################
-## Calculates Pearson chi-square statistics for a table of numbers
-##
-## Usage
-## =====
-## $chi_square = &ChiSquare($test,$row_nb, $col_nb, @values);
-##
-## where
-##	$test	indicates the kind of hypothesis to test:
-##		- independence
-##		- homogeneity
-##		- good fit
-##	$row_nb is the number of rows
-##	$col_nb is th number of columns
-##	@values is the list of values
-## all values must be real numbers
-## the number of values must equal the product of col_nb by row_nb
-##
-## Good fit test
-## =============
-## In this case, there must be exactly two rows:
-## - the first row contains the observed frequencies.
-## - the second row contains the expected frequencies.
-##
-## The chi-square value is calculated by:
-##
-##              (obs_j - exp_j)^2
-## ChiSq = SUM  ----------------
-##          j      (exp_j)
-##
-## where j is the index for columns.
-##
-## Independence or homogeneity test:
-## =================================
-## the first step is to calculate the marginal sums:
-## ni. = sum of all values from the ith row
-## n.j = sum of all values from the jth column
-## N = sum of all values from the table
-## 
-## The chi-square value is then calculated by:
-##
-##                   (nij - n.j*ni./N)^2
-## ChiSq = SUM (SUM -----------------)
-##          j    i     (n.j*ni./N)
-##
-##
-## the input data are reported together with all marginal sums
-## by setting a global variable called $report_data to 1 
-##
-## Applicability
-## =============
-## One condition of applicability for the chi-square test is that each
-## class should contain a "sufficient" number of expected observations.
-## One commonly takes 5 as the minimal number of expected observations per class.
-## When the condition of acceptability is not met, our ChiSquare function
-## returns the calculated value surrounded by parenthesis, in order to
-## warn the user that the chi2 value is not valid.
+
+=pod
+
+=item B<ChiSquare>
+
+Calculate Pearson chi-square statistics for a table of numbers.
+
+The input is an array containing the values of a data table on which
+the chi2 test will be applied. Each row of the input table is
+considered as a series of values. The number of columns corresponds to
+the number of values per series ("classes").
+
+For the goodness of fit test, there must be exactly two series: the
+first series indicates observed values, the second expected
+values. The homogeneity and independence test can be applied to tables
+containing two or more series.
+
+=head2 Usage
+
+ $chi_square = &ChiSquare($test,$series_nb, $class_nb, $sort_by_exp, @values);
+
+where
+
+=over
+
+=item I<$test> indicates the kind of  of hypothesis to test:
+
+Supported: independence, homogeneity, goodness (of fit)
+
+=item I<$series_nb>: number of series.
+
+=item I<$class_nb>: number of classes
+
+=item I<$sort_by_exp>: sort series by expected values (if parameter is > 0)
+
+Only for goodness of fit test. Sort obs and exp series by increasing
+expected values before grouping tail classes. This reduces the number
+of classes to be grouped, since after sorting all the classes with exp
+< 5 are on the same side of the sorted arrays.
+
+=item I<@values>: list of values
+
+All values must be real numbers.
+
+The number of values must equal the product of series_nb by class_nb.
+
+=head2 Goodness of  fit test
+
+For the goodness of fit test, there must be exactly two series: the
+first series containsq the observed frequencies, the second series the
+expected frequencies.
+
+The chi-square value is calculated by:
+
+              (obs_j - exp_j)^2
+ ChiSq = SUM  ----------------
+          j      (exp_j)
+
+where j is the index for classes.
+
+=head2 Independence or homogeneity test
+
+The first step is to calculate the marginal sums:
+
+ I<ni.> = sum of all values from the ith row
+ I<n.j> = sum of all values from the jth column
+ I<N> = sum of all values from the table
+
+The chi-square value is then calculated by:
+
+                   (nij - n.j*ni./N)^2
+ ChiSq = SUM (SUM -----------------)
+          j    i     (n.j*ni./N)
+
+Input data can be reported together with all marginal sums by setting
+a global variable called $report_data to 1.
+
+
+=head2  Applicability condition
+
+One condition of applicability for the chi-square test is that each
+class should contain a "sufficient" number of expected observations.
+One commonly takes 5 as the minimal number of expected observations
+per class.
+
+If any of the expected values is 0, the chi2 value is Inf.
+
+When the condition of acceptability is not met, the &ChiSquare() function
+returns the calculated value surrounded by curly brackets, in order to
+warn the user that the chi2 value is not valid.
+
+=cut
 
 sub ChiSquare {
-    my($test, $row_nb, $col_nb, @values) = @_;
+    my($test, $series_nb, $class_nb,  $sort_by_exp, @values) = @_;
     my $N;
-    my $row; 
+    my $row;
     my $col;
     my @col_sum;
     my @row_sum;
@@ -1289,26 +1324,26 @@ sub ChiSquare {
     my @observed = ();
     my @expected = ();
 
-    &RSAT::message::Debug("RSAT::stat::ChiSquare", "test=".$test, "row_nb=".$row_nb, "col_nb=.".$col_nb, scalar(@values)." values") 
-      if ($main::verbose >= 5);
+    &RSAT::message::Debug("RSAT::stat::ChiSquare", "test=".$test, "row_nb=".$series_nb, "col_nb=".$class_nb, scalar(@values)." values")
+	if ($main::verbose >= 4);
 
-    ### check parameter values ###
+    ### Check parameter values
     unless (($test =~ /^indep/i) || ($test =~ /^good/i) || ($test =~ /^homog/i)) {
-	&RSAT::error::FatalError("Unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')"); 
+	&RSAT::error::FatalError("Unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')");
     }
-    if (($row_nb < 2) || ($col_nb < 2)) {
+    if (($series_nb < 2) || ($class_nb < 2)) {
 	&RSAT::error::FatalError("At least 2 rows and 2 columns are required"); # too few rows or columns
     }
 
     ## values = columns*rows
-    unless ($val_nb == $row_nb * $col_nb) {
+    unless ($val_nb == $series_nb * $class_nb) {
 	&RSAT::error::FatalError( ";ChiSquare: invalid number of numeric values",
-		     "\t".$row_nb." rows",
-		     "\t".$col_nb." columns",
-		     "\t".$val_nb." values");
+				  "\t".$series_nb." rows",
+				  "\t".$class_nb." columns",
+				  "\t".$val_nb." values");
     }
 
-    ### all values must be real numbers
+    ### All values must be real numbers
     foreach $val (@values) {
 	&RSAT::error::FatalError("Invalid values: $val is not a real number") unless &RSAT::util::IsReal($val); # invalid values
     }
@@ -1316,34 +1351,36 @@ sub ChiSquare {
     ################################################################
     ## Independence of homogeneity test
     if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
-	#### calculate marginal sums ni+, n+j, and N ###
+
+	#### Calculate marginal sums ni+, n+j, and N
 	$N = 0;
-	for $row (1..$row_nb) {
+	for $row (1..$series_nb) {
 	    $col_sum[$row] = 0;
-	    for $col (1..$col_nb) {
-		$offset = ($row-1) * $col_nb + $col -1;
+	    for $col (1..$class_nb) {
+		$offset = ($row-1) * $class_nb + $col -1;
 		$col_sum[$row] += $values[$offset];
 	    }
 	    $N += $col_sum[$row];
 	}
-	for $col (1..$col_nb) {
+	for $col (1..$class_nb) {
 	    $row_sum[$col] = 0;
-	    for $row (1..$row_nb) {
-		$offset = ($row-1) * $col_nb + $col -1;
+	    for $row (1..$series_nb) {
+		$offset = ($row-1) * $class_nb + $col -1;
 		$row_sum[$col] += $values[$offset];
 	    }
 	}
 
-	#### calculate the chi square value ####
+	#### Calculate the chi square value
 	$chi_square = 0;
-	for $row (1..$row_nb) {
-	    for $col (1..$col_nb) {
+	for $row (1..$series_nb) {
+	    for $col (1..$class_nb) {
 		$exp = $row_sum[$col] * $col_sum[$row] / $N;
 		$not_valid = 1 if ($exp < 5);
-		$offset = ($row-1) * $col_nb + $col -1;
+		$offset = ($row-1) * $class_nb + $col -1;
 		$obs = $values[$offset];
 		if ($exp == 0) {
 		    $chi_square = "NA";
+		    &RSAT::message::Warning("&ChiSquare()", "chi2 is undefined (NA) because some expected values are null (some rows or columns contain only null values).");
 		    last;
 		} else {
 		    $chi_square += (($obs - $exp)**2)/$exp unless ($exp == 0);
@@ -1352,169 +1389,160 @@ sub ChiSquare {
 	    last if ($chi_square eq "NA");
 	}
 
-    ################################################################
-    ## Goodness of fit
+	################################################################
+	## Goodness of fit test
     } elsif ($test =~ /^good/i) {
-	unless ($row_nb == 2) {
-	    return ";Error: test of goodness of fit requires esactly two lines";
+	unless ($series_nb == 2) {
+	    &RSAT::error::FatalError("Goodness of fit test requires esactly two lines");
 	}
 	$chi_square = 0;
-	@observed = @values[0..$col_nb-1];
-	@expected = @values[$col_nb..2*$col_nb-1];
+	@observed = @values[0..$class_nb-1];
+	@expected = @values[$class_nb..2*$class_nb-1];
 
-#  	if ($main::verbose >= 10) {
-#  	    warn "Observed\t", join( " ", @observed), "\n" ;
-#  	    warn "Expected\t", join( " ", @expected), "\n";
-#  	}
+  	if ($main::verbose >= 10) {
+  	    &RSAT::message::Debug("obs original", join( "\t", @observed));
+  	    &RSAT::message::Debug("exp original", join( "\t", @expected));
+  	}
 
 	#### Group tails to fulfill the condition of applicability
 	if ($group_tails) {
-	  &RSAT::message::Debug("Before grouping",
-		   "\nexpected", join(":", @expected),
-		   "\nobserved", join(":", @observed))
-		if ($main::verbose >= 10);
+	    &RSAT::message::Info("&ChiSquare()", "Grouping classes on left and right tails to ensure exp >= 5.") if ($main::verbose >= 3);
+
+	    ## Sort by increasing expected values before grouping
+	    ## terminal classes.  This is , in order to get the two
+	    ## tails on the same side, which generally reduces the
+	    ## number of classes to be grouped. I am not sure this
+	    ## treatment is orthodox (I did not find it in any
+	    ## textbook) but since the Chi2 test does not make any
+	    ## assumption on the order of the columns, I don't see any
+	    ## reason to forbid it.
+	    if ($sort_by_exp) {
+		&RSAT::message::Info("&ChiSquare()", "Sorting by expected value before class grouping") if ($main::verbose >= 3);
+		@order = sort {$expected[$a] <=> $expected[$b]} 0..$#expected;
+		@observed_sorted = @observed[@order];
+		@expected_sorted = @expected[@order];
+		if ($main::verbose >= 10) {
+		    &RSAT::message::Debug("order by incr exp", join( "\t", @order));
+		    &RSAT::message::Debug("obs sorted by exp", join( "\t", @observed_sorted));
+		    &RSAT::message::Debug("exp sorted by exp", join( "\t", @expected_sorted));
+		}
+		@observed = @observed_sorted;
+		@expected = @expected_sorted;
+	    }
+
+	    ## Report expected and observed vectors before grouping
+	    if ($main::verbose >= 10) {
+		&RSAT::message::Debug("obs before grouping", join("\t", @observed));
+		&RSAT::message::Debug("exp before grouping", join("\t", @expected));
+	    }
+
 	    ## Group left tail
-	    do {
+	    $left_group = 0; ## Counter for the number of grouped classes on the left tail
+	    while (($#expected > 1) && ($expected[0] < 5)) {
 		$left_group++;
-		$left_sum += $expected[$left_group-1];
-	    } until (($left_group >= $col_nb) || 
-		     (($expected[$left_group] >= 5) && ($left_sum >= 5)));
-#	    } until ((($expected[$left_group] >= 5) || ($left_group >= $col_nb)) && 
-#		     (($left_sum >= 5) || ($left_group >= $col_nb)));
-	    if ($left_group > 1) {
-		my $left_obs = 0;
-		my $left_exp = 0;
-		for my $col (1..($left_group-1)) {
-		    $left_obs += shift @observed;
-		    $left_exp += shift @expected;
-#		    warn join ("\t", "Grouping left tail", $left_group, $col, $left_obs, $left_exp), "\n" if ($main::verbose >= 10);
-		}
-		$observed[0] += $left_obs;
-		$expected[0] += $left_exp;
-		warn join ("\t", "Grouped $left_group left classes",
-			   "sum=$left_sum",
-			   $observed[0],
-			   $expected[0],
-			  ), "\n" if ($main::verbose >= 6); 
+		$exp_sum = shift(@expected);
+		$expected[0] += $exp_sum;
+		$obs_sum = shift(@observed);
+		$observed[0] += $obs_sum;
 	    }
-	    ## recalculate the number of columns after left grouping
-	    $col_nb = scalar(@expected);
-	    
-	    warn ("After left grouping", 
-		  "\n\texpected\t", join(":", @expected), 
-		  "\n\tobserved\t", join(":", @observed), "\n")
-		if ($main::verbose >= 10);
 
-	    ## group right tail
-	    do {
+	    ## Recalculate the number of columns after left grouping
+	    $class_nb = scalar(@expected);
+	    &RSAT::message::Debug("Grouped on left", $left_group, "remaining", $class_nb) if ($main::verbose >= 3);
+	    if ($main::verbose >= 10) {
+		&RSAT::message::Debug("obs after left grouping", join("\t", @observed));
+		&RSAT::message::Debug("exp after left grouping", join("\t", @expected));
+	    }
+
+	    ## Group right tail
+	    $right_group = 0; ## Counter for the number of grouped classes on the right tail
+	    while (($#expected > 1) && ($expected[$#expected] < 5)) {
 		$right_group++;
-		$right_sum += $expected[$col_nb -$right_group];
-		&RSAT::message::Debug("Right group",
-				      $right_group,
-				      $right_sum,
-				      $col_nb, 
-				      $col_nb -$right_group,
-				      $expected[$col_nb -$right_group]) if ($main::verbose >= 10);
-	    } until (($right_group >= $col_nb) || 
-		     (($expected[$col_nb -$right_group -1] >= 5) && ($right_sum >= 5)));
-#	    } until ((($expected[$col_nb -$right_group -1] >= 5) || ($right_group >= $col_nb)) &&
-#		     (($right_sum >= 5) || ($right_group >= $col_nb)));
-	    if ($right_group > 1) {
-		my $right_obs = 0;
-		my $right_exp = 0;
-		for my $col (1..($right_group-1)) {
-		    $right_obs += pop @observed;
-		    $right_exp += pop @expected;
-		    &RSAT::message::Debug("Grouping right tail", $right_group, $col, $right_obs, $right_exp) if ($main::verbose >= 10);
-		}
-		$observed[$#observed] += $right_obs;
-		$expected[$#expected] += $right_exp;
-		warn join ("\t", "Grouped $right_group right classes",
-			   "sum=$right_sum",
-			   $observed[$#observed],
-			   $expected[$#expected],
-			  ), "\n" if ($main::verbose >= 6);
+		$exp_sum = pop(@expected);
+		$expected[$#expected] += $exp_sum;
+		$obs_sum = pop(@observed);
+		$observed[$#observed] += $obs_sum;
 	    }
-	    ## recalculate the number of columns after right grouping
-	    $col_nb = scalar(@expected);
 
-	    warn ("After right grouping", 
-		  "\n\texpected\t", join(":", @expected), 
-		  "\n\tobserved\t", join(":", @observed), "\n")
-		if ($main::verbose >= 10);
+	    ## Recalculate the number of columns after right grouping
+	    $class_nb = scalar(@expected);
+	    &RSAT::message::Debug("Grouped on right", $right_group, "remaining", $class_nb) if ($main::verbose >= 3);
+	    if ($main::verbose >= 10) {
+		&RSAT::message::Debug("obs after right grouping", join("\t", @observed));
+		&RSAT::message::Debug("exp after right grouping", join("\t", @expected));
+	    }
 
-	    @values = (@observed, @expected);
-	}
+ 	}
 
 	## Calculate the observed chi-square
-	for $col (1..$col_nb) {
+	for $col (1..$class_nb) {
 	    $obs = $observed[$col-1];
 	    $exp = $expected[$col-1];
 	    $not_valid = 1 if ($exp < 5);
 	    if ($exp == 0) {
 		$chi_square = "ERR_exp0";
-		warn join ("Cannot calculate the observed chi2 because class $col has an expected value of 0\n"), "\n" if ($main::verbose >= 2);
+		&RSA::message::Warning("Cannot calculate the observed chi2 because class $col has an expected value of 0");
 		last;
 	    } else {
 		$chi_square +=  (($obs - $exp)**2)/$exp;
 	    }
-	    warn join ("\t", $obs, $exp, $not_valid, $chi_square), "\n" if ($main::verbose >= 10);
+	    &RSAT::message::Info($obs, $exp, $not_valid, $chi_square) if ($main::verbose >= 5);
 	}
     }
 
-	    ################################################################
-	    ## Calculate the degrees of freedom
-	    my $deg_freedom = ($row_nb - 1)*($col_nb - 1);
+    ################################################################
+    ## Calculate the degrees of freedom
+    my $deg_freedom = ($series_nb - 1)*($class_nb - 1);
 
-	    ################################################################
-	    ### data report ###
-	    if ($report_data) {
-		print $out ";Pearson chi-square statistics with $row_nb rows and $col_nb col ($val_nb values)\n";
-		print $out ";Test of $test\n";
-		print $out ";$deg_freedom degrees of freedom\n";
-		print $out ";DATA REPORT\n";
-		if (($not_valid) && ($main::verbose >= 2)) {
-		    print $out "; WARNING: data do not conform to the applicability conditions \n; (some classes have less than 5 expected observations).\n";
+    ################################################################
+    ### data report
+    if ($report_data) {
+	print $out ";Pearson chi-square statistics with $series_nb rows and $class_nb col ($val_nb values)\n";
+	print $out ";Test of $test\n";
+	print $out ";$deg_freedom degrees of freedom\n";
+	print $out ";DATA REPORT\n";
+	if (($not_valid) && ($main::verbose >= 2)) {
+	    print $out "; WARNING: data do not conform to the applicability conditions \n; (some classes have less than 5 expected observations).\n";
+	}
+	print $out ";";
+	for $col (1..$class_nb) {
+	    print $out "\tA$col";
+	}
+	if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
+	    print $out "\tni+\n";
+	    for $row (1..$series_nb) {
+		print $out ";B$row";
+		for $col (1..$class_nb) {
+		    $offset = ($row-1) * $class_nb + $col -1;
+		    print $out "\t$values[$offset]";
 		}
-		print $out ";";
-		for $col (1..$col_nb) {
-		    print $out "\tA$col";
-		}
-		if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
-		    print $out "\tni+\n";
-		    for $row (1..$row_nb) {
-			print $out ";B$row";
-			for $col (1..$col_nb) {
-			    $offset = ($row-1) * $col_nb + $col -1;
-			    print $out "\t$values[$offset]";
-			}
-			print $out "\t$col_sum[$row]\n";
-		    }
-		    print $out ";n+j";
-		    for $col (1..$col_nb) {
-			print $out "\t$row_sum[$col]";
-		    }
-		    print $out "\t$N\n";
-		} else {
-		    print $out "\n;obs";
-		    for $col (1..$col_nb) {
-			print $out "\t$values[$col-1]";
-		    }
-		    print $out "\n;exp";
-		    for $col (1..$col_nb) {
-			print $out "\t$values[$col_nb + $col-1]";
-		    }
-		    print $out "\n";
-		}
+		print $out "\t$col_sum[$row]\n";
 	    }
+	    print $out ";n+j";
+	    for $col (1..$class_nb) {
+		print $out "\t$row_sum[$col]";
+	    }
+	    print $out "\t$N\n";
+	} else {
+	    print $out "\n;obs";
+	    for $col (1..$class_nb) {
+		print $out "\t$values[$col-1]";
+	    }
+	    print $out "\n;exp";
+	    for $col (1..$class_nb) {
+		print $out "\t$values[$class_nb + $col-1]";
+	    }
+	    print $out "\n";
+	}
+    }
 
-	    my $answer = $chi_square;
+    my $answer = $chi_square;
     if (!&RSAT::util::IsReal($chi_square)) {
-      $answer = $chi_square;
+	$answer = $chi_square;
 #    } elsif ($not_valid) {
 #      $answer = sprintf "{%.3f}", $chi_square;
     } else {
-      $answer = sprintf "%.5f", $chi_square;
+	$answer = sprintf "%.5f", $chi_square;
     }
     &RSAT::message::Debug($answer,
 			  $deg_freedom,
@@ -1523,17 +1551,19 @@ sub ChiSquare {
 			  $#expected,
 			  $expected[0],
 			  $expected[$#expected],
-			 ) if ($main::verbose >= 6);
+	) if ($main::verbose >= 6);
 
     &RSAT::message::Debug("chi2=",$answer, "df=".$deg_freedom, "left_group=".$left_group, "right_group=".$right_group, "obs:".scalar(@observed), "exp:".scalar(@expected))
-      if ($main::verbose >= 5);
+	if ($main::verbose >= 5);
 
     return ($answer, $deg_freedom, $left_group, $right_group, \@observed, \@expected);
 } ### end ChiSquare
 
 
 ##############################################################
+##
 ## calculates log-likelihood statistics for a table of numbers
+##
 ## Usage
 ## =====
 ## $log_likelihood = &LogLikelihood($row_nb, $col_nb, @values);
@@ -1549,23 +1579,23 @@ sub ChiSquare {
 ## ni+ = sum of all values from the ith row
 ## n+j = sum of all values from the jth column
 ## N = sum of all values from the table
-## 
+##
 ## The log-likelihood value is then calculated by:
 ##
-##                   
+##
 ## LogLikelihood = N*log(N) + SUM SUM nij*log(nij)
-##                             i   j                    
+##                             i   j 
 ##
 ##                          - SUM ni+*log(ni+) - SUM n+j*log(n+j)
 ##                             i                  j
 ##
 ##
 ## the input data are reported together with all marginal sums
-## by setting a global variable called $report_data to 1 
+## by setting a global variable called $report_data to 1
 sub LogLikelihood {
     my ($row_nb, $col_nb, @values) = @_;
     my $N;
-    my $row; 
+    my $row;
     my $col;
     my @col_sum;
     my @row_sum;
@@ -1590,7 +1620,7 @@ sub LogLikelihood {
 #	return ";Error: ($v) all values must be strictly positive" unless ($v > 0); # invalid values
 #    }
 
-    #### calculate marginal sums ni+, n+j, and N ###
+    ## calculate marginal sums ni+, n+j, and N
     $N = 0;
     for $row (1..$row_nb) {
 	$col_sum[$row] = 0;
@@ -1608,7 +1638,7 @@ sub LogLikelihood {
 	}
     }
 
-    #### calculate the log likelihood value ####
+    ## calculate the log likelihood value
     $log_likelihood = - $N * log($N);
     for $row (1..$row_nb) {
         for $col (1..$col_nb) {
@@ -1625,7 +1655,7 @@ sub LogLikelihood {
     }
     $log_likelihood = 0 if ($log_likelihood > 0);
 
-    ### data report ###
+    ### data report
     if ($report_data) {
 	print $out ";Log-likelihood statistics with $row_nb rows and $col_nb col ($val_nb values)\n";
 	print $out ";DATA REPORT\n";

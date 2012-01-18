@@ -9,36 +9,35 @@ use Statistics::Distributions; ## Required for computing the P-value
 
 $start_time = &RSAT::util::StartScript();
 
-
-#### initialise parameters ####
+#### initialise parameters
 $test = "homogeneity";
-
+$sort_by_exp = 1; ## Sort series by expected values for the goodness of fit test.
 &ReadArguments();
 
-#### check argument values ####
+#### check argument values
 
 
 
 ### open input file ###
-($in, $input_dir) = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($infile{input});
 
 ### open output file ###
-$out = &OpenOutputFile($outputfile);
+$out = &OpenOutputFile($outfile{output});
 
-#### verbose ####
+#### verbose
 if ($verbose) {
   print $out ";chi-square result\n";
-  if ($inputfile ne "") {
-    print $out ";Input file	$inputfile\n";
+  if ($infile{input}) {
+    print $out ";Input file	$infile{input}\n";
   }
-  if ($outputfile ne "") {
-    print $out ";Output file	$outputfile\n";
+  if ($outfile{output} ne "") {
+    print $out ";Output file	$outfile{output}\n";
   }
 }
 
 ################################################################
-## Read a table of positive values
-$row = 0;
+## Read a table (all values must be positive)
+my $row = 0;
 while (<$in>) {
   if (/\S/) {
     $row++;
@@ -67,10 +66,11 @@ while (<$in>) {
     }
   }
 }
-$row_nb = $row;
+
+my $row_nb = $row;
 
 ## Compute value of ch2_obs
-($chi_square, $df, $left_group, $right_group) = &ChiSquare($test, $row_nb, $col_nb, @values);
+($chi_square, $df, $left_group, $right_group) = &ChiSquare($test, $row_nb, $col_nb, $sort_by_exp, @values);
 
 ## Compute P-value
 if ($chi_square > 0) {
@@ -81,17 +81,30 @@ if ($chi_square > 0) {
 #  $Pval2 = 1;
 }
 
-#### print output ####
-print $out join ("\t", "#chi2", "df", "Pval", "Lgroup", "Rgroup"), "\n";
-print $out join ("\t", $chi_square, $df, $Pval, $left_group, $right_group), "\n";
+#### print output
+my @header = ("chi2", "df", "Pval");
+my @results = ($chi_square, $df, $Pval);
+if ($test =~ /good/) {
+    if ($sort_by_exp) {
+	push (@header, "Sgroup");
+	push (@results, $left_group);
+    } else {
+	push (@header, "Lgroup", "Rgroup");
+	push (@results, $left_group, $right_group);
+    }
+}
+
+print $out "#", join ("\t", @header), "\n";
+print $out join ("\t", @results), "\n";
+
 
 ###### close input file ######
-close $in unless ($inputfile eq "");
+close $in unless ($infile{input} eq "");
 
 ###### close output file ######
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
 print $main::out $exec_time if ($main::verbose >= 1);
-close $out unless ($outputfile eq "");
+close $out unless ($outfile{output} eq "");
 
 
 exit(0);
@@ -108,6 +121,7 @@ chi-square options
 -h      (must be first argument) display full help message
 -help   (must be first argument) display options
 -i      input file
+-no_sort do not sort by expected values before grouping (group on both tails separately)
 -o      output file
 -v      verbose
 -test goodfit | independence | homogeneity
@@ -132,12 +146,52 @@ USAGE
 DESCRIPTION
 	Calculates the chi square value for a given table of numerical values.
 
+
+    Class grouping for the goodness of fit
+    ======================================
+
+	A condition of applicability of the chi-squared test is that
+	all expected values should be >= 5. With goodness of fit
+	tests, it is frequent that the left and/or right tails of the
+	expected distribution progressively decrease, and thus give
+	values << 5. A classical approach to circumvent this is to
+	group terminal classes on each side, and to run the test with
+	a restricted number of classes having all exp values >=
+	5. This grouping of course reduces the number of degrees of
+	freedom.
+
+	The program chi-square automatically groups the terminal
+	classes to ensure this applicability condition. 
+
+    Class sorting before grouping
+    =============================
+
+	By default chi-square applies a specific treatment before
+	grouping classes: the observed and expected vectors are sorted
+	by increasing expected values.
+
+	The result is that all the classes with small expected values
+	are on the same side of the vectors, which reduces the number
+	of classes to be grouped (and thus better preserves the
+	original values submitted to chi-squared test).
+
+	I am not sure this treatment is orthodox (I did not find it in
+	any textbook) but since the Chi2 test does not make any
+	assumption on the order of the columns, I don't see any reason
+	to forbid it.
+
+	The option -no_sort allows to disactivate this class sorting,
+	in which case the grouping is performed separately on the left
+	and right sides of the distribution.
+
 CATEGORY
 	statistics
 
 OPTIONS
         -h      (must be first argument) display full help message
+
         -help   (must be first argument) display options
+
 	-v	verbose
 		returns a data report, i.e. a table with the input values
 		and the marginal sums.
@@ -145,9 +199,11 @@ OPTIONS
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
 	-test goodfit | independence | homogeneity
 		the hypothesis to test can be indenpendence or
 		goodness of fit.
@@ -155,12 +211,17 @@ OPTIONS
 		2 lines, the second line providing the expected frequencies.
 		By default, the test oh homogeneity is performed.
 
-INPUT FORMAT
-	The input must be a table containing exclusively numerical
-	values. Within each row, the values are separated by a single
-	tabulation. All rows must contain the same number of values.
-	All values must be positive numbers.
-	Blank lines are ignored.
+	-no_sort 
+		 (valid for goodness of fit test only)
+		 Do not sort by expected values before grouping (group
+		 on both tails separately).
+
+
+INPUT FORMAT The input must be a table containing exclusively
+	numerical values. Within each row, the values are separated by
+	a single tabulation. All rows must contain the same number of
+	values.  All values must be positive numbers.  Blank lines are
+	ignored.
 
 OUTPUT FORMAT
 	The output is a single number comprized between 0 and 1,
@@ -201,31 +262,35 @@ End_of_help
 
 
 
-#### read arguments ####
+################################################################
+## Read arguments
 sub ReadArguments {
-    foreach $a (0..$#ARGV) {
+  foreach $a (0..$#ARGV) {
 
-	if ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
-	    $report_data = 1;
+    if ($ARGV[$a] eq "-v") {
+      $verbose = 1;
+      $report_data = 1;
 
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
 
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
 
-	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
 
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-no_sort") {
+      $sort_by_exp = 0;
 
-	} elsif ($ARGV[$a] eq "-test") {
-	    $test = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
 
-	}
+    } elsif ($ARGV[$a] eq "-test") {
+      $test = $ARGV[$a+1];
+
     }
+  }
 }
