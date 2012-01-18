@@ -644,7 +644,7 @@ sub CalcDistances {
       push @values, @{$profile{$id2}};
       
       if ($distance_estimator eq "chi") {
-	($distance, $df) = &ChiSquare('homogeneity',2,$colnb,@values);
+	($distance, $df) = &ChiSquare('homogeneity',2,$colnb, 0, @values);
 	if ($nocheck) {
 	  $distance =~ s/\(//;
 	  $distance =~ s/\)//;

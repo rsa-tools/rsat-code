@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.16 2012/01/18 05:54:19 rsat Exp $
+# $Id: calibrate-oligos,v 1.17 2012/01/18 17:33:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -601,7 +601,7 @@ sub CalculateStatistics {
 	}
 
 	## Perform a chi-square test
-	my ($chi2, $df, $left_group, $right_group) = &ChiSquare("goodness", 2, $max_occ+1, @counts, @expected);
+	my ($chi2, $df, $left_group, $right_group) = &ChiSquare("goodness", 2, $max_occ+1, 1, @counts, @expected);
 
 	## Discard cases where applicability conditions are not met
 	unless (&IsReal($chi2)) {
