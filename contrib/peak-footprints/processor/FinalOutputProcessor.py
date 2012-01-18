@@ -236,7 +236,7 @@ class FinalOutputProcessor( Processor):
             doc.write( outfile)
             outfile.close()
             # Copy the XSL file in the same directory than the XML
-            shutil.copy( os.path.join( self.component.getParameter( Constants.CONFIG_DIR_PARAM), "resources/xsl/classification/classification.xsl"), self.outPath)
+            shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/classification.xsl"), self.outPath)
         except IOError, exce:
             Log.log( "ClassificationProcessor.outputClassification : Unable to write classification to XML file. From:\n\t---> " + str( exce))
 
