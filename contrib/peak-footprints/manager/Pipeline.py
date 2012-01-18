@@ -54,3 +54,4 @@ class Pipeline:
             result += "|--" + component.toString()
             
         return result
+
