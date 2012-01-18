@@ -257,7 +257,8 @@ class PipelineManager:
             try:
                 pipelines = PipelineXMLParser.getPipelines( pipelines_filepath)
                 OptionManager.applyOptions( pipelines, pipeline_options)
-            except SyntaxError,  syn_exce:
+                PipelineXMLParser.toXMLFile( pipelines)
+            except SyntaxError, syn_exce:
                 raise ParsingException( "PipelineManager.executePipelines : Unable to read definition of pipelines from XML file: '" + pipelines_filepath + "'. From:\n\t---> " + str( syn_exce))
             except ParsingException, par_exce:
                 raise ParsingException( "PipelineManager.executePipelines : Unable to read definition of pipelines from XML file: '" + pipelines_filepath + "'. From:\n\t---> " + str( par_exce))
