@@ -64,7 +64,7 @@ class BEDProcessor( Processor):
     @staticmethod
     def getRequiredParameters():
         
-        return ( BEDProcessor.INPUT_BED_FILE_PARAM, BEDProcessor.SPECIES_PARAM)
+        return ( BEDProcessor.INPUT_BED_FILE_PARAM, BEDProcessor.REFERENCE_SPECIES_PARAM)
         
         
 
