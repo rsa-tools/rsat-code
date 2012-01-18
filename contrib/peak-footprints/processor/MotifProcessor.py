@@ -46,6 +46,7 @@ class MotifProcessor( Processor):
     MOTIF_DATABASE_PATH_PARAM = "MotifDatabasePath"
     MOTIF_DATABASE_FILE_LIST_PARAM = "MotifDatabaseFileList"
     MOTIF_PERMUTED_DATABASE_FILE_LIST_PARAM = "MotifPermutedDatabaseFileList"
+    REFERENCE_SPECIES_PARAM = "ReferenceSpecies"
     DESIRED_SPECIES_LIST_PARAM = "DesiredSpeciesList"
     COMMAND_OPTIONS_PARAM = "CommandOptions"
     THREAD_NUMBER_PARAM = "ThreadNumber"
@@ -98,7 +99,10 @@ class MotifProcessor( Processor):
     @staticmethod
     def getRequiredParameters():
         
-        return ( MotifProcessor.METHOD_PARAM, MotifProcessor.MOTIF_DATABASE_PATH_PARAM, MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM)
+        return ( MotifProcessor.METHOD_PARAM,\
+                MotifProcessor.MOTIF_DATABASE_PATH_PARAM,\
+                MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM,\
+                MotifProcessor.REFERENCE_SPECIES_PARAM)
 
 
     
@@ -151,11 +155,13 @@ class MotifProcessor( Processor):
             raise ExecutionException( "MotifProcessor.getMethodParameters : No motif database file specified in parameter '" + MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM + "'")
 
         # Retrieve the list of desired species
+        referenceSpecies = self.getParameter( MotifProcessor.REFERENCE_SPECIES_PARAM)
         desired_species_line = self.getParameter( MotifProcessor.DESIRED_SPECIES_LIST_PARAM, False)
-        if desired_species_line == None:
-            arguments[ MotifProcessor.DESIRED_SPECIES_LIST_PARAM] = []
-        else:
-            arguments[ MotifProcessor.DESIRED_SPECIES_LIST_PARAM] = desired_species_line.split()
+        desiredSpeciesList = []
+        desiredSpeciesList.append( referenceSpecies)
+        if desired_species_line != None:
+            desiredSpeciesList.extend( desired_species_line.split())
+        arguments[ MotifProcessor.DESIRED_SPECIES_LIST_PARAM] = desiredSpeciesList
 
         # Retrieve the tool command line options
         command_options_line = self.getParameter( MotifProcessor.COMMAND_OPTIONS_PARAM, False)
