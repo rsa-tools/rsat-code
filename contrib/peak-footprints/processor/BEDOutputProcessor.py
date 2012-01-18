@@ -18,8 +18,9 @@ from utils.exception.ExecutionException import ExecutionException
 #   ReferenceMotif: the motif used as reference
 #   Method : the method used to assign a color to the motifs. Value should be "family" or "score"
 #            - the "family" method assign a color for each motif family. Note that following the UCSC recommendation only
-#              8 colors are assigned , so some families can have the same colors.
-#            - the "score" method assign a color to the motif according to its score. The greater the score, the clearer the color
+#              5 colors are assigned , so some families can have the same colors.
+#            - the "score" method assign a color to the motif according to its score. The greater the score, the more the color
+#              got from the blue to red in the rainbow order
 #              Note that in this case the color is the same for each motif.
 #            Note: in both cases, the reference motif is assigned to black color
 #   ScoreMin : the minimum value the score can reach
