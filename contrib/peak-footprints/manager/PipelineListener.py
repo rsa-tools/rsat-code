@@ -44,7 +44,7 @@ class PipelineListener:
                         resume = command_params[2]
                         working_dir = command_params[3]
                         ListenerLog.trace( "PipelineListener.run : Adding command to queue : " + str( command_params))
-                        self.pipelineManager.addToQueue( pipelines_filepath, verbosity, resume, working_dir)
+                        self.pipelineManager.addToQueue( pipelines_filepath, None, verbosity, resume, working_dir)
                     FileUtils.removeFile( path)
 
             time.sleep(5)

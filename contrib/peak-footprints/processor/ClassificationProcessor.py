@@ -10,10 +10,10 @@ from utils.exception.ExecutionException import ExecutionException
 # The Processor export an XML file presenting this classification both with information on motif (family, type, class, logo)
 #
 # Parameters:
-#   MaxMotifNumber : the maximum number of motifs to display in the result
-#   MaxMotifByFamily : the maximum number of motifs to display in the same family
-#   MaxHypergeometricEValue : the maximum value of the hypergeometric e-value the displayed motif must have
-#   MaxChi2EValue : the maximum value of the chi2 e-value the displayed motif must have
+#   MaxMotifNumber (optional): the maximum number of motifs to display in the result
+#   MaxMotifByFamily (optional): the maximum number of motifs to display in the same family
+#   MaxHypergeometricEValue (optional): the maximum value of the hypergeometric e-value the displayed motif must have
+#   MaxChi2EValue (optional): the maximum value of the chi2 e-value the displayed motif must have
 
 class ClassificationProcessor( Processor):
     

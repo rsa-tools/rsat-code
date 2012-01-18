@@ -5,6 +5,7 @@ from manager.Component import Component
 from manager.PipelineXMLParser import PipelineXMLParser
 from manager.ProgressionManager import ProgressionManager
 from manager.PipelineListener import PipelineListener
+from manager.OptionManager import OptionManager
 
 from utils.Constants import Constants
 from utils.FileUtils import FileUtils
@@ -94,20 +95,21 @@ class PipelineManager:
         # Add the RSAT path to the listening dir path retrieved from the manager.props
         self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM)) 
 
-        # Set the path used by the RSATUtils class
+        # Set the RSAT_PATH
         RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)        
-        #jaspar_path = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR")
-        #RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( jaspar_path, self.getParameter( Constants.RSAT_JASPAR_MOTIF_DATABASE_PARAM))
+        # Set the path to the jaspar database. This is used to create the motif logo
+        jaspar_path = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR")
+        RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( jaspar_path, self.getParameter( Constants.RSAT_JASPAR_MOTIF_DATABASE_PARAM))
         
-        # Set the path to the Jaspar TF details files
+        # Set the path to the Jaspar TF details files. Those files contains information on TF like family, class...
         MotifUtils.JASPAR_FLAT_DB_PATH = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), "resources/jaspar/motif")
 
     
     # --------------------------------------------------------------------------------------
     # Manage the direct execution of the given pipelines definition
-    def execute(self, pipelines_filepath, verbosity=0, resume = False, working_dir=None):
+    def execute(self, pipelines_filepath, options, verbosity=0, resume = False, working_dir=None):
         
-        self.addToQueue( pipelines_filepath, verbosity, str( resume), working_dir)
+        self.addToQueue( pipelines_filepath, options, verbosity, str( resume), working_dir)
         return self.executePipelines()
 
 
@@ -144,12 +146,12 @@ class PipelineManager:
 
     # --------------------------------------------------------------------------------------
     # Adds a pipelines definition and params in queue
-    def addToQueue( self, pipelines_filepath, verbosity, resume, working_dir):
+    def addToQueue( self, pipelines_filepath, options, verbosity, resume, working_dir):
         
         self.serverQueueLock.acquire()
         
         if pipelines_filepath != None and len( pipelines_filepath) > 0:
-            self.serverQueue.append( (pipelines_filepath, resume, verbosity, working_dir))
+            self.serverQueue.append( (pipelines_filepath, options, resume, verbosity, working_dir))
 
         try:
             self.outputServerQueue()
@@ -231,12 +233,13 @@ class PipelineManager:
             
             params = self.serverQueue[0]
             pipelines_filepath = params[0]
-            resume = (params[1].lower() == "true")
+            pipeline_options = params[1]
+            resume = (params[2].lower() == "true")
             try:
-                verbosity = int( params[2])
+                verbosity = int( params[3])
             except ValueError:
                 verbosity = 1
-            working_dir = params[3]
+            working_dir = params[4]
             
             # Modifies the config if required and initialize logs and outputdirectory
             if working_dir != None and len( working_dir) > 0:
@@ -254,6 +257,7 @@ class PipelineManager:
             
             try:
                 pipelines = PipelineXMLParser.getPipelines( pipelines_filepath)
+                OptionManager.applyOptions( pipelines, pipeline_options)
             except SyntaxError,  syn_exce:
                 raise ParsingException( "PipelineManager.executePipelines : Unable to read definition of pipelines from XML file: '" + pipelines_filepath + "'. From:\n\t---> " + str( syn_exce))
             except ParsingException, par_exce:
