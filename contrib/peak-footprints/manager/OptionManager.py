@@ -105,6 +105,8 @@ class OptionManager:
     
             for opt, arg in opts:
                 
+                print "opt = " + opt + " -> arg = " + arg
+                
                 # Add the BED file path
                 if opt == OptionManager.INPUT_PEAKS:
                     OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.INPUT_BED_FILE_PARAM, arg)
@@ -131,7 +133,7 @@ class OptionManager:
                     OptionManager.addParam( pipeline, "processor.HistogramProcessor.HistogramProcessor", HistogramProcessor.REFERENCE_MOTIF, arg)
                     OptionManager.addParam( pipeline, "processor.CoLocationAnalysisProcessor.CoLocationAnalysisProcessor", CoLocationAnalysisProcessor.REFERENCE_MOTIF_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.BEDOutputProcessor.BEDOutputProcessor", BEDOutputProcessor.REFERENCE_MOTIF, arg)
-            
+
 
 
 
@@ -141,5 +143,6 @@ class OptionManager:
     def addParameter( pipeline, component_name, param_name, param_value):
         
         component = pipeline.getComponent( component_name)
+        print "Component = " + str( component)
         if component != None:
             component.addParameters( param_name, param_value)
