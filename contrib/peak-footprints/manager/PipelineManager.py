@@ -98,9 +98,8 @@ class PipelineManager:
         # Set the RSAT_PATH
         RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)        
         # Set the path to the jaspar database. This is used to create the motif logo
-        jaspar_path = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR")
-        RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( jaspar_path, self.getParameter( Constants.RSAT_JASPAR_MOTIF_DATABASE_PARAM))
-        
+        RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf")
+         
         # Set the path to the Jaspar TF details files. Those files contains information on TF like family, class...
         MotifUtils.JASPAR_FLAT_DB_PATH = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), "resources/jaspar/motif")
 
