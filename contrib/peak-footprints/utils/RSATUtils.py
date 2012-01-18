@@ -21,7 +21,7 @@ class RSATUtils:
         cmd += " | cut -f " + str( data_col) + "," + str( homogen_col);
         cmd += " | " + os.path.join( RSATUtils.RSAT_PATH, "perl-scripts/transpose-table")
         cmd += " | cut -f 2-10000"
-        cmd += " | " + os.path.join( RSATUtils.RSAT_PATH, "perl-scripts/chi-square")
+        cmd += " | " + os.path.join( RSATUtils.RSAT_PATH, "perl-scripts/chi-square -test goodness")
         
         cmd_result = commands.getstatusoutput( cmd)
         if cmd_result[0] != 0:
