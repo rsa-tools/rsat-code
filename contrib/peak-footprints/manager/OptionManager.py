@@ -109,6 +109,8 @@ class OptionManager:
                 
                 while opt[0] == "-":
                     opt = opt[1:]
+                    
+                print "opt = " + opt + " -> arg = " + arg
                 
                 # Add the BED file path
                 if opt == OptionManager.INPUT_PEAKS:
@@ -143,7 +145,7 @@ class OptionManager:
     # --------------------------------------------------------------------------------------
     # Add the given parameter with the given value to the component with the given name
     @staticmethod
-    def addParameter( pipeline, component_name, param_name, param_value):
+    def addParam( pipeline, component_name, param_name, param_value):
         
         component = pipeline.getComponent( component_name)
         print "Component = " + str( component)
