@@ -84,11 +84,7 @@ def main( argv):
                 listening_path = arg
             else:
                 listening_path = None
-            print "Lauching SERVER mode"
-        # Other
-        else:
-            usage()
-            return 2        
+            print "Lauching SERVER mode"     
         
         
     try:
