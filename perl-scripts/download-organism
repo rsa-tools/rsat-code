@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.23 2012/01/09 00:53:45 jvanheld Exp $
+# $Id: download-organism,v 1.24 2012/01/18 19:06:06 jvanheld Exp $
 #
 ############################################################
 
@@ -128,12 +128,12 @@ package main;
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
   $get_command = "wget";
-  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
-  $rsat_server_login = "rsat\@rsat.ulb.ac.be";
+  $ssh_login = "rsat\@rsat.ulb.ac.be";
   $rsat_server_dir = "rsa-tools";
-#  $rsat_server_login = "rsat\@merlin.bigre.ulb.ac.be";
+#  $ssh_login = "rsat\@merlin.bigre.ulb.ac.be";
 #  $rsat_server_dir = "/bio/rsa-tools";
 
   $verbose = 0;
@@ -180,6 +180,14 @@ package main;
   &RSAT::util::CheckOutDir($output_dir);
 #  chdir($output_dir);
 
+  ## Get RSAT path for rsync
+  if ($get_command eq "rsync") {
+    my $rsat_server_dir = `ssh $ssh_login 'echo \$RSAT'`;
+    chomp($rsat_server_dir);
+    &RSAT::error::FatalError("Cannot get RSAT path on remote server", ssh_login) unless ($rsat_server_dir =~ /rsa-tools/);
+    &RSAT::message::Info("remote server", $ssh_login, "RSAT env",  $rsat_server_dir) if ($main::verbose >= 0);
+  }
+
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose);
@@ -188,7 +196,15 @@ package main;
   ## Obtain the lists of organisms for selected taxa
   foreach my $taxon (@taxa) {
     &RSAT::message::TimeWarn("Getting list of organisms from RSAT server for taxon", $taxon);
-    my $orgs_for_taxa = `supported-organisms -server -return ID -taxon $taxon | grep -v '^#'`;
+    my $orgs_for_taxa;
+    if ($get_command eq "rsync") {
+      &RSAT::message::Info("Getting llist of organisms for taxon", $taxon, "by ssh connection", $ssh_login);
+      $orgs_for_taxa = `ssh $ssh_login 'supported-organisms -return ID -taxon $taxon | grep -v "^#"'`;
+    } else {
+      &RSAT::message::Info("Getting list of organisms for taxon", $taxon, " by web services");
+      $orgs_for_taxa = `supported-organisms -server -return ID -taxon $taxon | grep -v '^#'`;
+    }
+
     chomp ($orgs_for_taxa);
     @orgs_for_taxa = sort(split(/\s+/, $orgs_for_taxa));
     push @organisms, @orgs_for_taxa;
@@ -206,8 +222,16 @@ package main;
   ## number of queries, get dates for all organisms and store them for
   ## the selected organisms only)
   &RSAT::message::TimeWarn("Getting information about supported organisms from server") if ($main::verbose >= 1);
-  my @all_organisms = `supported-organisms -v 0 -server -return ID,last_update,source | grep -v '^#'`;
+
+
+  my @all_organisms;
+  if ($ssh_login) {
+    @all_organisms = `ssh $ssh_login supported-organisms -v 0 -return ID,last_update,source | grep -v '^#'`;
+  } else {
+    @all_organisms = `supported-organisms -v 0 -server -return ID,last_update,source | grep -v '^#'`;
+  }
   foreach my $org_line (@all_organisms) {
+    next unless ($org_line); ## Skip empty line returned by RSAT Web service
     chomp($org_line);
     my ($org, $date, $source) = split /\t/, $org_line;
     $last_update{$org} = $date || '<NA>';
@@ -248,7 +272,7 @@ package main;
 
     } elsif ($get_command eq "rsync") {
 
-      my $remote_genome = $rsat_server_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/'*'";
+      my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/'*'";
       &RSAT::message::TimeWarn("Downloading genome", $i."/".$org_nb, $org, "from the RSAT server\n", $remote_genome) if ($main::verbose >= 1);
       $cmd .= "rsync -e ssh -ruptvl -z ";
       $cmd .= " --exclude jobs --exclude '*~'";
@@ -425,27 +449,30 @@ smart updating, etc).
 
 =pod
 
-=item B<-rsync_login your.login@some.rsat.server>
+=item B<-ssh your.login@some.rsat.server>
 
 This option requires a ssh login on the main RSAT server, it is
 reserved for the RSAT maintenance team.
 
 When this option is activated, genomes are downloaded with the program
 I<rsync> is used instead of I<wget>. This ensures a faster transfer
-(using the powerful featres of rsync such as on-the-fly compression,
+(using the powerful features of rsync such as on-the-fly compression,
 smart updating, etc).
 
+The rsync connection however requires a user account enabled with ssh
+access on the server, so it is reserved to the members of the RSAT
+team.
 
-Example: 
-    
+Example:
+
   download-organism -v 1 -org Saccharomyces_cerevisiae \
-    -rsync_login rsat@mamaze.ulb.ac.be
+    -ssh rsat@mamaze.ulb.ac.be
 
 =cut
 
-	  } elsif ($arg eq "-rsync_login") {
+	  } elsif ($arg eq "-ssh") {
 	    $main::get_command = "rsync";
-	    $main::rsat_server_login = shift(@arguments);
+	    $main::ssh_login = shift(@arguments);
 
 	    ## Dry run
 =pod
