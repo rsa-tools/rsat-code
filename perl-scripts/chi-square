@@ -177,8 +177,8 @@ DESCRIPTION
 
 	I am not sure this treatment is orthodox (I did not find it in
 	any textbook) but since the Chi2 test does not make any
-	assumption on the order of the columns, I don't see any reason
-	to forbid it.
+	assumption on the order of the columns, I see no reason to
+	forbid it.
 
 	The option -no_sort allows to disactivate this class sorting,
 	in which case the grouping is performed separately on the left
@@ -265,32 +265,36 @@ End_of_help
 ################################################################
 ## Read arguments
 sub ReadArguments {
-  foreach $a (0..$#ARGV) {
+    foreach $a (0..$#ARGV) {
 
-    if ($ARGV[$a] eq "-v") {
-      $verbose = 1;
-      $report_data = 1;
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    $report_data = 1;
 
-      ### detailed help
-    } elsif ($ARGV[$a] eq "-h") {
-      &PrintHelp();
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
 
-      ### list of options
-    } elsif ($ARGV[$a] eq "-help") {
-      &PrintOptions();
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
 
-    } elsif ($ARGV[$a] eq "-i") {
-      $infile{input} = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
 
-    } elsif ($ARGV[$a] eq "-no_sort") {
-      $sort_by_exp = 0;
+	} elsif ($ARGV[$a] eq "-no_sort") {
+	    $sort_by_exp = 0;
 
-    } elsif ($ARGV[$a] eq "-o") {
-      $outfile{output} = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
 
-    } elsif ($ARGV[$a] eq "-test") {
-      $test = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-test") {
+	    $test = $ARGV[$a+1];
 
+	}
     }
-  }
 }
