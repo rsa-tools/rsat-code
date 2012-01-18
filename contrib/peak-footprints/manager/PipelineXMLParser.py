@@ -203,7 +203,7 @@ class PipelineXMLParser:
     # Add indentation to the ElementTree in order to have a pretty print
     # in the XML file (used by subclasses)
     @staticmethod
-    def indent(self, elem, level=0):
+    def indent( elem, level=0):
             
         i = "\n" + level*"  "
         if len(elem):
