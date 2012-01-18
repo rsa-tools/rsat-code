@@ -24,7 +24,7 @@ class BEDProcessor( Processor):
     
     INPUT_BED_FILE_PARAM = "BEDFile"
     INPUT_PEAK_FILE = "PeakFile"
-    SPECIES_PARAM = "Species"
+    REFERENCE_SPECIES_PARAM = "ReferenceSpecies"
     PEAK_NUMBER = "PeakNumber"
     
     # --------------------------------------------------------------------------------------

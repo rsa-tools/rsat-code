@@ -105,37 +105,41 @@ class OptionManager:
     
             for opt, arg in opts:
                 
-                print "opt = " + opt + " -> arg = " + arg
-                
+                # Remove the dashed at the beginningof the option tag
                 while opt[0] == "-":
                     opt = opt[1:]
-                    
-                print "opt = " + opt + " -> arg = " + arg
                 
                 # Add the BED file path
                 if opt == OptionManager.INPUT_PEAKS:
                     OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.INPUT_BED_FILE_PARAM, arg)
-
+                
+                # Add the reference species
                 if opt == OptionManager.REF_SPECIES:
-                    OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.SPECIES_PARAM, arg)
+                    OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.REFERENCE_SPECIES_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.REFERENCE_SPECIES_PARAM, arg)
+                    OptionManager.extendParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.INPUT_MAF_FILE_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.BlockProcessor.BlockProcessor", BlockProcessor.REFERENCE_SPECIES_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.REFERENCE_SPECIES_PARAM, arg)
-        
+       
+                # Add the list of species to be aligned with the reference one
                 if opt == OptionManager.ALIGN_SPECIES:
                     OptionManager.addParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.DESIRED_SPECIES_LIST_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.BlockProcessor.BlockProcessor", BlockProcessor.DESIRED_SPECIES_LIST_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.DESIRED_SPECIES_LIST_PARAM, arg)
-                    
+                
+                # Add root path to the TF databases
                 if opt == OptionManager.DB_ROOT_PATH:
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.MOTIF_DATABASE_PATH_PARAM, arg)
-                    
+                
+                # Add TF databases file name list (names could contains missing path pieces from root path)
                 if opt == OptionManager.DB_FILE_LIST:
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM, arg)
-                    
+                
+                # Add TF databases format list
                 if opt == OptionManager.DB_FORMAT_LIST:
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM, arg)
                 
+                # Add reference motif
                 if opt == OptionManager.REF_MOTIF:
                     OptionManager.addParam( pipeline, "processor.HistogramProcessor.HistogramProcessor", HistogramProcessor.REFERENCE_MOTIF, arg)
                     OptionManager.addParam( pipeline, "processor.CoLocationAnalysisProcessor.CoLocationAnalysisProcessor", CoLocationAnalysisProcessor.REFERENCE_MOTIF_PARAM, arg)
@@ -150,6 +154,17 @@ class OptionManager:
     def addParam( pipeline, component_name, param_name, param_value):
         
         component = pipeline.getComponent( component_name)
-        print "Component = " + str( component)
         if component != None:
             component.addParameters( param_name, param_value)
+            
+            
+    # --------------------------------------------------------------------------------------
+    # Add the given parameter value to the current parameter value of the component with the given name
+    @staticmethod
+    def extendParam( pipeline, component_name, param_name, param_value):
+        
+        component = pipeline.getComponent( component_name)
+        if component != None:
+            old_param_value = component.getParameter( param_name, False)
+            if old_param_value != None:
+                component.addParameters( param_name, old_param_value + param_value)
