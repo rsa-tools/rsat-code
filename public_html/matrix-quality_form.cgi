@@ -58,7 +58,7 @@ foreach $key (keys %default) {
 
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-&ReadMatrixFromFile();
+#&ReadMatrixFromFile();
 
 ################################################################
 ### print the form ###
@@ -84,7 +84,6 @@ print "<b>Citation</b>: Medina-Rivera, A., Abreu-Goodger, C., Salgado-Osorio, H.
 
 ## demo description
 print $default{demo_descr};
-
 print $query->start_multipart_form(-action=>"matrix-quality.cgi");
 
 
