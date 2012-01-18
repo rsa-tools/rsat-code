@@ -171,7 +171,7 @@ class PipelineXMLParser:
     # --------------------------------------------------------------------------------------
     # Export the pipelines to an XML file
     @staticmethod
-    def toXMLFile(self, pipelines):
+    def toXMLFile( pipelines):
         
         pipelines_element = Element( PipelineXMLParser.PIPELINES_TAG)
         
