@@ -119,6 +119,8 @@ class OptionManager:
                 if opt == OptionManager.REF_SPECIES:
                     OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.SPECIES_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.REFERENCE_SPECIES_PARAM, arg)
+                    OptionManager.addParam( pipeline, "processor.BlockProcessor.BlockProcessor", BlockProcessor.REFERENCE_SPECIES_PARAM, arg)
+                    OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.REFERENCE_SPECIES_PARAM, arg)
         
                 if opt == OptionManager.ALIGN_SPECIES:
                     OptionManager.addParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.DESIRED_SPECIES_LIST_PARAM, arg)
