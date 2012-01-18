@@ -25,7 +25,7 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-$parameters = " -v 1 -index ";
+$parameters = " -v 2  ";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
@@ -96,6 +96,28 @@ $result_dir =~ s|\/\/|\/|g;
 $file_prefix = $result_dir."/".$query_prefix;
 $query_file = $file_prefix."_genes";
 
+
+################################################################
+#### Matrix specification
+$matrix_file = $result_dir."/input_matrix";
+local $input_format = lc($query->param('matrix_format'));
+
+if ($query->param('matrix')) {
+    open MAT, "> $matrix_file";
+    print MAT $query->param('matrix');
+    close MAT;
+    &DelayedRemoval($matrix_file);
+    ($input_format) = split (/\s+/, $input_format);
+    $parameters .= " -m $matrix_file";
+    
+} else {
+    &RSAT::error::FatalError('You did not enter any data in the matrix box');
+}
+
+
+$parameters .=  " -matrix_format " . $input_format;
+
+
 ################################################################
 ## Prepare a file on the server with the query genes
 if ($query->param('queries') =~ /\S/) {
@@ -109,35 +131,80 @@ if ($query->param('queries') =~ /\S/) {
   &cgiError("You should enter at least one query in the box\n");
 }
 
-## Return fields and threshold values for dyad-analysis
-&CGI_return_fields();
+## Return fields and threshold values for footprin-scan
+# &CGI_return_fields();
 
 ## Infer operon leader genes
 if ($query->param('leaders')) {
   $parameters .= " -infer_operons";
 }
 
-## Dyad filter
-if ($query->param('dyads_filter')) {
-  $parameters .= " -filter";
-} else {
-  $parameters .= " -no_filter";
-}
 
-## Convert assembled patterns to PSSM
-if ($query->param('to_matrix')) {
-  $parameters .= " -to_matrix";
-}
+################################################################
+## Background model method
 
-## Background model
-$bg_model = $query->param('bg_model');
-$parameters .= " -bg_model ".$bg_model;
+ ## Markov order
+my $markov_order = $query->param('markov_order');
+&RSAT::error::FatalError("Markov model should be a Natural number") unless &IsNatural($markov_order);
+
+ ##BG method
+ my $bg_method = $query->param('bg_method');
+  if ($bg_method eq "bginput") {
+    $parameters .= " -bginput";
+    $parameters .= " -markov ".$markov_order;
+
+  } elsif ($bg_method eq "window") {
+    my $window_size = $query->param('window_size');
+    &RSAT::message::FatalError(join("\t",$window_size, "Invalid value for the window size. Should be a Natural number." )) unless (&IsNatural($window_size));
+
+    $parameters .= " -window ".$window_size;
+    $parameters .= " -markov ".$markov_order;
+
+  } elsif ($bg_method eq "bgfile") {
+    ## Select pre-computed background file in RSAT genome directory
+    my $organism_name = $query->param("organism");
+    my $noov = "ovlp";
+    my $background_model = $query->param("background");
+    my $oligo_length = $markov_order + 1;
+    $bg_file = &ExpectedFreqFile($organism_name,
+				 $oligo_length, $background_model,
+				 noov=>$noov, str=>"-1str");
+    $parameters .= " -bgfile ".$bg_file;
+
+  } elsif ($bg_method =~ /upload/i) {
+    ## Upload user-specified background file
+    my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+    my $upload_bgfile = $query->param('upload_bgfile');
+    if ($upload_bgfile) {
+      if ($upload_bgfile =~ /\.gz$/) {
+	$bgfile .= ".gz";
+      }
+      my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+      open BGFILE, ">$bgfile" ||
+	&cgiError("Cannot store background file in temp dir.");
+      while (<$upload_bgfile>) {
+	print BGFILE;
+      }
+      close BGFILE;
+      $parameters .= " -bgfile $bgfile";
+      $parameters .= " -bg_format ".$query->param('bg_format');
+    } else {
+      &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+    }
+		
+  } else {
+    &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+  }
+  ## bg_pseudo
+if (&IsReal($query->param('bg_pseudo'))) {
+    $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
+}
 
 ## Output prefix
 $parameters .= " -o ".$file_prefix;
 
 ## Report the command
-print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
+print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 2);
 
 $index_file = $result_subdir."/".$query_prefix."_index.html";
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
@@ -152,34 +219,34 @@ exit(0);
 #
 # Pipe the result to other commands
 #
-sub PipingForm {
-    my $genes = `cat $result_file`;
-    ### prepare data for piping
-    print <<End_of_form;
-<HR SIZE = 3>
-<TABLE class = 'nextstep'>
-<TR>
+# sub PipingForm {
+#     my $genes = `cat $result_file`;
+#     ### prepare data for piping
+#     print <<End_of_form;
+# <HR SIZE = 3>
+# <TABLE class = 'nextstep'>
+# <TR>
 
-<TD>
-<H3>Next step</H3>
-</TD>
+# <TD>
+# <H3>Next step</H3>
+# </TD>
 
-</tr>
-<tr>
-<TD>
-<FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
-<INPUT type="hidden" NAME="organism" VALUE="$organism">
-<INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
-<INPUT type="hidden" NAME="seq_label" VALUE="gene identifier + organism + gene name">
-<INPUT type="hidden" NAME="genes" VALUE="selection">
-<INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
-<INPUT type="hidden" NAME="ids_only" VALUE="checked">
-<INPUT type="submit" value="retrieve sequences">
-</FORM>
-</TD>
-</TR>
-</TABLE>
-End_of_form
+# </tr>
+# <tr>
+# <TD>
+# <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
+# <INPUT type="hidden" NAME="organism" VALUE="$organism">
+# <INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
+# <INPUT type="hidden" NAME="seq_label" VALUE="gene identifier + organism + gene name">
+# <INPUT type="hidden" NAME="genes" VALUE="selection">
+# <INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
+# <INPUT type="hidden" NAME="ids_only" VALUE="checked">
+# <INPUT type="submit" value="retrieve sequences">
+# </FORM>
+# </TD>
+# </TR>
+# </TABLE>
+# End_of_form
 
-}
+# }
 
