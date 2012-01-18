@@ -74,7 +74,7 @@ class BEDProcessor( Processor):
         
         # Retrieve the processor parameters
         bed_filepath = self.getParameter( BEDProcessor.INPUT_BED_FILE_PARAM)
-        species = self.getParameter( BEDProcessor.SPECIES_PARAM)
+        species = self.getParameter( BEDProcessor.REFERENCE_SPECIES_PARAM)
         peak_filepath = self.getParameter( BEDProcessor.INPUT_PEAK_FILE, False)
         peak_number = self.getParameterAsint( BEDProcessor.PEAK_NUMBER, False)
         
