@@ -7,10 +7,6 @@ base_output_dir=public_html/tmp/peak-footprints_output
 listening_dir=logs/peak-motifs_logs
 
 
-# Name of the default motif database in RSAT
-#rsat_default_motif_database=jaspar_core_vertebrates_2009_10.tf
-
-
 ################################################################
 ## Optional parameters
 
