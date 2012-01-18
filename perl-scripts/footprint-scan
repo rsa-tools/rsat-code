@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.109 2011/11/26 18:29:05 jvanheld Exp $
+# $Id: footprint-scan,v 1.110 2012/01/18 20:26:59 amedina Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -952,7 +952,7 @@ package main;
 	  $file=$query_indexes{$gene}; $file =~ s|${syn_dir}/||g;
 	  print $synthesis_index "<td>"."<a href='", $file, "'>".$gene."</a>";
 	  print $synthesis_index $html_sep. $gene_sig."</td>";
-	   print $synthesis_index $html_sep. $gene_values_at_th."</td>";
+	  print $synthesis_index $html_sep. $gene_values_at_th."</td>";
 
 	  ################
 	  ## Add figures and links to figures and results tables
@@ -993,7 +993,8 @@ package main;
 	}
       }
     } else {
-      &RunFootprintScan(@query_genes);
+	local $current_gene="all_query_genes";
+	&RunFootprintScan(@query_genes);
     }
 
     ################################################################
