@@ -19,14 +19,8 @@ from utils.exception.ExecutionException import ExecutionException
 # This processor aims to create an output file that contain all the information user needs at the end of the analysis
 # The output is an XML file that would be displayed using an XSL stylesheet.
 #
-# Parameters:
-#   DisplayLimitValue : the limit valye of the hypergeometric P-value above which an identified motif is not added in the
-#                        final result
 
 class FinalOutputProcessor( Processor):
-    
-    
-    DISPLAY_LIMIT_VALUE = "DisplayLimitValue"
     
     
     LOGOS_DIR_NAME = "Logos"
@@ -83,11 +77,6 @@ class FinalOutputProcessor( Processor):
         
         input_commstruct = input_commstructs[0]
         
-        # Retrieve the processor parameters
-        limit_value = self.getParameter( FinalOutputProcessor.DISPLAY_LIMIT_VALUE, False)
-        if limit_value == None:
-            limit_value = 1.0
-        
         # Prepare the processor output dir
         self.outPath = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree( self.outPath, True)
@@ -100,7 +89,7 @@ class FinalOutputProcessor( Processor):
         self.createLogos( input_commstruct)
         
         # Output Results
-        self.outputClassification( input_commstruct, analysis, limit_value)
+        self.outputClassification( input_commstruct, analysis)
         
         # Copy other information
         FileUtils.copyFile( os.path.join( self.component.outputDir, Constants.PROGRESSION_XSL_FILE), self.outPath) 
@@ -232,11 +221,11 @@ class FinalOutputProcessor( Processor):
 
     # --------------------------------------------------------------------------------------
     # Output the motif classification
-    def outputClassification(self, input_commstruct, analysis, limit_value):
+    def outputClassification(self, input_commstruct, analysis):
 
         try:
             # Create and write to file the XML element
-            root_element = self.toXML( input_commstruct, analysis, limit_value)
+            root_element = self.toXML( input_commstruct, analysis)
             self.indent( root_element, 0)
             # Output the XML to file
             doc = ET.ElementTree( root_element)
@@ -255,7 +244,7 @@ class FinalOutputProcessor( Processor):
 
     # --------------------------------------------------------------------------------------
     # Write the Classification to XML file
-    def toXML( self, input_commstruct, analysis, limit_value):
+    def toXML( self, input_commstruct, analysis):
 
         # Retrieve the data from the statistics params
         reference_species = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_SPECIES]
@@ -313,7 +302,7 @@ class FinalOutputProcessor( Processor):
                 motif_stats = input_commstruct.motifStatistics[ motif_name]
                 
                 # If the motif has its hypergeometric p-value avove the limit, it is ignored
-                if not motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_PVALUE) or motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE) > limit_value:
+                if not motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_PVALUE):
                     continue
                 
                 # Create the motif XML element
