@@ -182,7 +182,7 @@ class MotifUtils:
                 database_file.close()
                 database_file_pathes.remove( database_file_path)
         except IOError, io_exce:
-            raise ExecutionException( "MotifUtils.getMotifsPWMFromJasparTF : Unable to read motif definition from database file '" + database_file_path + "'. From:\n\t---> " + str( io_exce))
+            raise ExecutionException( "MotifUtils.getMotifsDefinitionFromTF : Unable to read motif definition from database file '" + database_file_path + "'. From:\n\t---> " + str( io_exce))
 
         return motif_to_definition
 

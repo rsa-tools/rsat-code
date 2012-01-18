@@ -35,6 +35,17 @@ class Pipeline:
 
 
     # --------------------------------------------------------------------------------------
+    # Return the component which has the given name as processor name. Return None if no
+    # suitable component is found
+    def getComponent(self, component_name):
+        
+        for component in self.componentList:
+            if component.processorName == component_name:
+                return component
+        
+        return None
+
+    # --------------------------------------------------------------------------------------
     # Return a string representation of the pipeline
     def toString( self):
         
