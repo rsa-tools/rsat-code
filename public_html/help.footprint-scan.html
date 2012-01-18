@@ -1,0 +1,760 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>../perl-scripts/footprint-scan</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href='footprint-scan_form.cgi'>footprint-scan</a> manual</h2>
+</center>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#input_format">INPUT FORMAT</a></li>
+	<ul>
+
+		<li><a href="#query_gene_s_">Query gene(s)</a></li>
+		<li><a href="#position_specific_scoring_matrices__pssms_">Position-specific scoring matrices (PSSMs)</a></li>
+		<ul>
+
+			<li><a href="#example_of_transfac_format">Example of TRANSFAC format</a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#output_format">OUTPUT FORMAT</a></li>
+	<li><a href="#examples_of_utilization">EXAMPLES OF UTILIZATION</a></li>
+	<ul>
+
+		<li><a href="#detecting_trans_acting_factors_for_single_gene__with_a_collection_of_known_motifs">Detecting trans-acting factors for single gene, with a collection of known motifs</a></li>
+		<li><a href="#detecting_all_putative_target_genes_for_a_given_transcription_factor">Detecting all putative target genes for a given transcription factor</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<ul>
+
+		<li><a href="#footprint_discovery">footprint-discovery</a></li>
+	</ul>
+
+	<li><a href="#wish_list">WISH LIST</a></li>
+	<ul>
+
+		<li><a href="#options_to_be_added">Options to be added</a></li>
+		<li><a href="#revise_the_manual">Revise the manual</a></li>
+		<li><a href="#support_as_web_services">Support as Web services</a></li>
+		<li><a href="#web_interface">Web interface</a></li>
+		<li><a href="#tutorial">Tutorial</a></li>
+		<li><a href="#motif_co_occurrences">Motif co-occurrences</a></li>
+		<li><a href="#neighbout_gene_name_in_output_table">Neighbout gene name in output table</a></li>
+	</ul>
+
+	<li><a href="#options">OPTIONS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>footprint-scan</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Scan promoters of orthologous genes with one or several
+position-specific scoring matrices (PSSM) in order to detect motifs
+showing a higher number of hits than expected by chance
+(over-represented motifs).</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="jacques_van_helden_jacques_van_helden_ulb_ac_be" class="item">Jacques.van. Helden &lt;<a href="mailto:Jacques.van.Helden@ulb.ac.be">Jacques.van.Helden@ulb.ac.be</a>&gt;</a></strong>
+
+<dt><strong><a name="alejandra_medina_rivera_amedina_lcg_unam_mx" class="item">Alejandra Medina-Rivera  &lt;<a href="mailto:amedina@lcg.unam.mx">amedina@lcg.unam.mx</a>&gt;</a></strong>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<dl>
+<dt><strong><a name="comparative_genomics" class="item">comparative genomics</a></strong>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>footprint-scan [-m matrix_inputfile] [-o outputfile] [-v #] [...]</p>
+<p>
+</p>
+<hr />
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<p>
+</p>
+<h2><a name="query_gene_s_">Query gene(s)</a></h2>
+<p>The analysis can be performed either on a single gene, or several
+genes separately (option -sep_genes), or on a group of genes
+altogether.</p>
+<p>Query genes can be entered on the command line (option -q) or in a
+text file (option-genes). Alternatively, teh option -all_genes will
+run the analysis on all the genes of a genome.</p>
+<p>
+</p>
+<h2><a name="position_specific_scoring_matrices__pssms_">Position-specific scoring matrices (PSSMs)</a></h2>
+<p><em>footprint-scan</em> requires a collection of (at least one)
+position-specific scoring matrices (PSSM).</p>
+<p>All the format supported by <em>matrix-scan</em> can be used to enter the
+matrices. However, we recommend to use the TRANSFAC format, which
+supports multiple matrices (we usually want tos can promoters with a
+full collection of matrices), and associates an identifier with each
+matrix (e.g. the name of the transcription factor).</p>
+<p>
+</p>
+<h3><a name="example_of_transfac_format">Example of TRANSFAC format</a></h3>
+<p>The following example shows a text file describing two matrices,
+representing the binding motifs annotated in RegulonDB for AgaR and
+AraC, respectively. Motifs must be separated by a line containing a
+double slash (//).</p>
+<p>The complete file can be downloaded from RegulonDB
+(http://regulondb.ccg.unam.mx/).</p>
+<pre>
+ AC  ECK12_ECK120012515_AgaR.24
+ XX
+ ID  ECK12_ECK120012515_AgaR.24
+ XX
+ P0       A     T     C     G
+ 1        5     0     1     5
+ 2        6     1     4     0
+ 3        4     0     5     2
+ 4        5     4     0     2
+ 5        4     6     0     1
+ 6        1     5     3     2
+ 7        0     2     8     1
+ 8        4     1     1     5
+ 9        4     5     1     1
+ 10       3     8     0     0
+ 11       5     6     0     0
+ 12       1     8     1     1
+ 13       2     0     4     5
+ 14       4     5     2     0
+ 15       3     8     0     0
+ 16       3     8     0     0
+ 17       0     2     9     0
+ 18       0     2     2     7
+ 19       3     7     1     0
+ 20       4     7     0     0
+ 21       3     8     0     0
+ 22       3     4     0     4
+ 23       3     4     0     4
+ 24       3     4     3     1
+ 25       3     8     0     0
+ XX
+ //
+ AC  ECK12_ECK120012316_AraC.18
+ XX
+ ID  ECK12_ECK120012316_AraC.18
+ XX
+ P0       A     T     C     G
+ 1        0    10     0     3
+ 2        7     4     1     1
+ 3        0     6     5     2
+ 4        2     2     3     6
+ 5        0     0     6     7
+ 6        9     0     0     4
+ 7        0     2     9     2
+ 8        2     7     3     1
+ 9        9     3     0     1
+ 10       7     4     0     2
+ 11       4     8     0     1
+ 12       3     3     5     2
+ 13       2    10     0     1
+ 14       2     7     1     3
+ 15       6     1     6     0
+ 16       0    11     2     0
+ 17       1     0     3     9
+ 18       1     5     5     2
+ 19       5     2     0     6
+ XX
+ //</pre>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>The result comprises several files for the orthologs, upstream
+sequences, matrix-scan results, feature-maps. By default, a directory
+is created for each query gene, with a name indicating the parameters:</p>
+<pre>
+ footprints/[taxon]/[Organism]/[gene]</pre>
+<p>Alternatively, the output folder can be specified manually with the
+option <em>-o</em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examples_of_utilization">EXAMPLES OF UTILIZATION</a></h1>
+<p>
+</p>
+<h2><a name="detecting_trans_acting_factors_for_single_gene__with_a_collection_of_known_motifs">Detecting trans-acting factors for single gene, with a collection of known motifs</a></h2>
+<p>Let us assume that we have a collection of PSSMs annotated for a given
+organism (e.g. the matrices for all the <em>Escherichia coli</em>
+transcription factors annotated in RegulonDB). We would likt to scan
+the promoters of orthologs of a given gene, in order to predict the
+transcription factors that might be involved in its regulation. The
+program will count the hits for each matrix, and report those showing
+a significant enrichment in the promoters of its orthologs.</p>
+<p>In this example, we use a slightly higher verbosity than usually (-v
+2) in order to keep track of the progress of the analysis. This also
+reports the commands that are executed, and allows us to examine all
+their parameters.</p>
+<pre>
+ footprint-scan -v 2  -org Escherichia_coli_K12 \
+    -taxon Enterobacteriales -q sodA -q lexA -q araC \
+    -bgfile ${RSAT}/public_html/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -m RegulonDB_matrices_transfac_format.txt \
+    -matrix_format transfac \
+    -matrix_suffix RegulonDB \
+    -sep_genes</pre>
+<pre>
+ footprint-scan -v 2  -org Escherichia_coli_K12 \
+    -taxon Enterobacteriales -q sodA  \
+    -bgfile ${RSAT}/public_html/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -m RegulonDB_matrices.tab \
+    -matrix_format tab \
+    -matrix_suffix RegulonDB \
+    -sep_genes</pre>
+<p>
+</p>
+<h2><a name="detecting_all_putative_target_genes_for_a_given_transcription_factor">Detecting all putative target genes for a given transcription factor</a></h2>
+<p>Given a PSSM we would like detect new putative binding sites for a
+given Transcription Factor. The usual approach would be to retrieve
+all upstream region sequences of the organism of interest and then
+search for high scored sites with matrix-scan, althougth to have a
+high score in one sequence doesn’t mean is a real binding site.</p>
+<p>As we know sequences with a functional relevance migth be conserved
+througth some branches of phylogeny. So we expect binding sites with a
+functional rele- vance to be conserved in a group of close othologous
+sequences.  footprint-scan can search for putative bindign sites in
+the hole set of up- stream regions of an organism while evaluating if
+the detected binding sites are conserved (over-represented) in the
+respective orthologous sequences.</p>
+<pre>
+ footprint-scan -v 2  -org Escherichia_coli_K12 \
+    -taxon Enterobacteriales -all_genes \
+    -bgfile ${RSAT}/public_html/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -m MetJ_Regulon_matrix.tab \
+    -matrix_format tab \
+    -matrix_suffix RegulonDB \
+    -sep_genes</pre>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>
+</p>
+<h2><a name="footprint_discovery">footprint-discovery</a></h2>
+<p>The difference betsween <em>footprint-scan</em> and <em>footprint-discovery</em>
+is that <em>footprint-scan</em> requires prior knowledge of the motifs (in
+the form of position-specific matrices), whereas
+<em>footprint-discovery</em> perfoms <em>ab initio</em> motif discovery.</p>
+<p>
+</p>
+<hr />
+<h1><a name="wish_list">WISH LIST</a></h1>
+<p>
+</p>
+<h2><a name="options_to_be_added">Options to be added</a></h2>
+<dl>
+<dt><strong><a name="rand" class="item"><strong>-rand</strong></a></strong>
+
+<dd>
+<p>When the option <em>-rand</em> is activated, <em>footprint-scan</em> scans random
+selections of promoters rather than promoters of orthologs.</p>
+</dd>
+<dd>
+<p>This option serves to perform negative controls in orde to estimate
+empirically the rate of false prediction and check its correspondence
+with the theoretical estimation of the significance.</p>
+</dd>
+<dd>
+<p>The random selections are done by passing the option <em>-rand</em> to the
+program <em>get-orthologs</em>.</p>
+</dd>
+</li>
+<dt><strong><a name="crer" class="item"><strong>-crer</strong></a></strong>
+
+<dd>
+<p>Return Cis-Regulatory elements Enriched-Regions (CRER).</p>
+</dd>
+<dd>
+<pre>
+            Calculate the statistical significance of the number of hits in
+            windows of variable sizes. The number of hits is the sum of
+            matches above a predefined threshold set on hits p-values, for
+            all matrices and on both strands (if -2str). The maximum size
+            for a CRER is defined by the option -crer_max.</pre>
+</dd>
+<dd>
+<pre>
+            The prior probability to find an instance of the motif is the
+            same for all matrices, and corresponds to the chosen pval
+            threshold. Within a region of maximal CRER size, subwindows are
+            defined between each hits, and the observed number of matches in
+            a subwindow is the sum of hits above the threshold. The
+            significance of the observed number of matches in a subwindow is
+            estimated by calculating a P-value using the binomial
+            distribution (Aerts et al., 2003).</pre>
+</dd>
+</li>
+<dt><strong><a name="lth_crer_size" class="item"><strong>-lth_crer_size</strong></a></strong>
+
+<dd>
+<p>Minimal CRER size in bps</p>
+</dd>
+</li>
+<dt><strong><a name="crer_pval" class="item"><strong>-crer_pval</strong></a></strong>
+
+<dd>
+<p>Pval cutoff for selecting CRERs</p>
+</dd>
+</li>
+<dt><strong><a name="uth_crer_size" class="item"><strong>-uth_crer_size</strong></a></strong>
+
+<dd>
+<p>Maximal CRER size in bps</p>
+</dd>
+</li>
+</dl>
+<p>
+</p>
+<h2><a name="revise_the_manual">Revise the manual</a></h2>
+<p>The manual is still very incomplete, Jacques van Helden needs to
+revise and complete it.</p>
+<p>
+</p>
+<h2><a name="support_as_web_services">Support as Web services</a></h2>
+<p>On the basis of the existing Web service for footprint-discovery.</p>
+<p>
+</p>
+<h2><a name="web_interface">Web interface</a></h2>
+<p>Alejandra Medina-Rivera will implement the Web interface.  It would be
+more convenient to program the Web page after the Web services, in
+order to benefit ffrom the support of Web services (including the
+token). To be checked with Morgane Thomas-Chollier &amp; Olivier Sand.</p>
+<p>
+</p>
+<h2><a name="tutorial">Tutorial</a></h2>
+<p>It would be worth preparing a tutorial (or a chapter in Methods in
+Molecular Biology) to explain in detail the interpretation of the
+result.</p>
+<p>The tutorial could cover the 3 interfaces (command-line, Web services
+and Web form).</p>
+<p>
+</p>
+<h2><a name="motif_co_occurrences">Motif co-occurrences</a></h2>
+<p>After having detected the motifs in the different sequences, analyze
+their co-occurrences in order to report the factors having sites in
+the same sequences (putatively interacting factors). Actually , this
+option should be implemented in matrix-scan rather than
+footprint-scan, because it applies to any type of analysis.</p>
+<p>
+</p>
+<h2><a name="neighbout_gene_name_in_output_table">Neighbout gene name in output table</a></h2>
+<p>Add name of upstream neighbour to the synthetic tables, in order
+to detect pairs of gene sharing the same promoter.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="m_matrix_file" class="item"><strong>-m matrix_file</strong></a></strong>
+
+<dd>
+<p>Matrix file. This argument is mandatory.</p>
+</dd>
+<dd>
+<p>This argument can be used iteratively to scan the sequence with
+multiple matrices.</p>
+</dd>
+</li>
+<dt><strong><a name="matrix_format_matrix_format" class="item"><strong>-matrix_format matrix_format</strong></a></strong>
+
+<dd>
+<p>Matrix format. Default is tab. This argument is mandatory.</p>
+</dd>
+</li>
+<dt><strong><a name="matrix_suffix_matrix_suffix" class="item"><strong>-matrix_suffix matrix_suffix</strong></a></strong>
+
+<dd>
+<p>Matrix suffix. This argument is mandatory.</p>
+</dd>
+<dd>
+<p>The matrix suffix indicates the nature of the matrix file. For
+example, if your matrix file contains a single matrix for a
+transcription factor (say LexA), you can indicate it with</p>
+</dd>
+<dd>
+<p>-matrix_suffix LexA</p>
+</dd>
+<dd>
+<p>whereas if your matrix files contains all the matrices from the
+RegulonDB database, you can specify</p>
+</dd>
+<dd>
+<p>-matrix_suffix RegulonDB</p>
+</dd>
+<dd>
+<p>The matrix suffix will be concatenated to the output prefix, in order
+to maintain separate output files for distinct analyses performed on
+the same promoter sequences. For example, if you run successively the
+analysis with the matrix LexA, and then with the matrix CRP, you don't
+want to loose the results of the first scanning when running the
+second scanning.</p>
+</dd>
+</li>
+<dt><strong><a name="tf_transcription_factor" class="item"><strong>-tf transcription_factor</strong></a></strong>
+
+<dd>
+<p>Most matrices are derived from specific TFBS, so they represent the preferential sequence where a TF binds.
+This option will search for all the genomes in the given taxon where there is an ortholog for the specified tf.
+Orthologs for the query genes will only be retrived if the organism has an ortholog for the TF.</p>
+</dd>
+<dd>
+<p>-tf gene_name</p>
+</dd>
+<dd>
+<p>If the option -matrix_table is used instead of the name of an specific TF specify the names are in the file using:</p>
+</dd>
+<dd>
+<p>-tf file</p>
+</dd>
+</li>
+<dt><strong><a name="pseudo" class="item"><strong>-pseudo #</strong></a></strong>
+
+<dd>
+<p>Pseudo-count for the matrix (default: 1). See matrix-scan for details.</p>
+</dd>
+</li>
+<dt><strong><a name="bgfile_background_file" class="item"><strong>-bgfile background_file</strong></a></strong>
+
+<dd>
+<p>Background model file.</p>
+</dd>
+</li>
+<dt><strong><a name="bg_format_background_format" class="item"><strong>-bg_format background_format</strong></a></strong>
+
+<dd>
+<p>Format of background model file.
+For supported formats see: convert-background-model -h</p>
+</dd>
+</li>
+<dt><strong><a name="bginput" class="item"><strong>-bginput</strong></a></strong>
+
+<dd>
+<p>Calculate background model from the input sequence set.</p>
+</dd>
+</li>
+<dt><strong><a name="markov" class="item"><strong>-markov</strong></a></strong>
+
+<dd>
+<p>Order of the markov chain for the background model.</p>
+</dd>
+<dd>
+<p>This option is incompatible with the option -bgfile.</p>
+</dd>
+</li>
+<dt><strong><a name="window" class="item"><strong>-window</strong></a></strong>
+
+<dd>
+<p>Size of the sliding window for the background model calculation.
+When this option is specified, the matrix pseudo-count is equally
+distributed.</p>
+</dd>
+<dd>
+<p>The background model is calculated locally at each step of the scan,
+by computing transition frequencies from a sliding window centred
+around the considered segment. The model is thus updated at each
+scanned position. This model is called &quot;adaptive&quot;. Note that the
+sliding window must be large enough to train the local Markov model.
+The required sequence length increases exponentially with the Markov
+order. This option is thus usually suitable for low order models
+only (-markov 0 to 1).</p>
+</dd>
+<dd>
+<p>This option is incompatible with the option -bgfile.</p>
+</dd>
+</li>
+<dt><strong><a name="bg_pseudo" class="item"><strong>-bg_pseudo #</strong></a></strong>
+
+<dd>
+<p>Pseudo frequency for the background model. Value must be a real
+between 0 and 1.</p>
+</dd>
+<dd>
+<p>If this option is not specified, the pseudo-frequency value depends on
+the background calculation.</p>
+</dd>
+<dd>
+<p>For -bginput and -window, the pseudo frequency is automatically
+calculated from the length (L) of the sequence following this formula:</p>
+</dd>
+<dd>
+<p>sqrt(L)/(L+sqrt(L))</p>
+</dd>
+<dd>
+<p>For -bgfile, default value is 0.05.</p>
+</dd>
+<dd>
+<p>In other cases, if the length (L) of the training sequence is known
+(e.g. all promoters for the considered organism), the value can be set
+manually by using the option -bg_pseudo. In such case, the background
+pseudo-frequency might be set, as suggested by Thijs et al., to the
+following value:</p>
+</dd>
+<dd>
+<p>sqrt(L)/(L+sqrt(L))</p>
+</dd>
+</li>
+<dt><strong><a name="filter" class="item"><strong>-filter</strong></a></strong>
+
+<dd>
+<p>Filter TF-interactions that are not present on the query organism.
+The option -filter_pval can be used to set the threshold for the detected sites.</p>
+</dd>
+</li>
+<dt><strong><a name="filter_bgfile" class="item"><strong>-filter_bgfile</strong></a></strong>
+
+<dd>
+<p>Background model file for the scanning of query sequences for filtering,.</p>
+</dd>
+</li>
+<dt><strong><a name="filter_pval" class="item"><strong>-filter_pval</strong></a></strong>
+
+<dd>
+<p>Set the threshold to filter out TF-interactions that are not present on the query organism.</p>
+</dd>
+</li>
+<dt><strong><a name="pval" class="item"><strong>-pval</strong></a></strong>
+
+<dd>
+<p>Set the threshold on site p-value to report only the evaluated over-representations of binding sites whenever the individual sites crossed it.
+The default is set to 1e-4.</p>
+</dd>
+</li>
+<dt><strong><a name="occ_th" class="item"><strong>-occ_th</strong></a></strong>
+
+<dd>
+<p>Threshold set on the occurrence significance (over-representation) for scores that have p-value equal or smaller thant the one given as threshold in the option <em>-pval</em>.</p>
+</dd>
+<dd>
+<p>All genes are completely analyzed, only the genes that pass both threshold on pvalue and occ_sig will be included on the synthesis table and html of the matrix.</p>
+</dd>
+<dd>
+<p>Default is set to 5 .</p>
+</dd>
+</li>
+<dt><strong><a name="occ_sig_opt" class="item"><strong>-occ_sig_opt</strong></a></strong>
+
+<dd>
+<p>Additional options passed to matrix-scan for the test of
+over-representation of matrix hits.</p>
+</dd>
+<dd>
+<p>Supported threshold fields for the matches : score pval eval sig normw
+proba_M proba_B rank crer_sites crer_size</p>
+</dd>
+<dd>
+<p>Supported threshold fields for score distributions: occ occ_sum
+inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank</p>
+</dd>
+<dd>
+<p>Examples:
+ To return only the &quot;best&quot; score for each gene
+-occ_sig_opt '-uth rank 1'</p>
+</dd>
+<dd>
+<p>To analyze the distribution only above a weight threshold of 7.
+ -occ_sig_opt '-lth score 7'</p>
+</dd>
+<dd>
+<p>To analyze the distribution for sites having a P-value threshold of
+1e-3.
+-occ_sig_opt '-uth pval 1e-3'</p>
+</dd>
+<dd>
+<p>Note: the argument passed to matrix-scan is delimited by single
+quotes, and can thus not contain any quote.</p>
+</dd>
+</li>
+<dt><strong><a name="info_lines" class="item"><strong>-info_lines</strong></a></strong>
+
+<dd>
+<p>Draw reference lines on the significance profile plots, to highlight
+some particular values.</p>
+</dd>
+<dd>
+<p>- horizontal axis (Y=0), in violet</p>
+</dd>
+<dd>
+<p>- vertical axis (X=0), in violet</p>
+</dd>
+<dd>
+<p>- the weight value associated with maximal significance
+  (only weights &gt;=0 are considered), in red</p>
+</dd>
+</li>
+<dt><strong><a name="occ_sig_graph_opt" class="item"><strong>-occ_sig_graph_opt</strong></a></strong>
+
+<dd>
+<p>Additional options passed to XYgraph for drawing the
+occurrence significance graph.</p>
+</dd>
+<dd>
+<p>Note: the argument passed to XYgraph is delimited by single quotes,
+and can thus not contain any quote.</p>
+</dd>
+</li>
+<dt><strong><a name="plot_format" class="item"><strong>-plot_format</strong></a></strong>
+
+<dd>
+<p>Format for the occurrence plots (occurrence frequencies, occurrence sinificance).
+Supported: all formats supported by the program XYgraph</p>
+</dd>
+</li>
+<dt><strong><a name="scan_opt" class="item"><strong>-scan_opt</strong></a></strong>
+
+<dd>
+<p>Additional options passed to matrix-scan for site detection and
+feature-map drawing.</p>
+</dd>
+<dd>
+<p>Examples:</p>
+</dd>
+<dd>
+<p>Scan sequences with an upper threshold of 0.001 on pval.
+-scan_opt '-uth pval 0.001'</p>
+</dd>
+<dd>
+<p>Note: the argument passed to matrix-scan is delimited by single
+quotes, and can thus not contain any quote.</p>
+</dd>
+<dd>
+<p>Default: By default sites are filtered with a threshodl on p-value on 1e-4</p>
+</dd>
+</li>
+<dt><strong><a name="map_opt" class="item"><strong>-map_opt</strong></a></strong>
+
+<dd>
+<p>Additional options passed to feature-map for feature-map drawing.</p>
+</dd>
+<dd>
+<p>Examples:</p>
+</dd>
+<dd>
+<p>Change the thickness of the maps
+-map_opt '-mapthick 12'</p>
+</dd>
+<dd>
+<p>Write the weight score above each site (also activate the auto
+adjustment of map thickness to ensure there is enough space for drawing the
+labels).
+-map_opt  '-label score -mapthick auto'</p>
+</dd>
+<dd>
+<p>Note: the argument passed to feature-map is delimited by single
+quotes, and can thus not contain any quote.</p>
+</dd>
+<dd>
+<p>Default= &quot; -mlen 300  -mspacing  2&quot;</p>
+</dd>
+</li>
+<dt><strong><a name="rand2" class="item"><strong>-rand</strong></a></strong>
+
+<dd>
+<p>When the option -rand is activated, the program replaces each
+ortholog by a gene selected at random in the genome where this
+ortholg was found.</p>
+</dd>
+<dd>
+<p>This option is used (for example by footprint-scan and
+footprint-discovery to perform negative controls, i.e. check the
+rate of false positives in randomly selected promoters of the
+reference taxon.</p>
+</dd>
+</li>
+<dt><strong><a name="matrix_table_matrix_table_file_tab" class="item"><strong>-matrix_table matrix_table_file.tab</strong></a></strong>
+
+<dd>
+<p>A table providing the paths to matrix files (one file per row) +
+optional columns to specify parameters (factor name, format) for
+each martrix.</p>
+</dd>
+<dd>
+<p>The matrix list is provided as a tab-delimited text file, where each
+row specifies one matrix.</p>
+</dd>
+<dd>
+<p>- The first column indicates the path to a file containing a single
+  matrix (in the format specified with -matrix_format).</p>
+</dd>
+<dd>
+<p>- The second column (optional) indicates a common name for the matrix
+  (e.g. transcription factor name) which will be displayed in the
+  synthetic report tables. If the option '<em>-tf file</em>' is used, this column
+  must indicate the name of the transcription factor on which the
+  taxonomic filter will be applied (i.e. the analysis will only be led
+  in species of the taxon where an ortholog has been found for the
+  factor).</p>
+</dd>
+<dd>
+<p>- The third column (optional) indicates the format of each matrix, in
+  case the search would be done with matrices obtained from different
+  sources (e.g. TRANSFAC, consensus, meme). Note that if the file
+  contains a third column, the option -matrix_format cannot be used.</p>
+</dd>
+</li>
+<dt><strong><a name="batch_matrix" class="item"><strong>-batch_matrix </strong></a></strong>
+
+<dd>
+<p>Generate one footprint-scan command per matrix and post it on the queue of a PC
+cluster.</p>
+</dd>
+</li>
+<dt><strong><a name="skip_m" class="item"><strong>-skip_m  #</strong></a></strong>
+
+<dd>
+<p>Skip the first # matrices in the matrix_table (useful for quick testing and for resuming
+interrupted tasks when using a matrix_table or when several matrices are entered with the option -m ).</p>
+</dd>
+</li>
+<dt><strong><a name="last_m" class="item"><strong>-last_m #</strong></a></strong>
+
+<dd>
+<p>Stop after having treated the first # matrices in the matrix table (useful for quick
+testing when using a matrix_table or when several matrices are entered with the option -m ).</p>
+</dd>
+</dl>
+
+</body>
+
+</html>
