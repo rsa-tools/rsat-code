@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.32 2011/12/19 22:50:00 rsat Exp $
+# $Id: server.mk,v 1.33 2012/01/18 05:53:14 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -28,24 +28,27 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ################################################################
 # Mirrors
 BIGRE=rsat@rsat.ulb.ac.be:rsa-tools
-BIGRE2=rsat@wwwsup.scmbb.ulb.ac.be:rsa-tools
+WWWSUP=rsat@wwwsup.scmbb.ulb.ac.be:rsa-tools
 MAMAZE=rsat@mamaze.ulb.ac.be:rsa-tools
-MERLIN=jvanheld@merlin.bigre.ulb.ac.be:rsa-tools
-#FLYCHIP=jvanheld@flychip.org.uk:rsa-tools
-CCG=jvanheld@kayab.ccg.unam.mx:rsa-tools
+CCG=jvanheld@itzamna.ccg.unam.mx:rsa-tools
+#CCG=jvanheld@mitzli.ccg.unam.mx:rsa-tools
 TAGC=jvanheld@139.124.66.43:rsa-tools
-LIV=jvanheld@liv.hgen.slu.se:rsa-tools
+UPPSALA=jvanheld@bongcam1.hgen.slu.se:rsa-tools
+PRETORIA=jvanheld@anjie.bi.up.ac.za:.
+MIRROR_SERVERS=${MAMAZE} ${WWWSUP} ${UPPSALA} ${CCG} 
+LOG_SERVERS=${MAMAZE}  ${BIGRE} ${WWWSUP} ${UPPSALA} ${CCG} ${PRETORIA}
+
+################################################################
+## OLD SERVERS, NOT MAINTAINED ANYMORE
+#FLYCHIP=jvanheld@flychip.org.uk:rsa-tools
 #TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
 #PRETORIA=jvanheld@milliways.bi.up.ac.za:rsa-tools
-PRETORIA=jvanheld@anjie.bi.up.ac.za:rsa-tools
-MIRROR_SERVERS=${MAMAZE} ${BIGRE2} ${LIV} ${CCG} 
-LOG_SERVERS=${MAMAZE} ${BIGRE2} ${LIV} ${CCG}${PRETORIA} ${BIGRE}
 
 ################################################################
 ## distribution
 MEDICEL=root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
 
-MIRROR=${LIV}
+MIRROR=${UPPSALA}
 
 ################################################################
 #### from brol to mirrors
