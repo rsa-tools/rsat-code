@@ -1400,6 +1400,7 @@ sub ChiSquare {
 	@expected = @values[$class_nb..2*$class_nb-1];
 
   	if ($main::verbose >= 10) {
+	    &RSAT::message::Debug("rank original", join("\t", 1..scalar(@expected)));
   	    &RSAT::message::Debug("obs original", join( "\t", @observed));
   	    &RSAT::message::Debug("exp original", join( "\t", @expected));
   	}
@@ -1422,6 +1423,7 @@ sub ChiSquare {
 		@observed_sorted = @observed[@order];
 		@expected_sorted = @expected[@order];
 		if ($main::verbose >= 10) {
+		    &RSAT::message::Debug("rank", join("\t", 1..scalar(@expected)));
 		    &RSAT::message::Debug("order by incr exp", join( "\t", @order));
 		    &RSAT::message::Debug("obs sorted by exp", join( "\t", @observed_sorted));
 		    &RSAT::message::Debug("exp sorted by exp", join( "\t", @expected_sorted));
@@ -1448,30 +1450,33 @@ sub ChiSquare {
 
 	    ## Recalculate the number of columns after left grouping
 	    $class_nb = scalar(@expected);
-	    &RSAT::message::Debug("Grouped on left", $left_group, "remaining", $class_nb) if ($main::verbose >= 3);
+	    &RSAT::message::Debug("Left tail collapsed", $left_group, "remaining", $class_nb) if ($main::verbose >= 3);
 	    if ($main::verbose >= 10) {
+		&RSAT::message::Debug("rank after left grouping", join("\t", 1..scalar(@expected)));
 		&RSAT::message::Debug("obs after left grouping", join("\t", @observed));
 		&RSAT::message::Debug("exp after left grouping", join("\t", @expected));
 	    }
 
-	    ## Group right tail
-	    $right_group = 0; ## Counter for the number of grouped classes on the right tail
-	    while (($#expected > 1) && ($expected[$#expected] < 5)) {
-		$right_group++;
-		$exp_sum = pop(@expected);
-		$expected[$#expected] += $exp_sum;
-		$obs_sum = pop(@observed);
-		$observed[$#observed] += $obs_sum;
-	    }
+	    unless ($sort_by_exp) {
+		## Group right tail
+		$right_group = 0; ## Counter for the number of grouped classes on the right tail
+		while (($#expected > 1) && ($expected[$#expected] < 5)) {
+		    $right_group++;
+		    $exp_sum = pop(@expected);
+		    $expected[$#expected] += $exp_sum;
+		    $obs_sum = pop(@observed);
+		    $observed[$#observed] += $obs_sum;
+		}
 
-	    ## Recalculate the number of columns after right grouping
-	    $class_nb = scalar(@expected);
-	    &RSAT::message::Debug("Grouped on right", $right_group, "remaining", $class_nb) if ($main::verbose >= 3);
-	    if ($main::verbose >= 10) {
-		&RSAT::message::Debug("obs after right grouping", join("\t", @observed));
-		&RSAT::message::Debug("exp after right grouping", join("\t", @expected));
+		## Recalculate the number of columns after right grouping
+		$class_nb = scalar(@expected);
+		&RSAT::message::Debug("Right tail collapsed", $right_group, "remaining", $class_nb) if ($main::verbose >= 3);
+		if ($main::verbose >= 10) {
+		    &RSAT::message::Debug("rank after right grouping", join("\t", 1..scalar(@expected)));
+		    &RSAT::message::Debug("obs after right grouping", join("\t", @observed));
+		    &RSAT::message::Debug("exp after right grouping", join("\t", @expected));
+		}
 	    }
-
  	}
 
 	## Calculate the observed chi-square
