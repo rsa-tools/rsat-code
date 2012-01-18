@@ -30,7 +30,7 @@ $default{matrix_format} = "meme";
 $default{leaders} = '';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia_coli_K12";
+$default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
 $default{uth_pvalue} = "1e-4";
 $default{taxon} = "Gammaproteobacteria";
 $default{uth_occ_th} = "5";
@@ -81,6 +81,7 @@ print "</div></p>\n";
 
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
+&ReadMatrixFromFile() ;
 
 ## demo description
 print $default{demo_descr1};
@@ -105,9 +106,9 @@ print $query->start_multipart_form(-action=>"footprint-scan.cgi");
 ################################################################
 ### send results by email only
 print "<p>\n";
-#&SelectOutput('email', email_only=>1);
-&SelectOutput();
-print "<i>Note: email output is preferred</i>\n";
+&SelectOutput('email', email_only=>1);
+#&SelectOutput();
+#print "<i>Note: email output is preferred</i>\n";
 
 ################################################################
 ### action buttons
@@ -130,7 +131,7 @@ $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"footprint-scan_form.cgi");
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K12");
+print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
 print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
 
 #print $query->submit(-label=>"DEMO");
@@ -140,37 +141,13 @@ print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'meme');
+
+print $query->hidden(-name=>'bg_method',-default=>'bginput');
+print $query->hidden(-name=>'bginput',-default=>'CHECKED');
+#print $query->hidden(-name=>'background',-default=>'upstream-noorf');
+print $query->hidden(-name=>'markov_order',-default=>'0');
+
 print $query->submit(-label=>"DEMO");
-print "</B></TD>\n";
-print $query->end_form;
-
-# ################################################################
-# ### data for the demo differential (test vs control)
-
-# my $descr2 = "<H4>Comment on the demonstration example 2 :</H4>\n";
-# $descr2 .= "<blockquote class ='demo'>";
-
-# $descr2 .= "In this demonstration, we run a differential analysis (test vs control)
-# to discover the motifs that are over-represented in one tissue (heart) compared to another tissue (limb), for a same transcription factor (p300) (Blow et al, 2010)</p>\n";
-
-# $descr2 .= "</blockquote>";
-
-
-# print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
-# $demo_seq=`cat demo_files/peak-motifs_GSM559652_heart_p300_peaks.fa`;
-# $ctrl_seq=`cat demo_files/peak-motifs_GSM348066_limb_p300_peaks.fa`;
-# print "<TD><b>";
-# print $query->hidden(-name=>'demo_descr1',-default=>$descr2);
-# print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
-# print $query->hidden(-name=>'sequence2',-default=>$ctrl_seq);
-# print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
-# print $query->hidden(-name=>'sequence_format2',-default=>'fasta');
-# print $query->hidden(-name=>'title',-default=>'p300 heart versus limb Blow2010');
-# print $query->hidden(-name=>'max_seq_len',-default=>'');
-# print $query->hidden(-name=>'top_sequences',-default=>'');
-# print $query->hidden(-name=>'visualize',-default=>"galaxy");
-# #print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
-# print $query->submit(-label=>"DEMO test vs ctrl");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -198,7 +175,7 @@ sub Panel1 {
   print "<table>
   <tr><td colspan='2' style='text-align:center;'> ";
   &GetMatrix();
-
+  
   
   print "</td>
   </tr>";
