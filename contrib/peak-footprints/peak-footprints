@@ -57,17 +57,17 @@ def main( argv):
         
     for opt, arg in opts:
         # Help option
-        if opt in ("-h", OptionManager.HELP):
+        if opt in ("-h", "--"+OptionManager.HELP):
             usage()
             return 0
         # Path to a pipeline definition XML file
-        elif opt in ("-p", OptionManager.PIPELINE):
+        elif opt in ("-p", "--"+OptionManager.PIPELINE):
             pipeline_filepath = arg
         # Path for the desired output directory
-        elif opt in ("-o", OptionManager.OUTPUT):
+        elif opt in ("-o", "--"+OptionManager.OUTPUT):
             working_dir = arg
         # Verbosity level: 0=log, 1=log + trace, 2=log + trace + info    
-        elif opt in ("-v", OptionManager.VERBOSITY):
+        elif opt in ("-v", "--"+OptionManager.VERBOSITY):
             try:
                 verbosity = int( arg)
             except (TypeError, ValueError), exce:
@@ -75,10 +75,10 @@ def main( argv):
                 usage()
                 return 2
         # Disable resume mode
-        elif opt in ("-f",  OptionManager.FORCE):
+        elif opt in ("-f", "--"+OptionManager.FORCE):
             resume = False
         # activate server mode
-        elif opt in ("-s",   OptionManager.SERVER):
+        elif opt in ("-s", "--"+OptionManager.SERVER):
             server = True
             if arg != None and len( arg) > 0:
                 listening_path = arg
