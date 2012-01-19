@@ -169,8 +169,9 @@ my $markov_order = $query->param('markov_order');
     $bg_file = &ExpectedFreqFile($organism_name,
 				 $oligo_length, $background_model,
 				 noov=>$noov, str=>"-1str");
-    $parameters .= " -bgfile ".$bg_file;
 
+    $parameters .= " -bgfile ".$bg_file.".gz";
+   
   } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
     my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
