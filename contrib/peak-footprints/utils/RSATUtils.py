@@ -33,7 +33,7 @@ class RSATUtils:
         
         index_chi2 = output.find( '#chi2')
         if index_chi2 >= 0 :
-            final_header = 'Rgroup'
+            final_header = 'Sgroup'
             index_pval = output.find( final_header, index_chi2)
             if index_pval >= 0:
                 results_string = output[ index_pval + len( final_header):]
