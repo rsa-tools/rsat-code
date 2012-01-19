@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.110 2012/01/18 20:26:59 amedina Exp $
+# $Id: footprint-scan,v 1.111 2012/01/19 03:47:28 amedina Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -725,7 +725,6 @@ package main;
   foreach my $ms (@analyzed_matrices) {
     $m++;
 
-
     %top_sig=();
     local $m_suffix =$ms;
     local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
@@ -760,17 +759,7 @@ package main;
 
     ## Initialize variable that keeps the current file with othorlogs for the current TF
     $main::tf_ortho_file=() if $tf;
-    ################
-    ## Obtain the score related to the threshold p-value for selecting the recovered interactions
-    ## if a bg_file is given this calculus be done per matrix, if -bginput is used the calculaiton
-    ## is done by Matrix-query_gene pair before calculationg the OccurrenceSig
-    if( defined($main::infile{bg}) ){
-	$dir{matrix_result_dir} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix);
-	&RSAT::util::CheckOutDir($dir{matrix_result_dir});
-	$outfile{matrix_distrib} = join( "/",$dir{synthesis},$m_suffix."_matrix-distrib_occsig.tab") ;
-	&CalcMAtrixTheorDistrib   ;
-    }
-
+    
     ################
     ## Complet parameters for matrix scan commands with specific information for the matrix
     local $ms_parameters =  $ms_general_parameters;
@@ -819,15 +808,36 @@ package main;
       }
     }
 
-    ################################################################
-    ## Analyze query genes separately or altogether
-    if ($main::sep_genes) {
-      if ($task{synthesis}) {
+    ################
+    ## Open synthesis table per matrix
+    if ($task{synthesis}) {
 	($synthesis_index, $synthesis_table,$synthesis_all_table) = &OpenSynthesisPerMatrix ;
 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
 	print $synthesis_all_table join ("\t", "#gene","TF","weight_at_th","occ_at_th","exp_at_th","sig_at_th","top_sig","score_at_topsig"),"\n"; ## Header for the complete report table
+	
+    }
+    ################
+    ## Obtain the score related to the threshold p-value for selecting the recovered interactions
+    ## if a bg_file is given this calculus can be done per matrix, if -bginput is used the calculaiton
+    ## is done by Matrix-query_gene pair before calculationg the OccurrenceSig
 
-      }
+    if( defined($main::infile{bg}) ){
+	$dir{matrix_result_dir} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix);
+	&RSAT::util::CheckOutDir($dir{matrix_result_dir});
+	$outfile{matrix_distrib} = join( "/",$dir{synthesis},$m_suffix."_matrix-distrib_occsig.tab") ;
+	&CalcMAtrixTheorDistrib   ;
+    }
+    
+    ################################################################
+    ## Analyze query genes separately or altogether
+
+    if ($main::sep_genes) {
+      # if ($task{synthesis}) {
+      # 	($synthesis_index, $synthesis_table,$synthesis_all_table) = &OpenSynthesisPerMatrix ;
+      # 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
+      # 	print $synthesis_all_table join ("\t", "#gene","TF","weight_at_th","occ_at_th","exp_at_th","sig_at_th","top_sig","score_at_topsig"),"\n"; ## Header for the complete report table
+
+      # }
 
       #      &RSAT::message::Debug("query_genes", scalar(@query_genes), join(";", @query_genes)) if ($main::;
 
@@ -1174,6 +1184,7 @@ Background model file.
 =cut
 	} elsif ($arg eq "-bgfile") {
 	    $main::infile{bg} = shift(@arguments);
+	    $main::bg_method="infile_bg";
 =pod
 
 =item B<-bg_format background_format>
@@ -1854,6 +1865,7 @@ sub OpenSynthesisPerMatrix {
   $outfile{$m_suffix."_synthesis_tab"} = $prefix{$m_suffix."_synthesis"}.".tab";
   $outfile{$m_suffix."_synthesis_all"} = $prefix{$m_suffix."_synthesis"}."_all.tab";
   $outfile{$m_suffix."_synthesis_html"} = $prefix{$m_suffix."_synthesis"}.".html";
+
 
   my $synthesis_index = &OpenOutputFile($outfile{$m_suffix."_synthesis_html"});
   my $synthesis_table = &OpenOutputFile($outfile{$m_suffix."_synthesis_tab"});
