@@ -23,11 +23,19 @@ $query = new CGI;
 $default{demo_descr1} = "";
 
 ################################################################
-### default values for filling the form
+## Default values for filling the form
+
+## matrix-scan
 $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "transfac";
-$default{leaders} = '';
+$default{pseudo_distribution} = "pseudo_prior";
+$checked{$default{pseudo_distribution}} = "CHECKED";
+
+## Background model
+$default{markov_order} = "1";
+
+$default{leaders} = 'checked';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
 $default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
@@ -36,6 +44,7 @@ $default{taxon} = "Gammaproteobacteria";
 $default{uth_occ_th} = "5";
 $default{format}="jpg";
 $default{info_lines}="CHECKED";
+$default{pseudo_freq} = "0.01";
 
 
 
@@ -70,7 +79,7 @@ print "</BLOCKQUOTE>\n";
 print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\"><font color='#0D73A7'>Information about footprint-scan</font> </div>\n";
  print "<div id=\"menu105\" class=\"menu_collapsible\">\n";
 print "<BLOCKQUOTE>\n";
-print "<p>In the search of new putative Transcription Factor Binding Sites one common aproach is scanning a set of regulator regions from one organism with a PSSM, althogth, this search rases a problem of high False Positive Rate (FPR) when this method is not used carefully, and even when an expert uses it, the FPR is not as small as we would like, and an experimental validation must be done in order to decide if a site is in fact a real TFBS, to circumvent the problem we propose, under the asumption of conservation of regulation, to take advantage of the availability of many bacteria genomes.</p> 
+print "<p>In the search of new putative Transcription Factor Binding Sites one common aproach is scanning a set of regulator regions from one organism with a PSSM, althogth, this search rases a problem of high False Positive Rate (FPR) when this method is not used carefully, and even when an expert uses it, the FPR is not as small as we would like, and an experimental validation must be done in order to decide if a site is in fact a real TFBS, to circumvent the problem we propose, under the asumption of conservation of regulation, to take advantage of the availability of many bacteria genomes.</p>
 
 <p>Nowadays, the goal in bioinformatics is to increase the statistical power when scanning a genome sequences with regulatory motifs, we propose in <i>footprint-scan</i> the use of additional sequence data from related species in order to achieve this goal.</p> ";
 print "</BLOCKQUOTE>\n";
@@ -88,7 +97,7 @@ print $default{demo_descr1};
 
 print $query->start_multipart_form(-action=>"footprint-scan.cgi");
 
-################# Matrix input 
+################# Matrix input
  &Panel1();
 
 
@@ -97,12 +106,12 @@ print $query->start_multipart_form(-action=>"footprint-scan.cgi");
 
 ################# Scanning Parameters
  &Panel3();
- 
+
 ################# Drawing parameters
  &Panel4();
 
 
- 
+
 ################################################################
 ### send results by email only
 print "<p>\n";
@@ -171,15 +180,15 @@ exit(0);
 sub Panel1 {
 
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Matrix </a></b></legend>\n";
- 
+
   print "<table>
   <tr><td colspan='2' style='text-align:center;'> ";
   &GetMatrix();
-  
-  
+
+
   print "</td>
   </tr>";
-    
+
   print "</td></tr></table>";
   print '<b><font style="font-size:80%"><a href="tutorials/tut_peak-motifs.html#seq" target="_blank"></a></font></b></br>';
   print "</fieldset><p/>";
@@ -195,7 +204,7 @@ sub Panel2 {
   print "<legend><b><a href='help.peak-motifs.html#tasks'>Select reference organism, query genes and taxon</a></b></legend>\n";
 
   &PrintOrthoSelectionSection();
-  
+
 ### use predicted leader genes
   print "<br>";
   print $query->checkbox(-name=>'leaders',
@@ -204,7 +213,7 @@ sub Panel2 {
   print "<A HREF='help.footprint-scan.html#leader'><B>\n";
   print "predict operon leader genes";
   print "</B></A>\n";
-  
+
   print "<br/>";
 
   print "</fieldset><p/>";
@@ -231,22 +240,20 @@ print "<p/><fieldset>
 			      $query->th(["<A HREF='help.footprint-scan.html#return_fields'>Field</A> ",
 					  " <A HREF='help.footprint-scan.html#thresholds'>Threshold</A> "]),
 
-			      
 			      ### Threshold on score
-			      $query->td(['Pvalue',
+			      $query->td(['Max site Pvalue',
 			      		  $query->textfield(-name=>'uth_pvalue',
 							    -default=>$default{uth_pvalue},
 							    -size=>5)
 					 ]),
 
 				### Threshold on occ_inv_cum
-			      $query->td(['Occurrences<br>threshold',
+			      $query->td(['Min number of sites',
 					  $query->textfield(-name=>'uth_occ_th',
 							    -default=>$default{uth_occ_th},
 							    -size=>5)
 					 ]),
 
-			    
 			     ]
 			    )
 		 );
@@ -273,7 +280,7 @@ print "</p>";
 
 print "</fieldset><p/>";
 
-print '	
+print '
 </div></div>';
 
 }
@@ -303,11 +310,11 @@ print "<br>";
 print $query->checkbox(-name=>'info_lines',
 		       -checked=>$default{info_lines},
 		       -label=>' Informative lines');
- 
+
 
   print "<p/> ";
 
- 
+
   print "</fieldset><p/>";
 
   print '
