@@ -1003,7 +1003,6 @@ sub InferQueryOperons {
   &IndexOneFile("Operon leaders for query genes", $outfile{leader_qgenes});
 }
 
-
 ################################################################
 ## Retrieve promoters of the query organism
 sub RetrieveQueryPromoters {
@@ -1461,7 +1460,6 @@ sub Select_interaction{
 		}
 	    }
 	}
-	
 	print $synthesis_all_table  join("\t",$m_suffix, $current_gene, $weight_near_th,$occ_at_th,$exp_at_th,$sig_at_th, $report_top_scores )."\n";
 
 
