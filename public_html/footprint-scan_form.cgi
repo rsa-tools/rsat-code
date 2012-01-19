@@ -26,7 +26,7 @@ $default{demo_descr1} = "";
 ### default values for filling the form
 $default{matrix}="";
 $default{matrix_file}="";
-$default{matrix_format} = "meme";
+$default{matrix_format} = "transfac";
 $default{leaders} = '';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
