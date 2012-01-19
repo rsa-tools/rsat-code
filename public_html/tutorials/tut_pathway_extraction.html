@@ -46,69 +46,75 @@ in the <a href='../course/'>RSAT course</a>.</p>
 
       <a name='intro'></a><h2>Introduction</h2>
 
-    <p>We now dispose of the complete genome for more than 1,000 Bacteria,
-      and this number is expected to grow even faster with the advent of
-      Next Generation Sequencing (NGS) methods. For most of these bacteria,
-      almost nothing is known about metabolism, regulation. These bacteria
-      were sequenced because they present some interest for medicine,
-      biotechnologies, agriculture, but they have not yet been characterized
-      by geneticists or biochemists, and it is very likely that they will
-      never be, just because there are not enough people and financial
-      resources to perform all the required experiments. </p>
+    <p>We now dispose of the complete genome for more than 1,000
+      Bacteria, and this number is expected to grow even faster with
+      the advent of Next Generation Sequencing (NGS) methods. For most
+      of these bacteria, almost nothing is known about metabolism,
+      regulation. These bacteria were sequenced because they present
+      some interest for medicine, biotechnologies, agriculture, but
+      they have not yet been characterized by geneticists or
+      biochemists, and it is very likely that they will never be, just
+      because there are not enough people and financial resources to
+      perform all the required experiments. </p>
     
     <p>Bioinformatics is thus the most reasonable way to at least try
-      understanding the composition of these genomes, the function of their
-      genes, and the way they interact to allow an organism of interest to
-      survive in its environment. The first annotation step consists in
-      comparing the sequence of each gene product to a database of protein
-      functions (e.g. <a target='_blank'
-			 href='http://www.uniprot.org'>Uniprot</a>), and to infer individual
-      gene function by sequence similarity. </p>
+      understanding the composition of these genomes, the function of
+      their genes, and the way they interact to allow an organism of
+      interest to survive in its environment. The first annotation
+      step consists in comparing the sequence of each gene product to
+      a database of protein functions (e.g. <a target='_blank'
+      href='http://www.uniprot.org'>Uniprot</a>), and to infer
+      individual gene function by sequence similarity. </p>
     
     <p>Gene-wise analysis is however restricted to a one-by-one
       prediction, and does not inform us on how genes and proteins are
-      integrated into complex processes. However, several predictive methods
-      have been developed to address this question, in various ways.
+      integrated into complex processes. However, several predictive
+      methods have been developed to address this question, in various
+      ways.
       <ol>
-	<p><li><b>Operon prediction</b>:. In Bacteria, genes involved in
-	    the same process are often regrouped in operons (defined here
-	    as poly-cistronic transcription units). Genes belonging to the
-	    same operon are generally separated by a very short intergenic
-	    space (less than 50bp) or can even overlap, since the stop
-	    codon of a gene (<tt>TAA</tt>, <tt>TAG</tt>, <tt>TGA</tt>) can
-	    overlap with the start codon (<tt>ATG</tt>) of the next gene
-	    in two ways. Operons can be predicted with a reasonable
+	<p><li><b>Operon prediction</b>:. In Bacteria, genes involved
+	    in the same process are often regrouped in operons
+	    (defined here as poly-cistronic transcription
+	    units). Genes belonging to the same operon are generally
+	    separated by a very short intergenic space (less than
+	    50bp) or can even overlap, since the stop codon of a gene
+	    (<tt>TAA</tt>, <tt>TAG</tt>, <tt>TGA</tt>) can overlap
+	    with the start codon (<tt>ATG</tt>) of the next gene in
+	    two ways. Operons can be predicted with a reasonable
 	    accuracy (~80%) by grouping genes separated by a distance
 	    shorter than a given limit (e.g. 55bp), using a simplified
-	    approach derived from Salgado et al., 2000; Moreno-Hagelsieb
-	    et al., 2002.</li></p>
-	<p><li><b>Inference of co-regulation networks and prediction of
-	      regulons</b>. @Transcription (single genes or operons)
-	    involved in a same function are generally co-regulated at the
-	    transcriptional level by some specific transcription
-	    factor. For example, in <i>Escherichia coli</i> enzymes
-	    involved in methionine biosynthesis are regulated by the MetJ
-	    repressor, genes involved in arginine biosynthesis by the ArgR
-	    repressor, and so on. This regulation is relatively well
-	    conserved across species, up to a given taxonomical level
-	    (Gammaproteobacteria). We can predict the cis-regulatory
-	    elements of a gene by detecting phylogenetic footprints,
-	    i.e. sequence motifs that are conserved in the upstream
-	    sequences of its orthologs (Janky and van Helden, 2008). We
-	    can further link genes having similar footprints, in order to
-	    infer a co-regulation network (Broh&eacute;e et al., 2011),
-	    and extract from this network the modules of highly connected
-	    genes, which are likely to reveal regulons. </li></p>
-	<p><li><b>Prediction of metabolic pathways</b>. Starting from a
-	    set of enzymes supposed to be involved in the same process
-	    (e.g. found in a predicted operon or regulon), we can identify
-	    the reactions they can catalyze, and apply path finding
-	    methods (Croes et al.; 2005; 2006; Faust et al., 2009a, 2009b)
-	    to find the link between pairs of reactions. More
-	    interestingly, we can use this set of reactions as seeds to
-	    extract a subgraph from the reaction/compound network, in
-	    order to predict the metabolic pathway that can be catalyzed
-	    by the products of a given operon or regulon (Faust et al., 200. </li></p>
+	    approach derived from Salgado et al., 2000;
+	    Moreno-Hagelsieb et al., 2002.</li></p>
+	<p><li><b>Inference of co-regulation networks and prediction
+	      of regulons</b>. Transcription (single genes or operons)
+	      involved in a same function are generally co-regulated
+	      at the transcriptional level by some specific
+	      transcription factor. For example, in <i>Escherichia
+	      coli</i> enzymes involved in methionine biosynthesis are
+	      regulated by the MetJ repressor, genes involved in
+	      arginine biosynthesis by the ArgR repressor, and so
+	      on. This regulation is relatively well conserved across
+	      species, up to a given taxonomical level
+	      (Gammaproteobacteria). We can predict the cis-regulatory
+	      elements of a gene by detecting phylogenetic footprints,
+	      i.e. sequence motifs that are conserved in the upstream
+	      sequences of its orthologs (Janky and van Helden,
+	      2008). We can further link genes having similar
+	      footprints, in order to infer a co-regulation network
+	      (Broh&eacute;e et al., 2011), and extract from this
+	      network the modules of highly connected genes, which are
+	      likely to reveal regulons. </li></p>
+	<p><li><b>Prediction of metabolic pathways</b>. Starting from
+	    a set of enzymes supposed to be involved in the same
+	    process (e.g. found in a predicted operon or regulon), we
+	    can identify the reactions they can catalyze, and apply
+	    path finding methods (Croes et al.; 2005; 2006; Faust et
+	    al., 2009a, 2009b) to find the link between pairs of
+	    reactions. More interestingly, we can use this set of
+	    reactions as seeds to extract a subgraph from the
+	    reaction/compound network, in order to predict the
+	    metabolic pathway that can be catalyzed by the products of
+	    a given operon or regulon (Faust et al., 200. </li></p>
       </ol>
     </p>
     
@@ -116,21 +122,42 @@ in the <a href='../course/'>RSAT course</a>.</p>
     <a name='questions'></a><h2>General goal and specific questions</h2>
     
 
-    <p>The general goal of the tutorial is to learn the use of a series of
-      bioinformatics tools to predict metabolic pathways and their
-      regulation. More specifically, we would like to address the following
-      question. </p>
+    <p>The general goal of the tutorial is to learn the use of a
+      series of bioinformatics tools to predict metabolic pathways and
+      their regulation. More specifically, we would like to address
+      the following question. </p>
     
     <ol>
       <p><li><b>Two-ends path finding</b>. Can we recover our pathway
 	  of interest by finding the shortest path between its start
 	  and end compounds ?</li></p>
+
       <p><li><b>Operon prediction</b>. Are the genes of the pathway
 	  regrouped in one or several operons, or are they scattered over
 	  the genome ?</li></p>
+
+      <p><li><b>Footprint discovery</b>. Using comparative genomics,
+	  can we predict the cis-acting elements of the genes coding
+	  for the enzymes involved in a pathway of interest ? How
+	  widely are these elements conserved across the taxonomy ? Do
+	  we detect similar conserved motifs (phylogenetic footprints)
+	  in the promoters of different genes of our pathway of
+	  interest ?
+      </li></p>
+
+      <p><li><b>Pathway extraction</b>. The distance based method
+	  provides a quick and easy way to perform a rough prediction
+	  of all the operons of a given genome. some operons will
+	  contain a set of enzymes, supposedly involved in a common
+	  metabolic pathway. If an operon contains several
+	  enzyme-coding genes, can we predict the pathway catalyzed by
+	  these enzymes ?
+      </li></p>
+
       <p><li></li></p>
+
       <p><li></li></p>
-      <p><li></li></p>
+
     </ol>
     
     <p>In this tutorial, we will combine the Regulatory Sequence Analysis
@@ -155,8 +182,8 @@ in the <a href='../course/'>RSAT course</a>.</p>
 	  pathway. you should try to find a pathway with a sufficient
 	  number of reaction steps (at least 4).</li>
 	<li>By clicking on the button <i>More detail</i>, you can
-	  obtain a progressively more refined view of the pathway, with
-	  details about compound structure etc.</li>
+	  obtain a progressively more refined view of the pathway,
+	  with details about compound structure etc.</li>
 	<li>Read carefully the record, and pay a particular attention
 	  to the location of mapped genes and the genetic regulation
 	  schematic.
@@ -174,14 +201,15 @@ in the <a href='../course/'>RSAT course</a>.</p>
     
     <div class='tut'>
       <ol>
-	<li>Open a connection to the Network Analysis Tools (NeAT, 
+	<li>Open a connection to the Network Analysis Tools (NeAT,
            <a target='_blank'
            href='http://rsat.ulb.ac.be/neat/'>http://rsat.ulb.ac.be/neat/</a>)
            and select the tool <b>Metabolic path finding</b>.
 	</li>
+
 	<li>Try to find the shorter path between the initial substrate
 	  and end product of your study case pathway. For this, first
-	  leave all options to their default values. 
+	  leave all options to their default values.
 	  <br><b>Beware</b>:
 	  the first step of the analysis returns the list of comounds
 	  that match queries for the start and end compounds. Make
@@ -234,9 +262,9 @@ in the <a href='../course/'>RSAT course</a>.</p>
       <ol>
 	<li>Open a connection to the Regulatory Sequence Analysis Tools (RSAT, 
            <a target='_blank'
-           href='http://rsat.ulb.ac.be/rsat/'>http://rsat.ulb.ac.be/rsat/</a>)
-           open the toolbox <b>Comparative genomics</b> and select the
-           tool <b>footprint-discovery</b>.
+           href='http://rsat.ulb.ac.be/rsat/'>http://rsat.ulb.ac.be/rsat/</a>).</li>
+        <li>Open the toolbox <b>Comparative genomics</b>, and select
+           the tool <b>footprint-discovery</b>.
 	</li>
 	<li>Enter the name of one of the enzyme-coding genes of your
 	  pathway of interest. Set the <b>Organism</b>
