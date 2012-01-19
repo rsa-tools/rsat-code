@@ -25,7 +25,7 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-$parameters = " -v 2 -synthesis -info_lines -sep_genes ";
+$parameters = " -v 2 -synthesis  -sep_genes ";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
@@ -139,6 +139,10 @@ if ($query->param('leaders')) {
   $parameters .= " -infer_operons";
 }
 
+## info_lines
+if ($query->param('info_lines')) {
+  $parameters .= " -info_lines ";
+}
 
 ################################################################
 ## Background model method
@@ -200,6 +204,16 @@ my $markov_order = $query->param('markov_order');
 if (&IsReal($query->param('bg_pseudo'))) {
     $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
 }
+
+## image format
+
+if ($query->param('img_format')) {
+    $image_format = $query->param('img_format');
+} else {
+    $image_format = $ENV{rsat_img_format} || "png";
+}
+$parameters .= " -plot_format ".$image_format;
+$parameters .= " -map_format ".$image_format;
 
 ## Output prefix
 $parameters .= " -o ".$file_prefix;
