@@ -202,6 +202,7 @@ in the <a href='../course/'>RSAT course</a>.</p>
     <a name='path_finding'></a><hr><h2>Two-ends path finding</h2>
     
     <div class='tut'>
+      <h4>Protocol</h4>
       <ol>
 	<li>Open a connection to the Network Analysis Tools (NeAT,
            <a target='_blank'
@@ -228,36 +229,53 @@ in the <a href='../course/'>RSAT course</a>.</p>
 	    (compounds and reactant pairs)</i>, and test the ipmpact
 	    of the <b>Weighting scheme</b>. What happens when you
 	    disable compound weighting ? </li>
+	
+	<li>For each parameter setting, compare the predicted
+	  pathway and the annotated one, by computing the numbers of
+	  TP, FP, TN, as well as the Sensitivity and Positive
+	    Predictive Value.
+	</li>
       </ol>
+    </div>
+    
+    <div class='tips'>
+      <h3>Tips</h3>
+      <p>To compute the accuracy statistics, you can use the following
+	definitions.
+	<ul>
+	<li>Number of true positives (<b>TP</b>): reactions that are both
+	  found by path finding and annotated in the EcoCyc
+	  pathway. </li>
+	<li>Number of false positives (<b>FP</b>): reactions found in the
+	  predicted path but not in the annotated path.</li>
+	<li>Number of false negatives (<b>FN</b>): reactions present in
+	  the annotated pathway but not detected in the rpedicted
+	  pathway.</li>
+      </ul>
+      </p>
+      <p>You can then derive the statistics.
+	<ul>
+	  <li>Sensitivity: <b>Sn = TP / (TP + FN)</b>.  Fraction of the
+	    annotated reactions that were correctly recovered by
+	    path finding.</li>
+	  <li>Positive Predictive Value: PPV = TP / (TP + FP).
+	    Fraction of the predicted reactions that were part of
+	    the annotated pathway.</li>
+	  <li>Accuracy: <b>Acc<sub>geom</sub> = sqrt(Sn * PPV)</b>. The geometric accuracy
+	    of sensitivity and positive predictive value.</li>
+	</ul>
+      </p>
     </div>
 
     <div class='exo'>
       <h4>Questions</h4>
+	
       <ol>
-	<li>For each parameter setting, compare the predicted pathway
-	and the annotated one, by counting separately:
-	  <ul>
-	    <li>Number of true positives (TP): reactions that are both
-	      found by path finding and annotated in the EcoCyc
-	      pathway. </li>
-	    <li>Number of false positives (FP): reactions found in the
-	      predicted path but not in the annotated path.</li>
-	    <li>Number of false negatives (FN): reactions present in
-	      the annotated pathway but not detected in the rpedicted
-	      pathway.</li>
-	  </ul>
-	  <p>You  can then derive the following statistics.
-	  <ul>
-	    <li>Sensitivity: Sn = TP / (TP + FN).  Fraction of the
-	      annotated reactions that were correctly recovered by
-	      path finding.</li>
-	    <li>Positive Predictive Value: PPV = TP / (TP + FP).
-	      Fraction of the predicted reactions that were part of
-	      the annotated pathway.</li>
-	    <li>Accuracy: Acc = sqrt(Sn * PPV). The geometric accuracy
-	      of sensitivity and positive predictive value.</li>
-	  </ul>
-	</li>
+	<li>How do the parameters afect the Sn, PPV and accuracy ?
+	<ul>
+	  <li>Network type: RPAIR versus reaction network.</li>
+	  <li>Weighting scheme: activating or not the compound weightinf.</li>
+	</ul>
       </ol>
     </div>
     
