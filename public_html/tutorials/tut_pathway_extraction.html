@@ -263,7 +263,7 @@ in the <a href='../course/'>RSAT course</a>.</p>
     <div class='tut'>
       <ol>
 	<li>Open a connection to the Regulatory Sequence Analysis Tools (RSAT, 
-           <a target='_blank'
+          <a target='_blank'
            href='http://rsat.ulb.ac.be/rsat/'>http://rsat.ulb.ac.be/rsat/</a>).</li>
         <li>Open the toolbox <b>Comparative genomics</b>, and select
            the tool <b>footprint-discovery</b>.
@@ -273,14 +273,43 @@ in the <a href='../course/'>RSAT course</a>.</p>
 	  to <i>Escherichia coli K12</i> and the <b>Taxon</b> option
 	  to <i>Enterobacteriales</i>. </li>
 	<li>Activate the option <b>predict operon leader genes</b>.</li>
-	<li>Enter your <b>email</b> address and click <b>GO</b>.</li>
+	<li>Enter your <b>email</b> address and click <b>GO</b>.
+	  <ul>
+	    <p>Beware, this analysis can take a bit of time (1-2
+	      minutes). While it is running, you can already perform the next
+	      section, and come back to the result after having received the
+	      email notification of the task completion.</p>
+	  </ul>
+	</li>
+	<li>Once you have received the task completion email, open the
+	  result page and click on the link "Final matrices (transfac
+	  format)". Copy the whole content of the file, and open a new
+	  connection to <a target='_blank'
+	  href='http://rsat.ulb.ac.be/rsat/'>RSAT</a>. In the
+	  toolbox <b>Matrix tools</b>,
+	  open <b>compare-matrices</b>. Paste your matrices, make sure
+	  that the rigth matrix format is selected
+	  (<i>transfac</i>). For the option <b>Reference matrices</b>,
+	  select <i>RegulondDB</i>. Leave all other parameters
+	  unchanged and type <b>GO</b>.</li>
       </ol>
     </div>
 
-    <p>Beware, this analysis can take a bit of time. While it is
-      running, you can already perform the next section, and come back
-      to the result after having received the email notification of
-      the task completion.</p>
+    <div class='exo'>
+      <h4>Questions</h4>
+      <ol>
+	<li>Did the footprint-discovery program report significant dyads ?</li>
+	<li>Analyze the feature map : do you see conserved sites ? Do
+	  they occupy fixed positions or are they spread over the
+	  sequences ?</li>
+	<li>Are there know factors that are likey to bind the
+	discovered motifs ? How do the discovered matrices compare
+	with the known motifs in RegulonDB ? In case you found
+	matches, are they consistent with the pathway of interest
+	? </li>
+      </ol>
+    </div>
+    
 
     <div class='exo'>
       <h4>Questions</h4>
