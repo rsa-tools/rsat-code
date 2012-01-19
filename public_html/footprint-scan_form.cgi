@@ -129,12 +129,20 @@ print $query->end_form;
 
 ################################################################
 ### data for the demo
-$demo_queries = "lexA\n";
+$demo_queries = "lexA\nrecA\n";
 
 my $descr1 = "<H4>Comment on the demonstration example 1 :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
 
-$descr1 .= "In this demonstration, we apply <i>footprint-scan<\i> to evaluate the enrichment of LexA binding site in the upstream regulatory regions of lexA orthologous genes in Enterobacteriales.</p>\n";
+$descr1 .= "<p>In this demonstration, we apply <i>footprint-scan<\i> to
+evaluate the enrichment of LexA binding site in the upstream sequences
+of two of its target genes: lexA (the factor is auto-regulated) and
+recA.</p>\n
+
+<p> For each query gene, the orthologs are collected at the level of
+Enterobacteriales, their upstream sequences are scanned with the
+matrix, and the number of observed sites is compared to the random
+expectation.</p>\n";
 
 $descr1 .= "</blockquote>";
 
@@ -145,11 +153,11 @@ print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
 
 #print $query->submit(-label=>"DEMO");
 
-$demo_matrix=`cat demo_files/LexA.2nt_upstream-noorf-ovlp-2str.20.meme`;
+$demo_matrix=`cat demo_files/LexA.2nt_upstream-noorf-ovlp-2str.20.tf`;
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'meme');
+print $query->hidden(-name=>'matrix_format',-default=>'transfac');
 
 print $query->hidden(-name=>'bg_method',-default=>'bginput');
 print $query->hidden(-name=>'bginput',-default=>'CHECKED');
