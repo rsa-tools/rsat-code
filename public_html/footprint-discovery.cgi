@@ -37,7 +37,7 @@ $parameters = " -v 1";
 ##
 ## -task operon because the option has not been introduced in the Web
 ##   form (could be fixed some day).
-$parameters .= " -task bg_model,query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,map,index";
+$tasks .= " -task bg_model,query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,map,index";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
@@ -136,6 +136,7 @@ if ($query->param('queries') =~ /\S/) {
 ## Infer operon leader genes
 if ($query->param('leaders')) {
   $parameters .= " -infer_operons";
+  $tasks.=",operons";
 }
 
 ## Dyad filter
@@ -153,6 +154,9 @@ if ($query->param('to_matrix')) {
 ## Background model
 local $bg_model = $query->param('bg_model');
 $parameters .= " -bg_model ".$bg_model;
+
+## Add Tasks
+$parameters .= $tasks;
 
 ## Output prefix
 $parameters .= " -o ".$result_dir;
