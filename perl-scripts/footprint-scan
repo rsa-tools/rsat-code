@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.111 2012/01/19 03:47:28 amedina Exp $
+# $Id: footprint-scan,v 1.112 2012/01/19 04:38:38 amedina Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.112 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -2033,7 +2033,7 @@ sub AddOneMatrixToMatricesReport{
   if ($m_tf) {
     print  $matrices_synthesis_table join("\t",$msuf,$m_tf,$consensus,$num_reg_genes,$m_report)."\n";
   } else {
-    print  $matrices_synthesis_table join("\t",$msuf,$consensus,$num_reg_genes,$m_report)."\n";
+    print  $matrices_synthesis_table join("\t",$msuf,$motif_id,$consensus,$num_reg_genes,$m_report)."\n";
   }
 
   ################
@@ -2056,7 +2056,7 @@ sub AddOneMatrixToMatricesReport{
   if ($m_tf) {
     $matrix_report_line_hml="<td>".join("</td>\n<td>",$msuf,$m_tf,$m_report_link,$colored_consensus,$num_reg_genes)."</td>";
   } else {
-    $matrix_report_line_hml="<td>".join("</td>\n<td>",$msuf,$m_report_link,$colored_consensus,$num_reg_genes)."</td>";
+    $matrix_report_line_hml="<td>".join("</td>\n<td>",$msuf,$msuf,$m_report_link,$colored_consensus,$num_reg_genes)."</td>";
   }
   print  $matrices_synthesis_index  $matrix_report_line_hml."</tr>\n"; #finish line
 
