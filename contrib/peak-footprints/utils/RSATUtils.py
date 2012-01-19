@@ -33,19 +33,14 @@ class RSATUtils:
         
         index_chi2 = output.find( '#chi2')
         if index_chi2 >= 0 :
-            print "index_chi2 = " + str( index_chi2)
             final_header = 'Sgroup'
             index_pval = output.find( final_header, index_chi2)
-            print "index_pval = " + str( index_pval)
             if index_pval >= 0:
                 results_string = output[ index_pval + len( final_header):]
-                print "results_string = " + results_string
                 results = results_string.split()
-                print "results = " + str( results)
                 if len( results) >= 3:
                     chi2 = results[0]
                     pvalue = results[2]
-                    print "( chi2, pvalue) = " + str( ( chi2, pvalue))
                     return ( chi2, pvalue)
         
         Log.log( "RSATUtils.executeChi2Test : chi-square output does not contains desired results :" + str( output))
