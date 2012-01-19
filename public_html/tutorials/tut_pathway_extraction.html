@@ -231,6 +231,37 @@ in the <a href='../course/'>RSAT course</a>.</p>
       </ol>
     </div>
 
+    <div class='exo'>
+      <h4>Questions</h4>
+      <ol>
+	<li>For each parameter setting, compare the predicted pathway
+	and the annotated one, by counting separately:
+	  <ul>
+	    <li>Number of true positives (TP): reactions that are both
+	      found by path finding and annotated in the EcoCyc
+	      pathway. </li>
+	    <li>Number of false positives (FP): reactions found in the
+	      predicted path but not in the annotated path.</li>
+	    <li>Number of false negatives (FN): reactions present in
+	      the annotated pathway but not detected in the rpedicted
+	      pathway.</li>
+	  </ul>
+	  <p>You  can then derive the following statistics.
+	  <ul>
+	    <li>Sensitivity: Sn = TP / (TP + FN).  Fraction of the
+	      annotated reactions that were correctly recovered by
+	      path finding.</li>
+	    <li>Positive Predictive Value: PPV = TP / (TP + FP).
+	      Fraction of the predicted reactions that were part of
+	      the annotated pathway.</li>
+	    <li>Accuracy: Acc = sqrt(Sn * PPV). The geometric accuracy
+	      of sensitivity and positive predictive value.</li>
+	  </ul>
+	</li>
+      </ol>
+    </div>
+    
+
     <a name='operon prediction'></a><hr><h2>Operon prediction</h2>
     
     <div class='tut'>
@@ -303,10 +334,9 @@ in the <a href='../course/'>RSAT course</a>.</p>
 	  they occupy fixed positions or are they spread over the
 	  sequences ?</li>
 	<li>Are there know factors that are likey to bind the
-	discovered motifs ? How do the discovered matrices compare
-	with the known motifs in RegulonDB ? In case you found
-	matches, are they consistent with the pathway of interest
-	? </li>
+	  discovered motifs ? How do the discovered matrices compare
+	  with the known motifs in RegulonDB ? In case you found
+	  matches, are they consistent with the pathway of interest? </li>
       </ol>
     </div>
     
