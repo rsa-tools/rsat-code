@@ -42,7 +42,7 @@ $default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
 $default{uth_pvalue} = "1e-4";
 $default{taxon} = "Gammaproteobacteria";
 $default{uth_occ_th} = "5";
-$default{format}="jpg";
+$default{img_format}="jpg";
 $default{info_lines}="CHECKED";
 $default{pseudo_freq} = "0.01";
 
@@ -310,9 +310,9 @@ sub Panel4 {
 print "<br>";
 ## Image format
 print "Format ";
-print $query->popup_menu(-name=>'format',
+print $query->popup_menu(-name=>'img_format',
 			 -Values=>["jpg","png","eps","pdf"],
-			 -default=>$default{format});
+			 -default=>$default{img_format});
 print "<br>";
 ## draw lines to join points
 print $query->checkbox(-name=>'info_lines',
