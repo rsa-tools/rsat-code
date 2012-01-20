@@ -16,13 +16,13 @@ from common.PWM import PWM
 
 class BedSeqAlignmentStatsCommStruct( CommStruct):
 
-    BEDSEQUENCES_NUMBER = "BEDSequenceNumber"
-    BEDSEQUENCES_MIN_SIZE = "BEDSequenceMinSize"
-    BEDSEQUENCES_MAX_SIZE = "BEDSequenceMaxSize"
-    BEDSEQUENCES_MEAN_SIZE = "BEDSequenceMeanSize"
-    BEDSEQUENCES_TOTAL_SIZE = "BEDSequenceTotalSize"
-    BED_SEQUENCES_SIZE_PATH = "BEDSequenceSizeHistogram"
-    BED_SEQUENCES_SIZE_GRAPH_PATH = "BEDSequenceSizeHistogramGraph"
+    BEDSEQUENCES_NUMBER = "BEDSequencesNumber"
+    BEDSEQUENCES_MIN_SIZE = "BEDSequencesMinSize"
+    BEDSEQUENCES_MAX_SIZE = "BEDSequencesMaxSize"
+    BEDSEQUENCES_MEAN_SIZE = "BEDSequencesMeanSize"
+    BEDSEQUENCES_TOTAL_SIZE = "BEDSequencesTotalSize"
+    BED_SEQUENCES_SIZE_PATH = "BEDSequencesSizeHistogram"
+    BED_SEQUENCES_SIZE_GRAPH_PATH = "BEDSequencesSizeHistogramGraph"
 
     REFERENCE_SPECIES = "ReferenceSpecies"
     ALIGNED_SPECIES = "AlignedSpecies"
@@ -35,13 +35,13 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
     MSA_SIZE_PATH = "MSASizeHistogram"
     MSA_SIZE_GRAPH_PATH = "MSASizeHistogramGraph"
     
-    CONSERVED_BLOCKS_NUMBER = "ConservedBlockNumber"
-    CONSERVED_BLOCKS_MIN_SIZE = "ConservedBlockMinSize"
-    CONSERVED_BLOCKS_MAX_SIZE = "ConservedBlockMaxSize"
-    CONSERVED_BLOCKS_MEAN_SIZE = "ConservedBlockMeanSize"
-    CONSERVED_BLOCKS_TOTAL_SIZE = "ConservedBlockTotalSize"
-    CONSERVED_BLOCKS_SIZE_PATH = "ConservedRegionsSizeHistogram"
-    CONSERVED_BLOCKS_SIZE_GRAPH_PATH = "ConservedRegionsSizeHistogramGraph"
+    CONSERVED_BLOCKS_NUMBER = "ConservedBlocksNumber"
+    CONSERVED_BLOCKS_MIN_SIZE = "ConservedBlocksMinSize"
+    CONSERVED_BLOCKS_MAX_SIZE = "ConservedBlocksMaxSize"
+    CONSERVED_BLOCKS_MEAN_SIZE = "ConservedBlocksMeanSize"
+    CONSERVED_BLOCKS_TOTAL_SIZE = "ConservedBlocksTotalSize"
+    CONSERVED_BLOCKS_SIZE_PATH = "ConservedBlocksSizeHistogram"
+    CONSERVED_BLOCKS_SIZE_GRAPH_PATH = "ConservedBlocksSizeHistogramGraph"
 
     
     REFERENCE_MOTIF = "ReferenceMotif"

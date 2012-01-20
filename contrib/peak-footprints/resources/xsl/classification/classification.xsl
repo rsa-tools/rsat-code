@@ -96,9 +96,9 @@
 			<td><xsl:value-of select="@conservedBlocksTotalSize"/></td>
 			<td ALIGN="center" >
 				<a> 
-					<xsl:attribute name="href"> <xsl:value-of select="@ConservedRegionsSizeGraph"/> </xsl:attribute>
+					<xsl:attribute name="href"> <xsl:value-of select="@ConservedBlocksSizeGraph"/> </xsl:attribute>
 					<img>
-						<xsl:attribute name="src"> <xsl:value-of select="@ConservedRegionsSizeGraph"/> </xsl:attribute>
+						<xsl:attribute name="src"> <xsl:value-of select="@ConservedBlocksSizeGraph"/> </xsl:attribute>
 						<xsl:attribute name="title"> Distribution of conserved regions size</xsl:attribute>
 						<xsl:attribute name="border"> 0 </xsl:attribute>
 						<xsl:attribute name="height"> 120 </xsl:attribute>
