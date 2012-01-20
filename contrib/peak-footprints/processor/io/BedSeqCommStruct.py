@@ -11,10 +11,11 @@ from common.BEDSequence import BEDSequence
 
 class BedSeqCommStruct( CommStruct):
 
-    BEDSEQUENCE_NUMBER = "BEDSequenceNumber"
-    BEDSEQUENCE_MIN_SIZE = "BEDSequenceMinSize"
-    BEDSEQUENCE_MAX_SIZE = "BEDSequenceMaxSize"
-    BEDSEQUENCE_MEAN_SIZE = "BEDSequenceMeanSize"
+    BEDSEQUENCES_NUMBER = "BEDSequencesNumber"
+    BEDSEQUENCES_MIN_SIZE = "BEDSequencesMinSize"
+    BEDSEQUENCES_MAX_SIZE = "BEDSequencesMaxSize"
+    BEDSEQUENCES_MEAN_SIZE = "BEDSequencesMeanSize"
+    BEDSEQUENCES_TOTAL_SIZE = "BEDSequencesTotalSize"
     BED_SEQUENCES_SIZE_PATH = "BEDSequenceSizeHistogram"
     BED_SEQUENCES_SIZE_GRAPH_PATH = "BEDSequenceSizeHistogramGraph"
 
