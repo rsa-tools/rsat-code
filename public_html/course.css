@@ -96,9 +96,11 @@ pre,tt {
 
 
 .tips {
-       padding-top: 0.5em;
-       padding-bottom: 0.5em;
-       padding-left: 2em;
+       margin-top: 5px;
+       margin-bottom: 5px;
+       padding-top: 5px;
+       padding-bottom: 5px;
+       padding-left: 20px;
        border: 1px dashed #2f6fab;
        #color: Black;
        background-color: #DDFFDD;
@@ -108,9 +110,11 @@ pre,tt {
 
 .code {
         font-family: Courier;
-        padding-top: 0.5em;
-        padding-bottom: 0.5em;
-        padding-left: 2em;
+        padding-top: 5px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        padding-bottom: 5px;
+        padding-left: 20px;
         border: 1px dashed #2f6fab;
         background-color: #00FF00;
         color: #0000888;
@@ -118,9 +122,11 @@ pre,tt {
 }
 
 .solution {
-            padding-top: 0.5em;
-            padding-bottom: 0.5em;
-            padding-left: 2em;
+        margin-top: 5px;
+        margin-bottom: 5px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 20px;
             border: 1px dashed #FFFFFF;
             background-color: #DDDDFF;
             color: #0000BB;
@@ -131,9 +137,11 @@ pre,tt {
 
 .exo {
        #font-style:italic;
-       padding-top: 0.5em;
-       padding-bottom: 0.5em;
-       padding-left: 2em;
+        margin-top: 5px;
+        margin-bottom: 5px;
+       padding-top: 5px;
+       padding-bottom: 5px;
+       padding-left: 20px;
        #border: 1px solid #9999ff;
        #color: Black;
        background-color: #FFEEEE;
@@ -144,9 +152,11 @@ pre,tt {
 
 .tut {
        #font-style:italic;
-       padding-top: 0.5em;
-       padding-bottom: 0.5em;
-       padding-left: 2em;
+        margin-top: 5px;
+        margin-bottom: 5px;
+       padding-top: 5px;
+       padding-bottom: 5px;
+       padding-left: 20px;
        #border: 1px solid #9999ff;
        #color: Black;
        background-color: #EEEEEE;
@@ -157,9 +167,11 @@ pre,tt {
 
 .answer {
        #font-style:italic;
-       padding-top: 0.5em;
-       padding-bottom: 0.5em;
-       padding-left: 2em;
+        margin-top: 5px;
+        margin-bottom: 5px;
+       padding-top: 5px;
+       padding-bottom: 5px;
+       padding-left: 20px;
        #border: 1px solid #9999ff;
        #color: Black;
        background-color: #DDFFDD;
@@ -170,7 +182,7 @@ pre,tt {
 .attention {
              color: #6B0909;
              font-size: larger;
-             padding:1em;
+             padding:10px;
              background-color: #FFEEEE;
              border: 4px solid #B40404;
              margin-right: 5%;
@@ -179,7 +191,7 @@ pre,tt {
 
 p.attention
 {
-  padding:1em;
+  padding:10px;
   background-color: #F78181;
   border: 3px solid #B40404;
   margin-right: 5%;
@@ -189,9 +201,11 @@ p.attention
 
 .tbw {
        font-style:italic;
-       padding-top: 0.5em;
-       padding-bottom: 0.5em;
-       padding-left: 2em;
+        margin-top: 5px;
+        margin-bottom: 5px;
+       padding-top: 5px;
+       padding-bottom: 5px;
+       padding-left: 20px;
        border: 1px solid #9999ff;
        color: Red;
        background-color: #FFFFBB;
@@ -199,14 +213,16 @@ p.attention
 
 .protocol {
             font-style:plain;
-            padding-top: 0px;
-            padding-bottom: 0px;
-            padding-left: 10px;
-            padding-right: 10px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 20px;
+            padding-right: 20px;
             #border: 1px solid #9999ff;
             color: #000055;
-            background-color: #DDEEFF;
-}
+            background-color: #D8E8FF;
+            }
 
 /* TABLE */
 
