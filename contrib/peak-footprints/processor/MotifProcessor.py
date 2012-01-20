@@ -1043,13 +1043,23 @@ class MotifProcessor( Processor):
         motif_list = []
         motif_size_list = []
         bedseq_size_list = []
+        min_size = 1000000
+        max_size = -1
+        total_size = 0
         for bedseq in output_commstruct.bedToMA.keys():
             bedseq_size_list.append( bedseq.indexEnd - bedseq.indexStart)
             for alignment in output_commstruct.bedToMA[ bedseq]:
                 if alignment.motifs != None or len( alignment.motifs) > 0:
                     for motif in alignment.motifs:
                         motif_list.append( motif)
-                        motif_size_list.append( motif.indexEnd - motif.indexStart)
+                        motif_length = motif.indexEnd - motif.indexStart
+                        motif_size_list.append( motif_length)
+                        if motif_length < min_size:
+                            min_size = motif_length
+                        if motif_length > max_size:
+                            max_size = motif_length
+                        total_size += motif_length
+                        
 
         Log.trace( "MotifProcessor.getMotifList : Conserved regions found : " + str( len( motif_list)))
         
@@ -1061,11 +1071,23 @@ class MotifProcessor( Processor):
                     new_motif = Motif( bedseq.indexStart, bedseq.indexEnd, "", pwm)
                     new_motif.composeName( bedseq.name)
                     motif_list.append( new_motif)
-                    motif_size_list.append( new_motif.indexEnd - new_motif.indexStart)
+                    motif_length = new_motif.indexEnd - new_motif.indexStart
+                    motif_size_list.append( motif_length)
+                    if motif_length < min_size:
+                        min_size = motif_length
+                    if motif_length > max_size:
+                        max_size = motif_length
+                    total_size += motif_length
                     
             Log.trace( "MotifProcessor.getMotifList : Using complete sequences as conserved regions : " + str( len( motif_list)))
 
-        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_REGION_NUMBER] = len( motif_list)
+        mean_size = (int) (total_size / float( len( motif_list)))
+
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_NUMBER] = len( motif_list)
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MIN_SIZE] = len( min_size)
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MAX_SIZE] = len( max_size)
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MEAN_SIZE] = len( mean_size)
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_TOTAL_SIZE] = len( total_size)
         
         return ( motif_list, motif_size_list, bedseq_size_list)
 

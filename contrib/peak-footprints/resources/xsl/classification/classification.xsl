@@ -36,7 +36,7 @@
         <br></br>
 
 	<!-- ................................................................................................. -->
-	<!-- Table containg the information on data input and global statistics                                -->
+	<!-- Table containg the information on data input                                                      -->
 	<!-- ................................................................................................. -->
 	<table ALIGN="center">
 		<tr><td><b>Reference Species</b></td><td>:<xsl:value-of select="@referenceSpecies"/></td></tr>
@@ -47,17 +47,17 @@
 		<tr><td><b>Number of detected conserved regions</b></td><td>:<xsl:value-of select="@conservedRegionNumber"/></td></tr>
 	</table>
 
-
-	<br></br>
-        <br></br>
-
-
 	<!-- ................................................................................................. -->
-	<!-- Table containg the information on sequences, conserved regions and conserved blocks distributions -->
+	<!-- Table containg the information on global statistics                                               -->
 	<!-- ................................................................................................. -->
-	<div style="text-align:center; font-size:10pt; color:black; padding:4px"> 
-	<table ALIGN="center" WIDTH='50%'>
-		<tr>
+	<table ALIGN="center">
+		<tr><th></th><th>Number</th><th>Min Size</th><th>Max Size</th><th>Mean Size</th><th>Total Size</th><th>Size distribution</th></tr>
+		<tr><td>Initial Sequences</td>	
+			<td><xsl:value-of select="@bedSequencesNumber"/></td>
+			<td><xsl:value-of select="@bedSequencesMinSize"/></td>
+			<td><xsl:value-of select="@bedSequencesMaxSize"/></td>
+			<td><xsl:value-of select="@bedSequencesMeanSize"/></td>
+			<td><xsl:value-of select="@bedSequencesTotalSize"/></td>
 			<td ALIGN="center" >
 				<a>
 					<xsl:attribute name="href"> <xsl:value-of select="@BEDSequencesSizeHistogramGraph"/> </xsl:attribute>
@@ -69,6 +69,13 @@
 					</img>
 				</a>
 			</td>
+		</tr>
+		<tr><td>Sequences associated to MSA</td>	
+			<td><xsl:value-of select="@MSANumber"/></td>
+			<td><xsl:value-of select="@MSAMinSize"/></td>
+			<td><xsl:value-of select="@MSAMaxSize"/></td>
+			<td><xsl:value-of select="@MSAMeanSize"/></td>
+			<td><xsl:value-of select="@MSATotalSize"/></td>
 			<td ALIGN="center" >
 			 	<a> 
 					<xsl:attribute name="href"> <xsl:value-of select="@MSASizeHistogramGraph"/> </xsl:attribute>
@@ -80,6 +87,13 @@
 					</img>
 				</a>
 			</td>
+		</tr>
+		<tr><td>Detected conserved Blocks</td>	
+			<td><xsl:value-of select="@conservedBlocksNumber"/></td>
+			<td><xsl:value-of select="@conservedBlocksMinSize"/></td>
+			<td><xsl:value-of select="@conservedBlocksMaxSize"/></td>
+			<td><xsl:value-of select="@conservedBlocksMeanSize"/></td>
+			<td><xsl:value-of select="@conservedBlocksTotalSize"/></td>
 			<td ALIGN="center" >
 				<a> 
 					<xsl:attribute name="href"> <xsl:value-of select="@ConservedRegionsSizeGraph"/> </xsl:attribute>
@@ -91,23 +105,11 @@
 					</img>
 				</a>
 			</td>
-
-		</tr>
-		<tr HEIGHT='5' BGCOLOR="#ffffff">
-			<th WIDTH='33%'>
-				Distribution of sequences sizes
-			</th>
-			<th WIDTH='33%'>
-				Size distribution of conserved regions under peaks
-			</th>
-			<th WIDTH='33%'> 
-				Size distribution of conserved blocks under peaks
-			</th>
-
 		</tr>
 	</table>
-	</div>
 
+	<br></br>
+        <br></br>
 
 
 	<!-- ................................................................................................. -->

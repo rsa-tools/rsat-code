@@ -134,14 +134,29 @@ def main( argv):
 # --------------------------------------------------------------------------------------
 def usage():
     
-    print "Usage: "
-    print "\t -i | --input : path to a pipeline definition file"
-    print "\t [-o | --output] : path for the desired output directory"
-    print "\t [-v | --verbose] : verbosity level: 0=log, 1=log/trace, 2=log/trace/info"
-    print "\t [-f | --force] : force the complete reexecution of the pipelines (disable resume mode)"
-    print "\t [-s | --server] : launch the manager in server mode."
-
-
+    print "Command : peak-footprints"
+    print ""
+    print " Required options : "
+    print " -------------------"
+    print ""
+    print " --pipeline \t: the path to the XML file describing the pipeline to execute."
+    print " --input_peaks \t: the path to the BED file containing the chIP-seq peaks."
+    print " --ref_species \t: the id of the reference species (e.g. mm8)."
+    print ' --align_species: the space separated list of species composing the desired multi-alignement (e.g. "hg18 rn4 BosTau3").'
+    print " --ref_motif \t: the ID of the TF motif used in the chIP-seq (e.g. MA0102.2)"
+    print ""
+    print ' example: peak-footprints --pipeline "/data/pipeline/default.xml" --input_peaks "/data/bed/experience_1.bed" --ref_species mm8 --align_species "hg18 rn4 BosTau3" --ref_motif MA0102.2'
+    print ""
+    print " Other options : "
+    print " ----------------"
+    print ""
+    print " --db_root_path   : the path to the folder containing all the TF databases."
+    print " --db_file_list   : the space separated list of TF database file name."
+    print " --db_format_list : the space separated list of TF database format. The order and the size of this list must be the same as the list provided throught the --db_file_list option." 
+    print " --output         : the path to the desired output folder."
+    print " --force          : this option force the tool to reexecute all the pipeline steps even if previous similar results are found."
+    print " --server         : launch the tool in server mode."
+    print " --v \t: set the verbosity level (0 to 2)."
 
 
 # --------------------------------------------------------------------------------------
