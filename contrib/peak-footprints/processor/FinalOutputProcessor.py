@@ -407,8 +407,8 @@ class FinalOutputProcessor( Processor):
     CONSERVED_BLOCKS_MAX_SIZE_ATT = "conservedBlocksMaxSize"
     CONSERVED_BLOCKS_MEAN_SIZE_ATT = "conservedBlocksMeanSize"
     CONSERVED_BLOCKS_Total_SIZE_ATT = "conservedBlocksTotalSize"
-    CONSERVED_BLOCKS_SIZE_PATH_ATT = "ConservedRegionsSizeHistogram"
-    CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT = "ConservedRegionsSizeGraph"
+    CONSERVED_BLOCKS_SIZE_PATH_ATT = "ConservedBlocksSizeHistogram"
+    CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT = "ConservedBlocksSizeGraph"
     
     REFERENCE_MOTIF_ATT = "referenceMotif"
     
