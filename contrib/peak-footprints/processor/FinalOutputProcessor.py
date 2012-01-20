@@ -261,6 +261,7 @@ class FinalOutputProcessor( Processor):
         classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MIN_SIZE]
         classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MAX_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MAX_SIZE]
         classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MEAN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MEAN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_TOTAL_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_TOTAL_SIZE]
 
         classification_element.attrib[ FinalOutputProcessor.MSA_NUMBER_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_NUMBER]
         classification_element.attrib[ FinalOutputProcessor.MSA_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MIN_SIZE]
@@ -272,6 +273,7 @@ class FinalOutputProcessor( Processor):
         classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MIN_SIZE]
         classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MAX_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MAX_SIZE]
         classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MEAN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MEAN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_TOTAL_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_TOTAL_SIZE]
 
         classification_element.attrib[ FinalOutputProcessor.REFERENCE_MOTIF_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_MOTIF]
         ##classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT]
