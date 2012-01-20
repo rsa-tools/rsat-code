@@ -16,8 +16,8 @@ class BedSeqCommStruct( CommStruct):
     BEDSEQUENCES_MAX_SIZE = "BEDSequencesMaxSize"
     BEDSEQUENCES_MEAN_SIZE = "BEDSequencesMeanSize"
     BEDSEQUENCES_TOTAL_SIZE = "BEDSequencesTotalSize"
-    BED_SEQUENCES_SIZE_PATH = "BEDSequenceSizeHistogram"
-    BED_SEQUENCES_SIZE_GRAPH_PATH = "BEDSequenceSizeHistogramGraph"
+    BED_SEQUENCES_SIZE_PATH = "BEDSequencesSizeHistogram"
+    BED_SEQUENCES_SIZE_GRAPH_PATH = "BEDSequencesSizeHistogramGraph"
 
     # --------------------------------------------------------------------------------------
     def __init__( self):
