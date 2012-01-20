@@ -62,6 +62,7 @@
 			<td align="center"><xsl:value-of select="@bedSequencesMeanSize"/></td>
 			<td align="center"><xsl:value-of select="@bedSequencesTotalSize"/></td>
 			<td align="center" >
+			    <center>
 				<a>
 					<xsl:attribute name="href"> <xsl:value-of select="@BEDSequencesSizeHistogramGraph"/> </xsl:attribute>
 					<img>
@@ -71,6 +72,13 @@
 						<xsl:attribute name="height"> 120 </xsl:attribute>
 					</img>
 				</a>
+			   </center>
+			   <center>
+				<a>
+					<xsl:attribute name="href"> <xsl:value-of select="@BEDSequencesSizeHistogram"/> </xsl:attribute>
+					<font size="2">	Histogram </font>
+				</a>
+			   </center>
 			</td>
 		</tr>
 		<tr><td>Sequences associated to MSA</td>	
@@ -80,7 +88,8 @@
 			<td align="center"><xsl:value-of select="@MSAMeanSize"/></td>
 			<td align="center"><xsl:value-of select="@MSATotalSize"/></td>
 			<td align="center">
-			 	<a> 
+			   <center>
+				<a> 
 					<xsl:attribute name="href"> <xsl:value-of select="@MSASizeHistogramGraph"/> </xsl:attribute>
 					<img>
 						<xsl:attribute name="src"> <xsl:value-of select="@MSASizeHistogramGraph"/> </xsl:attribute>
@@ -89,6 +98,13 @@
 						<xsl:attribute name="height"> 120 </xsl:attribute>
 					</img>
 				</a>
+			   </center>
+			   <center>
+				<a>
+					<xsl:attribute name="href"> <xsl:value-of select="@MSASizeHistogram"/> </xsl:attribute>
+					<font size="2">	Histogram </font>
+				</a>
+			   </center>
 			</td>
 		</tr>
 		<tr><td>Detected conserved Blocks</td>	
@@ -98,6 +114,7 @@
 			<td align="center"><xsl:value-of select="@conservedBlocksMeanSize"/></td>
 			<td align="center"><xsl:value-of select="@conservedBlocksTotalSize"/></td>
 			<td align="center">
+			    <center>
 				<a> 
 					<xsl:attribute name="href"> <xsl:value-of select="@ConservedBlocksSizeGraph"/> </xsl:attribute>
 					<img>
@@ -107,6 +124,13 @@
 						<xsl:attribute name="height"> 120 </xsl:attribute>
 					</img>
 				</a>
+			   </center>
+			   <center>
+				<a>
+					<xsl:attribute name="href"> <xsl:value-of select="@ConservedBlocksSizeHistogram"/> </xsl:attribute>
+					<font size="2">	Histogram </font>
+				</a>
+			   </center>
 			</td>
 		</tr>
 	</table>
