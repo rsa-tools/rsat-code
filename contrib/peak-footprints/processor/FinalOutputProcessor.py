@@ -110,8 +110,8 @@ class FinalOutputProcessor( Processor):
         self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.BED_SEQUENCES_SIZE_GRAPH_PATH, FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # copy the conserved regions size histogram and graph
-        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_PATH, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_PATH_ATT, file_pathes)
-        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_GRAPH_PATH, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_GRAPH_PATH_ATT, file_pathes)
+        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_PATH, FinalOutputProcessor.CONSERVED_BLOCKS_SIZE_PATH_ATT, file_pathes)
+        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_GRAPH_PATH, FinalOutputProcessor.CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # copy the MSA size histogram and graph
         self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.MSA_SIZE_PATH, FinalOutputProcessor.MSA_SIZE_PATH_ATT, file_pathes)
