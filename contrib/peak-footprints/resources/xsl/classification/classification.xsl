@@ -68,8 +68,8 @@
 					<img>
 						<xsl:attribute name="src"> <xsl:value-of select="@BEDSequencesSizeHistogramGraph"/> </xsl:attribute>
 						<xsl:attribute name="title"> Distribution of sequences size</xsl:attribute>
-						<xsl:attribute name="border"> 0 </xsl:attribute>
-						<xsl:attribute name="height"> 120 </xsl:attribute>
+						<xsl:attribute name="height"> 90 </xsl:attribute>
+						<xsl:attribute name="width"> 120 </xsl:attribute>
 					</img>
 				</a>
 			   </center>
@@ -94,8 +94,8 @@
 					<img>
 						<xsl:attribute name="src"> <xsl:value-of select="@MSASizeHistogramGraph"/> </xsl:attribute>
 						<xsl:attribute name="title"> Distribution of MSA size</xsl:attribute>
-						<xsl:attribute name="border"> 0 </xsl:attribute>
-						<xsl:attribute name="height"> 120 </xsl:attribute>
+						<xsl:attribute name="height"> 90 </xsl:attribute>
+						<xsl:attribute name="width"> 120 </xsl:attribute>
 					</img>
 				</a>
 			   </center>
@@ -120,8 +120,9 @@
 					<img>
 						<xsl:attribute name="src"> <xsl:value-of select="@ConservedBlocksSizeGraph"/> </xsl:attribute>
 						<xsl:attribute name="title"> Distribution of conserved regions size</xsl:attribute>
-						<xsl:attribute name="border"> 0 </xsl:attribute>
-						<xsl:attribute name="height"> 120 </xsl:attribute>
+						<xsl:attribute name="height"> 90 </xsl:attribute>
+						<xsl:attribute name="width"> 120 </xsl:attribute>
+
 					</img>
 				</a>
 			   </center>
