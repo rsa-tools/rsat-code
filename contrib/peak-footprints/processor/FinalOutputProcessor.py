@@ -110,8 +110,8 @@ class FinalOutputProcessor( Processor):
         self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.BED_SEQUENCES_SIZE_GRAPH_PATH, FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # copy the conserved regions size histogram and graph
-        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_REGIONS_SIZE_PATH, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_PATH_ATT, file_pathes)
-        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_REGIONS_SIZE_GRAPH_PATH, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_GRAPH_PATH_ATT, file_pathes)
+        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_PATH, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_PATH_ATT, file_pathes)
+        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_GRAPH_PATH, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # copy the MSA size histogram and graph
         self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.MSA_SIZE_PATH, FinalOutputProcessor.MSA_SIZE_PATH_ATT, file_pathes)
@@ -245,14 +245,6 @@ class FinalOutputProcessor( Processor):
     # --------------------------------------------------------------------------------------
     # Write the Classification to XML file
     def toXML( self, input_commstruct, analysis):
-
-        # Retrieve the data from the statistics params
-        reference_species = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_SPECIES]
-        aligned_species = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.ALIGNED_SPECIES]
-        bedsequence_number = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCE_NUMBER]
-        bedsequence_msa_number = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCE_WITH_MSA_NUMBER]
-        conserved_regions = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_REGION_NUMBER]
-        reference_motif = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_MOTIF]
         
         # Retrieve the data from the analysed statistics
         classified_families = analysis[ 0]
@@ -262,22 +254,36 @@ class FinalOutputProcessor( Processor):
         # Create the root element with its attributes
         classification_element = Element( FinalOutputProcessor.CLASSIFICATION_TAG)
         classification_element.attrib[ FinalOutputProcessor.PIPELINE_NAME_ATT] = self.component.pipelineName
-        classification_element.attrib[ FinalOutputProcessor.REFERENCE_SPECIES_ATT] = reference_species
-        classification_element.attrib[ FinalOutputProcessor.ALIGNED_SPECIES_ATT] = aligned_species
-        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCE_NUMBER_ATT] = bedsequence_number
-        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCE_WITH_MSA_NUMBER_ATT] = bedsequence_msa_number
-        classification_element.attrib[ FinalOutputProcessor.CONSERVED_REGION_NUMBER_ATT] = conserved_regions
-        classification_element.attrib[ FinalOutputProcessor.REFERENCE_MOTIF_ATT] = reference_motif
-        classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT]
-        classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT]
+        classification_element.attrib[ FinalOutputProcessor.REFERENCE_SPECIES_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_SPECIES]
+        classification_element.attrib[ FinalOutputProcessor.ALIGNED_SPECIES_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.ALIGNED_SPECIES]
+        
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_NUMBER_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_NUMBER]
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MIN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MAX_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MAX_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MEAN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MEAN_SIZE]
+
+        classification_element.attrib[ FinalOutputProcessor.MSA_NUMBER_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_NUMBER]
+        classification_element.attrib[ FinalOutputProcessor.MSA_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MIN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.MSA_MAX_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MAX_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.MSA_MEAN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MEAN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.MSA_TOTAL_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_TOTAL_SIZE]
+
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCK_NUMBER_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_NUMBER]
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MIN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MAX_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MAX_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MEAN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MEAN_SIZE]
+
+        classification_element.attrib[ FinalOutputProcessor.REFERENCE_MOTIF_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_MOTIF]
+        ##classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT]
+        ##classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT]
 
         # Insert the path to the BED sequences sizes histogram and graph
         self.addFilePathAttribute( classification_element, FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT, file_pathes)
         self.addFilePathAttribute( classification_element, FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # Insert the path to the Conserved Regions sizes histogram and graph if any
-        self.addFilePathAttribute( classification_element, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_PATH_ATT, file_pathes)
-        self.addFilePathAttribute( classification_element, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_GRAPH_PATH_ATT, file_pathes)
+        self.addFilePathAttribute( classification_element, FinalOutputProcessor.CONSERVED_BLOCKS_SIZE_PATH_ATT, file_pathes)
+        self.addFilePathAttribute( classification_element, FinalOutputProcessor.CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # Insert the path to the MSA sizes histogram and graph if any
         self.addFilePathAttribute( classification_element, FinalOutputProcessor.MSA_SIZE_PATH_ATT, file_pathes)
@@ -380,18 +386,33 @@ class FinalOutputProcessor( Processor):
     PIPELINE_NAME_ATT = "name"
     REFERENCE_SPECIES_ATT = "referenceSpecies"
     ALIGNED_SPECIES_ATT = "alignedSpecies"
-    BEDSEQUENCE_NUMBER_ATT = "bedSequenceNumber"
-    BEDSEQUENCE_WITH_MSA_NUMBER_ATT = "bedSequenceNumberWithMSA"
-    CONSERVED_REGION_NUMBER_ATT = "conservedRegionNumber"
-    REFERENCE_MOTIF_ATT = "referenceMotif"
-    
+    BEDSEQUENCES_NUMBER_ATT = "bedSequencesNumber"
+    BEDSEQUENCES_MIN_SIZE_ATT = "bedSequencesMinSize"
+    BEDSEQUENCES_MAX_SIZE_ATT = "bedSequencesMaxSize"
+    BEDSEQUENCES_MEAN_SIZE_ATT = "bedSequencesMeanSize"
+    BEDSEQUENCES_TOTAL_SIZE_ATT = "bedSequencesTotalSize"
     BED_SEQUENCES_SIZE_PATH_ATT = "BEDSequencesSizeHistogram"
     BED_SEQUENCES_SIZE_GRAPH_PATH_ATT = "BEDSequencesSizeHistogramGraph"
     
-    CONSERVED_REGIONS_SIZE_PATH_ATT = "ConservedRegionsSizeHistogram"
-    CONSERVED_REGIONS_SIZE_GRAPH_PATH_ATT = "ConservedRegionsSizeGraph"
+    MSA_NUMBER_ATT = "MSANumber"
+    MSA_MIN_SIZE_ATT = "MSAMinSize"
+    MSA_MAX_SIZE_ATT = "MSAMaxSize"
+    MSA_MEAN_SIZE_ATT = "MSAMeanSize"
+    MSA_TOTAL_SIZE_ATT = "MSATotalSize"
     MSA_SIZE_PATH_ATT = "MSASizeHistogram"
     MSA_SIZE_GRAPH_PATH_ATT = "MSASizeHistogramGraph"
+    
+    CONSERVED_BLOCK_NUMBER_ATT = "conservedBlocksNumber"
+    CONSERVED_BLOCKS_MIN_SIZE_ATT = "conservedBlocksMinSize"
+    CONSERVED_BLOCKS_MAX_SIZE_ATT = "conservedBlocksMaxSize"
+    CONSERVED_BLOCKS_MEAN_SIZE_ATT = "conservedBlocksMeanSize"
+    CONSERVED_BLOCKS_Total_SIZE_ATT = "conservedBlocksTotalSize"
+    CONSERVED_BLOCKS_SIZE_PATH_ATT = "ConservedRegionsSizeHistogram"
+    CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT = "ConservedRegionsSizeGraph"
+    
+    REFERENCE_MOTIF_ATT = "referenceMotif"
+    
+
     BED_OUTPUT_ATT = "bedOutput"
     
     FAMILY_TAG = "family"

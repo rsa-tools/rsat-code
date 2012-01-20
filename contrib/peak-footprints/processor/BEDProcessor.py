@@ -117,11 +117,32 @@ class BEDProcessor( Processor):
         
         # Count the number of BED sequences
         bedseq_number = 0
+        min_size = 100000000
+        max_size = -1
+        total_size = 0
         for chrom in output_commstruct.bedSequencesDict.keys():
-            bedseq_number += len( output_commstruct.bedSequencesDict[chrom])
+            bedseq_in_chrom = output_commstruct.bedSequencesDict[chrom]
+            bedseq_number += len( bedseq_in_chrom)
+            for bedseq in bedseq_in_chrom :
+                bedseq_length = bedseq.indexEnd - bedseq.indexStart
+                if bedseq_length < min_size:
+                    min_size = bedseq_length
+                if bedseq_length > max_size:
+                    max_size = bedseq_length
+                total_size += bedseq_length
+                
+        mean_size = (int) (total_size / float( bedseq_number))
         
-        output_commstruct.paramStatistics[ BedSeqCommStruct.BEDSEQUENCE_NUMBER] = bedseq_number
+        output_commstruct.paramStatistics[ BedSeqCommStruct.BEDSEQUENCES_NUMBER] = bedseq_number
+        output_commstruct.paramStatistics[ BedSeqCommStruct.BEDSEQUENCES_MIN_SIZE] = min_size
+        output_commstruct.paramStatistics[ BedSeqCommStruct.BEDSEQUENCES_MAX_SIZE] = max_size
+        output_commstruct.paramStatistics[ BedSeqCommStruct.BEDSEQUENCES_MEAN_SIZE] = mean_size
+        output_commstruct.paramStatistics[ BedSeqCommStruct.BEDSEQUENCES_TOTAL_SIZE] = total_size
         Log.trace( "BEDProcessor.execute : Total number of BED Sequences = " + str( bedseq_number))
+        Log.trace( "BEDProcessor.execute : Minimum size of BED Sequences = " + str( min_size))
+        Log.trace( "BEDProcessor.execute : Maximum size of BED Sequences = " + str( max_size))
+        Log.trace( "BEDProcessor.execute : Mean size of BED Sequences = " + str( mean_size))
+        Log.trace( "BEDProcessor.execute : Total size of BED Sequences = " + str( total_size))
         
         # output the sequences size histogram
         self.outputSequenceSizeHistogram( bedseq_dictionnary, output_commstruct)
