@@ -204,20 +204,40 @@ class MAFProcessor( Processor):
         # Compose the MSA corresponding to each BED sequence from the MAF blocks
         ProgressionManager.setTaskProgression( "Building MSA", self.component, 0.0)
         count = 0
-        msa_lenghts = []
         total_number_bed = len( self.mafBlockDic.keys())
+        min_size = 100000000
+        max_size = -1
+        total_size = 0
+        msa_lenghts = []
         for bed_sequence in self.mafBlockDic.keys():
             count += 1
             if count % 100 == 0:
                 ProgressionManager.setTaskProgression( "Building MSA", self.component, count / float( total_number_bed))
             alignment = self.composeSequenceAlignment( bed_sequence, keep_gaps)
-            msa_lenghts.append( alignment.totalLength)
+            align_length = alignment.totalLength
+            msa_lenghts.append( align_length)
+            if align_length < min_size:
+                min_size = align_length
+            if align_length > max_size:
+                max_size = align_length
+            total_size += align_length
+            
             output_commstruct.addSequenceAlignment( bed_sequence, alignment)
         
         ProgressionManager.setTaskProgression( "Building MSA", self.component, 1.0)
 
-        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCE_WITH_MSA_NUMBER] = count
+        mean_size = (int) (total_size / float( total_number_bed))
+
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_NUMBER] = count
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MIN_SIZE] = min_size
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MAX_SIZE] = max_size
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MEAN_SIZE] = mean_size
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_TOTAL_SIZE] = total_size
         Log.trace( "MAFProcessor.execute : Total number of BEDsequence with associated MSA = " + str( count))
+        Log.trace( "MAFProcessor.execute : Minimal size of BEDsequence with associated MSA = " + str( min_size))
+        Log.trace( "MAFProcessor.execute : Maximal size of BEDsequence with associated MSA = " + str( max_size))
+        Log.trace( "MAFProcessor.execute : Mean size of BEDsequence with associated MSA = " + str( mean_size))
+        Log.trace( "MAFProcessor.execute : Total size of BEDsequence with associated MSA = " + str( total_size))
         
         # Output the MSA lengths histogram and graph
         self.outputMSALenghtHistogram( msa_lenghts, output_commstruct)
