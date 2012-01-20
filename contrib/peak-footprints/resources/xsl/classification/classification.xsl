@@ -42,9 +42,6 @@
 		<tr><td><b>Reference Species</b></td><td>:<xsl:value-of select="@referenceSpecies"/></td></tr>
 		<tr><td><b>Reference Motif</b></td><td>:<xsl:value-of select="@referenceMotif"/></td></tr>
 		<tr><td><b>Aligned Species</b></td><td>:<xsl:value-of select="@alignedSpecies"/></td></tr>
-		<tr><td><b>Number of initial sequences</b></td><td>:<xsl:value-of select="@bedSequenceNumber"/></td></tr>
-		<tr><td><b>Number of sequences associated to MSA</b></td><td>:<xsl:value-of select="@bedSequenceNumberWithMSA"/></td></tr>
-		<tr><td><b>Number of detected conserved regions</b></td><td>:<xsl:value-of select="@conservedRegionNumber"/></td></tr>
 	</table>
 
 	<br></br>
@@ -54,8 +51,16 @@
 	<!-- Table containg the information on global statistics                                               -->
 	<!-- ................................................................................................. -->
 	<table ALIGN="center" border="1">
-		<tr><th></th><th>Number</th><th>Min Size</th><th>Max Size</th><th>Mean Size</th><th>Total Size</th><th>Size distribution</th></tr>
-		<tr><td>Initial Sequences</td>	
+		<tr BGCOLOR="#339933">
+			<th></th>
+			<th><b>Number</b></th>
+			<th><b>Min Size</b></th>
+			<th><b>Max Size</b></th>
+			<th><b>Mean Size</b></th>
+			<th><b>Total Size</b></th>
+			<th><b>Size distribution</b></th>
+		</tr>
+		<tr><td><b>Initial Sequences</b></td>	
 			<td align="center"><xsl:value-of select="@bedSequencesNumber"/></td>
 			<td align="center"><xsl:value-of select="@bedSequencesMinSize"/></td>
 			<td align="center"><xsl:value-of select="@bedSequencesMaxSize"/></td>
@@ -81,7 +86,7 @@
 			   </center>
 			</td>
 		</tr>
-		<tr><td>Sequences associated to MSA</td>	
+		<tr><td><b>Sequences associated to MSA</b></td>	
 			<td align="center"><xsl:value-of select="@MSANumber"/></td>
 			<td align="center"><xsl:value-of select="@MSAMinSize"/></td>
 			<td align="center"><xsl:value-of select="@MSAMaxSize"/></td>
@@ -107,7 +112,7 @@
 			   </center>
 			</td>
 		</tr>
-		<tr><td>Detected conserved Blocks</td>	
+		<tr><td><b>Detected conserved Blocks</b></td>	
 			<td align="center"><xsl:value-of select="@conservedBlocksNumber"/></td>
 			<td align="center"><xsl:value-of select="@conservedBlocksMinSize"/></td>
 			<td align="center"><xsl:value-of select="@conservedBlocksMaxSize"/></td>
