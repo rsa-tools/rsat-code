@@ -33,7 +33,7 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
     MSA_MEAN_SIZE = "MSAMeanSize"
     MSA_TOTAL_SIZE = "MSATotalSize"
     MSA_SIZE_PATH = "MSASizeHistogram"
-    MSA_SIZE_GRAPH_PATH = "MSASizeHistogramGraph""
+    MSA_SIZE_GRAPH_PATH = "MSASizeHistogramGraph"
     
     CONSERVED_BLOCKS_NUMBER = "ConservedBlockNumber"
     CONSERVED_BLOCKS_MIN_SIZE = "ConservedBlockMinSize"
