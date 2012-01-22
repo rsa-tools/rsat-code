@@ -139,8 +139,8 @@ if (&IsNatural($query->param('nmotifs'))) {
 $parameters .= " -disco ".join(",",@disco_algo);
 
 ## Markov order for oligo-analysis
-if (&IsNatural($query->param('markov'))) {
-  $parameters .= " -max_markov ".$query->param('markov')." -min_markov ".$query->param('markov');
+if (&IsInteger($query->param('markov'))) {
+  $parameters .= " -min_markov ".$query->param('markov')." -max_markov ".$query->param('markov');
 }
 
 ## Number of top peaks
