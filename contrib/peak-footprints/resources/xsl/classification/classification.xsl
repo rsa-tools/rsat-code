@@ -51,7 +51,8 @@
 	<!-- Table containg the information on global statistics                                               -->
 	<!-- ................................................................................................. -->
 	<table ALIGN="center" border="1">
-		<tr BGCOLOR="#339933">
+		<tr align="center" bgcolor="#339933"><td colspan="7" ><b>Global Statistics</b></td></tr>
+		<tr bgcolor="#66cc66">
 			<th></th>
 			<th><b>Number</b></th>
 			<th><b>Min Size</b></th>
