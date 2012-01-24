@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.27 2011/10/11 12:24:50 jvanheld Exp $
+# $Id: random-genome-fragments,v 1.28 2012/01/24 14:17:11 jvanheld Exp $
 #
 ############################################################
 
@@ -112,6 +112,13 @@ package main;
   ################################################################
   ## Read argument values
   &ReadArguments();
+
+  ################################################################
+  ## Check parameter values
+  if ($main::out_format eq "bed") {
+    ## Verbosity is not compatible with bed format
+    $main::verbose = 0;
+  }
 
   ################################################################
   ## File with template sequences
