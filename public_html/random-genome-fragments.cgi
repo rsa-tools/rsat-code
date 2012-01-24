@@ -53,7 +53,7 @@ if ($template_sequence_file) {
   #### number of fragments
   $frag_nb = $query->param('frag_nb');
   if (&IsNatural($frag_nb)) {
-    $parameters .= " -r $frag_nb ";
+    $parameters .= " -n $frag_nb ";
   } else {
     &FatalError("Fragment number must be a natural number");
   }
