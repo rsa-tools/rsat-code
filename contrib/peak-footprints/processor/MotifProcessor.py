@@ -1054,11 +1054,17 @@ class MotifProcessor( Processor):
                         motif_list.append( motif)
                         motif_length = motif.indexEnd - motif.indexStart
                         motif_size_list.append( motif_length)
+                        print "motif start = " + str( motif.indexStart)
+                        print "motif end = " + str( motif.indexEnd)
+                        print "motif length = " + str( motif_length)
                         if motif_length < min_size:
                             min_size = motif_length
                         if motif_length > max_size:
                             max_size = motif_length
                         total_size += motif_length
+                        print "Min size = " + str( min_size)
+                        print "Max size = " + str( max_size)
+                        print "-----------------------------------"
                         
 
         Log.trace( "MotifProcessor.getMotifList : Conserved regions found : " + str( len( motif_list)))
