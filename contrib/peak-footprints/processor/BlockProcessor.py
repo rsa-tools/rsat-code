@@ -153,6 +153,11 @@ class BlockProcessor( Processor):
                 block.composeName( alignment.name)
                 alignment.addMotif( block, True)
                 block_lenghts.append( block.pwm.totalLength)
+                print "motif start = " + str( block.indexStart)
+                print "motif end = " + str( block.indexEnd)
+                print "motif length = " + str( block.indexEnd - block.indexStart)
+                print "motif pwm length = " + str( block.pwm.totalLength)
+                print "********************************************"
                 index_start = block.indexEnd
                 index_end = index_start + self.windowSize
                 left_limit = index_start
