@@ -121,6 +121,11 @@ class MotifProcessor( Processor):
         # Retrieve the method parameters
         arguments = self.getMethodParameters( method)
         
+        # Prepare the processor output dir
+        self.out_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
+        shutil.rmtree( self.out_path, True)
+        os.mkdir( self.out_path)
+        
         # build the output CommStruct
         output_commstruct = BedSeqAlignmentStatsCommStruct()
         output_commstruct.baseSpecies = input_commstruct.baseSpecies
@@ -1054,17 +1059,11 @@ class MotifProcessor( Processor):
                         motif_list.append( motif)
                         motif_length = motif.indexEnd - motif.indexStart
                         motif_size_list.append( motif_length)
-                        print "motif start = " + str( motif.indexStart)
-                        print "motif end = " + str( motif.indexEnd)
-                        print "motif length = " + str( motif_length)
                         if motif_length < min_size:
                             min_size = motif_length
                         if motif_length > max_size:
                             max_size = motif_length
                         total_size += motif_length
-                        print "Min size = " + str( min_size)
-                        print "Max size = " + str( max_size)
-                        print "-----------------------------------"
                         
 
         Log.trace( "MotifProcessor.getMotifList : Conserved regions found : " + str( len( motif_list)))
@@ -1089,11 +1088,17 @@ class MotifProcessor( Processor):
 
         mean_size = (int) (total_size / float( len( motif_list)))
 
+        #Memorize the statistics
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_NUMBER] = len( motif_list)
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MIN_SIZE] = min_size
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MAX_SIZE] = max_size
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MEAN_SIZE] = mean_size
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_TOTAL_SIZE] = total_size
+        
+        # Output the histogram
+        file_infos = RSATUtils.outputHistogram( motif_size_list, 10, self.out_path, "conservedRegionSize", self.component.pipelineName, "", "Conserved block size", "Number of blocks", ('5', '6'))
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_PATH] = file_infos[0]
+        output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_GRAPH_PATH] = file_infos[1]
         
         return ( motif_list, motif_size_list, bedseq_size_list)
 

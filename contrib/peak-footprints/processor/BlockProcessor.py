@@ -1,6 +1,3 @@
-
-import os, shutil
-
 from processor.Processor import Processor
 
 from utils.Constants import Constants
@@ -109,28 +106,18 @@ class BlockProcessor( Processor):
         if desired_species_line != None:
             self.desiredSpeciesList.extend( desired_species_line.split())
         
-        # Prepare the processor output dir
-        out_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
-        shutil.rmtree( out_path, True)
-        os.mkdir( out_path)
-        
         # Analyze the conserved region in each MSA
         # If 'None' algorithm is chosen, the entire MSA is considered as conserved
-        block_lenghts = []
         for bed_seq in input_commstruct.bedToMA.keys():
             for alignment in input_commstruct.bedToMA[ bed_seq]:
                 pwm = PWM()
                 pwm.initFromAlignment( alignment, self.desiredSpeciesList)
                 if self.algorithm != BlockProcessor.ALGORITHM_NONE_VALUE:
-                    block_lenghts.extend( self.analyzeConservedBlocks( pwm, alignment))
+                    self.analyzeConservedBlocks( pwm, alignment)
                 else:
                     new_block = Motif( 0, alignment.totalLength, "", pwm)
                     new_block.composeName( alignment.name)
                     alignment.addMotif( new_block, True)
-                    block_lenghts.append( alignment.totalLength )
-        
-        # Output the block length histogram
-        self.outputBlockLenghtHistogram( block_lenghts, input_commstruct, out_path)
         
         return input_commstruct
 
@@ -153,11 +140,6 @@ class BlockProcessor( Processor):
                 block.composeName( alignment.name)
                 alignment.addMotif( block, True)
                 block_lenghts.append( block.pwm.totalLength)
-                print "motif start = " + str( block.indexStart)
-                print "motif end = " + str( block.indexEnd)
-                print "motif length = " + str( block.indexEnd - block.indexStart)
-                print "motif pwm length = " + str( block.pwm.totalLength)
-                print "********************************************"
                 index_start = block.indexEnd
                 index_end = index_start + self.windowSize
                 left_limit = index_start
