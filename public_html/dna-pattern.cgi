@@ -16,6 +16,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 $command = "$SCRIPTS/dna-pattern";
 $prefix = "dna-pattern";
@@ -53,6 +54,7 @@ $parameters .= " -pl $pattern_file";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
+push @result_files, ("input sequence",$sequence_file);
 $parameters .= " -i $sequence_file -format $sequence_format";
 
 
@@ -154,6 +156,8 @@ if ($query->param("output") =~ /display/i) {
   &PipingWarning() if ($query->param('match_positions'));
 
   $result_file = "$TMP/$tmp_file_name.res";
+
+  push @result_files, ('dna-pattern result', $result_file);
   open RESULT, "$command $parameters |";
   print "<PRE>$command $parameters </b>" if ($ENV{rsat_echo});
 
@@ -161,7 +165,8 @@ if ($query->param("output") =~ /display/i) {
   print "<H4>Result</H4>";
   &PrintHtmlTable(RESULT, $result_file, 1);
   close RESULT;
-  &PipingForm if ($query->param('match_positions'));
+  &PrintURLTable(@result_files);
+  &PipingForm();
   print "<HR SIZE = 3>";
 
 } else {
@@ -177,24 +182,40 @@ sub PipingForm {
     ### prepare data for piping
     $title = $query->param("title");
     $title =~ s/\"/\'/g;
-    print <<End_of_form;
+print "
     <TABLE class='nextstep'>
 <TR>
   <TD>
     <H3>Next step</H3>
   </TD>
   </tr>
+";
+
+    if ($query->param('match_positions')) {
+      print "
   <tr>
-  <TD>
-<FORM METHOD="POST" ACTION="feature-map_form.cgi">
-<INPUT type="hidden" NAME="title" VALUE="$title">
-<INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
-<INPUT type="hidden" NAME="format" VALUE="dna-pattern">
-<INPUT type="hidden" NAME="fill_form" VALUE="on">
-<INPUT type="submit" VALUE="feature map">
-    </FORM>
-  </TD>
-</TR>
-</table>
-End_of_form
+  <td>
+<FORM METHOD='POST' ACTION='feature-map_form.cgi'>
+<INPUT type='hidden' NAME='title' VALUE='$title'>
+<INPUT type='hidden' NAME='feature_file' VALUE='$result_file'>
+<INPUT type='hidden' NAME='format' VALUE='dna-pattern'>
+<INPUT type='hidden' NAME='fill_form' VALUE='on'>
+<INPUT type='submit' VALUE='feature map'>
+ </form>
+  </td>
+</tr>";
+    }
+
+    print "
+  <tr>
+  <td>
+<FORM METHOD='POST' ACTION='classfreq_form.cgi'>
+<INPUT type='hidden' NAME='transferred_file' VALUE='$result_file'>
+<INPUT type='submit' VALUE='Frequency distribution'>
+ </form>
+  </td>
+</tr>";
+
+
+print "</table>";
 }
