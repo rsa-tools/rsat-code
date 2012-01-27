@@ -100,7 +100,8 @@ pre,tt {
        margin-bottom: 5px;
        padding-top: 5px;
        padding-bottom: 5px;
-       padding-left: 20px;
+       padding-left: 5px;
+       padding-right: 5px;
        border: 1px dashed #2f6fab;
        #color: Black;
        background-color: #DDFFDD;
@@ -114,7 +115,7 @@ pre,tt {
         margin-top: 5px;
         margin-bottom: 5px;
         padding-bottom: 5px;
-        padding-left: 20px;
+        padding-left: 5px;
         border: 1px dashed #2f6fab;
         background-color: #00FF00;
         color: #0000888;
@@ -141,7 +142,8 @@ pre,tt {
         margin-bottom: 5px;
        padding-top: 5px;
        padding-bottom: 5px;
-       padding-left: 20px;
+       padding-left: 5px;
+       padding-right: 5px;
        #border: 1px solid #9999ff;
        #color: Black;
        background-color: #FFEEEE;
@@ -156,7 +158,8 @@ pre,tt {
         margin-bottom: 5px;
        padding-top: 5px;
        padding-bottom: 5px;
-       padding-left: 20px;
+       padding-left: 5px;
+       padding-right: 5px;
        #border: 1px solid #9999ff;
        #color: Black;
        background-color: #EEEEEE;
@@ -171,7 +174,8 @@ pre,tt {
         margin-bottom: 5px;
        padding-top: 5px;
        padding-bottom: 5px;
-       padding-left: 20px;
+       padding-left: 5px;
+       padding-right: 5px;
        #border: 1px solid #9999ff;
        #color: Black;
        background-color: #DDFFDD;
@@ -205,7 +209,8 @@ p.attention
         margin-bottom: 5px;
        padding-top: 5px;
        padding-bottom: 5px;
-       padding-left: 20px;
+       padding-left: 5px;
+       padding-right: 5px;
        border: 1px solid #9999ff;
        color: Red;
        background-color: #FFFFBB;
@@ -217,8 +222,8 @@ p.attention
             margin-bottom: 5px;
             padding-top: 5px;
             padding-bottom: 5px;
-            padding-left: 20px;
-            padding-right: 20px;
+            padding-left: 5px;
+            padding-right: 5px;
             #border: 1px solid #9999ff;
             color: #000055;
             background-color: #D8E8FF;
