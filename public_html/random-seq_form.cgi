@@ -148,7 +148,7 @@ print "</UL>";
 
 
 ### send results by email or display on the browser
-&SelectOutput();
+&SelectOutput("server");
 
 ### action buttons
 print "<UL><UL><TABLE class = 'formbutton'>\n";
