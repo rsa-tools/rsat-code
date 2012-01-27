@@ -45,11 +45,11 @@ print $query->start_multipart_form(-action=>"gene-info.cgi");
 print "<FONT FACE='Helvetica'>";
 
 ################################################################
-#### choice of the organism
+## Choice of the organism
 &OrganismPopUp;
 
 ################################################################
-### queries
+## Queries
 print "<B><A HREF='help.gene-info.html#queries'>Gene queries</A></B>&nbsp;";
 print "<BR>\n";
 print $query->textarea(-name=>'queries',
@@ -66,8 +66,7 @@ print $query->filefield(-name=>'uploaded_file',
 print "<BR>\n";
 
 ################################################################
-#### feature type
-#### feature type
+## Feature type
 print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
 print $query->radio_group(-name=>'feattype',
 			  -values=>[@supported_feature_types],
@@ -76,7 +75,7 @@ print "<BR>\n";
 
 
 ################################################################
-### full match
+## Full match
 print $query->checkbox(-name=>'full',
   		       -checked=>$default{full},
   		       -label=>'');
@@ -84,7 +83,7 @@ print "&nbsp;<A HREF='help.retrieve-seq.html#full'><B>Full string matching</B></
 print "<P>\n";
 
 ################################################################
-### match queries against description
+## Match queries against description
 print $query->checkbox(-name=>'match_description',
   		       -checked=>$default{match_description},
   		       -label=>'');
@@ -92,8 +91,8 @@ print "&nbsp;<A HREF='help.retrieve-seq.html#match_description'><B>Match queries
 print "<P>\n";
 
 ################################################################
-### send results by email or display on the browser
-&SelectOutput;
+## Send results by email or display on the browser
+&SelectOutput();
 
 ################################################################
 ### action buttons
@@ -104,7 +103,7 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo 
+## Data for the demo
 print $query->start_multipart_form(-action=>"gene-info_form.cgi");
 $demo_queries = "ARG3\n";
 $demo_queries .= "PHO\n";
