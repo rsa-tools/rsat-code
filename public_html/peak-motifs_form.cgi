@@ -377,12 +377,12 @@ print "<br><i>Note: motifs can be larger than word sizes (words are used as seed
 ## Markov  order (for oligo-analysis in single strand mode)
 print "<br><p><b><a href='help.oligo-analysis.html'> Markov order (m) of the background model for oligo-analysis (k-mers)</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
 $oligoPopup = "<br>";
-$oligoPopup .=  "<SELECT NAME='markov'>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='0'>m=0 (generally not ideal)</option>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='1'>m=1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
-$oligoPopup .=  "<OPTION  SELECTED VALUE='-3'>m=k-3 (intermediate size data sets)</option>\n";
-$oligoPopup .=  "<OPTION VALUE='-2'>m=k-2 (more stringent for large data sets e.g. > 1Mb)</option>\n";
-$oligoPopup .=  "</SELECT>";
+$oligopopup .=  "<select name='markov'>\n";
+$oligoPopup .=  "<option value='0'>m=0 (generally not ideal)</option>\n";
+$oligoPopup .=  "<option value='1'>m=1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
+$oligoPopup .=  "<option selected value='-3'>m=k-3 (intermediate size data sets)</option>\n";
+$oligoPopup .=  "<option value='-2'>m=k-2 (more stringent for large data sets e.g. > 1Mb)</option>\n";
+$oligoPopup .=  "</select>";
 print $oligoPopup;
 
 print "</ul>\n";
@@ -402,10 +402,10 @@ print "</ul>\n";
 ### dyad sizes and spacer
 #print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</a>&nbsp;</B>\n";
 #	$oligoPopup = "";
-#    $oligoPopup .=  "<SELECT NAME='dyad-option'>\n";
-#	$oligoPopup .=  "<OPTION  VALUE='4'>4 {0,20} 4</option>\n";
-#	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>3 {0,20} 3</option>\n";
-#    $oligoPopup .=  "</SELECT>";
+#    $oligoPopup .=  "<select NAME='dyad-option'>\n";
+#	$oligoPopup .=  "<option  value='4'>4 {0,20} 4</option>\n";
+#	$oligoPopup .=  "<option  selected value='3'>3 {0,20} 3</option>\n";
+#    $oligoPopup .=  "</select>";
 #    print $oligoPopup;
 #print "<br/>";
 
@@ -417,10 +417,10 @@ print $query->popup_menu(-name=>'nmotifs',
 
 ### 2str or 1str
 print "<br/><b>Search on </b> ";
-my $strandPopup =  "<SELECT NAME='strand'>\n";
-$strandPopup .=  "<OPTION  SELECTED VALUE='-2str'>both strands</option>\n";
-$strandPopup .=  "<OPTION VALUE='-1str'>single strand</option>\n";
-$strandPopup .=  "</SELECT>";
+my $strandPopup =  "<select NAME='strand'>\n";
+$strandPopup .=  "<option  selected value='-2str'>both strands</option>\n";
+$strandPopup .=  "<option value='-1str'>single strand</option>\n";
+$strandPopup .=  "</select>";
 print $strandPopup;
 
 ### local-word-analysis => too slow to be put on the website until the program is optimized
@@ -536,15 +536,15 @@ sub Panel5  {
   ## Visualize UCSC custom track
   print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Visualize peaks and sites in genome browser </a></b></legend>";
 
-  print ("<INPUT TYPE='radio' NAME='visualize' VALUE='none' $checked{'none'}>","<b>No</b>");
+  print ("<INPUT TYPE='radio' NAME='visualize' value='none' $checked{'none'}>","<b>No</b>");
   print "<br/>";
 
-  print ("<INPUT TYPE='radio' NAME='visualize' VALUE='galaxy' $checked{'galaxy'}>",
+  print ("<INPUT TYPE='radio' NAME='visualize' value='galaxy' $checked{'galaxy'}>",
 	 "<b>Peak coordinates specified in fasta headers of the test sequence file (<a href=''>Galaxy</a> format)</b>",
 	 "<br>","&nbsp;"x7,"(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
 
   print "<br/>";
-  print ("<INPUT TYPE='radio' NAME='visualize' VALUE='bed_coord' $checked{'bed_coord'}>","<b>Peak coordinates provided as a custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
+  print ("<INPUT TYPE='radio' NAME='visualize' value='bed_coord' $checked{'bed_coord'}>","<b>Peak coordinates provided as a custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
   print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
 
   print "&nbsp;"x7, $query->filefield(-name=>'bed_file',
