@@ -136,11 +136,17 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 
 ### execute the command ###
-if ($query->param('output') eq "display") {
+if (($query->param('output') =~ /display/i) ||
+    ($query->param('output') =~ /server/i)) {
+#if ($query->param('output') eq "display") {
     $sequence_file = "$TMP/$tmp_file_name.res";
     push @result_files, ("sequence",$sequence_file);
 
     open RESULT, "$command $parameters |";
+
+    ### print the result ###
+    &PipingWarning();
+    print '<H4>Result</H4>';
 
     ### open the mirror file ###
     if (open MIRROR, ">$sequence_file") {
@@ -148,16 +154,15 @@ if ($query->param('output') eq "display") {
 	&DelayedRemoval($sequence_file);
     }
 
-    ### print the result ### 
-    &PipingWarning();
-    print '<H4>Result</H4>';
+
     print "<PRE>";
     while (<RESULT>) {
-	print "$_";
+	print "$_" unless ($query->param('output') =~ /server/i);
 	print MIRROR $_ if ($mirror);
     }
     print "</PRE>";
     close RESULT;
+    close MIRROR if ($mirror);
 
     ### prepare data for piping
     &PrintURLTable(@result_files);
