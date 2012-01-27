@@ -176,9 +176,8 @@ if (($query->param('output') =~ /display/i) ||
 #    $ENV{RSA_OUTPUT_CONTEXT} = "text";
     open RESULT, "$command $parameters |";
 
-    ### print the result ### 
+    ### print the result
     &PipingWarning();
-
     print '<H4>Result</H4>';
 
     ### open the sequence file on the server
