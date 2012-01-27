@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: create_pathway_extractor_index.pl,v 1.1 2011/06/26 22:25:42 rsat Exp $
+# $Id: create_pathway_extractor_index.pl,v 1.2 2012/01/27 10:39:19 jvanheld Exp $
 #
 ############################################################
 
@@ -14,7 +14,10 @@
 =head1 VERSION 1.0
 
 =head1 DESCRIPTION
-	This script use create a gene index file from resutls of footprint discovery and inferoperon pathway inference analysis
+
+This script creates a gene index file from the results of
+I<footprint-discovery>, I<infer-operons>, and pathway inference
+analysis.
 
 =head1 AUTHORS
 
@@ -50,7 +53,6 @@ NP_414552.1     NP_414552.1     yaaW    R       11356   10643   yaaI-yaaW       
 NP_414554.1     NP_414554.1     yaaI    R       11786   11382   yaaI-yaaW       2       conserved protein, UPF0412 family
 NP_414562.1     NP_414562.1     insB    R       20314   19811   insA-insB       2       IS1 transposase B
 
- 
 =head1  -a gene2ec2reactions [-b gene2reaction] file format
   gene_id ec_number       reaction_id     species_name    taxonomy_id     gene_name
   O22340  4.2.3.- RXN-10482       Abies grandis   46611   (4S)-limonene synthase
@@ -88,7 +90,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $main::operondir;				# File name containing infer operon results
