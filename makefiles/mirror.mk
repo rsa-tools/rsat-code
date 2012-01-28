@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.50 2011/11/03 03:27:21 jvanheld Exp $
+# $Id: mirror.mk,v 1.51 2012/01/28 01:34:16 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -9,9 +9,13 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/mirror.mk
 
-RSA_SERVER=rsat.ulb.ac.be
-RSA_SERVER_DIR=rsa-tools
-RSA_SERVER_LOGIN=rsat
+################################################################
+#
+# Server
+RSAT_SERVER=rsat.ulb.ac.be
+RSAT_SERVER_DIR=rsa-tools
+RSAT_SERVER_LOGIN=rsat
+SERVER=${RSAT_SERVER_LOGIN}@${RSAT_SERVER}:${RSAT_SERVER_DIR}
 
 DATE = `date +%Y%m%d_%H%M%S`
 
@@ -24,12 +28,6 @@ RSYNC_OPT = -ruptvl ${OPT} --exclude '*~' --exclude jobs
 SSH=-e ssh
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
-################################################################
-#
-# Server
-RSAT_SERVER = ${RSA_SERVER_LOGIN}@rsat.ulb.ac.be:/home/rsat/rsa-tools
-
-SERVER=${RSAT_SERVER}
 
 
 ################################################################
@@ -75,7 +73,7 @@ all_from_server: scripts_from_server pub_from_server data_from_server supported_
 
 DIR=doc
 TARGET_DIR=${RSAT}/
-RSYNC_FROM_SERVER_CMD=${RSYNC} ${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/${DIR} ${TARGET_DIR}
+RSYNC_FROM_SERVER_CMD=${RSYNC} ${SERVER}/${DIR} ${TARGET_DIR}
 dir_from_server:
 	@echo ${RSYNC_FROM_SERVER_CMD}
 	${RSYNC_FROM_SERVER_CMD}
@@ -94,7 +92,7 @@ pub_from_server:
 		--exclude data							\
 		--exclude logs							\
 		--exclude tmp							\
-		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSAT}/
+		${SERVER}/public_html ${RSAT}/
 
 EXCLUDED_GENOMES=					\
 		--exclude phages 			\
@@ -137,7 +135,7 @@ EXCLUDED_DIRS=					\
 EXCLUDED=${EXCLUDED_GENOMES} ${EXCLUDED_DIRS} ${EXCLUDED_FILES} ${EXCLUDED_BLAST}
 data_from_server:
 	${RSYNC} ${EXCLUDED} ${OPT}							\
-		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
+		${SERVER}/public_html/data/*	\
 		${RSAT}/public_html/data/
 
 ## Synchronize the list of supported organisms from the server to the mirror
