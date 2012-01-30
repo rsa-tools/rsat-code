@@ -4165,7 +4165,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
