@@ -1,5 +1,5 @@
 
-package MyElements::peak_motifs;
+package MyElements::compare_matrices;
 use strict;
 use warnings;
 
@@ -7,7 +7,7 @@ use warnings;
 
 sub get_xmlns { 'urn:RSATWS' }
 
-__PACKAGE__->__set_name('peak_motifs');
+__PACKAGE__->__set_name('compare_matrices');
 __PACKAGE__->__set_nillable();
 __PACKAGE__->__set_minOccurs();
 __PACKAGE__->__set_maxOccurs();
@@ -42,7 +42,7 @@ __PACKAGE__->_factory(
         'request' => \%request_of,
     },
     {
-        'request' => 'MyTypes::PeakMotifsRequest',
+        'request' => 'MyTypes::CompareMatricesRequest',
     },
     {
 
@@ -68,12 +68,12 @@ __PACKAGE__->_factory(
 
 =head1 NAME
 
-MyElements::peak_motifs
+MyElements::compare_matrices
 
 =head1 DESCRIPTION
 
 Perl data type class for the XML Schema defined element
-peak_motifs from the namespace urn:RSATWS.
+compare_matrices from the namespace urn:RSATWS.
 
 
 
@@ -104,34 +104,36 @@ methods:
 
 =head2 new
 
- my $element = MyElements::peak_motifs->new($data);
+ my $element = MyElements::compare_matrices->new($data);
 
 Constructor. The following data structure may be passed to new():
 
  {
-   request =>  { # MyTypes::PeakMotifsRequest
+   request =>  { # MyTypes::CompareMatricesRequest
      output =>  $some_value, # string
-     verbosity =>  $some_value, # int
-     test =>  $some_value, # string
-     tmp_test_infile =>  $some_value, # string
-     control =>  $some_value, # string
-     tmp_control_infile =>  $some_value, # string
-     max_seq_length =>  $some_value, # int
-     max_motif_number =>  $some_value, # int
-     ref_motif =>  $some_value, # string
-     top_peaks =>  $some_value, # int
-     min_length =>  $some_value, # int
-     max_length =>  $some_value, # int
-     markov =>  $some_value, # int
-     min_markov =>  $some_value, # int
-     max_markov =>  $some_value, # int
-     noov =>  $some_value, # int
-     class_int =>  $some_value, # int
-     str =>  $some_value, # int
-     graph_title =>  $some_value, # string
-     image_format =>  $some_value, # string
-     disco =>  $some_value, # string
-     task =>  $some_value, # string
+     matrix_1 =>  $some_value, # string
+     matrix_2 =>  $some_value, # string
+     matrix =>  $some_value, # string
+     tmp_matrix1_infile =>  $some_value, # string
+     tmp_matrix2_infile =>  $some_value, # string
+     tmp_matrix_infile =>  $some_value, # string
+     format1 =>  $some_value, # string
+     format2 =>  $some_value, # string
+     format =>  $some_value, # string
+     background_model =>  $some_value, # string
+     tmp_background_infile =>  $some_value, # string
+     background_format =>  $some_value, # string
+     top1 =>  $some_value, # int
+     top2 =>  $some_value, # int
+     output_prefix =>  $some_value, # string
+     mode =>  $some_value, # string
+     distinct =>  $some_value, # string
+     strand =>  $some_value, # string
+     matrix_id =>  $some_value, # string
+     return =>  $some_value, # string
+     sort =>  $some_value, # string
+     lth =>  $some_value, # string
+     uth =>  $some_value, # string
    },
  },
 

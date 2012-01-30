@@ -31,7 +31,6 @@ my %max_seq_length_of :ATTR(:get<max_seq_length>);
 my %max_motif_number_of :ATTR(:get<max_motif_number>);
 my %ref_motif_of :ATTR(:get<ref_motif>);
 my %top_peaks_of :ATTR(:get<top_peaks>);
-my %length_of :ATTR(:get<length>);
 my %min_length_of :ATTR(:get<min_length>);
 my %max_length_of :ATTR(:get<max_length>);
 my %markov_of :ATTR(:get<markov>);
@@ -42,6 +41,7 @@ my %class_int_of :ATTR(:get<class_int>);
 my %str_of :ATTR(:get<str>);
 my %graph_title_of :ATTR(:get<graph_title>);
 my %image_format_of :ATTR(:get<image_format>);
+my %disco_of :ATTR(:get<disco>);
 my %task_of :ATTR(:get<task>);
 
 __PACKAGE__->_factory(
@@ -55,7 +55,6 @@ __PACKAGE__->_factory(
         max_motif_number
         ref_motif
         top_peaks
-        length
         min_length
         max_length
         markov
@@ -66,6 +65,7 @@ __PACKAGE__->_factory(
         str
         graph_title
         image_format
+        disco
         task
 
     ) ],
@@ -80,7 +80,6 @@ __PACKAGE__->_factory(
         'max_motif_number' => \%max_motif_number_of,
         'ref_motif' => \%ref_motif_of,
         'top_peaks' => \%top_peaks_of,
-        'length' => \%length_of,
         'min_length' => \%min_length_of,
         'max_length' => \%max_length_of,
         'markov' => \%markov_of,
@@ -91,6 +90,7 @@ __PACKAGE__->_factory(
         'str' => \%str_of,
         'graph_title' => \%graph_title_of,
         'image_format' => \%image_format_of,
+        'disco' => \%disco_of,
         'task' => \%task_of,
     },
     {
@@ -104,7 +104,6 @@ __PACKAGE__->_factory(
         'max_motif_number' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'ref_motif' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'top_peaks' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
-        'length' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'min_length' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'max_length' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'markov' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -115,6 +114,7 @@ __PACKAGE__->_factory(
         'str' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'graph_title' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'image_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'disco' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'task' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
     },
     {
@@ -129,7 +129,6 @@ __PACKAGE__->_factory(
         'max_motif_number' => 'max_motif_number',
         'ref_motif' => 'ref_motif',
         'top_peaks' => 'top_peaks',
-        'length' => 'length',
         'min_length' => 'min_length',
         'max_length' => 'max_length',
         'markov' => 'markov',
@@ -140,6 +139,7 @@ __PACKAGE__->_factory(
         'str' => 'str',
         'graph_title' => 'graph_title',
         'image_format' => 'image_format',
+        'disco' => 'disco',
         'task' => 'task',
     }
 );
@@ -208,9 +208,6 @@ methods:
 =item * top_peaks
 
 
-=item * length
-
-
 =item * min_length
 
 
@@ -241,6 +238,9 @@ methods:
 =item * image_format
 
 
+=item * disco
+
+
 =item * task
 
 
@@ -266,7 +266,6 @@ Constructor. The following data structure may be passed to new():
    max_motif_number =>  $some_value, # int
    ref_motif =>  $some_value, # string
    top_peaks =>  $some_value, # int
-   length =>  $some_value, # int
    min_length =>  $some_value, # int
    max_length =>  $some_value, # int
    markov =>  $some_value, # int
@@ -277,6 +276,7 @@ Constructor. The following data structure may be passed to new():
    str =>  $some_value, # int
    graph_title =>  $some_value, # string
    image_format =>  $some_value, # string
+   disco =>  $some_value, # string
    task =>  $some_value, # string
  },
 
