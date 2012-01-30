@@ -18,7 +18,6 @@ use XML::Compile::Transport::SOAPHTTP;
 ## Specification of the server
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers = $ARGV[0] || qw(
-			   http://localhost/rsat
 			   http://embnet.ccg.unam.mx/rsa-tools
 			   http://mamaze.ulb.ac.be/rsat
 			   http://rsat.ulb.ac.be/rsat
