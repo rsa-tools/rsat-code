@@ -1537,6 +1537,9 @@ sub EmailTheResult {
       $mail_title = join " ", "[RSAT]", $script_name, &AlphaDate();
     }
 
+    ## Avoid exposing the full RSAT path in the mail title
+    $mail_title = &RSAT::util::hide_RSAT_path($mail_title);
+
     #### check the email address
     &CheckEmailAddress($email_address)  unless ($no_email);;
 
