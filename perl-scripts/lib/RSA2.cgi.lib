@@ -2296,6 +2296,8 @@ sub OligoDyadPipingForm {
       $to_convert_matrix .= "<INPUT type='submit' value='matrix conversion'>";
       $to_convert_matrix .= "</FORM>";
       $to_convert_matrix .= "</TD>";
+
+      $matrix_treatment = join ("<tr>", $to_matrix_scan, $to_convert_matrix, "</tr>");
     }
 
   print <<End_of_form;
@@ -2320,10 +2322,6 @@ sub OligoDyadPipingForm {
 </FORM>
 </TD>
 
-$to_matrix_scan
-
-$to_convert_matrix
-
 <td valign=bottom align=center>
 <FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
 <INPUT type="hidden" NAME="local_pattern_file" VALUE="$result_file">
@@ -2334,7 +2332,11 @@ $to_convert_matrix
 <INPUT type="submit" value="pattern assembly">
 </FORM>
 </TD>
+</tr>
 
+$matrix_treatment
+
+<tr>
 <td valign=bottom align=center>
 <FORM METHOD="POST" ACTION="XYgraph_form.cgi">
 <INPUT type="hidden" NAME="title1" VALUE="oligo-analysis result">
@@ -2347,6 +2349,14 @@ $to_convert_matrix
 <INPUT type="submit" VALUE="XY graph">
 </FORM>
 </TD>
+
+  <td>
+<FORM METHOD='POST' ACTION='classfreq_form.cgi'>
+<INPUT type='hidden' NAME='transferred_file' VALUE='$result_file'>
+<INPUT type='submit' VALUE='Frequency distribution'>
+ </form>
+  </td>
+</tr>
 
 </TR>
 </TABLE>
