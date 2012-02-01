@@ -21,6 +21,7 @@ Message handling for RSAT.
 
 
 ################################################################
+
 =pod
 
 =item new()
@@ -37,6 +38,7 @@ sub new {
 
 
 ################################################################
+
 =pod
 
 =item Warning(@warninng_message)
@@ -60,6 +62,7 @@ sub Warning {
 
 
 ################################################################
+
 =pod
 
 =item cgiWarning
@@ -74,6 +77,7 @@ sub cgiWarning {
 }
 
 ################################################################
+
 =pod
 
 =item Info
@@ -94,6 +98,7 @@ sub Info {
 }
 
 ################################################################
+
 =pod
 
 =item Debug
@@ -113,6 +118,7 @@ sub Debug {
 }
 
 ################################################################
+
 =pod
 
 =item cgiMessage
@@ -121,21 +127,22 @@ Print a message in HTML format (STDOUT)
 
 =cut
 sub cgiMessage {
-    my ($message, $message_type, $color) = @_;
-    $color = "#00BB00" unless ($color); ## PROBLEM: THIS COLOR IS NOW IGNORED -> EITHER SUPPRESS OR RESTORE
-    $message_type = "Information" unless ($message_type);
-    print  ("<blockquote class='",lc($message_type),"'>",
-	    "\n",
-	    "<b>",$message_type,": </b>",
-	    $message,
-	    "\n",
-	    "</blockquote>",
-	    "<br><hr size=3>\n");
+  my ($message, $message_type, $color) = @_;
+  $color = "#00BB00" unless ($color);
+  $message_type = "Information" unless ($message_type);
+  print  ("<blockquote class='",lc($message_type),"'>",
+	  "\n",
+	  "<font color='".$color."'><b>",$message_type,": </b>",
+	  $message,
+	  "</font>\n",
+	  "</blockquote>",
+	  "<br><hr size=3>\n");
 }
 
 
 
 ################################################################
+
 =pod
 
 =item TimeWarn
@@ -158,6 +165,7 @@ sub TimeWarn {
 }
 
 ################################################################
+
 =pod
 
 =item psWarn
@@ -182,6 +190,7 @@ sub psWarn {
 }
 
 ################################################################
+
 =pod
 
 =item MessageToAdmin
