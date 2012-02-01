@@ -32,14 +32,14 @@ Send an error message and die
 =cut
 sub FatalError {
     my @error_message = @_;
-    my $message = join "\t", @error_message;
     $ENV{RSA_ERROR} = "1";
     my $context = $ENV{RSA_OUTPUT_CONTEXT} || "screen";
     if ($context eq "cgi") {
-	$message =~ s/\n\t/ /g;
-	$message =~ s/\t/ /g;
-	&cgiError($message);
+	&cgiError(@error_message);
     } else {
+      my $message = join "\n\t", @error_message;
+#      $message =~ s/\n\t/\n/g;
+#      $message =~ s/\t+/ /g;
       die("Error\n\t", $message, "\n");
     }
 }
@@ -54,10 +54,12 @@ Print a HTML message and die.
 =cut
 
 sub cgiError {
-  my $error_message = join "", @_;
-  my $error_color = "#FF0000";
-  $error_message .= "\n<p>(error occurred on host ".`hostname`.")";
-  RSAT::message::cgiMessage($error_message, "Error", $error_color);
+  my $error_message = join "<br>\n", @_;
+  my $error_color = "#DD0000";
+  my $hostname = `hostname`;
+  chomp($hostname);
+  $error_message .= "<br>\nError occurred on host ".$hostname;
+  &RSAT::message::cgiMessage($error_message, "Error", $error_color);
   print "</body></html>\n";
   exit(1);
 }
