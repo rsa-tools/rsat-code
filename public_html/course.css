@@ -127,7 +127,8 @@ pre,tt {
         margin-bottom: 5px;
             padding-top: 5px;
             padding-bottom: 5px;
-            padding-left: 20px;
+            padding-left: 5px;
+            padding-right: 5px;
             border: 1px dashed #FFFFFF;
             background-color: #DDDDFF;
             color: #0000BB;
