@@ -128,7 +128,14 @@ sub readFromFile {
     ################################################################
     ## Check that there was at least one matrix in the file
     if (scalar(@matrices) == 0) {
-      &RSAT::message::Warning("File",  $file, "does not contain any matrix in", $format , "format") if ($main::verbose >= 1);
+      ## In case not a single matrix has been read, check if file is
+      ## empty.
+      $msg_file = &RSAT::util::hide_RSAT_path($file);
+      if (-z $file) {
+	&RSAT::message::Warning("Matrix file is empty (file size is zero)", $msg_file);
+      } else {
+	&RSAT::message::Warning("Matrix file",  $msg_file, "does not contain any matrix in", $format , "format. Please check format. ");
+      }
     }  else {
       &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
@@ -348,14 +355,22 @@ sub _readFromTRANSFACFile {
       $ncol = 0;
 #      next;
 
-      ## Read prior alphabet from the matrix header (P0 line)
+      ## Read prior alphabet from the matrix header (PO line)
       ## Equiprobable alphabet
 
     } elsif ((/^PO\s+/)  || (/^P0\s+/)) { ## 2009/11/03 JvH fixed a bug, in previous versions I used P0 (zero) instead of PO (big "o")
+
+      ## Check for a likely error: user has entered only the PO and
+      ## frequencies, without AC and ID.
+      if ($current_matrix_nb < 1) {
+	my $msg_file = &RSAT::util::hide_RSAT_path($file);
+	&RSAT::error::FatalError("Wrongly formatted matrix file ".$msg_file, "In TRANSFAC format, matrices should start with an accession line ('AC  ').");
+      }
+
       my $header = $'; #'
       $header = RSAT::util::trim($header);
 
-      ## Alphabet is parsed from the TRANSFAC matrix header (P0 row)
+      ## Alphabet is parsed from the TRANSFAC matrix header (PO row)
       my @alphabet = split /\s+/, $header;
       $matrix->setAlphabet_lc(@alphabet);
       &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 5);
@@ -952,13 +967,13 @@ sub _readFromOldInfoGibbsFile {
       ## Parameters for the current matrix
     } elsif ($matrix) {
 
-      ## Read prior alphabet from the matrix header (P0 line)
-      ## Equiprobable alphabet
-      if (/^P0\s+/) {
+      ## Read prior alphabet from the matrix header (PO line)
+      ## Equiprobable alphabet.
+      if ((/^PO\s+/) || (/^P0\s+/)) {
 	my $header = $'; #'
 	$header = &RSAT::util::trim($header);
 
-	## Alphabet is parsed from the InfoGibbs matrix header (P0 row)
+	## Alphabet is parsed from the InfoGibbs matrix header (PO row)
 	my @alphabet = split /\s+/, $header;
 	$matrix->setAlphabet_lc(@alphabet);
 
