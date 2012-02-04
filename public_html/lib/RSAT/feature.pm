@@ -136,11 +136,11 @@ $comment_char{bed} = "## ";
 ## http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
 ## warning: the coordinates are zero-based
 @{$columns{galaxy_seq}} = qw (assembly
-			   seq_name
-		       start
-		       end
-		       strand
-		      );
+			      seq_name
+			      start
+			      end
+			      strand
+			     );
 @{$strands{galaxy_seq}} = ("+", "-");
 $comment_char{galaxy_seq} = "#";
 
@@ -657,15 +657,25 @@ sub parse_from_row {
   my ($self, $row, $in_format, $out_format) = @_;
   chomp($row);
   $row =~ s/\r//g;
+
+  ## Split the row into fields (tab-delimited columns)
   my @fields = ();
   if ($in_format eq "galaxy_seq"){
-  	$row =~ s/^\s*>//;
-  	@fields = split("_", $row);
+    $row =~ s/^\s*>//;
+    ## PROBLEM HERE: DOES NOT WORK IF THE ID CONTAINS "_" characters
+#    @fields = split("_", $row);
+    if ($row =~ /(\S+)*_(\S+)_(\d+)_(\d+)_([+-])$/) {
+      @fields = ($1, $2, $3, $4, $5);
+    } else {
+      &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 0);
+      return();
+    }
   } else {
-  	@fields = split("\t", $row);
+    @fields = split("\t", $row);
   }
-  warn join( "\t", "parsing from ", $in_format, @fields), "\n" if ($main::verbose >= 10);
+  &RSAT::message::Debug("parsing from ", $in_format, @fields) if ($main::verbose >= 10);
 
+  ## Identify attributes in columns
   my @cols = @{$columns{$in_format}};
   foreach my $c (0..$#cols) {
     my $attr = $cols[$c];
@@ -800,6 +810,8 @@ sub parse_from_row {
 			    $self->get_attribute("description"),
 			    $self->get_attribute("score"))
 		      ) if ($main::verbose >= 3);
+
+  return();
 }
 
 ################################################################
