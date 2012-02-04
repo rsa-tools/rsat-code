@@ -75,7 +75,10 @@ if ($query->param('title')){
 	  "archive",
 	  "synthesis");
 
-### peak sequences file
+################################################################
+## Peak sequences file
+
+## Test sequences
 ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $output_path."/".$output_prefix."peak_seq", 1);
 $parameters .= "-i $sequence_file ";
 
@@ -86,62 +89,6 @@ if ($control_file) {
   $parameters .= "-ctrl $control_file ";
 }
 
-
-################################################################
-## Motif discovery parameters
-
-## motif-disco
-my $oligo_params = "";
-my @oligo_lengths =();
-foreach my $i (6..7){
-    if ($query->param('oligo_length'.$i) =~ /on/){
-		push (@oligo_lengths, $i);
-    }
-}
-@oligo_lengths = sort @oligo_lengths;
-$oligo_params .= " -minol ".$oligo_lengths[0]." -maxol ".$oligo_lengths[-1]." ";
-$parameters .= $oligo_params;
-
-## motif disco algorithm
-my @disco_algo =();
-if ($query->param('oligo-analysis') =~ /on/) {
-    push(@disco_algo, "oligos");
-    &FatalError("Select at least one oligo size for oligo-analysis") if (scalar(@oligo_lengths) < 1 );
-}
-
-if ($query->param('dyad-analysis') =~ /on/) {
-    push(@disco_algo, "dyads");
-}
-if ($query->param('local-word-analysis') =~ /on/) {
-    push(@disco_algo, "local_words");
-    &FatalError("Select at least one oligo size for local-word-analysis") if (scalar(@oligo_lengths) < 1 );
-}
-if ($query->param('position-analysis') =~ /on/) {
-    push(@disco_algo, "positions");
-}
-
-if ($query->param('local-word-analysis_dyads') =~ /on/) {
-  ## TO BE ADDED WHEN THE PROGRAM WILL BE FASTER
-}
-
-## Strands
-if ($query->param('strand')) {
-    $parameters .= " ".$query->param('strand')." ";
-}
-
-## Number of motifs per algorithm
-if (&IsNatural($query->param('nmotifs'))) {
-  $parameters .= " -nmotifs ".$query->param('nmotifs')." ";
-}
-
-
-## Motif discovery algorithms
-$parameters .= " -disco ".join(",",@disco_algo);
-
-## Markov order for oligo-analysis
-if (&IsInteger($query->param('markov'))) {
-  $parameters .= " -min_markov ".$query->param('markov')." -max_markov ".$query->param('markov');
-}
 
 ## Number of top peaks
 if ($query->param('top_sequences')){
@@ -154,11 +101,74 @@ if ($query->param('top_sequences')){
 
 ## Max peak length (clipping)
 if ($query->param('max_seq_len')){
-    if (&IsNatural($query->param('max_seq_len'))) {
-	$parameters .= "  -max_seq_len ".$query->param('max_seq_len')*2; ## here the program needs the length of the fragments, so x2
-    } else {
-	&FatalError("Incorrect maximal sequence length. Check your parameters for data restriction");
+  if (&IsNatural($query->param('max_seq_len'))) {
+    $parameters .= "  -max_seq_len ".$query->param('max_seq_len')*2; ## here the program needs the length of the fragments, so x2
+  } else {
+    &FatalError("Incorrect maximal sequence length. Check your parameters for data restriction");
+  }
+}
+
+
+################################################################
+## Motif discovery parameters
+
+my @disco_algo =(); ## motif disco algorithms to run
+
+
+## oligo-analysis
+if ($query->param('oligo-analysis') =~ /on/) {
+  push(@disco_algo, "oligos");
+
+  ## Markov order is specific to oligo-analysis
+  if (&IsInteger($query->param('markov'))) {
+    $parameters .= " -min_markov ".$query->param('markov')." -max_markov ".$query->param('markov');
+  }
+}
+
+## dyad-analysis
+if ($query->param('dyad-analysis') =~ /on/) {
+    push(@disco_algo, "dyads");
+}
+
+## position-analysis
+if ($query->param('position-analysis') =~ /on/) {
+    push(@disco_algo, "positions");
+}
+
+## local-word-analysis
+if ($query->param('local-word-analysis') =~ /on/) {
+    push(@disco_algo, "local_words");
+}
+
+if ($query->param('local-word-analysis_dyads') =~ /on/) {
+  ## TO BE ADDED WHEN THE PROGRAM WILL BE FASTER
+}
+
+## Motif discovery algorithms
+if (scalar(@disco_algo) >= 1) {
+  $parameters .= " -disco ".join(",",@disco_algo);
+
+  ## Number of motifs per algorithm
+  if (&IsNatural($query->param('nmotifs'))) {
+    $parameters .= " -nmotifs ".$query->param('nmotifs')." ";
+  }
+
+  ## Oligonucleotide lengths (used for oligo-analysis, position-analysis and local-word-analysis)
+  my @oligo_lengths =();
+  foreach my $i (6..7){
+    if ($query->param('oligo_length'.$i) =~ /on/){
+      push (@oligo_lengths, $i);
     }
+  }
+  @oligo_lengths = sort @oligo_lengths;
+  &RSAT::error::FatalError("Select at least one oligo size for oligo-analysis") if (scalar(@oligo_lengths) < 1 );
+  $parameters .= " -minol ".$oligo_lengths[0]." -maxol ".$oligo_lengths[-1]." ";
+}
+
+
+## Strands
+if ($query->param('strand')) {
+    $parameters .= " ".$query->param('strand')." ";
 }
 
 ################################################################
@@ -188,19 +198,18 @@ if ($query->param('custom_motif_db')) {
     }
     close REF;
   }
-  
-  ### name
-    my $dbname_perso="";
-if ($query->param('custom_motif_db_name')){
-  $dbname_perso = $query->param('custom_motif_db_name');
 
-  ## Suppress characters that may cause problems when used in file names
-  $dbname_perso =~ s/\s+/_/g;
-  $dbname_perso =~ s/\//_/g;
-  $dbname_perso =~ s/:/_/g;
+  ## Name for the custom motif database
+  my $dbname_perso="";
+  if ($query->param('custom_motif_db_name')){
+    $dbname_perso = $query->param('custom_motif_db_name');
 
+    ## Suppress characters that may cause problems when used in file names
+    $dbname_perso =~ s/\s+/_/g;
+    $dbname_perso =~ s/\//_/g;
+    $dbname_perso =~ s/:/_/g;
   } else {
-  	$dbname_perso = "personnal_collection";
+    $dbname_perso = "personnal_collection";
   }
   $parameters .= " -motif_db ".$dbname_perso." tf ".$persomotif_file;
   push(@tasks, "motifs_vs_db");
@@ -220,27 +229,12 @@ if ($query->param('ref_motif')) {
     open REF, ">$refmotif_file" ||
       &cgiError("Cannot store sequence file in temp dir.");
     while (<$upload_refmotif>) {
-#      print "<br>UPLOADING REF MOTIFS \t", $_;
       print REF;
     }
     close REF;
   }
-
-#  my $upload_refmotif = $query->param('ref_motif');
-#  #  if ($upload_refmotif) {
-#  my $type = $query->uploadInfo($upload_refmotif)->{'Content-Type'};
-#  open FILE, ">$refmotif_file" ||
-#    &cgiError("Cannot store reference motif file in temp dir.");
-#  while (<$upload_refmotif>) {
-#    print FILE;
-#  }
-#  close FILE;
-#  #    $parameters .= " -ref_motifs PERSONAL_MOTIFS transfac ".${TMP}."/".$output_path."/".$output_prefix."ref_motifs.tf";
   $parameters .= " -ref_motifs ".$refmotif_file;
   push(@tasks, "ref_motifs,motifs_vs_ref");
-  #  } else {
-  #    &FatalError ("If you want to upload a personal matrix file, you should specify the location of this file on your hard drive with the Browse button");
-  #  }
 }
 
 ################################################################
@@ -251,6 +245,7 @@ if ($query->param('matrix-scan-quick') =~ /on/) {
 
 }
 
+################################################################
 ## UCSC custom track
 if ($query->param('visualize') eq "galaxy") {
   $parameters .= " -source galaxy ";
@@ -278,7 +273,7 @@ if ($query->param('visualize') eq "bed_coord") {
   $parameters .= " -coord ".$query->param('assembly')." ".$upload_coord_file;
 }
 
-### add -task
+## Add list of tasks
 $parameters .= " -task " . join(",", @tasks);
 
 ### output prefix
@@ -292,7 +287,7 @@ $parameters .= " -noov -img_format png ";
 $parameters .= " -outdir $output_path";
 
 ################################################################
-## display or send result
+## Display or send result
 $index_file = $output_dir."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
