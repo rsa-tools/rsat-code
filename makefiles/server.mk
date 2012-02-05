@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.33 2012/01/18 05:53:14 rsat Exp $
+# $Id: server.mk,v 1.34 2012/02/05 21:20:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -27,16 +27,21 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
 ################################################################
 # Mirrors
-BIGRE=rsat@rsat.ulb.ac.be:rsa-tools
-WWWSUP=rsat@wwwsup.scmbb.ulb.ac.be:rsa-tools
-MAMAZE=rsat@mamaze.ulb.ac.be:rsa-tools
+#BIGRE=rsat@rsat.ulb.ac.be:rsa-tools
+#WWWSUP=rsat@wwwsup.scmbb.ulb.ac.be:rsa-tools
+#MAMAZE=rsat@mamaze.ulb.ac.be:rsa-tools
+
+BIGRE=rsat@merlout:/rsat_servers/rsat
+WWWSUP=rsat@merlout:/rsat_servers/wwwsup
+MAMAZE=rsat@merlout:/rsat_servers/mamaze
+
 CCG=jvanheld@itzamna.ccg.unam.mx:rsa-tools
 #CCG=jvanheld@mitzli.ccg.unam.mx:rsa-tools
 TAGC=jvanheld@139.124.66.43:rsa-tools
 UPPSALA=jvanheld@bongcam1.hgen.slu.se:rsa-tools
 PRETORIA=jvanheld@anjie.bi.up.ac.za:.
 MIRROR_SERVERS=${MAMAZE} ${WWWSUP} ${UPPSALA} ${CCG} 
-LOG_SERVERS=${MAMAZE}  ${BIGRE} ${WWWSUP} ${UPPSALA} ${CCG} ${PRETORIA}
+LOG_SERVERS=${BIGRE} ${MAMAZE} ${WWWSUP} ${UPPSALA} ${CCG} ${PRETORIA}
 
 ################################################################
 ## OLD SERVERS, NOT MAINTAINED ANYMORE
