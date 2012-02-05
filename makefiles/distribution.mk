@@ -4,7 +4,6 @@
 ## Usage: make -f distribution.mk
 
 include ${RSAT}/makefiles/util.mk
-
 MAKEFILE=${RSAT}/makefiles/distribution.mk
 MAKE = make -sk -f ${MAKEFILE}
 
@@ -24,15 +23,26 @@ TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar
 ## All the tasks for publishing the new version
 all: clean_emacs_bk tar_archive clean_distrib_site publish
 
+## List parameters
+SSH_OPT=
+PUB_FORMAT=tar.gz
+list_params:
+	@echo "RSAT distribution parameters"
+	@echo "	ARCHIVE		${ARCHIVE}"
+	@echo "The following parameters have to be specified by RSAT administrator"
+	@echo "	PUB_LOGIN	${PUB_LOGIN}"
+	@echo "	PUB_SERVER	${PUB_SERVER}"
+	@echo "	PUB_DIR		${PUB_DIR}"
+
 ################################################################
 ## Generate the Manuals and tutorials
 manuals:
 	(cd doc/manuals; make fullclean; make install_guide; make rsat_tutorial; make neat_tutorial; make web_server_guide; make tex_clean)
-	rsync -rtupvl -e ssh doc/manuals/*.pdf public_html/distrib
+	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf public_html/distrib
 
 ## Install manuals on the RSAT Web server
 publish_manuals:
-	rsync -rtupvl -e ssh doc/manuals/*.pdf rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/distrib/
+	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/distrib/
 
 
 ################################################################
@@ -103,17 +113,16 @@ zip_archive:
 	${MAKE} _fill_archive ARCHIVE_CMD='${ZIP}' POST_CMD='${ZIP_EXCLUDE}'
 
 
+ls_distrib:
+	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "ls -ltra ${PUB_DIR}/"
+
+clean_distrib_site:
+	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsa-tools_*.tar.gz ${PUB_DIR}/previous_versions/"
+
 ################################################################
 ## Publish the tar archive of the whole distribution
-PUB_LOGIN=rsat
-PUB_SERVER=mamaze.ulb.ac.be
-PUB_DIR=/home/${PUB_LOGIN}/public_html/rsat_distrib/
-PUB_FORMAT=tar.gz
-clean_distrib_site:
-	ssh ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsa-tools_*.tar.gz ${PUB_DIR}/previous_versions/"
-
 publish:
-	rsync -ruptvl -e ssh ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}
+	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}
 
 publish_metab:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB}
@@ -127,5 +136,5 @@ tar_wsclients:
 	@echo ${TAR_WSCLIENTS}
 
 publish_tar_wsclients:
-	rsync -ruptvl -e ssh ${TAR_WSCLIENTS} rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/web_services/
+	rsync -ruptvl -e "ssh ${SSH_OPT}" ${TAR_WSCLIENTS} rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/web_services/
 
