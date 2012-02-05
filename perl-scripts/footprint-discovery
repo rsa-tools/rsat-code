@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.81 2012/01/17 07:18:49 jvanheld Exp $
+# $Id: footprint-discovery,v 1.82 2012/02/05 18:12:39 jvanheld Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.82 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -408,7 +408,6 @@ package main;
   }
 
 
-
   ################################################################
   ## Analyze query genes separately or altogether
   local $q = 0;
@@ -417,13 +416,14 @@ package main;
     ## used to indicate gene names in the indexes
     $feature_index = $organism->get_attribute("name_index");
 
+
     local $query_nb = scalar(@query_genes);
-    foreach our $query (@query_genes) {
+    foreach $query (@query_genes) {
       $q++;
       &RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $query) if ($main::verbose >= 1);
       if ($feature_index->contains(uc($query))) {
-	our $current_feature = $feature_index->get_first_value(uc($query));
-	our $current_gene = $query; ## needs to be declared globally for some methods of footprint.lib.pl (not very clean, I know)
+	$current_feature = $feature_index->get_first_value(uc($query));
+	$current_gene = $query; ## needs to be declared globally for some methods of footprint.lib.pl (not very clean, I know)
 	&RunFootprintDisco($current_gene);
       } else {
 	&RSAT::message::Warning("Query", $q."/".$query_nb, "Unknown gene", $query) if ($main::verbose >= 1);
@@ -504,6 +504,11 @@ sub RunFootprintDisco {
   ## Initialize output directory + output files
 
   local ($outfile_prefix, $query_prefix) = &InitQueryOutput();
+  if (scalar(@current_query_genes) > 1) {
+    $current_gene = $query_prefix;
+  } else {
+    $current_gene = $current_query_genes[0];
+  }
 
   local $status = "OK";
   local $refresh_time = 10;
