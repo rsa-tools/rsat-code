@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.63 2011/04/05 17:26:56 amedina Exp $
+# $Id: get-orthologs,v 1.64 2012/02/05 16:04:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -39,6 +39,25 @@ comparative genomics
 
 get-orthologs -org query_organism -q GENE1 -q GENE2 ... -taxon ref_taxon
     [other options]
+
+=head1 ORTHOLOGY CRITERIA
+
+B<Semantic remark:> the appropriate criteria for establishing
+B<orthology> or B<paralogy> relationship require to reconciliate the species
+tree with the molecular tree. For practical reasons, we cannot do this
+for all the species supported in RSAT. Pragmatically, I<get-orthologs>
+is thus based on a very rudimentary (but widely used) criterion to
+decide whether a gene is or not ortholog: we run BLAST for all
+proteins of the query genome against all proteins of the reference
+taxon, and maintain lists of hits in subdirectories
+$RSAT/data/genome/[Organism_name]/blast_hits.
+
+The program filters the matches of these tables depending on the
+user-specified homology criteria and thresholds on all the fields.
+
+Actually, this program allows to retrieve supposed B<orthologs>
+(options B<-type BBH>, and to some extent option I<-type BH>), but
+also B<paralogs> (option -type all).
 
 =head1 INPUT FORMAT
 
@@ -85,14 +104,6 @@ Rank of this query gene among all those matching the same reference
 
 =back
 
-=head1 ORTHOLOGY CRITERIA
-
-Actually, this program allows to retrieve orthologs, but also paralogs.
-
-The detection of pairwise similarities is based on a bidirectional BLAST of
-each genome against each other. During the detection phase, multiple hits for
-a single gene are allowed, and the user can decide to filter them out or
-not.
 
 =cut
 
@@ -120,6 +131,8 @@ package main;
 
   %main::infile = ();
   %main::outfile = ();
+
+  $main::homology_type = "BBH";
 
   $main::verbose = 0;
   $warn_missing_blast_files = 1;
@@ -232,8 +245,34 @@ package main;
 
 
   ################################################################
+  ## Homology types
+
+  ## BBH
+  if (lc($main::homology_type) eq "bbh") {
+    &RSAT::message::Info("Homology criterion: BBH (=RBH)") if ($main::verbose >= 2);
+    ## bidirectional best hit
+    $lth{ali_len} = 50;
+    $uth{e_value} = 1e-05;
+    $uth{rank} = 1;
+    $uth{s_rank} = 1;
+
+  } elsif (lc($main::homology_type) eq "bh") {
+    &RSAT::message::Info("Homology criterion: BH") if ($main::verbose >= 2);
+    $lth{ali_len} = 50;
+    $uth{e_value} = 1e-05;
+    $uth{rank} = 1;
+  } elsif (lc($main::homology_type) eq "all") {
+    &RSAT::message::Info("Homology criterion: all") if ($main::verbose >= 2);
+  } else {
+    &RSAT::error::FatalError($homology_type, "Invalid homology type");
+  }
+
+  ################################################################
   ## Index selected output fields in a table
   local %output_field = ();
+  if (scalar(@output_fields) == 0) {
+    push (@output_fields, "ident", "ali_len", "e_value", "rank", "s_rank");
+  }
   foreach my $field (@output_fields) {
     $output_field{$field} = 1;
   }
@@ -246,8 +285,8 @@ package main;
     unless ($main::ref_taxon || $main::orglist_file);
   &RSAT::error::FatalError("Options -taxon and -org_list option are mutually exclusive")
     if (($main::ref_taxon) && ($main::orglist_file));
-    
-  ##open orglist
+
+  ## Open orglist
   if ($main::orglist_file) {
     ($main::orglist) = &OpenInputFile($main::orglist_file);
     &RSAT::message::Info ("Reading list of organisms form file", $main::orglist_file ) if ($main::verbose > 1);
@@ -328,7 +367,7 @@ package main;
   $feature_index = $query_org_object->get_attribute("name_index");
 
   ################################################################
-  ### open output stream
+  ## Open output stream
   $main::out = &OpenOutputFile($main::outfile{output});
 
   ################################################################
@@ -989,6 +1028,52 @@ to the reference taxon.
 
 =pod
 
+=item B<-type homology_type>
+
+Supported homology types: BBH,BH,all
+
+=over
+
+=item I<all>
+
+Return all genes reported as similar in the pre-computed BLAST tables
+of RSAT (for details on BLAST procedure used to build these tables,
+type I<genome-blast -help>).
+
+The result thus contains not only orthologs but also paralogs.
+
+=item I<auto>
+
+Automatically set thresholds to return the BBH with reasonable
+thresholds on additional fields (percent identity, alignment length).
+
+This option automatically adds the following parameters:
+
+Return percent of identity
+    -return ident
+
+Return alignment length, and set threshold to at least 50 bp
+    -return ali_len -lth ali_len 50 
+
+Return e-value, and set thresholds to 1e-05
+    -return e_value -uth e_value 1e-05
+
+Require the best-matching hit (BH criterion)
+    -return rank -uth rank 1 
+
+Require the best reciprocal hit (combined with previous criterion, it
+returns the BBH, also called RBH)
+    -return s_rank -uth s_rank 1
+
+
+=back
+
+=cut
+	  } elsif ($arg eq "-type") {
+	    $main::homology_type = shift(@arguments);
+
+=pod
+
 =item B<-lth field lower_threshold>
 
 Lower threshold value on the specified field.
@@ -1219,6 +1304,9 @@ sub Verbose {
 	}
     }
 
+    ## Homology criterion
+    printf $main::out "; %-21s\t%s\n", "Homology type", $main::homology_type;
+
     ## Query organism and genes
     printf $main::out "; %-21s\t%s\n", "Query organism", $main::query_organism;
     print $main::out ("; Query genes\t",scalar(@query_genes),"\n");
@@ -1238,7 +1326,6 @@ sub Verbose {
     ## Reference taxon and organisms
     printf $main::out "; %-21s\t%s\n", "Reference taxon", $main::ref_taxon;
 
-    
 #     print $main::out join ("\n;\t",
 # 			   join("\t", "; Reference organisms", scalar(@main::ref_organisms)),
 # 			   @main::ref_organisms
