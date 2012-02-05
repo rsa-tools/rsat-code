@@ -128,12 +128,12 @@ print $query->popup_menu(-name=>'bg_model',
 &PrintDyadReturnFields(no_matrix=>1);
 
 
-#### Convert patterns to matrix
-print $query->checkbox(-name=>'to_matrix',
-		       -checked=>$default{to_matrix},
-		       -label=>'');
-print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices";
-print "<BR>";
+# #### Convert patterns to matrix
+# print $query->checkbox(-name=>'to_matrix',
+# 		       -checked=>$default{to_matrix},
+# 		       -label=>'');
+# print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices";
+# print "<BR>";
 
 print "</ul>";
 
