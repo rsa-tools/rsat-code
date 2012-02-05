@@ -72,8 +72,11 @@ sub PrintOrthoSelectionSection {
 
 
   ################################################################
-  ## List of organisms for which ortholog search is supported
-  ## This is temporary, we need to find a way to provide orhtologs for all organisms
+  ## List of organisms for which ortholog search is supported.
+  ##
+  ## This is temporary, we need to find a way to provide orhtologs for
+  ## all organisms.
+
   my @supported_orthologs = qw(
 			       Bacillus_subtilis_168_uid57675
 			       Desulfovibrio_vulgaris_Hildenborough_uid57645
