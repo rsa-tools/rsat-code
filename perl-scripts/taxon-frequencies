@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.47 2011/10/06 14:18:21 rsat Exp $
+# $Id: taxon-frequencies,v 1.48 2012/02/05 14:53:29 rsat Exp $
 #
 ############################################################
 
@@ -369,7 +369,10 @@ package main;
 
 	      ################################################################
 	      ## Read background pattern frequencies
+	      my $org_nb = scalar(@organisms);
+	      my $o = 0;
 	      foreach my $org (@organisms) {
+		  $o++;
 		my $exp_freq_file;
 
 		## Initialize pattern counters
@@ -401,7 +404,8 @@ package main;
 		$infile{$org} = $exp_freq_file;
 
 		## Count occurrences for each frequency file
-		&RSAT::message::TimeWarn("Loading pattern occurrences for organism", $org, $infile{$org}) if ($main::verbose >= 2);
+		&RSAT::message::TimeWarn("Loading pattern occurrences for organism", $o."/".$org_nb, $org) if ($main::verbose >= 2);
+		&RSAT::message::TimeWarn("\tFrequency file", $infile{$org}) if ($main::verbose >= 3);
 		my ($in) = &OpenInputFile($infile{$org});
 		my $l = 0;
 		while (<$in>) {

@@ -190,7 +190,7 @@ sub ExpectedFreqFile {
       &RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
     }
   }
-  &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
+  &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 4);
   return($exp_freq_file);
 }
 
@@ -263,7 +263,7 @@ sub ReadCalibration {
 ##
 sub ReadPatternFrequencies {
   my ($pattern_freq_file, $sum_rc, $rescale_freq) = @_;
-  &RSAT::message::TimeWarn ("Reading pattern frequency file", $pattern_freq_file) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn ("Reading pattern frequency file", $pattern_freq_file) if ($main::verbose >= 4);
 
   my ($exp) = &OpenInputFile($pattern_freq_file);
   my $l=0;
@@ -361,7 +361,7 @@ sub ReadPatternFrequencies {
 # until I find time to implement and test a more appropriate procedure.
 sub ReadExpectedFrequencies {
     my ($exp_freq_file, $sum_rc, $rescale_freq) = @_;
-    &RSAT::message::TimeWarn ("Reading expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn ("Reading expected frequency file", $exp_freq_file) if ($main::verbose >= 4);
     my ($exp) = &OpenInputFile($exp_freq_file);
     my $l=0;
 
@@ -498,7 +498,7 @@ sub CalcConditionalProbabilities {
 
     &ReadExpectedFrequencies($exp_freq_file) ;
 
-    &RSAT::message::TimeWarn("Calculating Markov model from file $exp_freq_file") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating Markov model from file $exp_freq_file") if ($main::verbose >= 4);
 
     foreach my $pattern_seq (keys %patterns) {
 	$expected_freq{$pattern_seq} = $patterns{$pattern_seq}->{exp_freq};
