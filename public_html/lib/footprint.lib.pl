@@ -1238,7 +1238,7 @@ sub PurgeOrthoSeq {
   &IndexOneFile("Purged sequences", $outfile{purged});
 
   ## Check if purged sequence file exists
-  unless (-e $outfile{purged}) {
+  unless ((-e $outfile{purged}) || ($main::batch)) {
     &RSAT::message::Warning("Missing purged sequence file", $outfile{purged}) if ($main::verbose >= 0);
     $status = "Missing file: ".$outfile{purged};
   }
