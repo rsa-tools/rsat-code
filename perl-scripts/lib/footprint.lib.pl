@@ -245,9 +245,8 @@ sub CheckFootprintParameters {
 sub CheckDependency {
   my ($task, @files_types) = @_;
 
-  ## in batch mode, the check should not be done since the previous	#die join ("\t",  @sorted_genes). "  BOOM";
-
-  ## tasks have not yet been ran
+  ## Skip the checking of depentdenccies in batch mode, since tasks
+  ## have not yet been ran.
   return(0) if ($batch);
 
   foreach my $type (@files_types) {
@@ -257,7 +256,7 @@ sub CheckDependency {
 	if ($main::verbose >= 3);
       return(1);
     } else {
-      &RSAT::error::FatalError("Missing or empty ", $type, "file required for task", $task, "file", $file)
+      &RSAT::error::FatalError("Missing or empty file of type", $type, "required for task", $task, "file name", $file);
     }
   }
 }
