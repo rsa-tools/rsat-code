@@ -1145,7 +1145,7 @@ sub GetOrthologs {
     if ($ortholog_nb < 1) {
       $main::status = "No ortholog";
     }
-  } else {
+  } elsif (!$batch) {
     &RSAT::message::Warning("Missing orthologs file", $outfile{orthologs}) if ($main::verbose >= 1);
     $main::status = "Missing file: ".$outfile{orthologs};
   }
