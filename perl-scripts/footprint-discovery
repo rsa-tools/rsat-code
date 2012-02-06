@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.82 2012/02/05 18:12:39 jvanheld Exp $
+# $Id: footprint-discovery,v 1.83 2012/02/06 05:59:37 rsat Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.82 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.83 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -318,7 +318,7 @@ package main;
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
-  local $main_index = &OpenMainIndex();
+  local $main_index = &OpenMainIndex() unless ($batch);
 
   ################################################################
   ## Parameters for dyad-analysis
@@ -460,24 +460,25 @@ package main;
 
   ## Close the main index stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-  print $main_index "</table>\n";
-  print $main_index "<h2>File index</h2>\n";
-  print $main_index "<p><table>\n";
-  foreach my $key (@to_index) {
-    print $main_index "<tr>\n";
-    print $main_index "<td>".$key."</td>\n";
-    my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
-    print $main_index "<td>".$link."</td>\n";
-    print $main_index "</tr>\n";
+  unless ($batch) {
+      print $main_index "</table>\n";
+      print $main_index "<h2>File index</h2>\n";
+      print $main_index "<p><table>\n";
+      foreach my $key (@to_index) {
+	  print $main_index "<tr>\n";
+	  print $main_index "<td>".$key."</td>\n";
+	  my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
+	  print $main_index "<td>".$link."</td>\n";
+	  print $main_index "</tr>\n";
+      }
+      print $main_index "</table></p>\n";
+      
+      print $main_index "<p><pre>", $exec_time, "</pre></p>\n";
+      print $main_index "</body>\n";
+      print $main_index "</html>\n";
+      close ($main_index);
+      &RSAT::message::TimeWarn("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
   }
-  print $main_index "</table></p>\n";
-
-  print $main_index "<p><pre>", $exec_time, "</pre></p>\n";
-  print $main_index "</body>\n";
-  print $main_index "</html>\n";
-  close ($main_index);
-  &RSAT::message::TimeWarn("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
-
   exit(0);
 }
 
@@ -511,6 +512,9 @@ sub RunFootprintDisco {
   }
 
   local $status = "OK";
+  if ($batch) {
+      $status = "batch mode";
+  }
   local $refresh_time = 10;
 
   ## Output files for dyad-analysis
@@ -565,7 +569,7 @@ sub RunFootprintDisco {
   unless ($nofilter) {
     ## Retrieve promoters of the query organism
     $query_prom_len = &RetrieveQueryPromoters();
-    if ($status eq "OK") {
+    if (($status eq "OK") || ($batch)) {
       ## Detect all dyads in promoters of query genes for dyad filtering
       &ComputeFilterDyads();
     }
@@ -574,29 +578,29 @@ sub RunFootprintDisco {
   ################################################################
   ## Identify ortholog genes
   local $ortholog_nb = "NA";
-  $ortholog_nb = &GetOrthologs() if ($status eq "OK");
+  $ortholog_nb = &GetOrthologs() if (($status eq "OK") || ($batch));
 
   ################################################################
   ## Predict operon leader genes for the orthologous genes
-  &InferOrthoOperons() if (($status eq "OK") && ($infer_operons));
+  &InferOrthoOperons() if ((($status eq "OK") || ($batch)) && ($infer_operons));
 
   ################################################################
   ## Retrieve sequences from orthologs
   local $ortho_seq_len = "NA";
-  $ortho_seq_len = &RetrieveOrthoSeq() if ($status eq "OK");
+  $ortho_seq_len = &RetrieveOrthoSeq() if (($status eq "OK") || ($batch));
 
   ################################################################
   ## Purge sequences
-  &PurgeOrthoSeq() if ($status eq "OK");
+  &PurgeOrthoSeq() if (($status eq "OK") || ($batch));
 
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
   local $dyad_nb = "NA";
-  $dyad_nb = &DyadAnalysis() if ($status eq "OK");
+  $dyad_nb = &DyadAnalysis() if (($status eq "OK") || ($batch));
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
-  if (($status eq "OK") && ($task{map})) {
+  if ((($status eq "OK") || ($batch)) && ($task{map})) {
     my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
     &CheckDependency("map", "dyads");
     &CheckDependency("map", "seq");
@@ -613,7 +617,7 @@ sub RunFootprintDisco {
     $cmd .= " -o ".$outfile{map};
     &one_command($cmd);
   }
-  &IndexOneFile("Feature map", $outfile{map}, image=>1) if ($status eq "OK");
+  &IndexOneFile("Feature map", $outfile{map}, image=>1) if (($status eq "OK") || ($batch));
 
 
   ################################################################
@@ -642,9 +646,11 @@ sub RunFootprintDisco {
   close $genes if ($outfile{genes});
 
   ## Choose the color according to status
-  my $status_color = "#00AA00";
-  unless ($status eq "OK") {
-    $status_color = "#CC0000";
+  my $status_color = "#CC0000";
+  if ($batch) {
+      $status_color = "#BBBBBB";
+  } elsif ($status eq "OK") {
+      $status_color = "#00AA00";
   }
 
   ## Close query-specific index file
@@ -657,75 +663,77 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Update the main index
-  print $main_index "<tr>\n";
-  print $main_index "<td>", $q, "</td>\n";
-  ## Link to the query-specific index file
+  unless ($batch) {
+      print $main_index "<tr>\n";
+      print $main_index "<td>", $q, "</td>\n";
+      ## Link to the query-specific index file
 #  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
-  print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
-  print $main_index "<td>", $current_feature->get_attribute("name"), "</td>\n" if ($main::sep_genes);
+      print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
+      print $main_index "<td>", $current_feature->get_attribute("name"), "</td>\n" if ($main::sep_genes);
 
-  ## Report the significant dyads
-  my $top_id = "NA";
-  my $top_sig = "NA";
-  my $sig_color = '#000000';
-  $dyad_nb = 0; ## Re-initialize the number of dyads
-  local %header_col = ();
+      ## Report the significant dyads
+      my $top_id = "NA";
+      my $top_sig = "NA";
+      my $sig_color = '#000000';
+      $dyad_nb = 0; ## Re-initialize the number of dyads
+      local %header_col = ();
 
-  if (-e $outfile{dyads}) {
-    &RSAT::message::Info("Indexing dyads", $query_prefix, $outfile{dyads}) if ($main::verbose >= 4);
-    my ($dyads) = &OpenInputFile($outfile{dyads});
+      if (-e $outfile{dyads}) {
+	  &RSAT::message::Info("Indexing dyads", $query_prefix, $outfile{dyads}) if ($main::verbose >= 4);
+	  my ($dyads) = &OpenInputFile($outfile{dyads});
+    
+	  while (<$dyads>) {
+	      next if (/^;/); ## Skip comments
+	      next unless (/\S/); ## Skip empty lines
+	      chomp();
+	      
 
-    while (<$dyads>) {
-      next if (/^;/); ## Skip comments
-      next unless (/\S/); ## Skip empty lines
-      chomp;
+	      ## Read the header to idenfify occ_sig column
+	      if (/^#/) {
+		  s/^#//;
+		  my @header_fields = split "\t";
+		  for my $h (0..$#header_fields) {
+		      $header_fields[$h] = &RSAT::util::trim($header_fields[$h]);
+		      $header_col{$header_fields[$h]} = $h;
+		      #	&RSAT::message::Debug("header", $h, "'".$header_fields[$h]."'", $header_col{$header_fields[$h]}) if ($main::verbose >= 10);
+		  }
+		  next;
+	      }
+	      
+	      $dyad_nb++;
 
-
-      ## Read the header to idenfify occ_sig column
-      if (/^#/) {
-	s/^#//;
-	my @header_fields = split "\t";
-	for my $h (0..$#header_fields) {
-	  $header_fields[$h] = &RSAT::util::trim($header_fields[$h]);
-	  $header_col{$header_fields[$h]} = $h;
-	  #	&RSAT::message::Debug("header", $h, "'".$header_fields[$h]."'", $header_col{$header_fields[$h]}) if ($main::verbose >= 10);
-	}
-	next;
+	      ## Report top significant dyad
+	      if ($dyad_nb == 1) {
+		  my @fields = split "\t";
+		  $top_id = $fields[$header_col{"identifier"}];
+		  $top_sig = $fields[$header_col{"occ_sig"}];
+		  #      &RSAT::message::Debug("top_id", $top_id, "top_sig", $top_sig, ) if ($main::verbose >= 10);
+	      }
+	  }
+	  close $dyads;
       }
 
-      $dyad_nb++;
+      print $main_index "<td><font color='", $status_color,"'>", $status, "</font></td>\n";
+      print $main_index "<td>", $query_prom_len, "</td>\n" unless ($nofilter);
+      print $main_index "<td>", $ortholog_nb, "</td>\n";
+      print $main_index "<td>", $ortho_seq_len, "</td>\n";
+      print $main_index "<td><tt>", $top_id, "</tt></td>\n";
 
-      ## Report top significant dyad
-      if ($dyad_nb == 1) {
-	my @fields = split "\t";
-	$top_id = $fields[$header_col{"identifier"}];
-	$top_sig = $fields[$header_col{"occ_sig"}];
-	#      &RSAT::message::Debug("top_id", $top_id, "top_sig", $top_sig, ) if ($main::verbose >= 10);
+      if ($status ne "OK") {
+	  $sig_color = '#BBBBBB';
+      } elsif ($top_sig <= 2) {
+	  $sig_color = '#888888';
+      } elsif ($top_sig >= 5) {
+	  $sig_color = '#0000CC';
+      } else {
+	  $sig_color = '#000000';
       }
-    }
-    close $dyads;
-  }
-
-  print $main_index "<td><font color='", $status_color,"'>", $status, "</font></td>\n";
-  print $main_index "<td>", $query_prom_len, "</td>\n" unless ($nofilter);
-  print $main_index "<td>", $ortholog_nb, "</td>\n";
-  print $main_index "<td>", $ortho_seq_len, "</td>\n";
-  print $main_index "<td><tt>", $top_id, "</tt></td>\n";
-
-  if ($status ne "OK") {
-    $sig_color = '#BBBBBB';
-  } elsif ($top_sig <= 2) {
-    $sig_color = '#888888';
-  } elsif ($top_sig >= 5) {
-    $sig_color = '#0000CC';
-  } else {
-    $sig_color = '#000000';
-  }
-  print $main_index "<td>", "<font color='".$sig_color."'>", $top_sig, "</font>",,"</td>\n";
-  print $main_index "<td>", "<font color='".$sig_color."'>", $dyad_nb, "</font>",,"</td>\n";
+      print $main_index "<td>", "<font color='".$sig_color."'>", $top_sig, "</font>",,"</td>\n";
+      print $main_index "<td>", "<font color='".$sig_color."'>", $dyad_nb, "</font>",,"</td>\n";
 #  print $main_index "<td>", $dyad_nb, "<td>";
-
-  print $main_index "</tr>\n";
+      
+      print $main_index "</tr>\n";
+  }
 }
 
 
@@ -1023,8 +1031,8 @@ sub DyadAnalysis {
     ## Make sure that there is at least one significant dyad before
     ## doing the assembly and conversion to matrix
     $dyad_nb = &CountDyads();
-    if ($dyad_nb < 1) {
-      $status = "No significant dyad" if ($status eq "OK");
+    if (!($batch) && ($dyad_nb < 1)) {
+      $status = "No significant dyad" if (($status eq "OK") || ($batch));
     } else {
 
       ################################################################
@@ -1074,6 +1082,7 @@ sub DyadAnalysis {
 
 sub CountDyads {
   my $dyad_nb = "NA";
+  return ($dyad_nb) if ($batch);
   if (-e $outfile{dyads}) {
     $dyad_nb = `grep -v '^;' $outfile{dyads} | grep -v '^#' | wc -l`;
     chomp($dyad_nb);
