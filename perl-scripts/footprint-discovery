@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.83 2012/02/06 05:59:37 rsat Exp $
+# $Id: footprint-discovery,v 1.84 2012/02/06 23:32:15 jvanheld Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.83 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.84 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -561,9 +561,11 @@ sub RunFootprintDisco {
   ## Print verbose
   &Verbose() if ($verbose);
 
-  ## Predict operon leader genes of the query genes
+  ################################################################
+  ## Predict operon leader genes of the query gene(s)
   &InferQueryOperons() if ($infer_operons);
 
+  ################################################################
   ## Dyad filter tasks
   local $query_prom_len = "NA";
   unless ($nofilter) {
@@ -579,6 +581,7 @@ sub RunFootprintDisco {
   ## Identify ortholog genes
   local $ortholog_nb = "NA";
   $ortholog_nb = &GetOrthologs() if (($status eq "OK") || ($batch));
+
 
   ################################################################
   ## Predict operon leader genes for the orthologous genes
