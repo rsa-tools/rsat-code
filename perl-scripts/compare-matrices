@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.113 2012/01/17 07:17:48 jvanheld Exp $
+# $Id: compare-matrices,v 1.114 2012/02/07 11:45:02 jvanheld Exp $
 #
 ############################################################
 
@@ -419,7 +419,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -429,6 +429,8 @@ package main;
   @main::outfiles = ();
   @main::infiles = ();
   @main::dirs = ();
+
+  $main::no_buffering = 0;
 
   $main::verbose = 0;
   $main::out = STDOUT;
@@ -570,6 +572,13 @@ package main;
   ################################################################
   ## Read argument values
   &ReadArguments();
+
+  ## IMPORTANT: prevent output to be buffered becase this creates
+  ## problems for peak-footprint: the program sometimes leaves before the task is completed;
+  if ($main::no_buffering) {
+    $| = 1;
+  }
+
 
   ################################################################
   ## Check argument values
@@ -2604,6 +2613,33 @@ detail).
     } elsif ($arg eq "-o") {
       $main::outfile{output_prefix} = shift(@arguments);
       $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
+
+
+=pod
+
+=item B<-nobuf>
+
+No buffering.
+
+By default, the Perl language holds the output in memory (buffering)
+and writes output files piece by piece rather than line by line.
+
+This creates a particlar problem when I<compare-matrices> is
+encapsulated in another program (e.g. I<peak-footprints>), beacause
+the script occasionally exits while the bufer is still being printed
+out, and the output file is thus not yet ready for further analysis.
+
+The option -nobuf turns off buffering. The printing out is probably
+slower (the output stream is printed at each match), so we maintain
+buffering by default.
+
+=cut
+
+    } elsif ($arg eq "-nobuf") {
+      $main::no_buffering = 1;
+
+
+=pod
 
 =item B<-mode matches | profiles>
 
