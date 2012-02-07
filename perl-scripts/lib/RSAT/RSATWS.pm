@@ -4686,7 +4686,7 @@ sub draw_heatmap_cmd {
   my $command = "$SCRIPTS/draw-heatmap";
 
   if ($args{no_text}) {
-   $command .= " -notext";
+   $command .= " -no_text";
   }
   if ($args{row_names}) {
    $command .= " -rownames";
