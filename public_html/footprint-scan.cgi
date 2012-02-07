@@ -17,7 +17,7 @@ $command = "$SCRIPTS/footprint-scan";
 $query = new CGI;
 
 ### Print the header
-&RSA_header("footprint-discovery result", "results");
+&RSA_header("footprint-scan result", "results");
 
 #### update log file ####
 &UpdateLogFile();
@@ -88,7 +88,7 @@ $parameters .= " -taxon $taxon";
 
 ################################################################
 ## File prefix
-$tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism, $query_prefix, &AlphaDate());
+$tmp_file_name = join( "_", "footprint-scan", $taxon, $organism, $query_prefix, &AlphaDate());
 $result_subdir = $tmp_file_name;
 $result_dir = $TMP."/".$result_subdir;
 $result_dir =~ s|\/\/|\/|g;
@@ -222,7 +222,7 @@ $parameters .= " -o ".$file_prefix;
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 2);
 
 $index_file = $result_subdir."/".$query_prefix."/".$taxon."/".$organism."/all_matrices_report.html";
-my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
+my $mail_title = join (" ", "[RSAT]", "footprint-scan", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 
 print $query->end_html();
