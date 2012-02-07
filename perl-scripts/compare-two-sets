@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-two-sets,v 1.5 2011/09/30 09:46:59 rsat Exp $
+# $Id: compare-two-sets,v 1.6 2012/02/07 09:50:56 rsat Exp $
 #
 ############################################################
 
@@ -76,7 +76,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -115,9 +115,14 @@ package main;
     ## Read input
     my %query = readList($main::infile{query});
     my %reference = readList($main::infile{reference});
+    my %query_duplicated = &get_duplicated_elements(\%query);
+    my %reference_duplicated = &get_duplicated_elements(\%reference);
     my $query_size = scalar keys %query;
+    my $query_duplicated_size = scalar keys %query_duplicated;
+    my $reference_duplicated_size = scalar keys %reference_duplicated;
     my $reference_size = scalar keys %reference;
-    
+    my $query_dup_list = &print_duplicated_elements(\%query_duplicated);
+    my $ref_dup_list = &print_duplicated_elements(\%reference_duplicated);
     
 
     ################################################################
@@ -185,11 +190,17 @@ package main;
     print $main::out join "\t", ";", "Reference name", $reference_name."\n";
     print $main::out join "\t", ";", "Query size", $query_size."\n";
     print $main::out join "\t", ";", "Reference size", $reference_size."\n";
+    print $main::out join "\t", ";", "Number of duplicated elements in query", $query_duplicated_size."\n";
+    print $main::out join "\t", ";", "Number of duplicated elements in reference", $reference_duplicated_size."\n";
+    print $main::out join "\t", ";", "Query duplicated elements", $query_dup_list."\n" if ($query_duplicated_size);
+    print $main::out join "\t", ";", "Reference duplicated elements", $ref_dup_list."\n" if ($reference_duplicated_size);
     print $main::out join "\t", ";", "Intersection size", $inter_size."\n";
     print $main::out join "\t", ";", "Union size", $union_size."\n";
     print $main::out join "\t", ";", "Query only size", $qonly_size."\n";
     print $main::out join "\t", ";", "Reference only size", $ronly_size."\n";
     print $main::out join "\t", ";", "Total number of elements", $total_size."\n";
+
+
     
     my $round_pval = sprintf "%.2g", ($hyper_pval);
     print $main::out join "\t", ";", "Hypergeometric p-value", $round_pval."\n";
@@ -262,6 +273,13 @@ sub readList {
     $ligne =~ s/ /\t/g;
     my @lignecp = split /\t/, $ligne;
     my $elem = $lignecp[0];
+    if (defined $results{$elem}) {
+          RSAT::message::Warning("Element $elem found several times in $input_file") if ($main::verbose >= 2);
+    }
+    if ($elem eq "") {
+          RSAT::message::Warning("Skipped empty element") if ($main::verbose >= 2);
+          next;
+    }    
     $results{$elem}++;
   }
   close $main::in if ($input_file);
@@ -296,6 +314,38 @@ sub compare_lists {
   return (\@common, \@q_only, \@r_only);
 }
 
+sub print_duplicated_elements {
+  my $elem_array_ref = shift;
+  my %elem_array = %{$elem_array_ref};
+  my $result = "";
+  my @result_array = ();
+  
+  foreach my $elem (keys %elem_array) {
+    my $nb = $elem_array{$elem};
+    if ($nb > 1) {
+      
+      $toadd = "$elem ($nb)";
+      push @result_array, $toadd;
+    }
+  }
+  $result = join ", ", @result_array;
+  return $result;
+}
+
+sub get_duplicated_elements {
+  my $elem_array_ref = shift;
+  my @result_array = ();
+  my %elem_array = %{$elem_array_ref};
+  foreach my $elem (keys %elem_array) {
+    my $nb = $elem_array{$elem};
+    if ($nb > 1) {
+      $result{$elem} = $nb
+    }
+  }
+  return %result;
+}
+
+
 # this function returns a hash of size $n with elements going from n0 to ntotal
 sub create_rdm_hash {
   my $total = shift;
@@ -327,18 +377,18 @@ sub create_venn_diagramm {
   my $rdm_jac = $args{rdmjac};
   my $output_file = $args{output};
   # draw the figures
-  my $p = new PostScript::Simple(xsize => 300, ysize => 300, colour => 1, eps => 0, units => "cm");  
+  my $p = new PostScript::Simple(xsize => 350, ysize => 300, colour => 1, eps => 0, units => "cm");  
   # query circle
   $p->setcolour("black");
   $p->setfont("Arial", 12);
   $p->circle(4.5, 5.5, 1.5);
-  $p->text(3.5, 5.5, $ref_size);
-  $p->text(2.4,7.3, $query_name);
+  $p->text(3.5, 5.5, $q_size);
+  $p->text(2,7.6, $query_name);
 
   # reference circle
   $p->circle(6.3, 5.5, 1.5);
-  $p->text(6.9, 5.5, $q_size);
-  $p->text(6.1, 7.3, $ref_name);
+  $p->text(6.7, 5.5, $ref_size);
+  $p->text(5, 7.3, $ref_name);
   
   # inter size
   $p->text(5.1, 5.5, $inter_size);
