@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.226 2012/01/08 21:03:24 jvanheld Exp $
+# $Id: peak-motifs,v 1.227 2012/02/09 07:30:30 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.226 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.227 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -3550,13 +3550,14 @@ sub SynthesisPatternDisco {
   ################################################################
   ## Synthesize results of pattern assembly (assembly consensus + sig
   ## scores)
+  my $pattern_nb = 0;
+  my $asmb_or_isol = "";
+#  my %pattern_info = ();
+  my @pattern_info = ();
 
   ## Parse the assembly file to get the consensus + sig score
   if (-e $main::outfile{$pattern_type.'_asmb'}) {
     my ($asmb) = &OpenInputFile($main::outfile{$pattern_type.'_asmb'});
-    my $pattern_nb = 0;
-    my $asmb_or_isol = "";
-    my %pattern_info = ();
     while (<$asmb>) {
       next if /^#/;		## Skip header line
       next unless /\S/;		## Skip empty lines
