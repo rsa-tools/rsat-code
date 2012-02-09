@@ -1,9 +1,8 @@
 #!/usr/bin/perl
 
-
 ############################################################
 #
-# $Id: oligo-analysis,v 1.164 2011/12/05 12:51:54 jvanheld Exp $
+# $Id: oligo-analysis,v 1.165 2012/02/09 07:28:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -21,7 +20,7 @@ require RSAT::MarkovModel;
 ################################################################
 ## Initialize parameters
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.164 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.165 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -77,7 +76,7 @@ local $group_rc = 1;
 ## Thresholds
 our %uth = ();
 our %lth = ();
-$uth{occ_P} = 1;
+$uth{'occ_P'} = 1;
 $uth{ms_P} = 1;
 
 our $markov_order = -2;
@@ -194,7 +193,7 @@ if ($bg_method eq "Markov model estimated from input sequences") {
 ################################################################
 ## Check if quick counting mode is possible
 if ($quick_count_if_possible) {
-    $quick_count = &CheckQuickCount();
+  $quick_count = &CheckQuickCount();
 }
 
 ################################################################
@@ -210,7 +209,7 @@ if ($infile{accepted_patterns}) {
 
 ################################################################
 ## Open output stream
-our $out = &OpenOutputFile($outputfile);
+our $out = &OpenOutputFile($outfile{output});
 
 ################################################################
 ## Count oligo occurrences
@@ -399,7 +398,7 @@ if ($return{'table'}) {
 ## Close output stream
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
 print $main::out $exec_time if ($main::verbose >= 1);
-close $out if ($outputfile);
+close $out if ($outfile{output});
 
 exit(0);
 
@@ -507,7 +506,7 @@ sub CountOligos {
 	$residue_occ{$letter}++;
       }
 
-      ## For Markov chains, count trailing oligomers of length shorter than $oligo_length ####
+      ## For Markov chains, count trailing oligomers of length shorter than $oligo_length
       if ($bg_method eq "Markov model estimated from input sequences") {
 	for $w (1..$oligo_length - 1) {
 	  $subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
@@ -891,7 +890,10 @@ sub CalcSubWordFrequencies {
 	}
     }
 
-     ### sum occurrences on both strands if requested
+    ################################################################
+    ## Sum occurrences on both strands if requested THE MARKOV MODEL
+    ## SHOULD ALWAY S BE COMPUTED ON SINGLE STRAND ! -> suppressed
+    ## this code
 #     if ($sum_rc) {
 # 	for $w (1..$oligo_length-1) {
 # 	    foreach $subseq (keys %{$sub_word[$w]}) {
@@ -1029,10 +1031,11 @@ sub CalcExpected {
   ## Calcualte the number of possible positions for each pattern
   foreach $pattern_seq (sort keys %patterns) {
     #	$patterns{$pattern_seq}->{forbocc} += $nb_possible_pos;
-    $patterns{$pattern_seq}->{notforb} = $nb_possible_pos - $patterns{$pattern_seq}->{forbocc};
+    $patterns{$pattern_seq}->{'notforb'} = $nb_possible_pos - $patterns{$pattern_seq}->{forbocc};
   }
 
-  ### Expected frequency file
+  ################################################################
+  ## User-specified expected frequency file
   if ($bg_method eq "Frequency file") {
     if ($one_var_position) {
       foreach $deg_pattern_seq (sort keys %patterns) {
@@ -1050,14 +1053,62 @@ sub CalcExpected {
     ## Calculate expected frequencies according to a Markov chain
     ## model estimated from the input sequences.
   } elsif ($bg_method eq "Markov model estimated from input sequences") {
-    foreach $pattern_seq (sort keys %patterns) {
-      $patterns{$pattern_seq}->{'exp_freq'} = 1;
-      for $offset (0..($oligo_length - $markov_order -1)) {
-	$subseq = substr($pattern_seq,$offset,$markov_order+1);
-	$patterns{$pattern_seq}->{'exp_freq'} *= $sub_word[$markov_order+1]{$subseq}->{obs_freq};
-	if (($markov_order > 0) && ($offset > 0)) {
-	  $subseq = substr($pattern_seq,$offset,$markov_order);
-	  $patterns{$pattern_seq}->{'exp_freq'} /= $sub_word[$markov_order]{$subseq}->{obs_freq};
+    &RSAT::message::TimeWarn("Estimating Markov model (m=${markov_order}) from input sequences") if ($main::verbose >= 2);
+    my $bg_ol = $markov_order+1;
+
+    ## BEWARE: Markov models have to be counted on a single strand and
+    ## with -ovlp mode.
+    if ($quick_count) {
+      &RSAT::message::TimeWarn("Computing ".$bg_ol."nt frequencies for Markov model (m=".$markov_order.")") if ($main::verbose >= 3);
+
+      ## Store background model in separate file for checking
+      if ($outfile{output}) {
+	$outfile{bg_model} = $outfile{output};
+	$outfile{bg_model} =~ s/.tab$//;
+	$outfile{bg_model} .= "_bg_mkv".$markov_order.".tab";
+      } else {
+	$outfile{bg_model} = &RSAT::util::make_temp_file($TMP, "bg_mkv".$markov_order);
+      }
+      local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
+      my $cmd = $count_words_cmd;
+      $cmd .= " -v 1 -i ".$infile{input};
+      $cmd .= " -1str -l ".$bg_ol;
+      $cmd .= " -o ".$outfile{bg_model};
+      &doit($cmd);
+      &RSAT::message::TimeWarn("background model file", $outfile{bg_model}) if ($main::verbose >= 3);
+
+      ## Load background file
+      my $bg_model = new RSAT::MarkovModel();
+      $bg_model->load_from_file($outfile{bg_model}, "oligos");
+
+      ## Compute expected frequency for each oligonucleotide of size k
+      foreach $pattern_seq (sort keys %patterns) {
+	($patterns{$pattern_seq}->{'exp_freq'}) = $bg_model->segment_proba($pattern_seq,0);
+      }
+
+#       my ($bg, $bg_dir) = &OpenInputFile($outfile{bg_model});
+#       while (<$bg>) {
+# 	next if (/^;/); ## Skip comment lines
+# 	next if (/^;#/); ## Skip header line
+# 	next unless (/\S/); ## Skip empty lines
+# 	chomp();
+# 	my ($seq, $id, $freq, $occ) = split ("\t");
+# 	$sub_word[$bg_ol]{$seq}->{obs_freq} = $freq;
+#       }
+#     }
+
+    } else {
+      ## Compute Markov model parameters as subword frequencies from
+      ## the oligo frequencies
+      foreach $pattern_seq (sort keys %patterns) {
+	$patterns{$pattern_seq}->{'exp_freq'} = 1;
+	for $offset (0..($oligo_length - $markov_order -1)) {
+	  $subseq = substr($pattern_seq,$offset,$bg_ol);
+	  $patterns{$pattern_seq}->{'exp_freq'} *= $sub_word[$bg_ol]{$subseq}->{obs_freq};
+	  if (($markov_order > 0) && ($offset > 0)) {
+	    $subseq = substr($pattern_seq,$offset,$markov_order);
+	    $patterns{$pattern_seq}->{'exp_freq'} /= $sub_word[$markov_order]{$subseq}->{obs_freq};
+	  }
 	}
       }
     }
@@ -1076,8 +1127,8 @@ sub CalcExpected {
     ## occurrences in a calibration file
   } elsif ($bg_method =~ /calibration/i) {
     foreach $pattern_seq (sort keys %patterns) {
-      if ($patterns{$pattern_seq}->{notforb} > 0) {
-	$patterns{$pattern_seq}->{'exp_freq'} = $patterns{$pattern_seq}->{'exp_occ'}/$patterns{$pattern_seq}->{notforb};
+      if ($patterns{$pattern_seq}->{'notforb'} > 0) {
+	$patterns{$pattern_seq}->{'exp_freq'} = $patterns{$pattern_seq}->{'exp_occ'}/$patterns{$pattern_seq}->{'notforb'};
       } else {
 	$patterns{$pattern_seq}->{'exp_freq'} = "NA";
       }
@@ -1194,7 +1245,7 @@ sub CalcExpected {
   ## expected number of occurrences and matching sequences ####
   foreach $pattern_seq (sort keys %patterns) {
     unless ($bg_method =~ /calibration/i) {
-      # 	    $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $patterns{$pattern_seq}->{notforb};
+      # 	    $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $patterns{$pattern_seq}->{'notforb'};
       $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $sum_occurrences;
       #	    $patterns{$pattern_seq}->{'exp_occ'} = $patterns{$pattern_seq}->{'exp_freq'} * $sum_noov;
     }
@@ -1263,8 +1314,8 @@ sub CalcZscore {
 		} else {
 		    ### Correction for self-overlapping patterns
 #		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
-		    $patterns{$pattern_seq}->{'exp_var'} = $patterns{$pattern_seq}->{notforb} * $patterns{$pattern_seq}->{'exp_freq'}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{'exp_freq'});
-#       	$patterns{$pattern_seq}->{'exp_var'} = $patterns{$pattern_seq}->{notforb} * $patterns{$pattern_seq}->{'exp_freq'}*(1 - $patterns{$pattern_seq}->{'exp_freq'});
+		    $patterns{$pattern_seq}->{'exp_var'} = $patterns{$pattern_seq}->{'notforb'} * $patterns{$pattern_seq}->{'exp_freq'}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{'exp_freq'});
+#       	$patterns{$pattern_seq}->{'exp_var'} = $patterns{$pattern_seq}->{'notforb'} * $patterns{$pattern_seq}->{'exp_freq'}*(1 - $patterns{$pattern_seq}->{'exp_freq'});
 		}
 	    }
 
@@ -1317,13 +1368,13 @@ sub CalcLikelihood {
 sub CalcProba {
   &RSAT::message::TimeWarn("Computing probabilities") if ($main::verbose >= 2);
 
-  ## converts threshold on occurence significance index into a
+  ## Convert threshold on occurence significance index into a
   ## threshold on occurrence probability
-  #    if (defined($lth{occ_sig})) {
-  #	$uth{occ_P} = exp(-$lth{occ_sig}*log(10))/$nb_possible_oligos;
+  #    if (defined($lth{'occ_sig'})) {
+  #	$uth{'occ_P'} = exp(-$lth{'occ_sig'}*log(10))/$nb_possible_oligos;
   #    }
 
-  ## converts threshold on mseq significance index into a
+  ## Convert threshold on mseq significance index into a
   ## threshold on mseq probability
   if (defined($lth{ms_sig})) {
     $uth{ms_P} = exp(-$lth{ms_sig}*log(10))/$nb_possible_oligos;
@@ -1331,13 +1382,14 @@ sub CalcProba {
 
   ### calculate oligo probabilities
   foreach $pattern_seq (sort keys %patterns) {
-    warn sprintf("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n",
-		 $patterns{$pattern_seq}->{occ},
-		 $patterns{$pattern_seq}->{'exp_occ'},
-		 $patterns{$pattern_seq}->{'exp_freq'},
-		 $patterns{$pattern_seq}->{notforb}
-		) if ($verbose >= 4);
+    &RSAT::message::Debug(sprintf("Computing proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g",
+				  $patterns{$pattern_seq}->{occ},
+				  $patterns{$pattern_seq}->{'exp_occ'},
+				  $patterns{$pattern_seq}->{'exp_freq'},
+				  $patterns{$pattern_seq}->{'notforb'})
+			 ) if ($verbose >= 4);
 
+    ## Check that expected frequency is strictly positive
     if ($patterns{$pattern_seq}->{'exp_freq'} <= 0) {
       &Warning(join "\t", "Cannot calculate probability for pattern", $pattern_seq,
 	       "Invalid expected frequency",
@@ -1356,42 +1408,35 @@ sub CalcProba {
     } else {
       ## Right tail
       $occ_from = $patterns{$pattern_seq}->{occ};
-      #	    $occ_to = $patterns{$pattern_seq}->{notforb};
       $occ_to = $sum_occurrences;
       $patterns{$pattern_seq}->{tail} = "right";
     }
 
+
+    ## Compute nominal P-value
     if ($bg_method =~ /calibration/i) {
       if ($patterns{$pattern_seq}->{'exp_occ'} < $patterns{$pattern_seq}->{'exp_var'}) {
 	## Fit a negative binomial
-	($p, $k, $patterns{$pattern_seq}->{occ_P}) = &sum_of_negbin2($patterns{$pattern_seq}->{'exp_occ'},
+	($p, $k, $patterns{$pattern_seq}->{'occ_P'}) = &sum_of_negbin2($patterns{$pattern_seq}->{'exp_occ'},
 								     $patterns{$pattern_seq}->{'exp_var'},
 								     $occ_from,
 								     $occ_to);
 	$patterns{$pattern_seq}->{fitted} = "negbin";
       } else {
 	## Fit a Poisson
-	$patterns{$pattern_seq}->{occ_P} = &sum_of_poisson($patterns{$pattern_seq}->{'exp_occ'},
+	$patterns{$pattern_seq}->{'occ_P'} = &sum_of_poisson($patterns{$pattern_seq}->{'exp_occ'},
 							   $occ_from,
 							   $occ_to);
 	$patterns{$pattern_seq}->{fitted} = "Poisson";
       }
     } else {
-      $patterns{$pattern_seq}->{occ_P} = &sum_of_binomials($patterns{$pattern_seq}->{'exp_freq'},
+      $patterns{$pattern_seq}->{'occ_P'} = &sum_of_binomials($patterns{$pattern_seq}->{'exp_freq'},
 							   $sum_occurrences,
 							   $occ_from,
 							   $occ_to);
-      #	    &RSAT::message::Debug($pattern_seq,
-      #				  $patterns{$pattern_seq}->{'exp_freq'},
-      #				  $patterns{$pattern_seq}->{forbocc},
-      #				  $patterns{$pattern_seq}->{notforb},
-      #				  $occ_from,
-      #				  $occ_to,
-      #				  $patterns{$pattern_seq}->{occ_P}
-      #				 ) if ($main::verbose >= 10);
     }
 
-    ## Count the number of tests
+    ## Count the number of tests for the multitesting correction
     $main::nb_tested_patterns++;
 
     #	## check thresholds on occurrence probability ####
@@ -1610,7 +1655,7 @@ sub Verbose {
 	printf $out "; %-29s\t%s\n", "Input file",	&RSAT::util::hide_RSAT_path($infile{input}) if ($infile{input});
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
 
-	printf $out "; %-29s\t%s\n", "Output file", &RSAT::util::hide_RSAT_path($outputfile) if ($outputfile);
+	printf $out "; %-29s\t%s\n", "Output file", &RSAT::util::hide_RSAT_path($outfile{output}) if ($outfile{output});
 	if ($noov eq "-noov") {
 	    print $out "; Discard overlapping matches\n";
 	} else {
@@ -1696,7 +1741,7 @@ sub Verbose {
 sub PrintResult {
   ### open output file ###
   if ($verbose >= 2) {
-    &RSAT::message::TimeWarn("Printing output file\t$outputfile");
+    &RSAT::message::TimeWarn("Printing output file\t$outfile{output}");
   }
 
   ## print verbose
@@ -1712,13 +1757,13 @@ sub PrintResult {
 	if ($return{'proba'}) {
 	  if ($tail eq "two") {
 	    @sorted_keys = sort {(($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}) ||
-				  ($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}))
+				  ($patterns{$b}->{'occ_sig'} <=>  $patterns{$a}->{'occ_sig'}))
 			       } keys %patterns;
 	  } else {
 	    ## two-criteria sorting, sig is prioritary, but
 	    ## zscore is useful when the proba reaches
 	    ## calculation limits
-	    @sorted_keys = sort {(($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}) ||
+	    @sorted_keys = sort {(($patterns{$b}->{'occ_sig'} <=>  $patterns{$a}->{'occ_sig'}) ||
 				  ($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}))
 			       } keys %patterns;
 	  }
@@ -1727,7 +1772,7 @@ sub PrintResult {
 	}
 	$sorted = 1;
       } elsif ($return{'proba'}) {
-	@sorted_keys = sort {$patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}} keys %patterns;
+	@sorted_keys = sort {$patterns{$b}->{'occ_sig'} <=> $patterns{$a}->{'occ_sig'}} keys %patterns;
 	$sorted = 1;
       } elsif ($return{'like'}) {
 	@sorted_keys = sort {$patterns{$b}->{occ_lkh} <=> $patterns{$a}->{occ_lkh}} keys %patterns;
@@ -1812,18 +1857,18 @@ sub PrintResult {
 
       ### occurrence probability
       if ($return{'proba'}) {
-	if ($patterns{$pattern_seq}->{occ_P} >= 0.0001) {
-	  printf $out "\t%.5f", $patterns{$pattern_seq}->{occ_P};
-	  printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
-	} elsif ($patterns{$pattern_seq}->{occ_P} <= 1e-100) {
-	  printf $out "\t%.0g", $patterns{$pattern_seq}->{occ_P};
-	  printf $out "\t%.0e", $patterns{$pattern_seq}->{occ_E};
+	if ($patterns{$pattern_seq}->{'occ_P'} >= 0.0001) {
+	  printf $out "\t%.5f", $patterns{$pattern_seq}->{'occ_P'};
+	  printf $out "\t%.1e", $patterns{$pattern_seq}->{'occ_E'};
+	} elsif ($patterns{$pattern_seq}->{'occ_P'} <= 1e-100) {
+	  printf $out "\t%.0g", $patterns{$pattern_seq}->{'occ_P'};
+	  printf $out "\t%.0e", $patterns{$pattern_seq}->{'occ_E'};
 	} else {
-	  printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_P};
-	  printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{'occ_P'};
+	  printf $out "\t%.1e", $patterns{$pattern_seq}->{'occ_E'};
 	}
 	#		printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_FWER};
-	printf $out "\t%.2f", $patterns{$pattern_seq}->{occ_sig};
+	printf $out "\t%.2f", $patterns{$pattern_seq}->{'occ_sig'};
       }
     }
 
@@ -1837,7 +1882,7 @@ sub PrintResult {
       $patterns{$pattern_seq}->{overlaps} = 0 if ($patterns{$pattern_seq}->{overlaps} eq "");
       print $out "\t", $patterns{$pattern_seq}->{overlaps};
       printf $out "\t%d", $patterns{$pattern_seq}->{forbocc};
-      #	    printf $out "\t%d", $patterns{$pattern_seq}->{notforb};
+      #	    printf $out "\t%d", $patterns{$pattern_seq}->{'notforb'};
     }
 
     ### zscore and variance estimate
@@ -1973,7 +2018,7 @@ sub ReadArguments {
 
 	    ## output file
 	} elsif ($arg eq "-o") {
-	    $outputfile = shift(@arguments);
+	    $outfile{output} = shift(@arguments);
 
 	    ### organism (for selecting an organism-specific background model)
 	} elsif ($arg =~ /^-org/i) {
@@ -2199,10 +2244,10 @@ sub ReadArguments {
 	    ## threshold on occurrence probability
 	} elsif ($arg eq "-thpo") {
 	    &Warning("Option -thpo is deprecated. Please use '-uth occ_P' instead.");
-	    $uth{occ_P} = shift(@arguments);
+	    $uth{'occ_P'} = shift(@arguments);
 	    $return{'proba'} = 1;
-	    &RSAT::error::FatalError($lth{occ_P}, "Invalid value for Proba threshold. Must be a Real number between 0 and 1.")
-		unless ((&IsReal($lth{occ_P})) && ($lth{occ_P} >= 0) && ($lth{occ_P} <= 1));
+	    &RSAT::error::FatalError($lth{'occ_P'}, "Invalid value for Proba threshold. Must be a Real number between 0 and 1.")
+		unless ((&IsReal($lth{'occ_P'})) && ($lth{'occ_P'} >= 0) && ($lth{'occ_P'} <= 1));
 
 	    ## threshold on obs/exp ratio
 	} elsif ($arg =~ /^-thrat/i) {
@@ -2226,11 +2271,11 @@ sub ReadArguments {
 	    ## threshold on occurrence significance
 	} elsif ($arg eq "-thosig") {
 	    &Warning("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
-	    $lth{occ_sig} = shift(@arguments);
+	    $lth{'occ_sig'} = shift(@arguments);
 	    $return{'occ'} = 1;
 	    $return{'proba'} = 1;
-	    &RSAT::error::FatalError($lth{occ_sig}, "Invalid value for significance threshold. Should be a Real number.") 
-		unless (&IsReal($lth{occ_sig}));
+	    &RSAT::error::FatalError($lth{'occ_sig'}, "Invalid value for significance threshold. Should be a Real number.") 
+		unless (&IsReal($lth{'occ_sig'}));
 
 
 	    ## threshold on matching sequence significance
