@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.141 2012/01/17 00:57:54 jvanheld Exp $
+# $Id: convert-matrix,v 1.142 2012/02/09 07:31:41 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -397,7 +397,7 @@ foreach my $matrix (@matrices) {
     } else {
       my $id = $matrix->get_attribute("id") || $matrix->get_attribute("identifier");
       my $ac = $matrix->get_attribute("accession") || $matrix->get_attribute("AC") || $id;
-      &RSAT::message::Debug("ac=".$ac, "id=".$id) if ($main::verbose >= 0);
+      &RSAT::message::Debug("ac=".$ac, "id=".$id) if ($main::verbose >= 3);
       $logo_file .= $ac || $id;
       $logo_file .= "_logo";
     }
