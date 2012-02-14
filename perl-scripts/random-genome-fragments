@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.28 2012/01/24 14:17:11 jvanheld Exp $
+# $Id: random-genome-fragments,v 1.29 2012/02/14 19:24:15 jvanheld Exp $
 #
 ############################################################
 
@@ -101,13 +101,23 @@ package main;
   our $null = "";
   our $assembly_version = "";
 
+
   ## Return fields
-  local %supported_return_fields = (
-				    coord=>1, ## coordinates
-				    seq=>1,   ## sequence
-				   );
+  our %supported_return_fields = (
+				  coord=>1, ## coordinates
+				  seq=>1,   ## sequence
+				 );
   $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
-  local %return_fields = ();	## Fields to return
+  our %return_fields = ();	## Fields to return
+
+  ## Reference formats
+  our %supported_ref_format = (
+			       bed=>1, ## bed coordinates
+			       fasta=>1,   ## fasta sequence
+			       len=>1,   ## sequence lengths
+			      );
+  $supported_ref_formats = join (",", sort(keys(%supported_ref_format)));
+  our $ref_format = "fasta";
 
   ################################################################
   ## Read argument values
@@ -122,15 +132,17 @@ package main;
 
   ################################################################
   ## File with template sequences
-  if ($main::infile{reference_file}) {
+  if ($main::infile{ref_file}) {
     ## Compute sequence lengths
     my $job_prefix = "random-genome-fragments";
     my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate;
     $main::infile{length_file} = "$TMP/$tmp_file_name".".lengths";
-    my $seqlength_cmd = "sequence-lengths -v 1 -i ".$main::infile{reference_file}." -o ".$main::infile{length_file};
+    my $seqlength_cmd = "sequence-lengths -v 1";
+    $seqlength_cmd .= " -i ".$main::infile{ref_file};
+    $seqlength_cmd .= " -format ".$ref_format;
+    $seqlength_cmd .= " -o ".$main::infile{length_file};
     &doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
   }
-
 
   ################################################################
   ## File with the specification of sequence lengths
@@ -229,7 +241,7 @@ package main;
       }
       unless ($slice_name =~ /:MT:/) { #Do not take into account mitochondrial genome.
 	&RSAT::message::Info(join ("\t", "Chromosome name", $slice_name) )
-	  if ($main::verbose >= 2);
+	  if ($main::verbose >= 4);
 	push (@main::contig_names, $slice_name);
 	$main::ens_chroms{$slice_name} = $slice;
       }
@@ -271,7 +283,7 @@ package main;
       $contig_length = $main::ens_chroms{$rand_contig_name}->length();
     }
     &RSAT::message::Info(join ("\t", "Random chrom", $rand_contig_name, "length",$contig_length) )
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 4);
 
     my $rand_fragment_size;
     if ($main::fragment_len) {
@@ -291,11 +303,14 @@ package main;
       $count ++;
       last if ($count == 5);	##
       &RSAT::message::Info(join ("\t", "Negative start value for contig", $rand_contig_name, "value",$rand_start) )
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 3);
     }
     ##exclude the contig from the analysis, if it is too difficult to get a fragment of the correct size.
     if ($rand_start < 1) {
-      &RSAT::message::Info(join ("\t", "Excluding", $rand_contig_name, "from contigs due to repetitive negative starts. Contig length:",$contig_length," fragment size:",$main::fragment_len) )
+      &RSAT::message::Info("Excluding", $rand_contig_name,
+			   "from contigs due to repetitive negative starts.",
+			   "Contig length: ".$contig_length,
+			   "Fragment size: ".$main::fragment_len)
 	if ($main::verbose >= 2);
       splice(@main::contig_names, $rand_contig, 1);
       $i--;
@@ -312,7 +327,7 @@ package main;
     my $seq_id = "rand_".$i;
 
     &RSAT::message::Info(join ("\t", "Random fragment", $seq_id, $rand_contig_name,$rand_start,$rand_end,$rand_strand) )
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 4);
 
     ################################################################
     ## Print sequences
@@ -462,12 +477,18 @@ allows to use the command within a pipe.
 
 Type of data to return. Supported values: seq | coord
 
-By default, coordinates (coord) are returned.
-For RSAT organisms, the return type can be 'seq' to retrieve
-sequences. The sequence format is fasta.
-For Ensembl organisms, use the coordinate file (in ft format) as input to
-I<retrieve-ensembl-seq.pl> with the options -ftfile YourCoordFile -ftfileformat ft.
-You can also use the tools of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the sequences from the coordinates.
+By default, coordinates (coord) are returned.  For RSAT organisms, the
+return type can be 'seq' to retrieve sequences. The sequence format is
+fasta.  For Ensembl organisms, use the coordinate file (in ft format)
+as input to I<retrieve-ensembl-seq.pl> with the options -ftfile
+YourCoordFile -ftfileformat ft.  You can also use the tools of
+sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the
+sequences from the coordinates.
+
+The option -return can be iterated to obtain both coordinates and
+sequences.
+
+ -return seq -return coord
 
 =cut
       } elsif ($arg eq "-return") {
@@ -593,27 +614,84 @@ This option is incompatible with options -lw and -rep.
 
 =pod
 
-=item	B<-iseq reference_sequences>
+=item	B<-i reference_file>
 
-Generate random sequences with the same lengths as a set of reference
-sequences. The difference with the -lf option is that the sequence
-lengths are automatically calculated.
+Generate random sequences with lengths specified in a reference
+file.
+
+Various reference types are supported (option I<-ref_format>):
+sequences (in fasta), genomic coordinates (in bed), sequence lengths.
 
 This option is incompatible with options -l and -n.
 
 =cut
-      } elsif ($arg eq "-iseq") {
-	$main::infile{reference_file} = shift(@arguments);
+      } elsif ($arg eq "-i") {
+	&RSAT::error::FatalError("Option -i is incompatible with option -lf") if ($main::infile{length_file});
+	$main::infile{ref_file} = shift(@arguments);
+
+=pod
+
+=item	B<-ref_format reference_format>
+
+Format for the reference set (specified with the option I<-i>).
+
+Supported formats:
+
+=over
+
+=item I<fasta (default)>
+
+References are provided as a fasta-formatted sequence file. The
+program I<random-genome-fragments> calls I<sequence-lengths> to define
+the reference lengths.
 
 
+=item I<bed>
+
+References are provided as a bed-formatted file of genomic
+coordinates. The program I<random-genome-fragments> calls
+I<sequence-lengths -format bed> to define the lengths of the bed
+features.
+
+Bed file must contain at least 3 columns, indicating, for each feature:
+
+=over
+
+=item 1. id (ignored)
+
+=item 2. start coordinate
+
+=item 3. end coordinate
+
+=back
+
+
+=item I<len>
+
+References are provided as a tab-delimited file indicating the length
+of each reference sequence (this file can be produced by
+I<sequence-lengths>).
+
+=back
+
+=cut
+      } elsif ($arg eq "-ref_format") {
+	$main::ref_format = shift(@arguments);
+	&RSAT::error::FatalError($main::ref_format, "Invalid reference format. Supported: ".$supported_ref_formats)
+	  unless ($supported_ref_format{$main::ref_format});
 
 =pod
 
 =item	B<-lf length file>
 
+Deprecated. Replaced by I<-i len_file -ref_format len>.
+Maintained for backward compatibility.
+
 Generate random sequences with the same lengths as a set of reference
 sequences. The sequence length file can be obtained with the command
-I<sequence-lengths>
+I<sequence-lengths>.
+
+This option is incompatible with options -l and -n.
 
 The length file contains two columns :
 
@@ -625,12 +703,11 @@ The length file contains two columns :
 
 =back
 
-This option is incompatible with options -l and -n.
-
 =cut
       } elsif ($arg eq "-lf") {
+	&RSAT::error::FatalError("Option -lf is incompatible with option -i") if ($main::infile{ref_file});
 	$main::infile{length_file} = shift(@arguments);
-
+	&RSAT::message::Warning("Option -lf is deprecated, use -i len_file -ref_format len");
 
 =pod
 
@@ -638,7 +715,7 @@ This option is incompatible with options -l and -n.
 
 The list of sequence lengths is repeated I<r> times.
 
-This option supposed that the option -lf or -iseq has been used. It is
+This option supposed that the option -lf or -i has been used. It is
 is incompatible with options -l and -n.
 
 =cut
@@ -707,7 +784,7 @@ package Ensembl_genome;
 	$dbname = $ref->{'Database'};
       }
     }
-    &RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 2);
+    &RSAT::message::Info ("dbname = ", $dbname) if ($main::verbose >= 2);
     $sth->finish();
     $dbh->disconnect();
     if ($dbname) {
