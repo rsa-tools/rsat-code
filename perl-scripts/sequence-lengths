@@ -13,41 +13,63 @@ $verbose = 0;
 
 &ReadArguments();
 
-
 ################################################################
 ## Check argument values
 
-&CheckInputSeqFormat($in_format);
+&CheckInputSeqFormat($in_format) unless ($in_format eq "bed");
 
-
-
-### open output file ###
+## Open output stream
 if (defined($outfile{output})) {
   $out = &OpenOutputFile($outfile{output});
 } else {
   $out = STDOUT;
 }
 
-##### read input #####
+## Open input stream
 if (defined($infile{input})) {
   ($in, $input_dir) = &OpenInputFile($infile{input});
 } else {
   $in = STDIN;
 }
 
-#### verbose ####
+## Verbose
 &Verbose if ($verbose);
 
 print $out "#seq", "\t", "length", "\n";
-
 $sum = 0;
-while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
-       (($current_seq ne "") || ($current_id ne ""))) {
-  
-  $length = length(&FoldSequence($current_seq,0));
-  $sum+= $length;
-  print $out $current_id, "\t", $length , "\n" 
-      unless ($sum_only);
+
+
+if ($in_format eq "bed") {
+    while (<$in>) {
+	next unless (/\S/); ## Skip empty rows
+	next if (/^#/); ## Skip comment lines
+	chomp();
+	my ($chrom, $start, $end) = split('\t');
+	unless ((&RSAT::util::IsNatural($start)) && 
+		(&RSAT::util::IsNatural($end))) {
+	    &RSAT::message::Warning("Skipping line", $l, "invalid start and end positions.") if ($main::verbose >= 2);
+	    next;
+	}
+	if ($start > $end) {	
+	    &RSAT::message::Warning("Skipping line", $l, "start ($start) larger than end ($end).") if ($main::verbose >= 2);
+	    next;
+	}
+
+	my $length = $end - $start + 1;
+	my $current_id = $chrom.":".$start."..".$end.":1";
+	$sum+= $length;
+	print $out $current_id, "\t", $length , "\n"
+	    unless ($sum_only);
+    }
+
+} else {
+    while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+	   (($current_seq ne "") || ($current_id ne ""))) {
+	$length = length(&FoldSequence($current_seq,0));
+	$sum+= $length;
+	print $out $current_id, "\t", $length , "\n"
+	    unless ($sum_only);
+    }
 }
 
 close $in if ($infile{input});
@@ -75,7 +97,7 @@ NAME
 	sequence-lengths
 
         1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
-	
+
 DESCRIPTION
 	Return the lengths of each sequence from an input
 	file. Otionally, return the sum of lengths.
@@ -88,17 +110,29 @@ USAGE
 
 OPTIONS
 	-h	(must be first argument) display full help message
+
 	-help	(must be first argument) display options
+
 	-v	verbose
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
+	-in_format   input format
+
+		The input file can contain either sequences or genomic
+		coordinates (-format bed).
+
+		For a list of supported input sequences, type
+		    convert-seq -help
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 		   text-mode
-	-sum	only return sum of sequene lengths 
 
+	-sum	only return sum of sequene lengths
 End_of_help
   close HELP;
   exit;
@@ -110,12 +144,13 @@ sub PrintOptions {
   print HELP <<End_short_help;
 sequence-lengths options
 ----------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--i	input file
--o	output file
--v	verbose
--sum	only return sum of sequene lengths 
+-h		display full help message
+-help		display options
+-i		input file
+-in_format    	input format (sequence or bed)
+-o		output file
+-v		verbose
+-sum		only return sum of sequene lengths
 End_short_help
   close HELP;
   exit;
@@ -132,31 +167,31 @@ sub ReadArguments {
       } else {
 	$verbose = 1;
       }
-      
+
       ### detailed help
     } elsif ($ARGV[$a] eq "-h") {
-      &PrintHelp;
-      
+      &PrintHelp();
+
       ### list of options
     } elsif ($ARGV[$a] eq "-help") {
-      &PrintOptions;
-      
+      &PrintOptions();
+
       ### input file ###
     } elsif ($ARGV[$a] eq "-i") {
       $infile{input} = $ARGV[$a+1];
-      
+
       ### output file ###
     } elsif ($ARGV[$a] eq "-o") {
       $outfile{output} = $ARGV[$a+1];
-      
+
       ### sequence format ###
     } elsif ($ARGV[$a] eq "-format") {
       $in_format = $ARGV[$a+1];
-      
+
       ### only return sum of lengths
     } elsif ($ARGV[$a] eq "-sum") {
 	$sum_only = 1;
-      
+
     }
   }
 }
