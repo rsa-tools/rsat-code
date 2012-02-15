@@ -1,0 +1,495 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: bed-to-seq,v 1.1 2012/02/15 06:23:30 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+bed-to-seq
+
+=head1 VERSION
+
+$program_version
+
+=Head1 DESCRIPTION
+
+Retrieve genome sequences for a set of coordinates specified in a bed
+file.
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+Derivd from a Perl script developed by Carl Herrmann.
+
+=head1 CATEGORY
+
+=over
+
+=item genomics
+
+=item sequences
+
+=back
+
+=head1 USAGE
+
+bed-to-seq [-i bedfile] [-o seqfile] [-v #] [...]
+
+
+Examples
+
+Retrieve peaks identified by the peak-calling program MACS.
+
+ bed-to-seq -i MACS_output_peaks.bed -genome mm8
+
+
+To retrieve regions of fixed width (200bp) centred on the peak
+summitsreturned by MACS.
+
+ bed-to-seq -i MACS_output_summits.bed -genome mm8 -extend 100
+
+
+=head1 INPUT FORMAT
+
+The definition of the BED format is provided on the UCSC Genome
+Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).
+
+The first three required BED fields are:
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold
+(e.g. scaffold10671).
+
+=item 2. chromStart
+
+The starting position of the feature in the chromosome or
+scaffold. The first base in a chromosome is numbered 0.
+
+=item 3. chromEnd
+
+The ending position of the feature in the chromosome or scaffold. The
+chromEnd base is not included in the display of the feature. For
+example, the first 100 bases of a chromosome are defined as
+chromStart=0, chromEnd=100, and span the bases numbered 0-99.
+
+=back
+
+The 9 additional optional BED fields are:
+
+=item 4. name
+
+Defines the name of the BED line. This label is displayed to the left
+of the BED line in the Genome Browser window when the track is open to
+full display mode or directly to the left of the item in pack mode.
+
+=item 5. score
+
+A score between 0 and 1000. If the track line useScore attribute is
+set to 1 for this annotation data set, the score value will determine
+the level of gray in which this feature is displayed (higher numbers =
+darker gray).
+
+=item 6. strand
+
+Defines the strand - either '+' or '-'.
+
+=item 7. thickStart
+
+The starting position at which the feature is drawn thickly (for
+example, the start codon in gene displays).
+
+=item 8. thickEnd
+
+The ending position at which the feature is drawn thickly (for
+example, the stop codon in gene displays).
+
+=item 9. itemRgb
+
+An RGB value of the form R,G,B (e.g. 255,0,0). If the track line
+itemRgb attribute is set to "On", this RBG value will determine the
+display color of the data contained in this BED line. NOTE: It is
+recommended that a simple color scheme (eight colors or less) be used
+with this attribute to avoid overwhelming the color resources of the
+Genome Browser and your Internet browser.
+
+=item 10. blockCount
+
+The number of blocks (exons) in the BED line.
+
+=item 11. blockSizes
+
+A comma-separated list of the block sizes. The number of items in this
+list should correspond to blockCount.
+
+=item 12. blockStarts
+
+A comma-separated list of block starts. All of the blockStart
+positions should be calculated relative to chromStart. The number of
+items in this list should correspond to blockCount.
+
+=head1 OUTPUT FORMAT
+
+Sequences are exported in fasta format.
+
+=head1 SEE ALSO
+
+=over
+
+=item I<peak-motifs>
+
+A common utilization of bed-to-seq is to retrieve UCSC sequences for
+the peak coordinates produced by a peak callinf program (e.g. MACS,
+SICER, SWEMBL, ...).
+
+=head1 WISH LIST
+
+=item B<-mask>
+
+Add support for UCSC masking options (coding, repetitive, ...).
+
+For the time being, all sequences are transformed to uppercases.
+
+=item B<check chromosome size>
+
+When the coordinates of one feature exceed chromosome size, the whole
+UCSC query fails. This poses problems with the option -extend, since
+the extended feature may reach chromosome ends. I should check the
+chromosome lengths, and restrict the extended end to these values.
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+use Bio::Das; ## Required to access UCSC Genome Browser
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $genome = "";
+  our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
+
+  ## Extend the coordinates on the left and right sides
+  our $left_extension = 0;
+  our $right_extension = 0;
+
+  ## Max number of sequences to retrieve
+  our $top = 0;
+
+  our @queries = (); ## List of queries for the DAS server
+  our %desc = (); ## Description for each query
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  unless ($genome) {
+    &RSAT::error::FatalError("Genome version must be specified (e.g. mm9, hg19)");
+  }
+
+  ## Define the URL fo the DAS server
+  our $das_server_url = $das_server.'/'.$genome;
+  &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
+
+  ## Open DAS client
+  my $das = Bio::Das->new(5);  # timeout of 5 sec
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+  my $i = 0;
+  while (<$main::in>) {
+    if (($top > 0) && ($i > $top)) {
+      &RSAT::message::Warning("Stopped after $top top queries. Further lines are ignored.");
+      last;
+    }
+    next if (/^#/); ## Skip comment lines
+    next unless (/\S/); ## Skip empty lines
+    chomp();
+    my ($chrom, $start, $end, $name) = split(/\t/);
+    $start -= &RSAT::stats::max(0, $left_extension);
+    $end += $right_extension;
+
+    my $query = $chrom.":".$start.",".$end;
+    $desc{$query} = $name || $query;
+    push(@queries, $query);
+    &RSAT::message::Debug("Query", $query, $desc{$query}) if ($main::verbose >= 5);
+
+    $i++;
+  }
+  close $main::in if ($main::infile{input});
+
+
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+
+  ## Send request to DAS server
+  my @request = $das->dna(-dsn=>[$das_server_url],-segment=> \@queries);
+
+  ################################################################
+  ## Print results
+  for my $request (@request) {
+    if ($request->is_success) {
+      my $results = $request->results;
+      while (($query,$sequence) = each %$results) {
+ 	print $out ">$query $desc{$query}\n";
+ 	print $out $sequence,"\n";
+      }
+    }
+    else { #error
+      &RSAT::message::Warning("Query returned error", $request->dsn,": ",$request->error);
+    }
+  }
+
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+The input file should be in bed format (see section INPUT FORMATS
+above).
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-genome genome_version>
+
+Genome version (e.g. mm9, hg19).
+
+This option is mandatory, since the bed files generally does not
+contain information about the genome.
+
+
+=cut
+    } elsif ($arg eq "-genome") {
+      $main::genome = shift(@arguments);
+
+
+=pod
+
+=item B<-left_ext #>
+
+Extend each region by # base pairs on the left side.
+
+Under others, this option is convenient to retrieve regions of fixed width around
+the summits of peak calling results (e.g. summit file produced by
+MACS).
+
+=item B<-right_ext #>
+
+Extend each region by # base pairs on the right side.
+
+=item B<-extend #>
+
+Extend each region by # base pairs on both left and right sides.
+
+=cut
+
+    } elsif ($arg eq "-left_ext") {
+      $main::left_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::left_extension, "Invalid value for left extension; should be an Integer") unless (&RSAT::util::IsInteger($left_extension));
+
+    } elsif ($arg eq "-right_ext") {
+      $main::right_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::right_extension, "Invalid value for right extension; should be an Integer") unless (&RSAT::util::IsInteger($left_extension));
+
+    } elsif ($arg eq "-extend") {
+      $main::left_extension = $main::right_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::right_extension, "Invalid value for extension; should be an Integer") unless (&RSAT::util::IsInteger($left_extension));
+
+=pod
+
+=item B<-top #>
+
+Only consider the # top features of the bed file as queries.
+
+This option is convenient for restricting the number of peak
+sequences, and for testing.
+
+=cut
+
+    } elsif ($arg eq "-top") {
+      $main::top = shift(@arguments);
+      &RSAT::error::FatalError($main::top, "Invalid value for top; should be an Integer") unless (&RSAT::util::IsInteger($top));
+
+
+=pod
+
+=item	B<-o outputfile>
+
+The output file is in fasta format.
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; bed-to-seq ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  printf $out "; %-22s\t%s\n", "Genome", $genome;
+  printf $out "; %-22s\t%s\n", "DAS server URL", $das_server_url;
+  printf $out "; %-22s\t%d\n", "Left extension", $left_extension;
+  printf $out "; %-22s\t%d\n", "Right extension", $right_extension;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+
+}
+
+
+__END__
