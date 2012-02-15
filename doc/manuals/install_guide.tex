@@ -448,6 +448,9 @@ section.
   turn is required for handling genomes installed on the ENSEMBL
   database (\url{http://www.ensembl.org/}).
 
+\item \program{Bio::Das} is required to retrieve sequences from DAS
+  servers with the program \program{bed-to-seq}.
+
 \item \program{LWP::Simple} is used by the Web interface, to fetch
   sequences from remote servers (URL of the sequence file specified in
   a text field).
@@ -488,13 +491,13 @@ cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
 
 ## Download the current version of EnsEMBL
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-64 ensembl
-## (you need to adapt the branch number, e.g. 64, as it updates).
+  checkout -r branch-ensembl-65 ensembl
+## (you need to adapt the branch number, e.g. 65, as it updates).
 
 ## Download the current version of the EnsEMBL module for comparative genomics
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-64 ensembl-compara
-## (you need to adapt the branch number, e.g. 64, as it updates).
+  checkout -r branch-ensembl-65 ensembl-compara
+## (you need to adapt the branch number, e.g. 65, as it updates).
 \end{lstlisting}
 %%$ 
 
@@ -542,7 +545,6 @@ setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl/modules
 setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-compara/modules
 setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-variation/modules
 \end{lstlisting}
-
 
 
 The EnsEMBL libraries also require the SQL client Perl module
