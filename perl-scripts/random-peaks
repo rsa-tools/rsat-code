@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-peaks,v 1.5 2011/10/11 21:28:43 jvanheld Exp $
+# $Id: random-peaks,v 1.6 2012/02/15 05:09:40 jvanheld Exp $
 #
 ############################################################
 
@@ -152,7 +152,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -238,7 +238,7 @@ package main;
 
   ## Peak file is mandatory
   &RSAT::error::FatalError("Peak file is mandatory (option -i)")
-    unless ($infile{peak_seq});
+    unless (($infile{peak_seq}) || ($infile{peak_bed));
 
   ## Output prefix is mandatory
   &RSAT::error::FatalError("Output prefix is mandatory (option -o)")
@@ -752,7 +752,7 @@ sub ComputeOligoComposition {
 
     ## Compute transition table
     my $transitions =  $outfile{$seq_type."_".$ol."nt_transitions"};
-    $cmd = $SCRIPTS."/oligo-analysis -v 1";
+    $cmd = $SCRIPTS."/oligo-analysis -v 1 -quick";
     $cmd .= " -i ".$seq_file;
     $cmd .= " -l ".$ol;
     $cmd .= " ".$main::param{strand};
@@ -773,7 +773,7 @@ sub ComputeOligoComposition {
   ## Compute sequence-wise frequencies
   &RSAT::message::TimeWarn("Computing sequence-wise ".$main::param{oligo_len}."nt composition in file", $seq_file) if ($main::verbose >= 2);
   my $oligo_file =  $outfile{$seq_type."_compo"};
-  $cmd = $SCRIPTS."/oligo-analysis -v 1";
+  $cmd = $SCRIPTS."/oligo-analysis -v 1 -quick";
   $cmd .= " -i ".$seq_file;
   $cmd .= " -l ".$main::param{oligo_len};
   $cmd .= " ".$main::param{strand};
