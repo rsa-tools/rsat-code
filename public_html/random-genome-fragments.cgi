@@ -18,7 +18,9 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/random-genome-fragments";
-$tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate;
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate();
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -39,16 +41,27 @@ $parameters = "";
 ############################################################
 ## Random fragments
 
-#### template file (optional)
-($template_sequence_file, $template_sequence_format) = &MultiGetSequenceFile(1, "$TMP/$tmp_file_name"."_template.fa", 0);
+## template file (optional)
+($template_file, $template_format) = &MultiGetSequenceFile(1, "$TMP/$tmp_file_name"."_template.fa", 0);
 
 ## a template file has been given
-if ($template_sequence_file) { 
-  ## calculates the sequence lengths from the input sequence file
+if ($template_file) {
+  push @result_files, ("Template file",$template_file);
+
+  ## Compute sequence lengths from the template sequence file
   my $length_file = "$TMP/$tmp_file_name".".lengths";
-  my $seqlength_cmd = "$SCRIPTS/sequence-lengths -v 1 -i ".$template_sequence_file." -o ".$length_file;
-  `$seqlength_cmd`;
-  $parameters .= " -lf $length_file ";
+  push @result_files, ("Sequence lengths",$length_file);
+
+  my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;
+  $seqlength_cmd .= " -format ".$template_format;
+  $seqlength_cmd .= " -o ".$length_file;
+  system($seqlength_cmd);
+
+  ## Add the sequence length file as template for random-genome-fragments
+#  $parameters .= " -template_format len -i ".$length_file;
+
+  $parameters .= " -template_format seq -i ".$template_file;
+
 } else {
   #### number of fragments
   $frag_nb = $query->param('frag_nb');
@@ -68,9 +81,7 @@ if ($template_sequence_file) {
 }
 
 ############################################################
-## Organims
-
-#### organism 
+## Organim
 if ($query->param('org_select')) {
   ## RSAT organism
   if ($query->param('org_select') eq "rsat_org"){
@@ -119,6 +130,10 @@ if ($query->param('rm') =~ /on/) {
   $parameters .= " -rm ";
 }
 
+## Output file
+$result_file = "$TMP/$tmp_file_name.res";
+push @result_files, ("Genome fragments",$result_file);
+
 ############################################################
 ## Command
 
@@ -131,14 +146,14 @@ if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
   &PipingWarning();
 
-   ### print the result
-    print '<H4>Result</H4>';
+
+  ### print the result
+  print '<H4>Result</H4>';
 
   ### open the sequence file on the server
-  $sequence_file = "$TMP/$tmp_file_name.res";
-  if (open MIRROR, ">$sequence_file") {
+  if (open MIRROR, ">$result_file") {
     $mirror = 1;
-    &DelayedRemoval($sequence_file);
+    &DelayedRemoval($result_file);
   }
 
   print "<PRE>";
@@ -150,10 +165,15 @@ if (($query->param('output') =~ /display/i) ||
   close RESULT;
   close MIRROR if ($mirror);
 
-  $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-  print ("The result is available at the following URL: ", "\n<br>",
-	 "<a href=${result_URL}>${result_URL}</a>",
-	 "<p>\n");
+
+
+  ## Print table with links to the result files
+  &PrintURLTable(@result_files);
+#   $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
+#   print ("The result is available at the following URL: ", "\n<br>",
+# 	 "<a href=${result_URL}>${result_URL}</a>",
+# 	 "<p>\n");
+
 
   ### prepare data for piping
   if ($query->param('outputformat') eq "outputseq"){
