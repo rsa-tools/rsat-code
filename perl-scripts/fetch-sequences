@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.1 2012/02/15 08:16:21 jvanheld Exp $
+# $Id: fetch-sequences,v 1.2 2012/02/15 08:57:39 jvanheld Exp $
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-bed-to-seq
+fetch-sequences
 
 =head1 VERSION
 
@@ -40,20 +40,20 @@ Derivd from a Perl script developed by Carl Herrmann.
 
 =head1 USAGE
 
-bed-to-seq [-i bedfile] [-o seqfile] [-v #] [...]
+fetch-sequences [-i bedfile] [-o seqfile] [-v #] [...]
 
 
 Examples
 
 Retrieve peaks identified by the peak-calling program MACS.
 
- bed-to-seq -i MACS_output_peaks.bed -genome mm8
+ fetch-sequences -i MACS_output_peaks.bed -genome mm8
 
 
 To retrieve regions of fixed width (200bp) centred on the peak
 summitsreturned by MACS.
 
- bed-to-seq -i MACS_output_summits.bed -genome mm8 -extend 100
+ fetch-sequences -i MACS_output_summits.bed -genome mm8 -extend 100
 
 
 =head1 INPUT FORMAT
@@ -147,7 +147,7 @@ Sequences are exported in fasta format.
 
 =item I<peak-motifs>
 
-A common utilization of bed-to-seq is to retrieve UCSC sequences for
+A common utilization of fetch-sequences is to retrieve UCSC sequences for
 the peak coordinates produced by a peak callinf program (e.g. MACS,
 SICER, SWEMBL, ...).
 
@@ -187,7 +187,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -531,7 +531,7 @@ allows to use the command within a pipe.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $out "; bed-to-seq ";
+  print $out "; fetch-sequences ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   printf $out "; %-22s\t%s\n", "Genome", $genome;
