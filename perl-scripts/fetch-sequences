@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.2 2012/02/15 08:57:39 jvanheld Exp $
+# $Id: fetch-sequences,v 1.3 2012/02/15 14:38:32 jvanheld Exp $
 #
 ############################################################
 
@@ -187,7 +187,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -242,17 +242,33 @@ package main;
   ## Read input
   ($main::in) = &OpenInputFile($main::infile{input});
   my $i = 0;
+  my $l = 0;
   while (<$main::in>) {
+    $l++;
+    next if (/^#/); ## Skip comment lines
+    next unless (/\S/); ## Skip empty lines
+    chomp();
+
     if (($top > 0) && ($i >= $top)) {
       &RSAT::message::Warning("Stopped after $top top queries. Further lines are ignored.");
       last;
     }
-    next if (/^#/); ## Skip comment lines
-    next unless (/\S/); ## Skip empty lines
-    chomp();
     my ($chrom, $start, $end, $name) = split(/\t/);
+
+    unless (&RSAT::util::IsNatural($start)) {
+      &RSAT::message::Warning($start, "Invalid start position", "skipping line", $l);
+      push @skipped_rows, $_;
+      next;
+    }
+    unless (&RSAT::util::IsNatural($end)) {
+      &RSAT::message::Warning($end, "Invalid start position", "skipping line", $l);
+      push @skipped_rows, $_;
+      next;
+    }
     $start -= &RSAT::stats::max(0, $left_extension);
     $end += $right_extension;
+
+#    &RSAT::message::Debug("chrom=".$chrom, "start=".$start, "end=".$end) aif ($main::verbose >= 5);
 
     my $query = $chrom.":".$start.",".$end;
     if ($header_format eq 'ucsc') {
@@ -260,10 +276,10 @@ package main;
     } elsif ($header_format eq "galaxy") {
       $header{$query} = ">".$genome."_".$chrom."_".$start."_".$end."_+";
     } else {
-      $desc{$query} = $name || $query;
+      $header{$query} = $name || $query;
     }
     push(@queries, $query);
-    &RSAT::message::Debug("Query", $query, $desc{$query}) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Query", $query, $header{$query}) if ($main::verbose >= 5);
 
     $i++;
   }
