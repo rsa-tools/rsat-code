@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.29 2012/02/14 19:24:15 jvanheld Exp $
+# $Id: random-genome-fragments,v 1.30 2012/02/15 05:08:34 jvanheld Exp $
 #
 ############################################################
 
@@ -110,14 +110,14 @@ package main;
   $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
   our %return_fields = ();	## Fields to return
 
-  ## Reference formats
-  our %supported_ref_format = (
+  ## Template formats
+  our %supported_template_format = (
 			       bed=>1, ## bed coordinates
 			       fasta=>1,   ## fasta sequence
 			       len=>1,   ## sequence lengths
 			      );
-  $supported_ref_formats = join (",", sort(keys(%supported_ref_format)));
-  our $ref_format = "fasta";
+  $supported_template_formats = join (",", sort(keys(%supported_template_format)));
+  our $template_format = "fasta";
 
   ################################################################
   ## Read argument values
@@ -132,22 +132,27 @@ package main;
 
   ################################################################
   ## File with template sequences
-  if ($main::infile{ref_file}) {
-    ## Compute sequence lengths
-    my $job_prefix = "random-genome-fragments";
-    my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate;
-    $main::infile{length_file} = "$TMP/$tmp_file_name".".lengths";
-    my $seqlength_cmd = "sequence-lengths -v 1";
-    $seqlength_cmd .= " -i ".$main::infile{ref_file};
-    $seqlength_cmd .= " -format ".$ref_format;
-    $seqlength_cmd .= " -o ".$main::infile{length_file};
-    &doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
+  if ($main::infile{template_file}) {
+
+    if ($template_format eq "len") {
+      $main::outfile{length_file} = $main::infile{template_file};
+    } else {
+      ## Compute sequence lengths
+      my $job_prefix = "random-genome-fragments";
+      my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate;
+      $main::outfile{length_file} = "$TMP/$tmp_file_name".".lengths";
+      my $seqlength_cmd = "sequence-lengths -v 1";
+      $seqlength_cmd .= " -i ".$main::infile{template_file};
+      $seqlength_cmd .= " -format ".$template_format;
+      $seqlength_cmd .= " -o ".$main::outfile{length_file};
+      &doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
+    }
   }
 
   ################################################################
   ## File with the specification of sequence lengths
-  if ($main::infile{length_file}) {
-    my ($len_handle, $input_dir) = &OpenInputFile($main::infile{length_file});
+  if ($main::outfile{length_file}) {
+    my ($len_handle, $input_dir) = &OpenInputFile($main::outfile{length_file});
 
     while (my $line = <$len_handle>) {
       chomp($line);
@@ -614,26 +619,26 @@ This option is incompatible with options -lw and -rep.
 
 =pod
 
-=item	B<-i reference_file>
+=item	B<-i template_file>
 
-Generate random sequences with lengths specified in a reference
+Generate random sequences with lengths specified in a template
 file.
 
-Various reference types are supported (option I<-ref_format>):
+Various template types are supported (option I<-template_format>):
 sequences (in fasta), genomic coordinates (in bed), sequence lengths.
 
 This option is incompatible with options -l and -n.
 
 =cut
       } elsif ($arg eq "-i") {
-	&RSAT::error::FatalError("Option -i is incompatible with option -lf") if ($main::infile{length_file});
-	$main::infile{ref_file} = shift(@arguments);
+	&RSAT::error::FatalError("Option -i is incompatible with option -lf") if ($main::outfile{length_file});
+	$main::infile{template_file} = shift(@arguments);
 
 =pod
 
-=item	B<-ref_format reference_format>
+=item	B<-template_format template_format>
 
-Format for the reference set (specified with the option I<-i>).
+Format for the template set (specified with the option I<-i>).
 
 Supported formats:
 
@@ -641,14 +646,14 @@ Supported formats:
 
 =item I<fasta (default)>
 
-References are provided as a fasta-formatted sequence file. The
+Templates are provided as a fasta-formatted sequence file. The
 program I<random-genome-fragments> calls I<sequence-lengths> to define
-the reference lengths.
+the template lengths.
 
 
 =item I<bed>
 
-References are provided as a bed-formatted file of genomic
+Templates are provided as a bed-formatted file of genomic
 coordinates. The program I<random-genome-fragments> calls
 I<sequence-lengths -format bed> to define the lengths of the bed
 features.
@@ -668,26 +673,26 @@ Bed file must contain at least 3 columns, indicating, for each feature:
 
 =item I<len>
 
-References are provided as a tab-delimited file indicating the length
-of each reference sequence (this file can be produced by
+Templates are provided as a tab-delimited file indicating the length
+of each template sequence (this file can be produced by
 I<sequence-lengths>).
 
 =back
 
 =cut
-      } elsif ($arg eq "-ref_format") {
-	$main::ref_format = shift(@arguments);
-	&RSAT::error::FatalError($main::ref_format, "Invalid reference format. Supported: ".$supported_ref_formats)
-	  unless ($supported_ref_format{$main::ref_format});
+      } elsif ($arg eq "-template_format") {
+	$main::template_format = shift(@arguments);
+	&RSAT::error::FatalError($main::template_format, "Invalid template format. Supported: ".$supported_template_formats)
+	  unless ($supported_template_format{$main::template_format});
 
 =pod
 
 =item	B<-lf length file>
 
-Deprecated. Replaced by I<-i len_file -ref_format len>.
+Deprecated. Replaced by I<-i len_file -template_format len>.
 Maintained for backward compatibility.
 
-Generate random sequences with the same lengths as a set of reference
+Generate random sequences with the same lengths as a set of template
 sequences. The sequence length file can be obtained with the command
 I<sequence-lengths>.
 
@@ -705,9 +710,9 @@ The length file contains two columns :
 
 =cut
       } elsif ($arg eq "-lf") {
-	&RSAT::error::FatalError("Option -lf is incompatible with option -i") if ($main::infile{ref_file});
-	$main::infile{length_file} = shift(@arguments);
-	&RSAT::message::Warning("Option -lf is deprecated, use -i len_file -ref_format len");
+	&RSAT::error::FatalError("Option -lf is incompatible with option -i") if ($main::infile{template_file});
+	$main::outfile{length_file} = shift(@arguments);
+	&RSAT::message::Warning("Option -lf is deprecated, use -i len_file -template_format len");
 
 =pod
 
