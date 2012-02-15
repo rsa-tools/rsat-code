@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: bed-to-seq,v 1.1 2012/02/15 06:23:30 jvanheld Exp $
+# $Id: bed-to-seq,v 1.2 2012/02/15 06:29:20 jvanheld Exp $
 #
 ############################################################
 
@@ -187,7 +187,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -275,7 +275,8 @@ package main;
       my $results = $request->results;
       while (($query,$sequence) = each %$results) {
  	print $out ">$query $desc{$query}\n";
- 	print $out $sequence,"\n";
+ 	print $out uc($sequence),"\n"; ## TEMPORARY: convert all sequences to uppercases
+# 	print $out $sequence,"\n";
       }
     }
     else { #error
