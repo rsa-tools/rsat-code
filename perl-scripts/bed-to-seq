@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: bed-to-seq,v 1.2 2012/02/15 06:29:20 jvanheld Exp $
+# $Id: bed-to-seq,v 1.3 2012/02/15 06:44:16 jvanheld Exp $
 #
 ############################################################
 
@@ -187,7 +187,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -196,6 +196,15 @@ package main;
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
+
+  our @supported_headers = qw(ucsc galaxy);
+  our $supported_headers = join ",", @supported_headers;
+  our %supported_header  =();
+  foreach my $header (@supported_headers) {
+    $supported_header{$header} = 1;
+  }
+  our $header_format = "ucsc";
+
 
   our $genome = "";
   our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
@@ -208,7 +217,7 @@ package main;
   our $top = 0;
 
   our @queries = (); ## List of queries for the DAS server
-  our %desc = (); ## Description for each query
+  our %header = (); ## Header for each sequence
 
   ################################################################
   ## Read argument values
@@ -245,7 +254,13 @@ package main;
     $end += $right_extension;
 
     my $query = $chrom.":".$start.",".$end;
-    $desc{$query} = $name || $query;
+    if ($header_format eq 'ucsc') {
+      $header{$query} = ">".$genome."_".$chrom."_".$start."_".$end."+\trange=".$chrom.":".$start."-".$end." 5'pad=0 3'pad=0 strand=+ repeatMasking=none";
+    } elsif ($header_format eq "galaxy") {
+      $header{$query} = ">".$genome."_".$chrom."_".$start."_".$end."_+";
+    } else {
+      $desc{$query} = $name || $query;
+    }
     push(@queries, $query);
     &RSAT::message::Debug("Query", $query, $desc{$query}) if ($main::verbose >= 5);
 
@@ -274,7 +289,7 @@ package main;
     if ($request->is_success) {
       my $results = $request->results;
       while (($query,$sequence) = each %$results) {
- 	print $out ">$query $desc{$query}\n";
+ 	print $out $header{$query}, "\n";
  	print $out uc($sequence),"\n"; ## TEMPORARY: convert all sequences to uppercases
 # 	print $out $sequence,"\n";
       }
@@ -390,6 +405,26 @@ contain information about the genome.
     } elsif ($arg eq "-genome") {
       $main::genome = shift(@arguments);
 
+=pod
+
+=item B<-header_format header_format>
+
+Format for sequence headers.
+
+Supported header formats.
+
+=over
+
+=item I<UCSC (default)>
+
+=item I<galaxy>
+
+=back
+
+=cut
+    } elsif ($arg eq "-header_format") {
+      $main::header_format = lc(shift(@arguments));
+      &RSAT::error::FatalError($main::header_format, "Invalid header format. Supported: ".$supported_headers) unless ($supported_header{$main::header_format});
 
 =pod
 
