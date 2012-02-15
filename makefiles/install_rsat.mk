@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.56 2012/01/09 00:54:22 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.57 2012/02/15 06:23:52 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -71,7 +71,8 @@ PERL_MODULES= \
 	GD \
 	DB_File \
 	LWP::Simple \
-	Bio::Perl
+	Bio::Perl \
+	Bio::Das
 list_perl_modules:
 	@echo
 	@echo "Perl modules required for RSAT"
