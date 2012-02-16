@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.5 2012/02/16 19:26:16 jvanheld Exp $
+# $Id: fetch-sequences,v 1.6 2012/02/16 20:01:16 jvanheld Exp $
 #
 ############################################################
 
@@ -187,7 +187,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -221,8 +221,7 @@ package main;
 
   ## Parameters for connecting the DAS server
   our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
-  our $max_trials = 3;
-
+  our $max_trials = 5;
 
   ################################################################
   ## Read argument values
@@ -307,13 +306,15 @@ package main;
   my $next_chunk_size;
   my $trial_nb = 1;
   while ($remaining = scalar(@queries)) {
-
-    ## Splice a chunk of queries from the list
-    unless ($error) {
+    if ($error) {
+      &RSAT::message::TimeWarn("Retrying, trial number", $trial_nb);
+    } else {
+      ## Splice a chunk of queries from the list
       $next_chunk_size = &RSAT::stats::min($chunk, $remaining);
       @query_chunk = splice (@queries, 0, $next_chunk_size);
       &RSAT::message::Debug("Query chunk", join "; ", @query_chunk) if ($main::verbose >= 10);
-      &RSAT::message::TimeWarn( "Remaining queries", $remaining, ,"Treating next chunk",$next_chunk_size, scalar(@query_chunk) ) if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn( "Remaining queries", $remaining, ,"Treating next chunk",$next_chunk_size, scalar(@query_chunk) ) 
+	if ($main::verbose >= 0);
     }
 
     ## Send request to DAS server
@@ -342,7 +343,6 @@ package main;
 	if ($trial_nb >= $max_trials) {
 	  &RSAT::error::FatalError("Giving up after ".$trial_nb." unsuccessful requests to DAS server", $das_server_url);
 	} else {
-	  &RSAT::message::TimeWarn("Retrying, trial number", $trial_nb);
 	  $trial_nb++;
 	}
       }
