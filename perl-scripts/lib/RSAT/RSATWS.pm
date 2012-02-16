@@ -1085,6 +1085,7 @@ sub peak_motifs_cmd {
     my $graph_title = $args{"graph_title"};
     my $image_format = $args{"image_format"};
     my $disco = $args{"disco"};
+    my $source = $args{"source"};
     my $task = $args{"task"};
 
     my $command = "$SCRIPTS/peak-motifs";
@@ -1134,6 +1135,11 @@ sub peak_motifs_cmd {
 	$image_format =~ s/\"//g;
 	$command .= " -img_format '".$image_format."'";
     }
+
+    if ($source) {
+	$source =~ s/\'//g;
+	$source =~ s/\"//g;
+	$command .= " -source '".$source."'";
 
     if ($task) {
 	$task =~ s/\'//g;
