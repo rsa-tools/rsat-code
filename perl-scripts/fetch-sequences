@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.4 2012/02/16 17:47:19 jvanheld Exp $
+# $Id: fetch-sequences,v 1.5 2012/02/16 19:26:16 jvanheld Exp $
 #
 ############################################################
 
@@ -187,7 +187,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -302,40 +302,48 @@ package main;
 
 
   ## Split queries in chunks to avoid timeout
+  my @query_chunk = ();
+  my $error = 0;
+  my $next_chunk_size;
+  my $trial_nb = 1;
   while ($remaining = scalar(@queries)) {
-    my $next_chunk_size = &RSAT::stats::min($chunk, $remaining);
-    my @query_chunk = splice (@queries, 0, $next_chunk_size);
 
-    &RSAT::message::Debug("Query chunk", join "; ", @query_chunk) if ($main::verbose >= 10);
+    ## Splice a chunk of queries from the list
+    unless ($error) {
+      $next_chunk_size = &RSAT::stats::min($chunk, $remaining);
+      @query_chunk = splice (@queries, 0, $next_chunk_size);
+      &RSAT::message::Debug("Query chunk", join "; ", @query_chunk) if ($main::verbose >= 10);
+      &RSAT::message::TimeWarn( "Remaining queries", $remaining, ,"Treating next chunk",$next_chunk_size, scalar(@query_chunk) ) if ($main::verbose >= 0);
+    }
 
-    &RSAT::message::TimeWarn( "Remaining queries", $remaining, ,"Treating next chunk",$next_chunk_size, scalar(@query_chunk) ) if ($main::verbose >= 0);
+    ## Send request to DAS server
+    &RSAT::message::TimeWarn("Sending request to DAS server", $das_server_url) if ($main::verbose >= 3);
+    my @request = $das->dna(-dsn=>[$das_server_url],-segment=> \@query_chunk);
 
-    my $trial_nb = 0;
-    my $success = 0;
-    while (($trial_nb < $max_trials) || ($success == 0)){
-      ## Send request to DAS server
-      my @request = $das->dna(-dsn=>[$das_server_url],-segment=> \@query_chunk);
+    ################################################################
+    ## Treat request results
+    for my $request (@request) {
+      &RSAT::message::TimeWarn("Treating result") if ($main::verbose >= 3);
+      if ($request->is_success) {
+	my $results = $request->results;
+	while (($query,$sequence) = each %$results) {
+	  print $out $header{$query}, "\n";
+	  print $out uc($sequence),"\n"; ## TEMPORARY: convert all sequences to uppercases
+	  # 	print $out $sequence,"\n";
+	}
 
-      ################################################################
-      ## Print results
-      for my $request (@request) {
-	if ($request->is_success) {
-	  my $success = 1;
-	  my $results = $request->results;
-	  while (($query,$sequence) = each %$results) {
-	    print $out $header{$query}, "\n";
-	    print $out uc($sequence),"\n"; ## TEMPORARY: convert all sequences to uppercases
-	    # 	print $out $sequence,"\n";
-	  }
-	} else { 
-	  ## Report error
-	  &RSAT::message::Warning("DAS request returned error", $request->dsn,": ",$request->error);
+	## Reset error and trial counter
+	$error = 0;
+	$trial_nb = 1;
+      } else { 
+	## Report error
+	$error = 1;
+	&RSAT::message::Warning("DAS request returned error", $request->dsn,": ",$request->error);
+	if ($trial_nb >= $max_trials) {
+	  &RSAT::error::FatalError("Giving up after ".$trial_nb." unsuccessful requests to DAS server", $das_server_url);
+	} else {
+	  &RSAT::message::TimeWarn("Retrying, trial number", $trial_nb);
 	  $trial_nb++;
-	  if ($trial_nb >= $max_trials) {
-	    &RSAT::error::FatalError("Giving up after ".$trial_nb." unsuccessful requests to DAS server", $das_server_url);
-	  } else {
-	    &RSAT::message::TimeWarn("Retrying, trial number", $trial_nb);
-	  }
 	}
       }
     }
