@@ -950,14 +950,14 @@ sub peak_motifs {
 #     }
 
     my $tmp_synthesis = $output_path."/".$output_prefix."_synthesis.html";
-    $tmp_synthesis =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    $tmp_synthesis =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
     my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
-    $tmp_outzip =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    $tmp_outzip =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
     my $result_url = $output_path;
-    $result_url =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    $result_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
     my $error_file = $output_path.".err";
     my $error_url = $error_file;
-    $error_url =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    $error_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
 
     my $response = "The server is now processing your request.\n";
     $reponse .= "You can follow its status while running at the following URL\n";
@@ -1104,7 +1104,7 @@ sub peak_motifs_cmd {
     if ($ref_motif) {
       $ref_motif =~ s/\'//g;
       $ref_motif =~ s/\"//g;
-      $command .= " -ref_motif '".$ref_motif."'";
+      $command .= " -ref_motifs'".$ref_motif."'";
     }
 
     if ($noov == 1) {
