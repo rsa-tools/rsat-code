@@ -1140,6 +1140,7 @@ sub peak_motifs_cmd {
 	$source =~ s/\'//g;
 	$source =~ s/\"//g;
 	$command .= " -source '".$source."'";
+    }
 
     if ($task) {
 	$task =~ s/\'//g;
