@@ -960,7 +960,7 @@ sub peak_motifs {
     $error_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
 
     my $response = "The server is now processing your request.\n";
-    $reponse .= "You can follow its status while running at the following URL\n";
+    $response .= "You can follow its status while running at the following URL\n";
     $response .= "\t$tmp_synthesis\n";
     $response .= "Once it will be finished, the result will become available at the following URL\n";
     $response .= "\t$result_url\n";
