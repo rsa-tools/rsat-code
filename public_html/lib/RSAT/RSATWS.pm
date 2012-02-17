@@ -1041,7 +1041,17 @@ sub peak_motifs_cmd {
     my $verbosity = $args{'verbosity'};
     my $max_seq_length = $args{"max_seq_length"};
     my $max_motif_number = $args{"max_motif_number"};
-    my $ref_motif = $args{"ref_motif"};
+
+    if ($args{"ref_motif"}) {
+        my $ref_motif = $args{"ref_motif"};
+        chomp $ref_motif;
+        $tmp_ref_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+        open TMP_REF, ">".$tmp_ref_motif_infile or die "cannot open temp file ".$tmp_ref_motif_infile."\n";
+        print TMP_REF $ref_motif;
+        close TMP_REF;
+    }
+    chomp $tmp_ref_motif_infile;
+
     my $top_peaks = $args{"top_peaks"};
     my $min_length = $args{"min_length"};
     my $max_length = $args{"max_length"};
@@ -1102,11 +1112,11 @@ sub peak_motifs_cmd {
 	$command .= " -max_seq_len '".$max_seq_length."'";
     }
 
-    if ($ref_motif) {
-      $ref_motif =~ s/\'//g;
-      $ref_motif =~ s/\"//g;
-      $command .= " -ref_motifs'".$ref_motif."'";
-    }
+#    if ($ref_motif) {
+#      $ref_motif =~ s/\'//g;
+#      $ref_motif =~ s/\"//g;
+#      $command .= " -ref_motifs'".$ref_motif."'";
+#    }
 
     if ($noov == 1) {
       $command .= " -noov";
@@ -1206,6 +1216,10 @@ sub peak_motifs_cmd {
 
     if ($tmp_control_infile) {
         $command .= " -ctrl '".$tmp_control_infile."'";
+    }
+
+    if ($tmp_ref_motif_infile) {
+	$command .= " -ref_motifs '".$tmp_ref_motif_infile."'";
     }
 
     return $command;
