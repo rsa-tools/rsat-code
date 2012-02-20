@@ -58,9 +58,9 @@ if ($template_file) {
   system($seqlength_cmd);
 
   ## Add the sequence length file as template for random-genome-fragments
-#  $parameters .= " -template_format len -i ".$length_file;
+  $parameters .= " -template_format len -i ".$length_file;
 
-  $parameters .= " -template_format seq -i ".$template_file;
+#  $parameters .= " -template_format fasta -i ".$template_file;
 
 } else {
   #### number of fragments
