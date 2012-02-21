@@ -149,10 +149,11 @@ class HistogramProcessor( Processor):
                 hit_number = motif_stats.getAttributeAsint( MotifStatistics.MOTIF_HIT_SCORE)
                 
                 # Initialize the motif prefix ID
-                if motif_id != None and len( motif_id) > 0:
-                    prefix_id = "_" + motif_id
-                else:
-                    prefix_id = ""
+                #if motif_id != None and len( motif_id) > 0:
+                #    prefix_id = "_" + motif_id
+                #else:
+                #    prefix_id = ""
+                prefix_id = "";
                 
                 # save the stats to a tabbed file for classfreq command
                 input_path = os.path.join( dir_path, motif_name + prefix_id + "_Distances.tab")
