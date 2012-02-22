@@ -913,7 +913,12 @@ sub oligo_diff {
     &run_WS_command($command, $output_choice, "oligo-diff", ".tab");
 }
 
-##########
+################################################################
+## peak-motifs
+##
+## ATTENTION: THE ADDRESS IS HARD-CODED in the code !!! For some reason we
+## cannot access the properties from RSAT_config.props.  This should be
+## fixed.
 sub peak_motifs {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
