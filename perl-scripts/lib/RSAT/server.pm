@@ -126,6 +126,10 @@ sub UpdateLogFile {
     $script_name = &RSAT::util::ShortFileName($0);
   }
 
+  unless ($log_file) {
+      $log_file = $main::log_file;
+  }
+
   &RSAT::message::Debug("&RSAT::server::UpdateLogFile()",
 			"<p>script=".$script_name,
 			"<p>message=".$message,
@@ -410,7 +414,6 @@ sub InitRSAT {
   $main::log_file = join("", $LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
   $main::exec_time_log_file = join("", $LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::start_time_log_file = join("", $LOGS, "/start_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
-
   $main::date = &RSAT::util::AlphaDate();
 }
 
