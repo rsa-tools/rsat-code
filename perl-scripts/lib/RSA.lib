@@ -575,7 +575,7 @@ sub UpdateCounterFile {
 sub UpdateLogFile {
   my ($script_name, $message) = @_;
   my $user_email = $query->param('user_email') || "";
-#  &RSAT::message::Debug("Log file=", $log_file) if ($main::verbose >= 4);
+  &RSAT::message::Debug("Log file=", $log_file) if ($main::verbose >= 5);
   &RSAT::server::UpdateLogFile($script_name, $message, $log_file, $user_email);
 }
 
