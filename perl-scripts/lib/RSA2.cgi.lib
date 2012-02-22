@@ -1529,6 +1529,8 @@ sub EmailTheResult {
     my $mail_title = $args{title};
     my $no_email = $args{no_email} || 0;
 
+
+
     my $clean_command = &RSAT::util::hide_RSAT_path($command);
     ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
     $clean_command =~ s|\$|\\\$|;
@@ -1579,6 +1581,7 @@ sub EmailTheResult {
     unless ($no_email) {
       my $submission_mail_command = "echo \"".$submission_message."\" ";
       $submission_mail_command .= " | mail -s \'".$mail_title." submission\' ".$email_address;
+      print "<PRE>Mail: $submission_mail_command</PRE>" if ($ENV{rsat_echo} >= 1);
       system($submission_mail_command);
     }
 
