@@ -72,9 +72,9 @@
     echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
   }
   echo ("&nbsp;&nbsp;&nbsp;<B><a href = 'help.display_graph.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
-  <option value = 'png'> PNG
+  <option selected value = 'png'> PNG
   <option value = 'ps'> PS
-  <option selected value = 'jpeg'> JPEG
+  <option value = 'jpeg'> JPEG
   </select><br><br>");
   if (!$pipe) {
     if ($demo) {
