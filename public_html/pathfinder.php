@@ -25,6 +25,7 @@
   $default_attribs = "";
   $algorithm = "rea";
   $tab_java = 1;
+  $noHTMLTable = 1;
   $tmpGraphFile = "";
   # server-related params
   $result_location = $tmp.'/';
@@ -64,6 +65,7 @@
   $exAttrib = $_REQUEST['exAttrib'];
   $metabolic = $_REQUEST['metabolic'];
   $email = $_REQUEST['email'];
+  # $neat_java_wsdl = 'http://localhost:8080/be.ac.ulb.bigre.graphtools.server/services/GraphAlgorithms';
 
   ############ Check input ########################
 
@@ -210,9 +212,9 @@
         # Execute the command
         $functions = $client->__getFunctions();
         $types = $client->__getTypes();
-        # info(print_r($parameters));
-        # info(print_r($functions));
-        # info(print_r($types));
+        #info(print_r($parameters));
+        #info(print_r($functions));
+        #info(print_r($types));
  	  try{
         $echoed = $client->pathfinding($parameters);
         }catch(SoapFault $fault){
@@ -246,14 +248,15 @@
         	echo("<font color='red'>Warning: Path enumeration was interrupted by a time out. Paths might have been missed!</font>");
         }
         # Display the results
+    	# echo($command);
     	$resultURL = rsat_path_to_url($server);
-        $URL['tab'] = $resultURL;
+        $URL['result'] = $resultURL;
 			
     	# store command in a file
         store_command("$command", "k-shortest path finding", $cmd_handle);
 
     	# Text-to-html web service (for table of paths only)
-    	if(strcmp($outputType,'pathsTable') == 0){
+    	if(strcmp($outputType,'pathsTable') == 0 && $noHTMLTable == 0){
     	 $rsat_client = new SoapClient(
                           $neat_wsdl,
                            array(
