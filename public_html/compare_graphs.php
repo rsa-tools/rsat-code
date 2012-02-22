@@ -125,7 +125,7 @@
 //     phpinfo();
 
     $client = new SoapClient(
-                       $neat_wsdl,
+                        $neat_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -133,7 +133,7 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
-    
+    flush();
     # Execute the command
 #    echo "<pre>";
     $echoed = $client->compare_graphs($parameters);
