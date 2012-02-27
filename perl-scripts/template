@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.45 2011/10/10 08:51:52 jvanheld Exp $
+# $Id: template,v 1.46 2012/02/27 20:23:47 jvanheld Exp $
 #
 ############################################################
 
@@ -23,7 +23,7 @@ Template for writing new perl scripts.
 
 =head1 AUTHORS
 
-Jacques.van.Helden@ulb.ac.be
+Jacques.van-Helden@univ-amu.fr
 
 =head1 CATEGORY
 
@@ -65,14 +65,14 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
-  our %main::infile = ();
-  our %main::outfile = ();
+  our %infile = ();
+  our %outfile = ();
 
-  our $main::verbose = 0;
-  our $main::in = STDIN;
+  our $verbose = 0;
+  our $in = STDIN;
   our $out = STDOUT;
 
   ################################################################
