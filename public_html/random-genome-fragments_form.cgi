@@ -30,8 +30,8 @@ $default{outputformat}="outputcoord";
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
-  }  
-} 
+  }
+}
 
 ## radio button checked values (to be placed after changing default values !!)
 $checked{$default{org_select}}="CHECKED";

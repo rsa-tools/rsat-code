@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-## CVS: fixed problem with protein sequences
-
 #### redirect error log to a file
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
