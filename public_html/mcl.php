@@ -60,6 +60,7 @@
   if (!$error) { 
   
     $graph = trim_text($graph);
+    
 
     # Info message
     info("Results will appear below");
