@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.6 2012/02/16 20:01:16 jvanheld Exp $
+# $Id: fetch-sequences,v 1.7 2012/02/27 14:53:52 jvanheld Exp $
 #
 ############################################################
 
@@ -26,7 +26,7 @@ file.
 
 Jacques.van-Helden@univ-amu.fr
 
-Derivd from a Perl script developed by Carl Herrmann.
+Adapted from a script developed by Carl Herrmann.
 
 =head1 CATEGORY
 
@@ -147,9 +147,9 @@ Sequences are exported in fasta format.
 
 =item I<peak-motifs>
 
-A common utilization of fetch-sequences is to retrieve UCSC sequences for
-the peak coordinates produced by a peak callinf program (e.g. MACS,
-SICER, SWEMBL, ...).
+A common utilization of fetch-sequences is to retrieve UCSC sequences
+for the peak coordinates produced by a peak callinf program
+(e.g. MACS, SICER, SWEMBL, ...).
 
 =head1 WISH LIST
 
@@ -187,7 +187,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -209,8 +209,9 @@ package main;
   our $genome = "";
 
   ## Extend the coordinates on the left and right sides
-  our $left_extension = 0;
-  our $right_extension = 0;
+  our $upstr_extension = 0;
+  our $downstr_extension = 0;
+  our $reference = "segment";
 
   ## Max number of sequences to retrieve
   our $top = 0;
@@ -218,10 +219,11 @@ package main;
 
   our @queries = (); ## List of queries for the DAS server
   our %header = (); ## Header for each sequence
+  our @skipped_rows = (); ## Invalid rows skipped during parsing
 
   ## Parameters for connecting the DAS server
   our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
-  our $max_trials = 5;
+  our $max_trials = 20;
 
   ################################################################
   ## Read argument values
@@ -231,7 +233,7 @@ package main;
   ## Check argument values
 
   unless ($genome) {
-    &RSAT::error::FatalError("Genome version must be specified (e.g. mm9, hg19)");
+    &RSAT::error::FatalError("Genome version must be specified with option -genome (e.g. mm9, hg19)");
   }
 
   ## Define the URL fo the DAS server
@@ -250,34 +252,72 @@ package main;
     $l++;
     next if (/^#/); ## Skip comment lines
     next unless (/\S/); ## Skip empty lines
+    next unless (/\t/); ## Skip starting comment lines
     chomp();
 
     if (($top > 0) && ($i >= $top)) {
       &RSAT::message::Warning("Stopped after $top top queries. Further lines are ignored.");
       last;
     }
-    my ($chrom, $start, $end, $name) = split(/\t/);
+    my ($chrom, $left, $right, $name, $score, $strand) = split(/\t/);
 
-    unless (&RSAT::util::IsNatural($start)) {
-      &RSAT::message::Warning($start, "Invalid start position", "skipping line", $l);
+    &RSAT::message::Debug($l, $chrom, $left, $right, $strand) if ($main::verbose >= 5);
+
+    ## Check that strand is defined
+    unless ($strand =~ /[+-]/ ) {
+      $strand = "+";
+    }
+
+    ## Check that the left is smaller than the right
+    if ($left > $right) {
+      my $tmp = $left;
+      $left = $right;
+      $right = $tmp;
+    }
+
+    ## Treat reference
+    if ($reference eq "start") {
+      if ($strand eq "-") {
+	$left = $right;
+      } else {
+	$right = $left;
+      }
+    } elsif ($reference eq "end") {
+      if ($strand eq "-") {
+	$right = $left;
+      } else {
+	$left = $right;
+      }
+    }
+
+    ## Check validity of left and right positions
+    unless (&RSAT::util::IsNatural($left)) {
+      &RSAT::message::Warning($left, "Invalid left position", "skipping line", $l);
       push @skipped_rows, $_;
       next;
     }
-    unless (&RSAT::util::IsNatural($end)) {
-      &RSAT::message::Warning($end, "Invalid start position", "skipping line", $l);
+    unless (&RSAT::util::IsNatural($right)) {
+      &RSAT::message::Warning($right, "Invalid right position", "skipping line", $l);
       push @skipped_rows, $_;
       next;
     }
-    $start -= &RSAT::stats::max(0, $left_extension);
-    $end += $right_extension;
 
-#    &RSAT::message::Debug("chrom=".$chrom, "start=".$start, "end=".$end) aif ($main::verbose >= 5);
+    ## Treat left and right extensions
+    if ($strand eq "-") {
+      $left = &RSAT::stats::max(0, $left - $downstr_extension);
+      $right += $upstr_extension;
+    } else {
+      $left = &RSAT::stats::max(0, $left - $upstr_extension);
+      $right += $downstr_extension;
+    }
 
-    my $query = $chrom.":".$start.",".$end;
+#    &RSAT::message::Debug("chrom=".$chrom, "left=".$left, "right=".$right) aif ($main::verbose >= 5);
+
+    my $query = $chrom.":".$left.",".$right;
     if ($header_format eq 'ucsc') {
-      $header{$query} = ">".$genome."_".$chrom."_".$start."_".$end."+\trange=".$chrom.":".$start."-".$end." 5'pad=0 3'pad=0 strand=+ repeatMasking=none";
+      $header{$query} = ">".$genome."_".$chrom."_".$left."_".$right.$strand."\trange=".$chrom.":".$left."-".$right." 5'pad=0 3'pad=0 strand=".$strand." repeatMasking=none";
     } elsif ($header_format eq "galaxy") {
-      $header{$query} = ">".$genome."_".$chrom."_".$start."_".$end."_+";
+      $header{$query} = ">".$genome."_".$chrom."_".$left."_".$right."_".$strand;
     } else {
       $header{$query} = $name || $query;
     }
@@ -288,7 +328,10 @@ package main;
   }
   close $main::in if ($main::infile{input});
 
-
+  ## Report number of skipped rows
+  if (scalar(@skipped_rows) > 0) {
+    &RSAT::message::Warning("Skipped ".scalar(@skipped_rows)."invalid rows in query file");
+  }
 
   ################################################################
   ## Open output stream
@@ -326,11 +369,13 @@ package main;
     for my $request (@request) {
       &RSAT::message::TimeWarn("Treating result") if ($main::verbose >= 3);
       if ($request->is_success) {
-	my $results = $request->results;
-	while (($query,$sequence) = each %$results) {
+	my %results = %{$request->results};
+	foreach my $query (@query_chunk) {
+	  my $sequence = $results{$query};
+#	while (($query,$sequence) = each %$results) {
 	  print $out $header{$query}, "\n";
 	  print $out uc($sequence),"\n"; ## TEMPORARY: convert all sequences to uppercases
-	  # 	print $out $sequence,"\n";
+#	  print $out $sequence,"\n";
 	}
 
 	## Reset error and trial counter
@@ -477,35 +522,71 @@ Supported header formats.
 
 =pod
 
-=item B<-left_ext #>
+=item B<-upstr_ext #>
 
-Extend each region by # base pairs on the left side.
+Extend each region by # base pairs on the upstream side (i.e. left
+side for + strands, right side for - strand).
 
-Under others, this option is convenient to retrieve regions of fixed width around
-the summits of peak calling results (e.g. summit file produced by
-MACS).
+Under others, this option is convenient to retrieve regions of fixed
+width around the summits of peak calling results (e.g. summit file
+produced by MACS).
 
-=item B<-right_ext #>
+=item B<-downstr_ext #>
 
-Extend each region by # base pairs on the right side.
+Extend each region by # base pairs on the downstream side (i.e. right
+for + strand, left for - strand).
 
 =item B<-extend #>
 
-Extend each region by # base pairs on both left and right sides.
+Extend each region by # base pairs on both upstream and downstream
+sides.
 
 =cut
 
-    } elsif ($arg eq "-left_ext") {
-      $main::left_extension = shift(@arguments);
-      &RSAT::error::FatalError($main::left_extension, "Invalid value for left extension; should be an Integer") unless (&RSAT::util::IsInteger($left_extension));
+    } elsif ($arg eq "-upstr_ext") {
+      $main::upstr_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::upstr_extension, "Invalid value for upstream extension; should be an Integer") 
+	unless (&RSAT::util::IsInteger($upstr_extension));
 
-    } elsif ($arg eq "-right_ext") {
-      $main::right_extension = shift(@arguments);
-      &RSAT::error::FatalError($main::right_extension, "Invalid value for right extension; should be an Integer") unless (&RSAT::util::IsInteger($left_extension));
+    } elsif ($arg eq "-downstr_ext") {
+      $main::downstr_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::downstr_extension, "Invalid value for downstream extension; should be an Integer") 
+	unless (&RSAT::util::IsInteger($upstr_extension));
 
     } elsif ($arg eq "-extend") {
-      $main::left_extension = $main::right_extension = shift(@arguments);
-      &RSAT::error::FatalError($main::right_extension, "Invalid value for extension; should be an Integer") unless (&RSAT::util::IsInteger($left_extension));
+      $main::upstr_extension = $main::downstr_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::downstr_extension, "Invalid value for extension; should be an Integer") 
+	unless (&RSAT::util::IsInteger($upstr_extension));
+
+=pod
+
+=item B<-reference segment|end|start>
+
+Reference from which the sequences should be fetched.
+
+=over
+
+=item segment (default)
+
+Retrieve sequences from the start to the end positions of each feature
+(possibly extended with the options I<-upstr_ext>, I<-downstr_ext> or
+I<-extend>).
+
+=item start | end
+
+Retrieve sequences relative to repsectively the start or the end
+position of each feature. 
+
+This option is generally combined with the options I<-upstr_ext>,
+I<-downstr_ext> or I<-extend>, in order to retrieve sequences of a fixed
+width around the end coordinate.
+
+=back
+
+=cut
+
+    } elsif ($arg eq "-reference") {
+      $main::reference = shift(@arguments);
 
 =pod
 
@@ -573,8 +654,10 @@ sub Verbose {
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   printf $out "; %-22s\t%s\n", "Genome", $genome;
   printf $out "; %-22s\t%s\n", "DAS server URL", $das_server_url;
-  printf $out "; %-22s\t%d\n", "Left extension", $left_extension;
-  printf $out "; %-22s\t%d\n", "Right extension", $right_extension;
+  printf $out "; %-22s\t%d\n", "Reference", $reference;
+  printf $out "; %-22s\t%d\n", "Upstream extension", $upstr_extension;
+  printf $out "; %-22s\t%d\n", "Downstream extension", $downstr_extension;
+  printf $out "; %-22s\t%d\n", "Invalid rows in query file", scalar(@main::skipped_rows);
   if (%main::infile) {
     print $out "; Input files\n";
     while (my ($key,$value) = each %main::infile) {
