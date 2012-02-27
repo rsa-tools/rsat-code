@@ -37,7 +37,7 @@ sub FatalError {
     if ($context eq "cgi") {
 	&cgiError(@error_message);
     } else {
-      my $message = join "\n\t", @error_message;
+      my $message = join "\t", @error_message;
 #      $message =~ s/\n\t/\n/g;
 #      $message =~ s/\t+/ /g;
       die("Error\n\t", $message, "\n");
