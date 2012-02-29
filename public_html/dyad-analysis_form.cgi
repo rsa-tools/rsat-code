@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.34 2011/08/01 19:39:21 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.35 2012/02/29 09:39:11 morgane Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -91,9 +91,14 @@ foreach $key (keys %default) {
 
 ### head
 print "<center>";
-print "Analysis of spaced dyads in a set of DNA sequences\n";
-print "<br>Reference: <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/10734201'>van Helden, J., Rios, A. F. and Collado-Vides, J. (2000). Nucleic Acids Res 28, 1808-18.</a><p>\n";
+print "Analysis of spaced dyads in a set of DNA sequences\n<p/>";
+print "Reference: <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/10734201'>van Helden, J., Rios, A. F. and Collado-Vides, J. (2000). Nucleic Acids Res 28, 1808-18.</a><p>\n";
 print "</center>";
+print "<u>Warning</u> !! For <b>vertebrate</b> genomes, analyses of complete promoters from <b>co-expressed gene groups</b> return <b>many false positive</b> (i.e. if you submit a random set of genes, you always get plenty of highly 'significant' motifs). This is likely to come from the heterogeneity of human sequences (mixtures of GC-rich and GC-poor promoters).
+<br/>
+However, analyses of <b>ChIP-seq peaks</b> return <b>very good</b> results. See the program <i>peak-motifs</i>.
+<p/>";
+
 print "<hr>";
 print $query->start_multipart_form(-action=>"dyad-analysis.cgi");
 
