@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.68 2011/12/21 15:13:10 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.69 2012/02/29 09:38:48 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -90,58 +90,58 @@ print <<EndText;
 
     <td><a href="distrib/index.html"><b>
     Download</b></a></td>
+    
+    <td><a href="http://www.bigre.ulb.ac.be/forums/"><b>
+    [Forum]</b></a></td>
 
     </tr>
     </table>
     </div>
-
-    <table  cellpadding=10>
-    <tr >
-    <td>
-
-    <p>Welcome to <b>Regulatory Sequence Analysis Tools</b>
+	<!------------------------------------------->
+    <table border=0 cellpadding=3>
+    <tr>
+    <td COLSPAN=3>
+	<p>Welcome to <b>Regulatory Sequence Analysis Tools</b>
     (<b>RSAT</b>). This web site provides a series of modular computer
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.</p>
-
+	</td>
+	</tr>
+		<!------------------------------------------->
+	<tr>
+	<td  WIDTH="40%" bgcolor=#F6E6CA>
     <ul>
-	<p><li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
+	<li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
 
-	<p><li><font color="red"><b>New !</b> </font> <b>Peak-motifs</b> is now published in NAR <a href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full' target=_blank>[view article]</a></li>
+	<p><li><font color="red"><b>New !</b> </font> <b>Peak-motifs</b> is now published in <b>NAR</b> <a href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full' target=_blank>[view article]</a></li>
 	
-	<p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li>
-
-     <!--p><li><font color="red">New !</font> <a target='_top' href='http://rsat.ulb.ac.be/rsat/tutorial_ECCB_2010/'>Supporting
-     material</a> of the 3rd Tutorial presented at </a> of <a target='_blank' href='http://www.eccb10.org/'>ECCB
-     2010</a> (Sunday Sept 26).</li></p>-->
-
-     <p><li> <font color='red'>Check the latest news in </font> <a
-    href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our forum </b></a></li></p>
-
-	<p><li> Stay Tuned !! RSS feed to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
-
-
-    <li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li>
+	<p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <br/> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li>
 	</ul>
+	</td>
+						<!------------------------------------------->
+	<td WIDTH="30%" bgcolor=#F6E6CA>
+	<ul>
+	<li> Check the <b>latest news</b> in <a
+    href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our [Forum] </b></a></li>
 
+	<p><li> Stay Tuned !! <b>RSS feed</b> to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
+
+
+    <p><li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li></p>
+	</ul>
+	</td>
+	<td WIDTH="*"></td>
+</tr>
+		<!------------------------------------------->
+
+	<tr>
+	<td COLSPAN=3>
     <p> This website is free and open to all users.
    </p>
 </td>
-
-
-    <td>
-    <table class='title' cellpadding=0 cellspacing=0><tr><td align = 'center'>
-    <h3>Warnings<br><br>
-
-    <a href=warnings.html>Vertebrate genomes</a>
-
-    </h3>
-    </table>
-    </td>
-
     </tr>
     </table>
-
+		<!------------------------------------------->
 
 <hr  align='left'></hr>
 <div id = 'serverlist'>
