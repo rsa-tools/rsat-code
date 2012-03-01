@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.227 2012/02/09 07:30:30 jvanheld Exp $
+# $Id: peak-motifs,v 1.228 2012/03/01 07:45:04 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.227 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.228 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -3107,6 +3107,7 @@ sub SynthesisParamsAndFiles {
   print $syn "</table></p>\n";
   print $syn &close_menu_heading();
 
+
 }
 
 
@@ -3191,6 +3192,10 @@ sub Synthesis {
 
   ## Parameters and files
   &SynthesisParamsAndFiles() unless ($progressive_synthesis);
+
+  ## References
+  print $syn &open_menu_heading($menu_nb++, "<a name='refs'></a><h3>Publications</h3>", 0);
+  print $syn "<p>Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand, O., Thieffry, D. & van Helden, J. (2011). RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res.</p>\n";
 
   ## End of the HTML file
   &CloseSynthesis();
@@ -4175,7 +4180,7 @@ or by entering a comma-separated list of algorithms:
 
 B<Default motif discovery algorithms>
 
-=back
+=over
 
 =item I<oligos>
 
@@ -4243,6 +4248,7 @@ I<matrix-from-patterns>) from all the words discovered by the selected
 string-based motif disovery algorithms (oigos,dyads,positions and/or
 local_words).
 
+=back
 
 =cut
     } elsif ($arg eq "-disco") {
@@ -4333,6 +4339,8 @@ reference motif.
 =item Motif comparison
 
 Compare all discovered motifs with the reference motif.
+
+=back
 
 =item I<disco>
 
@@ -4435,10 +4443,10 @@ Compute meme background model from the test sequences.
 
 =item B<-nmotifs max_motif_number>
 
-Maximal number of motifs (matrices) to return for motif discovery
-algorithms. Note the distinction between the maximal number of motifs
+Maximal number of motifs (matrices) to return for each motif discovery
+algorithm. Note the distinction between the maximal number of motifs
 (matrices) and the maximum number of patterns (words, dyads): a motif
-generally corresponds to mutually overlapping several patterns (dyads,
+generally corresponds to a set of several mutually overlapping patterns (dyads,
 words).
 
 =cut
@@ -4446,6 +4454,24 @@ words).
       $main::param{matrix_nmotifs} = shift (@arguments);
       $main::param{dreme_m} = $main::param{matrix_nmotifs};
       $main::param{meme_nmotifs} = $main::param{matrix_nmotifs};
+      &RSAT::error::FatalError($main::param{matrix_nmotifs}, "Invalid value for max number of motifs. Should be a Natural number")
+	unless (&IsNatural($main::param{matrix_nmotifs}));
+
+=pod
+
+=item B<-maxpat max_pattern_number>
+
+Maximal number of patterns (words) to return for each motif discovery
+algorithm. Note the distinction between the maximal number of patterns
+(words,dyads) and the maximum number of motifs (matrices): a motif
+generally corresponds to a set of several mutually overlapping
+patterns (dyads, words).
+
+=cut
+    } elsif ($arg eq "-maxpat") {
+      $main::param{patterns_max_rank} = shift (@arguments);
+      &RSAT::error::FatalError($main::param{patterns_max_rank}, "Invalid value for max number of patterns. Should be a Natural number")
+	unless (&IsNatural($main::param{patterns_max_rank}));
 
 =pod
 
@@ -4840,6 +4866,16 @@ sub ReportParamsAndFiles {
 =pod
 
 =head1 REFERENCES
+
+Description and assessment of I<peak-motifs>
+
+=over
+
+Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand, O., Thieffry,
+D. & van Helden, J. (2011). RSAT peak-motifs: motif analysis in
+full-size ChIP-seq datasets. Nucleic Acids Res.
+
+=back
 
 The program I<peak-motifs> combines a series of tried-and-tested
 programs which have been detailed in the following publications.
