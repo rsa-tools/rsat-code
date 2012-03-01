@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.7 2012/02/27 14:53:52 jvanheld Exp $
+# $Id: fetch-sequences,v 1.8 2012/03/01 07:44:37 jvanheld Exp $
 #
 ############################################################
 
@@ -187,7 +187,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -263,9 +263,17 @@ package main;
 
     &RSAT::message::Debug($l, $chrom, $left, $right, $strand) if ($main::verbose >= 5);
 
-    ## Check that strand is defined
-    unless ($strand =~ /[+-]/ ) {
-      $strand = "+";
+
+    ## Check validity of left and right positions
+    unless (&RSAT::util::IsNatural($left)) {
+      &RSAT::message::Warning($left, "Invalid left position", "skipping line", $l);
+      push @skipped_rows, $_;
+      next;
+    }
+    unless (&RSAT::util::IsNatural($right)) {
+      &RSAT::message::Warning($right, "Invalid right position", "skipping line", $l);
+      push @skipped_rows, $_;
+      next;
     }
 
     ## Check that the left is smaller than the right
@@ -273,6 +281,11 @@ package main;
       my $tmp = $left;
       $left = $right;
       $right = $tmp;
+    }
+
+    ## Make sure that strand is defined
+    unless ($strand =~ /[+-]/ ) {
+      $strand = "+";
     }
 
     ## Treat reference
@@ -288,18 +301,6 @@ package main;
       } else {
 	$left = $right;
       }
-    }
-
-    ## Check validity of left and right positions
-    unless (&RSAT::util::IsNatural($left)) {
-      &RSAT::message::Warning($left, "Invalid left position", "skipping line", $l);
-      push @skipped_rows, $_;
-      next;
-    }
-    unless (&RSAT::util::IsNatural($right)) {
-      &RSAT::message::Warning($right, "Invalid right position", "skipping line", $l);
-      push @skipped_rows, $_;
-      next;
     }
 
     ## Treat left and right extensions
@@ -330,7 +331,7 @@ package main;
 
   ## Report number of skipped rows
   if (scalar(@skipped_rows) > 0) {
-    &RSAT::message::Warning("Skipped ".scalar(@skipped_rows)."invalid rows in query file");
+    &RSAT::message::Warning("Skipped ".scalar(@skipped_rows)." invalid rows in query file");
   }
 
   ################################################################
