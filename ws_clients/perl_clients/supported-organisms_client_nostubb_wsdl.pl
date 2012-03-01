@@ -17,7 +17,8 @@ use XML::Compile::Transport::SOAPHTTP;
 
 ## Specification of the server
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
-my @servers = $ARGV[0] || qw(
+my @servers =  $ARGV[0] || qw(
+			  http://localhost/rsat/
 			   http://embnet.ccg.unam.mx/rsa-tools
 			   http://mamaze.ulb.ac.be/rsat
 			   http://rsat.ulb.ac.be/rsat
@@ -71,6 +72,7 @@ foreach my $server (@servers) {
       # If the result is something else, return 2 to indicate a warning.
       # If no answer has arrived, return 1 to indicate the test failed.
       if ( defined $answer ) {
+	warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
 	print OUT "; Server : ", $server, "\n";
 	print OUT "; WSDL : ", $wsdl, "\n";
 	print OUT "; Server command : ".$answer->{output}->{response}->{command}."\n";
