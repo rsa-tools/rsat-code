@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.9 2011/12/02 22:03:19 jvanheld Exp $
+# $Id: pathways-from-clusters,v 1.10 2012/03/01 07:45:46 jvanheld Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input files
@@ -216,11 +216,11 @@ package main;
 
       ## Clean temporary files if required
       if ($task{clean}) {
-	my $clean_cmd = "rm -f $tempfilename"
-	  &doit($pathway_extractor_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	my $clean_cmd = "rm -f $tempfilename";
+	&doit($pathway_extractor_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       }
 
-      ## Re-initialize the 
+      ## Re-initialize the ### INTERRUPTED HERE !!!! IMPLEMENTATION IN CONSTRUCTION
       @genelist =();
     }
     my $gene= $tempdata[0];
