@@ -60,12 +60,12 @@
   ## If a query graph file and a query graph are submitted -> error
   if ($graphQ != "" && $graph_fileQ!= "") {
     $error = 1;
-    error("You must not submit both a query graph and a query graph file");
+    error("You cannot submit both a query graph and a query graph file");
   }
   ## If a query graph file and a query graph are submitted -> error
   if ($graphR != "" && $graph_fileR!= "") {
     $error = 1;
-    error("You must not submit both a reference graph and a reference graph file");
+    error("You cannot submit both a reference graph and a reference graph file");
   }
   ## No specification of the source and target columns
   if ($in_format_Q == "tab" && $s_colQ == "" && $t_colQ == "") {
@@ -116,14 +116,26 @@
          "self"=>$self
        )
      );
-//          print_r($parameters);
+
+      // report parameters if echo requested
+      if ($properties['rsat_echo'] >= 1) {
+           info("rsat_main\t".$rsat_main);
+           info("WWW_RSA\t".$WWW_RSA);
+           info("neat_wsdl\t".$neat_wsdl);
+           if ($properties['rsat_echo'] >= 1) {
+               print_r($parameters);
+               if ($properties['rsat_echo'] >= 3) {
+                   phpinfo();
+                   }
+               }
+           }
+   
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
     hourglass("on");
-    # Open the SOAP client
-//     phpinfo();
 
+    # Open the SOAP client
     $client = new SoapClient(
                         $neat_wsdl,
                            array(
@@ -133,6 +145,7 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
+
     flush();
     # Execute the command
 #    echo "<pre>";
