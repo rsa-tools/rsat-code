@@ -27,7 +27,6 @@ my @servers =  $ARGV[0] || qw(
 			   http://tagc.univ-mrs.fr/rsa-tools
 			   http://anjie.bi.up.ac.za/rsa-tools
 			   http://bongcam1.hgen.slu.se/rsat
-			   http://liv.bmc.uu.se/rsa-tools
 			    );
 
 #		 http://rsat01.biologie.ens.fr/rsa-tools
@@ -87,13 +86,15 @@ foreach my $server (@servers) {
 	# 	}
       } else {
 	print OUT "No answer\n";
-	exit 1;
       }
-    };
 
-  if ($@) {
-    warn "Caught an exception\n";
-    warn $@."\n";
-    exit 1;
-  }
+      if ($@) {
+	  warn "Caught an exception\n";
+	  warn $@."\n";
+	  print OUT "Caught an exception\n";
+	  print OUT $@."\n";
+      }
+
+      close OUT;
+    };
 }
