@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.228 2012/03/01 07:45:04 jvanheld Exp $
+# $Id: peak-motifs,v 1.229 2012/03/03 11:58:43 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.228 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.229 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -270,6 +270,7 @@ package main;
 
   &CheckArguments();
 
+
   &SetOutFileNames();
 
   ################################################################
@@ -289,6 +290,7 @@ package main;
     ## Prepare sequences
     &PurgeSeq($seq_type) if ($task{purge});
     &SequenceLengths($seq_type) if ($task{seqlen});
+
 
     if ($task{composition}) {
       ## Sequence composition
@@ -2292,7 +2294,8 @@ sub MatrixFromPatterns {
   my ($pattern_file, $pssm_file, $pattern_type, $score_column) = @_;
   &RSAT::message::TimeWarn("Matrix from patterns", $pattern_type) if ($verbose >= 3);
   my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
-  $cmd .= " -seq ".$infile{test_seq};
+#  $cmd .= " -seq ".$infile{test_seq};
+  $cmd .= " -seq ".$main::outfile{"test_converted"};
   $cmd .= " -pl ".$pattern_file;
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
   $cmd .= " -toppat ".$main::param{asmb_toppat};
@@ -4542,10 +4545,28 @@ min_markov_order and max_markov_order.
 =cut
     } elsif ($arg eq "-markov") {
       $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = shift (@arguments);
+      if ($main::param{oligo_min_mkv} eq "auto") {
+	$main::auto_markov = 1;
+      } else {
+	&RSAT::error::FatalError($main::param{oligo_min_mkv}, "Invalid value for Markov order. Should be an Integer")
+	  unless (&RSAT::util::IsNatural($main::param{oligo_min_mkv}));
+      }
     } elsif ($arg eq "-min_markov") {
       $main::param{oligo_min_mkv} = shift (@arguments);
+      if ($main::param{oligo_min_mkv} eq "auto") {
+	$main::auto_markov = 1;
+      } else {
+	&RSAT::error::FatalError($main::param{oligo_min_mkv}, "Invalid value for min Markov order. Should be an Integer")
+	  unless (&RSAT::util::IsNatural($main::param{oligo_min_mkv}));
+      }
     } elsif ($arg eq "-max_markov") {
       $main::param{oligo_max_mkv} = shift (@arguments);
+      if ($main::param{oligo_max_mkv} eq "auto") {
+	$main::auto_markov = 1;
+      } else {
+	&RSAT::error::FatalError($main::param{oligo_max_mkv}, "Invalid value for max Markov order. Should be an Integer")
+	  unless (&RSAT::util::IsNatural($main::param{oligo_max_mkv}));
+      }
 
 =pod
 
@@ -4780,6 +4801,29 @@ sub CheckArguments {
    push (@tasks, $task) if $task{$task};
   }
   &RSAT::message::Info("Tasks: ", join (",", @tasks)) if ($main::verbose >= 2);
+
+  ################################################################
+  ## If Markov model is computed automatically, compute the total
+  ## sequence length and determine markov orders, immediately compute
+  ## total sequence length because it is required to define output
+  ## file names.
+  if ($main::auto_markov) {
+    &RSAT::message::TimeWarn("Auto definition of Markov order on the basis of sequence length") if ($main::verbose >= 2);
+    my $cmd = "sequence-lengths -i ".$infile{test_seq}." -sum | grep -v '#' | cut -f 2";
+    my $total_seq_len = `$cmd`;
+    chomp($total_seq_len);
+    if ($total_seq_len <= 1e+4) {
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = 1;
+    } elsif ($total_seq_len <= 1e+5) {
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = 2;
+    } elsif ($total_seq_len <= 1e+6) {
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = -3;
+    } else {
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = -2;
+    }
+    &RSAT::message::Info("Automatic choice of Markov order.", "L=".sprintf("%.1e", $total_seq_len), "m=".$main::param{oligo_min_mkv});
+  }
+
 }
 
 
