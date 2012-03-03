@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.58 2012/03/03 15:15:26 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.59 2012/03/03 16:41:16 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -58,10 +58,9 @@ PERL_MODULES= \
 	POSIX \
 	Data::Dumper \
 	Util::Properties \
-	Class::Std::Fast \
+	Class::Std::Fast  \
+	GD \
 	XML::LibXML \
-	DBD::mysql \
-	DBI \
 	XML::Compile::Cache \
 	XML::Compile::SOAP11 \
 	XML::Compile::WSDL11 \
@@ -69,7 +68,8 @@ PERL_MODULES= \
 	SOAP::WSDL \
 	SOAP::Lite \
 	Module::Build::Compat \
-	GD \
+	DBD::mysql \
+	DBI \
 	DB_File \
 	LWP::Simple \
 	Bio::Perl \
