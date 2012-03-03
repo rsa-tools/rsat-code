@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.229 2012/03/03 11:58:43 jvanheld Exp $
+# $Id: peak-motifs,v 1.230 2012/03/03 14:40:39 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.229 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.230 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -289,6 +289,7 @@ package main;
   foreach my $seq_type (@seq_types) {
     ## Prepare sequences
     &PurgeSeq($seq_type) if ($task{purge});
+
     &SequenceLengths($seq_type) if ($task{seqlen});
 
 
@@ -297,6 +298,44 @@ package main;
       &CompositionProfiles($seq_type);
 
     }
+  }
+
+
+  ################################################################
+  ## If Markov model is computed automatically, compute the total
+  ## sequence length and determine markov orders. 
+  ##
+  if ($main::auto_markov) {
+    &RSAT::message::TimeWarn("Auto definition of Markov order on the basis of sequence length") if ($main::verbose >= 2);
+
+    ## Total sequence length is computed on the converted test
+    ## sequences, since these may have been clipped or restricted to
+    ## the top peaks.
+    my $cmd = "sequence-lengths -i ".$main::outfile{"test_converted"}." -sum | grep -v '#' | cut -f 2";
+    local $total_seq_len = `$cmd`;
+    chomp($total_seq_len);
+
+    ## Choose the order according to total sequence length. The limits
+    ## here are somewhat arbitrary, I should come back to this problem
+    ## some time, in order to define some better criterion for
+    ## defininig the Markov order as a function of sequence size.
+    if ($total_seq_len <= 1e+4) {
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = 1;
+    } elsif ($total_seq_len <= 1e+5) {
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = 2;
+    } elsif ($total_seq_len <= 1e+6) {
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = -3;
+    } else {
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = -2;
+    }
+    &RSAT::message::Info("Automatic choice of Markov order.", "L=".sprintf("%.1e", $total_seq_len), "m=".$main::param{oligo_min_mkv}) 
+      if ($main::verbose >= 2);
+
+    ## We need to redefine file names after having chosen the Markov
+    ## order.  Sequence length computation however required first to
+    ## prepare the sequences, which required a first pass throught
+    ## SetOutFileNames(). We run it this twice.
+    &SetOutFileNames();
   }
 
   ## Build background models from control sequences
@@ -637,7 +676,6 @@ sub CheckSubDir {
 ## Set output file names
 sub SetOutFileNames {
 
-
   ################################################################
   ## Output file names for peaks and their composition analysis (apply
   ## to both test and control sequences).
@@ -779,20 +817,23 @@ sub SetOutFileNames {
 	## themselves (Markov chain m <= k -2)
 
 	## Convert negative markov orders relative to the current oligo length
-	my $min_mkv = $main::param{oligo_min_mkv}; $min_mkv += $len if ($min_mkv < 0);
-	my $max_mkv = $main::param{oligo_max_mkv}; $max_mkv += $len if ($max_mkv < 0);
-	for my $markov ($min_mkv..$max_mkv) {
+	unless (($main::param{oligo_min_mkv} eq "auto") ||
+	    ($main::param{oligo_min_mkv} eq "auto")) {
+	  my $min_mkv = $main::param{oligo_min_mkv}; $min_mkv += $len if ($min_mkv < 0);
+	  my $max_mkv = $main::param{oligo_max_mkv}; $max_mkv += $len if ($max_mkv < 0);
+	  for my $markov ($min_mkv..$max_mkv) {
 
-	  ## oligo-analysis result file
-	  $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
-	  $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
-						       $len."nt", "mkv".$markov);
-	  push @pattern_types, $pattern_type;
-	  push @patterns_to_merge, $pattern_type;
+	    ## oligo-analysis result file
+	    $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
+	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
+							 $len."nt", "mkv".$markov);
+	    push @pattern_types, $pattern_type;
+	    push @patterns_to_merge, $pattern_type;
 
-	  ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
-	  #	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
-	  #						       $len."nt", "vs_ctrl");
+	    ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
+	    #	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
+	    #						       $len."nt", "vs_ctrl");
+	  }
 	}
       }
     }
@@ -4801,28 +4842,6 @@ sub CheckArguments {
    push (@tasks, $task) if $task{$task};
   }
   &RSAT::message::Info("Tasks: ", join (",", @tasks)) if ($main::verbose >= 2);
-
-  ################################################################
-  ## If Markov model is computed automatically, compute the total
-  ## sequence length and determine markov orders, immediately compute
-  ## total sequence length because it is required to define output
-  ## file names.
-  if ($main::auto_markov) {
-    &RSAT::message::TimeWarn("Auto definition of Markov order on the basis of sequence length") if ($main::verbose >= 2);
-    my $cmd = "sequence-lengths -i ".$infile{test_seq}." -sum | grep -v '#' | cut -f 2";
-    my $total_seq_len = `$cmd`;
-    chomp($total_seq_len);
-    if ($total_seq_len <= 1e+4) {
-      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = 1;
-    } elsif ($total_seq_len <= 1e+5) {
-      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = 2;
-    } elsif ($total_seq_len <= 1e+6) {
-      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = -3;
-    } else {
-      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = -2;
-    }
-    &RSAT::message::Info("Automatic choice of Markov order.", "L=".sprintf("%.1e", $total_seq_len), "m=".$main::param{oligo_min_mkv});
-  }
 
 }
 
