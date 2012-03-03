@@ -122,6 +122,8 @@ if ($query->param('oligo-analysis') =~ /on/) {
   ## Markov order is specific to oligo-analysis
   if (&IsInteger($query->param('markov'))) {
     $parameters .= " -min_markov ".$query->param('markov')." -max_markov ".$query->param('markov');
+  } elsif ($query->param('markov') eq 'auto') {
+    $parameters .= " -markov auto";
   }
 }
 

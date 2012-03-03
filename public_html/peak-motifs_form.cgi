@@ -378,9 +378,10 @@ print "<br><i>Note: motifs can be larger than word sizes (words are used as seed
 print "<br><p><b><a href='help.oligo-analysis.html'> Markov order (m) of the background model for oligo-analysis (k-mers)</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
 $oligoPopup = "<br>";
 $oligoPopup .=  "<select name='markov'>\n";
+$oligoPopup .=  "<option value='auto'>automatic (adapted to sequence length)</option>\n";
 $oligoPopup .=  "<option value='0'>m=0 (generally not ideal)</option>\n";
 $oligoPopup .=  "<option value='1'>m=1 (more sensitive for small data sets, e.g. 100kb)</option>\n";
-$oligoPopup .=  "<option selected value='-3'>m=k-3 (intermediate size data sets)</option>\n";
+$oligoPopup .=  "<option value='-3'>m=k-3 (intermediate size data sets)</option>\n";
 $oligoPopup .=  "<option value='-2'>m=k-2 (more stringent for large data sets e.g. > 1Mb)</option>\n";
 $oligoPopup .=  "</select>";
 print $oligoPopup;
