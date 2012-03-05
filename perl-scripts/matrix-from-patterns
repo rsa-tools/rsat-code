@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.57 2011/10/28 06:14:03 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.58 2012/03/05 05:50:16 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -569,7 +569,15 @@ output basename, followed by an extension.
 Export the sites used to build the count matrix. These sites can be
 used for example to draw a sequence logo.
 
-The sites are exported in fasta format, after each count matrix.
+The sites are exported in various formats:
+
+=over
+
+=item a separate fasta file, after each count matrix;
+
+=item "BS" fields in the transfac-formatted output matrices.
+
+=back
 
 =cut
 	} elsif ($arg eq "-sites") {
@@ -833,7 +841,7 @@ sub QuickScanForSites {
 #    my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
 
     &RSAT::message::Debug("\n\tScanning sequences (quick) with sig matrix", $m, $matrix_file) if ($main::verbose >= 3);
-    if (-e $matrix_file) {
+    if ((defined($matrix_file)) && (-e $matrix_file)) {
 #      $matrix_scan_cmd = $ENV{RSAT_BIN}."/matrix-scan-quick";
       my $scan_cmd = $matrix_scan_cmd." -v 1";
       $scan_cmd .= " -i ".$infile{sequence};
@@ -896,7 +904,7 @@ sub sites_to_matrix {
   $convert2_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
   $convert2_cmd .= " -return counts";
   #    $convert2_cmd .= " -sort desc information.per.column";
-  #  $convert2_cmd .= " -return sites" if ($return_fields{sites});
+  $convert2_cmd .= " -return sites" if ($return_fields{sites});
   if ($return_fields{logo}) {
     $convert2_cmd .= " -return logo -logo_format png,pdf ";
     $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
