@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.142 2012/02/09 07:31:41 jvanheld Exp $
+# $Id: convert-matrix,v 1.143 2012/03/05 05:43:27 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -189,7 +189,7 @@ if ($return_field{logo_table}) {
 local %return_fields = ();
 unless (scalar(@return_fields)) {
   if ((lc($output_format ) eq "transfac") ||
-      (lc($output_format ) eq "consensus") ||	
+      (lc($output_format ) eq "consensus") ||
       (lc($output_format ) eq "tab") ||
       (lc($output_format ) eq "infogibbs")
      ) {
@@ -823,12 +823,10 @@ INPUT/OUTPUT FORMATS
 	the following columns give the frequency of that residue
 	at the corresponding position of the matrix.
 	e.g.:
-	
 	a	|	0	16	0	1	0	0	11
 	c	|	16	0	15	0	0	0	3
 	g	|	0	0	0	15	0	16	0
 	t	|	1	0	0	1	0	16	0	2
-	
 
         The tab format accepts a user-specific set of return fields
         (option -return), provigind different statistics on the matrix
@@ -1523,13 +1521,23 @@ sub ExportMatrix {
     $matrix->force_attribute($key, $value);
   }
 
+
+  ## Suppress sites if not required because transfac format includes
+  ## them
+  if ($output_format eq "transfac") {
+    unless ($return_fields{sites}) {
+      $matrix->set_array_attribute("sequences", ());
+      &RSAT::message::Debug("After site suppression",  scalar($matrix->get_attribute("sequences")));
+    }
+  }
+
   ## Print the counts matrix
   if ($return_fields{counts}) {
     print $out_handle $matrix->toString(sep=>"\t",
 					type=>"counts",
 					format=>$output_format,
 				       );
-  } 
+  }
 
   ## Print frequency matrix
   if ($return_fields{frequencies}) {
