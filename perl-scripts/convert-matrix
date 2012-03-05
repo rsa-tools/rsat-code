@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.143 2012/03/05 05:43:27 jvanheld Exp $
+# $Id: convert-matrix,v 1.144 2012/03/05 05:44:24 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1527,7 +1527,7 @@ sub ExportMatrix {
   if ($output_format eq "transfac") {
     unless ($return_fields{sites}) {
       $matrix->set_array_attribute("sequences", ());
-      &RSAT::message::Debug("After site suppression",  scalar($matrix->get_attribute("sequences")));
+#      &RSAT::message::Debug("After site suppression",  scalar($matrix->get_attribute("sequences"))) if ($main::verbose >= 10);
     }
   }
 
@@ -1634,7 +1634,7 @@ sub ExportMatrix {
   }
 
 
-  ## Return weight distribution
+  ## Return weight distrsibution
   if ($return_fields{wdistrib}) {
     #    print ";WARNING: return wdistrib is deprecated in convert-matrix! Use matrix-dsitrib instead\n";
     $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
