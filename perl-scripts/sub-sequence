@@ -36,7 +36,7 @@ package main;
   if ($fragment_file) {
     ## Fragment file
     if (($from ne $null) || ($to ne $null)) {
-      &RSAT::message::FatalError("The option -frag is incompatible with the options -from and -to");
+      &RSAT::error::FatalError("The option -frag is incompatible with the options -from and -to");
     }
     my ($in, $input_dir) = &OpenInputFile($fragment_file);
     my $l = 0;
@@ -53,6 +53,7 @@ package main;
       $fragment{$frag_id}->{from} = $frag_from;
       $fragment{$frag_id}->{to} = $frag_to;
       $fragment{$frag_id}->{strand} = $frag_strand;
+      &RSAT::message::Debug("Fragment ID", $frag_id, "Seq ID","==".$seq_id."==", "fragmente coordinates",  $frag_from.":".$frag_to.":".$frag_strand) if ($main::verbose>=4);
     }
     close $in;
 
@@ -106,7 +107,7 @@ package main;
 	my $frag_from = $fragment->{from};
 	my $frag_to = $fragment->{to};
 	my $frag_strand = $fragment->{strand};
-	#	    &RSAT::message::Debug($seq_id, $frag_id, $frag_from, $frag_to, $frag_strand) if ($main::verbose >= 3);
+	&RSAT::message::Debug("fragment info",$seq_id, $frag_id, $frag_from, $frag_to, $frag_strand) if ($main::verbose >= 4);
 	&OneFragment($frag_from, $frag_to, $frag_strand, $frag_id);
       }
     } else {
