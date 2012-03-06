@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.140 2011/11/04 22:37:05 amedina Exp $
+# $Id: matrix-quality,v 1.141 2012/03/06 18:42:36 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -409,19 +409,21 @@ package main;
     $outfile{synthesis} = $main::prefix{main}."_synthesis.html";
     
 
-    ################################################################
-    ## Generate the general HTML report 
-    if ($tasks{synthesis}) {
-	&OpenGeneralHTMLReport($outfile{synthesis});
-    }
-
-
+    
     ## Create main output directory if required
     ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($prefix{main});
 #    $dir{output} = `dirname $prefix{main}`;
 #    chomp($dir{output});
     &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{output});
+
+    #############################################################
+    ## Generate the general HTML report 
+    if ($tasks{synthesis}) {
+	&OpenGeneralHTMLReport($outfile{synthesis});
+    }
+
+
 
     ## Define name of the converted bg file
     #$outfile{bg_file_inclusive} = $dir{output};
@@ -586,7 +588,6 @@ package main;
       ## Create matrix-specific output directory if required
       &RSAT::message::TimeWarn("Checking matrix output directory", $dir{matrix_output}) if ($main::verbose >= 0);
       &RSAT::util::CheckOutDir($dir{matrix_output});
-
       ## Define matrix-specific prefix
       $matrix_prefix{$matrix_name} = $dir{matrix_output}."/".$short_prefix;
 
@@ -2943,11 +2944,12 @@ sub index_one_file {
 
 sub OpenGeneralHTMLReport{
     my $synthesis_general_file=$_[0];
-    &RSAT::message::Debug("Generating report per matrix", $synthesis_general_file) if ($main::verbose >= 3);
+    &RSAT::message::Debug("Generating report per matrix", $synthesis_general_file) if ($main::verbose >= 2);
+
     ################################################################
     ## Open HTML outstream
     $synthesis_general = &OpenOutputFile($synthesis_general_file);
-    
+
     print $synthesis_general "<html>\n";
     print $synthesis_general "<head>\n";
     print $synthesis_general "<title>matrix-quality result</title>\n";
