@@ -130,8 +130,8 @@ sub CheckFootprintParameters {
   ## tasks.
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
     foreach my $task (keys %supported_task) {
-      #      &RSAT::message::Debug("Auto adding task", $task);
-      $task{$task} = 1;
+	&RSAT::message::Debug("Auto adding task", $task) if  ($main::verbose >= 5);
+	$task{$task} = 1;
     }
   }
   &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 2);
@@ -140,6 +140,7 @@ sub CheckFootprintParameters {
   ## If orthologs_list is specified omit the tasks that are not longer necesary
   ## Omit: orthologs
   $task{orthologs} = 0 if $main::orthologs_list_file ;
+
 
   ################################################################
   ## Check reference organisms (taxon or org list)
@@ -997,6 +998,7 @@ sub InferQueryOperons {
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -o ".$outfile{leader_qgenes};
   $cmd .= " -uth interg_dist ".$dist_thr;
+  &RSAT::message::Debug("Command to infer operon leaders ", $cmd) if ($task{operons}  && ($main::verbose >= 5)) ;
   &one_command($cmd) if ($task{operons});
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   &IndexOneFile("Operon leaders for query genes", $outfile{leader_qgenes});
