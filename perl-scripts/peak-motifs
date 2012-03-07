@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.230 2012/03/03 14:40:39 jvanheld Exp $
+# $Id: peak-motifs,v 1.231 2012/03/07 15:41:50 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.230 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.231 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1837,16 +1837,6 @@ sub MergeMotifs {
 
   foreach my $pattern_type (@pattern_types) {
     my $matrix_file = $main::outfile{$pattern_type.'_pssm_tf'};
-
-#    unless (-e $matrix_file) {
-#      ## TEMPORARY: ensure conversion for data sets of previous versions
-#      my $convert_cmd = $SCRIPTS."/convert-matrix";
-#      $convert_cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
-#      $convert_cmd .= " -from tab -to transfac -return counts,consensus";
-#      $convert_cmd .= " -prefix $pattern_type";
-#      $convert_cmd .= " -o ".$matrix_file;
-#      &one_command($convert_cmd, 1);
-#   }
 
     if (-e $matrix_file) {
       $cmd .= "; cat ".$matrix_file." >> ".$main::outfile{motifs_discovered};
@@ -4077,6 +4067,10 @@ This option can also be convenient for performing quick tests,
 parameter selection and debugging before running the full analysis of
 large sequence sets.
 
+A value of 0 is interpreted as "no limit" (this is convenient for
+setting the default value is scripts testing progressively increasing
+values ot TOPS).
+
 =cut
     } elsif ($arg eq "-top_peaks") {
       my $top_peaks = shift(@arguments);
@@ -4590,7 +4584,7 @@ min_markov_order and max_markov_order.
 	$main::auto_markov = 1;
       } else {
 	&RSAT::error::FatalError($main::param{oligo_min_mkv}, "Invalid value for Markov order. Should be an Integer")
-	  unless (&RSAT::util::IsNatural($main::param{oligo_min_mkv}));
+	  unless (&RSAT::util::IsInteger($main::param{oligo_min_mkv}));
       }
     } elsif ($arg eq "-min_markov") {
       $main::param{oligo_min_mkv} = shift (@arguments);
@@ -4598,7 +4592,7 @@ min_markov_order and max_markov_order.
 	$main::auto_markov = 1;
       } else {
 	&RSAT::error::FatalError($main::param{oligo_min_mkv}, "Invalid value for min Markov order. Should be an Integer")
-	  unless (&RSAT::util::IsNatural($main::param{oligo_min_mkv}));
+	  unless (&RSAT::util::IsInteger($main::param{oligo_min_mkv}));
       }
     } elsif ($arg eq "-max_markov") {
       $main::param{oligo_max_mkv} = shift (@arguments);
@@ -4606,7 +4600,7 @@ min_markov_order and max_markov_order.
 	$main::auto_markov = 1;
       } else {
 	&RSAT::error::FatalError($main::param{oligo_max_mkv}, "Invalid value for max Markov order. Should be an Integer")
-	  unless (&RSAT::util::IsNatural($main::param{oligo_max_mkv}));
+	  unless (&RSAT::util::IsInteger($main::param{oligo_max_mkv}));
       }
 
 =pod
@@ -5002,7 +4996,24 @@ motifs. Nucleic Acids Res 39, 808-24.
 
 =head1 WISH LIST
 
+
 =over
+
+=item N<site treatment>
+
+Add an option to include or not sites in the Transfac-formatted
+PSSM.
+
+If included by default, they can take a lot of disk space for large
+sequence files, and they are partly redundant with sites resulting
+from further scanning (which can be asked or not). For site scanning,
+we should also have the possibility either to store the sites, or to
+just calculate the distribution, coverage etc, and then clean the
+sites. Maybe add an option "-clean_sites" (but then we need to treat
+separately TRANSFAC sites) ? Or have two separate options for
+computing motif positional distrib+ coverage and for exporting sites,
+resp.
+
 
 =item B<-return explanation>
 
@@ -5015,11 +5026,13 @@ graphs at the bottom of the result page.
 Compare all discovered motifs (plus reference motif if specified) and
 cluster them in order to extract a consensus motif.
 
+
 =item B<weeder>
 
 Add a task to run Weeder on the peak sequences.
 
  weederlauncher.out input organism large S M T5
+
 
 =item B<matrix_quality>
 
@@ -5032,10 +5045,12 @@ discovered motif. A "good" motif should show a clear enrichment (more
 high-scoring hits than expected theoretically), whereas the
 column-permuted matrices should fit the theoretical distribution.
 
+
 =item B<-task ref_motif_enrichment>
 
 Compute the enrichment of test (and optionally control) sequences for
 the reference motifs.
+
 
 =item B<all_oligos>
 
@@ -5044,10 +5059,21 @@ observed versus expected occurrences for all the
 oligonucleotides. This analysis is performed with the option
 -two_tails, which detects both under- and over-represented patterns.
 
+
 =item B<in the full HTML report>
 
-- link from the result page to the link table returned by
-  position-analysis (file *_graph_index.html).
+=over
+
+=item link to positin-analysis
+
+Add a ink from the result page to the link table returned by
+position-analysis (file *_graph_index.html).
+
+=item sig in report per motif
+
+The significance of the motif should be added to the report per motif.
+
+=back
 
 =back
 
