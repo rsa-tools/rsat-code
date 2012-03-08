@@ -21,13 +21,9 @@ require RSAT::TaskManager;
 
 &main::InitRSAT();
 
-#my $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||;
-#my $RSAT = $ENV{RSAT};
 unless ($ENV{RSAT}) {
     $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
-#    $ENV{RSAT} = join(";","ENV", keys(%ENV));
 }
-#$ENV{RSAT} = "/cobelix/jvanheld/rsa-tools";
 
 my $SCRIPTS = $ENV{RSAT}.'/perl-scripts';
 my $TMP = $ENV{RSAT}.'/public_html/tmp';
@@ -914,9 +910,10 @@ sub oligo_diff {
 }
 
 ################################################################
+##
 ## peak-motifs
 ##
-## ATTENTION: THE ADDRESS IS HARD-CODED in the code !!! For some reason we
+## ATTENTION: THE MAMAZE ADDRESS IS HARD-CODED in the code !!! For some reason we
 ## cannot access the properties from RSAT_config.props.  This should be
 ## fixed.
 sub peak_motifs {
@@ -5218,6 +5215,7 @@ sub compare_graphs {
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
     close TMP_OUT;
+
     # Print the comments
     open COMMENTS_OUT, ">".$tmp_comments or die "cannot open temp file ".$tmp_comments."\n";
     print COMMENTS_OUT $stderr;
@@ -5243,7 +5241,7 @@ sub compare_graphs_cmd {
   my ($self, %args) =@_;
 
   my $command = "$SCRIPTS/compare-graphs -v 1 ";
-#  my $command = "HELLO FROM RSAT";
+#  my $command = "HELLO FROM caminante";
 
   if ($args{Qinformat}) {
    my $Qin_format = $args{Qinformat};
@@ -5251,66 +5249,77 @@ sub compare_graphs_cmd {
    $Qin_format =~ s/\'//g;
    $command .= " -in_format_Q $Qin_format";
   }
+
   if ($args{Rinformat}) {
    my $Rin_format = $args{Rinformat};
    $Rin_format =~ s/\'//g;
    $Rin_format =~ s/\'//g;
    $command .= " -in_format_R $Rin_format";
   }
+
   if ($args{outformat}) {
    my $out_format = $args{outformat};
    $out_format =~ s/\'//g;
    $out_format =~ s/\'//g;
    $command .= " -out_format $out_format";
   }
+
   if ($args{outweight}) {
    my $outweight = $args{outweight};
    $outweight =~ s/\'//g;
    $outweight =~ s/\'//g;
    $command .= " -outweight $outweight";
   }
+
   if ($args{return}) {
    my $return = $args{return};
    $return =~ s/\'//g;
    $return =~ s/\'//g;
    $command .= " -return $return";
   }
+
   if ($args{Qwcol}) {
    my $wcol_q = $args{Qwcol};
    $wcol_q =~ s/\'//g;
    $wcol_q =~ s/\'//g;
    $command .= " -wcol_Q $wcol_q";
   }
+
   if ($args{Qscol}) {
    my $scol_q = $args{Qscol};
    $scol_q =~ s/\'//g;
    $scol_q =~ s/\'//g;
    $command .= " -scol_Q $scol_q";
   }
+
   if ($args{Qtcol}) {
    my $tcol_q = $args{Qtcol};
    $tcol_q =~ s/\'//g;
    $tcol_q =~ s/\'//g;
    $command .= " -tcol_Q $tcol_q";
   }
+
   if ($args{Rwcol}) {
    my $wcol_r = $args{Rwcol};
    $wcol_r =~ s/\'//g;
    $wcol_r =~ s/\'//g;
    $command .= " -wcol_R $wcol_r";
   }
+
   if ($args{Rscol}) {
    my $scol_r = $args{Rscol};
    $scol_r =~ s/\'//g;
    $scol_r =~ s/\'//g;
    $command .= " -scol_R $scol_r";
   }
+
   if ($args{Rtcol}) {
    my $tcol_r = $args{Rtcol};
    $tcol_r =~ s/\'//g;
    $tcol_r =~ s/\'//g;
    $command .= " -tcol_R $tcol_r";
   }
+
   if ($args{Qinputgraph}) {
    my $input_graph = $args{Qinputgraph};
    chomp $input_graph;
@@ -5323,6 +5332,7 @@ sub compare_graphs_cmd {
    chomp $tmp_input;
    $command .= " -Q '".$tmp_input."'";
   }
+
   if ($args{Rinputgraph}) {
    my $input_graph = $args{Rinputgraph};
    chomp $input_graph;
@@ -5335,6 +5345,7 @@ sub compare_graphs_cmd {
    chomp $tmp_input;
    $command .= " -R '".$tmp_input."'";
   }
+
   return $command;
 }
 
@@ -5955,12 +5966,15 @@ sub run_WS_command {
       # Both stdout (1) and stderr (2) need to be redirected to allow background (&) mode
 #      `$command 1>$tmp_outfile 2>$error_file &`;
       `$command &>$error_file &`;
+#       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
+# 							       SOAP::Data->name('rsat_site' => $ENV{rsat_site}),
+# 							       SOAP::Data->name('rsat_www' => $ENV{rsat_www}),
+# 							       SOAP::Data->name('rsat_ws' => $ENV{rsat_ws}),
+# 							       SOAP::Data->name('command' =>"site: ".$ENV{rsat_site}." command: ".&RSAT::util::hide_RSAT_path($command))))
+# 	  ->attr({'xmlns' => ''});
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
-							       SOAP::Data->name('rsat_site' => $ENV{rsat_site}),
-							       SOAP::Data->name('rsat_www' => $ENV{rsat_www}),
-							       SOAP::Data->name('rsat_ws' => $ENV{rsat_ws}),
-							       SOAP::Data->name('command' =>"site: ".$ENV{rsat_site}." command: ".&RSAT::util::hide_RSAT_path($command))))
-	  ->attr({'xmlns' => ''});
+							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
+	->attr({'xmlns' => ''});
   }
 
   ## Execute the command on the server
