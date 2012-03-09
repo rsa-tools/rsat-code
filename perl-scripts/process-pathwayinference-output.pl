@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: process-pathwayinference-output.pl,v 1.1 2012/03/08 14:58:12 rsat Exp $
+# $Id: process-pathwayinference-output.pl,v 1.2 2012/03/09 09:29:06 rsat Exp $
 #
 ############################################################
 
@@ -178,7 +178,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input/output files
@@ -288,31 +288,42 @@ package main;
     if ($infile{gec}){
       my $ec2genequery="";
       while(my ($rxnid, $infoarray) = each(%reactioninfos)) {
-	if($infoarray[2] eq "EC"){
-	  &RSAT::message::Info("EC2GENE:", $infoarray[0]) if ($verbose >= 1);
-	  $ec2genequery = $ec2genequery."(\$2~\"^$infoarray[1]\")||"
+	my @values = @{$infoarray};
+	foreach my $info_ref (@values) {
+	  my @info = @{$info_ref};  
+	  if($info[2] eq "EC"){
+	    &RSAT::message::Info("EC2GENE:", $info[0]) if ($verbose >= 3);
+	    $ec2genequery = $ec2genequery."(\$2~\"^$info[1]\")||"
+	  }
 	}
       }
        $ec2genequery =~s/\|+$//;
       
-      # do something with $key and $value
-      $command_ = "awk -F'\\t+' ' $ec2genequery {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' $infile{gec}|sort|uniq";
-      &RSAT::message::TimeWarn($command_) if ($verbose >= 3);
+      #buid an hash for ec 2 genes
+      
+      $command_ = "awk -F'\\t+' ' $ec2genequery {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' \"$infile{gec}\"|sort|uniq";
+      &RSAT::message::TimeWarn($command_) if ($verbose >= 1);
       my @geconversiontable = qx ($command_);
       foreach my $content (@geconversiontable) {
+# 	&RSAT::message::Info("EC2GENE:", $content) if ($verbose >= 3);
 	my @currentarray = split(/\t/,$content);
 	if ( @previousarray && !($previousarray[0] eq $currentarray[0])) {
 	# 	  print $previousarray[0]."\n";
+	  
 	  my @truc = @gecinfoarray;
+	  &RSAT::message::Info("ECS2GENE:", $previousarray[0] ."\t" . $truc[0][1]) if ($verbose >= 3);
 	  $gecinfos{$previousarray[0]}=\@truc;
 	  undef @gecinfoarray;
 	}
+# 	&RSAT::message::Info("GENE:", $previousarray[0]) if ($verbose >= 3);
 	push (@gecinfoarray,\@currentarray);
 	@previousarray = @currentarray;
       }
       $gecinfos{$previousarray[0]}=\@gecinfoarray;
+      
+       &RSAT::message::Info("GENE:", "|".$previousarray[0] ."|\t" . $gecinfos{"5.3.1.16"}[0][1]) if ($verbose >= 3);
     }
-    
+#     exit 1;
  
 
     # End of Searching all reactions information for the reaction that are in  the infered pathway graph
@@ -354,19 +365,21 @@ package main;
 	      my($reacid,$ec,$qualif) = @info;
 	      # 		    print "ec: $ec\n";
 	      if ($ec) {
-		if (%gecinfos){
-		  my $genes = $gecinfos{$ec};
-		  if (defined $genes) {
-		    my @genesarray = @{$genes};
-		    foreach my $genearray (@genesarray) {		  
-		      my $genename = $genesarray[0];
-		      chomp($genename);
-		      $label=$label."$genename,";
+		if ($qualif eq "EC"){
+		  if (%gecinfos){
+		    chomp($ec);
+		    my $genes = $gecinfos{$ec};
+		    &RSAT::message::Info("EC:", "|".$ec."|",  $gecinfos{"$ec"}[0][1]) if ($verbose >= 4);
+		    if (defined $genes) {
+		      my @genesarray = @{$genes};
+		      foreach my $genearrayref (@genesarray) {
+			my @genearray = @{$genearrayref};
+			my($id,$genename,$qualif) = @genearray;		  
+			chomp($genename);
+			$label.= "$genename,";
+		      }
 		    }
 		  }
-		}
-		
-		if ($qualif eq "EC"){
 		  $ecs .= $ec;
 		}
 		if (!defined $reactionid) {
@@ -521,7 +534,7 @@ Gene -> EC (GE) annotation file.
 
 =cut
     } elsif ($arg eq "-gec") {
-      $infile{ge} = shift(@arguments);
+      $infile{gec} = shift(@arguments);
 =pod
 
 =item	B<-ecr ECR file>
