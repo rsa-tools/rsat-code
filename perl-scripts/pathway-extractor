@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.24 2011/12/02 22:03:19 jvanheld Exp $
+# $Id: pathway-extractor,v 1.25 2012/03/09 16:02:24 rsat Exp $
 #
 ############################################################
 
@@ -28,7 +28,7 @@ co-regulated, members of the same operon, …).
 1. Gene to reaction mapping. Identify the set of reactions ("seed
 reactions") catalyzed by the set of input genes ("seed genes"). The
 mapping relies on a user-specified file describing the mapping of
-genes to reactions (GPR, Gene-Protein-Reaction file).
+genes to reactions (GNN and NNN, Gene-Node Name and Network Node Name<>NodeID file).
 
 2. Pathway extraction (=Pathway inference). PathwayInference takes as
 input a network (typically a metabolic network made of compounds +
@@ -37,11 +37,6 @@ subnetwork that interconnects the seed nodes at a minimal “cost",
 where the cost is a weighted sum of the intermediate compounds and
 reactions used to link the seed nodes (Faust, et al., 2011; Faust and
 van Helden, 2011).
-
-3. Annotation of the inferred pathway: identify the EC numbers,
-enzymes and genes associated to each reaction (seed + inferred
-reactions) of the inferred pathway. This documentation relies on the
-same GPR file as the gene to reaction mapping.
 
 This implementation requires no database or Internet connection and
 works with local files only.  The PathwayInference tool wraps a number
@@ -75,7 +70,7 @@ Graph tool
 =head1 USAGE
 
 pathway_extractor -h -hp [-i inputfile] [-o output_directory] [-v verbosity] \
-    -g infile{graph} -a gene2ec2reactions [-d unique_descriptor] [-t temp_directory] [-show]
+    -g infile{graph} -a gene2ec -b ec/rxn/cpd2rxnid/cpdid [-d unique_descriptor] [-t temp_directory] [-show]
 
 =head1 INPUT FORMAT
 
@@ -128,29 +123,39 @@ The seed mapping file makes the link between different types of seeds
 (genes, EC numbers, proteins, compound names) and nodes of the network
 (reactions or compounds depending on the seed type).
 
-=head3 Gene-EC-reaction (GER) file (option I<-ger>)
+=head3 Network Node Names (nnn) file (option I<-nnn>)
 
 Mandatory.
 
-The GER file makes the link between genes and reactions, passing
-through EC numbers.
+The NNN files makes the link between EC numbers/rxn name/cpd name and node id in the network .
 
-This file is used for the reaction to gene mapping (backward).
+These files are used for the reaction ids/compound ids to gene annotation (backward).
 
-The three first columns are mandatory (gene_id, ec_number,
-reaction_id). Additional columns can be provided for convenience, but
-are ignored.
 
-=head3 Example of GERfile
+=head3 Example of NNN file
 
- geneID	ec_number       reaction_id     species_name    taxonomy_id     gene_name
- O22340	4.2.3.-	 RXN-10482       Abies grandis   46611   (4S)-limonene synthase
- O22340	4.2.3.-	 RXN-10483       Abies grandis   46611   (4S)-limonene synthase
- O22340	4.2.3.-	 RXN-10566       Abies grandis   46611   (4S)-limonene synthase
- O22340	4.2.3.-	 RXN-10567       Abies grandis   46611   (4S)-limonene synthase
- O22340	4.2.3.-	 RXN-10568       Abies grandis   46611   (4S)-limonene synthase
- O22340	4.2.3.-	 RXN-10600       Abies grandis   46611   (4S)-limonene synthase
+ #query  id      qualifier       name
+1.-.-.- RXN1G-1486      EC      3-oxo-C78-α-mycolate-reductase
+1.-.-.- RXN1G-1527      EC      3-oxo-C85-cis-methoxy-mycolate reductase
+1.-.-.- RXN1G-1528      EC      3-oxo-C86-trans-methoxy-mycolate-reductase
+10-deoxysarpagine       10-DEOXYSARPAGINE       compounds       10-deoxysarpagine
+10-DEOXYSARPAGINE       10-DEOXYSARPAGINE       compounds       10-deoxysarpagine
  ...
+
+=head3 Gene to Node Names (gnn) file (option I<-gnn>)
+
+not mandatory, in this cas the queyr file or stdin must contains only Node Names.
+
+The GNN files makes the link between external identifier and node names (example: gene name, refseq, locuslink) . 
+
+
+=head3 Example of NNN file
+
+#query	id	qualifier	name	taxonomy_id	species
+aas	2.3.1.40	GENE_NAME	aas	83333	Escherichia coli (strain K12)
+aas	6.2.1.20	GENE_NAME	aas	83333	Escherichia coli (strain K12)
+aat	2.3.2.6	GENE_NAME	aat	83333	Escherichia coli (strain K12)
+
 
 =head1 EXAMPLES
 
@@ -174,7 +179,7 @@ Select the first column, containing gene Ids.
 Extract a pathway connecting at best the reactions catalyzed by these gene products
   pathway-extractor -i met_genes_IDs.txt \
      -g data/networks/MetaCyc/MetaCyc_directed_141.txt \
-     -ger ${RSAT}/data/metabolic_networks/GER_files/GPR_Uniprot_112011_Escherichia_coli_K12.tab \
+     -gnn ${RSAT}/data/metabolic_networks/GER_files/GPR_Uniprot_112011_Escherichia_coli_K12.tab \
      -o result_dir \
      -t temp_dir
 
@@ -227,7 +232,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input/output files
@@ -243,17 +248,17 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  $infile{gpr} ="METACYC_GPR_EC.tab"; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+  $infile{gnn} =""; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+  $infile{nnn}=""; 
   $graph = "";		# Graph Name
   $infile{graph}="";		# File containing the graph
-  $show = 0;		# Open png image in gwenview
   $group_descriptor= ""; # Unique name to differenciate output files
 
   my $organism = "Unknown";
   my $organism_id;
   # my $working_dir = "";
-  my $genes_id;
-  my @genes_id_list;
+  my $query_ids;
+  my @query_id_list;
 
   ################################################################
   ## Read argument values
@@ -262,6 +267,7 @@ package main;
   ################################################################
   ## Check argument values
 
+#   if no grou descriptore use the input file name
   if (defined $infile{input}) {
     ($in) = &OpenInputFile($infile{input});
     if (!$group_descriptor) {
@@ -275,6 +281,8 @@ package main;
     }
   }
   $group_descriptor=~s/(\s|\(|\))+/_/g;
+  
+  # if no graph name take the graph file name
   if (!$graph) {
     $graph = $infile{graph};
     $graph =~ s{.*/}{};	    # removes path
@@ -309,57 +317,46 @@ package main;
 
 
   ################################################################
-  ## GPR Mapping
+  ## ECR Mapping
 
-  ## DIDIER: the GPR mapping should be redone with the new program match-names.
+  ## DIDIER: the ECR mapping should be redone with the new program match-names.
 
   &RSAT::message::TimeWarn("Mapping seeds to reactions") if ($verbose >= 1);
-  @genes_id_list = <$in>;
+  @query_id_list = <$in>;
   close $in if ($infile{input});
-  chomp(@genes_id_list);
-  $genes_id = (join "|^",@genes_id_list );	#
-  &RSAT::message::Info("Gene IDs", join("; ", @genes_id_list)) if ($verbose >= 3);
-  my @grconversiontable;
-  my %genelist=();
-  if ($outfile{gr}) {	    ## if annotated gene to reaction file (-b)
-    my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genes_id."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $outfile{gr}";
-    @grconversiontable = qx ($seed_converter_cmd) ;
-    chomp(@grconversiontable);
-    @grconversiontable = sort(@grconversiontable);
-    &RSAT::message::Debug("Gene IDs", join("; ", @grconversiontable)) if ($verbose >= 3);
-  }
-  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$genes_id."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' $infile{gpr}";
+  chomp(@query_id_list);
+  $query_ids = (join "\$|^",@query_id_list );	# build a query from the input file or stdin
+  &RSAT::message::Info("Query IDs", join("; ", @query_id_list)) if ($verbose >= 3);
+  my @ercconversiontable;
+  my %querylist=();
+  ## search into the GEC or GR file to find EC or Reactionid from gene input
+  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$query_ids."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' \"$infile{gnn}\"";
 
   &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
 
+  if($infile{gnn}){
+    my @gnnconversiontable = qx ($seed_converter_cmd) ;
+    chomp(@gnnconversiontable);
+    foreach my $line (@gnnconversiontable){
+      @tempdata = split(/\t/,$line);
+      $query_ids .= "\$|^".$tempdata[0]; # complete the query with id found in gnn file
+    }
+  }
+  # search in the ECR file with the complete query this normaly map ec, compound and reaction_id already presenet in the query
+  $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$query_ids."\" {print \$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4}' \"$infile{nnn}\"";
+   &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
   my @conversiontable = qx ($seed_converter_cmd) ;
   chomp(@conversiontable);
-  @conversiontable =sort(@conversiontable);
-  # getting organism information
-  my @tempdata = split(/\t/,$conversiontable[0]);
-  $organism = $tempdata[3];
-  $organism_id = $tempdata[4];
-  my $groupid=( join "-",$organism,$organism_id);
-  $groupid=~s/(\s|\(|\))+/_/g;
-
-  ##  merging GR and GPR in one array
-  if (@grconversiontable) {
-    foreach my $val (@conversiontable) {
-      @tempdata = split(/\t/,$val);
-      if (!grep(/^$tempdata[0]/, @grconversiontable)) {
-	push(@grconversiontable, grep(/^$tempdata[0]/, @conversiontable))
-      }
-    }
-    #   print join( "\n",@conversiontable) ."\n";
-    @conversiontable=@grconversiontable;
-
+  &RSAT::message::Info("Predicted pathway file\n", join("\n", @conversiontable)) if ($verbose >= 1);
+  
+# getting organism information
+# End of ECR mapping
+################################################################
+  if (! defined $group_id) {
+  $groupid =$group_descriptor;
   }
-  #  End of merging GR and GPR in one array
-
-  # End of GPR mapping
-  ################################################################
-
-
+  $groupid=~s/(\s|\(|\))+/_/g;
+  
   ################################################################
   ## Define output file names
   $outfile{gr} = "";		# GR Gene -> REACTION annotation
@@ -368,23 +365,14 @@ package main;
   $outfile{prefix} =~ s|//|/|g; ## Suppress double slashes
 
   $outfile{predicted_pathway} = $outfile{prefix}.".txt";
-  $outfile{graph_png} = $outfile{prefix}."_annot.png";
-  $outfile{graph_dot} = $outfile{prefix}."_annot.dot";
-  $outfile{graph_annot} = $outfile{prefix}."_annot.txt";
   $outfile{seeds_converted} = $outfile{prefix}."_seeds_converted.txt";
-#  my $outfile{graph_png} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.png");
-#  my $outfile{graph_dot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.dot");
-#  my $outfile{graph_annot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.txt");
-#  my $outfile{seeds_converted} = $dir{output}.(join "_",$group_descriptor,$groupid,$graph, "_converted_seeds.txt");
-
   ################################################################
   # Creating reaction file fo pathway inference
   &RSAT::message::TimeWarn("Creating reaction file for pathway inference") if ($verbose >= 1);
 #  my $outfile{seeds_converted} = $dir{output}.(join "_",$group_descriptor,$groupid,$graph, "_converted_seeds.txt");
   open (MYFILE, '>'.$outfile{seeds_converted});
   print MYFILE "# Batch file created", &RSAT::util::AlphaDate();
-  print MYFILE "# GENE groups parsed from file:". "\n";
-  print MYFILE "# Organism: ". $organism. "\n";
+  print MYFILE "# ECR groups parsed from file:". "\n";
   print MYFILE "# EC number grouping: true". "\n";
   my $seednum= 0;
   my @previousarray;
@@ -396,9 +384,9 @@ package main;
       $seednum++;
     }
     # 	print "$tempdata[1] eq $previousarray[1]\n";
-    print MYFILE $tempdata[2] .">\t".$tempdata[2]. "\n";
-    print MYFILE $tempdata[2] ."<\t".$tempdata[2]. "\n";
-    print MYFILE $tempdata[2] ."\t".$tempdata[0]. "\n";
+    print MYFILE $tempdata[1] .">\t".$tempdata[1]. "\n";
+    print MYFILE $tempdata[1] ."<\t".$tempdata[1]. "\n";
+    print MYFILE $tempdata[1] ."\t".$tempdata[0]. "\n";
     @previousarray = @tempdata;
   }
 
@@ -408,9 +396,7 @@ package main;
   }
   # END OF  Creating reaction file fo pathway inference
   ################################################################
-
-
-  ## TO DO WITH DIDIER: CHECK SEED NUMBER AND SEND WARNING IF TOO BIG.
+## TO DO WITH DIDIER: CHECK SEED NUMBER AND SEND WARNING IF TOO BIG.
   ##
   ## Define a parameter max{seed_numbers}. By default, program dies
   ## with error if seeds exceed max{seed_number}, but the max can be
@@ -438,151 +424,6 @@ package main;
 
     # END of Running patywayinference
     ################################################################
-
-    ################################################################
-    # Loading reactions from extracted  graph
-    &RSAT::message::TimeWarn("Loading reactions from extracted graph") if ($verbose >= 1);
-    open (INFILE, '<'.$outfile{predicted_pathway}) or die "couldn't open the file!";
-    my $i = 0;
-    my $stop = "";
-    my $line;
-    my $reactionquery="";
-    my $cpdquery="";
-    while ($line=<INFILE>) {
-      #$line = $_;
-      chomp  ($line );
-      if (length($line)>0 && !($line=~m/^;/)) {
-	my @tempdata = split(/\t/,$line);
-	if ($tempdata[6] &&($tempdata[6] eq "Reaction")) {
-	  #       print "|".$line."|"."\n";
-	  $tempdata[0]=~s/<$|>$//;
-	  $i++;
-	  $reactionquery = $reactionquery."(\$3~\"^".$tempdata[0]."\"&&\$5~\"".$organism_id."\")||";
-	} elsif ($tempdata[6] &&($tempdata[6] eq "Compound")) {
-	  $cpdquery = $cpdquery."(\$1~\"^".$tempdata[0]."\"&&\$2~\"Compound\")||";
-	}
-      } elsif ($i>0) {
-	last;
-      }
-    }
-    close (INFILE);
-    # End of Loading results graph reactions
-    ################################################################
-
-    ################################################################
-    # Searching all reactions information for the reaction that are in  the inferred pathway graph
-    &RSAT::message::TimeWarn("Searching information about extracted reactions") if ($verbose >= 1);
-    $reactionquery =~s/\|+$//;
-    $cpdquery =~s/\|+$//;
-
-    my $command_ = "awk -F'\\t+' ' $reactionquery {print \$3\"\\t\"\$2\"\\t\"\$6}' $infile{gpr}|sort|uniq";
-#    print "$command_\n";
-    &RSAT::message::TimeWarn($command_) if ($verbose >= 3);
-    @conversiontable = qx ($command_);
-
-
-    $command_ = "awk -F'\\t+' '$cpdquery {print \$1\"\\t\"\$4\"\\t\"\$1}' $infile{graph}";
-    &RSAT::message::TimeWarn($command_) if ($verbose >= 3);
-    my @conversionreactiontable = qx ($command_);
-    #     print "****************".join("\n", @conversionreactiontable)."\n";
-    push (@conversiontable,@conversionreactiontable);
-
-    chomp(@conversiontable);
-
-    ## Storing reaction infos in a hash for faster search
-    my %reactioninfos=();
-    undef @previousarray;
-    my @reacinfoarray=();
-    foreach my $content (@conversiontable) {
-      my @currentarray = split(/\t/,$content);
-      if ( @previousarray && !($previousarray[0] eq $currentarray[0])) {
-	# 	  print $previousarray[0]."\n";
-	my @truc = @reacinfoarray;
-	$reactioninfos{$previousarray[0]}=\@truc;
-	undef @reacinfoarray;
-      }
-      push (@reacinfoarray,\@currentarray);
-      @previousarray = @currentarray;
-    }
-    $reactioninfos{$previousarray[0]}=\@reacinfoarray;
-
-    # End of Searching all reactions information for the reaction that are in  the infered pathway graph
-    ################################################################
-
-    ################################################################
-    # Adding description to the pathway graph
-    &RSAT::message::TimeWarn("Adding descriptions to pathway graph") if ($verbose >= 1);
-    open (INFILE, '<'.$outfile{predicted_pathway}) or die "couldn't open the file!";
-#    my $outfile{graph_annot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.txt");
-    # my $outfilename = `mktemp $outfile{graph_annot}`;
-    open (OUTFILE, '>'.$outfile{graph_annot});
-    #     print $group_descriptor;
-    while (<INFILE>) {
-      my($line) = $_;
-      chomp($line);
-      my @tempdatab = split(/\t/,$line);
-      if (length($line)==0 || $line=~ m/^;/) {
-	print OUTFILE $line. "\n";
-      } else {
-
-	my $tempstring = $tempdatab[0];
-	$tempstring=~s/<$|>$//;
-	$tempdatab[0] = $tempstring; #remove directionality from reaction node id to merge the nodes
-	# 	      print "TEMPSTRING = $tempstring\n";
-	my $values_ref = $reactioninfos{$tempstring};
-	if (defined $values_ref) {
-	  my @values = @{$values_ref};
-	  if ($tempdatab[6] && ($tempdatab[6] eq "Reaction")) {
-
-	    my $label="";
-	    my $labelb;
-	    foreach my $info_ref (@values) {
-	      my @info = @{$info_ref};
-
-	      #  	      print "JOIN=".join("\t", $myarray[0][0])."\n";
-	      my( $reacid,$ec,$genename) = @info;
-	      # 		    print "ec: $ec\n";
-	      if ($ec) {
-		chomp($genename);
-		$label=$label."$genename,";
-		if (!defined $labelb) {
-		  $labelb = "\\n$ec\\n($reacid)";
-		}
-	      }
-	    }
-	    $tempdatab[3] = $label.$labelb;
-	  } elsif ($tempdatab[6] &&($tempdatab[6] eq "Compound")) {
-	    $tempdatab[3] =  $values[0][1];
-	  } else {
-	    $tempdatab[1]=~s/<$|>$//;
-	  }
-	}
-	print OUTFILE (join "\t",@tempdatab). "\n";
-      }
-    }
-    close (MYFILE);
-    # End of Adding description to the pathway graph
-    ################################################################
-
-    ################################################################
-    # Converting graph to dot format
-    &RSAT::message::TimeWarn("Converting graph to dot format") if ($verbose >= 1);
-#    my $outfile{graph_dot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.dot");
-    my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $outfile{graph_annot} -o $outfile{graph_dot}";
-    system  $convert_graph_cmd;
-    # End of Converting graph to dot graph format
-    ################################################################
-
-    ################################################################
-    # Converting dot graph to image with graphviz dot
-    &RSAT::message::TimeWarn("Creating graph image with graphviz dot") if ($verbose >= 1);
-#    my $outfile{graph_png} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.png");
-    my $graph_image_cmd = "dot -Tpng -Kdot -o $outfile{graph_png} $outfile{graph_dot}";
-    system $graph_image_cmd;
-    #exit 0;
-    if ($show) {
-      system "gwenview $outfile{graph_png} &";
-    }
   } else {
     print STDERR "NOT ENOUGH SEEDS. Min 2. I stop here!!\n";
     exit(1);
@@ -704,14 +545,22 @@ allows to use the command within a pipe.
 
 =pod
 
-=item	B<-ger GER Genes file>
+=item	B<-gnn GE Genes file>
 
-Gene -> EC -> REACTION (GER) annotation file.
+Gene -> EC (GE) annotation file.
 
 =cut
-    } elsif ($arg eq "-ger") {
-      $infile{gpr} = shift(@arguments);
+    } elsif ($arg eq "-gnn") {
+      $infile{gnn} = shift(@arguments);
+=pod
 
+=item	B<-nnn ECR file>
+
+EC -> REACTION and COUMPOUNDS (ECR) annotation file.
+
+=cut
+    } elsif ($arg eq "-nnn") {
+      $infile{nnn} = shift(@arguments);      
 # =item	B<-b GR Gene -> REACTION annotation>
 #
 # An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
