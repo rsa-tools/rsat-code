@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.25 2012/03/09 16:02:24 rsat Exp $
+# $Id: pathway-extractor,v 1.26 2012/03/12 14:47:10 rsat Exp $
 #
 ############################################################
 
@@ -221,6 +221,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+use Getopt::Long;
 
 
 ################################################################
@@ -232,9 +233,12 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
-
+  our @pioptions=('-s','-i','-g','-f','-b','-n','-q','-o','-O','-E','-a','-y','-p','-F','-Z','-m','-w','-t',
+		  '-l','-T','-W','-P','-C','-e','-d','-u','-x','-k','-U','-B','-r','-D','-M','-I','-N','-G',
+		  '-H','-X','-A','-K','-S','-R','-j','-J','-Q','-L','-Y','-v','-h','-V'); #other pathwayinference otptions : specific opions that will be directly pass to the java pathway inference app
+  our %otherPIoptions=();
   ## Input/output files
   our %infile = ();	     # File name containing a list of genes ID
   our %outfile = ();
@@ -407,17 +411,40 @@ package main;
     # Running PatywayInference
     &RSAT::message::TimeWarn("Running pathway inference with ", $seednum, "seeds") if ($verbose >= 1);
 #    $outfile{predicted_pathway} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "_pred_pathways.txt");
+    our $minpathlength = $otherPIoptions{"-m"} || "5";
+    delete($otherPIoptions{"-m"});
+    our $graphfileformat = $otherPIoptions{"-f"} || "flat";
+    delete($otherPIoptions{"-f"});
+    our $weightpolicy= $otherPIoptions{"-y"} || "con";
+    delete($otherPIoptions{"-h"});
+    delete($otherPIoptions{"-g"});
+    delete($otherPIoptions{"-o"});
+    delete($otherPIoptions{"-p"});
+    delete($otherPIoptions{"-v"});
+    #after the program has handled the mandatory parameters, it will add the remaining ones 
+    my $piparameters =" ";
+    
+    while( my($key, $val) = each(%otherPIoptions) ) {
+	$piparameters .= "$key $val ";
+    }
+    
+    
     my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference";
     $pathway_infer_cmd .= " -i ".$outfile{seeds_converted};
-    $pathway_infer_cmd .= " -m 5 -C -f flat -n";
+    $pathway_infer_cmd .= " -m $minpathlength -C -f $graphfileformat";
     $pathway_infer_cmd .= " -p ".$dir{temp};
     $pathway_infer_cmd .= " -E ".$dir{output};
-    $pathway_infer_cmd .= " -b -d -g";
+    $pathway_infer_cmd .= " -d -b -g ";
     $pathway_infer_cmd .= " ".$infile{graph};
-    $pathway_infer_cmd .= " -y con ".$verbose;
-    $pathway_infer_cmd .= " -o $outfile{predicted_pathway}";
+    $pathway_infer_cmd .= " -y $weightpolicy -v ".$verbose;
+    $pathway_infer_cmd .=  $piparameters;
+    
+    $pathway_infer_cmd .= "-o $outfile{predicted_pathway}";
+    
+    
     &RSAT::message::TimeWarn("Pathway inference command", $pathway_infer_cmd) if ($verbose >= 2);
     &RSAT::message::Info("Predicted pathway file", $outfile{predicted_pathway}) if ($verbose >= 1);
+    #exit 1;
     &doit($pathway_infer_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
     ## TO DO WITH DIDIER: redirect STDERR/STDOUD to log and err files in the output directory
@@ -585,12 +612,12 @@ EC -> REACTION and COUMPOUNDS (ECR) annotation file.
 
 =pod
 
-=item	B<-d group descriptor>
+=item	B<-gd group descriptor>
 
 ??? (Check with Didier)
 
 =cut
-    } elsif ($arg eq "-d") {
+    } elsif ($arg eq "-gd") {
       $group_descriptor = shift(@arguments);
 
 
@@ -616,20 +643,32 @@ If no output file is specified, the current directory is used.
 
 =pod
 
-=item	B<-t temp Directory>
+=item	B<-p temp Directory>
 
 If no output file is specified, the current directory is used.
 
 =cut
-    } elsif ($arg eq "-t") {
+    } elsif ($arg eq "-p") {
       $dir{temp} = shift(@arguments);
+=pod
 
+=item	B<Pathway inference arguments>
+
+=cut
+      
+    } elsif (grep(/$arg/ ,@pioptions)) { #if Pathway inference option add it to hash
+      $otherPIoptions{$arg}= shift(@arguments);
+      $dir{temp} = shift(@arguments);
     } else {
-      &FatalError(join("\t", "Invalid pathway_extractor option", $arg));
+      
+       &FatalError(join("\t", "Invalid pathway_extractor option", $arg));
 
     }
   }
-
+#GetOptionsFromArray(\@arguments,\%otherPIoptions)
+#getopts("CnHf:b:q:O:E:a:y:p:F:Z:m:w:t:l:T:W:P:e:d:u:x:k:U:B:r:D:M:I:N:G:X:A:K:S:R:j:J:Q:L:Y:v:h:V:o:p:g:i:g:",\%otherPIoptions);
+#&FatalError(join("\t", "Invalid pathway_extractor option", $ARGV[0])) if $ARGV[0];
+      
 =pod
 
 =back
