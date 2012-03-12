@@ -58,6 +58,8 @@ if ($query->param('title')){
   $title =~ s/\s+/_/g;
   $title =~ s/\//_/g;
   $title =~ s/:/_/g;
+  $title =~ s/\'/_/g;
+  $title =~ s/\"/_/g;
   $parameters .= " -title '".$title."' ";
 } else {
   &RSAT::error::FatalError("You must enter a title for this analysis");
