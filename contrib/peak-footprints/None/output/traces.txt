@@ -1,3 +1,0 @@
-TRACE : 2012-01-10 13:25:02.473737 : #################################################################################
-TRACE : 2012-01-10 13:25:02.473807 : # PipelineManager.executePipelines : Reading pipelines from : /home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testHistogram_pipeline.xml
-TRACE : 2012-01-10 13:25:02.473838 : #################################################################################
