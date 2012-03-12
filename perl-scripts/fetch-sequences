@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.8 2012/03/01 07:44:37 jvanheld Exp $
+# $Id: fetch-sequences,v 1.9 2012/03/12 12:29:32 rsat Exp $
 #
 ############################################################
 
@@ -17,7 +17,7 @@ fetch-sequences
 
 $program_version
 
-=Head1 DESCRIPTION
+=head1 DESCRIPTION
 
 Retrieve genome sequences for a set of coordinates specified in a bed
 file.
@@ -86,6 +86,8 @@ chromStart=0, chromEnd=100, and span the bases numbered 0-99.
 
 The 9 additional optional BED fields are:
 
+=over
+
 =item 4. name
 
 Defines the name of the BED line. This label is displayed to the left
@@ -137,6 +139,8 @@ A comma-separated list of block starts. All of the blockStart
 positions should be calculated relative to chromStart. The number of
 items in this list should correspond to blockCount.
 
+=back
+
 =head1 OUTPUT FORMAT
 
 Sequences are exported in fasta format.
@@ -151,7 +155,11 @@ A common utilization of fetch-sequences is to retrieve UCSC sequences
 for the peak coordinates produced by a peak callinf program
 (e.g. MACS, SICER, SWEMBL, ...).
 
+=back
+
 =head1 WISH LIST
+
+=over
 
 =item B<-mask>
 
@@ -165,6 +173,8 @@ When the coordinates of one feature exceed chromosome size, the whole
 UCSC query fails. This poses problems with the option -extend, since
 the extended feature may reach chromosome ends. I should check the
 chromosome lengths, and restrict the extended end to these values.
+
+=back
 
 =cut
 
@@ -187,7 +197,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
