@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.114 2012/02/07 11:45:02 jvanheld Exp $
+# $Id: compare-matrices,v 1.115 2012/03/12 05:43:39 jvanheld Exp $
 #
 ############################################################
 
@@ -419,7 +419,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.115 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -2003,7 +2003,7 @@ package main;
 sub PairwiseAlignments {
   &RSAT::message::TimeWarn("Computing pairwise matrix alignments") if ($main::verbose >= 2);
   print $alignments_pairwise_html "<p><pre><b>Command:</b> compare-matrices ";
-  &PrintArguments($alignments_pairwise_html);
+  &PrintArguments($alignments_pairwise_html, 1);
   print $alignments_pairwise_html "</pre></p>\n";
 
   foreach my $compa_id (@sorted_match_id) {
@@ -2142,7 +2142,7 @@ sub OneToNAlignments {
 
   ## Report the command
   print $alignments_1ton_html "<p><pre><b>Command:</b> compare-matrices ";
-  &PrintArguments($alignments_1ton_html);
+  &PrintArguments($alignments_1ton_html, 1);
   print $alignments_1ton_html "</pre></p>\n";
 
   ## Compute the best matching score per matrix
@@ -2238,7 +2238,7 @@ sub PrintAlignedMatrices {
   print $alignments_1ton_html "<h2>", $header_row, "</h2>\n";
 
 #  print $alignments_1ton_html "<p><pre><b>Command:</b> compare-matrices ";
-#  &PrintArguments($alignments_1ton_html);
+#  &PrintArguments($alignments_1ton_html, 1);
 #  print $alignments_1ton_html "</pre></p>\n";
 
   ## Open a table in the HTML file and print column headers
@@ -3032,7 +3032,7 @@ Supported threshold fields : rank, dEucl, cor, cov, ali_len, offset
 ## Verbose message
 sub Verbose {
   print $main::out "; compare-matrices ";
-  &PrintArguments($main::out);
+  &PrintArguments($main::out, 1);
   printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
   if (%main::infile) {
     print $main::out "; Input files\n";
