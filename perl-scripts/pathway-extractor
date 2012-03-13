@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.26 2012/03/12 14:47:10 rsat Exp $
+# $Id: pathway-extractor,v 1.27 2012/03/13 16:25:23 rsat Exp $
 #
 ############################################################
 
@@ -218,256 +218,64 @@ BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
 	push (@INC,"$ENV{RSAT}/perl-scripts/lib/");
+	push (@INC,"$ENV{RSAT}/perl-scripts/lib/RSAT");
     }
 }
 require "RSA.lib";
 use Getopt::Long;
-
+use RSAT::util;
+use RSAT::Pathwayinference;
 
 ################################################################
-## Main package
+## pathwayinference package
 package main;
-{
 
-  ################################################################
-  ## Initialise parameters
-  #
-  local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-  #    $program_version = "0.00";
+{  
+  #other pathwayinference otptions : specific opions that will be directly pass to the java pathway inference app
   our @pioptions=('-s','-i','-g','-f','-b','-n','-q','-o','-O','-E','-a','-y','-p','-F','-Z','-m','-w','-t',
 		  '-l','-T','-W','-P','-C','-e','-d','-u','-x','-k','-U','-B','-r','-D','-M','-I','-N','-G',
-		  '-H','-X','-A','-K','-S','-R','-j','-J','-Q','-L','-Y','-v','-h','-V'); #other pathwayinference otptions : specific opions that will be directly pass to the java pathway inference app
+		  '-H','-X','-A','-K','-S','-R','-j','-J','-Q','-L','-Y','-v','-h','-V'); 
   our %otherPIoptions=();
-  ## Input/output files
-  our %infile = ();	     # File name containing a list of genes ID
-  our %outfile = ();
+   ## Input/output files
+  our %infile = ();	     # input file names container
+  our %outfile = ();	     # output file names container
 
   ## Directories
   our %dir = ();
   $dir{output} = "."; # output directory
   $dir{temp}= "";     # temporary directory
 
-  our $verbose = "";
+  our $verbose = "3";
   our $in = STDIN;
   our $out = STDOUT;
 
   $infile{gnn} =""; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
   $infile{nnn}=""; 
-  $graph = "";		# Graph Name
   $infile{graph}="";		# File containing the graph
-  $group_descriptor= ""; # Unique name to differenciate output files
 
-  my $organism = "Unknown";
-  my $organism_id;
-  # my $working_dir = "";
-  my $query_ids;
-  my @query_id_list;
-
-  ################################################################
+  our $graph = "";		# Graph Name
+  our $group_descriptor= ""; # Unique name to differenciate output files
+  
+   ################################################################
   ## Read argument values
   &ReadArguments();
 
-  ################################################################
+   ################################################################
   ## Check argument values
-
-#   if no grou descriptore use the input file name
-  if (defined $infile{input}) {
-    ($in) = &OpenInputFile($infile{input});
-    if (!$group_descriptor) {
-      $group_descriptor = $infile{input};
-      $group_descriptor =~ s{.*/}{};     # removes path
-      $group_descriptor=~ s{\.[^.]+$}{}; # removes extension
-    }
-  } else {
-    if (!$group_descriptor) {
-      $group_descriptor ="stdin";
-    }
-  }
-  $group_descriptor=~s/(\s|\(|\))+/_/g;
   
-  # if no graph name take the graph file name
-  if (!$graph) {
-    $graph = $infile{graph};
-    $graph =~ s{.*/}{};	    # removes path
-    $graph=~ s{\.[^.]+$}{};   # removes extension
+  my $input = $infile{input};
+  my $isInputFile=0;
+  if ($input){
+    $isInputFile=1;
+  }else{
+    my @query_id_list = <$in>;
+    chomp(@query_id_list);
+    $input = join("\t", @query_id_list);
   }
-  $graph=~s/(\s|\(|\))+/_/g;
-
-
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($verbose);
-
-  ################################################################
-  ## Execute the command
-
-  ## Check the existence of the output directory and create it if
-  ## required
-  unless ($dir{output} =~ /\/$/) {
-    $dir{output} = $dir{output}."/";
-  }
-  $dir{output} =~s |//|/|g; ## Suppress double slashes
-  &RSAT::util::CheckOutDir($dir{output});
-
-  ## Check the existence of the temp directory and create it if
-  ## required
-  $dir{temp}=$dir{output} unless ($dir{temp});
-  if (!($dir{temp}=~m/\/$/)) {
-    $dir{temp} = $dir{temp}."/";
-  }
-  &RSAT::util::CheckOutDir($dir{temp});
-
-
-
-  ################################################################
-  ## ECR Mapping
-
-  ## DIDIER: the ECR mapping should be redone with the new program match-names.
-
-  &RSAT::message::TimeWarn("Mapping seeds to reactions") if ($verbose >= 1);
-  @query_id_list = <$in>;
-  close $in if ($infile{input});
-  chomp(@query_id_list);
-  $query_ids = (join "\$|^",@query_id_list );	# build a query from the input file or stdin
-  &RSAT::message::Info("Query IDs", join("; ", @query_id_list)) if ($verbose >= 3);
-  my @ercconversiontable;
-  my %querylist=();
-  ## search into the GEC or GR file to find EC or Reactionid from gene input
-  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$query_ids."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' \"$infile{gnn}\"";
-
-  &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
-
-  if($infile{gnn}){
-    my @gnnconversiontable = qx ($seed_converter_cmd) ;
-    chomp(@gnnconversiontable);
-    foreach my $line (@gnnconversiontable){
-      @tempdata = split(/\t/,$line);
-      $query_ids .= "\$|^".$tempdata[0]; # complete the query with id found in gnn file
-    }
-  }
-  # search in the ECR file with the complete query this normaly map ec, compound and reaction_id already presenet in the query
-  $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$query_ids."\" {print \$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4}' \"$infile{nnn}\"";
-   &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
-  my @conversiontable = qx ($seed_converter_cmd) ;
-  chomp(@conversiontable);
-  &RSAT::message::Info("Predicted pathway file\n", join("\n", @conversiontable)) if ($verbose >= 1);
-  
-# getting organism information
-# End of ECR mapping
-################################################################
-  if (! defined $group_id) {
-  $groupid =$group_descriptor;
-  }
-  $groupid=~s/(\s|\(|\))+/_/g;
-  
-  ################################################################
-  ## Define output file names
-  $outfile{gr} = "";		# GR Gene -> REACTION annotation
-  $outfile{prefix} = $dir{output}."/";
-  $outfile{prefix} .= join("_", $group_descriptor, $groupid, $graph, "pred_pathways");
-  $outfile{prefix} =~ s|//|/|g; ## Suppress double slashes
-
-  $outfile{predicted_pathway} = $outfile{prefix}.".txt";
-  $outfile{seeds_converted} = $outfile{prefix}."_seeds_converted.txt";
-  ################################################################
-  # Creating reaction file fo pathway inference
-  &RSAT::message::TimeWarn("Creating reaction file for pathway inference") if ($verbose >= 1);
-#  my $outfile{seeds_converted} = $dir{output}.(join "_",$group_descriptor,$groupid,$graph, "_converted_seeds.txt");
-  open (MYFILE, '>'.$outfile{seeds_converted});
-  print MYFILE "# Batch file created", &RSAT::util::AlphaDate();
-  print MYFILE "# ECR groups parsed from file:". "\n";
-  print MYFILE "# EC number grouping: true". "\n";
-  my $seednum= 0;
-  my @previousarray;
-  foreach my $val (@conversiontable) {
-
-    @tempdata = split(/\t/,$val);
-    if (@previousarray && !($tempdata[0] eq $previousarray[0])) {
-      print MYFILE "$previousarray[0]\t$groupid\n";
-      $seednum++;
-    }
-    # 	print "$tempdata[1] eq $previousarray[1]\n";
-    print MYFILE $tempdata[1] .">\t".$tempdata[1]. "\n";
-    print MYFILE $tempdata[1] ."<\t".$tempdata[1]. "\n";
-    print MYFILE $tempdata[1] ."\t".$tempdata[0]. "\n";
-    @previousarray = @tempdata;
-  }
-
-  if (@conversiontable) {
-    print MYFILE "$previousarray[0]\t$groupid\n";
-    $seednum++;
-  }
-  # END OF  Creating reaction file fo pathway inference
-  ################################################################
-## TO DO WITH DIDIER: CHECK SEED NUMBER AND SEND WARNING IF TOO BIG.
-  ##
-  ## Define a parameter max{seed_numbers}. By default, program dies
-  ## with error if seeds exceed max{seed_number}, but the max can be
-  ## increased by the user with the option -max seeds #.
-
-  if ($seednum > 1) {
-    ################################################################
-    # Running PatywayInference
-    &RSAT::message::TimeWarn("Running pathway inference with ", $seednum, "seeds") if ($verbose >= 1);
-#    $outfile{predicted_pathway} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "_pred_pathways.txt");
-    our $minpathlength = $otherPIoptions{"-m"} || "5";
-    delete($otherPIoptions{"-m"});
-    our $graphfileformat = $otherPIoptions{"-f"} || "flat";
-    delete($otherPIoptions{"-f"});
-    our $weightpolicy= $otherPIoptions{"-y"} || "con";
-    delete($otherPIoptions{"-h"});
-    delete($otherPIoptions{"-g"});
-    delete($otherPIoptions{"-o"});
-    delete($otherPIoptions{"-p"});
-    delete($otherPIoptions{"-v"});
-    #after the program has handled the mandatory parameters, it will add the remaining ones 
-    my $piparameters =" ";
-    
-    while( my($key, $val) = each(%otherPIoptions) ) {
-	$piparameters .= "$key $val ";
-    }
-    
-    
-    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference";
-    $pathway_infer_cmd .= " -i ".$outfile{seeds_converted};
-    $pathway_infer_cmd .= " -m $minpathlength -C -f $graphfileformat";
-    $pathway_infer_cmd .= " -p ".$dir{temp};
-    $pathway_infer_cmd .= " -E ".$dir{output};
-    $pathway_infer_cmd .= " -d -b -g ";
-    $pathway_infer_cmd .= " ".$infile{graph};
-    $pathway_infer_cmd .= " -y $weightpolicy -v ".$verbose;
-    $pathway_infer_cmd .=  $piparameters;
-    
-    $pathway_infer_cmd .= "-o $outfile{predicted_pathway}";
-    
-    
-    &RSAT::message::TimeWarn("Pathway inference command", $pathway_infer_cmd) if ($verbose >= 2);
-    &RSAT::message::Info("Predicted pathway file", $outfile{predicted_pathway}) if ($verbose >= 1);
-    #exit 1;
-    &doit($pathway_infer_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-    ## TO DO WITH DIDIER: redirect STDERR/STDOUD to log and err files in the output directory
-
-    # END of Running patywayinference
-    ################################################################
-  } else {
-    print STDERR "NOT ENOUGH SEEDS. Min 2. I stop here!!\n";
-    exit(1);
-  }
-  # End of Converting dot graph to image with graphviz dot
-  ################################################################
-
-  ################################################################
-  ## Insert here output printing
-  ## Report execution time and close output stream
-  &RSAT::message::TimeWarn("Ending") if ($verbose >= 1);
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $out $exec_time if ($verbose); ## only report exec time if verbosity is specified
-  close $out if ($outfile{output});
-
-  exit(0);
+  &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
+  &Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$dir{temp});
 }
+
 
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
@@ -509,7 +317,7 @@ Verbose mode
 
 =cut
     if ($arg eq "-v") {
-      if (&IsNatural($arguments[0])) {
+      if (&RSAT::util::IsNatural($arguments[0])) {
 	$verbose = shift(@arguments);
       } else {
 	$verbose = 1;
@@ -680,7 +488,7 @@ If no output file is specified, the current directory is used.
 ## Verbose message
 sub Verbose {
     print $out "; template ";
-    &PrintArguments($out);
+    &RSAT::util::PrintArguments($out);
     printf $out "; %-22s\t%s\n", "Program version", $program_version;
     if (%infile) {
 	print $out "; Input files\n";
