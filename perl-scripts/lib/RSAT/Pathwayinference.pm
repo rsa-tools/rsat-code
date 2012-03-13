@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: Pathwayinference.pm,v 1.1 2012/03/13 16:20:09 rsat Exp $
+# $Id: Pathwayinference.pm,v 1.2 2012/03/13 16:24:25 rsat Exp $
 #
 ############################################################
 
@@ -227,7 +227,7 @@ use RSAT::util;
 
 ################################################################
 ## pathwayinference package
-package Pathwayinference;
+package RSAT::Pathwayinference;
 
 {  
   #other pathwayinference otptions : specific opions that will be directly pass to the java pathway inference app
@@ -282,7 +282,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
