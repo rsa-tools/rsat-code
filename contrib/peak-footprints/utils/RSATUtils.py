@@ -52,26 +52,32 @@ class RSATUtils:
     # ---------------------------------------------------------------------------------------------
     # Permute the matrix in the given file using permute-matrix
     @staticmethod
-    def permuteMatrix( matrix_file, file_format, destination_path):
+    def permuteMatrix( matrix_file, file_format, destination_path, permutation_number):
     
-        # compose the destination file path
-        destination_file = os.path.join( destination_path, os.path.basename( matrix_file))
+        destination_files = []
     
-        # Compose the permute-matrix command
-        cmd = os.path.join( RSATUtils.RSAT_PATH, "perl-scripts/permute-matrix")
-        cmd += " -i '" + matrix_file + "'"
-        cmd += " -in_format " + file_format
-        cmd += " -o " + destination_file
-        cmd += " -out_format " + file_format
+        for index in range( permutation_number):
+            
+            # compose the destination file path
+            destination_file = os.path.join( destination_path, os.path.basename( matrix_file) + "_" + str(index))
         
-        # Execute the command
-        cmd_result = commands.getstatusoutput( cmd)
-        if cmd_result[0] != 0:
-            Log.log( "RSATUtils.permuteMatrix : status returned is :" + str( cmd_result[0]) + " for command '" + cmd + "'" )
-            Log.log( " permute-matrix output is = \n" + str( cmd_result[1]))
-            return None
+            # Compose the permute-matrix command
+            cmd = os.path.join( RSATUtils.RSAT_PATH, "perl-scripts/permute-matrix")
+            cmd += " -i '" + matrix_file + "'"
+            cmd += " -in_format " + file_format
+            cmd += " -o " + destination_file
+            cmd += " -out_format " + file_format
+            
+            # Execute the command
+            cmd_result = commands.getstatusoutput( cmd)
+            if cmd_result[0] != 0:
+                Log.log( "RSATUtils.permuteMatrix : status returned is :" + str( cmd_result[0]) + " for command '" + cmd + "'" )
+                Log.log( " permute-matrix output is = \n" + str( cmd_result[1]))
+                return None
+            
+            destination_files.append( destination_file)
         
-        return destination_file
+        return destination_files
             
     
     
