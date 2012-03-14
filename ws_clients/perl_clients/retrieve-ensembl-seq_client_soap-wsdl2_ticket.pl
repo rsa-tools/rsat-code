@@ -18,7 +18,8 @@ my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
 my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 
 ## Output option
-my $output_choice = 'client';  ## Accepted values: 'server', 'client', 'both'
+#my $output_choice = 'client';  ## Accepted values: 'server', 'client', 'both'
+my $output_choice = 'ticket';  ## Accepted values: 'server', 'client', 'both'
 
 ## Retrieve-seq parameters
 my $organism = 'Homo_sapiens';  ## Name of the query organism

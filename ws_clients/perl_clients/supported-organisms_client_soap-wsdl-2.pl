@@ -31,7 +31,8 @@ my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 
 ## Retrieve-seq parameters
-my $taxon='Saccharomycetales';
+#my $taxon='Saccharomycetales';
+my $taxon='Enterobacteriales';
 my $return='ID,taxonomy';
 my %args = (
 	    'taxon' => $taxon,
