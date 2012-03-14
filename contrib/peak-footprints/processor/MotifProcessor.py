@@ -1,5 +1,5 @@
 
-import os, commands, shutil, Queue, time, threading, gc, math
+import os, commands, shutil, Queue, time, threading, gc, math, random
 
 from manager.ProgressionManager import ProgressionManager
 
@@ -27,12 +27,15 @@ from utils.exception.ExecutionException import ExecutionException
 #       MotifDatabasePath : the path to the motifs files
 #       MotifDatabaseFileList : list of the name of the motif files to be used as comparison
 #       MotifDatabaseFormatList : list of the format of the motif files listed in the MotifDatabaseFileList parameter (one to one)
+#       CustomMotifDatabaseFile (optional) : path to the motif database file provided by the user
+#       CustomMotifDatabaseFormat (optional) : format of the motif database file provided by the user
 #       DesiredSpeciesList (optional): the species to take into account in the multiple alignments
 #       CorrelationLimit (optional) : the selection minimum threshold of the normalized correlation between reference and query motif (float number beetween 0 and 1)
 #       CommandOptions (optional) : specify option to pass to the compare-matrices command
 #   For method "TOMTOM":
 #       MotifDatabasePath : the path to the motifs files
 #       MotifDatabaseFileList : list of the name of the motif files to be used as comparison
+#       CustomMotifDatabaseFile (optional) : path to the motif database file provided by the user
 #       DesiredSpeciesList (optional): the species to take into account in the multiple alignments
 #       CommandOptions (optional) : specify option to pass to the TOMTOM command
 
@@ -46,6 +49,7 @@ class MotifProcessor( Processor):
     MOTIF_DATABASE_PATH_PARAM = "MotifDatabasePath"
     MOTIF_DATABASE_FILE_LIST_PARAM = "MotifDatabaseFileList"
     MOTIF_PERMUTED_DATABASE_FILE_LIST_PARAM = "MotifPermutedDatabaseFileList"
+    CUSTOM_MOTIF_DATABASE_FILE_PARAM = "CustomMotifDatabaseFile"
     REFERENCE_SPECIES_PARAM = "ReferenceSpecies"
     DESIRED_SPECIES_LIST_PARAM = "DesiredSpeciesList"
     COMMAND_OPTIONS_PARAM = "CommandOptions"
@@ -54,6 +58,7 @@ class MotifProcessor( Processor):
 
     # Parameters for RSAT compare-matrices only
     MOTIF_DATABASE_FORMAT_LIST_PARAM = "MotifDatabaseFormatList"
+    CUSTOM_MOTIF_DATABASE_FORMAT_PARAM = "CustomMotifDatabaseFormat"
     CORRELATION_LIMIT_PARAM = "CorrelationLimit"
 
     # Parameter for multi-threading
@@ -159,6 +164,12 @@ class MotifProcessor( Processor):
         else:
             raise ExecutionException( "MotifProcessor.getMethodParameters : No motif database file specified in parameter '" + MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM + "'")
 
+        # Add the custom motif database files if any
+        custom_database_file_line = self.getParameter( MotifProcessor.CUSTOM_MOTIF_DATABASE_FILE_PARAM, False)
+        if custom_database_file_line != None and not custom_database_file_line.isspace():
+            arguments[ MotifProcessor.MOTIF_DATABASE_PATH_PARAM].append( "")
+            arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM].append( custom_database_file_line)
+
         # Retrieve the list of desired species
         referenceSpecies = self.getParameter( MotifProcessor.REFERENCE_SPECIES_PARAM)
         desired_species_line = self.getParameter( MotifProcessor.DESIRED_SPECIES_LIST_PARAM, False)
@@ -180,7 +191,7 @@ class MotifProcessor( Processor):
         if arguments[ MotifProcessor.THREAD_NUMBER_PARAM] == None or arguments[ MotifProcessor.THREAD_NUMBER_PARAM] <= 0:
             arguments[ MotifProcessor.THREAD_NUMBER_PARAM] = 1
 
-        # Retrieve the parameter telling if wether or not reporting of motif PWM is required
+        # Retrieve the parameter telling if whether or not reporting of motif PWM is required
         report_pwm = self.getParameterAsint( MotifProcessor.REPORT_MOTIF_PWM, False)
         if report_pwm == None:
             arguments[  MotifProcessor.REPORT_MOTIF_PWM] = False
@@ -197,6 +208,11 @@ class MotifProcessor( Processor):
             else:
                 raise ExecutionException( "MotifProcessor.getMethodParameters : No motif database format specified in parameter '" + MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM + "'")
 
+            # add the format of the custom motif database if any
+            custom_database_format_line = self.getParameter( MotifProcessor.CUSTOM_MOTIF_DATABASE_FORMAT_PARAM)
+            if custom_database_format_line != None and not custom_database_format_line.isspace():
+                arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM].append( custom_database_format_line)
+
             if len( arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]) != len( arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM] ):
                 raise ExecutionException( "MotifProcessor.getMethodParameters : Motif database file list and format list do not have the same number of entries")
 
@@ -206,7 +222,7 @@ class MotifProcessor( Processor):
                 arguments[ MotifProcessor.CORRELATION_LIMIT_PARAM] = 0.5
         
         # Retrieve parameters specific to MEME TOMTOM
-        elif method == MotifProcessor.METHOD_VALUE_TOMTOM:
+        if method == MotifProcessor.METHOD_VALUE_TOMTOM:
             arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM] = ['meme'] * len( arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM])
             
     
@@ -222,15 +238,17 @@ class MotifProcessor( Processor):
         shutil.rmtree( out_path, True)
         os.mkdir( out_path)
 
-        # Permute the motif matrices in the database files for the hypergeometric test
+        # Retrieve the list of motif databases to use
         database_path = arguments[ MotifProcessor.MOTIF_DATABASE_PATH_PARAM]
         database_file_list = arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]
-        database_format_list = arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM]
-        permuted_database_file_list = []
+        database_format_list = arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM]        
+        
+        # Permute the motif matrices in the database files for the hypergeometric test
+        permuted_database_file_list = {}
         for index in range( len( database_file_list)):
-            permuted = RSATUtils.permuteMatrix( os.path.join( database_path, database_file_list[ index]), database_format_list[ index], out_path)
-            if permuted != None:
-                permuted_database_file_list.append( permuted)
+            permuted_list = RSATUtils.permuteMatrix( os.path.join( database_path, database_file_list[ index]), database_format_list[ index], out_path, 100)
+            if permuted_list != None:
+                permuted_database_file_list[ database_file_list[ index]] = permuted_list
                 
         arguments[ MotifProcessor.MOTIF_PERMUTED_DATABASE_FILE_LIST_PARAM] = permuted_database_file_list
 
@@ -569,7 +587,7 @@ class MotifProcessor( Processor):
         # Remove the RSAT compare-matrices result dir
         os.chdir( out_path)
         shutil.rmtree( file_info[0], True)
-    
+
     
     
     # ---------------------------------------------------------------------------------------------
@@ -581,8 +599,15 @@ class MotifProcessor( Processor):
             database_path = arguments[ MotifProcessor.MOTIF_DATABASE_PATH_PARAM]
             database_file_list = arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]
         else:
+            # In case of hypergeometric test, choose one of the database of permuted motifs previously computed
             database_path = None
-            database_file_list =  arguments[ MotifProcessor.MOTIF_PERMUTED_DATABASE_FILE_LIST_PARAM]
+            permuted_databases = arguments[ MotifProcessor.MOTIF_PERMUTED_DATABASE_FILE_LIST_PARAM]
+            database_file_list = []
+            for initial_database in permuted_databases.keys():
+                permuted_databases_list = permuted_databases[ initial_database]
+                index = int( random.uniform( 0, len( permuted_databases_list)))
+                database_file_list.append( permuted_databases_list[ index])
+                
         database_format_list = arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM]
         command_options = arguments[ MotifProcessor.COMMAND_OPTIONS_PARAM]
         correlation_limit = arguments[ MotifProcessor.CORRELATION_LIMIT_PARAM]
@@ -595,6 +620,8 @@ class MotifProcessor( Processor):
         os.chdir( dir_path)
         
         RSAT_PATH = self.component.getParameter( Constants.RSAT_DIR_PARAM)
+        # Parse the list of motif databases and apply each of them to the compare-matrices tool
+        # on the given file of conserved blocks
         for index in range( len( database_file_list)):
             if database_path != None:
                 database_file_path = os.path.join( database_path, database_file_list[index])
