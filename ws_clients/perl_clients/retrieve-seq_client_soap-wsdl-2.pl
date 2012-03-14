@@ -24,6 +24,7 @@ my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 
 ## Output option
 my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
+my $output_choice = 'ticket';
 
 ## Retrieve-seq parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
@@ -86,5 +87,8 @@ unless ($som) {
 		my $result = $results -> get_client();
 		print "Result file on the server: ".$server_file."\n";
 		print "Retrieved sequence(s): \n".$result;
+    } elsif ($output_choice eq 'ticket') {
+		my $ticket = $results -> get_server();
+		print "Ticket: $ticket\n";
     }
 }
