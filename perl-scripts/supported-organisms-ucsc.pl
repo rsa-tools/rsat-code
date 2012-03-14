@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-ucsc.pl,v 1.1 2012/03/14 08:37:37 jeremy Exp $
+# $Id: supported-organisms-ucsc.pl,v 1.2 2012/03/14 08:39:08 jeremy Exp $
 #
 ############################################################
 
@@ -19,8 +19,8 @@ $program_version
 
 =head1 DESCRIPTION
 
-Retrieve organisn disponible on USCS
-
+Retrieve organisn disponible on UCSC Genome browser
+(http://genome.ucsc.edu/).
 
 =head1 USAGE
 
@@ -28,7 +28,7 @@ supported-organims-uscs.pl [-o file] [-v #] [...]
 
 Examples
 
-Retrieve mammal genome disponible on uscs
+Retrieve mammal genome disponible on UCSC.
 
  supported-organims-uscs.pl -taxon mammal
 
@@ -50,7 +50,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 	our $taxon = "";
