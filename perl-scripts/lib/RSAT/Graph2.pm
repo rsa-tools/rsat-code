@@ -1950,7 +1950,14 @@ sub remove_duplicated_arcs {
       @nodes = sort(@nodes);
     }
     my $arc_id = $nodes[0]."_".$nodes[1];
-    if (!exists($seen{$arc_id})) {
+#######################################################################################
+# Didier Croes
+# I proposed this method to merge undirected duplicated arcs but I am not sure of the impact on rsat code. Also the layout was not satisfying  thus I prefered to use a dot attibute in to_dot function
+# If this method is required for other graph format uncomment those 2 lines and comment "if(!exists($seen{$arc_id})){"
+#     my $opositearc_id = $nodes[1]."_".$nodes[0]; #modify by didier to handle acs in both direction for undirected graph
+#     unless (exists($seen{$arc_id})|| ($directed && exists($seen{$opositearc_id}))) {#modify by didier to handle acs in both direction for undirected graph
+#######################################################################################""
+    if(!exists($seen{$arc_id})){
       my $source_id = $nodes_name_id{$arcs[$i][0]};
       my $target_id = $nodes_name_id{$arcs[$i][1]};
       $unique_array[$arccpt][0] = $arcs[$i][0];
@@ -2582,7 +2589,17 @@ GraphViz suite.
 
 =cut
 sub to_dot {
-    my ($self) = @_;    
+    my ($self, $arc_id_option, $directed) = @_;    
+    #print "NODES @nodes\n\n";
+    my $dot = "graph G {\n";
+    my $arrow= "--";
+    
+    if ($directed) { #modify by Didier Croes if directed build a digraph dot
+      $dot ="di".$dot;
+      $arrow= "->";
+    }else{
+	$dot .= "concentrate=true;\n"; #modify by Didier Croes to remove duplicate arcs in both direction for undirected graph
+    }
     my @nodes = $self->get_nodes();
     my @arcs = $self->get_attribute("arcs");
     my %nodes_attribute = $self->get_attribute("nodes_attribute");
@@ -2600,10 +2617,11 @@ sub to_dot {
     }     
     
     
-    #print "NODES @nodes\n\n";
-    my $dot = "graph G {\n";
+    
+    $dot .= "rankdir=TB;\n";
     $dot .= "overlap=scale;\n";
     $dot .= "size=\"36,40\";\n";
+    
 
     foreach my $node (@nodes) {
       my $nodeid = $self->node_by_name($node);
@@ -2633,7 +2651,7 @@ sub to_dot {
       if ($edge_width_calc) {
         $edge_width = ((($label-$min)/($max+1-$min))*6.5)+0.5;
       }
-      $dot .=  join ("", "\"", $source, "\" -- \"", $target, "\" [label=\"\", weight=\"$label\", color=\"$color\"]", "\n");
+      $dot .=  join ("", "\"", $source, "\" $arrow \"", $target, "\" [label=\"\", weight=\"$label\", color=\"$color\"]", "\n");
     }
     $dot .= "}\n";
 
