@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.27 2012/03/13 16:25:23 rsat Exp $
+# $Id: pathway-extractor,v 1.28 2012/03/14 11:51:40 rsat Exp $
 #
 ############################################################
 
@@ -273,7 +273,7 @@ package main;
     $input = join("\t", @query_id_list);
   }
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
-  &Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$dir{temp});
+  &RSAT::Pathwayinference::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
 }
 
 
@@ -466,7 +466,7 @@ If no output file is specified, the current directory is used.
       
     } elsif (grep(/$arg/ ,@pioptions)) { #if Pathway inference option add it to hash
       $otherPIoptions{$arg}= shift(@arguments);
-      $dir{temp} = shift(@arguments);
+#       $dir{temp} = shift(@arguments);
     } else {
       
        &FatalError(join("\t", "Invalid pathway_extractor option", $arg));
