@@ -122,7 +122,7 @@
            info("rsat_main\t".$rsat_main);
            info("WWW_RSA\t".$WWW_RSA);
            info("neat_wsdl\t".$neat_wsdl);
-           if ($properties['rsat_echo'] >= 1) {
+           if ($properties['rsat_echo'] >= 2) {
                print_r($parameters);
                if ($properties['rsat_echo'] >= 3) {
                    phpinfo();
