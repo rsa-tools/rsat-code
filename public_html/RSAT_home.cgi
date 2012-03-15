@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.69 2012/02/29 09:38:48 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.70 2012/03/15 00:44:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -215,6 +215,13 @@ print <<EndText;
   <b>Pretoria - South-Africa</b><br>
   <img src="images/pretoria_icon.jpg" height=80 border=0><br>
   http://anjie.bi.up.ac.za/rsa-tools/</a>
+  </td>
+
+  <td align=center>
+  <a href="http://lmmge-webserver.unisa.it/rsat/" target="_top">
+  <b>Salerno - Italia</b><br>
+  <img src="images/salerno_icon.jpg" height=80 border=0><br>
+  http://lmmge-webserver.unisa.it/rsat//</a>
   </td>
 
 <!--
