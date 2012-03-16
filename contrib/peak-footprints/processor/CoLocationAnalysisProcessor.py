@@ -203,11 +203,11 @@ class CoLocationAnalysisProcessor( Processor):
             
             # Consider only the distance under the distance max
             if distance >= -distance_max and distance <= distance_max:
-                #Consider only the distances that show motifs are not overlapping
-                if math.fabs(distance) > max( motif_length / float(2), (ref_motif_length / float(2))) :
-                    if not motif_name in distances.keys():
-                        distances[ motif_name] = []
-                    distances[ motif_name].append( distance)
+                ##(commented)Consider only the distances that show motifs are not overlapping
+                #if math.fabs(distance) > max( motif_length / float(2), (ref_motif_length / float(2))) :
+                if not motif_name in distances.keys():
+                    distances[ motif_name] = []
+                distances[ motif_name].append( distance)
             
             # Remove studied motif from the list of motif to analyse
             del motifs_middle_positions[ motif]
