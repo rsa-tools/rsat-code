@@ -20,6 +20,9 @@ from utils.exception.ExecutionException import ExecutionException
 # The output is an XML file that would be displayed using an XSL stylesheet.
 #
 # Parameters:
+#   MotifDatabasePath : the path to the motifs db files
+#   MotifDatabaseFileList : list of the name of the motif db files to be used to produce motif logo
+#   CustomMotifDatabaseFile (optional) : path to the motif database file provided by the user
 #   DisplayLimitValue : the limit valye of the hypergeometric P-value above which an identified motif is not added in the
 #                        final result
 
@@ -27,6 +30,7 @@ class FinalOutputProcessor( Processor):
     
     MOTIF_DATABASE_PATH_PARAM = "MotifDatabasePath"
     MOTIF_DATABASE_FILE_LIST_PARAM = "MotifDatabaseFileList"
+    CUSTOM_MOTIF_DATABASE_FILE_PARAM = "CustomMotifDatabaseFile"
     DISPLAY_LIMIT_VALUE = "DisplayLimitValue"
     
     
@@ -89,12 +93,19 @@ class FinalOutputProcessor( Processor):
         
         # Retrieve the list of motif database files to use
         database_file_line = self.getParameter( FinalOutputProcessor.MOTIF_DATABASE_FILE_LIST_PARAM)
-        self.dbFiles = []
         if database_file_line != None and not database_file_line.isspace():
-            self.dbFiles = database_file_line.split()
+	    file_list = database_file_line.split()
+	    self.dbFiles = []
+	    for file_path in file_list:
+                self.dbFiles.append( os.path.join( self.dbPath, file_path))
         else:
-            self.dbFiles = None
+            raise ExecutionException( "FinalOutputProcessor.getMethodParameters : No motif database file specified in parameter '" + MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM + "'")
 
+        # Add the custom motif database files if any
+        custom_database_file_line = self.getParameter( FinalOutputProcessor.CUSTOM_MOTIF_DATABASE_FILE_PARAM, False)
+        if custom_database_file_line != None and not custom_database_file_line.isspace():
+            arguments[ FinalOutputProcessor.MOTIF_DATABASE_PATH_PARAM].append( "")
+            self.dbFiles.append( custom_database_file_line)
         
         limit_value = self.getParameter( FinalOutputProcessor.DISPLAY_LIMIT_VALUE, False)
         if limit_value == None:
@@ -133,8 +144,8 @@ class FinalOutputProcessor( Processor):
         self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.BED_SEQUENCES_SIZE_GRAPH_PATH, FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # copy the conserved regions size histogram and graph
-        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_REGIONS_SIZE_PATH, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_PATH_ATT, file_pathes)
-        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_REGIONS_SIZE_GRAPH_PATH, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_GRAPH_PATH_ATT, file_pathes)
+        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_PATH, FinalOutputProcessor.CONSERVED_BLOCKS_SIZE_PATH_ATT, file_pathes)
+        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_GRAPH_PATH, FinalOutputProcessor.CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # copy the MSA size histogram and graph
         self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.MSA_SIZE_PATH, FinalOutputProcessor.MSA_SIZE_PATH_ATT, file_pathes)
@@ -224,12 +235,9 @@ class FinalOutputProcessor( Processor):
     def createLogos(self, input_commstruct):
         
         
-        if self.dbFiles != None and self.dbPath != None:
-            db_file_path = []
-            for index in range( len( self.dbFiles)):
-                db_file_path[index] = os.path( self.dbPath, self.dbFiles[index]);
-        else:
-            db_file_path = None
+        db_file_path = []
+        for index in range( len( self.dbFiles)):
+            db_file_path.append( os.path.join( self.dbPath, self.dbFiles[index]));
         
         motif_name_list = input_commstruct.motifStatistics.keys()
         motif_definition = MotifUtils.getMotifsDefinitionFromTF( motif_name_list, db_file_path)
@@ -267,7 +275,7 @@ class FinalOutputProcessor( Processor):
             doc.write( outfile)
             outfile.close()
             # Copy the XSL file in the same directory than the XML
-            shutil.copy( os.path.join( self.component.getParameter( Constants.CONFIG_DIR_PARAM), "resources/xsl/classification/classification.xsl"), self.outPath)
+            shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/classification.xsl"), self.outPath)
         except IOError, exce:
             Log.log( "ClassificationProcessor.outputClassification : Unable to write classification to XML file. From:\n\t---> " + str( exce))
 
@@ -280,9 +288,9 @@ class FinalOutputProcessor( Processor):
         # Retrieve the data from the statistics params
         reference_species = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_SPECIES]
         aligned_species = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.ALIGNED_SPECIES]
-        bedsequence_number = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCE_NUMBER]
-        bedsequence_msa_number = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCE_WITH_MSA_NUMBER]
-        conserved_regions = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_REGION_NUMBER]
+        bedsequence_number = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_NUMBER]
+        bedsequence_msa_number = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_NUMBER]
+        conserved_blocks = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_NUMBER]
         reference_motif = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_MOTIF]
         
         # Retrieve the data from the analysed statistics
@@ -293,12 +301,28 @@ class FinalOutputProcessor( Processor):
         # Create the root element with its attributes
         classification_element = Element( FinalOutputProcessor.CLASSIFICATION_TAG)
         classification_element.attrib[ FinalOutputProcessor.PIPELINE_NAME_ATT] = self.component.pipelineName
-        classification_element.attrib[ FinalOutputProcessor.REFERENCE_SPECIES_ATT] = reference_species
-        classification_element.attrib[ FinalOutputProcessor.ALIGNED_SPECIES_ATT] = aligned_species
-        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCE_NUMBER_ATT] = bedsequence_number
-        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCE_WITH_MSA_NUMBER_ATT] = bedsequence_msa_number
-        classification_element.attrib[ FinalOutputProcessor.CONSERVED_REGION_NUMBER_ATT] = conserved_regions
-        classification_element.attrib[ FinalOutputProcessor.REFERENCE_MOTIF_ATT] = reference_motif
+        classification_element.attrib[ FinalOutputProcessor.REFERENCE_SPECIES_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_SPECIES]
+        classification_element.attrib[ FinalOutputProcessor.ALIGNED_SPECIES_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.ALIGNED_SPECIES]
+        classification_element.attrib[ FinalOutputProcessor.REFERENCE_MOTIF_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_MOTIF]
+
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_NUMBER_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_NUMBER]
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MIN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MAX_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MAX_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_MEAN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_MEAN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.BEDSEQUENCES_TOTAL_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_TOTAL_SIZE]
+
+        classification_element.attrib[ FinalOutputProcessor.MSA_NUMBER_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_NUMBER]
+        classification_element.attrib[ FinalOutputProcessor.MSA_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MIN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.MSA_MAX_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MAX_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.MSA_MEAN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_MEAN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.MSA_TOTAL_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_TOTAL_SIZE]
+
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_NUMBER_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_NUMBER]
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MIN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MIN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MAX_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MAX_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_MEAN_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_MEAN_SIZE]
+        classification_element.attrib[ FinalOutputProcessor.CONSERVED_BLOCKS_TOTAL_SIZE_ATT] = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_TOTAL_SIZE]
+
         classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT]
         classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT]
 
@@ -307,8 +331,8 @@ class FinalOutputProcessor( Processor):
         self.addFilePathAttribute( classification_element, FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # Insert the path to the Conserved Regions sizes histogram and graph if any
-        self.addFilePathAttribute( classification_element, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_PATH_ATT, file_pathes)
-        self.addFilePathAttribute( classification_element, FinalOutputProcessor.CONSERVED_REGIONS_SIZE_GRAPH_PATH_ATT, file_pathes)
+        self.addFilePathAttribute( classification_element, FinalOutputProcessor.CONSERVED_BLOCKS_SIZE_PATH_ATT, file_pathes)
+        self.addFilePathAttribute( classification_element, FinalOutputProcessor.CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT, file_pathes)
 
         # Insert the path to the MSA sizes histogram and graph if any
         self.addFilePathAttribute( classification_element, FinalOutputProcessor.MSA_SIZE_PATH_ATT, file_pathes)
@@ -411,16 +435,31 @@ class FinalOutputProcessor( Processor):
     PIPELINE_NAME_ATT = "name"
     REFERENCE_SPECIES_ATT = "referenceSpecies"
     ALIGNED_SPECIES_ATT = "alignedSpecies"
-    BEDSEQUENCE_NUMBER_ATT = "bedSequenceNumber"
-    BEDSEQUENCE_WITH_MSA_NUMBER_ATT = "bedSequenceNumberWithMSA"
-    CONSERVED_REGION_NUMBER_ATT = "conservedRegionNumber"
     REFERENCE_MOTIF_ATT = "referenceMotif"
+
+    BEDSEQUENCES_NUMBER_ATT = "bedSequencesNumber"
+    BEDSEQUENCES_MIN_SIZE_ATT = "bedSequencesMinSize"
+    BEDSEQUENCES_MAX_SIZE_ATT = "bedSequencesMaxSize"
+    BEDSEQUENCES_MEAN_SIZE_ATT = "bedSequencesMeanSize"
+    BEDSEQUENCES_TOTAL_SIZE_ATT = "bedSequencesTotalSize"
+
+    MSA_NUMBER_ATT = "MSANumber"
+    MSA_MIN_SIZE_ATT = "MSAMinSize"
+    MSA_MAX_SIZE_ATT = "MSAMaxSize"
+    MSA_MEAN_SIZE_ATT = "MSAMeanSize"
+    MSA_TOTAL_SIZE_ATT = "MSATotalSize"
+
+    CONSERVED_BLOCKS_NUMBER_ATT = "conservedBlocksNumber"
+    CONSERVED_BLOCKS_MIN_SIZE_ATT = "conservedBlocksMinSize"
+    CONSERVED_BLOCKS_MAX_SIZE_ATT = "conservedBlocksMaxSize"
+    CONSERVED_BLOCKS_MEAN_SIZE_ATT = "conservedBlocksMeanSize"
+    CONSERVED_BLOCKS_TOTAL_SIZE_ATT = "conservedBlocksTotalSize"
     
     BED_SEQUENCES_SIZE_PATH_ATT = "BEDSequencesSizeHistogram"
     BED_SEQUENCES_SIZE_GRAPH_PATH_ATT = "BEDSequencesSizeHistogramGraph"
     
-    CONSERVED_REGIONS_SIZE_PATH_ATT = "ConservedRegionsSizeHistogram"
-    CONSERVED_REGIONS_SIZE_GRAPH_PATH_ATT = "ConservedRegionsSizeGraph"
+    CONSERVED_BLOCKS_SIZE_PATH_ATT = "ConservedBlocksSizeHistogram"
+    CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT = "ConservedBlocksSizeGraph"
     MSA_SIZE_PATH_ATT = "MSASizeHistogram"
     MSA_SIZE_GRAPH_PATH_ATT = "MSASizeHistogramGraph"
     BED_OUTPUT_ATT = "bedOutput"
