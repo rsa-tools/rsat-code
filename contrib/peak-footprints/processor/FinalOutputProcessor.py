@@ -94,12 +94,12 @@ class FinalOutputProcessor( Processor):
         # Retrieve the list of motif database files to use
         database_file_line = self.getParameter( FinalOutputProcessor.MOTIF_DATABASE_FILE_LIST_PARAM)
         if database_file_line != None and not database_file_line.isspace():
-	    file_list = database_file_line.split()
-	    self.dbFiles = []
-	    for file_path in file_list:
+            file_list = database_file_line.split()
+            self.dbFiles = []
+            for file_path in file_list:
                 self.dbFiles.append( os.path.join( self.dbPath, file_path))
         else:
-            raise ExecutionException( "FinalOutputProcessor.getMethodParameters : No motif database file specified in parameter '" + MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM + "'")
+            raise ExecutionException( "FinalOutputProcessor.getMethodParameters : No motif database file specified in parameter '" + FinalOutputProcessor.MOTIF_DATABASE_FILE_LIST_PARAM + "'")
 
         # Add the custom motif database files if any
         custom_database_file_line = self.getParameter( FinalOutputProcessor.CUSTOM_MOTIF_DATABASE_FILE_PARAM, False)
@@ -283,16 +283,8 @@ class FinalOutputProcessor( Processor):
     # --------------------------------------------------------------------------------------
     # Write the Classification to XML file
     def toXML( self, input_commstruct, analysis, limit_value):
-
-        # Retrieve the data from the statistics params
-        reference_species = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_SPECIES]
-        aligned_species = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.ALIGNED_SPECIES]
-        bedsequence_number = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BEDSEQUENCES_NUMBER]
-        bedsequence_msa_number = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_NUMBER]
-        conserved_blocks = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_NUMBER]
-        reference_motif = input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_MOTIF]
         
-        # Retrieve the data from the analysed statistics
+        # Retrieve the data from the analyzed statistics
         classified_families = analysis[ 0]
         motif_classification = analysis[ 1]
         file_pathes = analysis[2]
