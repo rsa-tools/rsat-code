@@ -139,16 +139,16 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
     @staticmethod
     def getCommStructFromXML( commstruct_filepath):
         
-        file = None
+        commstruct_file = None
         root_element = None
         
         try:
-            file = open( commstruct_filepath, "r")
-            tree = parse( file)
+            commstruct_file = open( commstruct_filepath, "r")
+            tree = parse( commstruct_file)
             root_element = tree.getroot()
-            file.close()
+            commstruct_file.close()
         except IOError, io_exce:
-            raise ParsingException( "BedSeqAlignmentStatsCommStruct.getCommStructFromXML : Unable to open/close XML file '" + commstruct_filepath, "' : " + str( io_exce))
+            raise ParsingException( "BedSeqAlignmentStatsCommStruct.getCommStructFromXML : Unable to open/close XML commstruct_file '" + commstruct_filepath, "' : " + str( io_exce))
         
         comm_struct = BedSeqAlignmentStatsCommStruct()
         
@@ -190,17 +190,17 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
             if son_node.tag.lower() == BedSeqAlignmentStatsCommStruct.MOTIF_STATS_TAG:
                 name = CommStruct.getAttribute( son_node, BedSeqAlignmentStatsCommStruct.MOTIF_STATS_NAME_ATT)
                 if name != None and len( name) > 0:
-                    id = CommStruct.getAttribute( son_node, BedSeqAlignmentStatsCommStruct.MOTIF_STATS_ID_ATT)
+                    motif_id = CommStruct.getAttribute( son_node, BedSeqAlignmentStatsCommStruct.MOTIF_STATS_ID_ATT)
                     family = CommStruct.getAttribute( son_node, BedSeqAlignmentStatsCommStruct.MOTIF_STATS_FAMILY_ATT)
                     classe = CommStruct.getAttribute( son_node, BedSeqAlignmentStatsCommStruct.MOTIF_STATS_CLASS_ATT)
-                    type = CommStruct.getAttribute( son_node, BedSeqAlignmentStatsCommStruct.MOTIF_STATS_TYPE_ATT)
+                    motif_type = CommStruct.getAttribute( son_node, BedSeqAlignmentStatsCommStruct.MOTIF_STATS_TYPE_ATT)
                     size = CommStruct.getAttributeAsint( son_node, BedSeqAlignmentStatsCommStruct.MOTIF_STATS_SIZE_ATT)
                     
                     motif_stats = MotifStatistics( name)
-                    motif_stats.motifID = id
+                    motif_stats.motifID = motif_id
                     motif_stats.motifFamily = family
                     motif_stats.motifClass = classe
-                    motif_stats.motifType = type
+                    motif_stats.motifType = motif_type
                     motif_stats.motifSize = size
                     
                     for param_node in son_node:
@@ -232,8 +232,8 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
             start = CommStruct.getAttributeAsint( node_bedseq, BedSeqAlignmentStatsCommStruct.BEDSEQ_START_ATT)
             end = CommStruct.getAttributeAsint( node_bedseq, BedSeqAlignmentStatsCommStruct.BEDSEQ_END_ATT)
             score = CommStruct.getAttributeAsint( node_bedseq, BedSeqAlignmentStatsCommStruct.BEDSEQ_SCORE_ATT, False)
-            max = CommStruct.getAttributeAsint( node_bedseq, BedSeqAlignmentStatsCommStruct.BEDSEQ_MAX_PEAK_ATT, False)
-            id = CommStruct.getAttribute( node_bedseq, BedSeqAlignmentStatsCommStruct.BEDSEQ_ID_ATT, False)
+            peak_max = CommStruct.getAttributeAsint( node_bedseq, BedSeqAlignmentStatsCommStruct.BEDSEQ_MAX_PEAK_ATT, False)
+            peak_id = CommStruct.getAttribute( node_bedseq, BedSeqAlignmentStatsCommStruct.BEDSEQ_ID_ATT, False)
         except ParsingException,  par_exce:
             raise ParsingException ( "BedSeqAlignmentStatsCommStruct.getBEDSequence : Malformed BED Sequence - some attributes are not numbers. From:\n\t---> " + str( par_exce))
  
@@ -241,10 +241,10 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
             bed_sequence = BEDSequence( species, chrom, start, end)
             if score != None:
                 bed_sequence.score = score
-            if max != None:
-                bed_sequence.referenceIndex = max
-            if id != None:
-                bed_sequence.id = id
+            if peak_max != None:
+                bed_sequence.referenceIndex = peak_max
+            if peak_id != None:
+                bed_sequence.id = peak_id
                 
             comm_struct.addBEDSequence( bed_sequence)
             return bed_sequence
@@ -299,7 +299,7 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
                 start = CommStruct.getAttributeAsint( node_motif, BedSeqAlignmentStatsCommStruct.MOTIF_START_ATT)
                 end = CommStruct.getAttributeAsint( node_motif, BedSeqAlignmentStatsCommStruct.MOTIF_END_ATT)
                 name = CommStruct.getAttribute( node_motif, BedSeqAlignmentStatsCommStruct.MOTIF_NAME_ATT)
-                id = CommStruct.getAttribute( node_motif, BedSeqAlignmentStatsCommStruct.MOTIF_ID_ATT, False)
+                motif_id = CommStruct.getAttribute( node_motif, BedSeqAlignmentStatsCommStruct.MOTIF_ID_ATT, False)
                 consensus = CommStruct.getAttribute( node_motif, BedSeqAlignmentStatsCommStruct.MOTIF_CONSENSUS_ATT, False)
                 nb_species = CommStruct.getAttributeAsint( node_motif, BedSeqAlignmentStatsCommStruct.MOTIF_NBSPECIES_ATT, False)
                 strand = CommStruct.getAttribute( node_motif, BedSeqAlignmentStatsCommStruct.MOTIF_STRAND_ATT, False)
@@ -339,8 +339,8 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
                     motif.score = score
                     if consensus != None:
                         motif.consensus = consensus
-                    if id != None:
-                        motif.id = id
+                    if motif_id != None:
+                        motif.id = motif_id
                     if strand != None:
                         motif.strand = strand
                     seqalign.addMotif( motif)
