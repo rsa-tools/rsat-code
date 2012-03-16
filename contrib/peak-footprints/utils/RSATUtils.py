@@ -163,10 +163,10 @@ class RSATUtils:
     def outputTable( table, path):
 
         try:        
-            file = open( path, "w")
+            out_file = open( path, "w")
             for number in table:
-                file.write( str( number) + "\n")
-                file.flush()
-            file.close()
+                out_file.write( str( number) + "\n")
+                out_file.flush()
+            out_file.close()
         except IOError, io_exce:
-            raise ExecutionException( "HistogramProcessor.outputMotifStatistics : Unable to build statistics file. From:\n\t---> " +str( io_exce))
+            raise ExecutionException( "HistogramProcessor.outputMotifStatistics : Unable to build statistics out_file. From:\n\t---> " +str( io_exce))

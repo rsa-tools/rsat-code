@@ -160,9 +160,9 @@ class MotifProcessor( Processor):
         # Retrieve the list of motif database files to use
         database_file_line = self.getParameter( MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM)
         if database_file_line != None and not database_file_line.isspace():
-	    file_list = database_file_line.split()
-	    arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM] = []
-	    for file_path in file_list:
+            file_list = database_file_line.split()
+            arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM] = []
+            for file_path in file_list:
                 arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM].append( os.path.join( db_base_path, file_path))
         else:
             raise ExecutionException( "MotifProcessor.getMethodParameters : No motif database file specified in parameter '" + MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM + "'")
@@ -217,7 +217,7 @@ class MotifProcessor( Processor):
 
             if len( arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]) != len( arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM] ):
                 for added_format in range( len( arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]) - len( arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM])): 
-		    arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM].append( "tf")
+                    arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM].append( "tf")
 
             # retrieve the correlation threshold value
             arguments[ MotifProcessor.CORRELATION_LIMIT_PARAM] = self.getParameterAsfloat( MotifProcessor.CORRELATION_LIMIT_PARAM, False)
@@ -355,9 +355,9 @@ class MotifProcessor( Processor):
         if not motif_name in motif_ids.keys():
             return
         
-        id = motif_stats.motifID
-        if id != motif_ids[ motif_name]:
-            Log.log( "MotifStatisticsProcessor.buildStatistics : A motif have an invalid ID : Motif ID = " + id + " Motif Jaspar ID = " + motif_ids[ motif_name])
+        motif_id = motif_stats.motifID
+        if motif_id != motif_ids[ motif_name]:
+            Log.log( "MotifStatisticsProcessor.buildStatistics : A motif have an invalid ID : Motif ID = " + motif_id + " Motif Jaspar ID = " + motif_ids[ motif_name])
             return
         
         if not motif_name in motif_families.keys():
@@ -681,20 +681,20 @@ class MotifProcessor( Processor):
             os.mkdir( dir_path)
             file_name = "motifs"
             file_path = os.path.join( dir_path, file_name + ".tf")
-            file = open( file_path, "w")
+            tf_file = open( file_path, "w")
             for motif in motif_list:
-                file.write( "AC\t" + motif.name + "\n")
-                file.write( "XX\n")
-                file.write( "ID\t" + motif.name + "\n")
-                file.write( "XX\n")
-                file.write( motif.pwm.convertToTransfac())
-                file.write( "XX\n")
-                file.write("//\n")
-            file.flush()
-            file.close()
+                tf_file.write( "AC\t" + motif.name + "\n")
+                tf_file.write( "XX\n")
+                tf_file.write( "ID\t" + motif.name + "\n")
+                tf_file.write( "XX\n")
+                tf_file.write( motif.pwm.convertToTransfac())
+                tf_file.write( "XX\n")
+                tf_file.write("//\n")
+            tf_file.flush()
+            tf_file.close()
             return (dir_path, file_path)
         except IOError, io_exce:
-            raise ExecutionException( "MotifProcessor.outputMotifListToTransfacFile : Unable to save motifs to tab file : '" + file_path + "'. From:\n\t---> " +str( io_exce))
+            raise ExecutionException( "MotifProcessor.outputMotifListToTransfacFile : Unable to save motifs to tab tf_file : '" + file_path + "'. From:\n\t---> " +str( io_exce))
 
 
 
@@ -705,16 +705,16 @@ class MotifProcessor( Processor):
         result = {}
         
         try:
-            file = open( file_path,  "r")
+            tf_file = open( file_path,  "r")
            
             # define some constants for the parsing
             input_motif_col = 2
             
-            # load the result tab file in a dictionnary : key = input_motif / Value = dictionnary of file column header/value
+            # load the result tab tf_file in a dictionary : key = input_motif / Value = dictionary of tf_file column header/value
             headers_ok = False
             headers = []
             count_line = 0
-            for line in file:
+            for line in tf_file:
                 count_line += 1
                 # Read the headers of the columns
                 if line[0] == "#":
@@ -736,9 +736,9 @@ class MotifProcessor( Processor):
                                 output_dic[ header] = token
                             result[ input_motif].append( output_dic)
                         else:
-                            Log.log( "MotifProcessor.parseCompareMatricesResult: wrongly formatted line : #tokens = " + str( len( tokens)) + " #headers = " + str( len( headers)) + " in line " + str( count_line) + " of file " + file_path)
+                            Log.log( "MotifProcessor.parseCompareMatricesResult: wrongly formatted line : #tokens = " + str( len( tokens)) + " #headers = " + str( len( headers)) + " in line " + str( count_line) + " of tf_file " + file_path)
                             
-            file.close()
+            tf_file.close()
         except (KeyError, IndexError, IOError),  io_exce:
             Log.log( "MotifProcessor.parseCompareMatricesResult : Unable to open/parse the compare-matrices result : '" + file_path + "'. From:\n\t---> " +str( io_exce))
             return None
@@ -901,7 +901,7 @@ class MotifProcessor( Processor):
             #cmd += " -text"
             cmd += " " + command_options
             cmd += " " + file_path 
-            cmd += " " + database_file_path
+            cmd += " " + database_file_list[index]
             
             Log.info( "MotifProcessor.launchTOMTOM : Starting comparison with database : " + database_file_list[index])
             Log.info( "MotifProcessor.launchTOMTOM : Command used is : " + cmd)
@@ -918,7 +918,7 @@ class MotifProcessor( Processor):
             if result == None:
                 continue
             
-            # analyse the result list and store the conserved elements in the final_result of the analysis
+            # analyze the result list and store the conserved elements in the final_result of the analysis
             identified_motifs = self.analyseTOMTOMResult( output_commstruct, result, motif_ids)
             
             # Retrieve the identified motif's PWM if required
@@ -941,23 +941,23 @@ class MotifProcessor( Processor):
             os.mkdir( dir_path)
             file_name = "motifs"
             file_path = os.path.join( dir_path, file_name + ".meme")
-            file = open( file_path, "w")
-            file.write( "MEME version 4.4\n\n")
-            file.write( "ALPHABET= ACGT\n\n")
-            file.write( "strands: + -\n\n")
-            file.write( "Background letter frequencies (from\n")
+            meme_file = open( file_path, "w")
+            meme_file.write( "MEME version 4.4\n\n")
+            meme_file.write( "ALPHABET= ACGT\n\n")
+            meme_file.write( "strands: + -\n\n")
+            meme_file.write( "Background letter frequencies (from\n")
             for letter in sorted( Constants.HG_BACKGROUND_MODEL.keys()):
-                file.write( letter + " " + str( Constants.HG_BACKGROUND_MODEL[ letter]) + "\t" )
-            file.write( "\n\n")
-            file.flush()
+                meme_file.write( letter + " " + str( Constants.HG_BACKGROUND_MODEL[ letter]) + "\t" )
+            meme_file.write( "\n\n")
+            meme_file.flush()
             for motif in motif_list:
-                file.write( motif.pwm.convertToMEME( motif.name))
-                file.write( "\n")
-                file.flush()
-            file.close()
+                meme_file.write( motif.pwm.convertToMEME( motif.name))
+                meme_file.write( "\n")
+                meme_file.flush()
+            meme_file.close()
             return (dir_path, file_path)
         except IOError, io_exce:
-            raise ExecutionException( "MotifProcessor.outputMotifListToMEMEFile : Unable to save motifs to tab file : '" + file_path + "'. From \n\t" +str( io_exce))
+            raise ExecutionException( "MotifProcessor.outputMotifListToMEMEFile : Unable to save motifs to tab meme_file : '" + file_path + "'. From \n\t" +str( io_exce))
 
 
 
@@ -968,15 +968,15 @@ class MotifProcessor( Processor):
         result = {}
         
         try:
-            file = open( file_path,  "r")
+            tomtom_file = open( file_path,  "r")
            
             # define some constants for the parsing
             input_motif_col = 0
             
-            # load the result tab file in a dictionnary : key = input_motif / Value = dictionnary of file column header/value
+            # load the result tab tomtom_file in a dictionnary : key = input_motif / Value = dictionnary of tomtom_file column header/value
             headers_ok = False
             headers = []
-            for line in file:
+            for line in tomtom_file:
                 # Read the headers of the columns
                 if line[0] == "#":
                     headers = line.split( "\t")
@@ -995,7 +995,7 @@ class MotifProcessor( Processor):
                             output_dic[ header] = token
                         result[ input_motif].append( output_dic)
 
-            file.close()
+            tomtom_file.close()
         except (KeyError, IndexError, IOError),  io_exce:
             Log.log( "MotifProcessor.parseTOMTOMResult : Unable to open/parse the TOMTOM result : '" + file_path + "'. From:\n\t---> " +str( io_exce))
             return None
@@ -1155,9 +1155,9 @@ class MotifProcessor( Processor):
     def retrieveMotifsMatrices(self, motif_list, database_file_path, database_format):
         
         if database_format == "transfac" or database_format == "tf":
-           MotifUtils.getMotifsPWMFromJasparTF( motif_list, database_file_path)
+            MotifUtils.getMotifsPWMFromJasparTF( motif_list, database_file_path)
         elif database_format == "meme":
-           MotifUtils.getMotifsPWMFromMeme( motif_list, database_file_path)
+            MotifUtils.getMotifsPWMFromMeme( motif_list, database_file_path)
         else:
             Log.trace( "MotifProcessor : Unknown database format : " + database_format)
 
