@@ -155,19 +155,21 @@ class MotifProcessor( Processor):
         arguments = {}
 
         # Retrieve the main path the motif databases
-        arguments[ MotifProcessor.MOTIF_DATABASE_PATH_PARAM] = self.getParameter( MotifProcessor.MOTIF_DATABASE_PATH_PARAM)
+        db_base_path = self.getParameter( MotifProcessor.MOTIF_DATABASE_PATH_PARAM)
         
         # Retrieve the list of motif database files to use
         database_file_line = self.getParameter( MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM)
         if database_file_line != None and not database_file_line.isspace():
-            arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM] = database_file_line.split()
+	    file_list = database_file_line.split()
+	    arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM] = []
+	    for file_path in file_list:
+                arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM].append( os.path.join( db_base_path, file_path))
         else:
             raise ExecutionException( "MotifProcessor.getMethodParameters : No motif database file specified in parameter '" + MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM + "'")
 
         # Add the custom motif database files if any
         custom_database_file_line = self.getParameter( MotifProcessor.CUSTOM_MOTIF_DATABASE_FILE_PARAM, False)
         if custom_database_file_line != None and not custom_database_file_line.isspace():
-            arguments[ MotifProcessor.MOTIF_DATABASE_PATH_PARAM].append( "")
             arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM].append( custom_database_file_line)
 
         # Retrieve the list of desired species
@@ -209,7 +211,7 @@ class MotifProcessor( Processor):
                 raise ExecutionException( "MotifProcessor.getMethodParameters : No motif database format specified in parameter '" + MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM + "'")
 
             # add the format of the custom motif database if any
-            custom_database_format_line = self.getParameter( MotifProcessor.CUSTOM_MOTIF_DATABASE_FORMAT_PARAM)
+            custom_database_format_line = self.getParameter( MotifProcessor.CUSTOM_MOTIF_DATABASE_FORMAT_PARAM, False)
             if custom_database_format_line != None and not custom_database_format_line.isspace():
                 arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM].append( custom_database_format_line)
 
@@ -239,14 +241,13 @@ class MotifProcessor( Processor):
         os.mkdir( out_path)
 
         # Retrieve the list of motif databases to use
-        database_path = arguments[ MotifProcessor.MOTIF_DATABASE_PATH_PARAM]
         database_file_list = arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]
         database_format_list = arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM]        
         
         # Permute the motif matrices in the database files for the hypergeometric test
         permuted_database_file_list = {}
         for index in range( len( database_file_list)):
-            permuted_list = RSATUtils.permuteMatrix( os.path.join( database_path, database_file_list[ index]), database_format_list[ index], out_path, 100)
+            permuted_list = RSATUtils.permuteMatrix( database_file_list[ index], database_format_list[ index], out_path, 100)
             if permuted_list != None:
                 permuted_database_file_list[ database_file_list[ index]] = permuted_list
                 
@@ -596,11 +597,9 @@ class MotifProcessor( Processor):
         
         # Retrieve the method arguments
         if hypergeometric_test == False:
-            database_path = arguments[ MotifProcessor.MOTIF_DATABASE_PATH_PARAM]
             database_file_list = arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]
         else:
             # In case of hypergeometric test, choose one of the database of permuted motifs previously computed
-            database_path = None
             permuted_databases = arguments[ MotifProcessor.MOTIF_PERMUTED_DATABASE_FILE_LIST_PARAM]
             database_file_list = []
             for initial_database in permuted_databases.keys():
@@ -618,19 +617,15 @@ class MotifProcessor( Processor):
         
         # Change directory to output dir
         os.chdir( dir_path)
-        
+
         RSAT_PATH = self.component.getParameter( Constants.RSAT_DIR_PARAM)
         # Parse the list of motif databases and apply each of them to the compare-matrices tool
         # on the given file of conserved blocks
         for index in range( len( database_file_list)):
-            if database_path != None:
-                database_file_path = os.path.join( database_path, database_file_list[index])
-            else:
-                database_file_path = database_file_list[index]
             # Compose the compare-matrices command line with all required options
             cmd = os.path.join( RSAT_PATH , "perl-scripts/compare-matrices")
             cmd += " -file1 " + file_path + " -format1 tf"
-            cmd += " -file2 " + database_file_path + " -format2 " + database_format_list[index]
+            cmd += " -file2 " + database_file_list[index] + " -format2 " + database_format_list[index]
             cmd += " -mode profiles"
             cmd += " -lth w 3"
             cmd += " -lth ncor2 0.7"
@@ -638,7 +633,7 @@ class MotifProcessor( Processor):
             cmd += " -o " + prefix
             cmd += " " + command_options
             
-            Log.info( "MotifProcessor.launchCompareMatrices : Starting comparison with database : " + database_file_path)
+            Log.info( "MotifProcessor.launchCompareMatrices : Starting comparison with database : " + database_file_list[index])
             Log.info( "MotifProcessor.launchCompareMatrices : command used is : " + cmd)
             
             # Execute the command
@@ -671,7 +666,7 @@ class MotifProcessor( Processor):
             
             # Retrieve the identified motif's PWM if required
             #if arguments[ MotifProcessor.REPORT_MOTIF_PWM] == True:
-            #    self.retrieveMotifsMatrices( identified_motifs, database_file_path, database_format_list[index])
+            #    self.retrieveMotifsMatrices( identified_motifs, database_file_list[index], database_format_list[index])
 
 
 
@@ -881,7 +876,6 @@ class MotifProcessor( Processor):
         
         Log.trace( "MotifProcessor.launchTOMTOM : Sending " + str( len( sub_motif_list)) + " conserved regions to identification")
 
-        database_path = arguments[ MotifProcessor.MOTIF_DATABASE_PATH_PARAM]
         database_file_list = arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM] 
         command_options = arguments[ MotifProcessor.COMMAND_OPTIONS_PARAM]
     
@@ -900,7 +894,6 @@ class MotifProcessor( Processor):
         # Execute the comparison with all the listed databases
         MEME_PATH = self.component.getParameter( Constants.MEME_DIR_PARAM)
         for index in range( len( database_file_list)):
-            database_file_path = os.path.join( database_path, database_file_list[index])
             # Compose the TOMTOM command line with all required options
             cmd = os.path.join( MEME_PATH , "bin/tomtom")
             cmd += " -oc " + dir_path
@@ -909,7 +902,7 @@ class MotifProcessor( Processor):
             cmd += " " + file_path 
             cmd += " " + database_file_path
             
-            Log.info( "MotifProcessor.launchTOMTOM : Starting comparison with database : " + database_file_path)
+            Log.info( "MotifProcessor.launchTOMTOM : Starting comparison with database : " + database_file_list[index])
             Log.info( "MotifProcessor.launchTOMTOM : Command used is : " + cmd)
             
             # Execute the command
@@ -929,7 +922,7 @@ class MotifProcessor( Processor):
             
             # Retrieve the identified motif's PWM if required
             if arguments[ MotifProcessor.REPORT_MOTIF_PWM] == True:
-                self.retrieveMotifsMatrices( identified_motifs, database_file_path, "meme")
+                self.retrieveMotifsMatrices( identified_motifs, database_file_list[index], "meme")
 
         # Remove the RSAT compare-matrices results
         os.chdir( out_path)
