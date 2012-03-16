@@ -104,7 +104,6 @@ class FinalOutputProcessor( Processor):
         # Add the custom motif database files if any
         custom_database_file_line = self.getParameter( FinalOutputProcessor.CUSTOM_MOTIF_DATABASE_FILE_PARAM, False)
         if custom_database_file_line != None and not custom_database_file_line.isspace():
-            arguments[ FinalOutputProcessor.MOTIF_DATABASE_PATH_PARAM].append( "")
             self.dbFiles.append( custom_database_file_line)
         
         limit_value = self.getParameter( FinalOutputProcessor.DISPLAY_LIMIT_VALUE, False)
