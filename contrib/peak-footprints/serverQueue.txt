@@ -1,1 +1,0 @@
-/home/spinelli/dev/TestFiles/pipelines/Ets1_mm9_chr19_testHistogram_pipeline.xml	True	1	None	
