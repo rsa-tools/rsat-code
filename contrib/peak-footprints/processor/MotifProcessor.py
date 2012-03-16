@@ -216,7 +216,8 @@ class MotifProcessor( Processor):
                 arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM].append( custom_database_format_line)
 
             if len( arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]) != len( arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM] ):
-                raise ExecutionException( "MotifProcessor.getMethodParameters : Motif database file list and format list do not have the same number of entries")
+                for added_format in range( len( arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]) - len( arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM])): 
+		    arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM].append( "tf")
 
             # retrieve the correlation threshold value
             arguments[ MotifProcessor.CORRELATION_LIMIT_PARAM] = self.getParameterAsfloat( MotifProcessor.CORRELATION_LIMIT_PARAM, False)
