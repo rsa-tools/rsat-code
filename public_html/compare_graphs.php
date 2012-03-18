@@ -117,19 +117,17 @@
        )
      );
 
-      // report parameters if echo requested
-      if ($properties['rsat_echo'] >= 1) {
-           info("rsat_main\t".$rsat_main);
-           info("WWW_RSA\t".$WWW_RSA);
-           info("neat_wsdl\t".$neat_wsdl);
-           if ($properties['rsat_echo'] >= 2) {
-               print_r($parameters);
-               if ($properties['rsat_echo'] >= 3) {
-                   phpinfo();
-                   }
-               }
-           }
-   
+     // report parameters if echo requested
+     if ($properties['rsat_echo'] >= 2) {
+       info("rsat_main\t".$rsat_main);
+       info("WWW_RSA\t".$WWW_RSA);
+       info("neat_wsdl\t".$neat_wsdl);
+       print_r($parameters);
+       if ($properties['rsat_echo'] >= 3) {
+	 phpinfo();
+       }
+     }
+
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
@@ -137,15 +135,14 @@
 
     # Open the SOAP client
     $client = new SoapClient(
-                        $neat_wsdl,
-                           array(
-                                 'trace' => 1,
-                                 'soap_version' => SOAP_1_1,
-                                 'style' => SOAP_DOCUMENT,
-                                 'encoding' => SOAP_LITERAL
-                                 )
-                           );
-
+			     $neat_wsdl,
+			     array(
+				   'trace' => 1,
+				   'soap_version' => SOAP_1_1,
+				   'style' => SOAP_DOCUMENT,
+				   'encoding' => SOAP_LITERAL
+				   )
+			     );
     flush();
     # Execute the command
 #    echo "<pre>";
@@ -167,7 +164,11 @@
 
     ## Close command handle
     fclose($cmd_handle);
-    $URL['Server commands'] = rsat_path_to_url($cmd_file);
+    if ($properties['rsat_echo'] >= 1) {
+      $URL['Server commands'] = rsat_path_to_url($cmd_file);
+    }
+
+    info("server commands\t".$URL['Server commands']);
 
     ## Print the comparison statistics
     echo "<pre>";
