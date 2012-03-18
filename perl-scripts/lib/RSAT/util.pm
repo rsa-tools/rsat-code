@@ -187,7 +187,7 @@ Usage: $alpha_date = &RSAT::util::AlphaDate();
 sub AlphaDate {
   my $my_date = "";
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
-  $my_date = sprintf("%02d_%02d_%02d.%02d%02d%02d", 1900+$year,$month+1,$day,$hour, $min, $sec);
+  $my_date = sprintf("%02d-%02d-%02d.%02d%02d%02d", 1900+$year,$month+1,$day,$hour, $min, $sec);
   #    $my_date = `date +%Y_%m_%d.%H%M%S`;
   chomp $my_date;
   return $my_date;
