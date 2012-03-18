@@ -232,6 +232,16 @@ sub set_array_attribute {
 }
 
 ################################################################
+## Set the value of an array attribute to the specified array
+sub delete_array_attribute {
+    my ($self,$attr) = @_;
+    my $class = ref($self) || $self;
+    $self->_set_attribute_cardinality($attr, "ARRAY");
+    $self->_incr_attribute_count($attr);
+    @{$self->{$attr}} = ();
+}
+
+################################################################
 ## add an entry to an EXPANDED attribute an EXPANDED is an array of
 ## entries, where #### each entry is itself an array of values
 sub push_expanded_attribute {
