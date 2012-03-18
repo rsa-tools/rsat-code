@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.46 2012/02/27 20:23:47 jvanheld Exp $
+# $Id: template,v 1.47 2012/03/18 10:29:49 jvanheld Exp $
 #
 ############################################################
 
@@ -45,6 +45,14 @@ template [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 WISH LIST
 
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
 =cut
 
 
@@ -65,7 +73,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
