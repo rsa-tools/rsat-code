@@ -499,7 +499,7 @@ sub GetSequenceFile {
     ## Execute the sequence conversion
     system($convert_seq_command);
 
-    print "<PRE>$convert_seq_command</PRE>\n" if ($ENV{rsat_echo} >= 1);
+    print "<PRE>", &RSAT::util::hide_RSAT_path($convert_seq_command), "</PRE>\n" if ($ENV{rsat_echo} >= 1);
     &DelayedRemoval($converted_seq_file);
     $sequence_file = $converted_seq_file;
     $sequence_format = $required_format;
@@ -585,7 +585,7 @@ sub MultiGetSequenceFile {
       ## Execute the sequence conversion
       system($convert_seq_command);
 
-      print "<PRE>$convert_seq_command</PRE>\n" if ($ENV{rsat_echo} >= 0);
+      print "<PRE>", &RSAT::util::hide_RSAT_path($convert_seq_command), "</PRE>\n" if ($ENV{rsat_echo} >= 0);
       &DelayedRemoval($converted_seq_file);
       $sequence_file = $converted_seq_file;
     }
@@ -1561,7 +1561,7 @@ sub EmailTheResult {
     }
 
     #### debugging: report the command
-    print "<pre>$command >> $TMP/$tmp_file_name</pre>" if ($ENV{rsat_echo} >= 1);
+    print "<pre>", &RSAT::util::hide_RSAT_path("$command >> $TMP/$tmp_file_name"), "</pre>" if ($ENV{rsat_echo} >= 1);
 
     #### Indicate the URL of the future result file
     my $submission_message = $mail_title."\n";
@@ -1581,7 +1581,7 @@ sub EmailTheResult {
     unless ($no_email) {
       my $submission_mail_command = "echo \"".$submission_message."\" ";
       $submission_mail_command .= " | mail -s \'".$mail_title." submission\' ".$email_address;
-      print "<PRE>Mail: $submission_mail_command</PRE>" if ($ENV{rsat_echo} >= 1);
+      print "<PRE>Mail: $submission_mail_command</PRE>" if ($ENV{rsat_echo} >= 2);
       system($submission_mail_command);
     }
 
@@ -1593,7 +1593,7 @@ sub EmailTheResult {
     $completion_message .= "\n\nCommand: ".$clean_command;
     $completion_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
     $completion_message .= "\nThe result file will remain there for $delay.";
-    print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
+    print "<PRE>", &RSAT::util::hide_RSAT_path($command), "</PRE>" if ($ENV{rsat_echo} >= 1);
 
     ## Run the command and send a notification mail if the user provided an email address
     $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> $TMP/$tmp_file_name; ";
