@@ -1,7 +1,12 @@
-###############################################################
-#
-# Manipulation of Position-Specific Scoring Matrices (PSSM)
-#
+################################################################
+##
+## Treatment of Position-Specific Scoring Matrices (PSSM): computation
+## of derived statistics (frequencies, weights, information) and
+## parameters (consensus) , export to various formats.
+##
+## Note: PSSM reading is implemented in a separate class
+## RSAT::MatrixReader.
+##
 package RSAT::matrix;
 
 #%alphabet_index = ();
