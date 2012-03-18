@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.231 2012/03/07 15:41:50 jvanheld Exp $
+# $Id: peak-motifs,v 1.232 2012/03/18 13:40:25 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.231 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.232 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -270,7 +270,6 @@ package main;
 
   &CheckArguments();
 
-
   &SetOutFileNames();
 
   ################################################################
@@ -300,12 +299,20 @@ package main;
     }
   }
 
+  ## Build background models from control sequences
+  if (($main::infile{ctrl_seq})) {
+    &ComputeBgModels($main::infile{ctrl_seq});
 
-  ################################################################
-  ## If Markov model is computed automatically, compute the total
-  ## sequence length and determine markov orders. 
-  ##
-  if ($main::auto_markov) {
+
+    ################################################################
+    ## Automatic definition of Markov order
+    ##
+    ## Note: auto (or manual) Markov order does not apply for test
+    ## versus control analysis.
+  } elsif ($main::auto_markov) {
+    ## If Markov model is computed automatically, compute the total
+    ## sequence length and determine markov orders.
+    ##
     &RSAT::message::TimeWarn("Auto definition of Markov order on the basis of sequence length") if ($main::verbose >= 2);
 
     ## Total sequence length is computed on the converted test
@@ -328,7 +335,7 @@ package main;
     } else {
       $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = -2;
     }
-    &RSAT::message::Info("Automatic choice of Markov order.", "L=".sprintf("%.1e", $total_seq_len), "m=".$main::param{oligo_min_mkv}) 
+    &RSAT::message::Info("Automatic choice of Markov order.", "L=".sprintf("%.1e", $total_seq_len), "m=".$main::param{oligo_min_mkv})
       if ($main::verbose >= 2);
 
     ## We need to redefine file names after having chosen the Markov
@@ -337,12 +344,6 @@ package main;
     ## SetOutFileNames(). We run it this twice.
     &SetOutFileNames();
   }
-
-  ## Build background models from control sequences
-  if (($main::infile{ctrl_seq})) {
-    &ComputeBgModels($main::infile{ctrl_seq});
-  }
-
 
   &SynthesisSequenceComposition() if ($progressive_synthesis);
 
@@ -675,6 +676,13 @@ sub CheckSubDir {
 ################################################################
 ## Set output file names
 sub SetOutFileNames {
+
+  ## Reset @pattern_types and @patterns_to_merge to empty lists,
+  ## because &SetOutFileNames() can be called twice with the option
+  ## $auto_markov.
+  @pattern_types = ();
+  @patterns_to_merge = ();
+
 
   ################################################################
   ## Output file names for peaks and their composition analysis (apply
