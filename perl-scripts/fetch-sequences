@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.9 2012/03/12 12:29:32 rsat Exp $
+# $Id: fetch-sequences,v 1.10 2012/03/18 13:29:59 jvanheld Exp $
 #
 ############################################################
 
@@ -161,6 +161,17 @@ for the peak coordinates produced by a peak callinf program
 
 =over
 
+
+=item B<-maf>
+
+Get multi-genome alignment files instead of single-genome sequence.
+The maf output requires to specify either a taxon (option I<-taxon>)
+or a list of organisms (option I<-org_list organism_file.txt>).
+
+=item B<-taxon>
+
+Taxonomic level for multi-genome alignment files.
+
 =item B<-mask>
 
 Add support for UCSC masking options (coding, repetitive, ...).
@@ -170,9 +181,13 @@ For the time being, all sequences are transformed to uppercases.
 =item B<check chromosome size>
 
 When the coordinates of one feature exceed chromosome size, the whole
-UCSC query fails. This poses problems with the option -extend, since
-the extended feature may reach chromosome ends. I should check the
-chromosome lengths, and restrict the extended end to these values.
+UCSC query fails. In some cases, the UCSC Web server does not even
+issue an error, but all the sequences following the erroneous feature
+are empty.
+
+This poses problems with the option -extend, since the extended
+feature may reach chromosome ends. I should check the chromosome
+lengths, and restrict the extended end to these values.
 
 =back
 
@@ -197,7 +212,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -233,7 +248,8 @@ package main;
 
   ## Parameters for connecting the DAS server
   our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
-  our $max_trials = 20;
+  our $timeout = 20; ## seconds for the timeout at UCSC
+  our $max_trials = 20; ## Number of trials in case of timeout
 
   ################################################################
   ## Read argument values
@@ -251,7 +267,7 @@ package main;
   &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
 
   ## Open DAS client
-  my $das = Bio::Das->new(5);  # timeout of 5 sec
+  my $das = Bio::Das->new($timeout);
 
   ################################################################
   ## Read input
@@ -294,7 +310,7 @@ package main;
     }
 
     ## Make sure that strand is defined
-    unless ($strand =~ /[+-]/ ) {
+    unless ((defined($strand)) && ($strand =~ /[+-]/)) {
       $strand = "+";
     }
 
@@ -392,7 +408,7 @@ package main;
 	## Reset error and trial counter
 	$error = 0;
 	$trial_nb = 1;
-      } else { 
+      } else {
 	## Report error
 	$error = 1;
 	&RSAT::message::Warning("DAS request returned error", $request->dsn,": ",$request->error);
