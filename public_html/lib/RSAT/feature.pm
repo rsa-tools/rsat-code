@@ -739,7 +739,7 @@ sub parse_from_row {
 
     ## Parse attributes from gff/gff3 format
     my @attributes = split /; */, $description;
-	&RSAT::message::Debug( $description, join(";", @attributes)) if ($main::verbose >= 3);
+	&RSAT::message::Debug( $description, join(";", @attributes)) if ($main::verbose >= 4);
     if (scalar(@attributes) > 0) {
       my $gff_attributes_found = 1;
       foreach my $a (0..$#attributes) {
@@ -809,7 +809,7 @@ sub parse_from_row {
 			    $self->get_attribute("strand"),
 			    $self->get_attribute("description"),
 			    $self->get_attribute("score"))
-		      ) if ($main::verbose >= 3);
+		      ) if ($main::verbose >= 4);
 
   return();
 }
@@ -938,7 +938,7 @@ sub to_text {
       if (defined($self->get_attribute($attr))) {
 	$value = $self->get_attribute($attr);
 	push @attributes, $attr."=".$value;
-	&RSAT::message::Debug("export attribute", $attr, $value) if ($main::verbose >= 3);
+	&RSAT::message::Debug("export attribute", $attr, $value) if ($main::verbose >= 4);
       } else {
 	&RSAT::message::Debug("feature", $self->get_attribute("ID"), "undefined gff3 attribute", $attr) if ($main::verbose >= 3);
       }
@@ -998,6 +998,9 @@ sub header {
       return();
     }
 
+    ## Display options
+    my $use_scores = 0; ## For the time being, we set this option to 0 because it supposes that scores are comprized between 160 and 1000, which is not the case for the features produced by RSAT (typically, weight scores are comprized between 0 and 20)
+
     ## Print format
     my $header = "";
     if ($out_format eq "gff3") {
@@ -1009,9 +1012,9 @@ sub header {
       if (defined($main::infile{input})) {
 	$track_name = $main::infile{input};
       }
-      $header .= "track name='".$track_name."' description='".$track_name."' visibility=3 itemRgb='On' use_score=1\n";
-      $header .= "browser dense RSAT\n";
-      $header .= "browser dense \n";
+      $header .= "track name='".$track_name."' description='".$track_name."' visibility=3 itemRgb='On' use_score=".$use_scores."\n";
+      $header .= "browser dense ".$track_name."\n";
+#      $header .= "browser dense all\n";
     } else {
       $header .= $comment_char{$out_format};
       $header .= $out_format;
