@@ -29,9 +29,9 @@ use Cwd 'abs_path';
     open(STDERR,">","$outputdir/stdERR.log");
     
     # workaround try to guess REA_ROOT and KWALKS_ROOT if unable to get it from prperties
-    $ENV{REA_ROOT} = "$ENV{RSAT}/contrib/REA" if (!$ENV{REA_ROOT})
-    $ENV{KWALKS_ROOT} = "$ENV{RSAT}/contrib/kwalks/kwalks/bin" if (!$ENV{KWALKS_ROOT})
-    
+     $ENV{"REA_ROOT"} = "$ENV{RSAT}/contrib/REA" if (not exists($ENV{"REA_ROOT"}));
+     $ENV{"KWALKS_ROOT"} = "$ENV{RSAT}/contrib/kwalks/kwalks/bin" if (not exists($ENV{"KWALKS_ROOT"}));
+#     
     print STDERR "RSATPATH: $ENV{RSAT}\n";
     print STDERR "REA_ROOT: $ENV{REA_ROOT}\n";
     print STDERR "KWALKS_ROOT: $ENV{KWALKS_ROOT}\n";
@@ -90,7 +90,7 @@ use Cwd 'abs_path';
   #
    
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
    my @query_id_list;
