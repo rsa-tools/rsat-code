@@ -26,7 +26,7 @@ use Cwd 'abs_path';
     my $basedir="/home/rsat/rsa-tools/public_html/data/metabolic_networks";
     my $outputdir = "$ENV{RSAT}/public_html/tmp/";
     my $outputurl = $ENV{rsat_ws_tmp};
-    open(STDERR,">","temp/stdERR.log");
+    open(STDERR,">","$outputdir/stdERR.log");
     
     print STDERR "RSATPATH: $ENV{RSAT}\n";
     print STDERR "REA_ROOT: $ENV{REA_ROOT}\n";
@@ -86,7 +86,7 @@ use Cwd 'abs_path';
   #
    
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
    my @query_id_list;
