@@ -54,7 +54,7 @@ use Cwd 'abs_path';
       $outputdir,
       "$basedir/GER_files/Escherichia_coli_strain_K12_gene_refseq_ec.tab",
       "$basedir/GER_files/MetaCyc_EC_cpds_2rxns.tab",
-      "$basedir/MetaCyc_directed_141.txt",
+      "$basedir/networks/MetaCyc_directed_141.txt",
       $outputdir, "WS$file",3);
 #       
         
@@ -86,7 +86,7 @@ use Cwd 'abs_path';
   #
    
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
    my @query_id_list;
