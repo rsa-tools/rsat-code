@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.28 2012/03/14 11:51:40 rsat Exp $
+# $Id: pathway-extractor,v 1.29 2012/03/19 10:53:32 rsat Exp $
 #
 ############################################################
 
@@ -221,10 +221,10 @@ BEGIN {
 	push (@INC,"$ENV{RSAT}/perl-scripts/lib/RSAT");
     }
 }
-require "RSA.lib";
+# require "RSA.lib";
 use Getopt::Long;
 use RSAT::util;
-use RSAT::Pathwayinference;
+use RSAT::PathwayExtraction;
 
 ################################################################
 ## pathwayinference package
@@ -273,7 +273,7 @@ package main;
     $input = join("\t", @query_id_list);
   }
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
-  &RSAT::Pathwayinference::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
+  &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
 }
 
 
