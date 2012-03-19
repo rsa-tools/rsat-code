@@ -16,6 +16,6 @@ BEGIN {
 
 
   SOAP::Transport::HTTP::CGI
-#     -> dispatch_to('/home/rsat/rsa-tools/public_html/web_services/modules')
+#     -> dispatch_to('$ENV{RSAT}/public_html/web_services/modules')
     -> dispatch_to('PathwayExtractor_WS')
     -> handle;
