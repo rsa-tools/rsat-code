@@ -2,7 +2,8 @@
 BEGIN {
   unless ($ENV{RSAT}) {
       $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
-      $ENV{CLASSPATH} .= ":/home/rsat/rsa-tools/java/lib/NeAT_javatools.jar" ;
+     
+      
   }
   if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
