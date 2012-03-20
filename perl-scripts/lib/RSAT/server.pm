@@ -263,6 +263,9 @@ sub ReadProperties {
 
       ## Identify the property file
     my $property_file = $`."../RSAT_config.props"; #`
+    $property_file = "$ENV{RSAT}/RSAT_config.props";
+#     my $pwd = `pwd`;
+#     warn "PWD $property_file\n";
     unless (-e $property_file) {
       $property_file = $`."../RSAT_config_default.props"; #`
       &RSAT::message::Warning("This RSAT site is not properly configured.",
