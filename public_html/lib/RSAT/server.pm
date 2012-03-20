@@ -4,7 +4,10 @@ require RSAT::util;
 require RSAT::message;
 
 unless ($ENV{RSAT}) {
-    $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
+    $ENV{RSAT} = $0; #
+    $ENV{RSAT} =~ s|/+public_html.*||; ## Guess RSAT path from module full name
+#  die join("\t", "HELLO", '$property_file='.$property_file, '$ENV{RSAT}='.$ENV{RSAT});
+#    $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
 #    $ENV{RSAT} = join(";","ENV", keys(%ENV));
 }
 
@@ -261,19 +264,31 @@ package main;
 sub ReadProperties {
   if ($0 =~ /([^(\/)]+)$/) {
 
-      ## Identify the property file
-    my $property_file = $`."../RSAT_config.props"; #`
-#    $property_file = "$ENV{RSAT}/RSAT_config.props";
-#     my $pwd = `pwd`;
-#     warn "PWD $property_file\n";
-    unless (-e $property_file) {
-      $property_file = $`."../RSAT_config_default.props"; #`
-      &RSAT::message::Warning("This RSAT site is not properly configured.",
-			      "Poperty file does not exist: ".$property_file,
-			      "Please contact the system administrator.");
+    ## This flag is activated if the site-specific config is not found
+    my $default_props = 0;
+
+    ## Identify the property file
+    my $property_file = "";
+    if (defined($ENV{RSAT})) {
+      $property_file = "$ENV{RSAT}/RSAT_config.props";
+    } else {
+      $property_file = $`."../RSAT_config.props"; #`
     }
 
-    ## Load the properties
+    ## Check that site-specific property file has been created (nd
+    ## hopefully configured). If not, issue warning and try to
+    ## improvise with the default config file distributed with RSAT
+    ## (no guarantee).
+    unless (-e $property_file) {
+      &RSAT::message::Warning("This RSAT site is not properly configured.\n",
+			      '$ENV{RSAT}='.$ENV{RSAT},
+			      "\n\tPoperty file does not exist: ".$property_file,
+			      "\n\tPlease contact the system administrator.");
+      $property_file = $`."../RSAT_config_default.props"; #`
+      $default_props = 1;
+    }
+
+    ## Load RSAT site-specific properties
     if (-e $property_file) {
       my ($props) = &RSAT::util::OpenInputFile($property_file);
       while (<$props>) {
@@ -284,6 +299,9 @@ sub ReadProperties {
 	if (/\=/) {
 	  my $value = $'; #'
 	  my $key = $`; #`
+	  if ($default_props) {
+	    $value =~ s|\[RSAT_PARENT_PATH\]/rsa-tools|$ENV{RSAT}|g;
+	  }
 	  $ENV{$key} = $value;
 	  $server::config{$key} = $value;
 	  #        &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
@@ -370,7 +388,6 @@ sub InitRSAT {
 #  &ReadConfig();
   &LoadLocalOrganisms();
 
-#  die join("\t", "HELLO", '$property_file='.$property_file, '$ENV{RSAT}='.$ENV{RSAT});
 
 
   ## Directories
