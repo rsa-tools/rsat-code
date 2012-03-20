@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.10 2012/03/18 13:29:59 jvanheld Exp $
+# $Id: fetch-sequences,v 1.11 2012/03/20 11:20:22 jeremy Exp $
 #
 ############################################################
 
@@ -212,7 +212,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -268,6 +268,25 @@ package main;
 
   ## Open DAS client
   my $das = Bio::Das->new($timeout);
+
+
+  ################################################################
+  ##Initialising parameter for length of each chr 
+  our %chr_end  = ();
+
+  ## Send request to DAS server
+  my @response = $das->entry_points(-dsn=>[$das_server_url]);
+
+  ## Treat request results
+  for my $id (@response) {
+     if ($id->is_success) {
+      my @dsns = $id->results;
+      foreach (@dsns) {
+        $chr_end{"chr".$_->ref} = $_->end; #put result in hash table with key "chr" and value "chr_end"
+      }
+    }
+  }
+
 
   ################################################################
   ## Read input
@@ -329,13 +348,23 @@ package main;
       }
     }
 
+    ## Check if the right position is not outside the genome ################
+    if ($right > $chr_end{$chrom}) {
+      &RSAT::message::Warning($right, "Invalid position", "skipping line", $l);
+      push @skipped_rows, $_;
+      next;
+    }
+
+
     ## Treat left and right extensions
     if ($strand eq "-") {
       $left = &RSAT::stats::max(0, $left - $downstr_extension);
-      $right += $upstr_extension;
+      $right = &RSAT::stats::min($chr_end{$chrom}, $right + $upstr_extension);
+      #$right += $upstr_extension;
     } else {
       $left = &RSAT::stats::max(0, $left - $upstr_extension);
-      $right += $downstr_extension;
+      $right = &RSAT::stats::min($chr_end{$chrom}, $right + $downstr_extension);
+      #$right += $downstr_extension;
     }
 
 #    &RSAT::message::Debug("chrom=".$chrom, "left=".$left, "right=".$right) aif ($main::verbose >= 5);
