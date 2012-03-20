@@ -263,13 +263,13 @@ sub ReadProperties {
 
       ## Identify the property file
     my $property_file = $`."../RSAT_config.props"; #`
-    $property_file = "$ENV{RSAT}/RSAT_config.props";
+#    $property_file = "$ENV{RSAT}/RSAT_config.props";
 #     my $pwd = `pwd`;
 #     warn "PWD $property_file\n";
     unless (-e $property_file) {
       $property_file = $`."../RSAT_config_default.props"; #`
       &RSAT::message::Warning("This RSAT site is not properly configured.",
-			      "Missing file: $ENV{RSAT}/RSAT_config.props",
+			      "Poperty file does not exist: ".$property_file,
 			      "Please contact the system administrator.");
     }
 
@@ -370,12 +370,16 @@ sub InitRSAT {
 #  &ReadConfig();
   &LoadLocalOrganisms();
 
+#  die join("\t", "HELLO", '$property_file='.$property_file, '$ENV{RSAT}='.$ENV{RSAT});
+
+
   ## Directories
   $main::BIN = "$ENV{RSAT}/bin";
   $main::LIB = "$ENV{RSAT}/lib";
 
   ## Check temporary directory
   $main::TMP = $ENV{RSAT}."/public_html/tmp";
+
 
   ################################################################
   ## I would like to define a month-specific tmp directory But this
@@ -390,6 +394,7 @@ sub InitRSAT {
 
   $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
   $main::PYTHON = "$ENV{RSAT}/python-scripts";
+
 
   ################################################################
   ## Redirect queries to a remote server
@@ -408,6 +413,7 @@ sub InitRSAT {
       $main::BIN = "$RSH rsa-tools/bin";
     }
   }
+
   $main::HTML = "$ENV{RSAT}/public_html"; 
   $main::WWW_TMP = "$ENV{rsat_www}/tmp";
   #$ENV{SERVER_ADMIN} = "jvanheld\@bigre.ulb.ac.be";
@@ -418,6 +424,7 @@ sub InitRSAT {
   $main::exec_time_log_file = join("", $LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::start_time_log_file = join("", $LOGS, "/start_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::date = &RSAT::util::AlphaDate();
+
 }
 
 return(1);
