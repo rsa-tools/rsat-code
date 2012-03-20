@@ -496,17 +496,18 @@ sub hide_RSAT_path {
 Check for the existence of an output directory, and, if it does not
 exist, create it.
 
-Usage: &RSAT::util::ChechOutDir($my_dir);
+Usage: &RSAT::util::ChechOutDir($my_dir, $umask, $chmod);
 
 =cut
 sub CheckOutDir {
-  my ($output_dir, $umask) = @_;
+  my ($output_dir, $umask, $chmod) = @_;
 
   unless ($output_dir) {
     &RSAT::message::Warning("&RSAT::util::CheckOutDir()", "No directory has been specified.", "Command ignored.") if ($main::verbose >= 1);
     return;
   }
 
+  ## Specify a mask for the new directory
   $umask = 0002 unless ($umask);
   umask($umask);
   if ($main::verbose >= 4) {
@@ -530,6 +531,12 @@ sub CheckOutDir {
     }
   } else {
     $output_dir = ".";
+  }
+
+  ## Change access mode if required
+  if ($chmod =~ /\d{3}/) {
+    &RSAT::message::Info("Changing access mode", $chmod, $output_dir) if ($main::verbose >= 0);
+    system("chmod ".$chmod." ".$output_dir);
   }
 }
 
