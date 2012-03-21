@@ -5,10 +5,9 @@ require RSAT::message;
 
 unless ($ENV{RSAT}) {
     $ENV{RSAT} = $0; #
+#    $ENV{RSAT} =~ s|\/[^\/]+$||g; ## Guess RSAT path from module full name
+    $ENV{RSAT} =~ s|/+perl-scripts.*||; ## Guess RSAT path from module full name
     $ENV{RSAT} =~ s|/+public_html.*||; ## Guess RSAT path from module full name
-#  die join("\t", "HELLO", '$property_file='.$property_file, '$ENV{RSAT}='.$ENV{RSAT});
-#    $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
-#    $ENV{RSAT} = join(";","ENV", keys(%ENV));
 }
 
 ################################################################
