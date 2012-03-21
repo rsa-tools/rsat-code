@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-ucsc,v 1.1 2012/03/14 08:41:11 jeremy Exp $
+# $Id: supported-organisms-ucsc,v 1.2 2012/03/21 15:57:57 jvanheld Exp $
 #
 ############################################################
 
@@ -12,6 +12,16 @@
 =head1 NAME
 
 suuported-organism-uscs
+
+=head1 AUTHORS
+
+=over
+
+=item Jeremy Delerce
+
+=item Jacques.van-Helden@univ-amu.fr
+
+=back
 
 =head1 VERSION
 
@@ -50,7 +60,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 	our $taxon = "";
