@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.34 2012/02/05 21:20:13 jvanheld Exp $
+# $Id: server.mk,v 1.35 2012/03/21 07:35:36 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -31,17 +31,17 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 #WWWSUP=rsat@wwwsup.scmbb.ulb.ac.be:rsa-tools
 #MAMAZE=rsat@mamaze.ulb.ac.be:rsa-tools
 
-BIGRE=rsat@merlout:/rsat_servers/rsat
-WWWSUP=rsat@merlout:/rsat_servers/wwwsup
-MAMAZE=rsat@merlout:/rsat_servers/mamaze
 
-CCG=jvanheld@itzamna.ccg.unam.mx:rsa-tools
-#CCG=jvanheld@mitzli.ccg.unam.mx:rsa-tools
+BIGRE=rsat@${MERLIN}:/rsat_servers/rsat
+WWWSUP=rsat@${MERLIN}:/rsat_servers/wwwsup
+MAMAZE=rsat@${MERLIN}:/rsat_servers/mamaze
+
+#CCG=jvanheld@itzamna.ccg.unam.mx:rsa-tools
+CCG=rsat@itzamna.ccg.unam.mx:rsa-tools
 TAGC=jvanheld@139.124.66.43:rsa-tools
 UPPSALA=jvanheld@bongcam1.hgen.slu.se:rsa-tools
 PRETORIA=jvanheld@anjie.bi.up.ac.za:.
-MIRROR_SERVERS=${MAMAZE} ${WWWSUP} ${UPPSALA} ${CCG} 
-LOG_SERVERS=${BIGRE} ${MAMAZE} ${WWWSUP} ${UPPSALA} ${CCG} ${PRETORIA}
+LOG_SERVERS= ${MAMAZE} ${WWWSUP}  ${CCG} ${UPPSALA} ${PRETORIA} ${BIGRE} 
 
 ################################################################
 ## OLD SERVERS, NOT MAINTAINED ANYMORE
@@ -66,6 +66,8 @@ rsync_mirrors:
 	done
 
 rsync_one_mirror:
+	@echo
+	@echo "Synchronizing mirror ${MIRROR}"
 	@for dir in ${DIRS}; do							\
 		${MAKE} rsync_dir  MIRROR=${MIRROR} DIR=$${dir} ;	\
 	done
@@ -119,17 +121,14 @@ rsync_archives:
 #### from mirrors to brol
 ################################################################
 rsync_logs:
-	@for mirror in ${LOG_SERVERS} ; do					\
+	@for mirror in ${LOG_SERVERS} ; do				\
+		echo ;							\
+		echo "Synchronizing mirror	$${mirror}";		\
 		echo "${RSYNC} $${mirror}/logs/log-file_* logs/" ;	\
 		${RSYNC} $${mirror}/logs/log-file_* logs/ ;		\
 	done
 	rsync -ruptvl -e 'ssh -p 24222'  jvanheld@139.124.66.43:rsa-tools/logs/log-file_* logs/
 
-
-rsync_config:
-	@for mirror in ${MIRROR_SERVERS} ; do \
-		${RSYNC} $${mirror}/config/*.config config/ ;\
-	done
 
 FOLDERS=data pdf_files
 from_ucmb:
