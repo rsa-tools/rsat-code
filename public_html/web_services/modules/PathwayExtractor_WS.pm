@@ -29,7 +29,7 @@ use Cwd 'abs_path';
   ##   $class: calling class
   ##   $seeds: seed list
   ##   $organism: name of a supported organism
-  ##   $network: name of a supported network
+  ##   $network: name of a supported network !! file name format $SOURCENAME$/metab_$SOURCENAME_v$version$_$TYPE$_network.tab (etab_MetaCyc_v141_directed_network.tab)
   ## Web service for the pathway inference tool
   ##########################################
   sub infer_pathway {
