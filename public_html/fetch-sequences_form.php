@@ -20,14 +20,16 @@
          <option value = 'none'> ---UCSC genome---
 <?php
 
+## Load RSAT configuration
 require ('functions.php');
+#   print_r($properties);
 UpdateLogFile("rsat","","");
 
-#print_r($properties);
-
-exec($properties['RSAT'].'/perl-scripts/supported-organisms-ucsc2.pl', $tab);
-sort($tab);
-foreach ($tab as $ligne) {
+## Get the list of supported organisms from UCSC and display it in the pop-up menu
+$cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
+exec($cmd, $ucsc_organisms);
+sort($ucsc_organisms);
+foreach ($ucsc_organisms as $ligne) {
   list($genome,$description) =  explode("\t", $ligne);
   echo "<option value = '$genome'>", $genome,"\n";
 }
