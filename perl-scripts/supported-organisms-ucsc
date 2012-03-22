@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-ucsc,v 1.2 2012/03/21 15:57:57 jvanheld Exp $
+# $Id: supported-organisms-ucsc,v 1.3 2012/03/22 09:09:38 jeremy Exp $
 #
 ############################################################
 
@@ -60,7 +60,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 	our $taxon = "";
@@ -70,31 +70,6 @@ package main;
 
   ## Parameters for connecting the DAS server
   our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
-
-
-  ## Hard-coded information about taxonomic grouping.
-  ##
-  ## This is a temporary fix because we dd not find the way to obtain
-  ## the taxonomy from UCSC.
-
-  ##First genome for each taxon
-  our %first_id  = ();
-  our %last_id  = ();
-
-  $first_id{mammal} = "hg19";
-  $first_id{vertebrate} = "galGal3";
-  $first_id{deuterostome} = "braFlo1";
-  $first_id{insect} = "dm3";
-  $first_id{nematode} = "ce6";
-  $first_id{other} = "aplCal1";
-
-  ##Last genome for each taxon
-  $last_id{mammal} = "ornAna1";
-  $last_id{vertebrate} = "petMar1";
-  $last_id{deuterostome} = "strPur1";
-  $last_id{insect} = "apiMel1";
-  $last_id{nematode} = "priPac1";
-  $last_id{other} = "sacCer1";
 
   ################################################################
   ## Read argument values
@@ -113,40 +88,6 @@ package main;
   $out = &OpenOutputFile($outfile{output});
 
   ################################################################
-  ## Define First and Last id
-#  if ($taxon eq "mammal") {
-#      our $first_id = $first_id_mammal;
-#      our $last_id = $last_id_mammal;
-#  } elsif ($taxon eq "vertebrate") {
-#      our $first_id = $first_id_mammal; #mammal are vertebrate
-#      our $last_id = $last_id_vertebrate;
-#  } elsif ($taxon eq "deuterostome") {
-#      our $first_id = $first_id_mammal; #vertebrate are deuterostome
-#      our $last_id = $last_id_deuterostome;
-#  } elsif ($taxon eq "insect") {
-#      our $first_id = $first_id_insect;
-#      our $last_id = $last_id_insect;
-#  } elsif ($taxon eq "nematode") {
-#      our $first_id = $first_id_nematode;
-#      our $last_id = $last_id_nematode;
-#  } elsif ($taxon eq "other") {
-#      our $first_id = $first_id_other;
-#      our $last_id = $last_id_other;
-#  } else {
-#      our $first_id = $first_id_mammal;
-#      our $last_id = $last_id_other;
-#  }
-
-  our $first_id = $first_id{mammal};
-  our $last_id = $last_id{other};
-  if (defined($first_id{$taxon})) {
-      $first_id = $first_id{$taxon};
-  }
-  if (defined($last_id{$taxon})) {
-      $last_id = $last_id{$taxon};
-  }
-
-  ################################################################
   ## Print verbose
   #&Verbose() if ($main::verbose >= 1);
 
@@ -155,28 +96,14 @@ package main;
   my @response = $das->dsn('http://genome.cse.ucsc.edu/cgi-bin/das');
   
   for my $url (@response) {
-      if ($url->is_success) {
-	  my @dsns = $url->results;
-	  foreach (@dsns) {
-	      
-	      unless ($id_ok) {
-		  if ($_->id eq $first_id) {
-		      $id_ok=1;
-		      print $out $_->id,"\t",$_->description,"\n";
+    if ($url->is_success) {
+	    my @dsns = $url->results;
+      foreach (@dsns) {
+        print $out $_->id,"\t",$_->description,"\n";
 		  } 
-		  
-	      } else {
-		  print $out $_->id,"\t",$_->description,"\n";
-		  
-		  ##Stop loop if id is the last one of the taxon
-		  if ($_->id eq $last_id) {
-		      last;
-		  }
-	      } 
-	  }
-      } else {
-	  &RSAT::message::Warning("DAS request returned error", $request->dsn,": ",$request->error);
-      }
+    } else {
+	    &RSAT::message::Warning("DAS request returned error", $request->dsn,": ",$request->error);
+    }
   }
 
   ################################################################
@@ -253,35 +180,6 @@ Same as -h
 =cut
     } elsif ($arg eq "-help") {
       &PrintOptions();
-
-=pod
-
-=item B<-taxon #>
-
-Return only genome from this taxon. 
-
-Supported Taxon.
-
-=over
-
-=item I<mammal>
-
-=item I<vertebrate>
-
-=item I<deuterostome>
-
-=item I<insect>
-
-=item I<nematode>
-
-=item I<other>
-
-=back
-	
-
-=cut
-    } elsif ($arg eq "-taxon") {
-      $main::taxon = shift(@arguments);
 
 =pod
 
