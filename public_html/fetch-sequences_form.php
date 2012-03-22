@@ -6,12 +6,24 @@
     <link rel="stylesheet" type="text/css" href="http://rsat.ulb.ac.be/rsat//tabs.css" media="screen,projection,print"/>
     <script src="RSAT_menu.js" type="text/javascript"></script>
     <script src="RSAT_tabs.js" type="text/javascript"></script>
+    <script language="javascript">
+			function add_demo() {
+<?php
+## Load RSAT configuration
+require ('functions.php');
+#   print_r($properties);
+UpdateLogFile("rsat","","");
+
+echo "document.forms[0].sequence_url.value = '".$properties['RSAT']."/public_html/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
+?>
+			}
+		</script>
   </head>
 
   <body class="form">
     <h3 align='center'><a href='http://rsat.ulb.ac.be/rsat//RSAT_home.cgi'>RSA-tools</a> - fetch-sequence</h3>
     <br/>
-    <form method='post' action='fetch_sequences.php' enctype='multipart/form-data'>
+    <form method='post' action='fetch-sequences.php' enctype='multipart/form-data'>
 
       <fieldset>  
        <legend><b>Bed file</b></legend>    
@@ -19,12 +31,6 @@
         <select name='genome'>
          <option value = 'none'> ---UCSC genome---
 <?php
-
-## Load RSAT configuration
-require ('functions.php');
-#   print_r($properties);
-UpdateLogFile("rsat","","");
-
 ## Get the list of supported organisms from UCSC and display it in the pop-up menu
 $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
 exec($cmd, $ucsc_organisms);
@@ -33,12 +39,13 @@ foreach ($ucsc_organisms as $ligne) {
   list($genome,$description) =  explode("\t", $ligne);
   echo "<option value = '$genome'>", $genome,"\n";
 }
-
 ?>
         </select><br/><br/>
 
         <b><a href='help.fetch-sequences.html#input_format'>BED file</a></b> <font color='red'>(mandatory)</font> Paste your sequence (bed format)<br/>
-        <textarea name='bed' rows='6' cols='40'></textarea><br/>
+        <textarea name='bed' rows='6' cols='45'></textarea><br/>
+        URL of bed file<br/>
+        <input type="text" name="sequence_url" size="62" /><br/>
         Or select a file to upload :<br/><input type='file' name='bedfile' size='40' /><br/><br/>
         <b><a href='help.fetch-sequences.html#header'>Header Format</a></b><input type="radio" name="header" value="ucsc" checked="checked"/>UCSC
         <input type="radio" name="header" value="galaxy"/>Galaxy     
@@ -63,12 +70,12 @@ foreach ($ucsc_organisms as $ligne) {
         <fieldset>
           <table border='0'>
             <legend><b><a href='help.fetch-sequences.html#options'>Extend</a></b></legend>
-            <tr align='center'><td colspan='4'>OR</td></tr>
-            <tr><td><b><a href='help.fetch-sequences.html#upstr_ext'>Upstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="upstr_ext" size ='3' value="0"/>&nbsp;bp</td>
-                <td rowspan="2" align='center' style='border-left:1px solid #2D282E;' width='120px'><b><a href='help.fetch-sequences.html#extend'>Both side</a></b></td>
-                <td rowspan="2" ><input type="input" name="extend" size = '3' value="0"/>&nbsp;bp </td>
+            <!--  <tr align='center'><td colspan='4'>OR</td></tr>-->
+            <tr><td><b><a href='help.fetch-sequences.html#upstr_ext'>Upstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="upstr_ext" size ='3'/>&nbsp;bp</td>
+              <!--  <td rowspan="2" align='center' style='border-left:1px solid #2D282E;' width='120px'><b><a href='help.fetch-sequences.html#extend'>Both side</a></b></td>
+                <td rowspan="2" ><input type="input" name="extend" size = '3'/>&nbsp;bp </td>
             </tr>
-            <tr><td><b><a href='help.fetch-sequences.html#downstr_ext'>Downstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="downstr_ext" size = '3' value="0"/>&nbsp;bp</td></tr>
+            <tr>--><td><b><a href='help.fetch-sequences.html#downstr_ext'>Downstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="downstr_ext" size = '3'/>&nbsp;bp</td></tr>
           </table>
         </fieldset><br/>
       </div>
@@ -77,10 +84,11 @@ foreach ($ucsc_organisms as $ligne) {
 
       <ul><ul><table class='formbutton'>
         <tr valign=middle>
-          <td><input type="submit" name="submit" value="GO" /></TD>
-          <td><input type="reset"  name="reset" /></TD>
-          <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></TD>
-          <td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></b></TD>
+          <td><input type="submit" name="submit" value="GO" /></td>
+          <td><input type="reset"  name="reset" /></td> 
+          <td><input type="button" name="demo" value="Demo" onclick="add_demo()"/></td>  
+          <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>
+          <td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></b></td>
           <td><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></b></td>
         </tr></table>
       </ul></ul>
