@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.232 2012/03/18 13:40:25 jvanheld Exp $
+# $Id: peak-motifs,v 1.233 2012/03/22 17:00:47 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.232 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.233 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -668,7 +668,7 @@ sub CheckSubDir {
   my ($subdir) = @_;
   my $dir = $main::dir{output};
   $dir = join ("/", $main::dir{output}, $subdir);
-  &RSAT::util::CheckOutDir($dir);
+  &RSAT::util::CheckOutDir($dir,"",775);
 
   return($dir);
 }
@@ -3051,7 +3051,7 @@ sub OpenSynthesis {
 
   ## Create a directory to store the arrow icons
   $main::dir{images_html} = $dir{output}."/images_html";
-  &RSAT::util::CheckOutDir($main::dir{images_html});
+  &RSAT::util::CheckOutDir($main::dir{images_html}, "", 775);
   my $cmd = "rsync -ruptl ";
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/arrow*.gif ";
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/UCSC_icon.jpg ";
@@ -4726,7 +4726,7 @@ sub CheckArguments {
 
   ## Output directory
   if ($main::dir{output}) {
-    &RSAT::util::CheckOutDir($main::dir{output});
+    &RSAT::util::CheckOutDir($main::dir{output}, "", 755);
     push @outdir, "output";
   } else {
     &RSAT::error::FatalError("You must define the output directory (option -outdir)");
