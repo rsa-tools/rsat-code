@@ -26,34 +26,50 @@ echo "document.forms[0].sequence_url.value = '".$properties['RSAT']."/public_htm
     <form method='post' action='fetch-sequences.php' enctype='multipart/form-data'>
 
       <fieldset>  
-       <legend><b>Bed file</b></legend>    
+       <legend><b>Genomic coordinates</b></legend>    
        <b>Genome </b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
         <select name='genome'>
          <option value = 'none'> ---UCSC genome---
 <?php
-## Get the list of supported organisms from UCSC and display it in the pop-up menu
-$cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
-exec($cmd, $ucsc_organisms);
-sort($ucsc_organisms);
-foreach ($ucsc_organisms as $ligne) {
-  list($genome,$description) =  explode("\t", $ligne);
-  echo "<option value = '$genome'>", $genome,"\n";
-}
-?>
+   ## Get the list of supported organisms from UCSC and display it in the pop-up menu
+   $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
+   exec($cmd, $ucsc_organisms);
+   sort($ucsc_organisms);
+   foreach ($ucsc_organisms as $ligne) {
+   list($genome,$description) =  explode("\t", $ligne);
+   echo "<option value = '$genome'>", $genome,"\n";
+   }
+   ?>
         </select><br/><br/>
 
-        <b><a href='help.fetch-sequences.html#input_format'>BED file</a></b> <font color='red'>(mandatory)</font> Paste your sequence (bed format)<br/>
-        <textarea name='bed' rows='6' cols='45'></textarea><br/>
-        URL of bed file<br/>
-        <input type="text" name="sequence_url" size="62" /><br/>
-        Or select a file to upload :<br/><input type='file' name='bedfile' size='40' /><br/><br/>
-        <b><a href='help.fetch-sequences.html#header'>Header Format</a></b><input type="radio" name="header" value="ucsc" checked="checked"/>UCSC
-        <input type="radio" name="header" value="galaxy"/>Galaxy     
+        <p>
+	  <b><a href='help.fetch-sequences.html#input_format'>Genomic
+	  coordinates</a></b> <font color='red'>(mandatory)</font>
+	  <br/>should be provided as a bed file (<a target='_blank'
+	  href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed
+	  format</a>), in any of the three following ways:
+
+	<ul type='square'>
+	  <li>Paste coordinates<br/>
+	    
+            <textarea name='bed' rows='6' cols='45'></textarea></li>
+
+          <li>Specify the URL of bed file on remorte server (e.g. Galaxy)<br/>
+            <input type="text" name="sequence_url" size="62" /><br/></li>
+
+          <li>Upload a file from your computer<br/>
+	    <input type='file' name='bedfile' size='40' />
+	  </p>
+	</ul>
+
+	    
+          <p><b><a href='help.fetch-sequences.html#header'>Header Format</a></b><input type="radio" name="header" value="ucsc" checked="checked"/>UCSC
+            <input type="radio" name="header" value="galaxy"/>Galaxy     
       </fieldset><br/>
       
       <div class="menu_heading_closed" onclick="toggleMenu('101')" id="heading101">
-          <span><b>Reference from which the sequences should be fetched.</b></span></div><br/>
-
+        <span><b>Reference from which the sequences should be fetched.</b></span></div><br/>
+      
       <div id="menu101" class="menu_collapsible">
         <fieldset>
           <legend><b><a href='help.fetch-sequences.html#reference'>Reference</a></b></legend>
