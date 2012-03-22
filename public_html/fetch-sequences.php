@@ -1,6 +1,5 @@
 <?php
 
-
 ## Load RSAT configuration
 require ('functions.php');
 #print_r($properties);
@@ -16,7 +15,7 @@ import_request_variables('P','fs_');
 $cmd = $properties['RSAT'].'/perl-scripts/fetch-sequences';
 $argument = "";
 $confict_extension = False;
-$exp_bed_file = "/^[\w-\+\r,\n\t\.\#; \/]+$/";
+$exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
 
 ################################################################
 ## Check arguments
@@ -56,16 +55,18 @@ if ($bed_specifications == 0) {
 
 ## Write/move bed file in tmp
 if ($_FILES["bedfile"]['name'] != "") {
-  $file_name = basename($_FILES['bedfile']['name']);
-  $file = $properties['rsat_tmp']."/".$file_name;
-  if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $file)) {
-    $argument .= " -i $file";
-    $output_file = str_replace(".bed",".fasta",$file);
+  $bed_file_name = basename($_FILES['bedfile']['name']);
+  $bed_file = $properties['rsat_tmp']."/".$bed_file_name;
+  if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
+    $argument .= " -i $bed_file";
+    $output_file = str_replace(".bed",".fasta",$bed_file);
     $argument .= " -o $output_file";
   } else {
     echo 'File upload failed';
   }
  }
+$URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
+$URL['Fetched sequences (fasta)'] = rsat_path_to_url($output_file);
 
 if ($fs_bed != "") {
   $array_ligne = explode("\n",$fs_bed);
@@ -129,8 +130,12 @@ if ($fs_reference != "segment") {
   $argument .= " -reference $fs_reference";
  }
 
-####Faire fichier
+## DISPLAY THE RESULT
+print_url_table($URL);
+     
 
+
+####Faire fichier
 echo $argument, "<br/>\n";
 $cmd .= $argument;
 echo $cmd, "<br/>\n";
