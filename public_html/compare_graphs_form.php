@@ -159,7 +159,7 @@ and
   ## Directed graph
   echo("
     <input type='checkbox' name='directed' value='on'/>&nbsp;<B><a href = 'help.compare_graphs.html#directed'>Graphs must be considered as directed</a></B><br><br>");
-  echo("<input type='checkbox' name='self' value='on'/>&nbsp;<B><a href = 'help.compare_graphs.html#directed'>Graph admit self loops</a></B><br><br></ul>");
+  echo("<input type='checkbox' name='self' value='on'/>&nbsp;<B><a href = 'help.compare_graphs.html#directed'>Graph admits self loops</a></B><br><br></ul>");
   echo ("<ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='compare_graphs_form.php?demo=0'>RESET</A></B></TD>
