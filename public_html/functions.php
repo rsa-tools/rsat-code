@@ -63,10 +63,12 @@ Function getTempFileName($prefix) {
   $tmpDir = "tmp/";
   $tmpFile = $_FILES[$file]["name"];
   $tmpFile = $tmpFile.$prefix;
-  $randval = randchar(3);  
+  
   $now = date("Ymd_His");
-  $tmpFile = $tmpFile.'_'.$randval."_".$now;
-  #    $unique = mktemp('XXXXX');
+  $suffix = randchar(3);  
+  #  $suffix = mktemp('XXXXX');
+  $tmpFile = $tmpFile.'_'.$suffix."_".$now;
+#  $tmpFile = tempnam($tmpDir , $prefix."_".$now);
   return $tmpDir.$tmpFile;
 }
 
