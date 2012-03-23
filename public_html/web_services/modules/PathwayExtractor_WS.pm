@@ -80,8 +80,7 @@ use Cwd 'abs_path';
       "$neworkfilepattern"."_node_names.tab",
       "$neworkfilepattern"."_network.tab",
       $directed,
-      $outputdir, "$file",3,{'-Q' => " ", 
-					       '-J' => " "});
+      $outputdir, "$file",3,{'-Q' => " ",'-J' => " "});
 #       
         
       &RSAT::message::TimeWarn("running inferpathway:END");# if ($verbose >= 2);
@@ -91,7 +90,7 @@ use Cwd 'abs_path';
       $outputfile,
       $outputdir,
       "$GERdir/$organism"."-gene_refseq_ec.tab",
-      "$neworkfilepattern"."_node_names.tab",3);
+      "$neworkfilepattern"."_node_names.tab",$directed,0);
       &RSAT::message::TimeWarn("processing files:END");# if ($verbose >= 2); 
       
       my $cmd = "zip -j $outputdir/$file"."_results $outputdir/$file*";
