@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.29 2012/03/19 10:53:32 rsat Exp $
+# $Id: pathway-extractor,v 1.30 2012/03/23 08:34:02 rsat Exp $
 #
 ############################################################
 
@@ -248,7 +248,7 @@ package main;
   our $verbose = "3";
   our $in = STDIN;
   our $out = STDOUT;
-
+  our $directed;
   $infile{gnn} =""; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
   $infile{nnn}=""; 
   $infile{graph}="";		# File containing the graph
@@ -273,7 +273,7 @@ package main;
     $input = join("\t", @query_id_list);
   }
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
-  &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
+  &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$directed,$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
 }
 
 
@@ -438,6 +438,15 @@ Unique name to differenciate output files. If not set With -i, the name of the i
 =cut
     } elsif ($arg eq "-g") {
       $infile{graph} = shift(@arguments);
+=pod
+
+=item	B<-dir true/false>
+
+true if the graph is directed 
+
+=cut
+    } elsif ($arg eq "-d") {
+      $directed =1;
 
 =pod
 
