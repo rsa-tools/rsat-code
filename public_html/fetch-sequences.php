@@ -38,7 +38,6 @@ if ($fs_genome == "none" or $fs_genome == "" ) {
   $argument .= " -genome $fs_genome";
 }
 
-
 ## Check that the BED has been specified once and only once
 $bed_specifications = 0;
 if ($fs_bed != "") {
@@ -60,7 +59,6 @@ if ($bed_specifications == 0) {
   error("The BED file can be specified only in 1 way (paste, upload or URL of external server)");
   $errors = 1;
 }
-
 
 ##Check optional arguments
 if ($fs_header == "galaxy") {
@@ -99,7 +97,7 @@ if (!$errors) {
   
 	$now = date("Ymd_His");
 	$suffix = randchar(3);
-	
+
 	##Move upload bed file in tmp
 	if ($_FILES["bedfile"]['name'] != "") {
 	  $bed_file_name = basename($_FILES['bedfile']['name']);
@@ -119,7 +117,8 @@ if (!$errors) {
 	  	$error = 1;
 	  }
 	}
- 
+
+	 
   ##Write bed file in tmp
 	if ($fs_bed != "") {
 	 	$array_ligne = explode("\n",$fs_bed);
@@ -130,7 +129,7 @@ if (!$errors) {
 	 	  if (preg_match($exp_bed_file,$ligne)) {
 	 			fwrite($file, $ligne);
 	 	  } else {
-	      warning ("Not bed line", $ligne);
+	      warning ("Not bed line $ligne");
 	 	  }
 	  }
 	  fclose($file);
@@ -156,21 +155,21 @@ if (!$errors) {
   		$error = 1;
   	}
   }
-  
-  ##Add otput argument
-	if (!$errors) {  
-		$output_file = str_replace(".bed",".fasta",$bed_file);
-		$argument .= " -o $output_file";	  
-	
-		$URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
-		$URL['Fetched sequences (fasta)'] = rsat_path_to_url($output_file);
-	}	
 }
 
-if (!$errors) {
-	####Faire fichier
+###########################################
+##Make request
+
+if (!$errors) { 
+	##Add otput argument
+	$output_file = str_replace(".bed",".fasta",$bed_file);
+	$argument .= " -o $output_file";	  
+	
+  $URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
+	$URL['Fetched sequences (fasta)'] = rsat_path_to_url($output_file);
+
+	####Request
 	$cmd .= $argument;	
-	exec($cmd, $error);
 
 	##DISPLAY command
   $cmd = str_replace($properties['RSAT'], '$RSAT', $cmd);
@@ -179,7 +178,6 @@ if (!$errors) {
 	## DISPLAY THE RESULT
 	print_url_table($URL);  
 }	
-
 
 ?>
   </body>
