@@ -62,12 +62,12 @@ use Cwd 'abs_path';
     &RSAT::message::TimeWarn("running inferpathway:START");# if ($verbose >= 2);
     SOAPAction: "running inferpathway:START";
     # build random id for file uniqueness
-    my $filename;
-    (undef, $file) =  File::Temp::tempfile('XXXXXX', OPEN=>0);
+      my $filename;
+      my (undef, $file) =  File::Temp::tempfile('XXXXXX', OPEN=>0);
 #      return "starting in $basedir \n";
 #     my $outputfile = &RSAT::Pathwayinference::Inferpathway(
  
-
+      $file = "PathwayExtractorWS$file";
       $outputdir = Cwd::abs_path($outputdir);
       print STDERR "outputdir: $outputdir\n";
       #my $outputfile = PathwayExtraction::InferpathwaySub(
@@ -80,7 +80,8 @@ use Cwd 'abs_path';
       "$neworkfilepattern"."_node_names.tab",
       "$neworkfilepattern"."_network.tab",
       $directed,
-      $outputdir, "WS$file",3);
+      $outputdir, "$file",3,{'-Q' => " ", 
+					       '-J' => " "});
 #       
         
       &RSAT::message::TimeWarn("running inferpathway:END");# if ($verbose >= 2);
@@ -89,11 +90,11 @@ use Cwd 'abs_path';
       &RSAT::PathwayExtraction::ProcessOutputFiles(
       $outputfile,
       $outputdir,
-      "$basedir/GER_files/Escherichia_coli_strain_K12_gene_refseq_ec.tab",
-      "$basedir/GER_files/MetaCyc_EC_cpds_2rxns.tab",0);
+      "$GERdir/$organism"."-gene_refseq_ec.tab",
+      "$neworkfilepattern"."_node_names.tab",3);
       &RSAT::message::TimeWarn("processing files:END");# if ($verbose >= 2); 
       
-      my $cmd = "zip -j $outputdir/$file"."_results $outputdir/WS$file*";
+      my $cmd = "zip -j $outputdir/$file"."_results $outputdir/$file*";
       print STDERR $cmd."\n";
       print STDERR qx($cmd)."\n";
 
