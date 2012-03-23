@@ -14,7 +14,8 @@
 				document.forms[0].header[0].checked=true;			
 				document.forms[0].reference[0].checked=true;
 				document.forms[0].upstr_ext.value="0";	
-				document.forms[0].downstr_ext.value="0";								
+				document.forms[0].downstr_ext.value="0";
+				document.forms[0].output[0].checked=true;									
 <?php
 
 ## Load RSAT configuration
@@ -112,7 +113,6 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
           <td><input type="reset"  name="reset" /></td> 
           <td><input type="button" name="demo" value="Demo" onclick="add_demo()"/></td>  
           <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>
-          <td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></b></td>
           <td><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></b></td>
         </tr></table>
       </ul></ul>
