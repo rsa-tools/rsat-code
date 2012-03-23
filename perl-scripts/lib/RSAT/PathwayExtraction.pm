@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.2 2012/03/23 08:32:02 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.3 2012/03/23 14:04:53 rsat Exp $
 #
 ############################################################
 
@@ -281,7 +281,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -415,7 +415,8 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
   ## Define output file names
   $outfile{gr} = "";		# GR Gene -> REACTION annotation
   $outfile{prefix} =$outputdir."/";
-  $outfile{prefix} .= join("_", $localgroup_descriptor, $groupid, $graph, "pred_pathways");
+  #removed  from name file $localgroup_descriptor,
+  $outfile{prefix} .= join("_", $groupid, $graph, "pred_pathways");
   $outfile{prefix} =~ s|//|/|g; ## Suppress double slashes
 
   $outfile{predicted_pathway} = $outfile{prefix}.".txt";
@@ -546,7 +547,7 @@ while (my ($cpd, $val) = each(%compounds)){
     $pathway_infer_cmd .= " -g $graphfile";
     $pathway_infer_cmd .= " -y $weightpolicy ";
     $pathway_infer_cmd .=  $piparameters;
-    $pathway_infer_cmd .= "-o $outfile{predicted_pathway}";
+    $pathway_infer_cmd .= " -o $outfile{predicted_pathway}";
 #     -v $verbose
     
     
@@ -585,8 +586,11 @@ my ($inputfile,
    $outputdir,
    $gnnfile,
    $nnnfile,
+   $directed,
    $verbose) = @_;
   
+  my $undirected = "-undirected";
+  undef $undirected if ($directed);
   my %outfile = ();
   $outfile{prefix} = $outputdir."/";
   my $outputfile =  $inputfile;
@@ -621,7 +625,7 @@ my ($inputfile,
 	  #       print "|".$line."|"."\n";
 	  $tempdata[0]=~s/<$|>$//;
 	  $i++;
-	  $reactioncpdquery = $reactioncpdquery."(\$2~\"^$tempdata[0]\")||";
+	  $reactioncpdquery = $reactioncpdquery."(\$2~\"^$tempdata[0]\$\")||";
 	}
       } elsif ($i>0) {
 	last;
@@ -770,7 +774,11 @@ my ($inputfile,
 	    
 	    $tempdatab[3] = $label.$labelb;
 	  } elsif ($tempdatab[6] &&($tempdatab[6] eq "Compound")) {
-	    $tempdatab[3] =  $values[0][1];
+	    if ($values[0][3]){
+	      $tempdatab[3] =  $values[0][3];
+	    }else {
+	      $tempdatab[3] = $values[0][1];
+	    }
 	  } else {
 	    $tempdatab[1]=~s/<$|>$//;
 	  }
