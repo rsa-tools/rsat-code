@@ -8,13 +8,22 @@
     <script src="RSAT_tabs.js" type="text/javascript"></script>
     <script language="javascript">
 			function add_demo() {
+				document.getElementById('genome').value = 'mm9'; 	
+				document.forms[0].bed.value="";
+				document.getElementById('bedfile').value=''; 				
+				document.forms[0].header[0].checked=true;			
+				document.forms[0].reference[0].checked=true;
+				document.forms[0].upstr_ext.value="0";	
+				document.forms[0].downstr_ext.value="0";								
 <?php
+
 ## Load RSAT configuration
 require ('functions.php');
-#   print_r($properties);
+#print_r($properties);#
 UpdateLogFile("rsat","","");
 
-echo "document.forms[0].sequence_url.value = '".$properties['RSAT']."/public_html/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
+echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
+
 ?>
 			}
 		</script>
@@ -28,21 +37,23 @@ echo "document.forms[0].sequence_url.value = '".$properties['RSAT']."/public_htm
       <fieldset>  
        <legend><b>Genomic coordinates</b></legend>    
        <b>Genome </b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
-        <select name='genome'>
-         <option value = 'none'> ---UCSC genome---
+        <select name='genome' id='genome'>
+         <option value ='none'> ---UCSC genome---
 <?php
+
    ## Get the list of supported organisms from UCSC and display it in the pop-up menu
    $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
    exec($cmd, $ucsc_organisms);
    sort($ucsc_organisms);
    foreach ($ucsc_organisms as $ligne) {
-   list($genome,$description) =  explode("\t", $ligne);
-   echo "<option value = '$genome'>", $genome,"\n";
+     list($genome,$description) =  explode("\t", $ligne);
+     echo "<option value = '$genome' id='$genome'>", $genome, " ", $description, "\n";
    }
-   ?>
+   
+?>
         </select><br/><br/>
 
-        <p>
+    <p>
 	  <b><a href='help.fetch-sequences.html#input_format'>Genomic
 	  coordinates</a></b> <font color='red'>(mandatory)</font>
 	  <br/>should be provided as a bed file (<a target='_blank'
@@ -58,7 +69,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['RSAT']."/public_htm
             <input type="text" name="sequence_url" size="62" /><br/></li>
 
           <li>Upload a file from your computer<br/>
-	    <input type='file' name='bedfile' size='40' />
+	    <input type='file' name='bedfile' id='bedfile' size='40' />
 	  </p>
 	</ul>
 
@@ -86,12 +97,9 @@ echo "document.forms[0].sequence_url.value = '".$properties['RSAT']."/public_htm
         <fieldset>
           <table border='0'>
             <legend><b><a href='help.fetch-sequences.html#options'>Extend</a></b></legend>
-            <!--  <tr align='center'><td colspan='4'>OR</td></tr>-->
-            <tr><td><b><a href='help.fetch-sequences.html#upstr_ext'>Upstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="upstr_ext" size ='3'/>&nbsp;bp</td>
-              <!--  <td rowspan="2" align='center' style='border-left:1px solid #2D282E;' width='120px'><b><a href='help.fetch-sequences.html#extend'>Both side</a></b></td>
-                <td rowspan="2" ><input type="input" name="extend" size = '3'/>&nbsp;bp </td>
+            <tr><td><b><a href='help.fetch-sequences.html#upstr_ext'>Upstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="upstr_ext" size ='3' value='0'/>&nbsp;bp</td>
+                <td><b><a href='help.fetch-sequences.html#downstr_ext'>Downstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="downstr_ext" size = '3' value='0'/>&nbsp;bp</td>
             </tr>
-            <tr>--><td><b><a href='help.fetch-sequences.html#downstr_ext'>Downstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="downstr_ext" size = '3'/>&nbsp;bp</td></tr>
           </table>
         </fieldset><br/>
       </div>
