@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.12 2012/03/23 15:25:51 jeremy Exp $
+# $Id: fetch-sequences,v 1.13 2012/03/23 15:54:39 jeremy Exp $
 #
 ############################################################
 
@@ -212,7 +212,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -350,7 +350,7 @@ package main;
 
     ## Check if the right position is not outside the genome ################
     if ($right > $chr_end{$chrom}) {
-      &RSAT::message::Warning($chrom,":", $left, "-", $right, "invalid position. Skipping line", $l);
+      &RSAT::message::Warning("$chrom:$left-$right", "invalid position. Skipping line", $l);
       push @skipped_rows, $_;
       next;
     }
@@ -412,8 +412,7 @@ package main;
       $next_chunk_size = &RSAT::stats::min($chunk, $remaining);
       @query_chunk = splice (@queries, 0, $next_chunk_size);
       &RSAT::message::Debug("Query chunk", join "; ", @query_chunk) if ($main::verbose >= 10);
-      &RSAT::message::TimeWarn( "Remaining queries", $remaining, ,"Treating next chunk",$next_chunk_size, scalar(@query_chunk) ) 
-	if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn( "Remaining queries", $remaining, ,"Treating next chunk",$next_chunk_size, scalar(@query_chunk)) 	if ($main::verbose >= 2);
     }
 
     ## Send request to DAS server
