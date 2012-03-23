@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.13 2012/03/23 15:54:39 jeremy Exp $
+# $Id: fetch-sequences,v 1.14 2012/03/23 18:58:53 jvanheld Exp $
 #
 ############################################################
 
@@ -212,7 +212,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -308,6 +308,17 @@ package main;
 
     &RSAT::message::Debug($l, $chrom, $left, $right, $strand) if ($main::verbose >= 5);
 
+    ## Check validity of the chromosome
+    unless (defined($chr_end{$chrom})) {
+      if (defined($chr_end{"chr".$chrom})) {
+	$chrom = "chr".$chrom;
+	&RSAT::message::Warning($chrom, "chromosome name: missing 'chr' prefix, added.", $l);
+      } else {
+	&RSAT::message::Warning($chrom, "Invalid chromosome name", "skipping line", $l);
+	push @skipped_rows, $_;
+	next;
+      }
+    }
 
     ## Check validity of left and right positions
     unless (&RSAT::util::IsNatural($left)) {
@@ -369,6 +380,8 @@ package main;
 
 #    &RSAT::message::Debug("chrom=".$chrom, "left=".$left, "right=".$right) aif ($main::verbose >= 5);
 
+
+    ## Formulate the query
     my $query = $chrom.":".$left.",".$right;
     if ($header_format eq 'ucsc') {
       $header{$query} = ">".$genome."_".$chrom."_".$left."_".$right.$strand."\trange=".$chrom.":".$left."-".$right." 5'pad=0 3'pad=0 strand=".$strand." repeatMasking=none";
@@ -709,7 +722,7 @@ sub Verbose {
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   printf $out "; %-22s\t%s\n", "Genome", $genome;
   printf $out "; %-22s\t%s\n", "DAS server URL", $das_server_url;
-  printf $out "; %-22s\t%d\n", "Reference", $reference;
+  printf $out "; %-22s\t%s\n", "Reference", $reference;
   printf $out "; %-22s\t%d\n", "Upstream extension", $upstr_extension;
   printf $out "; %-22s\t%d\n", "Downstream extension", $downstr_extension;
   printf $out "; %-22s\t%d\n", "Invalid rows in query file", scalar(@main::skipped_rows);
