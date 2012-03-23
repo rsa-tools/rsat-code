@@ -35,7 +35,7 @@ use Cwd 'abs_path';
   sub infer_pathway {
 
 #   return "RSATPATH: $ENV{RSAT}\nREA_ROOT: $ENV{REA_ROOT}\nKWALKS_ROOT: $ENV{KWALKS_ROOT}\nCLASSPATH:  $ENV{CLASSPATH}\n";
-    my ($class, $seeds,$organism,$network) = @_;
+    my ($class, $seeds,$organism,$network,$directed) = @_;
     my $basedir="$ENV{RSAT}/public_html/data/metabolic_networks";
     my $GERdir = "$basedir/GER_files/$organism";
     my $outputdir = "$ENV{RSAT}/public_html/tmp/";
@@ -46,7 +46,7 @@ use Cwd 'abs_path';
     my $neworkfilepattern= $network;
     $neworkfilepattern =~ s/_v.*//gi; 
     $neworkfilepattern = "$basedir/networks/$neworkfilepattern/metab_$network";
-    print STDERR "neworkfilepattern: $neworkfilepattern\n";
+    print STDERR "networkfilepattern: $neworkfilepattern\n";
     # workaround try to guess REA_ROOT and KWALKS_ROOT if unable to get it from prperties
      $ENV{"REA_ROOT"} = "$ENV{RSAT}/contrib/REA" if (not exists($ENV{"REA_ROOT"}));
      $ENV{"KWALKS_ROOT"} = "$ENV{RSAT}/contrib/kwalks/kwalks/bin" if (not exists($ENV{"KWALKS_ROOT"}));
@@ -79,6 +79,7 @@ use Cwd 'abs_path';
       "$GERdir/$organism"."-gene_refseq_ec.tab",
       "$neworkfilepattern"."_node_names.tab",
       "$neworkfilepattern"."_network.tab",
+      $directed,
       $outputdir, "WS$file",3);
 #       
         
@@ -96,19 +97,35 @@ use Cwd 'abs_path';
       print STDERR $cmd."\n";
       print STDERR qx($cmd)."\n";
 
-    %resultshash = {};
-    $resultshash{"filename"} = $file."_results.zip";
-    $resultshash{"fileurl"} = $outputurl."/$file"."_results.zip";
-#     $resultshash{"filecontent"} = $outputurl."/$file"."_results.zip";
+    my $filename = $file."_results.zip";
+    my $fileurl = "$outputurl/$filename";
+    open RESFILE, "<$outputdir/$filename";
+    my $resultfile =  do { local $/; <RESFILE> };
+    close (RESFILE);
+#     my $resultfile = `cat $outputdir/$filename`;
     close STDERR;
-    return $outputurl."/$file"."_results.zip"; 
-    return $resultshash;     
+    
+    return SOAP::Data->name('response' => {'url' => $fileurl,
+ 				        'filename' => $filename,	
+				        'file' => $resultfile});
+#     return $outputurl."/$file"."_results.zip"; 
+#     return $resultshash;     
   }
  
   sub hi{
    return "hello world\n";
   }
-  
+#   sub returnhash{
+#   open RESFILE, "</home/rsat/rsa-tools//public_html/tmp/wqQQQE_results.zip";
+#  my $resultfile =  do { local $/; <RESFILE> };
+# #      
+# my $resultfile =<RESFILE>;
+#      close (RESFILE);
+# #   my $resultfile = `cat /home/rsat/rsa-tools//public_html/tmp/wqQQQE_results.zip`;
+#    return SOAP::Data->name('response' => {'url' => "hello world\n",
+#    				        'filename' => "wqQQQE_results.zip\n",
+# 				        'file' =>$resultfile});
+#   }
 #   
 #   sub convertfile{
 #     my ($class, $filename) = @_;
