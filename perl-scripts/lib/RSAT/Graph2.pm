@@ -2620,7 +2620,7 @@ sub to_dot {
     
     $dot .= "rankdir=TB;\n";
     $dot .= "overlap=scale;\n";
-    $dot .= "size=\"36,40\";\n";
+#     $dot .= "size=\"36,40\";\n";
     
 
     foreach my $node (@nodes) {
