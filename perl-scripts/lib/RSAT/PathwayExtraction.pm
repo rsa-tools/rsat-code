@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.1 2012/03/19 10:52:18 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.2 2012/03/23 08:32:02 rsat Exp $
 #
 ############################################################
 
@@ -281,7 +281,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -291,6 +291,7 @@ sub Inferpathway{
        $gnnfile,
        $nnnfile,
        $graphfile,
+       $directed,
        $tempdir,
        $localgroup_descriptor,
        $verbose,
@@ -429,24 +430,81 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
   print MYFILE "# EC number grouping: true". "\n";
   my $seednum= 0;
   my @previousarray;
+  my %conversiontablehash= ();
+  my %compounds = ();
   foreach my $val (@conversiontable) {
-
     @tempdata = split(/\t/,$val);
-    if (@previousarray && !($tempdata[0] eq $previousarray[0])) {
-      print MYFILE "$previousarray[0]\t$groupid\n";
-      $seednum++;
+    #separating reaction nodes from compound nodes
+    if ($tempdata[2] =~/^compound.*|cpd.*/i){
+      $compounds{$tempdata[1]} = $tempdata[0];
+    }else{
+      my $ECgroup = $conversiontablehash{$tempdata[1]};
+      if($ECgroup){
+       $ECgroup.="_$tempdata[0]";
+      }else{
+       $ECgroup=$tempdata[0];
+      }
+     $conversiontablehash{$tempdata[1]} = $ECgroup;
     }
-    # 	print "$tempdata[1] eq $previousarray[1]\n";
-    print MYFILE $tempdata[1] .">\t".$tempdata[1]. "\n";
-    print MYFILE $tempdata[1] ."<\t".$tempdata[1]. "\n";
-    print MYFILE $tempdata[1] ."\t".$tempdata[0]. "\n";
-    @previousarray = @tempdata;
+#     @previousarray = @tempdata;
   }
-
-  if (@conversiontable) {
-    print MYFILE "$previousarray[0]\t$groupid\n";
+  my %invertedconversiontablehash = ();
+#   foreach my ($key,$val) (%conversiontablehash) {
+  while (my ($key, $val) = each(%conversiontablehash)){
+    my $ECgroup = $invertedconversiontablehash{$val};
+    if($ECgroup){
+      push (@{$ECgroup},$key);
+    }else{
+     $ECgroup=[$key];
+    }
+    $invertedconversiontablehash{$val} = $ECgroup;
+   }
+   
+#processing reaction seeds
+   while (my ($key, $val) = each(%invertedconversiontablehash)){
+    foreach my $reaction (@{$val}) {
+ 
+    if ($directed){
+      print MYFILE $reaction .">\t".$reaction. "\n";
+      print MYFILE $reaction ."<\t".$reaction. "\n";
+    }
+    print MYFILE $reaction ."\t".$key. "\n";
     $seednum++;
-  }
+   }
+   print MYFILE "$key\t$groupid\n";
+   }
+
+# processing compound seeds   
+while (my ($cpd, $val) = each(%compounds)){
+#       print MYFILE $cpd ."\t".$cpd. "\n";
+      print MYFILE "$cpd\t$groupid\n";
+      $seednum++;
+}
+   
+
+   
+   
+   close MYFILE;
+   
+   
+#  if (@previousarray && !($tempdata[0] eq $previousarray[0])) {
+#       print MYFILE "$previousarray[0]\t$groupid\n";
+#       $seednum++;
+#     }
+#     	print "$tempdata[1] eq $previousarray[1]\n";
+#     if ($directed){
+#       print MYFILE $tempdata[1] .">\t".$tempdata[1]. "\n";
+#       print MYFILE $tempdata[1] ."<\t".$tempdata[1]. "\n";
+#     }else{
+#       print MYFILE $tempdata[1] ."\t".$tempdata[1]. "\n";
+#     }
+#     print MYFILE $tempdata[1] ."\t".$tempdata[0]. "\n";
+# 
+# 
+#   if (@conversiontable) {
+#     print MYFILE "$previousarray[0]\t$groupid\n";
+#     $seednum++;
+#   }
   # END OF  Creating reaction file fo pathway inference
   ################################################################
 ## TO DO WITH DIDIER: CHECK SEED NUMBER AND SEND WARNING IF TOO BIG.
@@ -483,7 +541,8 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
     $pathway_infer_cmd .= " -m $minpathlength -C -f $graphfileformat";
     $pathway_infer_cmd .= " -p $tempdir";
     $pathway_infer_cmd .= " -E $outputdir";
-    $pathway_infer_cmd .= " -d -b";
+    $pathway_infer_cmd .= " -b";
+    $pathway_infer_cmd .= " -d" if ($directed);
     $pathway_infer_cmd .= " -g $graphfile";
     $pathway_infer_cmd .= " -y $weightpolicy ";
     $pathway_infer_cmd .=  $piparameters;
