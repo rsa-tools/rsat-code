@@ -18,7 +18,7 @@ getopts("hu:o:i:",\%options);
 die "Unprocessed by Getopt::Std:\n" if $ARGV[0];
 
 if ($options{h}) {
-  print "ORTHO DISCO OPTIONS\n";
+  print "pathway-extractor_soapclient OPTIONS\n";
   print "===================\n";
   print "-h displays this help message and exit\n";                                                                                                                             
   print "-u server url \n";
