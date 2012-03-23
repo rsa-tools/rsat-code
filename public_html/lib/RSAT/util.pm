@@ -535,7 +535,7 @@ sub CheckOutDir {
 
   ## Change access mode if required
   if ($chmod =~ /\d{3}/) {
-    &RSAT::message::Info("Changing access mode", $chmod, $output_dir) if ($main::verbose >= 0);
+    &RSAT::message::Info("Changing access mode", $chmod, $output_dir) if ($main::verbose >= 5);
     system("chmod ".$chmod." ".$output_dir);
   }
 }
