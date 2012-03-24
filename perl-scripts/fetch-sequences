@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.15 2012/03/24 08:05:47 jvanheld Exp $
+# $Id: fetch-sequences,v 1.16 2012/03/24 10:15:49 jvanheld Exp $
 #
 ############################################################
 
@@ -212,7 +212,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -271,6 +271,21 @@ package main;
 
 
   ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ## Define log file
+  if ($outfile{output}) {
+    $outfile{log} = $outfile{output};
+    $outfile{log} =~ s/\.fasta$//;
+    $outfile{log} =~ s/\.fa$//;
+    $outfile{log} .= "_log.txt";
+  } else {
+    $outfile{log} = "";
+  }
+  $log = &OpenOutputFile($outfile{log});
+
+  ################################################################
   ##Initialising parameter for length of each chr
   our %chr_end  = ();
 
@@ -299,7 +314,7 @@ package main;
       $main::outfile{input} = $main::outfile{output};
       $main::outfile{input} =~ s/\.fasta$//;
       $main::outfile{input} =~ s/\.fa$//;
-      $main::outfile{input} .= "_from_url.bed";
+      $main::outfile{input} .= ".bed";
     } else {
       ## Define temporary directory
       if ($main::TMP) {
@@ -425,20 +440,18 @@ package main;
   }
   close $main::in if ($main::infile{input});
 
-  ## Report number of skipped rows
-  if (scalar(@skipped_rows) > 0) {
-    &RSAT::message::Warning("Skipped ".scalar(@skipped_rows)." invalid rows in query file") if ($main::verbose >= 2);
-  }
-
-  ################################################################
-  ## Open output stream
-  $out = &OpenOutputFile($outfile{output});
-
 
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
 
+  ################################################################
+  ## Report skipped lines in the log file
+  if (scalar(@skipped_rows) > 0) {
+    &RSAT::message::Warning("Skipped ".scalar(@skipped_rows)." invalid rows in query file") if ($main::verbose >= 2);
+    printf $log "; %-22s\t%s\n", "Skipped rows in query file", scalar(@skipped_rows);
+    print $log (join "\n", @skipped_rows), "\n";
+  }
 
   ## Split queries in chunks to avoid timeout
   my @query_chunk = ();
@@ -493,8 +506,9 @@ package main;
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out if ($outfile{output});
+  close $log if ($outfile{log});
 
   exit(0);
 }
@@ -762,31 +776,30 @@ allows to use the command within a pipe.
 }
 
 ################################################################
-## Verbose message
+## Verbose message is sent to the log file, because fasta files cannot
+## contain comments
 sub Verbose {
-  print $out "; fetch-sequences ";
-  &PrintArguments($out);
-  printf $out "; %-22s\t%s\n", "Program version", $program_version;
-  printf $out "; %-22s\t%s\n", "Genome", $genome;
-  printf $out "; %-22s\t%s\n", "DAS server URL", $das_server_url;
-  printf $out "; %-22s\t%s\n", "Reference", $reference;
-  printf $out "; %-22s\t%d\n", "Upstream extension", $upstr_extension;
-  printf $out "; %-22s\t%d\n", "Downstream extension", $downstr_extension;
-  printf $out "; %-22s\t%d\n", "Invalid rows in query file", scalar(@main::skipped_rows);
+  print $log "; fetch-sequences ";
+  &PrintArguments($log);
+  printf $log "; %-22s\t%s\n", "Program version", $program_version;
+  printf $log "; %-22s\t%s\n", "Genome", $genome;
+  printf $log "; %-22s\t%s\n", "DAS server URL", $das_server_url;
+  printf $log "; %-22s\t%s\n", "Reference", $reference;
+  printf $log "; %-22s\t%d\n", "Upstream extension", $upstr_extension;
+  printf $log "; %-22s\t%d\n", "Downstream extension", $downstr_extension;
+  printf $log "; %-22s\t%d\n", "Invalid rows in query file", scalar(@main::skipped_rows);
   if (%main::infile) {
-    print $out "; Input files\n";
+    print $log "; Input files\n";
     while (my ($key,$value) = each %main::infile) {
-      printf $out ";\t%-13s\t%s\n", $key, $value;
+      printf $log ";\t%-13s\t%s\n", $key, $value;
     }
   }
   if (%main::outfile) {
-    print $out "; Output files\n";
+    print $log "; Output files\n";
     while (my ($key,$value) = each %main::outfile) {
-      printf $out ";\t%-13s\t%s\n", $key, $value;
+      printf $log ";\t%-13s\t%s\n", $key, $value;
     }
   }
-
-
 }
 
 
