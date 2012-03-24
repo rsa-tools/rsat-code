@@ -259,7 +259,7 @@ sub SequenceChoice {
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
   if ($sequence_file = $query->param("sequence_file")) {
-    ### sequence file is already on the server machine
+    ### Sequence file is already on the server machine
     ### (piped from a previous script)
     $sequence_url = $sequence_file;
     $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
