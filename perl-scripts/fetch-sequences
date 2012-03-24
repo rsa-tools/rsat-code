@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.14 2012/03/23 18:58:53 jvanheld Exp $
+# $Id: fetch-sequences,v 1.15 2012/03/24 08:05:47 jvanheld Exp $
 #
 ############################################################
 
@@ -212,7 +212,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -271,7 +271,7 @@ package main;
 
 
   ################################################################
-  ##Initialising parameter for length of each chr 
+  ##Initialising parameter for length of each chr
   our %chr_end  = ();
 
   ## Send request to DAS server
@@ -287,10 +287,38 @@ package main;
     }
   }
 
+  ################################################################
+  ## Download input from remote URL
+  if ($main::infile{input_url}) {
+    &RSAT::message::TimeWarn("Transferring input file from URL", $main::infile{input_url}) if ($main::verbose >= 2);
+    use LWP::Simple;
+#    my $content = get($main::infile{input_url});
+#    my @content_lines = split (/[\n\r]/, $content);
+#    die "Couldn't get URL ".$infile{input_url} unless ($content);
+    if (defined($outfile{output})) {
+      $main::outfile{input} = $main::outfile{output};
+      $main::outfile{input} =~ s/\.fasta$//;
+      $main::outfile{input} =~ s/\.fa$//;
+      $main::outfile{input} .= "_from_url.bed";
+    } else {
+      ## Define temporary directory
+      if ($main::TMP) {
+	$tmp_dir = $main::TMP;
+      } else {
+	$tmp_dir = ".";
+      }
+      $main::outfile{input} = &RSAT::util::make_temp_file($tmp_dir, "fetch-sequences");
+    }
+    getstore($main::infile{input_url}, $main::outfile{input});
+    &RSAT::message::TimeWarn("Genomic coordinates transferred to local file", $main::outfile{input}) if ($main::verbose >= 2);
+    ($main::in) = &OpenInputFile($main::outfile{input});
+  } else {
+    ($main::in) = &OpenInputFile($main::infile{input});
+  }
 
   ################################################################
   ## Read input
-  ($main::in) = &OpenInputFile($main::infile{input});
+  &RSAT::message::TimeWarn("Reading genomic coordinates") if ($main::verbose >= 2);
   my $i = 0;
   my $l = 0;
   while (<$main::in>) {
@@ -301,7 +329,7 @@ package main;
     chomp();
 
     if (($top > 0) && ($i >= $top)) {
-      &RSAT::message::Warning("Stopped after $top top queries. Further lines are ignored.");
+      &RSAT::message::Info("Stopped after $top top queries. Further lines are ignored.");
       last;
     }
     my ($chrom, $left, $right, $name, $score, $strand) = split(/\t/);
@@ -312,9 +340,9 @@ package main;
     unless (defined($chr_end{$chrom})) {
       if (defined($chr_end{"chr".$chrom})) {
 	$chrom = "chr".$chrom;
-	&RSAT::message::Warning($chrom, "chromosome name: missing 'chr' prefix, added.", $l);
+	&RSAT::message::Warning($chrom, "chromosome name: missing 'chr' prefix, added.", $l) if ($main::verbose >= 2);
       } else {
-	&RSAT::message::Warning($chrom, "Invalid chromosome name", "skipping line", $l);
+	&RSAT::message::Warning($chrom, "Invalid chromosome name", "skipping line", $l) if ($main::verbose >= 2);
 	push @skipped_rows, $_;
 	next;
       }
@@ -322,12 +350,12 @@ package main;
 
     ## Check validity of left and right positions
     unless (&RSAT::util::IsNatural($left)) {
-      &RSAT::message::Warning($left, "Invalid left position", "skipping line", $l);
+      &RSAT::message::Warning($left, "Invalid left position", "skipping line", $l) if ($main::verbose >= 2);
       push @skipped_rows, $_;
       next;
     }
     unless (&RSAT::util::IsNatural($right)) {
-      &RSAT::message::Warning($right, "Invalid right position", "skipping line", $l);
+      &RSAT::message::Warning($right, "Invalid right position", "skipping line", $l) if ($main::verbose >= 2);
       push @skipped_rows, $_;
       next;
     }
@@ -361,7 +389,7 @@ package main;
 
     ## Check if the right position is not outside the genome ################
     if ($right > $chr_end{$chrom}) {
-      &RSAT::message::Warning("$chrom:$left-$right", "invalid position. Skipping line", $l);
+      &RSAT::message::Warning("$chrom:$left-$right", "invalid position. Skipping line", $l) if ($main::verbose >= 2);
       push @skipped_rows, $_;
       next;
     }
@@ -399,7 +427,7 @@ package main;
 
   ## Report number of skipped rows
   if (scalar(@skipped_rows) > 0) {
-    &RSAT::message::Warning("Skipped ".scalar(@skipped_rows)." invalid rows in query file");
+    &RSAT::message::Warning("Skipped ".scalar(@skipped_rows)." invalid rows in query file") if ($main::verbose >= 2);
   }
 
   ################################################################
@@ -549,9 +577,28 @@ above).
 If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
 
+This option is mutually exclusive with option I<-u>.
+
 =cut
     } elsif ($arg eq "-i") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") 
+	if ($main::infile{input_url});
       $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-u input_file_URL>
+
+Use as input a file available on a remote Web server (e.g. a bed file
+on your Galaxy account).
+
+This option is mutually exclusive with option I<-i>.
+
+=cut
+    } elsif ($arg eq "-u") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") 
+	if ($main::infile{input});
+      $main::infile{input_url} = shift(@arguments);
 
 =pod
 
