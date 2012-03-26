@@ -1,15 +1,5 @@
-<html>
-<head>
-<title>RSAT - fetch-sequences</title>
-<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
-   </head>
-   <body class="results">
-   <H3><a href='http://rsat.ulb.ac.be/'>RSAT</a> - fetch-sequences - results</H3>
-  
-  
-   <?php
-
-   // Load RSAT configuration
+<?php    
+// Load RSAT configuration
    require('functions.php');
 
 // print_r($properties);
@@ -18,7 +8,7 @@ UpdateLogFile("rsat","","");
 // Import variables with prefix fs_ from form
 import_request_variables('P','fs_');
 
-// print_r($_POST);
+//print_r($_POST);
 // print_r($_FILES);
 
 // Initialize variables
@@ -26,6 +16,19 @@ $cmd = $properties['RSAT'].'/perl-scripts/fetch-sequences';
 $argument = " -v 2";
 $confict_extension = False;
 $exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
+?>
+
+<html>
+<head>
+<title>RSAT - fetch-sequences</title>
+<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   </head>
+   <body class="results">
+   
+   <?php
+////////////////////////////////////////////////////////////////
+//Print <h3>
+echo "<H3><a href='".$properties['rsat_www']."'>RSAT</a> - fetch-sequences - results</H3>";
 
 ////////////////////////////////////////////////////////////////
 // Check arguments
@@ -33,10 +36,18 @@ $errors = 0;
 
 // Check that genome has been specified
 if ($fs_genome == "none" or $fs_genome == "" ) {
-  error( "You forgot to specify the genome", "<br/>\n");
-  $errors++;
+  error( "You forgot to specify the genome.");
+  $errors=1;
  } else {
   $argument .= " -genome $fs_genome";
+ }
+
+//Check if email is right
+if($fs_output =="email") {
+  if (!preg_match("#^[\wàáâãäåæçèéêëìíîïðñòóôõöøùúûüý._\-]+@[a-z]+.[a-z]{2,4}$#", $fs_user_email)) {
+     error( "Email not valid");
+     $errors=1;
+  }
  }
 
 ////////////////////////////////////////////////////////////////
@@ -143,7 +154,7 @@ if (!$errors) {
       if (preg_match($exp_bed_file,$line)) {
 	fwrite($file, $line);
       } else {
-	warning ("Not bed line $line");
+	warning ("Not bed line ".htmlspecialchars($line));
       }
     }
     fclose($file);
@@ -186,20 +197,44 @@ if ($errors == 0) {
   // Add arguments to the command
   $cmd .= $argument;	
 
-  // Display the command
-  $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
-  info("Command : ".$cmd_report);
-
-  echo "<hr>";
-
   // Run the command
   exec($cmd, $error);
   // print_r($error);
   // echo ("Done");
 
-  // Display the result
-  print_url_table($URL);  
- }	
+  if ($fs_output =="display")  {
+
+    // Display the command
+    $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
+    info("Command : ".$cmd_report);
+    echo "<hr>";
+
+    // Display the result
+    print_url_table($URL);
+    
+  } else {
+    echo "Email outpout not available for now";
+/*
+    //parammetter of mail
+    $to = $fs_user_email;
+    $subject = "fetch-sequences results";
+
+    //put result in variable
+    $msg = "<table class='resultlink'>\n";
+    $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
+    foreach ($URL as $key => $value) {
+      $msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
+    }
+    $msg .= "</table>\n";
+    
+    $headers = 'Mime-Version: 1.0'."\r\n";
+    $headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
+    $headers .= "\r\n";
+
+    //sending mail
+    mail($to, $subject, $msg, $headers);*/
+  }  
+}	
 
 ?>
 
