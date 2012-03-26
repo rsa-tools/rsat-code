@@ -36,6 +36,9 @@ rsat_site=your_server_name
 ## Administrator of this RSAT server (to whom the error reports should be sent by email)
 rsat_server_admin=your.mail@your.mail.server
 
+## Server for sending mail (SMTP) is site-dependent
+smtp=[smtp.at.your.site]
+
 ## Main RSAT directory
 RSAT=[RSAT_PARENT_PATH]/rsa-tools
 
