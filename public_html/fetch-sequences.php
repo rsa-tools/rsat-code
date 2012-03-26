@@ -207,10 +207,11 @@ if ($errors == 0) {
   exec($cmd, $error);
 
   // Display the command
+  /*
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
   info("Command : ".$cmd_report);
   echo "<hr>";
-
+  */
   //display log file
 
   $info = "";
