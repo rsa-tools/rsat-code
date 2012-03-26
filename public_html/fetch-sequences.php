@@ -42,9 +42,9 @@ if ($fs_genome == "none" or $fs_genome == "" ) {
   $argument .= " -genome $fs_genome";
  }
 
-//Check if email is right
+//Check syntax of email address (ensure the texte netered in email box was an email address)
 if($fs_output =="email") {
-  if (!preg_match("#^[\wàáâãäåæçèéêëìíîïðñòóôõöøùúûüý._\-]+@[a-z]+.[a-z]{2,4}$#", $fs_user_email)) {
+  if (!preg_match("#^[\wàáâãäåæçèéêëìíîïðñòóôõöøùúûüý._\-]+@([a-z]+.)+[a-z]{2,4}$#", $fs_user_email)) {
      error( "Email not valid");
      $errors=1;
   }
@@ -197,29 +197,34 @@ if ($errors == 0) {
   // Add arguments to the command
   $cmd .= $argument;	
 
+  // Announce the fture location of the files
+  if ($fs_output =="email")  {
+    info("Starting job. After job completion, email will be sent to ". $fs_user_email);
+  }
+
   // Run the command
   exec($cmd, $error);
   // print_r($error);
   // echo ("Done");
 
-  if ($fs_output =="display")  {
-
-    // Display the command
-    $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
-    info("Command : ".$cmd_report);
-    echo "<hr>";
-
-    // Display the result
-    print_url_table($URL);
+  // Display the command
+  $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
+  info("Command : ".$cmd_report);
+  echo "<hr>";
+  
+  // Display the result
+  print_url_table($URL);
     
-  } else {
-    echo "Email outpout not available for now";
-/*
-    //parammetter of mail
+
+  ################################################################
+  // Send email with notification of task completion 
+  if ($fs_output =="email")  {
+    //    echo "Email outpout not available for now";
+    // Parammeters for sending the mail
     $to = $fs_user_email;
     $subject = "fetch-sequences results";
-
-    //put result in variable
+    
+    // Store the URL table in a variable
     $msg = "<table class='resultlink'>\n";
     $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
     foreach ($URL as $key => $value) {
@@ -232,7 +237,21 @@ if ($errors == 0) {
     $headers .= "\r\n";
 
     //sending mail
-    mail($to, $subject, $msg, $headers);*/
+    $smtp = $properties["smtp"];
+
+    // Check that the SMTP was specificed in the property file of the server
+    if ($smtp == "") {
+      error("SMTP server is not specified in the RSAT config file. Please contact system administrator.");
+    } else {
+      info("Sending mail via SMTP ".$smtp);
+      ini_set ( "SMTP", $smtp); 
+      $mail_sent = mail($to, $subject, $msg, $headers);
+      if ($mail_sent) {
+	info("Job done, email sent to ".$to);
+      } else {
+	error("Notification mail could not be sent.\n\n.".$msg);
+      }
+    }
   }  
 }	
 
