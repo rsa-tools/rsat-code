@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <title>Network Analysis Tools - compare-graphs</title>
+    <title>RSAT - fetch-sequences</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link rel="stylesheet" type="text/css" href="http://rsat.ulb.ac.be/rsat//main.css" media="screen,projection,print"/>
     <link rel="stylesheet" type="text/css" href="http://rsat.ulb.ac.be/rsat//tabs.css" media="screen,projection,print"/>
@@ -33,7 +33,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 
   <body class="form">
     <div>
-      <h3 align='center'><a href='http://rsat.ulb.ac.be/rsat//RSAT_home.cgi'>RSA-tools</a> - fetch-sequence</h3>
+      <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSA-tools</a> - fetch-sequence</h3>
       <br/>
       <form method='post' action='fetch-sequences.php' enctype='multipart/form-data'>
 
