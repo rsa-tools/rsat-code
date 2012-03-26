@@ -1,12 +1,13 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <title>Network Analysis Tools - compare-graphs</title>
-    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link rel="stylesheet" type="text/css" href="http://rsat.ulb.ac.be/rsat//main.css" media="screen,projection,print"/>
     <link rel="stylesheet" type="text/css" href="http://rsat.ulb.ac.be/rsat//tabs.css" media="screen,projection,print"/>
     <script src="RSAT_menu.js" type="text/javascript"></script>
     <script src="RSAT_tabs.js" type="text/javascript"></script>
-    <script language="javascript">
+    <script type="text/javascript">
 			function add_demo() {
 				document.getElementById('genome').value = 'mm9'; 	
 				document.forms[0].bed.value="";
@@ -31,15 +32,16 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
   </head>
 
   <body class="form">
-    <h3 align='center'><a href='http://rsat.ulb.ac.be/rsat//RSAT_home.cgi'>RSA-tools</a> - fetch-sequence</h3>
-    <br/>
-    <form method='post' action='fetch-sequences.php' enctype='multipart/form-data'>
+    <div>
+      <h3 align='center'><a href='http://rsat.ulb.ac.be/rsat//RSAT_home.cgi'>RSA-tools</a> - fetch-sequence</h3>
+      <br/>
+      <form method='post' action='fetch-sequences.php' enctype='multipart/form-data'>
 
-      <fieldset>  
-       <legend><b>Genomic coordinates</b></legend>    
-       <b>Genome </b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
-        <select name='genome' id='genome'>
-         <option value ='none'> ---UCSC genome---
+        <fieldset>  
+         <legend><b>Genomic coordinates</b></legend>    
+         <b>Genome </b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
+          <select name='genome' id='genome'>
+           <option value ='none'> ---UCSC genome--- </option>
 <?php
 
    ## Get the list of supported organisms from UCSC and display it in the pop-up menu
@@ -48,7 +50,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
    sort($ucsc_organisms);
    foreach ($ucsc_organisms as $ligne) {
      list($genome,$description) =  explode("\t", $ligne);
-     echo "<option value = '$genome' id='$genome'>", $genome, " ", $description, "\n";
+     echo "<option value = '$genome'>", $genome, " ", $description, "</option>\n";
    }
    
 ?>
@@ -61,22 +63,21 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 	  href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed
 	  format</a>), in any of the three following ways:
 
-	<ul type='square'>
-	  <li>Paste coordinates<br/>
-	    
-            <textarea name='bed' rows='6' cols='45'></textarea></li>
+	  <ul type='square'>
+	    <li>Paste coordinates<br/>
+	      
+              <textarea name='bed' rows='6' cols='45'></textarea></li>
 
-          <li>Specify the URL of bed file on remorte server (e.g. Galaxy)<br/>
-            <input type="text" name="sequence_url" size="62" /><br/></li>
+            <li>Specify the URL of bed file on remorte server (e.g. Galaxy)<br/>
+              <input type="text" name="sequence_url" size="62" /><br/></li>
 
-          <li>Upload a file from your computer<br/>
-	    <input type='file' name='bedfile' id='bedfile' size='40' />
+            <li>Upload a file from your computer<br/>
+	      <input type='file' name='bedfile' id='bedfile' size='40' /></li>
+	  </ul>
 	  </p>
-	</ul>
-
 	    
           <p><b><a href='help.fetch-sequences.html#header'>Header Format</a></b><input type="radio" name="header" value="ucsc" checked="checked"/>UCSC
-            <input type="radio" name="header" value="galaxy"/>Galaxy     
+            <input type="radio" name="header" value="galaxy"/>Galaxy</p>    
       </fieldset><br/>
       
       <div class="menu_heading_closed" onclick="toggleMenu('101')" id="heading101">
@@ -85,29 +86,26 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
       <div id="menu101" class="menu_collapsible">
         <fieldset>
           <legend><b><a href='help.fetch-sequences.html#reference'>Reference</a></b></legend>
-          <input type="radio" name="reference" value="segment" checked="checked"/><b>Segment</b>
-          <input type="radio" name="reference" value="start"/><b>Start</b>
-          <input type="radio" name="reference" value="end"/><b>End</b>
-        </fieldset><br/>
-      </div>
-
-      <div class="menu_heading_closed" onclick="toggleMenu('102')" id="heading102">
-          <span><b>Extend sequence retrieve</b></span></div><br/>
-
-      <div id="menu102" class="menu_collapsible">
-        <fieldset>
-          <table border='0'>
-            <legend><b><a href='help.fetch-sequences.html#options'>Extend</a></b></legend>
-            <tr><td><b><a href='help.fetch-sequences.html#upstr_ext'>Upstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="upstr_ext" size ='3' value='0'/>&nbsp;bp</td>
-                <td><b><a href='help.fetch-sequences.html#downstr_ext'>Downstream side</a></b></td><td style='padding-right:15px;'><input type="input" name="downstr_ext" size = '3' value='0'/>&nbsp;bp</td>
-            </tr>
-          </table>
+          <p>
+            <b><a href='help.fetch-sequences.html#reference'>Reference</a></b><br/>   
+            <ul>     
+              <input type="radio" name="reference" value="segment" checked="checked"/><b>Segment</b>
+              <input type="radio" name="reference" value="start"/><b>Start</b>
+              <input type="radio" name="reference" value="end"/><b>End</b></p>
+            </ul>
+          <p>
+            <b><a href='help.fetch-sequences.html#options'>Extend</a></b>
+            <ul>
+              <li><b><a href='help.fetch-sequences.html#upstr_ext'>Upstream side&nbsp;</a></b><input type="input" name="upstr_ext" size ='3' value='0'/>&nbsp;bp</li>
+              <li><b><a href='help.fetch-sequences.html#downstr_ext'>Downstream side&nbsp;</a></b><td style='padding-right:15px;'><input type="input" name="downstr_ext" size = '3' value='0'/>&nbsp;bp</li>
+              </tr>
+            </ul></p>  
         </fieldset><br/>
       </div>
       
       <b>Output</b>&nbsp;<input type="radio" name="output" value="display" />display <input type="radio" name="output" value="email" checked="checked" />email <input type="text" name="user_email"  size="30" />
 
-      <ul><ul><table class='formbutton'>
+      <ul><table class='formbutton'>
         <tr valign=middle>
           <td><input type="submit" name="submit" value="GO" /></td>
           <td><input type="reset"  name="reset" /></td> 
@@ -115,7 +113,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
           <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>
           <td><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></b></td>
         </tr></table>
-      </ul></ul>
-
+      </ul>
+    </div>
   </body>
 </html>
