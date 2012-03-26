@@ -225,17 +225,28 @@ if ($errors == 0) {
     $subject = "fetch-sequences results";
     
     // Store the URL table in a variable
-    $msg = "<table class='resultlink'>\n";
-    $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
-    foreach ($URL as $key => $value) {
-      $msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
+    $html_mail = 0; // Boolean variable indicating whether HTML format is supported in email
+    $headers = ""; // Header (specifying Mime types)
+    if ($html_mail) {
+      $msg = "<table class='resultlink'>\n";
+      $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
+      foreach ($URL as $key => $value) {
+	$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
+      }
+      $msg .= "</table>\n";
+      
+      $headers .= 'Mime-Version: 1.0'."\r\n";
+      $headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
+      $headers .= "\r\n";
+    } else {
+      $msg = "fetch-sequences result\n\n";
+      $msg .= "Result files:\n";
+      foreach ($URL as $key => $value) {
+	$msg .= "\t".$key."\t".$value."\n";
+      }
     }
-    $msg .= "</table>\n";
-    
-    $headers = 'Mime-Version: 1.0'."\r\n";
-    $headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
-    $headers .= "\r\n";
 
+    
     //sending mail
     $smtp = $properties["smtp"];
 
