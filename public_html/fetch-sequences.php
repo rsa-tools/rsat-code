@@ -222,7 +222,7 @@ if ($errors == 0) {
     //    echo "Email outpout not available for now";
     // Parammeters for sending the mail
     $to = $fs_user_email;
-    $subject = "fetch-sequences results";
+    $subject = "[RSAT] fetch-sequences result ".$now."_".$suffix;
     
     // Store the URL table in a variable
     $html_mail = 0; // Boolean variable indicating whether HTML format is supported in email
@@ -247,7 +247,7 @@ if ($errors == 0) {
     }
 
     
-    //sending mail
+    // Sending mail
     $smtp = $properties["smtp"];
 
     // Check that the SMTP was specificed in the property file of the server
