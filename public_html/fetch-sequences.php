@@ -1,4 +1,4 @@
-<?php    
+<?php
 // Load RSAT configuration
    require('functions.php');
 
@@ -17,14 +17,12 @@ $argument = " -v 2";
 $confict_extension = False;
 $exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
 ?>
-
 <html>
 <head>
 <title>RSAT - fetch-sequences</title>
 <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
    </head>
-   <body class="results">
-   
+   <body class="results"> 
    <?php
 ////////////////////////////////////////////////////////////////
 //Print <h3>
@@ -197,20 +195,51 @@ if ($errors == 0) {
   // Add arguments to the command
   $cmd .= $argument;	
 
-  // Announce the fture location of the files
+  // Announce job starting
+  $msg = "Starting job.";
   if ($fs_output =="email")  {
-    info("Starting job. After job completion, email will be sent to ". $fs_user_email);
+    $msg .= "After job completion, email will be sent to ".$fs_user_email;
   }
+
+  echo str_repeat(" ", 1024), "\n"; //Buffer needs to be filled for flush working
+  info($msg);
+  echo "<hr>";
+  flush(); 
 
   // Run the command
   exec($cmd, $error);
-  // print_r($error);
-  // echo ("Done");
 
   // Display the command
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
   info("Command : ".$cmd_report);
   echo "<hr>";
+
+  //display log file
+
+  $info = "";
+  $warning = "";
+  $logs = file_get_contents(rsat_path_to_url($error_file));
+  $logs = explode("\n", $logs);
+
+  foreach ($logs as $line) {
+    if ($line[0] == ";") {
+      $info .= $line."<br/>\n";
+    } else  {
+       $warning .= $line."<br/>\n";
+    } 
+  }
+
+  if ($info != "") {
+    info($info);
+    echo "<hr>";
+  }    
+  
+  if ($warning != "<br/>\n") {
+    warning($warning);
+    echo "<hr>";
+  }  
+
+
   
   // Display the result
   print_url_table($URL);
@@ -262,11 +291,23 @@ if ($errors == 0) {
       } else {
 	error("Notification mail could not be sent.\n\n.".$msg);
       }
-    }
+    }  
   }  
+
+  //Display pipe
+  echo ('   <table class = "nextstep">
+    <tr><th>next step</th></tr>
+    <tr><td align=center>
+	    <form method="post" action="peak-motifs_form.cgi">
+	    <input type="hidden" name="title" value="'.str_replace('.bed', '', end(explode('/',$bed_file))).'">
+	    <input type="hidden" name="sequence_url1" value="'.rsat_path_to_url($output_file).'">
+	    <input type="submit" value="peak-motif">
+	    </form></td>
+	  </tr>
+	  </table>');  
 }	
 
 ?>
-
-</body>
+ 
+  </body>
 </html>
