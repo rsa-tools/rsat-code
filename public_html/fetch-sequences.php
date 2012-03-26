@@ -1,3 +1,9 @@
+<html>
+<head>
+<title>RSAT - fetch-sequences</title>
+<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   </head>
+   <body class="results"> 
 <?php
 // Load RSAT configuration
    require('functions.php');
@@ -16,14 +22,7 @@ $cmd = $properties['RSAT'].'/perl-scripts/fetch-sequences';
 $argument = " -v 2";
 $confict_extension = False;
 $exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
-?>
-<html>
-<head>
-<title>RSAT - fetch-sequences</title>
-<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
-   </head>
-   <body class="results"> 
-   <?php
+
 ////////////////////////////////////////////////////////////////
 //Print <h3>
 echo "<H3><a href='".$properties['rsat_www']."'>RSAT</a> - fetch-sequences - results</H3>";
@@ -74,12 +73,10 @@ if ($bed_specifications == 0) {
   $errors++;
  }
 
-
 // Header format
 if ($fs_header == "galaxy") {
   $argument .= " -header galaxy";
  }
-
 
 // Downstream extension
 if (($fs_downstr_ext !="") &&
@@ -113,7 +110,7 @@ if ($fs_reference != "segment") {
  }
  
 
-/////////////////////////////////
+//////////////////////////////////////////////////
 // Write bed file in temporary directory
 if (!$errors) {
   
@@ -198,7 +195,7 @@ if ($errors == 0) {
   // Announce job starting
   $msg = "Starting job.";
   if ($fs_output =="email")  {
-    $msg .= "After job completion, email will be sent to ".$fs_user_email;
+    $msg .= " After job completion, email will be sent to ".$fs_user_email;
   }
 
   echo str_repeat(" ", 1024), "\n"; //Buffer needs to be filled for flush working
