@@ -40,7 +40,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
         <fieldset>  
          <legend><b>Select a Genome</b></legend>    
          <b>Gene Reaction mapping</b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
-          <select name='genome' id='genome'>
+          <select name='gnn' id='gnn'>
            <option value ='none'> --- Gene Reaction --- </option>
 <?php
 
@@ -82,7 +82,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 
 	  <ul type='square'>
 	    <li>Genes,Compounds,ECs,Reactions<br/>
-	          <textarea name='ids' rows='6' cols='45'></textarea>
+	          <textarea name='seeds' rows='6' cols='45'></textarea>
        	</li>
 
 	  </ul>
