@@ -1,0 +1,263 @@
+<html>
+<head>
+<title>RSAT - fetch-sequences</title>
+<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   </head>
+   <body class="results"> 
+<?php
+// Load RSAT configuration
+   require('functions.php');
+
+// print_r($properties);
+UpdateLogFile("rsat","","");
+
+// Import variables with prefix fs_ from form
+import_request_variables('P','fs_');
+
+//print_r($_POST);
+// print_r($_FILES);
+
+// Initialize variables
+$basedir=$properties['RSAT']."/public_html/data/metabolic_networks";
+$outputdir = $properties['RSAT']."/public_html/tmp/";
+$outputurl = $properties['rsat_ws_tmp'];
+
+putenv  ("CLASSPATH=".$properties['RSAT']."/java/lib/NeAT_javatools.jar");
+
+$cmda = $properties['RSAT'].'/perl-scripts/pathway-extractor';
+$cmdb = $properties['RSAT'].'/perl-scripts/process-pathwayextractor-output';
+$groupdescriptor = uniqid('PathwayExtractor');
+$argumenta = " -v 2 -o $outputdir";
+$argumenta .= " -d ";
+
+$argumentb = $argumenta;
+$argumenta .= "-gd ". $groupdescriptor;
+#$exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
+
+////////////////////////////////////////////////////////////////
+//Print <h3>
+echo "<H3><a href='".$properties['rsat_www']."'>RSAT</a> - Pathway-Extractor - results</H3>";
+
+////////////////////////////////////////////////////////////////
+// Check arguments
+$errors = 0;
+
+// Check that gnn has been specified
+if ($fs_gnn == "none" or $fs_gnn == "" ) {
+  error( "You forgot to select the genome source for the mapping.");
+  $errors=1;
+} else {
+	$GERdir = "$basedir/GER_files/$fs_gnn";
+   $argumenta .= " -gnn ".$GERdir."/".$fs_gnn."-gene_ec.tab";
+   $argumentb .= " -gnn ".$GERdir."/".$fs_gnn."-gene_ec.tab";
+}
+// Check that gnn has been specified
+if ($fs_network == "none" or $fs_network == "" ) {
+  error( "You forgot to select network.");
+  $errors=1;
+} else {
+	$neworkfilepattern= $fs_network;
+	$neworkfilepattern = eregi_replace("_v.*","",$fs_network); 
+    $neworkfilepattern = "$basedir/networks/$neworkfilepattern/$fs_network";
+    $networknodenames = $neworkfilepattern."-metab-node_names.tab";
+    $networkfile = $neworkfilepattern."-metab-network.tab";
+	$argumenta .= " -nnn ".$networknodenames ." -g " . $networkfile;
+	$argumentb .= " -nnn ".$networknodenames;
+}
+//Check syntax of email address (ensure the texte netered in email box was an email address)
+if($fs_output =="email") {
+  if (!preg_match("#^[\wàáâãäåæçèéêëìíîïðñòóôõöøùúûüý._\-]+@([a-z]+.)+[a-z]{2,4}$#", $fs_user_email)) {
+     error( "Email not valid");
+     $errors=1;
+  }
+ }
+
+////////////////////////////////////////////////////////////////
+// Check that the BED has been specified once and only once
+
+// Bed data pasted in text area
+#$fs_seeds = $_POST["seeds"];
+
+if ($fs_seeds = "") {
+  error( "No seeds!");
+  $errors=1;
+}else {
+	$mystring = preg_replace( "#\r\n|\r|\t|;#", "\n", $_POST["seeds"] );
+	#$array_line = explode("\n",$fs_seeds);
+    $seed_file = $outputdir."/".$groupdescriptor."_seeds.tab";
+    $file = fopen ($seed_file, "w");
+    fwrite($file, $mystring);
+    fclose($file);
+    $argumenta .= " -i $seed_file";
+}
+// Local bed file on client machine
+ 
+
+
+//////////////////////////////////////////////////
+// Write bed file in temporary directory
+
+///////////////////////////////////////////
+// Run fetch-sequences
+if ($errors == 0) { 
+  // Add arguments to the command
+  
+  $cmdb .= $argumentb;		
+
+  // Announce job starting
+  $msg = "Starting job.";
+  if ($fs_output =="email")  {
+    $msg .= " After job completion, email will be sent to ".$fs_user_email;
+  }
+  info($msg);
+  
+  flush(); 
+
+  // Run the command
+ 
+$cmda .= $argumenta;
+
+  info("Command : ".$cmda);
+  #########################################
+  exec($cmda, $output);
+  
+  foreach ($output as $line) {
+    if ($line[0] == ";") {
+      $info .= $line."<br/>\n";
+    } else  if (eregi('^OUTPUTFILE =',$line)){
+        $cmdb .= ' -i '. substr( $line , 12);
+        info("Command : ".$cmdb);
+    	exec($cmdb, $outputb);
+    } else {
+    	echo $line;
+    }
+  }
+
+  echo "<hr>";
+  $it = new DirectoryIterator("glob://tmp/".$groupdescriptor."*");
+  sort($it);
+  $returned = "";
+foreach($it as $f) {
+  	if (preg_match("#png$#",$f->getFilename())){
+  		echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f->getFilename()."\"><br/> \n";
+  		$returned .= "Extracted pathway image file: ";
+  	}elseif (preg_match("#pred_pathways.txt$#",$f->getFilename())){
+  		$returned .= "Extracted pathway graph file: ";
+  	}elseif (preg_match("#pred_pathways_annot.dot$#",$f->getFilename())){
+  		$returned .= "Extracted annotated pathway dot graph  file: ";
+  	}elseif (preg_match("#pred_pathways_annot.txt$#",$f->getFilename())){
+  		$returned .= "Extracted pathway annotated graph file: ";
+  	}elseif (preg_match("#pred_pathways_seeds_converted.txt$#",$f->getFilename())){
+  		$returned .= "Mapped seeds file: ";
+  	}elseif (preg_match("#seeds.tab$#",$f->getFilename())){
+  		$returned .= "Seeds file: ";
+  	}
+	$returned .= 	"<a href=\"".$outputurl."/".$f->getFilename()."\" >".$f->getFilename()."</a><br/> \n";
+}
+echo	$returned;
+  echo "<hr>";
+  // Display the command
+  /*
+  $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
+  info("Command : ".$cmd_report);
+  echo "<hr>";
+  */
+  //display log file
+
+  /*$info = "";
+  $warning = "";
+  $logs = file_get_contents(rsat_path_to_url($error_file));
+  $logs = explode("\n", $logs);
+
+  foreach ($logs as $line) {
+    if ($line[0] == ";") {
+      $info .= $line."<br/>\n";
+    } else  {
+       $warning .= $line."<br/>\n";
+    } 
+  }
+
+  if ($info != "") {
+    info($info);
+    echo "<hr>";
+  }    
+  
+  if ($warning != "<br/>\n") {
+    warning($warning);
+    echo "<hr>";
+  }  
+
+
+  */
+  // Display the result
+  #print_url_table($URL);
+    
+
+  ################################################################
+  // Send email with notification of task completion 
+  if ($fs_output =="email")  {
+    //    echo "Email outpout not available for now";
+    // Parammeters for sending the mail
+    $to = $fs_user_email;
+    $subject = "[RSAT] fetch-sequences result ".$now."_".$suffix;
+    
+    // Store the URL table in a variable
+    $html_mail = 0; // Boolean variable indicating whether HTML format is supported in email
+    $headers = ""; // Header (specifying Mime types)
+    if ($html_mail) {
+      $msg = "<table class='resultlink'>\n";
+      $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
+      foreach ($URL as $key => $value) {
+	$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
+      }
+      $msg .= "</table>\n";
+      
+      $headers .= 'Mime-Version: 1.0'."\r\n";
+      $headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
+      $headers .= "\r\n";
+    } else {
+      $msg = "fetch-sequences result\n\n";
+      $msg .= "Result files:\n";
+      foreach ($URL as $key => $value) {
+	$msg .= "\t".$key."\t".$value."\n";
+      }
+    }
+
+    
+    // Sending mail
+    $smtp = $properties["smtp"];
+
+    // Check that the SMTP was specificed in the property file of the server
+    if ($smtp == "") {
+      error("SMTP server is not specified in the RSAT config file. Please contact system administrator.");
+    } else {
+      info("Sending mail via SMTP ".$smtp);
+      ini_set ( "SMTP", $smtp); 
+      $mail_sent = mail($to, $subject, $msg, $headers);
+      if ($mail_sent) {
+	info("Job done, email sent to ".$to);
+      } else {
+	error("Notification mail could not be sent.\n\n.".$msg);
+      }
+    }  
+  }  
+
+  //Display pipe
+  /*
+  echo ('   <table class = "nextstep">
+    <tr><th>next step</th></tr>
+    <tr><td align=center>
+	    <form method="post" action="peak-motifs_form.cgi">
+	    <input type="hidden" name="title" value="'.str_replace('.bed', '', end(explode('/',$bed_file))).'">
+	    <input type="hidden" name="sequence_url1" value="'.rsat_path_to_url($output_file).'">
+	    <input type="submit" value="peak-motif">
+	    </form></td>
+	  </tr>
+	  </table>');  
+	  */
+}	
+
+?>
+ 
+  </body>
+</html>
