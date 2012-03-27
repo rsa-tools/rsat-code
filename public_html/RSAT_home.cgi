@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.70 2012/03/15 00:44:00 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.71 2012/03/27 09:24:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -28,37 +28,35 @@ print "<blockquote>";
 
 print <<EndText;
 
-<table class = 'title' cellpadding=10 width = 100%>
-    <tr>
-
-
+<table class="title" cellpadding="10" width="100%">
+  <tr>
     <td align=center valign = top>
-    <a href="http://www.bigre.ulb.ac.be" target=_blank>
-    <img src="images/bigre_logo.png" alt="BiGRE lab" border=1 height=75>
-    <br>
-    <font color="#0000dd" size=-2>
-    BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
-    </font>
+      <a href="http://www.bigre.ulb.ac.be" target=_blank>
+	<img src="images/bigre_logo.png" alt="BiGRE lab" border=1 height=75>
+	<br>
+	<font color="#0000dd" size=-2>
+	  BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
+      </font>
     </td>
-
+    
     <td align=center>
-    <h1>Regulatory Sequence Analysis Tools</h1>
+      <h1>Regulatory Sequence Analysis Tools</h1>
     </td>
-
-
+    
+    
     <td align=center valign = top width="160">
-    <a target=_blank href="http://embnet.ccg.unam.mx/">
-    <img src="images/ccg_logo_lr.jpg" alt="CCG" border=0  width=75></a>
-    <br>
-    <font color="#006600" size=-2>Laboratorio de Biologia Computacional<br>UNAM/CCG
-    </FONT>
+      <a target=_blank href="http://embnet.ccg.unam.mx/">
+	<img src="images/ccg_logo_lr.jpg" alt="CCG" border=0  width=75></a>
+      <br>
+      <font color="#006600" size=-2>Laboratorio de Biologia Computacional<br>UNAM/CCG</font>
     </td>
+    
+  </TR>
+</table>
 
-    </TR>
-    </TABLE>
-    <div class = 'serverlist'>
-
-    <table border=0 cellspacing=3 cellpadding=7>
+<div class = 'serverlist'>
+  
+  <table border="0" cellspacing="3" cellpadding="7">
     <TR>
     <td><a href="tool_map.html"><b>
     Tool Map</b></a></td>
@@ -95,171 +93,167 @@ print <<EndText;
     [Forum]</b></a></td>
 
     </tr>
-    </table>
-    </div>
-	<!------------------------------------------->
-    <table border=0 cellpadding=3>
-    <tr>
+  </table>
+</div>
+
+
+<table border=0 cellpadding=3>
+  <tr>
     <td COLSPAN=3>
-	<p>Welcome to <b>Regulatory Sequence Analysis Tools</b>
-    (<b>RSAT</b>). This web site provides a series of modular computer
-    programs specifically designed for the detection of regulatory
-    signals in non-coding sequences.</p>
-	</td>
-	</tr>
-		<!------------------------------------------->
-	<tr>
-	<td  WIDTH="40%" bgcolor=#F6E6CA>
-    <ul>
+      <p>Welcome to <b>Regulatory Sequence Analysis Tools</b>
+	(<b>RSAT</b>). This web site provides a series of modular computer
+	programs specifically designed for the detection of regulatory
+	signals in non-coding sequences.</p>
+    </td>
+  </tr>
+  <tr>
+    <td  WIDTH="40%" bgcolor=#F6E6CA>
+      <ul>
 	<li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
-
-	<p><li><font color="red"><b>New !</b> </font> <b>Peak-motifs</b> is now published in <b>NAR</b> <a href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full' target=_blank>[view article]</a></li>
 	
+	<p><li><font color="red"><b>New !</b> </font> <b>Peak-motifs</b> is now published in <b>NAR</b> <a href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full' target=_blank>[view article]</a></li>
+	  
 	<p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <br/> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li>
-	</ul>
-	</td>
-						<!------------------------------------------->
-	<td WIDTH="30%" bgcolor=#F6E6CA>
-	<ul>
+      </ul>
+    </td>
+
+    <td WIDTH="30%" bgcolor=#F6E6CA>
+      <ul>
 	<li> Check the <b>latest news</b> in <a
-    href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our [Forum] </b></a></li>
-
+						href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our [Forum] </b></a></li>
+	
 	<p><li> Stay Tuned !! <b>RSS feed</b> to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
+	  
+	  
+	<p><li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li></p>
+      </ul>
+    </td>
+    <td WIDTH="*"></td>
+  </tr>
 
-
-    <p><li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li></p>
-	</ul>
-	</td>
-	<td WIDTH="*"></td>
-</tr>
-		<!------------------------------------------->
-
-	<tr>
-	<td COLSPAN=3>
-    <p> This website is free and open to all users.
-   </p>
-</td>
-    </tr>
-    </table>
-		<!------------------------------------------->
+  <tr>
+    <td COLSPAN=3>
+      <p> This website is free and open to all users.
+      </p>
+    </td>
+  </tr>
+</table>
 
 <hr  align='left'></hr>
 <div id = 'serverlist'>
-<table class='serverlist'>
-
-
-<tr>
-    <td align=center colspan=3><h3>Regulatory Sequence Analysis Tools - Web servers</h3></td>
-</tr>
-<tr align=center valign=bottom>
-
-  <td>
-  <a href="http://rsat.ulb.ac.be/rsat/" target="_top">
-  <b>Brussels - Belgium</b><br>
-  <img src="images/manneken_pis.jpg" height=80 border=0><br>
-  http://rsat.ulb.ac.be/rsat/</a>
-  </td>
-
-
-  <td>
-  <a href="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
-  <b>Brussels (2) - Belgium</b><br>
-  <img src="images/Atomium_icon_80.png" height=80 border=0><br>
-  http://wwwsup.scmbb.ulb.ac.be/rsat/</a>
-  </td>
-
-  <td>
-  <a href="http://mamaze.ulb.ac.be/rsat/" target="_top">
-  <b>Brussels (3) - Belgium</b><br>
-  <img src="images/frites.jpg" height=80 border=0><br>
-  http://mamaze.ulb.ac.be/rsat/</a>
-  </td>
-
-</tr><tr>
-
-  <td ALIGN=CENTER>
-  <a href="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
-  <b>Cuernavaca - Mexico</b><br>
-  <img src="images/zapata.jpg" height=80 border=0><br>
-  http://embnet.ccg.unam.mx/rsa-tools/</a>
-  </td>
-
-  <td align=center>
-  <a href="http://bongcam1.hgen.slu.se/rsat/" target="_top">
-<!--  <a href="http://liv.hgen.slu.se/rsa-tools/" target="_top">-->
-  <b>Uppsala - Sweden</b><br>
-  <img src="images/uppsala_lcb.jpg" height=80 border=0><br>
-  http://bongcam1.hgen.slu.se/rsat/</a>
-<!--http://liv.hgen.slu.se/rsa-tools/</a>-->
-  </td>
-
-  <td align=center>
-  <a href='http://tagc.univ-mrs.fr/rsa-tools/' target='_top'>
-  <b>Marseille TAGC - France</b><br>
-  <img src="images/calanques.jpg" height=80 border=0><br>
-  http://tagc.univ-mrs.fr/rsa-tools/</a>
-<br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
-  </td>
-
-  </tr><tr>
-
-  <td align=center>
-  <a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
-  <b>ENS Paris - France</b><br>
-  <img src="images/paris.jpg" height=80 border=0><br>
-  http://rsat01.biologie.ens.fr/rsa-tools/</a></font>
-  </td>
-
-  <td align=center>
-  <a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
-  <b>Pretoria - South-Africa</b><br>
-  <img src="images/pretoria_icon.jpg" height=80 border=0><br>
-  http://anjie.bi.up.ac.za/rsa-tools/</a>
-  </td>
-
-  <td align=center>
-  <a href="http://lmmge-webserver.unisa.it/rsat/" target="_top">
-  <b>Salerno - Italia</b><br>
-  <img src="images/salerno_icon.jpg" height=80 border=0><br>
-  http://lmmge-webserver.unisa.it/rsat//</a>
-  </td>
-
+  <table class='serverlist'>
+    
+    
+    <tr>
+      <td align=center colspan=3><h3>Regulatory Sequence Analysis Tools - Web servers</h3></td>
+    </tr>
+    <tr align=center valign=bottom>
+      
+      <td>
+	<a href="http://rsat.ulb.ac.be/rsat/" target="_top">
+	  <b>Brussels - Belgium</b><br>
+	  <img src="images/manneken_pis.jpg" height=80 border=0><br>
+	  http://rsat.ulb.ac.be/rsat/</a>
+      </td>
+      
+      
+      <td>
+	<a href="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
+	  <b>Brussels (2) - Belgium</b><br>
+	  <img src="images/Atomium_icon_80.png" height=80 border=0><br>
+	  http://wwwsup.scmbb.ulb.ac.be/rsat/</a>
+      </td>
+      
 <!--
+    <td>
+      <a href="http://mamaze.ulb.ac.be/rsat/" target="_top">
+	<b>Brussels (3) - Belgium</b><br>
+	<img src="images/frites.jpg" height=80 border=0><br>
+	http://mamaze.ulb.ac.be/rsat/</a>
+    </td>
+-->
+
+    </tr><tr>
+
+      <td ALIGN=CENTER>
+	<a href="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
+	  <b>Cuernavaca - Mexico</b><br>
+	  <img src="images/zapata.jpg" height=80 border=0><br>
+	  http://embnet.ccg.unam.mx/rsa-tools/</a>
+      </td>
+      
+      <td align=center>
+	<a href="http://bongcam1.hgen.slu.se/rsat/" target="_top">
+	  <!--  <a href="http://liv.hgen.slu.se/rsa-tools/" target="_top">-->
+	  <b>Uppsala - Sweden</b><br>
+	  <img src="images/uppsala_lcb.jpg" height=80 border=0><br>
+	  http://bongcam1.hgen.slu.se/rsat/</a>
+	<!--http://liv.hgen.slu.se/rsa-tools/</a>-->
+      </td>
+      
+      <td align=center>
+	<a href='http://tagc.univ-mrs.fr/rsa-tools/' target='_top'>
+	  <b>Marseille TAGC - France</b><br>
+	  <img src="images/calanques.jpg" height=80 border=0><br>
+	  http://tagc.univ-mrs.fr/rsa-tools/</a>
+	<br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
+      </td>
+
+    </tr><tr>
+      
+      <td align=center>
+	<a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
+	  <b>ENS Paris - France</b><br>
+	  <img src="images/paris.jpg" height=80 border=0><br>
+	  http://rsat01.biologie.ens.fr/rsa-tools/</a>
+      </td>
+      
+      <td align=center>
+	<a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
+	  <b>Pretoria - South-Africa</b><br>
+	  <img src="images/pretoria_icon.jpg" height=80 border=0><br>
+	  http://anjie.bi.up.ac.za/rsa-tools/</a>
+      </td>
+      
+      <td align=center>
+	<a href="http://lmmge-webserver.unisa.it/rsat/" target="_top">
+	  <b>Salerno - Italia</b><br>
+	  <img src="images/salerno_icon.jpg" height=80 border=0><br>
+	  http://lmmge-webserver.unisa.it/rsat//</a>
+      </td>
+
+      <!--
+	  <td align=center>
+	    <a href="http://rsat.ccb.sickkids.ca/" target="_top">
+	      <b>Toronto - Canada</b><br>
+	      <img src="images/toronto.jpg" height=80 border=0><br>
+	      http://rsat.ccb.sickkids.ca/</a>
+	  </td>
+      </tr><tr>
+      
+      
   <td align=center>
-  <a href="http://rsat.ccb.sickkids.ca/" target="_top">
-  <b>Toronto - Canada</b><br>
-  <img src="images/toronto.jpg" height=80 border=0><br>
-  http://rsat.ccb.sickkids.ca/</a>
+    <a href="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
+      <b>Vienna - Austria</b><br>
+      <img src="http://www.wien.gv.at/english/cityhall/images/cityhall.jpg" height=80 border=0><br>
+      http://af.boku.ac.at:4080/rsa-tools/</a>
   </td>
-</tr><tr>
-
-
-  <td align=center>
-  <a href="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
-  <b>Vienna - Austria</b><br>
-  <img src="http://www.wien.gv.at/english/cityhall/images/cityhall.jpg" height=80 border=0><br>
-  http://af.boku.ac.at:4080/rsa-tools/</a>
-  </td>
-
+  
   <td></td>
-
--->
-
-
-<!--
-</tr><tr>
-
+  
+	  </tr><tr>
+	  
   <td ALIGN=CENTER>
-  <a href="http://www.flychip.org.uk/rsa-tools/" target="_top">
-  <b>Cambridge - UK</b><br>
-  <img src="images/cambridge.jpg" height=80 border=0><br>
-  http://www.flychip.org.uk/rsa-tools/</a>
+    <a href="http://www.flychip.org.uk/rsa-tools/" target="_top">
+      <b>Cambridge - UK</b><br>
+      <img src="images/cambridge.jpg" height=80 border=0><br>
+      http://www.flychip.org.uk/rsa-tools/</a>
   </td>
--->
+  -->
 
     </tr>
-    </TABLE>
-    </div>
+  </table>
+</div>
 EndText
 
 @orgs =  &RSAT::OrganismManager::get_supported_organisms();
