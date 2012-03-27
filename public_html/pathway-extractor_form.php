@@ -39,21 +39,21 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 
         <fieldset>  
          <legend><b>Select a Genome</b></legend>    
-         <b>Genomes </b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
+         <b>Gene Reaction mapping</b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
           <select name='genome' id='genome'>
-           <option value ='none'> ---Genomes--- </option>
+           <option value ='none'> --- Gene Reaction --- </option>
 <?php
 
-   ## Get the list of supported organisms from UCSC and display it in the pop-up menu
-    $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
-    exec($cmd, $ucsc_organisms);
-##    sort($ucsc_organisms);
+   ## Get the list of supported organisms for metabolic analysis and display it in the pop-up menu
+   $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-metab';
+   exec($cmd, $metab_organisms);
+   sort($metab_organisms);
+   
 
-
-#   foreach ($ucsc_organisms as $ligne) {
-#     list($genome,$description) =  explode("\t", $ligne);
-#     echo "<option value = '$genome'>", $genome, " ", $description, "</option>\n";
-#   }
+   foreach ($metab_organisms as $ligne) {
+     list($mapping) =  explode("\t", $ligne);
+     echo "<option value = '$mapping'>", $mapping, "</option>\n";
+   }
    
 ?>
         </select><br/><br/>
@@ -63,13 +63,13 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
            <option value ='none'> ---Networks--- </option>
 <?php
 
-   ## Get the list of supported organisms from UCSC and display it in the pop-up menu
-   $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
-   exec($cmd, $ucsc_organisms);
-   sort($ucsc_organisms);
-   foreach ($ucsc_organisms as $ligne) {
-     list($genome,$description) =  explode("\t", $ligne);
-     echo "<option value = '$genome'>", $genome, " ", $description, "</option>\n";
+   ## Get the list of supported organisms from METAB and display it in the pop-up menu
+   $cmd = $properties['RSAT'].'/perl-scripts/supported-metabolic-networks';
+   exec($cmd, $metab_networks);
+   sort($metab_networks);
+   foreach ($metab_networks as $ligne) {
+     list($network, $source) =  explode("\t", $ligne);
+     echo "<option value = '$network'>", $network, "</option>\n";
    }
    
 ?>
@@ -77,7 +77,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
     <p>
 	  <b><a href='help.pathway-extractor.html#input_format'>input format</a></b> <font color='red'>(mandatory)</font>
 	  <br/>should be provided as a bed file (<a target='_blank'
-	  href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed
+	  href='http://genome.metab.edu/FAQ/FAQformat.html#format1'>bed
 	  format</a>), in any of the three following ways:
 
 	  <ul type='square'>
