@@ -9,14 +9,11 @@
     <script src="RSAT_tabs.js" type="text/javascript"></script>
     <script type="text/javascript">
 			function add_demo() {
-				document.getElementById('genome').value = 'mm9'; 	
-				document.forms[0].bed.value="";
-				document.getElementById('bedfile').value=''; 				
-				document.forms[0].header[0].checked=true;			
-				document.forms[0].reference[0].checked=true;
-				document.forms[0].upstr_ext.value="0";	
-				document.forms[0].downstr_ext.value="0";
-				document.forms[0].output[0].checked=true;									
+				document.getElementById('gnn').value = 'Escherichia_coli_strain_K12-83333-Uniprot'; 
+				document.getElementById('network').value = 'MetaCyc_v141_directed'; 	
+				document.getElementById('seeds').innerHTML="NP_416523.1\nNP_416524.1\nNP_416525.1\nNP_416526.4\nNP_416527.1\nNP_416528.2\nNP_416529.1\nNP_416530.1";
+			}
+	</script>												
 <?php
 
 ## Load RSAT configuration
@@ -24,7 +21,7 @@ require ('functions.php');
 #print_r($properties);#
 UpdateLogFile("rsat","","");
 
-echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
+#echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
 
 ?>
 			}
@@ -82,7 +79,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 
 	  <ul type='square'>
 	    <li>Genes,Compounds,ECs,Reactions<br/>
-	          <textarea name='seeds' rows='6' cols='45'></textarea>
+	          <textarea name='seeds' id='seeds'rows='6' cols='45'></textarea>
        	</li>
 
 	  </ul>
