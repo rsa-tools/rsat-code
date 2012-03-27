@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.30 2012/03/23 08:34:02 rsat Exp $
+# $Id: pathway-extractor,v 1.31 2012/03/27 23:21:56 rsat Exp $
 #
 ############################################################
 
@@ -221,7 +221,7 @@ BEGIN {
 	push (@INC,"$ENV{RSAT}/perl-scripts/lib/RSAT");
     }
 }
-# require "RSA.lib";
+require "RSA.lib";
 use Getopt::Long;
 use RSAT::util;
 use RSAT::PathwayExtraction;
@@ -271,9 +271,12 @@ package main;
     my @query_id_list = <$in>;
     chomp(@query_id_list);
     $input = join("\t", @query_id_list);
+    print STDERR "SEEDS:" .$input;
   }
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
-  &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$directed,$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
+  my $output = &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$directed,$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
+  print $out "OUTPUTFILE = $output\n";
+
 }
 
 

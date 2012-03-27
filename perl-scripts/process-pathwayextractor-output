@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: process-pathwayextractor-output,v 1.1 2012/03/12 09:00:09 rsat Exp $
+# $Id: process-pathwayextractor-output,v 1.2 2012/03/27 23:21:56 rsat Exp $
 #
 ############################################################
 
@@ -167,7 +167,7 @@ BEGIN {
 }
 require "RSA.lib";
 
-
+use RSAT::PathwayExtraction;
 ################################################################
 ## Main package
 package main;
@@ -177,7 +177,7 @@ package main;
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input/output files
@@ -199,6 +199,7 @@ package main;
   $show = 0;		# Open png image in gwenview
 #   $group_descriptor= ""; # Unique name to differenciate output files
 
+  our $directed="";
   my $organism = "Unknown";
   my $organism_id;
   # my $working_dir = "";
@@ -211,228 +212,13 @@ package main;
 
   ################################################################
   #generate ouput files name
-  $outfile{prefix} = $dir{output}."/";
-  my $outputfile =  $infile{input};
-  $outputfile =~ s{.*/}{};# remove path
-  $outputfile =~ s{\.[^.]+$}{};# remove file extension
-  $outfile{prefix} =~ s|//|/|g; ## Suppress double slashes
-   print  $outfile{prefix}."\n";
-  $outfile{prefix} .= $outputfile;
-  $outfile{graph_png} = $outfile{prefix}."_annot.png";
-  $outfile{graph_dot} = $outfile{prefix}."_annot.dot";
-  $outfile{graph_annot} = $outfile{prefix}."_annot.txt";
-  print  $outfile{graph_annot}."\n";
-  
-    ################################################################
-    # Loading reactions from extracted  graph
-    
-#     &RSAT::message::TimeWarn("Loading reactions from extracted graph") if ($verbose >= 1);
-    open (INFILE, '<'.$infile{input}) or die "couldn't open the file!";
-    my $i = 0;
-    my $stop = "";
-    my $line;
-    my $reactioncpdquery="";
-    while ($line=<INFILE>) {
-      #$line = $_;
-      chomp  ($line );
-      if (length($line)>0 && !($line=~m/^;/)) {
-	my @tempdata = split(/\t/,$line);
-	if ($tempdata[6] &&(($tempdata[6] eq "Reaction")|| ($tempdata[6] eq "Compound"))) {
-	  #       print "|".$line."|"."\n";
-	  $tempdata[0]=~s/<$|>$//;
-	  $i++;
-	  $reactioncpdquery = $reactioncpdquery."(\$2~\"^$tempdata[0]\")||";
-	}
-      } elsif ($i>0) {
-	last;
-      }
-    }
-    close (INFILE);
-    # End of Loading results graph reactions
-    ################################################################
-
-    ################################################################
-    # Searching all reactions information for the reaction that are in  the inferred pathway graph
-    &RSAT::message::TimeWarn("Searching information about extracted reactions") if ($verbose >= 1);
-    $reactioncpdquery =~s/\|+$//;
-   
-
-    my $command_ = "awk -F'\\t+' ' $reactioncpdquery {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' $infile{nnn}|sort|uniq";
-#    print "$command_\n";
-    &RSAT::message::TimeWarn($command_) if ($verbose >= 1);
-    my @conversiontable = qx ($command_);
-    chomp(@conversiontable);
-
-    ## Storing reaction infos in a hash for faster search
-    my %reactioninfos=();
-    undef @previousarray;
-    my @reacinfoarray=();
-    foreach my $content (@conversiontable) {
-      my @currentarray = split(/\t/,$content);
-      if ( @previousarray && !($previousarray[0] eq $currentarray[0])) {
-	# 	  print $previousarray[0]."\n";
-	my @truc = @reacinfoarray;
-	$reactioninfos{$previousarray[0]}=\@truc;
-	undef @reacinfoarray;
-      }
-      push (@reacinfoarray,\@currentarray);
-      @previousarray = @currentarray;
-    }
-    $reactioninfos{$previousarray[0]}=\@reacinfoarray;
-    
-    ## if gene file get ECs from conversion table
-    my %gnninfos=();
-    undef @previousarray;
-    my @gnninfoarray=();
-    if ($infile{gnn}){
-      my $ec2genequery="";
-      while(my ($rxnid, $infoarray) = each(%reactioninfos)) {
-	my @values = @{$infoarray};
-	foreach my $info_ref (@values) {
-	  my @info = @{$info_ref};  
-	  if($info[2] eq "EC"){
-	    &RSAT::message::Info("EC2GENE:", $info[0]) if ($verbose >= 3);
-	    $ec2genequery = $ec2genequery."(\$2~\"^$info[1]\")||"
-	  }
-	}
-      }
-       $ec2genequery =~s/\|+$//;
-      
-      #buid an hash for ec 2 genes
-      
-      $command_ = "awk -F'\\t+' ' $ec2genequery {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' \"$infile{gnn}\"|sort|uniq";
-      &RSAT::message::TimeWarn($command_) if ($verbose >= 1);
-      my @gnnonversiontable = qx ($command_);
-      foreach my $content (@gnnonversiontable) {
-# 	&RSAT::message::Info("EC2GENE:", $content) if ($verbose >= 3);
-	my @currentarray = split(/\t/,$content);
-	if ( @previousarray && !($previousarray[0] eq $currentarray[0])) {
-	# 	  print $previousarray[0]."\n";
-	  
-	  my @truc = @gnninfoarray;
-	  &RSAT::message::Info("ECS2GENE:", $previousarray[0] ."\t" . $truc[0][1]) if ($verbose >= 3);
-	  $gnninfos{$previousarray[0]}=\@truc;
-	  undef @gnninfoarray;
-	}
-# 	&RSAT::message::Info("GENE:", $previousarray[0]) if ($verbose >= 3);
-	push (@gnninfoarray,\@currentarray);
-	@previousarray = @currentarray;
-      }
-      $gnninfos{$previousarray[0]}=\@gnninfoarray;
-      
-       &RSAT::message::Info("GENE:", "|".$previousarray[0] ."|\t" . $gnninfos{"5.3.1.16"}[0][1]) if ($verbose >= 3);
-    }
-#     exit 1;
- 
-
-    # End of Searching all reactions information for the reaction that are in  the infered pathway graph
-    ################################################################
-
-    ################################################################
-    # Adding description to the pathway graph
-    &RSAT::message::TimeWarn("Adding descriptions to pathway graph") if ($verbose >= 1);
-    open (INFILE, '<'.$infile{input}) or die "couldn't open the file!";
-#    my $outfile{graph_annot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.txt");
-    # my $outfilename = `mktemp $outfile{graph_annot}`;
-    open (OUTFILE, '>'.$outfile{graph_annot}) or die "couldn't open the file!";
-    #     print $group_descriptor;
-    while (<INFILE>) {
-      my($line) = $_;
-      chomp($line);
-      my @tempdatab = split(/\t/,$line);
-      if (length($line)==0 || $line=~ m/^;/) {
-	print OUTFILE $line. "\n";
-      } else {
-
-	my $tempstring = $tempdatab[0];
-	$tempstring=~s/<$|>$//;
-	$tempdatab[0] = $tempstring; #remove directionality from reaction node id to merge the nodes
-	# 	      print "TEMPSTRING = $tempstring\n";
-	my $values_ref = $reactioninfos{$tempstring};
-	if (defined $values_ref) {
-	  my @values = @{$values_ref};
-	  if ($tempdatab[6] && ($tempdatab[6] eq "Reaction")) {
-
-	    my $label="";
-	    my $labelb;
-	    my $ecs;
-	    my $reactionid;
-	    foreach my $info_ref (@values) {
-	      my @info = @{$info_ref};
-
-	      #  	      print "JOIN=".join("\t", $myarray[0][0])."\n";
-	      my($reacid,$ec,$qualif) = @info;
-	      # 		    print "ec: $ec\n";
-	      if ($ec) {
-		if ($qualif eq "EC"){
-		  if (%gnninfos){
-		    chomp($ec);
-		    my $genes = $gnninfos{$ec};
-		    &RSAT::message::Info("EC:", "|".$ec."|",  $gnninfos{"$ec"}[0][1]) if ($verbose >= 4);
-		    if (defined $genes) {
-		      my @genesarray = @{$genes};
-		      foreach my $genearrayref (@genesarray) {
-			my @genearray = @{$genearrayref};
-			my($id,$genename,$qualif) = @genearray;		  
-			chomp($genename);
-			$label.= "$genename,";
-		      }
-		    }
-		  }
-		  $ecs .= $ec;
-		}
-		if (!defined $reactionid) {
-		  $reactionid = $reacid;
-		}
-	      }
-	    }
-	    $labelb = "\\n$ecs\\n($reactionid)";
-	    
-	    $tempdatab[3] = $label.$labelb;
-	  } elsif ($tempdatab[6] &&($tempdatab[6] eq "Compound")) {
-	    $tempdatab[3] =  $values[0][1];
-	  } else {
-	    $tempdatab[1]=~s/<$|>$//;
-	  }
-	}
-	print OUTFILE (join "\t",@tempdatab). "\n";
-      }
-    }
-    close (OUTFILE);
-    # End of Adding description to the pathway graph
-    ################################################################
-
-    ################################################################
-    # Converting graph to dot format
-    &RSAT::message::TimeWarn("Converting graph to dot format") if ($verbose >= 1);
-#    my $outfile{graph_dot} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.dot");
-    my $convert_graph_cmd = "convert-graph -from path_extract -to dot -i $outfile{graph_annot} -o $outfile{graph_dot}";
-    system  $convert_graph_cmd;
-    # End of Converting graph to dot graph format
-    ################################################################
-
-    ################################################################
-    # Converting dot graph to image with graphviz dot
-    &RSAT::message::TimeWarn("Creating graph image with graphviz dot") if ($verbose >= 1);
-#    my $outfile{graph_png} = $dir{output}.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.png");
-    my $graph_image_cmd = "dot -Tpng -Kdot -o $outfile{graph_png} $outfile{graph_dot}";
-    system $graph_image_cmd;
-    #exit 0;
-    if ($show) {
-      system "gwenview $outfile{graph_png} &";
-    }
- 
-  # End of Converting dot graph to image with graphviz dot
-  ################################################################
-
-  ################################################################
-  ## Insert here output printing
-  ## Report execution time and close output stream
-  &RSAT::message::TimeWarn("Ending") if ($verbose >= 1);
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $out $exec_time if ($verbose); ## only report exec time if verbosity is specified
-  close $out if ($outfile{output});
-
+  &RSAT::message::TimeWarn("processing files:Start") if ($verbose >= 2); 
+   &RSAT::PathwayExtraction::ProcessOutputFiles(
+      $infile{input},
+      $dir{output},
+      $infile{gnn},
+      $infile{nnn},$directed,$verbose);
+  &RSAT::message::TimeWarn("processing files:End") if ($verbose >= 2); 
   exit(0);
 }
 
@@ -554,17 +340,16 @@ If no output file is specified, the current directory is used.
 =cut
     } elsif ($arg eq "-o") {
       $dir{output} = shift(@arguments);
-
 =pod
 
-=item	B<-t temp Directory>
+=item	B<-u undirected display>
 
-If no output file is specified, the current directory is used.
+Generate an undirected dot and png files (default is directed) even if the input is directed
 
 =cut
-    } elsif ($arg eq "-t") {
-      $dir{temp} = shift(@arguments);
-
+    } elsif ($arg eq "-d") {
+     $directed = "-directed";
+    
     } else {
       &FatalError(join("\t", "Invalid pathway_extractor option", $arg));
 
