@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.3 2012/03/23 14:04:53 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.4 2012/03/27 23:21:56 rsat Exp $
 #
 ############################################################
 
@@ -281,7 +281,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -319,7 +319,7 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
     }
     
   }elsif ($input){
-     @query_id_list = split(/\t|\s|;/,$input);
+     @query_id_list = split(/[\t\n;\|\r]+/,$input);
   }else{
     @query_id_list = <$in>;
   }
@@ -590,26 +590,27 @@ my ($inputfile,
    $verbose) = @_;
   
   my $undirected = "-undirected";
-  undef $undirected if ($directed);
+  undef $undirected if ($directed); # if directed $undirected = null
+  
   my %outfile = ();
   $outfile{prefix} = $outputdir."/";
   my $outputfile =  $inputfile;
   $outputfile =~ s{.*/}{};# remove path
   $outputfile =~ s{\.[^.]+$}{};# remove file extension
   $outfile{prefix} =~ s|//|/|g; ## Suppress double slashes
-  print STDERR $outfile{prefix}."\n";
+#   print STDERR $outfile{prefix}."\n";
   $outfile{prefix} .= $outputfile;
   $outfile{graph_png} = $outfile{prefix}."_annot.png";
   $outfile{graph_dot} = $outfile{prefix}."_annot.dot";
   $outfile{graph_annot} = $outfile{prefix}."_annot.txt";
-  print  STDERR $outfile{graph_annot}."\n";
+#   print  STDERR $outfile{graph_annot}."\n";
   &RSAT::message::TimeWarn("Graph annotated file: ",$outfile{graph_annot}, "PWD:$ENV{PWD}" ) if ($verbose >= 1);
     ################################################################
     # Loading reactions from extracted  graph
-    &RSAT::message::Info("RSATPATH: ", $ENV{RSAT}) if ($verbose >= 1);
-    &RSAT::message::Info("REA_ROOT: ", $ENV{REA_ROOT}) if ($verbose >= 1);
-    &RSAT::message::Info("KWALKS_ROOT: ", $ENV{KWALKS_ROOT}) if ($verbose >= 1);
-    &RSAT::message::Info("CLASSPATH: ",$ENV{CLASSPATH}) if ($verbose >= 1); 
+#     &RSAT::message::Info("RSATPATH: ", $ENV{RSAT}) if ($verbose >= 1);
+#     &RSAT::message::Info("REA_ROOT: ", $ENV{REA_ROOT}) if ($verbose >= 1);
+#     &RSAT::message::Info("KWALKS_ROOT: ", $ENV{KWALKS_ROOT}) if ($verbose >= 1);
+#     &RSAT::message::Info("CLASSPATH: ",$ENV{CLASSPATH}) if ($verbose >= 1); 
 #     &RSAT::message::TimeWarn("Loading reactions from extracted graph") if ($verbose >= 1);
     open (INFILE, '<'.$inputfile) or die "couldn't open the file!";
     my $i = 0;
@@ -698,16 +699,13 @@ my ($inputfile,
 	  $gnninfos{$previousarray[0]}=\@truc;
 	  undef @gnninfoarray;
 	}
-# 	&RSAT::message::Info("GENE:", $previousarray[0]) if ($verbose >= 3);
+	&RSAT::message::Info("GENE:", $previousarray[0]) if ($verbose >= 3);
 	push (@gnninfoarray,\@currentarray);
 	@previousarray = @currentarray;
       }
       $gnninfos{$previousarray[0]}=\@gnninfoarray;
       
-       &RSAT::message::Info("GENE:", "|".$previousarray[0] ."|\t" . $gnninfos{"5.3.1.16"}[0][1]) if ($verbose >= 3);
     }
-#     exit 1;
- 
 
     # End of Searching all reactions information for the reaction that are in  the infered pathway graph
     ################################################################
@@ -716,8 +714,6 @@ my ($inputfile,
     # Adding description to the pathway graph
     &RSAT::message::TimeWarn("Adding descriptions to pathway graph") if ($verbose >= 1);
     open (INFILE, '<'.$inputfile) or die "couldn't open the file!";
-#    my $outfile{graph_annot} = $outputdir.(join "_",$group_descriptor, $groupid, $graph, "annot_pred_pathways.txt");
-    # my $outfilename = `mktemp $outfile{graph_annot}`;
     open (OUTFILE, '>'.$outfile{graph_annot}) or die "couldn't open the file!";
     #     print $group_descriptor;
     while (<INFILE>) {
@@ -796,7 +792,6 @@ my ($inputfile,
     my $convert_graph_cmd = "$ENV{RSAT}/perl-scripts/convert-graph -from path_extract -to dot -i $outfile{graph_annot} -o $outfile{graph_dot} $undirected";
     $convert_graph_cmd .= " -v $verbose" if ($verbose >= 1); 
     &RSAT::message::TimeWarn($convert_graph_cmd) if ($verbose >= 1);
-    
     &RSAT::util::doit($convert_graph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     # End of Converting graph to dot graph format
     ################################################################
