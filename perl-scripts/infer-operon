@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.18 2012/03/28 00:06:48 jvanheld Exp $
+# $Id: infer-operon,v 1.19 2012/03/28 09:32:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -81,7 +81,7 @@ jvanheld@bigre.ulb.ac.be
 genomics
 
 =head1 USAGE
-    
+
 infer-operon [-i inputfile] [-o outputfile] [-v] [options]
 
 =over
@@ -179,6 +179,7 @@ package main;
 				  leader
 				  trailer
 				  query
+				  name
 				  upstr_dist
 				  upstr_size
 				  q_info
@@ -269,7 +270,7 @@ package main;
     ################################################################
     ## Return fields
     if (scalar(@return_fields) ==0) {
-      @return_fields = qw(leader q_info operon);
+      @return_fields = qw(leader operon query name upstr_dist gene_nb);
     }
 
     ## Treat the case of subfields
@@ -630,17 +631,17 @@ to contain at least a given number of genes (e.g. -min_gene_nb 4).
 
 List of fields to return.
 
-Supported fields: leader,trailer,operon,query,q_info,up_info,down_info
+Supported fields: leader,trailer,operon,query,name,upstr_dist,q_info,up_info,down_info
 
 =over
 
 =item B<leader>
 
-Predicted operon leader. 
+Predicted operon leader gene (first gene).
 
 =item B<trailer>
 
-Predicted operon trailer. 
+Predicted operon trailer gene (last gene).
 
 =item B<operon>
 
@@ -648,9 +649,23 @@ Full composition of the operon. The names of member genes are
 separated by a semi-column ";" (note that the gene separator can be
 changed using the option -sep).
 
+=item B<query>
+
+Identifier of the query gene(s).
+
+=item B<name>
+
+Name of the query gene(s).
+
 =item B<q_info>
 
 Detailed info on the query gene(s).
+
+=item B<upstr_dist>
+
+Distance betwene query gene and its first upstream neighbour. Note
+that this distance can be negative, in case of mutually overlapping
+genes.
 
 =item B<up_info>
 
