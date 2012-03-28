@@ -154,22 +154,26 @@ if ($errors == 0) {
     $returned .= "<tr><td>";
     if (preg_match("#png$#",$f)){
       echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f."\"><br/> <hr> <br/>\n";
-      $returned .= "Extracted pathway image file: ";
+      $file_type = "Extracted pathway image file";
+      $returned .= $file_type.": ";
     }elseif (preg_match("#pred_pathways.txt$#",$f)){
-      $returned .= "Extracted pathway graph file: ";
+      $file_type = "Extracted pathway graph file";
+      $returned .= $file_type.": ";
     }elseif (preg_match("#pred_pathways_annot.dot$#",$f)){
-      $returned .= "Extracted annotated pathway dot graph  file: ";
+      $file_type = "Extracted annotated pathway graph (dot format)";
+      $returned .= $file_type."./: ";
     }elseif (preg_match("#pred_pathways_annot.txt$#",$f)){
-      $returned .= "Extracted pathway annotated graph file: ";
+      $file_type = "Extracted pathway annotated graph";
     }elseif (preg_match("#pred_pathways_seeds_converted.txt$#",$f)){
-      $returned .= "Mapped seeds file: ";
+      $file_type = "Mapped seeds";
     }elseif (preg_match("#seeds.tab$#",$f)){
-      $returned .= "Seeds file: ";
+      $file_type = "Seeds file: ";
     }else {
-    	info("Unknown file:". $f );
+      info("Unknown file:". $f );
     }
-    $URL[$returned] = rsat_path_to_url($f);
-    $returned .= 	"</td><td><a href=\"".$outputurl."/".$f."\" >".$f."</a></td></tr>\n";
+    $returned .= $file_type."</td>";
+    $URL[$file_type] = rsat_path_to_url($f);
+    $returned .=  "</td><td><a href=\"".$outputurl."/".$f."\" >".$f."</a></td></tr>\n";
   }
 
 $returned .= "</table>\n";
