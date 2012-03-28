@@ -78,7 +78,7 @@ $parameters .= " -min_gene_nb ".$min_gene_nb;
 
 ### return fields
 my $i=0;
-foreach my $field ("leader","trailer","operon","query","q_info","up_info","down_info", "gene_nb") {
+foreach my $field ("leader","trailer","operon","query", "name", "upstr_dist", "q_info","up_info","down_info", "gene_nb") {
     my $return_field = "return_".$field;
 #    my $return_field = $field;
     if ($query->param($return_field) eq "on"){
@@ -126,7 +126,7 @@ if ($query->param('genes') eq "all") {
     }
 }
 
-print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
+print  "<PRE><B>Command :</B> ", &RSAT::util::hide_RSAT_path($command." ".$parameters), "</PRE><P>" if ($ENV{rsat_echo} >= 1);
 
 ################################################################
 #### run the command
