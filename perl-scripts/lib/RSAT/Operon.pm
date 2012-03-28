@@ -56,7 +56,6 @@ Add a gene object to the operon.
 
 sub add_gene {
   my ($self, $gene) = @_;    
-  
   &RSAT::message::Info("Operon", 
 		       $self->get_attribute("id"),
 		       "Adding gene",
@@ -193,7 +192,7 @@ sub sort_genes {
     }
   }
   $self->set_array_attribute("sorted_genes", @sorted_genes);
-  
+
   ## Collect sorted gene IDs
   my @sorted_gene_ids = ();
   foreach my $gene (@sorted_genes) {
