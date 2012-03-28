@@ -1,10 +1,10 @@
 <html>
 <head>
-<title>RSAT - fetch-sequences</title>
+<title>RSAT - Pathway-Extractor</title>
 <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
    </head>
    <body class="results" onload="javascript:document.getElementById('hourglass').hidden=true"> 
-   <!--div id=hourglass><img source="../images/animated_hourglass.gif" alt="Please Wait!!"></img></div>-->
+   <!--div id=hourglass><img src="../images/animated_hourglass.gif" alt="Please Wait!!"></img></div>-->
 <?php
 // Load RSAT configuration
    require('functions.php');
@@ -144,7 +144,7 @@ if ($errors == 0) {
 
   echo "<hr>";
   //  $it = new DirectoryIterator("glob:".$outputdir."/".$groupdescriptor."*");
-  $it = glob($outputdir."/".$groupdescriptor.".*");
+  $it = glob($outputdir."/".$groupdescriptor."*");
   sort($it);
   #$returned = "";
   $returned = "<table class='resultlink'>\n";
@@ -152,22 +152,24 @@ if ($errors == 0) {
   
   foreach($it as $f) {
     $returned .= "<tr><td>";
-    if (preg_match("#png$#",$f->getFilename())){
-      echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f->getFilename()."\"><br/> <hr> <br/>\n";
+    if (preg_match("#png$#",$f)){
+      echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f."\"><br/> <hr> <br/>\n";
       $returned .= "Extracted pathway image file: ";
-    }elseif (preg_match("#pred_pathways.txt$#",$f->getFilename())){
+    }elseif (preg_match("#pred_pathways.txt$#",$f)){
       $returned .= "Extracted pathway graph file: ";
-    }elseif (preg_match("#pred_pathways_annot.dot$#",$f->getFilename())){
+    }elseif (preg_match("#pred_pathways_annot.dot$#",$f)){
       $returned .= "Extracted annotated pathway dot graph  file: ";
-    }elseif (preg_match("#pred_pathways_annot.txt$#",$f->getFilename())){
+    }elseif (preg_match("#pred_pathways_annot.txt$#",$f)){
       $returned .= "Extracted pathway annotated graph file: ";
-    }elseif (preg_match("#pred_pathways_seeds_converted.txt$#",$f->getFilename())){
+    }elseif (preg_match("#pred_pathways_seeds_converted.txt$#",$f)){
       $returned .= "Mapped seeds file: ";
-    }elseif (preg_match("#seeds.tab$#",$f->getFilename())){
+    }elseif (preg_match("#seeds.tab$#",$f)){
       $returned .= "Seeds file: ";
+    }else {
+    	info("Unknown file:". $f );
     }
-    $URL[$returned] = $URL['Output directory'] = rsat_path_to_url($f->getFilename());
-    $returned .= 	"</td><td><a href=\"".$outputurl."/".$f->getFilename()."\" >".$f->getFilename()."</a></td></tr>\n";
+    $URL[$returned] = rsat_path_to_url($f);
+    $returned .= 	"</td><td><a href=\"".$outputurl."/".$f."\" >".$f."</a></td></tr>\n";
   }
 
 $returned .= "</table>\n";
