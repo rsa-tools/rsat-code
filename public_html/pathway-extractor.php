@@ -20,15 +20,26 @@ import_request_variables('P','fs_');
 
 // Initialize variables
 $basedir=$properties['RSAT']."/public_html/data/metabolic_networks";
-$outputdir = $properties['RSAT']."/public_html/tmp/";
-$outputurl = $properties['rsat_ws_tmp'];
+#$outputdir = $properties['RSAT']."/public_html/tmp/";
+$outputdir =  $properties['RSAT']."/public_html/".getTempFileName('pathway-extractor');
+$URL['Output directory'] = rsat_path_to_url($outputdir);
 
-putenv  ("CLASSPATH=".$properties['RSAT']."/java/lib/NeAT_javatools.jar");
+$outdir_created = mkdir($outputdir, 0775, TRUE);
+if (!$outdir_created) {
+  error("Could not create output directory");
+ }
+
+#$outputurl = $properties['rsat_ws_tmp'];
+$outputurl = $rsat_path_to_url[$outputdir];
+
+$CLASSPATH=$properties['RSAT']."/java/lib/NeAT_javatools.jar";
+putenv("CLASSPATH=".$CLASSPATH);
+//info("CLASSPATH=".str_replace($properties['RSAT'], '$RSAT', $CLASSPATH));
 
 $cmda = $properties['RSAT'].'/perl-scripts/pathway-extractor';
 $cmdb = $properties['RSAT'].'/perl-scripts/process-pathwayextractor-output';
 $groupdescriptor = uniqid('PathwayExtractor');
-$argumenta = " -v 2 -o $outputdir";
+$argumenta = " -v 2";
 $argumenta .= " -d ";
 
 $argumentb = $argumenta;
@@ -51,19 +62,19 @@ if ($fs_gnn == "none" or $fs_gnn == "" ) {
 	$GERdir = "$basedir/GER_files/$fs_gnn";
    $argumenta .= " -gnn ".$GERdir."/".$fs_gnn."-gene_ec.tab";
    $argumentb .= " -gnn ".$GERdir."/".$fs_gnn."-gene_ec.tab";
-}
+ }
 // Check that gnn has been specified
 if ($fs_network == "none" or $fs_network == "" ) {
   error( "You forgot to select network.");
   $errors=1;
 } else {
-	$neworkfilepattern= $fs_network;
-	$neworkfilepattern = eregi_replace("_v.*","",$fs_network); 
-    $neworkfilepattern = "$basedir/networks/$neworkfilepattern/$fs_network";
-    $networknodenames = $neworkfilepattern."-metab-node_names.tab";
-    $networkfile = $neworkfilepattern."-metab-network.tab";
-	$argumenta .= " -nnn ".$networknodenames ." -g " . $networkfile;
-	$argumentb .= " -nnn ".$networknodenames;
+  $neworkfilepattern= $fs_network;
+  $neworkfilepattern = eregi_replace("_v.*","",$fs_network); 
+  $neworkfilepattern = "$basedir/networks/$neworkfilepattern/$fs_network";
+  $networknodenames = $neworkfilepattern."-metab-node_names.tab";
+  $networkfile = $neworkfilepattern."-metab-network.tab";
+  $argumenta .= " -nnn ".$networknodenames ." -g " . $networkfile;
+  $argumentb .= " -nnn ".$networknodenames;
 }
 //Check syntax of email address (ensure the texte netered in email box was an email address)
 if($fs_output =="email") {
@@ -82,27 +93,23 @@ if($fs_output =="email") {
 if ($fs_seeds = "") {
   error( "No seeds!");
   $errors=1;
-}else {
-	$mystring = preg_replace( "#\r\n|\r|\t|;#", "\n", $_POST["seeds"] );
-	#$array_line = explode("\n",$fs_seeds);
-    $seed_file = $outputdir."/".$groupdescriptor."_seeds.tab";
-    $file = fopen ($seed_file, "w");
+ }else {
+  $mystring = preg_replace( "#\r\n|\r|\t#", "\n", $_POST["seeds"] );
+  #$array_line = explode("\n",$fs_seeds);
+  $seed_file = $outputdir."/".$groupdescriptor."_seeds.tab";
+  $file = fopen($seed_file, "w");
     fwrite($file, $mystring);
     fclose($file);
     $argumenta .= " -i $seed_file";
-}
-// Local bed file on client machine
- 
+ }
 
-
-//////////////////////////////////////////////////
-// Write bed file in temporary directory
+$argumenta .= " -o $outputdir";
 
 ///////////////////////////////////////////
-// Run fetch-sequences
+// Run commands
 if ($errors == 0) { 
   // Add arguments to the command
-  
+  $argumentb .= " -o ".$outputdir;
   $cmdb .= $argumentb;		
 
   // Announce job starting
@@ -114,20 +121,21 @@ if ($errors == 0) {
   
   flush(); 
 
-  // Run the command
- 
-$cmda .= $argumenta;
+  // Report the command 
+  $cmda .= $argumenta;
+  info("Command : ".str_replace($properties['RSAT'], '$RSAT', $cmda));
+  // info("Command : ".$cmda);
 
-  info("Command : ".$cmda);
-  #########################################
+  //  Run the command
   exec($cmda, $output);
-  
+
   foreach ($output as $line) {
     if ($line[0] == ";") {
       $info .= $line."<br/>\n";
     } else  if (eregi('^OUTPUTFILE =',$line)){
         $cmdb .= ' -i '. substr( $line , 12);
-        info("Command : ".$cmdb);
+	info("Command : ".str_replace($properties['RSAT'], '$RSAT', $cmdb));
+	// info("Command : ".$cmdb);
     	exec($cmdb, $outputb);
     } else {
     	echo $line;
@@ -135,30 +143,32 @@ $cmda .= $argumenta;
   }
 
   echo "<hr>";
-  $it = new DirectoryIterator("glob://tmp/".$groupdescriptor."*");
+  //  $it = new DirectoryIterator("glob:".$outputdir."/".$groupdescriptor."*");
+  $it = glob($outputdir."/".$groupdescriptor.".*");
   sort($it);
   #$returned = "";
   $returned = "<table class='resultlink'>\n";
   $returned .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
   
-foreach($it as $f) {
-	$returned .= "<tr><td>";
-  	if (preg_match("#png$#",$f->getFilename())){
-  		echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f->getFilename()."\"><br/> <hr> <br/>\n";
-  		$returned .= "Extracted pathway image file: ";
-  	}elseif (preg_match("#pred_pathways.txt$#",$f->getFilename())){
-  		$returned .= "Extracted pathway graph file: ";
-  	}elseif (preg_match("#pred_pathways_annot.dot$#",$f->getFilename())){
-  		$returned .= "Extracted annotated pathway dot graph  file: ";
-  	}elseif (preg_match("#pred_pathways_annot.txt$#",$f->getFilename())){
-  		$returned .= "Extracted pathway annotated graph file: ";
-  	}elseif (preg_match("#pred_pathways_seeds_converted.txt$#",$f->getFilename())){
-  		$returned .= "Mapped seeds file: ";
-  	}elseif (preg_match("#seeds.tab$#",$f->getFilename())){
-  		$returned .= "Seeds file: ";
-  	}
-	$returned .= 	"</td><td><a href=\"".$outputurl."/".$f->getFilename()."\" >".$f->getFilename()."</a></td></tr>\n";
-}
+  foreach($it as $f) {
+    $returned .= "<tr><td>";
+    if (preg_match("#png$#",$f->getFilename())){
+      echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f->getFilename()."\"><br/> <hr> <br/>\n";
+      $returned .= "Extracted pathway image file: ";
+    }elseif (preg_match("#pred_pathways.txt$#",$f->getFilename())){
+      $returned .= "Extracted pathway graph file: ";
+    }elseif (preg_match("#pred_pathways_annot.dot$#",$f->getFilename())){
+      $returned .= "Extracted annotated pathway dot graph  file: ";
+    }elseif (preg_match("#pred_pathways_annot.txt$#",$f->getFilename())){
+      $returned .= "Extracted pathway annotated graph file: ";
+    }elseif (preg_match("#pred_pathways_seeds_converted.txt$#",$f->getFilename())){
+      $returned .= "Mapped seeds file: ";
+    }elseif (preg_match("#seeds.tab$#",$f->getFilename())){
+      $returned .= "Seeds file: ";
+    }
+    $URL[$returned] = $URL['Output directory'] = rsat_path_to_url($f->getFilename());
+    $returned .= 	"</td><td><a href=\"".$outputurl."/".$f->getFilename()."\" >".$f->getFilename()."</a></td></tr>\n";
+  }
 
 $returned .= "</table>\n";
 echo	$returned;
@@ -194,10 +204,11 @@ echo	$returned;
     echo "<hr>";
   }  
 
-
   */
+
   // Display the result
-  #print_url_table($URL);
+  info("Printing URLs");
+  print_url_table($URL);
     
 
   ################################################################
