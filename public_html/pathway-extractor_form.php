@@ -24,8 +24,8 @@ UpdateLogFile("rsat","","");
 #echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
 
 ?>
-			}
-		</script>
+		
+	
   </head>
 
   <body class="form">
@@ -87,7 +87,7 @@ UpdateLogFile("rsat","","");
       </fieldset><br/>
       
       
-      <b>Output</b>&nbsp;<input type="radio" name="output" value="display" />display <input type="radio" name="output" value="email" checked="checked" />email <input type="text" name="user_email"  size="30" />
+      <b>Output</b>&nbsp;<input type="radio" name="output" value="display" checked="checked" />display <input type="radio" name="output" value="email" />email <input type="text" name="user_email"  size="30" />
 
       <ul><table class='formbutton'>
         <tr valign=middle>
