@@ -21,6 +21,8 @@ $default{return_leader} = "checked";
 $default{return_trailer} = "";
 $default{return_operon} = "checked";
 $default{return_query} = "checked";
+$default{return_name} = "checked";
+$default{return_upstr_dist} = "checked";
 $default{return_q_info} = "";
 $default{return_up_info} = "";
 $default{return_down_info} = "";
@@ -38,6 +40,8 @@ my @output_fields = qw(leader
 		       trailer
 		       operon
 		       query
+		       name
+		       upstr_dist
 		       q_info
 		       up_info
 		       down_info
@@ -47,10 +51,12 @@ my %field_description = ();
 $field_description{leader} = "Predicted operon leader gene";
 $field_description{trailer} = "Predicted operon trailer gene";
 $field_description{operon} = "Full composition of the operon";
-$field_description{query} = "Query gene";
+$field_description{query} = "Query";
+$field_description{name} = "Query gene name";
+$field_description{upstr_dist} = "Distance between query gene and its closest upstream neighbour (negative for overlapping genes)";
 $field_description{q_info} = "Detailed info on the query gene";
-$field_description{up_info} = "Detailed info on the upstream leader gene";
-$field_description{down_info} = "Detailed info on the upstream trailer gene";
+$field_description{up_info} = "Detailed info on the gene located upstream the query";
+$field_description{down_info} = "Detailed info on the gene located downstream the query";
 $field_description{gene_nb} = "Number of genes in the predicted operon";
 
 ### print the form ###
