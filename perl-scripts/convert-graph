@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.64 2011/12/05 23:50:13 jvanheld Exp $
+# $Id: convert-graph,v 1.65 2012/03/28 09:27:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -351,8 +351,10 @@ package main;
 
     ################################################################
     ## Close output stream
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    if ($output_format eq "tab") {
+      my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+      print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    }
     close $main::out if ($main::outfile{output});
 
     exit(0);
