@@ -3,7 +3,8 @@
 <title>RSAT - fetch-sequences</title>
 <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
    </head>
-   <body class="results"> 
+   <body class="results" onload="javascript:document.getElementById('hourglass').hidden=true"> 
+   <!--div id=hourglass><img source="../images/animated_hourglass.gif" alt="Please Wait!!"></img></div>-->
 <?php
 // Load RSAT configuration
    require('functions.php');
@@ -136,10 +137,14 @@ $cmda .= $argumenta;
   echo "<hr>";
   $it = new DirectoryIterator("glob://tmp/".$groupdescriptor."*");
   sort($it);
-  $returned = "";
+  #$returned = "";
+  $returned = "<table class='resultlink'>\n";
+  $returned .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
+  
 foreach($it as $f) {
+	$returned .= "<tr><td>";
   	if (preg_match("#png$#",$f->getFilename())){
-  		echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f->getFilename()."\"><br/> \n";
+  		echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f->getFilename()."\"><br/> <hr> <br/>\n";
   		$returned .= "Extracted pathway image file: ";
   	}elseif (preg_match("#pred_pathways.txt$#",$f->getFilename())){
   		$returned .= "Extracted pathway graph file: ";
@@ -152,8 +157,10 @@ foreach($it as $f) {
   	}elseif (preg_match("#seeds.tab$#",$f->getFilename())){
   		$returned .= "Seeds file: ";
   	}
-	$returned .= 	"<a href=\"".$outputurl."/".$f->getFilename()."\" >".$f->getFilename()."</a><br/> \n";
+	$returned .= 	"</td><td><a href=\"".$outputurl."/".$f->getFilename()."\" >".$f->getFilename()."</a></td></tr>\n";
 }
+
+$returned .= "</table>\n";
 echo	$returned;
   echo "<hr>";
   // Display the command
@@ -199,18 +206,13 @@ echo	$returned;
     //    echo "Email outpout not available for now";
     // Parammeters for sending the mail
     $to = $fs_user_email;
-    $subject = "[RSAT] fetch-sequences result ".$now."_".$suffix;
+    $subject = "[RSAT] Pathway-extractor result ".$now."_".$suffix;
     
     // Store the URL table in a variable
     $html_mail = 0; // Boolean variable indicating whether HTML format is supported in email
     $headers = ""; // Header (specifying Mime types)
     if ($html_mail) {
-      $msg = "<table class='resultlink'>\n";
-      $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
-      foreach ($URL as $key => $value) {
-	$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
-      }
-      $msg .= "</table>\n";
+      $msg = $returned;
       
       $headers .= 'Mime-Version: 1.0'."\r\n";
       $headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
@@ -219,7 +221,7 @@ echo	$returned;
       $msg = "fetch-sequences result\n\n";
       $msg .= "Result files:\n";
       foreach ($URL as $key => $value) {
-	$msg .= "\t".$key."\t".$value."\n";
+	  $msg .= "\t".$key."\t".$value."\n";
       }
     }
 
