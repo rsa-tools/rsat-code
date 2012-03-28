@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.4 2012/03/27 23:21:56 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.5 2012/03/28 09:33:22 jvanheld Exp $
 #
 ############################################################
 
@@ -223,6 +223,12 @@ BEGIN {
 require "RSA.lib";
 use RSAT::util;
 
+## Guess RSAT path from module full name
+unless ($ENV{RSAT}) {
+  $ENV{RSAT} = $0;
+  $ENV{RSAT} =~ s|/perl-scripts/.*||;
+  $ENV{RSAT} =~ s|/public_html/.*||;
+}
 
 ################################################################
 ## pathwayinference package
@@ -281,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -376,7 +382,6 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
   ## DIDIER: the ECR mapping should be redone with the new program match-names.
 
   &RSAT::message::TimeWarn("Mapping seeds to reactions") if ($verbose >= 1);
-  
   chomp(@query_id_list);
   $query_ids = (join "\$|^",@query_id_list );	# build a query from the input file or stdin
   &RSAT::message::Info("Query IDs", join("; ", @query_id_list)) if ($verbose >= 3);
@@ -531,14 +536,17 @@ while (my ($cpd, $val) = each(%compounds)){
     delete($otherPIoptions{"-v"});
     #after the program has handled the mandatory parameters, it will add the remaining ones 
     my $piparameters =" ";
-    
+
     while( my($key, $val) = each(%localotherPIparameters) ) {
 	$piparameters .= "$key $val ";
     }
-    
-    
-    my $pathway_infer_cmd = "java -Xmx1000M graphtools.algorithms.Pathwayinference";
+
+    my $pathway_infer_cmd = "java ";
+    $pathway_infer_cmd .= " -cp ".$ENV{RSAT}."/java/lib/NeAT_javatools.jar";
+    $pathway_infer_cmd .= " -Xmx1000M graphtools.algorithms.Pathwayinference";
     $pathway_infer_cmd .= " -i ".$outfile{seeds_converted};
+    $pathway_infer_cmd .= " -A ".$ENV{REA_ROOT};
+    $pathway_infer_cmd .= " -K ".$ENV{KWALKS_ROOT};
     $pathway_infer_cmd .= " -m $minpathlength -C -f $graphfileformat";
     $pathway_infer_cmd .= " -p $tempdir";
     $pathway_infer_cmd .= " -E $outputdir";
@@ -549,8 +557,7 @@ while (my ($cpd, $val) = each(%compounds)){
     $pathway_infer_cmd .=  $piparameters;
     $pathway_infer_cmd .= " -o $outfile{predicted_pathway}";
 #     -v $verbose
-    
-    
+
     &RSAT::message::TimeWarn("Pathway inference command", $pathway_infer_cmd) if ($verbose >= 2);
     &RSAT::message::Info("Predicted pathway file", $outfile{predicted_pathway}) if ($verbose >= 1);
     #exit 1;
@@ -789,7 +796,7 @@ my ($inputfile,
     ################################################################
     # Converting graph to dot format
     &RSAT::message::TimeWarn("Converting graph to dot format in $outfile{graph_dot} ") if ($verbose >= 1);     
-    my $convert_graph_cmd = "$ENV{RSAT}/perl-scripts/convert-graph -from path_extract -to dot -i $outfile{graph_annot} -o $outfile{graph_dot} $undirected";
+    my $convert_graph_cmd = $ENV{RSAT}."/perl-scripts/convert-graph -from path_extract -to dot -i $outfile{graph_annot} -o $outfile{graph_dot} $undirected";
     $convert_graph_cmd .= " -v $verbose" if ($verbose >= 1); 
     &RSAT::message::TimeWarn($convert_graph_cmd) if ($verbose >= 1);
     &RSAT::util::doit($convert_graph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
