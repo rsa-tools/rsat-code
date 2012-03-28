@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.31 2012/03/27 23:21:56 rsat Exp $
+# $Id: pathway-extractor,v 1.32 2012/03/28 09:32:43 jvanheld Exp $
 #
 ############################################################
 
@@ -28,7 +28,8 @@ co-regulated, members of the same operon, …).
 1. Gene to reaction mapping. Identify the set of reactions ("seed
 reactions") catalyzed by the set of input genes ("seed genes"). The
 mapping relies on a user-specified file describing the mapping of
-genes to reactions (GNN and NNN, Gene-Node Name and Network Node Name<>NodeID file).
+genes to reactions (GNN and NNN, Gene-Node Name and Network Node
+Name<>NodeID file).
 
 2. Pathway extraction (=Pathway inference). PathwayInference takes as
 input a network (typically a metabolic network made of compounds +
@@ -187,7 +188,9 @@ Extract a pathway connecting at best the reactions catalyzed by these gene produ
 
 =head2 Using standard input
 
-=head3 The script pathway-extractor can also use as input the STDIN. This allows to use it in aconcatenation of commands. For example, all the commands above could be combined in a single pipeline as follows.
+The script pathway-extractor can also use as input the STDIN. This
+allows to use it in aconcatenation of commands. For example, all the
+commands above could be combined in a single pipeline as follows.
 
  gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q 'met.*' \
    | grep -v "^;" met_genes.tab | cut -f 1 \
@@ -229,8 +232,7 @@ use RSAT::PathwayExtraction;
 ################################################################
 ## pathwayinference package
 package main;
-
-{  
+{
   #other pathwayinference otptions : specific opions that will be directly pass to the java pathway inference app
   our @pioptions=('-s','-i','-g','-f','-b','-n','-q','-o','-O','-E','-a','-y','-p','-F','-Z','-m','-w','-t',
 		  '-l','-T','-W','-P','-C','-e','-d','-u','-x','-k','-U','-B','-r','-D','-M','-I','-N','-G',
@@ -255,14 +257,13 @@ package main;
 
   our $graph = "";		# Graph Name
   our $group_descriptor= ""; # Unique name to differenciate output files
-  
-   ################################################################
+
+  ################################################################
   ## Read argument values
   &ReadArguments();
 
-   ################################################################
+  ################################################################
   ## Check argument values
-  
   my $input = $infile{input};
   my $isInputFile=0;
   if ($input){
@@ -276,7 +277,6 @@ package main;
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
   my $output = &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$directed,$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
   print $out "OUTPUTFILE = $output\n";
-
 }
 
 
