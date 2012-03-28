@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.5 2012/03/28 09:33:22 jvanheld Exp $
+# $Id: PathwayExtraction.pm,v 1.6 2012/03/28 09:57:19 jvanheld Exp $
 #
 ############################################################
 
@@ -287,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -806,7 +806,9 @@ my ($inputfile,
     ################################################################
     # Converting dot graph to image with graphviz dot
     &RSAT::message::TimeWarn("Creating graph image with graphviz dot") if ($verbose >= 1);
-    my $graph_image_cmd = "dot -Tpng -Kdot -o $outfile{graph_png} $outfile{graph_dot}";
+    my $dot_cmd = &RSAT::server::GetProgramPath("dot", 1, $ENV{dot_bin_dir});
+
+    my $graph_image_cmd = $dot_cmd." -Tpng -Kdot -o $outfile{graph_png} $outfile{graph_dot}";
     &RSAT::message::TimeWarn($graph_image_cmd) if ($verbose >= 1);
     &RSAT::util::doit($graph_image_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
