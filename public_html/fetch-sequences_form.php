@@ -3,8 +3,8 @@
   <head>
     <title>RSAT - fetch-sequences</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" type="text/css" href="http://rsat.ulb.ac.be/rsat//main.css" media="screen,projection,print"/>
-    <link rel="stylesheet" type="text/css" href="http://rsat.ulb.ac.be/rsat//tabs.css" media="screen,projection,print"/>
+    <link rel="stylesheet" type="text/css" href="main.css" media="screen,projection,print"/>
+    <link rel="stylesheet" type="text/css" href="tabs.css" media="screen,projection,print"/>
     <script src="RSAT_menu.js" type="text/javascript"></script>
     <script src="RSAT_tabs.js" type="text/javascript"></script>
     <script type="text/javascript">
@@ -50,12 +50,11 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
    sort($ucsc_organisms);
    foreach ($ucsc_organisms as $ligne) {
      list($genome,$description) =  explode("\t", $ligne);
-     echo "<option value = '$genome'>", $genome, " ", $description, "</option>\n";
+     echo "<option value = '$genome'>", $genome, " ", str_replace(" Genome at UCSC", "", $description), "</option>\n";
    }
    
 ?>
-        </select><br/><br/>
-
+        </select><br/><br/>          
     <p>
 	  <b><a href='help.fetch-sequences.html#input_format'>Genomic
 	  coordinates</a></b> <font color='red'>(mandatory)</font>
@@ -68,7 +67,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 	      
               <textarea name='bed' rows='6' cols='45'></textarea></li>
 
-            <li>Specify the URL of bed file on remorte server (e.g. Galaxy)<br/>
+          <li>Specify the URL of bed file on remorte server (e.g. Galaxy)<br/>
               <input type="text" name="sequence_url" size="62" /><br/></li>
 
             <li>Upload a file from your computer<br/>
