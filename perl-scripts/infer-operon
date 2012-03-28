@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.17 2011/03/14 09:10:25 jvanheld Exp $
+# $Id: infer-operon,v 1.18 2012/03/28 00:06:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -179,6 +179,8 @@ package main;
 				  leader
 				  trailer
 				  query
+				  upstr_dist
+				  upstr_size
 				  q_info
 				  up_info
 				  down_info
@@ -205,6 +207,7 @@ package main;
 				 upstr_neighb_str
 				 upstr_neighb_pos
 				 up_dir
+				 upstr_dist
 				 upstr_size
 				 up_rule
 				 first
@@ -215,6 +218,7 @@ package main;
 				   downstr_neighb_str
 				   downstr_neighb_pos
 				   dn_dir
+				   downstr_dist
 				   downstr_size
 				   dn_rule
 				   last
@@ -238,7 +242,9 @@ package main;
     $field_descr{upstr_neighb_name} = "Name of the upstream gene."; 
     $field_descr{upstr_neighb_str} = "Strand of the upstream gene.";
     $field_descr{upstr_neighb_pos} = "Proximal position of the upstream gene.";
-    $field_descr{upstr_size} = "Size of the non-coding region located upstream of the query gene.";
+    $field_descr{upstr_distance} = "Distance from query gene to the closest upstream gene. Can be negative if the two genes overlap.";
+    $field_descr{upstr_size} = "Size of the non-coding region upstream of the query gene. Cannot be negative (distance truncated to 0). ";
+#    $field_descr{upstr_size} = "Size of the non-coding region located upstream of the query gene.";
     $field_descr{up_dir} = "Relative direction of the upstream gene (tandem, divergent or convergent).";
     $field_descr{up_rule} = "Rule used to predict operon membership of the upstream gene (opposite strand, distance).";
     $field_descr{first} = "1 if the gene is the operon leader; 0 otherwise";
@@ -248,7 +254,8 @@ package main;
     $field_descr{downstr_neighb_name} = "Name of the downstream gene."; 
     $field_descr{downstr_neighb_str} = "Strand of the downstream gene.";
     $field_descr{downstr_neighb_pos} = "Proximal position of the downstream gene.";
-    $field_descr{downstr_size} = "Size of the non-coding region located downstream of the query gene.";
+    $field_descr{downstr_distance} = "Distance from query gene to the closest downstream gene. Can be negative if the two genes overlap.";
+    $field_descr{dowbstr_size} = "Size of the non-coding region downstream of the query gene. Cannot be negative (distance truncated to 0). ";
     $field_descr{dn_dir} = "Relative direction of the downstream gene (tandem, divergent or convergent).";
     $field_descr{dn_rule} = "Rule used to predict operon membership of the downstream gene (opposite strand, distance).";
     $field_descr{last} = "1 if the gene is the operon trailer; 0 otherwise";
@@ -357,7 +364,7 @@ package main;
 	&ExtendOperon($feature);
 
       } else {
-	&RSAT::message::Warning(join ("\t", "No feature corresponds to query", $query)) if ($main::verbose >= 3);
+	&RSAT::message::Warning("No feature corresponds to query", $query) if ($main::verbose >= 3);
 	push @warnings, join("\t", "; WARNING", "No feature corresponds to query", $query);
       }
     }
@@ -726,6 +733,8 @@ sub Verbose {
 sub ExtendOperon {
   my ($feature) = @_;
 
+  ## Caching: attributes already been computed for this features are
+  ## not re-calculated.
   my %to_calc = ();
   unless  ($feature->get_attribute("up_dir")) {
     $to_calc{up} = 1;
@@ -737,7 +746,7 @@ sub ExtendOperon {
   }
 
   if (scalar(keys(%to_calc)) == 0) {
-    &RSAT::message::Warning("Operon already extended for feature", $feature) if ($main::verbose >= 3);
+    &RSAT::message::Warning("Operon already extended for feature", $feature->get_attribute("id"), $feature->get_attribute("name")) if ($main::verbose >= 3);
     return;
   }
 
@@ -745,7 +754,9 @@ sub ExtendOperon {
   my $id = $feature->get_attribute("id");
   my $name = $feature->get_attribute("name");
   my $strand = $feature->get_attribute("strand");
+  my $upstr_dist = $feature->get_attribute("upstr_dist");
   my $upstr_size = $feature->get_attribute("upstr_size");
+  my $downstr_dist = $feature->get_attribute("downstr_dist");
   my $downstr_size = $feature->get_attribute("downstr_size");
 
   ## Check if the gene is already included in a predicted
@@ -756,6 +767,7 @@ sub ExtendOperon {
 
     ## Cross-references between the operon and the gene
     $operon->add_gene($feature);
+    $operon->sort_genes();
     $feature->set_attribute("operon", $operon);
     push @operons, $operon;
   }
@@ -786,20 +798,24 @@ sub ExtendOperon {
 	$feature->set_attribute("up_rule", "div");
 	$feature->set_attribute("up_dir", "div");
 	$operon->set_leader($feature);
+
       } else {
 	$feature->set_attribute("up_dir", "tandem");
 	## Rule 2: if the intergenic distance is larger than the
 	## threshold, the genes are considered to belong to distinct
 	## operons
-	if ($upstr_size > $dist_threshold) {
+	if ($upstr_dist > $dist_threshold) {
 	  $feature->set_attribute("first", 1);
 	  $feature->set_attribute("up_rule", "d >= t");
 	  $operon->set_leader($feature);
+	  &RSAT::message::Debug("Stopping extension", $feature->get_attribute("name"), "upstr_dist=".$upstr_dist, "up_name=".$upstr_neighb->get_attribute("name"), $operon->get_attribute("name")) if ($main::verbose >= 5);
 	} else {
 	  $feature->set_attribute("first", 0);
 	  $feature->set_attribute("up_rule", "d < t");
 	  $operon->add_gene($upstr_neighb);
+	  $operon->sort_genes();
 	  $upstr_neighb->force_attribute("operon", $operon);
+	  &RSAT::message::Debug("Pursuing extension", $feature->get_attribute("name"), "upstr_dist=".$upstr_dist, "up_name=".$upstr_neighb->get_attribute("name"), $operon->get_attribute("name")) if ($main::verbose >= 5);
 	  &ExtendOperon($upstr_neighb);
 	}
 
@@ -841,7 +857,7 @@ sub ExtendOperon {
 	## Rule 2: if the intergenic distance is larger than the
 	## threshold, the genes are considered to belong to distinct
 	## operons
-	if ($downstr_size > $dist_threshold) {
+	if ($downstr_dist > $dist_threshold) {
 	  $feature->set_attribute("last", 1);
 	  $feature->set_attribute("dn_rule", "d > t");
 	  $operon->set_trailer($feature);
