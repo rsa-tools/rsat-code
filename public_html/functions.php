@@ -43,7 +43,7 @@ Function uploadFile($file) {
   //     $now = date("Ymd_His");
   //     $tmpFile = $tmpFile.$now;
   //     $tmpFileName = $tmpDir.$tmpFile;
-  $tmpFileName = getTempFileName('upload');
+   $tmpFileName = getTempFileName('upload');
   //   echo ("TEMP $tmpFileName");
   if (is_uploaded_file($_FILES[$file]['tmp_name'])) {
     if (rename($_FILES[$file]['tmp_name'], $tmpFileName)) {
