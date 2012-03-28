@@ -241,7 +241,6 @@ if ($errors == 0) {
   
   // Display the result
   print_url_table($URL);
-    
 
   ################################################################
   // Send email with notification of task completion 
