@@ -112,7 +112,7 @@ if ($fs_reference != "segment") {
 
 //////////////////////////////////////////////////
 // Write bed file in temporary directory
-if (!$errors) {
+if ($errors == 0) {
   
   $now = date("Ymd_His");
   $suffix = randchar(3);
