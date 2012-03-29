@@ -39,6 +39,7 @@ onclick='toggleMenu('202')' id='heading202'>Path finding and pathway extraction<
         <a class='menu_item' target='tools' href='$neat_java_host/rsat/pathfinder_form.php'>k-shortest path finding </a>
 	<a class='menu_item' target='tools' href='$neat_java_host/metabolicpathfinding/metabolicPathfinder_form.jsp'>Metabolic path finding</a>
 	<a class='menu_item_last' target='tools' href='$neat_java_host/metabolicpathfinding/pathwayinference_form.jsp'>Pathway extraction</a>
+	<a class='menu_item_last' target='tools' href='pathway-extractor_form.php'>Pathway extraction (microme prototype)</a>
 </div>
 
 </div>
