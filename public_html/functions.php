@@ -166,6 +166,7 @@ $rsat_logs = $rsat_main."/public_html/logs";
 $properties = load_props($rsat_main."/RSAT_config.props");
 $tmp = $properties['rsat_tmp'];
 $WWW_RSA = $properties['rsat_www'];
+$RSAT = $properties['RSAT'];
 $log_name = $properties['rsat_site'];
 date_default_timezone_set("Europe/Paris");
 $neat_wsdl = $properties['neat_ws'];
@@ -251,10 +252,12 @@ Function spaces_to_tab($string, $num) {
 # http://rsat.ulb.ac.be/rsat/tmp/brol.truc
 Function rsat_path_to_url ($file_name) {
   global $WWW_RSA;
-  $temp_file = rtrim($file_name);
-  $temp_file = explode('/',$temp_file);
-  $temp_file = end($temp_file);
-  $resultURL = $WWW_RSA."/tmp/".$temp_file;
+  global $properties;
+#  $temp_file = rtrim($file_name);
+#  $temp_file = explode('/',$temp_file);
+#  $temp_file = end($temp_file);
+#  $resultURL = $WWW_RSA."/tmp/".$temp_file;
+  $resultURL = str_replace($properties['RSAT']."/public_html", $properties['rsat_www'], $file_name);
   return $resultURL;
 }
 
