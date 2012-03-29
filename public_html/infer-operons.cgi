@@ -78,7 +78,7 @@ $parameters .= " -min_gene_nb ".$min_gene_nb;
 
 ### return fields
 my $i=0;
-foreach my $field ("leader","trailer","operon","query", "name", "upstr_dist", "q_info","up_info","down_info", "gene_nb") {
+foreach my $field ("query", "name", "leader","trailer","operon", "upstr_dist", "q_info","up_info","down_info", "gene_nb") {
     my $return_field = "return_".$field;
 #    my $return_field = $field;
     if ($query->param($return_field) eq "on"){
@@ -136,7 +136,7 @@ if ($query->param('output') eq "display") {
     print '<H2>Result</H2>';
 
     open RESULT, "$command $parameters |";
-    &PrintHtmlTable(RESULT, $result_file, 1);
+    &PrintHtmlTable(RESULT, $result_file, 1, 5000);
     close(RESULT);
 
     push (@result_files, 'operons', $result_file);
