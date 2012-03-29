@@ -36,11 +36,11 @@ foreach $key (keys %default) {
 }
 
 ## Output fields
-my @output_fields = qw(leader
+my @output_fields = qw(query
+		       name
+		       leader
 		       trailer
 		       operon
-		       query
-		       name
 		       upstr_dist
 		       q_info
 		       up_info
@@ -50,10 +50,10 @@ my @output_fields = qw(leader
 my %field_description = ();
 $field_description{leader} = "Predicted operon leader gene";
 $field_description{trailer} = "Predicted operon trailer gene";
-$field_description{operon} = "Full composition of the operon";
+$field_description{operon} = "Composition of the operon";
 $field_description{query} = "Query";
 $field_description{name} = "Query gene name";
-$field_description{upstr_dist} = "Distance between query gene and its closest upstream neighbour (negative for overlapping genes)";
+$field_description{upstr_dist} = "Distance to upstream neighbour (negative for overlapping genes)";
 $field_description{q_info} = "Detailed info on the query gene";
 $field_description{up_info} = "Detailed info on the gene located upstream the query";
 $field_description{down_info} = "Detailed info on the gene located downstream the query";
