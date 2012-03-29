@@ -29,12 +29,12 @@ echo "<H3><a href='".$properties['rsat_www']."'>RSAT</a> - fetch-sequences - res
 
 ////////////////////////////////////////////////////////////////
 // Check arguments
-$errors = 0;
+$errors = false;
 
 // Check that genome has been specified
 if ($fs_genome == "none" or $fs_genome == "" ) {
   error( "You forgot to specify the genome.");
-  $errors=1;
+  $errors = true;
  } else {
   $argument .= " -genome $fs_genome";
  }
@@ -43,7 +43,7 @@ if ($fs_genome == "none" or $fs_genome == "" ) {
 if($fs_output =="email") {
   if (!preg_match("#^[\wàáâãäåæçèéêëìíîïðñòóôõöøùúûüý._\-]+@([a-z]+.)+[a-z]{2,4}$#", $fs_user_email)) {
      error( "Email not valid");
-     $errors=1;
+     $errors=true;
   }
  }
 
@@ -67,10 +67,10 @@ if ( $fs_sequence_url != "") {
 // Report error if no BED has been specified
 if ($bed_specifications == 0) {
   error("You forgot to specify the genomic coordinates (BED file)");
-  $errors++;
+  $errors=true;
  } else if ($bed_specifications > 1) {
   error("The BED file can be specified only in 1 way (paste, upload or URL of external server)");
-  $errors++;
+  $errors = true;
  }
 
 // Header format
@@ -83,7 +83,7 @@ if (($fs_downstr_ext !="") &&
     ($fs_downstr_ext != '0')) {
   if (!is_numeric($fs_downstr_ext)) {
     error ($fs_downstr_extr." Invalid value for downstream extension: should be an Integrer.");
-    $errors++;
+    $errors = true;
   } else {
     if (!$confict_extension) {
       $argument .= " -downstr_ext $fs_downstr_ext";
@@ -96,7 +96,7 @@ if (($fs_upstr_ext !="") &&
     ($fs_upstr_ext != '0')) {
   if (!is_numeric($fs_upstr_ext)) {
     error($fs_upstr_ext." is not valid value for upstream extension : should be an Integrer.");
-    $errors++;
+    $errors = true;
   }  else {
     if (!$confict_extension) {
       $argument .= " -upstr_ext $fs_upstr_ext";
@@ -112,7 +112,7 @@ if ($fs_reference != "segment") {
 
 //////////////////////////////////////////////////
 // Write bed file in temporary directory
-if ($errors == 0) {
+if (!$errors) {
   
   $now = date("Ymd_His");
   $suffix = randchar(3);
@@ -130,11 +130,11 @@ if ($errors == 0) {
 	$argument .= " -i $bed_file";
       } else {
 	error('File upload failed');
-	$error = 1;
+	$errors = true;
       }
     }	else {
       error("Wrong file extension $extention");
-      $error = 1;
+      $errors = true;
     }
   }
   
@@ -172,14 +172,14 @@ if ($errors == 0) {
   		
     } else {
       error($fs_sequence_url." is not a valid URL (should start with http: or ftp:.");
-      $errors++;
+      $errors = true;
     }
   }
  }
 
 ///////////////////////////////////////////
 // Run fetch-sequences
-if ($errors == 0) { 
+if (!$errors) { 
 
   // Specify output file
   $output_file = str_replace(".bed",".fasta",$bed_file);
