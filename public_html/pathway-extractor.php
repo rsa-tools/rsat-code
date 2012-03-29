@@ -143,25 +143,29 @@ if ($errors == 0) {
   }
 
   echo "<hr>";
-  //  $it = new DirectoryIterator("glob:".$outputdir."/".$groupdescriptor."*");
-  $it = glob($outputdir."/".$groupdescriptor."*");
-  sort($it);
-  #$returned = "";
-  $returned = "<table class='resultlink'>\n";
-  $returned .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
+  //  $result_files = new DirectoryIterator("glob:".$outputdir."/".$groupdescriptor."*");
+
+  $result_files = glob($outputdir."/".$groupdescriptor."*");
+  sort($result_files);
+  // print_r($result_files);
+
+
+  /*  $returned = "<table class='resultlink'>\n";
+   $returned .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";*/
   
-  foreach($it as $f) {
+  foreach($result_files as $f) {
     $returned .= "<tr><td>";
     if (preg_match("#png$#",$f)){
-      echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f."\"><br/> <hr> <br/>\n";
+      // echo "<img width=800  title=\"inferedpathway\"src=\"".$outputurl."/".$f."\"><br/> <hr> <br/>\n";
+      echo '<img width=800  title="inferedpathway" src="'.rsat_path_to_url($f).'"><br/> <hr> <br/>'."\n";
       $file_type = "Extracted pathway image file";
-      $returned .= $file_type.": ";
+      //      $returned .= $file_type.": ";
     }elseif (preg_match("#pred_pathways.txt$#",$f)){
       $file_type = "Extracted pathway graph file";
-      $returned .= $file_type.": ";
+      //$returned .= $file_type.": ";
     }elseif (preg_match("#pred_pathways_annot.dot$#",$f)){
       $file_type = "Extracted annotated pathway graph (dot format)";
-      $returned .= $file_type."./: ";
+      //$returned .= $file_type."./: ";
     }elseif (preg_match("#pred_pathways_annot.txt$#",$f)){
       $file_type = "Extracted pathway annotated graph";
     }elseif (preg_match("#pred_pathways_seeds_converted.txt$#",$f)){
@@ -171,14 +175,14 @@ if ($errors == 0) {
     }else {
       info("Unknown file:". $f );
     }
-    $returned .= $file_type."</td>";
+    //$returned .= $file_type."</td>";
     $URL[$file_type] = rsat_path_to_url($f);
-    $returned .=  "</td><td><a href=\"".$outputurl."/".$f."\" >".$f."</a></td></tr>\n";
+    //$returned .=  "</td><td><a href=\"".$outputurl."/".$f."\" >".$f."</a></td></tr>\n";
   }
 
-$returned .= "</table>\n";
-echo	$returned;
-  echo "<hr>";
+  //$returned .= "</table>\n";
+  //echo	$returned;
+  //  echo "<hr>";
   // Display the command
   /*
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
