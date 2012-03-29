@@ -217,7 +217,6 @@ if ($errors == 0) {
   */
 
   // Display the result
-  info("Printing URLs");
   print_url_table($URL);
     
 
