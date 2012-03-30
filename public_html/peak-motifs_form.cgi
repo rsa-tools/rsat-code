@@ -41,7 +41,6 @@ $default{max_seq_len}="";
 $default{top_sequences}="";
 $default{nmotifs} = 3;
 
-
 $default{visualize}="none";
 $checked{$default{visualize}} = "CHECKED";
 
