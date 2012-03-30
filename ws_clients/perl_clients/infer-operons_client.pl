@@ -27,6 +27,7 @@ package main;
   my $verbose = 1;
   my $output = "client";
   my $return = "leader,operon,q_info";
+  my $infile = "",
   my $distance = 55;
   my $min_gene_nb = 2;
   my $query = "";
@@ -35,19 +36,20 @@ package main;
   ## Parse arguments from the command line
   my %opt = ('v|verbose=i'=> \$verbose,
 	     's|server=s'=>\$server,
-	     'r|organism=s'=>\$organism,
+	     'o|organism=s'=>\$organism,
 	     'd|distance=i'=>\$distance,
 	     'q|query=s'=>\$query,
-	     'g|min_gene_nb'=>\$min_gene_nb,
+	     'g|min_gene_nb=i'=>\$min_gene_nb,
 	     'r|return=s'=>\$return,
 	     'h|help'=>\$help
 	    );
 
   ## Print command-line arguments for the sake of reproducibility
-  print "; Command: ", join(" ", $0, @ARGV), "\n";
+  print "; Client command: ", join(" ", $0, @ARGV), "\n";
 
   ## Automatically parse the options with the Getopt module
   &GetOptions(%opt);
+
 
   ## Print help message
   if ($help) {
@@ -81,11 +83,14 @@ ARGUMENTS
     -s, --server server_url
         URL of the server (default: $server)
 
-    -d, --distance #
-        Threshold on intergenic distance (default: $distance).
+    -d, --distance
+        Splitting distance between two genes: if intergenic regions is
+        larger than this value, they two genes are considered to
+        belong to distinct operons.
 
     -g, --min_gene_nb #
-        Threshold on the number of genes to be in the same operon.
+         Mininal number of genes (operons with less than g genes are
+         not reported).
 
     -q, --query
         Query gene. If no query is specified, infer-operon returns the
@@ -94,14 +99,6 @@ ARGUMENTS
     -r, --return return_fields
         List of fields to return, separated by commas.
 
-    -d, --distance
-        Splitting distance between two genes: if their intergenic
-        regions is larger than this value, they two genes are
-        considered to belong to distinct operons.
-
-    -g, --min_gene_nb #
-         Mininal number of genes (operons with less than g genes are
-         not reported).
 
     -i input_file
         Name of an input file contianing the queries (one query per
@@ -132,6 +129,7 @@ EndHelp
 	      'tmp_infile'=>$infile,
 	      'all'=>$all,
 	      'distance'=>$distance,
+	      'min_gene_nb'=>$min_gene_nb,
 #	      'return'=>$return,
 	     );
 
@@ -140,22 +138,21 @@ EndHelp
   eval {
     # Retrieving and processing the WSDL
     my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
-    warn ("Parsing Web service description from WSDL", "\t", $wsdl_url, "\n");
+    warn ("Parsing Web service description from WSDL", "\t", $wsdl_url, "\n") if ($verbose >= 2);
     my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
     my $proxy = XML::Compile::WSDL11->new($wsdl);
 
     ## Compiling the client for infer-operon
-    warn ("Compiling client\n");
+    warn ("Compiling client\n") if ($verbose >= 2);
     my $client = $proxy->compileClient('infer_operon');
 
     # Calling the service and getting the response
-    warn ("Sending query to server", "\t", $server, "\n");
+    warn ("Sending query to server", "\t", $server, "\n") if ($verbose >= 2);
     my $answer = $client->( request => {%args});
 
 
     ## Analyze the answer and print out the result
     if ( defined $answer ) {
-      warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
       print "; Server : ", $server, "\n";
       print "; WSDL URL : ", $wsdl_url, "\n";
       print "; Server command : ".$answer->{output}->{response}->{command}."\n";
