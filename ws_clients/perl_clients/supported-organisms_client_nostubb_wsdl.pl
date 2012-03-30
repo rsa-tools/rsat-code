@@ -73,7 +73,7 @@ foreach my $server (@servers) {
       if ( defined $answer ) {
 	warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
 	print OUT "; Server : ", $server, "\n";
-	print OUT "; WSDL : ", $wsdl, "\n";
+	print OUT "; WSDL URL : ", $wsdl_url, "\n";
 	print OUT "; Server command : ".$answer->{output}->{response}->{command}."\n";
 	print OUT "; Server file : ".$answer->{output}->{response}->{server}."\n";
 	print OUT $answer->{output}->{response}->{client}."\n";
