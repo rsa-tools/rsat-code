@@ -56,7 +56,8 @@ my %args = (
     );
 
 ## Send the request to the server
-print "Sending request to the server $server\n";
+warn "Sending request to the server via SOAP::WSDL\n";
+
 my $som = $soap->retrieve_ensembl_seq({'request' => \%args});
 
 ## Get the result
