@@ -26,7 +26,7 @@ package main;
   my $help = "";
   my $verbose = 1;
   my $output = "client";
-  my $return = "leader,operon,q_info";
+  my $return = "query,name,leader,operon,q_info";
   my $infile = "",
   my $distance = 55;
   my $min_gene_nb = 2;
@@ -41,7 +41,7 @@ package main;
 	     'q|query=s'=>\$query,
 	     'g|min_gene_nb=i'=>\$min_gene_nb,
 	     'r|return=s'=>\$return,
-	     'h|help'=>\$help
+	     'h|help'=>\$help,
 	    );
 
   ## Print command-line arguments for the sake of reproducibility
@@ -130,10 +130,10 @@ EndHelp
 	      'all'=>$all,
 	      'distance'=>$distance,
 	      'min_gene_nb'=>$min_gene_nb,
-#	      'return'=>$return,
+	      'return'=>$return,
 	     );
 
-#  warn "DEBUG", join "; ", %args;
+  warn "DEBUG\targs\t", join "; ", %args, "\n";
 
   eval {
     # Retrieving and processing the WSDL
