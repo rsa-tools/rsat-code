@@ -588,7 +588,8 @@ class MotifProcessor( Processor):
         
         # Remove the RSAT compare-matrices result dir
         os.chdir( out_path)
-        shutil.rmtree( file_info[0], True)
+        #TODO: restore folder remove
+        #shutil.rmtree( file_info[0], True)
 
     
     
@@ -622,7 +623,9 @@ class MotifProcessor( Processor):
         RSAT_PATH = self.component.getParameter( Constants.RSAT_DIR_PARAM)
         # Parse the list of motif databases and apply each of them to the compare-matrices tool
         # on the given file of conserved blocks
+        all_input_motif_to_remove = {}
         for index in range( len( database_file_list)):
+            sub_prefix = prefix + "_" + str(index)
             # Compose the compare-matrices command line with all required options
             cmd = os.path.join( RSAT_PATH , "perl-scripts/compare-matrices")
             cmd += " -file1 " + file_path + " -format1 tf"
@@ -631,7 +634,7 @@ class MotifProcessor( Processor):
             cmd += " -lth w 3"
             cmd += " -lth ncor2 0.7"
             cmd += " -return matrix_id,cor,Ncor2,w,consensus,offset" 
-            cmd += " -o " + prefix
+            cmd += " -o " + sub_prefix
             cmd += " " + command_options
             
             Log.info( "MotifProcessor.launchCompareMatrices : Starting comparison with database : " + database_file_list[index])
@@ -646,29 +649,39 @@ class MotifProcessor( Processor):
                 continue
                 
             # Convert the tab result to html file
-            commands.getstatusoutput( os.path.join( RSAT_PATH , "perl-scripts/text-to-html") +" -i " + prefix + ".tab -o " + prefix + ".html")
+            commands.getstatusoutput( os.path.join( RSAT_PATH , "perl-scripts/text-to-html") +" -i " + sub_prefix + ".tab -o " + sub_prefix + ".html")
             
             # Verify if the compare-matrices is present and have finished to be written
-            result_file_path = os.path.join( dir_path, prefix+".tab")
+            result_file_path = os.path.join( dir_path, sub_prefix+".tab")
             if not self.verifyResultFile( result_file_path):
-                Log.log( "MotifProcessor.launchCompareMatrices : Compare-matrices result file is not accesible at " + result_file_path)
+                Log.log( "MotifProcessor.launchCompareMatrices : Compare-matrices result file is not accessible at " + result_file_path)
                 continue
             
             # Parse the result of the compare-matrices command to get the result list
-            result = self.parseCompareMatricesResult( os.path.join( dir_path, prefix + ".tab"))
+            result = self.parseCompareMatricesResult( os.path.join( dir_path, sub_prefix + ".tab"))
             if result == None:
+                Log.log( "MotifProcessor.launchCompareMatrices : Compare-matrices result file gave a null result :" + result_file_path)
                 continue
                 
-            # Analyse the result list and store the conserved elements in the thread_result of the analysis
+            # Analyze the result list and store the conserved elements in the thread_result of the analysis
             if hypergeometric_test == False:
-                self.analyseCompareMatricesResult( output_commstruct, result, correlation_limit)
+                input_motif_to_remove = self.analyseCompareMatricesResult( output_commstruct, result, correlation_limit)
+                # Update the list of input motifs to remove with the list provided by the last analysis 
+                for alignment in input_motif_to_remove.keys():
+                    if alignment in all_input_motif_to_remove.keys():
+                        all_input_motif_to_remove[ alignment].extend( input_motif_to_remove[ alignment])
+                    else:
+                        all_input_motif_to_remove[ alignment] = input_motif_to_remove[ alignment]
             else:
                 self.analyseCompareMatricesHypResult( output_commstruct, result, correlation_limit)
-            
-            # Retrieve the identified motif's PWM if required
-            #if arguments[ MotifProcessor.REPORT_MOTIF_PWM] == True:
-            #    self.retrieveMotifsMatrices( identified_motifs, database_file_list[index], database_format_list[index])
-
+        
+        #Remove the input motifs that were associated to identified reference motifs
+        for alignment in all_input_motif_to_remove.keys():
+            motifs_to_remove = all_input_motif_to_remove[ alignment]
+            if motifs_to_remove != None:
+                for motif in motifs_to_remove:
+                    alignment.motifs.remove( motif)
+        
 
 
     # ---------------------------------------------------------------------------------------------
@@ -762,6 +775,7 @@ class MotifProcessor( Processor):
         strand_header     = "strand"
         
         motif_list = []
+        input_motif_to_remove = {}
         # parse the bedseq and the bedseq alignment to get the motifs
         for bedseq in output_commstruct.bedToMA.keys():
             for alignment in output_commstruct.bedToMA[ bedseq]:
@@ -772,14 +786,17 @@ class MotifProcessor( Processor):
                         if input_motif.name in result.keys():
                             motif_dics = result[ input_motif.name]
                             #for each entry in the result series, create an output motif if the result ncor2 > correlation_limit
+                            Log.info( "MotifProcessor.analyseCompareMatricesResult : motif_dics size for " + input_motif.name + " = " + str( len( motif_dics)))
                             for motif_dic in motif_dics:
                                 try:
                                     n_cor2 = self.getTokenAsfloat( motif_dic[ ncor2_header])
+                                    Log.info( "MotifProcessor.analyseCompareMatricesResult :     n_cor2 for " + str( motif_dic[ id2_header]) + " = " + str( n_cor2));
                                     if n_cor2 >= correlation_limit:
                                         # retrieve the data
                                         output_motif_offset = self.getTokenAsint( motif_dic[ offset_header])
                                         output_motif_length = self.getTokenAsint( motif_dic[ w2_header])
                                         output_motif_name = motif_dic[ id2_header]
+                                        Log.log( "Detected motif = " + output_motif_name)
                                         # build the new motif
                                         output_motif = Motif( input_motif.indexStart + output_motif_offset, input_motif.indexStart + output_motif_offset + output_motif_length, output_motif_name, None )
                                         output_motif.consensus = self.removeNoInfoChar( motif_dic[ consensus2_header])
@@ -803,17 +820,21 @@ class MotifProcessor( Processor):
                                     Log.log( "MotifProcessor.analyseCompareMatricesResult : Some value of a motif correlation is not a float : " + str( motif_dic) + ". From:\n\t--->" + str( par_exce))
                     
                     # add the new motifs to the alignment motif list and remove the corresponding conserved regions
+                    Log.info( " -len( analysis_result) = " + str( len( analysis_result)))
                     if len( analysis_result) > 0:
                         
                         self.threadLock.acquire()
                         
                         for input_motif in analysis_result.keys():
                             # remove the input motif from the alignement and add all the corresponding output motifs
-                            alignment.motifs.remove( input_motif)
+                            if not alignment in input_motif_to_remove.keys():
+                                input_motif_to_remove[ alignment] = []
+                            input_motif_to_remove[alignment].append( input_motif)
                             alignment.motifs.extend( analysis_result[ input_motif])
                             # create the motif statistics if required and
                             # increment the hit score of each output motif
                             for output_motif in analysis_result[ input_motif]:
+                                Log.info( " --Found output motif = " + output_motif.name)
                                 output_motif_name = output_motif.name
                                 if not output_motif_name in output_commstruct.motifStatistics.keys():
                                     output_commstruct.motifStatistics[ output_motif_name] = MotifStatistics( output_motif_name)
@@ -828,7 +849,7 @@ class MotifProcessor( Processor):
                                     
                         self.threadLock.release()
         
-        return motif_list
+        return input_motif_to_remove
 
 
     # ---------------------------------------------------------------------------------------------
@@ -901,7 +922,7 @@ class MotifProcessor( Processor):
             #cmd += " -text"
             cmd += " " + command_options
             cmd += " " + file_path 
-            cmd += " " + database_file_list[index]
+            #cmd += " " + database_file_path
             
             Log.info( "MotifProcessor.launchTOMTOM : Starting comparison with database : " + database_file_list[index])
             Log.info( "MotifProcessor.launchTOMTOM : Command used is : " + cmd)
