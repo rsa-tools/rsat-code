@@ -124,7 +124,7 @@ require ('RSAT_header.php');
 <?php
 
 foreach($multiz_supported as $key => $value) {
-	echo "<option value='$key'>$key - ".$genome_ucsc[$key]['name']."</option>", "\n";
+	echo "<option value='$key'>$key - ".$genome_ucsc[$key]['organism']."</option>", "\n";
 }
 ?>
 					</select>
