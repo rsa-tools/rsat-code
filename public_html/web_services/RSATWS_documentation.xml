@@ -758,6 +758,15 @@ Default motif discovery algorithms
 	      </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="source" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Enter the source of the fasta sequence file.
+Supported source: galaxy
+When the sequence file comes from Galaxy, peak coordinates embedded in the fasta headers are extracted and used to convert predicted site coordinates (relative to peak center) to genomic coordinates (in the form of a bed file), which can then be uploaded to the UCSC genome browser as an annotation track.
+This option is incompatible with -coord.
+	      </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
 	  <xsd:element name="task" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Specify a subset of tasks to be executed.
@@ -1704,6 +1713,11 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="distance" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Distance threshold.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="min_gene_nb" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Min number of genes to report the operon.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="return" type="xsd:string" minOccurs="0">
@@ -4165,7 +4179,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -6898,9 +6912,9 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <service name="RSATWebServices">
     <documentation>Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@bigre.ulb.ac.be).</documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-<!--     <soap:address location="http://embnet.ccg.unam.mx/rsa-tools/web_services/RSATWS.cgi"/>-->
-        <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-      <!-- <soap:address location="http://127.0.0.1/rsat/web_services/RSATWS.cgi"/>-->
+      <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+      <!-- <soap:address location="http://mamaze.ulb.ac.be/rsat/web_services/RSATWS.cgi"/> -->
+      <!--<soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>-->
     </port>
   </service>
 </definitions>
