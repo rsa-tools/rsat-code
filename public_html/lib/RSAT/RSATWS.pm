@@ -21,8 +21,11 @@ require RSAT::TaskManager;
 
 &main::InitRSAT();
 
+## Guess RSAT path from module full name
 unless ($ENV{RSAT}) {
-    $ENV{RSAT} = $0; $ENV{RSAT} =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
+  $ENV{RSAT} = $0;
+  $ENV{RSAT} =~ s|/perl-scripts/.*||; 
+  $ENV{RSAT} =~ s|/public_html/.*||;
 }
 
 my $SCRIPTS = $ENV{RSAT}.'/perl-scripts';
@@ -2449,15 +2452,16 @@ sub footprint_discovery_cmd {
     return $command;
 }
 
-##########
+################################################################
+## infer-operon
 sub infer_operon {
-    my ($self, $args_ref) = @_;
+  my ($self, $args_ref) = @_;
 
-    my %args = %$args_ref;
-    my $output_choice = $args{"output"};
-    unless ($output_choice) {
-	$output_choice = 'both';
-    }
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
 
   ## List of queries
   my $query_ref = $args{"query"};
@@ -2465,8 +2469,8 @@ sub infer_operon {
   if ($query_ref =~ /ARRAY/) {
     my @query = @{$query_ref};
     foreach $q (@query) {
-	$q =~s/\'//g;
-	$q =~s/\"//g;
+      $q =~s/\'//g;
+      $q =~s/\"//g;
     }
     $query = " -q '";
     $query .= join "' -q '", @query;
@@ -2477,35 +2481,58 @@ sub infer_operon {
     $query .= "'";
   }
 
+  open TMP_IN, ">/tmp/err.txt";
+  print TMP_IN join("\t", "HELLO", join(" ", %args)), "\n";
+  close TMP_IN;
+
   my $command = "$SCRIPTS/infer-operon";
 
-    if ($args{verbosity}) {
-      $args{verbosity} =~ s/\'//g;
-      $args{verbosity} =~ s/\"//g;
-      $command .= " -v '".$args{verbosity}."'";
-    }
-
-  if ($args{organism}) {
-      $args{organism} =~ s/\'//g;
-      $args{organism} =~ s/\"//g;
-      $command .= " -org '".$args{organism}."'";
+  ## Verbosity
+  if ($args{verbosity}) {
+    $args{verbosity} =~ s/\'//g;
+    $args{verbosity} =~ s/\"//g;
+    $command .= " -v '".$args{verbosity}."'";
   }
+
+  ## Organism (mandatory)
+  if ($args{organism}) {
+    $args{organism} =~ s/\'//g;
+    $args{organism} =~ s/\"//g;
+    $command .= " -org '".$args{organism}."'";
+  }
+
+  ## Query
   if ($query) {
     $command .= $query;
   }
+
+  ## Return all operons
   if ($args{all} == 1) {
     $command .= " -all";
   }
-  if ($args{distance} =~ /\d/){
-      $args{distance} =~ s/\'//g;
-      $args{distance} =~ s/\"//g;
+
+  ## Threshold on distance
+  if ($args{distance} =~ /\d/) {
+    $args{distance} =~ s/\'//g;
+    $args{distance} =~ s/\"//g;
     $command .= " -dist '".$args{distance}."'";
   }
-  if ($args{return}) {
-      $args{return} =~ s/\'//g;
-      $args{return} =~ s/\"//g;
-      $command .= " -return '".$args{return}."'";
+
+  ## Threshold on number of genes in the operon
+  if ($args{min_gene_nb} =~ /\d/) {
+    $args{min_gene_nb} =~ s/\'//g;
+    $args{min_gene_nb} =~ s/\"//g;
+    $command .= " -min_gene_nb '".$args{min_gene_nb}."'";
   }
+
+  ## Return fields
+  if ($args{return}) {
+    $args{return} =~ s/\'//g;
+    $args{return} =~ s/\"//g;
+    $command .= " -return '".$args{return}."'";
+  }
+
+  ## Temporary file contianing the queries
   if ($args{"tmp_infile"}) {
     $tmp_infile = $args{"tmp_infile"};
     $tmp_infile =~ s/\'//g;
@@ -2514,7 +2541,7 @@ sub infer_operon {
     $command .= " -i '".$tmp_infile."'";
   }
 
-    &run_WS_command($command, $output_choice, "infer-operon", ".tab");
+  &run_WS_command($command, $output_choice, "infer-operon", ".tab");
 }
 
 ##########
