@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: gene2ec,v 1.16 2012/03/26 21:32:50 jvanheld Exp $
+# $Id: gene2ec,v 1.17 2012/03/30 06:07:17 jvanheld Exp $
 #
 ############################################################
 
@@ -41,23 +41,15 @@ gene2ec [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
-=head2 Gene list
-
-A list of query gens can be provided as a tab-delimited file, with one
+A list of query genes can be provided as a tab-delimited file, with one
 row per query. The first word of each line is considered as a query,
-the rest of the line is ignored.
-
-
-=head2 Cluster file
-
-A tab-delimited file containing at least 2 columns. 
-
-1) First column indicates the query (gene name, ID or
-   cross-reference).
-
-2) Second column indicates the group (cluster, class) of the gene.
+the rest of the line is ignored for the query, but reported in the
+output.
 
 =head1 OUTPUT FORMAT
+
+The output file is a copy of the input file with one column added,
+indicating the EC number of the input genes.
 
 =head1 SEE ALSO
 
@@ -74,9 +66,10 @@ element (gene ID or name) and the second column the cluster
 
 =over
 
-=item B<wish 1>
+=item B<-before>
 
-=item B<wish 2>
+Print the EC number as first column rather than as last column of the
+output.
 
 =back
 
@@ -100,7 +93,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -109,6 +102,7 @@ package main;
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
+  our $id_col = 1;
 
   ################################################################
   ## Read argument values
@@ -118,27 +112,41 @@ package main;
   ## Check argument values
 
   ################################################################
-  ## Open output stream
-  $out = &OpenOutputFile($outfile{output});
-
-
-  ################################################################
   ## Read input
   ($main::in) = &OpenInputFile($main::infile{input});
-  my @queries = ();
-  my %query_index = ();
+  our $header = "";
+  our @queries = ();
+  our %query_index = ();
   while (<$main::in>) {
     next if (/^;/); ## skip comment lines
-    next if (/^#/); ## Skip header line
     next unless (/\S/) ; # Skyp empty lines
     chomp();
-    my ($query) = split("\t");
+    ## Report header line
+    if (/^#/) {
+      $header = $_;
+      $header =~ s/^#//;
+    }
+    my @fields = split("\t");
+    my $query = $fields[$id_col-1];
     push @queries, $query;
-    $query_index{lc($query)} = $query; ## Queries are indexed for case-insenstive searches -> no lower cases
+    $query_index{lc($query)} = $_; ## Queries are indexed for case-insenstive searches -> no lower cases
+#    $query_index{lc($query)} = $query; ## Queries are indexed for case-insenstive searches -> no lower cases
   }
   close $main::in if ($main::infile{input});
   &RSAT::message::TimeWarn("Loaded queries", scalar(@queries));
-#  &RSAT::message::Debug("Keys", keys(%query_index)) if ($main::verbose >= 10);
+#  &RSAT::message::Debug("Keys", keys(%query_index)) if ($main::verbose >= 0);
+
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ## Report header line
+  print $out "#EC\t", $header, "\n";
 
   ################################################################
   ## Read Gene-EC-reaction links
@@ -147,7 +155,7 @@ package main;
   }
 
   ($main::ger) = &OpenInputFile($main::infile{ger});
-  my $ger_nb = 0;
+  our $ger_nb = 0;
   while (<$main::ger>) {
     next if (/^;/); ## skip comment lines
     next if (/^#/); ## Skip header line
@@ -155,10 +163,13 @@ package main;
     chomp();
     $ger_nb++;
     my ($gene, $ec_or_reaction)  = split("\t");
+    my $gene_key = lc($gene);
+
     if ($gene) {
       if (defined($query_index{lc($gene)})) {
-	$matched{$gene} = $query_index{lc($gene)};
-	print $out join ("\t", $ec_or_reaction, $gene), "\n";
+	$matched{$gene} = 1;
+	print $out join ("\t", $ec_or_reaction, $query_index{lc($gene)}), "\n";
+#	print $out join ("\t", $ec_or_reaction, $gene), "\n";
       }
     }
   }
@@ -166,15 +177,12 @@ package main;
   &RSAT::message::TimeWarn("Loaded GER associations", $ger_nb) if ($main::verbose >= 2);
   &RSAT::message::TimeWarn("Matched queries", scalar(keys(%matched))) if ($main::verbose >= 2);
 
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose >= 1);
 
-  ################################################################
-  ## Execute the command
-
-  ################################################################
-  ## Insert here output printing
+  ## Print matching statistics
+  printf $out "; Matching statistics\n";
+  printf $out  ";\t%-13s\t%s\n", "Loaded queries", scalar(@queries);
+  printf $out  ";\t%-13s\t%s\n", "Loaded GER associations", $ger_nb;
+  printf $out  ";\t%-13s\t%s\n", "Matched queries", scalar(keys(%matched));
 
   ################################################################
   ## Report execution time and close output stream
@@ -274,6 +282,18 @@ allows to use the command within a pipe.
 =cut
     } elsif ($arg eq "-ger") {
       $main::infile{ger} = shift(@arguments);
+
+=pod
+
+=item B<-id_col id_column>
+
+Column of the input file containing the gene ID (default: 1).
+
+=cut
+    } elsif ($arg eq "-id_col") {
+      $id_col = shift(@arguments);
+      &RSAT::error::FatalError($id_col, "Invalid value for ID column. Should be a strictly positive Natural number")
+	unless ((&IsNatural($id_col)) && ($id_col > 0));
 
 
 =pod
