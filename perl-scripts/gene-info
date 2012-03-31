@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.19 2012/01/15 00:23:31 jvanheld Exp $
+# $Id: gene-info,v 1.20 2012/03/31 09:11:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -126,7 +126,7 @@ exit(0);
 ################################################################
 #### print header
 sub Header {
-    print $out ";", join ("\t", 
+    print $out "#", join ("\t", 
 			  "id",
 			  "name",
 			  "chr",
