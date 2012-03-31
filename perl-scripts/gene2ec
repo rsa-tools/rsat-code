@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: gene2ec,v 1.17 2012/03/30 06:07:17 jvanheld Exp $
+# $Id: gene2ec,v 1.18 2012/03/31 09:11:54 jvanheld Exp $
 #
 ############################################################
 
@@ -66,11 +66,6 @@ element (gene ID or name) and the second column the cluster
 
 =over
 
-=item B<-before>
-
-Print the EC number as first column rather than as last column of the
-output.
-
 =back
 
 =cut
@@ -93,7 +88,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -103,6 +98,10 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
   our $id_col = 1;
+  our $after = 0;
+
+  our %matched = (); ## Index of matched queries
+  our $links  = 0; ## Number of gene - EC associations (including multiple links)
 
   ################################################################
   ## Read argument values
@@ -110,13 +109,50 @@ package main;
 
   ################################################################
   ## Check argument values
+  unless (defined($main::infile{ger})) {
+    &RSAT::error::FatalError("No GER file has be specified (option -ger).");
+  }
 
   ################################################################
-  ## Read input
+  ## Read Gene-EC-reaction links
+  ($main::ger) = &OpenInputFile($main::infile{ger});
+  our $ger_nb = 0;
+  while (<$main::ger>) {
+    next if (/^;/); ## skip comment lines
+    next if (/^#/); ## Skip header line
+    next unless (/\S/) ; # Skyp empty lines
+    chomp();
+    $ger_nb++;
+    my ($gene, $ec_or_reaction)  = split("\t");
+    my $gene_key = lc($gene);
+    $gene2ec{$gene_key}{$ec_or_reaction} = 1;
+#     ## Previous operating mode - genes were loaded before GER
+#     if ($gene) {
+#       if (defined($query_index{lc($gene)})) {
+# 	$matched{$gene} = 1;
+# 	print $out join ("\t", $ec_or_reaction, $query_index{lc($gene)}), "\n";
+# #	print $out join ("\t", $ec_or_reaction, $gene), "\n";
+#       }
+#     }
+  }
+  close $main::ger;
+  &RSAT::message::TimeWarn("Loaded GER associations", $ger_nb) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Read query genes
   ($main::in) = &OpenInputFile($main::infile{input});
   our $header = "";
   our @queries = ();
   our %query_index = ();
+ 
   while (<$main::in>) {
     next if (/^;/); ## skip comment lines
     next unless (/\S/) ; # Skyp empty lines
@@ -128,61 +164,43 @@ package main;
     }
     my @fields = split("\t");
     my $query = $fields[$id_col-1];
+    my $key = lc(&RSAT::util::trim($query));
+
+    ## Identify the links from query genes to EC
+    if (defined($gene2ec{$key})) {
+      $matched{$query} = 1;
+      my @ecs_for_this_gene = sort(keys(%{$gene2ec{$key}}));
+      foreach my $ec_or_reaction (@ecs_for_this_gene) {
+	$links++;
+	if ($after) {
+	  print $out join ("\t", $_, $ec_or_reaction), "\n";
+	} else {
+	  print $out join ("\t", $ec_or_reaction, $_), "\n";
+	}
+      }
+    }
+
+
     push @queries, $query;
     $query_index{lc($query)} = $_; ## Queries are indexed for case-insenstive searches -> no lower cases
 #    $query_index{lc($query)} = $query; ## Queries are indexed for case-insenstive searches -> no lower cases
   }
   close $main::in if ($main::infile{input});
-  &RSAT::message::TimeWarn("Loaded queries", scalar(@queries));
+  &RSAT::message::TimeWarn("Loaded queries", scalar(@queries)) if ($main::verbose >= 2);
 #  &RSAT::message::Debug("Keys", keys(%query_index)) if ($main::verbose >= 0);
 
-
-  ################################################################
-  ## Open output stream
-  $out = &OpenOutputFile($outfile{output});
-
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose >= 1);
 
   ## Report header line
   print $out "#EC\t", $header, "\n";
 
-  ################################################################
-  ## Read Gene-EC-reaction links
-  unless (defined($main::infile{ger})) {
-    &RSAT::error::FatalError("No GER file has be specified (option -ger).");
-  }
-
-  ($main::ger) = &OpenInputFile($main::infile{ger});
-  our $ger_nb = 0;
-  while (<$main::ger>) {
-    next if (/^;/); ## skip comment lines
-    next if (/^#/); ## Skip header line
-    next unless (/\S/) ; # Skyp empty lines
-    chomp();
-    $ger_nb++;
-    my ($gene, $ec_or_reaction)  = split("\t");
-    my $gene_key = lc($gene);
-
-    if ($gene) {
-      if (defined($query_index{lc($gene)})) {
-	$matched{$gene} = 1;
-	print $out join ("\t", $ec_or_reaction, $query_index{lc($gene)}), "\n";
-#	print $out join ("\t", $ec_or_reaction, $gene), "\n";
-      }
-    }
-  }
-  close $main::ger;
-  &RSAT::message::TimeWarn("Loaded GER associations", $ger_nb) if ($main::verbose >= 2);
-  &RSAT::message::TimeWarn("Matched queries", scalar(keys(%matched))) if ($main::verbose >= 2);
-
-
   ## Print matching statistics
+  &RSAT::message::TimeWarn("Matched queries", scalar(keys(%matched))) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Gene-EC links", $links) if ($main::verbose >= 2);
   printf $out "; Matching statistics\n";
   printf $out  ";\t%-13s\t%s\n", "Loaded queries", scalar(@queries);
   printf $out  ";\t%-13s\t%s\n", "Loaded GER associations", $ger_nb;
   printf $out  ";\t%-13s\t%s\n", "Matched queries", scalar(keys(%matched));
+  printf $out  ";\t%-13s\t%s\n", "Gene-EC links", $links;
 
   ################################################################
   ## Report execution time and close output stream
@@ -294,6 +312,18 @@ Column of the input file containing the gene ID (default: 1).
       $id_col = shift(@arguments);
       &RSAT::error::FatalError($id_col, "Invalid value for ID column. Should be a strictly positive Natural number")
 	unless ((&IsNatural($id_col)) && ($id_col > 0));
+
+=pod
+
+=item B<-after>
+
+Print the EC number as last column rather than as the first column of the
+output.
+
+=cut
+
+    } elsif ($arg eq "-after") {
+      $after = 1;
 
 
 =pod
