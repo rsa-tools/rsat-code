@@ -20,8 +20,10 @@ import_request_variables('P','fs_');
 // Initialize variables
 $cmd = $properties['RSAT'].'/perl-scripts/fetch-sequences';
 $argument = " -v 2";
-$confict_extension = False;
 $exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
+
+//Fill buffer
+echo str_repeat(" ", 1024), "\n";
 
 ////////////////////////////////////////////////////////////////
 //Print <h3>
@@ -41,7 +43,7 @@ if ($fs_genome == "none" or $fs_genome == "" ) {
 
 //Check syntax of email address (ensure the texte netered in email box was an email address)
 if($fs_output =="email") {
-  if (!preg_match("#^[\wàáâãäåæçèéêëìíîïðñòóôõöøùúûüý._\-]+@([a-z]+.)+[a-z]{2,4}$#", $fs_user_email)) {
+  if (!preg_match("#^[^@]+@([a-z]+\.)+[a-z]{2,4}$#", $fs_user_email)) {
      error( "Email not valid");
      $errors=true;
   }
@@ -85,11 +87,9 @@ if (($fs_downstr_ext !="") &&
     error ($fs_downstr_extr." Invalid value for downstream extension: should be an Integrer.");
     $errors = true;
   } else {
-    if (!$confict_extension) {
-      $argument .= " -downstr_ext $fs_downstr_ext";
-    }
+     $argument .= " -downstr_ext $fs_downstr_ext";
   }
- }
+}
 
 // Upstream extension
 if (($fs_upstr_ext !="") &&
@@ -98,63 +98,64 @@ if (($fs_upstr_ext !="") &&
     error($fs_upstr_ext." is not valid value for upstream extension : should be an Integrer.");
     $errors = true;
   }  else {
-    if (!$confict_extension) {
-      $argument .= " -upstr_ext $fs_upstr_ext";
-    }
+		$argument .= " -upstr_ext $fs_upstr_ext";
   }
- }
+}
 
 // Reference coordinates
 if ($fs_reference != "segment") {
   $argument .= " -reference $fs_reference";
- }
- 
+} 
 
 //////////////////////////////////////////////////
 // Write bed file in temporary directory
 if (!$errors) {
-  
-  $now = date("Ymd_His");
-  $suffix = randchar(3);
-  
+	$suffix = "_".date("Ymd_His")."_".randchar(3).".bed";
+	  
   // Upload file from client machine
   if ($_FILES["bedfile"]['name'] != "") {
     $bed_file_name = basename($_FILES['bedfile']['name']);
-    $extension = end(explode(".", $bed_file_name));
     
     // Move uploaded bed file in tmp
-    if ($extension =="bed") {
-      $bed_file = $properties['rsat_tmp']."/".$bed_file_name;
-      $bed_file = str_replace(".bed","_".$now."_".$suffix.".".$extension,$bed_file);
-      if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
-	$argument .= " -i $bed_file";
-      } else {
-	error('File upload failed');
-	$errors = true;
-      }
-    }	else {
-      error("Wrong file extension $extention");
-      $errors = true;
+    $bed_file = $properties['rsat_tmp']."/".$bed_file_name;
+    $bed_file = str_replace(".bed",$suffix,$bed_file);
+    if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
+			$argument .= " -i $bed_file";
+    } else {
+			error('File upload failed');
+			$errors = true;
     }
   }
   
-	 
   // Bed data provided in text area
   if ($fs_bed != "") {
-    $array_line = explode("\n",$fs_bed);
-    $bed_file = $properties['rsat_tmp']."/"."userbed_".$now."_".$suffix.".bed";
-    $file = fopen ($bed_file, "w");
-    
-    foreach($array_line as $line) {
-      if (preg_match($exp_bed_file,$line)) {
-	fwrite($file, $line);
-      } else {
-	warning ("Not bed line ".htmlspecialchars($line));
-      }
-    }
-    fclose($file);
-    $argument .= " -i $bed_file";
-  }	  
+  	$array_line = explode("\n",$fs_bed);
+  	$bed_file = $properties['rsat_tmp']."/"."userbed".$suffix;
+  	$file = fopen ($bed_file, "w");
+  	$no_bed_line = true;
+  	$warnings = "";
+  
+  	foreach($array_line as $line) {
+  		if (preg_match("/^[\w\-\+\s,\.\#; \/]+$/",$line)) {
+  			$no_bed_line = false;
+  			fwrite($file, $line."\n");
+  		} else {
+  			$warnings .= htmlspecialchars($line)."<br/>\n";
+  		}
+  	}
+  	fclose($file);
+  
+  	if ($warnings != "") {
+  		warning("Not bed line :<br/>\n".$warnings);
+  	}
+  
+  	if ($no_bed_line) {
+  		error("All your line are not bed format");
+  		$errors = true;
+  	} else {
+  		$argument .= " -i $bed_file";
+  	}
+  }
 
   // Check URL
   if ($fs_sequence_url != "") {
@@ -163,19 +164,19 @@ if (!$errors) {
     $bed = explode(".",$bed_file);
     $extension = end($bed);
 
-    if (($url[0]=="http:" or $url[0]=='ftp:') and $extension =="bed") {
+    if ($url[0]=="http:" or $url[0]=='ftp:') {
       $argument .= " -u $fs_sequence_url";
-  		
-      //Add randum value to $bedfile for the outputfile
-      $bed_file = $properties['rsat_tmp']."/".$bed_file;
-      $bed_file = str_replace(".bed","_".$now."_".$suffix.".bed",$bed_file);
-  		
+	  		
+	    //Add randum value to $bedfile for the outputfile
+	    $bed_file = $properties['rsat_tmp']."/".$bed_file;
+	    $bed_file = str_replace(".bed",$suffix,$bed_file);
+
     } else {
       error($fs_sequence_url." is not a valid URL (should start with http: or ftp:.");
       $errors = true;
     }
   }
- }
+}
 
 ///////////////////////////////////////////
 // Run fetch-sequences
@@ -198,7 +199,7 @@ if (!$errors) {
     $msg .= " After job completion, email will be sent to ".$fs_user_email;
   }
 
-  echo str_repeat(" ", 1024), "\n"; //Buffer needs to be filled for flush working
+  // Printing starting job
   info($msg);
   echo "<hr>";
   flush(); 
@@ -210,8 +211,8 @@ if (!$errors) {
   /*
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
   info("Command : ".$cmd_report);
-  echo "<hr>";
-  */
+  echo "<hr>";*/
+  
   //display log file
 
   $info = "";
@@ -236,8 +237,6 @@ if (!$errors) {
     warning($warning);
     echo "<hr>";
   }  
-
-
   
   // Display the result
   print_url_table($URL);
@@ -257,7 +256,7 @@ if (!$errors) {
       $msg = "<table class='resultlink'>\n";
       $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
       foreach ($URL as $key => $value) {
-	$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
+				$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
       }
       $msg .= "</table>\n";
       
@@ -268,7 +267,7 @@ if (!$errors) {
       $msg = "fetch-sequences result\n\n";
       $msg .= "Result files:\n";
       foreach ($URL as $key => $value) {
-	$msg .= "\t".$key."\t".$value."\n";
+				$msg .= "\t".$key."\t".$value."\n";
       }
     }
 
