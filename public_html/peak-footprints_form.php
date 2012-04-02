@@ -9,7 +9,6 @@ UpdateLogFile("rsat","","");
 	var multiz_genome = new Array();
 	multiz_genome[0] = new Array();
 <?php
-
 //////////////////////////
 //Get info on avalaible genome on ucsc
 $file = fopen ($properties['RSAT'].'/public_html/data/supported_organism_ucsc.tab', 'r');
@@ -40,14 +39,14 @@ while (!feof($file)) {
 fclose(file);
 
 //Write array() with key multiz available genome and values genome in multiz.
-foreach($multiz_supported as $key => $value) {
-	echo "multiz_genome['$key'] = new Array(";
+foreach($multiz_supported as $genome_reference => $aligned_species) {
+	echo "multiz_genome['$genome_reference'] = new Array(";
 		
-	foreach($value as $key1 => $value1) {
-		if ($value1 == end($value)) {
-			echo "'$value1 - ".$genome_ucsc[$value1]['organism']."'";
+	foreach($aligned_species as $key => $species) {
+		if ($species == end($aligned_species)) {
+			echo "'$species - ".$genome_ucsc[$species]['organism']."'";
 		}	else {
-			echo "'$value1 - ".$genome_ucsc[$value1]['organism']."',";
+			echo "'$species - ".$genome_ucsc[$species]['organism']."',";
 		}
 	}
 	echo ")\n";
@@ -97,7 +96,6 @@ function move(from, to) {
 	}					
 }	
 </script>
-
 <?php
 //Print header
 $prog_name = "peak-footprints";
@@ -105,15 +103,14 @@ $result = false;
 require ('RSAT_header.php');
 
 ?>
-		<form name="form" method='post' action='peak-footprints.php' enctype='multipart/form-data' onreset="on_reset('species_ali');on_reset('species_ali_keep');" onsubmit="select_all('species_ali_keep')">
+		<form method='post' action='peak-footprints.php' enctype='multipart/form-data' onreset="on_reset('species_ali');on_reset('species_ali_keep');" onsubmit="select_all('species_ali_keep')">
 			<fieldset>  
 				<legend><b>??</b></legend>
 				<p>
 					<b>Genomic coordinates</b> <span style='color:red'>(mandatory)</span>
 					<br/>Should be provided as a bed file (<a target='_blank' href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed format</a>), in any of the two following ways:				
-					<ul type='square'>
+					<ul style="list-style-type:square">
 						<li>Paste coordinates<br/><textarea name='bed' rows='6' cols='45'></textarea></li>
-						<!--  <li>Specify the URL of bed file on remorte server (e.g. Galaxy)<br/><input type="text" name="sequence_url" size="62" /><br/></li> -->
 						<li>Upload a file from your computer<br/><input type='file' name='bed_file' id='bed_file' size='40' /></li>
 					</ul>
 				</p>
@@ -133,9 +130,9 @@ foreach($multiz_supported as $key => $value) {
 				  <b>Aligned species</b> <span style='color:red'>(mandatory)</span><br/>
 				  <table>
 					  <tr>
-						  <td><select name="species_ali[]" id="species_ali" style="width:200px" size="8" multiple></select></td>
+						  <td><select name="species_ali[]" id="species_ali" style="width:200px" size="8" multiple="multiple"></select></td>
 						  <td><input type="button" value="Add >>" name="add" onclick="move('species_ali','species_ali_keep');" style="width:80px"><br/><input type="button" style="width:80px" value="&lt;&lt; Remove" name="remove" onclick="move('species_ali_keep','species_ali');" size='10'></td>
-						  <td><select name="species_ali_keep[]" id="species_ali_keep" style="width:200px" size="8" multiple></select></td>
+						  <td><select name="species_ali_keep[]" id="species_ali_keep" style="width:200px" size="8" multiple="multiple"></select></td>
 					  </tr>
 					  <tr><td align="center" colspan='3'>
 						  <input type="button" style="width:80px" value="Add All" name="addall" onclick="fill_species_ali(genome.options[genome.selectedIndex].value,'species_ali_keep','species_ali')">
@@ -154,7 +151,7 @@ foreach($multiz_supported as $key => $value) {
 				<p>
 					<b>Motif TF</b>
 					<br/>Should be provided as a transfac file, in any of the two following ways:				
-					<ul type='square'>
+					<ul style="list-style-type:square">
 						<li>Paste coordinates<br/><textarea name='transfac' rows='6' cols='45'></textarea></li>
 						<li>Upload a file from your computer<br/><input type='file' name='transfac_file' id='transfac_file' size='40' /></li>
 					</ul>
@@ -178,9 +175,9 @@ foreach($multiz_supported as $key => $value) {
         <b>Output</b>&nbsp;<input type="radio" name="output" value="display" />display <input type="radio" name="output" value="email" checked="checked" />email <input type="text" name="user_email"  size="30" />
         
       <ul><table class='formbutton'>
-        <tr valign=middle>
+        <tr style="valign:middle">
           <td><input type="submit" name="submit" value="GO" /></td>
-          <td><input type="reset"  name="reset" onclick="deselectall();"/></td> 
+          <td><input type="reset"  name="reset"/></td> 
 <!--          <td><input type="button" name="demo" value="Demo" onclick="add_demo()"/></td>  
           <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>  -->
           <td><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></b></td>
