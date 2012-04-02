@@ -4,7 +4,7 @@ require ('functions.php');
 UpdateLogFile("rsat","","");
 
 //print_r($properties);
-print_r($_POST);
+//print_r($_POST);
 //print_r($_FILES);
 
 // Import variables with prefix pf_ from form
@@ -32,7 +32,7 @@ if ($pf_bed != "") {
 	$bed_specifications++;
 }
 // Local bed file on client machine
-if ($_FILES["bedfile"]['name'] != "") {
+if ($_FILES["bed_file"]['name'] != "") {
 	$bed_specifications++;
 }
 
@@ -167,7 +167,7 @@ if (int("Maximum number of motif reported by family ", $pf_motif_number_family))
 
 if($pf_output =="email") {
 	if (!preg_match("#^[^@]+@([a-z]+\.)+[a-z]{2,4}$#", $pf_user_email)) {
-		error( "$pf_user_email : Email not valid");
+		error( "Email not valid");
 		$errors=true;
 	}
 }
