@@ -4,10 +4,10 @@ require ('functions.php');
 UpdateLogFile("rsat","","");
 
 //print_r($properties);
-//print_r($_POST);
+print_r($_POST);
 //print_r($_FILES);
 
-// Import variables with prefix fs_ from form
+// Import variables with prefix pf_ from form
 import_request_variables('P','pf_');
 
 //Fill buffer for flush()
@@ -19,7 +19,7 @@ $result = true;
 require ('RSAT_header.php');
 
 // Initialize variables
-$cmd = $properties['RSAT'].'/python-scripts/peak-footprints';
+$cmd = 'python '.$properties['RSAT'].'/python-scripts/peak-footprints';
 $argument = " -v 2";
 $errors = false;
 
@@ -45,7 +45,7 @@ if ($bed_specifications == 0) {
 	$errors = true;
 }
 
-// Check that the BED has been specified 0 or once.
+// Check that the transfac has been specified 0 or once.
 $transfac_specifications = 0;
 
 // Bed data pasted in text area
@@ -138,7 +138,7 @@ if (numeric("Block-wise conservation threshold", $pf_window_cons_thres)) {
 		$argument .= " --window_conservation_threshold $pf_window_cons_thres";
 	}
 } else {
-	$error++;
+	$errors = true;
 }
 
 if (int("Initial sliding window size", $pf_window_size)) {
@@ -165,6 +165,12 @@ if (int("Maximum number of motif reported by family ", $pf_motif_number_family))
 	$errors = true;
 }
 
+if($pf_output =="email") {
+	if (!preg_match("#^[^@]+@([a-z]+\.)+[a-z]{2,4}$#", $pf_user_email)) {
+		error( "$pf_user_email : Email not valid");
+		$errors=true;
+	}
+}
 //////////////////////////////////////////////////////////////////////////////
 //Writing bed/transfac file in tmp
 if (!$errors) {
@@ -176,17 +182,22 @@ if (!$errors) {
 		$bed_file = $properties['rsat_tmp']."/"."userbed".$suffix.".bed";
 		$file = fopen ($bed_file, "w");
 		$no_bed_line = true;
+		$warnings = "";
 		
 		foreach($array_line as $line) {
 			if (preg_match("/^[\w\-\+\s,\.\#; \/]+$/",$line)) {
 				$no_bed_line = false;
-				fwrite($file, $line);
+				fwrite($file, $line."\n");
 			} else {
-						warning (htmlspecialchars($line)." is not a bed line.\n");
+						$warnings .= htmlspecialchars($line)."<br/>\n";
 			}
 		}
 		fclose($file);
 		
+		if ($warnings != "") {
+			warning("Not bed line :<br/>\n".$warnings);
+		}
+				
 		if ($no_bed_line) {
 			error("All your line are not bed format");
 			$errors = true;
@@ -200,17 +211,12 @@ if (!$errors) {
 		$bed_file_name = basename($_FILES['bedfile']['name']);
 
 		// Move uploaded bed file in tmp
-		if (end(explode(".", $bed_file_name)) =="bed") {
-			$bed_file = $properties['rsat_tmp']."/".$bed_file_name;
-			$bed_file = str_replace(".bed",$suffix.".bed",$bed_file);
-			if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
-				$argument .= " --input_peaks $bed_file";
-			} else {
-				error('File upload failed');
-				$errors = true;
-			}
-		}	else {
-			error("Wrong file extension");
+		$bed_file = $properties['rsat_tmp']."/".$bed_file_name;
+		$bed_file = str_replace(".bed",$suffix.".bed",$bed_file);
+		if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
+			$argument .= " --input_peaks $bed_file";
+		} else {
+			error('File upload failed');
 			$errors = true;
 		}
 	}
@@ -225,7 +231,7 @@ if (!$errors) {
 		foreach($array_line as $line) {
 			if (preg_match("/^[\w\-\+\s,\.\#; \/]+$/",$line)) {
 				$no_transfac_line = false;
-				fwrite($file, $line);
+				fwrite($file, $line."\n");
 			} else {
 				warning (htmlspecialchars($line)." is not a bed line.\n");
 			}
@@ -236,7 +242,7 @@ if (!$errors) {
 			error("All your line are not transfac format");
 			$errors = true;
 		} else {
-			$argument .= " --??? $bed_file";  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			$argument .= " --??? $transfac_file";  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		}
 	}	
 	
@@ -245,17 +251,12 @@ if (!$errors) {
 		$transfac_file_name = basename($_FILES['transfacfile']['name']);
 	
 		// Move uploaded transfac file in tmp
-		if (end(explode(".", $transfac_file_name)) == "transfac") {
-			$transfac_file = $properties['rsat_tmp']."/".$transfac_file_name;
-			$transfac_file = str_replace(".transfac",$suffix.".transfac",$transfac_file);
-			if(move_uploaded_file($_FILES['transfacfile']['tmp_name'], $transfac_file)) {
-				$argument .= " --??? $transfac_file";   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			} else {
-				error('File upload failed');
-				$errors = true;
-			}
-		}	else {
-			error("Wrong file extension"); 
+		$transfac_file = $properties['rsat_tmp']."/".$transfac_file_name;
+		$transfac_file = str_replace(".transfac",$suffix.".transfac",$transfac_file);
+		if(move_uploaded_file($_FILES['transfacfile']['tmp_name'], $transfac_file)) {
+			$argument .= " --??? $transfac_file";   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		} else {
+			error('File upload failed');
 			$errors = true;
 		}
 	}
@@ -265,12 +266,12 @@ if (!$errors) {
 if (!$errors) {
 	
 	// Specify output file
-	$output_file = str_replace(".bed",".fasta",$bed_file);
-	$argument .= " -o $output_file";
+	$argument .= " --output ".$properties['rsat_tmp'];
 	$URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
-	$URL['Motif (transfac)'] = rsat_path_to_url($transfac_file);
-	$URL['Peak-footprints (fasta)'] = rsat_path_to_url($output_file);
-	
+	if ($transfac_specifications == 1) {
+		$URL['Motif (transfac)'] = rsat_path_to_url($transfac_file);
+	}
+
 	// Add arguments to the command
 	$cmd .= $argument;
 	
@@ -283,10 +284,10 @@ if (!$errors) {
 	echo "<hr>";
 	
 	// Display the command
-/* $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
+	$cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
 	info("Command : ".$cmd_report);
 	echo "<hr>";
-*/
+
 	flush();
 	
 	// Display the result
