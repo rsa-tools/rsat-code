@@ -207,13 +207,13 @@ if (!$errors) {
 	}
 	
 	// Upload bed file from client machine
-	if ($_FILES["bedfile"]['name'] != "") {
-		$bed_file_name = basename($_FILES['bedfile']['name']);
+	if ($_FILES["bed_file"]['name'] != "") {
+		$bed_file_name = basename($_FILES['bed_file']['name']);
 
 		// Move uploaded bed file in tmp
 		$bed_file = $properties['rsat_tmp']."/".$bed_file_name;
 		$bed_file = str_replace(".bed",$suffix.".bed",$bed_file);
-		if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
+		if(move_uploaded_file($_FILES['bed_file']['tmp_name'], $bed_file)) {
 			$argument .= " --input_peaks $bed_file";
 		} else {
 			error('File upload failed');
