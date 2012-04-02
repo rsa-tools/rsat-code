@@ -588,8 +588,7 @@ class MotifProcessor( Processor):
         
         # Remove the RSAT compare-matrices result dir
         os.chdir( out_path)
-        #TODO: restore folder remove
-        #shutil.rmtree( file_info[0], True)
+        shutil.rmtree( file_info[0], True)
 
     
     
@@ -680,7 +679,8 @@ class MotifProcessor( Processor):
             motifs_to_remove = all_input_motif_to_remove[ alignment]
             if motifs_to_remove != None:
                 for motif in motifs_to_remove:
-                    alignment.motifs.remove( motif)
+                    if motif in alignment.motifs.keys():
+                        alignment.motifs.remove( motif)
         
 
 
@@ -796,7 +796,7 @@ class MotifProcessor( Processor):
                                         output_motif_offset = self.getTokenAsint( motif_dic[ offset_header])
                                         output_motif_length = self.getTokenAsint( motif_dic[ w2_header])
                                         output_motif_name = motif_dic[ id2_header]
-                                        Log.log( "Detected motif = " + output_motif_name)
+                                        Log.info( "Detected motif = " + output_motif_name)
                                         # build the new motif
                                         output_motif = Motif( input_motif.indexStart + output_motif_offset, input_motif.indexStart + output_motif_offset + output_motif_length, output_motif_name, None )
                                         output_motif.consensus = self.removeNoInfoChar( motif_dic[ consensus2_header])
