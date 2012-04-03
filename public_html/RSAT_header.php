@@ -1,18 +1,17 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
 <?php
 if ($result) {
 	$res = " - results";
 	$class = "results";
-	echo '<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">';
+	echo '<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">',"\n";
 } else  {
 	$res = "";
 	$class = "form";
-	echo '<link rel="stylesheet" type="text/css" href="main.css" media="screen,projection,print"/>';
+	echo '<link rel="stylesheet" type="text/css" href="main.css" media="screen,projection,print"/>',"\n";
 }
 ?>
-		<link rel="stylesheet" type="text/css" href="tabs.css" media="screen,projection,print"/>
+<!--  	<link rel="stylesheet" type="text/css" href="tabs.css" media="screen,projection,print"/>-->	
 		<script src="RSAT_menu.js" type="text/javascript"></script>
 		<script src="RSAT_tabs.js" type="text/javascript"></script>
 		<title>RSAT - <?php echo $prog_name, $res; ?></title>
