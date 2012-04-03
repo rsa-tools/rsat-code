@@ -161,8 +161,6 @@ if (!$errors) {
   if ($fs_sequence_url != "") {
     $url = explode("/",$fs_sequence_url);
     $bed_file = end($url);
-    $bed = explode(".",$bed_file);
-    $extension = end($bed);
 
     if ($url[0]=="http:" or $url[0]=='ftp:') {
       $argument .= " -u $fs_sequence_url";
