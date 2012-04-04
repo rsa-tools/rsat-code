@@ -2,7 +2,8 @@
 <head>
 <title>RSAT - Pathway-Extractor</title>
 <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
-   </head>
+
+</head>
    <body class="results" onload="javascript:document.getElementById('hourglass').hidden=true"> 
    <!--div id=hourglass><img src="../images/animated_hourglass.gif" alt="Please Wait!!"></img></div>-->
 <?php
@@ -40,10 +41,17 @@ $cmda = $properties['RSAT'].'/perl-scripts/pathway-extractor';
 $cmdb = $properties['RSAT'].'/perl-scripts/process-pathwayextractor-output';
 $groupdescriptor = uniqid('PathwayExtractor');
 $argumenta = " -v 2";
-$argumenta .= " -d ";
+//$argumenta .= " -d ";
 
 $argumentb = $argumenta;
-$argumenta .= "-gd ". $groupdescriptor;
+if ($fs_directedgraph =="directedgraph") {
+  $argumenta .= " -d ";
+  $argumentb .= " -d ";
+}else{
+  $argumenta .= " -J -Q ";
+}
+
+$argumenta .= "-m 10 -gd ". $groupdescriptor;
 #$exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
 
 ////////////////////////////////////////////////////////////////
