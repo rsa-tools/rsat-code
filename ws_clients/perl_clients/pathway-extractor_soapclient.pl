@@ -7,8 +7,8 @@ use SOAP::Lite
     },
     on_fault => sub { 
 	my($soap, $res) = @_; 
-#      die ref $res ? $res->faultstring : $soap->transport->status, "\n";
-	print "ERROR: ". $soap->transport->status . "\n"
+	die ref $res ? $res->faultstring : $soap->transport->status, "\n";
+# 	print "ERROR: ". $soap->transport->status . "\n"
     }
 #     ,'trace'
     ;
@@ -33,11 +33,11 @@ my $outputdir = $options{o} || "." ;
 
 
 my $soap = SOAP::Lite
-    -> uri("$url/PathwayExtractor_WS")
+    -> uri("$url/RSATWM")
     -> proxy("$url/rsat/web_services/RSATWM.cgi",timeout=>1000);
 
- 
-    my $results=  $soap->infer_pathway("NP_416523.1\tNP_416524.1\tNP_416525.1\tNP_416526.4\tNP_416527.1\tNP_416528.2\tNP_416529.1\tNP_416530.1\tPHOSPHORIBOSYL-ATP","Escherichia_coli_strain_K12-83333-Uniprot","MetaCyc_v141_directed","true"); 
+ my $results=  $soap->infer_pathway({"seeds"=>"hisA\thisB\thisC\thisD\thisF\tPHOSPHORIBOSYL-ATP","organism"=>"Escherichia_coli_K12-83333-Microme","network"=>"MetaCyc_v141_directed","directed"=>"true"}); 
+#     my $results=  $soap->infer_pathway("NP_416523.1\tNP_416524.1\tNP_416525.1\tNP_416526.4\tNP_416527.1\tNP_416528.2\tNP_416529.1\tNP_416530.1\tPHOSPHORIBOSYL-ATP","Escherichia_coli_strain_K12-83333-Uniprot","MetaCyc_v141_directed","true"); 
 #     my $results=  $soap->returnhash();
     
     
@@ -45,9 +45,10 @@ my $soap = SOAP::Lite
     my %resulthash = %{$results->result};
     
     print "Output URL: " . $resulthash{"url"}."\n";
-    print "Output filename: $outputdir/".$resulthash{"filename"}."\n" ;
+   
     if($resulthash{"file"}){
-      open (ZIPFILE, '>'.$outputdir."/".$resulthash{"filename"});
+      print "Output filename: $outputdir/".$resulthash{"filename"}."\n" ;
+      open (ZIPFILE, '>'.$outputdir."/".$resulthash{"filename"}) or die ("unable to create ". $outputdir."/".$resulthash{"filename"}."\n");
       print ZIPFILE $resulthash{"file"};
       close (ZIPFILE);
     }else {
