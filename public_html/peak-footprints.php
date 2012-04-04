@@ -45,21 +45,21 @@ if ($bed_specifications == 0) {
 	$errors = true;
 }
 
-// Check that the transfac has been specified 0 or once.
-$transfac_specifications = 0;
+// Check that the custom_motifs has been specified 0 or once.
+$custom_motifs_specifications = 0;
 
 // Bed data pasted in text area
-if ($pf_transfac != "") {
-	$transfac_specifications++;
+if ($pf_custom_motifs != "") {
+	$custom_motifs_specifications++;
 }
 // Local bed file on client machine
-if ($_FILES["transfac_file"]['name'] != "") {
-	$transfac_specifications++;
+if ($_FILES["custom_motifs_file"]['name'] != "") {
+	$custom_motifs_specifications++;
 }
 
 // Report error if no BED has been specified
-if ($transfac_specifications > 1) {
-	error("The Transfac file can be specified only in 1 way (paste, upload)");
+if ($custom_motifs_specifications > 1) {
+	error("The Custom_Motifs file can be specified only in 1 way (paste, upload)");
 	$errors = true;
 }
 
@@ -172,7 +172,7 @@ if($pf_output =="email") {
 	}
 }
 //////////////////////////////////////////////////////////////////////////////
-//Writing bed/transfac file in tmp
+//Writing bed/custom_motifs file in tmp
 if (!$errors) {
 	$suffix = "_".date("Ymd_His")."_".randchar(3);
 	
@@ -221,16 +221,16 @@ if (!$errors) {
 		}
 	}
 
-	//Transfac data provided in text area
-	if ($pf_transfac != "") {
-		$array_line = explode("\n",$pf_transfac);
-		$transfac_file = $properties['rsat_tmp']."/"."userbed".$suffix.".transfac";
-		$file = fopen ($transfac_file, "w");
-		$no_transfac_line = true;
+	//Custom_Motifs data provided in text area
+	if ($pf_custom_motifs != "") {
+		$array_line = explode("\n",$pf_custom_motifs);
+		$custom_motifs_file = $properties['rsat_tmp']."/"."userbed".$suffix.".transfac";
+		$file = fopen ($custom_motifs_file, "w");
+		$no_custom_motifs_line = true;
 	
 		foreach($array_line as $line) {
 			if (preg_match("/^[\w\-\+\s,\.\#; \/]+$/",$line)) {
-				$no_transfac_line = false;
+				$no_custom_motifs_line = false;
 				fwrite($file, $line."\n");
 			} else {
 				warning (htmlspecialchars($line)." is not a bed line.\n");
@@ -238,23 +238,23 @@ if (!$errors) {
 		}
 		fclose($file);
 	
-		if ($no_transfac_line) {
-			error("All your line are not transfac format");
+		if ($no_custom_motifs_line) {
+			error("All your line are not custom_motifs format");
 			$errors = true;
 		} else {
-			$argument .= " --??? $transfac_file";  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			$argument .= " --??? $custom_motifs_file";  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		}
 	}	
 	
-	// Upload transfac file from client machine
-	if ($_FILES["transfacfile"]['name'] != "") {
-		$transfac_file_name = basename($_FILES['transfacfile']['name']);
+	// Upload custom_motifs file from client machine
+	if ($_FILES["custom_motifs_file"]['name'] != "") {
+		$custom_motifs_file_name = basename($_FILES['custom_motifs_file']['name']);
 	
-		// Move uploaded transfac file in tmp
-		$transfac_file = $properties['rsat_tmp']."/".$transfac_file_name;
-		$transfac_file = str_replace(".transfac",$suffix.".transfac",$transfac_file);
-		if(move_uploaded_file($_FILES['transfacfile']['tmp_name'], $transfac_file)) {
-			$argument .= " --??? $transfac_file";   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		// Move uploaded custom_motifs file in tmp
+		$custom_motifs_file = $properties['rsat_tmp']."/".$custom_motifs_file_name;
+		$custom_motifs_file = str_replace(".custom_motifs",$suffix.".transfac",$custom_motifs_file);
+		if(move_uploaded_file($_FILES['custom_motifs_file']['tmp_name'], $custom_motifs_file)) {
+			$argument .= " --??? $custom_motifs_file";   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		} else {
 			error('File upload failed');
 			$errors = true;
@@ -268,8 +268,8 @@ if (!$errors) {
 	// Specify output file
 	$argument .= " --output ".$properties['rsat_tmp'];
 	$URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
-	if ($transfac_specifications == 1) {
-		$URL['Motif (transfac)'] = rsat_path_to_url($transfac_file);
+	if ($custom_motifs_specifications == 1) {
+		$URL['Custom motifs (transfac format)'] = rsat_path_to_url($custom_motifs_file);
 	}
 
 	// Add arguments to the command

@@ -105,7 +105,7 @@ require ('RSAT_header.php');
 ?>
 		<form method='post' action='peak-footprints.php' enctype='multipart/form-data' onreset="on_reset('species_ali');on_reset('species_ali_keep');" onsubmit="select_all('species_ali_keep')">
 			<fieldset>  
-				<legend><b>??</b></legend>
+				<legend><b>Genomic sequences</b></legend>
 				<p>
 					<b>Genomic coordinates</b> <span style='color:red'>(mandatory)</span>
 					<br/>Should be provided as a bed file (<a target='_blank' href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed format</a>), in any of the two following ways:				
@@ -115,7 +115,7 @@ require ('RSAT_header.php');
 					</ul>
 				</p>
 				<p>
-	        <b>UCSC genome</b> <span style='color:red'>(mandatory)</span>&nbsp;&nbsp;			
+	        <b>Reference genome</b> <span style='color:red'>(mandatory)</span>&nbsp;&nbsp;			
 					<select name="genome" onChange="fill_species_ali(this.options[this.selectedIndex].value,'species_ali','species_ali_keep');">
 						<option value="0">----Choose a genome----</option>								
 <?php
@@ -143,26 +143,25 @@ foreach($multiz_supported as $key => $value) {
 				</p>
 			</fieldset><br/>					
 			<fieldset>
-	        <legend><b>??</b></legend>
+	        <legend><b>Motifs</b></legend>
 				<p>
-				  <b>Reference Motif</b> <span style='color:red'>(mandatory)</span><br/>	
+											  <b>ID of Reference Motif</b> (<span style='color:red'>mandatory, must belong to the motif database</span>, e.g. MA0102.2)<br/>	
 					<input type="text" name="r_motif">
 				</p>
 				<p>
-					<b>Motif TF</b>
-					<br/>Should be provided as a transfac file, in any of the two following ways:				
+											  <b>Custom motif(s)</b>
+					<br/>Should be provided in transfac format, in any of the two following ways:				
 					<ul style="list-style-type:square">
-						<li>Paste coordinates<br/><textarea name='transfac' rows='6' cols='45'></textarea></li>
-						<li>Upload a file from your computer<br/><input type='file' name='transfac_file' id='transfac_file' size='40' /></li>
+						<li>Paste matrices<br/><textarea name='custom_motifs' rows='6' cols='45'></textarea></li>
+						<li>Upload a file from your computer<br/><input type='file' name='custom_motifs_file' id='custom_motifs_file' size='40' /></li>
 					</ul>
 				</p>					
 			</fieldset><br/>
 			
-			<div class="menu_heading_closed" onclick="toggleMenu('101')" id="heading101"><b>Advanced option.</b></div><br/>
+			<div class="menu_heading_closed" onclick="toggleMenu('101')" id="heading101"><b>Advanced options</b></div><br/>
      
 	     <div id="menu101" class="menu_collapsible">
 	       <fieldset>
-	         <legend><b>??</b></legend>
 					<table>
 						<tr><th>Column-wise conservation threshold </th><th><input type="text" size="3" value="0.7" name="cons_thres"></th></tr>
 						<tr><th>Block-wise conservation threshold</th><th><input type="text" size="3" value="0.7" name="window_cons_thres"></th></tr>
