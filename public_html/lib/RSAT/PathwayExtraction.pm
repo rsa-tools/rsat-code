@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.6 2012/03/28 09:57:19 jvanheld Exp $
+# $Id: PathwayExtraction.pm,v 1.7 2012/04/04 14:54:11 rsat Exp $
 #
 ############################################################
 
@@ -287,11 +287,9 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
-   my $query_ids;
-  my @query_id_list;
-   my ($input,
+  my ($input,
        $isinputfile,
        $outputdir,
        $gnnfile,
@@ -311,23 +309,20 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
 #   $infile{nnn} = $nnnfile if ($nnnfile); 
 #   $infile{graph} = $graphfile if ($graphfile);
 #  
- 
+
   if ($isinputfile){
-    ($in) = &RSAT::util::OpenInputFile($input);
-     
-    @query_id_list = <$in>;
-    close $in;
+    ($main::in) = &RSAT::util::OpenInputFile($input);
+    while (<$main::in>) {
+      $input .= $_;
+    }
     #   if no group descriptor use the input file name
     if (!$localgroup_descriptor) {
       $localgroup_descriptor = $input;
       $localgroup_descriptor =~ s{.*/}{};     # removes path
       $localgroup_descriptor=~ s{\.[^.]+$}{}; # removes extension
     }
+    close $main::in;
     
-  }elsif ($input){
-     @query_id_list = split(/[\t\n;\|\r]+/,$input);
-  }else{
-    @query_id_list = <$in>;
   }
 #close $in;
   if (!$localgroup_descriptor) {
@@ -374,47 +369,10 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
   }
   &RSAT::util::CheckOutDir($tempdir);
 
-
-
-  ################################################################
-  ## ECR Mapping
-
-  ## DIDIER: the ECR mapping should be redone with the new program match-names.
-
-  &RSAT::message::TimeWarn("Mapping seeds to reactions") if ($verbose >= 1);
-  chomp(@query_id_list);
-  $query_ids = (join "\$|^",@query_id_list );	# build a query from the input file or stdin
-  &RSAT::message::Info("Query IDs", join("; ", @query_id_list)) if ($verbose >= 3);
-
-  my @ercconversiontable;
-  my %querylist=();
-  ## search into the GEC or GR file to find EC or Reactionid from gene input
-  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$query_ids."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' \"$gnnfile\"";
-
-  &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
-
-  if($gnnfile){
-    my @gnnconversiontable = qx ($seed_converter_cmd) ;
-    chomp(@gnnconversiontable);
-    foreach my $line (@gnnconversiontable){
-      @tempdata = split(/\t/,$line);
-      $query_ids .= "\$|^".$tempdata[0]; # complete the query with id found in gnn file
-    }
+  if (!defined $group_id) {
+    $groupid =$localgroup_descriptor;
   }
-  # search in the ECR file with the complete query this normaly map ec, compound and reaction_id already presenet in the query
-  $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$query_ids."\" {print \$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4}' \"$nnnfile\"";
-   &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
-  my @conversiontable = qx ($seed_converter_cmd) ;
-  chomp(@conversiontable);
-  &RSAT::message::Info("Predicted pathway file\n", join("\n", @conversiontable)) if ($verbose >= 1);
-  
-# getting organism information
-# End of ECR mapping
-################################################################
-  if (! defined $group_id) {
-  $groupid =$localgroup_descriptor;
-  }
-  $groupid=~s/(\s|\(|\))+/_/g;
+    $groupid=~s/(\s|\(|\))+/_/g;
   
   ################################################################
   ## Define output file names
@@ -426,48 +384,22 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
 
   $outfile{predicted_pathway} = $outfile{prefix}.".txt";
   $outfile{seeds_converted} = $outfile{prefix}."_seeds_converted.txt";
+
   ################################################################
-  # Creating reaction file fo pathway inference
-  &RSAT::message::TimeWarn("Creating reaction file for pathway inference") if ($verbose >= 1);
-#  my $outfile{seeds_converted} =$outputdir.(join "_",$localgroup_descriptor,$groupid,$graph, "_converted_seeds.txt");
-  open (MYFILE, '>'.$outfile{seeds_converted});
-  print MYFILE "# Batch file created", &RSAT::util::AlphaDate();
-  print MYFILE "# ECR groups parsed from file:". "\n";
-  print MYFILE "# EC number grouping: true". "\n";
-  my $seednum= 0;
-  my @previousarray;
-  my %conversiontablehash= ();
-  my %compounds = ();
-  foreach my $val (@conversiontable) {
-    @tempdata = split(/\t/,$val);
-    #separating reaction nodes from compound nodes
-    if ($tempdata[2] =~/^compound.*|cpd.*/i){
-      $compounds{$tempdata[1]} = $tempdata[0];
-    }else{
-      my $ECgroup = $conversiontablehash{$tempdata[1]};
-      if($ECgroup){
-       $ECgroup.="_$tempdata[0]";
-      }else{
-       $ECgroup=$tempdata[0];
-      }
-     $conversiontablehash{$tempdata[1]} = $ECgroup;
-    }
-#     @previousarray = @tempdata;
-  }
-  my %invertedconversiontablehash = ();
-#   foreach my ($key,$val) (%conversiontablehash) {
-  while (my ($key, $val) = each(%conversiontablehash)){
-    my $ECgroup = $invertedconversiontablehash{$val};
-    if($ECgroup){
-      push (@{$ECgroup},$key);
-    }else{
-     $ECgroup=[$key];
-    }
-    $invertedconversiontablehash{$val} = $ECgroup;
-   }
-   
+  ## ECR Mapping
+  my $patrial;
+  ## DIDIER: the ECR mapping should be redone with the new program match-names.
+ my $output = &RSAT::PathwayExtraction::MapSeeds($input,$gnnfile,$nnnfile,$patrial,$verbose);
+ my %mappedseeds = %{$output};
+ my $seednum= 0; 
 #processing reaction seeds
-   while (my ($key, $val) = each(%invertedconversiontablehash)){
+&RSAT::message::TimeWarn("building seed file: ",$outfile{seeds_converted}) if ($verbose >= 1);
+  open (MYFILE, '>'.$outfile{seeds_converted});
+  print MYFILE "# Batch file created", &RSAT::util::AlphaDate()."\n";
+  print MYFILE "# ECR groups parsed from file: "."\n";
+  print MYFILE "# EC number grouping: true". "\n";
+
+   while (my ($key, $val) = each(%mappedseeds)){
     foreach my $reaction (@{$val}) {
  
     if ($directed){
@@ -486,10 +418,6 @@ while (my ($cpd, $val) = each(%compounds)){
       print MYFILE "$cpd\t$groupid\n";
       $seednum++;
 }
-   
-
-   
-   
    close MYFILE;
    
    
@@ -538,7 +466,7 @@ while (my ($cpd, $val) = each(%compounds)){
     my $piparameters =" ";
 
     while( my($key, $val) = each(%localotherPIparameters) ) {
-	$piparameters .= "$key $val ";
+	$piparameters .= " $key $val ";
     }
 
     my $pathway_infer_cmd = "java ";
@@ -619,7 +547,7 @@ my ($inputfile,
 #     &RSAT::message::Info("KWALKS_ROOT: ", $ENV{KWALKS_ROOT}) if ($verbose >= 1);
 #     &RSAT::message::Info("CLASSPATH: ",$ENV{CLASSPATH}) if ($verbose >= 1); 
 #     &RSAT::message::TimeWarn("Loading reactions from extracted graph") if ($verbose >= 1);
-    open (INFILE, '<'.$inputfile) or die "couldn't open the file!";
+    open (INFILE, '<'.$inputfile) or die "couldn't open the file!: $inputfile";
     my $i = 0;
     my $stop = "";
     my $line;
@@ -827,232 +755,119 @@ my ($inputfile,
 #   print  $exec_time if ($verbose); ## only report exec time if verbosity is specified
  
 }
+sub MapSeeds{
+
+  ################################################################
+  ## Initialise parameters
+  #
+  local $start_time = &RSAT::util::StartScript();
+  $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+   my $query_ids;
+  my @query_id_list;
+   my ($input,
+       $gnnfile,
+       $nnnfile,
+       $partial,
+       $verbose) = @_;
+
+#   if the parameters comes from the function use those one
+#   $dir{output} = $outputdir if ($outputdir);    
+#   $dir{temp} = $tempdir if ($tempdir);
+#   $infile{gnn} = $gnnfile if ($gnnfile);
+#   $infile{nnn} = $nnnfile if ($nnnfile); 
+#   $infile{graph} = $graphfile if ($graphfile);
+#  
+  @query_id_list = split(/[\t\n;\|\r|\n|\t]+/,$input);
+
+  ################################################################
+  ## Print verbose
+#   &Verbose() if ($verbose);
+
+  ################################################################
+  ## ECR Mapping
+
+  ## DIDIER: the ECR mapping should be redone with the new program match-names.
+
+  &RSAT::message::TimeWarn("Mapping seeds to reactions") if ($verbose >= 1);
+  chomp(@query_id_list);
+  
+# $query_ids = (join "\$|^",@query_id_list );	# build a query from the input file or stdin
+  my $separator = "\$|^";
+  if ($partial){
+    $separator = "|";
+    	# build a query from the input file or stdin
+  }
+  
+  $query_ids = (join $separator,@query_id_list );
+  &RSAT::message::Info("Query IDs", join("; ", @query_id_list)) if ($verbose >= 3);
+
+  my @ercconversiontable;
+  my %querylist=();
+  ## search into the GEC or GR file to find EC or Reactionid from gene input
+  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"".$query_ids."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' \"$gnnfile\"";
+
+  &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
+
+  if($gnnfile){
+    my @gnnconversiontable = qx ($seed_converter_cmd) ;
+    chomp(@gnnconversiontable);
+    foreach my $line (@gnnconversiontable){
+      @tempdata = split(/\t/,$line);
+      $query_ids .= $separator.$tempdata[0]; # complete the query with id found in gnn file
+    }
+  }
+  # search in the ECR file with the complete query this normaly map ec, compound and reaction_id already presenet in the query
+  $seed_converter_cmd = "awk -F'\\t+' '\$1~\"^".$query_ids."\" {print \$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4}' \"$nnnfile\"";
+   &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
+  my @conversiontable = qx ($seed_converter_cmd) ;
+  chomp(@conversiontable);
+  &RSAT::message::Info("Mapped seeds\n", join("\n", @conversiontable)) if ($verbose >= 1);
+  
+# getting organism information
+# End of ECR mapping
 ################################################################
-################### SUBROUTINE DEFINITION ######################
 ################################################################
+# preparing output data
+  &RSAT::message::TimeWarn("Creating reaction file for pathway inference") if ($verbose >= 1);
+#  my $outfile{seeds_converted} =$outputdir.(join "_",$localgroup_descriptor,$groupid,$graph, "_converted_seeds.txt");
+  my $seednum= 0;
+  my @previousarray;
+  my %conversiontablehash= ();
+  my %compounds = ();
+  foreach my $val (@conversiontable) {
+    @tempdata = split(/\t/,$val);
+    #separating reaction nodes from compound nodes
+    if ($tempdata[2] =~/^compound.*|cpd.*/i){
+      $compounds{$tempdata[1]} = $tempdata[0];
+    }else{
+      my $ECgroup = $conversiontablehash{$tempdata[1]};
+      if($ECgroup){
+       $ECgroup.="_$tempdata[0]";
+      }else{
+       $ECgroup=$tempdata[0];
+      }
+     $conversiontablehash{$tempdata[1]} = $ECgroup;
+    }
+#     @previousarray = @tempdata;
+  }
+  my %invertedconversiontablehash = ();
+#   foreach my ($key,$val) (%conversiontablehash) {
+  while (my ($key, $val) = each(%conversiontablehash)){
 
+    my $ECgroup = $invertedconversiontablehash{$val};
+    if($ECgroup){
+      push (@{$ECgroup},$key);
+    }else{
+     $ECgroup=[$key];
+    }
+    $invertedconversiontablehash{$val} = $ECgroup;
+#      &RSAT::message::Info("$val:\n", join("\t", @{$ECgroup})) if ($verbose >= 1);
+    $seednum++;
+   }
+   
+return \%invertedconversiontablehash; 
 
-
-# ################################################################
-# ## Display full help message
-# sub PrintHelp {
-#   system "pod2text -c $0";
-#   exit()
-# }
-# 
-# ################################################################
-# ## Display short help message
-# sub PrintOptions {
-#   &PrintHelp();
-# }
-# 
-# ################################################################
-# ## Read arguments
-# sub ReadArguments {
-#   my $arg;
-#   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-#   while (scalar(@arguments) >= 1) {
-#     $arg = shift (@arguments);
-#     ## Verbosity
-# 
-# =pod
-# 
-# =head1 OPTIONS
-# 
-# =over 4
-# 
-# =item B<-v>
-# 
-# Verbose mode
-# 
-# =cut
-#     if ($arg eq "-v") {
-#       if (&RSAT::util::IsNatural($arguments[0])) {
-# 	$verbose = shift(@arguments);
-#       } else {
-# 	$verbose = 1;
-#       }
-# 
-# 
-# =pod
-# 
-# =item B<-h>
-# 
-# Display full help message
-# 
-# =cut
-#     } elsif ($arg eq "-h") {
-#       &PrintHelp();
-# 
-# 
-# =pod
-# 
-# =item B<-help>
-# 
-# Same as -h
-# 
-# =cut
-#     } elsif ($arg eq "-help") {
-#       &PrintOptions();
-# 
-# =pod
-# 
-# =item B<-hp>
-# 
-# Display full PathwayInference help message
-# 
-# =cut
-#     } elsif ($arg eq "-hp") {
-#       system("java graphtools.algorithms.Pathwayinference -h");
-#       print "\n";
-#       exit(0);
-# 
-# =pod
-# 
-# =item B<-show>
-# 
-# execute gwenview to display the pathway results in png format
-# 
-# =cut
-#     } elsif ($arg eq "-show") {
-#      $show = 1;
-# 
-# =pod
-# 
-# =item B<-i inputfile>
-# 
-# If no input file is specified, the standard input is used.  This
-# allows to use the command within a pipe.
-# 
-# =cut
-#     } elsif ($arg eq "-i") {
-#       $infile{input} = shift(@arguments);
-# 
-# =pod
-# 
-# =item	B<-gnn GE Genes file>
-# 
-# Gene -> EC (GE) annotation file.
-# 
-# =cut
-#     } elsif ($arg eq "-gnn") {
-#       $infile{gnn} = shift(@arguments);
-# =pod
-# 
-# =item	B<-nnn ECR file>
-# 
-# EC -> REACTION and COUMPOUNDS (ECR) annotation file.
-# 
-# =cut
-#     } elsif ($arg eq "-nnn") {
-#       $infile{nnn} = shift(@arguments);      
-# # =item	B<-b GR Gene -> REACTION annotation>
-# #
-# # An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
-# #
-# #
-# # =pod
-# #
-# # =cut
-# #     } elsif ($arg eq "-b") {
-# #       $outfile{gr} = shift(@arguments);
-# 
-# # =pod
-# 
-# # =item	B<-n Graph name>
-# #
-# # Name of the Graph (default: Name of the graph file).
-# #
-# # =cut
-# #     } elsif ($arg eq "-n") {
-# #       $graph = shift(@arguments);
-# #
-# 
-# =pod
-# 
-# =item	B<-gd group descriptor>
-# 
-# ??? (Check with Didier)
-# 
-# =cut
-#     } elsif ($arg eq "-gd") {
-#       $group_descriptor = shift(@arguments);
-# 
-# 
-# =pod
-# 
-# =item	B<-d Unique descriptor>
-# 
-# Unique name to differenciate output files. If not set With -i, the name of the input file will be used.
-# 
-# =cut
-#     } elsif ($arg eq "-g") {
-#       $infile{graph} = shift(@arguments);
-# 
-# =pod
-# 
-# =item	B<-o output Directory>
-# 
-# If no output file is specified, the current directory is used.
-# 
-# =cut
-#     } elsif ($arg eq "-o") {
-#       $dir{output} = shift(@arguments);
-# 
-# =pod
-# 
-# =item	B<-p temp Directory>
-# 
-# If no output file is specified, the current directory is used.
-# 
-# =cut
-#     } elsif ($arg eq "-p") {
-#       $dir{temp} = shift(@arguments);
-# =pod
-# 
-# =item	B<Pathway inference arguments>
-# 
-# =cut
-#       
-#     } elsif (grep(/$arg/ ,@pioptions)) { #if Pathway inference option add it to hash
-#       $otherPIoptions{$arg}= shift(@arguments);
-# #       $dir{temp} = shift(@arguments);
-#     } else {
-#       
-#        &FatalError(join("\t", "Invalid pathway_extractor option", $arg));
-# 
-#     }
-#   }
-# #GetOptionsFromArray(\@arguments,\%localotherPIparameters)
-# #getopts("CnHf:b:q:O:E:a:y:p:F:Z:m:w:t:l:T:W:P:e:d:u:x:k:U:B:r:D:M:I:N:G:X:A:K:S:R:j:J:Q:L:Y:v:h:V:o:p:g:i:g:",\%localotherPIparameters);
-# #&FatalError(join("\t", "Invalid pathway_extractor option", $ARGV[0])) if $ARGV[0];
-#       
-# =pod
-# 
-# =back
-# 
-# =cut
-# 
-# }
-# ################################################################
-# ## Verbose message
-# sub Verbose {
-#     print $out "; template ";
-#     &RSAT::util::PrintArguments($out);
-#     printf $out "; %-22s\t%s\n", "Program version", $program_version;
-#     if (%infile) {
-# 	print $out "; Input files\n";
-# 	while (my ($key,$value) = each %infile) {
-# 	  printf $out ";\t%-13s\t%s\n", $key, $value;
-# 	}
-#     }
-#     if (%outfile) {
-# 	print $out "; Output files\n";
-# 	while (my ($key,$value) = each %outfile) {
-# 	  printf $out ";\t%-13s\t%s\n", $key, $value;
-# 	}
-#     }
-# }
-
+}
 
 __END__
