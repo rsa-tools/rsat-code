@@ -12,6 +12,7 @@
 				document.getElementById('gnn').value = 'Escherichia_coli_strain_K12-83333-Uniprot'; 
 				document.getElementById('network').value = 'MetaCyc_v141_directed'; 	
 				document.getElementById('seeds').innerHTML="NP_416523.1\nNP_416524.1\nNP_416525.1\nNP_416526.4\nNP_416527.1\nNP_416528.2\nNP_416529.1\nNP_416530.1";
+				document.getElementById('directedgraph').checked=true;
 			}
 	</script>												
 <?php
@@ -55,7 +56,7 @@ UpdateLogFile("rsat","","");
 ?>
         </select><br/><br/>
 <legend><b>Select a Network</b></legend>    
-         <b>Netwoks </b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
+         <b>Networks </b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
           <select name='network' id='network'>
            <option value ='none'> ---Networks--- </option>
 <?php
@@ -71,6 +72,7 @@ UpdateLogFile("rsat","","");
    
 ?>
         </select><br/><br/>
+        <b>Directed Graph</b>&nbsp;<input type="checkbox" name="directedgraph" id="directedgraph" value="directedgraph" checked /> <BR>
     <p>
 	  <b><a href='help.pathway-extractor.html#input_format'>input format</a></b> <font color='red'>(mandatory)</font>
 	  <br/>should be provided as a bed file (<a target='_blank'
