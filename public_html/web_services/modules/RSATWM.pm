@@ -41,11 +41,11 @@ use Cwd 'abs_path';
   ## Web service for the pathway inference tool
   ##########################################
   sub infer_pathway {
-#   ############################DEBUG CODE####################
-#    return SOAP::Data->name('response' => {'response' => "r",'bfilename' => "o",'cfile' => "a"});
-#   ############################################
-    my $directed ="true";
-  return "RSATPATH: $ENV{RSAT}\nREA_ROOT: $ENV{REA_ROOT}\nKWALKS_ROOT: $ENV{KWALKS_ROOT}\nCLASSPATH:  $ENV{CLASSPATH}\n";
+  
+#    return SOAP::Data->name('response' => {'url' => "r",'filename' => "o",'file' => "a",'response'=>"myresponse"});
+# return {'url' => "r",'filename' => "o",'file' => "a",'response' => "a"};
+#     my $directed ="true";
+#   return "RSATPATH: $ENV{RSAT}\nREA_ROOT: $ENV{REA_ROOT}\nKWALKS_ROOT: $ENV{KWALKS_ROOT}\nCLASSPATH:  $ENV{CLASSPATH}\n";
     my ($class, $args_ref) = @_;
     my %args = %{$args_ref};
     my $seeds = $args{"seeds"};
@@ -58,12 +58,16 @@ use Cwd 'abs_path';
     my $outputurl = $ENV{rsat_ws_tmp};
     
          # build random id for file uniqueness
-      my $filename;
-      my (undef, $file) =  File::Temp::tempfile('XXXXXXXXX', OPEN=>0);
-      $file = "PathwayExtractorWS$file";#fileprefix
+    my $filename;
+    my (undef, $file) =  File::Temp::tempfile('XXXXXXXXX', OPEN=>0);
+    $file = "PathwayExtractorWS$file";#fileprefix
  
-    
-    open(STDERR,">","$outputdir/$file.log");
+    $outputdir.= $file."/";
+    $outputurl.= $file."/";
+    &RSAT::util::CheckOutDir($outputdir);
+    open(STDERR,">","$outputdir/stderr.log");
+    print STDERR "OUTPUTDIR: ". $outputdir."\n";
+#     open(STDERR,">","$outputdir/$file.log");
     
     # get directory from network
     my $neworkfilepattern= $network;
@@ -124,7 +128,7 @@ use Cwd 'abs_path';
       print STDERR qx($cmd)."\n";
 
     my $filename = $file."_results.zip";
-    my $fileurl = "$outputurl/$filename";
+    my $fileurl = "$outputurl"."$filename";
     open RESFILE, "<$outputdir/$filename";
     my $resultfile =  do { local $/; <RESFILE> };
     close (RESFILE);
