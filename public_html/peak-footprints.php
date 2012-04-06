@@ -252,7 +252,7 @@ if (!$errors) {
 	
 		// Move uploaded custom_motifs file in tmp
 		$custom_motifs_file = $properties['rsat_tmp']."/".$custom_motifs_file_name;
-		$custom_motifs_file = str_replace(".custom_motifs",$suffix.".transfac",$custom_motifs_file);
+		$custom_motifs_file = str_replace(".transfac",$suffix.".transfac",$custom_motifs_file);
 		if(move_uploaded_file($_FILES['custom_motifs_file']['tmp_name'], $custom_motifs_file)) {
 			$argument .= " --??? $custom_motifs_file";   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		} else {
