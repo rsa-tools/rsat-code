@@ -1,6 +1,7 @@
-; This file describes the fiels containing position-specific scoring
-;  matrices (PSSM) used to compare discovered motifs with those
-;  annotated in public databases.
+; This file describes the files containing collection of curated
+;  position-specific scoring matrices (PSSM) used by the tools
+;  compare-matrices and peak-motifs, in order to compare discovered
+;  motifs with those bound by known transcription factors.
 ;
 ; Column description
 ; 	 1	DB_NAME	Database name
@@ -19,6 +20,6 @@ jaspar_pbm_mouse	tf	JASPAR/jaspar_pbm_mouse_2009_10.tf	JASPAR PBM (UNIPROBE) Mou
 jaspar_pbm-homeo_mouse	tf	JASPAR/jaspar_pbm-homeo_mouse_2009_10.tf	JASPAR PBM (UNIPROBE) Homeo Mouse	2009_10
 jaspar_pbm-hlh_nematode	tf	JASPAR/jaspar_pbm-hlh_nematode_2009_10.tf	JASPAR PBM (UNIPROBE) HLH Nematode	2009_10
 FlyFactorSurvey	tf	FlyFactorSurvey/PWM_FlyFactorSurvey.tf	Drosophila FlyFactorSurvey	2011_06
-DMMPMM_drosophila	tf	DMMPMM_drosophila/dmmpmm_PCM.tf	Drosophila DMMPMM (http://line.imb.ac.ru/DMMPMM/)	2010_11
-IDMMPMM_drosophila	tf	DMMPMM_drosophila/idmmpmm_PCM.tf	Drosophila IDMMPMM (http://line.imb.ac.ru/DMMPMM/)	2010_11
+DMMPMM_drosophila	tf	DMMPMM_drosophila/dmmpmm_PCM.tf	Drosophila DMMPMM (http://autosome.ru/DMMPMM/)	2010_11
+IDMMPMM_drosophila	tf	DMMPMM_drosophila/idmmpmm_PCM.tf	Drosophila IDMMPMM (http://autosome.ru/DMMPMM/)	2010_11
 regulonDB	tf	REGULONDB/regulonDB_dec2010.tf	RegulonDB prokaryotes	2010_12
