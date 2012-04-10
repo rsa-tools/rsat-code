@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.7 2012/04/04 14:54:11 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.8 2012/04/10 15:02:11 rsat Exp $
 #
 ############################################################
 
@@ -287,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
   my ($input,
        $isinputfile,
@@ -761,7 +761,7 @@ sub MapSeeds{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -870,4 +870,195 @@ return \%invertedconversiontablehash;
 
 }
 
+sub QueryExactMetabNames{
+
+  ################################################################
+  ## Initialise parameters
+  #
+  local $start_time = &RSAT::util::StartScript();
+  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+   my $query_ids;
+  my @query_id_list;
+   my ($input,
+       $gnnfile,
+       $nnnfile,
+       $partial,
+       $verbose) = @_;
+
+#   if the parameters comes from the function use those one
+#   $dir{output} = $outputdir if ($outputdir);    
+#   $dir{temp} = $tempdir if ($tempdir);
+#   $infile{gnn} = $gnnfile if ($gnnfile);
+#   $infile{nnn} = $nnnfile if ($nnnfile); 
+#   $infile{graph} = $graphfile if ($graphfile);
+#  
+  @query_id_list = split(/[\t\n;\|\r|\n|\t]+/,$input);
+  my @filteredlist =();
+  foreach my $val (@query_id_list){
+    push @filteredlist,$val if (length($val) > 2); 
+  }
+  @query_id_list = @query_id_list;
+
+  ################################################################
+  ## Print verbose
+#   &Verbose() if ($verbose);
+
+  ################################################################
+  ## ECR Mapping
+
+  ## DIDIER: the ECR mapping should be redone with the new program match-names.
+
+  &RSAT::message::TimeWarn("Searching info") if ($verbose >= 1);
+  chomp(@query_id_list);
+  
+# $query_ids = (join "\$|^",@query_id_list );	# build a query from the input file or stdin
+  my $separator = "\$|^";
+  my $start = "^";
+  my $end = "\$";
+  if ($partial){
+    $separator = "|";
+    $start="";
+    $end="";
+    	# build a query from the input file or stdin
+  }
+  
+  $query_ids = (join $separator,@query_id_list );
+  &RSAT::message::Info("Query IDs", join("; ", @query_id_list)) if ($verbose >= 3);
+  if ($partial){
+    $separator = "|";
+    	# build a query from the input file or stdin
+  }
+  my @gnnconversiontable;
+  my %querylist=();
+  ## search into the GEC or GR file to find EC or Reactionid from gene input
+  my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"$start".$query_ids."$end\" {print \$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4}' \"$gnnfile\"";
+
+  &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
+
+  if($gnnfile){
+    @gnnconversiontable = qx ($seed_converter_cmd) ;
+    chomp(@gnnconversiontable);
+    my $addedquery;
+    foreach my $line (@gnnconversiontable){
+      @tempdata = split(/\t/,$line);
+      $addedquery .= "|^".$tempdata[1]."\$"; # complete the query with id found in gnn file
+    }
+    
+    $query_ids .= $addedquery;
+  }
+  # search in the ECR file with the complete query this normaly map ec, compound and reaction_id already presenet in the query
+  $seed_converter_cmd = "awk -F'\\t+' '\$1~\"$start".$query_ids."$end\" {print \$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4}' \"$nnnfile\"";
+   &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
+  my @nnnconversiontable = qx ($seed_converter_cmd) ;
+  chomp(@nnnconversiontable);
+  &RSAT::message::Info("Mapped seeds\n", join("\n", @nnnconversiontable)) if ($verbose >= 1);
+  
+  my @conversiontable = @nnnconversiontable;
+  @conversiontable = (@gnnconversiontable, @nnnconversiontable) if (@gnnconversiontable);
+#   return join("\n", @conversiontable);
+# getting organism information
+# End of ECR mapping
+################################################################
+################################################################
+# preparing output data
+  &RSAT::message::TimeWarn("Creating reaction file for pathway inference") if ($verbose >= 1);
+
+  my $seednum= 0;
+  my @previousarray;
+  our %nnnconversiontablehash= ();
+  my %compounds = ();
+  foreach my $val (@nnnconversiontable) {
+    @tempdata = split(/\t/,$val);
+    #separating reaction nodes from compound nodes
+
+   
+     my $ECgroupref= $nnnconversiontablehash{$tempdata[0]};
+     if($ECgroupref){
+#       &RSAT::message::Info("ECgroupREFF ",$ECgroupref) if ($verbose >= 2);
+#       &RSAT::message::Info("ECgroupBB ", $tempdata[0], $ECgroupref {"reactions"}) if ($verbose >= 2);
+      $nnnconversiontablehash {$tempdata[0]} {"ids"}.=", $tempdata[1]" if (!($nnnconversiontablehash {$tempdata[0]} {"ids"}=~m/$tempdata[1]/));
+      if ($tempdata[3]){
+	$nnnconversiontablehash {$tempdata[0]} {"name"}.= ", $tempdata[3]";
+      }
+    }else{
+	my %ECgroup=();
+	$ECgroup{"ids"} = $tempdata[1];
+	$ECgroup{"type"} = $tempdata[2];
+      if($tempdata[3]){
+	 $ECgroup{"name"} = $tempdata[3];
+      }else{
+	 $ECgroup{"name"} = $tempdata[1];
+      }
+        $nnnconversiontablehash{$tempdata[0]} = \%ECgroup; 
+        
+    }
+      &RSAT::message::Info("ECgroupA ", $tempdata[0],$nnnconversiontablehash {$tempdata[0]} {"ids"}) if ($verbose >= 2);
+  }
+  
+#    my $testret = "";
+#    
+#    while (my($key, $val) = each(%nnnconversiontablehash)) { 
+#      $testret .= $key ." | ". join("; ", @{$val})."\n" if ($val);
+#    
+#    }
+#    
+#   &RSAT::message::Info("TESTRETURN", $testret) if ($verbose >= 2);
+  my $return = "";
+  my @todelete =();
+  foreach my $val (@gnnconversiontable) {
+	my @tempdata = split(/\t/,$val);
+	my $genemapping = $nnnconversiontablehash{"$tempdata[1]"};
+	if ($genemapping){
+	  my %hashreac = %{$genemapping};
+	  $return .=  $tempdata[0]."\t".$tempdata[1]."\t".$hashreac{"ids"}."\t".$tempdata[2]."\t".$hashreac{"name"}."\n";
+	  push (@todelete,  $tempdata[1]); 
+	  
+	}else {
+	  &RSAT::message::Info("EC? ", $tempdata[1]) if ($verbose >= 2);
+	}
+  }
+  # delete gnn mapping
+  foreach my $gnn (@todelete){
+      delete $nnnconversiontablehash{$gnn};
+  }
+    while (my($key, $val) = each(%nnnconversiontablehash)) {
+     my %hashreac = %{$val};
+     $return .=  $key."\tNA\t".$hashreac{"ids"}."\t".$hashreac{"type"}."\t".$hashreac{"name"}."\n";
+   } 
+  
+  
+  
+ &RSAT::message::Info("ret? ", $return) if ($verbose >= 2);
+
+
+
+
+# foreach my $val (@nnnconversiontable) {
+# 	my @tempdata = split(/\t/,$val);
+# # 	if ($tempdata[2] =~/^compound.*|cpd.*/i){
+# 	 $return .= $val."\n"   
+# # 	}
+#   }
+return $return."\n";
+
+
+#   my %invertedconversiontablehash = ();
+# #   foreach my ($key,$val) (%conversiontablehash) {
+#   while (my ($key, $val) = each(%conversiontablehash)){
+# 
+#     my $ECgroup = $invertedconversiontablehash{$val};
+#     if($ECgroup){
+#       push (@{$ECgroup},$key);
+#     }else{
+#      $ECgroup=[$key];
+#     }
+#     $invertedconversiontablehash{$val} = $ECgroup;
+# #      &RSAT::message::Info("$val:\n", join("\t", @{$ECgroup})) if ($verbose >= 1);
+#     $seednum++;
+#    }
+#    
+# return \%invertedconversiontablehash; 
+
+}
 __END__
