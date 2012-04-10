@@ -10,7 +10,8 @@
     <script type="text/javascript">
 			function add_demo() {
 				document.getElementById('gnn').value = 'Escherichia_coli_strain_K12-83333-Uniprot'; 
-				document.getElementById('network').value = 'MetaCyc_v141_directed'; 	
+				document.getElementById('network').value = 'MetaCyc_v141_directed';
+				document.getElementById('seeds').innerHTML=""; 	
 				document.getElementById('seeds').innerHTML="NP_416523.1\nNP_416524.1\nNP_416525.1\nNP_416526.4\nNP_416527.1\nNP_416528.2\nNP_416529.1\nNP_416530.1";
 				document.getElementById('directedgraph').checked=true;
 			}
@@ -33,7 +34,7 @@ UpdateLogFile("rsat","","");
     <div>
       <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSA-tools</a> - Pathway Extractor</h3>
       <br/>
-      <form method='post' action='pathway-extractor.php' enctype='multipart/form-data'>
+      <form method='post' action='pathway-extractor_seeds.php' enctype='multipart/form-data'>
 
         <fieldset>  
          <legend><b>Select a Genome</b></legend>    
@@ -72,15 +73,14 @@ UpdateLogFile("rsat","","");
    
 ?>
         </select><br/><br/>
-        <b>Directed Graph</b>&nbsp;<input type="checkbox" name="directedgraph" id="directedgraph" value="directedgraph" checked /> <BR>
+        <b>Directed Network</b>&nbsp;<input type="checkbox" name="directedgraph" id="directedgraph" value="directedgraph" checked /> <BR>
     <p>
-	  <b><a href='help.pathway-extractor.html#input_format'>input format</a></b> <font color='red'>(mandatory)</font>
-	  <br/>should be provided as a bed file (<a target='_blank'
-	  href='http://genome.metab.edu/FAQ/FAQformat.html#format1'>bed
-	  format</a>), in any of the three following ways:
+    <legend><b>Provide seeds</b></legend> 
+	  <b>Genes,Compounds,ECs,Reactions</b> <font color='red'>(mandatory)</font>
+	  <br/>Minimun seed size 2 characters
 
-	  <ul type='square'>
-	    <li>Genes,Compounds,ECs,Reactions<br/>
+	  <ul type='none'>
+	    <li>
 	          <textarea name='seeds' id='seeds'rows='6' cols='45'></textarea>
        	</li>
 
