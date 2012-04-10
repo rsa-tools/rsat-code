@@ -96,13 +96,19 @@ if($fs_output =="email") {
 // Check that the BED has been specified once and only once
 
 // Bed data pasted in text area
-#$fs_seeds = $_POST["seeds"];
-
-if ($fs_seeds = "") {
+if (count($_POST["seeds"]) == 0) {
   error( "No seeds!");
   $errors=1;
  }else {
-  $mystring = preg_replace( "#\r\n|\r|\t#", "\n", $_POST["seeds"] );
+ 	
+  //$mystring = preg_replace( "#\r\n|\r|\t#", "\n", $_POST["seeds"] );
+ 	$mystring =""; 
+  foreach( $_POST["seeds"] as $key=>$val){
+//  		info($key."=>".$val);
+  		$mystring.=str_replace(',', "\n", $val)."\n";
+  }
+  
+//  info("SEEDS:".$mystring);
   #$array_line = explode("\n",$fs_seeds);
   $seed_file = $outputdir."/".$groupdescriptor."_seeds.tab";
   $file = fopen($seed_file, "w");
