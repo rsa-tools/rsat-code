@@ -1,0 +1,275 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+NAME
+		%(progname)s
+
+VERSION
+		%(version)s
+
+CATEGORY
+		genome   
+        
+DESCRIPTION
+		Downlod ucsc multiz alignement
+        
+USAGE
+		download-ucsc-multiz  [-org ORG1 [ORG2....] | -org_file org_file.txt [-multiz]] [-v] [-index] [-h]
+        
+		Exemple 
+			download-ucsc-multiz -org mm8 mm9 hg19
+            
+OPTIONS
+		-h, --help		show this help and exit
+		-v #		verbosity
+		-org #		list of organism seperate with a white space
+		-org_file #	file contening all organism with only one organism by line
+		-multiz		download all multiz available for a organisme. By default, only the wildest is download
+		-nogunzip	Not uncompressed maf
+		-index		index the maf file.
+'''
+
+
+#############################################################################################################	
+##import
+import os
+import sys
+import argparse
+import re
+import subprocess
+import time
+
+
+#############################################################################################################	
+##read arguments
+parser = argparse.ArgumentParser(add_help=0)
+parser.add_argument('-org', action="store",default=False, nargs='+', dest="org")
+parser.add_argument('-org_file', action="store",default=False, dest="org_file")
+parser.add_argument('-multiz', action="store_true", default=False, dest="multiz")
+parser.add_argument('-nogunzip', action="store_true", default=False, dest="no_gunzip")
+parser.add_argument("-index", action="store_true", default=False, dest="index")
+parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
+parser.add_argument("-h", "--help", action="store_true", dest="help")
+args = parser.parse_args()
+
+if args.help:
+	print  globals()['__doc__'] % {'version' : '1.00', 'progname' : parser.prog}
+	sys.exit(0)
+	
+if args.org and args.org_file:
+	print 'You indicate organism -org and -org_file. You can only use one option for specify organism'
+ 	sys.exit(1)
+ 	
+##Define variable
+rsat_path = os.getenv('RSAT')
+lang = os.getenv('LANG').split("_")[0]
+peak_footprints_path = rsat_path+"/contrib/peak-footprints/"
+maf_path = peak_footprints_path+"maf"
+fetch_maf_list_name = peak_footprints_path+"fetch_maf_list.txt"
+num_month= {'jan' : '01', 'fév':'02', 'mar':'03', 'avr':'04', 'mai':'05', 'jui':'06', 'jul' :'07', 'aou':'08', 'sep':'09', 'oct':'10', 'nov':'11', 'dec':'12', 'Jan':'01', 'Feb':'02', 'Mar':'03', 'Apr':'04', 'May':'05', 'Jun':'06', 'Jul':'07', 'Aug':'08', 'Sep':'09', 'Oct':'10', 'Nov':'11', 'Dec':'12'}
+
+
+
+#############################################################################################################		
+##Get all maf.gz available (or wanted if -org_file option is used) on UCSC
+if args.verbosity > 0:
+	print "Getting UCSC maf list"
+	
+cmd = 'rsync -navP rsync://hgdownload.cse.ucsc.edu/goldenPath/ 2>&1 | grep "multiz" | grep "maf.gz" | grep -v upstream | grep -v _'
+if args.org_file != False:
+	cmd += ' | grep -f '+args.org_file
+cmd += "| awk '{print $3,$NF}' > "+fetch_maf_list_name
+
+if args.verbosity > 1:
+	print "\tCommand : ",cmd
+
+subprocess.check_call(cmd, shell=True)
+
+if args.verbosity > 1:
+	print "\tFile : "+fetch_maf_list_name+" as been created"
+
+	
+#############################################################################################################		
+##Get RSAT download maf
+
+cmd = "ls -lR "+ maf_path+" | grep -v '\.gz$' | grep -v '\.mafindex$' | grep -v '^d' | grep -v 'total' | awk '{print $6,$7,$8,$NF}'"
+
+if args.verbosity > 0:
+	print "\nGetting RSAT maf list"
+	if args.verbosity > 1:
+		print "\tCommand : ",cmd
+
+already_download_maf = subprocess.check_output(cmd, shell=True)
+already_download_maf = already_download_maf[4:-1].split('\n   \n')
+
+already_download_maf_formated = []
+for maf in already_download_maf:
+	maf = maf.split("\n")
+
+	if len(maf)>=2: #not treating directory with no file
+		path = maf[0].lstrip().rstrip(":").replace(maf_path,"").lstrip("/")+"/"
+
+		for info in maf[1:]:
+			info = info.split(" ")
+
+			if lang == "fr":
+				if len(info[0]) == 1:
+					day = '0'+str(info[0])
+				else : 
+					day = str(info[0])
+
+				month = num_month[info[1]]
+				
+				if ":" in info[2]:
+					year = time.strftime('%Y',time.localtime())
+				else:
+					year = info[2]
+			else:
+				if len(info[1]) == 1:
+					day = '0'+str(info[1])
+				else : 
+					day = str(info[1])
+
+				month = num_month[info[0]]
+				
+				if ":" in info[2]:
+					year = time.strftime('%Y',time.localtime())
+				else:
+					year = info[2]
+
+			date = year+"/"+month+"/"+day
+			already_download_maf_formated.append(date+" "+path+info[3]+".gz")
+		
+already_download_maf = already_download_maf_formated
+
+
+#############################################################################################################		
+##Treating File
+if args.verbosity > 0:
+	print "\nTreating UCSC maf list"
+	
+file = open(fetch_maf_list_name, 'r')
+maf_list = []
+org_dico = {}
+exp_reg = ('multiz(\d+)way')
+exp_reg = re.compile(exp_reg)	
+
+line = file.readline()
+while line != "":
+	line = line.rstrip("\n")
+	
+	date,maf = line.split(" ")
+	org = maf.split("/")[0]
+	multiz = maf.split("/")[1]
+
+	if org not in org_dico:
+		org_dico[org] = []
+
+	if multiz not in org_dico[org]:
+		org_dico[org].append(multiz)
+		
+		##keeping only the widest multiz for each species
+		if not args.multiz and len(org_dico[org])>1 :
+			result = []
+			for multiz in org_dico[org]:
+				result.append(int(exp_reg.findall(multiz)[0]))
+			org_dico[org] = ["multiz"+str(max(result))+"way"]	
+					
+	maf_list.append(line)
+	line = file.readline()	
+		
+file.close()
+
+##Rewriting fetch_maf_list
+file = open(fetch_maf_list_name, 'w')
+maf_to_download = []
+for maf_info in maf_list:
+	date, maf = maf_info.split()
+	org = maf.split("/")[0] 
+	multiz = maf.split("/")[1]
+	
+	##Keep org paste in argument
+	if args.org != False:
+		wanted = org in args.org
+	else:
+		wanted = True
+
+	##Keep widest multiz or all multiz
+	if args.multiz:
+		widest_multiz = True
+	else :
+		widest_multiz= multiz == org_dico[org][0]	
+
+	##Keep not downloaded maf
+	not_downloaded = date+" "+maf not in already_download_maf
+
+	if wanted and not_downloaded and widest_multiz:			
+			file.write(maf+"\n")
+			maf_to_download.append(maf)
+			
+file.close()
+
+if args.verbosity > 1:
+	print "\t"+fetch_maf_list_name+" as been rewrited"
+
+
+#############################################################################################################	
+##launch donwload
+if len(maf_list) > 0: #no need to rsync if nothing to download
+	if args.verbosity > 0:
+		print "\nStart Downloading"
+	subprocess.check_call('rsync -avP --files-from='+fetch_maf_list_name+' rsync://hgdownload.cse.ucsc.edu/goldenPath/  '+maf_path, shell=True)
+else:
+	if args.verbosity > 0:
+		print "\nNothing to download (wrong requested organism  or not new maf"
+	
+
+#############################################################################################################	
+##gunzip file
+if not args.no_gunzip:
+	
+	total_gz = len(maf_to_download)	
+	
+	if args.verbosity > 0:
+		print "\nStart uncompressed maf"
+		print "\tMaf to uncompressed "+str(total_gz)
+	
+	for maf in maf_to_download:
+		
+		if args.verbosity > 0:
+			print "\tStart Uncompressed "+maf_path+"/"+maf,"\t",
+		subprocess.check_call('gunzip '+ maf_path+"/"+maf, shell=True)
+		total_gz = total_gz -1
+		if args.verbosity > 0:
+			print "--> Finish. Maf left to uncompressed :"+str(total_gz)
+
+#############################################################################################################	
+##index file
+if args.verbosity > 0:
+	print "\nStart indexed maf"
+
+##Get path to maf to index
+download_maf_directory = []
+for maf in maf_list:
+	directory = maf_path+"/"+("/").join(maf.split("/")[:-1])
+	species_ref = maf.split("/")[0]
+	
+	if (species_ref, directory) not in download_maf_directory:
+		download_maf_directory.append((species_ref, directory))
+		
+##Writing xml to index
+xml_indexer ="""<?xml version="1.0" encoding="UTF-8"?>
+
+<pipelines>
+""" 
+for need_index_maf in download_maf_directory:
+	species_ref, directory = need_index_maf
+	xml_template = open(peak_footprints_path+"template_indexer_pipeline.xml", 'r').read()
+	xml_indexer = xml_indexer + xml_template %(species_ref, directory, species_ref)
+xml_indexer = xml_indexer + "\n</pipelines>"
+open(peak_footprints_path+"indexer_pipeline.xml", 'w').write(xml_indexer)
+
+##Launch index
+subprocess.check_call("python "+ peak_footprints_path +"peak-footprints --pipeline "+ peak_footprints_path+"indexer_pipeline.xml", shell=True)
+
+
