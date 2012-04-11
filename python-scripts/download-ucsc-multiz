@@ -215,13 +215,13 @@ if args.verbosity > 1:
 
 #############################################################################################################	
 ##launch donwload
-if len(maf_list) > 0: #no need to rsync if nothing to download
+if len(maf_to_download) > 0: #no need to rsync if nothing to download
 	if args.verbosity > 0:
 		print "\nStart Downloading"
 	subprocess.check_call('rsync -avP --files-from='+fetch_maf_list_name+' rsync://hgdownload.cse.ucsc.edu/goldenPath/  '+maf_path, shell=True)
 else:
 	if args.verbosity > 0:
-		print "\nNothing to download (wrong requested organism  or not new maf"
+		print "\nNothing to download (wrong requested organism or no new maf)"
 		sys.exit(2)
 
 #############################################################################################################	
