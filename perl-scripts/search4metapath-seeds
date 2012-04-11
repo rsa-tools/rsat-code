@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: search4metapath-seeds,v 1.1 2012/04/11 14:40:00 rsat Exp $
+# $Id: search4metapath-seeds,v 1.2 2012/04/11 14:46:19 rsat Exp $
 #
 ############################################################
 
@@ -9,18 +9,17 @@
 
 =pod
 
-=head1 Extract Pathway from gene list
+=head1 Search for seeds mapping
 
 =head1 VERSION 1.0
 
 =head1 DESCRIPTION
 
 This tools maps input stringd to node id. 
-1. Gene to reaction mapping. Identify the set of reactions ("seed
-reactions") catalyzed by the set of input genes ("seed genes"). The
+1. Seed to node mapping. Identify the set of nodes ("seeds") of the network. The
 mapping relies on a user-specified file describing the mapping of
 genes to reactions (GNN and NNN, Gene-Node Name and Network Node
-Name<>NodeID file).
+Name<>NodeID file). The mapping can be partial or exact
 
 
 
@@ -38,7 +37,7 @@ Graph tool
 
 =head1 USAGE
 
-convert2metapathseeds -h [-i inputfile] [-o output_file] [-v verbosity] -a gene2ec -b ec/rxn/cpd2rxnid/cpdid
+search4metapath-seeds -h [-i inputfile] [-o output_file] [-v verbosity] [-p] -gnn geneecmapping -nnn ec/rxnid//cpdid
 
 =head1 INPUT FORMAT
 
@@ -69,7 +68,7 @@ These files are used for the reaction ids/compound ids to gene annotation (backw
 10-DEOXYSARPAGINE       10-DEOXYSARPAGINE       compounds       10-deoxysarpagine
  ...
 
-=head3 Gene to Node Names (gnn) file (option I<-gnn>)
+=head3 Seed to Node Names (gnn) file (option I<-gnn>)
 
 not mandatory, in this cas the queyr file or stdin must contains only Node Names.
 
