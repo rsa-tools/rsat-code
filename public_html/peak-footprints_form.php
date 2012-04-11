@@ -166,8 +166,8 @@ foreach($multiz_supported as $key => $value) {
 						<tr><th>Column-wise conservation threshold </th><th><input type="text" size="3" value="0.7" name="cons_thres"></th></tr>
 						<tr><th>Block-wise conservation threshold</th><th><input type="text" size="3" value="0.7" name="window_cons_thres"></th></tr>
 						<tr><th>Initial sliding window size</th><th><input type="text" size="3" value="5" name="window_size"></th></tr>
-						<tr><th>Maximum number of motif reported</th><th><input type="text" size="3" value="50" name="motif_number"></th></tr>
-						<tr><th>Maximum number of motif reported by family</th><th><input type="text" size="3" value="4" name="motif_number_family"></th></tr>																														
+						<tr><th>Maximum number of reported motifs</th><th><input type="text" size="3" value="50" name="motif_number"></th></tr>
+						<tr><th>Maximum number of reported motifs per family</th><th><input type="text" size="3" value="4" name="motif_number_family"></th></tr>																														
 					</table>
 	       </fieldset>
 	     </div>
