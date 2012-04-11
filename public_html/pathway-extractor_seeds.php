@@ -6,8 +6,9 @@
 <script language="javascript" type="text/javascript" src="TableFilter/tablefilter_all_min.js"></script>
 <script src="TableFilter/sortabletable.js" language="javascript" type="text/javascript"></script>
 <script src="TableFilter/tfAdapter.sortabletable.js" language="javascript" type="text/javascript"></script>
+<script src="pathwayextractor.js" language="javascript" type="text/javascript"></script>
 <script language="javascript" type="text/javascript">
-var seedstableFilters = {
+var table3Filters = {
 		sort: true,
 		sort_config: { sort_types:['String', 'string', 'None', 'none', 'None'] },
 		on_keyup: true,
@@ -24,7 +25,7 @@ var seedstableFilters = {
 		col_width: ['120px','80px','250px',null,'250px'],
 		popup_filters: true
 }
-var table3Filters = {  
+var seedstableFilters = {  
         sort: true,
         sort_config: { sort_types:['none', 'string', 'string', 'string', 'string', 'string'] },
 		col_0: "none",  
@@ -34,16 +35,20 @@ var table3Filters = {
 		on_keyup: true,
 		on_keyup_delay: 1000,
 		highlight_keywords: true,        
-       alternate_rows: true
+       alternate_rows: true,
+       help_instructions_html:'<ul><li>Click on column header for sorting</li><li>Click on <img alt="Column filter" src="TableFilter/TF_Themes/icn_filter.gif"> for filtering</li><li>Click on <img alt="Reset filter" src="TableFilter/TF_Themes/btn_clear_filters.png"> to reset the filters</li><li> Click on \'Select all\' to select all visible seeds</li></ul>'
 //        grid_width: '900px'
     }  
 function init(){
 //	alert("coucou");
 	//document.getElementById('hourglass').hidden="true";
-	var theseedstable = new TF("seedstable",1,table3Filters);  
-	 theseedstable.AddGrid();  
+	var theseedstable = new TF("seedstable",1,seedstableFilters);  
+	theseedstable.AddGrid();
+	var elem = document.getElementById("inf_seedstable");
+//	var content="<a class=\"Button\" href=\"javascript:selectAllVisiblecb('chkID',0);\">Select All</a>&nbsp<a class=\"Button\" href=\"javascript:selectAllVisiblecb('chkID',1 );\">Inverse All</a>";
+//	elem.innerHTML="<div id='myleftdiv' class='ldiv'>"+content+"</div>"+elem.innerHTML;  
 }
-function enum_formforseeds(form)
+function buildarrayforseeds(form)
 { 	var max=form.elements.length;
 	
 	var elements = document.getElementsByTagName("TABLE");
@@ -63,7 +68,6 @@ function enum_formforseeds(form)
 	if (j++>0) return true;
 	
 }
-
 function addHiddenArrayInputElement(form,name,suffix,value) {
 	  var newelem = document.createElement('input');
 	  newelem.setAttribute('name',name+"["+suffix+"]");
@@ -72,15 +76,32 @@ function addHiddenArrayInputElement(form,name,suffix,value) {
 	  newelem.setAttribute('value',value);
 	  form.appendChild(newelem);
 
-	}
-function selectallpathways(val){
-	//for(var i=0; i < exparray.length;i++ ){
-		//selectAllcb("pathway",val);
-		selectAllVisiblecb("??",val);
-	//}
 }
+function enum_formforseeds(form)
+{
+	var max=form.elements.length;
+	var seeds="";
+	for (var i=0;i<max;i++) {
+		temp=form.elements[i];
+		if (temp.name=="chkIDS" && temp.checked) {
+			seeds+=temp.value + ";";
+		}
+	}
+	return seeds;
+}
+
 function submitSel(){
 	document.forms['actionForm'].submit();
+}
+
+function setChecked(e,b){
+    for(var i=0; i<e.length; i++)
+            e[i].checked = b
+}
+
+function toggleChecked(e){
+    for(var i=0; i<e.length; i++)
+            e[i].checked = !e[i].checked
 }
 </script>
 </head>
@@ -194,10 +215,14 @@ $str = rtrim($ouput_content);
 //class=sortable 
 
 ?>
-<form method='post' action='pathway-extractor.php' enctype='multipart/form-data' onSubmit="return enum_formforseeds(this);">
+<form method='post' action='pathway-extractor.php' enctype='multipart/form-data' onSubmit="return buildarrayforseeds(this);">
 <!--input type=hidden id="seeds" name="seeds[]" value=""-->
 <?php
-echo converttab2table ($str,"name=id=seedstable id=seedstable");
+echo converttab2table ($str,"name=seedstable id=seedstable");
+?>
+<a class="Button" href="javascript:selectAllVisiblecb('chkID',0);">Select All</a>
+<a class="Button" href="javascript:selectAllVisiblecb('chkID',1 );">Inverse All</a><BR><BR>
+<?php 
 echo "<hr>"; 
 $req = array_merge($_GET, $_POST);
 foreach($req as $key=>$val)
@@ -208,21 +233,6 @@ foreach($req as $key=>$val)
   	}
   }
 }      
-
-  
-  //Display pipe
-  /*
-  echo ('   <table class = "nextstep">
-    <tr><th>next step</th></tr>
-    <tr><td align=center>
-	    <form method="post" action="peak-motifs_form.cgi">
-	    <input type="hidden" name="title" value="'.str_replace('.bed', '', end(explode('/',$bed_file))).'">
-	    <input type="hidden" name="sequence_url1" value="'.rsat_path_to_url($output_file).'">
-	    <input type="submit" value="peak-motif">
-	    </form></td>
-	  </tr>
-	  </table>');  
-	  */
 }	
 
 ?>
