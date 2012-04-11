@@ -47,7 +47,7 @@ parser.add_argument('-org', action="store",default=False, nargs='+', dest="org")
 parser.add_argument('-org_file', action="store",default=False, dest="org_file")
 parser.add_argument('-multiz', action="store_true", default=False, dest="multiz")
 parser.add_argument('-nogunzip', action="store_true", default=False, dest="no_gunzip")
-parser.add_argument("-index", action="store_true", default=False, dest="index")
+parser.add_argument("-noindex", action="store_true", default=False, dest="no_index")
 parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
 parser.add_argument("-h", "--help", action="store_true", dest="help")
 args = parser.parse_args()
@@ -123,7 +123,7 @@ for maf in already_download_maf:
 				if ":" in info[2]:
 					year = time.strftime('%Y',time.localtime())
 				else:
-					year = info[2]
+					year = str(info[2])
 			else:
 				if len(info[1]) == 1:
 					day = '0'+str(info[1])
@@ -135,7 +135,7 @@ for maf in already_download_maf:
 				if ":" in info[2]:
 					year = time.strftime('%Y',time.localtime())
 				else:
-					year = info[2]
+					year = str(info[2])
 
 			date = year+"/"+month+"/"+day
 			already_download_maf_formated.append(date+" "+path+info[3]+".gz")
@@ -222,7 +222,7 @@ if len(maf_list) > 0: #no need to rsync if nothing to download
 else:
 	if args.verbosity > 0:
 		print "\nNothing to download (wrong requested organism  or not new maf"
-	
+		sys.exit(2)
 
 #############################################################################################################	
 ##gunzip file
@@ -237,39 +237,41 @@ if not args.no_gunzip:
 	for maf in maf_to_download:
 		
 		if args.verbosity > 0:
-			print "\tStart Uncompressed "+maf_path+"/"+maf,"\t",
+			print "\tUncompressed "+maf_path+"/"+maf,"\t",
 		subprocess.check_call('gunzip '+ maf_path+"/"+maf, shell=True)
 		total_gz = total_gz -1
 		if args.verbosity > 0:
-			print "--> Finish. Maf left to uncompressed :"+str(total_gz)
+			print "Maf left to uncompressed :"+str(total_gz)
 
 #############################################################################################################	
 ##index file
-if args.verbosity > 0:
-	print "\nStart indexed maf"
+if not args.no_index:
+	if args.verbosity > 0:
+		print "\nStart indexed maf"
 
-##Get path to maf to index
-download_maf_directory = []
-for maf in maf_list:
-	directory = maf_path+"/"+("/").join(maf.split("/")[:-1])
-	species_ref = maf.split("/")[0]
-	
-	if (species_ref, directory) not in download_maf_directory:
-		download_maf_directory.append((species_ref, directory))
-		
-##Writing xml to index
-xml_indexer ="""<?xml version="1.0" encoding="UTF-8"?>
+	##DEfine indexer 
+	xml_indexer_begin ='''<?xml version="1.0" encoding="UTF-8"?>
 
-<pipelines>
-""" 
-for need_index_maf in download_maf_directory:
-	species_ref, directory = need_index_maf
-	xml_template = open(peak_footprints_path+"template_indexer_pipeline.xml", 'r').read()
-	xml_indexer = xml_indexer + xml_template %(species_ref, directory, species_ref)
-xml_indexer = xml_indexer + "\n</pipelines>"
-open(peak_footprints_path+"indexer_pipeline.xml", 'w').write(xml_indexer)
+	<pipelines>
+	'''
+	xml_indexer_template = open(peak_footprints_path+"template_indexer_pipeline.xml", 'r').read()
+	xml_indexer_end = "</pipelines>"
 
-##Launch index
-subprocess.check_call("python "+ peak_footprints_path +"peak-footprints --pipeline "+ peak_footprints_path+"indexer_pipeline.xml", shell=True)
+
+	##Get path to maf to index
+	download_maf_directory = []
+
+	xml_indexer = xml_indexer_begin
+	for maf in maf_to_download:
+		directory = maf_path+"/"+maf[:-3]
+		species_ref = maf.split("/")[0]
+
+		xml_indexer += xml_indexer_template %(species_ref, directory, species_ref)
+
+	xml_indexer += xml_indexer_end
+	open(peak_footprints_path+"indexer_pipeline.xml", 'w').write(xml_indexer)
+
+	##Launch index
+	subprocess.check_call("python "+ peak_footprints_path +"peak-footprints --pipeline "+ peak_footprints_path+"indexer_pipeline.xml", shell=True)
 
 
