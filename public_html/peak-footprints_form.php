@@ -163,11 +163,11 @@ foreach($multiz_supported as $key => $value) {
 	     <div id="menu101" class="menu_collapsible">
 	       <fieldset>
 					<table>
-						<tr><th>Column-wise conservation threshold </th><th><input type="text" size="3" value="0.7" name="cons_thres"></th></tr>
-						<tr><th>Block-wise conservation threshold</th><th><input type="text" size="3" value="0.7" name="window_cons_thres"></th></tr>
-						<tr><th>Initial sliding window size</th><th><input type="text" size="3" value="5" name="window_size"></th></tr>
-						<tr><th>Maximum number of reported motifs</th><th><input type="text" size="3" value="50" name="motif_number"></th></tr>
-						<tr><th>Maximum number of reported motifs per family</th><th><input type="text" size="3" value="4" name="motif_number_family"></th></tr>																														
+											  <tr><th>Column-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="cons_thres"></th></tr>
+											  <tr><th>Block-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="window_cons_thres"></th></tr>
+																	  <tr><th>Initial sliding window size (>1)</th><th><input type="text" size="3" value="5" name="window_size"></th></tr>
+																	  <tr><th>Maximum number of reported motifs (>1)</th><th><input type="text" size="3" value="50" name="motif_number"></th></tr>
+																	  <tr><th>Maximum number of reported motifs per family (>= 1)</th><th><input type="text" size="3" value="4" name="motif_number_family"></th></tr>																													
 					</table>
 	       </fieldset>
 	     </div>
