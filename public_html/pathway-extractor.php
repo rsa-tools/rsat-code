@@ -84,6 +84,26 @@ if ($fs_network == "none" or $fs_network == "" ) {
   $argumenta .= " -nnn ".$networknodenames ." -g " . $networkfile;
   $argumentb .= " -nnn ".$networknodenames;
 }
+if ($fs_algorithm){
+ 	$argumenta .= " -a $fs_algorithm";
+}
+if ($fs_preproc){
+ 	$argumenta .= " -P";
+}
+if ($fs_postproc){
+ 	$argumenta .= " -C";
+}
+if ($fs_iter){
+ 	$argumenta .= " -I ".$fs_iter;
+}
+if ($fs_percentage){
+ 	$argumenta .= " -x ".$fs_percentage;
+}
+if ($fs_kwalksweight){
+ 	$argumenta .= " -k true";
+}
+$argumenta .= " -T pathsUnion -u";
+
 //Check syntax of email address (ensure the texte netered in email box was an email address)
 if($fs_output =="email") {
   if (!preg_match("#^[\wàáâãäåæçèéêëìíîïðñòóôõöøùúûüý._\-]+@([a-z]+.)+[a-z]{2,4}$#", $fs_user_email)) {
@@ -116,6 +136,7 @@ if (count($_POST["seeds"]) == 0) {
     fclose($file);
     $argumenta .= " -i $seed_file";
  }
+ 
 
 $argumenta .= " -o $outputdir";
 
