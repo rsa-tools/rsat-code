@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.32 2012/03/28 09:32:43 jvanheld Exp $
+# $Id: pathway-extractor,v 1.33 2012/04/11 14:38:12 rsat Exp $
 #
 ############################################################
 
@@ -236,7 +236,8 @@ package main;
   #other pathwayinference otptions : specific opions that will be directly pass to the java pathway inference app
   our @pioptions=('-s','-i','-g','-f','-b','-n','-q','-o','-O','-E','-a','-y','-p','-F','-Z','-m','-w','-t',
 		  '-l','-T','-W','-P','-C','-e','-d','-u','-x','-k','-U','-B','-r','-D','-M','-I','-N','-G',
-		  '-H','-X','-A','-K','-S','-R','-j','-J','-Q','-L','-Y','-v','-h','-V'); 
+		  '-H','-X','-A','-K','-S','-R','-j','-J','-Q','-L','-Y','-v','-h','-V');
+  our @piflags=('-n','-q','-C','-P','-d','-u','-k','-U','-B','-r','-D','-M','-H','-R','-j','-J','-Q','-L','-Y','-v','-h','-V'); 	   
   our %otherPIoptions=();
    ## Input/output files
   our %infile = ();	     # input file names container
@@ -477,7 +478,11 @@ If no output file is specified, the current directory is used.
 =cut
       
     } elsif (grep(/$arg/ ,@pioptions)) { #if Pathway inference option add it to hash
-      $otherPIoptions{$arg}= shift(@arguments);
+      if (grep(/$arg/ ,@piflags)){
+	$otherPIoptions{$arg}= " ";
+      }else{
+      	$otherPIoptions{$arg}= shift(@arguments);
+      }
 #       $dir{temp} = shift(@arguments);
     } else {
       
