@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.9 2012/04/12 13:34:18 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.10 2012/04/12 19:36:26 rsat Exp $
 #
 ############################################################
 
@@ -287,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
   my ($input,
        $isinputfile,
@@ -312,6 +312,7 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
 
   if ($isinputfile){
     ($main::in) = &RSAT::util::OpenInputFile($input);
+    $input="";
     while (<$main::in>) {
       $input .= $_;
     }
@@ -389,8 +390,10 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
   ## ECR Mapping
   my $patrial;
   ## DIDIER: the ECR mapping should be redone with the new program match-names.
- my $output = &RSAT::PathwayExtraction::MapSeeds($input,$gnnfile,$nnnfile,$patrial,$verbose);
- my %mappedseeds = %{$output};
+ my ($rxnoutput,$cpdoutput) = &RSAT::PathwayExtraction::MapSeeds($input,$gnnfile,$nnnfile,$patrial,$verbose);
+ my %mappedseeds = %{$rxnoutput};
+ my %compounds = %{$cpdoutput};
+ 
  my $seednum= 0; 
 #processing reaction seeds
 &RSAT::message::TimeWarn("building seed file: ",$outfile{seeds_converted}) if ($verbose >= 1);
@@ -415,7 +418,8 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
 # processing compound seeds   
 while (my ($cpd, $val) = each(%compounds)){
 #       print MYFILE $cpd ."\t".$cpd. "\n";
-      print MYFILE "$cpd\t$groupid\n";
+      print MYFILE "$cpd\t$cpd\n";
+      print STDERR "ERROR:$cpd\t$cpd\n";
       $seednum++;
 }
    close MYFILE;
@@ -762,7 +766,7 @@ sub MapSeeds{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -867,7 +871,7 @@ sub MapSeeds{
     $seednum++;
    }
    
-return \%invertedconversiontablehash; 
+return \%invertedconversiontablehash,\%compounds; 
 
 }
 
@@ -877,7 +881,7 @@ sub QueryExactMetabNames{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
