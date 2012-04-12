@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.8 2012/04/10 15:02:11 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.9 2012/04/12 13:34:18 rsat Exp $
 #
 ############################################################
 
@@ -287,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
   my ($input,
        $isinputfile,
@@ -452,8 +452,8 @@ while (my ($cpd, $val) = each(%compounds)){
     # Running PatywayInference
     &RSAT::message::TimeWarn("Running pathway inference with ", $seednum, "seeds") if ($verbose >= 1);
 #    $outfile{predicted_pathway} =$outputdir.(join "_",$localgroup_descriptor, $groupid, $graph, "_pred_pathways.txt");
-    our $minpathlength = $otherPIoptions{"-m"} || "5";
-    delete($otherPIoptions{"-m"});
+    #our $maxbetweennodelength = $otherPIoptions{"-m"} || "5";
+    #delete($otherPIoptions{"-m"});
     our $graphfileformat = $otherPIoptions{"-f"} || "flat";
     delete($otherPIoptions{"-f"});
     our $weightpolicy= $otherPIoptions{"-y"} || "con";
@@ -475,7 +475,8 @@ while (my ($cpd, $val) = each(%compounds)){
     $pathway_infer_cmd .= " -i ".$outfile{seeds_converted};
     $pathway_infer_cmd .= " -A ".$ENV{REA_ROOT};
     $pathway_infer_cmd .= " -K ".$ENV{KWALKS_ROOT};
-    $pathway_infer_cmd .= " -m $minpathlength -C -f $graphfileformat";
+    #$pathway_infer_cmd .= " -m $maxbetweennodelength -C";
+    $pathway_infer_cmd .= " -f $graphfileformat";
     $pathway_infer_cmd .= " -p $tempdir";
     $pathway_infer_cmd .= " -E $outputdir";
     $pathway_infer_cmd .= " -b";
@@ -761,7 +762,7 @@ sub MapSeeds{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -876,7 +877,7 @@ sub QueryExactMetabNames{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
