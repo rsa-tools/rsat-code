@@ -679,7 +679,7 @@ class MotifProcessor( Processor):
             motifs_to_remove = all_input_motif_to_remove[ alignment]
             if motifs_to_remove != None:
                 for motif in motifs_to_remove:
-                    if motif in alignment.motifs.keys():
+                    if motif in alignment.motifs:
                         alignment.motifs.remove( motif)
         
 
