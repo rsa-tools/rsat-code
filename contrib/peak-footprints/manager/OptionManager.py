@@ -22,8 +22,9 @@
 
 ## BlockProcessor
 #   WindowSize : the size of the window used to parse the sequences when searching conserved blocks
-#   ConservationLimit : the ratio limit to consider a block is conserved
-#   DesiredSpeciesList (optionnal): the list of species used in the multiple alignement to research conserved blocks
+#   ResiduConservationLimit : the ratio limit to consider a residu is conserved
+#   WindowConservationLimit : the ratio limit to consider a block is conserved
+#   DesiredSpeciesList (optional): the list of species used in the multiple alignement to research conserved blocks
 #   Algorithm : the chosen algorithm. Could be "OccurenceRatio", "InformationRatio" or "null". null mean that the whole
 #               peak region is considered as a unique conserved region
 
@@ -33,12 +34,15 @@
 #       MotifDatabasePath : the path to the motifs files
 #       MotifDatabaseFileList : list of the name of the motif files to be used as comparison
 #       MotifDatabaseFormatList : list of the format of the motif files listed in the MotifDatabaseFileList parameter (one to one)
+#       CustomMotifDatabaseFile (optional) : path to the motif database file provided by the user
+#       CustomMotifDatabaseFormat (optional) : format of the motif database file provided by the user
 #       DesiredSpeciesList (optional): the species to take into account in the multiple alignments
 #       CorrelationLimit (optional) : the selection minimum threshold of the normalized correlation between reference and query motif (float number beetween 0 and 1)
 #       CommandOptions (optional) : specify option to pass to the compare-matrices command
 #   For method "TOMTOM":
 #       MotifDatabasePath : the path to the motifs files
 #       MotifDatabaseFileList : list of the name of the motif files to be used as comparison
+#       CustomMotifDatabaseFile (optional) : path to the motif database file provided by the user
 #       DesiredSpeciesList (optional): the species to take into account in the multiple alignments
 #       CommandOptions (optional) : specify option to pass to the TOMTOM command
 
@@ -69,7 +73,11 @@
 #   ScoreMax : the maximum value the score can reach
 
 ## FinalOutputProcessor
-# No parameters
+#   MotifDatabasePath : the path to the motifs db files
+#   MotifDatabaseFileList : list of the name of the motif db files to be used to produce motif logo
+#   CustomMotifDatabaseFile (optional) : path to the motif database file provided by the user
+#   DisplayLimitValue : the limit value of the hypergeometric P-value above which an identified motif is not added in the
+#                        final result
 
 from processor.BEDProcessor import BEDProcessor
 from processor.MAFProcessor import MAFProcessor
@@ -78,6 +86,8 @@ from processor.MotifProcessor import MotifProcessor
 from processor.HistogramProcessor import HistogramProcessor
 from processor.CoLocationAnalysisProcessor import CoLocationAnalysisProcessor
 from processor.BEDOutputProcessor import BEDOutputProcessor
+from processor.FinalOutputProcessor import FinalOutputProcessor
+from processor.ClassificationProcessor import ClassificationProcessor
 
 class OptionManager:
 
@@ -85,9 +95,16 @@ class OptionManager:
     REF_SPECIES = "ref_species"
     ALIGN_SPECIES = "align_species"
     DB_ROOT_PATH = "db_root_path"
-    DB_FILE_LIST =  "db_file_list"
+    DB_FILE_LIST = "db_file_list"
     DB_FORMAT_LIST = "db_format_list"
+    CUSTO_DB_FILE_PATH = "custo_db_file_path"
     REF_MOTIF = "ref_motif"
+    WINDOW_SIZE = "window_size"
+    RESIDU_CONSERVATION_LIMIT = "conservation_threshold"
+    WINDOW_CONSERVATION_LIMIT = "window_conservation_threshold"
+    MAX_MOTIF_NUMBER = "max_motif_number"
+    MAX_MOTIF_BY_FAMILY = "max_motif_by_family"
+    PEAK_NUMBER = "peak_number"
 
     PIPELINE = "pipeline"   ## RESERVE THE LETTER p
     OUTPUT = "output"       ## RESERVE THE LETTER o
@@ -105,7 +122,7 @@ class OptionManager:
     
             for opt, arg in opts:
                 
-                # Remove the dashed at the beginningof the option tag
+                # Remove the dashed at the beginning of the option tag
                 while opt[0] == "-":
                     opt = opt[1:]
                 
@@ -113,8 +130,12 @@ class OptionManager:
                 if opt == OptionManager.INPUT_PEAKS:
                     OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.INPUT_BED_FILE_PARAM, arg)
                 
+                # Add the value of the number of peaks taken into account
+                elif opt == OptionManager.PEAK_NUMBER:
+                    OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.PEAK_NUMBER, arg)
+                
                 # Add the reference species
-                if opt == OptionManager.REF_SPECIES:
+                elif opt == OptionManager.REF_SPECIES:
                     OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.REFERENCE_SPECIES_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.REFERENCE_SPECIES_PARAM, arg)
                     OptionManager.extendParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.INPUT_MAF_FILE_PARAM, arg)
@@ -122,29 +143,56 @@ class OptionManager:
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.REFERENCE_SPECIES_PARAM, arg)
        
                 # Add the list of species to be aligned with the reference one
-                if opt == OptionManager.ALIGN_SPECIES:
+                elif opt == OptionManager.ALIGN_SPECIES:
                     OptionManager.addParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.DESIRED_SPECIES_LIST_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.BlockProcessor.BlockProcessor", BlockProcessor.DESIRED_SPECIES_LIST_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.DESIRED_SPECIES_LIST_PARAM, arg)
                 
                 # Add root path to the TF databases
-                if opt == OptionManager.DB_ROOT_PATH:
+                elif opt == OptionManager.DB_ROOT_PATH:
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.MOTIF_DATABASE_PATH_PARAM, arg)
+                    OptionManager.addParam( pipeline, "processor.FinalOutputProcessor.FinalOutputProcessor", FinalOutputProcessor.MOTIF_DATABASE_PATH_PARAM, arg)
                 
                 # Add TF databases file name list (names could contains missing path pieces from root path)
-                if opt == OptionManager.DB_FILE_LIST:
+                elif opt == OptionManager.DB_FILE_LIST:
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM, arg)
+                    OptionManager.addParam( pipeline, "processor.FinalOutputProcessor.FinalOutputProcessor", FinalOutputProcessor.MOTIF_DATABASE_FILE_LIST_PARAM, arg)
                 
                 # Add TF databases format list
-                if opt == OptionManager.DB_FORMAT_LIST:
+                elif opt == OptionManager.DB_FORMAT_LIST:
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM, arg)
+                    #OptionManager.addParam( pipeline, "processor.FinalOutputProcessor.FinalOutputProcessor", FinalOutputProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM, arg)
+                
+                # Add Custom TF database file path
+                elif opt == OptionManager.CUSTO_DB_FILE_PATH:
+                    OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.CUSTOM_MOTIF_DATABASE_FILE_PARAM, arg)
+                    OptionManager.addParam( pipeline, "processor.FinalOutputProcessor.FinalOutputProcessor", FinalOutputProcessor.CUSTOM_MOTIF_DATABASE_FILE_PARAM, arg)
                 
                 # Add reference motif
-                if opt == OptionManager.REF_MOTIF:
+                elif opt == OptionManager.REF_MOTIF:
                     OptionManager.addParam( pipeline, "processor.HistogramProcessor.HistogramProcessor", HistogramProcessor.REFERENCE_MOTIF, arg)
                     OptionManager.addParam( pipeline, "processor.CoLocationAnalysisProcessor.CoLocationAnalysisProcessor", CoLocationAnalysisProcessor.REFERENCE_MOTIF_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.BEDOutputProcessor.BEDOutputProcessor", BEDOutputProcessor.REFERENCE_MOTIF, arg)
 
+                # Add the initial size of the sliding window used for conservation detection
+                elif opt == OptionManager.WINDOW_SIZE:
+                    OptionManager.addParam( pipeline, "processor.BlockProcessor.BlockProcessor", BlockProcessor.WINDOW_SIZE_PARAM, arg)
+                    
+                # Add the value of the threshold indicating if a residue is conserved
+                elif opt == OptionManager.RESIDU_CONSERVATION_LIMIT:
+                    OptionManager.addParam( pipeline, "processor.BlockProcessor.BlockProcessor", BlockProcessor.RESIDU_CONSERVATION_LIMIT_PARAM, arg)
+                
+                # Add the value of the threshold indicating if a block is conserved
+                elif opt == OptionManager.WINDOW_CONSERVATION_LIMIT:
+                    OptionManager.addParam( pipeline, "processor.BlockProcessor.BlockProcessor", BlockProcessor.WINDOW_CONSERVATION_LIMIT_PARAM, arg)
+                    
+                # Add the maximal number of motif finally reported
+                elif opt == OptionManager.MAX_MOTIF_NUMBER:
+                    OptionManager.addParam( pipeline, "processor.ClassificationProcessor.ClassificationProcessor", ClassificationProcessor.MAX_MOTIF_NUMBER, arg)
+                    
+                # Add the maximal number of motif reported in each motif family
+                elif opt == OptionManager.MAX_MOTIF_BY_FAMILY:
+                    OptionManager.addParam( pipeline, "processor.ClassificationProcessor.ClassificationProcessor", ClassificationProcessor.MAX_MOTIF_BY_FAMILY, arg)
 
 
 

@@ -30,14 +30,21 @@ def main( argv):
     listening_path = None
 
     try:
-        long_options = [ OptionManager.INPUT_PEAKS + "=",\
+        long_options = [ OptionManager.PIPELINE + "=",\
+                         OptionManager.INPUT_PEAKS + "=",\
                          OptionManager.REF_SPECIES + "=",\
                          OptionManager.ALIGN_SPECIES + "=",\
+                         OptionManager.REF_MOTIF + "=",\
+                         OptionManager.PEAK_NUMBER + "=",\
                          OptionManager.DB_ROOT_PATH + "=",\
                          OptionManager.DB_FILE_LIST + "=",\
                          OptionManager.DB_FORMAT_LIST + "=",\
-                         OptionManager.REF_MOTIF + "=",\
-                         OptionManager.PIPELINE + "=",\
+                         OptionManager.CUSTO_DB_FILE_PATH + "=",\
+                         OptionManager.WINDOW_SIZE + "=",\
+                         OptionManager.RESIDU_CONSERVATION_LIMIT + "=",\
+                         OptionManager.WINDOW_CONSERVATION_LIMIT + "=",\
+                         OptionManager.MAX_MOTIF_NUMBER + "=",\
+                         OptionManager.MAX_MOTIF_BY_FAMILY + "=",\
                          OptionManager.VERBOSITY + "=",\
                          OptionManager.OUTPUT + "=",\
                          OptionManager.FORCE,\
@@ -136,7 +143,7 @@ def usage():
     
     print "Command : peak-footprints"
     print ""
-    print " Required options : "
+    print " Standard options : "
     print " -------------------"
     print ""
     print " --pipeline \t: the path to the XML file describing the pipeline to execute."
@@ -147,16 +154,23 @@ def usage():
     print ""
     print ' example: peak-footprints --pipeline "/data/pipeline/default.xml" --input_peaks "/data/bed/experience_1.bed" --ref_species mm8 --align_species "hg18 rn4 BosTau3" --ref_motif MA0102.2'
     print ""
-    print " Other options : "
-    print " ----------------"
+    print " Expert level options : "
+    print " -----------------------"
     print ""
-    print " --db_root_path   : the path to the folder containing all the TF databases."
-    print " --db_file_list   : the space separated list of TF database file name."
-    print " --db_format_list : the space separated list of TF database format. The order and the size of this list must be the same as the list provided throught the --db_file_list option." 
-    print " --output         : the path to the desired output folder."
-    print " --force          : this option force the tool to reexecute all the pipeline steps even if previous similar results are found."
-    print " --server         : launch the tool in server mode."
-    print " --v \t: set the verbosity level (0 to 2)."
+    print " --db_root_path \t\t: the path to the folder containing all the TF databases."
+    print " --db_file_list \t\t: the space separated list of TF database file name."
+    print " --db_format_list \t\t: the space separated list of TF database format. The order and the size of this list must be the same as the list provided throught the --db_file_list option."
+    print " --custo_db_file_path \t\t: the path to the customer TF database."
+    print " --peak_number \t\t\t: the number of peaks that will be randomly chosen in the initial peak list (from BED file)."
+    print " --window_size \t\t\t: the initial size of the sliding window used to detect conserved blocks."
+    print " --conservation_threshold \t: the ratio (between 0 and 1) indicating if a residue at a given position in the multi-alignment matrix is conserved or not."   
+    print " --window_conservation_threshold : the ratio (between 0 and 1) indicating if the sliding window in the multi-alignment matrix is conserved or not."
+    print " --max_motif_number \t\t: the maximal number of motif that will be presented in the final report."
+    print " --max_motif_by_family \t\t: the maximal number of motif that will be presented in each motif family in the final report."   
+    print " --output \t\t\t: the path to the desired output folder."
+    print " --force \t\t\t: this option force the tool to reexecute all the pipeline steps even if previous similar results are found."
+    print " --server \t\t\t: launch the tool in server mode."
+    print " --v \t\t\t\t: set the verbosity level (0 to 2)."
 
 
 # --------------------------------------------------------------------------------------
