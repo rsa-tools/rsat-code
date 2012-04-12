@@ -126,7 +126,7 @@ UpdateLogFile("rsat","","");
 		</tr>
 		<tr>
 			<td><a href="help.pathwayinference.jsp#postproc"><b>Postprocess</b></a>
-			<input name="postproc" value="on" type="checkbox"></td>
+			<input name="postproc" value="on" type="checkbox" checked></td>
 		</tr>
 		<tr>
 			<td><a href="help.pathwayinference.jsp#postproc"><b>Iteration number</b></a>
