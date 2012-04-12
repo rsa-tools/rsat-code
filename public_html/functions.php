@@ -364,6 +364,45 @@ function randchar($length) {
   }
   return $result;
 }
+
+function converttab2table($tabdelimtable, $tableprops) {
+	//class=sortable id=seedstable
+	$output = "<table ".$tableprops." >\n";
+	$linearray = preg_split ("#\n#",$tabdelimtable);
+	foreach ($linearray as $line){
+		if(startsWith($line,"#",false)){
+			$line ="<thead><tr><th> </th><th>".$line;
+			$line = str_replace("\t","</th><th>",$line );
+			$line .="</th></tr></thead>\n";
+		}else{
+			$contentarray = preg_split ("#\t#",$line);
+			$line ="<tr><td><input name=chkID id=chkID type=checkbox  value=\"".$contentarray[0]."\" checked=checked></td><td>".$line;
+			$line = str_replace("\t","</td><td>",$line );
+			$line .="</td></tr>\n";
+		}
+		$output.=$line; 
+	}
+	$output.="</table>\n";
+	return $output;
+}
+
+function startsWith($haystack,$needle,$case=true)
+{
+   if($case)
+       return strpos($haystack, $needle, 0) === 0;
+
+   return stripos($haystack, $needle, 0) === 0;
+}
+
+function endsWith($haystack,$needle,$case=true)
+{
+  $expectedPosition = strlen($haystack) - strlen($needle);
+
+  if($case)
+      return strrpos($haystack, $needle, 0) === $expectedPosition;
+
+  return strripos($haystack, $needle, 0) === $expectedPosition;
+}
 ?> 
 <?php
 ini_set('max_execution_time', 2400);
