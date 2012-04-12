@@ -6,11 +6,11 @@ function collapseAll(id)
 	var s="";
 	if (_style == "none") {
 		_style = "block";
-		s="-";
+		s="<img src=\"images/arrow_box_down.gif\" alt=\"-\">";
 	}
 	else {
 		_style = "none";
-		s="+";
+		s="<img src=\"images/arrow_box.gif\" alt=\"+\">";
 	}
 	id.style.display=_style;
 	sign.innerHTML=s;
