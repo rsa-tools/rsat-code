@@ -30,7 +30,7 @@ $file = fopen ($properties['RSAT'].'/public_html/data/supported_organism_ucsc_mu
 $multiz_supported = array();
 
 while (!feof($file)) {
-	list($genome, $genome_reference) = explode("\t", substr(fgets($file),0,-1));
+	list($genome_reference,$nb_species,$genome) = explode("\t", substr(fgets($file),0,-1));
 
 	if ($genome_reference != "") {
 		$multiz_supported[$genome_reference][] = $genome;
