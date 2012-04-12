@@ -16,15 +16,17 @@ from common.Motif import Motif
 #
 # Parameters:
 #   WindowSize : the size of the window used to parse the sequences when searching conserved blocks
-#   ConservationLimit : the ratio limit to consider a block is conserved
-#   DesiredSpeciesList (optionnal): the list of species used in the multiple alignement to research conserved blocks
+#   ResiduConservationLimit : the ratio limit to consider a residue is conserved
+#   WindowConservationLimit : the ratio limit to consider a block is conserved
+#   DesiredSpeciesList (optional): the list of species used in the multiple alignement to research conserved blocks
 #   Algorithm : the chosen algorithm. Could be "OccurenceRatio", "InformationRatio" or "null". null mean that the whole
 #               peak region is considered as a unique conserved region
 
 class BlockProcessor( Processor):
     
     WINDOW_SIZE_PARAM = "WindowSize"
-    CONSERVATION_LIMIT_PARAM = "ConservationLimit"
+    RESIDU_CONSERVATION_LIMIT_PARAM = "ResiduConservationLimit"
+    WINDOW_CONSERVATION_LIMIT_PARAM = "WindowConservationLimit"
     REFERENCE_SPECIES_PARAM = "ReferenceSpecies"
     DESIRED_SPECIES_LIST_PARAM = "DesiredSpeciesList"
     
@@ -75,7 +77,8 @@ class BlockProcessor( Processor):
     def getRequiredParameters():
         
         return ( BlockProcessor.WINDOW_SIZE_PARAM,\
-                BlockProcessor.CONSERVATION_LIMIT_PARAM,\
+                BlockProcessor.RESIDU_CONSERVATION_LIMIT_PARAM,\
+                BlockProcessor.WINDOW_CONSERVATION_LIMIT_PARAM,\
                 BlockProcessor.REFERENCE_SPECIES_PARAM)
 
 
@@ -91,7 +94,8 @@ class BlockProcessor( Processor):
 
         # retrieve the processor parameters
         self.windowSize = self.getParameterAsint( BlockProcessor.WINDOW_SIZE_PARAM)
-        self.conservationLimit = self.getParameterAsfloat( BlockProcessor.CONSERVATION_LIMIT_PARAM)
+        self.residuConservationLimit = self.getParameterAsfloat( BlockProcessor.RESIDU_CONSERVATION_LIMIT_PARAM)
+        self.windowConservationLimit = self.getParameterAsfloat( BlockProcessor.WINDOW_CONSERVATION_LIMIT_PARAM)
         algo = self.getParameter( BlockProcessor.ALGORITHM_PARAM, False)
         if algo != None:
             self.algorithm = algo.lower()
@@ -135,7 +139,7 @@ class BlockProcessor( Processor):
         left_limit = index_start
         while not finished and index_start >= 0 and index_end < pwm.totalLength:
             ratio = self.computeBlockRatio( index_start, index_end, pwm)
-            if ratio >= self.conservationLimit:
+            if ratio >= self.windowConservationLimit:
                 block = self.extendBlock( index_start, index_end, ratio, left_limit, pwm)
                 block.composeName( alignment.name)
                 alignment.addMotif( block, True)
@@ -161,7 +165,7 @@ class BlockProcessor( Processor):
                 letter_max = pwm.getMostConservedResidu( index)
                 if letter_max != None:
                     max_ratio =  pwm.ratioMatrix[ letter_max][index]
-                    if  max_ratio >= self.conservationLimit:
+                    if  max_ratio >= self.residuConservationLimit:
                         window_ratio += 1
                     else:
                         # If the number of "-" is greater than the number of occurence of the most conserved letter
@@ -182,7 +186,7 @@ class BlockProcessor( Processor):
                 letter_max = pwm.informationMatrix[ Constants.MAX_INDEX][ index]
                 max_info = pwm.informationMatrix[ letter_max][index]
                 info_ratio = (max_info - pwm.informationLimits[ letter_max][0]) / float( pwm.informationLimits[ letter_max][1] - pwm.informationLimits[ letter_max][0])
-                if info_ratio > self.conservationLimit : 
+                if info_ratio > self.residuConservationLimit : 
                     window_ratio += 1
                 else:
                     # If the number of "-" is greater than the number of occurence of the most conserved letter
@@ -217,7 +221,7 @@ class BlockProcessor( Processor):
         while not finished and index_end <= pwm.totalLength -1:
             if pwm.ratioMatrix[ Constants.MAX_INDEX][ index_end] >= 0:
                 new_ratio = self.computeBlockRatio( index_start, index_end +1, pwm)
-                if new_ratio < self.conservationLimit:
+                if new_ratio < self.windowConservationLimit:
                     finished = True
                 else:
                     index_end += 1
@@ -229,7 +233,7 @@ class BlockProcessor( Processor):
         while not finished and index_start >= 1 and index_start > left_limit:
             if pwm.ratioMatrix[ Constants.MAX_INDEX][ index_start -1] >= 0:
                 new_ratio = self.computeBlockRatio( index_start -1,  index_end, pwm)
-                if new_ratio < self.conservationLimit:
+                if new_ratio < self.windowConservationLimit:
                     finished = True
                 else:
                     index_start -= 1
