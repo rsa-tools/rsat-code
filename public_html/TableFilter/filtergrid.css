@@ -192,7 +192,10 @@ div.helpCont{ /* help container */
 }
 div.helpCont a{ color:#cc0000; text-decoration:underline; font-weight:normal; }
 div.helpCont a:hover{ text-decoration:none; }
-div.helpFooter{ margin:10px 0 0 0; }
+div.helpFooter{ 
+	margin:20px 0 0 0;
+	font-size: xx-small;
+}
 
 /* Pop-up filters elements */
 div.popUpFilter{ 
