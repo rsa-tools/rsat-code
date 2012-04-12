@@ -100,7 +100,7 @@ UpdateLogFile("rsat","","");
 </p>
 </fieldset>
 <fieldset><legend class=clickable onClick="javascript:collapseAll(document.getElementById('advparams'));" >
-<b><span id=advparamsSign class=sign>+</span></b> Advanced parameters</legend>
+<b><span id=advparamsSign class=sign><img src="images/arrow_box.gif" alt="+"></img></span></b> Advanced parameters</legend>
 
 
 <div  id=advparams style="display: none">
