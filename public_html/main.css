@@ -7,6 +7,7 @@
 
 /* css/tooltip.css -- fancy tooltips */
 
+
 span.tool {
   position: relative;   /* this is key */
   cursor: help;
@@ -320,11 +321,17 @@ margin-left: 50px;
 margin-right: 50px;
 border: 1px solid;
 }
-
-legend {
+fieldset.level1 {
+background: #EFFBFE;
+margin-left: 50px;
+margin-right: 50px;
+border: 1px solid;
+}
+legend {	
 background: #D6EEFA;
 border: 1px solid;
 padding: 2px 6px;
+font-weight: bold;
 } 
 
 select {
@@ -659,3 +666,23 @@ table.simpleform td.left {
 	text-decoration: none;
 }
 
+/* pathway extractor css*/
+span.fieldtitle{
+	display: inline-block;
+	font-family: Verdana, Helvetica, Arial, sans-serif;
+	font-weight: bold;
+	font-size: 15px;
+}
+span.sign {
+display: inline-block;
+width: 15px;
+font-family: Verdana, Helvetica, Arial, sans-serif;
+font-weight: bold;
+font-size: 15px;
+}
+
+legend.clickable {
+}
+legend.clickable:hover {
+	cursor: pointer;
+}
