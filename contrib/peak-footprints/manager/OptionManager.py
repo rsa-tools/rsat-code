@@ -91,7 +91,8 @@ from processor.ClassificationProcessor import ClassificationProcessor
 
 class OptionManager:
 
-    INPUT_PEAKS = "input_peaks"         ## RESERVE THE LETTER i
+    PIPELINE_NAME = "pipeline_name"
+    INPUT_PEAKS = "input_peaks"
     REF_SPECIES = "ref_species"
     ALIGN_SPECIES = "align_species"
     DB_ROOT_PATH = "db_root_path"
@@ -106,12 +107,12 @@ class OptionManager:
     MAX_MOTIF_BY_FAMILY = "max_motif_by_family"
     PEAK_NUMBER = "peak_number"
 
-    PIPELINE = "pipeline"   ## RESERVE THE LETTER p
-    OUTPUT = "output"       ## RESERVE THE LETTER o
-    VERBOSITY = "v"         ## RESERVE THE LETTER v
-    FORCE = "force"         ## RESERVE THE LETTER f
-    SERVER = "server"       ## RESERVE THE LETTER s
-    HELP = "h"              ## RESERVE THE LETTER h
+    PIPELINE = "pipeline"   
+    OUTPUT = "output"       
+    VERBOSITY = "v"         
+    FORCE = "force"        
+    SERVER = "server"       
+    HELP = "h"              
     
     # --------------------------------------------------------------------------------------
     # Apply the provided options to the pipelines components
@@ -125,6 +126,14 @@ class OptionManager:
                 # Remove the dashed at the beginning of the option tag
                 while opt[0] == "-":
                     opt = opt[1:]
+                
+                print "option : " + str( opt) + " = " + str( arg)
+                
+                # Set the name of the pipeline (to the pipeline itself and to its components)
+                if opt == OptionManager.PIPELINE_NAME:
+                    pipeline.name = arg
+                    for component in pipeline.componentList:
+                        component.pipelineName = arg
                 
                 # Add the BED file path
                 if opt == OptionManager.INPUT_PEAKS:
