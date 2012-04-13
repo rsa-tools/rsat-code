@@ -19,8 +19,10 @@ $result = true;
 require ('RSAT_header.php');
 
 // Initialize variables
-$cmd = 'python '.$properties['RSAT'].'/python-scripts/peak-footprints';
-$argument = " -v 2";
+$cmd = 'python '.$properties['RSAT'].'/contrib/peak-footprints/peak-footprints';
+$argument = " --v 2";
+$argument .= " --pipeline ".$properties['RSAT']."/contrib/peak-footprints/default_pipeline.xml";
+$argument .= " --db_root_path ".$properties['RSAT'].'/data/motif_databases';
 $errors = false;
 
 ////////////////////////////////////////////////////////////////
@@ -31,6 +33,7 @@ $bed_specifications = 0;
 if ($pf_bed != "") {
 	$bed_specifications++;
 }
+
 // Local bed file on client machine
 if ($_FILES["bed_file"]['name'] != "") {
 	$bed_specifications++;
@@ -79,7 +82,7 @@ function numeric($name, $value) {
 	}
 }
 
-function int($name, $value) {
+function integrer($name, $value) {
 	if (!ereg("^[0-9]+$", $value)) {
 		error("$name '$value' is not a integrer");
 		return false;
@@ -125,6 +128,14 @@ if ($pf_r_motif == "") {
 	}	
 }
 
+if ($pf_nb_peaks != '') {
+	if (integrer("Maximun numbers of peaks", $pf_nb_peaks)) {
+		$argument .= " --peak_number $pf_nb_peaks";
+	}	else {
+		$errors = true;
+	}
+}
+
 if (numeric("Column-wise conservation threshold", $pf_cons_thres)) {
 	if ($pf_cons_thres != 0.7) {
 		$argument .= " --conservation_threshold $pf_cons_thres";
@@ -141,7 +152,7 @@ if (numeric("Block-wise conservation threshold", $pf_window_cons_thres)) {
 	$errors = true;
 }
 
-if (int("Initial sliding window size", $pf_window_size)) {
+if (integrer("Initial sliding window size", $pf_window_size)) {
 	if ($pf_window_size != 5) {
 		$argument .= " --window_size $pf_window_size";
 	}
@@ -149,15 +160,15 @@ if (int("Initial sliding window size", $pf_window_size)) {
 		$errors = true;
 }
 
-if (int("Maximum number of motif reported", $pf_motif_number)) {
+if (integrer("Maximum number of motif reported", $pf_motif_number)) {
 	if ($pf_motif_number != 50) {
 		$argument .= " --max_motif_number $pf_motif_number";
 	}
-}	else {
+} else {
 	$errors = true;
 }
 
-if (int("Maximum number of motif reported by family ", $pf_motif_number_family)) {
+if (integrer("Maximum number of motif reported by family ", $pf_motif_number_family)) {
 	if ($pf_motif_number_family != 4) {
 		$argument .= " --window_size $pf_motif_number_family";
 	}
@@ -171,10 +182,12 @@ if($pf_output =="email") {
 		$errors=true;
 	}
 }
+
 //////////////////////////////////////////////////////////////////////////////
 //Writing bed/custom_motifs file in tmp
 if (!$errors) {
 	$suffix = "_".date("Ymd_His")."_".randchar(3);
+	$argument .= " --pipeline_name users_pipeline".$suffix;
 	
 	// Bed data provided in text area
 	if ($pf_bed != "") {
@@ -212,7 +225,14 @@ if (!$errors) {
 
 		// Move uploaded bed file in tmp
 		$bed_file = $properties['rsat_tmp']."/".$bed_file_name;
-		$bed_file = str_replace(".bed",$suffix.".bed",$bed_file);
+		$extension = end( explode( ".", $bed_file));
+		
+		if ($extension == "bed") {
+			$bed_file = str_replace(".bed",$suffix.".bed",$bed_file);
+		} else {
+			$bed_file = $bed_file.$suffix.".bed";
+		}
+		
 		if(move_uploaded_file($_FILES['bed_file']['tmp_name'], $bed_file)) {
 			$argument .= " --input_peaks $bed_file";
 		} else {
@@ -242,19 +262,29 @@ if (!$errors) {
 			error("All your line are not custom_motifs format");
 			$errors = true;
 		} else {
-			$argument .= " --??? $custom_motifs_file";  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			$argument .= " --custo_db_file_path $custom_motifs_file";  
 		}
 	}	
 	
 	// Upload custom_motifs file from client machine
 	if ($_FILES["custom_motifs_file"]['name'] != "") {
 		$custom_motifs_file_name = basename($_FILES['custom_motifs_file']['name']);
-	
+		$extension = end( explode( ".", $custom_motifs_file_name));
+		
 		// Move uploaded custom_motifs file in tmp
 		$custom_motifs_file = $properties['rsat_tmp']."/".$custom_motifs_file_name;
-		$custom_motifs_file = str_replace(".transfac",$suffix.".transfac",$custom_motifs_file);
+		
+		if ($extension == "tf") {
+			$custom_motifs_file = str_replace(".tf",$suffix.".tf",$custom_motifs_file);
+		} else {
+			$custom_motifs_file .= $suffix.".tf";
+		}
+		
+		
+		
+		
 		if(move_uploaded_file($_FILES['custom_motifs_file']['tmp_name'], $custom_motifs_file)) {
-			$argument .= " --??? $custom_motifs_file";   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			$argument .= " --custo_db_file_path $custom_motifs_file"; 
 		} else {
 			error('File upload failed');
 			$errors = true;
@@ -263,10 +293,9 @@ if (!$errors) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-if (!$errors) {
-	
+if (!$errors) {	
 	// Specify output file
-	$argument .= " --output ".$properties['rsat_tmp'];
+	//$argument .= " --output ".$properties['rsat_tmp'];
 	$URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
 	if ($custom_motifs_specifications == 1) {
 		$URL['Custom motifs (transfac format)'] = rsat_path_to_url($custom_motifs_file);
