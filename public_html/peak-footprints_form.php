@@ -7,7 +7,9 @@ UpdateLogFile("rsat","","");
 ?>
 <script type="text/javascript">
 	var multiz_genome = new Array();
+	var multiz_path = new Array();
 	multiz_genome[0] = new Array();
+	multiz_path[0] = '';
 <?php
 //////////////////////////
 //Get info on avalaible genome on ucsc
@@ -30,26 +32,28 @@ $file = fopen ($properties['RSAT'].'/public_html/data/supported_organism_ucsc_mu
 $multiz_supported = array();
 
 while (!feof($file)) {
-	list($genome_reference,$nb_species,$genome) = explode("\t", substr(fgets($file),0,-1));
+	list($genome_reference,$nb_species,$genome,$path) = explode("\t", substr(fgets($file),0,-1));
 
 	if ($genome_reference != "") {
-		$multiz_supported[$genome_reference][] = $genome;
+		$multiz_supported[$genome_reference]['aligned_species'][] = $genome;
+		$multiz_supported[$genome_reference]['path']= $path;
 	}
 }
 fclose(file);
 
 //Write array() with key multiz available genome and values genome in multiz.
-foreach($multiz_supported as $genome_reference => $aligned_species) {
+foreach($multiz_supported as $genome_reference => $value) {
 	echo "multiz_genome['$genome_reference'] = new Array(";
-		
-	foreach($aligned_species as $key => $species) {
-		if ($species == end($aligned_species)) {
+
+	foreach($multiz_supported[$genome_reference]['aligned_species'] as $key => $species) {
+		if ($species == end($multiz_supported[$genome_reference]['aligned_species'])) {
 			echo "'$species - ".$genome_ucsc[$species]['organism']."'";
 		}	else {
 			echo "'$species - ".$genome_ucsc[$species]['organism']."',";
 		}
 	}
 	echo ")\n";
+	echo "multiz_path['$genome_reference'] = '".$multiz_supported[$genome_reference]['path']."';\n";
 }
 
 ?>	
@@ -67,6 +71,11 @@ function fill_species_ali(code,fill_area,clear_area) {
 			document.getElementById(fill_area).options[i].text = genomes[i];
 		}		
 	}	
+}
+
+function fill_multiz_path(ref_species) {
+	var path = multiz_path[ref_species];
+	document.getElementById('multiz_path').value = path;
 }
 
 function deselect_all(id) {
@@ -116,7 +125,7 @@ require ('RSAT_header.php');
 				</p>
 				<p>
 	        <b>Reference genome</b> <span style='color:red'>(mandatory)</span>&nbsp;&nbsp;			
-					<select name="genome" onChange="fill_species_ali(this.options[this.selectedIndex].value,'species_ali','species_ali_keep');">
+					<select name="genome" onChange="fill_species_ali(this.options[this.selectedIndex].value,'species_ali','species_ali_keep');fill_multiz_path(this.options[this.selectedIndex].value);">
 						<option value="0">----Choose a genome----</option>								
 <?php
 
@@ -124,20 +133,21 @@ foreach($multiz_supported as $key => $value) {
 	echo "<option value='$key'>$key - ".$genome_ucsc[$key]['organism']."</option>", "\n";
 }
 ?>
-					</select>
+					</select><input type='hidden' id='multiz_path' />
 				</p>							
 				<p>
 				  <b>Aligned species</b> <span style='color:red'>(mandatory)</span><br/>
 				  <table>
 					  <tr>
-						  <td><select name="species_ali[]" id="species_ali" style="width:200px" size="8" multiple="multiple"></select></td>
-						  <td><input type="button" value="Add >>" name="add" onclick="move('species_ali','species_ali_keep');" style="width:80px"><br/><input type="button" style="width:80px" value="&lt;&lt; Remove" name="remove" onclick="move('species_ali_keep','species_ali');" size='10'></td>
-						  <td><select name="species_ali_keep[]" id="species_ali_keep" style="width:200px" size="8" multiple="multiple"></select></td>
+						  <td><select name="species_ali[]" id="species_ali" style="width:200px" size="8" multiple="multiple"/></select></td>
+						  <td><input type="button" value="Add >>" name="add" onclick="move('species_ali','species_ali_keep');" style="width:80px"/><br/>
+						      <input type="button" style="width:80px" value="&lt;&lt; Remove" name="remove" onclick="move('species_ali_keep','species_ali');" size='10'/></td>
+						  <td><select name="species_ali_keep[]" id="species_ali_keep" style="width:200px" size="8" multiple="multiple"/></select></td>
 					  </tr>
 					  <tr><td align="center" colspan='3'>
-						  <input type="button" style="width:80px" value="Add All" name="addall" onclick="fill_species_ali(genome.options[genome.selectedIndex].value,'species_ali_keep','species_ali')">
-							<input type="button" style="width:80px" value="Deselect all" name="deselectall" onclick="deselect_all('species_ali');deselect_all('species_ali_keep');">
-							<input type="button" style="width:80px" value="Remove All" name="remove_all" onclick="fill_species_ali(genome.options[genome.selectedIndex].value,'species_ali','species_ali_keep')">
+						  <input type="button" style="width:80px" value="Add All" name="addall" onclick="fill_species_ali(genome.options[genome.selectedIndex].value,'species_ali_keep','species_ali')"/>
+							<input type="button" style="width:80px" value="Deselect all" name="deselectall" onclick="deselect_all('species_ali');deselect_all('species_ali_keep');"/>
+							<input type="button" style="width:80px" value="Remove All" name="remove_all" onclick="fill_species_ali(genome.options[genome.selectedIndex].value,'species_ali','species_ali_keep')"/>
 						</td></tr>					  
 				  </table>
 				</p>
@@ -163,12 +173,12 @@ foreach($multiz_supported as $key => $value) {
 	     <div id="menu101" class="menu_collapsible">
 	       <fieldset>
 					<table>
-						<tr><th>Maximun numbers of peaks (>= 1)</th><th><input type="text" size="3" name="nb_peaks"></th></tr>
-						<tr><th>Column-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="cons_thres"></th></tr>
-						<tr><th>Block-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="window_cons_thres"></th></tr>	
-						<tr><th>Initial sliding window size (>1)</th><th><input type="text" size="3" value="5" name="window_size"></th></tr>
-						<tr><th>Maximum number of reported motifs (>1)</th><th><input type="text" size="3" value="50" name="motif_number"></th></tr>
-						<tr><th>Maximum number of reported motifs per family (>= 1)</th><th><input type="text" size="3" value="4" name="motif_number_family"></th></tr>
+						<tr><th>Maximun numbers of peaks (>= 1)</th><th><input type="text" size="3" name="nb_peaks"/></th></tr>
+						<tr><th>Column-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="cons_thres"/></th></tr>
+						<tr><th>Block-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="window_cons_thres"/></th></tr>	
+						<tr><th>Initial sliding window size (>1)</th><th><input type="text" size="3" value="5" name="window_size"/></th></tr>
+						<tr><th>Maximum number of reported motifs (>1)</th><th><input type="text" size="3" value="50" name="motif_number"/></th></tr>
+						<tr><th>Maximum number of reported motifs per family (>= 1)</th><th><input type="text" size="3" value="4" name="motif_number_family"/></th></tr>
 					</table>
 	       </fieldset>
 	     </div>
