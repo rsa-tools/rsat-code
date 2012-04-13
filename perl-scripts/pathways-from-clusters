@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.10 2012/03/01 07:45:46 jvanheld Exp $
+# $Id: pathways-from-clusters,v 1.11 2012/04/13 15:46:06 rsat Exp $
 #
 ############################################################
 
@@ -39,7 +39,7 @@ Revised by Jacques van Helden (van-helden.j@univmed.fr)
 
 =head1 USAGE
 
-pathways-from-clusters -h [-i inputfile] [-o outputdirectory] [-v] -g graphfile -ger gene2ec2reactions
+pathways-from-clusters -h [-i inputfile] [-o outputdirectory] [-v] -g graphfile -gnn gene2ec2reactions
 
 =head1 INPUT FORMATS
 
@@ -84,21 +84,21 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input files
-  our %main::infile = ();
-  $main::infile{gpr} ="METACYC_GPR_EC.tab"; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
-  $main::infile{gr}="";		# GR Gene -> REACTION annotation
-  $main::infile{graph}="";	# File containing the graph
+  our %infile = ();
+  $infile{gnn} ="METACYC_GPR_EC.tab"; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+  $infile{nnn}="";		# GR Gene -> REACTION annotation
+  $infile{graph}="";	# File containing the graph
+  our $operoncolnum="3"; 
+  our %outfile = ();
+  our %dir = ();
 
-  our %main::outfile = ();
-  our %main::dir = ();
-
-  our $main::verbose = "";
-  our $main::in = STDIN;
-  our $main::out = STDOUT;
+  our $verbose = "";
+  our $in = STDIN;
+  our $out = STDOUT;
 
 
   our $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
@@ -127,13 +127,16 @@ package main;
 
   ## Mandatory input files
   unless (defined($infile{graph})) {
-    &RSAT::error::FatalError("You must define a graph file (option -graph)");
+    &RSAT::error::FatalError("You must define a graph file (option -g)");
   }
   unless (defined($infile{clusters})) {
-    &RSAT::error::FatalError("You must define a cluster file (option -clusters)");
+    &RSAT::error::FatalError("You must define a cluster file (option -i)");
   }
-  unless (defined($infile{ger})) {
-    &RSAT::error::FatalError("You must define a gene-EC-reaction file (option -ger)");
+  unless (defined($infile{gnn})) {
+    &RSAT::error::FatalError("You must define a gene node names file (option -gnn)");
+  }
+unless (defined($infile{nnn})) {
+    &RSAT::error::FatalError("You must define a network node names file (option -nnn)");
   }
 
 
@@ -183,10 +186,11 @@ package main;
 #      if (!($line=~m/^;|^#/)) {
     &RSAT::message::Debug($l, $line) if ($main::verbose >= 10);
     my @tempdata = split(/\t/,$line);
-    # 	   print "$tempdata[6] eq $oldclusterid\n";
-    if ($oldclusterid && !($tempdata[6] eq $oldclusterid)) {
+    # 	   print "$tempdata[$main::operoncolnum] eq $oldclusterid\n";
+    if ($oldclusterid && !($tempdata[$main::operoncolnum] eq $oldclusterid)) {
       $oldclusterid=~s/\s+/_/g;
-      my $tempfilename = $dir{output}.$oldclusterid."_original_seeds.txt";
+      $oldclusterid=~s/\;+/_/g;
+      my $tempfilename = $main::dir{output}."/".$oldclusterid."-seeds.tab";
       chomp ($tempfilename);
       open (MYFILE, '>'.$tempfilename);
       print MYFILE join ("\n",@genelist). "\n";
@@ -201,9 +205,10 @@ package main;
       $pathway_extractor_cmd .= " -v ".$main::verbose;
       $pathway_extractor_cmd .= " -i ".$tempfilename;
       $pathway_extractor_cmd .= " -g ".$main::infile{graph};
-      $pathway_extractor_cmd .= "  ".$grfilecmd;
-      $pathway_extractor_cmd .= " -a ".$main::infile{gpr};
-      $pathway_extractor_cmd .= " -t ".$main::dir{output};
+      $pathway_extractor_cmd .= " -gd $oldclusterid";
+      $pathway_extractor_cmd .= " -gnn ".$main::infile{gnn};
+      $pathway_extractor_cmd .= " -nnn ".$main::infile{nnn};
+      $pathway_extractor_cmd .= " -C -d -m 5 -T pathsUnion ";
       $pathway_extractor_cmd .= " -o ".$main::dir{output};
       ## TO DO WITH DIDIER: redirect STDER from pathway-extractor to a
       ## log file in the output directory.
@@ -215,19 +220,20 @@ package main;
       ## AND NOT IN TH EPROGRAM pathway-extractor ITSELF.
 
       ## Clean temporary files if required
-      if ($task{clean}) {
-	my $clean_cmd = "rm -f $tempfilename";
+       if($seednum > 1){
+# my $clean_cmd = "rm -f $tempfilename";
 	&doit($pathway_extractor_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      }
+	}
 
       ## Re-initialize the ### INTERRUPTED HERE !!!! IMPLEMENTATION IN CONSTRUCTION
       @genelist =();
     }
     my $gene= $tempdata[0];
-    $gene=~ s{\.[^.]+$}{};	# removes gene version
+#     $gene=~ s{\.[^.]+$}{};	# removes gene version not anymore
     push(@genelist,$gene);
-    $oldclusterid = $tempdata[6];
-#  }
+    $oldclusterid = $tempdata[$main::operoncolnum];
+    $seednum++;
+  }
 #}
     close $main::in if ($main::infile{clusters});
 
@@ -322,26 +328,34 @@ allows to use the command within a pipe.
 =cut
     } elsif ($arg eq "-i") {
       $main::infile{clusters} = shift(@arguments);
-
 =pod
 
-=item	B<-ger gene2ec2reaction.tab>
+=item	B<-ocol #operon name col number>
+
+operon name column number starting from 0
+
+=cut
+    } elsif ($arg eq "-ocol") {
+      $main::operoncolnum = shift(@arguments);
+=pod
+
+=item	B<-gnn gene2nodenames file.tab>
 
 GER file (Gene -> EC -> REACTION). annotation file path.
 
 =cut
-    } elsif ($arg eq "-ger") {
-      $main::infile{gpr} = shift(@arguments);
+    } elsif ($arg eq "-gnn") {
+      $main::infile{gnn} = shift(@arguments);
 
 =pod
 
-=item	B<-b GR Gene -> REACTION annotation>
+=item	B<-nnn network node names file -> REACTION and compound annotation>
 
 An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
 
 =cut
-    } elsif ($arg eq "-b") {
-      $main::infile{gr} = shift(@arguments);
+    } elsif ($arg eq "-nnn") {
+      $main::infile{nnn} = shift(@arguments);
 
 
 =pod
