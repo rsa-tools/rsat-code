@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert2metapath-seeds,v 1.1 2012/04/04 14:55:09 rsat Exp $
+# $Id: convert2metapath-seeds,v 1.2 2012/04/13 07:00:20 rsat Exp $
 #
 ############################################################
 
@@ -183,12 +183,16 @@ package main;
   print STDERR "SEEDS:" .$input."\n";
 
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
-  my $output = &RSAT::PathwayExtraction::MapSeeds($input,$infile{gnn},$infile{nnn},$partial,$verbose);
-  my %ouputhash = %{$output};
-  
+  my ($rxnoutput,$cpdoutput) = &RSAT::PathwayExtraction::MapSeeds($input,$infile{gnn},$infile{nnn},$partial,$verbose);
+  my %rxnhash = %{$rxnoutput};
+  my %cpdhash = %{$cpdoutput};
   print $out "#Query\tmapping";
   
-  while (my ($key, $val) = each(%ouputhash)){
+  while (my ($key, $val) = each(%rxnhash)){
+   print $out "$key\t$val\n";
+  
+  }
+  while (my ($key, $val) = each(%cpdhash)){
    print $out "$key\t$val\n";
   
   }
