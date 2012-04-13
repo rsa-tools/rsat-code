@@ -6,31 +6,42 @@ apiMel1	A. mellifera		July 2004
 apiMel2	A. mellifera		Jan. 2005
 apiMel3	A. mellifera		May. 2005
 aplCal1	Sea hare		Sept. 2008
+bosTau1	Cow	Bos taurus	
 bosTau2	Cow	Bos taurus	Mar. 2005
 bosTau3	Cow	Bos taurus	Aug. 2006
 bosTau4	Cow	Bos taurus	Oct. 2007
+bosTau5	Cow	Bos taurus
 bosTau6	Cow	Bos taurus	Nov. 2009
 braFlo1	Lancelet		Mar. 2006
 caeJap1	C. japonica		Mar. 2008
 caePb1	C. brenneri		Jan. 2007
 caePb2	C. brenneri		Feb. 2008
+caeRem1	C. remanei
 caeRem2	C. remanei		Mar. 2006
 caeRem3	C. remanei		May 2007
 calJac1	Marmoset	Callithrix jacchus	June 2007
+calJac2	Marmoset	Callithrix jacchus
 calJac3	Marmoset	Callithrix jacchus	March 2009
 canFam1	Dog	Canis lupus familiaris	July 2004
 canFam2	Dog	Canis lupus familiaris	May 2005
+cavPor1	Guinea pig	Cavia porcellus
 cavPor2	Guinea pig	Cavia porcellus	Oct. 2005
 cavPor3	Guinea pig 	Cavia porcellus	Feb. 2008
 cb1	C. briggsae		July 2002
+cb2	C. briggsae		
 cb3	C. briggsae		Jan. 2007
+ce1	C. elegans		
 ce10	C. elegans		Oct. 2010
 ce2	C. elegans		Mar. 2004
+ce3	C. elegans		
 ce4	C. elegans		Jan. 2007
+ce5	C. elegans		
 ce6	C. elegans		May 2008
 choHof1	Sloth	Choloepus hoffmanni	July 2008
 ci1	C. intestinalis		Dec. 2002
 ci2	C. intestinalis		Mar. 2005
+danRer1	Zebrafish	Danio rerio	
+danRer2	Zebrafish	Danio rerio	
 danRer3	Zebrafish	Danio rerio	May 2005
 danRer4	Zebrafish	Danio rerio	Mar. 2006
 danRer5	Zebrafish	Danio rerio	July 2007
@@ -68,19 +79,38 @@ echTel1	Tenrec	Echinops telfairi	July 2005
 equCab1	Horse	Equus caballus 	Jan. 2007
 equCab2	Horse	Equus caballus 	Sep. 2007
 eriEur1	Hedgehog	Erinaceus europaeus	June 2006
+felCat1	Cat	Felis catus	
+felCat2	Cat	Felis catus	
 felCat3	Cat	Felis catus	Mar. 2006
 felCat4	Cat	Felis catus	Dec. 2008
 fr1	Fugu	Takifugu rubripes 	Aug. 2002
 fr2	Fugu	Takifugu rubripes 	Oct. 2004
+galGal1	Chicken	Gallus gallus 	
 galGal2	Chicken	Gallus gallus 	Feb. 2004
 galGal3	Chicken	Gallus gallus 	May 2006
 gasAcu1	Stickleback	Gasterosteus aculeatus	Feb. 2006
 gorGor1	Gorilla	Gorilla gorilla gorilla	Oct. 2008
+gorGor2	Gorilla	Gorilla gorilla gorilla	
 gorGor3	Gorilla	Gorilla gorilla gorilla	May 2011
+hg1	Human	Homo sapiens	
+hg10	Human	Homo sapiens	
+hg11	Human	Homo sapiens	
+hg12	Human	Homo sapiens	
+hg13	Human	Homo sapiens	
+hg14	Human	Homo sapiens	
+hg15	Human	Homo sapiens	
 hg16	Human	Homo sapiens	July 2003
 hg17	Human	Homo sapiens	May 2004
 hg18	Human	Homo sapiens	Mar. 2006
 hg19	Human	Homo sapiens	Feb. 2009
+hg2	Human	Homo sapiens	
+hg3	Human	Homo sapiens	
+hg4	Human	Homo sapiens	
+hg5	Human	Homo sapiens	
+hg6	Human	Homo sapiens	
+hg7	Human	Homo sapiens	
+hg8	Human	Homo sapiens	
+hg9	Human	Homo sapiens	
 loxAfr1	Elephant	Loxodonta africana 	May 2005
 loxAfr2	Elephant	Loxodonta africana 	July 2008
 loxAfr3	Elephant	Loxodonta africana 	July 2009
@@ -89,15 +119,24 @@ macEug2	Wallaby	Macropus eugenii	Sep. 2009
 melGal1	Turkey		Dec. 2009
 micMur1	Mouse lemur 	Microcebus murinus	Jun. 2003
 mm10	Mouse	Mus musculus	Dec. 2011
+mm1	Mouse	Mus musculus	
+mm2	Mouse	Mus musculus	
+mm3	Mouse	Mus musculus	
+mm4	Mouse	Mus musculus	
+mm5	Mouse	Mus musculus	
+mm6	Mouse	Mus musculus	
 mm7	Mouse	Mus musculus	Aug. 2005
 mm8	Mouse	Mus musculus	Feb. 2006
 mm9	Mouse	Mus musculus	July 2007
 monDom1	Opossum	Monodelphis domestica	Oct. 2004
+monDom2	Opossum	Monodelphis domestica	
+monDom3	Opossum	Monodelphis domestica	
 monDom4	Opossum	Monodelphis domestica	Jan. 2006
 monDom5	Opossum	Monodelphis domestica	Oct. 2006
 myoLuc1	Microbat	Myotis lucifugus	Mar. 2006
 myoLuc2	Microbat	Myotis lucifugus	July 2010
 nomLeu1	Gibbon		Jan. 2010
+ochPri1	Pika	Ochotona princeps	
 ochPri2	Pika	Ochotona princeps	July 2008
 ornAna1	Platypus	Ornithorhynchus anatinus	Mar. 2007
 oryCun1	Rabbit	Oryctolagus cuniculus	May 2005
@@ -111,11 +150,15 @@ panTro2	Chimp	Pan troglodytes	Mar. 2006
 panTro3	Chimp	Pan troglodytes	Oct. 2010
 papHam1	Baboon	Papio hamadryas	Nov. 2008
 petMar1	Lamprey	Petromyzon marinus	Mar. 2007
+ponAbe1	Orangutan	Pongo pygmaeus abelii	
 ponAbe2	Orangutan	Pongo pygmaeus abelii	July 2007
 priPac1	P. pacificus		Feb. 2007
 proCap1	Rock hyrax	Procavia capensis 	July 2008
 pteVam1	Megabat	Pteropus vampyrus	July 2008
+rheMac1	Rhesus	Macaca mulatta	
 rheMac2	Rhesus	Macaca mulatta	Jan. 2006
+rn1	Rat	Rattus norvegicus	
+rn2	Rat	Rattus norvegicus	
 rn3	Rat	Rattus norvegicus	June 2003
 rn4	Rat	Rattus norvegicus	Nov. 2004
 sacCer1	S. cerevisiae		Oct. 2003
@@ -125,11 +168,13 @@ sorAra1	Shrew	Sorex araneus	June 2006
 speTri1	Squirrel	Spermophilus tridecemlineatus	Feb. 2008
 strPur1	S. purpuratus		Apr. 2005
 strPur2	S. purpuratus		Sep. 2006
+susScr1	Pig		
 susScr2	Pig		Nov. 2009
 taeGut1	Zebra finch	Taeniopygia guttata	July 2008
 tarSyr1	Tarsier	Tarsius syrichta	Aug. 2008
 tetNig1	Tetraodon	Tetraodon nigroviridis	Feb. 2004
 tetNig2	Tetraodon	Tetraodon nigroviridis	Mar. 2007
+triCas1	T. castaneum		
 triCas2	T. castaneum		Sep. 2005
 tupBel1	Tree shrew	Tupaiabelangeri	Dec. 2006
 turTru1	Dolphin	Tursiops truncatus	Feb. 2008
