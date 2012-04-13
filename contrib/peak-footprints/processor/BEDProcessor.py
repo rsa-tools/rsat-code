@@ -159,9 +159,11 @@ class BEDProcessor( Processor):
         while count < peak_number:
             # Randomly choose a chromosom
             chrom_list = bedseq_dictionnary.keys()
+            if len( chrom_list) == 0:
+                break
             chrom_index = int( random.uniform(0, len( chrom_list)))
             chrom = chrom_list[ chrom_index]
-            # Randomly choose a peak in the chrom
+            # Randomly choose a peak in the chromosom
             peak_list = bedseq_dictionnary.get( chrom)
             peak_index = int( random.uniform(0, len( peak_list)))
             peak = peak_list[ peak_index]
