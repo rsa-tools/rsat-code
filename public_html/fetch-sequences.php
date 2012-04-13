@@ -118,7 +118,14 @@ if (!$errors) {
     
     // Move uploaded bed file in tmp
     $bed_file = $properties['rsat_tmp']."/".$bed_file_name;
-    $bed_file = str_replace(".bed",$suffix,$bed_file);
+    $extension = end( explode( ".", $bed_file));
+    
+    if ($extension == "bed") {
+    	$bed_file = str_replace(".bed",$suffix,$bed_file);
+    } else {
+    	$bed_file = $bed_file.$suffix;
+    }
+    
     if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
 			$argument .= " -i $bed_file";
     } else {
@@ -167,8 +174,14 @@ if (!$errors) {
 	  		
 	    //Add randum value to $bedfile for the outputfile
 	    $bed_file = $properties['rsat_tmp']."/".$bed_file;
-	    $bed_file = str_replace(".bed",$suffix,$bed_file);
-
+      $extension = end( explode( ".", $bed_file));
+    
+	    if ($extension == "bed") {
+	    	$bed_file = str_replace(".bed",$suffix,$bed_file);
+	    } else {
+	    	$bed_file = $bed_file.$suffix;
+	    }
+	    
     } else {
       error($fs_sequence_url." is not a valid URL (should start with http: or ftp:.");
       $errors = true;
@@ -224,13 +237,14 @@ if (!$errors) {
   		$headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
   		$headers .= "\r\n";
   	} else {
-  		$msg = "fetch-sequences starting\n"
-  		$msg .= "Result files will available here soon:\n";
+  		$msg = "fetch-sequences starting\n";
+  		$msg .= "Result files will :\n";
   		foreach ($URL as $key => $value) {
   			$msg .= "\t".$key."\t".$value."\n";
   		}
   	}
-    
+  
+  
   	// Sending mail
   	$smtp = $properties["smtp"];
   
@@ -248,6 +262,9 @@ if (!$errors) {
   		}
   	}
   }
+  
+  
+  
   
   // Run the command
   exec($cmd, $error);
