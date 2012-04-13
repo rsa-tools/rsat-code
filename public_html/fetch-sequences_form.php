@@ -35,6 +35,16 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
     <div>
       <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSA-tools</a> - fetch-sequence</h3>
       <br/>
+<?php
+   ## Get the list of supported organisms from UCSC and display it in the pop-up menu
+   $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
+   exec($cmd, $ucsc_organisms);
+   sort($ucsc_organisms);
+
+  if ($ucsc_organisms=="")  {
+    error("Can't connect on UCSC. Please contact system administrator.");
+   }
+?> 
       <form method='post' action='fetch-sequences.php' enctype='multipart/form-data'>
 
         <fieldset>  
@@ -43,16 +53,10 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
           <select name='genome' id='genome'>
            <option value ='none'> ---UCSC genome--- </option>
 <?php
-
-   ## Get the list of supported organisms from UCSC and display it in the pop-up menu
-   $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';
-   exec($cmd, $ucsc_organisms);
-   sort($ucsc_organisms);
    foreach ($ucsc_organisms as $ligne) {
      list($genome,$description) =  explode("\t", $ligne);
      echo "<option value = '$genome'>", $genome, " ", str_replace(" Genome at UCSC", "", $description), "</option>\n";
    }
-   
 ?>
         </select><br/><br/>          
     <p>
