@@ -4,15 +4,15 @@ anoCar2	Lizard	Anolis carolinensis	May 2010
 anoGam1	A. gambiae		Feb. 2003
 apiMel1	A. mellifera		July 2004
 apiMel2	A. mellifera		Jan. 2005
-apiMel3	A. mellifera		May. 2005
+apiMel3	A. mellifera		May 2005
 aplCal1	Sea hare		Sept. 2008
-bosTau1	Cow	Bos taurus	
+bosTau1	Cow	Bos taurus	May 2004
 bosTau2	Cow	Bos taurus	Mar. 2005
 bosTau3	Cow	Bos taurus	Aug. 2006
 bosTau4	Cow	Bos taurus	Oct. 2007
-bosTau5	Cow	Bos taurus
+bosTau5	Cow	Bos taurus	Apr. 2009
 bosTau6	Cow	Bos taurus	Nov. 2009
-braFlo1	Lancelet		Mar. 2006
+braFlo1	Lancelet	Branchiostoma floridae	Mar. 2006
 caeJap1	C. japonica		Mar. 2008
 caePb1	C. brenneri		Jan. 2007
 caePb2	C. brenneri		Feb. 2008
@@ -30,7 +30,7 @@ cavPor3	Guinea pig 	Cavia porcellus	Feb. 2008
 cb1	C. briggsae		July 2002
 cb2	C. briggsae		
 cb3	C. briggsae		Jan. 2007
-ce1	C. elegans		
+ce1	C. elegans		May 2003
 ce10	C. elegans		Oct. 2010
 ce2	C. elegans		Mar. 2004
 ce3	C. elegans		
@@ -41,7 +41,7 @@ choHof1	Sloth	Choloepus hoffmanni	July 2008
 ci1	C. intestinalis		Dec. 2002
 ci2	C. intestinalis		Mar. 2005
 danRer1	Zebrafish	Danio rerio	
-danRer2	Zebrafish	Danio rerio	
+danRer2	Zebrafish	Danio rerio	Jun. 2004
 danRer3	Zebrafish	Danio rerio	May 2005
 danRer4	Zebrafish	Danio rerio	Mar. 2006
 danRer5	Zebrafish	Danio rerio	July 2007
@@ -116,26 +116,26 @@ loxAfr2	Elephant	Loxodonta africana 	July 2008
 loxAfr3	Elephant	Loxodonta africana 	July 2009
 macEug1	Wallaby	Macropus eugenii	Nov. 2007
 macEug2	Wallaby	Macropus eugenii	Sep. 2009
-melGal1	Turkey		Dec. 2009
+melGal1	Turkey	Meleagris gallopavo	Dec. 2009
 micMur1	Mouse lemur 	Microcebus murinus	Jun. 2003
 mm10	Mouse	Mus musculus	Dec. 2011
 mm1	Mouse	Mus musculus	
 mm2	Mouse	Mus musculus	
-mm3	Mouse	Mus musculus	
+mm3	Mouse	Mus musculus	Feb. 2003
 mm4	Mouse	Mus musculus	
-mm5	Mouse	Mus musculus	
-mm6	Mouse	Mus musculus	
+mm5	Mouse	Mus musculus	May 2004
+mm6	Mouse	Mus musculus	Mar. 2005
 mm7	Mouse	Mus musculus	Aug. 2005
 mm8	Mouse	Mus musculus	Feb. 2006
 mm9	Mouse	Mus musculus	July 2007
 monDom1	Opossum	Monodelphis domestica	Oct. 2004
-monDom2	Opossum	Monodelphis domestica	
-monDom3	Opossum	Monodelphis domestica	
+monDom2	Opossum	Monodelphis domestica	Jun 2005
+monDom3	Opossum	Monodelphis domestica	Mar. 2005
 monDom4	Opossum	Monodelphis domestica	Jan. 2006
 monDom5	Opossum	Monodelphis domestica	Oct. 2006
 myoLuc1	Microbat	Myotis lucifugus	Mar. 2006
 myoLuc2	Microbat	Myotis lucifugus	July 2010
-nomLeu1	Gibbon		Jan. 2010
+nomLeu1	Gibbon	Hylobates sp.	Jan. 2010
 ochPri1	Pika	Ochotona princeps	
 ochPri2	Pika	Ochotona princeps	July 2008
 ornAna1	Platypus	Ornithorhynchus anatinus	Mar. 2007
@@ -144,7 +144,7 @@ oryCun2	Rabbit	Oryctolagus cuniculus	Apr. 2009
 oryLat1	Medaka	Oryzias latipes	Apr. 2006
 oryLat2	Medaka	Oryzias latipes	Oct. 2005
 otoGar1	Bushbaby	Otolemur garnettii	Dec. 2006
-oviAri1	Sheep		Feb. 2010
+oviAri1	Sheep	Ovis aries	Feb. 2010
 panTro1	Chimp	Pan troglodytes	Nov. 2003
 panTro2	Chimp	Pan troglodytes	Mar. 2006
 panTro3	Chimp	Pan troglodytes	Oct. 2010
@@ -158,7 +158,7 @@ pteVam1	Megabat	Pteropus vampyrus	July 2008
 rheMac1	Rhesus	Macaca mulatta	
 rheMac2	Rhesus	Macaca mulatta	Jan. 2006
 rn1	Rat	Rattus norvegicus	
-rn2	Rat	Rattus norvegicus	
+rn2	Rat	Rattus norvegicus	Jan. 2003
 rn3	Rat	Rattus norvegicus	June 2003
 rn4	Rat	Rattus norvegicus	Nov. 2004
 sacCer1	S. cerevisiae		Oct. 2003
@@ -168,8 +168,8 @@ sorAra1	Shrew	Sorex araneus	June 2006
 speTri1	Squirrel	Spermophilus tridecemlineatus	Feb. 2008
 strPur1	S. purpuratus		Apr. 2005
 strPur2	S. purpuratus		Sep. 2006
-susScr1	Pig		
-susScr2	Pig		Nov. 2009
+susScr1	Pig	Sus scrofa	
+susScr2	Pig	Sus scrofa	Nov. 2009
 taeGut1	Zebra finch	Taeniopygia guttata	July 2008
 tarSyr1	Tarsier	Tarsius syrichta	Aug. 2008
 tetNig1	Tetraodon	Tetraodon nigroviridis	Feb. 2004
