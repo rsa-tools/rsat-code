@@ -34,6 +34,7 @@ def main( argv):
                          OptionManager.PIPELINE_NAME + "=",\
                          OptionManager.INPUT_PEAKS + "=",\
                          OptionManager.REF_SPECIES + "=",\
+                         OptionManager.MAF_FILE_PATH + "=",\
                          OptionManager.ALIGN_SPECIES + "=",\
                          OptionManager.REF_MOTIF + "=",\
                          OptionManager.PEAK_NUMBER + "=",\
@@ -159,6 +160,7 @@ def usage():
     print " Expert level options : "
     print " -----------------------"
     print ""
+    print " --maf_path \t\t: the path to the folder containing the MAF files."
     print " --db_root_path \t\t: the path to the folder containing all the TF databases."
     print " --db_file_list \t\t: the space separated list of TF database file name."
     print " --db_format_list \t\t: the space separated list of TF database format. The order and the size of this list must be the same as the list provided throught the --db_file_list option."

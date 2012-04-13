@@ -94,6 +94,7 @@ class OptionManager:
     PIPELINE_NAME = "pipeline_name"
     INPUT_PEAKS = "input_peaks"
     REF_SPECIES = "ref_species"
+    MAF_FILE_PATH = "maf_path"
     ALIGN_SPECIES = "align_species"
     DB_ROOT_PATH = "db_root_path"
     DB_FILE_LIST = "db_file_list"
@@ -136,7 +137,7 @@ class OptionManager:
                         component.pipelineName = arg
                 
                 # Add the BED file path
-                if opt == OptionManager.INPUT_PEAKS:
+                elif opt == OptionManager.INPUT_PEAKS:
                     OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.INPUT_BED_FILE_PARAM, arg)
                 
                 # Add the value of the number of peaks taken into account
@@ -147,9 +148,12 @@ class OptionManager:
                 elif opt == OptionManager.REF_SPECIES:
                     OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.REFERENCE_SPECIES_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.REFERENCE_SPECIES_PARAM, arg)
-                    OptionManager.extendParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.INPUT_MAF_FILE_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.BlockProcessor.BlockProcessor", BlockProcessor.REFERENCE_SPECIES_PARAM, arg)
                     OptionManager.addParam( pipeline, "processor.MotifProcessor.MotifProcessor", MotifProcessor.REFERENCE_SPECIES_PARAM, arg)
+       
+                # Add the path to the MAF files
+                elif opt == OptionManager.MAF_FILE_PATH:
+                    OptionManager.addParam( pipeline, "processor.MAFProcessor.MAFProcessor", MAFProcessor.INPUT_MAF_FILE_PARAM, arg)
        
                 # Add the list of species to be aligned with the reference one
                 elif opt == OptionManager.ALIGN_SPECIES:
