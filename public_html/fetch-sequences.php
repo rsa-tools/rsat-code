@@ -202,6 +202,53 @@ if (!$errors) {
   echo "<hr>";
   flush(); 
 
+  ################################################################
+  // Send email with notification of starting task
+  if ($fs_output =="email")  {
+  	// Parammeters for sending the mail
+  	$to = $fs_user_email;
+  	$subject = "[RSAT] fetch-sequences start ".$now."_".$suffix;
+  
+  	// Store the URL table in a variable
+  	$html_mail = 0; // Boolean variable indicating whether HTML format is supported in email
+  	$headers = ""; // Header (specifying Mime types)
+  	if ($html_mail) {
+  		$msg = "<table class='resultlink'>\n";
+  		$msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
+  		foreach ($URL as $key => $value) {
+  			$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n";
+  		}
+  		$msg .= "</table>\n";
+  
+  		$headers .= 'Mime-Version: 1.0'."\r\n";
+  		$headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
+  		$headers .= "\r\n";
+  	} else {
+  		$msg = "fetch-sequences starting\n"
+  		$msg .= "Result files will available here soon:\n";
+  		foreach ($URL as $key => $value) {
+  			$msg .= "\t".$key."\t".$value."\n";
+  		}
+  	}
+    
+  	// Sending mail
+  	$smtp = $properties["smtp"];
+  
+  	// Check that the SMTP was specificed in the property file of the server
+  	if ($smtp == "") {
+  		error("SMTP server is not specified in the RSAT config file. Please contact system administrator.");
+  	} else {
+  		info("Sending mail via SMTP ".$smtp);
+  		ini_set ( "SMTP", $smtp);
+  		$mail_sent = mail($to, $subject, $msg, $headers);
+  		if ($mail_sent) {
+  			info("Job done, email sent to ".$to);
+  		} else {
+  			error("Notification mail could not be sent.\n\n.".$msg);
+  		}
+  	}
+  }
+  
   // Run the command
   exec($cmd, $error);
 
