@@ -31,6 +31,7 @@ def main( argv):
 
     try:
         long_options = [ OptionManager.PIPELINE + "=",\
+                         OptionManager.PIPELINE_NAME + "=",\
                          OptionManager.INPUT_PEAKS + "=",\
                          OptionManager.REF_SPECIES + "=",\
                          OptionManager.ALIGN_SPECIES + "=",\
@@ -147,6 +148,7 @@ def usage():
     print " -------------------"
     print ""
     print " --pipeline \t: the path to the XML file describing the pipeline to execute."
+    print " --pipeline_name \t: the name of the pipeline."
     print " --input_peaks \t: the path to the BED file containing the chIP-seq peaks."
     print " --ref_species \t: the id of the reference species (e.g. mm8)."
     print ' --align_species: the space separated list of species composing the desired multi-alignement (e.g. "hg18 rn4 BosTau3").'
