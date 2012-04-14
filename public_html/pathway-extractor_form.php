@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>RSAT - fetch-sequences</title>
+<title>RSAT - pathway-extractor</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="stylesheet" type="text/css"
 	href="main.css"
@@ -29,7 +29,7 @@ require ('functions.php');
 #print_r($properties);#
 UpdateLogFile("rsat","","");
 
-#echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
+#echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_files/pathway-extractor_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
 
 ?>
 
@@ -179,7 +179,7 @@ email
 			<td><input type="reset" name="reset" /></td>
 			<td><input type="button" name="demo" value="Demo"
 				onclick="add_demo()" /></td>
-			<td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>
+			<td><b><a href='help.pathway-extractor.html'>[MANUAL]</a></b></td>
 			<td><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK
 			A QUESTION]</a></b></td>
 		</tr>
