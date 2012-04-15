@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.27 2012/04/15 22:31:50 rsat Exp $
+# $Id: genome-blast,v 1.28 2012/04/15 22:45:14 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -492,7 +492,7 @@ sub iterate_blast {
 		    $task_counter = 0;
 		    $batch_command = "";
 		} else {
-		    $batch_command .= ";\n";
+		    $batch_command .= "; ";
 		}
 
 	    } else {
@@ -736,14 +736,21 @@ Don't die on error.
 
 =item B<-batch>
 
+Run the tasks in batch. This option requires to dispose of a PC
+cluster, and to properly configure it in the configuration file
+$RSAT/RSAT_config.props.
 
-Run the tasks in batch. This option only works on our lab's cluster,
-but could be adapted for other configurations by adapting the method
-&doit() in the utilities ($RSAT/lib/RSA.lib).
+=item B<-batch batch_nb>
+
+If the first argument following the option I<-batch> is a strictly
+positive Natural number, jobs are posted to the cluster queue by
+groups of I<batch_nb> tasks (each job script regroups I<batch_nb>
+tasks).
+
 
 =cut
       } elsif ($ARGV[$a] eq "-batch") {
-        if (&RSAT::util::IsNatural($ARGV[$a+1])) {
+        if ((defined($ARGV[$a+1])) && (&RSAT::util::IsNatural($ARGV[$a+1]))) {
 	    $batch = $ARGV[$a+1];
 	    &RSAT::error::FatalError("Batch number must be larger than 0") 
 		if ($batch == 0);
