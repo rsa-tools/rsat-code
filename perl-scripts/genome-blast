@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.26 2011/02/17 05:07:46 rsat Exp $
+# $Id: genome-blast,v 1.27 2012/04/15 22:31:50 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -379,7 +379,10 @@ sub iterate_blast {
     my ($db_organisms_ref, $query_organisms_ref) = @_;
     my @db_organisms = @{$db_organisms_ref};
     my @query_organisms = @{$query_organisms_ref};
-    my $d = 0;
+    my $d = 0; ## counter of database organisms
+    my $batch_command = "";
+    my $task_counter = 0; ## Counter for regrouping tasks in batch jobs (when $batch > 1)
+    my $job_counter = 0; ## Counter for the number of jobs sent to the cluster queue
     foreach $db_organism (@db_organisms) {
 	$d++;
 #    &RSAT::message::TimeWarn("DB organism" $db_organims, $d."/".scalar(@db_organisms)) if ($main::verbose >= 1);
@@ -447,7 +450,7 @@ sub iterate_blast {
 	    }
 
 	    if ($batch) {
-		my $batch_command = "$rsat_dir/perl-scripts/genome-blast";
+		$batch_command .= "$rsat_dir/perl-scripts/genome-blast";
 		$batch_command .= " -q ".$query_organism;
 		$batch_command .= " -db ".$db_organism;
 
@@ -461,6 +464,9 @@ sub iterate_blast {
 			shift @args_to_pass;
 			next;
 		    } elsif ($arg eq "-batch") {
+			if (&IsNatural($args_to_pass[0])) {
+			    shift @args_to_pass;
+			}
 			next;
 		    } else {
 			if ($arg =~ /\s/) {
@@ -470,9 +476,24 @@ sub iterate_blast {
 			}
 		    }
 		}
-		&RSAT::message::Debug($batch_command) if ($main::verbose >= 4);
 		$job_prefix="q_".$query_organism."_db_".$db_organism;
-		&doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+		## Check if batch command has to be sent to cluster or must still be appended with next BLAST task(s)
+		$task_counter++;
+		if (($task_counter >= $batch) ||
+		    (($d >= scalar(@db_organisms)) && ($q >= scalar(@query_organisms)))) {
+		    ## Send job with 1 or more tasks (depending on $batch number)
+		    $job_counter++;
+		    &RSAT::message::Debug($batch_command) if ($main::verbose >= 4);
+		    &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+		    &RSAT::message::TimeWarn("Job number", $job_counter, "sent to cluster queue") if ($main::verbose >= 2);
+
+		    ## Reinitialize counter and batch command for next iterations
+		    $task_counter = 0;
+		    $batch_command = "";
+		} else {
+		    $batch_command .= ";\n";
+		}
 
 	    } else {
 		&BlastAndRank() if ($task{blastall});
@@ -721,10 +742,15 @@ but could be adapted for other configurations by adapting the method
 &doit() in the utilities ($RSAT/lib/RSA.lib).
 
 =cut
-	} elsif ($ARGV[$a] eq "-batch") {
+      } elsif ($ARGV[$a] eq "-batch") {
+        if (&RSAT::util::IsNatural($ARGV[$a+1])) {
+	    $batch = $ARGV[$a+1];
+	    &RSAT::error::FatalError("Batch number must be larger than 0") 
+		if ($batch == 0);
+        } else {
 	    $batch = 1;
-
-	}
+        }
+      }
 
     }
 
