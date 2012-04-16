@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.18 2010/01/23 08:10:21 jvanheld Exp $
+# $Id: makefile,v 1.19 2012/04/16 15:53:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -31,6 +31,7 @@ IND_FILES=${TEX_FILES:.tex=.ind}
 LOG_FILES=${TEX_FILES:.tex=.log}
 TOC_FILES=${TEX_FILES:.tex=.toc}
 OUT_FILES=${TEX_FILES:.tex=.out}
+BRF_FILES=${TEX_FILES:.tex=.brf}
 
 PDF_FILES=${TEX_FILES:.tex=.pdf}
 PS_FILES=${TEX_FILES:.tex=.ps}
@@ -54,7 +55,7 @@ rsat_tutorial:
 
 install_guide:
 	@${MAKE} install_guide.pdf
-	@${MAKE} tex_clean
+#	@${MAKE} tex_clean
 	@echo install_guide.pdf
 
 rsat_web_server:
@@ -102,7 +103,7 @@ all_view: ${VIEW_FILES}
 #
 
 tex_clean:
-	${RM} ${AUX_FILES} ${BBL_FILES} ${BLG_FILES} ${DVI_FILES} ${IDX_FILES} ${ILG_FILES} ${IND_FILES} ${LOG_FILES} ${TOC_FILES} ${OUT_FILES}
+	${RM} ${AUX_FILES} ${BBL_FILES} ${BLG_FILES} ${DVI_FILES} ${IDX_FILES} ${ILG_FILES} ${IND_FILES} ${LOG_FILES} ${TOC_FILES} ${OUT_FILES} ${BRF_FILES}
 
 pdf_clean:
 	${RM} ${PDF_FILES}
@@ -125,18 +126,22 @@ emacs_clean:
 SPLIT=4
 .tex.html:
 	latex2html -split ${SPLIT} $<
+	@echo "$<.html"
 
 .tex.dvi:
 	latex $<; bibtex $<; latex $<; latex $<
+	@echo "$<.dvi"
 #	latex $< 
 #	makeindex $< 
 #	latex $< 
 
 .dvi.pdf:
 	dvipdf $<
+	@echo "$<.pdf"
 
 .dvi.ps:
 	dvips -o $@ $<
+	@echo "$<.ps"
 
 .pdf.view:
 	acroread $<
