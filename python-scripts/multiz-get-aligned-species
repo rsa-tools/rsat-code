@@ -58,7 +58,7 @@ import time
 ##Initalize variable
 rsat_path = os.getenv('RSAT') # Main path for the RSAT suite
 peak_footprints_path = rsat_path + "/contrib/peak-footprints/" # Path for the peak-footprint program
-multiz_path = rsat_path + "/data/UCSC_multiz/"
+multiz_path = rsat_path + "/data/UCSC_multiz"
 supported_organism_ucsc_multiz_local = rsat_path+"/data/supported_organism_ucsc_multiz_local.tab"
 exp_reg = ('multiz(\d+)way')
 exp_reg = re.compile(exp_reg)
@@ -114,7 +114,7 @@ file = open(supported_organism_ucsc_multiz_local,'r')
 line = file.readline()
 
 while line != "":
-	ref_species,nb_species, species = line.split("\t")
+	ref_species,nb_species, species, path = line.split("\t")
 	#if not ref_species in args.ref_species and int(nb_species) not in args.nb_species:
 	if not ref_species in args.ref_species : 		
 		line_to_keep += line+"\n"
@@ -138,6 +138,7 @@ if args.remove:
 cmd = "ls -lRSr "+ multiz_path
 cmd += " | grep -v '\.gz$'" #removing .gz file
 cmd += " | grep -v '\.mafindex$'" #removing .mafindex file
+cmd += " | grep -v '\.xml$'" #removing .xml file
 cmd += " | grep -v '^d'" #removing directory
 cmd += " | grep -v 'total'" #removing useless line
 cmd += " | awk '{print $NF}'" #get only the name of maf file
@@ -153,7 +154,7 @@ for directory in downloaded_maf:
 		path = directory[0].strip().rstrip(':')
 		local_path = path.replace(multiz_path,"").lstrip("/")
 		ref_species = local_path.split("/")[0]
-		multiz = local_path.split("/")[1]
+		multiz = local_path.split("/")[1]		
 		nb_species = int(exp_reg.findall(multiz)[0])
 		
 		#only get species for ref_species and multiz paste in argument
@@ -171,10 +172,10 @@ for directory in downloaded_maf:
 				cmd +=" | awk '{print $2}'" #get only the name of species and chr
 				cmd +=" | sed 's/\..*//'" # removing chr
 				cmd +=" | sort -u" #removing redondante info
-				
+
 				species = subprocess.check_output(cmd, shell=True)
 				species = species[:-1].split("\n")
-				
+
 				for specie in species:
 					if specie not in list_species:
 						list_species.append(specie)
@@ -184,8 +185,19 @@ for directory in downloaded_maf:
 			list_species.remove(ref_species)
 			for specie in list_species:
 				if args.print_result:
-					print ref_species+"\t"+str(nb_species)+"\t"+specie
+					print ref_species+"\t"+str(nb_species)+"\t"+specie+"\t"+path
 				else:
-					file.write(ref_species+"\t"+str(nb_species)+"\t"+specie+"\n")
+					file.write(ref_species+"\t"+str(nb_species)+"\t"+specie+"\t"+path.lstrip(rsat_path)+"\n")
+
+			##Removing treating maf directory
+			t_ref_spec_nb_spec.remove((ref_species,nb_species))
+			
 file.close()
+
+if t_ref_spec_nb_spec != []:
+	for ref_species,nb_species in t_ref_spec_nb_spec:
+		print "Can't find "+ref_species+"/multiz"+str(nb_species)+"way"
+			
+
+
 		
