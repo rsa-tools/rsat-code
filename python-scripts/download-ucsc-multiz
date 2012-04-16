@@ -108,7 +108,7 @@ if args.help:
 if args.org and args.org_file:
 	print 'You indicate organism -org and -org_file. You can only use one option for specify organism'
  	sys.exit(1)
- 	
+
 ################################################################
 ##Define variables
 
@@ -120,7 +120,7 @@ fetch_maf_list_name = multiz_path+"fetch_maf_list.txt"
 
 ##Define for every local abrv month the num of the month
 num_month= {}
-for i in range(1,13):
+for i in range(12):
 	result = subprocess.check_output('date -v -'+str(i)+'m +"%b %m"', shell=True)
 	month, n_month = result.strip("\n").split()
 	num_month[month]=n_month
@@ -167,6 +167,9 @@ cmd += " | grep -v '\.gz$'"
 ## Ignore index files
 #cmd += " | grep -v '\.mafindex$'"
 
+## Ignore xml files
+cmd += " | grep -v '\.xml$'"
+
 ## Ignore folders
 cmd += " | grep -v '^d'"
 
@@ -203,27 +206,22 @@ for maf in already_d_u_i_maf:
 
 			if extension == "maf":
 				## Reformat the dates to ensure compatibility between the date formats
-				## returned by the "ls" and "rsync" commands, repsectively			
-				if lang == "fr":
-					if len(info[0]) == 1:
-						day = '0'+str(info[0])
-					else : 
-						day = str(info[0])
+				## returned by the "ls" and "rsync" commands, repsectively
 
-					month = num_month[info[1]]
-				
-				else:
-					if len(info[1]) == 1:
-						day = '0'+str(info[1])
-					else : 
-						day = str(info[1])
+				for part_date in info[:3]:
 
-					month = num_month[info[0]]
-				
-				if ":" in info[2]:
-					year = time.strftime('%Y',time.localtime())
-				else:
-					year = str(info[2])
+					if len(part_date) >= 4:
+						if ":" in part_date:
+							year = time.strftime('%Y',time.localtime())
+						else:
+							year = str(part_date)
+					elif len(part_date) <= 2:
+						if len(part_date) == 1:
+							day = '0'+str(part_date)
+						else : 
+							day = str(part_date)
+					else:
+						month = num_month[part_date]
 
 				date = year+"/"+month+"/"+day
 
@@ -382,4 +380,3 @@ if not args.no_index:
 	else:
 		if args.verbosity > 0:
 			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tNo maf to index (wrong requested organism or no new maf)"
-
