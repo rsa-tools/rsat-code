@@ -68,6 +68,7 @@ function fill_species_ali(code,fill_area,clear_area) {
 					
 		for (i=0; i<genomes.length; i++) {
 			document.getElementById(fill_area).options[i].value = genomes[i].split(" ")[0];
+			document.getElementById(fill_area).options[i].id = genomes[i].split(" ")[0];
 			document.getElementById(fill_area).options[i].text = genomes[i];
 		}		
 	}	
@@ -104,6 +105,40 @@ function move(from, to) {
 		}
 	}					
 }	
+
+function add_demo(ref_species, align_species) {
+<?php 
+$demo_file= $properties['rsat_tmp']."/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R02_nof_20120416_111600_0u2.bed";
+echo "document.forms[0].bed_url.value = '".rsat_path_to_url($demo_file)."';"; 
+?>
+
+	document.forms[0].bed.value="";
+	document.getElementById('bed_file').value=''; 
+	
+	document.getElementById(ref_species).selected = true;
+	fill_species_ali(ref_species,'species_ali','species_ali_keep');
+	fill_multiz_path(ref_species)
+	for (Species in align_species) {
+		document.getElementById(align_species[Species]).selected = true;
+	}
+	move('species_ali','species_ali_keep');
+
+	document.forms[0].r_motif.value="MA0102.2";
+	document.forms[0].custom_motifs.value="";
+	document.getElementById('custom_motifs_file').value=''; 
+
+	document.forms[0].nb_peaks.value="";
+	document.forms[0].cons_thres.value=0.7;
+	document.forms[0].window_cons_thres.value=0.7;
+	document.forms[0].window_size.value=5;
+	document.forms[0].motif_number.value=50;
+	document.forms[0].motif_number_family.value=4;
+						
+	document.forms[0].output[0].checked=true;
+}
+
+
+
 </script>
 <?php
 //Print header
@@ -112,28 +147,29 @@ $result = false;
 require ('RSAT_header.php');
 
 ?>
-		<form method='post' action='peak-footprints.php' enctype='multipart/form-data' onreset="on_reset('species_ali');on_reset('species_ali_keep');" onsubmit="select_all('species_ali_keep')">
+		<form id="form" method='post' action='peak-footprints.php' enctype='multipart/form-data' onreset="on_reset('species_ali');on_reset('species_ali_keep');" onsubmit="select_all('species_ali_keep')">
 			<fieldset>  
 				<legend><b>Genomic sequences</b></legend>
 				<p>
 					<b>Genomic coordinates</b> <span style='color:red'>(mandatory)</span>
-					<br/>Should be provided as a bed file (<a target='_blank' href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed format</a>), in any of the two following ways:				
+					<br/>Should be provided as a bed file (<a target='_blank' href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed format</a>), in any of the three following ways:				
 					<ul style="list-style-type:square">
 						<li>Paste coordinates<br/><textarea name='bed' rows='6' cols='45'></textarea></li>
+						<li>Specify the URL of bed file on remorte server (e.g. Galaxy)<br/><input type="text" name="bed_url" size="52" /></li>
 						<li>Upload a file from your computer<br/><input type='file' name='bed_file' id='bed_file' size='40' /></li>
 					</ul>
 				</p>
 				<p>
 	        <b>Reference genome</b> <span style='color:red'>(mandatory)</span>&nbsp;&nbsp;			
-					<select name="genome" onChange="fill_species_ali(this.options[this.selectedIndex].value,'species_ali','species_ali_keep');fill_multiz_path(this.options[this.selectedIndex].value);">
+					<select name="genome" id="genome" onChange="fill_species_ali(this.options[this.selectedIndex].value,'species_ali','species_ali_keep');fill_multiz_path(this.options[this.selectedIndex].value);">
 						<option value="0">----Choose a genome----</option>								
 <?php
 
 foreach($multiz_supported as $key => $value) {
-	echo "<option value='$key'>$key - ".$genome_ucsc[$key]['organism']."</option>", "\n";
+	echo "<option value='$key' id='$key'>$key - ".$genome_ucsc[$key]['organism']."</option>", "\n";
 }
 ?>
-					</select><input type='hidden' id='multiz_path' />
+					</select><input type='hidden' name='multiz_path' id='multiz_path' />
 				</p>							
 				<p>
 				  <b>Aligned species</b> <span style='color:red'>(mandatory)</span><br/>
@@ -188,8 +224,8 @@ foreach($multiz_supported as $key => $value) {
         <tr style="valign:middle">
           <td><input type="submit" name="submit" value="GO" /></td>
           <td><input type="reset"  name="reset"/></td> 
-<!--          <td><input type="button" name="demo" value="Demo" onclick="add_demo()"/></td>  
-          <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>  -->
+          <td><input type="button" name="demo" value="Demo" onclick="add_demo('mm9', Array ('hg18', 'rn4', 'bosTau3', 'monDom4'))"/></td>  
+ <!--         <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>  -->
           <td><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></b></td>
         </tr></table>
       </ul>
