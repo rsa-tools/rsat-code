@@ -40,7 +40,7 @@ body {
 	font-size: 70%;
 	margin-top: 2px;
 	margin-left: 20px;
-	text-align: justify;
+	text-align: left;
 	background: #ffffff;
 	margin-right: 20px;
 	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
@@ -669,17 +669,17 @@ table.simpleform td.left {
 
 /* pathway extractor css*/
 span.fieldtitle{
-	display: inline-block;
-	font-family: Verdana, Helvetica, Arial, sans-serif;
-	font-weight: bold;
-	font-size: 15px;
-}
+                 display: inline-block;
+                 font-family: Verdana, Helvetica, Arial, sans-serif;
+                 font-weight: bold;
+                 font-size: 12px;
+                 }
 span.sign {
-display: inline-block;
-width: 15px;
-font-family: Verdana, Helvetica, Arial, sans-serif;
-font-weight: bold;
-font-size: 15px;
+            display: inline-block;
+            width: 15px;
+            font-family: Verdana, Helvetica, Arial, sans-serif;
+            font-weight: bold;
+            font-size: 12px;
 }
 
 legend.clickable {
