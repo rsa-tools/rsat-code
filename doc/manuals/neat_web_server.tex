@@ -69,26 +69,39 @@ version (at least v5) of the php module, which can be found at the following sit
 
 \subsubsection{PHP module for LINUX}
 
-Generally, PHP5 is included with the Linux distribution or can easyly be installed using the installer (YAST, YUM, etc). Take care that the PHP5 Module for Apache 2.0 (apache2-mod\_php5) is installed.
+Generally, PHP5 is included with the Linux distribution or can easyly
+be installed using the installer (YAST, YUM, etc). Take care that the
+PHP5 Module for Apache 2.0 (apache2-mod\_php5) is installed.
 
-PHP5 can also be installed manually from the PHP website (\url{http://www.php.net/downloads.php}).
+PHP5 can also be installed manually from the PHP website
+(\url{http://www.php.net/downloads.php}).
+
+In addition, you will need to install the module php5-SOAP.
 
 \subsubsection{Modification of php.ini}
-In order for the server to work with \neat, you have to edit the file \file{php.ini} which is the main configuration file of PHP. Depending on your PHP installation, this file might be in different directory. In computers running Suse 10.3, this file is in the \url{/etc/php5/apache2/} directory. In this file, you must modify the following fields accordingly.
+
+In order for the server to work with \neat, you have to edit the file
+\file{php.ini} which is the main configuration file of PHP. Depending
+on your PHP installation, this file might be in different
+directory. In computers running Suse 10.3, this file is in the
+\url{/etc/php5/apache2/} directory. In this file, you must modify the
+following fields accordingly.
 
 \begin{lstlisting}
 soap.wsdl_cache_enabled=0
-max_execution_time = 2400
-max_input_time = 6000	;
-memory_limit = 600M
-error_reporting  =  E_ALL & ~E_NOTICE
-post_max_size = 300M
-upload_max_filesize = 200M
-default_socket_timeout = 3000
+max_execution_time = 3600
+max_input_time = 1800
+memory_limit = 1G
+error_reporting = E_ALL & ~E_NOTICE
+post_max_size = 50M
+upload_max_filesize = 50M
+default_socket_timeout = 1800
 upload_tmp_dir = "/tmp/php/"
 \end{lstlisting}
 
-Pay attention to the location of php5 extension libraries. Indicate the correct directory, e.g.
+Pay attention to the location of php5 extension libraries. Indicate
+the correct directory, e.g.:
+
 \begin{lstlisting}
 extension_dir=/usr/lib/php5/extensions
 \end{lstlisting}
@@ -97,17 +110,17 @@ You must change permissions so that the directory \url{/tmp/php/} for
 temporary upload is writable by eveverybody. To do this, type:
 
 \begin{lstlisting}
-mkdir -p /tmp/php; 
-chmod 777 /tmp/php
+sudo mkdir -p /tmp/php; 
+sudo chmod 777 /tmp/php
 \end{lstlisting}
 
 
 \subsection{Tomcat}
 
-A part of \neat is using axis web services, JSP and Java servlet pages and needs Tomcat
-or an equivalent servlet engine to run.
-Tomcat can be easily installed on SUSE with yast and is
-usually located in \file{/usr/share/tomcat} after installation.
+A part of \neat is using axis web services, JSP and Java servlet pages
+and needs Tomcat or an equivalent servlet engine to run.  Tomcat can
+be easily installed on SUSE with yast and is usually located in
+\file{/usr/share/tomcat} after installation.
 
 %% On MacOS, it is already installed by default.
 On MaxOS, you need to install TomCat
@@ -117,9 +130,10 @@ Make sure to install at least Tomcat version 5.  We noticed however
 that Tomcat version 6 is more stable.  We will refer from now on to
 the Tomcat root directory as \$CATALINA\_HOME.
 
-\subsubsection{Configuration of Tomcat}
-If you would like to use the Tomcat manager, make sure to configure the file
-tomcat-users.xml located in \$CATALINA\_HOME/conf.
+\subsubsection{Tomcat configuration}
+
+If you would like to use the Tomcat manager, make sure to configure
+the file tomcat-users.xml located in \$CATALINA\_HOME/conf.
 
 Add a manager role with a special login and password, e.g.
 \begin{lstlisting}
@@ -131,17 +145,22 @@ Add a manager role with a special login and password, e.g.
 </tomcat-users>
 \end{lstlisting}
 
-Make sure that tomcat-users.xml cannot be read by anyone else than tomcat or root.\\
+Make sure that tomcat-users.xml cannot be read by anyone else than
+tomcat or root.
 
-By default, Tomcat takes a lot of memory. You can reduce this amount by
-modifying the file tomcat.conf in \$CATALINA\_HOME/conf.
-Adjust the variable JAVA\_OPTS as follows:\\
-JAVA\_OPTS="-Xmx800m"\\
+By default, Tomcat takes a lot of memory. You can reduce this amount
+by modifying the file tomcat.conf in \$CATALINA\_HOME/conf.
+Adjust the variable JAVA\_OPTS as follows:
 
-You can start Tomcat on SUSE with\\
- \textit{/etc/init.d/tomcat6 start}\\
-and stop it with\\
- \textit{/etc/init.d/tomcat6 stop}\\
+JAVA\_OPTS="-Xmx800m"
+
+You can start Tomcat on SUSE with
+
+ \textit{/etc/init.d/tomcat6 start}
+
+and stop it with
+
+ \textit{/etc/init.d/tomcat6 stop}
 
 More advice for the installation and configuration of Tomcat on unix systems
 can be found at: \textit{http://linux-sxs.org/internet\_serving/book1.html}
@@ -199,12 +218,18 @@ An alternative to mod\_jk is mod\_proxy, which requires less configuration.
 
 \subsubsection{Preparation of folders for Tomcat}
 In Linux, a tomcat user is created if Tomcat is installed via yast. Make sure
-that this user has read, write and execution rights for the following folders:\\
-\file{\$RSAT/contrib/REA}\\
-\file{\$RSAT/contrib/kwalks/bin}\\
-\file{\$RSAT/public\_html/data/KEGG}\\
-\file{\$RSAT/public\_html/data/Stored\_networks}\\
-\file{\$RSAT/java/lib}\\
+that this user has read, write and execution rights for the following folders:
+
+\file{\$RSAT/contrib/REA}
+
+\file{\$RSAT/contrib/kwalks/bin}
+
+\file{\$RSAT/public\_html/data/KEGG}
+
+\file{\$RSAT/public\_html/data/Stored\_networks}
+
+\file{\$RSAT/java/lib}
+
 
 If any of these folders does not yet exist, create them.
 
@@ -232,7 +257,8 @@ open the RSAT configuration file and set the parameter
 
 \item There are two ways to deploy a war file.
  If you do not use the Tomcat manager, make sure
- Tomcat can open the war file with the command:\\
+ Tomcat can open the war file with the command:
+
  \textit{chown tomcat:tomcat be.ac.ulb.bigre.graphtools.server.war}
  Then place the war file \textit{be.ac.ulb.bigre.graphtools.server.war} in
  \$CATALINA\_HOME/webapps and start Tomcat.
@@ -244,8 +270,10 @@ open the RSAT configuration file and set the parameter
 
 \item Open \textit{serverConfig.txt} and set the value of RSAT\_ROOT to the value of \$RSAT.
 
-\item Run install.sh with the following commands:\\
-	  \textit{chmod 755 install.sh}\\
+\item Run install.sh with the following commands:
+
+	  \textit{chmod 755 install.sh}
+
       \textit{./install.sh}
 
 \end{enumerate}
@@ -257,7 +285,8 @@ If you want to install the metabolic pathfinder, continue with section "Metaboli
 
 The directory \file{\$RSAT/public\_html/data/Stored\_networks}
 allows to store graph files for longer time
-(since \file{\$RSAT/public\_html/tmp} is cleaned regularly).\\
+(since \file{\$RSAT/public\_html/tmp} is cleaned regularly).
+
 
 Note that the Kegg network provider accesses the metabolic database to add attributes
 such as compound name or EC number to networks.
@@ -272,18 +301,29 @@ The KEGG network provider places organism-specific KGML files in \file{\$RSAT/pu
 in a folder with the KEGG organism name (e.g. sce).
 You may place KGML folders for organisms yourself or you may let the program download
 required KGML files on the fly. In the latter case, make sure that the KGML version is set correctly.
-To change the KGML version displayed in the web interface,\\
-go to \file{\$CATALINA\_HOME/webapps/be.ac.ulb.bigre.graphtools.server/WEB-INF}, open
-\textit{serverConfig.txt} and modify the value of the parameter KGML\_VERSION.\\
+To change the KGML version displayed in the web interface,
+go to 
 
-The Kegg network provider queries a metabolic database in order to annotate the network
-with certain compound and reaction attributes.
-To install and update the metabolic database, use the KeggLigandDataManager command line tool.
-For details, type:
-\textit{java graphtools.parser.KeggLigandDataManager -h}\\
+\file{\$CATALINA\_HOME/webapps/be.ac.ulb.bigre.graphtools.server/WEB-INF}
 
-The KEGG network provider is also using the file rpairs.tab located in \file{\$RSAT/data/KEGG}
-to convert reaction into RPAIR graphs. To update this file, use the KeggLigandDataManager command line tool.\\
+Open \textit{serverConfig.txt} with a text editor, and modify the
+value of the parameter \texttt{KGML\_VERSION}.
+
+
+The Kegg network provider queries a metabolic database in order to
+annotate the network with certain compound and reaction attributes.
+
+To install and update the metabolic database, use the
+\command{KeggLigandDataManager} command line tool.  For details, type:
+
+\begin{lstlisting}
+java graphtools.parser.KeggLigandDataManager -h
+\end{lstlisting}
+
+
+The KEGG network provider is also using the file rpairs.tab located in
+\file{\$RSAT/data/KEGG} to convert reaction into RPAIR graphs. To
+update this file, use the KeggLigandDataManager command line tool.
 
 Finally, the KEGG network provider displays a list of KEGG organisms. To obtain the
 organism list for the recent KEGG version, use the MetabolicGraphProvider command line
@@ -300,12 +340,14 @@ Metabolic pathfinder and pathway extraction have a number of additional requirem
 
 \begin{enumerate}
 
-\item Dot\\
+\item Dot
+
 Dot is needed to draw graphs and can be obtained freely from \textit{http://www.graphviz.org/}.
 
 \item Postgres
 \begin{enumerate}
-\item Installation\\
+\item Installation
+
 Postgres (version 8.2 or later) is needed to store KEGG and MetaCyc data.
 Postgres can be obtained freely from
 \textit{http://www.postgresql.org/}.
@@ -313,7 +355,8 @@ For MacOS, you can use Darwinports to install postgres. On SUSE, you may
 install it with yast (install postgresql and postgresql-server).
 Usually, a postgres user is created during installation of postgres.
 
-\item Postgres configuration\\
+\item Postgres configuration
+
 You may need to configure the postgres server. You can simply
 allow all users on your machine (but not from outside) to access
 all postgres databases.
@@ -328,25 +371,34 @@ host    all         all         127.0.0.1             trust
 For more details on postgres configuration, check the postgres manual
 on the pg\_hba.conf and pg\_ident.conf files.
 
-\item Start the server\\
+\item Start the server
+
 On SUSE, you may start the postgres server with
 \textit{/etc/init.d/postgresql start}. On MacOS, you may start the postgres server
-using a command similar to\\
-\textit{pg\_ctl -D /usr/local/pgsql/data/ -l logfile start}.\\
+using a command similar to
 
-\item Obtain the data file\\
+\textit{pg\_ctl -D /usr/local/pgsql/data/ -l logfile start}.
+
+
+\item Obtain the data file
+
 Download the postgres backup file \file{metabolicdb\_dump\_day\_month\_year.backup}
 from the data section of the official NeAT web site.
 
-\item Load data into postgres\\
+\item Load data into postgres
+
 Load the \file{metabolicdb\_dump\_day\_month\_year.backup} file into postgres as follows:
 \begin{enumerate}
-\item Start postgres by typing the following on command line:\\
+\item Start postgres by typing the following on command line:
+
 \textit{psql -U postgres}
-\item In postgres, do:\\
-\textit{create user metabolic with password 'metabolic';}\\
+\item In postgres, do:
+
+\textit{create user metabolic with password 'metabolic';}
+
 \textit{create database "metabolicdb" with owner "metabolic" encoding='UTF8';}
-\item Quit postgres and type the following command in one line:\\
+\item Quit postgres and type the following command in one line:
+
 \textit{pg\_restore -d metabolicdb metabolicdb\_dump\_day\_month\_year.backup -U postgres}
 \end{enumerate}
 
@@ -356,7 +408,8 @@ Load the \file{metabolicdb\_dump\_day\_month\_year.backup} file into postgres as
 
 \subsubsection{Installation of metabolic pathfinder and pathway extraction}
 Either place the war file \textit{metabolicpathfinding.war} located
-in \file{\$RSAT/java/web} in\\
+in \file{\$RSAT/java/web} in
+
 \$CATALINA\_HOME/webapps and then start
 Tomcat or use the Tomcat manager to deploy the war file.
 
@@ -365,10 +418,13 @@ Tomcat or use the Tomcat manager to deploy the war file.
 \begin{enumerate}
 \item Go to the folder \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/WEB-INF}.
 
-\item If you are not the rsat user, set the RSAT environment variable, e.g.:\\
+\item If you are not the rsat user, set the RSAT environment variable, e.g.:
+
       \textit{export RSAT=/home/rsat/rsa-tools}
-      Run the configuration script with the following commands:\\
-      \textit{chmod 755 configureWebxml.pl}\\
+      Run the configuration script with the following commands:
+
+      \textit{chmod 755 configureWebxml.pl}
+
       \textit{./configureWebxml.pl}
 
 \item Reload the metabolic pathfinding web application using the Tomcat manager or
@@ -385,13 +441,15 @@ In order to update it, you can follow the steps below:
       The command line tool \textit{KeggLigandDataManager} can be used for this.
       If present, delete previous KEGG data in the database. You may change the name,
       the location, owner and password of the metabolic database. In this case, change the
-      default values in the web.xml file located at\\
+      default values in the web.xml file located at
+
       \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/WEB-INF}.
 
 \item Generate the preloaded networks with the \textit{KeggLigandDataManager} command line tool.
       Place those networks in \file{\$RSAT/data/Stored\_networks} replacing the old ones.
 
-\item In point 2, example networks have been generated as well.\\
+\item In point 2, example networks have been generated as well.
+
       Copy them to
       \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/networks}, replacing the old ones.
 
@@ -412,13 +470,15 @@ See the section on the update of metabolic pathfinder for the KEGG data.
       The command line tool \textit{MetabolicXMLFilesParser} can be used for this.
       If present, delete previous MetaCyc data in the database. You may change the name,
       the location, owner and password of the metabolic database. In this case, change the
-      default values in the web.xml file located at\\
+      default values in the web.xml file located at
+
       \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/WEB-INF}.
 
 \item Generate the preloaded networks with the \textit{MetabolicGraphProvider} command line tool.
       Place those networks in \file{\$RSAT/data/Stored\_networks} replacing the old ones.
 
-\item In point 2, an example network has been generated as well.\\
+\item In point 2, an example network has been generated as well.
+
       Copy it to
       \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/networks}, replacing the old one.
 
