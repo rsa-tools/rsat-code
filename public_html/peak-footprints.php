@@ -7,6 +7,7 @@ UpdateLogFile("rsat","","");
 //print_r($_POST);
 //print_r($_FILES);
 
+
 // Import variables with prefix pf_ from form
 import_request_variables('P','pf_');
 
@@ -36,6 +37,11 @@ if ($pf_bed != "") {
 
 // Local bed file on client machine
 if ($_FILES["bed_file"]['name'] != "") {
+	$bed_specifications++;
+}
+
+// Local bed file on client machine
+if ($pf_bed_url != "") {
 	$bed_specifications++;
 }
 
@@ -187,7 +193,8 @@ if($pf_output =="email") {
 //Writing bed/custom_motifs file in tmp
 if (!$errors) {
 	$suffix = "_".date("Ymd_His")."_".randchar(3);
-	$argument .= " --pipeline_name users_pipeline".$suffix;
+	$user_name = "users_pipeline$suffix";
+	$argument .= " --pipeline_name ".$user_name;
 	
 	// Bed data provided in text area
 	if ($pf_bed != "") {
@@ -232,7 +239,7 @@ if (!$errors) {
 		} else {
 			$bed_file = $bed_file.$suffix.".bed";
 		}
-		
+
 		if(move_uploaded_file($_FILES['bed_file']['tmp_name'], $bed_file)) {
 			$argument .= " --input_peaks $bed_file";
 		} else {
@@ -240,6 +247,39 @@ if (!$errors) {
 			$errors = true;
 		}
 	}
+
+	// Upload bed file from url
+	if ($pf_bed_url != "") {
+		$url = explode("/",$pf_bed_url);
+		$bed_file = end($url);
+
+		if ($url[0]=="http:" or $url[0]=='ftp:') {
+			$web_bed = file_get_contents($pf_bed_url);
+  		
+			//Add randum value to $bedfile for the outputfile
+			$bed_file = $properties['rsat_tmp']."/".$bed_file;
+			$extension = end( explode( ".", $bed_file));
+		
+			if ($extension == "bed") {
+				$bed_file = str_replace(".bed",$suffix.".bed",$bed_file);
+			} else {
+				$bed_file = $bed_file.$suffix.".bed";
+			}
+
+		$file = fopen ($bed_file, "w");
+		fwrite($file, $web_bed);
+		fclose($file);
+		$argument .= " --input_peaks $bed_file";
+
+		} else {
+			error($fs_sequence_url." is not a valid URL (should start with http: or ftp:.");
+			$errors = true;
+		}
+	}
+	
+
+
+
 
 	//Custom_Motifs data provided in text area
 	if ($pf_custom_motifs != "") {
@@ -294,16 +334,23 @@ if (!$errors) {
 
 /////////////////////////////////////////////////////////////////////////////
 if (!$errors) {	
-	// Specify output file
-	//$argument .= " --output ".$properties['rsat_tmp'];
+
+	$maf_path = $properties['RSAT']."/".$pf_multiz_path."/";
+	$argument .= " --maf_path $maf_path"; 
+
+	$outpout_path = $properties['rsat_tmp']."/peak-footprints_output/output/$user_name";
+	
+	//Prepare URL result table
 	$URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
 	if ($custom_motifs_specifications == 1) {
 		$URL['Custom motifs (transfac format)'] = rsat_path_to_url($custom_motifs_file);
 	}
-
+	$URL['Progress can bo follow here'] = rsat_path_to_url("$outpout_path/progression.xml");
+	$URL['When progress is complete, result page appears here'] = rsat_path_to_url($outpout_path."/".$user_name."_9_FinalOutputProcessor/".$user_name."_MotifClassification.xml");
+	
 	// Add arguments to the command
 	$cmd .= $argument;
-	
+
 	// Announce job starting
 	$msg = "Starting job.";
 	if ($fs_output =="email")  {
@@ -321,13 +368,14 @@ if (!$errors) {
 	
 	// Display the result
 	print_url_table($URL);
-	
+
+
 	///////////////////////////////////////////////////////////////
-	// Send email with notification of task completion
+	// Send email with notification of starting task
 	if ($fs_output =="email")  {
 		// Parammeters for sending the mail
 		$to = $fs_user_email;
-		$subject = "[RSAT] $prog_name result ".$now."_".$suffix;
+		$subject = "[RSAT] $prog_name begin ".$suffix;
 	
 		// Store the URL table in a variable
 		$html_mail = 0; // Boolean variable indicating whether HTML format is supported in email
@@ -350,6 +398,32 @@ if (!$errors) {
 				$msg .= "\t".$key."\t".$value."\n";
 			}
 		}
+
+		// Sending mail
+		$smtp = $properties["smtp"];
+	
+		// Check that the SMTP was specificed in the property file of the server
+		if ($smtp == "") {
+			error("SMTP server is not specified in the RSAT config file. Please contact system administrator.");
+		} else {
+			info("Sending mail via SMTP ".$smtp);
+			ini_set ( "SMTP", $smtp);
+			$mail_sent = mail($to, $subject, $msg, $headers);
+			if ($mail_sent) {
+				info("Job start, email sent to ".$to);
+			} else {
+				error("Notification mail could not be sent.\n\n.".$msg);
+			}
+		}
+	}
+				
+	// Run the command
+	exec($cmd, $error);	
+
+	///////////////////////////////////////////////////////////////
+	// Send email with notification of task completion
+	if ($fs_output =="email")  {
+		$subject = "[RSAT] $prog_name result ".$suffix;
 
 		// Sending mail
 		$smtp = $properties["smtp"];
