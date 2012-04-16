@@ -30,9 +30,16 @@ original sources.
 \begin{itemize}
 \item NCBI/Genbank (\url{ftp://ftp.ncbi.nih.gov/genomes/})
 
-\item ENSEMBL (\url{http://www.ensembl.org/})
+\item UCSC (\url{http://genome.ucsc.edu/}) for the multi-genome
+  alingment files (multiz) used by \program{peak-footprints}.
 
-\item The EBI genome directory (\url{ftp://ftp.ebi.ac.uk/pub/databases/genomes/Eukaryota/})
+\item ENSEMBL (\url{http://www.ensembl.org/}) genomes are supported by
+  special tools (\program{retrieve-ensembl-seq},
+  \program{supported-organisms-ensembl}).
+
+
+\item The EBI genome directory
+  (\url{ftp://ftp.ebi.ac.uk/pub/databases/genomes/Eukaryota/})
 
 \end{itemize}
 
@@ -252,4 +259,67 @@ Options
   discovery). Repetitive sequences are replaced by \seq{N} characters.
 
 \end{itemize} 
+
+\section{Importing multi-genome alignemnt files from UCSC}
+
+\subsection{Warning: required disk space}
+
+The UCSC multi-genome alignment files occupy a hige disk space. The
+alignments of 30 vertebrates onto the mouse genome (mm9 multiz30)
+requires 70Gb. If you intend to offer support for multi-genome
+alignments, it might be safe acquiring a separate hard drive for this
+data.
+
+The complete data set available at UCSC in April 2012 occupies 1Tb in
+compressed form, and probably 7 times more once uncompressed. For
+efficiency reasons, it is necessary to uncompress these files for
+using them with the indexing system of  \program{peak-footprints}.
+
+\subsection{Checking supported genomes at UCSC}
+
+As a first step, we will check the list of supported genomes at the
+UCSC Genome Browser.
+
+\begin{lstlisting}
+supported-organisms-ucsc
+\end{lstlisting}
+
+Each genome is assocaited with a short identifier, followed by a
+description. For example, several versions of the mouse genome are
+currently available.
+
+
+\begin{small}
+\begin{verbatim}
+mm10	Mouse Dec. 2011 (GRCm38/mm10) Genome at UCSC
+mm9	Mouse July 2007 (NCBI37/mm9) Genome at UCSC
+mm8	Mouse Feb. 2006 (NCBI36/mm8) Genome at UCSC
+mm7	Mouse Aug. 2005 (NCBI35/mm7) Genome at UCSC
+\end{verbatim}
+\end{small}
+
+\subsection{Downloading multiz files from UCSC}
+
+Multi-genome alignments at UCSC are generated with the program
+\program{multiz}, which produces text files in a custom text format
+called \concept{maf} for Multi-Alignment file.
+
+We show hereafter the command to download the mm9 version of the mouse
+genome, and install it in the proper directory for
+\program{peak-footprints} (\file{\$RSAT/data/UCSC\_multiz}).
+
+\begin{lstlisting}
+download-ucsc-multiz -v 1 -org mm9
+\end{lstlisting}
+
+The program will create the sub-directory for the mm9 genome, download
+the coresponding compressed multiz files (files with extension
+\file{.maf.gz}), uncompress them, and call \program{peak-footprint}
+with specific options in order to create a position index, which will
+be further used for fast retrieval of the conserved regions under
+peaks.
+
+
+
+
 
