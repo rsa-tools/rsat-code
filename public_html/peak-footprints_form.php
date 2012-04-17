@@ -3,7 +3,6 @@
 require ('functions.php');
 #print_r($properties);
 UpdateLogFile("rsat","","");
-
 ?>
 <script type="text/javascript">
 	var multiz_genome = new Array();
@@ -127,7 +126,9 @@ echo "document.forms[0].bed_url.value = '".rsat_path_to_url($demo_file)."';";
 	document.forms[0].custom_motifs.value="";
 	document.getElementById('custom_motifs_file').value=''; 
 
-	document.forms[0].nb_peaks.value="";
+	document.forms[0].nb_peaks.value=1000;
+	document.forms[0].max_chi2_pvalue.value=1;
+	document.forms[0].max_hyp_pvalue.value=0.001;	
 	document.forms[0].cons_thres.value=0.7;
 	document.forms[0].window_cons_thres.value=0.7;
 	document.forms[0].window_size.value=5;
@@ -136,8 +137,6 @@ echo "document.forms[0].bed_url.value = '".rsat_path_to_url($demo_file)."';";
 						
 	document.forms[0].output[0].checked=true;
 }
-
-
 
 </script>
 <?php
@@ -209,13 +208,16 @@ foreach($multiz_supported as $key => $value) {
 	     <div id="menu101" class="menu_collapsible">
 	       <fieldset>
 					<table>
-						<tr><th>Maximun numbers of peaks (>= 1)</th><th><input type="text" size="3" name="nb_peaks"/></th></tr>
+						<tr><th>Maximun numbers of peaks<span style='color:red'>*</span> ]1..1000]</th><th><input type="text" size="3" name="nb_peaks" value="1000"/></th></tr>
+						<tr><th>Maximun chi2 Pvalue (>0)</th><th><input type="text" size="3" name="max_chi2_pvalue" value="1"/></th></tr>
+						<tr><th>Maximun Hypergeometric P-value (>0)</th><th><input type="text" size="3" name="max_hyp_pvalue" value="0.001"/></th></tr>		
 						<tr><th>Column-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="cons_thres"/></th></tr>
 						<tr><th>Block-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="window_cons_thres"/></th></tr>	
 						<tr><th>Initial sliding window size (>1)</th><th><input type="text" size="3" value="5" name="window_size"/></th></tr>
 						<tr><th>Maximum number of reported motifs (>1)</th><th><input type="text" size="3" value="50" name="motif_number"/></th></tr>
-						<tr><th>Maximum number of reported motifs per family (>= 1)</th><th><input type="text" size="3" value="4" name="motif_number_family"/></th></tr>
+						<tr><th>Maximum number of reported motifs per family (>1)</th><th><input type="text" size="3" value="4" name="motif_number_family"/></th></tr>
 					</table>
+					<p>* The numbers of peaks is limited to 1000 peaks. For more peaks use stand-alone version of peak-footprints.</p>
 	       </fieldset>
 	     </div>
         <b>Output</b>&nbsp;<input type="radio" name="output" value="display" />display <input type="radio" name="output" value="email" checked="checked" />email <input type="text" name="user_email"  size="30" />
