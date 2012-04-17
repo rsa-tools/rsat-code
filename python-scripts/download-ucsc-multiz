@@ -87,6 +87,7 @@ import argparse
 import re
 import subprocess
 import time
+import datetime
 
 
 #############################################################################################################	
@@ -111,7 +112,6 @@ if args.org and args.org_file:
 
 ################################################################
 ##Define variables
-
 rsat_path = os.getenv('RSAT') # Main path for the RSAT suite
 lang = os.getenv('LANG').split("_")[0] ## Language is required to interpret file modification dates
 peak_footprints_path = rsat_path + "/contrib/peak-footprints/" # Path for the peak-footprint program
@@ -156,82 +156,47 @@ if args.verbosity > 1:
 	print "\tTemporary list of maf files stored in: "+fetch_maf_list_name
 
 #############################################################################################################
-## Get the list of multiz files already downloaded,uncompressed and indexed on the RSAT muliz folder
+## Get the list of multiz files already downloaded and indexed on the RSAT muliz folder
 
-## Run a recursive ls on the local multiz folder
-cmd =  " ls -lR "+ multiz_path
+def listing (directory, multiz_path):
 
-## Filter out the compressed files
-cmd += " | grep -v '\.gz$'"
+	global already_downloaded_maf, already_indexed_maf
 
-## Ignore index files
-#cmd += " | grep -v '\.mafindex$'"
+	##Treat each file on directory
+	for file in os.listdir(directory) :		
+		file_path = os.path.join(directory, file)
 
-## Ignore xml files
-cmd += " | grep -v '\.xml$'"
-
-## Ignore folders
-cmd += " | grep -v '^d'"
-
-## Ignore the last line indicating the total
-cmd += " | grep -v 'total'"
-
-## Select the relevant columns: date and name
-cmd += " | awk '{print $6,$7,$8,$NF}'"
-
-if args.verbosity > 0:
-	print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tGetting RSAT maf list"
-	if args.verbosity > 1:
-		print "\tCommand : ",cmd
-
-## Run the command
-already_d_u_i_maf = subprocess.check_output(cmd, shell=True)
-
-## Suppress fist and last lines, which are non-informatve
-already_d_u_i_maf = already_d_u_i_maf[4:-1].split('\n   \n')
-
+		#if file_path is a directory, the fonction recall itself
+		if os.path.isdir(file_path):
+			listing(file_path, multiz_path)
+			
+		else : 
+			local_file_path = file_path.replace(multiz_path,"")
+			extension = file_path.split(".")[-1]
+			
+			if extension == "maf":
+				d = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+				date = time.strftime("%Y/%m/%d", d)
+				file_gz = local_file_path+".gz"
+				
+				already_downloaded_maf.append(date+" "+file_gz)
+				
+			if extension == "mafindex":
+				file_gz = local_file_path.replace("mafindex", "maf")+".gz"
+				already_indexed_maf.append(file_gz)
+					
+					
 ##Separated type of file
 already_downloaded_maf = []
 already_indexed_maf = []
 
-for maf in already_d_u_i_maf:
-	maf = maf.split("\n")
-
-	if len(maf)>=2: #not treating directory with no file
-		path = maf[0].lstrip().rstrip(":").replace(multiz_path,"").lstrip("/")+"/"
-
-		for info in maf[1:]:
-			info = info.split(" ")
-			extension = info[3].split(".")[-1]
-
-			if extension == "maf":
-				## Reformat the dates to ensure compatibility between the date formats
-				## returned by the "ls" and "rsync" commands, repsectively
-
-				for part_date in info[:3]:
-
-					if len(part_date) >= 4:
-						if ":" in part_date:
-							year = time.strftime('%Y',time.localtime())
-						else:
-							year = str(part_date)
-					elif len(part_date) <= 2:
-						if len(part_date) == 1:
-							day = '0'+str(part_date)
-						else : 
-							day = str(part_date)
-					else:
-						month = num_month[part_date]
-
-				date = year+"/"+month+"/"+day
-
-				already_downloaded_maf.append(date+" "+path+info[3]+".gz")
-
-			if extension == "mafindex":
-				already_indexed_maf.append(path+info[3].replace(".mafindex",".maf.gz"))
+##Calling the function
+listing(multiz_path,multiz_path)
+	
 
 #############################################################################################################
 ##  Analyze the list of multiz maf files to select files that need to be downloaded
+
 if args.verbosity > 0:
 	print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tAnalyze the list of multiz maf files"
 	
