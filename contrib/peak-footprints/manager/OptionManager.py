@@ -93,6 +93,7 @@ class OptionManager:
 
     PIPELINE_NAME = "pipeline_name"
     INPUT_PEAKS = "input_peaks"
+    PEAK_NUMBER = "peak_number"
     REF_SPECIES = "ref_species"
     MAF_FILE_PATH = "maf_path"
     ALIGN_SPECIES = "align_species"
@@ -106,7 +107,8 @@ class OptionManager:
     WINDOW_CONSERVATION_LIMIT = "window_conservation_threshold"
     MAX_MOTIF_NUMBER = "max_motif_number"
     MAX_MOTIF_BY_FAMILY = "max_motif_by_family"
-    PEAK_NUMBER = "peak_number"
+    MAX_HYP_EVALUE = "max_hyp_pvalue"
+    MAX_CHI2_EVALUE = "max_chi2_pvalue"
 
     PIPELINE = "pipeline"   
     OUTPUT = "output"       
@@ -207,7 +209,13 @@ class OptionManager:
                 elif opt == OptionManager.MAX_MOTIF_BY_FAMILY:
                     OptionManager.addParam( pipeline, "processor.ClassificationProcessor.ClassificationProcessor", ClassificationProcessor.MAX_MOTIF_BY_FAMILY, arg)
 
+                # Add the threshold on the hypergeometric e-value
+                elif opt == OptionManager.MAX_HYP_EVALUE:
+                    OptionManager.addParam( pipeline, "processor.ClassificationProcessor.ClassificationProcessor", ClassificationProcessor.MAX_HYP_EVALUE, arg)
 
+                # Add the threshold on the chi2 e-value
+                elif opt == OptionManager.MAX_CHI2_EVALUE:
+                    OptionManager.addParam( pipeline, "processor.ClassificationProcessor.ClassificationProcessor", ClassificationProcessor.MAX_CHI2_EVALUE, arg)
 
     # --------------------------------------------------------------------------------------
     # Add the given parameter with the given value to the component with the given name
