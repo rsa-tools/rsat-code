@@ -52,7 +52,7 @@ USAGE
       	    [-multiz] [-v] [-index] [-h]
         
       Exemple 
-      	download-ucsc-multiz -org mm8 mm9 hg19
+      	download-ucsc-multiz -org mm8,mm9,hg19
             
 OPTIONS
       -h, --help		
@@ -62,7 +62,7 @@ OPTIONS
           verbosity
 
       -org # 
-          list of organism seperated by white spaces
+          list of organism seperated by comma
 
       -org_file #	
           file contening all organism with only one organism by line
@@ -93,7 +93,7 @@ import datetime
 #############################################################################################################	
 ##read arguments
 parser = argparse.ArgumentParser(add_help=0)
-parser.add_argument('-org', action="store",default=False, nargs='+', dest="org")
+parser.add_argument('-org', action="store",default=False, dest="org")
 parser.add_argument('-org_file', action="store",default=False, dest="org_file")
 parser.add_argument('-multiz', action="store_true", default=False, dest="multiz")
 parser.add_argument('-nogunzip', action="store_true", default=False, dest="no_gunzip")
@@ -105,10 +105,13 @@ args = parser.parse_args()
 if args.help:
 	print  globals()['__doc__'] % {'version' : '1.00', 'progname' : parser.prog}
 	sys.exit(0)
-	
+
 if args.org and args.org_file:
 	print 'You indicate organism -org and -org_file. You can only use one option for specify organism'
  	sys.exit(1)
+
+if not args.org:
+	args.org = args.org.split(",")
 
 ################################################################
 ##Define variables
@@ -117,13 +120,6 @@ lang = os.getenv('LANG').split("_")[0] ## Language is required to interpret file
 peak_footprints_path = rsat_path + "/contrib/peak-footprints/" # Path for the peak-footprint program
 multiz_path = rsat_path + "/data/UCSC_multiz/"
 fetch_maf_list_name = multiz_path+"fetch_maf_list.txt"
-
-##Define for every local abrv month the num of the month
-num_month= {}
-for i in range(12):
-	result = subprocess.check_output('date -v -'+str(i)+'m +"%b %m"', shell=True)
-	month, n_month = result.strip("\n").split()
-	num_month[month]=n_month
 
 #############################################################################################################
 ## Get all maf.gz files available on the UCSC repository (or wanted if -org_file option is used) on UCSC
