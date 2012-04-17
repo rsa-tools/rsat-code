@@ -4,27 +4,26 @@
 	<pipeline name="default_pipeline">
 		<component processor="processor.BEDProcessor.BEDProcessor">
 			<!--param name="BEDFile" value="/Users/jeremy/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.2_nof.bed"/-->
-      			<!--param name="ReferenceSpecies" value="mm9"/-->
-			<param name="PeakNumber" value="1000"/>
+      		<!--param name="ReferenceSpecies" value="mm9"/-->
+			<!--param name="PeakNumber" value="1000"/-->
 		</component>
     		<component processor="processor.MAFProcessor.MAFProcessor">
 			<!--param name="MAFFile" value="/Users/jeremy/rsa-tools/data/UCSC_multiz/mm9/multiz30way/maf/"/-->
-      			<param name="SpecializedFile" value="true"/>
-      			<!--param name="ReferenceSpecies" value="mm9"/-->
-      			<!--param name="DesiredSpeciesList" value="rn4 hg18 monDom4 bosTau2"/-->
+      		<param name="SpecializedFile" value="true"/>
+      		<!--param name="ReferenceSpecies" value="mm9"/-->
+      		<!--param name="DesiredSpeciesList" value="rn4 hg18 monDom4 bosTau2"/-->
 		</component>
     		<component processor="processor.BlockProcessor.BlockProcessor">
-			<param name="WindowSize" value="7"/>
+			<param name="WindowSize" value="5"/>
 			<param name="WindowConservationLimit" value="0.7"/>			
 			<param name="ResiduConservationLimit" value="0.7"/>		
-			<!--param name="ConservationLimit" value="0.7"/-->
 			<!--param name="ReferenceSpecies" value="mm9"/-->
 			<!--param name="DesiredSpeciesList" value="mm9 rn4 hg18 monDom4 bosTau2"/-->
 			<param name="Algorithm" value="OccurenceRatio"/>
 		</component>
 		<component processor="processor.MotifProcessor.MotifProcessor">
 			<param name="Method" value="RSAT compare-matrices"/>
-      			<!--param name="ReferenceSpecies" value="mm9"/-->
+      		<!--param name="ReferenceSpecies" value="mm9"/-->
 			<!--param name="DesiredSpeciesList" value="mm9 rn4 hg18 monDom4 bosTau2"/-->
 			<!--param name="MotifDatabasePath" value="/Users/jeremy/rsa-tools/public_html/data/motif_databases"/-->
 			<param name="MotifDatabaseFileList" value="JASPAR/jaspar_core_vertebrates_2009_10.tf"/>
@@ -42,9 +41,9 @@
 			<param name="MaximalDistance" value="500"/>
 		</component>
 		<component processor="processor.ClassificationProcessor.ClassificationProcessor">
-			<param name="MaxMotifNumber" value="20"/>
-			<param name="MaxMotifByFamily" value="2"/>
-			<param name="MaxHypergeometricEValue" value="0.5"/>
+			<param name="MaxMotifNumber" value="50"/>
+			<param name="MaxMotifByFamily" value="4"/>
+			<param name="MaxHypergeometricEValue" value="0.001"/>
 			<param name="MaxChi2EValue" value="1.0"/>
 		</component>
 		<component processor="processor.BEDOutputProcessor.BEDOutputProcessor">
