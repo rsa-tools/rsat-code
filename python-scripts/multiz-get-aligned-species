@@ -52,7 +52,7 @@ import re
 import argparse
 import subprocess
 import time
-
+import operator
 
 #############################################################################################################
 ##Initalize variable
@@ -115,8 +115,7 @@ line = file.readline()
 
 while line != "":
 	ref_species,nb_species, species, path = line.split("\t")
-	#if not ref_species in args.ref_species and int(nb_species) not in args.nb_species:
-	if not ref_species in args.ref_species : 		
+	if ref_species not in args.ref_species : ##Removing all multiz from the same ref_species in supported_organism_ucsc_multiz_local.tab
 		line_to_keep += line+"\n"
 
 	line = file.readline()
@@ -128,75 +127,95 @@ file.close()
 file = open(supported_organism_ucsc_multiz_local,'w')
 if line_to_keep != "":
 	file.write(line_to_keep)
-	
+
+##Stop prog if user only want to remove ref_species	
 if args.remove:
 	file.close
 	sys.exit(5)
+
 	
+#############################################################################################################
 
-##Get all downloaded maf
-cmd = "ls -lRSr "+ multiz_path
-cmd += " | grep -v '\.gz$'" #removing .gz file
-cmd += " | grep -v '\.mafindex$'" #removing .mafindex file
-cmd += " | grep -v '\.xml$'" #removing .xml file
-cmd += " | grep -v '^d'" #removing directory
-cmd += " | grep -v 'total'" #removing useless line
-cmd += " | awk '{print $NF}'" #get only the name of maf file
+##List recursivly all directory in multiz_path and return a dictionnay with all the .maf for ref_species and multiz paste in argument
+def listing (directory, multiz_path, downloaded_maf, t_ref_spec_nb_spec):
+ 
+	for files in os.listdir(directory) :		
+		file_path = os.path.join(directory, files)
 
-downloaded_maf = subprocess.check_output(cmd, shell=True)
-downloaded_maf = downloaded_maf[1:-1].split('\n\n')
+		#if file_path is a directory, the fonction recall itself
+		if os.path.isdir(file_path):
+			downloaded_maf = listing(file_path, multiz_path, downloaded_maf, t_ref_spec_nb_spec)
+			
+		else : 
+			extension = file_path.split(".")[-1]
+			
+			if extension == "maf":	
+				local_file_path = file_path.replace(multiz_path,"").lstrip("/")
+				ref_species = local_file_path.split("/")[0]
+				multiz = local_file_path.split("/")[1]
+				nb_species = int(exp_reg.findall(multiz)[0])
+				
+				if (ref_species,nb_species) in t_ref_spec_nb_spec:
+					if ref_species not in downloaded_maf:
+						downloaded_maf[ref_species] = {}
 
-for directory in downloaded_maf:
-	directory = directory.split("\n")
+					if multiz not in downloaded_maf[ref_species]:
+						downloaded_maf[ref_species][multiz] = []
 	
-	#only work on directory with maf
-	if len(directory) > 1:
-		path = directory[0].strip().rstrip(':')
-		local_path = path.replace(multiz_path,"").lstrip("/")
-		ref_species = local_path.split("/")[0]
-		multiz = local_path.split("/")[1]		
-		nb_species = int(exp_reg.findall(multiz)[0])
+					downloaded_maf[ref_species][multiz].append( ( os.stat(file_path).st_size, file_path))
+
+	return downloaded_maf
+
+##Calling the function
+downloaded_maf = listing(multiz_path, multiz_path, {}, t_ref_spec_nb_spec)
+
+for ref_species in downloaded_maf:
+	multiz = downloaded_maf[ref_species].keys()[0]
+	downloaded_maf[ref_species][multiz].sort(key=operator.itemgetter(0))
+
+	list_species = []
+	nb_species = int(exp_reg.findall(multiz)[0])
+	
+	##Begin reading maf file with the smallest.
+	##If not all aligned species find, read the next smallest
+	i = 0
+	while len(list_species) != nb_species:
+		maf_file = downloaded_maf[ref_species][multiz][i][1]
+
+		maf = open(maf_file,'r')
+
+		line = maf.readline()
+
+		while line != "":
+			if line[0] in  ["s","e","i","q"]:
+				species = line.split(".")[0].split()[1]
+				if species not in list_species:
+					list_species.append(species)	
+								
+			line = maf.readline()
+
+		i += 1
+
+	##Writing align_species 
+	list_species.remove(ref_species)
+	list_species.sort()
+	
+	for specie in list_species:
+		path = "/".join(maf_file.replace(multiz_path,"").lstrip("/").split("/")[:-1])
 		
-		#only get species for ref_species and multiz paste in argument
-		if (ref_species,nb_species) in t_ref_spec_nb_spec:
-			maf_list = directory[1:]
-			list_species = []
-	
-			##Begin reading maf file with the smallest.
-			##If not all aligned species find, read the next smallest
-			i = 0
-			while len(list_species) != nb_species:
-				maf_file = path+"/"+maf_list[i]
-				cmd = "more "+maf_file
-				cmd +=" | grep '^s'"  #removing all line not starting by s
-				cmd +=" | awk '{print $2}'" #get only the name of species and chr
-				cmd +=" | sed 's/\..*//'" # removing chr
-				cmd +=" | sort -u" #removing redondante info
-
-				species = subprocess.check_output(cmd, shell=True)
-				species = species[:-1].split("\n")
-
-				for specie in species:
-					if specie not in list_species:
-						list_species.append(specie)
-									
-				i += 1
-
-			list_species.remove(ref_species)
-			for specie in list_species:
-				if args.print_result:
-					print ref_species+"\t"+str(nb_species)+"\t"+specie+"\t"+path
-				else:
-					file.write(ref_species+"\t"+str(nb_species)+"\t"+specie+"\t"+path.lstrip(rsat_path)+"\n")
-
-			##Removing treating maf directory
-			t_ref_spec_nb_spec.remove((ref_species,nb_species))
+		if args.print_result:
+			print ref_species+"\t"+str(nb_species)+"\t"+specie+"\t"+path
+		else:
+			file.write(ref_species+"\t"+str(nb_species)+"\t"+specie+"\t"+path+"\n")
+				
+	##Removing treating maf directory
+	t_ref_spec_nb_spec.remove((ref_species,nb_species))
 			
 file.close()
 
 if t_ref_spec_nb_spec != []:
 	for ref_species,nb_species in t_ref_spec_nb_spec:
-		print "Can't find "+ref_species+"/multiz"+str(nb_species)+"way"
+		print "Can't find "+multiz_path+"/"+ref_species+"/multiz"+str(nb_species)+"way"
 			
 
 
