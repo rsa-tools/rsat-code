@@ -110,7 +110,7 @@ class ClassificationProcessor( Processor):
             if max_motif_number != None and rank > max_motif_number:
                 input_commstruct.motifStatistics.pop( motif_name)
                 continue
-            # test the value of the hypergoemetric e-value if required
+            # test the value of the hypergeometric e-value if required
             if max_hyp_evalue != None:
                 hyp_evalue = motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE)
                 if hyp_evalue == None or hyp_evalue > max_hyp_evalue:
