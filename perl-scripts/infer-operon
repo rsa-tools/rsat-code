@@ -1,7 +1,14 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
+
+## TEMPORARY (2012-04-17): I SUPPRESS THE -w FLAG BECAUSE IT ISSUES A
+## WARNING OF DEEP RECURSION FOR LARGE INTERGENIC DISTANCES (syntons).
+##
+## I should "derecursivate" &ExtendOperon()
+## !/usr/bin/perl -w
+
 ############################################################
 #
-# $Id: infer-operon,v 1.19 2012/03/28 09:32:09 jvanheld Exp $
+# $Id: infer-operon,v 1.20 2012/04/17 18:59:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -362,7 +369,7 @@ package main;
       if ($feature) {
 	$feature->force_attribute("query", $query);
 	push @matched_features, $feature;
-	&ExtendOperon($feature);
+	&ExtendOperon($feature, 0);
 
       } else {
 	&RSAT::message::Warning("No feature corresponds to query", $query) if ($main::verbose >= 3);
@@ -746,7 +753,9 @@ sub Verbose {
 ## has been collected from the seed gene.
 ##
 sub ExtendOperon {
-  my ($feature) = @_;
+  my ($feature, $recursion_depth) = @_;
+  &RSAT::message::Debug("&ExtendOperon()", $feature->get_attribute("name"), "Recursion depth", $recursion_depth) 
+    if (($main::verbose >= 3) && ($recursion_depth > 10));
 
   ## Caching: attributes already been computed for this features are
   ## not re-calculated.
@@ -831,7 +840,7 @@ sub ExtendOperon {
 	  $operon->sort_genes();
 	  $upstr_neighb->force_attribute("operon", $operon);
 	  &RSAT::message::Debug("Pursuing extension", $feature->get_attribute("name"), "upstr_dist=".$upstr_dist, "up_name=".$upstr_neighb->get_attribute("name"), $operon->get_attribute("name")) if ($main::verbose >= 5);
-	  &ExtendOperon($upstr_neighb);
+	  &ExtendOperon($upstr_neighb, $recursion_depth++);
 	}
 
       }
@@ -881,7 +890,7 @@ sub ExtendOperon {
 	  $feature->set_attribute("dn_rule", "d <= t");
 	  $operon->add_gene($downstr_neighb);
 	  $downstr_neighb->force_attribute("operon", $operon);
-	  &ExtendOperon($downstr_neighb);
+	  &ExtendOperon($downstr_neighb, $recursion_depth++);
 	}
 
       }
