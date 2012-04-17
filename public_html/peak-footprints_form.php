@@ -107,8 +107,8 @@ function move(from, to) {
 
 function add_demo(ref_species, align_species) {
 <?php 
-$demo_file= $properties['rsat_tmp']."/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R02_nof_20120416_111600_0u2.bed";
-echo "document.forms[0].bed_url.value = '".rsat_path_to_url($demo_file)."';"; 
+$demo_file= $properties['rsat_www']."/demo_files/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.12_nof.bed";
+echo "document.forms[0].bed_url.value = '".$demo_file."';"; 
 ?>
 
 	document.forms[0].bed.value="";
