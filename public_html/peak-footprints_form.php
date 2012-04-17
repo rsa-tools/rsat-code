@@ -8,7 +8,7 @@ UpdateLogFile("rsat","","");
 	var multiz_genome = new Array();
 	var multiz_path = new Array();
 	multiz_genome[0] = new Array();
-	multiz_path[0] = '';
+	multiz_path[0] = 'none';
 <?php
 //////////////////////////
 //Get info on avalaible genome on ucsc
@@ -52,7 +52,12 @@ foreach($multiz_supported as $genome_reference => $value) {
 		}
 	}
 	echo ")\n";
-	echo "multiz_path['$genome_reference'] = '".$multiz_supported[$genome_reference]['path']."';\n";
+
+	if ( is_dir( $properties['RSAT']."/data/UCSC_multiz/".$multiz_supported[$genome_reference]['path'])) {
+		echo "multiz_path['$genome_reference'] = '".$multiz_supported[$genome_reference]['path']."';\n";
+	} else {
+		echo "multiz_path['$genome_reference'] = '';\n";
+	}	
 }
 
 ?>	
@@ -75,7 +80,14 @@ function fill_species_ali(code,fill_area,clear_area) {
 
 function fill_multiz_path(ref_species) {
 	var path = multiz_path[ref_species];
-	document.getElementById('multiz_path').value = path;
+	if (path == '') {
+		document.getElementById('multiz_path').type = "text";
+		document.getElementById('multiz_path').value = "Can't find maf for this reference species on the server. Please contact system administrator.";
+	} else {
+		document.getElementById('multiz_path').type = "hidden";
+		document.getElementById('multiz_path').value = path;
+		
+	}
 }
 
 function deselect_all(id) {
@@ -126,7 +138,7 @@ echo "document.forms[0].bed_url.value = '".$demo_file."';";
 	document.forms[0].custom_motifs.value="";
 	document.getElementById('custom_motifs_file').value=''; 
 
-	document.forms[0].nb_peaks.value=1000;
+	document.forms[0].nb_peaks.value=300;
 	document.forms[0].max_chi2_pvalue.value=1;
 	document.forms[0].max_hyp_pvalue.value=0.001;	
 	document.forms[0].cons_thres.value=0.7;
@@ -168,8 +180,8 @@ foreach($multiz_supported as $key => $value) {
 	echo "<option value='$key' id='$key'>$key - ".$genome_ucsc[$key]['organism']."</option>", "\n";
 }
 ?>
-					</select><input type='hidden' name='multiz_path' id='multiz_path' />
-				</p>							
+					</select><input type='hidden' name='multiz_path' id='multiz_path' style='background-color:#E7F6FD;border-style:none;color:red' size="100" readonly="readonly"/>
+				</p>									
 				<p>
 				  <b>Aligned species</b> <span style='color:red'>(mandatory)</span><br/>
 				  <table>
