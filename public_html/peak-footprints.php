@@ -76,7 +76,7 @@ if ($custom_motifs_specifications > 1) {
 //Function for checking same type of argument
 function numeric($name, $value) {
 	if (!is_numeric($value)) {
-		error("$name '$value' is not a number");
+		error("$name '".htmlentities($value)."' is not a number");
 		return false;
 	}	else {
 		if (0>=$value or $value>=1) {
@@ -88,13 +88,13 @@ function numeric($name, $value) {
 	}
 }
 
-function integrer($name, $value) {
+function integrer($name, $value, $min) {
 	if (!ereg("^[0-9]+$", $value)) {
-		error("$name '$value' is not a integrer");
+		error("$name '".htmlentities($value)."' is not a integrer");
 		return false;
 	}	else {
-		if (1>$value) {
-			error("$name must be >1");
+		if ($min>$value) {
+			error("$name must be >$min");
 			return false;
 		} else {
 			return true;
@@ -134,12 +134,45 @@ if ($pf_r_motif == "") {
 	}	
 }
 
+if (integrer("Maximun chi2 Pvalue", $pf_max_chi2_pvalue,0)) {
+	if ($pf_max_chi2_pvalue != 1) {
+		$argument .= " --max_chi2_pvalue $pf_max_chi2_pvalue";
+	}
+} else {
+	$errors = true;
+}
+
+if (!is_numeric($pf_max_hyp_pvalue)) {
+	error("Maximun Hypergeometric P-value '".htmlentities($pf_max_hyp_pvalue)."' is not a number");
+	$errors = true;
+} else {
+	if (0>=$pf_max_hyp_pvalue) {
+		error("Maximun Hypergeometric P-value '".htmlentities($pf_max_hyp_pvalue)."' must be >0");
+		$errors = true;
+	} else {
+		$argument .= " --max_hyp_pvalue $pf_max_hyp_pvalue";
+	}
+}
+
+/*
 if ($pf_nb_peaks != '') {
 	if (integrer("Maximun numbers of peaks", $pf_nb_peaks)) {
 		$argument .= " --peak_number $pf_nb_peaks";
 	}	else {
 		$errors = true;
 	}
+}
+*/
+
+if (integrer("Maximun numbers of peaks", $pf_nb_peaks,1)) {
+	if ($pf_nb_peaks <= 1000) {
+		$argument .= " --peak_number $pf_nb_peaks";
+	} else {
+		error("Maximun numbers of peaks must be <=1000");
+		$errors = true;
+	}	
+} else {
+	$errors = true;
 }
 
 if (numeric("Column-wise conservation threshold", $pf_cons_thres)) {
@@ -158,7 +191,7 @@ if (numeric("Block-wise conservation threshold", $pf_window_cons_thres)) {
 	$errors = true;
 }
 
-if (integrer("Initial sliding window size", $pf_window_size)) {
+if (integrer("Initial sliding window size", $pf_window_size,1)) {
 	if ($pf_window_size != 5) {
 		$argument .= " --window_size $pf_window_size";
 	}
@@ -166,7 +199,7 @@ if (integrer("Initial sliding window size", $pf_window_size)) {
 		$errors = true;
 }
 
-if (integrer("Maximum number of motif reported", $pf_motif_number)) {
+if (integrer("Maximum number of motif reported", $pf_motif_number,1)) {
 	if ($pf_motif_number != 50) {
 		$argument .= " --max_motif_number $pf_motif_number";
 	}
@@ -174,7 +207,7 @@ if (integrer("Maximum number of motif reported", $pf_motif_number)) {
 	$errors = true;
 }
 
-if (integrer("Maximum number of motif reported by family ", $pf_motif_number_family)) {
+if (integrer("Maximum number of motif reported by family ", $pf_motif_number_family,1)) {
 	if ($pf_motif_number_family != 4) {
 		$argument .= " --window_size $pf_motif_number_family";
 	}
@@ -272,15 +305,11 @@ if (!$errors) {
 		$argument .= " --input_peaks $bed_file";
 
 		} else {
-			error($fs_sequence_url." is not a valid URL (should start with http: or ftp:.");
+			error(htmlentities($fs_sequence_url)." is not a valid URL (should start with http: or ftp:.");
 			$errors = true;
 		}
 	}
 	
-
-
-
-
 	//Custom_Motifs data provided in text area
 	if ($pf_custom_motifs != "") {
 		$array_line = explode("\n",$pf_custom_motifs);
@@ -320,8 +349,7 @@ if (!$errors) {
 			$custom_motifs_file .= $suffix.".tf";
 		}
 		
-		
-		
+			
 		
 		if(move_uploaded_file($_FILES['custom_motifs_file']['tmp_name'], $custom_motifs_file)) {
 			$argument .= " --custo_db_file_path $custom_motifs_file"; 
