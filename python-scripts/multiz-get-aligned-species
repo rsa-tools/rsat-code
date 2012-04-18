@@ -108,19 +108,20 @@ else:
 
 
 #############################################################################################################
-##Reading supported_organism_ucsc_multiz_local.tab
+##Reading supported_organism_ucsc_multiz_local.tab if exsit
 line_to_keep = ""
-file = open(supported_organism_ucsc_multiz_local,'r')
-line = file.readline()
-
-while line != "":
-	ref_species,nb_species, species, path = line.split("\t")
-	if ref_species not in args.ref_species : ##Removing all multiz from the same ref_species in supported_organism_ucsc_multiz_local.tab
-		line_to_keep += line+"\n"
-
+if os.path.isfile(supported_organism_ucsc_multiz_local): 
+	file = open(supported_organism_ucsc_multiz_local,'r')
 	line = file.readline()
+
+	while line != "":
+		ref_species,nb_species, species, path = line.split("\t")
+		if ref_species not in args.ref_species : ##Removing all multiz from the same ref_species in supported_organism_ucsc_multiz_local.tab
+			line_to_keep += line
+
+		line = file.readline()
 	
-file.close()
+	file.close()
 
 #############################################################################################################
 ##Rewrinting supported_organism_ucsc_multiz_local.tab
@@ -138,7 +139,7 @@ if args.remove:
 
 ##List recursivly all directory in multiz_path and return a dictionnay with all the .maf for ref_species and multiz paste in argument
 def listing (directory, multiz_path, downloaded_maf, t_ref_spec_nb_spec):
- 
+
 	for files in os.listdir(directory) :		
 		file_path = os.path.join(directory, files)
 
@@ -216,7 +217,3 @@ file.close()
 if t_ref_spec_nb_spec != []:
 	for ref_species,nb_species in t_ref_spec_nb_spec:
 		print "Can't find "+multiz_path+"/"+ref_species+"/multiz"+str(nb_species)+"way"
-			
-
-
-		
