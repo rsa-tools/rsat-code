@@ -6,14 +6,14 @@ UpdateLogFile("rsat","","");
 //print_r($properties);
 //print_r($_POST);
 //print_r($_FILES);
-
+//print_r(passthru("export"));
 
 // Import variables with prefix pf_ from form
 import_request_variables('P','pf_');
 
 //Fill buffer for flush()
 echo str_repeat(" ", 1024), "\n";
-print_r(passthru("export"));
+
 //Print header
 $prog_name = "peak-footprints";
 $result = true;
