@@ -81,18 +81,20 @@ function fill_species_ali(code,fill_area,clear_area) {
 function fill_multiz_path(ref_species) {
 	var path = multiz_path[ref_species];
 	if (path == '') {
-		document.getElementById('multiz_path').type = "text";
-		document.getElementById('multiz_path').value = "Can't find maf for this reference species on the server. Please contact system administrator.";
+		document.getElementById('maf_path').type = "text";
+		document.getElementById('maf_path').value = "Can't find maf for "+ref_species+" on the server. Please contact system administrator.";
 	} else {
-		document.getElementById('multiz_path').type = "hidden";
-		document.getElementById('multiz_path').value = path;
+		document.getElementById('maf_path').type = "hidden";
+		document.getElementById('maf_path').value = path;
 		
 	}
 }
 
 function deselect_all(id) {
-	document.getElementById(id).options.selectedIndex = 0;
-	document.getElementById(id).options[0].selected = false;
+	if (document.getElementById(id).options.length != 0) {
+		document.getElementById(id).options.selectedIndex = 0;
+		document.getElementById(id).options[0].selected = false;
+	}
 }
 
 function on_reset(id) {
@@ -162,7 +164,7 @@ require ('RSAT_header.php');
 			<fieldset>  
 				<legend><b>Genomic sequences</b></legend>
 				<p>
-					<b>Genomic coordinates</b> <span style='color:red'>(mandatory)</span>
+					<b>Genomic coordinates</b> <span style='color:orange'>(mandatory)</span>
 					<br/>Should be provided as a bed file (<a target='_blank' href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed format</a>), in any of the three following ways:				
 					<ul style="list-style-type:square">
 						<li>Paste coordinates<br/><textarea name='bed' rows='6' cols='45'></textarea></li>
@@ -171,7 +173,7 @@ require ('RSAT_header.php');
 					</ul>
 				</p>
 				<p>
-	        <b>Reference genome</b> <span style='color:red'>(mandatory)</span>&nbsp;&nbsp;			
+	        <b>Reference genome</b> <span style='color:orange'>(mandatory)</span>&nbsp;&nbsp;			
 					<select name="genome" id="genome" onChange="fill_species_ali(this.options[this.selectedIndex].value,'species_ali','species_ali_keep');fill_multiz_path(this.options[this.selectedIndex].value);">
 						<option value="0">----Choose a genome----</option>								
 <?php
@@ -180,10 +182,10 @@ foreach($multiz_supported as $key => $value) {
 	echo "<option value='$key' id='$key'>$key - ".$genome_ucsc[$key]['organism']."</option>", "\n";
 }
 ?>
-					</select><input type='hidden' name='multiz_path' id='multiz_path' style='background-color:#E7F6FD;border-style:none;color:red' size="100" readonly="readonly"/>
+					</select><input type='hidden' name='maf_path' id='maf_path' style='background-color:#E7F6FD;border-style:none;color:red' size="58" readonly="readonly"/>
 				</p>									
 				<p>
-				  <b>Aligned species</b> <span style='color:red'>(mandatory)</span><br/>
+				  <b>Aligned species</b> <span style='color:orange'>(mandatory)</span><br/>
 				  <table>
 					  <tr>
 						  <td><select name="species_ali[]" id="species_ali" style="width:200px" size="8" multiple="multiple"/></select></td>
@@ -202,7 +204,7 @@ foreach($multiz_supported as $key => $value) {
 			<fieldset>
 	        <legend><b>Motifs</b></legend>
 				<p>
-											  <b>ID of Reference Motif</b> (<span style='color:red'>mandatory, must belong to the motif database</span>, e.g. MA0102.2)<br/>	
+											  <b>ID of Reference Motif</b> (<span style='color:orange'>mandatory, must belong to the motif database</span>, e.g. MA0102.2)<br/>	
 					<input type="text" name="r_motif">
 				</p>
 				<p>
@@ -220,7 +222,7 @@ foreach($multiz_supported as $key => $value) {
 	     <div id="menu101" class="menu_collapsible">
 	       <fieldset>
 					<table>
-						<tr><th>Maximun numbers of peaks<span style='color:red'>*</span> ]1..1000]</th><th><input type="text" size="3" name="nb_peaks" value="1000"/></th></tr>
+						<tr><th>Maximun numbers of peaks<span style='color:orange'>*</span> ]1..1000]</th><th><input type="text" size="3" name="nb_peaks" value="1000"/></th></tr>
 						<tr><th>Maximun chi2 Pvalue (>0)</th><th><input type="text" size="3" name="max_chi2_pvalue" value="1"/></th></tr>
 						<tr><th>Maximun Hypergeometric P-value (>0)</th><th><input type="text" size="3" name="max_hyp_pvalue" value="0.001"/></th></tr>		
 						<tr><th>Column-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="cons_thres"/></th></tr>
