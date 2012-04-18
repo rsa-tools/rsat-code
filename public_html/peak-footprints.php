@@ -13,7 +13,7 @@ import_request_variables('P','pf_');
 
 //Fill buffer for flush()
 echo str_repeat(" ", 1024), "\n";
-
+print_r(passthru("export"));
 //Print header
 $prog_name = "peak-footprints";
 $result = true;
@@ -125,6 +125,16 @@ if ($_POST['species_ali_keep'] == "") {
 	$argument .= $al_species;
 }
 
+if (!preg_match("#\/#", $pf_maf_path))  {
+	error(str_replace("\\", "", $pf_maf_path));
+	$errors = true;
+} else {
+	$maf_path = $properties['RSAT']."/data/UCSC_multiz/".$pf_maf_path."/";
+	$argument .= " --maf_path $maf_path"; 
+}
+
+
+
 if ($pf_r_motif == "") {
 	error("You forgot to specify Reference Motif");
 	$errors = true;
@@ -150,7 +160,9 @@ if (!is_numeric($pf_max_hyp_pvalue)) {
 		error("Maximun Hypergeometric P-value '".htmlentities($pf_max_hyp_pvalue)."' must be >0");
 		$errors = true;
 	} else {
-		$argument .= " --max_hyp_pvalue $pf_max_hyp_pvalue";
+		if ($pf_max_hyp_pvalue != 0.001) {
+			$argument .= " --max_hyp_pvalue $pf_max_hyp_pvalue";
+		}
 	}
 }
 
@@ -363,9 +375,6 @@ if (!$errors) {
 /////////////////////////////////////////////////////////////////////////////
 if (!$errors) {	
 
-	$maf_path = $properties['RSAT']."/".$pf_multiz_path."/";
-	$argument .= " --maf_path $maf_path"; 
-
 	$outpout_path = $properties['rsat_tmp']."/peak-footprints_output/output/$user_name";
 	
 	//Prepare URL result table
@@ -446,6 +455,7 @@ if (!$errors) {
 	}
 				
 	// Run the command
+
 	exec($cmd, $error);	
 
 	///////////////////////////////////////////////////////////////
