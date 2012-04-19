@@ -9,8 +9,10 @@ class Constants:
     PROJECT_INSTALL_PATH_ENV_VAR = "FOOTPRINTING_PATH"
     MANAGER_CONFIG_FILE_NAME = "manager.props"
     OUTPUT_DIR_NAME = "output"
+    QUEUE_DIR_NAME = "queue"
     LOG_FILE_NAME = "logs.txt"
     TRACE_FILE_NAME = "traces.txt"
+    SERVER_QUEUE_FILE_NAME = "serverQueue.txt"
     
 
     # --------------------------------------------------------------------------------------
@@ -19,6 +21,7 @@ class Constants:
     BASE_OUTPUT_DIR_PARAM = "base_output_dir"
     LISTENING_DIR_PARAM = "listening_dir"
     OUTPUT_DIR_PARAM = "output_dir"
+    QUEUE_DIR_PARAM = "queue_dir"
     PIPELINE_DTD_PARAM = "pipeline_dtd"
     RSAT_DIR_PARAM = "rsat_dir"
     RSAT_JASPAR_MOTIF_DATABASE_PARAM = "rsat_default_motif_database"
