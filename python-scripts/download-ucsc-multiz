@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
 NAME
@@ -79,7 +79,7 @@ OPTIONS
 '''
 
 
-#############################################################################################################	
+################################################################
 ##import
 import os
 import sys
@@ -90,73 +90,103 @@ import time
 import datetime
 
 
-#############################################################################################################	
-##read arguments
-parser = argparse.ArgumentParser(add_help=0)
-parser.add_argument('-org', action="store",default=False, dest="org")
-parser.add_argument('-org_file', action="store",default=False, dest="org_file")
-parser.add_argument('-multiz', action="store_true", default=False, dest="multiz")
-parser.add_argument('-nogunzip', action="store_true", default=False, dest="no_gunzip")
-parser.add_argument("-noindex", action="store_true", default=False, dest="no_index")
-parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
-parser.add_argument("-h", "--help", action="store_true", dest="help")
-args = parser.parse_args()
+################################################################
+def main( argv):
 
-if args.help:
-	print  globals()['__doc__'] % {'version' : '1.00', 'progname' : parser.prog}
-	sys.exit(0)
+	##Check argument 
+	args = read_argument(argv)
 
-if args.org and args.org_file:
-	print 'You indicate organism -org and -org_file. You can only use one option for specify organism'
- 	sys.exit(1)
+	if args.help:
+		print  globals()['__doc__'] % {'version' : '1.00', 'progname' : parser.prog}
+		sys.exit(0)
 
-if not args.org:
-	args.org = args.org.split(",")
+	if not args.org and not args.org_file:
+		print 'You forgot to indicate organism you want to download, umcompress or index.'
+	 	sys.exit(1)
+
+	if args.org and args.org_file:
+		print 'You indicate organism -org and -org_file. You can only use one option for specify organism'
+	 	sys.exit(2)
+
+	if not args.org:
+		args.org = args.org.split(",")
+		
+
+
+	##Define variables
+	rsat_path = os.getenv('RSAT') # Main path for the RSAT suite
+	peak_footprints_path = rsat_path + "/contrib/peak-footprints/" # Path for the peak-footprint program
+	multiz_path = rsat_path + "/data/UCSC_multiz/"
+	fetch_maf_list_name = multiz_path+"fetch_maf_list.txt"
+
+
+
+	##Launch function	
+	get_maf( args, multiz_path, fetch_maf_list_name)
+	local_downloaded_maf, local_indexed_maf = get_local_maf ( multiz_path, multiz_path, [], [])
+	maf_list, org_dico = read_list_maf( args, fetch_maf_list_name)
+	maf_to_download, maf_to_index = rewrite_fetch_maf_list( args, fetch_maf_list_name, maf_list, org_dico, local_downloaded_maf, local_indexed_maf)
+	lauch_download( args, multiz_path, maf_to_download)
+
+	if not args.no_gunzip:
+		uncompress_maf(args, maf_to_download)
+
+	if not args.no_index:
+		index_maf(args, maf_to_index, peak_footprints_path)
 
 ################################################################
-##Define variables
-rsat_path = os.getenv('RSAT') # Main path for the RSAT suite
-lang = os.getenv('LANG').split("_")[0] ## Language is required to interpret file modification dates
-peak_footprints_path = rsat_path + "/contrib/peak-footprints/" # Path for the peak-footprint program
-multiz_path = rsat_path + "/data/UCSC_multiz/"
-fetch_maf_list_name = multiz_path+"fetch_maf_list.txt"
+## Read argument
+def read_argument(argv):
+	parser = argparse.ArgumentParser(add_help=0)
+	parser.add_argument('-org', action="store",default=False, dest="org")
+	parser.add_argument('-org_file', action="store",default=False, dest="org_file")
+	parser.add_argument('-multiz', action="store_true", default=False, dest="multiz")
+	parser.add_argument('-nogunzip', action="store_true", default=False, dest="no_gunzip")
+	parser.add_argument("-noindex", action="store_true", default=False, dest="no_index")
+	parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
+	parser.add_argument("-h", "--help", action="store_true", dest="help")
+	args = parser.parse_args()
 
-#############################################################################################################
+	return args
+
+ 
+
+	
+################################################################
 ## Get all maf.gz files available on the UCSC repository (or wanted if -org_file option is used) on UCSC
-if args.verbosity > 0:
-	print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tGetting list of multiz files from UCSC"
+def get_maf(args, multiz_path,fetch_maf_list_name):
+	if args.verbosity > 0:
+		print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tGetting list of multiz files from UCSC"
 
-cmd = "mkdir -p "+multiz_path
-cmd += ' ; rsync -navP rsync://hgdownload.cse.ucsc.edu/goldenPath/ 2>&1'
-cmd += ' | grep "multiz"'
-cmd += ' | grep "maf.gz"'
-cmd += ' | grep -v upstream'
-cmd += ' | grep -v _'
+	cmd = "mkdir -p "+multiz_path
+	cmd += ' ; rsync -navP rsync://hgdownload.cse.ucsc.edu/goldenPath/ 2>&1'
+	cmd += ' | grep "multiz"'
+	cmd += ' | grep "maf.gz"'
+	cmd += ' | grep -v upstream'
+	cmd += ' | grep -v _'
 
-## Filter on organisms if an organism file has been specified by the user
-if args.org_file != False:
-	cmd += ' | grep -f '+args.org_file
+	## Filter on organisms if an organism file has been specified by the user
+	if args.org_file != False:
+		cmd += ' | grep -f '+args.org_file
 
-## Retrieve the relevant columns: modification date and file name
-cmd += "| awk '{print $3,$NF}' > "+fetch_maf_list_name
+	## Retrieve the relevant columns: modification date and file name
+	cmd += "| awk '{print $3,$NF}' > "+fetch_maf_list_name
 
-## Report command
-if args.verbosity > 1:
-	print "\tCommand : ",cmd
+	## Report command
+	if args.verbosity > 1:
+		print "\tCommand : ",cmd
 
-## Run the command
-subprocess.check_call(cmd, shell=True)
+	## Run the command
+	subprocess.check_call(cmd, shell=True)
 
-## Report done
-if args.verbosity > 1:
-	print "\tTemporary list of maf files stored in: "+fetch_maf_list_name
+	## Report done
+	if args.verbosity > 1:
+		print "\tTemporary list of maf files stored in: "+fetch_maf_list_name
 
-#############################################################################################################
-## Get the list of multiz files already downloaded and indexed on the RSAT muliz folder
 
-def listing (directory, multiz_path):
-
-	global already_downloaded_maf, already_indexed_maf
+################################################################
+## Get the list of maf files local downloaded and indexed on the RSAT muliz folder
+def get_local_maf (directory, multiz_path, local_downloaded_maf, local_indexed_maf):
 
 	##Treat each file on directory
 	for file in os.listdir(directory) :		
@@ -164,7 +194,7 @@ def listing (directory, multiz_path):
 
 		#if file_path is a directory, the fonction recall itself
 		if os.path.isdir(file_path):
-			listing(file_path, multiz_path)
+			local_downloaded_maf, local_indexed_maf = get_local_maf(file_path, multiz_path, local_downloaded_maf, local_indexed_maf )
 			
 		else : 
 			local_file_path = file_path.replace(multiz_path,"")
@@ -175,140 +205,143 @@ def listing (directory, multiz_path):
 				date = time.strftime("%Y/%m/%d", d)
 				file_gz = local_file_path+".gz"
 				
-				already_downloaded_maf.append(date+" "+file_gz)
+				local_downloaded_maf.append(date+" "+file_gz)
 				
 			if extension == "mafindex":
 				file_gz = local_file_path.replace("mafindex", "maf")+".gz"
-				already_indexed_maf.append(file_gz)
-					
-					
-##Separated type of file
-already_downloaded_maf = []
-already_indexed_maf = []
+				local_indexed_maf.append(file_gz)
 
-##Calling the function
-listing(multiz_path,multiz_path)
-	
+	return local_downloaded_maf, local_indexed_maf
+
+
 
 #############################################################################################################
 ##  Analyze the list of multiz maf files to select files that need to be downloaded
+def read_list_maf(args, fetch_maf_list_name):
 
-if args.verbosity > 0:
-	print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tAnalyze the list of multiz maf files"
+	if args.verbosity > 0:
+		print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tAnalyze the list of multiz maf files"
 	
-file = open(fetch_maf_list_name, 'r')
-maf_list = []
-org_dico = {}
-exp_reg = ('multiz(\d+)way')
-exp_reg = re.compile(exp_reg)	
 
-line = file.readline()
-while line != "":
-	line = line.rstrip("\n")
+	maf_list = []
+	org_dico = {}
+	exp_reg = ('multiz(\d+)way')
+	exp_reg = re.compile(exp_reg)	
+
+	file = open(fetch_maf_list_name, 'r')
+	line = file.readline()
 	
-	date,maf = line.split(" ")
-	org = maf.split("/")[0]
-	multiz = maf.split("/")[1]
+	while line != "":
+		line = line.rstrip("\n")
+	
+		date,maf = line.split(" ")
+		org = maf.split("/")[0]
+		multiz = maf.split("/")[1]
 
-	if org not in org_dico:
-		org_dico[org] = []
+		if org not in org_dico:
+			org_dico[org] = []
 
-	if multiz not in org_dico[org]:
-		org_dico[org].append(multiz)
+		if multiz not in org_dico[org]:
+			org_dico[org].append(multiz)
 		
-		##keeping only the widest multiz for each species
-		if not args.multiz and len(org_dico[org])>1 :
-			result = []
-			for multiz in org_dico[org]:
-				result.append(int(exp_reg.findall(multiz)[0]))
-			org_dico[org] = ["multiz"+str(max(result))+"way"]	
+			##keeping only the widest multiz for each species
+			if not args.multiz and len(org_dico[org])>1 :
+				result = []
+				for multiz in org_dico[org]:
+					result.append(int(exp_reg.findall(multiz)[0]))
+				org_dico[org] = ["multiz"+str(max(result))+"way"]	
 					
-	maf_list.append(line)
-	line = file.readline()	
+		maf_list.append(line)
+		line = file.readline()	
 		
-file.close()
-
+	file.close()
+	
+	return maf_list, org_dico
+	
 ## Rewriting fetch_maf_list and put list the maf to treat
-file = open(fetch_maf_list_name, 'w')
-maf_to_download = []
-maf_to_index = []
+def rewrite_fetch_maf_list( args, fetch_maf_list_name, maf_list, org_dico, local_downloaded_maf, local_indexed_maf):
 
-for maf_info in maf_list:
-	date, maf = maf_info.split()
-	org = maf.split("/")[0] 
-	multiz = maf.split("/")[1]
+	file = open(fetch_maf_list_name, 'w')
+	maf_to_download = []
+	maf_to_index = []
+
+	for maf_info in maf_list:
+		date, maf = maf_info.split()
+		org = maf.split("/")[0] 
+		multiz = maf.split("/")[1]
 	
-	##Keep org paste in argument
-	if args.org != False:
-		wanted = org in args.org
-	else:
-		wanted = True
+		##Keep org paste in argument
+		if args.org != False:
+			wanted = org in args.org
+		else:
+			wanted = True
 
-	##Keep widest multiz or all multiz
-	if args.multiz:
-		widest_multiz = True
-	else :
-		widest_multiz= multiz == org_dico[org][0]	
+		##Keep widest multiz or all multiz
+		if args.multiz:
+			widest_multiz = True
+		else :
+			widest_multiz= multiz == org_dico[org][0]	
 
-	##Keep not downloaded maf
-	not_downloaded = date+" "+maf not in already_downloaded_maf
+		##Keep not downloaded maf
+		not_downloaded = date+" "+maf not in local_downloaded_maf
 
-	##Keep unindexed
-	not_unindexed = maf not in already_indexed_maf
+		##Keep unindexed
+		not_unindexed = maf not in local_indexed_maf
 
-	##Write file and add in last maf keep	
-	if wanted and widest_multiz:	
-		if not_downloaded:
-			file.write(maf+"\n")
-			maf_to_download.append(maf)
-		if not_unindexed:
-			maf_to_index.append(maf)
+		##Write file and add in last maf keep	
+		if wanted and widest_multiz:	
+			if not_downloaded:
+				file.write(maf+"\n")
+				maf_to_download.append(maf)
+			if not_unindexed:
+				maf_to_index.append(maf)
 	
-file.close()
+	file.close()
 
-if args.verbosity > 1:
-	print "\tList of files to download: "+fetch_maf_list_name
+	if args.verbosity > 1:
+		print "\tList of files to download: "+fetch_maf_list_name
 
+	return maf_to_download, maf_to_index
 
 #############################################################################################################	
 ##launch donwload
-if len(maf_to_download) > 0: #no need to rsync if nothing to download
-	if args.verbosity > 0:
-		print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tStarting download"
-	subprocess.check_call('rsync -avP --files-from='+fetch_maf_list_name+' rsync://hgdownload.cse.ucsc.edu/goldenPath/  '+multiz_path, shell=True)
+def lauch_download( args, multiz_path, maf_to_download):
+	if len(maf_to_download) > 0: #no need to rsync if nothing to download
+		if args.verbosity > 0:
+			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tStarting download"
+		subprocess.check_call('rsync -avP --files-from='+fetch_maf_list_name+' rsync://hgdownload.cse.ucsc.edu/goldenPath/  '+multiz_path, shell=True)
 	
-else:
-	if args.verbosity > 0:
-		print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tNo maf to download (wrong requested organism or no new maf)"
-
+	else:
+		if args.verbosity > 0:
+			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tNo maf to download (wrong requested organism or no new maf)"
 
 #############################################################################################################	
 ## Uncompress files
-
-if not args.no_gunzip:
+def uncompress_maf(args, maf_to_download):
 	if len(maf_to_download) > 0: #no need to uncompressed if nothing to download	
 		total_gz = len(maf_to_download)	
-	
+
 		if args.verbosity > 0:
 			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tStart uncompressed maf"
 			print "\tMaf to uncompressed "+str(total_gz)
-	
+
 		for maf in maf_to_download:		
 			if args.verbosity > 0:
 				print "\tUncompressed "+multiz_path+"/"+maf,"\t",
-				
+			
 			subprocess.check_call('gunzip '+ multiz_path+"/"+maf, shell=True)
 			total_gz = total_gz -1
-			
+		
 			if args.verbosity > 0:
 				print "Maf left to uncompressed :"+str(total_gz)
 	else:
 		if args.verbosity > 0:
 			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tNo maf to uncompressed (wrong requested organism or no new maf)"
 
+
 #############################################################################################################	
 ## Index files for further retrieval with peak-footprints
-if not args.no_index:
+def index_maf(args, maf_to_index, peak_footprints_path):
 	if len(maf_to_index) > 0: #no need to index if nothing to download	
 		if args.verbosity > 0:
 			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tStart indexed maf"
@@ -336,8 +369,12 @@ if not args.no_index:
 		open(peak_footprints_path+"indexer_pipeline.xml", 'w').write(xml_indexer)
 
 		## Launch index
-		subprocess.check_call("python "+ peak_footprints_path +"peak-footprints --pipeline "+ peak_footprints_path+"indexer_pipeline.xml", shell=True)
+		subprocess.check_call(peak_footprints_path +"peak-footprints --pipeline "+ peak_footprints_path+"indexer_pipeline.xml", shell=True)
 		
 	else:
 		if args.verbosity > 0:
 			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tNo maf to index (wrong requested organism or no new maf)"
+
+#############################################################################################################	
+if __name__ == "__main__":
+    sys.exit( main( sys.argv))
