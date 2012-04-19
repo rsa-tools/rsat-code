@@ -7,6 +7,7 @@ UpdateLogFile("rsat","","");
 //print_r($_POST);
 //print_r($_FILES);
 //print_r(passthru("export"));
+#putenv("PATH=" .$_ENV["PATH"]. ":/usr/local/bin/python2.7");
 
 // Import variables with prefix pf_ from form
 import_request_variables('P','pf_');
@@ -20,7 +21,7 @@ $result = true;
 require ('RSAT_header.php');
 
 // Initialize variables
-$cmd = 'python '.$properties['RSAT'].'/contrib/peak-footprints/peak-footprints';
+$cmd = '/usr/local/bin/python2.7 '.$properties['RSAT'].'/contrib/peak-footprints/peak-footprints';
 $argument = " --v 2";
 $argument .= " --pipeline ".$properties['RSAT']."/contrib/peak-footprints/default_pipeline.xml";
 $argument .= " --db_root_path ".$properties['RSAT'].'/data/motif_databases';
@@ -455,8 +456,14 @@ if (!$errors) {
 	}
 				
 	// Run the command
+	exec('cd '.$properties['RSAT'].'/contrib/peak-footprints; '.$cmd, $outpout, $return_var);	
+	/*echo $cmd,"<br/><br/>";
+		
+	foreach ($outpout as $key => $line) {
+		echo $line,"<br/>";
+	}
+	echo "Error : ".$return_var,"<br/><br/>";*/
 
-	exec($cmd, $error);	
 
 	///////////////////////////////////////////////////////////////
 	// Send email with notification of task completion
