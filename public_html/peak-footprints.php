@@ -6,8 +6,8 @@ UpdateLogFile("rsat","","");
 //print_r($properties);
 //print_r($_POST);
 //print_r($_FILES);
-//print_r(passthru("export"));
-#putenv("PATH=" .$_ENV["PATH"]. ":/usr/local/bin/python2.7");
+
+putenv("RSAT=" .$properties['RSAT']);
 
 // Import variables with prefix pf_ from form
 import_request_variables('P','pf_');
@@ -21,7 +21,7 @@ $result = true;
 require ('RSAT_header.php');
 
 // Initialize variables
-$cmd = '/usr/local/bin/python2.7 '.$properties['RSAT'].'/contrib/peak-footprints/peak-footprints';
+$cmd = $properties['RSAT'].'/contrib/peak-footprints/peak-footprints';
 $argument = " --v 2";
 $argument .= " --pipeline ".$properties['RSAT']."/contrib/peak-footprints/default_pipeline.xml";
 $argument .= " --db_root_path ".$properties['RSAT'].'/data/motif_databases';
@@ -376,7 +376,25 @@ if (!$errors) {
 /////////////////////////////////////////////////////////////////////////////
 if (!$errors) {	
 
-	$outpout_path = $properties['rsat_tmp']."/peak-footprints_output/output/$user_name";
+	#Create or check if time directory exist
+	$year_directory = $properties['rsat_tmp']."/".date( "Y");
+	if (!is_dir( $year_directory)) {
+		mkdir($year_directory);
+	}
+
+	$month_directory = $year_directory."/".date( "m");
+	if ( !is_dir( $month_directory)) {
+		mkdir($month_directory);
+	}
+
+	$day_directory = $month_directory."/".date( "d");
+	if ( !is_dir( $day_directory)) {
+		mkdir($day_directory);
+	}
+
+	$argument .= " --output $day_directory";  
+
+	$outpout_path = $day_directory."/output/".$user_name;
 	
 	//Prepare URL result table
 	$URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
@@ -406,7 +424,8 @@ if (!$errors) {
 	
 	// Display the result
 	print_url_table($URL);
-
+	
+	flush();
 
 	///////////////////////////////////////////////////////////////
 	// Send email with notification of starting task
@@ -456,15 +475,9 @@ if (!$errors) {
 	}
 				
 	// Run the command
-	exec('cd '.$properties['RSAT'].'/contrib/peak-footprints; '.$cmd, $outpout, $return_var);	
-	/*echo $cmd,"<br/><br/>";
-		
-	foreach ($outpout as $key => $line) {
-		echo $line,"<br/>";
-	}
-	echo "Error : ".$return_var,"<br/><br/>";*/
-
-
+	exec($cmd, $output, $return_var);	
+	//print_r($output);
+	
 	///////////////////////////////////////////////////////////////
 	// Send email with notification of task completion
 	if ($fs_output =="email")  {
