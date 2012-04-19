@@ -27,6 +27,7 @@ USAGE
 OPTIONS
 	-h, --help
 		show this help and exit
+		
 	-v #
 		verbosity
 			
@@ -61,7 +62,7 @@ def main( argv):
 	args = read_argument(argv)
 	
 	if args.help:
-		print  globals()['__doc__'] % {'version' : '1.00', 'progname' : parser.prog}
+		print  globals()['__doc__'] % {'version' : '1.00', 'progname' : argv[0]}
 		sys.exit(0)
 	
 	if not args.ref_species:
