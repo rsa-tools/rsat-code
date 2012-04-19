@@ -17,15 +17,13 @@ from utils.exception.ConfigException import ConfigException
 from utils.log.Log import Log
 from utils.log.ListenerLog import ListenerLog
 
-import sys, os, shutil, time, threading
+import sys, os, shutil, time, threading, ast
 
 # This class is the central manager. It's role is to manage the pipelines execution.
 # It reads the definition of the pipelines from the XML file, create the corresponding object structure,
 # verify it and execute it's steps.
 
 class PipelineManager:
-
-    SERVER_QUEUE_FILE_NAME = "serverQueue.txt"
 
     # --------------------------------------------------------------------------------------
     def __init__( self):
@@ -93,7 +91,10 @@ class PipelineManager:
         self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM)) 
         
         # Add the RSAT path to the listening dir path retrieved from the manager.props
-        self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM)) 
+        self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM))
+        
+        # Set the path for the job queue directory
+        self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.QUEUE_DIR_NAME) 
 
         # Set the RSAT_PATH
         RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)        
@@ -112,17 +113,16 @@ class PipelineManager:
         return self.executePipelines()
 
 
-
     # --------------------------------------------------------------------------------------
-    # Set the mamanger in server mode, always running and managing queue
+    # Set the manager in server mode, always running and managing queue
     def server(self, listener_path = None):
         
-        # initialize logs and output directories
+        # Initialize logs and output directories
         FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM])
         self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
         FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM])
 
-        # init the server queue with queue file if exists (restoring from previous run)
+        # Init the server queue with queue file if exists (restoring from previous run)
         self.initServerQueue()
         
         # Init the logs of the listener
@@ -150,7 +150,7 @@ class PipelineManager:
         self.serverQueueLock.acquire()
         
         if pipelines_filepath != None and len( pipelines_filepath) > 0:
-            self.serverQueue.append( (pipelines_filepath, options, resume, verbosity, working_dir))
+            self.serverQueue.append( (pipelines_filepath, options, verbosity, resume, working_dir))
 
         try:
             self.outputServerQueue()
@@ -184,12 +184,15 @@ class PipelineManager:
     def outputServerQueue(self):
         
         try:
-            queue_file_path = os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], PipelineManager.SERVER_QUEUE_FILE_NAME)
+            queue_file_path = os.path.join( self.config[ Constants.QUEUE_DIR_PARAM], Constants.SERVER_QUEUE_FILE_NAME)
+            FileUtils.createDirectory( self.config[ Constants.QUEUE_DIR_PARAM])
             queue_file = open( queue_file_path, "w")
             for infos in self.serverQueue:
+                line = ""
                 for info in infos:
-                    queue_file.write( str(info) + "\t")
-                queue_file.write("\n")
+                    line = line + str(info) + "|**|"
+                line = line[:-4]
+                queue_file.write( line + "\n")
                 queue_file.flush()
             queue_file.close()
         except IOError, io_exce:
@@ -200,23 +203,23 @@ class PipelineManager:
     # Read the server queue file content to initialize the queue
     def initServerQueue(self):
         
-        queue_file_path = os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], PipelineManager.SERVER_QUEUE_FILE_NAME)
+        queue_file_path = os.path.join( self.config[ Constants.QUEUE_DIR_PARAM], Constants.SERVER_QUEUE_FILE_NAME)
         if os.path.exists( queue_file_path):
             try:
                 commands_list = []
                 file = open( queue_file_path, "r")
                 for line in file:
-                    command_params = [None, 0, "True", None]
+                    command_params = [None, None, 0, "True", None]
                     if not line.isspace() and line[0] != Constants.COMMENT_CHAR:
-                        tokens = line.split()
-                        if len( tokens) > 0 and len( tokens) <= 4:
+                        tokens = line.split("|**|")
+                        if len( tokens) > 0 and len( tokens) <= 5:
                             for index in range( len( tokens)):
                                 command_params[ index] = tokens[ index]
-                        print "PipelineManager.initServerQueue : Adding command to queue : " + str( command_params)
                         commands_list.append( command_params)
                 file.close()
+                options = ast.literal_eval( command_params[1])
                 for command_params in commands_list:
-                    self.addToQueue( command_params[0], command_params[1], command_params[2], command_params[3])
+                    self.addToQueue( command_params[0], options, command_params[2], command_params[3], command_params[4])
             except IOError, io_exce:
                 raise ExecutionException(" PipelineManager.initServerQueue : Unable to read Server queue from file : " + queue_file_path +". From:\n\t---> " + str( io_exce))
             
@@ -233,11 +236,11 @@ class PipelineManager:
             params = self.serverQueue[0]
             pipelines_filepath = params[0]
             pipeline_options = params[1]
-            resume = (params[2].lower() == "true")
             try:
-                verbosity = int( params[3])
+                verbosity = int( params[2])
             except ValueError:
                 verbosity = 1
+            resume = (params[3].lower() == "true")
             working_dir = params[4]
             
             # Modifies the config if required and initialize logs and outputdirectory
