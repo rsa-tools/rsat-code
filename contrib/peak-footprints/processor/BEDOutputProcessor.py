@@ -26,7 +26,7 @@ from utils.exception.ExecutionException import ExecutionException
 #   ScoreMin : the minimum value the score can reach
 #   ScoreMax : the maximum value the score can reach
 
-class BEDOutputProcessor( Processor):
+class BEDOutputProcessor(Processor):
     
     REFERENCE_MOTIF = "ReferenceMotif"
     COLOR_METHOD = "ColorMethod"
@@ -39,8 +39,8 @@ class BEDOutputProcessor( Processor):
 
     
     # --------------------------------------------------------------------------------------
-    def __init__( self):
-        Processor.__init__( self)
+    def __init__(self):
+        Processor.__init__(self)
 
     # --------------------------------------------------------------------------------------
     # Returns the name of the CommStruct class used as input 
@@ -48,7 +48,7 @@ class BEDOutputProcessor( Processor):
     @staticmethod
     def getInputCommStructClass():
         
-        return ( BedSeqAlignmentStatsCommStruct, )
+        return (BedSeqAlignmentStatsCommStruct,)
 
 
     # --------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ class BEDOutputProcessor( Processor):
     @staticmethod
     def getOutputCommStructClass():
         
-        return ( BedSeqAlignmentStatsCommStruct, )
+        return (BedSeqAlignmentStatsCommStruct,)
 
 
     # --------------------------------------------------------------------------------------
@@ -73,22 +73,22 @@ class BEDOutputProcessor( Processor):
     @staticmethod
     def getRequiredParameters():
         
-        return ( BEDOutputProcessor.SCORE_MIN, BEDOutputProcessor.SCORE_MAX)
+        return (BEDOutputProcessor.SCORE_MIN, BEDOutputProcessor.SCORE_MAX)
 
 
     # --------------------------------------------------------------------------------------
     # Execute the processor
-    def execute( self, input_commstructs):
+    def execute(self, input_commstructs):
         
-        if input_commstructs == None or len( input_commstructs) == 0:
-            raise ExecutionException( "BEDOutputProcessor.execute : No inputs")
+        if input_commstructs == None or len(input_commstructs) == 0:
+            raise ExecutionException("BEDOutputProcessor.execute : No inputs")
         
         input_commstruct = input_commstructs[0]
         
         # Retrieve the processor parameters
-        reference_motif = self.getParameter( BEDOutputProcessor.REFERENCE_MOTIF)
+        reference_motif = self.getParameter(BEDOutputProcessor.REFERENCE_MOTIF)
                 
-        color_method = self.getParameter( BEDOutputProcessor.COLOR_METHOD,  False)
+        color_method = self.getParameter(BEDOutputProcessor.COLOR_METHOD, False)
         if color_method == None:
             color_method = BEDOutputProcessor.COLOR_METHOD_SCORE
         else:
@@ -96,13 +96,13 @@ class BEDOutputProcessor( Processor):
             if color_method != BEDOutputProcessor.COLOR_METHOD_SCORE and color_method != BEDOutputProcessor.COLOR_METHOD_FAMILY:
                 color_method = BEDOutputProcessor.COLOR_METHOD_SCORE
                 
-        score_min = self.getParameterAsfloat( BEDOutputProcessor.SCORE_MIN)
-        score_max = self.getParameterAsfloat( BEDOutputProcessor.SCORE_MAX)
+        score_min = self.getParameterAsfloat(BEDOutputProcessor.SCORE_MIN)
+        score_max = self.getParameterAsfloat(BEDOutputProcessor.SCORE_MAX)
         
         # Prepare the processor output dir
-        out_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
-        shutil.rmtree( out_path, True)
-        os.mkdir( out_path)
+        out_path = os.path.join(self.component.outputDir, self.component.getComponentPrefix())
+        shutil.rmtree(out_path, True)
+        os.mkdir(out_path)
 
         # Retrieve the JASPAR motifs details
         motif_details = MotifUtils.getMotifsDetailsFromJaspar()
@@ -111,64 +111,64 @@ class BEDOutputProcessor( Processor):
         family_rgb = {}
 
         # build the bed output file path
-        bed_file_path = os.path.join( out_path, self.component.pipelineName + "_Motifs.bed")
+        bed_file_path = os.path.join(out_path, self.component.pipelineName + "_Motifs.bed")
 
         try:
-            bed_file = open(bed_file_path,  "w")
+            bed_file = open(bed_file_path, "w")
 
-            bed_file.write( "track name='" + self.component.pipelineName + "' visibility=3 itemRgb='On' use_score=1\n")
-            bed_file.write( "browser dense RSAT\n")
-            bed_file.write( "browser dense\n") 
-            bed_file.write( "## seq_name	start	end	feature_name	score	strand	thickStart	thickEnd	itemRgb	blockCount	blockSizes	blckStarts\n")
+            bed_file.write("track name='" + self.component.pipelineName + "' visibility=3 itemRgb='On' use_score=1\n")
+            bed_file.write("browser dense RSAT\n")
+            bed_file.write("browser dense\n") 
+            bed_file.write("## seq_name	start	end	feature_name	score	strand	thickStart	thickEnd	itemRgb	blockCount	blockSizes	blckStarts\n")
 
             current_color = None
             bedseq_list = input_commstruct.bedToMA.keys()
-            bedseq_list.sort( BEDSequence.compare)
+            bedseq_list.sort(BEDSequence.compare)
             previous_line_start = 0
             previous_line_key = ""
             for bed_seq in bedseq_list:
                 for msa in input_commstruct.bedToMA[ bed_seq]:
                     for motif in msa.motifs:
                         motif_name = motif.name
-                        if not input_commstruct.motifStatistics.has_key( motif_name):
+                        if not input_commstruct.motifStatistics.has_key(motif_name):
                             continue
                         if motif_name in motif_id.keys():
                             out_name = motif_id[ motif_name]
                             chromosom = bed_seq.chromosom
-                            start_position = bed_seq.indexStart + msa.fixIndex( motif.indexStart)
-                            end_position = bed_seq.indexStart + msa.fixIndex( motif.indexEnd)
+                            start_position = bed_seq.indexStart + msa.fixIndex(motif.indexStart)
+                            end_position = bed_seq.indexStart + msa.fixIndex(motif.indexEnd)
                             score = motif.score
                             
-                            # Back is assigned to the reference motif
-                            if motif_name == reference_motif:
-                                item_rgb = "0,0,0"
+                            # Commented : Black is assigned to the reference motif
+                            #if motif_name == reference_motif:
+                            #    item_rgb = "0,0,0"
                             # for the other motif, color depends on the chosen method
-                            else:
-                                if color_method == BEDOutputProcessor.COLOR_METHOD_FAMILY:
-                                    if motif_name in motif_family.keys():
-                                        item_rgb = self.getNextFamilyColor( motif_family[ motif_name], family_rgb, current_color)
-                                        current_color = item_rgb
-                                    else:
-                                        item_rgb = BEDOutputProcessor.COLORS[ 0]
+                            #else:
+                            if color_method == BEDOutputProcessor.COLOR_METHOD_FAMILY:
+                                if motif_name in motif_family.keys():
+                                    item_rgb = self.getNextFamilyColor(motif_family[ motif_name], family_rgb, current_color)
+                                    current_color = item_rgb
                                 else:
-                                    item_rgb = self.getColorForScore( score, score_min, score_max)
+                                    item_rgb = BEDOutputProcessor.COLORS[ 0]
+                            else:
+                                item_rgb = self.getColorForScore(score, score_min, score_max)
                             
                             # Write the lines to output file
                             line_out = chromosom
-                            line_out += "\t" + str( start_position)
-                            line_out += "\t" + str( end_position)
+                            line_out += "\t" + str(start_position)
+                            line_out += "\t" + str(end_position)
                             line_out += "\t" + out_name
-                            line_out += "\t" + str( int( score*1000))
+                            line_out += "\t" + str(int(score * 1000))
                             line_out += "\t" + motif.strand
-                            line_out += "\t" + str( start_position)           # ThickStart
-                            line_out += "\t" + str( end_position)            # ThickEnd
+                            line_out += "\t" + str(start_position)           # ThickStart
+                            line_out += "\t" + str(end_position)            # ThickEnd
                             line_out += "\t" + item_rgb        # itemRGB
                             #line_out += "\t" + "0"            # BlockCount
                             #line_out += "\t" + "0"            # BlockSizes
                             #line_out += "\t" + "0"            # BlockStarts
                             
                             # Build a key that represent the motif chrom,  name and positions
-                            line_key = chromosom + ":" + str( start_position) + ":" + str( end_position) + ":" + out_name
+                            line_key = chromosom + ":" + str(start_position) + ":" + str(end_position) + ":" + out_name
                             
                             # If the new line has the same key has the previous one, we must keep only one of the two lines
                             # i.e. the one with the highest score (the tell() and seek() method permits to overwrite the old line
@@ -176,23 +176,23 @@ class BEDOutputProcessor( Processor):
                             # If the new line and the previous one has different keys the new line is simply written
                             if previous_line_key != line_key:
                                 previous_line_start = bed_file.tell()
-                                bed_file.write( line_out)
-                                bed_file.write( "\n")
+                                bed_file.write(line_out)
+                                bed_file.write("\n")
                                 bed_file.flush
                                 previous_line_key = line_key
                                 previous_score = score
                             else:
                                 if score > previous_score:
-                                    bed_file.seek( previous_line_start)
-                                    bed_file.write( line_out)
-                                    bed_file.write( "\n")
+                                    bed_file.seek(previous_line_start)
+                                    bed_file.write(line_out)
+                                    bed_file.write("\n")
                                     bed_file.flush
                                     previous_score = score     
 
             bed_file.close()
             input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BED_OUTPUT_PATH] = bed_file_path
         except IOError, io_exce:
-            Log.log( "BEDOutputProcessor.execute : Unable to save the BED file of recognized motifs : " + str( io_exce))
+            Log.log("BEDOutputProcessor.execute : Unable to save the BED file of recognized motifs : " + str(io_exce))
         
         return input_commstruct
         
@@ -206,9 +206,9 @@ class BEDOutputProcessor( Processor):
             if current_color == None:
                 family_rgb[ family] = BEDOutputProcessor.COLORS[ 0]
             else:
-                current_color_index = BEDOutputProcessor.COLORS.index( current_color)
+                current_color_index = BEDOutputProcessor.COLORS.index(current_color)
                 next_color_index = current_color_index + 1
-                if next_color_index < len( BEDOutputProcessor.COLORS) :
+                if next_color_index < len(BEDOutputProcessor.COLORS) :
                     next_color = BEDOutputProcessor.COLORS[ next_color_index]
                 else:
                     next_color = BEDOutputProcessor.COLORS[ 0]
@@ -220,12 +220,12 @@ class BEDOutputProcessor( Processor):
         
     # --------------------------------------------------------------------------------------
     # Assign a color according to the given score 
-    def getColorForScore( self, score, score_min, score_max):
+    def getColorForScore(self, score, score_min, score_max):
         
         # Color = RED proportionnal to score 
         ##level = int( ((score - score_min) / float( score_max - score_min)) *100) + 155
         ##return str(level) + ",0,0"
         
         # Color = purple, blue, yellow, green, orange, red respect to the score
-        return self.COLORS[ int((score - score_min) / float( score_max - score_min) * len( self.COLORS))]
+        return self.COLORS[ int((score - score_min) / float(score_max - score_min) * len(self.COLORS))]
         
