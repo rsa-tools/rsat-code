@@ -226,6 +226,6 @@ class BEDOutputProcessor(Processor):
         ##level = int( ((score - score_min) / float( score_max - score_min)) *100) + 155
         ##return str(level) + ",0,0"
         
-        # Color = purple, blue, yellow, green, orange, red respect to the score
+        # Color = blue, cyan, green, yellow, red respect to the score
         return self.COLORS[ int((score - score_min) / float(score_max - score_min) * len(self.COLORS))]
         
