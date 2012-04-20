@@ -89,12 +89,27 @@ function numeric($name, $value) {
 	}
 }
 
+
+function numeric_one_include($name, $value) {
+	if (!is_numeric($value)) {
+		error("$name '".htmlentities($value)."' is not a number");
+		return false;
+	}	else {
+		if (0>=$value or $value>1) {
+			error("$name must be between 0 and 1");
+			return false;
+		} else {
+			return true;
+		}
+	}
+}
+
 function integrer($name, $value, $min) {
 	if (!ereg("^[0-9]+$", $value)) {
 		error("$name '".htmlentities($value)."' is not a integrer");
 		return false;
 	}	else {
-		if ($min>$value) {
+		if ($min>=$value) {
 			error("$name must be >$min");
 			return false;
 		} else {
@@ -145,7 +160,7 @@ if ($pf_r_motif == "") {
 	}	
 }
 
-if (integrer("Maximun chi2 Pvalue", $pf_max_chi2_pvalue,0)) {
+if (numeric_one_include("Maximun chi2 Pvalue", $pf_max_chi2_pvalue)) {
 	if ($pf_max_chi2_pvalue != 1) {
 		$argument .= " --max_chi2_pvalue $pf_max_chi2_pvalue";
 	}
@@ -153,19 +168,14 @@ if (integrer("Maximun chi2 Pvalue", $pf_max_chi2_pvalue,0)) {
 	$errors = true;
 }
 
-if (!is_numeric($pf_max_hyp_pvalue)) {
-	error("Maximun Hypergeometric P-value '".htmlentities($pf_max_hyp_pvalue)."' is not a number");
-	$errors = true;
-} else {
-	if (0>=$pf_max_hyp_pvalue) {
-		error("Maximun Hypergeometric P-value '".htmlentities($pf_max_hyp_pvalue)."' must be >0");
-		$errors = true;
-	} else {
-		if ($pf_max_hyp_pvalue != 0.001) {
-			$argument .= " --max_hyp_pvalue $pf_max_hyp_pvalue";
-		}
+if (numeric_one_include("Maximun Hypergeometric P-value", $pf_max_hyp_pvalue)) {
+	if ($pf_max_hyp_pvalue != 0.001) {
+		$argument .= " --max_hyp_pvalue $pf_max_hyp_pvalue";
 	}
+} else {
+	$errors = true;
 }
+
 
 /*
 if ($pf_nb_peaks != '') {
@@ -375,34 +385,21 @@ if (!$errors) {
 
 /////////////////////////////////////////////////////////////////////////////
 if (!$errors) {	
-
-	#Create or check if time directory exist
-	$year_directory = $properties['rsat_tmp']."/".date( "Y");
-	if (!is_dir( $year_directory)) {
-		mkdir($year_directory);
+	$time_directory = $properties['rsat_tmp']."/".date( "Y")."/".date( "m")."/".date( "d");
+	if (!is_dir( $time_directory)) {
+		mkdir($time_directory, 0777, true);
 	}
 
-	$month_directory = $year_directory."/".date( "m");
-	if ( !is_dir( $month_directory)) {
-		mkdir($month_directory);
-	}
+	$argument .= " --output $time_directory";  
 
-	$day_directory = $month_directory."/".date( "d");
-	if ( !is_dir( $day_directory)) {
-		mkdir($day_directory);
-	}
-
-	$argument .= " --output $day_directory";  
-
-	$outpout_path = $day_directory."/output/".$user_name;
+	$outpout_path = $time_directory."/output/".$user_name;
 	
 	//Prepare URL result table
 	$URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
 	if ($custom_motifs_specifications == 1) {
 		$URL['Custom motifs (transfac format)'] = rsat_path_to_url($custom_motifs_file);
 	}
-	$URL['Progress can bo follow here'] = rsat_path_to_url("$outpout_path/progression.xml");
-	$URL['When progress is complete, result page appears here'] = rsat_path_to_url($outpout_path."/".$user_name."_9_FinalOutputProcessor/".$user_name."_MotifClassification.xml");
+	$URL['Result page'] = rsat_path_to_url($outpout_path."/".$user_name."_9_FinalOutputProcessor/".$user_name."_MotifClassification.xml");
 	
 	// Add arguments to the command
 	$cmd .= $argument;
@@ -413,19 +410,23 @@ if (!$errors) {
 		$msg .= " After job completion, email will be sent to ".$fs_user_email;
 	}
 	info($msg);
-	echo "<hr>";
+	echo "<hr/><br/>";
 	
 	// Display the command
 	$cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
 	info("Command : ".$cmd_report);
-	echo "<hr>";
+	echo "<hr/><br/>";
 
+	//Display progress page
+	info('<a href="'.rsat_path_to_url($outpout_path).'/progression.xml" target="_blank">Progress page</a>');
+	echo "<hr/><br/>";
+	
 	flush();
 	
 	// Display the result
 	print_url_table($URL);
 	
-	flush();
+
 
 	///////////////////////////////////////////////////////////////
 	// Send email with notification of starting task
@@ -477,6 +478,7 @@ if (!$errors) {
 	// Run the command
 	exec($cmd, $output, $return_var);	
 	//print_r($output);
+	//echo $return_var;
 	
 	///////////////////////////////////////////////////////////////
 	// Send email with notification of task completion
