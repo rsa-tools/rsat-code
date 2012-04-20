@@ -12,14 +12,23 @@ CATEGORY
         
 DESCRIPTION
 
-	Get list of species in a maf file. By default the programme
-	write the result in
+	Parse the list of aligned species from a multi-genome alignent
+	file (maf format), such as those downloaded from UCSC genome
+	browser by the script download-ucsc-multiz.
+
+	The result is a 4-columns tab-delimited text, stored by
+	default in the file
 	$RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
 		
-	This file is use for the interface of RSAT peak-footprints.
+	This file is used to display the list of locally supported
+	multi-genome alignemnts in the Web interface of the program
+	peak-footprints.
 
 WARNING
-	Do not work for camFam1, dm1, sacCer1
+
+	Does not work for camFam1, dm1, sacCer1, because their multiz
+	file is not organized in a consistent way with other UCSC
+	multiz files.
         
 USAGE
 	maf-species-list -ref_species ref_species1[,ref_species2 ...] \\
@@ -37,19 +46,27 @@ OPTIONS
 		verbosity
 			
 	-ref_species # 
-		list of reference species seperated by comma
+		Reference species. Multiple species can be provided,
+		seperated by comma.
 		  
 	-nb_species # 
-		list of numbers of species in the maf file included
-		the reference species seperated by comma
+		List of numbers of aligned species in the multiz file
+		associated to the list of reference species specified
+		with the option -ref_species.
 
 	-rm
-		remove ref_species from
+		Remove ref_species from the list of supported
+		multi-genome alignemnts. This erases the
+		corresponding lines from the file
+
 		$RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
+
+		However, the multiz alignements are not suppressed
+		from the data directory (this must be done manually).
 
 	-print_result
 		Print the species alignend on STDOUT instead of the
-		file
+		file.
 
 '''
 
