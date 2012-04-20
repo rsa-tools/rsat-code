@@ -153,12 +153,12 @@ def main( argv):
 
 	if not args.no_gunzip:
 	
-		if len(maf_to_download) > 0: #no need to uncompressed if nothing to download	
+		if len(maf_to_download) > 0: #no need to uncompress if nothing to download	
 			uncompress_maf(maf_to_download, multiz_path, args.verbosity)
 			
 		else:
 			if args.verbosity > 0:
-				print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tNo maf to uncompressed (wrong requested organism or no new maf)"
+				print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tNo maf to uncompress (wrong requested organism or no new maf)"
 
 	if not args.no_index:
 		if len(maf_to_index) > 0: #no need to index if nothing to download
@@ -361,7 +361,7 @@ def uncompress_maf(file_to_uncompress, path, verbosity =0):
 
 	if verbosity > 0:
 		print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tStart uncompressed maf"
-		print "\tMaf to uncompressed "+str(total_gz)
+		print "\tMaf to uncompress "+str(total_gz)
 
 	for maf in file_to_uncompress:		
 		if verbosity > 0:
@@ -371,7 +371,7 @@ def uncompress_maf(file_to_uncompress, path, verbosity =0):
 		total_gz = total_gz -1
 	
 		if verbosity > 0:
-			print "Maf left to uncompressed :"+str(total_gz)
+			print "Maf left to uncompress :"+str(total_gz)
 
 #############################################################################################################	
 ## Index files for further retrieval with peak-footprints
