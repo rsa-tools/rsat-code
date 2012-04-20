@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.51 2012/01/28 01:34:16 rsat Exp $
+# $Id: mirror.mk,v 1.52 2012/04/20 07:17:00 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -12,8 +12,8 @@ MAKEFILE=${RSAT}/makefiles/mirror.mk
 ################################################################
 #
 # Server
-RSAT_SERVER=rsat.ulb.ac.be
-RSAT_SERVER_DIR=rsa-tools
+RSAT_SERVER=merlin.bigre.ulb.ac.be
+RSAT_SERVER_DIR=/rsat_servers/rsat
 RSAT_SERVER_LOGIN=rsat
 SERVER=${RSAT_SERVER_LOGIN}@${RSAT_SERVER}:${RSAT_SERVER_DIR}
 
@@ -52,10 +52,10 @@ data_to_server:
 
 genomes_to_server:
 	echo "Synchronizing genomes to server ${SERVER}"
+	${RSYNC} ${EXCLUDED_FILES} public_html/data/taxon_frequencies ${SERVER}/public_html/data/
 	${RSYNC} ${EXCLUDED_FILES} public_html/data/genomes ${SERVER}/public_html/data/
 	${RSYNC}  public_html/data/supported*.tab ${SERVER}/public_html/data/
 	${RSYNC}  public_html/data/supported*.pl ${SERVER}/public_html/data/
-	${RSYNC} ${EXCLUDED_FILES} public_html/data/taxon_frequencies ${SERVER}/public_html/data/
 
 doc_to_server:
 	${MAKE} dir_to_server DIR=doc
