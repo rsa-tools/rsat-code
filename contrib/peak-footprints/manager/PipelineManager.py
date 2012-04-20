@@ -89,12 +89,19 @@ class PipelineManager:
 
         # Add the RSAT path to the base output dir path retrieved from the manager.props
         self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM)) 
+        FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM], 0777)
+        
+        # Initialize the output directory
+        self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
+        FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM], 0777)
         
         # Add the RSAT path to the listening dir path retrieved from the manager.props
         self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM))
+        FileUtils.createDirectory( self.config[ Constants.LISTENING_DIR_PARAM], 0777)
         
         # Set the path for the job queue directory
-        self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.QUEUE_DIR_NAME) 
+        self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.QUEUE_DIR_NAME)
+        FileUtils.createDirectory( self.config[ Constants.QUEUE_DIR_PARAM]) 
 
         # Set the RSAT_PATH
         RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)        
@@ -117,11 +124,6 @@ class PipelineManager:
     # Set the manager in server mode, always running and managing queue
     def server(self, listener_path = None):
         
-        # Initialize logs and output directories
-        FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM])
-        self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
-        FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM])
-
         # Init the server queue with queue file if exists (restoring from previous run)
         self.initServerQueue()
         
@@ -185,7 +187,6 @@ class PipelineManager:
         
         try:
             queue_file_path = os.path.join( self.config[ Constants.QUEUE_DIR_PARAM], Constants.SERVER_QUEUE_FILE_NAME)
-            FileUtils.createDirectory( self.config[ Constants.QUEUE_DIR_PARAM])
             queue_file = open( queue_file_path, "w")
             for infos in self.serverQueue:
                 line = ""
@@ -243,13 +244,16 @@ class PipelineManager:
             resume = (params[3].lower() == "true")
             working_dir = params[4]
             
-            # Modifies the config if required and initialize logs and outputdirectory
+            # Modifies the config if required and initialize logs and output directory
             if working_dir != None and len( working_dir) > 0:
                 self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = working_dir
-            FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM])
                 
+            # Verify the base output dir and the output dir are created and create them if not
+            FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM], 0777)
             self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
-            FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM])
+            FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM], 0777)
+            
+            # Switch log location
             Log.switchFiles( self.getParameter( Constants.OUTPUT_DIR_PARAM), verbosity)
             
             # Parse the XML file to retrieve the pipelines definition

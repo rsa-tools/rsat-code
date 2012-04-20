@@ -1,6 +1,6 @@
 
         
-import os, shutil, glob
+import os, shutil, glob, stat
 
 class FileUtils:
     
@@ -62,13 +62,14 @@ class FileUtils:
     # --------------------------------------------------------------------------------------
     # create a directory at the given path is possible
     @staticmethod
-    def createDirectory( path):
+    def createDirectory( path, chmod = 0755):
         
         if os.path.exists( path):
             if not os.path.isdir( path):
                 return False
         else:
             os.mkdir( path)
+            os.chmod( path, chmod)
         
         return True
 
