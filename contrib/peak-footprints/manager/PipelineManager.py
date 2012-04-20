@@ -196,6 +196,7 @@ class PipelineManager:
                 queue_file.write( line + "\n")
                 queue_file.flush()
             queue_file.close()
+            os.chmod( queue_file_path, 0666)
         except IOError, io_exce:
             raise ExecutionException(" PipelineManager.outputServerQueue : Unable to save Server queue to file : " + queue_file_path +". From:\n\t---> " + str( io_exce))
 
