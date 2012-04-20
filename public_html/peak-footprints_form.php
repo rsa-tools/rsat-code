@@ -12,11 +12,10 @@ UpdateLogFile("rsat","","");
 <?php
 //////////////////////////
 //Get info on avalaible genome on ucsc
-$file = fopen ($properties['RSAT'].'/public_html/data/supported_organism_ucsc.tab', 'r');
+$file = fopen ($properties['RSAT'].'/public_html/data/supported_organisms_ucsc.tab', 'r');
 $genome_ucsc= array();
 
 while (!feof($file)) {
-
 	list($genome, $organism, $species, $date) = explode("\t", substr(fgets($file),0,-1));
 	if ($genome != "") {
 		$genome_ucsc[$genome]['organism'] = $organism;
@@ -26,19 +25,20 @@ while (!feof($file)) {
 }
 fclose(file);
 
-//Get supported multiz alignement and genone in each multiz
-$file = fopen ($properties['RSAT'].'/public_html/data/supported_organism_ucsc_multiz_local.tab', 'r');
+//Get multiz alignements supported on this local server (ref genomes + aligned species)
 $multiz_supported = array();
-
-while (!feof($file)) {
+$filename = $properties['RSAT'].'/public_html/data/supported_organisms_ucsc_multiz_local.tab';
+if (is.file($filename)) {
+  $file = fopen ($filename, 'r');
+  while (!feof($file)) {
 	list($genome_reference,$nb_species,$genome,$path) = explode("\t", substr(fgets($file),0,-1));
-
 	if ($genome_reference != "") {
 		$multiz_supported[$genome_reference]['aligned_species'][] = $genome;
 		$multiz_supported[$genome_reference]['path']= $path;
 	}
+  }
+  fclose(file);
 }
-fclose(file);
 
 //Write array() with key multiz available genome and values genome in multiz.
 foreach($multiz_supported as $genome_reference => $value) {
