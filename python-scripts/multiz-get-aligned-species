@@ -11,7 +11,7 @@ CATEGORY
 	genome   
         
 DESCRIPTION
-	Get list of species in a maf file. By default the programme write the result in $RSAT/public-html/data/supported_organism_ucsc_multiz_local.tab
+	Get list of species in a maf file. By default the programme write the result in $RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
 		
 	This file is use for the interface of RSAT peak-footprints.
 
@@ -38,7 +38,7 @@ OPTIONS
 		list of numbers of species in the maf file included the reference species seperated by comma
 
 	-rm
-		remove ref_species from $RSAT/public-html/data/supported_organism_ucsc_multiz_local.tab
+		remove ref_species from $RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
 
 	-print_result
 		Print the species alignend on STDOUT instead of the file
@@ -97,10 +97,10 @@ def main( argv):
 	rsat_path = os.getenv('RSAT') # Main path for the RSAT suite
 	peak_footprints_path = rsat_path + "/contrib/peak-footprints/" # Path for the peak-footprint program
 	multiz_path = rsat_path + "/data/UCSC_multiz"
-	supported_organism_ucsc_multiz_local = rsat_path+"/data/supported_organism_ucsc_multiz_local.tab"
+	supported_organisms_ucsc_multiz_local = rsat_path+"/data/supported_organisms_ucsc_multiz_local.tab"
 
 	##Launch function
-	line_to_keep = read_supported_organism_ucsc_multiz_local(args.ref_species, supported_organism_ucsc_multiz_local)
+	line_to_keep = read_supported_organisms_ucsc_multiz_local(args.ref_species, supported_organisms_ucsc_multiz_local)
 	
 	if args.remove:	#Not reading maf if user want remove
 		list_info = []
@@ -115,7 +115,7 @@ def main( argv):
 	if args.print_result:
 		priting_align_species(list_info)
 	else:
-		writing_align_species(line_to_keep, list_info, supported_organism_ucsc_multiz_local )
+		writing_align_species(line_to_keep, list_info, supported_organisms_ucsc_multiz_local )
 		
 	if ref_nb_spec != []:
 		for ref_species,nb_species in ref_nb_spec:
@@ -137,17 +137,17 @@ def read_argument(argv):
 	return args
 
 #############################################################################################################
-##Reading supported_organism_ucsc_multiz_local.tab if exsit
-def read_supported_organism_ucsc_multiz_local(list_ref_species, supported_organism_ucsc_multiz_local):
+##Reading supported_organisms_ucsc_multiz_local.tab if exsit
+def read_supported_organisms_ucsc_multiz_local(list_ref_species, supported_organisms_ucsc_multiz_local):
 
 	line_to_keep = ""
-	if os.path.isfile(supported_organism_ucsc_multiz_local): 
-		file = open(supported_organism_ucsc_multiz_local,'r')
+	if os.path.isfile(supported_organisms_ucsc_multiz_local): 
+		file = open(supported_organisms_ucsc_multiz_local,'r')
 		line = file.readline()
 
 		while line != "":
 			ref_species,nb_species, species, path = line.split("\t")
-			if ref_species not in list_ref_species : ##Removing all multiz from the same ref_species in supported_organism_ucsc_multiz_local.tab
+			if ref_species not in list_ref_species : ##Removing all multiz from the same ref_species in supported_organisms_ucsc_multiz_local.tab
 				line_to_keep += line
 
 			line = file.readline()
@@ -234,10 +234,10 @@ def read_maf(downloaded_maf, multiz_path, ref_nb_spec):
 
 	return list_info, ref_nb_spec
 
-##Writing align_species in supported_organism_ucsc_multiz_local.tab
-def writing_align_species(line_to_keep, list_info, supported_organism_ucsc_multiz_local ):
+##Writing align_species in supported_organisms_ucsc_multiz_local.tab
+def writing_align_species(line_to_keep, list_info, supported_organisms_ucsc_multiz_local ):
 
-	file = open(supported_organism_ucsc_multiz_local,'w')
+	file = open(supported_organisms_ucsc_multiz_local,'w')
 	
 	if line_to_keep != "":
 		file.write(line_to_keep)
@@ -252,7 +252,7 @@ def writing_align_species(line_to_keep, list_info, supported_organism_ucsc_multi
 
 	file.close()
 
-##Priting align_species in supported_organism_ucsc_multiz_local.tab
+##Priting align_species in supported_organisms_ucsc_multiz_local.tab
 def priting_align_species(list_info):
 
 	for ref_species, nb_species, list_species, maf_path in list_info:
