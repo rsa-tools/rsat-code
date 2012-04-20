@@ -48,11 +48,11 @@ DISK SPACE REQUIREMENT
 
 USAGE
       %(progname)s \\
-           [-org ORG1 [ORG2....] | -org_file org_file.txt] \\
+           [-org ORG1 | -org_file org_file.txt] \\
       	    [-multiz] [-v] [-index] [-h]
         
       Exemple 
-      	%(progname)s -org mm8,mm9,hg19
+      	%(progname)s -org mm9
             
 OPTIONS
       -h, --help		
@@ -62,7 +62,7 @@ OPTIONS
           verbosity
 
       -org # 
-          list of organism seperated by comma
+          Organism supported on UCSC
 
       -org_file #	
           file contening all organism with only one organism by line
@@ -76,6 +76,9 @@ OPTIONS
 
       -noindex
 	   do not run the indexation of the maf file.
+
+	  -web_pf
+	   Use multiz-get-align-species to create a file contening information need by the interface of peak-footprints
 '''
 
 
@@ -99,6 +102,7 @@ def main( argv):
 	parser.add_argument('-all_multiz', action="store_true", default=False, dest="all_multiz")
 	parser.add_argument('-nogunzip', action="store_true", default=False, dest="no_gunzip")
 	parser.add_argument("-noindex", action="store_true", default=False, dest="no_index")
+	parser.add_argument("-web_pf", action="store_true", default=False, dest="web_pf")
 	parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
 	parser.add_argument("-h", "--help", action="store_true", dest="help")
 	args = parser.parse_args()
@@ -167,6 +171,14 @@ def main( argv):
 		else:
 			if args.verbosity > 0:
 				print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tNo maf to index (wrong requested organism or no new maf)"
+
+	if args.web_pf:
+		if args.org_file != False:
+			subprocess.check_call("multiz-get-aligned-species -ref_species "+open(args.org_file, 'r').read().split("\n"), shell=True)
+		else : 
+			subprocess.check_call("multiz-get-aligned-species -ref_species "+args.org, shell=True)
+
+	
 
 ################################################################
 ##Check if multiz_path exist
