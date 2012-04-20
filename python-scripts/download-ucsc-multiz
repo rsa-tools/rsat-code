@@ -126,7 +126,7 @@ def main( argv):
 	local_downloaded_maf, local_indexed_maf = get_local_maf ( multiz_path, multiz_path, [], [])
 	maf_list, org_dico = read_list_maf( args, fetch_maf_list_name)
 	maf_to_download, maf_to_index = rewrite_fetch_maf_list( args, fetch_maf_list_name, maf_list, org_dico, local_downloaded_maf, local_indexed_maf)
-	lauch_download( args, multiz_path, maf_to_download)
+	lauch_download( args, fetch_maf_list_name, multiz_path, maf_to_download)
 
 	if not args.no_gunzip:
 		uncompress_maf(args, maf_to_download)
@@ -305,11 +305,16 @@ def rewrite_fetch_maf_list( args, fetch_maf_list_name, maf_list, org_dico, local
 
 #############################################################################################################	
 ##launch donwload
-def lauch_download( args, multiz_path, maf_to_download):
+def lauch_download( args, fetch_maf_list_name, multiz_path, maf_to_download):
 	if len(maf_to_download) > 0: #no need to rsync if nothing to download
+		cmd = 'rsync -avP --files-from='+fetch_maf_list_name+' rsync://hgdownload.cse.ucsc.edu/goldenPath/  '+multiz_path
+
 		if args.verbosity > 0:
 			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tStarting download"
-		subprocess.check_call('rsync -avP --files-from='+fetch_maf_list_name+' rsync://hgdownload.cse.ucsc.edu/goldenPath/  '+multiz_path, shell=True)
+			if args.verbosity > 1:
+			print "\tCommand : ",cmd
+			
+		subprocess.check_call(cmd, shell=True)
 	
 	else:
 		if args.verbosity > 0:
