@@ -42,14 +42,14 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
    sort($ucsc_organisms);
 
   if ($ucsc_organisms=="")  {
-    error("Can't connect on UCSC. Please contact system administrator.");
+    error("<span style='color:red'>Can't connect on UCSC. Please contact system administrator.</span>");
    }
 ?> 
       <form method='post' action='fetch-sequences.php' enctype='multipart/form-data'>
 
         <fieldset>  
          <legend><b>Genomic coordinates</b></legend>    
-         <b>Genome </b> <font color='red'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
+         <b>Genome </b> <font style='color:orange'>(mandatory)</font>&nbsp;&nbsp;&nbsp;
           <select name='genome' id='genome'>
            <option value ='none'> ---UCSC genome--- </option>
 <?php
@@ -61,7 +61,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
         </select><br/><br/>          
     <p>
 	  <b><a href='help.fetch-sequences.html#input_format'>Genomic
-	  coordinates</a></b> <font color='red'>(mandatory)</font>
+	  coordinates</a></b> <font style='color:orange'>(mandatory)</font>
 	  <br/>should be provided as a bed file (<a target='_blank'
 	  href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed
 	  format</a>), in any of the three following ways:
