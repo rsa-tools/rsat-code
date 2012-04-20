@@ -224,7 +224,10 @@ foreach($multiz_supported as $key => $value) {
 	     <div id="menu101" class="menu_collapsible">
 	       <fieldset>
 					<table>
-						<tr><th>Maximun numbers of peaks<span style='color:orange'>*</span> ]1..1000]</th><th><input type="text" size="3" name="nb_peaks" value="1000"/></th></tr>
+						<tr><th>Maximun numbers of peaks ]1..1000]<br/>
+							<span style="font-weight:normal;">The numbers of peaks is limited to 1000 peaks.<br/>
+							For biggest data use <a target='_blank' href='<?php echo $properties['rsat_www'].'distrib/' ?>'>stand-alone version</a> of peak-footprints.</span>
+							</th><th><input type="text" size="3" name="nb_peaks" value="1000"/></th></tr>
 						<tr><th>Maximun chi2 Pvalue (>0)</th><th><input type="text" size="3" name="max_chi2_pvalue" value="1"/></th></tr>
 						<tr><th>Maximun Hypergeometric P-value (>0)</th><th><input type="text" size="3" name="max_hyp_pvalue" value="0.001"/></th></tr>		
 						<tr><th>Column-wise conservation threshold ]0..1[</th><th><input type="text" size="3" value="0.7" name="cons_thres"/></th></tr>
@@ -233,7 +236,7 @@ foreach($multiz_supported as $key => $value) {
 						<tr><th>Maximum number of reported motifs (>1)</th><th><input type="text" size="3" value="50" name="motif_number"/></th></tr>
 						<tr><th>Maximum number of reported motifs per family (>1)</th><th><input type="text" size="3" value="4" name="motif_number_family"/></th></tr>
 					</table>
-					<p>* The numbers of peaks is limited to 1000 peaks. For more peaks use stand-alone version of peak-footprints.</p>
+					
 	       </fieldset>
 	     </div>
         <b>Output</b>&nbsp;<input type="radio" name="output" value="display" />display <input type="radio" name="output" value="email" checked="checked" />email <input type="text" name="user_email"  size="30" />
@@ -244,7 +247,8 @@ foreach($multiz_supported as $key => $value) {
 <?php
 if ( array_key_exists('mm9', $multiz_supported)) {
 	$demo_button = '<td><input type="button" name="demo" value="Demo (mm9)" onclick="'."add_demo('mm9', Array ('hg18', 'rn4', 'bosTau3', 'monDom4'), '";
-	$demo_button .= $properties['rsat_www']."demo_files/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.12_nof.bed')\"/></td>";
+	$demo_button .= $properties['rsat_www']."demo_files/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.12_nof.bed";
+	$demo_button .= "')\"/></td>";
 	echo $demo_button;
 }
 
