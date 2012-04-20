@@ -21,7 +21,7 @@ class PipelineListener:
     @staticmethod
     def start( pipeline_manager, dir_path):
         
-        FileUtils.createDirectory( dir_path)
+        FileUtils.createDirectory( dir_path, 0777)
         listener = PipelineListener( pipeline_manager, dir_path)
         listener.run()
         
