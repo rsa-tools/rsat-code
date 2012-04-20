@@ -1,6 +1,4 @@
-	<pipeline name="%s_MAFIndexer">
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
 			<param name="MAFFile" value="%s"/>
       			<param name="ReferenceSpecies" value="%s"/>
 		</component>
-	</pipeline>
