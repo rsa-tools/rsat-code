@@ -241,7 +241,14 @@ foreach($multiz_supported as $key => $value) {
         <tr style="valign:middle">
           <td><input type="submit" name="submit" value="GO" /></td>
           <td><input type="reset"  name="reset"/></td> 
-          <td><input type="button" name="demo" value="Demo" onclick="add_demo('mm9', Array ('hg18', 'rn4', 'bosTau3', 'monDom4'), '<?php echo $properties['rsat_www']?>demo_files/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.12_nof.bed')"/></td>  
+<?php
+if ( array_key_exists('mm9', $multiz_supported)) {
+	$demo_button = '<td><input type="button" name="demo" value="Demo (mm9)" onclick="'."add_demo('mm9', Array ('hg18', 'rn4', 'bosTau3', 'monDom4'), '";
+	$demo_button .= $properties['rsat_www']."demo_files/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.12_nof.bed')\"/></td>";
+	echo $demo_button;
+}
+
+?>
  <!--         <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>  -->
           <td><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></b></td>
         </tr></table>
