@@ -11,7 +11,10 @@ CATEGORY
 	genome   
         
 DESCRIPTION
-	Get list of species in a maf file. By default the programme write the result in $RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
+
+	Get list of species in a maf file. By default the programme
+	write the result in
+	$RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
 		
 	This file is use for the interface of RSAT peak-footprints.
 
@@ -19,9 +22,11 @@ WARNING
 	Do not work for camFam1, dm1, sacCer1
         
 USAGE
-	maf-species-list -ref_species ref_species1[,ref_species2 ...] -nb_species nb_species_in_org1[,nb_species_in_org2 ...] [-v #] [-h] [-print_result] [-rm]
+	maf-species-list -ref_species ref_species1[,ref_species2 ...] \\
+	  -nb_species nb_species_in_org1[,nb_species_in_org2 ...] \\
+	  [-v #] [-h] [-print_result] [-rm]
 	    
-	Exemple 
+	Example 
 		maf-species-list -ref_species mm9,hg18 -nb_species 30,44
             
 OPTIONS
@@ -35,13 +40,17 @@ OPTIONS
 		list of reference species seperated by comma
 		  
 	-nb_species # 
-		list of numbers of species in the maf file included the reference species seperated by comma
+		list of numbers of species in the maf file included
+		the reference species seperated by comma
 
 	-rm
-		remove ref_species from $RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
+		remove ref_species from
+		$RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
 
 	-print_result
-		Print the species alignend on STDOUT instead of the file
+		Print the species alignend on STDOUT instead of the
+		file
+
 '''
 
 
