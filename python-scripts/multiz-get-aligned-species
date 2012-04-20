@@ -31,12 +31,12 @@ WARNING
 	multiz files.
         
 USAGE
-	maf-species-list -ref_species ref_species1[,ref_species2 ...] \\
+	%(progname)s -ref_species ref_species1[,ref_species2 ...] \\
 	  -nb_species nb_species_in_org1[,nb_species_in_org2 ...] \\
 	  [-v #] [-h] [-print_result] [-rm]
-	    
+
 	Example 
-		maf-species-list -ref_species mm9,hg18 -nb_species 30,44
+		%(progname)s -ref_species mm9,hg18 -nb_species 30,44
             
 OPTIONS
 	-h, --help
@@ -84,28 +84,36 @@ import operator
 ################################################################
 def main( argv):
 
+	##Read arguments
+	parser = argparse.ArgumentParser(add_help=0)
+	parser.add_argument('-ref_species', action="store",default=False, dest="ref_species")
+	parser.add_argument('-nb_species', action="store", default=False, dest="nb_species")
+	parser.add_argument('-rm', action="store_true", default=False, dest="remove")
+	parser.add_argument('-print_result', action="store_true",default=False, dest="print_result")
+	parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
+	parser.add_argument("-h", "--help", action="store_true", dest="help")
+	args = parser.parse_args()
+
 	##Check argument 
-	args = read_argument(argv)
-	
 	if args.help:
-		print  globals()['__doc__'] % {'version' : '1.00', 'progname' : argv[0]}
+		print  globals()['__doc__'] % {'version' : '1.00', 'progname' : parser.prog}
 		sys.exit(0)
 	
 	if not args.ref_species:
-		print 'You forgot to specify reference species'
+		print 'You forgot to specify reference species. Use -ref_species'
 	 	sys.exit(1)
 	else:
 		args.ref_species = args.ref_species.split(",")
 
 	if not args.nb_species:
-		print 'You forgot to specify the numbers of species aligned'
+		print 'You forgot to specify the numbers of aligned species. Use -nb_species'
 	 	sys.exit(2)
 	else:
 		args.nb_species = args.nb_species.split(",")
 
 
 	if len(args.nb_species) != len(args.ref_species):
-		print 'You indicate a different numbers of reference species and nb_species in maf'
+		print 'You indicate a different numbers of reference species and align species'
 		sys.exit(3)
 		
 	else:
@@ -146,22 +154,7 @@ def main( argv):
 	if ref_nb_spec != []:
 		for ref_species,nb_species in ref_nb_spec:
 			print "Can't find "+multiz_path+"/"+ref_species+"/multiz"+str(nb_species)+"way"
-
 		
-################################################################
-## Read argument
-def read_argument(argv):
-	parser = argparse.ArgumentParser(add_help=0)
-	parser.add_argument('-ref_species', action="store",default=False, dest="ref_species")
-	parser.add_argument('-nb_species', action="store", default=False, dest="nb_species")
-	parser.add_argument('-rm', action="store_true", default=False, dest="remove")
-	parser.add_argument('-print_result', action="store_true",default=False, dest="print_result")
-	parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
-	parser.add_argument("-h", "--help", action="store_true", dest="help")
-	args = parser.parse_args()
-
-	return args
-
 #############################################################################################################
 ##Reading supported_organisms_ucsc_multiz_local.tab if exsit
 def read_supported_organisms_ucsc_multiz_local(list_ref_species, supported_organisms_ucsc_multiz_local):
