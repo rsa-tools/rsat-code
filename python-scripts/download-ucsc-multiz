@@ -304,7 +304,7 @@ def rewrite_fetch_maf_list( args, fetch_maf_list_name, maf_list, org_dico, local
 	return maf_to_download, maf_to_index
 
 #############################################################################################################	
-##launch donwload
+## LAUNCH donwload
 def lauch_download( args, fetch_maf_list_name, multiz_path, maf_to_download):
 	if len(maf_to_download) > 0: #no need to rsync if nothing to download
 		cmd = 'rsync -avP --files-from='+fetch_maf_list_name+' rsync://hgdownload.cse.ucsc.edu/goldenPath/  '+multiz_path
@@ -312,7 +312,7 @@ def lauch_download( args, fetch_maf_list_name, multiz_path, maf_to_download):
 		if args.verbosity > 0:
 			print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tStarting download"
 			if args.verbosity > 1:
-			print "\tCommand : ",cmd
+				print "\tCommand : ",cmd
 			
 		subprocess.check_call(cmd, shell=True)
 	
