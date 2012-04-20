@@ -32,7 +32,6 @@ WARNING
         
 USAGE
 	%(progname)s -ref_species ref_species1[,ref_species2 ...] \\
-	  -nb_species nb_species_in_org1[,nb_species_in_org2 ...] \\
 	  [-v #] [-h] [-print_result] [-rm]
 
 	Example 
@@ -48,11 +47,6 @@ OPTIONS
 	-ref_species # 
 		Reference species. Multiple species can be provided,
 		seperated by comma.
-		  
-	-nb_species # 
-		List of numbers of aligned species in the multiz file
-		associated to the list of reference species specified
-		with the option -ref_species.
 
 	-rm
 		Remove ref_species from the list of supported
@@ -87,7 +81,7 @@ def main( argv):
 	##Read arguments
 	parser = argparse.ArgumentParser(add_help=0)
 	parser.add_argument('-ref_species', action="store",default=False, dest="ref_species")
-	parser.add_argument('-nb_species', action="store", default=False, dest="nb_species")
+	#parser.add_argument('-nb_species', action="store", default=False, dest="nb_species")
 	parser.add_argument('-rm', action="store_true", default=False, dest="remove")
 	parser.add_argument('-print_result', action="store_true",default=False, dest="print_result")
 	parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
@@ -105,27 +99,27 @@ def main( argv):
 	else:
 		args.ref_species = args.ref_species.split(",")
 
-	if not args.nb_species:
-		print 'You forgot to specify the numbers of aligned species. Use -nb_species'
-	 	sys.exit(2)
-	else:
-		args.nb_species = args.nb_species.split(",")
+	#if not args.nb_species:
+	#	print 'You forgot to specify the numbers of aligned species. Use -nb_species'
+	# 	sys.exit(2)
+	#else:
+	#	args.nb_species = args.nb_species.split(",")
 
 
-	if len(args.nb_species) != len(args.ref_species):
-		print 'You indicate a different numbers of reference species and align species'
-		sys.exit(3)
+	#if len(args.nb_species) != len(args.ref_species):
+	#	print 'You indicate a different numbers of reference species and align species'
+	#	sys.exit(3)
 		
-	else:
-		ref_nb_spec = []
-		for i in range(len(args.ref_species)):
-			try:
-				args.nb_species[i] = int(args.nb_species[i])
-			except:
-				print args.nb_species[i]+"is not a integrer"
-				sys.exit(4)
-			
-			ref_nb_spec.append((args.ref_species[i],args.nb_species[i]))
+	#else:
+	#	ref_nb_spec = []
+	#for i in range(len(args.ref_species)):
+	#		try:
+	#			args.nb_species[i] = int(args.nb_species[i])
+	#		except:
+	#			print args.nb_species[i]+"is not a integrer"
+	#			sys.exit(4)
+	#		
+	#		ref_nb_spec.append((args.ref_species[i],args.nb_species[i]))
 
 	##Initalize variable
 	rsat_path = os.getenv('RSAT') # Main path for the RSAT suite
@@ -141,9 +135,9 @@ def main( argv):
 		ref_nb_spec = []
 		
 	else: 
-		downloaded_maf = listing(multiz_path, multiz_path, {}, ref_nb_spec)
+		downloaded_maf = listing(multiz_path, multiz_path, {}, args.ref_species)
 
-		list_info, ref_nb_spec = read_maf(downloaded_maf, multiz_path, ref_nb_spec)
+		list_info, ref_nb_spec = read_maf(downloaded_maf, multiz_path, args.ref_species)
 
 
 	if args.print_result:
@@ -152,8 +146,8 @@ def main( argv):
 		writing_align_species(line_to_keep, list_info, supported_organisms_ucsc_multiz_local )
 		
 	if ref_nb_spec != []:
-		for ref_species,nb_species in ref_nb_spec:
-			print "Can't find "+multiz_path+"/"+ref_species+"/multiz"+str(nb_species)+"way"
+		for ref_species in ref_nb_spec:
+			print "Can't find "+multiz_path+"/"+ref_species+"/multizNway"
 		
 #############################################################################################################
 ##Reading supported_organisms_ucsc_multiz_local.tab if exsit
@@ -165,7 +159,7 @@ def read_supported_organisms_ucsc_multiz_local(list_ref_species, supported_organ
 		line = file.readline()
 
 		while line != "":
-			ref_species,nb_species, species, path = line.split("\t")
+			ref_species, nb_species, species, path = line.split("\t")
 			if ref_species not in list_ref_species : ##Removing all multiz from the same ref_species in supported_organisms_ucsc_multiz_local.tab
 				line_to_keep += line
 
@@ -176,17 +170,14 @@ def read_supported_organisms_ucsc_multiz_local(list_ref_species, supported_organ
 
 #############################################################################################################
 ##List recursivly all directory in multiz_path and return a dictionnay with all the .maf for ref_species and multiz paste in argument
-def listing (directory, multiz_path, downloaded_maf, ref_nb_spec):
-	exp_reg = ('multiz(\d+)way')
-	exp_reg = re.compile(exp_reg)
-	
+def listing (directory, multiz_path, downloaded_maf, ref_spec):
 	
 	for files in os.listdir(directory) :		
 		file_path = os.path.join(directory, files)
 
 		#if file_path is a directory, the fonction recall itself
 		if os.path.isdir(file_path):
-			downloaded_maf = listing(file_path, multiz_path, downloaded_maf, ref_nb_spec)
+			downloaded_maf = listing(file_path, multiz_path, downloaded_maf, ref_spec)
 			
 		else : 
 			extension = file_path.split(".")[-1]
@@ -195,9 +186,8 @@ def listing (directory, multiz_path, downloaded_maf, ref_nb_spec):
 				local_file_path = file_path.replace(multiz_path,"").lstrip("/")
 				ref_species = local_file_path.split("/")[0]
 				multiz = local_file_path.split("/")[1]
-				nb_species = int(exp_reg.findall(multiz)[0])
 				
-				if (ref_species,nb_species) in ref_nb_spec:
+				if ref_species in ref_spec:
 					if ref_species not in downloaded_maf:
 						downloaded_maf[ref_species] = {}
 
@@ -210,7 +200,7 @@ def listing (directory, multiz_path, downloaded_maf, ref_nb_spec):
 
 #############################################################################################################
 ##Reading maf file
-def read_maf(downloaded_maf, multiz_path, ref_nb_spec): 
+def read_maf(downloaded_maf, multiz_path, ref_spec): 
 	exp_reg = ('multiz(\d+)way')
 	exp_reg = re.compile(exp_reg)
 	list_info = []
@@ -220,38 +210,41 @@ def read_maf(downloaded_maf, multiz_path, ref_nb_spec):
 		downloaded_maf[ref_species][multiz].sort(key=operator.itemgetter(0))
 
 		list_species = []
-		nb_species = int(exp_reg.findall(multiz)[0])
+
+		
+		nb_species = exp_reg.findall(multiz)
+
+		if nb_species != []:
+			nb_species_int = int(nb_species[0])
 	
-		##Begin reading maf file with the smallest.
-		##If not all aligned species find, read the next smallest
-		i = 0
-		while len(list_species) != nb_species:
-			maf_file = downloaded_maf[ref_species][multiz][i][1]
+			##Begin reading maf file with the smallest.
+			##If not all aligned species find, read the next smallest
+			i = 0
+			while len(list_species) != nb_species_int:
+				maf_file = downloaded_maf[ref_species][multiz][i][1]
 
-			maf = open(maf_file,'r')
+				maf = open(maf_file,'r')
 
-			line = maf.readline()
-
-			while line != "":
-				if line[0] in  ["s","e","i","q"]:
-					species = line.split(".")[0].split()[1]
-					
-					if species not in list_species:			
-						list_species.append(species)	
-								
 				line = maf.readline()
-			i += 1
+
+				while line != "":
+					if line[0] in  ["s","e","i","q"]:
+						species = line.split(".")[0].split()[1]
+					
+						if species not in list_species:			
+							list_species.append(species)	
+								
+					line = maf.readline()
+				i += 1
 
 
-		maf_path = "/".join(maf_file.replace(multiz_path,"").lstrip("/").split("/")[:-1])		
-		list_info.append((ref_species, nb_species, list_species, maf_path))
+			maf_path = "/".join(maf_file.replace(multiz_path,"").lstrip("/").split("/")[:-1])		
+			list_info.append((ref_species, nb_species_int, list_species, maf_path))
 
+			##Removing treating maf directory
+			ref_spec.remove(ref_species)
 
-
-		##Removing treating maf directory
-		ref_nb_spec.remove((ref_species,nb_species))
-
-	return list_info, ref_nb_spec
+	return list_info, ref_spec
 
 ##Writing align_species in supported_organisms_ucsc_multiz_local.tab
 def writing_align_species(line_to_keep, list_info, supported_organisms_ucsc_multiz_local ):
