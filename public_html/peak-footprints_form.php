@@ -28,7 +28,8 @@ fclose(file);
 //Get multiz alignements supported on this local server (ref genomes + aligned species)
 $multiz_supported = array();
 $filename = $properties['RSAT'].'/public_html/data/supported_organisms_ucsc_multiz_local.tab';
-if (is.file($filename)) {
+
+if (is_file($filename)) {
   $file = fopen ($filename, 'r');
   while (!feof($file)) {
 	list($genome_reference,$nb_species,$genome,$path) = explode("\t", substr(fgets($file),0,-1));
@@ -119,12 +120,9 @@ function move(from, to) {
 	}					
 }	
 
-function add_demo(ref_species, align_species) {
-<?php 
-$demo_file= $properties['rsat_www']."/demo_files/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.12_nof.bed";
-echo "document.forms[0].bed_url.value = '".$demo_file."';"; 
-?>
+function add_demo(ref_species, align_species, bed_file) {
 
+	document.forms[0].bed_url.value = bed_file;
 	document.forms[0].bed.value="";
 	document.getElementById('bed_file').value=''; 
 	
@@ -158,6 +156,10 @@ echo "document.forms[0].bed_url.value = '".$demo_file."';";
 $prog_name = "peak-footprints";
 $result = false;
 require ('RSAT_header.php');
+
+if ($multiz_supported == array()) {
+    error("<span style='color:red'>No supported multiz on this server. Please contact system administrator.</span>");
+}
 
 ?>
 		<form id="form" method='post' action='peak-footprints.php' enctype='multipart/form-data' onreset="on_reset('species_ali');on_reset('species_ali_keep');" onsubmit="select_all('species_ali_keep')">
@@ -235,12 +237,11 @@ foreach($multiz_supported as $key => $value) {
 	       </fieldset>
 	     </div>
         <b>Output</b>&nbsp;<input type="radio" name="output" value="display" />display <input type="radio" name="output" value="email" checked="checked" />email <input type="text" name="user_email"  size="30" />
-        
       <ul><table class='formbutton'>
         <tr style="valign:middle">
           <td><input type="submit" name="submit" value="GO" /></td>
           <td><input type="reset"  name="reset"/></td> 
-          <td><input type="button" name="demo" value="Demo" onclick="add_demo('mm9', Array ('hg18', 'rn4', 'bosTau3', 'monDom4'))"/></td>  
+          <td><input type="button" name="demo" value="Demo" onclick="add_demo('mm9', Array ('hg18', 'rn4', 'bosTau3', 'monDom4'), '<?php echo $properties['rsat_www']?>demo_files/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.12_nof.bed')"/></td>  
  <!--         <td><b><a href='help.fetch-sequences.html'>[MANUAL]</a></b></td>  -->
           <td><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></b></td>
         </tr></table>
