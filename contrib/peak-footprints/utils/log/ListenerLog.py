@@ -27,10 +27,10 @@ class ListenerLog:
         
         try:
             if self.log:
-                self.logFile = open( os.path.join( file_path, "listener_" + Constants.LOG_FILE_NAME), option)
+                self.logFile = FileUtils.openFile( os.path.join( file_path, "listener_" + Constants.LOG_FILE_NAME), option)
                 
             if self.trace:
-                self.traceFile = open( os.path.join( file_path, "listener_" + Constants.TRACE_FILE_NAME), option)
+                self.traceFile = FileUtils.openFile( os.path.join( file_path, "listener_" + Constants.TRACE_FILE_NAME), option)
         except Exception, exce:
             raise ConfigException( "Log.__init__ : Unable to create log file in directory '" + file_path + "'. From:\n\t---> " + str( exce))
 
