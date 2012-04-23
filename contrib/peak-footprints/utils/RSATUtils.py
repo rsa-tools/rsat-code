@@ -162,8 +162,8 @@ class RSATUtils:
     @staticmethod
     def outputTable( table, path):
 
-        try:        
-            out_file = open( path, "w")
+        try:
+            out_file = FileUtils.openFile( path, "w")
             for number in table:
                 out_file.write( str( number) + "\n")
                 out_file.flush()

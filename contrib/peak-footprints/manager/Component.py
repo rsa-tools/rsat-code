@@ -6,8 +6,10 @@ from manager.ProgressionManager import ProgressionManager
 from utils.exception.ExecutionException import ExecutionException
 from utils.exception.ParsingException import ParsingException
 from utils.log.Log import Log
+from utils.FileUtils import FileUtils
 
 from processor.ProcessorFactory import ProcessorFactory
+
 
 class Component:
     
@@ -324,7 +326,7 @@ class Component:
                 
         try:
             output_path = self.getConfigFilePath()
-            config_file = open( output_path, "w")
+            config_file = FileUtils.openFile( output_path, "w")
             for param in self.parameters.keys():
                 config_file.write( param + "=" + self.parameters[ param] + "\n")
                 config_file.flush()
@@ -342,7 +344,7 @@ class Component:
         
         try:
             output_path = self.getConfigFilePath()
-            config_file = open( output_path, "r")
+            config_file = FileUtils.openFile( output_path)
             for line in config_file:
                 tokens = line.split( "=")
                 if tokens != None and len( tokens) == 2:
