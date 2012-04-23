@@ -28,13 +28,11 @@ class Log:
         try:
             if self.log:
                 log_file_path = os.path.join( file_path, Constants.LOG_FILE_NAME)
-                self.logFile = open( log_file_path, option)
-                os.chmod( log_file_path, 0666)
+                self.logFile = FileUtils.openFile( log_file_path, option, 0666)
                 
             if self.trace:
                 trace_file_path = os.path.join( file_path, Constants.TRACE_FILE_NAME)
-                self.traceFile = open( trace_file_path, option)
-                os.chmod( trace_file_path, 0666)
+                self.traceFile = FileUtils.openFile( trace_file_path, option, 0666)
         except Exception, exce:
             raise ConfigException( "Log.__init__ : Unable to create log file in directory '" + file_path + "'. From:\n\t---> " + str( exce))
 

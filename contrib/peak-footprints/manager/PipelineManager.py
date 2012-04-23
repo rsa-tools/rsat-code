@@ -66,7 +66,7 @@ class PipelineManager:
     def readConfig(self, param_file):
         
         try:
-            file = open( param_file, "r")
+            file = FileUtils.openFile( param_file)
             for line in file:
                 if line.isspace() or line[0] == Constants.COMMENT_CHAR:
                     continue
@@ -187,7 +187,7 @@ class PipelineManager:
         
         try:
             queue_file_path = os.path.join( self.config[ Constants.QUEUE_DIR_PARAM], Constants.SERVER_QUEUE_FILE_NAME)
-            queue_file = open( queue_file_path, "w")
+            queue_file = FileUtils.openFile( queue_file_path, "w", 0666)
             for infos in self.serverQueue:
                 line = ""
                 for info in infos:
@@ -196,7 +196,6 @@ class PipelineManager:
                 queue_file.write( line + "\n")
                 queue_file.flush()
             queue_file.close()
-            os.chmod( queue_file_path, 0666)
         except IOError, io_exce:
             raise ExecutionException(" PipelineManager.outputServerQueue : Unable to save Server queue to file : " + queue_file_path +". From:\n\t---> " + str( io_exce))
 
@@ -209,7 +208,7 @@ class PipelineManager:
         if os.path.exists( queue_file_path):
             try:
                 commands_list = []
-                file = open( queue_file_path, "r")
+                file = FileUtils.openFile( queue_file_path)
                 for line in file:
                     command_params = [None, None, 0, "True", None]
                     if not line.isspace() and line[0] != Constants.COMMENT_CHAR:

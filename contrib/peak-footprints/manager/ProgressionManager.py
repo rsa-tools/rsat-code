@@ -6,6 +6,7 @@ from xml.etree import cElementTree as ET
 
 from utils.Constants import Constants
 from utils.log.Log import Log
+from utils.FileUtils import FileUtils
 
 class ProgressionManager:
     
@@ -181,7 +182,7 @@ class ProgressionManager:
             pipeline_output_dir = os.path.join( ProgressionManager.instance.outputPath, pipeline.name)
             progression_file = os.path.join( pipeline_output_dir, Constants.PROGRESSION_XML_FILE)
             #ElementTree( pipeline_element).write( progression_file)
-            outfile = open( progression_file, 'w')
+            outfile = FileUtils.openFile( progression_file, 'w')
             outfile.write('<?xml version="1.0" encoding="utf-8"?>\n')
             outfile.write('<?xml-stylesheet type="text/xsl" href="' + ProgressionManager.instance.stylesheetPath + '"?>\n')
             doc.write( outfile)
