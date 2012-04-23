@@ -60,7 +60,7 @@ class PipelineListener:
         tries = 0
         while tries <= 1:
             try:
-                file = open( path, "r")
+                file = FileUtils.openFile( path)
                 while True:
                     line = file.readline()
                     if len( line) == 0:

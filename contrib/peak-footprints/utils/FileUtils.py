@@ -1,6 +1,8 @@
 
         
-import os, shutil, glob, stat
+import os, shutil, glob
+
+from utils.exception.ExecutionException import ExecutionException
 
 class FileUtils:
     
@@ -73,6 +75,21 @@ class FileUtils:
         
         return True
 
+    # --------------------------------------------------------------------------------------
+    # Open a file 
+    @staticmethod
+    def openFile( path, mode = "r", chmod = 0644):
+        
+        if os.path.exists(path):
+            if not os.path.isfile( path):
+                raise ExecutionException( "FileUtils.openFile: unable to open file. Provided path is not a file : " + path)
+            result_file = open( path, mode)
+            return result_file
+        else:
+            result_file = open( path, mode)
+            os.chmod( path, chmod)
+            return result_file
+            
 
     # --------------------------------------------------------------------------------------
     # Remove the file at the given path

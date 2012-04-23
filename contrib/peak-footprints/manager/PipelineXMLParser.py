@@ -8,6 +8,7 @@ from Pipeline import Pipeline
 from Component import Component
 
 from utils.log.Log import Log
+from utils.FileUtils import FileUtils
 
 class PipelineXMLParser:
     
@@ -25,7 +26,7 @@ class PipelineXMLParser:
         root_element = None
         
         try:
-            file = open( pipelines_filepath, "r")
+            file = FileUtils.openFile( pipelines_filepath)
             tree = parse( file)
             root_element = tree.getroot()
             file.close()
