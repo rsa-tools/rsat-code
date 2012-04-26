@@ -64,6 +64,10 @@ class MotifProcessor( Processor):
     # Parameter for multi-threading
     THREAD_CHECK_DELAY = 2
     
+    # Parameter indicating the max number of blocks sent to a single processor.
+    # In case of multi-threads, this number is devided over all threads 
+    TOTAL_CONCURENT_BLOCKS = 128
+    
 
     # ---------------------------------------------------------------------------------------------
     def __init__( self):
@@ -259,7 +263,7 @@ class MotifProcessor( Processor):
         motif_list = motif_list_infos[ 0]
         
         # Initialize parameters
-        motif_pack_length = int( 128 / float( arguments[ MotifProcessor.THREAD_NUMBER_PARAM]))
+        motif_pack_length = int( MotifProcessor.TOTAL_CONCURENT_BLOCKS / float( arguments[ MotifProcessor.THREAD_NUMBER_PARAM]))
         old_working_dir = os.getcwd()
         
         # Build the motif list queue (by pack)
