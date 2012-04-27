@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.59 2012/03/03 16:41:16 rsat Exp $
+# $Id: install_rsat.mk,v 1.60 2012/04/27 17:28:53 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -95,6 +95,16 @@ install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
+################################################################
+## Install Pytho 2.7 and some libraries required for Web services.  We
+## intently chose version 2.7 (and not version 3.x) because some modules are
+## not working with version 3.x.
+PYTHON_INSTALL_DIR=${RSAT}/python_install
+download_python:
+	(mkdir ${PYTHON_INSTALL_DIR}; cd ${PYTHON_INSTALL_DIR}; wget -NL http://www.python.org/ftp/python/2.7/Python-2.7.tgz; tar -xpzf Python-2.7.tgz)
+
+install_python:
+	(cd ${PYTHON_INSTALL_DIR}/Python-2.7; ./configure; make; sudo make install)
 
 ################################################################
 ## This library allows you to install the Perl libraries locally, if you are not system administrator
