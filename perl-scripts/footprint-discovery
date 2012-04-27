@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.85 2012/04/20 07:16:24 rsat Exp $
+# $Id: footprint-discovery,v 1.86 2012/04/27 04:11:21 rsat Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.85 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.86 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -628,7 +628,7 @@ sub RunFootprintDisco {
   if ($batch) {
     my $jobnb = 0;
     my $delay = 30;
-    if (($q-1) % 500 == 0) {
+    if (($q-1) % 100 == 0) {
       $jobnb = &get_job_nb();
     }
     while ($jobnb > $max_jobs) {
