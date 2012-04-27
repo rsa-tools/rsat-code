@@ -55,7 +55,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 <?php
    foreach ($ucsc_organisms as $ligne) {
      list($genome,$description) =  explode("\t", $ligne);
-     echo "<option value = '$genome'>", $genome, " ", str_replace(" Genome at UCSC", "", $description), "</option>\n";
+     echo "<option value = '$genome'>", $genome, " - ", str_replace(" Genome at UCSC", "", $description), "</option>\n";
    }
 ?>
         </select><br/><br/>          
