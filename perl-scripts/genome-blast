@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.28 2012/04/15 22:45:14 rsat Exp $
+# $Id: genome-blast,v 1.29 2012/04/27 04:10:44 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -235,7 +235,7 @@ require "lib/load_classes.pl";
 require RSAT::blast_hit;
 
 ################################################################
-#### initialise parameters
+## Initialize parameters
 local $start_time = &RSAT::util::StartScript();
 
 #local $null = "<NULL>";
@@ -266,10 +266,16 @@ local $rsat_dir = $ENV{RSAT};
 
 ## Options for the command &doit()
 local $dry = 0;
-local $new_only = 0;
 local $no_self = 0;
 local $batch = 0;
 local $die_on_error = 1;
+local $job_counter = 0; ## Counter for the number of jobs sent to the cluster queue
+local $task_counter = 0; ## Counter for regrouping tasks in batch jobs (when $batch > 1)
+local $total_tasks = 0; 
+
+## options for skipping BLAST when hit table already exists
+local $new_only = 0;
+local $skipped_tasks = 0;
 
 ## Supported tasks
 @supported_tasks = qw (formatdb blastall cleandb all);
@@ -360,10 +366,18 @@ if ($reciprocal) {
 }
 
 
+
+
 ################################################################
 ## Report execution time and close output stream
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+if ($main::verbose >= 1)  {
+    printf $main::out "; %-29s\t%d\n", "Jobs", $job_counter;
+    printf $main::out "; %-29s\t%d\n", "Blastall tasks", $total_tasks;
+    printf $main::out "; %-29s\t%d\n", "Skipped tasks", $skipped_tasks;
+    print $main::out $exec_time; ## only report exec time if verbosity is specified
+}
 close $main::out if ($main::outfile{output});
 
 exit(0);
@@ -381,8 +395,6 @@ sub iterate_blast {
     my @query_organisms = @{$query_organisms_ref};
     my $d = 0; ## counter of database organisms
     my $batch_command = "";
-    my $task_counter = 0; ## Counter for regrouping tasks in batch jobs (when $batch > 1)
-    my $job_counter = 0; ## Counter for the number of jobs sent to the cluster queue
     foreach $db_organism (@db_organisms) {
 	$d++;
 #    &RSAT::message::TimeWarn("DB organism" $db_organims, $d."/".scalar(@db_organisms)) if ($main::verbose >= 1);
@@ -411,6 +423,7 @@ sub iterate_blast {
 		&RSAT::message::Warning("Skipping self-comparison", "DB", $d."/".scalar(@db_organisms), $db_organism, 
 					"Query", $q."/".scalar(@query_organisms), $query_organism,
 		    ) if ($main::verbose >= 1);
+		$skipped_tasks++;
 		next;
 	    }
 
@@ -442,6 +455,7 @@ sub iterate_blast {
 	    if ($new_only) {
 		if (-s $outfile{blast_ranks}) {
 		    &RSAT::message::Warning("BLAST result already exists, skipping", $outfile{blast_ranks}) if ($main::verbose >= 1);
+		    $skipped_tasks++;
 		    next;
 		}elsif (($task{formatdb})&&(!$formatdb)){
 		    &FormatDB();
@@ -478,8 +492,14 @@ sub iterate_blast {
 		}
 		$job_prefix="q_".$query_organism."_db_".$db_organism;
 
-		## Check if batch command has to be sent to cluster or must still be appended with next BLAST task(s)
+		## Increment task counter.  Task counter can be larger
+		## than job counter, since several tasks can be
+		## grouped in a single job with the option -batch #
+		## (e.g. -batch 10).
 		$task_counter++;
+		$total_tasks++;
+
+		## Check if batch command has to be sent to cluster or must still be appended with next BLAST task(s)
 		if (($task_counter >= $batch) ||
 		    (($d >= scalar(@db_organisms)) && ($q >= scalar(@query_organisms)))) {
 		    ## Send job with 1 or more tasks (depending on $batch number)
