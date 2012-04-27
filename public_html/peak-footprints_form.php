@@ -184,7 +184,7 @@ foreach($multiz_supported as $key => $value) {
 	echo "<option value='$key' id='$key'>$key - ".$genome_ucsc[$key]['organism']."</option>", "\n";
 }
 ?>
-					</select><input type='hidden' name='maf_path' id='maf_path' style='background-color:#E7F6FD;border-style:none;color:red' size="58" readonly="readonly"/>
+					</select><input type='hidden' name='maf_path' id='maf_path' style='background-color:#EFFBFB;border-style:none;color:red' size="100%" readonly="readonly"/>
 				</p>									
 				<p>
 				  <b>Aligned species</b> <span style='color:orange'>(mandatory)</span><br/>
