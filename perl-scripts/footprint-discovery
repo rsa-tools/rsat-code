@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.86 2012/04/27 04:11:21 rsat Exp $
+# $Id: footprint-discovery,v 1.87 2012/05/02 03:28:58 rsat Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.86 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.87 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -941,6 +941,7 @@ sub Verbose {
   $header_verbose .= "\n";
   $header_verbose .= sprintf "; %-22s\t%s\n", "Program version", $program_version;
   $header_verbose .= sprintf "; %-22s\t%s", "Working directory", `pwd`;
+  $header_verbose .= sprintf "; %-22s\t%s", "Computer name", `hostname`;
   $header_verbose .= sprintf "; %-22s\t%s\n", "Query organism", $organism_name;
   if($main::orglist_file) {
     $header_verbose .= sprintf "; %-22s\t%s\n", "Organism list", $orglist_file;
