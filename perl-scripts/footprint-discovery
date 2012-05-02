@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.87 2012/05/02 03:28:58 rsat Exp $
+# $Id: footprint-discovery,v 1.88 2012/05/02 19:17:30 rsat Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.87 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.88 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -382,9 +382,10 @@ package main;
     ## If the required the taxon frequencies are not pre-installed,
     ## compute them before porocessing and store them in the result
     ## directory.
-    unless ((-e $infile{bg_model}) ||
+    if ((-e $infile{bg_model}) ||
 	    (-e ($infile{bg_model}.".gz"))) {
-
+	&RSAT::message::Info("Background model file already exists. Not re-computed.", $infile{bg_model}) if ($main::verbose >= 2);
+    } else {
 
       ## Store the background model in the parent directory of the query sub-directories
       $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
@@ -394,18 +395,18 @@ package main;
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
       if ($task{bg_model}) {
-	my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
-	$cmd .= " -taxon ".$taxon;
-	$cmd .= " > ".$infile{bg_model};
-	&doit($cmd);
+	  my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+	  $cmd .= " -taxon ".$taxon;
+	  $cmd .= " > ".$infile{bg_model};
+	  &doit($cmd);
       }
       &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
-
-    } else {
-      &RSAT::error::FatalError($bg_model, "Invalid background model. Supported: ", $supported_bg_models) unless ($supported_bg_model{$bg_model});
     }
-    &RSAT::message::TimeWarn("Background model file", $infile{bg_model}) if ($main::verbose >= 3);
+      
+  } else {
+      &RSAT::error::FatalError($bg_model, "Invalid background model. Supported: ", $supported_bg_models) unless ($supported_bg_model{$bg_model});
   }
+  &RSAT::message::TimeWarn("Background model file", $infile{bg_model}) if ($main::verbose >= 3);
 
 
   ################################################################
