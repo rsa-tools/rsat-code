@@ -50,7 +50,7 @@
   // 1) the organism ID
   // 2) the usual name of the organism
   Function readStringOrganisms() {
-    $organisms = file_get_contents("http://string-db.org/newstring_download/species.v8.3.txt");
+    $organisms = file_get_contents("http://string.embl.de/newstring_download/species.v9.0.txt");
     $lines = explode("\n",$organisms);
     $array_count = count($lines);
     for($y=0; $y<$array_count; $y++) {
