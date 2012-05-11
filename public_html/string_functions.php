@@ -1,7 +1,6 @@
 <?php
 // List of functions dedicated to the treatment of STRING database via REST webservices using NeAT.
 ?>
-
 <?php
   // Check if the gene names exists in STRING
   // return their description in an array
@@ -17,7 +16,7 @@
       }
       $tempfile = writeTempFile("resolveString", "");
       $wget_command = "wget 'http://stitch.embl.de/api/tsv-no-header/resolve?identifier={$name}&species=$organism_id&echo_query=1' -O $tempfile";
-//       echo("$wget_command");
+      
 //       $wget_command = "wget 'http://string80.embl.de/api/tsv/interactors?identifier=$name&species=$organism_id' -O $tempfile";
       exec ($wget_command);
       $resolve_content = storeFile ($tempfile);
@@ -52,13 +51,26 @@
   Function readStringOrganisms() {
     $organisms = file_get_contents("http://string.embl.de/newstring_download/species.v9.0.txt");
     $lines = explode("\n",$organisms);
+    $sorted_lines = array();
     $array_count = count($lines);
     for($y=0; $y<$array_count; $y++) {
       $line = trim($lines[$y]);
       if (!preg_match("/^\#\#/", $line)) {
         $linecp = explode("\t", $line);
-        $organism_array[$y][0] = $linecp[0];
-        $organism_array[$y][1] = $linecp[2];
+        array_push($sorted_lines, $linecp[2]."\t".$linecp[0]);
+      }
+    }
+    sort($sorted_lines);
+
+    $array_count = count($sorted_lines);
+    for($y=0; $y<$array_count; $y++) {
+      $line = trim($sorted_lines[$y]);
+      
+      if (!preg_match("/^\#\#/", $line)) {
+        $linecp = explode("\t", $line);
+//         print_r($linecp);
+        $organism_array[$y][0] = $linecp[1];
+        $organism_array[$y][1] = $linecp[0];
       }
     }
     return $organism_array;
