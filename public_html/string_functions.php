@@ -17,13 +17,13 @@
       }
       $tempfile = writeTempFile("resolveString", "");
       $wget_command = "wget 'http://stitch.embl.de/api/tsv-no-header/resolve?identifier={$name}&species=$organism_id&echo_query=1' -O $tempfile";
-      
+//       echo("$wget_command");
 //       $wget_command = "wget 'http://string80.embl.de/api/tsv/interactors?identifier=$name&species=$organism_id' -O $tempfile";
       exec ($wget_command);
       $resolve_content = storeFile ($tempfile);
       $lines = explode("\n", $resolve_content);
       $result_size = count ($result);
-      for ($j = 1; $j < count ($lines); $j++) {
+      for ($j = 0; $j < count ($lines); $j++) {
         $line = $lines[$j];
         $linecp = explode("\t", $line);
         if ($line == "") {
