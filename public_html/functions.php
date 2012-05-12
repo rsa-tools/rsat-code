@@ -7,19 +7,19 @@ Function title($title) {
 
 // NeAT ERROR
 Function error($error) {
-  echo "<H4>Error: </H4><blockquote class='error'>$error</blockquote></h4><br>";
+  echo "<H4>Error</H4>\n<blockquote class='error'>$error</blockquote></h4><br>";
 }
 
 
 // NeAT WARNING
 Function warning($warning) {
-  echo "<H4>Warning: </H4><blockquote class ='warning'>$warning</blockquote><br>";
+  echo "<H4>Warning</H4>\n<blockquote class ='warning'>$warning</blockquote><br>";
 }
 
 
 // NeAT WARNING
 Function demo($demo) {
-  echo "<H4>Comment on the demonstration example: </H4><blockquote class ='demo'>$demo</blockquote><hr>";
+  echo "<H4>Comment on the demonstration example</H4>\n<blockquote class ='demo'>$demo</blockquote><hr>";
 }
 
 
