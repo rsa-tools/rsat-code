@@ -3,7 +3,7 @@ class Constants:
 
     # --------------------------------------------------------------------------------------
     #Init parameters
-    
+    PROJECT_NAME = "peak-footprints"
     RSAT_PATH_ENV_VAR = "RSAT"
     PROJECT_PATH_IN_RSAT = "contrib/peak-footprints"
     PROJECT_INSTALL_PATH_ENV_VAR = "FOOTPRINTING_PATH"
@@ -19,6 +19,7 @@ class Constants:
     #Manager Config parameters
     INSTALL_DIR_PARAM = "install_dir"
     BASE_OUTPUT_DIR_PARAM = "base_output_dir"
+    SERVER_QUEUE_DIR_PARAM = "server_queue_dir"
     LISTENING_DIR_PARAM = "listening_dir"
     OUTPUT_DIR_PARAM = "output_dir"
     QUEUE_DIR_PARAM = "queue_dir"

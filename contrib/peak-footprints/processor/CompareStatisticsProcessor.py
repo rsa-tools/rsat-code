@@ -7,6 +7,7 @@ from utils.log.Log import Log
 from utils.exception.ExecutionException import ExecutionException
 
 import os, shutil, commands
+from utils.FileUtils import FileUtils
 
 class CompareStatisticsProcessor( Processor):
 
@@ -80,7 +81,7 @@ class CompareStatisticsProcessor( Processor):
         # Prepare the output directories
         dir_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree( dir_path, True)
-        os.mkdir( dir_path)
+        FileUtils.createDirectory( dir_path, 0777)
         
         for motif_name in common_motifs.keys():
             motifs = common_motifs[motif_name]

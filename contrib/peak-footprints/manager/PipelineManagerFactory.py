@@ -6,10 +6,10 @@ class PipelineManagerFactory:
     managerInstance = None
     
     @staticmethod
-    def getManager():
+    def getManager( output_dir, rsat_path):
         
         if PipelineManagerFactory.managerInstance == None:
-            PipelineManagerFactory.managerInstance = PipelineManager()
+            PipelineManagerFactory.managerInstance = PipelineManager( output_dir, rsat_path)
         
         return PipelineManagerFactory.managerInstance
         

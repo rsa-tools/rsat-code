@@ -113,7 +113,7 @@ class FinalOutputProcessor( Processor):
         # Prepare the processor output dir
         self.outPath = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree( self.outPath, True)
-        os.mkdir( self.outPath)
+        FileUtils.createDirectory( self.outPath, 0777)
         
         # Copy motif graph and stats files
         analysis = self.AnalyseMotifStats( input_commstruct)
