@@ -26,20 +26,27 @@ import sys, os, shutil, time, threading, ast
 class PipelineManager:
 
     # --------------------------------------------------------------------------------------
-    def __init__( self):
+    def __init__( self, output_dir, rsat_path):
         
         self.config = {}
         install_path = None
-        # Try to detect the RSAT install dir and test if the project is installed in RSAT
-        self.config[ Constants.RSAT_DIR_PARAM] = ""
-        if Constants.RSAT_PATH_ENV_VAR in os.environ.keys():
-            rsat_path = os.environ[ Constants.RSAT_PATH_ENV_VAR]
-            if rsat_path != None and len( rsat_path) > 0:
-                self.config[ Constants.RSAT_DIR_PARAM] = rsat_path
-                install_path = os.path.join( rsat_path, Constants.PROJECT_PATH_IN_RSAT)
-                if not os.path.exists( install_path):
-                    print "Project not installed in RSA-Tools"
-                    install_path = None
+        
+        # Try to detect the RSAT install dir if not provided
+        if rsat_path == None:
+            self.config[ Constants.RSAT_DIR_PARAM] = ""
+            if Constants.RSAT_PATH_ENV_VAR in os.environ.keys():
+                rsat_path = os.environ[ Constants.RSAT_PATH_ENV_VAR]
+        
+        # Test the RSAT installation path
+        if rsat_path != None and len( rsat_path) > 0:
+            self.config[ Constants.RSAT_DIR_PARAM] = rsat_path
+            install_path = os.path.join( rsat_path, Constants.PROJECT_PATH_IN_RSAT)
+            if not os.path.exists( install_path):
+                print "Project not installed in RSA-Tools"
+                install_path = None
+        else:
+            print "PipelineManager.init : Unable to find RSAT directory : using user HOME directory"
+            self.config[ Constants.RSAT_DIR_PARAM] = os.path.join( os.environ( "HOME"), Constants.PROJECT_NAME)
                 
         # If Project is not in RSAT, test if the project as its own environment variable set
         if (install_path == None or len( install_path) == 0 ) and (Constants.PROJECT_INSTALL_PATH_ENV_VAR in os.environ.keys()):
@@ -49,12 +56,12 @@ class PipelineManager:
         if install_path != None and len( install_path) > 0:
             self.config[ Constants.INSTALL_DIR_PARAM] = install_path
         else:
-            print "PipelineManager.init : No " + Constants.PROJECT_INSTALL_PATH_ENV_VAR + " environment variable set : using current directory"
-            self.config[ Constants.INSTALL_DIR_PARAM] = os.getcwd()
+            print "PipelineManager.init : Unable to find peak-footprint installation directory : using user HOME directory"
+            self.config[ Constants.INSTALL_DIR_PARAM] = os.path.join( os.environ( "HOME"), Constants.PROJECT_NAME)
             
         self.readConfig( os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], Constants.MANAGER_CONFIG_FILE_NAME))
         
-        self.initVariables()
+        self.initVariables( output_dir)
         
         self.serverQueue = []
         self.serverQueueLock = threading.Lock()
@@ -66,8 +73,8 @@ class PipelineManager:
     def readConfig(self, param_file):
         
         try:
-            file = FileUtils.openFile( param_file)
-            for line in file:
+            config_file = FileUtils.openFile( param_file)
+            for line in config_file:
                 if line.isspace() or line[0] == Constants.COMMENT_CHAR:
                     continue
                 tokens = line.split( "=")
@@ -80,27 +87,41 @@ class PipelineManager:
                 else:
                     raise ConfigException( "PipelineManager.readConfig : wrongly formated parameter line in config file '" + param_file + "'. Should be '<param_name>=<param_value>' instead of '" + line + "'")
         except IOError,  io_exce:
-            raise ConfigException( "PipelineManager.readConfig : unable to read parameters from config file '" + param_file + "'. From:\n\t---> " + str( io_exce))
+            Log.info( "PipelineManager.readConfig : unable to read parameters from config file '" + param_file + "'. From:\n\t---> " + str( io_exce))
 
 
     # --------------------------------------------------------------------------------------
     # Initialize some variables
-    def initVariables( self):
+    def initVariables( self, output_dir):
 
-        # Add the RSAT path to the base output dir path retrieved from the manager.props
-        self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM)) 
+        # Define and create the output directory parameter as the provided output_dir if non null
+        # or as the RSAT path + base output dir path retrieved from the manager.props
+        if output_dir != None:
+            self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = output_dir
+        else:
+            self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM)) 
         FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM], 0777)
         
         # Initialize the output directory
         self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
         FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM], 0777)
         
-        # Add the RSAT path to the listening dir path retrieved from the manager.props
-        self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM))
+        # Define the path to the listening dir according situations
+        if self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM) != None:
+            queue_path = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM))
+            FileUtils.createDirectory( queue_path, 0777)
+            self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( queue_path, self.getParameter( Constants.LISTENING_DIR_PARAM))
+        else:
+            self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM))
         FileUtils.createDirectory( self.config[ Constants.LISTENING_DIR_PARAM], 0777)
         
         # Set the path for the job queue directory
-        self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.QUEUE_DIR_NAME)
+        if self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM) != None:
+            queue_path = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM))
+            FileUtils.createDirectory( queue_path, 0777)
+            self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( queue_path, Constants.QUEUE_DIR_NAME)
+        else:
+            self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), Constants.QUEUE_DIR_NAME)
         FileUtils.createDirectory( self.config[ Constants.QUEUE_DIR_PARAM]) 
 
         # Set the RSAT_PATH
@@ -296,10 +317,10 @@ class PipelineManager:
                 # Manage the pipeline output directory and the logs
                 if resume == False:
                     shutil.rmtree( pipeline_output, True)
-                    os.mkdir( pipeline_output)
+                    FileUtils.createDirectory( pipeline_output, 0777)
                     Log.switchFiles( pipeline_output)
                 else:
-                    FileUtils.createDirectory( pipeline_output)
+                    FileUtils.createDirectory( pipeline_output, 0777)
                     Log.initLog( pipeline_output)
                 ProgressionManager.setPipelineStatus( pipeline, ProgressionManager.RUNNING_STATUS)
                 shutil.copy( os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], os.path.join( Constants.PROGRESSION_XSL_PATH, Constants.PROGRESSION_XSL_FILE)), pipeline_output)

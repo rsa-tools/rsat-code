@@ -111,7 +111,8 @@ class OptionManager:
     MAX_CHI2_EVALUE = "max_chi2_pvalue"
 
     PIPELINE = "pipeline"   
-    OUTPUT = "output"       
+    OUTPUT = "output"
+    RSAT = "rsat"       
     VERBOSITY = "v"         
     FORCE = "force"        
     SERVER = "server"       

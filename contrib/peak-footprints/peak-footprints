@@ -19,6 +19,8 @@ def main( argv):
 
     # Directory where output fir will be created
     working_dir = None
+    # Directory where RSAT is installed
+    rsat_path = None
     # Path to the pipelines definition XML file
     pipeline_filepath = None
     # Verbosity level
@@ -77,6 +79,9 @@ def main( argv):
         # Path for the desired output directory
         elif opt in ("-o", "--"+OptionManager.OUTPUT):
             working_dir = arg
+        # Path to RSAT
+        elif opt in ( "-r", "--"+OptionManager.RSAT):
+            rsat_path = arg
         # Verbosity level: 0=log, 1=log + trace, 2=log + trace + info    
         elif opt in ("-v", "--"+OptionManager.VERBOSITY):
             try:
@@ -95,11 +100,11 @@ def main( argv):
                 listening_path = arg
             else:
                 listening_path = None
-            print "Lauching SERVER mode"     
+            print "Launching SERVER mode"     
         
         
     try:
-        pipeline_manager = PipelineManagerFactory.getManager()
+        pipeline_manager = PipelineManagerFactory.getManager( working_dir, rsat_path)
         if server == True:
             # Launch manager in server mode
             pipeline_manager.server( listening_path)
@@ -176,6 +181,7 @@ def usage():
     print " --max_hyp_pvalue \t\t: the maximal threshold on the hypergeometric p-value for a motif to be reported."   
     print " --max_chi2_pvalue \t\t: the maximal threshold on the chi2 p-value for a motif to be reported."   
     print " --output \t\t\t: the path to the desired output folder."
+    print " --rsat \t\t\t: the path to the RSAT install."
     print " --force \t\t\t: this option force the tool to reexecute all the pipeline steps even if previous similar results are found."
     print " --server \t\t\t: launch the tool in server mode."
     print " --v \t\t\t\t: set the verbosity level (0 to 2)."

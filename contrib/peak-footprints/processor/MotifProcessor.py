@@ -133,7 +133,7 @@ class MotifProcessor( Processor):
         # Prepare the processor output dir
         self.out_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree( self.out_path, True)
-        os.mkdir( self.out_path)
+        FileUtils.createDirectory( self.out_path, 0777)
         
         # build the output CommStruct
         output_commstruct = BedSeqAlignmentStatsCommStruct()
@@ -243,7 +243,7 @@ class MotifProcessor( Processor):
         # Prepare the processor output dir
         out_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree( out_path, True)
-        os.mkdir( out_path)
+        FileUtils.createDirectory( out_path, 0777)
 
         # Retrieve the list of motif databases to use
         database_file_list = arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]
@@ -435,7 +435,7 @@ class MotifProcessor( Processor):
     # Compute the p-value with the hypergeometric test
     def hypergeometric(self, var_m, var_n, var_k, var_x, var_to):
 
-        var_w = var_n - var_m; ### white balls in the urn
+        var_w = var_n - var_m ### white balls in the urn
 
         # initialization
         var_proba = 0
@@ -498,27 +498,27 @@ class MotifProcessor( Processor):
 
         else:
             # calculate value for 0 successes
-            var_log_proba = 0;
+            var_log_proba = 0
             for var_i in range(var_w - var_k + 1, var_n - var_m +1):
                 var_log_proba += math.log(var_i)
                 
             for var_i in range(var_n - var_k + 1, var_n +1):
-                var_log_proba -= math.log(var_i);
+                var_log_proba -= math.log(var_i)
                 
-            var_start = 1;
+            var_start = 1
 
-        var_proba = self.logToEng( var_log_proba);
+        var_proba = self.logToEng( var_log_proba)
 
         # recursive calculation of the hypergeometric density for var_x
         # (if cumulative, var_x is the first value of the sum)
         if var_start <= var_x:
             for var_i in range( var_start, var_x +1):
-                var_log_proba += math.log(var_m - var_i + 1);
-                var_log_proba -= math.log(var_i);
-                var_log_proba += math.log(var_k - var_i + 1);
-                var_log_proba -= math.log(var_w - var_k + var_i);
+                var_log_proba += math.log(var_m - var_i + 1)
+                var_log_proba -= math.log(var_i)
+                var_log_proba += math.log(var_k - var_i + 1)
+                var_log_proba -= math.log(var_w - var_k + var_i)
 
-            var_proba = self.logToEng(var_log_proba);
+            var_proba = self.logToEng(var_log_proba)
 
         # If var_to > var_x (cumulative density has to be computed),
         # pursue the recursive computation and add up the values to the sum
@@ -534,7 +534,7 @@ class MotifProcessor( Processor):
             if var_proba == var_last_proba and var_proba >0:
                 break 
 
-        var_proba = min( var_proba, 1); ### floating point calculation errors
+        var_proba = min( var_proba, 1) ### floating point calculation errors
 
         # var_proba = exp(var_log_proba);
         return var_proba
@@ -560,7 +560,7 @@ class MotifProcessor( Processor):
         var_eng = 10**(1+var_log - int(var_log))
         str_var_eng = str( var_eng) + "E"
         if int(var_log)-1 > 0:
-            str_var_eng += "+";
+            str_var_eng += "+"
         str_var_eng += str(int(var_log)-1)
         
         return float( str_var_eng)
@@ -602,15 +602,17 @@ class MotifProcessor( Processor):
         
         # Retrieve the method arguments
         if hypergeometric_test == False:
-            database_file_list = arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]
+            database_file_list = []
+            for database_path in arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]:
+                database_file_list.append( database_path)
         else:
             # In case of hypergeometric test, choose one of the database of permuted motifs previously computed
             permuted_databases = arguments[ MotifProcessor.MOTIF_PERMUTED_DATABASE_FILE_LIST_PARAM]
             database_file_list = []
             for initial_database in permuted_databases.keys():
                 permuted_databases_list = permuted_databases[ initial_database]
-                index = int( random.uniform( 0, len( permuted_databases_list)))
-                database_file_list.append( permuted_databases_list[ index])
+                rand_index = int( random.uniform( 0, len( permuted_databases_list)))
+                database_file_list.append( permuted_databases_list[ rand_index])
                 
         database_format_list = arguments[ MotifProcessor.MOTIF_DATABASE_FORMAT_LIST_PARAM]
         command_options = arguments[ MotifProcessor.COMMAND_OPTIONS_PARAM]
@@ -627,12 +629,13 @@ class MotifProcessor( Processor):
         # Parse the list of motif databases and apply each of them to the compare-matrices tool
         # on the given file of conserved blocks
         all_input_motif_to_remove = {}
-        for index in range( len( database_file_list)):
-            sub_prefix = prefix + "_" + str(index)
+        for db_index in range( len( database_file_list)):
+            sub_prefix = prefix + "_" + str( db_index)
             # Compose the compare-matrices command line with all required options
+            Log.trace( "MotifProcessor.executeCompareMatrices : " + threading.currentThread().getName() + " sub_prefix before execution = " + sub_prefix)
             cmd = os.path.join( RSAT_PATH , "perl-scripts/compare-matrices")
             cmd += " -file1 " + file_path + " -format1 tf"
-            cmd += " -file2 " + database_file_list[index] + " -format2 " + database_format_list[index]
+            cmd += " -file2 " + database_file_list[db_index] + " -format2 " + database_format_list[db_index]
             cmd += " -mode profiles"
             cmd += " -lth w 3"
             cmd += " -lth ncor2 0.7"
@@ -640,30 +643,31 @@ class MotifProcessor( Processor):
             cmd += " -o " + sub_prefix
             cmd += " " + command_options
             
-            Log.info( "MotifProcessor.launchCompareMatrices : Starting comparison with database : " + database_file_list[index])
-            Log.info( "MotifProcessor.launchCompareMatrices : command used is : " + cmd)
+            Log.info( "MotifProcessor.executeCompareMatrices : Starting comparison with database : " + database_file_list[db_index])
+            Log.info( "MotifProcessor.executeCompareMatrices : command used is : " + cmd)
             
             # Execute the command
             cmd_result = commands.getstatusoutput( cmd)
-            Log.trace( "MotifProcessor.launchCompareMatrices : " + threading.currentThread().getName() + " : status returned is :" + str( cmd_result[0]))
+            Log.trace( "MotifProcessor.executeCompareMatrices : " + threading.currentThread().getName() + " (" + sub_prefix + ") : status returned is :" + str( cmd_result[0]))
             if cmd_result[0] != 0:
-                Log.log( "MotifProcessor.launchCompareMatrices : status returned is :" + str( cmd_result[0]) + " for command '" + cmd + "'" )
-                Log.log( "MotifProcessor.launchCompareMatrices : command output is = \n" + str( cmd_result[1]))
+                Log.log( "MotifProcessor.executeCompareMatrices : status returned is :" + str( cmd_result[0]) + " for command '" + cmd + "'" )
+                Log.log( "MotifProcessor.executeCompareMatrices : command output is = \n" + str( cmd_result[1]))
                 continue
                 
             # Convert the tab result to html file
             commands.getstatusoutput( os.path.join( RSAT_PATH , "perl-scripts/text-to-html") +" -i " + sub_prefix + ".tab -o " + sub_prefix + ".html")
             
             # Verify if the compare-matrices is present and have finished to be written
-            result_file_path = os.path.join( dir_path, sub_prefix+".tab")
+            result_file_path = os.path.join( dir_path, sub_prefix + ".tab")
+            Log.trace( "MotifProcessor.executeCompareMatrices : " + threading.currentThread().getName() + " sub_prefix after execution = " + sub_prefix)
             if not self.verifyResultFile( result_file_path):
-                Log.log( "MotifProcessor.launchCompareMatrices : Compare-matrices result file is not accessible at " + result_file_path)
+                Log.log( "MotifProcessor.executeCompareMatrices : Compare-matrices result file is not accessible at " + result_file_path)
                 continue
             
             # Parse the result of the compare-matrices command to get the result list
             result = self.parseCompareMatricesResult( os.path.join( dir_path, sub_prefix + ".tab"))
             if result == None:
-                Log.log( "MotifProcessor.launchCompareMatrices : Compare-matrices result file gave a null result :" + result_file_path)
+                Log.log( "MotifProcessor.executeCompareMatrices : Compare-matrices result file gave a null result :" + result_file_path)
                 continue
                 
             # Analyze the result list and store the conserved elements in the thread_result of the analysis
@@ -695,10 +699,10 @@ class MotifProcessor( Processor):
         try:
             dir_path = os.path.join( out_path, folder_prefix)
             shutil.rmtree( dir_path, True)
-            os.mkdir( dir_path)
+            FileUtils.createDirectory( dir_path, 0777)
             file_name = "motifs"
             file_path = os.path.join( dir_path, file_name + ".tf")
-            tf_file = open( file_path, "w")
+            tf_file = FileUtils.openFile( file_path, "w", 0666)
             for motif in motif_list:
                 tf_file.write( "AC\t" + motif.name + "\n")
                 tf_file.write( "XX\n")
@@ -794,7 +798,7 @@ class MotifProcessor( Processor):
                             for motif_dic in motif_dics:
                                 try:
                                     n_cor2 = self.getTokenAsfloat( motif_dic[ ncor2_header])
-                                    Log.info( "MotifProcessor.analyseCompareMatricesResult :     n_cor2 for " + str( motif_dic[ id2_header]) + " = " + str( n_cor2));
+                                    Log.info( "MotifProcessor.analyseCompareMatricesResult :     n_cor2 for " + str( motif_dic[ id2_header]) + " = " + str( n_cor2))
                                     if n_cor2 >= correlation_limit:
                                         # retrieve the data
                                         output_motif_offset = self.getTokenAsint( motif_dic[ offset_header])
@@ -824,7 +828,7 @@ class MotifProcessor( Processor):
                                     Log.log( "MotifProcessor.analyseCompareMatricesResult : Some value of a motif correlation is not a float : " + str( motif_dic) + ". From:\n\t--->" + str( par_exce))
                     
                     # add the new motifs to the alignment motif list and remove the corresponding conserved regions
-                    Log.info( " -len( analysis_result) = " + str( len( analysis_result)))
+                    #Log.info( " -len( analysis_result) = " + str( len( analysis_result)))
                     if len( analysis_result) > 0:
                         
                         self.threadLock.acquire()
@@ -963,7 +967,7 @@ class MotifProcessor( Processor):
         try:
             dir_path = os.path.join( out_path, folder_prefix)
             shutil.rmtree( dir_path, True)
-            os.mkdir( dir_path)
+            FileUtils.createDirectory( dir_path, 0777)
             file_name = "motifs"
             file_path = os.path.join( dir_path, file_name + ".meme")
             meme_file = open( file_path, "w")
@@ -1220,7 +1224,7 @@ class MotifProcessor( Processor):
         file_exists = False
         while tries_nb < 5 and file_exists == False:
             if not os.path.exists( path):
-                Log.log("MotifProcessor.verifyResultFile : " + threading.currentThread().getName() + " : result file is not accessible. Retries = " + str( tries_nb))
+                Log.log("MotifProcessor.verifyResultFile : " + threading.currentThread().getName() + " : result file '" + path + "' is not accessible. Retries = " + str( tries_nb))
                 time.sleep( 1 + tries_nb)
                 tries_nb += 1
             else:
@@ -1246,6 +1250,9 @@ class MotifProcessor( Processor):
             
         else:
             Log.log( "MotifProcessor: verifyResultFile : Unable to get access to the result file after 5 retries at :" + path)
+            file_list = FileUtils.getFileList( os.path.dirname( path), "tab", False)
+            for file_path in file_list:
+                Log.log( "MotifProcessor: verifyResultFile : tab file in :" + file_path)
             return False
         
         return True

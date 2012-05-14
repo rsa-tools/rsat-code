@@ -14,6 +14,7 @@ from utils.MotifUtils import MotifUtils
 from utils.log.Log import Log
 from utils.exception.ExecutionException import ExecutionException
 from utils.exception.ParsingException import ParsingException
+from utils.FileUtils import FileUtils
 
 #import site
 #site.addsitedir( "/usr/share/pyshared")
@@ -135,7 +136,7 @@ class HistogramProcessor( Processor):
             # Prepare the output directories
             dir_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
             shutil.rmtree( dir_path, True)
-            os.mkdir( dir_path)
+            FileUtils.createDirectory( dir_path, 0777)
 
             # Parse the motif list and execute the computations and commands for each of them 
             ProgressionManager.setTaskProgression( "Building motifs histogram",  self.component, 0.0)
