@@ -8,6 +8,7 @@ from utils.log.Log import Log
 from utils.parser.BEDParser import BEDParser
 from utils.RSATUtils import RSATUtils
 from utils.exception.ParsingException import ParsingException
+from utils.FileUtils import FileUtils
 
 # This processor takes as input a BED format file and returns a BedSeqAlignmentStatsCommStruct
 # containing the definition of the BEDSequences retrieved in the file
@@ -197,7 +198,7 @@ class BEDProcessor( Processor):
         # Prepare output directory
         dir_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree( dir_path,  True)
-        os.mkdir( dir_path)
+        FileUtils.createDirectory( dir_path, 0777)
         
         # Output the histogram
         file_infos = RSATUtils.outputHistogram( sizes, 10, dir_path, "sequenceSize", self.component.pipelineName, "",  "Peak Size",  "Number of peaks", ('5', '6'))

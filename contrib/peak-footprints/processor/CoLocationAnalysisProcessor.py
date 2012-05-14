@@ -9,6 +9,7 @@ from processor.io.BedSeqAlignmentStatsCommStruct import MotifStatistics
 
 from utils.RSATUtils import RSATUtils
 from utils.exception.ExecutionException import ExecutionException
+from utils.FileUtils import FileUtils
 
 # This Processor computes the distance between each motif hit and the nearest site of the reference motif. Those distances
 # are reported in histograms indenpendently for each identified motif.
@@ -89,7 +90,7 @@ class CoLocationAnalysisProcessor( Processor):
         # Prepare the processor output dir
         dir_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree( dir_path, True)
-        os.mkdir( dir_path)
+        FileUtils.createDirectory( dir_path, 0777)
         
         # Output the distance distribution histogram of each identified motif
         ProgressionManager.setTaskProgression( "Building histograms", self.component, 0.0)
