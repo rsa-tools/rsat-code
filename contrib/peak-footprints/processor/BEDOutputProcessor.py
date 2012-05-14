@@ -9,6 +9,7 @@ from common.BEDSequence import BEDSequence
 from utils.log.Log import Log
 from utils.MotifUtils import MotifUtils
 from utils.exception.ExecutionException import ExecutionException
+from utils.FileUtils import FileUtils
 
 # This processor produce a BED format file containing all the identified motif with their coordinate and their score.
 # A color is also associated to each motif (see below).
@@ -102,7 +103,7 @@ class BEDOutputProcessor(Processor):
         # Prepare the processor output dir
         out_path = os.path.join(self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree(out_path, True)
-        os.mkdir(out_path)
+        FileUtils.createDirectory( out_path, 0777)
 
         # Retrieve the JASPAR motifs details
         motif_details = MotifUtils.getMotifsDetailsFromJaspar()

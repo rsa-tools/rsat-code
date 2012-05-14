@@ -64,7 +64,7 @@ class FileUtils:
     # --------------------------------------------------------------------------------------
     # create a directory at the given path is possible
     @staticmethod
-    def createDirectory( path, chmod = 0755):
+    def createDirectory( path, chmod = 0777):
         
         if os.path.exists( path):
             if not os.path.isdir( path):
@@ -78,7 +78,7 @@ class FileUtils:
     # --------------------------------------------------------------------------------------
     # Open a file 
     @staticmethod
-    def openFile( path, mode = "r", chmod = 0644):
+    def openFile( path, mode = "r", chmod = 0666):
         
         if os.path.exists(path):
             if not os.path.isfile( path):

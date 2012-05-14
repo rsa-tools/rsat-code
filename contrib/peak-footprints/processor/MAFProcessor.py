@@ -663,7 +663,7 @@ class MAFProcessor( Processor):
         # Prepare the processor output dir
         out_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
         shutil.rmtree( out_path, True)
-        os.mkdir( out_path)
+        FileUtils.createDirectory( out_path, 0777)
         
         # Output the histogram
         file_infos = RSATUtils.outputHistogram( msa_lenghts, 10, out_path, "MSASize", self.component.pipelineName, "", "Conserved region size", "Number of regions", ('5', '6'))

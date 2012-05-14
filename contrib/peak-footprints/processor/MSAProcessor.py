@@ -1,3 +1,4 @@
+from utils.FileUtils import FileUtils
 
 import os, commands,  shutil
 
@@ -168,7 +169,7 @@ class MSAProcessor(Processor):
         try:
             dir_path = os.path.join( self.component.outputDir, self.component.getComponentPrefix())
             shutil.rmtree( dir_path, True)
-            os.mkdir( dir_path)
+            FileUtils.createDirectory( dir_path, 0777)
             file_name = "motif"
             file_path = os.path.join( dir_path, file_name)
             return (dir_path, file_path)

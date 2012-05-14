@@ -1,10 +1,15 @@
 # Path to the folder where the log files and the 'output' folder 
-# containing all the outputs will be created. This path must be relative to RSAT install dir
+# containing all the outputs will be created. This path is relative to the RSAT install dir
+# or the user HOME directory
 base_output_dir=public_html/tmp/peak-footprints_output
+
+# Path to the folder containing the serverQueue.txt file. This path is relative to the RSAT install dir
+# or the user HOME directory
+server_queue_dir=public_html/tmp/peak-footprints_queue_management
 
 # (Mode server only) Folder where tickets containing commands to send in queue will be copied
 # This path must be relative to RSAT install dir
-listening_dir=logs/peak-motifs_logs
+listening_dir=ticket
 
 
 ################################################################
