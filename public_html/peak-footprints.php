@@ -22,7 +22,7 @@ require ('RSAT_header.php');
 
 // Initialize variables
 $cmd = $properties['RSAT'].'/contrib/peak-footprints/peak-footprints';
-$argument = " --v 2";
+$argument = " --v 1";
 $argument .= " --pipeline ".$properties['RSAT']."/contrib/peak-footprints/default_pipeline.xml";
 $argument .= " --db_root_path ".$properties['RSAT'].'/data/motif_databases';
 $errors = false;
@@ -261,20 +261,16 @@ if($pf_output =="email") {
 // Create sub-directory in $RSAT/public_html/tmp for this query
 $time_directory = $properties['rsat_tmp']."/".date( "Y")."/".date( "m")."/".date( "d")."/peak-footprints_".date("Ymd_His")."_".randchar(3);
 if (!is_dir( $time_directory)) {
+  umask(0);
   mkdir($time_directory, 0777, true);
-  ////////////////////////////////////////////////////////////////
-  //// THIS DOES NOT WORK: directories are created with mode 0755
-  //// rather than 0777 as requested
-  ////////////////////////////////////////////////////////////////
-  system("chmod 777 ".$time_directory);
  }
 
 //////////////////////////////////////////////////////////////////////////////
 //Writing bed/custom_motifs file in tmp
 if (!$errors) {
   $suffix = "_".date("Ymd_His")."_".randchar(3);
-  $user_name = "users_pipeline$suffix";
-  $argument .= " --pipeline_name ".$user_name;
+  $pipeline_name = "users_pipeline$suffix";
+  $argument .= " --pipeline_name ".$pipeline_name;
   
   // Bed data provided in text area
   if ($pf_bed != "") {
@@ -415,16 +411,19 @@ if (!$errors) {
 /////////////////////////////////////////////////////////////////////////////
 if (!$errors) {	
 
-  $argument .= " --output $time_directory";  
+  // Pass the RSAT path because the Apache user does know know it
+  $argument .= " --rsat ".$properties['RSAT'];  
 
-  $outpout_path = $time_directory."/output/".$user_name;
+  // Specify output directory
+  $argument .= " --output ".$time_directory;
 	
   //Prepare URL result table
+  $output_path = $time_directory."/output/".$pipeline_name;
   $URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
   if ($custom_motifs_specifications == 1) {
     $URL['Custom motifs (transfac format)'] = rsat_path_to_url($custom_motifs_file);
   }
-  $URL['Result page'] = rsat_path_to_url($outpout_path."/".$user_name."_9_FinalOutputProcessor/".$user_name."_MotifClassification.xml");
+  $URL['Result page'] = rsat_path_to_url($output_path."/".$pipeline_name."_9_FinalOutputProcessor/".$pipeline_name."_MotifClassification.xml");
 	
   // Add arguments to the command
   $cmd .= $argument;
@@ -443,7 +442,7 @@ if (!$errors) {
   echo "<hr/><br/>";
 
   //Display progress page
-  info('<a href="'.rsat_path_to_url($outpout_path).'/progression.xml" target="_blank">Progress page</a>');
+  info('<a href="'.rsat_path_to_url($output_path).'/progression.xml" target="_blank">Progress page</a>');
   echo "<hr/><br/>";
 	
   flush();
