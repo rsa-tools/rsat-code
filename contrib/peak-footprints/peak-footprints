@@ -53,6 +53,7 @@ def main( argv):
                          OptionManager.MAX_CHI2_EVALUE + "=",\
                          OptionManager.VERBOSITY + "=",\
                          OptionManager.OUTPUT + "=",\
+                         OptionManager.RSAT + "=",\
                          OptionManager.FORCE,\
                          OptionManager.SERVER,\
                          OptionManager.HELP ]
