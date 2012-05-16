@@ -5,7 +5,6 @@
 include ${RSAT}/makefiles/init_RSAT.mk
 MAKEFILE=${RSAT}/makefiles/cluster.mk
 
-
 list_nodes:
 	@echo "NODES"
 	@echo ${NODES}
