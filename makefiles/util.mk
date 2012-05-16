@@ -39,18 +39,17 @@ JOB_PREFIX=job
 #JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
 JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
 
-
 command_queue:
 	${MAKE} command_queue_${QUEUE_MANAGER}
 
 ## Send a jobs to a cluster using the torque quee management system
 command_queue_torque:
 	@mkdir -p ${JOB_DIR}
-	@for job in ${JOB} ; do							\
-		echo "Job ${JOB_DIR}/$${job}" ;						\
-		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; 		\
-		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
-		chmod u+x ${JOB_DIR}/$${job} ;				\
+	@for job in ${JOB} ; do	\
+		echo "Job ${JOB_DIR}/$${job}" ;	\
+		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; \
+		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;	\
+		chmod u+x ${JOB_DIR}/$${job} ;	\
 		qsub -m a -q ${QUEUE} -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
 	done
 
@@ -58,16 +57,17 @@ command_queue_torque:
 command_queue_sge:
 	@mkdir -p ${JOB_DIR}
 	@echo "job dir	${JOB_DIR}"
-	@for job in ${JOB} ; do							\
-		echo "Job ${JOB_DIR}/$${job}" ;						\
-		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; 		\
-		echo "echo Job started" >> ${JOB_DIR}/$${job}; 		\
-		echo "date" >> ${JOB_DIR}/$${job}; 		\
-		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
-		echo "echo Job done `date`" >> ${JOB_DIR}/$${job}; 		\
-		echo "date" >> ${JOB_DIR}/$${job}; 		\
-		chmod u+x ${JOB_DIR}/$${job} ;				\
-		qsub -m a -q ${QUEUE} -N $${job} -j y -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
+	@for job in ${JOB} ; do	\
+		echo "job	$${job}" ; \
+		echo "Job ${JOB_DIR}/$${job}" ;	\
+		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; \
+		echo "echo Job started" >> ${JOB_DIR}/$${job}; \
+		echo "date" >> ${JOB_DIR}/$${job}; \
+		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;	\
+		echo "echo Job done" >> ${JOB_DIR}/$${job}; \
+		echo "date" >> ${JOB_DIR}/$${job}; \
+		chmod u+x ${JOB_DIR}/$${job} ;	\
+		qsub -m a -q ${QUEUE} -N $${job} -j y -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ; \
 		rm $${job} ;\
 	done
 
@@ -101,7 +101,7 @@ iterate_organisms:
 	@echo "Iterating task ${ORG_TASK} over organisms"
 	@echo "	${ORGANISMS}"
 	@echo
-	@for org in ${ORGANISMS} ; do			\
+	@for org in ${ORGANISMS} ; do	\
 		${MAKE} ${ORG_TASK} ORG=$${org} ;	\
 	done
 
@@ -112,6 +112,6 @@ OLIGO_LENGTHS=1 2 3 4 5 6 7 8
 iterate_oligo_lengths:
 	@echo "Iterating task ${OLIGO_TASK} over oligonucleotide lengths ${OLIGO_LENGTHS}"
 	@echo
-	@for ol in ${OLIGO_LENGTHS} ; do			\
+	@for ol in ${OLIGO_LENGTHS} ; do	\
 		${MAKE} ${OLIGO_TASK} OL=$${ol} ;	\
 	done
