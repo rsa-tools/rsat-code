@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.60 2012/04/27 17:28:53 rsat Exp $
+# $Id: install_rsat.mk,v 1.61 2012/05/19 14:55:27 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -594,6 +594,12 @@ _compile_perl_scripts:
 
 
 ################################################################
+## UCSC tools (developed by Jim Kent)
+UCSC_OS=macOSX.i386
+download_ucsc_tools:
+	(mkdir -p ${RSAT}/ext/ucsc; cd ${RSAT}/ext/ucsc/;  wget  -nv -nd -rNL http://hgdownload.cse.ucsc.edu/admin/exe/${UCSC_OS}/)
+
+################################################################
 ################################################################
 ###########  SOFTWARE FOR HIGH-THROUGHPUT SEQUENCING ###########
 ################################################################
@@ -624,3 +630,46 @@ install_tophat:
 	@mkdir -p ${TOPHAT_INSTALL_DIR}
 	(cd ${TOPHAT_DISTRIB_DIR}; ./configure --prefix=${TOPHAT_INSTALL_DIR} ; \
 	make clean; make ; make install)
+
+
+################################################################
+## Instal MACS, peak-calling program
+MACS_BASE_DIR=${APP_SRC_DIR}/MACS
+MACS_VERSION=1.4.2
+MACS_ARCHIVE=MACS-${MACS_VERSION}.tar.gz
+MACS_URL=https://github.com/downloads/taoliu/MACS/
+MACS_DISTRIB_DIR=${MACS_BASE_DIR}/MACS-${MACS_VERSION}
+download_macs:
+	@echo
+	@echo "Downloading MACS"
+	@mkdir -p ${MACS_BASE_DIR}
+	wget -nd  --directory-prefix ${MACS_BASE_DIR} -rNL ${MACS_URL}
+	(cd ${MACS_BASE_DIR}; tar -xpzf ${MACS_ARCHIVE})
+	@echo ${MACS_DISTRIB_DIR}
+
+install_macs:
+	(cd ${MACS_DISTRIB_DIR}; sudo python setup.py install)
+
+################################################################
+## Instal PeakSplitter, peak-calling program
+PEAKSPLITTER_BASE_DIR=${APP_SRC_DIR}/PeakSplitter
+PEAKSPLITTER_ARCHIVE=PeakSplitter_Cpp.tar.gz
+PEAKSPLITTER_URL=http://www.ebi.ac.uk/bertone/software/${PEAKSPLITTER_ARCHIVE}
+PEAKSPLITTER_DISTRIB_DIR=${PEAKSPLITTER_BASE_DIR}/PeakSplitter_Cpp
+download_peaksplitter:
+	@echo
+	@echo "Downloading PeakSplitter"
+	@mkdir -p ${PEAKSPLITTER_BASE_DIR}
+	wget -nd  --directory-prefix ${PEAKSPLITTER_BASE_DIR} -rNL ${PEAKSPLITTER_URL}
+	(cd ${PEAKSPLITTER_BASE_DIR}; tar -xpzf ${PEAKSPLITTER_ARCHIVE})
+	@echo ${PEAKSPLITTER_DISTRIB_DIR}
+
+OS=MacOS
+install_peaksplitter_macos:
+	${MAKE} _install_peaksplitter OS=MacOS
+
+install_peaksplitter_linux64:
+	${MAKE} _install_peaksplitter OS=Linux64
+
+_install_peaksplitter:
+	(cd ${PEAKSPLITTER_DISTRIB_DIR}; rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${RSAT}/bin/)
