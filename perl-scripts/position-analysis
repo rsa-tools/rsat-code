@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.63 2012/01/18 17:33:46 jvanheld Exp $
+# $Id: position-analysis,v 1.64 2012/05/20 23:20:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -1134,8 +1134,8 @@ sub ReadArguments {
 	    #### last
 	} elsif ($ARGV[$a] =~ /^-last/i) {
 	    $last = lc($ARGV[$a+1]);
-	    unless ((&IsNatural($last)) && ($last > 1)) {
-		&RSAT::error::FatalError("$last is not a valid value for -last. Must be a strictly positive Natural number.");
+	    unless (&IsNatural($last)) {
+		&RSAT::error::FatalError("$last is not a valid value for -last. Must be a Natural number.");
 	    }
 
 	    #### max number of graphs
