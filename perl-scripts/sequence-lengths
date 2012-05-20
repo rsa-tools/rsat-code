@@ -10,6 +10,7 @@ require "RSA.lib";
 $start_time = &RSAT::util::StartScript();
 $in_format = "fasta";
 $verbose = 0;
+local $units = "bp";
 
 &ReadArguments();
 
@@ -38,7 +39,6 @@ if (defined($infile{input})) {
 print $out "#seq", "\t", "length", "\n";
 $sum = 0;
 
-
 if ($in_format eq "bed") {
     while (<$in>) {
 	next unless (/\S/); ## Skip empty rows
@@ -55,7 +55,7 @@ if ($in_format eq "bed") {
 	    next;
 	}
 
-	my $length = $end - $start + 1;
+	my $length = &apply_units($end - $start + 1);
 	my $current_id = $chrom.":".$start."..".$end.":1";
 	$sum+= $length;
 	print $out $current_id, "\t", $length , "\n"
@@ -65,7 +65,7 @@ if ($in_format eq "bed") {
 } else {
     while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
-	$length = length(&FoldSequence($current_seq,0));
+	$length = &apply_units(length(&FoldSequence($current_seq,0)));
 	$sum+= $length;
 	print $out $current_id, "\t", $length , "\n"
 	    unless ($sum_only);
@@ -86,6 +86,15 @@ close $main::out if ($main::outfile{output});
 
 exit(0);
 
+sub apply_units {
+    my ($length) = @_;
+    if ($units eq "kb") {
+	$length /= 1000;
+    } elsif ($units eq "mb") {
+	$length /= 1000000;
+    }
+    return $length;
+}
 
 ########################## subroutine definition ############################
 
@@ -119,6 +128,13 @@ OPTIONS
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
 
+	-units bp|kb|mb
+	      Units for sequence lengths. 
+	      Supported values: 
+	      bp	base pairs
+	      kb	kilobases
+	      mb	megabases
+
 	-in_format   input format
 
 		The input file can contain either sequences or genomic
@@ -151,6 +167,7 @@ sequence-lengths options
 -o		output file
 -v		verbose
 -sum		only return sum of sequene lengths
+-units		bp|kb|mb
 End_short_help
   close HELP;
   exit;
@@ -192,6 +209,9 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-sum") {
 	$sum_only = 1;
 
+      ### Units
+    } elsif ($ARGV[$a] eq "-units") {
+	$units = lc($ARGV[$a+1]);
     }
   }
 }
