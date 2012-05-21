@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.61 2012/05/19 14:55:27 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.62 2012/05/21 00:16:29 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -419,16 +419,20 @@ install_blast: install_blast_${OS}
 
 ################################################################
 ## Install the BLAST on linux
-ARCHITECTURE=32
+ARCHITECTURE=x64
 BLAST_BASE_DIR=${APP_SRC_DIR}/blast
-BLAST_LINUX_ARCHIVE=blast-*-ia${ARCHITECTURE}-linux.tar.gz
+BLAST_LINUX_ARCHIVE=blast-*-${ARCHITECTURE}-linux.tar.gz
 BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
 BLAST_BIN_DIR=${RSAT}/bin
 BLAST_SOURCE_DIR=blast_latest
 download_blast_linux:
 	@mkdir -p ${BLAST_BASE_DIR}
 	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_LINUX_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_LINUX_ARCHIVE}; rm -r ${BLAST_SOURCE_DIR};mv ${BLAST_LINUX_ARCHIVE} ..;mv blast-*  ${BLAST_SOURCE_DIR})
+	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_LINUX_ARCHIVE}; \
+		rm -r ${BLAST_SOURCE_DIR};
+		mv ${BLAST_LINUX_ARCHIVE} ..;
+		mv blast-*  ${BLAST_SOURCE_DIR} \
+	)
 	@echo ${BLAST_BASE_DIR}
 
 install_blast_linux:
