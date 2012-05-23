@@ -27,6 +27,8 @@ class BEDProcessor( Processor):
     INPUT_PEAK_FILE = "PeakFile"
     REFERENCE_SPECIES_PARAM = "ReferenceSpecies"
     PEAK_NUMBER = "PeakNumber"
+    EXTENSION_5P = "5pext"
+    EXTENSION_3P = "3pext"
     
     # --------------------------------------------------------------------------------------
     def __init__(self):
@@ -78,9 +80,15 @@ class BEDProcessor( Processor):
         species = self.getParameter( BEDProcessor.REFERENCE_SPECIES_PARAM)
         peak_filepath = self.getParameter( BEDProcessor.INPUT_PEAK_FILE, False)
         peak_number = self.getParameterAsint( BEDProcessor.PEAK_NUMBER, False)
+        extension_5p = self.getParaleterAsint( BEDProcessor.EXTENSION_5P, False)
+        if extension_5p == None:
+            extension_5P = 0
+        extension_3p = self.getParaleterAsint( BEDProcessor.EXTENSION_3P, False)
+        if extension_3p == None:
+            extension_3P = 0
         
         # Parse the BED file and get the BED sequences ordered by species and chromosom
-        bedseq_dictionnary = BEDParser.getBEDSequenceDictionnary( species, bed_filepath)
+        bedseq_dictionnary = BEDParser.getBEDSequenceDictionnary( species, bed_filepath, extension_5P, extension_3P)
         
         # Extract the desired number of peak if a limit has been defined
         if peak_number != None:
