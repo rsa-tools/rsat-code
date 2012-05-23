@@ -42,6 +42,7 @@
 		<tr><td><b>Reference Species</b></td><td>:<xsl:value-of select="@referenceSpecies"/></td></tr>
 		<tr><td><b>Reference Motif</b></td><td>:<xsl:value-of select="@referenceMotif"/></td></tr>
 		<tr><td><b>Aligned Species</b></td><td>:<xsl:value-of select="@alignedSpecies"/></td></tr>
+		<tr><td><b>BED Output file</b></td><td><a><xsl:attribute name="href"> <xsl:value-of select="@bedOutput"/> </xsl:attribute>:BED Output</a></td></tr>
 	</table>
 
 	<br></br>
