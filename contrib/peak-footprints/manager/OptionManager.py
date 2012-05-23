@@ -109,6 +109,8 @@ class OptionManager:
     MAX_MOTIF_BY_FAMILY = "max_motif_by_family"
     MAX_HYP_EVALUE = "max_hyp_pvalue"
     MAX_CHI2_EVALUE = "max_chi2_pvalue"
+    EXTENSION_5P = "5pext";
+    EXTENSION_3P = "3pext";
 
     PIPELINE = "pipeline"   
     OUTPUT = "output"
@@ -217,6 +219,14 @@ class OptionManager:
                 # Add the threshold on the chi2 e-value
                 elif opt == OptionManager.MAX_CHI2_EVALUE:
                     OptionManager.addParam( pipeline, "processor.ClassificationProcessor.ClassificationProcessor", ClassificationProcessor.MAX_CHI2_EVALUE, arg)
+
+                # Add the peak 5' extensions
+                elif opt == OptionManager.EXTENSION_5P:
+                    OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.EXTENSION_5P, arg)
+
+                # Add the peak 3' extensions
+                elif opt == OptionManager.EXTENSION_3P:
+                    OptionManager.addParam( pipeline, "processor.BEDProcessor.BEDProcessor", BEDProcessor.EXTENSION_3P, arg)
 
     # --------------------------------------------------------------------------------------
     # Add the given parameter with the given value to the component with the given name
