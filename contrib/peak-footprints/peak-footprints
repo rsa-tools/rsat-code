@@ -51,6 +51,8 @@ def main( argv):
                          OptionManager.MAX_MOTIF_BY_FAMILY + "=",\
                          OptionManager.MAX_HYP_EVALUE + "=",\
                          OptionManager.MAX_CHI2_EVALUE + "=",\
+                         OptionManager.EXTENSION_5P + "=",\
+                         OptionManager.EXTENSION_3P + "=",\
                          OptionManager.VERBOSITY + "=",\
                          OptionManager.OUTPUT + "=",\
                          OptionManager.RSAT + "=",\
@@ -180,7 +182,9 @@ def usage():
     print " --max_motif_number \t\t: the maximal number of motif that will be presented in the final report."
     print " --max_motif_by_family \t\t: the maximal number of motif that will be presented in each motif family in the final report."   
     print " --max_hyp_pvalue \t\t: the maximal threshold on the hypergeometric p-value for a motif to be reported."   
-    print " --max_chi2_pvalue \t\t: the maximal threshold on the chi2 p-value for a motif to be reported."   
+    print " --max_chi2_pvalue \t\t: the maximal threshold on the chi2 p-value for a motif to be reported."
+    print " --5pext \t\t: value of the 5' desired extension (applied to the initial peaks)."
+    print " --3pext \t\t: value of the 3' desired extension (applied to the initial peaks)."   
     print " --output \t\t\t: the path to the desired output folder."
     print " --rsat \t\t\t: the path to the RSAT install."
     print " --force \t\t\t: this option force the tool to reexecute all the pipeline steps even if previous similar results are found."

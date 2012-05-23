@@ -17,7 +17,7 @@ class BEDParser:
     # Parse the given BED file and return a dictionnary of the BED Sequences
     # grouped by sequence keys ('species'.'chromosom')
     @staticmethod
-    def getBEDSequenceDictionnary( species, bed_filepath):
+    def getBEDSequenceDictionnary( species, bed_filepath, extension_5p, extension_3p):
         
         sequence_dic = {}
         
@@ -31,6 +31,10 @@ class BEDParser:
                         start = BEDParser.getTokenAsint( tokens[ BEDParser._startindex_col])
                         end = BEDParser.getTokenAsint( tokens[ BEDParser._endindex_col])
                         if start < end:
+                            start = start - extension_5p;
+                            if start < 0:
+                                start = 0;
+                            end = end + extension_3p;
                             bedsequence = BEDSequence( species, chrom, start, end )
                             if len( tokens) > BEDParser._id_col:
                                 bedsequence.id = tokens[ BEDParser._id_col]
