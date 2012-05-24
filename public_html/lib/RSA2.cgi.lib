@@ -81,7 +81,6 @@ sub PrintOrthoSelectionSection {
 Bacillus_subtilis_168_uid57675
 Desulfovibrio_vulgaris_Hildenborough_uid57645
 Dickeya_dadantii_3937_uid52537
-Escherichia_coli_ETEC_H10407
 Escherichia_coli_K_12_substr__MG1655_uid57779
 Mycobacterium_tuberculosis_H37Rv_uid57777
 Saccharomyces_cerevisiae
@@ -100,9 +99,12 @@ Saccharomyces_cerevisiae
 	  next if (/^;/); # skip comment lines
 	  next if (/^\#/); # Skip header line
 	  my ($org) = split(/\s/, $_);
-##	  if ($org) {
-	  if (($org) && (defined($supported_organism{$org}))){
+	  if ($org) {
+#	      if (defined($supported_organism{$org})) {## This control seems
+#	      not to work, probably because the library is read before the
+#	      list of supported organisms.
 	      $supported_orthologs{$org} = 1;
+#	      }
 	  }
       }
       @supported_orthologs = sort keys %supported_orthologs;
@@ -111,6 +113,7 @@ Saccharomyces_cerevisiae
 #Bacillus_subtilis
 #Brucella_melitensis
 #Escherichia_coli_K12
+#Escherichia_coli_ETEC_H10407
 #Klebsiella_pneumoniae_MGH_78578
 #Mycoplasma_pneumoniae
 #Pseudoalteromonas_haloplanktis_TAC125
