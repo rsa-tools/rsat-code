@@ -90,17 +90,18 @@ Saccharomyces_cerevisiae
       $supported_orthologs{$org} = 1;
   }
 
-
   ## Read supported orthologs from file
   my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_organisms_footprints.tab";
   if (-e $fp_org_file) {
+
       my ($org) = &OpenInputFile($fp_org_file);
       while (<$org>) {
 	  next unless (/\S/) ; # skip empty rows
 	  next if (/^;/); # skip comment lines
-	  next if (/^#/); # Skip header line
+	  next if (/^\#/); # Skip header line
 	  my ($org) = split(/\s/, $_);
-	  if ($org) {
+##	  if ($org) {
+	  if (($org) && (defined($supported_organism{$org}))){
 	      $supported_orthologs{$org} = 1;
 	  }
       }
