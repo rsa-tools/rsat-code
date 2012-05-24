@@ -78,27 +78,48 @@ sub PrintOrthoSelectionSection {
   ## all organisms.
 
   my @supported_orthologs = qw(
-			       Bacillus_subtilis_168_uid57675
-			       Desulfovibrio_vulgaris_Hildenborough_uid57645
-			       Escherichia_coli_K12
-			       Klebsiella_pneumoniae_MGH_78578
-			       Mycoplasma_pneumoniae
-			       Rhizobium_etli_CFN_42
-			       Saccharomyces_cerevisiae
-			       Salmonella_typhi
-			       Salmonella_typhimurium_LT2
-			       Streptococcus_mutans
-                               Bacillus_subtilis
-                               Brucella_melitensis
-                               Dickeya_dadantii_3937_uid52537
-                               Escherichia_coli_ETEC_H10407
-                               Escherichia_coli_K_12_substr__MG1655_uid57779
-                               Mycobacterium_tuberculosis_H37Rv_uid57777
-                               Pseudoalteromonas_haloplanktis_TAC125
-                               Pseudomonas_putida_KT2440
-                               Ralstonia_metallidurans_CH34
-                               Yersinia_pestis_KIM
+Bacillus_subtilis_168_uid57675
+Desulfovibrio_vulgaris_Hildenborough_uid57645
+Dickeya_dadantii_3937_uid52537
+Escherichia_coli_ETEC_H10407
+Escherichia_coli_K_12_substr__MG1655_uid57779
+Mycobacterium_tuberculosis_H37Rv_uid57777
+Saccharomyces_cerevisiae
 			       );
+  foreach my $org (@supported_orthologs) {
+      $supported_orthologs{$org} = 1;
+  }
+
+
+  ## Read supported orthologs from file
+  my $fp_org_file = ${RSAT}."public_html/data/supported_organisms_footprints.tab";
+  if (-e $fp_org_file) {
+      my ($org) = &OpenInputFile($fp_org_file);
+      while (<$org>) {
+	  next unless (/\S/) ; # skip empty rows
+	  next if (/^;/); # skip comment lines
+	  next if (/^#/); # Skip header line
+	  my ($org) = split(/\s/, $_);
+	  if ($org) {
+	      $supported_orthologs{$org} = 1;
+	  }
+      }
+      @supported_orthologs = sort keys %supported_orthologs;
+  }
+
+#Bacillus_subtilis
+#Brucella_melitensis
+#Escherichia_coli_K12
+#Klebsiella_pneumoniae_MGH_78578
+#Mycoplasma_pneumoniae
+#Pseudoalteromonas_haloplanktis_TAC125
+#Pseudomonas_putida_KT2440
+#Ralstonia_metallidurans_CH34
+#Rhizobium_etli_CFN_42
+#Salmonella_typhi
+#Salmonella_typhimurium_LT2
+#Streptococcus_mutans
+#Yersinia_pestis_KIM
 
   #### choice of the organism
   print "<b>Query </b>";
