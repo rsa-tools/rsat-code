@@ -92,7 +92,7 @@ Saccharomyces_cerevisiae
 
 
   ## Read supported orthologs from file
-  my $fp_org_file = ${RSAT}."public_html/data/supported_organisms_footprints.tab";
+  my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_organisms_footprints.tab";
   if (-e $fp_org_file) {
       my ($org) = &OpenInputFile($fp_org_file);
       while (<$org>) {
