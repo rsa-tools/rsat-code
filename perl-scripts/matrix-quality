@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.141 2012/03/06 18:42:36 amedina Exp $
+# $Id: matrix-quality,v 1.142 2012/05/25 14:46:45 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -445,8 +445,7 @@ package main;
 	$main::bg_pseudo = $matrix_scan_options[$i+1]
       }
     }
-    &RSAT::message::Info("matrix-scan options", join(" ", @matrix_scan_options)) if ($main::verbose >= 3);
-
+    &RSAT::message::Info("matrix-scan options", join(" ", @matrix_scan_options)) if ($main::verbose >= 1);
 
     ## Graph image formats : png is default
     unless (scalar(@image_formats)>0) {
@@ -744,9 +743,7 @@ package main;
       ## Compute empirical distribution in the input sequence files
       foreach my $seq_type (@local_seq_types) {
 	&RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 1);
-
-	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
-
+       	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
 	## Score sequences with the permuted matrices
 	if (($seqfile{$seq_type}) &&
 	    (defined($perm_nb{$seq_type})) &&
@@ -2001,7 +1998,7 @@ sub CalcSequenceDistrib {
 
   $matrix_scan_cmd .= " > ".$outfile{'empirical_distrib_'.$seq_type};
 
-  &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 5);
+  &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 1);
 
   ## Print the complete command in the log file
   print $main::out "\n; ", &AlphaDate(), "\tComputing score distribution\n";
@@ -2025,7 +2022,6 @@ sub CalcSequenceDistrib {
 
     &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   }
-
   return($outfile{'empirical_distrib_'.$seq_type});
 }
 
