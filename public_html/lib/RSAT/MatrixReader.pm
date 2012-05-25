@@ -1474,7 +1474,7 @@ sub _readFromConsensusFile {
 	my $site_pos = $5;
 	my $site_sequence = $6;
 	$matrix->push_attribute("sequences", $site_sequence);
-	&RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 5);
+	&RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 10);
 
 	## Other matrix parameters
       } elsif (/number of sequences = (\d+)/) {
@@ -2134,13 +2134,14 @@ sub _readFromMEMEFile {
     } elsif (/Motif (\d+) in BLOCKS format/) {
       $current_matrix_nb = $1;
       $in_blocks = 1;
-      &RSAT::message::Debug("line", $l, "Starting to parse BLOCKS format") if ($main::verbose >= 5);
+      &RSAT::message::Debug("line", $l, "Starting to parse BLOCKS format") if ($main::verbose >= 10);
 
     } elsif ($in_blocks) {
       if (/(\S+)\s+\(\s*\d+\)\s+(\S+)/) {
 	my $seq_id = $1;
 	my $seq = lc($2);
 	my $seq_len =  length($seq);
+	&RSAT::message::Debug("Reading sequences for MEME matrix", "SeqId", $seq_id, "\n\t", $seq) if ($main::verbose >= 10);
 	if ($seq_len > 0) {
 #	  $parsed_width = &main::max($parsed_width, $seq_len);
 	  $matrix->add_site(lc($seq), score=>1, id=>$seq_id, max_score=>0);
