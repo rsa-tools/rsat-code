@@ -78,12 +78,27 @@ sub PrintOrthoSelectionSection {
   ## all organisms.
 
   my @supported_orthologs = qw(
-Bacillus_subtilis_168_uid57675
-Desulfovibrio_vulgaris_Hildenborough_uid57645
-Dickeya_dadantii_3937_uid52537
-Escherichia_coli_K_12_substr__MG1655_uid57779
-Mycobacterium_tuberculosis_H37Rv_uid57777
-Saccharomyces_cerevisiae
+			       Bacillus_subtilis_168_uid57675
+			       Desulfovibrio_vulgaris_Hildenborough_uid57645
+			       Escherichia_coli_K12
+			       Klebsiella_pneumoniae_MGH_78578
+			       Mycoplasma_pneumoniae
+			       Rhizobium_etli_CFN_42 
+			       Rhizobium_etli_CFN_42_uid58377 
+			       Saccharomyces_cerevisiae
+			       Salmonella_typhi
+			       Salmonella_typhimurium_LT2
+			       Streptococcus_mutans
+                               Bacillus_subtilis
+                               Brucella_melitensis
+                               Dickeya_dadantii_3937_uid52537
+                               Escherichia_coli_ETEC_H10407
+                               Escherichia_coli_K_12_substr__MG1655_uid57779
+                               Mycobacterium_tuberculosis_H37Rv_uid57777
+                               Pseudoalteromonas_haloplanktis_TAC125
+                               Pseudomonas_putida_KT2440
+                               Ralstonia_metallidurans_CH34
+                               Yersinia_pestis_KIM
 			       );
   foreach my $org (@supported_orthologs) {
       $supported_orthologs{$org} = 1;
