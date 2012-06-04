@@ -87,54 +87,12 @@ $out = &OpenOutputFile($outfile{output});
 ################################################################
 ## Get the list supported organisms from a remote RSAT server
 if ($from_server) {
-#     # import the modules we need for this test; XML::Compile is included on the server
-#     # by default.
-#     use XML::Compile::SOAP11;
-#     use XML::Compile::WSDL11;
-#     use XML::Compile::Transport::SOAPHTTP;
+    # import the modules we need for this test; XML::Compile is included on the server
+    # by default.
+    use XML::Compile::SOAP11;
+    use XML::Compile::WSDL11;
+    use XML::Compile::Transport::SOAPHTTP;
 
-
-#     ## Retrieve-seq parameters
-#     my %args = (
-# 	'taxon' => $taxon,
-# 	'format'=> $out_format,
-# 	'return'=> $return_fields,
-# 	);
-
-#     # Retrieving and processing the WSDL
-#     my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
-#     &RSAT::message::TimeWarn("Parsing Web service description from WSDL", $wsdl_url) if ($main::verbose >= 2);
-#     my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
-#     my $proxy = XML::Compile::WSDL11->new($wsdl);
-
-#     ## Compiling the client for supported-organisms
-#     &RSAT::message::TimeWarn("Compiling client") if ($main::verbose >= 2);
-#     my $client = $proxy->compileClient('supported_organisms');
-
-#     # Calling the service and getting the response
-#     &RSAT::message::TimeWarn("Sending query to server", $server) if ($main::verbose >= 2);
-#     my $answer = $client->( request => {%args});
-
-#     if ($main::verbose >= 1) {
-# 	print $out "; Server : ", $server, "\n";
-# 	print $out "; WSDL : ", $wsdl, "\n";
-# 	my $server_command = $answer->{output}->{response}->{command};
-# 	print $out "; Server command : ".$server_command."\n";
-# 	print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
-#     }
-#     print $out $answer->{output}->{response}->{client}."\n";
-#
-#} elsif ($from_server) {
-
-    ## Required for the option -server (obtaining the supported organisms from a remote server)
-    require MyInterfaces::RSATWebServices::RSATWSPortType;
-    require SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
-
-    ## Service call
-    my $soap = MyInterfaces::RSATWebServices::RSATWSPortType->new();
-
-    ## Output option
-    my $output_choice = 'client';  ## Accepted values: 'server', 'client', 'both'
 
     ## Retrieve-seq parameters
     my %args = (
@@ -143,24 +101,66 @@ if ($from_server) {
 	'return'=> $return_fields,
 	);
 
-    ## Send the request to the server
-    &RSAT::message::Info("Sending request to the remote server") if ($main::verbose >= 1);
-    my $som = $soap->supported_organisms({'request' => \%args});
+    # Retrieving and processing the WSDL
+    my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
+    &RSAT::message::TimeWarn("Parsing Web service description from WSDL", $wsdl_url) if ($main::verbose >= 2);
+    my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
+    my $proxy = XML::Compile::WSDL11->new($wsdl);
 
-    ## Get the result
-    if ($som) {
-	my $results = $som->get_response();
+    ## Compiling the client for supported-organisms
+    &RSAT::message::TimeWarn("Compiling client") if ($main::verbose >= 2);
+    my $client = $proxy->compileClient('supported_organisms');
 
-	## Report the remote command
-	my $command = $results -> get_command();
-	&RSAT::message::Info("Command used on the server:\n;\t".$command) if ($main::verbose >= 1);
+    # Calling the service and getting the response
+    &RSAT::message::TimeWarn("Sending query to server", $server) if ($main::verbose >= 2);
+    my $answer = $client->( request => {%args});
 
-	## Report the result
-	my $result = $results -> get_client();
-	print $out $result;
-    } else {
-	&RSAT::error::FatalError("Web services. A fault (%s) occured : %s\n", $som->get_faultcode(), $som->get_faultstring());
+    if ($main::verbose >= 1) {
+	print $out "; Server : ", $server, "\n";
+	print $out "; WSDL : ", $wsdl_url, "\n";
+	my $server_command = $answer->{output}->{response}->{command};
+	print $out "; Server command : ".$server_command."\n";
+	print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
     }
+    print $out $answer->{output}->{response}->{client}."\n";
+
+# } elsif ($from_server) {
+
+#     ## Required for the option -server (obtaining the supported organisms from a remote server)
+#     require MyInterfaces::RSATWebServices::RSATWSPortType;
+#     require SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
+
+#     ## Service call
+#     my $soap = MyInterfaces::RSATWebServices::RSATWSPortType->new();
+
+#     ## Output option
+#     my $output_choice = 'client';  ## Accepted values: 'server', 'client', 'both'
+
+#     ## Retrieve-seq parameters
+#     my %args = (
+# 	'taxon' => $taxon,
+# 	'format'=> $out_format,
+# 	'return'=> $return_fields,
+# 	);
+
+#     ## Send the request to the server
+#     &RSAT::message::Info("Sending request to the remote server") if ($main::verbose >= 1);
+#     my $som = $soap->supported_organisms({'request' => \%args});
+
+#     ## Get the result
+#     if ($som) {
+# 	my $results = $som->get_response();
+
+# 	## Report the remote command
+# 	my $command = $results -> get_command();
+# 	&RSAT::message::Info("Command used on the server:\n;\t".$command) if ($main::verbose >= 1);
+
+# 	## Report the result
+# 	my $result = $results -> get_client();
+# 	print $out $result;
+#     } else {
+# 	&RSAT::error::FatalError("Web services. A fault (%s) occured : %s\n", $som->get_faultcode(), $som->get_faultstring());
+#     }
 
 } else {
     if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newick") {
@@ -316,7 +316,7 @@ sub ReadArguments {
 	&RSAT::error::FatalError("Format $out_format is not supported\n");
       }
 
-      ### output format
+      ### server address
     } elsif ($ARGV[$a] eq "-server") {
       $from_server = 1;
       if ($ARGV[$a+1] =~ /^http/) {
