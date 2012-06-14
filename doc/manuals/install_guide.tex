@@ -70,8 +70,27 @@ Chapter~\ref{chap:perl_modules}).
 
 \subsection{Python language}
 
-Some of the programs in \RSAT are written in python. Version 2.4 or
-later is recommended.
+Some of the programs in \RSAT are written in Python. 
+
+Python release
+2.7\footnote{\url{http://www.python.org/getit/releases/2.7/}} is
+recommended, because it contains some required libraries for remote
+access to external resources (UCSC genome browser).
+
+The following libraries are required for various programs.
+
+
+
+\begin{itemize}
+\item
+  \textbf{setuptools}\footnote{\url{http://pypi.python.org/pypi/setuptools}}
+  is required to install other Python libraries (see installation
+  instructions\footnote{\url{http://pypi.python.org/pypi/setuptools\#installation-instructions}}).
+
+\item \textbf{suds}\footnote{\url{https://fedorahosted.org/suds/}} is
+  used for accessing the SOAP interface.
+
+\end{itemize}
 
 \subsection{Java language}
 
