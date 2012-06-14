@@ -1684,7 +1684,9 @@ sub _readFromTabFile {
     push @matrices, $matrix;
     my $current_matrix_nb = 1;
     #    my $id = $file."_".$current_matrix_nb;
-    my $id_prefix = $file || "matrix";
+    my $no_path_file=$file;
+    $no_path_file=~s/.+\/+//;
+    my $id_prefix = $no_path_file|| "matrix";
     my $id = $id_prefix."_".$current_matrix_nb;
     $matrix->set_attribute("AC", $id);
     $matrix->set_attribute("id", $id);
