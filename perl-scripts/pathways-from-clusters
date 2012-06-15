@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.11 2012/04/13 15:46:06 rsat Exp $
+# $Id: pathways-from-clusters,v 1.12 2012/06/15 07:09:25 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input files
@@ -172,7 +172,7 @@ unless (defined($infile{nnn})) {
   my @genelist;
   my $line;
   while ($line=<$main::in>) {
-
+#   print "$line";
     chomp($line);
     next if ($line =~ /^#/); ## Skip header line
     next if ($line =~ /^;/); ## Skip comment lines
@@ -186,7 +186,7 @@ unless (defined($infile{nnn})) {
 #      if (!($line=~m/^;|^#/)) {
     &RSAT::message::Debug($l, $line) if ($main::verbose >= 10);
     my @tempdata = split(/\t/,$line);
-    # 	   print "$tempdata[$main::operoncolnum] eq $oldclusterid\n";
+#     	   print "$tempdata[$main::operoncolnum] eq $oldclusterid\n";
     if ($oldclusterid && !($tempdata[$main::operoncolnum] eq $oldclusterid)) {
       $oldclusterid=~s/\s+/_/g;
       $oldclusterid=~s/\;+/_/g;
@@ -208,12 +208,13 @@ unless (defined($infile{nnn})) {
       $pathway_extractor_cmd .= " -gd $oldclusterid";
       $pathway_extractor_cmd .= " -gnn ".$main::infile{gnn};
       $pathway_extractor_cmd .= " -nnn ".$main::infile{nnn};
-      $pathway_extractor_cmd .= " -C -d -m 5 -T pathsUnion ";
+      $pathway_extractor_cmd .= " -C -d -F 7 -T pathsUnion ";
       $pathway_extractor_cmd .= " -o ".$main::dir{output};
       ## TO DO WITH DIDIER: redirect STDER from pathway-extractor to a
       ## log file in the output directory.
 
       &RSAT::message::Info("Patwhay extractor command: ", $pathway_extractor_cmd);
+#       exit (-1);
       &doit($pathway_extractor_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
       ## CHECK WITH DIDIER: WHY THE CLEANING HAS TO EXECUTED HERE

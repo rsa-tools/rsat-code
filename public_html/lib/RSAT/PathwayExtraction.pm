@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.10 2012/04/12 19:36:26 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.11 2012/06/15 07:09:25 rsat Exp $
 #
 ############################################################
 
@@ -287,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
   my ($input,
        $isinputfile,
@@ -456,16 +456,16 @@ while (my ($cpd, $val) = each(%compounds)){
     # Running PatywayInference
     &RSAT::message::TimeWarn("Running pathway inference with ", $seednum, "seeds") if ($verbose >= 1);
 #    $outfile{predicted_pathway} =$outputdir.(join "_",$localgroup_descriptor, $groupid, $graph, "_pred_pathways.txt");
-    #our $maxbetweennodelength = $otherPIoptions{"-m"} || "5";
-    #delete($otherPIoptions{"-m"});
-    our $graphfileformat = $otherPIoptions{"-f"} || "flat";
-    delete($otherPIoptions{"-f"});
-    our $weightpolicy= $otherPIoptions{"-y"} || "con";
-    delete($otherPIoptions{"-h"});
-    delete($otherPIoptions{"-g"});
-    delete($otherPIoptions{"-o"});
-    delete($otherPIoptions{"-p"});
-    delete($otherPIoptions{"-v"});
+    our $maxinterseedslength = $localotherPIparameters{"-F"} || "5";
+    delete($localotherPIparameters{"-F"});
+    our $graphfileformat = $localotherPIparameters{"-f"} || "flat";
+    delete($localotherPIparameters{"-f"});
+    our $weightpolicy= $localotherPIparameters{"-y"} || "con";
+    delete($localotherPIparameters{"-h"});
+    delete($localotherPIparameters{"-g"});
+    delete($localotherPIparameters{"-o"});
+    delete($localotherPIparameters{"-p"});
+    delete($localotherPIparameters{"-v"});
     #after the program has handled the mandatory parameters, it will add the remaining ones 
     my $piparameters =" ";
 
@@ -479,8 +479,7 @@ while (my ($cpd, $val) = each(%compounds)){
     $pathway_infer_cmd .= " -i ".$outfile{seeds_converted};
     $pathway_infer_cmd .= " -A ".$ENV{REA_ROOT};
     $pathway_infer_cmd .= " -K ".$ENV{KWALKS_ROOT};
-    #$pathway_infer_cmd .= " -m $maxbetweennodelength -C";
-    $pathway_infer_cmd .= " -f $graphfileformat";
+    $pathway_infer_cmd .= " -F $maxinterseedslength -C -f $graphfileformat";
     $pathway_infer_cmd .= " -p $tempdir";
     $pathway_infer_cmd .= " -E $outputdir";
     $pathway_infer_cmd .= " -b";
@@ -766,7 +765,7 @@ sub MapSeeds{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -881,7 +880,7 @@ sub QueryExactMetabNames{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -1029,7 +1028,9 @@ sub QueryExactMetabNames{
   }
     while (my($key, $val) = each(%nnnconversiontablehash)) {
      my %hashreac = %{$val};
-     $return .=  $key."\tNA\t".$hashreac{"ids"}."\t".$hashreac{"type"}."\t".$hashreac{"name"}."\n";
+     my $EC = "NA";
+     $EC = $key if ($hashreac{"type"} eq "EC");
+     $return .=  $key."\t$EC\t".$hashreac{"ids"}."\t".$hashreac{"type"}."\t".$hashreac{"name"}."\n";
    } 
   
   
