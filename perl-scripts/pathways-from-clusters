@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.12 2012/06/15 07:09:25 rsat Exp $
+# $Id: pathways-from-clusters,v 1.13 2012/06/15 14:14:03 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input files
@@ -285,7 +285,7 @@ Verbose mode
 
 =cut
     if ($arg eq "-v") {
-	$main::verbose = "-v";
+	$main::verbose = shift (@arguments);
 
 =pod
 
