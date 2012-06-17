@@ -4,6 +4,14 @@ doc = '''
 NAME
 	%(progname)s
 
+AUTHOR
+
+	Jeremy Delerce <jeremy.delerce@etu.univ-amu.fr>
+	(Master student 2012)
+
+	Supervision: Jacques van Helden
+	<Jacques.van-Helden@univ-amu.fr>
+
 VERSION
 	%(version)s
 
@@ -12,20 +20,24 @@ CATEGORY
         
 DESCRIPTION
 
-	Download, decompress and index the multi-genome alignemnt
-	files ("multiz" files, in MAF format) from the UCSC genome
-	browser (http://genome.ucsc.edu/).
+	This script manages the local installation (downloading,
+	decompressing and indexing) of multi-genome alignemnt files
+	("multiz" files, in MAF format) from the UCSC genome browser
+	(http://genome.ucsc.edu/).
 
-	The multiz files are used by the RSAT program peak-footprints
-	for detecting enrichment for transcription factor binding
-	motifs in the conserved regions under ChIP-seq peaks.
+	Multiz files are used by the RSAT program peak-footprints to
+	detect enrichment for transcription factor binding motifs in
+	the conserved regions under ChIP-seq peaks.
 
 	The script download-ucsc-multiz only downloads the files for
 	which the local copy is older than the copy on the UCSC
 	server.
 
 	The original files are downloaded in gzip format, and
-	uncomrpessed because the idenxation requires flat files.
+	uncompressed because the indexation requires flat
+	files. Beware, uncompressed multiz files can occupay a large
+	disk space. In 2012, the decompressed multiz30 for the mouse
+	genome (mm9) weights >70Gb, and the human multiz >250Gb!
 
 	The program also indexes the multiz files, in order to enable
 	fast retrieval of conserved regions for a set of genomic
