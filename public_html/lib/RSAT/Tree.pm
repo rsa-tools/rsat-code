@@ -180,7 +180,7 @@ sub get_node_descendents{
 
 sub get_node_descendents_names {
   my ($self, @args) = @_;
-  &RSAT::message::Info("RSAT::Tree", $self, "Getting names of node descendents", $node_id, $order, $type) if ($main::verbose >= 3);
+  &RSAT::message::Info("RSAT::Tree", $self, "Getting names of node descendents") if ($main::verbose >= 4);
 #  my $node_id=shift;
 #  my $order=shift;
 #  my $type=shift; # all, leave, node
@@ -336,7 +336,7 @@ sub get_leaves_names {
 sub LoadSupportedTaxonomy {
   my ($self) = @_;
   &RSAT::message::Info("RSAT::Tree", $self, "Loading supported taxonomy") if ($main::verbose >= 3);
-#  &LoadSupportedTaxonomy_jvh(@_);
+  #  &LoadSupportedTaxonomy_jvh(@_);
   &LoadSupportedTaxonomy_rj(@_);
   $self->force_attribute("loaded", 1)
 ;
@@ -362,7 +362,7 @@ sub LoadSupportedTaxonomy_rj {
     $root_name = "Organisms";
   }
 
-  &RSAT::message::Debug("RSAT::Tree", "Loading supported taxonomy with root", $root_name, $supported_organism)
+  &RSAT::message::Info("RSAT::Tree", "Loading supported taxonomy with root", $root_name)
     if ($main::verbose >= 3);
 
   my %supported_organism=%{$supported_organism};
@@ -486,7 +486,7 @@ sub LoadSupportedTaxonomy_jvh {
   ## Iterate over all supported organisms
   my $org_counter = 0;
   foreach my $org (keys %main::supported_organism) {
-    &RSAT::message::Info(join("\t", "adding organism", $org)) if ($main::verbose >= 3);
+    &RSAT::message::Info(join("\t", "adding organism", $org)) if ($main::verbose >= 4);
     $org_counter++;
     my $org_node = new RSAT::TreeNode();
     $org_node->force_attribute("id", $org);
