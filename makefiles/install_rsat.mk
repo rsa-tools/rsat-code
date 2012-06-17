@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.62 2012/05/21 00:16:29 rsat Exp $
+# $Id: install_rsat.mk,v 1.63 2012/06/17 11:06:49 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -18,8 +18,14 @@ MAKEFILE=${RSAT}/makefiles/install_rsat.mk
 V=1
 
 ## Operating system
-## Supported: linux | mac
-OS=linux
+## Supported: linux64 | linux32 | macosx
+#OS=linux
+OS=macosx
+
+## Install dir for binaries
+BIN_DIR=/usr/local/bin
+#BIN_DIR=${RSAT}/bin
+
 
 #################################################################
 # Programs used for downloading and sycnrhonizing
@@ -104,7 +110,7 @@ download_python:
 	(mkdir ${PYTHON_INSTALL_DIR}; cd ${PYTHON_INSTALL_DIR}; wget -NL http://www.python.org/ftp/python/2.7/Python-2.7.tgz; tar -xpzf Python-2.7.tgz)
 
 install_python:
-	(cd ${PYTHON_INSTALL_DIR}/Python-2.7; ./configure; make; sudo make install)
+	(cd ${PYTHON_INSTALL_DIR}/Python-2.7; ./configure; make; ${SUDO} make install)
 
 ################################################################
 ## This library allows you to install the Perl libraries locally, if you are not system administrator
@@ -186,9 +192,9 @@ download_seqlogo:
 
 install_seqlogo:
 	@echo "Installing seqlogo"
-	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${RSAT}/bin/
-	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${RSAT}/bin/
-	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${RSAT}/bin/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}
 
 ################################################################
 ## Get and install the program ghostscript
@@ -259,15 +265,14 @@ compile_bedtools:
 	@echo "Installing bedtools from ${BED_SRC_DIR}"
 	@echo
 	@mkdir -p ${BED_SRC_DIR}
-	(cd ${BED_SRC_DIR}; make clean; make all) #; make test; make install)
+	(cd ${BED_SRC_DIR}; make clean; make; make test; ${SUDO} make install)
 
-BIN=${RSAT}/bin
 install_bedtools:
 	@echo
-	@echo "Synchronizing bedtools from ${BEN_BIN_DIR} to ${BIN}"
+	@echo "Synchronizing bedtools from ${BEN_BIN_DIR} to ${BIN_DIR}"
 	@echo
-	@mkdir -p ${BIN}
-	rsync -ruptvl ${BED_BIN_DIR}/* ${BIN}
+	@mkdir -p ${BIN_DIR}
+	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}
 
 ################################################################
 ## Install MEME (Tim Bailey)
@@ -293,7 +298,7 @@ install_meme:
 	@echo
 	@mkdir -p ${MEME_INSTALL_DIR}
 	(cd ${MEME_DISTRIB_DIR}; ./configure --prefix=${MEME_INSTALL_DIR} --with-url="http://localhost/meme")
-	(cd ${MEME_DISTRIB_DIR}; make clean; make ; make test; make install)
+	(cd ${MEME_DISTRIB_DIR}; make clean; make ; make test; ${SUDO} make install)
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
@@ -309,9 +314,6 @@ install_meme:
 
 ################################################################
 ## Install a clustering algorithm "cluster"
-
-################################################################
-## Install the graph-based clustering algorithm MCL
 CLUSTER_BASE_DIR=${APP_SRC_DIR}/cluster
 CLUSTER_VERSION=1.50
 CLUSTER_ARCHIVE=cluster-${CLUSTER_VERSION}.tar.gz
@@ -327,14 +329,14 @@ download_cluster:
 #	tar xvfz cluster-1.50.tar.gz
 #	(cd cluster-1.50; ./configure --without-x; make clean; make )
 
-CLUSTER_INSTALL_DIR=${RSAT}
+CLUSTER_INSTALL_DIR=`dirname ${BIN_DIR}`
 CLUSTER_BIN_DIR=${CLUSTER_INSTALL_DIR}/bin
 install_cluster:
 	@echo
-	@echo "Installing CLUSTER"
+	@echo "Installing CLUSTER in dir	${CLUSTER_INSTALL_DIR}"
 	@mkdir -p ${CLUSTER_INSTALL_DIR}
 	(cd ${CLUSTER_DISTRIB_DIR}; ./configure --without-x --prefix=${CLUSTER_INSTALL_DIR} ; \
-	make clean; make ; make install)
+	make clean; make ; ${SUDO} make install)
 
 
 
@@ -353,14 +355,14 @@ download_mcl:
 	(cd ${MCL_BASE_DIR}; tar -xpzf ${MCL_ARCHIVE})
 	@echo ${MCL_DISTRIB_DIR}
 
-MCL_INSTALL_DIR=${RSAT}
+MCL_INSTALL_DIR=`dirname ${BIN_DIR}`
 MCL_BIN_DIR=${MCL_INSTALL_DIR}/bin
 install_mcl:
 	@echo
 	@echo "Installing MCL"
 	@mkdir -p ${MCL_INSTALL_DIR}
 	(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_INSTALL_DIR} ; \
-	make clean; make ; make install)
+	make clean; make ; ${SUDO} make install)
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the MCL bin pathway"
@@ -387,27 +389,26 @@ download_rnsc:
 	(cd ${RNSC_BASE_DIR}; unzip ${RNSC_ARCHIVE})
 	@echo ${RNSC_BASE_DIR}
 
-RNSC_BIN_DIR=${RSAT}/bin
 install_rnsc:
 	@echo
 	@echo "Installing RNSC"
-	@mkdir -p ${RNSC_BIN_DIR}
+	@mkdir -p ${BIN_DIR}
 	(cd ${RNSC_BASE_DIR}; make ; \
-	mv -f rnsc ${RNSC_BIN_DIR}; \
-	mv -f rnscfilter ${RNSC_BIN_DIR}; \
-	mv -f rnscconvert ${RNSC_BIN_DIR}; \
+	${SUDO} rsync -ruptvl rnsc ${BIN_DIR}; \
+	${SUDO} rsync -ruptvl rnscfilter ${BIN_DIR}; \
+	${SUDO} rsync -ruptvl rnscconvert ${BIN_DIR}; \
 	)
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the RNSC bin pathway"
-	@echo "	rnsc_dir=${RNSC_BIN_DIR}"
+	@echo "	rnsc_dir=${BIN_DIR}"
 	@echo "This will allow RSAT programs to idenfity rnsc path on this server."
 	@echo
 	@echo "You can also add the RNSC bin directory in your path."
 	@echo "If your shell is bash"
-	@echo "	export PATH=${RNSC_BIN_DIR}:\$$PATH"
+	@echo "	export PATH=${BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
-	@echo "	setenv PATH ${RNSC_BIN_DIR}:\$$PATH"
+	@echo "	setenv PATH ${BIN_DIR}:\$$PATH"
 
 
 ################################################################
@@ -416,14 +417,12 @@ download_blast: download_blast_${OS}
 
 install_blast: install_blast_${OS}
 
-
 ################################################################
 ## Install the BLAST on linux
 ARCHITECTURE=x64
 BLAST_BASE_DIR=${APP_SRC_DIR}/blast
 BLAST_LINUX_ARCHIVE=blast-*-${ARCHITECTURE}-linux.tar.gz
 BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
-BLAST_BIN_DIR=${RSAT}/bin
 BLAST_SOURCE_DIR=blast_latest
 download_blast_linux:
 	@mkdir -p ${BLAST_BASE_DIR}
@@ -436,55 +435,47 @@ download_blast_linux:
 	@echo ${BLAST_BASE_DIR}
 
 install_blast_linux:
-	@mkdir -p ${BLAST_BIN_DIR}
-	(cd ${BLAST_BIN_DIR}; \
-	ln -fs ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall blastall; \
-	ln -fs ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb formatdb; \
-	)
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the BLAST bin pathway"
-	@echo "	blast_dir=${BLAST_BIN_DIR}"
+	@echo "	blast_dir=${BIN_DIR}"
 	@echo "This will allow RSAT programs to idenfity BLAST path on this server."
 	@echo
 	@echo "You can also add the BLAST bin directory in your path."
 	@echo "If your shell is bash"
-	@echo "	export PATH=${BLAST_BIN_DIR}:\$$PATH"
+	@echo "	export PATH=${BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
-	@echo "	setenv PATH ${BLAST_BIN_DIR}:\$$PATH"
+	@echo "	setenv PATH ${BIN_DIR}:\$$PATH"
 
 ################################################################
 ## Install the BLAST on MAC
 BLAST_BASE_DIR=${APP_SRC_DIR}/blast
 BLAST_MAC_ARCHIVE=blast-*-universal-macosx.tar.gz
 BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
-BLAST_BIN_DIR=${RSAT}/bin
 BLAST_SOURCE_DIR=blast_latest
-download_blast_mac:
+download_blast_macosx:
 	@mkdir -p ${BLAST_BASE_DIR}
 	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_MAC_ARCHIVE}"
 	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_MAC_ARCHIVE}; rm -r ${BLAST_SOURCE_DIR};mv ${BLAST_MAC_ARCHIVE} ..;mv blast-*  ${BLAST_SOURCE_DIR})
 	@echo ${BLAST_BASE_DIR}
 
-install_blast_mac:
-	@mkdir -p ${BLAST_BIN_DIR}
-	(cd ${BLAST_BIN_DIR}; \
-	ln -fs ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall blastall; \
-	ln -fs ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb formatdb; \
-	)
+install_blast_macosx:
+	@mkdir -p ${BIN_DIR}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the BLAST bin pathway"
-	@echo "	blast_dir=${BLAST_BIN_DIR}"
+	@echo "	blast_dir=${BIN_DIR}"
 	@echo "This will allow RSAT programs to idenfity BLAST path on this server."
 	@echo
 	@echo "You can also add the BLAST bin directory in your path."
 	@echo "If your shell is bash"
-	@echo "	export PATH=${BLAST_BIN_DIR}:\$$PATH"
+	@echo "	export PATH=${BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
-	@echo "	setenv PATH ${BLAST_BIN_DIR}:\$$PATH"
-
-
+	@echo "	setenv PATH ${BIN_DIR}:\$$PATH"
 
 ################################################################
 ## Generic call for installing a program. This tag is called with
@@ -535,9 +526,9 @@ download_patser:
 install_patser:
 	@echo "Installing patser"
 	(cd ${PATSER_DIR}; rm *.o; make)
-	rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${RSAT}/bin/
+	rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${BIN_DIR}
 #	(cd ${RSAT}/bin; ln -fs ${PATSER_APP} patser)
-	@echo "ls -ltr ${RSAT}/bin/patser*"
+	@echo "ls -ltr ${BIN_DIR}patser*"
 #	${MAKE} uncompress_program PROGRAM_DIR=${PATSER_DIR} PROGRAM=patser
 #	${MAKE} install_program PROGRAM=patser
 
@@ -609,7 +600,8 @@ download_ucsc_tools:
 ################################################################
 ################################################################
 
-## TopHat
+################################################################
+## TopHat - discovery splice junctions with RNA-seq
 tophat: download_tophat install_tophat
 
 
@@ -633,11 +625,11 @@ install_tophat:
 	@echo "Installing TopHat"
 	@mkdir -p ${TOPHAT_INSTALL_DIR}
 	(cd ${TOPHAT_DISTRIB_DIR}; ./configure --prefix=${TOPHAT_INSTALL_DIR} ; \
-	make clean; make ; make install)
+	make clean; make ; ${SUDO} make install)
 
 
 ################################################################
-## Instal MACS, peak-calling program
+## MACS, peak-calling program
 MACS_BASE_DIR=${APP_SRC_DIR}/MACS
 MACS_VERSION=1.4.2
 MACS_ARCHIVE=MACS-${MACS_VERSION}.tar.gz
@@ -652,10 +644,11 @@ download_macs:
 	@echo ${MACS_DISTRIB_DIR}
 
 install_macs:
-	(cd ${MACS_DISTRIB_DIR}; sudo python setup.py install)
+	(cd ${MACS_DISTRIB_DIR}; ${SUDO} python setup.py install)
 
 ################################################################
-## Instal PeakSplitter, peak-calling program
+## PeakSplitter, program for splitting the sometimes too large regions
+## returned by MACS into "topological" peaks.
 PEAKSPLITTER_BASE_DIR=${APP_SRC_DIR}/PeakSplitter
 PEAKSPLITTER_ARCHIVE=PeakSplitter_Cpp.tar.gz
 PEAKSPLITTER_URL=http://www.ebi.ac.uk/bertone/software/${PEAKSPLITTER_ARCHIVE}
@@ -668,12 +661,46 @@ download_peaksplitter:
 	(cd ${PEAKSPLITTER_BASE_DIR}; tar -xpzf ${PEAKSPLITTER_ARCHIVE})
 	@echo ${PEAKSPLITTER_DISTRIB_DIR}
 
-OS=MacOS
-install_peaksplitter_macos:
+install_peaksplitter_macosx:
 	${MAKE} _install_peaksplitter OS=MacOS
 
 install_peaksplitter_linux64:
 	${MAKE} _install_peaksplitter OS=Linux64
 
 _install_peaksplitter:
-	(cd ${PEAKSPLITTER_DISTRIB_DIR}; rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${RSAT}/bin/)
+	(cd ${PEAKSPLITTER_DISTRIB_DIR}; rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR})
+
+################################################################
+## SICER
+SICER_BASE_DIR=${APP_SRC_DIR}/sicer
+SICER_VERSION=1.1
+SICER_ARCHIVE=SICER_V${SICER_VERSION}.tgz
+SICER_URL=http://home.gwu.edu/~wpeng/${SICER_ARCHIVE}
+SICER_DISTRIB_DIR=${SICER_BASE_DIR}/SICER_V${SICER_VERSION}
+download_sicer:
+	@echo
+	@echo "Downloading SICER"
+	@mkdir -p ${SICER_BASE_DIR}
+	wget -nd  --directory-prefix ${SICER_BASE_DIR} -rNL ${SICER_URL}
+
+## This installation is VERY tricky. The user has to replace the
+## hard-coded path in 3 shell files
+install_sicer:
+	@echo
+	@echo "Installing SICER in dir	${SICER_DISTRIB_DIR}"
+	(cd ${SICER_BASE_DIR}; tar -xpzf ${SICER_ARCHIVE})
+	@echo ${SICER_DISTRIB_DIR}
+	@for f in SICER.sh SICER-rb.sh SICER-df.sh SICER-df-rb.sh; do \
+		${MAKE} _sicer_path_one_file SICER_FILE=$${f} ; \
+	done
+
+SICER_FILE=SICER.sh
+_sicer_path_one_file:
+	@if [ -f "${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}.ori" ] ; then \
+		echo "	backup copy already exists ${SICER_DISTRIB_DIR}/SICER//${SICER_FILE}.ori" ; \
+	else \
+		echo "	creating backup copy ${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}.ori" ; \
+		rsync -ruptl ${SICER_DISTRIB_DIR}/SICER/${SICER_FILE} ${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}.ori ; \
+	fi
+	@perl -pe 's|/home/data/SICER${SICER_VERSION}|${SICER_DISTRIB_DIR}|g' -i ${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}
+	@echo '	specified SICER path in	${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}'
