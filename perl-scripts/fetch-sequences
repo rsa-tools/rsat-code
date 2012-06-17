@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.16 2012/03/24 10:15:49 jvanheld Exp $
+# $Id: fetch-sequences,v 1.17 2012/06/17 11:13:46 jvanheld Exp $
 #
 ############################################################
 
@@ -212,7 +212,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -780,7 +780,7 @@ allows to use the command within a pipe.
 ## contain comments
 sub Verbose {
   print $log "; fetch-sequences ";
-  &PrintArguments($log);
+  &PrintArguments($log, 1);
   printf $log "; %-22s\t%s\n", "Program version", $program_version;
   printf $log "; %-22s\t%s\n", "Genome", $genome;
   printf $log "; %-22s\t%s\n", "DAS server URL", $das_server_url;
