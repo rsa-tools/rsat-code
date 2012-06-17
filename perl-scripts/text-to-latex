@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: text-to-latex,v 1.1 2011/03/29 23:24:10 jvanheld Exp $
+# $Id: text-to-latex,v 1.2 2012/06/17 11:16:02 jvanheld Exp $
 #
 ############################################################
 
@@ -65,7 +65,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -113,7 +113,10 @@ package main;
       next;
     }
 
-      ## Split the fields
+    ## Replace % by \%
+    s/%/\\%/;
+
+    ## Split the fields
     @fields = split($field_separator);
     $nb_fields = scalar(@fields);
     $in_table = 1;
@@ -325,7 +328,7 @@ sub Verbose {
 ## Open the latex table
 sub open_latex_table {
   my ($nb_fields) = @_;
-  &RSAT::message::Debug("Opening table with", $nb_fields, "fields") if ($main::verbose >= 0);
+  &RSAT::message::Info("Opening table with", $nb_fields, "fields") if ($main::verbose >= 3);
   print $out '\begin{table}[bt]', "\n";
   print $out '  \centering', "\n";
   print $out '  % \tableparts', "\n";
@@ -344,7 +347,7 @@ sub open_latex_table {
 ################################################################
 ## Close the latex table
 sub close_latex_table {
-  &RSAT::message::Debug("Closing table") if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Closing table") if ($main::verbose >= 2);
   print $out '\hline', "\n";
   print $out '        \end{tabular}', "\n";
   print $out '      \end{tiny}', "\n";
