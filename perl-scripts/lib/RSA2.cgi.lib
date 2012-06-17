@@ -1413,17 +1413,19 @@ sub PrintHtmlResultHeader {
 ################################################################
 #### Print a text table in html format
 ##
-## usage
-##   PrintHtmlTable(FILE_HANDLE,$mirror_file)
-## reads the content of FILEHANDLE and displays
-## it in the form of a HTML table.
+## Read the content of FILEHANDLE and display it in the form of a
+## HTML table.
+##
 ## if $mirror_file is specified, a copy of the input text (without HTML formatting)
 ## is saved on the hard drive
 ##
+## usage
+##   &PrintHtmlTable($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border, $autolink);
+##
 ## global variables
 ## ================
-## The fixed font type can be switched off
-## by specifiying a global variable
+## The fixed font type can be switched off by specifiying a global
+## variable
 ##       $font{variable} = 1;
 sub PrintHtmlTable {
   my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border, $autolink) = @_;
