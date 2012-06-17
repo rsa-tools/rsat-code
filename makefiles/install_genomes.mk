@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.45 2012/05/04 06:09:07 rsat Exp $
+# $Id: install_genomes.mk,v 1.46 2012/06/17 11:11:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -205,7 +205,8 @@ install_all_protozoa:
 		${MAKE} install_one_proto PROTO=$${proto} ;	\
 	done
 
-PROTO=Plasmodium_falciparum
+#PROTO=Plasmodium_falciparum
+PROTO=Dictyostelium_discoideum
 ### Install a single proto genome
 install_one_proto:
 	@echo
@@ -296,3 +297,5 @@ install_rat:
 
 install_human:
 	${MAKE} install_one_ref_eukaryote ORG=H_sapiens FULL_ORG=Homo_sapiens
+
+
