@@ -2481,9 +2481,9 @@ sub infer_operon {
     $query .= "'";
   }
 
-  open TMP_IN, ">/tmp/err.txt";
-  print TMP_IN join("\t", "HELLO", join(" ", %args)), "\n";
-  close TMP_IN;
+#   open TMP_IN, ">/tmp/err.txt";
+#   print TMP_IN join("\t", "HELLO", join(" ", %args)), "\n";
+#   close TMP_IN;
 
   my $command = "$SCRIPTS/infer-operon";
 
@@ -3184,7 +3184,8 @@ sub compare_classes {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  #creation d'un fichier temporaire qui sera integre dans la commande
+
+  ## Creation of a temporary file which will be integrated in the command
   if ($args{"ref_classes"}) {
     my $reference = $args{"ref_classes"};
     chomp $reference;
@@ -3193,7 +3194,8 @@ sub compare_classes {
     print TMP_IN $reference;
     close TMP_IN;
   }
-  #idem
+
+  ## idem for query classes
   if ($args{"query_classes"}) {
     my $query = $args{"query_classes"};
     chomp $query;
@@ -3202,6 +3204,8 @@ sub compare_classes {
     print TMP_IN $query;
     close TMP_IN;
   }
+
+  ## Idem for input classes
   if ($args{"input_classes"}) {
     my $input = $args{"input_classes"};
     chomp $input;
