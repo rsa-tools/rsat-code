@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.19 2011/09/21 23:19:16 jvanheld Exp $
+# $Id: convert-classes,v 1.20 2012/06/17 11:12:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -152,10 +152,10 @@ package main;
     ################################################################
     ## Check argument values
     if ($input_format eq 'rnsc' && !defined($main::infile{names})) { 
-	&RSAT::message::Warning(join ("\t", "No name file given for RNSC format input format"));
+	&RSAT::message::Warning("No name file given for RNSC format input format");
     }
     if ($input_format ne 'rnsc' && defined($main::infile{names})) { 
-	&RSAT::message::Warning(join ("\t", "Using -names option with format $input_format is useless"));
+	&RSAT::message::Warning("Using -names option with format $input_format is useless");
     }
 
     ################################################################
