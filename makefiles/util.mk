@@ -50,7 +50,7 @@ command_queue_torque:
 		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; \
 		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;	\
 		chmod u+x ${JOB_DIR}/$${job} ;	\
-		qsub -m a -q ${QUEUE} -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
+		qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -D ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
 	done
 
 ## Send a jobs to a cluster using the SGE queue management system
@@ -67,7 +67,7 @@ command_queue_sge:
 		echo "echo Job done" >> ${JOB_DIR}/$${job}; \
 		echo "date" >> ${JOB_DIR}/$${job}; \
 		chmod u+x ${JOB_DIR}/$${job} ;	\
-		qsub -m a -q ${QUEUE} -N $${job} -j y -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ; \
+		qsub -m a -q ${QUEUE} -N $${job} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ; \
 		rm $${job} ;\
 	done
 
