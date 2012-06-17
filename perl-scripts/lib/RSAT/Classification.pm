@@ -36,6 +36,7 @@ hierarchy is not treated in the current version.
 
 
 ################################################################
+
 =pod
 
 =item new()
@@ -52,6 +53,7 @@ sub new {
 
 
 ################################################################
+
 =pod
 
 =item B<read_from_file>
@@ -87,6 +89,7 @@ sub read_from_file {
 
 
 ################################################################
+
 =pod
 
 =item B<read_mcl>
@@ -121,6 +124,7 @@ sub read_mcl {
     }
 }
 ################################################################
+
 =pod
 
 =item B<read_mcode>
@@ -166,6 +170,7 @@ sub read_mcode {
   }
 }
 ################################################################
+
 =pod
 
 =item B<read_rnsc>
@@ -220,6 +225,7 @@ sub read_rnsc {
   }
 }
 ################################################################
+
 =pod
 
 =item B<read_tab>
@@ -342,6 +348,7 @@ sub read_tab {
 }
 
 ################################################################
+
 =pod
 
 =item B<read_profiles>
@@ -379,21 +386,23 @@ sub read_profiles {
 	&RSAT::message::TimeWarn("Reading classification from profile file", $input_file) if ($main::verbose >= 2);
     }
 
+
     ## Load the classification
     my $line = 0;
     my @class_names = ();
     while (<$in>) {
-	$line++;
-	next if (/^;/); ## Skip comment lines
-	next unless (/\S/); ## Skip empty lines
-	s/\r//; ## Replace DOS-specific carriage return characters by Unix carriage return
-	chomp(); ## Suppres carriage return
+      $line++;
+      next if (/^;/); ## Skip comment lines
+      next unless (/\S/); ## Skip empty lines
+      s/\r//; ## Replace DOS-specific carriage return characters by Unix carriage return
+      chomp(); ## Suppres carriage return
 
-	## Read class names from the header line, and create all the classes
-	unless ($got_header) {
-	  if (/^\#/) {
-	    $got_header = 1;
-	    @class_names = split /\t/;
+
+      ## Read class names from the header line, and create all the classes
+      unless ($got_header) {
+	if (/^\#/) {
+	  $got_header = 1;
+	  @class_names = split /\t/;
 	    shift @class_names;
 	    &RSAT::message::Debug("line", $line, "Header", "class names",join( "; ", @class_names)) if ($main::verbose >= 3);
 	    foreach my $c (0..$#class_names) {
@@ -457,6 +466,7 @@ sub read_profiles {
 
 
 ################################################################
+
 =pod
 
 =item B<read_ermg>
@@ -564,6 +574,7 @@ sub read_ermg {
 
 
 ################################################################
+
 =pod
 
 =item B<to_text>
@@ -591,6 +602,7 @@ sub to_text {
 }
 
 ################################################################
+
 =pod
 
 =item B<to_tab>
@@ -634,6 +646,7 @@ sub to_tab {
 }
 
 ################################################################
+
 =pod
 
 =item B<to_profiles>
@@ -697,6 +710,7 @@ sub to_profiles {
 }
 
 ################################################################
+
 =pod
 
 =item B<to_mcl>
