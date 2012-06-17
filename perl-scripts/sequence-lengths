@@ -74,7 +74,7 @@ if ($in_format eq "bed") {
 
 close $in if ($infile{input});
 
-print $out "$sum\n" if ($sum_only);
+printf $out "%7g\n", $sum if ($sum_only);
 
 
 ################################################################
