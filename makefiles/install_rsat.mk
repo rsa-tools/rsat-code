@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.66 2012/06/18 04:29:01 rsat Exp $
+# $Id: install_rsat.mk,v 1.67 2012/06/18 04:34:42 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -392,7 +392,7 @@ download_rnsc:
 install_rnsc:
 	@echo
 	@echo "Installing RNSC"
-	@mkdir -p ${BIN_DIR}
+	@${SUDO} mkdir -p ${BIN_DIR}
 	(cd ${RNSC_BASE_DIR}; make ; \
 	${SUDO} rsync -ruptvl rnsc ${BIN_DIR}; \
 	${SUDO} rsync -ruptvl rnscfilter ${BIN_DIR}; \
