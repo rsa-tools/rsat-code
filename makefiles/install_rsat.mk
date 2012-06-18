@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.63 2012/06/17 11:06:49 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.64 2012/06/18 03:05:37 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -682,6 +682,8 @@ download_sicer:
 	@echo "Downloading SICER"
 	@mkdir -p ${SICER_BASE_DIR}
 	wget -nd  --directory-prefix ${SICER_BASE_DIR} -rNL ${SICER_URL}
+	@echo "SICER requires python library Numpy	http://sourceforge.net/projects/numpy/files/NumPy/"
+	@echo "SICER requires python library Numpy	http://sourceforge.net/projects/numpy/files/NumPy/"
 
 ## This installation is VERY tricky. The user has to replace the
 ## hard-coded path in 3 shell files
@@ -704,3 +706,11 @@ _sicer_path_one_file:
 	fi
 	@perl -pe 's|/home/data/SICER${SICER_VERSION}|${SICER_DISTRIB_DIR}|g' -i ${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}
 	@echo '	specified SICER path in	${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}'
+
+## NUMPY requires two python libraries Numpy and Scipy
+## Info for nose (test library): http://nose.readthedocs.org/en/latest/
+## Info for NumPy and scipy: http://www.scipy.org/Installing_SciPy/Mac_OS_X
+numpy_and_scipy:
+	${SUDO} easy_install nose
+	${SUDO} easy_install numpy
+	${SUDO} easy_install scipy
