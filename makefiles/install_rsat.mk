@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.65 2012/06/18 03:19:03 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.66 2012/06/18 04:29:01 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -526,7 +526,7 @@ download_patser:
 install_patser:
 	@echo "Installing patser"
 	(cd ${PATSER_DIR}; rm *.o; make)
-	rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${BIN_DIR}
+	${SUDO} rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${BIN_DIR}
 #	(cd ${RSAT}/bin; ln -fs ${PATSER_APP} patser)
 	@echo "ls -ltr ${BIN_DIR}patser*"
 #	${MAKE} uncompress_program PROGRAM_DIR=${PATSER_DIR} PROGRAM=patser
@@ -633,7 +633,7 @@ install_tophat:
 MACS_BASE_DIR=${APP_SRC_DIR}/MACS
 MACS_VERSION=1.4.2
 MACS_ARCHIVE=MACS-${MACS_VERSION}.tar.gz
-MACS_URL=https://github.com/downloads/taoliu/MACS/
+MACS_URL=https://github.com/downloads/taoliu/MACS/${MACS_ARCHIVE}
 MACS_DISTRIB_DIR=${MACS_BASE_DIR}/MACS-${MACS_VERSION}
 download_macs:
 	@echo
@@ -661,14 +661,16 @@ download_peaksplitter:
 	(cd ${PEAKSPLITTER_BASE_DIR}; tar -xpzf ${PEAKSPLITTER_ARCHIVE})
 	@echo ${PEAKSPLITTER_DISTRIB_DIR}
 
+install_peaksplitter: install_peaksplitter_${OS}
+
 install_peaksplitter_macosx:
 	${MAKE} _install_peaksplitter OS=MacOS
 
-install_peaksplitter_linux64:
+install_peaksplitter_linux:
 	${MAKE} _install_peaksplitter OS=Linux64
 
 _install_peaksplitter:
-	(cd ${PEAKSPLITTER_DISTRIB_DIR}; rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR})
+	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR})
 
 ################################################################
 ## SICER
