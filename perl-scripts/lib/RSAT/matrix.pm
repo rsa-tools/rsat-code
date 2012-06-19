@@ -847,8 +847,7 @@ sub to_TRANSFAC {
 
       ## Print sequences
       my @site_ids = $self->get_attribute("site_ids");
-      &RSAT::message::Debug("Number of sequences included with the matrix", scalar (@site_ids)) if ($main::verbose >= 0);
-      
+      &RSAT::message::Debug("Number of sequences included with the matrix", scalar (@site_ids)) if ($main::verbose >= 10);
       my @site_seq = $self->get_attribute("sequences");
       foreach my $i (0..$#site_seq) {
 	## TRANSFAC biding site description
