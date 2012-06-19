@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.67 2012/06/18 04:34:42 rsat Exp $
+# $Id: install_rsat.mk,v 1.68 2012/06/19 05:51:37 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -102,7 +102,7 @@ install_one_perl_module:
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 ################################################################
-## Install Pytho 2.7 and some libraries required for Web services.  We
+## Install Python 2.7 and some libraries required for Web services.  We
 ## intently chose version 2.7 (and not version 3.x) because some modules are
 ## not working with version 3.x.
 PYTHON_INSTALL_DIR=${RSAT}/python_install
