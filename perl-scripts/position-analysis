@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.64 2012/05/20 23:20:51 jvanheld Exp $
+# $Id: position-analysis,v 1.65 2012/06/19 05:51:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -26,7 +26,7 @@ $group_rc = 0;
 $img_format = $ENV{rsat_img_format} || "png";
 $XYgraph_command = "$SCRIPTS/XYgraph";
 $log_base = log(10);
-$MAX_SIG = 300; ## Value to be displayed for the significance when the P-value is lower than precision limit (thus, P-val = 0)
+$max_sig = 300; ## Value to be displayed for the significance when the P-value is lower than precision limit (thus, P-val = 0)
 
 ## Origin and offset
 $origin = "start";
@@ -637,7 +637,7 @@ sub CalcChi {
     if ($pattern{$oligo_seq}->{Pval} <= 0) {
       $pattern{$oligo_seq}->{Pval} = 0;	## Lower boundary for the computation of P-values with the CDF library
       $pattern{$oligo_seq}->{Eval} = 0;
-      $pattern{$oligo_seq}->{sig} = $MAX_SIG;
+      $pattern{$oligo_seq}->{sig} = $max_sig;
     } else {
       $pattern{$oligo_seq}->{Eval} = $pattern{$oligo_seq}->{Pval}*$nb_tests;
       $pattern{$oligo_seq}->{sig} = sprintf ("%.2f", -log($pattern{$oligo_seq}->{Eval})/$log_base);
@@ -946,8 +946,8 @@ position-analysis options
 -h		display complete help message
 -help		display this list of options
 -i		input file
--seqtype       sequence type (dna|any)
--last #	      Stop after # sequences (for quick testing)
+-seqtype        sequence type (dna|any)
+-last #	        Stop after # sequences (for quick testing)
 -mask upper|lower	mask upper- or lowercases, respectively
 -format		input sequence format
 -o 		output file
