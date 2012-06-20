@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.68 2012/06/19 05:51:37 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.69 2012/06/20 23:06:00 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -67,6 +67,7 @@ PERL_MODULES= \
 	Class::Std::Fast  \
 	GD \
 	XML::LibXML \
+	XML::Compile \
 	XML::Compile::Cache \
 	XML::Compile::SOAP11 \
 	XML::Compile::WSDL11 \
