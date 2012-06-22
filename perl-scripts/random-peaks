@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-peaks,v 1.6 2012/02/15 05:09:40 jvanheld Exp $
+# $Id: random-peaks,v 1.7 2012/06/22 23:19:28 jvanheld Exp $
 #
 ############################################################
 
@@ -152,7 +152,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -238,7 +238,7 @@ package main;
 
   ## Peak file is mandatory
   &RSAT::error::FatalError("Peak file is mandatory (option -i)")
-    unless (($infile{peak_seq}) || ($infile{peak_bed));
+    unless (($infile{peak_seq}) || ($infile{peak_bed}));
 
   ## Output prefix is mandatory
   &RSAT::error::FatalError("Output prefix is mandatory (option -o)")
