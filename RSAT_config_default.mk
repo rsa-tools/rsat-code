@@ -20,6 +20,10 @@ BIN_DIR=/usr/local/bin
 ## Main directory for software installation
 SOFT_DIR=${PWD}
 
+## Directory to store the downloaded software (sources, before compilation)
+SRC_DIR=${PWD}/src
+
+
 ################################################################
 ##
 ## Configuration of a PC cluster

@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.1 2012/06/22 22:34:26 rsat Exp $
+# $Id: install_software.mk,v 1.2 2012/06/23 05:09:39 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -14,6 +14,7 @@
 
 include makefiles/util.mk
 MAKEFILE=${PWD}/makefiles/install_software.mk
+MAKE=make -f ${MAKEFILE}
 V=1
 
 #################################################################
@@ -23,13 +24,17 @@ WGET = wget -np -rNL
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
-SRC_DIR=${PWD}/src
 
 ################################################################
 ## Install the software tools.
-INSTALL_TASKS=`${MAKE} | grep '^install'`
+INSTALL_TASKS=`${MAKE} | grep 'install_'  | grep -v install_bioinfo_software`
+list_bioinfo_software:
+	@echo "Supported installation tasks"
+	@echo ${INSTALL_TASKS} | perl -pe 's|\s|\n|g'
+
 install_bioinfo_software:
 	@for task in ${INSTALL_TASKS}; do \
+		echo "Installation task	$${task}" ; \
 		${MAKE} $${task} ; \
 	done
 
@@ -96,6 +101,7 @@ _download_python:
 	(mkdir -p ${PYTHON_COMPILE_DIR}; cd ${PYTHON_COMPILE_DIR}; wget -NL http://www.python.org/ftp/python/2.7/Python-2.7.tgz; tar -xpzf Python-2.7.tgz)
 
 _compile_python:
+	@echo "Compiling python2.7"
 	(cd ${PYTHON_COMPILE_DIR}/Python-2.7; ./configure; make; ${SUDO} make install)
 
 
