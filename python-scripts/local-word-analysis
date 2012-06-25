@@ -34,6 +34,7 @@ ARGUMENTS
         --dyad                count dyads instead of oligomers                              
         --spacing=A:B         when using dyads set the spacing between A to B
                               EXAMPLE: --length=3 --dyad --spacing=1:20
+        --under               use under-represented words statistics
         -s #, --strand=#      search in forward strand + or in both strands +- (default)
                               EXAMPLE: --strand=+
         -p, --overlap         allow overlapping oligomer occurrences
@@ -212,6 +213,7 @@ parser.add_option("-o", "--output",   action="store",      dest="output",       
 parser.add_option("-s", "--strand",   choices=['+', '+-'], dest="strand",            default='+-')
 parser.add_option("-p", "--overlap",  action="store_true", dest="overlap",           default=False)
 parser.add_option("--dyad",           action="store_true", dest="dyad",              default=False)
+parser.add_option("--under",          action="store_true", dest="under",              default=False)
 parser.add_option("--spacing",        action="store",      dest="spacing",       type="string", default='1:1')
 parser.add_option("-m", "--markov",   action="store",      dest="markov",        type="int", metavar="ORDER", default=None)
 parser.add_option("--bgfile",         action="store",      dest="bgfile",        type="string", default=None)
@@ -354,7 +356,8 @@ def main(args, options):
               'window' : options.window,
               'window_group' : options.window_group,
               'dyad' : options.dyad,
-              'center' : options.center
+              'center' : options.center,
+              'under' : options.under
               }
     params.update(thresholds)
 

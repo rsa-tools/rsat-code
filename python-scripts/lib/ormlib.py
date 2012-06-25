@@ -25,7 +25,7 @@ import dna
 import markov
 import ST
 from dna import reverse_complement, find_location
-from dist import pbinom, ppois, pbinom_right_left
+from dist import pbinom, ppois, pbinom_right_left, pbinom_left
 from tab import load_oligo_file
 
 def list_unique(seq):
@@ -300,7 +300,10 @@ class Extractor:
         #pv = ppois(obsOcc, expOcc)
         #pv = ppois_cached(obsOcc, expOcc)
         #pv = pbinom_right_left_cached(obsOcc, n, expFreq)
-        pv = pbinom(obsOcc, n, expFreq)
+        if self.params['under']:
+            pv = pbinom_left(obsOcc, n, expFreq)
+        else:
+            pv = pbinom(obsOcc, n, expFreq)
 
         ev = 1.0
         label = '%s|%s' % (self.w, reverse_complement(self.w))
