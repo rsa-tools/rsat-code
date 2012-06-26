@@ -118,7 +118,7 @@ STATISTICS
 
 '''        
 
-VERSION = '20101020'
+VERSION = '20120626'
 USAGE = '''local-word-analysis -l OLIGOMER_LENGTH [-i inputfile]
                 [-o outputfile] 
                 [--max parameter #][--min parameter #]
