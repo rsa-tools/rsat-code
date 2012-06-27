@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.2 2012/06/23 05:09:39 jvanheld Exp $
+# $Id: install_software.mk,v 1.3 2012/06/27 13:26:59 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -13,7 +13,7 @@
 ## the users.
 
 include makefiles/util.mk
-MAKEFILE=${PWD}/makefiles/install_software.mk
+MAKEFILE=makefiles/install_software.mk
 MAKE=make -f ${MAKEFILE}
 V=1
 
@@ -250,7 +250,7 @@ _compile_meme:
 	@echo
 	@echo "Installing MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
 	@mkdir -p ${MEME_INSTALL_DIR}
-	@(cd ${MEME_INSTALL_DIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
+	(cd ${MEME_INSTALL_DIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
 	(cd ${MEME_INSTALL_DIR}; ./configure --prefix=${MEME_INSTALL_DIR} --with-url="http://localhost/meme")
 	(cd ${MEME_INSTALL_DIR}; make clean; make ; make test; ${SUDO} make install)
 	@cd ${SOFT_DIR}; rm -f meme; ln -s meme_${MEME_VERSION} meme
@@ -613,3 +613,37 @@ numpy_and_scipy:
 	${SUDO} easy_install nose
 	${SUDO} easy_install numpy
 	${SUDO} easy_install scipy
+
+################################################################
+## SISSRS, peak-calling program. 
+## References: 
+##  Genome-wide identification of in vivo protein-DNA binding sites from ChIP-Seq data
+##    Raja Jothi, Suresh Cuddapah, Artem Barski, Kairong Cui, Keji Zhao.
+##    Nucleic Acids Research, 36(16):5221-31, 2008. [Pubmed] [PDF] [Text] [Download Sissrs]
+##
+##  ChIP-Seq data analysis: identification of protein-DNA binding sites with Sissrs peak-finder
+##    Leelavati Narlikar, Raja Jothi.
+##    Methods in Molecular Biology, 802:305-22, 2012. [Pubmed] [PDF]
+SISSRS_BASE_DIR=${SRC_DIR}/SISSRS
+SISSRS_VERSION=1.4
+SISSRS_ARCHIVE=sissrs_v${SISSRS_VERSION}.tar.gz
+SISSRS_URL=http://dir.nhlbi.nih.gov/papers/lmi/epigenomes/sissrs/${SISSRS_ARCHIVE}
+install_sissrs: _download_sissrs _link_sissrs
+
+_download_sissrs:
+	@echo
+	@echo "Downloading SISSRS"
+	@mkdir -p ${SISSRS_BASE_DIR}
+	wget -nd  --directory-prefix ${SISSRS_BASE_DIR} -rNL ${SISSRS_URL}
+
+
+
+## This installation is VERY tricky. The user has to replace the
+## hard-coded path in 3 shell files
+_link_sissrs:
+	@echo
+	@echo "Installing SISSRS in dir	${SISSRS_BASE_DIR}"
+	(cd ${SISSRS_BASE_DIR}; tar -xpzf ${SISSRS_ARCHIVE})
+	@echo ${SISSRS_BASE_DIR}
+	@echo "Linking sissrs in binary dir ${BIN_DIR}"
+	(cd ${BIN_DIR}; ln -fs ${SISSRS_BASE_DIR}/sissrs.pl sissrs)
