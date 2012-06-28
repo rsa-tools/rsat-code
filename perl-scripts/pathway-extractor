@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.33 2012/04/11 14:38:12 rsat Exp $
+# $Id: pathway-extractor,v 1.34 2012/06/28 09:41:29 rsat Exp $
 #
 ############################################################
 
@@ -255,7 +255,7 @@ package main;
   $infile{gnn} =""; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
   $infile{nnn}=""; 
   $infile{graph}="";		# File containing the graph
-
+  our $process="";
   our $graph = "";		# Graph Name
   our $group_descriptor= ""; # Unique name to differenciate output files
 
@@ -277,6 +277,15 @@ package main;
   }
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
   my $output = &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$directed,$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
+  if ($process){
+    &RSAT::message::TimeWarn("processing files:Start") if ($verbose >= 2); 
+   &RSAT::PathwayExtraction::ProcessOutputFiles(
+      $output,
+      $dir{output},
+      $infile{gnn},
+      $infile{nnn},$directed,$verbose);
+  &RSAT::message::TimeWarn("processing files:End") if ($verbose >= 2); 
+  }
   print $out "OUTPUTFILE = $output\n";
 }
 
@@ -370,6 +379,16 @@ execute gwenview to display the pathway results in png format
 =cut
     } elsif ($arg eq "-show") {
      $show = 1;
+=pod
+
+=item B<-process>
+
+Process the ouput to generate a dot file and a png file 
+
+=cut
+    } elsif ($arg eq "-process") {
+     $process = 1;
+
 
 =pod
 
