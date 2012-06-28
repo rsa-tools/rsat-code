@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.34 2012/06/28 09:41:29 rsat Exp $
+# $Id: pathway-extractor,v 1.35 2012/06/28 09:51:37 rsat Exp $
 #
 ############################################################
 
@@ -277,16 +277,17 @@ package main;
   }
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
   my $output = &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$directed,$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
-  if ($process){
+   print $out "OUTPUTFILE = $output\n";
+  if ($process && -e $output){
     &RSAT::message::TimeWarn("processing files:Start") if ($verbose >= 2); 
-   &RSAT::PathwayExtraction::ProcessOutputFiles(
+    &RSAT::PathwayExtraction::ProcessOutputFiles(
       $output,
       $dir{output},
       $infile{gnn},
       $infile{nnn},$directed,$verbose);
-  &RSAT::message::TimeWarn("processing files:End") if ($verbose >= 2); 
+    &RSAT::message::TimeWarn("processing files:End") if ($verbose >= 2); 
   }
-  print $out "OUTPUTFILE = $output\n";
+ 
 }
 
 
