@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.13 2012/06/15 14:14:03 rsat Exp $
+# $Id: pathways-from-clusters,v 1.14 2012/06/28 09:41:29 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input files
@@ -210,6 +210,8 @@ unless (defined($infile{nnn})) {
       $pathway_extractor_cmd .= " -nnn ".$main::infile{nnn};
       $pathway_extractor_cmd .= " -C -d -F 7 -T pathsUnion ";
       $pathway_extractor_cmd .= " -o ".$main::dir{output};
+      $pathway_extractor_cmd .= " -process";
+      
       ## TO DO WITH DIDIER: redirect STDER from pathway-extractor to a
       ## log file in the output directory.
 
