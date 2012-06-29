@@ -27,7 +27,7 @@ meme_dir=/Tools/meme
 
 # Clustal executable name. If executable path is not in the PATH,
 # a full path to the clustalW executable file must be provided.
-clustalw_command=/home/s.pinelli/Tools/clustalw2/clustalw2
+clustalw_command=/home/spinelli/Tools/clustalw2/clustalw2
 
 # Name of the MAFFT script or executable file. If the MAFFT bin directory is not in the PATH,
 # a full path must be provided. Default value for this option is 'mafft --auto'
