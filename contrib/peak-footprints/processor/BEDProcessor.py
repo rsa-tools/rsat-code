@@ -80,10 +80,10 @@ class BEDProcessor( Processor):
         species = self.getParameter( BEDProcessor.REFERENCE_SPECIES_PARAM)
         peak_filepath = self.getParameter( BEDProcessor.INPUT_PEAK_FILE, False)
         peak_number = self.getParameterAsint( BEDProcessor.PEAK_NUMBER, False)
-        extension_5p = self.getParaleterAsint( BEDProcessor.EXTENSION_5P, False)
+        extension_5p = self.getParameterAsint( BEDProcessor.EXTENSION_5P, False)
         if extension_5p == None:
             extension_5P = 0
-        extension_3p = self.getParaleterAsint( BEDProcessor.EXTENSION_3P, False)
+        extension_3p = self.getParameterAsint( BEDProcessor.EXTENSION_3P, False)
         if extension_3p == None:
             extension_3P = 0
         
