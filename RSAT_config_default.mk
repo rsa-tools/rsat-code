@@ -21,8 +21,7 @@ BIN_DIR=/usr/local/bin
 SOFT_DIR=${PWD}
 
 ## Directory to store the downloaded software (sources, before compilation)
-SRC_DIR=${PWD}/src
-
+SRC_DIR=${SOFT_DIR}/src
 
 ################################################################
 ##
