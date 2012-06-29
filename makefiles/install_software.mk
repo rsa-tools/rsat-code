@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.4 2012/06/29 22:16:17 jvanheld Exp $
+# $Id: install_software.mk,v 1.5 2012/06/29 23:14:04 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -218,7 +218,7 @@ _compile_bedtools:
 	@echo "Installing bedtools from ${BED_SRC_DIR}"
 	@echo
 	@mkdir -p ${BED_SRC_DIR}
-	(cd ${BED_SRC_DIR}; make clean; make; make test; ${SUDO} make install)
+	(cd ${BED_SRC_DIR}; make clean; make)
 
 _install_bedtools:
 	@echo
@@ -565,7 +565,7 @@ __compile_peaksplitter:
 	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR})
 
 ################################################################
-## SICER
+## SICER (peak calling for large regions e.g. methylation)
 SICER_BASE_DIR=${SRC_DIR}/sicer
 SICER_VERSION=1.1
 SICER_ARCHIVE=SICER_V${SICER_VERSION}.tgz
@@ -647,3 +647,37 @@ _link_sissrs:
 	@echo ${SISSRS_BASE_DIR}
 	@echo "Linking sissrs in binary dir ${BIN_DIR}"
 	(cd ${BIN_DIR}; ln -fs ${SISSRS_BASE_DIR}/sissrs.pl sissrs)
+
+
+################################################################
+## Install bfast
+## 
+## Prerequisites
+## 
+## BFAST requires the following packages to be installed: 
+## - automake (part of GNU autotools) 
+## - zlib-dev (ZLIB developer’s libraray)
+## - libbz2-dev (BZIP2 developer’s library)
+##
+## The BZIP2 developer’s library may optionally not be installed, but
+## the --disable-bz2 option must be used when running the configure
+## script (see the next section).
+BFAST_BASE_DIR=${SRC_DIR}/bfast
+BFAST_VERSION=0.7.0
+BFAST_ARCHIVE=bfast-${BFAST_VERSION}a.tar.gz
+BFAST_URL=http://sourceforge.net/projects/bfast/files/bfast/${BFAST_VERSION}/${BFAST_ARCHIVE}
+BFAST_DISTRIB_DIR=${BFAST_BASE_DIR}/bfast-${BFAST_VERSION}a
+install_bfast: _download_bfast _compile_bfast 
+
+_download_bfast:
+	@echo
+	@echo "Downloading BFAST"
+	@mkdir -p ${BFAST_BASE_DIR}
+	wget -nd  --directory-prefix ${BFAST_BASE_DIR} -rNL ${BFAST_URL}
+
+_compile_bfast:
+	@echo
+	@echo "Installing BFAST in dir	${BFAST_DISTRIB_DIR}"
+	(cd ${BFAST_BASE_DIR}; tar -xpzf ${BFAST_ARCHIVE})
+	@echo ${BFAST_DISTRIB_DIR}
+	(cd  ${BFAST_DISTRIB_DIR}; ./configure  --prefix=${BIN_DIR}; make ; make check; ${SUDO} make install)
