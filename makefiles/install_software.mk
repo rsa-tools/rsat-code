@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.3 2012/06/27 13:26:59 jvanheld Exp $
+# $Id: install_software.mk,v 1.4 2012/06/29 22:16:17 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -28,11 +28,11 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ################################################################
 ## Install the software tools.
 INSTALL_TASKS=`${MAKE} | grep 'install_'  | grep -v install_bioinfo_software`
-list_bioinfo_software:
+list_install_targets:
 	@echo "Supported installation tasks"
 	@echo ${INSTALL_TASKS} | perl -pe 's|\s|\n|g'
 
-install_bioinfo_software:
+install_all:
 	@for task in ${INSTALL_TASKS}; do \
 		echo "Installation task	$${task}" ; \
 		${MAKE} $${task} ; \
