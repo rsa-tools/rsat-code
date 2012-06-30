@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.12 2012/06/30 07:01:07 rsat Exp $
+# $Id: install_software.mk,v 1.13 2012/06/30 08:30:58 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -84,7 +84,6 @@ _compile_perl_modules:
 PERL_MODULE=PostScript::Simple
 #PERL=`which perl`
 PERL='/usr/bin/perl'
-SUDO=sudo
 _compile_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
