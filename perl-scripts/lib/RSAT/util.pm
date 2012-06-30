@@ -784,7 +784,10 @@ sub make_temp_file {
   } else {
     $tmp_prefix = 'tmp';
   }
-  $tmp_dir = $main::TMP unless ($tmp_dir);
+
+  unless ($tmp_dir) {
+    $tmp_dir = $main::TMP;
+  }
   &CheckOutDir($tmp_dir);
 
   ## Add date if required
@@ -798,7 +801,6 @@ sub make_temp_file {
   my $temp_file = `$mktmp_cmd`;
   chomp($temp_file);
 
-
   ## Ensure that everyone can read the temporary file
   system("chmod a+r $temp_file");
 
@@ -808,7 +810,6 @@ sub make_temp_file {
 # 			"\n\tprefix_dir=".$prefix_dir,
 # 			"\n\ttemp_file=".$temp_file,
 # 		       ) if ($main::verbose >= 10);
-
   return ($temp_file);
 }
 
