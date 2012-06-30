@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.11 2012/06/30 06:59:16 jvanheld Exp $
+# $Id: install_software.mk,v 1.12 2012/06/30 07:01:07 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -765,7 +765,7 @@ _download_swembl:
 _compile_swembl:
 	@echo
 	@echo "Installing SWEMBL in dir	${SWEMBL_DISTRIB_DIR}"
-	(cd ${SWEMBL_BASE_DIR}; tar -xpzf ${SWEMBL_ARCHIVE})
+	(cd ${SWEMBL_BASE_DIR}; tar --bzip2 -xpf ${SWEMBL_ARCHIVE})
 	@echo ${SWEMBL_DISTRIB_DIR}
 	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${BIN_DIR})
 
