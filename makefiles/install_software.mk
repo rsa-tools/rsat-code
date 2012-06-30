@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.14 2012/06/30 08:43:22 rsat Exp $
+# $Id: install_software.mk,v 1.15 2012/06/30 19:38:48 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -745,6 +745,28 @@ _compile_ceas:
 
 
 
+################################################################
+## Install  SAMTOOLS
+SAMTOOLS_BASE_DIR=${SRC_DIR}/samtools
+SAMTOOLS_VERSION=0.1.18
+SAMTOOLS_ARCHIVE=samtools-${SAMTOOLS_VERSION}.tar.bz2
+SAMTOOLS_URL=http://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}
+SAMTOOLS_DISTRIB_DIR=${SAMTOOLS_BASE_DIR}/samtools-${SAMTOOLS_VERSION}
+install_samtools: _download_samtools _compile_samtools 
+
+_download_samtools:
+	@echo
+	@echo "Downloading SAMTOOLS"
+	@mkdir -p ${SAMTOOLS_BASE_DIR}
+	wget -nd  --directory-prefix ${SAMTOOLS_BASE_DIR} -rNL ${SAMTOOLS_URL}
+
+_compile_samtools:
+	@echo
+	@echo "Installing SAMTOOLS in dir	${SAMTOOLS_DISTRIB_DIR}"
+	(cd ${SAMTOOLS_BASE_DIR}; tar --bzip2 -xpf ${SAMTOOLS_ARCHIVE})
+	@echo ${SAMTOOLS_DISTRIB_DIR}
+	(cd ${SAMTOOLS_DISTRIB_DIR}; make)
+	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
 
 ################################################################
 ## Install  SWEMBL
@@ -770,3 +792,15 @@ _compile_swembl:
 
 
 
+################################################################
+## Internet Genome Browser
+UGB_VERSION=5GB
+IGB_URL=http://bioviz.org/igb/releases/current/igb-${IGB_VERSION}.jnlp
+IGB_BASE_DIR=${SRC_DIR}/IGB
+install_igb: _download_igb
+
+_download_igb:
+	@echo
+	@echo "Downloading IGB"
+	@mkdir -p ${IGB_BASE_DIR}
+	wget -nd  --directory-prefix ${IGB_BASE_DIR} -rNL ${IGB_URL}
