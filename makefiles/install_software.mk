@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.15 2012/06/30 19:38:48 jvanheld Exp $
+# $Id: install_software.mk,v 1.16 2012/06/30 19:39:22 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -37,6 +37,11 @@ all_installations:
 		echo "Installation task	$${task}" ; \
 		${MAKE} $${task} ; \
 	done
+
+list_versions:
+	@echo
+	@echo "Software versions"
+	@grep '_VERSION=' ${MAKEFILE} | grep -v '^#'
 
 ################################################################
 ## Install perl modules
