@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.9 2012/06/30 06:46:11 rsat Exp $
+# $Id: install_software.mk,v 1.10 2012/06/30 06:53:14 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -719,4 +719,27 @@ _compile_bowtie_os:
 	@echo "Installing BOWTIE in dir	${BOWTIE_DISTRIB_DIR}"
 	(cd ${BOWTIE_BASE_DIR}; unzip ${BOWTIE_ARCHIVE})
 	@echo ${BOWTIE_DISTRIB_DIR}
-	sudo find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+	${SUDO} find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+
+################################################################
+## Install  Cis-regulatory Element Annotation System  (CEAS)
+CEAS_BASE_DIR=${SRC_DIR}/CEAS
+CEAS_VERSION=1.0.2
+CEAS_ARCHIVE=CEAS-Package-${CEAS_VERSION}.tar.gz
+CEAS_URL=http://liulab.dfci.harvard.edu/CEAS/src/${CEAS_ARCHIVE}
+CEAS_DISTRIB_DIR=${CEAS_BASE_DIR}/CEAS-Package-${CEAS_VERSION}
+install_ceas: _download_ceas _compile_ceas 
+
+_download_ceas:
+	@echo
+	@echo "Downloading CEAS"
+	@mkdir -p ${CEAS_BASE_DIR}
+	wget -nd  --directory-prefix ${CEAS_BASE_DIR} -rNL ${CEAS_URL}
+
+_compile_ceas:
+	@echo
+	@echo "Installing CEAS in dir	${CEAS_DISTRIB_DIR}"
+	(cd ${CEAS_BASE_DIR}; tar -xpzf ${CEAS_ARCHIVE})
+	@echo ${CEAS_DISTRIB_DIR}
+	@chmod a+x ${CEAS_DISTRIB_DIR}/bin/*
+	${SUDO} rsync -ruptvl ${CEAS_DISTRIB_DIR}/bin/* ${BIN_DIR}
