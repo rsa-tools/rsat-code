@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.16 2012/06/30 19:39:22 rsat Exp $
+# $Id: install_software.mk,v 1.17 2012/06/30 19:54:18 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -38,10 +38,11 @@ all_installations:
 		${MAKE} $${task} ; \
 	done
 
+VERSIONS=`grep '_VERSION=' ${MAKEFILE} | grep -v '^\#' | perl -pe 's|_VERSION=|\t|'`
 list_versions:
 	@echo
 	@echo "Software versions"
-	@grep '_VERSION=' ${MAKEFILE} | grep -v '^#'
+	@echo "${VERSIONS}"
 
 ################################################################
 ## Install perl modules
@@ -799,7 +800,7 @@ _compile_swembl:
 
 ################################################################
 ## Internet Genome Browser
-UGB_VERSION=5GB
+IGB_VERSION=5GB
 IGB_URL=http://bioviz.org/igb/releases/current/igb-${IGB_VERSION}.jnlp
 IGB_BASE_DIR=${SRC_DIR}/IGB
 install_igb: _download_igb
