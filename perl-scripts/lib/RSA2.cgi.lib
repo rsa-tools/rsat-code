@@ -70,7 +70,6 @@ sub LoadGetOrthoDefault {
 ## - reference taxon
 sub PrintOrthoSelectionSection {
 
-
   ################################################################
   ## List of organisms for which ortholog search is supported.
   ##
@@ -2298,10 +2297,10 @@ sub MatrixFromPatterns_run {
   ## Run the command
   system "$pssm_command";
   print "<PRE>command to generate matrices (PSSM): ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-  push @result_files, ('significance matrices', $sig_matrix_file);
-  #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
-  push @result_files, ('final matrices (tranfac format)', $pssm_file_tf);
-  push @result_files, ('final matrices (tab format)', $pssm_file_tab);
+  push @result_files, ('significance matrices', $TMP."/".$sig_matrix_file);
+  #  push @result_files, ('info-gibbs matrices', $TMP."/".$gibbs_matrix_file);
+  push @result_files, ('final matrices (transfac format)', $TMP."/".$pssm_file_tf);
+  push @result_files, ('final matrices (tab format)', $TMP."/".$pssm_file_tab);
 
   my ($out_matrix_file) = &display_matrices_web($TMP."/".$pssm_file_tab, "tab", 1);
 }
@@ -2487,8 +2486,9 @@ sub PrintURLTable {
   print "<th>URL</th></tr>";
   while (my $type = shift @files) {
     my $file = shift @files;
-    $file = &ShortFileName($file);
-    my $result_URL = $ENV{rsat_www}."/tmp/".$file;
+#    $file = &ShortFileName($file);
+    my $result_URL = $ENV{rsat_www}."/tmp/";
+    $result_URL .= &RSAT::util::RelativePath($TMP, $file);
     print ("<tr>","<td>".$type."</td>","<td>","<a href='".$result_URL."'>".$result_URL."</a>","</td>","</tr>");
   }
   print "</table>";
