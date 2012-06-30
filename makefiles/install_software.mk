@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.5 2012/06/29 23:14:04 jvanheld Exp $
+# $Id: install_software.mk,v 1.6 2012/06/30 05:27:41 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -681,3 +681,35 @@ _compile_bfast:
 	(cd ${BFAST_BASE_DIR}; tar -xpzf ${BFAST_ARCHIVE})
 	@echo ${BFAST_DISTRIB_DIR}
 	(cd  ${BFAST_DISTRIB_DIR}; ./configure  --prefix=${BIN_DIR}; make ; make check; ${SUDO} make install)
+
+
+################################################################
+## Install bowtie, read-mapping program
+BOWTIE_BASE_DIR=${SRC_DIR}/bowtie
+BOWTIE_VERSION=2.0.0-beta6
+BOWTIE_ARCHIVE=bowtie-${BOWTIE_VERSION}a.tar.gz
+BOWTIE_URL=http://sourceforge.net/projects/bowtie-bio/files/bowtie2/${BOWTIE_VERSION}/bowtie2-${BOWTIE_VERSION}-${OS}.zip
+BOWTIE_DISTRIB_DIR=${BOWTIE_BASE_DIR}/bowtie-${BOWTIE_VERSION}a
+install_bowtie: _download_bowtie _compile_bowtie 
+
+_download_bowtie: _download_bowtie_${OS}
+
+_download_bowtie_macosx:
+	${MAKE} _download_bowtie_os OS=macos-x86_64
+
+_download_bowtie_linux:
+	${MAKE} _download_bowtie_os OS=linux-x86_64
+
+_download_bowtie_os:
+	@echo
+	@echo "Downloading BOWTIE"
+	@mkdir -p ${BOWTIE_BASE_DIR}
+	wget -nd  --directory-prefix ${BOWTIE_BASE_DIR} -rNL ${BOWTIE_URL}
+
+_compile_bowtie:
+	@echo
+	@echo "Installing BOWTIE in dir	${BOWTIE_DISTRIB_DIR}"
+	(cd ${BOWTIE_BASE_DIR}; tar -xpzf ${BOWTIE_ARCHIVE})
+	@echo ${BOWTIE_DISTRIB_DIR}
+	(cd  ${BOWTIE_DISTRIB_DIR}; ./configure  --prefix=${BIN_DIR}; make ; make check; ${SUDO} make install)
+
