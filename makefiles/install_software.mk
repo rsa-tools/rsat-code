@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.10 2012/06/30 06:53:14 jvanheld Exp $
+# $Id: install_software.mk,v 1.11 2012/06/30 06:59:16 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -743,3 +743,31 @@ _compile_ceas:
 	@echo ${CEAS_DISTRIB_DIR}
 	@chmod a+x ${CEAS_DISTRIB_DIR}/bin/*
 	${SUDO} rsync -ruptvl ${CEAS_DISTRIB_DIR}/bin/* ${BIN_DIR}
+
+
+
+
+################################################################
+## Install  SWEMBL
+SWEMBL_BASE_DIR=${SRC_DIR}/SWEMBL
+SWEMBL_VERSION=3.3.1
+SWEMBL_ARCHIVE=SWEMBL.${SWEMBL_VERSION}.tar.bz2
+SWEMBL_URL=http://www.ebi.ac.uk/~swilder/SWEMBL/${SWEMBL_ARCHIVE}
+SWEMBL_DISTRIB_DIR=${SWEMBL_BASE_DIR}/SWEMBL.${SWEMBL_VERSION}
+install_swembl: _download_swembl _compile_swembl 
+
+_download_swembl:
+	@echo
+	@echo "Downloading SWEMBL"
+	@mkdir -p ${SWEMBL_BASE_DIR}
+	wget -nd  --directory-prefix ${SWEMBL_BASE_DIR} -rNL ${SWEMBL_URL}
+
+_compile_swembl:
+	@echo
+	@echo "Installing SWEMBL in dir	${SWEMBL_DISTRIB_DIR}"
+	(cd ${SWEMBL_BASE_DIR}; tar -xpzf ${SWEMBL_ARCHIVE})
+	@echo ${SWEMBL_DISTRIB_DIR}
+	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${BIN_DIR})
+
+
+
