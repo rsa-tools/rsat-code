@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.8 2012/06/30 06:42:01 jvanheld Exp $
+# $Id: install_software.mk,v 1.9 2012/06/30 06:46:11 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -719,4 +719,4 @@ _compile_bowtie_os:
 	@echo "Installing BOWTIE in dir	${BOWTIE_DISTRIB_DIR}"
 	(cd ${BOWTIE_BASE_DIR}; unzip ${BOWTIE_ARCHIVE})
 	@echo ${BOWTIE_DISTRIB_DIR}
-	sudo find  ${BOWTIE_DISTRIB_DIR} -perm 755 -type f -depth 1 -exec rsync -uptvL {} ${BIN_DIR} \;
+	sudo find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
