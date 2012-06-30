@@ -11,6 +11,9 @@
 OS=linux
 ARCHITECTURE=x64
 
+## sudo command is required for installing some software
+SUDO=sudo
+
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
 
