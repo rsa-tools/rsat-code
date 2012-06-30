@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.6 2012/06/30 05:27:41 jvanheld Exp $
+# $Id: install_software.mk,v 1.7 2012/06/30 05:29:26 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -680,8 +680,7 @@ _compile_bfast:
 	@echo "Installing BFAST in dir	${BFAST_DISTRIB_DIR}"
 	(cd ${BFAST_BASE_DIR}; tar -xpzf ${BFAST_ARCHIVE})
 	@echo ${BFAST_DISTRIB_DIR}
-	(cd  ${BFAST_DISTRIB_DIR}; ./configure  --prefix=${BIN_DIR}; make ; make check; ${SUDO} make install)
-
+	(cd  ${BFAST_DISTRIB_DIR}; ./configure ; make; make check; ${SUDO} make install)
 
 ################################################################
 ## Install bowtie, read-mapping program
@@ -712,4 +711,3 @@ _compile_bowtie:
 	(cd ${BOWTIE_BASE_DIR}; tar -xpzf ${BOWTIE_ARCHIVE})
 	@echo ${BOWTIE_DISTRIB_DIR}
 	(cd  ${BOWTIE_DISTRIB_DIR}; ./configure  --prefix=${BIN_DIR}; make ; make check; ${SUDO} make install)
-
