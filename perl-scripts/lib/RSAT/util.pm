@@ -398,10 +398,12 @@ Usage:
 sub RelativePath {
   my ($referring_file, $referred_file) = @_;
 
+  $referring_file =~ s|/+|/|g;
   my ($referring_dir, $referring_basename) = &RSAT::util::SplitFileName($referring_file);
   $referring_dir =~ s/\/+$//;
   my @referring_path = split /\/+/, $referring_dir;
 
+  $referred_file =~ s|/+|/|g;
   my ($referred_dir, $referred_basename) = &RSAT::util::SplitFileName($referred_file);
   $referred_dir =~ s/\/+$//;
   my @referred_path = split /\/+/, $referred_dir;
@@ -541,7 +543,59 @@ sub CheckOutDir {
   }
 }
 
-################################################################
+
+
+=pod
+
+=item B<OutFileName>
+
+Define one output file name by concatenating arguments.
+
+A variable $main::dir{output} must have been defined beforehand.
+
+Usage:
+ $outfile{key} = &OutFileName($subdir, $extension, @name_elements);
+
+=cut
+sub OutFileName {
+  my ($subdir, $extension, @name_elements) = @_;
+  my $dir = $main::dir{output};
+  if ($subdir) {
+    $dir = &CheckSubDir($subdir);
+  }
+  my $out_file_name = $dir;
+  if (scalar(@name_elements) > 0) {
+    $out_file_name .= "/";
+    $out_file_name .= join ("_", $main::param{prefix}, @name_elements);
+    if ($extension) {
+      $out_file_name .= $extension;
+    }
+  }
+  if (wantarray) {
+    return ($out_file_name, $dir);
+  } else {
+    return ($out_file_name);
+  }
+}
+
+=pod
+
+Define the name of an output subdirectory by concatenating arguments.
+
+A variable $main::dir{output} must have been defined beforehand.
+
+Usage:
+   $dir = &CheckSubDir($subdir);
+
+=cut
+sub CheckSubDir {
+  my ($subdir) = @_;
+  my $dir = $main::dir{output};
+  $dir = join ("/", $main::dir{output}, $subdir);
+  &RSAT::util::CheckOutDir($dir,"",775);
+  return($dir);
+}
+
 
 =pod
 
@@ -759,17 +813,20 @@ sub hex2rgb {
 ################################################################
 ## Return a unique name for a temporary file in the $TMP directory
 ## Usage:
-##  my $temp_file_name = &RSAT::util::make_temp_file($tmp_dir, $tmp_prefix, $add_date);
+##  my $temp_file_name = &RSAT::util::make_temp_file($tmp_dir, $tmp_prefix, $add_date, $make_dir);
 ##    $tmp_dir: if not specified, the default RSAT temporary dir is used
 ##    $tmp_prefix: prefix for the file name
 ##    $add_date (value 0 or 1): if 1, the date is added to the suffix
+##    $make_dir (value 0 or 1): if 1, create a temporary directory rather than temporary file
 sub make_temp_file {
-  my ($tmp_dir, $tmp_prefix, $add_date) = @_;
+  my ($tmp_dir, $tmp_prefix, $add_date, $make_dir) = @_;
 
-#   &RSAT::message::Debug("&RSAT::util::make_temp_file()", 
-# 			"\n\ttmp_dir=".$tmp_dir,
-# 			"\n\ttmp_prefix=".$tmp_prefix,
-# 		       ) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("&RSAT::util::make_temp_file()",
+#  			"\n\ttmp_dir=".$tmp_dir,
+#  			"\n\ttmp_prefix=".$tmp_prefix,
+#  			"\n\tadd_date=".$add_date,
+#  			"\n\tmake_dir=".$make_dir,
+#  		       ) if ($main::verbose >= 10);
 
   my $prefix_dir = "";
 
@@ -785,8 +842,10 @@ sub make_temp_file {
     $tmp_prefix = 'tmp';
   }
 
+  ## Check that temp dir is define and create it if required
   unless ($tmp_dir) {
-    $tmp_dir = $main::TMP;
+    my ($sec, $min, $hour,$day,$month,$year) = localtime(time()); 
+    $tmp_dir = sprintf("%s/%04d/%02d/%02d", $main::TMP, 1900+$year,$month+1,$day);
   }
   &CheckOutDir($tmp_dir);
 
@@ -797,19 +856,23 @@ sub make_temp_file {
   }
 
   ## request the temporary file to the system
-  my $mktmp_cmd = "mktemp ".$tmp_dir."/".$tmp_prefix."_XXXXXX";
+  my $mktmp_cmd = "mktemp";
+  $mktmp_cmd .= " -d " if ($make_dir);
+  $mktmp_cmd .= " ".$tmp_dir."/".$tmp_prefix."_XXXXXX";
   my $temp_file = `$mktmp_cmd`;
   chomp($temp_file);
 
   ## Ensure that everyone can read the temporary file
   system("chmod a+r $temp_file");
 
-#   &RSAT::message::Debug("&RSAT::util::make_temp_file()", 
-# 			"\n\ttmp_dir=".$tmp_dir,
-# 			"\n\ttmp_prefix=".$tmp_prefix,
-# 			"\n\tprefix_dir=".$prefix_dir,
-# 			"\n\ttemp_file=".$temp_file,
-# 		       ) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("&RSAT::util::make_temp_file()",
+#   			"\n\ttmp_dir=".$tmp_dir,
+#   			"\n\ttmp_prefix=".$tmp_prefix,
+#   			"\n\tprefix_dir=".$prefix_dir,
+#   			"\n\ttemp_file=".$temp_file,
+#   			"\n\tmktmp_cmd=".$mktmp_cmd,
+#   		       ) if ($main::verbose >= 10);
+
   return ($temp_file);
 }
 
@@ -1005,8 +1068,6 @@ sub one_command {
 }
 
 
-################################################################
-
 =pod
 
 =item PrintArguments()
@@ -1033,6 +1094,8 @@ sub PrintArguments {
   print $local_out $argument_string, "\n" if ($local_out);
   return $argument_string;
 }
+
+
 
 return 1;
 
