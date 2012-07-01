@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.233 2012/03/22 17:00:47 jvanheld Exp $
+# $Id: peak-motifs,v 1.234 2012/07/01 23:44:47 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.233 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.234 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -638,40 +638,7 @@ sub DefaultParameters {
 
 }
 
-################################################################
-## Define one output file name by concatenating arguments
-sub OutFileName {
-  my ($subdir, $extension, @name_elements) = @_;
-  my $dir = $main::dir{output};
-  if ($subdir) {
-    $dir = &CheckSubDir($subdir);
-  }
-  my $out_file_name = $dir;
-  if (scalar(@name_elements) > 0) {
-    $out_file_name .= "/";
-    $out_file_name .= join ("_", $main::param{prefix}, @name_elements);
-    if ($extension) {
-      $out_file_name .= $extension;
-    }
-  }
-  if (wantarray) {
-    return ($out_file_name, $dir);
-  } else {
-    return ($out_file_name);
-}
 
-}
-
-################################################################
-## Define the name of an output directory by concatenating arguments
-sub CheckSubDir {
-  my ($subdir) = @_;
-  my $dir = $main::dir{output};
-  $dir = join ("/", $main::dir{output}, $subdir);
-  &RSAT::util::CheckOutDir($dir,"",775);
-
-  return($dir);
-}
 
 ################################################################
 ## Set output file names
@@ -3110,7 +3077,7 @@ sub SynthesisMergedSites {
     ## Print the link table
     print $syn &open_menu_heading($menu_nb++, "<a name='merged_sites'></a><h3>Motif locations (sites)</h3>", 0);
     print $syn "<table class='whitebg'>\n";
-    &SyntheticTableAddRow("Prediced sites on test peaks (all motifs)",
+    &SyntheticTableAddRow("Predicted sites on test peaks (all motifs)",
 			  $browser_url,
 			  "tab",$main::outfile{merged_sites},
 			  "bed",$main::outfile{merged_sites_bed},
