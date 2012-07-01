@@ -227,17 +227,10 @@ exit(0);
 ################################################################
 ## Comparisons with motif databases
 sub DatabaseChoice {
-  print '
-<br/>
-<div>';
-#  print "<div class='menu_heading_closed' onclick='toggleMenu(\'103\')' id='heading103'>\n";
-#  print "<b>Reference motifs (databases or custom motif collection)</b>";
-#  print "</div>\n";
-#  print "<div id='menu103' class='menu_collapsible'>";
+  print '<br/>';
 
   ## Tasks
   print "<fieldset><legend><b><a href='help.compare-matrices.html#tasks'>Reference matrices (database or custom motif collection)</a></b></legend>";
-
   print "<p/> ";
 
   ## load the various databases that can be compared against
@@ -255,10 +248,7 @@ sub DatabaseChoice {
 
   print "</fieldset><p/>";
 
-  print '
-</div>
-</div>
-<p class="clear"></p>';
+  print '<p class="clear"></p>';
 }
 
 
@@ -267,8 +257,9 @@ sub DatabaseChoice {
 sub ScoresAndThresholdsDiv {
   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
 #  my ($title, $help_file, @fields) = @_;
+
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b> </div>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
   print "<p/><fieldset>\n";
 
