@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.65 2012/06/19 05:51:32 jvanheld Exp $
+# $Id: position-analysis,v 1.66 2012/07/01 23:42:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -89,8 +89,10 @@ unless ($title) {
 #### file
 
 if ($outputfile) {
-    $dir{output} =`dirname $outputfile`; 
-    chomp $dir{output};
+  $dir{output} =`dirname $outputfile`; 
+  chomp $dir{output};
+} else {
+  $dir{output} = ".";
 }
 &RSAT::util::CheckOutDir($dir{output});
 $out = &OpenOutputFile($outputfile);
