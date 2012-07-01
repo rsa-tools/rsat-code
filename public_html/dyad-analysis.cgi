@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.45 2011/08/01 19:39:21 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.46 2012/07/01 23:41:53 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -31,7 +31,7 @@ $dyad_analysis_command = "$SCRIPTS/dyad-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
 $prefix = "dyad-analysis";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 #$tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
 
 ### Read the CGI query
@@ -165,7 +165,9 @@ if ($query->param('bg_method') eq 'background') {
   #}
   #    $parameters .= " -bg ".$query->param('background');
 } elsif ($query->param('bg_method') =~ /upload/i) {
-  $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+  $exp_freq_file = $tmp_file_path.".expfreq";
+#  $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+  push @result_files, ('exp_freq', $exp_freq_file);
   $upload_freq_file = $query->param('upload_freq_file');
   if ($upload_freq_file) {
     if ($upload_file =~ /\.gz$/) {
@@ -193,28 +195,31 @@ $command .= $parameters;
 
 print "<PRE><B>Command:</B> ", &RSAT::util::hide_RSAT_path($command), "</PRE>" if ($ENV{rsat_echo});
 
-&SaveCommand($command, "$TMP/$tmp_file_name");
+&SaveCommand("$command", $tmp_file_path);
 
 if ($query->param('output') eq "display") {  
 
   &PipingWarning();
 
   ### execute the command ###
-  $result_file = "$TMP/$tmp_file_name.res";
-  open RESULT, "$command | ";
+  $result_file = $tmp_file_path.".res";
+#  $result_file = "$TMP/$tmp_file_name.res";
+  push @result_files, ('dyads', $result_file);
 
+  open RESULT, "$command | ";
 
   ### Print result on the web page
   print '<H4>Result</H4>';
   &PrintHtmlTable(RESULT, $result_file, 1);
   close(RESULT);
-  push @result_files, ('dyads', $result_file);
 
   #### pattern assembly ####
   if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
 
     ## Assemble the significant patterns with pattern-assembly
-    $assembly_file = "$TMP/$tmp_file_name.asmb";
+    $assembly_file = $tmp_file_path.".asmb";
+#    $assembly_file = "$TMP/$tmp_file_name.asmb";
+    push @result_files, ('assembly', $assembly_file);
     $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
     if ($query->param('strand') =~ /single/) {
       $pattern_assembly_command .= " -1str";
@@ -239,7 +244,6 @@ if ($query->param('output') eq "display") {
     }
     print "</PRE>\n";
     close(ASSEMBLY);
-    push @result_files, ('assembly', $assembly_file);
 
 
     ## Convert pattern-assembly result into PSSM
@@ -252,7 +256,7 @@ if ($query->param('output') eq "display") {
   &OligoDyadPipingForm();
 
 } else {
-  &EmailTheResult("$command", $query->param('user_email'));
+  &EmailTheResult("$command", $query->param('user_email'), $tmp_file_path);
 }
 
 
