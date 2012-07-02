@@ -17,9 +17,12 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$tmp_file_name = sprintf "infer-operon.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
+$prefix = "infer-operons";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "infer-operon.%s", &AlphaDate();
+
 @result_files = ();
+
 
 ### Read the CGI query
 $query = new CGI;
@@ -133,13 +136,14 @@ print  "<PRE><B>Command :</B> ", &RSAT::util::hide_RSAT_path($command." ".$param
 if ($query->param('output') eq "display") {
     &PipingWarning();
 
-    print '<H2>Result</H2>';
+    $result_file = $tmp_file_path.".res";
+    push (@result_files, 'operons', $result_file);
 
+    print '<H2>Result</H2>';
     open RESULT, "$command $parameters |";
     &PrintHtmlTable(RESULT, $result_file, 1, 5000);
     close(RESULT);
 
-    push (@result_files, 'operons', $result_file);
     &PrintURLTable(@result_files);
 
     &PipingForm();
