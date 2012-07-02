@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.33 2012/03/18 10:28:04 jvanheld Exp $
+# $Id: convert-features,v 1.34 2012/07/02 12:57:59 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -111,6 +111,7 @@ if ($infile{coord}){
 ################################################################
 ##### read input
 ($in) = &OpenInputFile($infile{input});
+my $f = 0;
 while (<$in>) {
   ## Comment lines
   next if (/^;/);
@@ -127,8 +128,16 @@ while (<$in>) {
   }
   chomp();
   my $feature = new RSAT::feature();
+  $f++;
 
   $feature->parse_from_row($_, $input_format, $output_format);
+
+  ## Check that there is at least an ID attribute
+  my $id = $feature->get_attribute("ft_id");
+  unless ($id) {
+    $id = "ft".$f;
+    $feature->force_attribute("ft_id", $id);
+  }
 
   if ($output_format eq "bed") {
     &set_color($feature);
