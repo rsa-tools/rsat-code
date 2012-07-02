@@ -17,7 +17,10 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "convert-seq.%s", &AlphaDate();
+$prefix="convert-seq";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "convert-seq.%s", &AlphaDate();
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -40,11 +43,11 @@ $parameters = "";
 #unless ($query->param('sequence') =~ /\S/) {
 #    &cgiError("The sequence box should not be empty.");
 #}
-#open INSEQ, ">$TMP/$tmp_file_name";
+#open INSEQ, ">$tmp_file_path";
 #print INSEQ $query->param('sequence');
 #close INSEQ;
-#$parameters .= " -i $TMP/$tmp_file_name ";
-#&DelayedRemoval("$TMP/$tmp_file_name");
+#$parameters .= " -i $tmp_file_path ";
+#&DelayedRemoval("$tmp_file_path");
 
 ################################################################
 ## sequence file
@@ -99,7 +102,8 @@ if (($query->param('output') =~ /display/i) ||
     print '<H4>Result</H4>';
 
     ### open the sequence file on the server
-    $sequence_file = "$TMP/$tmp_file_name.res";
+    $sequence_file = $tmp_file_path.".res";
+    push @result_files, ("Input sequence",$sequence_file);
     if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
 	&DelayedRemoval($sequence_file);
@@ -114,19 +118,13 @@ if (($query->param('output') =~ /display/i) ||
     close RESULT;
     close MIRROR if ($mirror);
 
-    if ($query->param('output') =~ /server/i) {
-	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-	print ("The result is available at the following URL: ", "\n<br>",
-	       "<a href=${result_URL}>${result_URL}</a>",
-	       "<p>\n");
-    }
-
     ### prepare data for piping
+    &PrintURLTable(@result_files);
     &PipingFormForSequence();
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
 }
 
 exit(0);

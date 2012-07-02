@@ -40,7 +40,7 @@ my $parameters;
 
 ################################################################
 #### Matrix specification
-$matrix_file = "$TMP/$tmp_file_name.input";
+$matrix_file = $tmp_file_path.".input";
 open MAT, "> $matrix_file";
 print MAT $query->param('matrix');
 close MAT;
@@ -145,7 +145,7 @@ if (($query->param('output') =~ /display/i) ||
   open RESULT, "$command $parameters |";
 
   ### open the sequence file on the server
-  $distrib_file = "$TMP/$tmp_file_name.res";
+  $distrib_file = $tmp_file_path.".res";
   push (@result_files, "distribution table", $distrib_file);
   if (open MIRROR, ">$distrib_file") {
     $mirror = 1;
@@ -179,8 +179,9 @@ if (($query->param('output') =~ /display/i) ||
   unless($error_found){
     my $plot_format = "png";
     my $XYgraph_command = "$SCRIPTS/XYgraph";
-    my $graph_file1 = "$tmp_file_name"."_1.".${plot_format};
-    my $figure = "$TMP/$graph_file1";
+    my $graph_file1 = $tmp_file_path."_1.".${plot_format};
+    #    my $graph_file1 = "$tmp_file_name"."_1.".${plot_format};
+    my $figure = $graph_file1;
     my $command2 = "$XYgraph_command";
     $command2 .= " -i $distrib_file";
     $command2 .= " -title1 'Distribution of weights'";
@@ -190,14 +191,17 @@ if (($query->param('output') =~ /display/i) ||
     $command2 .= " -yleg1 'frequency'";
     $command2 .= " -format ".${plot_format};
     $command2 .= " -o $figure";
-    print "<PRE>command2: $command2<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+    print "<pre>command2: $command2\n</pre>" if ($ENV{rsat_echo} >= 1);
     system($command2);
-    print "<center><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
+    $graph_URL1 = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($TMP, $figure);
+    print "<center><a href = \"".$graph_URL1."\"><img src=\"".$graph_URL1."\" width='200'></a>";
+#    print "<center><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
     &DelayedRemoval("$TMP/$graph_file1");
     push (@result_files, "Weight distrib plot", $graph_file1);
 
-    my $graph_file2 = "$tmp_file_name"."_2.".${plot_format};
-    $figure = "$TMP/$graph_file2";
+    my $graph_file2 = $tmp_file_path."_2.".${plot_format};
+    #    my $graph_file2 = "$tmp_file_name"."_2.".${plot_format};
+    $figure = $graph_file2;
     my $command3 = "$XYgraph_command";
     $command3 .= " -i $distrib_file";
     $command3 .= " -title1 'Distribution of weights  (log scale)'";
@@ -210,9 +214,11 @@ if (($query->param('output') =~ /display/i) ||
     $command3 .= " -xleg1 'weight' -yleg1 'Frequency (log scale)'";
     $command3 .= " -format ${plot_format}";
     $command3 .= " -o $figure";
-    print "<PRE>command3: $command3<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+    print "<pre>command3: $command3\n</pre>" if ($ENV{rsat_echo} >= 1);
     system($command3);
-    print "<a href = \"$WWW_TMP/$graph_file2\"><IMG SRC=\"$WWW_TMP/$graph_file2\" width='200'></a></CENTER><P>\n";
+    $graph_URL2 = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($TMP, $figure);
+    print "<center><a href = \"".$graph_URL2."\"><img src=\"".$graph_URL2."\" width='200'></a>";
+#    print "<a href = \"$WWW_TMP/$graph_file2\"><IMG SRC=\"$WWW_TMP/$graph_file2\" width='200'></a></CENTER><P>\n";
     &DelayedRemoval("$TMP/$graph_file2");
     push (@result_files, "P-value distrib plot", $graph_file2);
 

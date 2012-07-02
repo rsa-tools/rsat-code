@@ -27,7 +27,7 @@ $oligo_analysis_command = $SCRIPTS."/oligo-analysis";
 $convert_seq_command = $SCRIPTS."/convert-seq";
 $purge_sequence_command = $SCRIPTS."/purge-sequence";
 $prefix = "oligo-analysis";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 #$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
 
 ### Read the CGI query
@@ -36,6 +36,7 @@ $query = new CGI;
 ### print the result page
 &RSA_header("oligo-analysis result", "results");
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
 
 #### update log file ####
 &UpdateLogFile();
@@ -46,7 +47,7 @@ $parameters .= " -sort";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
-push @result_files, ("input sequence",$sequence_file);
+push @result_files, ("Input sequence",$sequence_file);
 
 ## Sequence purging seems not to work with proteins -> only apply it
 ## for DNA sequences
@@ -57,13 +58,19 @@ if ($sequence_type eq "dna") {
 
 ## Purge sequence if required, and start oligo-analysis command
 if ($purge) {
+  $purged_seq_file = ${sequence_file}.".purged";
+  push @result_files, ("Purged sequence",$sequence_file);
+
   #### purge sequence option
   #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
-  $command = "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged ";
+  $command = $purge_sequence_command;
+  $command .= " -i ".$sequence_file;
+  $command .= " -format ".$sequence_format;
+  $command .= " -o ".$purged_seq_file;
   $command .= " -seqtype ".$sequence_type if ($sequence_type eq "dna");
-  $command .= "; $oligo_analysis_command -i ${sequence_file}.purged -format fasta ";
+  $command .= "; ".$oligo_analysis_command." -i ".$purged_seq_file." -format fasta ";
 } else {
-  $command = "$oligo_analysis_command -i $sequence_file  ";
+  $command = $oligo_analysis_command." -i ".$sequence_file;
 }
 
 ### fields to return
@@ -155,7 +162,9 @@ if ($query->param('bg_method') =~ /background/i) {
 
 } elsif ($query->param('bg_method') eq 'freq_file_upload') {
   ## User-specific expected freqency file (oligos of same sise as analyzed oligos)
-  $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+  $exp_freq_file = $tmp_file_path.".expfreq";
+#  $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+  push @result_files, ('Expected frequencies', $exp_freq_file);
   $upload_freq_file = $query->param('upload_freq_file');
   if ($upload_freq_file) {
     ## Support compressed .gz files
@@ -177,7 +186,9 @@ if ($query->param('bg_method') =~ /background/i) {
 } elsif ($query->param('bg_method') eq 'file_upload') {
 
   ## User-specific background model (any Markov order)
-  $bgfile = "${TMP}/$tmp_file_name.bgfile";
+  $bgfile = $tmp_file_path.".bgfile";
+  push @result_files, ('Background file', $bgfile);
+#  $bgfile = "${TMP}/$tmp_file_name.bgfile";
   $upload_bgfile = $query->param('upload_bgfile');
   if ($upload_bgfile) {
     ## Support compressed .gz files
@@ -221,7 +232,7 @@ if ($query->param('bg_method') =~ /background/i) {
 
 } else {
   $freq_option = "";
-} 
+}
 $parameters .= "$freq_option";
 
 #### pseudo weight
@@ -241,20 +252,22 @@ $command .= $parameters;
 
 print "<PRE>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
-&SaveCommand("$command", "$TMP/$tmp_file_name");
+&SaveCommand("$command", $tmp_file_path);
 
 if ($query->param('output') =~ /display/i) {
     &PipingWarning();
 
     ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
+    $result_file = $tmp_file_path.".res";
+#    $result_file = "$TMP/$tmp_file_name.res";
+    push @result_files, ('oligos', $result_file);
+
     open RESULT, "$command |";
 
     ### Print result on the web page
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
-    push @result_files, ('oligos', $result_file);
 
     #### oligonucleotide assembly ####
     if (($query->param('return') ne "table") &&
@@ -263,7 +276,9 @@ if ($query->param('output') =~ /display/i) {
 
 
       ## Assemble the significant patterns with pattern-assembly
-      $assembly_file = "$TMP/$tmp_file_name.asmb";
+      $assembly_file = $tmp_file_path.".asmb";
+#      $assembly_file = "$TMP/$tmp_file_name.asmb";
+      push @result_files, ('assembly', $assembly_file);
       $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
       if ($query->param('strand') =~ /single/) {
 	$pattern_assembly_command .= " -1str";
@@ -290,7 +305,6 @@ if ($query->param('output') =~ /display/i) {
 	}
 	print "</PRE>\n";
 	close(ASSEMBLY);
-	push @result_files, ('assembly', $assembly_file);
 
 
 	## Convert pattern-assembly result into PSSM
@@ -309,7 +323,7 @@ if ($query->param('output') =~ /display/i) {
     print '<HR SIZE=3>';
 
 } else {
-    &EmailTheResult("$command", $query->param('user_email'), $tmp_file_name);
+    &EmailTheResult("$command", $query->param('user_email'), $tmp_file_path);
 }
 
 print $query->end_html;

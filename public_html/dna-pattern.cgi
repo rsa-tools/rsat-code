@@ -43,7 +43,8 @@ $parameters .= " -v";
 unless ($query->param('patterns') =~ /\S/) {
   &cgiError("The pattern box should not be empty.");
 }
-$pattern_file = "$TMP/$tmp_file_name.pat";
+$pattern_file = $tmp_file_path.".pat";
+push @result_files, "Patterns", $pattern_file;
 if (open PAT, ">$pattern_file") {
   print PAT $query->param('patterns');
   close PAT;
@@ -155,8 +156,7 @@ if ($query->param("output") =~ /display/i) {
   ### execute the command ###
   &PipingWarning() if ($query->param('match_positions'));
 
-  $result_file = "$TMP/$tmp_file_name.res";
-
+  $result_file = $tmp_file_path.".res";
   push @result_files, ('dna-pattern result', $result_file);
   open RESULT, "$command $parameters |";
   print "<PRE>$command $parameters </b>" if ($ENV{rsat_echo});

@@ -22,7 +22,6 @@ $prefix = "random-genes";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = &RSAT::util::make_temp_file("","random-genes", 1);
 #$tmp_file_name = sprintf "random-genes.%s", &AlphaDate;
-$result_file = "$TMP/$tmp_file_name.res";
 @result_files = ();
 
 ### Read the CGI query
@@ -83,6 +82,9 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo});
 ### execute the command ###
 if ($query->param('output') eq "display") {
 
+    $result_file = $tmp_file_path.".res";
+    push @result_files, ("random genes",$result_file);
+
     &PipingWarning();
 
     ### prepare data for piping
@@ -100,7 +102,6 @@ if ($query->param('output') eq "display") {
     open RES_FILE, ">".$result_file;
     print RES_FILE $genes;
     close RES_FILE;
-    push @result_files, ("random genes",$result_file);
 
 ## STILL TO BE DONE: WRITE A COPY OF GENE LIST IN A FILE
     &PrintURLTable(@result_files);

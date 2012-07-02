@@ -23,7 +23,6 @@ $command = $SCRIPTS."/convert-matrix";
 $prefix = "convert-matrix";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
 $ENV{rsat_echo} = 1;
 @result_files = ();
 
@@ -43,7 +42,7 @@ local $parameters = " -v 1";
 
 ################################################################
 #### Matrix specification
-$matrix_file = "$TMP/$tmp_file_name.input";
+$matrix_file = $tmp_file_path.".input";
 if ($query->param('matrix')) {
     open MAT, "> $matrix_file";
     print MAT $query->param('matrix');
@@ -54,6 +53,7 @@ if ($query->param('matrix')) {
     &RSAT::error::FatalError('You did not enter any data in the matrix box');
 }
 push @result_files, ("Input file",$matrix_file);
+$result_file = $tmp_file_path.".res";
 push @result_files, ("Result file",$result_file);
 
 ################################################################

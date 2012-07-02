@@ -16,9 +16,12 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
+
 $pattern_assembly_command = "$SCRIPTS/pattern-assembly";
-$tmp_file_name = sprintf "pattern-assembly.%s", &AlphaDate;
-$result_file = "$TMP/$tmp_file_name.res";
+$prefix = "pattern-assembly";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "pattern-assembly.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
@@ -35,7 +38,8 @@ $parameters .= " -v 1";
 
 ################################################################
 #### patterns
-my $pattern_file = $TMP."/".$tmp_file_name.".pat";
+my $pattern_file = $tmp_file_path.".pat";
+push @result_files, "Patterns", $pattern_file;
 open PATTERNS, "> ".$pattern_file;
 if ( $query->param('patterns') =~ /\S/) {
     print PATTERNS $query->param('patterns');
@@ -117,13 +121,17 @@ if ($query->param('strand') =~ /insensitive/) {
 print "<PRE>command: $pattern_assembly_command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 if ($query->param('output') eq "display") {
 
-    open RESULT, "$pattern_assembly_command $parameters |";
+  $result_file = $tmp_file_path.".res";
+  push @result_files, "Assembly", $result_file;
 
-    print '<H2>Result</H2>';
-    &PrintHtmlTable(RESULT, $result_file, true);
-    close(RESULT);
+  open RESULT, "$pattern_assembly_command $parameters |";
+  print '<H2>Result</H2>';
+  &PrintHtmlTable(RESULT, $result_file, true);
+  close(RESULT);
+  &PrintURLTable(@result_files);
 
-    print "<HR SIZE = 3>";
+  print "<HR SIZE = 3>";
+
 } else { 
     &EmailTheResult("$pattern_assembly_command $parameters", $query->param('user_email'));
 }

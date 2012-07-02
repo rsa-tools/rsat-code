@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.12 2011/05/26 05:11:19 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.13 2012/07/02 04:50:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -53,7 +53,7 @@ $parameters = " -i $in_sequence_file ";
 push @result_files, ("Input sequences",$in_sequence_file);
 
 ## Output file (purged sequences)
-$sequence_file = "$TMP/$tmp_file_name.res";
+$sequence_file = $tmp_file_path.".res";
 push @result_files, ("Purged sequences",$sequence_file);
 
 
@@ -112,13 +112,6 @@ if (($query->param('output') =~ /display/i) ||
     print "</PRE>";
     close(RESULT);
     close MIRROR if ($mirror);
-    
-    if ($query->param('output') =~ /server/i) {
-	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-	print ("Result is available in the file ",
-	       "<a href=${result_URL}>${result_URL}</a>",
-	       "\n");
-    }
 
     ### prepare data for piping
     &PrintURLTable(@result_files);
@@ -130,7 +123,7 @@ if (($query->param('output') =~ /display/i) ||
     print "<hr size = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
 }
 
 print $query->end_html;
