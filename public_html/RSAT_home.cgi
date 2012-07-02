@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.72 2012/03/28 11:15:41 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.73 2012/07/02 12:52:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -163,10 +163,10 @@ print <<EndText;
 	  <img src="images/Atomium_icon_80.png" height=80 border=0><br>
 	  http://wwwsup.scmbb.ulb.ac.be/rsat/</a>
       </td>
-      
+
     <td>
       <a href="http://tagc.univ-mrs.fr/metabolix/" target="_top">
-	<b>Brussels (3) - Belgium</b>
+	<b>Marseille - France</b>
     <br/>
     <img src="images/frites.jpg" height=80 border=0><br>
   http://tagc.univ-mrs.fr/metabolix/
