@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-peaks,v 1.7 2012/06/22 23:19:28 jvanheld Exp $
+# $Id: random-peaks,v 1.8 2012/07/02 12:54:32 jvanheld Exp $
 #
 ############################################################
 
@@ -152,7 +152,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -773,7 +773,7 @@ sub ComputeOligoComposition {
   ## Compute sequence-wise frequencies
   &RSAT::message::TimeWarn("Computing sequence-wise ".$main::param{oligo_len}."nt composition in file", $seq_file) if ($main::verbose >= 2);
   my $oligo_file =  $outfile{$seq_type."_compo"};
-  $cmd = $SCRIPTS."/oligo-analysis -v 1 -quick";
+  $cmd = $SCRIPTS."/oligo-analysis -v 1 "; ## quick mode is not possible withl option -table
   $cmd .= " -i ".$seq_file;
   $cmd .= " -l ".$main::param{oligo_len};
   $cmd .= " ".$main::param{strand};
