@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-quality,v 1.1 2012/07/02 18:07:04 jvanheld Exp $
+# $Id: peak-quality,v 1.2 2012/07/02 18:41:22 jvanheld Exp $
 #
 ############################################################
 
@@ -117,11 +117,12 @@ package main;
 {
   ## Check that the RSAT paths of the programs required for the script are specified
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
+  $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -145,11 +146,14 @@ package main;
   $param{top_matrices} = 1; push @param_list, "top_matrices"; ## Number of top matrices taken in consideration in the reference matrix file
   $param{matrix_permutations} = 1; push @param_list, "matrix_permutations"; ## Number of matrix permutations for matrix-quality (negative control)
   $param{decimals} = 1; push @param_list, "decimals"; ## Number of decimals for matrix scanning
+  $param{scan_markov_order} = 1; push @param_list, "scan_markov_order"; ## Order of the markov model used for scanning sequences with the motif
 
+  # Supported tasks
   my %task = ();
-  $task{seq_len} = 1;
-  $task{slices} = 1;
-  $task{quality} = 1;
+  $task{seq_len} = 0; ## Compute sequence lengths
+  $task{bg_model} = 0; ## compute background model
+  $task{slices} = 0; ## Extract peak sequence slices
+  $task{quality} = 1; ## Analyze sequence slices with matrix-quality
 
   ################################################################
   ## Read argument values
@@ -159,19 +163,19 @@ package main;
   ## Check argument values
 
   ## Output directory
-  if ($main::dir{output}) {
-    &RSAT::util::CheckOutDir($main::dir{output}, "", 755);
+  if ($dir{output}) {
+    &RSAT::util::CheckOutDir($dir{output}, "", 755);
   } else {
     &RSAT::error::FatalError("You must define the output directory (option -outdir)");
   }
 
   ## Prefix
-  unless ($main::param{prefix}) {
+  unless ($param{prefix}) {
     &RSAT::error::FatalError("You must define a prefix for the output files (option -prefix)");
   }
 
   ## Reference motif file
-  unless ($main::infile{ref_motifs}) {
+  unless ($infile{ref_motifs}) {
     &RSAT::error::FatalError("You must define a reference motif file (option -ref_motifs).");
   }
 
@@ -187,7 +191,7 @@ package main;
   ## Read bed coordinates
   &RSAT::message::TimeWarn("Reading bed file", $infile{bed});
   my $peak_nb = 0;
-  my ($bed_handle) = &OpenInputFile($main::infile{bed});
+  my ($bed_handle) = &OpenInputFile($infile{bed});
   my $l = 0 ; ## Line counter
   my $bed_errors = 0;
   while (<$bed_handle>) {
@@ -243,7 +247,7 @@ package main;
     &RSAT::message::TimeWarn("Read ".$peak_nb." peaks");
     &RSAT::message::TimeWarn("Skipped ".$bed_errors." invalid rows.");
   }
-  $main::param{nb_peaks_from_bed} = $peak_nb;
+  $param{nb_peaks_from_bed} = $peak_nb;
 
   ################################################################
   ## Sequence lengths
@@ -263,7 +267,7 @@ package main;
   ## than the peak file, because some peaks could correspond to no
   ## sequence (e.g. there are sometimes problem with peaks on the Mt
   ## chromosome).
-  my ($len_handle) = &OpenInputFile($main::outfile{seq_len});
+  my ($len_handle) = &OpenInputFile($outfile{seq_len});
   while (<$len_handle>) {
     next if (/^;/); # Skip comment lines
     next if (/^#/); # Skip header line
@@ -369,7 +373,7 @@ package main;
   $stat_descr{L_med} = "Median sequence length in the slice";
   $stat_descr{L_sd} = "Standard deviation of sequence length in the slice";
   $outfile{slice_stats} = &OutFileName("seq_stats", ".tab", "slice_statistics");
-  my $slice_stat_hdl = &OpenOutputFile($main::outfile{slice_stats});
+  my $slice_stat_hdl = &OpenOutputFile($outfile{slice_stats});
   my $s = 0;
   foreach my $stat (@slice_stat_fields) {
     $s++;
@@ -387,23 +391,90 @@ package main;
 
 
   ################################################################
+  ## Compute background model
+  $param{bg_oligo_len} = $param{scan_markov_order} + 1;
+  $outfile{bg_model_freq} = &OutFileName("bg_models", ".tab", $param{bg_oligo_len}."nt", "freq");
+  $outfile{bg_model_inclusive} = &OutFileName("bg_models", ".inclusive", $param{bg_oligo_len}."nt", "freq");
+  $outfile{bg_model_transitions} = &OutFileName("bg_models", ".tab", "markov".$param{scan_markov_order}, "transitions");
+  $outfile{bg_model_heatmap} = &OutFileName("bg_models", ".png", "markov".$param{scan_markov_order}, "transitions");
+
+  if ($task{bg_model}) {
+    &RSAT::message::TimeWarn("Computing background model") if ($main::verbose >= 1);
+
+    ## Compute oligonucleotide frequencies (k = m+1) in input sequence file
+    $cmd = $BIN."/count-words -v 1";
+    $cmd .= " -i ".$main::infile{seq};
+    $cmd .= " -l ".$param{bg_oligo_len};
+    $cmd .= " -1str";
+    $cmd .= " > ".$outfile{bg_model_freq};
+    &one_command($cmd, 1);
+
+    ## Convert background model in INCLUSIVE format for matrix-scan-quick
+    $cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+    $cmd .= " -i ".$main::outfile{bg_model_freq};
+    $cmd .= " -o ".$main::outfile{bg_model_inclusive};
+
+    ## Convert background model to transition table and draw the heatmap of transition probabilities
+    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
+    $cmd .= " -i ".$main::outfile{bg_model_freq};
+    $cmd .= " -o ".$main::outfile{bg_model_transitions};
+    $cmd .= " ; cut -f 1-5,7 ".$main::outfile{bg_model_transitions};
+    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+    $cmd .= " -o ".$main::outfile{bg_model_heatmap};
+    &one_command($cmd, 1);
+
+    foreach my $s (1..$param{nb_slices}) {
+      $outfile{"bg_model_slice".$s."_freq"} = &OutFileName("bg_models", ".tab", "slice".$s, $param{bg_oligo_len}."nt", "freq");
+      $outfile{"bg_model_slice".$s."_inclusive"} = &OutFileName("bg_models", ".inclusive", "slice".$s, $param{bg_oligo_len}."nt", "freq");
+      $outfile{"bg_model_slice".$s."_transitions"} = &OutFileName("bg_models", ".tab", "slice".$s, "markov".$param{scan_markov_order}, "transitions");
+      $outfile{"bg_model_slice".$s."_heatmap"} = &OutFileName("bg_models", ".png", "slice".$s, "markov".$param{scan_markov_order}, "transitions");
+      &RSAT::message::TimeWarn("Computing background model for slice", $s."/".$param{nb_slices}) if ($main::verbose >= 1);
+
+      ## Compute oligonucleotide frequencies (k = m+1) in input sequence file
+      $cmd = $BIN."/count-words -v 1";
+      $cmd .= " -i ".$outfile{"seq_slice_".$s};
+      $cmd .= " -l ".$param{bg_oligo_len};
+      $cmd .= " -1str";
+      $cmd .= " > ".$outfile{"bg_model_slice".$s."_freq"};
+      &one_command($cmd, 1);
+
+      ## Convert background model in INCLUSIVE format for matrix-scan-quick
+      $cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+      $cmd .= " -i ".$main::outfile{"bg_model_slice".$s."_freq"};
+      $cmd .= " -o ".$main::outfile{"bg_model_slice".$s."_inclusive"};
+
+      ## Convert background model to transition table and draw the heatmap of transition probabilities
+      $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
+      $cmd .= " -i ".$main::outfile{"bg_model_slice".$s."_freq"};
+      $cmd .= " -o ".$main::outfile{"bg_model_slice".$s."_transitions"};
+      $cmd .= " ; cut -f 1-5,7 ".$main::outfile{"bg_model_slice".$s."_transitions"};
+      $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+      $cmd .= " -o ".$main::outfile{"bg_model_slice".$s."_heatmap"};
+      &one_command($cmd, 1);
+    }
+  }
+
+  ################################################################
   ## Use matrix-quality to compute motif enrichment in the different
   ## slices
   if ($task{quality}) {
     &RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >= 1);
-    $outfile{"quality"} = &OutFileName("quality", ".fasta", "");
+    $outfile{quality_prefix} = &OutFileName("quality", "", "slice_enrichment");
 
     my $cmd = $SCRIPTS."/matrix-quality";
     $cmd .= " -v ".$main::verbose;
-    $cmd .= " -m ".$main::infile{ref_motifs};
+    $cmd .= " -m ".$infile{ref_motifs};
     $cmd .= " -matrix_format transfac";
     $cmd .= " -top ".$param{top_matrices};
     $cmd .= " -seq all_peaks ".$infile{seq};
     $cmd .= " -perm all_peaks ".$param{matrix_permutations};
     $cmd .= " -decimals ".$param{decimals};
+    $cmd .= " -bgfile ".$outfile{bg_model_inclusive};
+    $cmd .= " -bg_format inclusive";
     foreach my $s (1..$param{nb_slices}) {
       $cmd .= " -seq ".$slice_stats[$s]->{id}." ".$outfile{"seq_slice_".$slice_stats[$s]->{s}};
     }
+    $cmd .= " -o ".$outfile{quality_prefix};
     &one_command($cmd, 1);
   }
 
@@ -518,7 +589,7 @@ score at the right position.
 
 =cut
     } elsif ($arg eq "-bed") {
-      $main::infile{bed} = shift(@arguments);
+      $infile{bed} = shift(@arguments);
 
 =pod
 
@@ -540,7 +611,7 @@ those of the bed file.
 
 =cut
     } elsif ($arg eq "-seq") {
-      $main::infile{seq} = shift(@arguments);
+      $infile{seq} = shift(@arguments);
 
 =pod
 
@@ -558,7 +629,7 @@ transfac-formatted matrices).
 
 =cut
     } elsif ($arg eq "-ref_motifs") {
-      $main::infile{ref_motifs} = shift(@arguments);
+      $infile{ref_motifs} = shift(@arguments);
 
 =pod
 
@@ -578,7 +649,7 @@ Prefix for the output files.
 
 =cut
     } elsif ($arg eq "-prefix") {
-      $main::param{prefix} = shift(@arguments);
+      $param{prefix} = shift(@arguments);
 
 
 =pod
@@ -592,9 +663,9 @@ Default: 5
 
 =cut
     } elsif ($arg eq "-slices") {
-      $main::param{slices} = shift(@arguments);
-      &RSAT::error::FatalError($main::param{slices}, "Invalid number of slices, must be a strictly positive Natural number")
-	unless (&RSAT::util::IsNatural($main::param{slices}));
+      $param{slices} = shift(@arguments);
+      &RSAT::error::FatalError($param{slices}, "Invalid number of slices, must be a strictly positive Natural number")
+	unless (&RSAT::util::IsNatural($param{slices}));
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
@@ -616,27 +687,27 @@ sub Verbose {
   print $out "; peak-quality ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
-  if (%main::infile) {
+  if (%infile) {
     print $out "; Input files\n";
-    foreach my $key (sort keys (%main::infile)) {
-      my $value = $main::infile{$key};
-#    while (my ($key,$value) = each %main::infile) {
+    foreach my $key (sort keys (%infile)) {
+      my $value = $infile{$key};
+#    while (my ($key,$value) = each %infile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
-  if (%main::outfile) {
+  if (%outfile) {
     print $out "; Output files\n";
-    foreach my $key (sort keys (%main::outfile)) {
-      my $value = $main::outfile{$key};
-#    while (my ($key,$value) = each %main::outfile) {
+    foreach my $key (sort keys (%outfile)) {
+      my $value = $outfile{$key};
+#    while (my ($key,$value) = each %outfile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
-  if (%main::dir) {
+  if (%dir) {
     print $out "; Directories\n";
-    foreach my $key (sort keys (%main::dir)) {
-      my $value = $main::dir{$key};
-#    while (my ($key,$value) = each %main::dir) {
+    foreach my $key (sort keys (%dir)) {
+      my $value = $dir{$key};
+#    while (my ($key,$value) = each %dir) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
