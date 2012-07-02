@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.41 2011/06/11 12:34:35 jvanheld Exp $
+# $Id: convert-seq,v 1.42 2012/07/02 19:17:49 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -76,16 +76,29 @@ if ($verbose) {
     print ";Output format\t$out_format\n";
 }
 
+if ($skip) {
+    &RSAT::message::Info("Skipping the $top top sequences.") if ($main::verbose >= 1);
+    if ($top) {
+	if ($skip >= $top) {
+	    &RSAT::error::FatalError("Number of sequences to skip ($skip) cannot be larger than the selected number of top sequences ($top).");
+	}
+    }
+}
+
+
 ## ##############################################################
 ## Read the sequences and convert them
 while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
     $seq_nb++;
     my $seq_len = length($current_seq);
-
     if (($top > 0) && ($seq_nb > $top)) {
       &RSAT::message::Info("Exported the $top top sequences only (option -top). Remaining sequences are ignored.") if ($main::verbose >= 1);
       last;
+    }
+    
+    if (($skip) && ($seq_nb <= $skip)) {
+      next;	
     }
 
     &RSAT::message::Info("Converting sequence", $seq_nb, $current_id, $seq_len."bp", $comments[0]) if ($main::verbose >= 2);
@@ -294,6 +307,19 @@ OPTIONS
 	-top #
 		Export the # top sequences only.
 
+	-skip #
+		Skip the # top sequences. 
+
+		Options -skip and -top can be combined to extract a
+		subset from the i^th to the j^th sequence (a "slice"
+		of the sequence file).
+
+		Example: 
+			 convert-seq -skip 100 -top 200
+
+		will extract the sequences 101 to 200 from the input
+		file.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -429,6 +455,7 @@ consvert-seq options
 -skip_short min_seq_len	Skip sequences shorter than the specified length
 -skip_long max_seq_len	Skip sequences longer than the specified length
 -top #	   		Export the # top sequences only.
+-skip #			Skip the # first sequences of the file. 
 -noempty		Remove empty sequences from the set (same as -skip_short 1)
 -o			outputfile
 -from			input format (see below for accepted formats)
@@ -490,38 +517,42 @@ sub ReadArguments {
       ## mask short sequences
     } elsif ($ARGV[$a] eq "-mask_short") {
       $mask_short = $ARGV[$a+1];
-      &RSAT::error::FatalError(join("\t",
-				    $mask_short,
-				    "Invalid value for the minimal masking length. ".
-				    "Must be a strictly positive natural number"))
+      &RSAT::error::FatalError($mask_short,
+			       "Invalid value for the minimal masking length. ".
+			       "Must be a strictly positive natural number")
 	unless &IsNatural($mask_short) && ($mask_short > 0);
 
       ## skip short sequences
     } elsif ($ARGV[$a] eq "-skip_short") {
       $skip_short = $ARGV[$a+1];
-      &RSAT::error::FatalError(join("\t",
-				    $skip_short,
-				    "Invalid value for the minimal skipping length. ".
-				    "Must be a strictly positive natural number"))
+      &RSAT::error::FatalError($skip_short,
+			       "Invalid value for the minimal skipping length. ".
+			       "Must be a strictly positive natural number")
 	unless &IsNatural($skip_short) && ($skip_short > 0);
 
       ## skip long sequences
     } elsif ($ARGV[$a] eq "-skip_long") {
       $skip_long = $ARGV[$a+1];
-      &RSAT::error::FatalError(join("\t",
-				    $skip_long,
-				    "Invalid value for the maximal skipping length. ".
-				    "Must be a strictly positive natural number"))
+      &RSAT::error::FatalError($skip_long,
+			       "Invalid value for the maximal skipping length. ".
+			       "Must be a strictly positive natural number")
 	unless &IsNatural($skip_long) && ($skip_long > 0);
 
       ## Only export the N top sequences of the input file
     } elsif ($ARGV[$a] eq "-top") {
       $top = $ARGV[$a+1];
-      &RSAT::error::FatalError(join("\t",
-				    $top,
-				    "Invalid value for number of top sequences. ".
-				    "Must be a strictly positive natural number"))
-	unless &IsNatural($top) && ($top > 0);
+      &RSAT::error::FatalError($top,
+			       "Invalid value for number of top sequences. ".
+			       "Must be a Natural number")
+	unless (&IsNatural($top));
+
+      ## Skip the N first sequences of the file
+    } elsif ($ARGV[$a] eq "-skip") {
+      $skip = $ARGV[$a+1];
+      &RSAT::error::FatalError($skip,
+			       "Invalid value for number of skip sequences. ".
+			       "Must be a Natural number")
+	unless (&IsNatural($skip));
 
 
     } elsif ($ARGV[$a] eq "-id") {
