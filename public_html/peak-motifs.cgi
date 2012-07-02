@@ -48,12 +48,6 @@ $query = new CGI;
 ### update log file
 &UpdateLogFile();
 
-&RSAT::message::Debug(join "<br>", "temporary files", 
-		     "output_dir_prefix = ".$output_dir_prefix,
-		      "output_dir = ".$output_dir,
-		      "output_prefix = ".$output_prefix,
-		      "output_dir_full_path = ".$output_dir_full_path,
-		     );
 
 ################################################################
 ## command line paramters
