@@ -18,8 +18,9 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $prefix = "retrieve-seq";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -131,42 +132,43 @@ if (lc($query->param('imp_pos')) eq "on") {
 
 #### queries ####
 if ($query->param('genes') eq "all") {
-    ### take all genes as query
-    $parameters .= " -all ";
-} elsif ($query->param('uploaded_file')) {
+  ### take all genes as query
+  $parameters .= " -all ";
+} else {
+  my $gene_list_file = $tmp_file_path.".genes";
+  push @result_files, ("query genes",$gene_list_file);
+  if ($query->param('uploaded_file')) {
     $upload_file = $query->param('uploaded_file');
-    $gene_list_file = "${TMP}/${tmp_file_name}.genes";
+    #    $gene_list_file = "${TMP}/${tmp_file_name}.genes";
     if ($upload_file =~ /\.gz$/) {
-	$gene_list_file .= ".gz";
+      $gene_list_file .= ".gz";
     }
     $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-    open SEQ, ">$gene_list_file" ||
-	&cgiError("Cannot store gene list file in temporary directory");
+    open SEQ, ">".$gene_list_file ||
+      &cgiError("Cannot store gene list file in temporary directory");
     while (<$upload_file>) {
-	print SEQ;
+      print SEQ;
     }
     close SEQ;
-    $parameters .= " -i $gene_list_file ";
-
-} else {
+  } else {
     my $gene_selection = $query->param('gene_selection');
     $gene_selection =~ s/\r/\n/g;
     my @gene_selection = split ("\n", $gene_selection);
     if ($gene_selection =~ /\S/) {
-	open QUERY, ">$tmp_file_path";
-	foreach my $row (@gene_selection) {
-	  chomp($row); ## Suppress newline character
-	  $row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option. 
-	  print QUERY $row, "\n";
-	}
-	close QUERY;
-	&DelayedRemoval("$tmp_file_path");
-	$parameters .= " -i $tmp_file_path";
+      open QUERY, ">".$gene_list_file;
+      foreach my $row (@gene_selection) {
+	chomp($row); ## Suppress newline character
+	$row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option. 
+	print QUERY $row, "\n";
+      }
+      close QUERY;
     } else {
-	&cgiError("You should enter at least one gene identifier in the query box..");
+      &cgiError("You should enter at least one gene identifier in the query box..");
     }
+  }
+  $parameters .= " -i ".$gene_list_file;
+  &DelayedRemoval($gene_list_file);
 }
-
 print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
 
 #### execute the command #####
@@ -178,10 +180,10 @@ if (($query->param('output') =~ /display/i) ||
 
     ### print the result
     &PipingWarning();
-    print '<H4>Result</H4>';
 
     ### open the sequence file on the server
-    $sequence_file = "$tmp_file_path.res";
+    $sequence_file = "$tmp_file_path.seq";
+    push @result_files, ("sequences",$sequence_file);
     if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
 	&DelayedRemoval($sequence_file);
@@ -197,10 +199,11 @@ if (($query->param('output') =~ /display/i) ||
     close MIRROR if ($mirror);
 
     if ($query->param('output') =~ /server/i) {
-	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-	print ("The result is available at the following URL: ", "\n<br>",
-	       "<a href=${result_URL}>${result_URL}</a>",
-	       "<p>\n");
+      &PrintURLTable(@result_files);
+#      $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
+#      print ("The result is available at the following URL: ", "\n<br>",
+#	     "<a href=${result_URL}>${result_URL}</a>",
+#	     "<p>\n");
     }
 
     ### prepare data for piping

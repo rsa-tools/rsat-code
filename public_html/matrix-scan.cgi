@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.39 2011/05/26 05:11:19 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.40 2012/07/02 12:50:42 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -24,12 +24,13 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 $command = $SCRIPTS."/matrix-scan -v 1 ";
 $prefix = "matrix-scan";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
-$result_file =  $TMP."/".$tmp_file_name.".ft";
+$result_file =  $tmp_file_path.".ft";
 
 ### Read the CGI query
 $query = new CGI;
@@ -54,17 +55,17 @@ if ($query->param("quick")) {
 ################################################################
 ## sequence file
 if ($quick_mode) {
-	($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $main::TMP."/".$tmp_file_name.".seq", 1);
+  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".seq", 1);
 } else {
-	($sequence_file,$sequence_format) = &GetSequenceFile();
+  ($sequence_file,$sequence_format) = &GetSequenceFile();
 }
-
-
 
 
 #### matrix-scan parameters
 &ReadMatrixScanParameters();
 $parameters .= " -i $sequence_file -seq_format $sequence_format";
+push @result_files, ("Input sequence",$sequence_file);
+push @result_files, ("Scan result (FT)",$result_file);
 
 ################################################################
 ### vertically print the matrix
@@ -112,45 +113,51 @@ if ($query->param('output') eq "display") {
 
   ################################################################
   ## Convert features to GFF3 format
-  $gff3_file =  $TMP."/".$tmp_file_name.".gff3";
+#  $gff3_file =  $TMP."/".$tmp_file_name.".gff3";
+  $gff3_file =  $tmp_file_path.".gff3";
   $command = "${SCRIPTS}/convert-features -from ft -to gff3 ";
   $command .= " -i ".$result_file;
   $command .= " -o ".$gff3_file;
   &RSAT::message::Info("Converting features to GFF3 format", $command) if ($ENV{rsat_echo} >=2);
   system($command);
+  push @result_files, ("Features (GFF3)", $gff3_file);
 
   ################################################################
   ## Convert features for loading as genome tracks
   if ($origin eq "genomic") {
-    $bed_file =  $TMP."/".$tmp_file_name.".bed";
+#    $bed_file =  $TMP."/".$tmp_file_name.".bed";
+    $bed_file =  $tmp_file_path.".bed";
     $command = "${SCRIPTS}/convert-features -from ft -to bed ";
     $command .= " -i ".$result_file;
     $command .= " -o ".$bed_file;
     &RSAT::message::Info("Converting features to BED format", $command) if ($ENV{rsat_echo} >=2);;
     system($command);
+    push @result_files, ("Features (BED)", $bed_file);
   }
 
 
   ################################################################
   ## Table with links to the raw result files in various formats
-  $result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name;
-  print "<center><table class=\"nextstep\">\n";
-  print "<tr><td colspan='3'><h3>Raw result files</h3> </td></tr>";
-#  print ("<tr>",
-#	 "<th>Format</th>",
-#	 "<th>URL</th>",
-#	 "<th>Usage</th>",
-#	 "</tr>");
-  print ("<tr>",
-	 "<td>FT</td>",
-	 "<td>","<a href='".$result_URL.".ft'>".$result_URL.".ft</a>","</td>",
-	 "<td>RSAT feature-map</td>",
-	 "</tr>");
-  print ("<tr>",
-	 "<td>GFF3</td>",
-	 "<td>","<a href='".$result_URL.".gff3'>".$result_URL.".gff3</a>","</td>",
-	 "<td>General feature format</td>",
-	 "</tr>");
+#   $result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name;
+#   print "<center><table class=\"nextstep\">\n";
+#   print "<tr><td colspan='3'><h3>Raw result files</h3> </td></tr>";
+# #  print ("<tr>",
+# #	 "<th>Format</th>",
+# #	 "<th>URL</th>",
+# #	 "<th>Usage</th>",
+# #	 "</tr>");
+#   print ("<tr>",
+# 	 "<td>FT</td>",
+# 	 "<td>","<a href='".$result_URL.".ft'>".$result_URL.".ft</a>","</td>",
+# 	 "<td>RSAT feature-map</td>",
+# 	 "</tr>");
+#   print ("<tr>",
+# 	 "<td>GFF3</td>",
+# 	 "<td>","<a href='".$result_URL.".gff3'>".$result_URL.".gff3</a>","</td>",
+# 	 "<td>General feature format</td>",
+# 	 "</tr>");
+  &PrintURLTable(@result_files);
+
   if ($origin eq "genomic") {
 
     ################################################################
@@ -180,11 +187,8 @@ if ($query->param('output') eq "display") {
       $browser_url .= "=normal'><img border=0 height='20' src='images/e-ensembl_icon.png' alt='EnsEMBL'> genome browser</a>";
     }
 
-    print ("<tr>",
-	   "<td>BED</td>",
-	   "<td>","<a href='".$result_URL.".bed'>".$result_URL.".bed</a>","</td>",
-	   "<td>".$browser_url."</td>",
-	   "</tr>");
+    print ("<h3>Upload features in genome viewer ($genomic_format)</h3>",
+	   $browser_url);
   }
   print "</table></center>";
 
@@ -252,7 +256,8 @@ sub ReadMatrixScanParameters {
   unless ($query->param('matrix') =~ /\S/) { ### empty matrix
     &RSAT::error::FatalError("You did not enter the matrix");
   }
-  $matrix_file = "$TMP/$tmp_file_name.matrix";
+#  $matrix_file = "$TMP/$tmp_file_name.matrix";
+  $matrix_file = $tmp_file_path.".matrix";
 
   $matrix_format = lc($query->param('matrix_format'));
   $parameters .= " -matrix_format ".$matrix_format;
@@ -262,6 +267,7 @@ sub ReadMatrixScanParameters {
   close MAT;
   &DelayedRemoval($matrix_file);
   $parameters .= " -m $matrix_file";
+  push @result_files, ("Matrix file (".$matrix_format.")",$matrix_file);
 
   ## Use consensus as matrix name
   if ($query->param("consensus_as_name") eq "on") {
@@ -350,7 +356,9 @@ sub ReadMatrixScanParameters {
 
   } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
-    my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+#    my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+    my $bgfile = $tmp_file_path."_bgfile.txt";
+    push @result_files, ("Background model", $bgfile);
     my $upload_bgfile = $query->param('upload_bgfile');
     if ($upload_bgfile) {
       if ($upload_bgfile =~ /\.gz$/) {
@@ -381,35 +389,35 @@ sub ReadMatrixScanParameters {
 
   ################################################################
   ## Return fields
- 
+
   ################################################################
   ## Return sites
   if ($query->param('analysis_type') eq "analysis_sites") {
-  	
-  	if ($query->param("return_site_limits") eq "on") {
+
+    if ($query->param("return_site_limits") eq "on") {
       $parameters .= " -return limits";
-    } 
-  	
-  	if ($quick_mode){
-  		 if ($query->param("return_field")){
-  				$parameters .= " -return ".$query->param("return_field");
-  		 }
-  		 my $th = $query->param("thresh_value");
-		 &RSAT::error::FatalError($th." is not a valid value for the threshold. Should be a number. ") unless (&IsReal($th));
-  		 if ($query->param("return_field") eq "sites"){
-  				$parameters .= " -lth score ".$th;
-  		 }
-  		 if ($query->param("return_field") eq "pval"){
-  				$parameters .= " -uth pval ".$th;
-  		  }	 
-  	} else {
-  	
-    my @return_fields = qw(sites pval rank normw weight_limits bg_residues);
-    foreach my $field (@return_fields) {
-      if ($query->param("return_".$field) eq "on") {
-	$parameters .= " -return ".$field;
-      }
     }
+
+    if ($quick_mode){
+      if ($query->param("return_field")){
+	$parameters .= " -return ".$query->param("return_field");
+      }
+      my $th = $query->param("thresh_value");
+      &RSAT::error::FatalError($th." is not a valid value for the threshold. Should be a number. ") unless (&IsReal($th));
+      if ($query->param("return_field") eq "sites"){
+	$parameters .= " -lth score ".$th;
+      }
+      if ($query->param("return_field") eq "pval"){
+	$parameters .= " -uth pval ".$th;
+      }
+    } else {
+
+      my @return_fields = qw(sites pval rank normw weight_limits bg_residues);
+      foreach my $field (@return_fields) {
+	if ($query->param("return_".$field) eq "on") {
+	  $parameters .= " -return ".$field;
+	}
+      }
     
 
     ## thresholds
@@ -514,7 +522,7 @@ sub ReadMatrixScanParameters {
 	$parameters .= " -uth $field $uth ";
       }
     }
- 
+
     my @threshold_fields = qw(site_pval);
     foreach my $field (@threshold_fields) {
       $ms_field = $field;
