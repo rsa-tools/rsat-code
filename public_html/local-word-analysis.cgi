@@ -57,7 +57,7 @@ if ($query->param('windowtype') =~ /no/ ){
     
     if (IsReal($query->param('window_width'))) {
         if ($query->param('window_group')) {
-            $parameters .= ' --windowgroup=' . $query->param('window_width');                
+            $parameters .= ' --center=0 --windowgroup=' . $query->param('window_width');                
         }else{
             $parameters .= ' --window=' . $query->param('window_width');        
         }
