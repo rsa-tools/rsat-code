@@ -20,18 +20,20 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
+
+## peak-motifs command
+$command = "$ENV{RSAT}/perl-scripts/peak-motifs";
+
 ################################################################
 ## configuration
-$command = "$ENV{RSAT}/perl-scripts/peak-motifs";
-$output_dir = sprintf "peak-motifs.%s", &AlphaDate();
+
+## We need to create the output directory before starting peak-motif
+## for uploading the input sequences and reference motifs
+$output_dir_prefix = sprintf "peak-motifs.%s", &AlphaDate();
+$output_dir_full_path = &RSAT::util::make_temp_file("", $output_dir_prefix, 1, 1); $output_dir = &ShortFileName($tmp_file_path);
 $output_prefix = "peak-motifs";
 
-## We need to create the output directory before starting peak-motif  for uploading the input sequences and reference motifs
-$output_path = $TMP."/".$output_dir;
-$output_path =~ s|\/\/|\/|g;
-system("mkdir -p $output_path");
-# $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/perl-scripts" . ":$ENV{RSAT}/python-scripts";
-# $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/bin";
+system("mkdir -p $output_dir_full_path");
 
 ################################################################
 ## result page header
@@ -42,8 +44,16 @@ $query = new CGI;
 &RSA_header("peak-motifs result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
+
 ### update log file
 &UpdateLogFile();
+
+&RSAT::message::Debug(join "<br>", "temporary files", 
+		     "output_dir_prefix = ".$output_dir_prefix,
+		      "output_dir = ".$output_dir,
+		      "output_prefix = ".$output_prefix,
+		      "output_dir_full_path = ".$output_dir_full_path,
+		     );
 
 ################################################################
 ## command line paramters
@@ -81,11 +91,11 @@ if ($query->param('title')){
 ## Peak sequences file
 
 ## Test sequences
-($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $output_path."/".$output_prefix."peak_seq", 1);
+($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $output_dir_full_path."/".$output_prefix."peak_seq", 1);
 $parameters .= "-i $sequence_file ";
 
 ### control sequences file
-($control_file, $sequence_format) = &MultiGetSequenceFile(2, $output_path."/".$output_prefix."control_seq", 0);
+($control_file, $sequence_format) = &MultiGetSequenceFile(2, $output_dir_full_path."/".$output_prefix."control_seq", 0);
 
 if ($control_file) {
   $parameters .= "-ctrl $control_file ";
@@ -186,7 +196,7 @@ if (scalar(@selected_db) > 0) {
 ################################################################
 ## Custom collection motifs (not reference)
 if ($query->param('custom_motif_db')) {
-  my $persomotif_file = $output_path."/".$output_prefix."_custom_motif_db.tf";
+  my $persomotif_file = $output_dir_full_path."/".$output_prefix."_custom_motif_db.tf";
 
   $upload_persomotif = $query->param('custom_motif_db');
   if ($upload_persomotif) {
@@ -222,7 +232,7 @@ if ($query->param('custom_motif_db')) {
 ################################################################
 ## Custom reference motifs
 if ($query->param('ref_motif')) {
-  my $refmotif_file = $output_path."/".$output_prefix."_ref_motifs.tf";
+  my $refmotif_file = $output_dir_full_path."/".$output_prefix."_ref_motifs.tf";
 
   $upload_refmotif = $query->param('ref_motif');
   if ($upload_refmotif) {
@@ -288,16 +298,17 @@ $parameters .= " -prefix $output_prefix";
 $parameters .= " -noov -img_format png ";
 
 ### output directory
-$parameters .= " -outdir $output_path";
+$parameters .= " -outdir ".$output_dir_full_path;
 
 ################################################################
 ## Display or send result
-$index_file = $output_dir."/".$output_prefix."_synthesis.html";
+$index_file = $output_dir_full_path."/".$output_prefix."_synthesis.html";
+#$index_file = $output_dir."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere", $index_file, title=>$mail_title ,no_email=>1);
+  &EmailTheResult("$command $parameters", "nobody@nowhere", $index_file, title=>'$mail_title' ,no_email=>1);
 } else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>'$mail_title');
 }
 
 ################################################################
