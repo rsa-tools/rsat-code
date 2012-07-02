@@ -421,7 +421,7 @@ ATCAACCCATAGCAACTCATAAA
 print "<TD><B>";
 print $query->hidden(-name=>'lth_occ',-default=>'2');
 print $query->hidden(-name=>'window_width',-default=>'800');
-print $query->hidden(-name=>'center',-default=>'0');
+# print $query->hidden(-name=>'center',-default=>'0');
 print $query->hidden(-name=>'bg_level',-default=>"organism");
 print $query->hidden(-name=>'bg_window_width',-default=>'800');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
