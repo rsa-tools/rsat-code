@@ -95,7 +95,7 @@ if ($query->param('proba') eq "alphabet") {
     }
 
     ## Print residue frequencies in a file
-    $alphabet_file = $TMP."/".$tmp_file_name.".alphabet";
+    $alphabet_file = $tmp_file_path.".alphabet";
     push @result_files, ("residue priors",$alphabet_file);
     open ALPHA, ">".$alphabet_file;
     foreach my $letter (keys %freq) {
@@ -139,7 +139,7 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
 #if ($query->param('output') eq "display") {
-    $sequence_file = "$TMP/$tmp_file_name.res";
+    $sequence_file = $tmp_file_path.".res";
     push @result_files, ("sequence",$sequence_file);
 
     open RESULT, "$command $parameters |";
@@ -173,7 +173,7 @@ if (($query->param('output') =~ /display/i) ||
 
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
 }
 print $query->end_html;
 
