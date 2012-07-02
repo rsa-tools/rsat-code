@@ -300,9 +300,9 @@ $index_file = $output_dir_full_path."/".$output_prefix."_synthesis.html";
 #$index_file = $output_dir."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere", $index_file, title=>'$mail_title' ,no_email=>1);
+  &EmailTheResult("$command $parameters", "nobody@nowhere", $index_file, title=>"$mail_title",no_email=>1);
 } else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>'$mail_title');
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>"$mail_title");
 }
 
 ################################################################
