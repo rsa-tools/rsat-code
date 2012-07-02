@@ -223,6 +223,7 @@ print "<TD><b>";
 print $query->hidden(-name=>'demo_descr',-default=>$descr2);
 #print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_url1',-default=>$demo_url);
+print $query->hidden(-name=>'jaspar_pbm_mouse',-default=>'on');
 #print $query->hidden(-name=>'sequence2',-default=>$ctrl_seq);
 print $query->hidden(-name=>'sequence_url2',-default=>$ctrl_url);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
