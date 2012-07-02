@@ -17,7 +17,9 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/seq-proba -v 1";
-$tmp_file_name = sprintf "seq-proba.%s", &AlphaDate();
+$prefix = "seq-proba";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "seq-proba.%s", &AlphaDate();
 @result_files = ();
 
 ### Read the CGI query
@@ -36,6 +38,7 @@ $parameters = "";
 ################################################################
 ## sequence file
 ($in_sequence_file,$sequence_format) = &GetSequenceFile();
+push (@result_files, "Input sequences ($sequence_format)", $in_sequence_file);
 
 #### parameters
 $parameters .= " -i $in_sequence_file -seq_format $sequence_format";
@@ -59,7 +62,7 @@ if ($bg_choose eq "rsat") {
 
 } elsif ($bg_choose =~ /upload/i) {
   ## Upload user-specified background file
-  $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  $bgfile = $tmp_file_path."_bgfile.txt";
   my $upload_bgfile = $query->param('upload_bgfile');
   if ($upload_bgfile) {
     if ($upload_bgfile =~ /\.gz$/) {
@@ -104,7 +107,7 @@ if (($query->param('output') =~ /display/i) ||
 
 
     ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
+    $result_file = $tmp_file_path.".res";
     push @result_files, ("Result file",$result_file);
     open RESULT, "$command $parameters |";
 

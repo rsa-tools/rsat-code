@@ -25,7 +25,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$ENV{RSAT}/python-scripts/implant-sites";
 #$convert_matrix_command = "$SCRIPTS/convert-matrix -return counts";
-$tmp_file_name = sprintf "implant-sites.%s", &AlphaDate();
+$prefix = "implant-sites";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "implant-sites.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -43,14 +45,14 @@ $query = new CGI;
 # Read sequences
 #
 ($sequence_file, $in_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
-
+push (@result_files, "Input sequence ($in_format)", $sequence_file);
 
 ################################################################
 #
 # Read sites
 #
-$sites_file = "$TMP/$tmp_file_name.sites";
-
+$sites_file = $tmp_file_path.".sites";
+push (@result_files, "Input sites", $sites_file);
 if ($query->param('sites')) {
     open SIT, "> $sites_file";
     print SIT $query->param('sites');
@@ -83,6 +85,7 @@ $parameters .= " -s " . $sites_file;
 ## Concatenate parameters to the command
 $command .= " ".$parameters;
 $result_file = $TMP."/".$tmp_file_name.".fasta";
+push @result_files, "Result (fasta)", $result_file;
 $out_format = "fasta"; ## implant-site always exports fasta, but this variable is required for the piping form
 $command  .= " -o ".$result_file;
 
@@ -103,7 +106,7 @@ if ($query->param('output') eq "display") {
 
     ## Add link to the result file
     $result_file = $tmp_file_name.".". "fasta";
-    &PrintURLTable(fasta=>$result_file);
+    &PrintURLTable(@result_files);
 
     ## Form for sending results to other programs
     &PipingFormForSequence();

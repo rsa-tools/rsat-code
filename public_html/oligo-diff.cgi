@@ -22,7 +22,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
 $command = "$SCRIPTS/oligo-diff";
-$tmp_file_name = sprintf "oligo-diff.%s", &AlphaDate();
+$prefix = "oligo-diff";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "oligo-diff.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -40,7 +42,7 @@ $parameters = " -v 1";
 #### Test sequence set
 $upload_test_seq = $query->param('upload_test_seq');
 if ($upload_test_seq) {
-  $tmp_test_seq = "${TMP}/${tmp_file_name}_upload_test_seq.fasta";
+  $tmp_test_seq = $tmp_file_path."_upload_test_seq.fasta";
   $upload_test_seq = $query->param('upload_test_seq');
   if ($upload_test_seq) {
     if ($upload_file =~ /\.gz$/) {
@@ -55,7 +57,7 @@ if ($upload_test_seq) {
     close TEST_SEQ;
   }
 } elsif ($query->param('test_seq') =~/\S/) {
-  $tmp_test_seq = "${TMP}/${tmp_file_name}_pasted_test_seq.fasta";
+  $tmp_test_seq = $tmp_file_path."_pasted_test_seq.fasta";
   open TEST_SEQ, "> $tmp_test_seq";
   print TEST_SEQ $query->param('test_seq');
   close TEST_SEQ;
@@ -71,7 +73,7 @@ push @result_files, ("test sequences",$tmp_test_seq);
 
 $upload_ctrl_seq = $query->param('upload_ctrl_seq');
 if ($upload_ctrl_seq) {
-    $tmp_ctrl_seq = "${TMP}/${tmp_file_name}_upload_ctrl_seq.fasta";
+    $tmp_ctrl_seq = $tmp_file_path."_upload_ctrl_seq.fasta";
     $upload_ctrl_seq = $query->param('upload_ctrl_seq');
     if ($upload_ctrl_seq) {
 	if ($upload_file =~ /\.gz$/) {
@@ -86,7 +88,7 @@ if ($upload_ctrl_seq) {
 	close CTRL_SEQ;
     }
 } elsif ($query->param('ctrl_seq') =~/\S/) {
-    $tmp_ctrl_seq = "${TMP}/${tmp_file_name}_pasted_ctrl_seq.fasta";
+    $tmp_ctrl_seq = $tmp_file_path."_pasted_ctrl_seq.fasta";
     open CTRL_SEQ, "> $tmp_ctrl_seq";
     print CTRL_SEQ $query->param('ctrl_seq');
     close CTRL_SEQ;
@@ -142,7 +144,7 @@ if ($query->param('output') =~ /display/i) {
     &PipingWarning();
 
     ### Execute the command
-    $result_file = "$TMP/${tmp_file_name}.res";
+    $result_file = $tmp_file_path.".res";
     push @result_files, ("oligos", $result_file);
     open RESULT, "$command |";
 
@@ -157,7 +159,7 @@ if ($query->param('output') =~ /display/i) {
 	(&IsReal($query->param('lth_occ_sig')))) {
 
       ## Pattern-assembly
-      $assembly_file = "$TMP/$tmp_file_name.asmb";
+      $assembly_file = $tmp_file_path.".asmb";
       $top_patterns = 50;
       $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -top ".$top_patterns;
       if ($query->param('strand') =~ /single/) {

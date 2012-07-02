@@ -30,7 +30,9 @@ $command = "$ENV{RSAT}/contrib/info-gibbs/info-gibbs";
 
 #$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "info-gibbs.%s", &AlphaDate();
+$prefix = "info-gibbs";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "info-gibbs.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -63,7 +65,7 @@ if (lc($query->param("two_strands")) eq "on") {
 ## sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
 $parameters .= " -i ".$sequence_file;
-push @result_files, ("input sequence",$sequence_file);
+push @result_files, ("Input sequence",$sequence_file);
 
 ### matrix length
 if (&IsNatural($query->param('length'))) {
@@ -164,7 +166,7 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### execute the command ###
-    local $result_file = "$TMP/$tmp_file_name.tab";
+    $result_file = $tmp_file_path.".tab";
     #$matrix_file = "$TMP/$tmp_file_name.matrix";
     #print("$command $parameters\n");
     push @result_files, ('info-gibbs result', $result_file);

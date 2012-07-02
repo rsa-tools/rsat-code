@@ -26,7 +26,6 @@ $command = "$ENV{RSAT}/perl-scripts/compare-matrices";
 
 $prefix = "compare-matrices";
 $output_path = &RSAT::util::make_temp_file("",$prefix, 1); $output_dir = &ShortFileName($output_path);
-### CHANGED ### $output_dir = sprintf "compare-matrices.%s", &AlphaDate();
 
 ## We need to create the output directory before starting
 ## compare-matrices, since it will generate multiple output files.
@@ -55,10 +54,8 @@ $query = new CGI;
 ### read parameters
 $parameters = " -v 1";
 
-
 #### read parameters ####
 local $parameters = " -v 1";
-
 
 ################################################################
 ## Matrix input format
@@ -107,7 +104,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 ## Reference motifs
 if ($query->param('db_choice') eq "custom") {
   ## Upload custom reference motif file
-  local $custom_motif_file = "${TMP}/custom_motif_file.txt";
+  local $custom_motif_file = $output_dir."custom_motif_file.txt";
   local $upload_custom_motif_file = $query->param('upload_custom_motif_file');
   if ($upload_custom_motif_file) {
     if ($upload_custom_motif_file =~ /\.gz$/) {
@@ -225,10 +222,10 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 ################################################################
 ## Display or send result by email
-$index_file = $output_dir."/".$output_prefix."_index.html";
+$index_file = $output_path."/".$output_prefix."_index.html";
 my $mail_title = join (" ", "[RSAT]", "compare-matrices", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere","", title=>$mail_title ,no_email=>1,index=>$index_file);
+  &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title ,no_email=>1,index=>$index_file);
 } else {
   &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
 }

@@ -12,7 +12,6 @@ $command = "$SCRIPTS/get-orthologs";
 $prefix = "get-orthologs";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = sprintf "get-orthologs.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
 @result_files = ();
 
 #$ENV{rsat_echo}=2;
@@ -39,18 +38,14 @@ $parameters = " -v 1";
 ################################################################
 #### queries
 if ( $query->param('queries') =~ /\S/) {
-  $query_file = $TMP."/".$tmp_file_name;
+  $query_file = $tmp_file_path."_query.txt";
+  push @result_files, ("query",$query_file);
+
   open QUERY, ">".$query_file;
   print QUERY $query->param('queries');
   close QUERY;
   &DelayedRemoval($query_file);
   $parameters .= " -i ".$query_file;
-  push @result_files, ("query",$query_file);
-#    open QUERY, ">$TMP/$tmp_file_name";
-#    print QUERY $query->param('queries');
-#    close QUERY;
-#    &DelayedRemoval("$TMP/$tmp_file_name");
-#    $parameters .= " -i $TMP/$tmp_file_name";
 } else {
     &cgiError("You should enter at least one query in the box\n");
 }  
@@ -106,12 +101,13 @@ print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 if ($query->param('output') eq "display") {
     &PipingWarning();
 
-    open RESULT, "$command $parameters |";
+    $result_file = $tmp_file_path.".res";
+    push @result_files, ("gene info",$result_file);
 
+    open RESULT, "$command $parameters |";
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
-    push @result_files, ("gene info",$result_file);
 
     &PrintURLTable(@result_files);
     &PipingForm();

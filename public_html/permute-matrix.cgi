@@ -20,8 +20,10 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = $SCRIPTS."/permute-matrix";
-$tmp_file_name = sprintf "permute-matrix.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
+$prefix = "permute-matrix";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "permute-matrix.%s", &AlphaDate();
+$result_file = $tmp_file_path.".res";
 $ENV{rsat_echo} = 1;
 @result_files = ();
 
@@ -41,7 +43,7 @@ local $parameters = " -v 0";
 
 ################################################################
 #### Matrix specification
-$matrix_file = "$TMP/$tmp_file_name.input";
+$matrix_file = $tmp_file_path.".input";
 if ($query->param('matrix')) {
     open MAT, "> $matrix_file";
     print MAT $query->param('matrix');

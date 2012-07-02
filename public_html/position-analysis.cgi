@@ -20,11 +20,14 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
 #$ENV{rsat_echo}=2;
+@result_files = ();
 
 $position_analysis_command = "$SCRIPTS/position-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
-$tmp_file_name = sprintf "position-analysis.%s", &AlphaDate;
+$prefix = "position-analysis";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "position-analysis.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
@@ -42,17 +45,21 @@ $parameters .= " -sort" if ($query->param('sort'));
 $parameters .= " -nofilter" unless ($query->param('filter'));
 $parameters .= " -nocheck" unless ($query->param('check'));
 
-
 #### purge sequence option
 $purge = $query->param('purge');
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
+push @result_files, ("input sequence",$sequence_file);
 if ($purge) {
-    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $position_analysis_command ";
+  $purged_seq_file = ${sequence_file}.".purged";
+  push @result_files, ("Purged sequence",$sequence_file);
+
+  $command = "$purge_sequence_command -i $sequence_file -format $sequence_format -o $purged_seq_file";
+  $command .= "; $position_analysis_command -i ".$purged_seq_file;
 #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged;  $position_analysis_command -i ${sequence_file}.purged  ";
 } else {
-    $command= "$position_analysis_command -i $sequence_file  ";
+    $command= $position_analysis_command." -i ".$sequence_file;
 }
 
 
@@ -64,7 +71,6 @@ $lth_occ = $query->param('lth_occ');
 &FatalError("$lth_occ Invalid threshold on occurrences") unless &IsNatural($lth_occ);
 $parameters .= " -lth_occ ".$lth_occ;
 
-
 #### chi2
 if ($query->param('return_chi')) {
   push @return_fields, "chi";
@@ -73,7 +79,7 @@ if ($query->param('return_chi')) {
   $lth = $query->param('lth');
   &FatalError("$lth Invalid threshold on chi2") unless &IsNatural($lth);
   $parameters .= " -lth ".$lth;
-} 
+}
 
 ### graphs
 if ($query->param('return_graph')) {
@@ -83,7 +89,7 @@ if ($query->param('return_graph')) {
 ### rank
 if ($query->param('return_rank')) {
   push @return_fields, "rank";
-} 
+}
 
 ### distrib
 if ($query->param('return_distrib')) {
@@ -147,13 +153,17 @@ if ((&IsInteger($offset)) && ($offset != 0)) {
 
 print "<PRE>command: ", &RSAT::util::hide_RSAT_path($command." ".$parameters), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
+
 if ($query->param('output') =~ /display/i) {
 
   &PipingWarning();
 
   ### execute the command ###
-  $result_file = "$TMP/$tmp_file_name.res";
+  $result_file = $tmp_file_path.".res";
+  push @result_files, ("Position analysis result", $result_file);
+#  $result_file = "$TMP/$tmp_file_name.res";
   open RESULT, "$command $parameters |";
+
 
   ### Print result on the web page
   print '<H2>Result</H2>';
@@ -164,7 +174,9 @@ if ($query->param('output') =~ /display/i) {
   if (&IsReal($query->param('occ_significance_threshold'))) {
 
     ## Assemble the significant patterns with pattern-assembly
-    $assembly_file = "$TMP/$tmp_file_name.asmb";
+      $assembly_file = $tmp_file_path.".asmb";
+#      $assembly_file = "$TMP/$tmp_file_name.asmb";
+      push @result_files, ('assembly', $assembly_file);
     $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
     if ($query->param('strand') =~ /single/) {
       $pattern_assembly_command .= " -1str";
@@ -197,11 +209,12 @@ if ($query->param('output') =~ /display/i) {
     }
   }
 
+  &PrintURLTable(@result_files);
   &PipingForm();
   print '<HR SIZE=3>';
 
 } else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
 }
 
 print $query->end_html;
