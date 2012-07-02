@@ -22,10 +22,13 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 $command = "$ENV{RSAT}/python-scripts/random-sites";
 $convert_matrix_command = "$SCRIPTS/convert-matrix -return counts";
-$tmp_file_name = sprintf "random-sites.%s", &AlphaDate();
+$prefix = "random-sites";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "random-sites.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -43,15 +46,14 @@ $query = new CGI;
 #
 $convert_matrix_parameters = '';
 
-$matrix_file = "$TMP/$tmp_file_name.input";
-$tmp_matrix_file = "$TMP/$tmp_file_name.matrix";
+$matrix_file = $tmp_file_path.".input";
+$tmp_matrix_file = $tmp_file_path.".matrix";
 
 if ($query->param('matrix')) {
     open MAT, "> $matrix_file";
     print MAT $query->param('matrix');
     close MAT;
     &DelayedRemoval($matrix_file);
-    
     $convert_matrix_parameters .= " -i $matrix_file";
 } else {
     &RSAT::error::FatalError('You did not enter any data in the matrix box');
@@ -74,7 +76,10 @@ $convert_matrix_parameters .= " -from ".$matrix_input_format;
 
 ## output format
 $convert_matrix_parameters .= " -to tab";
-$convert_matrix_parameters .= " -o " . $tmp_matrix_file;
+$convert_matrix_parameters .= " -o " .$tmp_matrix_file;
+
+push (@result_files, "Input matrix ($matrix_input_format)", $matrix_file);
+push (@result_files, "Converted matrix file (tab)", $tmp_matrix_file);
 
 ################################################################
 #
@@ -92,8 +97,9 @@ if (&RSAT::util::IsNatural($sites_nb)) {
 
 ## Concatenate parameters to the command
 $command .= " ".$parameters;
-$short_result_file = $tmp_file_name."_sites.fasta";
-$result_file = $TMP."/".$short_result_file;
+$result_file = $tmp_file_path."_sites.fasta";
+push (@result_files, "Sites (fasta)", $result_file);
+
 #$result_file = $tab_result_file;
 $command  .= " -o ".$result_file;
 #$command  .= " -m ".$tmp_file_name_matrix;
@@ -120,7 +126,7 @@ if ($query->param('output') eq "display") {
     print "</pre>";
 
     ## Add link to the result file
-    &PrintURLTable(fasta=>$short_result_file);
+    &PrintURLTable(@result_files);
 
     ## Form for sending results to other programs
     &PipingForm();

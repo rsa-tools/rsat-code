@@ -23,7 +23,9 @@ $dna_pattern_command = "$SCRIPTS/dna-pattern -nolimits";
 $add_linenb_command = "$SCRIPTS/add-linenb";
 $add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
 $link_command = "$SCRIPTS/add-yeast-link -db all ";
-$tmp_file_name = sprintf "genome-scale-dna-pattern.%s", &AlphaDate;
+$prefix = "gs-dna-pattern";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "genome-scale-dna-pattern.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
@@ -80,7 +82,7 @@ $parameters_dna_pattern .= " -format $seq_format ";
 unless ($query->param('patterns') =~ /\S/) {
   &cgiError("The pattern box should not be empty.<P>Read on-line manual for more information.");
 }
-$pattern_file = "$TMP/$tmp_file_name.pat";
+$pattern_file = $tmp_file_path.".pat";
 push @result_files, ("patterns",$pattern_file);
 if (open PAT, ">$pattern_file") {
   print PAT $query->param('patterns');
@@ -180,7 +182,7 @@ if ($query->param("output") =~ /display/i) {
 
 
     ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
+    $result_file = $tmp_file_path.".res";
     push @result_files, ("result",$result_file);
     open RESULT, "$command & |";
 

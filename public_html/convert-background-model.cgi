@@ -18,8 +18,10 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-background-model -v 1 ";
-$tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
+$prefix = "convert-bg";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
+$result_file = $tmp_file_path.".res";
 @result_files = ();
 push @result_files, ("Result file",$result_file);
 
@@ -86,7 +88,8 @@ if ($bg_method eq "rsat") {
     
 } elsif ($bg_method =~ /upload/i) {
   ## Upload user-specified background file
-  my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  my $bgfile = $tmp_file_path."_bgfile.txt";
+  push (@result_files, "Input background file", $bgfile);
   my $upload_bgfile = $query->param('upload_bgfile');
   if ($upload_bgfile) {
     if ($upload_bgfile =~ /\.gz$/) {
@@ -147,7 +150,7 @@ if ($query->param('output') eq "display") {
   open RESULT, "$command $parameters |";
 
   ### open the sequence file on the server
-  $mirror_file = "$TMP/${tmp_file_name}.res";
+  $mirror_file = $tmp_file_path.".res";
   if (open MIRROR, ">$mirror_file") {
     $mirror = 1;
     &DelayedRemoval($mirror_file);
@@ -166,20 +169,22 @@ if ($query->param('output') eq "display") {
     close MIRROR if ($mirror);
 
     if ($draw_heatmap) {
-      my $heatmap_file = "${tmp_file_name}_heatmap";
+      my $heatmap_file = $tmp_file_path."_heatmap.png";
       my $command2 = "draw-heatmap -i $mirror_file";
       $command2 = "cut -f 1-5 ".$mirror_file; 
       $command2 .= "| ${SCRIPTS}/draw-heatmap -min 0 -max 1 ";
       $command2 .= " -out_format png";
       $command2 .= " -col_width 50 ";
       $command2 .= " -rownames ";
-      $command2 .= " -o ".${TMP}."/".$heatmap_file.".png";
+      $command2 .= " -o ".$heatmap_file;
 #      $command2 .= " -html ".${TMP}."/".$heatmap_file.".html";
-      push @result_files, ("Heatmap", $heatmap_file.".png");
+      push @result_files, ("Heatmap", $heatmap_file);
 
       print "<pre>command: $command2<p>\n</pre>" if ($ENV{rsat_echo} >= 1);
       `$command2`;
-      print "<center><a href = \"$WWW_TMP/${heatmap_file}.png\"><img src=\"$WWW_TMP/${heatmap_file}.png\"></a>";
+      $heatmap_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($TMP, $heatmap_file);
+      print "<center><a href = \"".$heatmap_URL."\"><img src=\"".$heatmap_URL."\"></a>";
+#      print "<center><a href = \"$WWW_TMP/${heatmap_file}.png\"><img src=\"$WWW_TMP/${heatmap_file}.png\"></a>";
       &DelayedRemoval("$TMP/${heatmap_file}.png");
       &DelayedRemoval("$TMP/${heatmap_file}.html");
     }

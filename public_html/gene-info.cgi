@@ -18,10 +18,11 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/gene-info";
 $prefix = "gene-info";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = sprintf "gene-info.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
 @result_files = ();
+
 
 ### Read the CGI query
 $query = new CGI;
@@ -38,13 +39,13 @@ $parameters = " -v 1";
 ################################################################
 #### queries
 if ( $query->param('queries') =~ /\S/) {
-  $query_file = $TMP."/".$tmp_file_name;
+  $query_file = $tmp_file_path."_query.txt";
+  push @result_files, ("query",$query_file);
   open QUERY, ">".$query_file;
   print QUERY $query->param('queries');
   close QUERY;
   &DelayedRemoval($query_file);
   $parameters .= " -i ".$query_file;
-  push @result_files, ("query",$query_file);
 } else {
     &cgiError("You should enter at least one query in the box\n");
 }
@@ -75,20 +76,23 @@ unless (%{$supported_organism{$organism}}) {
 }
 $parameters .= " -org $organism";
 
+$result_file = $tmp_file_path.".res";
+push @result_files, ("gene info",$result_file);
 
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo});
+
 
 ################################################################
 #### run the command
 if ($query->param('output') eq "display") {
     &PipingWarning();
 
+
     open RESULT, "$command $parameters |";
 
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
-    push @result_files, ("gene info",$result_file);
 
     &PrintURLTable(@result_files);
     &PipingForm();
