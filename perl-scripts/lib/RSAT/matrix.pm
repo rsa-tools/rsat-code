@@ -4010,7 +4010,6 @@ sub fake_seq_from_matrix {
 
   ## create a temporary sequence file which will be deleted after logo creation
   my $tmp_seq_file = &RSAT::util::make_temp_file($main::TMP, ( $self->get_attribute("id")|| $self->get_attribute("identifier") ) );
-
 #  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
