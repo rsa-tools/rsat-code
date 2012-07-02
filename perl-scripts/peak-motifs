@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.234 2012/07/01 23:44:47 jvanheld Exp $
+# $Id: peak-motifs,v 1.235 2012/07/02 19:25:42 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.234 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.235 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -318,7 +318,7 @@ package main;
     ## Total sequence length is computed on the converted test
     ## sequences, since these may have been clipped or restricted to
     ## the top peaks.
-    my $cmd = "sequence-lengths -i ".$main::outfile{"test_converted"}." -sum | grep -v '#' | cut -f 2";
+    my $cmd = $SCRIPTS."/sequence-lengths -i ".$main::outfile{"test_converted"}." -sum | grep -v '#' | cut -f 2";
     local $total_seq_len = `$cmd`;
     chomp($total_seq_len);
 
@@ -1045,7 +1045,7 @@ sub PurgeSeq {
 
   ## Purge sequences (mask redundant fragments)
   &RSAT::message::TimeWarn("Purging sequences", $seq_type, $main::outfile{$seq_type."_converted"}) if ($main::verbose >= 2);
-  $cmd = "$SCRIPTS/purge-sequence -dna";
+  $cmd = $SCRIPTS."/purge-sequence -dna";
   $cmd .= " -i ".$main::outfile{$seq_type."_converted"};
   $cmd .= " -ml ".$main::param{purge_match_length};
   $cmd .= " -mis ".$main::param{purge_mismatches};
