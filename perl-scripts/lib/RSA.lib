@@ -1215,6 +1215,13 @@ sub MessageToAdmin {
     &RSAT::message::MessageToAdmin(@_);
 }
 
+sub OutFileName {
+  &RSAT::util::OutFileName(@_);
+}
+
+sub CheckSubDir {
+  &RSAT::util::CheckSubDir(@_);
+}
 
 #### end of the library #####
 1; # return true
