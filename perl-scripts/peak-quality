@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-quality,v 1.2 2012/07/02 18:41:22 jvanheld Exp $
+# $Id: peak-quality,v 1.3 2012/07/02 19:19:04 jvanheld Exp $
 #
 ############################################################
 
@@ -122,7 +122,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -140,24 +140,39 @@ package main;
   our %param = ();
   our @param_list = (); ## Parameters to print out in the report
   $param{nb_slices} = 5; push @param_list, "nb_slices"; ## Number of sequence slices
-  $param{seq_per_slice} = 200; push @param_list, "seq_per_slice"; ## Number of sequences per slice
+  $param{seq_per_slice} = 0; push @param_list, "seq_per_slice"; ## Number of sequences per slice
   $param{nb_peaks_from_bed} = 0; push @param_list, "nb_peaks_from_bed"; ## Number of peaks defined in the bed file
   $param{nb_peaks_from_seq} = 0; push @param_list, "nb_peaks_from_seq"; ## Number of peaks found in the sequence file
-  $param{top_matrices} = 1; push @param_list, "top_matrices"; ## Number of top matrices taken in consideration in the reference matrix file
-  $param{matrix_permutations} = 1; push @param_list, "matrix_permutations"; ## Number of matrix permutations for matrix-quality (negative control)
+  $param{top_matrices} = 0; push @param_list, "top_matrices"; ## Number of top matrices taken in consideration in the reference matrix file
+  $param{matrix_permutations} = 5; push @param_list, "matrix_permutations"; ## Number of matrix permutations for matrix-quality (negative control)
   $param{decimals} = 1; push @param_list, "decimals"; ## Number of decimals for matrix scanning
   $param{scan_markov_order} = 1; push @param_list, "scan_markov_order"; ## Order of the markov model used for scanning sequences with the motif
 
   # Supported tasks
-  my %task = ();
-  $task{seq_len} = 0; ## Compute sequence lengths
-  $task{bg_model} = 0; ## compute background model
-  $task{slices} = 0; ## Extract peak sequence slices
-  $task{quality} = 1; ## Analyze sequence slices with matrix-quality
+  our @supported_tasks = qw(seq_len
+			   bg_model
+			   slices
+			   quality
+			  );
+  our %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
+
+#   ## Define tasks to execute
+#   $task{seq_len} = 1; ## Compute sequence lengths
+#   $task{bg_model} = 1; ## compute background model
+#   $task{slices} = 1; ## Extract peak sequence slices
+#   $task{quality} = 1; ## Analyze sequence slices with matrix-quality
 
   ################################################################
   ## Read argument values
   &ReadArguments();
+
+  ## If no task is specified, run all of them
+  unless (scalar(keys(%task))) {
+    %task = %supported_task;
+  }
 
   ################################################################
   ## Check argument values
@@ -280,6 +295,10 @@ package main;
   close ($len_handle);
 
   $param{nb_peaks_from_seq} = scalar(@peak_ids);
+  unless ($param{seq_per_slice}) {
+    $param{seq_per_slice} = $param{nb_peaks_from_seq} / $param{slices};
+  }
+
   if (scalar(@peak_ids) < $param{nb_slices} * $param{seq_per_slice}) {
     &RSAT::error::FatalError(join(" ",
 				  "Number of peak sequences ($param{nb_peaks_from_seq}) is insuffient to extract",
@@ -293,7 +312,8 @@ package main;
   push @param_list, "slice_spacing"; ## Number of sequences skipped between two successive slices
   foreach my $s (1..$param{nb_slices}) {
     my $first_seq = &RSAT::util::round(($s-1) * ($param{seq_per_slice} + $param{slice_spacing}))+1;
-    my $last_seq = $first_seq + $param{seq_per_slice} -1;
+    my $last_seq = &RSAT::util::round($first_seq + $param{seq_per_slice} -1);
+    $last_seq = &RSAT::stats::min($last_seq, $param{nb_peaks_from_seq}); ## Make sure that rounding effects don't provoke an excessive value for last_seq
     &RSAT::message::TimeWarn("Extracting slice",
 			     $s."/".$param{nb_slices},
 			     $first_seq." -> ".$last_seq,
@@ -633,6 +653,30 @@ transfac-formatted matrices).
 
 =pod
 
+=item B<-top_matrices top_matrices>
+
+Maximal number of reference matrices to take in consideration for
+matrix-quality.
+
+Default: 0 (means that all matrices of the ref_motif file are analyzed).
+
+Reference motif files may contain one or several matrices. In some
+cases, databases contain distinct matrices for the same transcription
+factor, for different reasons (method to collect the sites, or species
+accepted for building the matrix). 
+
+If the reference file contains multiple motifs, each of them will be
+analyzed in turn, unless the number of motifs is restrictd with the
+parameter -top_matrices.
+
+=cut
+    } elsif ($arg eq "-top_matrices") {
+      $param{top_matrices} = shift(@arguments);
+      &RSAT::error::FatalError($param{top_matrices}, "Invalid value for option -top. Must be a strictly positive Natural number")
+	unless ((&IsNatural($param{top_matrices})) && ($param{top_matrices} > 0));
+
+=pod
+
 =item	B<-o output_directory>
 
 Output directory. All result files will be stored in this directory.
@@ -666,6 +710,21 @@ Default: 5
       $param{slices} = shift(@arguments);
       &RSAT::error::FatalError($param{slices}, "Invalid number of slices, must be a strictly positive Natural number")
 	unless (&RSAT::util::IsNatural($param{slices}));
+
+
+=pod
+
+=item B<-seq_per_slice nb_seq_per_slice>
+
+Number of sequences per slice.  If not specified, this parameter is
+automatically set to N / s, where N is the number of peak sequences
+and s the number of slices.
+
+=cut
+    } elsif ($arg eq "-seq_per_slice") {
+      $param{seq_per_slice} = shift(@arguments);
+      &RSAT::error::FatalError($param{seq_per_slice}, "Invalid number of sequences per slice, must be a strictly positive Natural number")
+	unless (&RSAT::util::IsNatural($param{seq_per_slice}));
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
