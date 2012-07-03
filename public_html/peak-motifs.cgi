@@ -249,8 +249,8 @@ if ($query->param('ref_motif')) {
 ## Scan sequences to search motif occurrences (matrix-scan-quick).
 if ($query->param('matrix-scan-quick') =~ /on/) {
     push(@tasks, "scan");
-    ## HERE need to add the pval and markov order for the background model for matrix-scan-quick
-
+    ## HERE need to add the pval and markov order for the background
+    ## model for matrix-scan-quick
 }
 
 ################################################################
