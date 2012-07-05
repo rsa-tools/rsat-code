@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.17 2012/06/30 19:54:18 rsat Exp $
+# $Id: install_software.mk,v 1.18 2012/07/05 05:50:50 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -775,6 +775,30 @@ _compile_samtools:
 	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
 
 ################################################################
+## Install  SRA toolkit
+SRA_OS=mac64
+SRA_BASE_DIR=${SRC_DIR}/sra
+SRA_VERSION=2.1.10
+SRA_ARCHIVE=sratoolkit.${RSA_VERSION}-${SRA_OS}.tar.gz
+SRA_URL=ftp-private.ncbi.nlm.nih.gov/sra/sdk/${RSA_VERSION}/${SRA_ARCHIVE}
+SRA_DISTRIB_DIR=${SRA_BASE_DIR}/sra-${SRA_VERSION}
+install_sra: _download_sra _compile_sra 
+
+_download_sra:
+	@echo
+	@echo "Downloading SRA"
+	@mkdir -p ${SRA_BASE_DIR}
+	wget -nd  --directory-prefix ${SRA_BASE_DIR} -rNL ${SRA_URL}
+
+_compile_sra:
+	@echo
+	@echo "Installing SRA in dir	${SRA_DISTRIB_DIR}"
+	(cd ${SRA_BASE_DIR}; tar --bzip2 -xpf ${SRA_ARCHIVE})
+	@echo ${SRA_DISTRIB_DIR}
+	(cd ${SRA_DISTRIB_DIR}; make)
+	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+
+################################################################
 ## Install  SWEMBL
 SWEMBL_BASE_DIR=${SRC_DIR}/SWEMBL
 SWEMBL_VERSION=3.3.1
@@ -810,3 +834,28 @@ _download_igb:
 	@echo "Downloading IGB"
 	@mkdir -p ${IGB_BASE_DIR}
 	wget -nd  --directory-prefix ${IGB_BASE_DIR} -rNL ${IGB_URL}
+
+################################################################
+## Integrative Genomics Viewer (IGV) tools
+IGV_BASE_DIR=${SRC_DIR}/IGV
+IGV_VERSION=2.1.7
+#IGV_VERSION=nogenomes_2.1.7
+IGV_ARCHIVE=igvtools_${IGV_VERSION}.zip
+IGV_URL=http://www.broadinstitute.org/igv/projects/downloads/${IGV_ARCHIVE}
+IGV_DISTRIB_DIR=${IGV_BASE_DIR}/IGVTools
+install_igv: _download_igv _compile_igv 
+
+_download_igv:
+	@echo
+	@echo "Downloading IGV"
+	@mkdir -p ${IGV_BASE_DIR}
+	wget -nd  --directory-prefix ${IGV_BASE_DIR} -rNL ${IGV_URL}
+
+_compile_igv:
+	@echo
+	@echo "Installing IGV in dir	${IGV_DISTRIB_DIR}"
+	(cd ${IGV_BASE_DIR}; unzip ${IGV_ARCHIVE})
+	@echo ${IGV_DISTRIB_DIR}
+	@echo "Please add IGVTools folder to your path"
+	@echo 'export PATH=$$PATH:${IGV_DISTRIB_DIR}'
+
