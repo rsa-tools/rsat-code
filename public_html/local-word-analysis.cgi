@@ -173,7 +173,7 @@ if ($query->param('oligotype') =~ /dyad/i) {
 
 
 #### expected frequency estimation ####
-if ($query->param('freq_estimate') =~ /background/i) {
+if ($query->param('bg_method') =~ /background/i) {
     %supported_background = (
 			      "upstream"=>1,
 			      "upstream-noorf"=>1,
