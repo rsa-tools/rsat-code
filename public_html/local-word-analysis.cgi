@@ -42,7 +42,7 @@ $query = new CGI;
 $parameters = "";
 #$parameters .= " -sort";
 
-$parameters .= " --sort -occ_sig";
+$parameters .= " --sort=-occ_sig";
 #$parameters .= " --count=hash ";
 #$parameters .= " --count=tree --spacing=1:10";
 
@@ -52,7 +52,7 @@ $parameters .= " --sort -occ_sig";
 
 ### window
 if ($query->param('windowtype') =~ /no/ ){
-    $parameters .= ' --all';
+    $parameters .= ' --window=none';
 }elsif ($query->param('windowtype') =~ /fixed/){
     
     if (IsReal($query->param('window_width'))) {
@@ -254,7 +254,9 @@ if ($purge) {
 $command .=  "$motif_command -i $sequence_file $parameters";
 
 #print '<style> <!-- pre {overflow: auto;} --></style>';
-print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>" if ($ENV{rsat_echo} >=1);
+#print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>" if ($ENV{rsat_echo} >=1);
+
+print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>";
 
 #&SaveCommand("$command", "$TMP/$tmp_file_name");
 
