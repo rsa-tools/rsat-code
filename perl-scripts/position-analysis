@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.66 2012/07/01 23:42:12 jvanheld Exp $
+# $Id: position-analysis,v 1.67 2012/07/07 11:02:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -11,6 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA2.cgi.lib";
 require RSAT::util;
 require RSAT::stats;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
@@ -42,7 +43,9 @@ $start_time = &RSAT::util::StartScript();
 $sequence_number = 0;
 
 $max_seq_length = 0;
+$skip = 0; ## number of sequences to skip at the beginning of the file
 $last = 0; ## max number of sequences to treat (for quick testing)
+$seqnb = 0; ## max number of sequences to treat (for quick testing)
 $max_graphs = -1; #  maximal number of graphs to export
 
 $nb_possible_pos = 0;
@@ -83,19 +86,24 @@ unless ($title) {
   $title = "position-analysis";
 }
 
+## Number of sequences to analyze
+if ($seqnb > 0) {
+    $last = $skip + $seqnb;
+}
+
 ################################################################
 #### specific treatment for output file, because if graphs are
 #### requested, they must be saved in the same directory as the output
 #### file
 
-if ($outputfile) {
-  $dir{output} =`dirname $outputfile`; 
+if ($outfile{output}) {
+  $dir{output} =`dirname $outfile{output}`; 
   chomp $dir{output};
 } else {
   $dir{output} = ".";
 }
 &RSAT::util::CheckOutDir($dir{output});
-$out = &OpenOutputFile($outputfile);
+$out = &OpenOutputFile($outfile{output});
 
 ### open sequence file ###
 &CheckInputSeqFormat($in_format);
@@ -158,8 +166,8 @@ if ($return{graphs}) {
 
   #### directory for storing the graphs
   $rel_dir{graphs}="graphs";
-  if ($outputfile) {
-    $basename = `basename $outputfile`;
+  if ($outfile{output}) {
+    $basename = `basename $outfile{output}`;
     $basename =~ s/\.tab$//;
     chomp $basename;
     $rel_dir{graphs} = $basename."_".$rel_dir{graphs};
@@ -182,20 +190,35 @@ if ($return{graphs}) {
   print ";$date\tgenerating the graphs ... \n" if ($main::verbose >= 2);
 
   #### index for the graphs
-  if ($outputfile) {
-    $index_file = $outputfile;
-    $index_file =~ s/\.tab$//;	## Suppress tab extension
-    $index_file .= "_graph_index.html";
+  if ($outfile{output}) {
+    $outfile{graph_index} = $outfile{output};
+    $outfile{graph_index} =~ s/\.tab$//;	## Suppress tab extension
+    $outfile{graph_index} .= "_graph_index.html";
+
+#    $outfile{html} = $outfile{output};
+#    $outfile{html} =~ s /\.tab$//;
+#    $outfile{html} .= ".html";
   } else {
-    $index_file = "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}_$strands.html";
+    $outfile{graph_index} = "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}_$strands.html";
   }
 
-  &RSAT::message::Info("Index file", $index_file) if ($main::verbose >= 2);
-  open INDEX, ">$index_file";
+  &RSAT::message::Info("Index file", $outfile{graph_index}) if ($main::verbose >= 2);
+  open INDEX, ">".$outfile{graph_index};
   print INDEX "<html>";
   print INDEX "<title>$title ; ${oligo_len}nt $strands $noov</title>";
   print INDEX "<body>\n";
   print INDEX "<h1>$title</h1>";
+
+  ## Links to output files
+  my ($short_outfile) = &ShortFileName($outfile{output});
+  my $link = &RSAT::util::RelativePath($outfile{graph_index}, $outfile{output});
+  print INDEX "<p>Output file (tab): <a href='".$link."'>$short_outfile</a></p>";
+
+#  my ($short_html_file) = &ShortFileName($outfile{html});
+#  $link = &RSAT::util::RelativePath($outfile{graph_index}, $outfile{html});
+#  print INDEX "<p>Output file (html): <a href='".$link."'>$short_html_file</a></p>";
+
+  ## Open the table linking oligos to their position profile graphs
   print INDEX "<table>\n";
   print INDEX "<tr>\n";
   print INDEX "<th>Sequence</th>\n";
@@ -206,7 +229,7 @@ if ($return{graphs}) {
   print INDEX "<th>Sig</th>\n";
   print INDEX "<th>Score</th>\n" if ($score_column > 0);
   print INDEX "</tr>\n";
-  close INDEX;
+#  close INDEX;
 
   ################################################################
   ## Generate one graph for each oligo
@@ -268,7 +291,7 @@ if ($return{graphs}) {
       print XY "$exp_occ{$oligo_seq}{$class}\n";
     }
     close XYgraph;
-    open INDEX, ">>$index_file";
+#    open INDEX, ">>".$outfile{graph_index};
     print INDEX "<tr>\n";
     print INDEX "<td><A HREF=\"$rel_dir{graphs}/$graph_file_name\">$oligo_seq</A></td>\n";
     print INDEX "<td>", $pattern{$oligo_seq}->{in_bound_occ}, "</td>\n";
@@ -278,11 +301,11 @@ if ($return{graphs}) {
     print INDEX "<td>", $sig, "</td>\n";
     print INDEX "<td>", $score, "</td>\n" if ($score_column > 0);
     print INDEX "</tr>\n";
-    close INDEX;
+#    close INDEX;
   }
-  open INDEX, ">>$index_file";
-  print INDEX "<TABLE>\n";
-  print INDEX "</BODY></HTML>\n";
+#  open INDEX, ">>".$outfile{graph_index};
+  print INDEX "<table>\n";
+  print INDEX "</body></html>\n";
   close INDEX;
 }
 
@@ -291,6 +314,16 @@ if ($return{graphs}) {
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
 print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $out;
+
+################################################################
+## Generate a html output file if required
+#if ($outfile{html}) {
+#    &RSAT::message::TimeWarn("Generating HTML table", $outfile{html}) if ($main::verbose >= 2);
+#    my $cmd = $SCRIPTS."/text-to-html";
+#    $cmd .= " -i ".$outfile{output};
+#    $cmd .= " -o ".$outfile{html};
+#    &doit($cmd);
+#}
 
 exit(0);
 
@@ -381,11 +414,13 @@ sub ReadSequence {
   while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
 	 (($current_seq ne "") || ($current_id ne ""))) {
 
+
     $sequence_number++;
 
-    if (($last > 0) && ($sequence_number > $last)) {
-      &RSAT::message::Warning("Stopped after $last sequences (option -last was used)");
-      last;
+    if (($skip > 0) && ($sequence_number <= $skip)) {
+      &RSAT::message::Warning("Skipped $skip top sequences (option -skip).") 
+	  if ($sequence_number == $skip);
+      next;
     }
 
     ### remove tabs and blank spaces ###
@@ -497,6 +532,13 @@ sub ReadSequence {
     }
 
     undef %last_pos;
+
+    ## Stop if last sequence has been reached
+    if (($last > 0) && ($sequence_number > $last)) {
+      &RSAT::message::Warning("Stopped after $last sequences (option -last).");
+      last;
+    }
+
   }
   undef $current_seq;		### release the memory occupied
   close $in;
@@ -780,15 +822,58 @@ OPTIONS
 
 	-seqtype dna|any
 		  Sequence type
+
 	-last #
 	      Stop after # sequences (for quick testing)
 
 	      The possibility to limit the analysis to a few sequences
-	      (e.g.50 of the input file can be useful for fine-tuing
+	      (e.g.50 of the input file can be useful for fine-tuning
 	      the options and ensuring that the result will appear as
 	      requested. Note that this option should not be used for
 	      the final analysis, since the significance drastically
 	      depends on the number of input sequences.
+
+	-skip #
+	      Skip the first # sequences.
+
+
+	-first #
+
+	     First sequence to analyze. 
+
+	     The option "-first n" has the same effect as "-skip x",
+	     where x = n-1.  These two somewhat redundant options
+	     exist because in some cases it is easier to indicate the
+	     first sequences (e.g. for naming result files according
+	     to the first and last sequences analyzed).
+
+	     The options -skip, -last, -first and -seqnb are
+	     convenient for analyzing successive slices of at
+	     different depths in the sequence file (e.g. from 1 to
+	     1000, then from 5001 to 6000, then from 10001 to 11000,
+	     etc). This allows to test if the position bias of a
+	     pattern is consistent over the whole sequence file, or if
+	     it is confined to the top sequences.
+
+	     An example of useful application of this slice-based
+	     analysis is to estimate the number of relevant sequences
+	     in peaks returned by applying peak-calling programs on
+	     ChIP-seq reads.  Peak sequences should be sorted by
+	     decreasing score values. 
+
+        -seqnb #
+
+	     Maximal number of sequences to analyze. the program stop
+	     reading the sequences after having reached this
+	     number. This option is convenient for analyzing
+	     successive slices of at different depths in the sequence
+	     file (e.g. for peak sequences sorted by decreasing scores.
+
+	     Example: analyze N sequences starting from the X_th one.
+		-first X -seqnnb N
+	
+	     When used without -skip or -first, the option -seqnb
+	     gives the same result as -last.
 
 	-mask upper|lower
 		Mask lower or uppercases, respecively, i.e. replace
@@ -949,7 +1034,10 @@ position-analysis options
 -help		display this list of options
 -i		input file
 -seqtype        sequence type (dna|any)
--last #	        Stop after # sequences (for quick testing)
+-last #	        Stop after # sequences
+-skip #	        Skip the # top sequences
+-first #        Start at the # sequences
+-seqnb #	Analyse up to seqnb sequences
 -mask upper|lower	mask upper- or lowercases, respectively
 -format		input sequence format
 -o 		output file
@@ -1021,7 +1109,7 @@ sub ReadArguments {
 
 	    ### output file
 	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+	    $outfile{output} = $ARGV[$a+1];
 
 	    ### oligomer length
 	} elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
@@ -1140,6 +1228,28 @@ sub ReadArguments {
 		&RSAT::error::FatalError("$last is not a valid value for -last. Must be a Natural number.");
 	    }
 
+	    #### seqnb
+	} elsif ($ARGV[$a] =~ /^-seqnb/i) {
+	    $seqnb = lc($ARGV[$a+1]);
+	    unless (&IsNatural($seqnb)) {
+		&RSAT::error::FatalError("$seqnb is not a valid value for -seqnb. Must be a Natural number.");
+	    }
+
+	    #### skip
+	} elsif ($ARGV[$a] =~ /^-skip/i) {
+	    $skip = lc($ARGV[$a+1]);
+	    unless (&IsNatural($skip)) {
+		&RSAT::error::FatalError("$skip is not a valid value for -skip. Must be a Natural number.");
+	    }
+
+	    #### first
+	} elsif ($ARGV[$a] =~ /^-first/i) {
+	    my $first = lc($ARGV[$a+1]);
+	    unless ((&IsNatural($first)) && ($first > 0)) {
+		&RSAT::error::FatalError("$first is not a valid value for -first. Must be a strictly positive Natural number.");
+	    }
+	    $skip = $first - 1;
+
 	    #### max number of graphs
 	} elsif ($ARGV[$a] =~ /^-max_graphs/i) {
 	    $max_graphs = lc($ARGV[$a+1]);
@@ -1222,7 +1332,10 @@ sub Verbose {
     printf $out "; %-29s\t%s\n", "Sequence file", $inputfile if ($inputfile);
     printf $out "; %-29s\t%s\n", "Sequence format", $in_format;
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
-    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
+    printf $out "; %-29s\t%d\n", "Skipped sequence", $skip if ($skip > 0);
+    printf $out "; %-29s\t%d\n", "Fist sequence", $skip + 1 if ($skip > 0);
+    printf $out "; %-29s\t%d\n", "Last sequence", $last if ($last > 0);
+    printf $out "; %-29s\t%s\n", "Output file", $outfile{output} if ($outfile{output});
     printf $out "; %-29s\t%d\n", "Oligo length", $oligo_length;
     printf $out "; %-29s\t%f\n", "Lower threshold on chi", $lth{chi} if (&IsReal($lth{chi}));
     printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $lth{'occ'} if (&IsNatural($lth{'occ'}));
@@ -1365,7 +1478,7 @@ sub PrintResult {
   }
 
   &RSAT::message::TimeWarn("Printing results") if ($main::verbose >= 2);
-  ### Print header 
+  ### Print header
   print $out "#", join("\t", @out_col), "\n";
 
 
