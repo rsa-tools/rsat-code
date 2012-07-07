@@ -898,7 +898,7 @@ sub GetMatrix {
 
   ## Propose help to find matrices
   unless ($args{nowhere}) {
-    print '</div><div class="menu"><font color=#FF0000>New!</font>
+    print '</div><div class="menu">
 <div class="menu_heading_closed"
 onclick="toggleMenu(';
     print "'98'";
@@ -2328,7 +2328,7 @@ sub OligoDyadPipingForm {
       ## Prepare form for sending matrices and sequences to matrix-scan
       $to_matrix_scan = "<td valign=bottom align=center>";
       $to_matrix_scan .= "<FORM METHOD='POST' ACTION='matrix-scan_form.cgi'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$TMP/$pssm_file_tf'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='".$pssm_file_tf."'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_format' VALUE='transfac'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>";
@@ -2339,7 +2339,7 @@ sub OligoDyadPipingForm {
       ## Prepare form for sending matrices to convert-matrix
       $to_convert_matrix = "<td valign=bottom align=center>";
       $to_convert_matrix .= "<FORM METHOD='POST' ACTION='convert-matrix_form.cgi'>";
-      $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$TMP/$pssm_file_tf'>";
+      $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_file' VALUE='".$pssm_file_tf."'>";
       $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_format' VALUE='transfac'>";
       $to_convert_matrix .= "<INPUT type='submit' value='matrix conversion'>";
       $to_convert_matrix .= "</FORM>";
