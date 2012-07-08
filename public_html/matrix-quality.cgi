@@ -20,7 +20,7 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = $SCRIPTS."/matrix-quality";
 
-$ENV{rsat_echo} = 1;
+#$ENV{rsat_echo} = 1;
 
 ### Read the CGI query
 $query = new CGI;
@@ -60,7 +60,7 @@ my ($result_dir, $file_prefix) = &RSAT::util::SplitFileName($tmp_file_name);
 &RSAT::message::Info("<br>Temporary file: ", $tmp_file_name,
 		     "<br>Result dir: ", $result_dir,
 #		     "<br>Result subdir: ", $result_subdir, 
-		     "<br>File prefix: ", $file_prefix) if ($ENV{rsat_echo} >= 0);
+		     "<br>File prefix: ", $file_prefix) if ($ENV{rsat_echo} >= 2);
 
 #####################
 #Title specification
