@@ -18,7 +18,7 @@ require RSAT::util;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/matrix-quality";
+$command = $SCRIPTS."/matrix-quality";
 
 $ENV{rsat_echo} = 1;
 
@@ -42,24 +42,25 @@ local $parameters = " -v 0";
 #$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #system("rm -f $tmp_file_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 #my $date = &AlphaDate();
-my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality", 1);
+my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality", 1,0); system ("rm -f $tmp_file_name");
 
 #$tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
-$file_prefix = `basename $tmp_file_name`;
-chomp($file_prefix);
-$result_dir = $tmp_file_name;
+#$file_prefix = `basename $tmp_file_name`;
+#chomp($file_prefix);
+#$result_dir = $tmp_file_name;
 #$result_subdir = $tmp_file_name;
 #$result_dir = $TMP."/".$result_subdir;
 #$result_dir =~ s|\/\/|\/|g;
 #$file_prefix = $result_dir."/";
 
 ## We remove the file created by mktemp and create a directory instead
-`rm -f $result_dir; mkdir -p $result_dir; chmod 777 $result_dir`;
+#`rm -f $result_dir; mkdir -p $result_dir; chmod 777 $result_dir`;
 
-&RSAT::message::Info("Temporary file</br>", $tmp_file_name, 
-		     "<p>\nResult dir<br>", $result_dir, 
-		     "<p>\nResult subdir<br>", $result_subdir, 
-		     "<p>File prefix<br>", $file_prefix) if ($ENV{rsat_echo} >= 2);
+my ($result_dir, $file_prefix) = &RSAT::util::SplitFileName($tmp_file_name);
+&RSAT::message::Info("<br>Temporary file: ", $tmp_file_name,
+		     "<br>Result dir: ", $result_dir,
+#		     "<br>Result subdir: ", $result_subdir, 
+		     "<br>File prefix: ", $file_prefix) if ($ENV{rsat_echo} >= 0);
 
 #####################
 #Title specification
@@ -101,43 +102,41 @@ if (&IsReal($query->param('pseudo_counts'))) {
 if ($query->param('pseudo_distribution') eq "equi_pseudo") {
     $parameters .= " -equi_pseudo ";
 }
-############
-#Kfold
+
+################################################################
+## k parameter for the k-fold validation
 if (&IsInteger($query->param('kfold'))) {
     $parameters .= " -kfold ".$query->param('kfold');
 }
 
 ################################################################
-## sequence file
+## First sequence file
 my $sequence_format="fasta";
-($sequence_file1,$sequence_format1) = &MultiGetSequenceFile(1,$result_dir."sequence1.input", 1);
-
+($sequence_file1, $sequence_format1) = &MultiGetSequenceFile(1,$result_dir."sequence1.fasta", 1);
 if ($query->param('tag1') ){
-    $tag1 =$query->param('tag1') ;
+    $tag1=$query->param('tag1') ;
 }
-
 $parameters .= " -seq ". $tag1 ." ".$sequence_file1 ;
 $parameters .= " -seq_format ". "fasta" ;
-
 if (lc($query->param('nwd')) eq "on") {
   $parameters .= " -nwd ". $tag1 ;
 }
 
 
-
-($sequence_file2) = &MultiGetSequenceFile(2,$result_dir."sequence2.input", 0);
-if ($query->param('tag2') ){
+################################################################
+## Secod sequence file
+($sequence_file2) = &MultiGetSequenceFile(2,$result_dir."sequence2.fasta", 0);
+if ($sequence_file2) {
+  if ($query->param('tag2') ){
     $tag2 =$query->param('tag2') ;
+  } else {
+    $tag2 = "seq_file2";
+  }
+  $parameters .= " -seq ". $tag2 ." ".$sequence_file2
 }
 
-
-$parameters .= " -seq ". $tag2 ." ".$sequence_file2  if $sequence_file2 ;
-
-
-
-
 ################################################################
-## permutations
+## Permutations
 if (&IsInteger($query->param('permutation1'))) {
     $parameters .= " -perm ".$tag1." ".$query->param('permutation1');
 }
@@ -145,8 +144,9 @@ if (&IsInteger($query->param('permutation1'))) {
 if (&IsInteger($query->param('permutation2'))) {
     $parameters .= " -perm ".$tag2." ".$query->param('permutation2')  if  $sequence_file2 ;
 }
-#############
-#scan options
+
+################################################################
+## scan options
 if ($query->param('scanopt1') ){
     $scanopt2 =$query->param('scanopt1') ;
 }
@@ -158,16 +158,16 @@ if ($query->param('scanopt2') ){
 $parameters .= " -scanopt ".$tag2." ".$scanopt2   if ( $sequence_file2 && $scanopt2 ) ;
 
 ################################################################
-  ## Markov order
-  my $markov_order = $query->param('markov_order');
-  &RSAT::error::FatalError("Markov model should be a Natural number") unless &IsNatural($markov_order);
+## Markov order
+my $markov_order = $query->param('markov_order');
+&RSAT::error::FatalError("Markov model should be a Natural number") unless &IsNatural($markov_order);
 
 
 ################################################################
 ## Background model method
 local $bg_method = $query->param('bg_method');
 if ($bg_method eq "from_matrix") {
-
+  
 } elsif ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
   local $organism_name = $query->param("organism");
@@ -179,10 +179,11 @@ if ($bg_method eq "from_matrix") {
 			       $oligo_length, $background_model,
 			       noov=>$noov, str=>"-1str");
   $parameters .= " -bgfile ".$bg_file.".gz";
-   $parameters .= " -bg_format ".'oligo-analysis';
+  $parameters .= " -bg_format ".'oligo-analysis';
+
 } elsif ($bg_method =~ /upload/i) {
   ## Upload user-specified background file
-  local $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  local $bgfile = $tmp_file_name."_bgfile.txt";
   local $upload_bgfile = $query->param('upload_bgfile');
   if ($upload_bgfile) {
     if ($upload_bgfile =~ /\.gz$/) {
@@ -200,6 +201,7 @@ if ($bg_method eq "from_matrix") {
   } else {
     &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
+
 } else {
   &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
 }
@@ -207,7 +209,7 @@ if ($bg_method eq "from_matrix") {
 ################################################################
 ## bg_pseudo
 if (&IsReal($query->param('bg_pseudo'))) {
-    $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
+  $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
 }
 ###############
 #output folder
@@ -220,9 +222,10 @@ $parameters .= " -archive  -o ".$result_dir."/".$file_prefix;
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 ## Convert the absolute path of the directory into a path relative to the tmp directory for the Web link
-$result_subdir = $tmp_file_name;
-$result_subdir =~ s/${TMP}//;
-$index_file = $result_subdir."/".$file_prefix."_synthesis.html";
+#$result_subdir = $tmp_file_name;
+#$result_subdir =~ s/${TMP}//;
+#$index_file = $result_subdir."/".$file_prefix."_synthesis.html";
+$index_file = $tmp_file_name."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-quality",  &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 
