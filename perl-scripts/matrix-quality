@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.144 2012/07/08 20:15:49 jvanheld Exp $
+# $Id: matrix-quality,v 1.145 2012/07/08 21:01:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2866,14 +2866,16 @@ sub GenerateHTMLReport {
   print $synthesis_per_matrix "\n<h3>Result files</h3>\n";
   print $synthesis_per_matrix "<p><table border=1 cellpadding=3 cellpsacing=3>";
 
-  ## Compress all the results in a zip archive
-  ## This will compress only the archives for one matrix
+    ## Compress all the results in a zip archive.  This will compress
+    ## only the archives for one matrix.
   if ($main::archive) {
     $outfile{zip_archive} = $main::matrix_prefix{$matrix_name}."_dir.zip"; push @files_to_index, "zip_archive";
-    &RSAT::message::Debug("Adding file to index ", "zip_archive",  $main::prefix{main}."_dir.zip") if ($main::verbose >= 10);
-    $zip_command=" zip -q ".$outfile{zip_archive}."  ". $main::matrix_prefix{$matrix_name}."* ";
+    $zip_command=" zip -q ".$outfile{zip_archive}."  ". $main::matrix_prefix{$matrix_name}."*";
     &doit($zip_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    #	&index_one_file("Output directory",$outfile{zip_archive} );
+
+    ## Index the archive in the matrix-wise HTML report.
+    &RSAT::message::Debug("Adding file to index ", "zip_archive",  $main::prefix{main}."_dir.zip") if ($main::verbose >= 10);
+    &index_one_file("Output directory",$outfile{zip_archive} );
   }
   #      } else{
 
@@ -2895,6 +2897,19 @@ sub GenerateHTMLReport {
   print $synthesis_per_matrix "</body></html>\n";
   close $synthesis_per_matrix;
    # print "Finishing one index"; <STDIN>;
+
+
+    ## Run the zip command with the html report because it has been
+    ## modified since we zipped the whole content (there is some
+    ## circularity: the zip archive must exist in order to appear
+    ## correctly on the HTML index report, but the HTML index report
+    ## is not yet finished when we run zip -> we re-run it to update
+    ## the HTML report once it is closed).
+  if ($main::archive) {
+    &RSAT::message::Debug("Updating HTML report in the zip archive") if ($main::verbose >= 10);
+    $zip_command=" zip -q ".$outfile{zip_archive}."  ". $main::matrix_prefix{$matrix_name}."*.html";
+    &doit($zip_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  }
 
 }
 
