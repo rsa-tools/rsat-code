@@ -106,7 +106,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
         </fieldset><br/>
       </div>
       
-      <b>Output</b>&nbsp;<input type="radio" name="output" value="display" />display <input type="radio" name="output" value="email" checked="checked" />email <input type="text" name="user_email"  size="30" />
+      <b>Output</b>&nbsp;<input type="radio" name="output" value="display"  checked="checked"/>display <input type="radio" name="output" value="email"/>email <input type="text" name="user_email"  size="30" />
 
       <ul><table class='formbutton'>
         <tr valign=middle>

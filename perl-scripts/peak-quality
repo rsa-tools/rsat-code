@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-quality,v 1.4 2012/07/03 01:32:27 jvanheld Exp $
+# $Id: peak-quality,v 1.5 2012/07/08 20:19:21 jvanheld Exp $
 #
 ############################################################
 
@@ -144,7 +144,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -831,8 +831,6 @@ site per peak). See option I<-one_site_per_peak>.
     } elsif ($arg eq "-all_sites") {
       $param{one_site_per_peak} = 0;
 
-
-
 =pod
 
 =item B<-task>
@@ -864,6 +862,7 @@ B<Default tasks>
 	if ($supported_task{$task}) {
 	  $task{$task} = 1;
 	} else {
+## TEMPORARILY DISACTIVATED FOR PROGRAMMING ###
 #	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
 	}
       }

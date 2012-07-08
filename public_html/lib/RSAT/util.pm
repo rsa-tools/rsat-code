@@ -820,7 +820,6 @@ sub hex2rgb {
 ##    $make_dir (value 0 or 1): if 1, create a temporary directory rather than temporary file
 sub make_temp_file {
   my ($tmp_dir, $tmp_prefix, $add_date, $make_dir) = @_;
-
 #    &RSAT::message::Debug("&RSAT::util::make_temp_file()",
 #  			"\n\ttmp_dir=".$tmp_dir,
 #  			"\n\ttmp_prefix=".$tmp_prefix,
