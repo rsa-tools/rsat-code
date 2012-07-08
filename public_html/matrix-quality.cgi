@@ -46,15 +46,6 @@ my $result_dir = &RSAT::util::make_temp_file("","matrix-quality", 1,1);
 my $file_prefix = "matrix-quality_".&AlphaDate();
 my $tmp_file_name = $result_dir."/".$file_prefix;
 
-#$tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
-#$file_prefix = `basename $tmp_file_name`;
-#chomp($file_prefix);
-#$result_dir = $tmp_file_name;
-#$result_subdir = $tmp_file_name;
-#$result_dir = $TMP."/".$result_subdir;
-#$result_dir =~ s|\/\/|\/|g;
-#$file_prefix = $result_dir."/";
-
 ## We remove the file created by mktemp and create a directory instead
 #`rm -f $result_dir; mkdir -p $result_dir; chmod 777 $result_dir`;
 &RSAT::message::Info("<br>Temporary file: ", $tmp_file_name,
