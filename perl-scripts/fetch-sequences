@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.17 2012/06/17 11:13:46 jvanheld Exp $
+# $Id: fetch-sequences,v 1.18 2012/07/08 20:17:56 jvanheld Exp $
 #
 ############################################################
 
@@ -212,7 +212,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -300,6 +300,9 @@ package main;
         $chr_end{"chr".$_->ref} = $_->end; #put result in hash table with key "chr" and value "chr_end"
       }
     }
+  }
+  if (scalar(keys(%chr_end)) == 0) {
+    &RSAT::error::FatalError("Could not obtain entry points from UCSC DAS server", $das_server_url);
   }
 
   ################################################################
