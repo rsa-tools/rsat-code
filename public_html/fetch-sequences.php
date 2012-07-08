@@ -359,7 +359,7 @@ if (!$errors) {
 	    <form method="post" action="peak-motifs_form.cgi">
 	    <input type="hidden" name="title" value="'.str_replace('.bed', '', end(explode('/',$bed_file))).'">
 	    <input type="hidden" name="sequence_url1" value="'.rsat_path_to_url($output_file).'">
-	    <input type="submit" value="peak-motif">
+	    <input type="submit" value="peak-motifs">
 	    </form></td>
 	  </tr>
 	  </table>');  
