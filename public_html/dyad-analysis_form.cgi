@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.35 2012/02/29 09:39:11 morgane Exp $
+# $Id: dyad-analysis_form.cgi,v 1.36 2012/07/08 20:22:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -96,7 +96,7 @@ print "Reference: <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/10
 print "</center>";
 print "<u>Warning</u> !! For <b>vertebrate</b> genomes, analyses of complete promoters from <b>co-expressed gene groups</b> return <b>many false positive</b> (i.e. if you submit a random set of genes, you always get plenty of highly 'significant' motifs). This is likely to come from the heterogeneity of human sequences (mixtures of GC-rich and GC-poor promoters).
 <br/>
-However, analyses of <b>ChIP-seq peaks</b> return <b>very good</b> results. See the program <i>peak-motifs</i>.
+However, analyses of <b>ChIP-seq peaks</b> return <b>very good</b> results. See the program <i><a href='peak-motifs_form.cgi'>peak-motifs</a></i>.
 <p/>";
 
 print "<hr>";
@@ -124,7 +124,6 @@ print "<HR width=550 align=left>\n";
 
 ################################################################
 ## Dyad counting options
-print "<hr>\n";
 print "<b>Dyad counting mode</b><br>\n";
 
 ### Monad length
