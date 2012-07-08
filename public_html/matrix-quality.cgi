@@ -42,7 +42,9 @@ local $parameters = " -v 0";
 #$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #system("rm -f $tmp_file_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 #my $date = &AlphaDate();
-my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality", 1,0); system ("rm -f $tmp_file_name");
+my $result_dir = &RSAT::util::make_temp_file("","matrix-quality", 1,1);
+my $file_prefix = "matrix-quality_".&AlphaDate();
+my $tmp_file_name = $result_dir."/".$file_prefix;
 
 #$tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
 #$file_prefix = `basename $tmp_file_name`;
@@ -55,12 +57,10 @@ my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality", 1,0); syste
 
 ## We remove the file created by mktemp and create a directory instead
 #`rm -f $result_dir; mkdir -p $result_dir; chmod 777 $result_dir`;
-
-my ($result_dir, $file_prefix) = &RSAT::util::SplitFileName($tmp_file_name);
 &RSAT::message::Info("<br>Temporary file: ", $tmp_file_name,
 		     "<br>Result dir: ", $result_dir,
 #		     "<br>Result subdir: ", $result_subdir, 
-		     "<br>File prefix: ", $file_prefix) if ($ENV{rsat_echo} >= 2);
+		     "<br>File prefix: ", $file_prefix) if ($ENV{rsat_echo} >= 1);
 
 #####################
 #Title specification
@@ -214,7 +214,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 ###############
 #output folder
 
-$parameters .= " -archive  -o ".$result_dir."/".$file_prefix;
+$parameters .= " -archive -o ".$result_dir."/".$file_prefix;
 
 ###########################
 #Command
