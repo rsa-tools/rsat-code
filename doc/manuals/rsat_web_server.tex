@@ -113,11 +113,28 @@ ScriptAlias /rsat/ [RSAT_PARENT_PATH]/rsa-tools/public_html/
 <Directory "[RSAT_PARENT_PATH]/rsa-tools/public_html/">
    AllowOverride None
    AddHandler cgi-script .cgi
-   Options ExecCGI Indexes
+   Options ExecCGI
    Order allow,deny
    Allow from all
 </Directory>
 \end{lstlisting}
+
+\item We will now add the possibility for web browsers to access the file
+  content of sub-folders of the data directory. 
+
+
+\begin{lstlisting}
+<Directory "[RSAT_PARENT_PATH]/rsa-tools/public_html/data/">
+   AllowOverride None
+   Options Indexes
+   Order allow,deny
+   Allow from all
+</Directory>
+\end{lstlisting}
+
+  Note that ``Options Indexes'' should never be authorized at the level of the
+  parent folder public_html, because this would make the content of the tmp
+  directory visible to anyone!
 
 \end{enumerate}
 
