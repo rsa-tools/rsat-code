@@ -57,6 +57,7 @@ clean_emacs_bk:
 	done
 	@echo "	Cleaning directory public_html"
 	@rm -f public_html/*~ public_html/.#* public_html/#*
+	@rm -f *~ .#* #*
 
 ################################################################
 ## Create tar and zip archives of the whole distribution
