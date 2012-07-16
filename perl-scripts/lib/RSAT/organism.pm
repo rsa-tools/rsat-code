@@ -174,170 +174,170 @@ Usage:
 
 =cut
 sub OpenContigs {
-    my ($self,
-	$organism_name,
-	$annotation_table,
-	$input_sequence_file,
-	$input_sequence_format,
-	%args) = @_;
+  my ($self,
+      $organism_name,
+      $annotation_table,
+      $input_sequence_file,
+      $input_sequence_format,
+      %args) = @_;
 
-    my $genome_file;
-    my $genome_file_format;
+  my $genome_file;
+  my $genome_file_format;
 
-    if ($main::verbose >= 3) {
-      &RSAT::message::TimeWarn(join ("\t", "Opening contigs", @_));
-      &RSAT::message::Info(join ("\t",
-				 "Manually specified input sequence file",
-				 $input_sequence_file,
-				 $input_sequence_format))
-	if ($input_sequence_file);
+  if ($main::verbose >= 3) {
+    &RSAT::message::TimeWarn(join ("\t", "Opening contigs", @_));
+    &RSAT::message::Info(join ("\t",
+			       "Manually specified input sequence file",
+			       $input_sequence_file,
+			       $input_sequence_format))
+      if ($input_sequence_file);
+  }
+
+  ################################################################
+  #### check input sequence file and format
+  if ($input_sequence_file) {
+    $genome_file = $input_sequence_file;
+    $genome_seq_format = $input_sequence_format;
+  } elsif ($organism_name) {
+    $self->check_name($organism_name);
+    $genome_file = $main::supported_organism{$organism_name}->{'genome'};
+    $genome_seq_format = $main::supported_organism{$organism_name}->{'seq_format'};
+  } else {
+    &RSAT::error::FatalError("You should specify an organism.", "Use the command supported-organisms to get a list of suported organisms");
+  }
+  if ($main::verbose >= 4) {
+    &RSAT::message::Info("genome file\t".$genome_file);
+    &RSAT::message::Info("genome format\t".$genome_seq_format) ;
+  }
+
+  #### check feature file
+  unless ($annotation_table) {
+    $annotation_table = $main::supported_organism{$organism_name}->{'features'};
+  }
+  if ($main::verbose >= 4) {
+    &RSAT::message::Info("feature table\t".$annotation_table);
+  }
+
+  ################################################################
+  ### open a direct read access to the contig files
+  if ($genome_seq_format eq "raw") {
+    $contig_id = $organism_name;
+    $genome_file =~ s/\.fna$/\.raw/;
+    $contig_seq{$contig_id} = new RSAT::SequenceOnDisk (filename=>  $genome_file,
+							id=>        $contig_id,
+							circular=>  1, ### for bacterial genomes
+							organism=>  $organism_name);
+    $contig_obj = new RSAT::contig();
+    $contig_obj->push_attribute("names", $contig_id);
+    $contig_obj->set_sequence_object($contig_seq{$contig_id});
+    $contig_obj->set_organism($organism_name);
+    $self->add_contig($contig_id, $contig_obj);
+
+  } elsif ($genome_seq_format eq "filelist") {
+
+    ## Check the existence of genome file
+    unless (-e $genome_file) {
+      &RSAT::error::FatalError("Genome file $genome_file does not exist.");
     }
 
-    ################################################################
-    #### check input sequence file and format
-    if ($input_sequence_file) {
-	$genome_file = $input_sequence_file;
-	$genome_seq_format = $input_sequence_format;
-    } elsif ($organism_name) {
-	$self->check_name($organism_name);
-	$genome_file = $main::supported_organism{$organism_name}->{'genome'};
-	$genome_seq_format = $main::supported_organism{$organism_name}->{'seq_format'};
-    } else {
-	&RSAT::error::FatalError("You should specify an organism.", "Use the command supported-organisms to get a list of suported organisms");
-    }
+    ## Separate the genome directory and file name
+    my ($seq_dir, $seq_list) = &RSAT::util::SplitFileName($genome_file);
+
     if ($main::verbose >= 4) {
-	&RSAT::message::Info("genome file\t".$genome_file);
-	&RSAT::message::Info("genome format\t".$genome_seq_format) ;
+      &RSAT::message::Info(join ("\t", "Genome dir", $seq_dir));
+      &RSAT::message::Info(join ("\t", "Sequence list", $seq_list));
     }
 
-    #### check feature file
-    unless ($annotation_table) {
-	$annotation_table = $main::supported_organism{$organism_name}->{'features'};
+    ## Read the list of contigs for this genome, and open a stream for each contig
+    open FILES, $genome_file ||
+      &RSAT::error::FatalError("Cannot open genome file $genome_file for reading.");
+    while (<FILES>) {
+      chomp;
+      my ($seq_file, $contig_id, $type) = split "\t";
+
+      ## Contig ID
+      $contig_id = $seq_file unless ($contig_id);
+
+      ## Specify whether the contig is circular
+      my $circular = 0;
+      if ((defined($type)) && ($type eq "circular")) {
+	$circular = 1;
+      }
+
+      ## Repeat masked
+      if ($args{rm}) {
+	my $masked_seq_file = $seq_file;
+	$masked_seq_file =~ s/\.raw/_repeat_masked.raw/;
+	if (-e $seq_dir."/".$masked_seq_file) {
+	  $seq_file = $masked_seq_file;
+
+	  &RSAT::message::Warning(join("\t",
+				       "Using masked repeat version of contig",
+				       $contig_id,
+				       $seq_dir."/".$seq_file,
+				      )) if ($main::verbose >= 2);
+	} else {
+	  &RSAT::message::Warning(join("\t",
+				       "There is no masked repeat version of contig",
+				       $contig_id,
+				       "missing file", $seq_dir."/".$masked_seq_file,
+				      ));
+	}
+      }
+
+      &RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular: $circular") )
+	if ($main::verbose >= 3);
+
+      $contig_seq{$contig_id} = new RSAT::SequenceOnDisk(filename=>  $seq_dir."/".$seq_file,
+							 id=>        $contig_id,
+							 circular=>  $circular,
+							 organism=>  $organism_name);
+      $contig_obj = new RSAT::contig();
+      $contig_obj->push_attribute("names",$contig_id);
+      $contig_obj->set_sequence_object($contig_seq{$contig_id});
+      $contig_obj->set_organism($organism_name);
+      $self->add_contig($contig_id, $contig_obj);
+
+      warn join ("\t","CONTIG",
+		 $seq_file,
+		 $contig_id,
+		 $contig_obj,
+		 $contig_obj->get_attribute("sequence"),
+		 $contig_obj->get_attribute("sequence")->get_length()
+		), "\n"  if ($main::verbose >= 10);
+
+      warn join ("\t", "SEQUENCE",
+		 $contig_id,
+		 $contig_seq{$contig_id}->get_attribute("filename"),
+		 $contig_seq{$contig_id}->get_length(),
+		 $contig_seq{$contig_id}->get_attribute("circular"),
+		 $contig_seq{$contig_id}->get_sequence(1,12,"D")
+		), "\n" if ($main::verbose >= 10);
+
     }
-    if ($main::verbose >= 4) {
-	&RSAT::message::Info("feature table\t".$annotation_table);
+    close FILES;
+
+  } elsif ($accepted_input_seq{$genome_seq_format}) {
+    unless (-e $genome_file) {
+      &RSAT::error::FatalError("Genome file $genome_file does not exist.");
     }
+    my ($in, $input_dir) = &OpenInputFile($genome_file, $genome_seq_format);
 
-    ################################################################
-    ### open a direct read access to the contig files
-    if ($genome_seq_format eq "raw") {
-	$contig_id = $organism_name;
-	$genome_file =~ s/\.fna$/\.raw/;
-	$contig_seq{$contig_id} = new RSAT::SequenceOnDisk (filename=>  $genome_file,
-						id=>        $contig_id,
-						circular=>  1, ### for bacterial genomes
-						organism=>  $organism_name);
-	$contig_obj = new RSAT::contig();
-	$contig_obj->push_attribute("names", $contig_id);
-	$contig_obj->set_sequence_object($contig_seq{$contig_id});
-	$contig_obj->set_organism($organism_name);
-	$self->add_contig($contig_id, $contig_obj);
-
-    } elsif ($genome_seq_format eq "filelist") {
-
-	## Check the existence of genome file
-	unless (-e $genome_file) {
-&RSAT::error::FatalError("Genome file $genome_file does not exist.");
-	}
-
-	## Separate the genome directory and file name
-	my ($seq_dir, $seq_list) = &RSAT::util::SplitFileName($genome_file);
-
-	if ($main::verbose >= 4) {
-&RSAT::message::Info(join ("\t", "Genome dir", $seq_dir));
-&RSAT::message::Info(join ("\t", "Sequence list", $seq_list));
-	}
-
-	## Read the list of contigs for this genome, and open a stream for each contig
-	open FILES, $genome_file ||
-&RSAT::error::FatalError("Cannot open genome file $genome_file for reading.");
-	while (<FILES>) {
-chomp;
-my ($seq_file, $contig_id, $type) = split "\t";
-
-## Contig ID
-$contig_id = $seq_file unless ($contig_id);
-
-## Specify whether the contig is circular
-my $circular = 0;
-if ((defined($type)) && ($type eq "circular")) {
-		$circular = 1;
-}
-
-## Repeat masked
-if ($args{rm}) {
-		my $masked_seq_file = $seq_file;
-		$masked_seq_file =~ s/\.raw/_repeat_masked.raw/;
-		if (-e $seq_dir."/".$masked_seq_file) {
-	$seq_file = $masked_seq_file;
-
-	&RSAT::message::Warning(join("\t",
-						 "Using masked repeat version of contig",
-						 $contig_id,
-						 $seq_dir."/".$seq_file,
-						 )) if ($main::verbose >= 2);
-		} else {
-	&RSAT::message::Warning(join("\t",
-						 "There is no masked repeat version of contig",
-						 $contig_id,
-						 "missing file", $seq_dir."/".$masked_seq_file,
-						 ));
-		}
-}
-
-&RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular: $circular") )
-		if ($main::verbose >= 3);
-
-$contig_seq{$contig_id} = new RSAT::SequenceOnDisk(filename=>  $seq_dir."/".$seq_file,
-						   id=>        $contig_id,
-						   circular=>  $circular,
-						   organism=>  $organism_name);
-$contig_obj = new RSAT::contig();
-$contig_obj->push_attribute("names",$contig_id);
-$contig_obj->set_sequence_object($contig_seq{$contig_id});
-$contig_obj->set_organism($organism_name);
-$self->add_contig($contig_id, $contig_obj);
-
- warn join ("\t","CONTIG",
- 	   $seq_file,
- 	   $contig_id,
- 	   $contig_obj,
- 	   $contig_obj->get_attribute("sequence"),
- 	   $contig_obj->get_attribute("sequence")->get_length()
-	  ), "\n"  if ($main::verbose >= 10);
-
- warn join ("\t", "SEQUENCE",
- 	   $contig_id,
- 	   $contig_seq{$contig_id}->get_attribute("filename"),
- 	   $contig_seq{$contig_id}->get_length(),
- 	   $contig_seq{$contig_id}->get_attribute("circular"),
- 	   $contig_seq{$contig_id}->get_sequence(1,12,"D")
-	  ), "\n" if ($main::verbose >= 10);
-
-	}
-	close FILES;
-
-    } elsif ($accepted_input_seq{$genome_seq_format}) {
-	unless (-e $genome_file) {
-&RSAT::error::FatalError("Genome file $genome_file does not exist.");
-	}
-	my ($in, $input_dir) = &OpenInputFile($genome_file, $genome_seq_format);
-
-	while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $genome_seq_format, $input_dir)) &&
-   (($current_seq) || ($current_id))) {
-$contig_id = $current_id;
-$contig_seq{$contig_id} = new RSAT::Sequence (id=>        $contig_id,
-					   sequence=>  $current_seq,
-					   organism=>  $organism_name);
-$contig_obj = new RSAT::contig();
-$contig_obj->push_attribute("names",$contig_id);
-$contig_obj->set_sequence_object($contig_seq{$contig_id});
-$contig_obj->set_organism($organism_name);
-$self->add_contig($contig_id, $contig_obj);
-	}
-    } else {
-	&RSAT::error::FatalError("Sequence format $genome_seq_format is not supported for genomes.");
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $genome_seq_format, $input_dir)) &&
+	   (($current_seq) || ($current_id))) {
+      $contig_id = $current_id;
+      $contig_seq{$contig_id} = new RSAT::Sequence (id=>        $contig_id,
+						    sequence=>  $current_seq,
+						    organism=>  $organism_name);
+      $contig_obj = new RSAT::contig();
+      $contig_obj->push_attribute("names",$contig_id);
+      $contig_obj->set_sequence_object($contig_seq{$contig_id});
+      $contig_obj->set_organism($organism_name);
+      $self->add_contig($contig_id, $contig_obj);
     }
+  } else {
+    &RSAT::error::FatalError("Sequence format $genome_seq_format is not supported for genomes.");
+  }
 }
 
 
@@ -448,19 +448,20 @@ sub LoadFeatures {
     foreach my $type (@feature_types) {
       $annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, ".tab");
       if (-e $annotation_table) {
-	  $self->push_attribute("annotation_tables", $annotation_table);
+	$self->push_attribute("annotation_tables", $annotation_table);
       } else {
-	  &RSAT::message::Warning("Annotation table not found, skipped", $annotation_table) if ($main::verbose >= 2);
+	&RSAT::message::Warning("Annotation table not found, skipped", $annotation_table) if ($main::verbose >= 2);
       }
     }
   }
 
   foreach my $annotation_table ($self->get_attribute("annotation_tables")) {
+
     &RSAT::message::Info(join ("\t",
-		   &RSAT::util::AlphaDate(),
-		   "Loading annotation table",
-		   $self->get_attribute("name"),
-		   $annotation_table)
+			       &RSAT::util::AlphaDate(),
+			       "Loading annotation table",
+			       $self->get_attribute("name"),
+			       $annotation_table)
 			) if ($main::verbose >= 3);
 
     ## Default column order for genomic features
