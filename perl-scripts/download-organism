@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.25 2012/03/18 13:29:36 jvanheld Exp $
+# $Id: download-organism,v 1.26 2012/07/17 20:02:02 jvanheld Exp $
 #
 ############################################################
 
@@ -128,7 +128,7 @@ package main;
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
   $get_command = "wget";
-  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
   $ssh_login = "rsat\@rsat.ulb.ac.be";
@@ -182,7 +182,7 @@ package main;
 
   ## Get RSAT path for rsync
   if ($get_command eq "rsync") {
-    my $rsat_server_dir = `ssh $ssh_login 'echo \$RSAT'`;
+    $rsat_server_dir = `ssh $ssh_login 'echo \$RSAT'`;
     chomp($rsat_server_dir);
     &RSAT::error::FatalError("Cannot get RSAT path on remote server", ssh_login) unless ($rsat_server_dir =~ /rsa-tools/);
     &RSAT::message::Info("remote server", $ssh_login, "RSAT env",  $rsat_server_dir) if ($main::verbose >= 0);
@@ -222,7 +222,6 @@ package main;
   ## number of queries, get dates for all organisms and store them for
   ## the selected organisms only)
   &RSAT::message::TimeWarn("Getting information about supported organisms from server") if ($main::verbose >= 1);
-
 
   my @all_organisms;
   if ($ssh_login) {
