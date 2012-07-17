@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #use strict;;
 if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+  push (@INC, "$`lib/");
 }
 require "RSA.lib";
 
@@ -39,37 +39,40 @@ if (defined($infile{input})) {
 print $out "#seq", "\t", "length", "\n" unless ($sum_only);
 $sum = 0;
 
+## Compute sequence lengths from coordinates in bed format
 if ($in_format eq "bed") {
-    while (<$in>) {
-	next unless (/\S/); ## Skip empty rows
-	next if (/^#/); ## Skip comment lines
-	chomp();
-	my ($chrom, $start, $end) = split('\t');
-	unless ((&RSAT::util::IsNatural($start)) && 
-		(&RSAT::util::IsNatural($end))) {
-	    &RSAT::message::Warning("Skipping line", $l, "invalid start and end positions.") if ($main::verbose >= 2);
-	    next;
-	}
-	if ($start > $end) {	
-	    &RSAT::message::Warning("Skipping line", $l, "start ($start) larger than end ($end).") if ($main::verbose >= 2);
-	    next;
-	}
-
-	my ($length, $rounded_length) = &apply_units($end - $start + 1);
-	my $current_id = $chrom.":".$start."..".$end.":1";
-	$sum+= $length;
-	print $out $current_id, "\t", $rounded_length , "\n"
-	  unless ($sum_only);
+  while (<$in>) {
+    next unless (/\S/);		## Skip empty rows
+    next if (/^#/);		## Skip comment lines
+    chomp();
+    my ($chrom, $start, $end) = split('\t');
+#    &RSAT::message::Debug("chrom=".$chrom, "start=".$start, "end=".$end) if ($main::verbose >= 10);
+    unless ((&RSAT::util::IsNatural($start)) &&
+	    (&RSAT::util::IsNatural($end))) {
+      &RSAT::message::Warning("Skipping line", $l, "invalid start and end positions.") if ($main::verbose >= 2);
+      next;
+    }
+    if ($start > $end) {
+      &RSAT::message::Warning("Skipping line", $l, "start ($start) larger than end ($end).") if ($main::verbose >= 2);
+      next;
     }
 
+    my ($length, $rounded_length) = &apply_units($end - $start + 1);
+    my $current_id = $chrom.":".$start."..".$end.":1";
+    $sum+= $length;
+    print $out $current_id, "\t", $rounded_length , "\n"
+      unless ($sum_only);
+  }
+
+## Compute sequence lengths by reading the sequences
 } else {
-    while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
-	   (($current_seq ne "") || ($current_id ne ""))) {
-	my ($length, $rounded_length) = &apply_units(length(&FoldSequence($current_seq,0)));
-	$sum+= $length;
-	print $out $current_id, "\t", $rounded_length , "\n"
-	    unless ($sum_only);
-    }
+  while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+	 (($current_seq ne "") || ($current_id ne ""))) {
+    my ($length, $rounded_length) = &apply_units(length(&FoldSequence($current_seq,0)));
+    $sum+= $length;
+    print $out $current_id, "\t", $rounded_length , "\n"
+      unless ($sum_only);
+  }
 }
 
 
@@ -95,17 +98,17 @@ close $main::out if ($main::outfile{output});
 exit(0);
 
 sub apply_units {
-    my ($length) = @_;
-    if ($units eq "kb") {
-	$length /= 1000;
-    } elsif ($units eq "mb") {
-	$length /= 1000000;
-    }
-    my $rounded_length = $length;
-    unless ($units eq "bp") {
-      $rounded_length = sprintf("%.2f", $length);
-    }
-    return ($length, $rounded_length);
+  my ($length) = @_;
+  if ($units eq "kb") {
+    $length /= 1000;
+  } elsif ($units eq "mb") {
+    $length /= 1000000;
+  }
+  my $rounded_length = $length;
+  unless ($units eq "bp") {
+    $rounded_length = sprintf("%.2f", $length);
+  }
+  return ($length, $rounded_length);
 }
 
 ########################## subroutine definition ############################
@@ -141,8 +144,8 @@ OPTIONS
 		This allows to place the command within a pipe.
 
 	-units bp|kb|mb
-	      Units for sequence lengths. 
-	      Supported values: 
+	      Units for sequence lengths.
+	      Supported values:
 	      bp	base pairs
 	      kb	kilobases
 	      mb	megabases
@@ -216,13 +219,17 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-in_format") {
       $in_format = $ARGV[$a+1];
 
+    } elsif ($ARGV[$a] eq "-format") {
+      $in_format = $ARGV[$a+1];
+      &RSAT::message::Warning("Option -format has been replaced by -in_format");
+
       ### only return sum of lengths
     } elsif ($ARGV[$a] eq "-sum") {
-	$sum_only = 1;
+      $sum_only = 1;
 
       ### Units
     } elsif ($ARGV[$a] eq "-units") {
-	$units = lc($ARGV[$a+1]);
+      $units = lc($ARGV[$a+1]);
     }
   }
 }
