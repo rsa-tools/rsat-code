@@ -36,7 +36,7 @@ if (defined($infile{input})) {
 ## Verbose
 &Verbose if ($verbose);
 
-print $out "#seq", "\t", "length", "\n";
+print $out "#seq", "\t", "length", "\n" unless ($sum_only);
 $sum = 0;
 
 if ($in_format eq "bed") {
@@ -55,26 +55,34 @@ if ($in_format eq "bed") {
 	    next;
 	}
 
-	my $length = &apply_units($end - $start + 1);
+	my ($length, $rounded_length) = &apply_units($end - $start + 1);
 	my $current_id = $chrom.":".$start."..".$end.":1";
 	$sum+= $length;
-	print $out $current_id, "\t", $length , "\n"
-	    unless ($sum_only);
+	print $out $current_id, "\t", $rounded_length , "\n"
+	  unless ($sum_only);
     }
 
 } else {
     while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
-	$length = &apply_units(length(&FoldSequence($current_seq,0)));
+	my ($length, $rounded_length) = &apply_units(length(&FoldSequence($current_seq,0)));
 	$sum+= $length;
-	print $out $current_id, "\t", $length , "\n"
+	print $out $current_id, "\t", $rounded_length , "\n"
 	    unless ($sum_only);
     }
 }
 
-close $in if ($infile{input});
 
-printf $out "%7g\n", $sum if ($sum_only);
+################################################################
+## Print sum of sequence lengths if requested
+if ($sum_only) {
+  my $rounded_length = $sum;
+  if ($units ne "bp") {
+    $rounded_length = sprintf ("%.2f", $sum);
+  }
+  print $out $rounded_length, "\t", $units, "\n";
+}
+close $in if ($infile{input});
 
 
 ################################################################
@@ -93,7 +101,11 @@ sub apply_units {
     } elsif ($units eq "mb") {
 	$length /= 1000000;
     }
-    return $length;
+    my $rounded_length = $length;
+    unless ($units eq "bp") {
+      $rounded_length = sprintf("%.2f", $length);
+    }
+    return ($length, $rounded_length);
 }
 
 ########################## subroutine definition ############################
@@ -138,15 +150,14 @@ OPTIONS
 	-in_format   input format
 
 		The input file can contain either sequences or genomic
-		coordinates (-format bed).
+		coordinates (-in_format bed).
 
 		For a list of supported input sequences, type
 		    convert-seq -help
 
 	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-		   text-mode
+		If not specified, the standard output is used.
+	        This allows to place the command within a pipe.
 
 	-sum	only return sum of sequene lengths
 End_of_help
@@ -202,7 +213,7 @@ sub ReadArguments {
       $outfile{output} = $ARGV[$a+1];
 
       ### sequence format ###
-    } elsif ($ARGV[$a] eq "-format") {
+    } elsif ($ARGV[$a] eq "-in_format") {
       $in_format = $ARGV[$a+1];
 
       ### only return sum of lengths
