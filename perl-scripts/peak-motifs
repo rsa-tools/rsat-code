@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.237 2012/07/18 02:43:59 jvanheld Exp $
+# $Id: peak-motifs,v 1.238 2012/07/18 05:25:27 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.237 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.238 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -318,7 +318,7 @@ package main;
     ## Total sequence length is computed on the converted test
     ## sequences, since these may have been clipped or restricted to
     ## the top peaks.
-    my $cmd = $SCRIPTS."/sequence-lengths -i ".$main::outfile{"test_converted"}." -sum | grep -v '#' | cut -f 2";
+    my $cmd = $SCRIPTS."/sequence-lengths -i ".$main::outfile{"test_converted"}." -sum | grep -v '#' | cut -f 1";
     local $total_seq_len = `$cmd`;
     chomp($total_seq_len);
 
@@ -326,7 +326,7 @@ package main;
     ## here are somewhat arbitrary, I should come back to this problem
     ## some time, in order to define some better criterion for
     ## defininig the Markov order as a function of sequence size.
-    if ($total_seq_len <= 1e+4) {
+    if ($total_seq_len <= 10000) {
       $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = 1;
     } elsif ($total_seq_len <= 1e+5) {
       $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = 2;
