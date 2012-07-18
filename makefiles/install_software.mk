@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.18 2012/07/05 05:50:50 jvanheld Exp $
+# $Id: install_software.mk,v 1.19 2012/07/18 14:47:44 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -820,8 +820,6 @@ _compile_swembl:
 	@echo ${SWEMBL_DISTRIB_DIR}
 	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${BIN_DIR})
 
-
-
 ################################################################
 ## Internet Genome Browser
 IGB_VERSION=5GB
@@ -859,3 +857,35 @@ _compile_igv:
 	@echo "Please add IGVTools folder to your path"
 	@echo 'export PATH=$$PATH:${IGV_DISTRIB_DIR}'
 
+
+
+################################################################
+## HOMER
+HOMER_CONFIG_URL=http://biowhat.ucsd.edu/homer/configureHomer.pl
+HOMER_BASE_DIR=${SRC_DIR}/HOMER
+homer: _download_homer _install_homer
+
+_download_homer:
+	@echo 
+	@echo "Downloading HOMER"
+	@mkdir -p ${HOMER_BASE_DIR}
+	wget -nd  --directory-prefix ${HOMER_BASE_DIR} -rNL ${HOMER_CONFIG_URL}
+	@echo "	${HOMER_BASE_DIR}"
+
+_install_homer:
+	@echo
+	@echo "Installing HOMER in dir	${HOMER_BASE_DIR}"
+	(cd ${HOMER_BASE_DIR}; perl ./configureHomer.pl -install)
+	@echo "HOMER installed in dir	${HOMER_BASE_DIR}"
+	@echo "Please add the three following lines to your .bashrc file in order to include HOMER programs in your path"
+#	@echo 'export PATH=$$PATH:${HOMER_BASE_DIR}/bin'
+	@echo 'export HOMER=${HOMER_BASE_DIR}'
+	@echo 'export PATH=$$PATH:$$HOMER/bin'
+	@echo 'export PERL5LIB=$${PERL5LIB}:$$HOMER/bin'
+
+
+HOMER_GENOME=mm9
+install_homer_genome:
+	@echo
+	@echo "Installing HOMER genome	HOMER_GENOME=${HOMER_GENOME}"
+	(cd ${HOMER_BASE_DIR}; perl ./configureHomer.pl -install ${HOMER_GENOME})
