@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.236 2012/07/03 02:18:35 rsat Exp $
+# $Id: peak-motifs,v 1.237 2012/07/18 02:43:59 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.236 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.237 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -549,14 +549,15 @@ sub DefaultParameters {
 
   ################################################################
   ## matrix-scan options
-  $main::param{scan_strands} = "-2str";
+#  $main::param{scan_strands} = "-2str";
   $main::param{scan_pseudo} = 1;
   $main::param{scan_decimals} = 1;
   $main::param{scan_bg_pseudo} =  0.01;
 
   ## Concatenate scanning options for matrix-scan
   $main::param{scan_options} = " -pseudo ".$main::param{scan_pseudo};
-  $main::param{scan_options} .= " ".$main::param{scan_strands};
+#  $main::param{scan_options} .= " ".$main::param{scan_strands};
+  $main::param{scan_options} .= " ".$main::param{strand};
   $main::param{scan_options} .= " -decimals ".$main::param{scan_decimals};
   $main::param{scan_options} .= " -bg_pseudo ".$main::param{scan_bg_pseudo};
   $main::param{scan_options} .= " -n score"; ##  Assign a score to the sequence fragments containing masked/undefined nucleotides (N)
@@ -4593,8 +4594,11 @@ min_markov_order and max_markov_order.
 
 Single-strand (-1str) or double-strand (-2str) analysis.
 
-The default is double-strand analysis, since ChIP-seq results have no
-particular strand orientation.
+The default is double-strand analysis (-2str), since ChIP-seq results
+have no particular strand orientation.
+
+However, for some data types such as CLIP-seq it might be relevant to
+analyze single-strand motifs (option -1str).
 
 =cut
     } elsif ($arg eq "-1str") {
