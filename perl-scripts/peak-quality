@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-quality,v 1.6 2012/07/18 05:06:14 jvanheld Exp $
+# $Id: peak-quality,v 1.7 2012/07/18 07:59:32 jvanheld Exp $
 #
 ############################################################
 
@@ -144,7 +144,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -163,6 +163,7 @@ package main;
   our @param_list = (); ## Parameters to print out in the report
   $param{nb_slices} = 5; push @param_list, "nb_slices"; ## Number of sequence slices
   $param{seq_per_slice} = 0; push @param_list, "seq_per_slice"; ## Number of sequences per slice
+  $param{strand} = "-2str"; push @param_list, "strand"; ## Single- or two-strand analysis
   $param{seq_len_distrib_ci} = 100; push @param_list, "seq_len_distrib_ci"; ## class interval for sequence length distribution
   $param{nb_peaks_from_bed} = 0; push @param_list, "nb_peaks_from_bed"; ## Number of peaks defined in the bed file
   $param{nb_peaks_from_seq} = 0; push @param_list, "nb_peaks_from_seq"; ## Number of peaks found in the sequence file
@@ -575,7 +576,7 @@ package main;
       $cmd .= " -nmotifs 3";
       $cmd .= " -minol 7";
       $cmd .= " -maxol 7";
-      $cmd .= " -2str";
+      $cmd .= " ".$param{strand};
       #	$cmd .= " -motif_db jaspar_core_vertebrates tf $RSAT/public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf";
       $cmd .= " -source galaxy";
       $cmd .= " -task purge,seqlen,composition,disco,merge_words,collect_motifs,synthesis,scan";
@@ -602,6 +603,7 @@ package main;
     $cmd .= " -matrix_format transfac";
     $cmd .= " -top ".$param{top_matrices};
     $cmd .= " -no_cv";
+    $cmd .= " ".$param{strand};
     $cmd .= " -perm all_peaks ".$param{matrix_permutations};
     $cmd .= " -decimals ".$param{decimals};
     $cmd .= " -bgfile ".$outfile{bg_model_inclusive};
@@ -946,6 +948,25 @@ Analyze sequence slices with I<peak-motifs>.
 #	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
 	}
       }
+
+=pod
+
+=item B<-1str | -2str>
+
+Single-strand (-1str) or double-strand (-2str) analysis.
+
+The default is double-strand analysis (-2str), since ChIP-seq results
+have no particular strand orientation.
+
+However, for some data types such as CLIP-seq it might be relevant to
+analyze single-strand motifs (option -1str).
+
+=cut
+    } elsif ($arg eq "-1str") {
+      $param{strand} = "-1str";
+    } elsif ($arg eq "-2str") {
+      $param{strand} = "-2str";
+
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
