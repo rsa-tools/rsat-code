@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-quality,v 1.5 2012/07/08 20:19:21 jvanheld Exp $
+# $Id: peak-quality,v 1.6 2012/07/18 05:06:14 jvanheld Exp $
 #
 ############################################################
 
@@ -144,7 +144,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -163,6 +163,7 @@ package main;
   our @param_list = (); ## Parameters to print out in the report
   $param{nb_slices} = 5; push @param_list, "nb_slices"; ## Number of sequence slices
   $param{seq_per_slice} = 0; push @param_list, "seq_per_slice"; ## Number of sequences per slice
+  $param{seq_len_distrib_ci} = 100; push @param_list, "seq_len_distrib_ci"; ## class interval for sequence length distribution
   $param{nb_peaks_from_bed} = 0; push @param_list, "nb_peaks_from_bed"; ## Number of peaks defined in the bed file
   $param{nb_peaks_from_seq} = 0; push @param_list, "nb_peaks_from_seq"; ## Number of peaks found in the sequence file
   $param{top_matrices} = 0; push @param_list, "top_matrices"; ## Number of top matrices taken in consideration in the reference matrix file
@@ -175,7 +176,8 @@ package main;
   our @supported_tasks = qw(seq_len
 			    bg_model
 			    slices
-			    quality
+			    enrichment
+			    peakmo
 			  );
   our %supported_task = ();
   foreach my $task (@supported_tasks) {
@@ -185,11 +187,11 @@ package main;
 #			    peakmmo
 
    ## Define tasks to execute
+#   $task{slices} = 1; ## Extract peak sequence slices
 #   $task{seq_len} = 1; ## Compute sequence lengths
 #   $task{bg_model} = 1; ## compute background model
-#   $task{slices} = 1; ## Extract peak sequence slices
-#   $task{quality} = 1; ## Analyze sequence slices with matrix-quality
-#  $task{peakmo} = 1; ## Analyze sequence slices with matrix-quality
+#   $task{enrichment} = 1; ## Analyze sequence slices with matrix-quality
+#  $task{peakmo} = 1; ## Analyze sequence slices with peak-motifs
 
   ################################################################
   ## Read argument values
@@ -215,9 +217,11 @@ package main;
     &RSAT::error::FatalError("You must define a prefix for the output files (option -prefix)");
   }
 
-  ## Reference motif file
-  unless ($infile{ref_motifs}) {
-    &RSAT::error::FatalError("You must define a reference motif file (option -ref_motifs).");
+   ## Reference motif file
+  if ($task{enrichment}) {
+    unless ($infile{ref_motifs}) {
+      &RSAT::error::FatalError("You must define a reference motif file (option -ref_motifs) to run enrichment analysis.");
+    }
   }
 
   ################################################################
@@ -294,13 +298,20 @@ package main;
   ## Sequence lengths
   &RSAT::message::TimeWarn("Computing sequence lengths");
   $outfile{seq_len} = &OutFileName("seq_stats", ".tab", "seq_len");
+  $outfile{seq_len_distrib} = &OutFileName("seq_stats", ".tab", "seq_len_distrib_all_peaks");
+  @seq_len_distrib_files = ($outfile{seq_len_distrib});
   if ($task{seq_len}) {
     my $cmd = $SCRIPTS."/sequence-lengths";
     $cmd .= " -i ".$infile{seq};
     $cmd .= " -o ".$outfile{seq_len};
+    $cmd .= "; classfreq -v 1";
+    $cmd .= " -i ".$outfile{seq_len};
+    $cmd .= " -ci ".$param{seq_len_distrib_ci};
+    $cmd .= " -o ".$outfile{seq_len_distrib};
     &one_command($cmd, 1);
   }
 
+  ################################################################
   ## Read sequence lengths and check that they are compatible with
   ## slice nb and size.
   ##
@@ -320,9 +331,12 @@ package main;
   }
   close ($len_handle);
 
+
+  ################################################################
+  ## Define number of slices per sequence if required
   $param{nb_peaks_from_seq} = scalar(@peak_ids);
   unless ($param{seq_per_slice}) {
-    $param{seq_per_slice} = $param{nb_peaks_from_seq} / $param{slices};
+    $param{seq_per_slice} = $param{nb_peaks_from_seq} / $param{nb_slices};
   }
 
   if (scalar(@peak_ids) < $param{nb_slices} * $param{seq_per_slice}) {
@@ -330,10 +344,10 @@ package main;
 		       "Number of peak sequences ($param{nb_peaks_from_seq}) is insuffient to extract",
 		       $param{nb_slices}, "slices of",
 		       $param{seq_per_slice}, "sequences.",
-		       "Changed to ".$param{nb_peaks_from_seq} / $param{slices});
+		       "Changed to ".$param{nb_peaks_from_seq} / $param{nb_slices});
     &RSAT::message::Warning($warning);
     print $out "\n\nWARNING\n", $warning , "\n";
-    $param{seq_per_slice} = $param{nb_peaks_from_seq} / $param{slices};
+    $param{seq_per_slice} = $param{nb_peaks_from_seq} / $param{nb_slices};
   }
 
   ################################################################
@@ -382,17 +396,59 @@ package main;
       &one_command($cmd, 1);
     }
 
+    ## Compute seq length distribution for each slice
+    $outfile{"seq_len_distrib_slice_".$s} = &OutFileName("seq_stats", ".tab", "seq_len_distrib_slice_".$s);
+    push @seq_len_distrib_files, $outfile{"seq_len_distrib_slice_".$s};
     if ($task{seq_len}) {
-      ## Compute seq length distribution for each slice
-      $outfile{"seq_len_distrib_slice_".$s} = &OutFileName("seq_stats", ".tab", "seq_len_distrib_slice_".$s);
       $cmd = $SCRIPTS."/sequence-lengths";
       $cmd .= " -i ".$outfile{"seq_slice_".$s};
-      $cmd .= " | classfreq -v -ci 100";
+      $cmd .= " | classfreq -v 1";
+      $cmd .= " -ci ".$param{seq_len_distrib_ci};
       $cmd .= " -o ".$outfile{"seq_len_distrib_slice_".$s};
       &one_command($cmd, 1);
     }
   }
 
+  ## Compare sequence length distributions between slices
+  $outfile{seq_len_distrib_compa} = &OutFileName("seq_stats", ".tab", "seq_len_distrib_comparison");
+  $outfile{seq_len_distrib_compa_plot_png} = &OutFileName("seq_stats", ".png", "seq_len_distrib_comparison");
+  $outfile{seq_len_distrib_compa_plot_pdf} = &OutFileName("seq_stats", ".pdf", "seq_len_distrib_comparison");
+  if ($task{seq_len}) {
+    $cmd = $SCRIPTS."/compare-scores -v 1";
+    $cmd .= " -ic 3 -numeric -null .";
+    $cmd .= " -sc 9";
+    $cmd .= " -suppress '.tab'";
+    $cmd .= " -suppress ".$dir{output}."/seq_stats/";
+    $cmd .= " -suppress ".$param{prefix}."_seq_len_distrib_";
+    $cmd .= " -o ".$outfile{seq_len_distrib_compa};
+    $cmd .= " -files ";
+    $cmd .= join " ", @seq_len_distrib_files;
+    &one_command($cmd, 1);
+
+    ## Generate an XY plot of sequence length distributions
+    foreach my $img_format ("png", "pdf") {
+      my $last_col = 1 + scalar(@seq_len_distrib_files);
+      $cmd = $SCRIPTS."/XYgraph";
+      $cmd .= " -i ".$outfile{seq_len_distrib_compa};
+      $cmd .= " -xsize 800";
+      $cmd .= " -ysize 400";
+      $cmd .= " -xcol 1";
+      $cmd .= " -xmin 0";
+      $cmd .= " -ymin 0 -ymax 1";
+      $cmd .= " -hline violet 0.5";
+      $cmd .= " -ygstep1 0.1";
+#      $cmd .= " -xgstep1 ".$param{seq_len_distrib_ci};
+      $cmd .= " -ycol 2-".$last_col;
+      $cmd .= " -lines -pointsize 0 -legend";
+      $cmd .= " -title1 'Sequence length distributions'";
+      $cmd .= " -title2 ".$param{prefix};
+      $cmd .= " -xleg1 'Sequence length'";
+      $cmd .= " -yleg1 'Decreasing cumulative frequency: F(L <= x)'";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$outfile{"seq_len_distrib_compa_plot_".$img_format};
+      &one_command($cmd, 1);
+    }
+  }
 
   ## Print out slice stats
   my @slice_stat_fields = qw(s
@@ -509,25 +565,26 @@ package main;
   foreach my $s (1..$param{nb_slices}) {
       &RSAT::message::TimeWarn("Running peak-motifs on slice", $s."/".$param{nb_slices}) if ($main::verbose >= 1);
       $outfile{"peak_motifs_slice".$s} = &OutFileName("discovered_motifs", "", "peak-motifs_slice".$s);
+      my $prefix = join ("_", $param{prefix}, $slice_stats[$s]->{id});
+      my $cmd = $SCRIPTS."/peak-motifs -v ".$verbose;
+      $cmd .= " -i ".$outfile{"seq_slice_".$s};
+      $cmd .= " -title '".$prefix."'";
+      $cmd .= " -prefix '".$prefix."'";
+      $cmd .= " -markov auto";
+      $cmd .= " -disco oligos,positions";
+      $cmd .= " -nmotifs 3";
+      $cmd .= " -minol 7";
+      $cmd .= " -maxol 7";
+      $cmd .= " -2str";
+      #	$cmd .= " -motif_db jaspar_core_vertebrates tf $RSAT/public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf";
+      $cmd .= " -source galaxy";
+      $cmd .= " -task purge,seqlen,composition,disco,merge_words,collect_motifs,synthesis,scan";
+      $cmd .= " -prefix peak-motifs";
+      $cmd .= " -noov";
+      $cmd .= " -img_format png";
+      $cmd .= " -outdir ".$outfile{"peak_motifs_slice".$s};
       if ($task{peakmo}) {
-	my $prefix = join ("_", $param{prefix}, $slice_stats[$s]->{id});
-	my $cmd = $SCRIPTS."/peak-motifs -v ".$verbose;
-	$cmd .= " -i ".$outfile{"seq_slice_".$s};
-	$cmd .= " -title '".$prefix."'";
-	$cmd .= " -prefix '".$prefix."'";
-	$cmd .= " -markov auto";
-	$cmd .= " -disco oligos,positions";
-	$cmd .= " -nmotifs 3";
-	$cmd .= " -minol 7";
-	$cmd .= " -maxol 7";
-	$cmd .= " -2str";
-#	$cmd .= " -motif_db jaspar_core_vertebrates tf $RSAT/public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf";
-	$cmd .= " -source galaxy";
-	$cmd .= " -task purge,seqlen,composition,disco,merge_words,collect_motifs,synthesis,scan";
-	$cmd .= " -prefix peak-motifs";
-	$cmd .= " -noov";
-	$cmd .= " -img_format png";
-	$cmd .= " -outdir ".$outfile{"peak_motifs_slice".$s};
+	&one_command($cmd, 1);
       }
     }
 
@@ -537,7 +594,7 @@ package main;
   ## slices
   $outfile{quality_prefix} = &OutFileName("quality", "", "slice_enrichment");
 
-  if ($task{quality}) {
+  if ($task{enrichment}) {
     &RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >= 1);
     my $cmd = $SCRIPTS."/matrix-quality";
     $cmd .= " -v ".$main::verbose;
@@ -710,7 +767,7 @@ those of the bed file.
 
 =item B<-ref_motifs reference_motif>
 
-Reference motifs (mandatory).
+Reference motif(s)
 
 A file containing one or several reference motif(s)
 (i.e. position-specific scoring matrices) for the peak sequences,
@@ -780,9 +837,9 @@ Default: 5
 
 =cut
     } elsif ($arg eq "-slices") {
-      $param{slices} = shift(@arguments);
-      &RSAT::error::FatalError($param{slices}, "Invalid number of slices, must be a strictly positive Natural number")
-	unless (&RSAT::util::IsNatural($param{slices}));
+      $param{nb_slices} = shift(@arguments);
+      &RSAT::error::FatalError($param{nb_slices}, "Invalid number of slices, must be a strictly positive Natural number")
+	unless (&RSAT::util::IsNatural($param{nb_slices}));
 
 
 =pod
@@ -851,6 +908,29 @@ B<Default tasks>
 =over
 
 =item I<all> (default)
+
+Run all supported tasks.
+
+=item I<slices>
+
+Extract peak sequence slices.
+
+=item I<seq_len>
+
+Compute sequence lengths.
+
+=item I<bg_model>
+
+Compute background model.
+
+=item I<enrichment>
+
+Analyze sequence slices with I<matrix-quality>. This requires to enter a
+reference motif file.
+
+=item I<peakmo>
+
+Analyze sequence slices with I<peak-motifs>.
 
 =back
 
