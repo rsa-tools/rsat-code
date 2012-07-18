@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.238 2012/07/18 05:25:27 jvanheld Exp $
+# $Id: peak-motifs,v 1.239 2012/07/18 07:54:44 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.238 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.239 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -554,24 +554,13 @@ sub DefaultParameters {
   $main::param{scan_decimals} = 1;
   $main::param{scan_bg_pseudo} =  0.01;
 
-  ## Concatenate scanning options for matrix-scan
-  $main::param{scan_options} = " -pseudo ".$main::param{scan_pseudo};
-#  $main::param{scan_options} .= " ".$main::param{scan_strands};
-  $main::param{scan_options} .= " ".$main::param{strand};
-  $main::param{scan_options} .= " -decimals ".$main::param{scan_decimals};
-  $main::param{scan_options} .= " -bg_pseudo ".$main::param{scan_bg_pseudo};
-  $main::param{scan_options} .= " -n score"; ##  Assign a score to the sequence fragments containing masked/undefined nucleotides (N)
 
   ## Options used for site scanning but not for enrichment analysis
   $main::param{scan_min_score} = 7.5;
-  $main::param{scan_sites_options} = " -lth score ".$main::param{scan_min_score};
-  $main::param{scan_sites_options} .= " -origin center -return sites";
 
   ## Options used for enrichment in matrix hits but not for site detection
   $main::param{scan_enrich_min_score} = -5;
   $main::param{scan_enrich_markov} = 2;
-  $main::param{scan_enrich_options} = " -lth score ".$main::param{scan_enrich_min_score};
-  $main::param{scan_enrich_options} .= " -bginput -markov ".$main::param{scan_enrich_markov};
 
   ## Default MEME options
   $main::param{meme_text} = ""; push @MEME_options, "text";	## Ouptut format = text
@@ -4603,6 +4592,7 @@ analyze single-strand motifs (option -1str).
 =cut
     } elsif ($arg eq "-1str") {
       $main::param{strand} = "-1str";
+
     } elsif ($arg eq "-2str") {
       $main::param{strand} = "-2str";
 
@@ -4738,6 +4728,27 @@ sub CheckArguments {
   if ((scalar(keys(%task)) == 1) && ($task{synthesis})) {
     $progressive_synthesis = 0;
   }
+
+
+  ################################################################
+  ## Specify scanning options after having read command-line arguments
+
+  ## Concatenate scanning options for matrix-scan
+  $main::param{scan_options} = " -pseudo ".$main::param{scan_pseudo};
+  $main::param{scan_options} .= " ".$main::param{strand};
+  $main::param{scan_options} .= " -decimals ".$main::param{scan_decimals};
+  $main::param{scan_options} .= " -bg_pseudo ".$main::param{scan_bg_pseudo};
+  $main::param{scan_options} .= " -n score"; ##  Assign a score to the sequence fragments containing masked/undefined nucleotides (N)
+
+  ## Options used for site scanning but not for enrichment analysis
+  $main::param{scan_sites_options} = " -lth score ".$main::param{scan_min_score};
+  $main::param{scan_sites_options} .= " -origin center -return sites";
+
+  ## Options used for enrichment in matrix hits but not for site detection
+  $main::param{scan_enrich_options} = " -lth score ".$main::param{scan_enrich_min_score};
+  $main::param{scan_enrich_options} .= " -bginput -markov ".$main::param{scan_enrich_markov};
+
+  &RSAT::message::Debug($param{strand}, $param{scan_options}) if ($main::verbose >= 3);
 
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
