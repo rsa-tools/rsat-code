@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.31 2012/07/17 20:28:15 jvanheld Exp $
+# $Id: random-genome-fragments,v 1.32 2012/07/19 07:54:21 jvanheld Exp $
 #
 ############################################################
 
@@ -36,7 +36,6 @@ random controls
 
 =head1 USAGE
 
-
 Fixed fragment length:
 
 I<random-genome-fragments -org organism -l fragment_length -n nb_fragments [-o outputfile] [-v # -rm] [...]>
@@ -49,6 +48,21 @@ I<random-genome-fragments -org organism -lf length_file [-rep repetitions] [-o o
 
 The program returns a file containing the genomic coordinates or the
 sequences.
+
+=head1 DISTRIBUTION OF RANDOM FRAGMENTS
+
+Chromosomes (more generally, contigs for the selected genome) are
+selected randomly with a probability proportional to their lengths.
+
+Very small contigs may be discarded if they are too small to obtain
+fragments of the desired sizes.
+
+=head1 WISH LIST
+
+=head2 Chromosomal distribution  of fragments based on template
+
+For some purposes, one would like to obtain random fragments with the
+same chromosomal distribution as in the template file.
 
 =cut
 
@@ -133,7 +147,6 @@ package main;
   ################################################################
   ## File with template sequences
   if ($main::infile{template_file}) {
-
     if ($template_format eq "len") {
       $main::outfile{length_file} = $main::infile{template_file};
     } else {
@@ -256,9 +269,66 @@ package main;
   }
 
   ################################################################
+  ## Get contig lengths, for two purposes
+  ##
+  ## - distribute random fragments across chromosomes (contigs) with a
+  ## probability proportional to their lengths
+  ##
+  ## - calculate last possible position to have a fragment of the
+  ##   desired length
+  &RSAT::message::TimeWarn("Computing contig lengths") if ($main::verbose >= 2);
+  my $cum_len = 0;
+  foreach my $contig (0..$#contig_names) {
+    my $contig_name = $main::contig_names[$contig];
+    my $contig_len = 0;
+    if ($main::organism_name) {
+      $contig_len = $main::contigs{$contig_name}->get_length();
+    } elsif ($main::organism_ens) {
+      $contig_len = $main::ens_chroms{$contig_name}->length();
+    }
+
+    ## Index contig lengths
+    $contig_len{$contig_name} = $contig_len;
+
+    ## Index contig cumulative lengths
+    $cum_len += $contig_len;
+    $contig_cum_len{$contig_name} = $cum_len;
+
+#    &RSAT::message::Debug("contig length", $contig_name, $contig_len, $cum_len) if ($main::verbose >= 5);
+  }
+  &RSAT::error::FatalError("Chdomosome lengths are not defined") if ($cum_len <= 0);
+
+  ## Compute proportions of random fragments per chromosomes
+  my @rand_contig_names = ();
+  my $allocated = 0;
+  foreach my $contig (0..$#contig_names) {
+    my $contig_name = $contig_names[$contig];
+    $contig_proba{$contig_name} = $contig_len{$contig_name} / $cum_len;
+    $contig_cdf{$contig_name} = $contig_cum_len{$contig_name} / $cum_len;
+    $contig_fragments{$contig_name} = sprintf("%d", $contig_proba{$contig_name} * $nb_fragments);
+    $contig_fragments_cum{$contig_name} = sprintf("%d", $contig_cdf{$contig_name} * $nb_fragments);
+
+    while ($allocated < $contig_fragments_cum{$contig_name}) {
+      push @rand_contigs, $contig;
+      $allocated++;
+    }
+
+    &RSAT::message::Info("contig", $contig,
+			 $contig_name,
+			 "L=".$contig_len{$contig_name},
+			 "cum_L=".$contig_cum_len{$contig_name},
+			 "P=".sprintf("%.2f", $contig_proba{$contig_name}),
+			 "CDF=".sprintf("%.2f", $contig_cdf{$contig_name}),
+			 "fragments=".$contig_fragments{$contig_name},
+			 "fragments_cum=".$contig_fragments_cum{$contig_name},
+			 )
+      if ($main::verbose >= 2);
+  }
+
+
+  ################################################################
   ## Open output stream
   $main::out = &OpenOutputFile($main::outfile{output});
-
 
   ################################################################
   ## Print verbose
@@ -271,24 +341,25 @@ package main;
 
 
   ################################################################
-  ## get random positions
-
-  for (my $i=1; $i<=$main::nb_fragments; $i++) {
+  ## Get random positions
+  for (my $i=1; $i<= $main::nb_fragments; $i++) {
 
     ## 1- get a random contig
-    my $rand_contig = int(rand ($#main::contig_names+1));
+#    my $rand_contig = int(rand ($#main::contig_names+1));
+    my $rand_contig = $rand_contigs[$i-1];
     my $rand_contig_name = $main::contig_names[$rand_contig];
 
     ## 2 - get contig length, and calculate last possible position to have
     ## a fragment of the desired length
-    my $contig_length;
-    if ($main::organism_name) {
-      $contig_length = $main::contigs{$rand_contig_name}->get_length();
-    } elsif ($main::organism_ens) {
-      $contig_length = $main::ens_chroms{$rand_contig_name}->length();
-    }
-    &RSAT::message::Info(join ("\t", "Random chrom", $rand_contig_name, "length",$contig_length) )
+    my $contig_length = $contig_len{$rand_contig_name};
+#    if ($main::organism_name) {
+#      $contig_length = $main::contigs{$rand_contig_name}->get_length();
+#    } elsif ($main::organism_ens) {
+#      $contig_length = $main::ens_chroms{$rand_contig_name}->length();
+#    }
+    &RSAT::message::Info("Random chrom", $rand_contig, $rand_contig_name, "length",$contig_length)
       if ($main::verbose >= 4);
+
 
     my $rand_fragment_size;
     if ($main::fragment_len) {
@@ -310,7 +381,9 @@ package main;
       &RSAT::message::Info(join ("\t", "Negative start value for contig", $rand_contig_name, "value",$rand_start) )
 	if ($main::verbose >= 3);
     }
-    ##exclude the contig from the analysis, if it is too difficult to get a fragment of the correct size.
+
+    ## Exclude the contig from the analysis, if it is too difficult to
+    ## get a fragment of the correct size.
     if ($rand_start < 1) {
       &RSAT::message::Info("Excluding", $rand_contig_name,
 			   "from contigs due to repetitive negative starts.",
@@ -322,7 +395,7 @@ package main;
       next;
     }
 
-    ## calculate end position
+    ## Calculate end position
     my $rand_end = $rand_start + $rand_fragment_size -1;
 
     ## 4- rand strand
