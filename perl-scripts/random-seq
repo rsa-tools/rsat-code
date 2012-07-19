@@ -237,7 +237,11 @@ package main;
 sub ReadArguments {
   foreach $a (0..$#ARGV) {
     if ($ARGV[$a] eq "-v") {
-      $verbose = 1;
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
 
     } elsif ($ARGV[$a] eq "-l") {
       $seq_length = $ARGV[$a+1];
