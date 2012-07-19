@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.92 2011/11/27 03:46:09 jvanheld Exp $
+# $Id: retrieve-seq,v 1.93 2012/07/19 16:57:12 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -187,9 +187,12 @@ if ($sequence_type eq "random fragments") {
       $organism = retrieve $serial_file;
       &RSAT::message::TimeWarn("Retrieved organism", $organism_name, "from serialized file", $serial_file)
 	if ($main::verbose >= 3);
+
     } else {
+
       ### Load organism from flat files (slower)
       $organism->load_and_serialize($imp_pos, $synonyms);
+
     }
   }
 }
@@ -202,18 +205,17 @@ if ($noorf) {
 
 ################################################################
 # Query ORFs
-#
 &RSAT::message::TimeWarn("Reading query genes") if ($main::verbose >= 2);
 
 #### retrieve all
 if ($return_all) {
-    @queries = $organism->get_attribute("features");
-    if (scalar(@queries < 1)) {
-	&RSAT::message::Warning(join("\t", "There is not a single feature of type",
-				     join(" or ", sort (keys(%accepted_feature_types))),
-				     "annotated in the genome of", $organism_name));
-	exit();
-    }
+  @queries = $organism->get_attribute("features");
+  if (scalar(@queries < 1)) {
+    &RSAT::message::Warning(join("\t", "There is not a single feature of type",
+				 join(" or ", sort (keys(%accepted_feature_types))),
+				 "annotated in the genome of", $organism_name));
+    exit();
+  }
 }
 
 
@@ -988,7 +990,7 @@ sub ReadArguments {
 	    $no_warn = 1;
 
 	    #### alternative feature file
-	} elsif ($ARGV[$a] =~ /^-feat/i) {
+	} elsif ($ARGV[$a] eq "-features") {
 	    $annotation_table = $ARGV[$a+1];
 
 	}
