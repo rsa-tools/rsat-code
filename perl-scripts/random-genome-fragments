@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.32 2012/07/19 07:54:21 jvanheld Exp $
+# $Id: random-genome-fragments,v 1.33 2012/07/19 16:58:02 jvanheld Exp $
 #
 ############################################################
 
@@ -139,10 +139,10 @@ package main;
 
   ################################################################
   ## Check parameter values
-  if ($main::out_format eq "bed") {
-    ## Verbosity is not compatible with bed format
-    $main::verbose = 0;
-  }
+#  if ($main::out_format eq "bed") {
+#    ## Verbosity is not compatible with bed format
+#    $main::verbose = 0;
+#  }
 
   ################################################################
   ## File with template sequences
@@ -325,14 +325,16 @@ package main;
       if ($main::verbose >= 2);
   }
 
-
   ################################################################
   ## Open output stream
   $main::out = &OpenOutputFile($main::outfile{output});
 
   ################################################################
   ## Print verbose
-  &Verbose() if ($main::verbose);
+  unless ($main::out_format eq "bed") {
+    &Verbose() if ($main::verbose >= 1);
+  }
+
   ## file header
   unless ($return_fields{seq}) {
     my $header = &RSAT::feature::header($main::out_format);
@@ -443,9 +445,11 @@ package main;
 
   ################################################################
   ## Finish verbose
-  if ($main::verbose >= 1) {
-    if ($main::organism_ens) {
-      print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
+  unless ($main::out_format eq "bed") {
+    if ($main::verbose >= 1) {
+      if ($main::organism_ens) {
+	print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
+      }
     }
   }
 
@@ -460,7 +464,9 @@ package main;
   ################################################################
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
+  unless ($main::out_format eq "bed") {
+    print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
+  }
   close $main::out if ($main::outfile{output});
 
   exit(0);
