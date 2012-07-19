@@ -512,7 +512,7 @@ sub CheckOutDir {
 
   ## Specify a mask for the new directory
   $umask = 0002 unless ($umask);
-  $chmod = 0755 unless ($chmod);
+  $chmod = 755 unless ($chmod);
   umask($umask);
   if ($main::verbose >= 4) {
     my $wd = `pwd`;
@@ -596,7 +596,7 @@ sub CheckSubDir {
   my ($subdir) = @_;
   my $dir = $main::dir{output};
   $dir = join ("/", $main::dir{output}, $subdir);
-  &RSAT::util::CheckOutDir($dir,"",0777);
+  &RSAT::util::CheckOutDir($dir,"",777);
   return($dir);
 }
 
@@ -851,7 +851,7 @@ sub make_temp_file {
     $tmp_dir = sprintf("%s/%04d/%02d/%02d", $main::TMP, 1900+$year,$month+1,$day);
   }
 
-  &CheckOutDir($tmp_dir, "", 0777); ## temporary dir and all of its parents must be writable by all users
+  &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
 
   ## Add date if required
   if ($add_date) {
@@ -902,7 +902,7 @@ sub doit {
     my $job_dir = "jobs";
     $job_dir .= "/".`date +%Y%m%d`;
     chomp($job_dir);
-    &CheckOutDir($job_dir, "", 0777);
+    &CheckOutDir($job_dir, "", 777);
 
     my $job_prefix = $job_prefix || "doit";
     &RSAT::util::CheckOutDir($job_dir);
