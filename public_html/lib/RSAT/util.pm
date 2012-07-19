@@ -509,8 +509,10 @@ sub CheckOutDir {
     return;
   }
 
+
   ## Specify a mask for the new directory
   $umask = 0002 unless ($umask);
+  $chmod = 0755 unless ($chmod);
   umask($umask);
   if ($main::verbose >= 4) {
     my $wd = `pwd`;
@@ -522,21 +524,23 @@ sub CheckOutDir {
       &RSAT::message::Warning("&RSAT::util::CheckOutDir()", "Directory $output_dir already exists") if ($main::verbose >= 4);
       return;
     }
+
     &RSAT::message::Info("Creating directory", $output_dir) if ($main::verbose >= 3);
-    mkdir ($output_dir, 0755);
+    mkdir ($output_dir, $chmod);
     unless (-d $output_dir) {
       &RSAT::message::Info("Creating directory with all parents", $output_dir) if ($main::verbose >= 3);
       system "mkdir -p $output_dir"; ## create output directory with all parents
     }
+
     unless (-d $output_dir) {
       &RSAT::error::FatalError("Cannot create output directory $output_dir");
     }
+
   } else {
     $output_dir = ".";
   }
 
   ## Change access mode if required
-  $chmod = 755 unless ($chmod);
   if ((defined($chmod)) && ($chmod =~ /\d{3}/)) {
     &RSAT::message::Info("Changing access mode", $chmod, $output_dir) if ($main::verbose >= 5);
     system("chmod ".$chmod." ".$output_dir);
@@ -592,7 +596,7 @@ sub CheckSubDir {
   my ($subdir) = @_;
   my $dir = $main::dir{output};
   $dir = join ("/", $main::dir{output}, $subdir);
-  &RSAT::util::CheckOutDir($dir,"",775);
+  &RSAT::util::CheckOutDir($dir,"",0777);
   return($dir);
 }
 
@@ -846,7 +850,8 @@ sub make_temp_file {
     my ($sec, $min, $hour,$day,$month,$year) = localtime(time()); 
     $tmp_dir = sprintf("%s/%04d/%02d/%02d", $main::TMP, 1900+$year,$month+1,$day);
   }
-  &CheckOutDir($tmp_dir);
+
+  &CheckOutDir($tmp_dir, "", 0777); ## temporary dir and all of its parents must be writable by all users
 
   ## Add date if required
   if ($add_date) {
@@ -897,7 +902,7 @@ sub doit {
     my $job_dir = "jobs";
     $job_dir .= "/".`date +%Y%m%d`;
     chomp($job_dir);
-    &CheckOutDir($job_dir);
+    &CheckOutDir($job_dir, "", 0777);
 
     my $job_prefix = $job_prefix || "doit";
     &RSAT::util::CheckOutDir($job_dir);
