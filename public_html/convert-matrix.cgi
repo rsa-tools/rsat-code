@@ -241,10 +241,9 @@ sub PipingForm {
 -->
 
 <td valign="bottom" align="center">
-<b><font color=red>new</a></b>
 <form method="POST" action="matrix-scan_form.cgi">
 <input type="hidden" name="title" value="$title">
-<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_file" value="$tab_matrices">
 <input type="hidden" name="matrix_format" value="$output_format">
 <input type="submit" value="pattern matching (matrix-scan)">
 </form>
@@ -253,7 +252,7 @@ sub PipingForm {
 <td valign=bottom align=center>
 <form method="post" action="convert-matrix_form.cgi">
 <input type="hidden" name="title" value="$title">
-<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_file" value="$tab_matrices">
 <input type="hidden" name="matrix_format" value="$output_format">
 <input type="hidden" name="logo" value="on" checked="checked">
 <input type="submit" value="convert-matrix">
