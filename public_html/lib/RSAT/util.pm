@@ -512,7 +512,7 @@ sub CheckOutDir {
 
   ## Specify a mask for the new directory
   $umask = 0002 unless ($umask);
-  $chmod = 755 unless ($chmod);
+  $chmod = 0777 unless ($chmod);
   umask($umask);
   if ($main::verbose >= 4) {
     my $wd = `pwd`;
@@ -531,6 +531,7 @@ sub CheckOutDir {
       &RSAT::message::Info("Creating directory with all parents", $output_dir) if ($main::verbose >= 3);
       system "mkdir -p $output_dir"; ## create output directory with all parents
     }
+    chmod $chmod, $output_dir; ## Not sure the $chmod argument works with mkdir)
 
     unless (-d $output_dir) {
       &RSAT::error::FatalError("Cannot create output directory $output_dir");
@@ -848,7 +849,8 @@ sub make_temp_file {
   ## Check that temp dir is define and create it if required
   unless ($tmp_dir) {
     my ($sec, $min, $hour,$day,$month,$year) = localtime(time()); 
-    $tmp_dir = sprintf("%s/%04d/%02d/%02d", $main::TMP, 1900+$year,$month+1,$day);
+    my $login = getpwuid($<) || "temp_user";
+    $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $main::TMP, $login, 1900+$year,$month+1,$day);
   }
 
   &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
