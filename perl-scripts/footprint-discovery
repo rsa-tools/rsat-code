@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.90 2012/07/24 19:20:15 amedina Exp $
+# $Id: footprint-discovery,v 1.91 2012/07/24 22:23:46 amedina Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.90 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.91 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -318,7 +318,7 @@ package main;
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
-  local $main_index = &OpenMainIndex() unless ($batch);
+  local ($main_index, $main_index_table) = &OpenMainIndex() unless ($batch);
 
   ################################################################
   ## Parameters for dyad-analysis
@@ -673,17 +673,20 @@ sub RunFootprintDisco {
       ## Link to the query-specific index file
 #  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
       print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
+      my $query_name_index;
       if ($main::sep_genes){
-	  print $main_index "<td>", $current_feature->get_attribute("name"), "</td>\n" ;
+	  $query_name_index=$current_feature->get_attribute("name");
       }
       else{
-	  if (scalar(@main::query_genesprint)<=3){
-	      print $main_index "<td>", join("_" ,@main::query_genes), "</td>\n" ;
+	  if (scalar(@main::query_genes)<=3){
+	     $query_name_index=join("_" ,@main::query_genes) ;
 	  }
 	  else{
-	      print $main_index "<td>", "all_query_genes", "</td>\n" ;
+	     $query_name_index= "all_query_genes" ;
 	  }
       }
+      print $main_index "<td>",$query_name_index , "</td>\n" ;
+
 
       ## Report the significant dyads
       my $top_id = "NA";
@@ -733,6 +736,8 @@ sub RunFootprintDisco {
       print $main_index "<td>", $ortho_seq_len, "</td>\n";
       print $main_index "<td><tt>", $top_id, "</tt></td>\n";
 
+   
+
       if ($status ne "OK") {
 	  $sig_color = '#BBBBBB';
       } elsif ($top_sig <= 2) {
@@ -747,6 +752,9 @@ sub RunFootprintDisco {
 #  print $main_index "<td>", $dyad_nb, "<td>";
       
       print $main_index "</tr>\n";
+      
+      print $main_index_table join ("\t",$q,$query_prefix,$query_name_index,$status,$query_prom_len,$ortholog_nb,$ortho_seq_len,$top_id,$top_sig,$dyad_nb );
+
   }
 }
 
@@ -1237,12 +1245,16 @@ sub CoregulationNetwork {
 ## results: one row per query, one column per output type.
 sub OpenMainIndex {
   &RSAT::util::CheckOutDir($dir{output_root});
-
-  $outfile{main_index} = $dir{output_root}."/".&MainIndexFileName();
+  my ($name_index,$name_table)=&MainIndexFileName();
+  $outfile{main_index} = $dir{output_root}."/".$name_index;
+  $outfile{main_index_table} = $dir{output_root}."/".$name_table;
 
   &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
+  &RSAT::message::Info("Main table file", $outfile{main_index_table}) if ($main::verbose >= 1);
 
   my $main_index = &OpenOutputFile($outfile{main_index});
+  my $main_index_table=&OpenOutputFile($outfile{main_index_table}) ;
+
   $html_title = $taxon if ($taxon);
   $html_title .= " ".$organism_name if ($organism_name);
   $html_title .= " ".$bg_model if ($bg_model);
@@ -1253,6 +1265,8 @@ sub OpenMainIndex {
   $arguments =  &RSAT::util::hide_RSAT_path(&PrintArguments());
   print $main_index $arguments;
   print $main_index "</p>\n";
+
+  
 
   ## Open the index table
   print $main_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
@@ -1270,7 +1284,24 @@ sub OpenMainIndex {
   print $main_index "<th>","Nb dyads","</th>\n";
   print $main_index "</tr>\n";
 
-  return ($main_index);
+
+  print $main_index_table "; Command: footprint-discovery ".$arguments. "\n ";
+  print $main_index_table "<tr>\n";
+  print $main_index_table join ("\t","#Query nb",
+				"Query",
+				"Query name",
+				"Status",
+				"Query promoter length",
+				"Orthologs",
+				"Sum ortholog sequence sizes",
+				"Top dyad",
+				"Max sig",
+				"Nb dyads")."\n";
+
+
+  return ($main_index,$main_index_table);
+
+
 }
 
 #######################################################################
