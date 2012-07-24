@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.89 2012/07/24 19:12:29 amedina Exp $
+# $Id: footprint-discovery,v 1.90 2012/07/24 19:20:15 amedina Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.89 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.90 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -677,7 +677,12 @@ sub RunFootprintDisco {
 	  print $main_index "<td>", $current_feature->get_attribute("name"), "</td>\n" ;
       }
       else{
-	  print $main_index "<td>", join("_" ,@main::query_genes), "</td>\n" ;
+	  if (scalar(@main::query_genesprint)<=3){
+	      print $main_index "<td>", join("_" ,@main::query_genes), "</td>\n" ;
+	  }
+	  else{
+	      print $main_index "<td>", "all_query_genes", "</td>\n" ;
+	  }
       }
 
       ## Report the significant dyads
