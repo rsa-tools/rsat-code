@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.88 2012/05/02 19:17:30 rsat Exp $
+# $Id: footprint-discovery,v 1.89 2012/07/24 19:12:29 amedina Exp $
 #
 ############################################################
 
@@ -224,7 +224,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.88 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.89 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -673,7 +673,12 @@ sub RunFootprintDisco {
       ## Link to the query-specific index file
 #  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
       print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
-      print $main_index "<td>", $current_feature->get_attribute("name"), "</td>\n" if ($main::sep_genes);
+      if ($main::sep_genes){
+	  print $main_index "<td>", $current_feature->get_attribute("name"), "</td>\n" ;
+      }
+      else{
+	  print $main_index "<td>", join("_" ,@main::query_genes), "</td>\n" ;
+      }
 
       ## Report the significant dyads
       my $top_id = "NA";
