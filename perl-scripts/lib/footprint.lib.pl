@@ -960,6 +960,7 @@ sub OpenQueryReport {
 sub MainPrefix {
   $outfile{main_prefix} = join("_", ($taxon||"org_list"),$organism_name,
 			       "bg", $bg_model);
+  $outfile{main_prefix} .= "_rand" if $main::rand ;
   return $outfile{main_prefix};
 }
 
@@ -972,6 +973,7 @@ sub MainIndexFileName {
   my $main_prefix = &MainPrefix();
   $outfile{main_index_file} = $main_prefix."_result_index.html"; 
   $outfile{main_table_file} = $main_prefix."_result_table.tab";
+
   return($outfile{main_index_file},$outfile{main_table_file});
 }
 
