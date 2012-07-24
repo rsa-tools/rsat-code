@@ -512,7 +512,7 @@ sub CheckOutDir {
 
   ## Specify a mask for the new directory
   $umask = 0002 unless ($umask);
-  $chmod = 0777 unless ($chmod);
+  $chmod = '0777' unless ($chmod);
   umask($umask);
   if ($main::verbose >= 4) {
     my $wd = `pwd`;
@@ -527,6 +527,8 @@ sub CheckOutDir {
 
     &RSAT::message::Info("Creating directory", $output_dir) if ($main::verbose >= 3);
     mkdir ($output_dir, $chmod);
+
+
     unless (-d $output_dir) {
       &RSAT::message::Info("Creating directory with all parents", $output_dir) if ($main::verbose >= 3);
       system "mkdir -p $output_dir"; ## create output directory with all parents
