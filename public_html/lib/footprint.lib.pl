@@ -848,6 +848,24 @@ Draw the feature map of the hits (using I<feature-mp>).
       }
 
 =pod
+=item B<-rand>
+
+When the option -rand is activated, the program replaces each
+ortholog by a gene selected at random in the genome where this
+ortholg was found.
+
+This option is used (for example by footprint-scan and
+footprint-discovery to perform negative controls, i.e. check the
+rate of false positives in randomly selected promoters of the
+reference taxon.
+
+
+=cut
+
+  } elsif ($arg eq "-rand") {
+    $main::rand = 1;
+
+=pod
 
 =item B<-map_format>
 
@@ -1028,7 +1046,7 @@ sub RetrieveQueryPromoters {
 
   ## Compute length of query sequences (in order to filter out genes with 0 length promoters)
   if (-e $outfile{query_seq}) {
-    $query_prom_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{query_seq} | grep -v '^#' | cut -f 2`;
+    $query_prom_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{query_seq} | grep -v '^#' | cut -f 1`;
     chomp($query_prom_len);
     if ($query_prom_len < 1) {
       ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
@@ -1200,7 +1218,7 @@ sub RetrieveOrthoSeq {
 
   ## Compute length of orthologous sequences (in order to filter out genes with 0 length sequences)
   if (-e $outfile{seq}) {
-    $ortho_seq_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{seq} | grep -v '^#' | cut -f 2`;
+    $ortho_seq_len = `$ENV{RSAT}/perl-scripts/sequence-lengths -v 0 -sum -i $outfile{seq} | grep -v '^#' | cut -f 1`;
     chomp($ortho_seq_len);
     if ($ortho_seq_len < 1) {
       ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
