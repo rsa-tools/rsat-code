@@ -165,7 +165,7 @@ $parameters .= " -o ".$result_dir;
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
 $index_file = $result_subdir."/";
-$index_file .= &MainIndexFileName();
+$index_file .= (&MainIndexFileName())[0];
 #$index_file .= join("_", $taxon, $organism_name, "bg", $bg_model, "result_index.html");
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism_name, &AlphaDate());
 my $log_file = $result_subdir."/server_log.txt";
