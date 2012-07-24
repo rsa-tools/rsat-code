@@ -848,6 +848,7 @@ Draw the feature map of the hits (using I<feature-mp>).
       }
 
 =pod
+
 =item B<-rand>
 
 When the option -rand is activated, the program replaces each
