@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.91 2012/07/24 22:23:46 amedina Exp $
+# $Id: footprint-discovery,v 1.92 2012/07/25 16:52:26 amedina Exp $
 #
 ############################################################
 
@@ -176,19 +176,6 @@ soon.
 
 =over
 
-
-=item B<-rand>
-
-When the option I<-rand> is activated, the motif discovery is applied
-to random selections of promoters rather than promoters of orthologs.
-
-This option serves to perform negative controls in orde to estimate
-empirically the rate of false prediction and check its correspondence
-with the theoretical estimation of the significance.
-
-The random selections are done by passing the option I<-rand> to the
-program I<get-orthologs>.
-
 =item B<-taxa>
 
 Specify a file containing a list of taxa, each of which will be
@@ -224,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.91 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -1258,6 +1245,7 @@ sub OpenMainIndex {
   $html_title = $taxon if ($taxon);
   $html_title .= " ".$organism_name if ($organism_name);
   $html_title .= " ".$bg_model if ($bg_model);
+  $html_title .= " "."_rand" if ($main::rand);
   print $main_index &PrintHtmlResultHeader(program=>"footprint-discovery", title=>"$html_title", refresh_time=>$refresh_time);
 
 #  print $main_index "<h1>", $html_title, "</h1\n";
