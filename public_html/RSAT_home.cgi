@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.73 2012/07/02 12:52:51 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.74 2012/07/27 06:32:03 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -107,11 +107,11 @@ print <<EndText;
     </td>
   </tr>
   <tr>
-    <td  WIDTH="40%" bgcolor=#F6E6CA>
-      <ul>
-	<li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
+    <td  WIDTH="50%" bgcolor=#F6E6CA>
+      <ul> 
+	<li><font color="red"><b>New !</b></font> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font></li>
 	
-	<p><li><font color="red"><b>New !</b> </font> <b>Peak-motifs</b> is now published in <b>NAR</b> <a href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full' target=_blank>[view article]</a></li>
+	<p><li> <b>Peak-motifs</b> is now published in <b>NAR</b> <a href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full' target=_blank>[view article]</a></li>
 	  
 	<p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <br/> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li>
       </ul>
@@ -119,6 +119,7 @@ print <<EndText;
 
     <td WIDTH="30%" bgcolor=#F6E6CA>
       <ul>
+      <li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li> <p>
 	<li> Check the <b>latest news</b> in <a
 						href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our [Forum] </b></a></li>
 	
