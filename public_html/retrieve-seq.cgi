@@ -144,21 +144,22 @@ if ($query->param('genes') eq "all") {
       $gene_list_file .= ".gz";
     }
     $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-    open SEQ, ">".$gene_list_file ||
+    open GENE_FILE, ">".$gene_list_file ||
       &cgiError("Cannot store gene list file in temporary directory");
     while (<$upload_file>) {
-      print SEQ;
+      print GENE_FILE;
     }
-    close SEQ;
+    close GENE_FILE;
   } else {
     my $gene_selection = $query->param('gene_selection');
     $gene_selection =~ s/\r/\n/g;
-    my @gene_selection = split ("\n", $gene_selection);
+    my @gene_selection = split (/[\n\r]/, $gene_selection);
     if ($gene_selection =~ /\S/) {
       open QUERY, ">".$gene_list_file;
       foreach my $row (@gene_selection) {
+	next unless $row =~ /\S/; ## Skip empty rows
 	chomp($row); ## Suppress newline character
-	$row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option. 
+	$row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option
 	print QUERY $row, "\n";
       }
       close QUERY;
