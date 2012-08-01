@@ -249,7 +249,8 @@
         }
         # Display the results
     	# echo($command);
-    	$resultURL = rsat_path_to_url($server);
+    	# $resultURL = rsat_path_to_url($server); results in error when clicking result link
+    	$resultURL = $html_location.$server;
         $URL['result'] = $resultURL;
 			
     	# store command in a file
