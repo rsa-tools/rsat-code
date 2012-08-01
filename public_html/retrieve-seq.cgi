@@ -199,13 +199,13 @@ if (($query->param('output') =~ /display/i) ||
     close RESULT;
     close MIRROR if ($mirror);
 
-    if ($query->param('output') =~ /server/i) {
+#    if ($query->param('output') =~ /server/i) {
       &PrintURLTable(@result_files);
 #      $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
 #      print ("The result is available at the following URL: ", "\n<br>",
 #	     "<a href=${result_URL}>${result_URL}</a>",
 #	     "<p>\n");
-    }
+#    }
 
     ### prepare data for piping
     &PipingFormForSequence();
