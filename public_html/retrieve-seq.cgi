@@ -171,6 +171,8 @@ if ($query->param('genes') eq "all") {
   &DelayedRemoval($gene_list_file);
 }
 print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
+$sequence_file = "$tmp_file_path.".$out_format;
+push @result_files, ("sequences", $sequence_file);
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
@@ -183,8 +185,6 @@ if (($query->param('output') =~ /display/i) ||
     &PipingWarning();
 
     ### open the sequence file on the server
-    $sequence_file = "$tmp_file_path.".$out_format;
-    push @result_files, ("sequences",$sequence_file);
     if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
 	&DelayedRemoval($sequence_file);
@@ -213,7 +213,7 @@ if (($query->param('output') =~ /display/i) ||
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $sequence_file);
 }
 
 print $query->end_html;

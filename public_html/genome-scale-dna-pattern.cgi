@@ -205,7 +205,7 @@ if ($query->param("output") =~ /display/i) {
 
     print "<HR SIZE = 3>";
 } else {
-    &EmailTheResult($command, $query->param('user_email'));
+    &EmailTheResult($command, $query->param('user_email'), $pattern_file);
 }
 
 print $query->end_html;
