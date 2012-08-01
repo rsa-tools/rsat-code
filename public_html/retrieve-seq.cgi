@@ -182,7 +182,7 @@ if (($query->param('output') =~ /display/i) ||
     &PipingWarning();
 
     ### open the sequence file on the server
-    $sequence_file = "$tmp_file_path.seq";
+    $sequence_file = "$tmp_file_path.".$out_format;
     push @result_files, ("sequences",$sequence_file);
     if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
