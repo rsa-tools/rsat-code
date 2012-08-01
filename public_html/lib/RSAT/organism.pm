@@ -1264,7 +1264,7 @@ sub LoadSynonyms {
     if (-e $synonym_file) {
 	$self->push_attribute("synonym_files", $synonym_file);
     } else {
-	&RSAT::message::Warning(join("\t", "synonym file does not exist", $synonym_file));
+	&RSAT::message::Warning(join("\t", "synonym file does not exist", $synonym_file)) if ($main::verbose >= 2);
     }
   }
 
