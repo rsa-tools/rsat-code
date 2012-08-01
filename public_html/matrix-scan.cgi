@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.40 2012/07/02 12:50:42 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.41 2012/08/01 23:07:48 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -24,13 +24,12 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-@result_files = ();
 
 $command = $SCRIPTS."/matrix-scan -v 1 ";
 $prefix = "matrix-scan";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
-$result_file =  $tmp_file_path.".ft";
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -65,7 +64,6 @@ if ($quick_mode) {
 &ReadMatrixScanParameters();
 $parameters .= " -i $sequence_file -seq_format $sequence_format";
 push @result_files, ("Input sequence",$sequence_file);
-push @result_files, ("Scan result (FT)",$result_file);
 
 ################################################################
 ### vertically print the matrix
@@ -85,6 +83,11 @@ if ($query->param('n_score')) {
 }
 
 $command .= " $parameters";
+
+## Define output file
+$result_file =  $tmp_file_path.".ft";
+push @result_files, ("Scan result (FT)",$result_file);
+
 #$command .= " -o ".$result_file;
 
 ################################################################
@@ -199,7 +202,7 @@ if ($query->param('output') eq "display") {
   print "<HR SIZE = 3>";
 
 } else {
-  &EmailTheResult("$command ", $query->param('user_email'));
+  &EmailTheResult($command , $query->param('user_email'), $result_file);
 }
 
 
