@@ -159,15 +159,16 @@ if ($query->param("output") =~ /display/i) {
   $result_file = $tmp_file_path.".res";
   push @result_files, ('dna-pattern result', $result_file);
   open RESULT, "$command $parameters |";
-  print "<PRE>$command $parameters </b>" if ($ENV{rsat_echo});
+  print "<pre>$command $parameters </b></pre>" if ($ENV{rsat_echo});
 
   ### Print the result on Web page
-  print "<H4>Result</H4>";
+  print "<h2>Result</h2>";
   &PrintHtmlTable(RESULT, $result_file, 1);
   close RESULT;
+
   &PrintURLTable(@result_files);
   &PipingForm();
-  print "<HR SIZE = 3>";
+  print "<hr size='3'>";
 
 } else {
   &EmailTheResult("$command $parameters", $query->param('user_email'));
