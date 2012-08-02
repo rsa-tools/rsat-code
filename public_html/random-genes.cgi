@@ -77,13 +77,14 @@ if ($query->param('replacement')) {
 }
 
 
+## Output file
+$result_file = $tmp_file_path.".res";
+push @result_files, ("random genes",$result_file);
+
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo});
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
-
-    $result_file = $tmp_file_path.".res";
-    push @result_files, ("random genes",$result_file);
 
     &PipingWarning();
 
@@ -110,7 +111,7 @@ if ($query->param('output') eq "display") {
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 print $query->end_html;
 
