@@ -46,14 +46,14 @@ $parameters = "";
 
 ## a template file has been given
 if ($template_file) {
-  push @result_files, ("Template file",$template_file);
+  push @result_files, ("Template file ($template_format)",$template_file);
 
   ## Compute sequence lengths from the template sequence file
   my $length_file = "$TMP/$tmp_file_name".".lengths";
   push @result_files, ("Sequence lengths",$length_file);
 
   my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;
-  $seqlength_cmd .= " -format ".$template_format;
+  $seqlength_cmd .= " -in_format ".$template_format;
   $seqlength_cmd .= " -o ".$length_file;
   system($seqlength_cmd);
 
@@ -109,17 +109,20 @@ if ($query->param('outputformat')) {
 
   ## return sequence
   if ($query->param('outputformat') eq "outputseq"){
-    ## not compatible with non-RSAT organisms
+    $output_format = "fasta";
+
+    ## Sequence output is only valid for RSAT organisms
     if ($query->param('org_select') ne "rsat_org") {
       &FatalError("Sequence output is only compatible with RSAT organisms. Select a RSAT organism or choose as output format 'genomic coordinates' ");
     } else {
       $parameters .= " -return seq ";
     }
 
-    ## return coordinates
+    ## Return coordinates
   } elsif ($query->param('outputformat') eq "outputcoord") {
     if ($query->param('coord_format')) {
-      $parameters .= " -return coord -coord_format ".$query->param('coord_format');
+      $output_format = $query->param('coord_format');
+      $parameters .= " -return coord -coord_format ".$output_format;
       $parameters .= " -v 1 ";
     }
   }
@@ -131,8 +134,8 @@ if ($query->param('rm') =~ /on/) {
 }
 
 ## Output file
-$result_file = "$TMP/$tmp_file_name.res";
-push @result_files, ("Genome fragments",$result_file);
+$result_file = $tmp_file_path."_fragments.".$output_format;
+push @result_files, ("Genome fragments ($output_format)",$result_file);
 
 ############################################################
 ## Command
@@ -186,7 +189,7 @@ if (($query->param('output') =~ /display/i) ||
   print "<HR SIZE = 3>";
 
 } else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'));
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 
 print $query->end_html;
