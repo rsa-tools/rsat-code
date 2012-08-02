@@ -138,14 +138,16 @@ foreach my $field qw(occ occ_sig occ_Pval occ_Eval) {
 
 $command .= $parameters;
 
+## Output file
+$result_file = $tmp_file_path.".tab";
+push @result_files, ("oligos", $result_file);
+
 print "<PRE>command: $command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') =~ /display/i) {
     &PipingWarning();
 
     ### Execute the command
-    $result_file = $tmp_file_path.".res";
-    push @result_files, ("oligos", $result_file);
     open RESULT, "$command |";
 
     ### Print result on the web page
@@ -201,7 +203,7 @@ if ($query->param('output') =~ /display/i) {
     print '<HR SIZE=3>';
 
 } else {
-    &EmailTheResult("$command", $query->param('user_email'), $tmp_file_name);
+    &EmailTheResult("$command", $query->param('user_email'), $result_file);
 }
 
 print $query->end_html;
