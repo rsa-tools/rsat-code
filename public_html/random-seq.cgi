@@ -134,13 +134,14 @@ if ($query->param('proba') eq "alphabet") {
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
+## Output file
+$sequence_file = $tmp_file_path.".".$out_format;
+push @result_files, ("sequence",$sequence_file);
 
 ### execute the command ###
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
 #if ($query->param('output') eq "display") {
-    $sequence_file = $tmp_file_path.".res";
-    push @result_files, ("sequence",$sequence_file);
 
     open RESULT, "$command $parameters |";
 
@@ -173,7 +174,7 @@ if (($query->param('output') =~ /display/i) ||
 
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $sequence_file);
 }
 print $query->end_html;
 

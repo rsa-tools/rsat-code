@@ -134,6 +134,10 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 my $error_found = 0; # catch an error if occurs, and then prevent from drawing the graphs
 
+## Tab-delimited output file
+$distrib_file = $tmp_file_path.".tab";
+push (@result_files, "distribution table", $distrib_file);
+
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
   &PipingWarning();
@@ -145,8 +149,6 @@ if (($query->param('output') =~ /display/i) ||
   open RESULT, "$command $parameters |";
 
   ### open the sequence file on the server
-  $distrib_file = $tmp_file_path.".res";
-  push (@result_files, "distribution table", $distrib_file);
   if (open MIRROR, ">$distrib_file") {
     $mirror = 1;
     &DelayedRemoval($distrib_file);
@@ -232,7 +234,7 @@ if (($query->param('output') =~ /display/i) ||
   }
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $distrib_file);
 }
 print $query->end_html;
 
