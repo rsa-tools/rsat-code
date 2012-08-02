@@ -857,6 +857,16 @@ sub make_temp_file {
 
   &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
 
+  ## Create an index file in the nexw directory to prevent Web users from seing its whole content
+  my $index_file = $tmp_dir."/index.html";
+  unless (-e $index_file) {
+    open INDEX, ">".$index_file;
+    print INDEX "<html>";
+    print INDEX "<b>Access forbidden</b>";
+    print INDEX "</html>";
+    close INDEX;
+  }
+
   ## Add date if required
   if ($add_date) {
     $tmp_prefix .= "_";
