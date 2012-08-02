@@ -93,6 +93,10 @@ foreach my $param (@parameters) {
 ## Show only resulst for organisms for which we have a blast file
 $parameters .= " -nowarn";
 
+## Output file
+$result_file = $tmp_file_path.".tab";
+push @result_files, ("gene info",$result_file);
+
 ## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
@@ -100,9 +104,6 @@ print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 #### run the command
 if ($query->param('output') eq "display") {
     &PipingWarning();
-
-    $result_file = $tmp_file_path.".res";
-    push @result_files, ("gene info",$result_file);
 
     open RESULT, "$command $parameters |";
     print '<H2>Result</H2>';
@@ -113,10 +114,12 @@ if ($query->param('output') eq "display") {
     &PipingForm();
 
     print "<HR SIZE = 3>";
+
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+    &ServerOutput("$command $parameters", $query->param('user_email'), $result_file);
+
 } else { 
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 print $query->end_html();
 
