@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.13 2012/07/02 04:50:25 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.14 2012/08/02 01:34:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -50,12 +50,11 @@ $query = new CGI;
 ### Input sequence file ####
 ($in_sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
 $parameters = " -i $in_sequence_file ";
-push @result_files, ("Input sequences",$in_sequence_file);
+push @result_files, ("Input sequences (fasta)",$in_sequence_file);
 
 ## Output file (purged sequences)
-$sequence_file = $tmp_file_path.".res";
-push @result_files, ("Purged sequences",$sequence_file);
-
+$sequence_file = $tmp_file_path.".fasta";
+push @result_files, ("Purged sequences (fasta)",$sequence_file);
 
 #### add reverse complement
 if ($query->param("both_strands")) {
@@ -123,7 +122,7 @@ if (($query->param('output') =~ /display/i) ||
     print "<hr size = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $sequence_file);
 }
 
 print $query->end_html;
