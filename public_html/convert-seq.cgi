@@ -52,6 +52,7 @@ $parameters = "";
 ################################################################
 ## sequence file
 ($in_sequence_file,$sequence_format) = &GetSequenceFile();
+push @result_files, ("Input sequence ($sequence_format)",$in_sequence_file);
 
 #&cgiWarning("in sequence = ".$in_sequence_file);
 
@@ -85,8 +86,8 @@ if ($query->param('line_width') =~ /\d+/) {
 }
 
 ### open the sequence file on the server
-$sequence_file = $tmp_file_path.".res";
-push @result_files, ("Converted sequence",$sequence_file);
+$sequence_file = $tmp_file_path.".".$out_format;
+push @result_files, ("Converted sequence ($out_format)",$sequence_file);
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
