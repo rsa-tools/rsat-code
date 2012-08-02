@@ -84,6 +84,10 @@ if ($query->param('line_width') =~ /\d+/) {
     $parameters .= " -lw ".$query->param('line_width');
 }
 
+### open the sequence file on the server
+$sequence_file = $tmp_file_path.".res";
+push @result_files, ("Converted sequence",$sequence_file);
+
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 #### execute the command #####
@@ -101,9 +105,6 @@ if (($query->param('output') =~ /display/i) ||
 
     print '<H4>Result</H4>';
 
-    ### open the sequence file on the server
-    $sequence_file = $tmp_file_path.".res";
-    push @result_files, ("Input sequence",$sequence_file);
     if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
 	&DelayedRemoval($sequence_file);
@@ -124,7 +125,7 @@ if (($query->param('output') =~ /display/i) ||
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $sequence_file);
 }
 
 exit(0);
