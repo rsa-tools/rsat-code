@@ -45,6 +45,7 @@ package RSAT::feature;
 		       );
 @{$strands{ft}} = ("D", "R", "DR");
 $comment_char{ft} = "; ";
+$header_char{ft} = "# ";
 
 # RSAT dna-pattern format (dnapat)
 @{$columns{dnapat}} = qw (
@@ -59,6 +60,7 @@ $comment_char{ft} = "; ";
 		       );
 @{$strands{dnapat}} = ("D", "R", "DR");
 $comment_char{dnapat} = "; ";
+$header_char{dnapat} = "# ";
 
 # RSAT Genome feature format (gft)
 @{$columns{gft}} = qw (ft_id
@@ -72,6 +74,7 @@ $comment_char{dnapat} = "; ";
 		       );
 @{$strands{gft}} = ("D", "R", "DR");
 $comment_char{gft} = "; ";
+$header_char{gft} = "# ";
 
 ## Sanger generic feature format (gff)
 ## http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
@@ -87,6 +90,7 @@ $comment_char{gft} = "; ";
 		       );
 @{$strands{gff}} = ("+", "-", ".");
 $comment_char{gff} = "## ";
+$header_char{gff} = "## ";
 
 ## Generic Feature Format version 3 (gff3)
 ## http://flybase.net/annot/gff3.html
@@ -102,6 +106,7 @@ $comment_char{gff} = "## ";
 		       );
 @{$strands{gff3}} = ("+", "-", ".");
 $comment_char{gff3} = "## ";
+$header_char{gff3} = "## ";
 @gff3_attributes = ("ID", #    name of the feature
 		    "Name", #	 display name for the feature
 		    "Alias", #	 secondary name for the feature
@@ -131,6 +136,7 @@ $comment_char{gff3} = "## ";
 		      );
 @{$strands{bed}} = ("+", "-", ".");
 $comment_char{bed} = "## ";
+$header_char{bed} = "## ";
 
 ## Galaxy sequences
 ## http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
@@ -143,6 +149,7 @@ $comment_char{bed} = "## ";
 			     );
 @{$strands{galaxy_seq}} = ("+", "-");
 $comment_char{galaxy_seq} = "#";
+$header_char{galaxy_seq} = "#";
 
 
 require "RSA.seq.lib";
@@ -1017,13 +1024,12 @@ sub header {
 #      $header .= "browser dense all\n";
     } else {
       $header .= $comment_char{$out_format};
-      $header .= $out_format;
-      $header .= "\n";
+      $header .= "Feature format:".$out_format."\n";
     }
 
     ## Print column content
     my @cols = @{$columns{$out_format}};
-    $header .= $comment_char{$out_format};
+    $header .= $header_char{$out_format};
     $header .= join ("\t", @cols);
     $header .= "\n";
     return $header;
