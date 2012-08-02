@@ -21,9 +21,7 @@ $command = "$SCRIPTS/convert-background-model -v 1 ";
 $prefix = "convert-bg";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 #$tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
-$result_file = $tmp_file_path.".res";
 @result_files = ();
-push @result_files, ("Result file",$result_file);
 
 ## Draw a heat map for the transition table
 my $draw_heatmap = 0;
@@ -136,6 +134,10 @@ my $output_format = lc($query->param('output_format'));
 $parameters .= " -to ".$output_format;
 $draw_heatmap = 0 unless ($output_format eq 'transitions');
 
+## Output file
+$result_file = $tmp_file_path.".".$output_format;
+push @result_files, "Background model file ($output_format)", $result_file;
+
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
@@ -150,10 +152,9 @@ if ($query->param('output') eq "display") {
   open RESULT, "$command $parameters |";
 
   ### open the sequence file on the server
-  $mirror_file = $tmp_file_path.".res";
-  if (open MIRROR, ">$mirror_file") {
+  if (open MIRROR, ">$result_file") {
     $mirror = 1;
-    &DelayedRemoval($mirror_file);
+    &DelayedRemoval($result_file);
   }
 
     print "<PRE>";
@@ -170,8 +171,8 @@ if ($query->param('output') eq "display") {
 
     if ($draw_heatmap) {
       my $heatmap_file = $tmp_file_path."_heatmap.png";
-      my $command2 = "draw-heatmap -i $mirror_file";
-      $command2 = "cut -f 1-5 ".$mirror_file; 
+      my $command2 = "draw-heatmap -i $result_file";
+      $command2 = "cut -f 1-5 ".$result_file; 
       $command2 .= "| ${SCRIPTS}/draw-heatmap -min 0 -max 1 ";
       $command2 .= " -out_format png";
       $command2 .= " -col_width 50 ";
@@ -194,7 +195,7 @@ if ($query->param('output') eq "display") {
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 print $query->end_html;
 
