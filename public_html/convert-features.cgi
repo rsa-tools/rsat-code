@@ -18,9 +18,10 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-features -v 1";
+$prefix = "convert-features";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 $tmp_file_name = sprintf "convert-features.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
-$ENV{rsat_echo} = 1;
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -37,39 +38,7 @@ $query = new CGI;
 my $parameters;
 
 ################################################################
-#### Feature from input box
-my $feature_file = "$TMP/$tmp_file_name.input";
-if ($query->param('feature')){
-	open FEAT, "> $feature_file";
-	print FEAT $query->param('feature');
-	close FEAT;
-} else  {
-    ## Upload user-specified  file
-    my $upload_file = $query->param('uploaded_file');
-    if ($upload_file) {
-	if ($upload_file =~ /\.gz$/) {
-	    $feature_file .= ".gz";
-	}
-	my $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-	open FEAT, ">$feature_file" ||
-	    &cgiError("Cannot store feature file in temp dir.");
-	while (<$upload_bgfile>) {
-	    print FEAT;
-	}
-	close FEAT;
-    } else {
-	&FatalError ("If you want to upload a file, you should specify the location of this file on your hard drive with the Browse button");
-    }
-
-}
-
-&DelayedRemoval($feature_file);
-$parameters .= " -i $feature_file";
-
-
-################################################################
 ## feature input format
-
 my $input_format = lc($query->param('feature_format'));
 $parameters .= " -from ".$input_format;
 
@@ -80,7 +49,42 @@ my $output_format = lc($query->param('output_format'));
 $parameters .= " -to ".$output_format;
 
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+################################################################
+#### Feature from input box
+my $input_file = $tmp_file_path.".".$input_format;
+push @result_files, ("Input features ($input_format)",$input_file);
+
+if ($query->param('feature')){
+  open FEAT, "> $input_file";
+  print FEAT $query->param('feature');
+  close FEAT;
+} else  {
+    ## Upload user-specified  file
+    my $upload_file = $query->param('uploaded_file');
+    if ($upload_file) {
+	if ($upload_file =~ /\.gz$/) {
+	    $input_file .= ".gz";
+	}
+	my $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+	open FEAT, ">$input_file" ||
+	    &cgiError("Cannot store feature file in temp dir.");
+	while (<$upload_bgfile>) {
+	    print FEAT;
+	}
+	close FEAT;
+    } else {
+	&FatalError ("If you want to upload a file, you should specify the location of this file on your hard drive with the Browse button");
+    }
+
+}
+&DelayedRemoval($input_file);
+$parameters .= " -i $input_file";
+
+my $output_file = $tmp_file_path.".".$output_format;
+push @result_files, ("Output features ($output_format)",$output_file);
+
+
+print "<pre>command: $command $parameters<P>\n</pre>" if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
@@ -89,21 +93,24 @@ if ($query->param('output') eq "display") {
  ## prepare figures
     ### prepare data for piping
     open RESULT, "$command $parameters |";
-    
     print '<H4>Result</H4>';
-    print '<PRE>';
-    while (<RESULT>) {
-		print $_;
-    }
-    print '</PRE>';
+    print '<H2>Result</H2>';
+    &PrintHtmlTable(RESULT, $output_file, 1);
     close(RESULT);
+#    print '<PRE>';
+#    while (<RESULT>) {
+#      print $_;
+#    }
+#    print '</PRE>';
+#    close(RESULT);
 
+    &PrintURLTable(@result_files);
 #    &PipingForm();
 
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $output_file);
 }
 print $query->end_html;
 
