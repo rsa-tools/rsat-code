@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.29 2010/11/27 16:30:56 jvanheld Exp $
+# $Id: patser.cgi,v 1.30 2012/08/02 17:05:24 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -25,12 +25,15 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 $command = $BIN."/patser";
 #$convert_seq_command = $SCRIPTS."/convert-seq";
 $features_from_patser_cmd = $SCRIPTS."/features-from-patser -v 1";
 $add_yeast_link_command = $SCRIPTS."/add-yeast-link";
-$tmp_file_name = sprintf "patser.%s", &AlphaDate();
+#$tmp_file_name = sprintf "patser.%s", &AlphaDate();
+$prefix = "patser";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
 ### Read the CGI query
 $query = new CGI;
@@ -66,6 +69,10 @@ if ($query->param('vertically_print')){
 $command .= " $patser_parameters";
 $command .= "| $features_from_patser_cmd";
 
+## Output file
+$result_file =  $tmp_file_path.".ft";
+push @result_files, "Patser result (ft)", $result_file;
+
 ################################################################
 #### echo the command (for debugging)
 print "<pre>$command</pre>" if ($ENV{rsat_echo} >= 1);
@@ -79,7 +86,6 @@ if ($query->param('output') eq "display") {
     }
 
     ### Print the result on Web page
-    $result_file =  "$TMP/$tmp_file_name.ft";
     open RESULT, "$command |";
 #    open FEATURES, "| $features_from_patser_cmd";
     
@@ -98,14 +104,15 @@ if ($query->param('output') eq "display") {
 #    close RESULT;
     print "</PRE>";
 
+    &PrintURLTable(@result_files);
     if ($query->param('output_format') eq 'feature list') {
 	&PipingForm();
     }
-
+    
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $patser_parameters", $query->param('user_email'));
+    &EmailTheResult("$command $patser_parameters", $query->param('user_email'), $result_file);
 }
 
 
