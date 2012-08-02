@@ -9,6 +9,7 @@ require "RSA2.cgi.lib";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/roc-stats2";
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -28,8 +29,12 @@ my $img_format = $query->param('img_format')||'png';
 
 ################################################################
 #### Get input
-my $tmp_file_prefix = sprintf "roc-stats.%s", &AlphaDate();
-my $score_file = "$TMP/$tmp_file_prefix.input";
+#my $tmp_file_prefix = sprintf "roc-stats.%s", &AlphaDate();
+$prefix = "roc-stats";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+
+my $score_file = $tmp_file_path.".input";
+push @result_files, "Input score file", $score_file;
 my $data = $query->param('data');
 if ($data){
   $data =~ s/\r//g;
@@ -86,7 +91,8 @@ if (&IsInteger($query->param('total'))) {
 ################################################################
 ## Return fields
 #&CGI_return_fields();
-my $result_file = "$TMP/$tmp_file_prefix.res";
+my $result_file = $tmp_file_path.".tab";
+push @result_file, "ROC statistics (tab)", $result_file;
 
 ## graphs 
 if ($query->param('graphs')) {
@@ -107,7 +113,7 @@ print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 if ($query->param('graphs')){
   if ($query->param('output') =~ /display/i){
     @data_report = `$command $parameters`;
-    my $result_prefix = $tmp_file_prefix.".res";
+    my $result_prefix = $tmp_file_path.".res";
 
     print '<H4>Graphs</H4>';
     print "<UL>\n";
@@ -149,93 +155,125 @@ if ($query->param('graphs')){
 
    ## Draw stats as a function of score
     my $cmd = "$SCRIPTS/XYgraph -i ".$result_file;
+    $score_distrib_plot = $tmp_file_path."_scores.".$img_format;
+    push @result_files, "Score distributions", $score_distrib_plot;
     $cmd .= " -title1 'Score distributions'";
     $cmd .= " -xcol 1 -ycol 7,8,9,10,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
     $cmd .= " -ygstep1 0.1 -ygstep2 0.05 ";
     $cmd .= " -format ".$img_format;
-    $cmd .= " -o $TMP/".$result_prefix."_scores.".$img_format;
+    $cmd .= " -o ".$score_distrib_plot;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"scores\"></A>";
-    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_scores.".$img_format."\"><BR>";
+#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_scores.".$img_format."\"><BR>";
+    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $score_distrib_plot);
+    print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
 
     ## Draw stats as a function of score, with log scale on X axis
+    $score_distrib_plot_xlog2 = $tmp_file_path."_scores_xlog2.".$img_format;
+    push @result_files, "Score distributions (log2 X axis)", $score_distrib_plot_xlog2;
     $cmd = "$SCRIPTS/XYgraph -i ".$result_file;
     $cmd .= " -title1 'Score distributions (xlog)'";
     $cmd .= " -xcol 1 -ycol 7,8,9,10,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
     $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
     $cmd .= " -format ".$img_format;
-    $cmd .= " -xlog 2 -o $TMP/".$result_prefix."_scores_xlog2.".$img_format;
+    $cmd .= " -xlog 2 -o ".$score_distrib_plot_xlog2;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"scores_xlog2\"></A>";
-    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_scores_xlog2.".$img_format."\"><BR>";
+    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $score_distrib_plot_xlog2);
+    print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
+#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_scores_xlog2.".$img_format."\"><BR>";
 
     ## Draw a graph with TP=f(FP)
+    $FP_TP_plot = $tmp_file_path."_FP_TP.".$img_format;
+    push @result_files, "FP versus TP", $FP_TP_plot;
     $cmd = "$SCRIPTS/XYgraph -i ".$result_file;
     $cmd .= " -title1 'True versus false positives'";
     $cmd .= " -xcol 5 -ycol 4 -xleg1 FP -yleg1 TP -lines -pointsize 0";
     $cmd .= " -format ".$img_format;
-    $cmd .= " -o $TMP/".$result_prefix."_FP_TP.".$img_format;
+    $cmd .= " -xlog 2 -o ".$FP_TP_plot;
+#    $cmd .= " -o $tmp_file_path."._FP_TP.".$img_format;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"FP_TP\"></A>";
-    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_FP_TP.".$img_format."\"><BR>";
+    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $FP_TP_plot);
+    print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
+#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_FP_TP.".$img_format."\"><BR>";
 
     ## Draw a ROC curve
+    $ROC_plot = $tmp_file_path."_ROC.".$img_format;
+    push @result_files, "ROC curve", $ROC_plot;
     $cmd = "$SCRIPTS/XYgraph -i ".$result_file;
     $cmd .= " -title1 'ROC curve'";
     $cmd .= " -xcol 9 -ycol 7 -xleg1 'FPR' -yleg1 'Sn (=TPR)' -lines -pointsize 0 -min 0 -max 1";
     $cmd .= " -format ".$img_format;
-    $cmd .= " -o $TMP/".$result_prefix."_roc.".$img_format;
+#    $cmd .= " -o $tmp_file_path."_roc.".$img_format;
+    $cmd .= " -o ".$ROC_plot;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"roc\"></A>";
-    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_roc.".$img_format."\"><BR>";
+    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $ROC_plot);
+    print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
+#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_roc.".$img_format."\"><BR>";
 
     ## Draw a Precision-recall curve
+    $precision_recall = $tmp_file_path."_precision_recall.".$img_format;
+    push @result_files, "Precision/Recall curve", $precision_recall;
     $cmd = "$SCRIPTS/XYgraph -i ".$result_file;
     $cmd .= " -title1 'Precision-recall curve'";
     $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1";
     $cmd .= " -format ".$img_format;
-    $cmd .= " -o $TMP/".$result_prefix."_precision_recall.".$img_format;
+    $cmd .= " -o ".$precision_recall;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"precision_recall\"></A>";
-    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall.".$img_format."\"><BR>";
+    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $precision_recall);
+    print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
+#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall.".$img_format."\"><BR>";
 
     ## Draw a Precision-recall curve with logarithmic axis X
     ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
+    $precision_recall_xlog = $tmp_file_path."_precision_recall_xlog.".$img_format;
+    push @result_files, "Precision/Recall curve (log X axis)", $precision_recall_xlog;
     $cmd = "$SCRIPTS/XYgraph -i ".$result_file;
     $cmd .= " -title1 'Precision-recall curve (xlog)'";
     $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog";
     $cmd .= " -format ".$img_format;
-    $cmd .= " -o $TMP/".$result_prefix."_precision_recall_xlog.".$img_format;
+    $cmd .= " -o  ".$precision_recall_xlog;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"precision_recall_xlog\"></A>";
-    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall_xlog.".$img_format."\"><BR></CENTER>";
+    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $precision_recall_xlog);
+    print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
+#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall_xlog.".$img_format."\"><BR></CENTER>";
 
     ## Draw a Precision-recall curve with logarithmic axes
     ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
+    $precision_recall_log = $tmp_file_path."_precision_recall_log.".$img_format;
+    push @result_files, "Precision/Recall curve (log axes)", $precision_recall_log;
     $cmd = "$SCRIPTS/XYgraph -i ".$result_file;
     $cmd .= " -title1 'Precision-recall curve (log-log)'";
     $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog -ylog";
     $cmd .= " -format ".$img_format;
-    $cmd .= " -o $TMP/".$result_prefix."_precision_recall_log.".$img_format;
+    $cmd .= " -o ".$precision_recall_log;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"precision_recall_log\"></A>";
-    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall_log.".$img_format."\"><BR>";
+    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $precision_recall_log);
+    print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
+#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall_log.".$img_format."\"><BR>";
+
+    &PrintURLTable(@result_files);
 
   }else{
     ## TO BE IMPLEMENTED
     &cgiError("Graph option is not yet supported by email output. Please choose display output.");
   }
+
 } else {
   if ($query->param('output') =~ /display/i){
     open RESULT, "$command $parameters | ";
     print '<H4>Table</H4>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
+
   }else{
     my $mail_title = join (";", "NeAT", "roc-stats", &AlphaDate());
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_prefix.".res",
-		    title=>$mail_title,
-		   );
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file, title=>$mail_title);
   }
 }
 
