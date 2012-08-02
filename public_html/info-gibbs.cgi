@@ -157,8 +157,12 @@ if ($query->param('freq_estimate') =~ /background/i) {
   #       &FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
   #     }
 }
-### additional parameters
 
+## Result file
+$result_file = $tmp_file_path.".tab";
+push @result_files, ('info-gibbs result', $result_file);
+
+### additional parameters
 #$parameters .= ' --finalcycle';
 print "<pre>$command $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
 
@@ -166,10 +170,8 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### execute the command ###
-    $result_file = $tmp_file_path.".tab";
     #$matrix_file = "$TMP/$tmp_file_name.matrix";
     #print("$command $parameters\n");
-    push @result_files, ('info-gibbs result', $result_file);
     system "$command $parameters > $result_file";
     &DelayedRemoval($result_file);
 
@@ -193,7 +195,7 @@ if ($query->param('output') eq "display") {
     print "<hr size=\"3\">";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 
 print $query->end_html;
