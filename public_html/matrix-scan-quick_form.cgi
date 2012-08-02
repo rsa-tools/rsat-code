@@ -46,7 +46,7 @@ $default{thresh_value} = "1";
 
 ### print the form ###
 &RSA_header("matrix-scan QUICK and SIMPLE");
-&ListParameters() if ($ENV{rsat_echo} >=2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
