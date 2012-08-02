@@ -76,9 +76,7 @@ if ($bg_choose eq "rsat") {
     }
     close BGFILE;
     $parameters .= " -bgfile $bgfile";
-    $bg_format = $query->param('bg_format');
-    $parameters .= " -bg_format ".$bg_format;
-    push @result_files, "Background model ($bg_format)", $bgfile;
+    $parameters .= " -bg_format ".$query->param('bg_format');
   } else {
     &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
