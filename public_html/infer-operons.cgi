@@ -129,15 +129,17 @@ if ($query->param('genes') eq "all") {
     }
 }
 
+## Output file
+$result_file = $tmp_file_path.".tab";
+push (@result_files, 'operons', $result_file);
+
 print  "<PRE><B>Command :</B> ", &RSAT::util::hide_RSAT_path($command." ".$parameters), "</PRE><P>" if ($ENV{rsat_echo} >= 1);
+
 
 ################################################################
 #### run the command
 if ($query->param('output') eq "display") {
     &PipingWarning();
-
-    $result_file = $tmp_file_path.".res";
-    push (@result_files, 'operons', $result_file);
 
     print '<H2>Result</H2>';
     open RESULT, "$command $parameters |";
@@ -151,7 +153,7 @@ if ($query->param('output') eq "display") {
     print "<HR SIZE = 3>";
 
 } else { 
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 print $query->end_html();
 
