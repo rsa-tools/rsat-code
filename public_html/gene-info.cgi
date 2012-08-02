@@ -76,7 +76,7 @@ unless (%{$supported_organism{$organism}}) {
 }
 $parameters .= " -org $organism";
 
-$result_file = $tmp_file_path.".res";
+$result_file = $tmp_file_path.".tab";
 push @result_files, ("gene info",$result_file);
 
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo});
@@ -100,7 +100,7 @@ if ($query->param('output') eq "display") {
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 print $query->end_html();
 
