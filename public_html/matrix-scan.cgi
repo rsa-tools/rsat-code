@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.41 2012/08/01 23:07:48 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.42 2012/08/02 16:47:07 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -53,11 +53,11 @@ if ($query->param("quick")) {
 
 ################################################################
 ## sequence file
-if ($quick_mode) {
-  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".seq", 1);
-} else {
+#if ($quick_mode) {
+#  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
+#} else {
   ($sequence_file,$sequence_format) = &GetSequenceFile();
-}
+#}
 
 
 #### matrix-scan parameters
@@ -107,7 +107,7 @@ if ($query->param('output') eq "display") {
   ### Print the result on Web page
   open RESULT, "$command |";
   print "<PRE>";
-  &PrintHtmlTable(RESULT, $result_file, true);
+  &PrintHtmlTable(RESULT, $result_file, true, 1000);
   print "</PRE>";
   print "<HR SIZE = 3>";
 
