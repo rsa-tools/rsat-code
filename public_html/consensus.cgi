@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.19 2010/12/15 09:32:24 jvanheld Exp $
+# $Id: consensus.cgi,v 1.20 2012/08/02 00:33:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -24,13 +24,15 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-@result_files = ();
 
-$command = "$BIN/consensus";
+$command = $BIN."/consensus";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-consensus -v 1";
 $convert_matrix_command = "$SCRIPTS/convert-matrix -from consensus -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "consensus.%s", &AlphaDate();
+#$tmp_file_name = sprintf "consensus.%s", &AlphaDate();
+$prefix = "consensus";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -49,8 +51,10 @@ $query = new CGI;
 
 ### sequence file ####
 ($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", no_format=>1, add_rc=>0);
+push @result_files, "Input sequences ($sequence_format)",$sequence_file;
+
 $parameters .= " -f $sequence_file ";
-push @result_files, ("input sequence",$sequence_file);
+
 
 ## Number of matrices to save
 if (&IsNatural($query->param('matrices_to_save'))) {
@@ -103,9 +107,9 @@ if ($query->param('seed') eq "on") {
     }
 }
 
-#### Output files    
-$result_file = "$TMP/$tmp_file_name.res";
-$matrix_file = "$TMP/$tmp_file_name.matrix";
+#### Output and input files
+$matrix_file = $tmp_file_path.".matrix";
+$result_file = $tmp_file_path.".res";
 
 #### Matrix conversion command
 $convert_matrix_command.= " -i ".$result_file." -o ".$matrix_file;
@@ -127,7 +131,7 @@ if ($query->param('output') eq "display") {
     open RESULT, "$command $parameters | ";
     open RES_FILE, ">$result_file";
   #    system "$command $parameters >$result_file ";
-    push @result_files, ('info-gibbs result', $result_file);
+    push @result_files, ('consensus result', $result_file);
 
     ### Print result on the web page
     print '<H4>Result</H4>';
@@ -143,8 +147,10 @@ if ($query->param('output') eq "display") {
 
     ## Display matrices with logos and links
     my ($out_matrix_file) = &display_matrices_web($result_file, "consensus");
-    push @result_files, ('converted matrices', $out_matrix_file);
+    push @result_files, "Input matrix", $matrix_file;
+    push @result_files, ('Converted matrix', $out_matrix_file);
 
+    &PrintURLTable(@result_files);
     &PipingForm();
 
     system "$convert_matrix_command -i $result_file -o $matrix_file";
@@ -153,7 +159,7 @@ if ($query->param('output') eq "display") {
     &DelayedRemoval($matrix_file);
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 
 print $query->end_html;
