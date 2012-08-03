@@ -243,14 +243,23 @@ $parameters .= "$freq_option";
 
 $purge = $query->param('purge');
 if ($purge) {
-    #### purge sequence option
-    $command = "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged; "
-    
-} else {
-    $command = "";
-}
+  $purged_seq_file = $sequence_file.".purged";
+  push @result_files, ("Purged sequence",$purged_seq_file);
 
-$command .=  "$motif_command -i $sequence_file $parameters";
+  #### purge sequence option
+  #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
+  $command = $purge_sequence_command;
+  $command .= " -i ".$sequence_file;
+  $command .= " -format ".$sequence_format;
+  $command .= " -o ".$purged_seq_file;
+  $command .= " -seqtype ".$sequence_type if ($sequence_type eq "dna");
+    #### purge sequence option
+#    $command = "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged; "
+  $command .=  "; $motif_command -i $purged_seq_file $parameters";
+
+} else {
+  $command .=  "; $motif_command -i $sequence_file $parameters";
+}
 
 #print '<style> <!-- pre {overflow: auto;} --></style>';
 #print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>" if ($ENV{rsat_echo} >=1);
@@ -284,7 +293,7 @@ if ($query->param('output') =~ /display/i) {
       ## Assemble the significant patterns with pattern-assembly
       $assembly_file = $tmp_file_path.".asmb";
       push @result_files, "Assembly", $assembly_file;
-      $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
+      $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1 -top 50";
       if ($query->param('strand') =~ /single/) {
 	$pattern_assembly_command .= " -1str";
       } else {
