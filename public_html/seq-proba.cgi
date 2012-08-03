@@ -76,7 +76,9 @@ if ($bg_choose eq "rsat") {
     }
     close BGFILE;
     $parameters .= " -bgfile $bgfile";
-    $parameters .= " -bg_format ".$query->param('bg_format');
+    $bg_format = $query->param('bg_format');
+    $parameters .= " -bg_format ".$bg_format;
+    push @result_files, "Background model ($bg_format)", $bgfile;
   } else {
     &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
@@ -97,7 +99,7 @@ foreach my $field (@return_fields) {
 }
 
 ## Output file
-$result_file = $tmp_file_path.".res";
+$result_file = $tmp_file_path.".tab";
 push @result_files, ("Result file",$result_file);
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
