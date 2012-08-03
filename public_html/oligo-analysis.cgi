@@ -22,16 +22,18 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 @result_files = ();
 
-#### TEMPORARY
+#### commands
 $oligo_analysis_command = $SCRIPTS."/oligo-analysis";
 $convert_seq_command = $SCRIPTS."/convert-seq";
 $purge_sequence_command = $SCRIPTS."/purge-sequence";
 $prefix = "oligo-analysis";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+
 #$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
+
 
 ### print the result page
 &RSA_header("oligo-analysis result", "results");
@@ -258,7 +260,7 @@ if ($query->param('output') =~ /display/i) {
     &PipingWarning();
 
     ### execute the command ###
-    $result_file = $tmp_file_path.".res";
+    $result_file = $tmp_file_path.".tab";
 #    $result_file = "$TMP/$tmp_file_name.res";
     push @result_files, ('oligos', $result_file);
 
@@ -277,8 +279,7 @@ if ($query->param('output') =~ /display/i) {
 
       ## Assemble the significant patterns with pattern-assembly
       $assembly_file = $tmp_file_path.".asmb";
-#      $assembly_file = "$TMP/$tmp_file_name.asmb";
-      push @result_files, ('assembly', $assembly_file);
+      push @result_files, ('Assembly', $assembly_file);
       $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
       if ($query->param('strand') =~ /single/) {
 	$pattern_assembly_command .= " -1str";
