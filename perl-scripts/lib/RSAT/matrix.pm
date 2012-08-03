@@ -3938,7 +3938,8 @@ sub makeLogo{
     push @logo_files, $logo_file;
     &RSAT::message::Info("matrix", $self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 5);
     ## Remove the fake sequences, not necessary anymore
-    &RSAT::server::DelayedRemoval($fake_seq_file);
+#    &RSAT::server::DelayedRemoval($fake_seq_file);
+    system "rm -f $fake_seq_file";
 #    unlink ($fake_seq_file); ## The file removal  makes a problem that I don't understand
   }
   return(@logo_files);
@@ -4009,7 +4010,7 @@ sub fake_seq_from_matrix {
   &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 5);
 
   ## create a temporary sequence file which will be deleted after logo creation
-  my $tmp_seq_file = &RSAT::util::make_temp_file($main::TMP, ( $self->get_attribute("id")|| $self->get_attribute("identifier") ) );
+  my $tmp_seq_file = &RSAT::util::make_temp_file("", ( $self->get_attribute("id")|| $self->get_attribute("identifier") ) );
 #  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
