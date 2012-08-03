@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.46 2012/07/01 23:41:53 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.47 2012/08/03 11:49:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -193,6 +193,10 @@ if ($query->param('bg_method') eq 'background') {
 
 $command .= $parameters;
 
+## Output file
+$result_file = $tmp_file_path.".tab";
+push @result_files, ('dyads', $result_file);
+
 print "<PRE><B>Command:</B> ", &RSAT::util::hide_RSAT_path($command), "</PRE>" if ($ENV{rsat_echo});
 
 &SaveCommand("$command", $tmp_file_path);
@@ -202,10 +206,6 @@ if ($query->param('output') eq "display") {
   &PipingWarning();
 
   ### execute the command ###
-  $result_file = $tmp_file_path.".res";
-#  $result_file = "$TMP/$tmp_file_name.res";
-  push @result_files, ('dyads', $result_file);
-
   open RESULT, "$command | ";
 
   ### Print result on the web page
@@ -256,7 +256,7 @@ if ($query->param('output') eq "display") {
   &OligoDyadPipingForm();
 
 } else {
-  &EmailTheResult("$command", $query->param('user_email'), $tmp_file_path);
+  &EmailTheResult("$command", $query->param('user_email'), $result_file);
 }
 
 
