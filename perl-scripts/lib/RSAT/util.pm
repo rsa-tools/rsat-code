@@ -498,7 +498,7 @@ sub hide_RSAT_path {
 Check for the existence of an output directory, and, if it does not
 exist, create it.
 
-Usage: &RSAT::util::ChechOutDir($my_dir, $umask, $chmod);
+Usage: &RSAT::util::CheckOutDir($my_dir, $umask, $chmod);
 
 =cut
 sub CheckOutDir {
