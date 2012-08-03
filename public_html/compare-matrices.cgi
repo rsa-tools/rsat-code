@@ -27,6 +27,9 @@ $command = "$ENV{RSAT}/perl-scripts/compare-matrices";
 $prefix = "compare-matrices";
 $output_path = &RSAT::util::make_temp_file("",$prefix, 1); $output_dir = &ShortFileName($output_path);
 
+#$output_dir_prefix = sprintf "compare-matrices.%s", &AlphaDate();
+#$output_dir_full_path = &RSAT::util::make_temp_file("", $output_dir_prefix, 1, 1); $output_dir = &ShortFileName($tmp_file_path);
+
 ## We need to create the output directory before starting
 ## compare-matrices, since it will generate multiple output files.
 #$output_path = $TMP."/".$output_dir;
@@ -225,7 +228,7 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 $index_file = $output_path."/".$output_prefix."_index.html";
 my $mail_title = join (" ", "[RSAT]", "compare-matrices", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title ,no_email=>1,index=>$index_file);
+  &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
 } else {
   &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
 }
