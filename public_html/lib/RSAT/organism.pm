@@ -1417,7 +1417,7 @@ sub serial_file_name {
   my $serial_file = join ("", $self->get_attribute("name"),
 			  "_imp_pos",$imp_pos,
 			  "_synonyms",$synonyms,
-			  "_",join("_", $self->get_attribute("feature_types")),
+			  "_", join("_", $self->get_attribute("feature_types")),
 			  ".serial");
   return ($serial_dir."/".$serial_file);
 }
