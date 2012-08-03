@@ -41,8 +41,19 @@ $query = new CGI;
 local $parameters = " -v 1";
 
 ################################################################
+## Matrix input format
+local $input_format = lc($query->param('matrix_format'));
+($input_format) = split (/\s+/, $input_format);
+$parameters .= " -from ".$input_format;
+
+################################################################
+## Matrix output format
+local $output_format = lc($query->param('output_format'));
+$parameters .= " -to ".$output_format;
+
+################################################################
 #### Matrix specification
-$matrix_file = $tmp_file_path.".input";
+$matrix_file = $tmp_file_path."_input.".$input_format;
 if ($query->param('matrix')) {
     open MAT, "> $matrix_file";
     print MAT $query->param('matrix');
@@ -52,8 +63,10 @@ if ($query->param('matrix')) {
 } else {
     &RSAT::error::FatalError('You did not enter any data in the matrix box');
 }
-push @result_files, ("Input file",$matrix_file);
-$result_file = $tmp_file_path.".res";
+push @result_files, ("Input file", $matrix_file);
+
+## Result file
+$result_file = $tmp_file_path."_output.".$output_format;
 push @result_files, ("Result file",$result_file);
 
 ################################################################
@@ -96,13 +109,6 @@ if (&IsInteger($query->param('perm'))) {
 }
 
 
-################################################################
-## Matrix input format
-local $input_format = lc($query->param('matrix_format'));
-($input_format) = split (/\s+/, $input_format);
-#$input_format =~ s/cluster\-buster/cb/i;
-#$input_format =~ s/(\S+)/$1/; ## Only retain the first word
-$parameters .= " -from ".$input_format;
 
 ################################################################
 ## Background model method
@@ -114,11 +120,6 @@ if (&IsReal($query->param('bg_pseudo'))) {
     $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
 }
 
-
-################################################################
-## Matrix output format
-local $output_format = lc($query->param('output_format'));
-$parameters .= " -to ".$output_format;
 
 ## Return fields
 local @return_fields = ();
