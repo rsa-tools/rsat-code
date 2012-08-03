@@ -16,6 +16,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 $ENV{rsat_echo}=1;
 
@@ -199,89 +200,96 @@ if ($#selected_ids >= 0) {
 
 ## color file ##
 if ($query->param('color_file')) {
-    $color_file = "$TMP/$tmp_color_file.ft";
-    open COLOR, ">$color_file";
-    $upload_color_file = $query->param('color_file');
-	while (<$upload_color_file>) {
-	    print COLOR;
+  $color_file = $tmp_file_path."_colors.tab";
+  push @result_files, "Colors", $color_file;
+  open COLOR, ">$color_file";
+  $upload_color_file = $query->param('color_file');
+  while (<$upload_color_file>) {
+    print COLOR;
 	}
-	close COLOR;
-	
-	$parameters .= " -colors $color_file ";
+  close COLOR;
+  $parameters .= " -colors $color_file ";
 }
 
 ### data file ####
 if ($query->param('feature_file') =~ /\S/) {
-    ### file on the server
-    $feature_file = $query->param('feature_file');
+
+  ### file on the server
+  $feature_file = $query->param('feature_file');
+
 } elsif (($query->param('uploaded_file')) ||
 	 ($query->param('data') =~ /\S/)) {
-    $feature_file = "$TMP/$tmp_file_name.ft";
-    ### convert data towards feature-map format
-    if ($query->param('format') =~ /swiss/i) {
-	open DATA, "| $features_from_swissprot_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /transfac factor/i) {
-	open DATA, "| $features_from_tffact_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /transfac gene/i) {
-	open DATA, "| $features_from_tfgene_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /msf/i) {
-	open DATA, "| $features_from_msf_cmd -o $feature_file";
-	$parameters .= " -aacolors ";
-	$parameters .= " -horiz ";
-    } elsif ($query->param('format') =~ /dssp/i) {
-	open DATA, "| $features_from_dssp_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /matins/i) {
-	open DATA, "| $features_from_matins_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /dna\-pattern/i) {
-	open DATA, "| $features_from_dnapat_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /patser/i) {
-	open DATA, "| $features_from_patser_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /signal scan/i) {
-	open DATA, "| $features_from_sigscan_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /gibbs/i) {
-	open DATA, "| $features_from_gibbs_cmd -o $feature_file";
-    } elsif ($query->param('format') =~ /fugue/i) {
-	open DATA, "| $features_from_fugue_cmd -o $feature_file";
-    } else {
-	open DATA, ">$feature_file";
-    }
-    
 
-    if ($query->param('uploaded_file')) {
-	$upload_feature_file = $query->param('uploaded_file');
-	$type = $query->uploadInfo($upload_feature_file)->{'Content-Type'};
-#	&RSA_header("Debugging");
-#	&Info($feature_file, "\n", $upload_feature_file, "\n", $type);
-	while (<$upload_feature_file>) {
-#	    print $_;
-	    print DATA;
-	}
-	close DATA;
-	
-	### upload file from the client
-#	$fh = $query->param('uploaded_file');
-#	while (<$fh>) {
-#	    print DATA;
-#	}
-    } else {
-	### data from the textarea
-	print DATA $query->param('data');
-#	print "<PRE>\$feature_file\t$feature_file</PRE>";
+  $feature_format = $query->param('format');
+  $feature_file = $tmp_file_path.".".$feature_format;
+  $feature_file =~ s/\s+/_/;
+
+  ### convert data towards feature-map format
+  if ($feature_format =~ /swiss/i) {
+    open DATA, "| $features_from_swissprot_cmd -o $feature_file";
+  } elsif ($feature_format =~ /transfac factor/i) {
+    open DATA, "| $features_from_tffact_cmd -o $feature_file";
+  } elsif ($feature_format =~ /transfac gene/i) {
+    open DATA, "| $features_from_tfgene_cmd -o $feature_file";
+  } elsif ($feature_format =~ /msf/i) {
+    open DATA, "| $features_from_msf_cmd -o $feature_file";
+    $parameters .= " -aacolors ";
+    $parameters .= " -horiz ";
+  } elsif ($feature_format =~ /dssp/i) {
+    open DATA, "| $features_from_dssp_cmd -o $feature_file";
+  } elsif ($feature_format =~ /matins/i) {
+    open DATA, "| $features_from_matins_cmd -o $feature_file";
+  } elsif ($feature_format =~ /dna\-pattern/i) {
+    open DATA, "| $features_from_dnapat_cmd -o $feature_file";
+  } elsif ($feature_format =~ /patser/i) {
+    open DATA, "| $features_from_patser_cmd -o $feature_file";
+  } elsif ($feature_format =~ /signal scan/i) {
+    open DATA, "| $features_from_sigscan_cmd -o $feature_file";
+  } elsif ($feature_format =~ /gibbs/i) {
+    open DATA, "| $features_from_gibbs_cmd -o $feature_file";
+  } elsif ($feature_format =~ /fugue/i) {
+    open DATA, "| $features_from_fugue_cmd -o $feature_file";
+  } else {
+    open DATA, ">$feature_file";
+  }
+
+  if ($query->param('uploaded_file')) {
+    $upload_feature_file = $query->param('uploaded_file');
+    $type = $query->uploadInfo($upload_feature_file)->{'Content-Type'};
+    #	&RSA_header("Debugging");
+    #	&Info($feature_file, "\n", $upload_feature_file, "\n", $type);
+    while (<$upload_feature_file>) {
+      #	    print $_;
+      print DATA;
     }
     close DATA;
+
+    ### upload file from the client
+    #	$fh = $query->param('uploaded_file');
+    #	while (<$fh>) {
+    #	    print DATA;
+    #	}
+  } else {
+    ### data from the textarea
+    print DATA $query->param('data');
+    #	print "<PRE>\$feature_file\t$feature_file</PRE>";
+  }
+  close DATA;
 
 } else {
     print $query->header();
     &cgiError("The feature list should not be empty.");
 }
 
-
+push @result_files, "Input features (.ft)", $feature_file;
 $parameters .= " -i $feature_file ";
 
 ### map file ###
-$map_file = "$tmp_file_name.${image_format}";
-$html_file = "$tmp_file_name.html";
-$parameters .= " -o $TMP/$map_file > $TMP/$html_file";
+$map_file = $tmp_file_path.".".$image_format;
+push @result_files, "Map file ($image_format)", $map_file;
+$html_file = $tmp_file_path.".html";
+push @result_file, "Html report (html)", $html_file;
+$parameters .= " -o $map_file > $html_file";
 
 ## report the command (for debugging)
 #$ENV{rsat_echo} = 2;
@@ -293,23 +301,24 @@ if ($ENV{rsat_echo} >= 2) {
     print "<PRE>command = $feature_map_command $parameters \n\n\n</PRE>";
     print $query->end_html();
     exit(0)
-} 
+}
 
 ### execute the command
 system "$feature_map_command $parameters ";
 &DelayedRemoval($feature_file);
-&DelayedRemoval("$TMP/$map_file");
-&DelayedRemoval("$TMP/$html_file");
+&DelayedRemoval($map_file);
+&DelayedRemoval($html_file);
 
 ### display the result ###
-if (($image_format ne 'ps') 
+my $result_URL = $ENV{rsat_www}."/tmp/";
+if (($image_format ne 'ps')
     && (lc($query->param('htmap')) eq "on")) {
-    $location = "$ENV{rsat_www}/tmp/$html_file";
+  $result_URL .= &RSAT::util::RelativePath($TMP, $html_file);
 } else {
-    $location = "$ENV{rsat_www}/tmp/$map_file";
+  $result_URL .= &RSAT::util::RelativePath($TMP, $map_file);
+#   $location = "$ENV{rsat_www}/tmp/$map_file";
 }
-print "Location: $location", "\n\n";
-
+print "Location: $result_URL", "\n\n";
 
 exit(0);
 
