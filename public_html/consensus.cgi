@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.20 2012/08/02 00:33:11 jvanheld Exp $
+# $Id: consensus.cgi,v 1.21 2012/08/03 12:09:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -109,7 +109,7 @@ if ($query->param('seed') eq "on") {
 
 #### Output and input files
 $matrix_file = $tmp_file_path.".matrix";
-$result_file = $tmp_file_path.".res";
+$result_file = $tmp_file_path.".txt";
 
 #### Matrix conversion command
 $convert_matrix_command.= " -i ".$result_file." -o ".$matrix_file;

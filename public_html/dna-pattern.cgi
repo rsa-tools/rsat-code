@@ -156,7 +156,7 @@ if ($query->param("output") =~ /display/i) {
   ### execute the command ###
   &PipingWarning() if ($query->param('match_positions'));
 
-  $result_file = $tmp_file_path.".res";
+  $result_file = $tmp_file_path.".dnapat";
   push @result_files, ('dna-pattern result', $result_file);
   open RESULT, "$command $parameters |";
   print "<pre>$command $parameters </b></pre>" if ($ENV{rsat_echo});
