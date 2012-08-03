@@ -28,8 +28,12 @@ $query = new CGI;
 ### print the header
 &RSA_header("Random genome fragments result", "results");
 
-#### update log file ####
-&UpdateLogFile;
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
