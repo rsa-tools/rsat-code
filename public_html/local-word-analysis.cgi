@@ -48,6 +48,7 @@ $parameters .= " --sort=-occ_sig";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
+push @result_files, ("Input sequence", $sequence_file);
 
 
 ### window

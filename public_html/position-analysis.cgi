@@ -50,10 +50,10 @@ $purge = $query->param('purge');
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
-push @result_files, ("input sequence",$sequence_file);
+push @result_files, ("Input sequence", $sequence_file);
 if ($purge) {
   $purged_seq_file = ${sequence_file}.".purged";
-  push @result_files, ("Purged sequence",$sequence_file);
+  push @result_files, ("Purged sequence", $purged_seq_file);
 
   $command = "$purge_sequence_command -i $sequence_file -format $sequence_format -o $purged_seq_file";
   $command .= "; $position_analysis_command -i ".$purged_seq_file;
@@ -159,9 +159,8 @@ if ($query->param('output') =~ /display/i) {
   &PipingWarning();
 
   ### execute the command ###
-  $result_file = $tmp_file_path.".res";
+  $result_file = $tmp_file_path.".tab";
   push @result_files, ("Position analysis result", $result_file);
-#  $result_file = "$TMP/$tmp_file_name.res";
   open RESULT, "$command $parameters |";
 
 
