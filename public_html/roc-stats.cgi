@@ -113,7 +113,6 @@ print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 if ($query->param('graphs')){
   if ($query->param('output') =~ /display/i){
     @data_report = `$command $parameters`;
-    my $result_prefix = $tmp_file_path.".res";
 
     print '<H4>Graphs</H4>';
     print "<UL>\n";
@@ -164,7 +163,6 @@ if ($query->param('graphs')){
     $cmd .= " -o ".$score_distrib_plot;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"scores\"></A>";
-#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_scores.".$img_format."\"><BR>";
     $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $score_distrib_plot);
     print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
 
@@ -181,7 +179,6 @@ if ($query->param('graphs')){
     print "<CENTER><B><A NAME=\"scores_xlog2\"></A>";
     $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $score_distrib_plot_xlog2);
     print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
-#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_scores_xlog2.".$img_format."\"><BR>";
 
     ## Draw a graph with TP=f(FP)
     $FP_TP_plot = $tmp_file_path."_FP_TP.".$img_format;
@@ -196,7 +193,6 @@ if ($query->param('graphs')){
     print "<CENTER><B><A NAME=\"FP_TP\"></A>";
     $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $FP_TP_plot);
     print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
-#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_FP_TP.".$img_format."\"><BR>";
 
     ## Draw a ROC curve
     $ROC_plot = $tmp_file_path."_ROC.".$img_format;
@@ -211,7 +207,6 @@ if ($query->param('graphs')){
     print "<CENTER><B><A NAME=\"roc\"></A>";
     $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $ROC_plot);
     print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
-#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_roc.".$img_format."\"><BR>";
 
     ## Draw a Precision-recall curve
     $precision_recall = $tmp_file_path."_precision_recall.".$img_format;
@@ -225,7 +220,6 @@ if ($query->param('graphs')){
     print "<CENTER><B><A NAME=\"precision_recall\"></A>";
     $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $precision_recall);
     print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
-#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall.".$img_format."\"><BR>";
 
     ## Draw a Precision-recall curve with logarithmic axis X
     ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
@@ -240,7 +234,6 @@ if ($query->param('graphs')){
     print "<CENTER><B><A NAME=\"precision_recall_xlog\"></A>";
     $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $precision_recall_xlog);
     print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
-#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall_xlog.".$img_format."\"><BR></CENTER>";
 
     ## Draw a Precision-recall curve with logarithmic axes
     ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
@@ -255,7 +248,6 @@ if ($query->param('graphs')){
     print "<CENTER><B><A NAME=\"precision_recall_log\"></A>";
     $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $precision_recall_log);
     print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
-#    print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall_log.".$img_format."\"><BR>";
 
     &PrintURLTable(@result_files);
 
