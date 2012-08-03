@@ -124,12 +124,14 @@ sub UpdateCounterFile {
 sub UpdateLogFile {
   my ($script_name, $message, $log_file, $user_email) = @_;
 
+  ## Check script name
   unless ($script_name) {
     $script_name = &RSAT::util::ShortFileName($0);
   }
 
+  ## Check log file
   unless ($log_file) {
-      $log_file = $main::log_file;
+    $log_file = $main::log_file;
   }
 
   &RSAT::message::Debug("&RSAT::server::UpdateLogFile()",
@@ -150,6 +152,52 @@ sub UpdateLogFile {
 		    $script_name,
 		    $user_email,
 		    $message
+		    ), "\n";
+    #flock(LOG,8);
+    close LOG;
+  }
+  chmod 0777, $log_file;
+}
+
+
+################################################################
+## Report a suspicious content in a Web form, considered as potential
+## Web attack.
+##
+### Usage:
+###     &ReportWebAttack($script_name, $message, $log_file, $user_email);
+sub ReportWebAttack {
+  my ($script_name, $attack_type, $attack_detail, $user_email) = @_;
+
+  ## Check script name
+  unless ($script_name) {
+    $script_name = &RSAT::util::ShortFileName($0);
+  }
+
+  ## Check log file
+  unless ($log_file) {
+    $log_file = $main::web_attacks_log_file;
+  }
+
+  &RSAT::message::Debug("&RSAT::server::ReportWebAttack()",
+			"<p>script=".$script_name,
+			"<p>message=".$message,
+			"<p>log=".$log_file,
+			"<p>email=".$user_email,
+			 ) if ($main::verbose >= 5);
+
+  if (open LOG, ">>".$log_file) {
+    #flock(LOG,2);
+    $date = &RSAT::util::AlphaDate();
+    $date =~ s/\n//;
+    print LOG join ("\t",
+		    $date,
+		    $ENV{rsat_site},
+		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
+		    $script_name,
+		    $user_email,
+		    $attack_type,
+		    $attack_detail,
 		    ), "\n";
     #flock(LOG,8);
     close LOG;
@@ -411,7 +459,6 @@ sub InitRSAT {
   $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
   $main::PYTHON = "$ENV{RSAT}/python-scripts";
 
-
   ################################################################
   ## Redirect queries to a remote server
   ##
@@ -429,7 +476,6 @@ sub InitRSAT {
       $main::BIN = "$RSH rsa-tools/bin";
     }
   }
-
   $main::HTML = "$ENV{RSAT}/public_html"; 
   $main::WWW_TMP = "$ENV{rsat_www}/tmp";
   #$ENV{SERVER_ADMIN} = "jvanheld\@bigre.ulb.ac.be";
@@ -437,10 +483,10 @@ sub InitRSAT {
   $main::counter_file = "$LOGS/count-file";
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
   $main::log_file = join("", $LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
+  $main::web_attacks_log_file = join("", $LOGS, "/web_attacks_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::exec_time_log_file = join("", $LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::start_time_log_file = join("", $LOGS, "/start_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::date = &RSAT::util::AlphaDate();
-
 }
 
 return(1);
