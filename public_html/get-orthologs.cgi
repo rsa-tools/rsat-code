@@ -22,7 +22,11 @@ $query = new CGI;
 ### Print the header
 &RSA_header("get-orthologs result", "results");
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
