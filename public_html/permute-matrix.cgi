@@ -23,7 +23,6 @@ $command = $SCRIPTS."/permute-matrix";
 $prefix = "permute-matrix";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 #$tmp_file_name = sprintf "permute-matrix.%s", &AlphaDate();
-$result_file = $tmp_file_path.".res";
 $ENV{rsat_echo} = 1;
 @result_files = ();
 
@@ -41,45 +40,44 @@ $query = new CGI;
 #### read parameters ####
 local $parameters = " -v 0";
 
-################################################################
-#### Matrix specification
-$matrix_file = $tmp_file_path.".input";
-if ($query->param('matrix')) {
-    open MAT, "> $matrix_file";
-    print MAT $query->param('matrix');
-    close MAT;
-    &DelayedRemoval($matrix_file);
-    $parameters .= " -i $matrix_file";
-} else {
-    &RSAT::error::FatalError('You did not enter any data in the matrix box');
-}
-push @result_files, ("Input file",$matrix_file);
-push @result_files, ("Result file",$result_file);
-
-
-
-
-################################################################
-## permutations
-if (&IsInteger($query->param('perm'))) {
-    $parameters .= " -perm ".$query->param('perm');
-}
 
 
 ################################################################
 ## Matrix input format
 local $input_format = lc($query->param('matrix_format'));
 ($input_format) = split (/\s+/, $input_format);
-#$input_format =~ s/cluster\-buster/cb/i;
-#$input_format =~ s/(\S+)/$1/; ## Only retain the first word
 $parameters .= " -in_format ".$input_format;
 
+################################################################
+#### Input matrix specification
+$matrix_file = $tmp_file_path."_input.".$input_format;
+if ($query->param('matrix')) {
+  open MAT, "> ".$matrix_file;
+  print MAT $query->param('matrix');
+  close MAT;
+  &DelayedRemoval($matrix_file);
+  $parameters .= " -i ".$matrix_file;
+} else {
+  &RSAT::error::FatalError('You did not enter any data in the matrix box');
+}
+push @result_files, ("Input file",$matrix_file);
+
+
+################################################################
+## Permutations
+if (&IsInteger($query->param('perm'))) {
+    $parameters .= " -perm ".$query->param('perm');
+}
 
 ################################################################
 ## Matrix output format
 local $output_format = lc($query->param('output_format'));
 $parameters .= " -out_format ".$output_format;
 
+################################################################
+## Output file
+local $result_file = $tmp_file_path."_output.".$output_format;
+push @result_files, ("Result file",$result_file);
 $parameters .= " -o ".$result_file;
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
@@ -96,7 +94,7 @@ if ($query->param('output') eq "display") {
 
   print '<H4>Result</H4>';
   print '<PRE>';
-  while (<RESULT>) {    
+  while (<RESULT>) {
       print $_;
   }
   print '</PRE>';
@@ -105,7 +103,8 @@ if ($query->param('output') eq "display") {
   ################################################################
   ## Prepare tab-delimited matrices with only the counts f the first
   ## matrix, for piping the result to other programs
-  local $tab_matrices = $result_file.".tab";
+  local $tab_matrices = $tmp_file_path."_simple.tab";
+
   local $command = $SCRIPTS."/convert-matrix -v 0 -i  $matrix_file -from ".$input_format." -to tab  -return counts -o $tab_matrices";
   system $command;
   print "<pre><b>Tab conversion:</b> $command</pre>" if ($ENV{rsat_echo} >= 1);
