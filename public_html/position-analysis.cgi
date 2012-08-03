@@ -36,8 +36,12 @@ $query = new CGI;
 &RSA_header("position-analysis result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-#### update log file ####
-&UpdateLogFile;
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
 
 #### read parameters ####
 $parameters = " -v ";

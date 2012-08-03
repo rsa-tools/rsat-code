@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.49 2012/08/03 12:07:27 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.50 2012/08/03 19:49:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -41,8 +41,12 @@ $query = new CGI;
 &RSA_header("dyad-analysis result", "results");
 &ListParameters if ($ENV{rsat_echo} >= 2);
 
-#### update log file ####
-&UpdateLogFile;
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
 
 #### read parameters ####
 $parameters = " -v 1 -quick -sort";
