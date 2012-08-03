@@ -116,9 +116,8 @@ if ($query->param('strand') =~ /insensitive/) {
 }
 
 ## Output file
-$result_file = $tmp_file_path.".res";
+$result_file = $tmp_file_path.".asmb";
 push @result_files, "Assembly", $result_file;
-
 
 ################################################################
 #### run the command
