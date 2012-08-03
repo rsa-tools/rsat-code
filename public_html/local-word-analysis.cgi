@@ -19,14 +19,14 @@ require "RSA.lib";
 require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-
-#### TEMPORARY
+@result_files = ();
 
 $motif_command = "$ENV{RSAT}/python-scripts/local-word-analysis";
-
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
-$tmp_file_name = sprintf "local-word-analysis.%s", &AlphaDate();
+#$tmp_file_name = sprintf "local-word-analysis.%s", &AlphaDate();
+$prefix = "local-word-analysis";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
 ### Read the CGI query
 $query = new CGI;
@@ -54,22 +54,21 @@ $parameters .= " --sort=-occ_sig";
 if ($query->param('windowtype') =~ /no/ ){
     $parameters .= ' --window=none';
 }elsif ($query->param('windowtype') =~ /fixed/){
-    
-    if (IsReal($query->param('window_width'))) {
-        if ($query->param('window_group')) {
-            $parameters .= ' --center=0 --windowgroup=' . $query->param('window_width');                
-        }else{
-            $parameters .= ' --window=' . $query->param('window_width');        
-        }
+  if (IsReal($query->param('window_width'))) {
+    if ($query->param('window_group')) {
+      $parameters .= ' --center=0 --windowgroup=' . $query->param('window_width');                
+    }else{
+      $parameters .= ' --window=' . $query->param('window_width');        
     }
-    
+  }
+
 }else {
-    $parameters .= ' --heuristic=slices';
-    #variable size
+  $parameters .= ' --heuristic=slices';
+  #variable size
 }
 
 if (IsReal($query->param('bg_window_width'))) {
-    $parameters .= ' --bgwindow=' . $query->param('bg_window_width');
+  $parameters .= ' --bgwindow=' . $query->param('bg_window_width');
 }
 
 ### filters
@@ -143,9 +142,8 @@ if (! $query->param('noov')) {
   $overlap='-ovlp';
   $parameters .= " --overlap";
 }else{
-  $overlap='-noov';    
-    
-} 
+  $overlap='-noov';
+}
 
 ### verbose
 $parameters .= " -v 5";
@@ -209,7 +207,8 @@ if ($query->param('bg_method') =~ /background/i) {
 
 
   } elsif ($query->param('freq_estimate') =~ /upload/i) {
-    $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+    $exp_freq_file = $tmp_file_path.".expfreq";
+    push @result_files, "Expected frequencies", $exp_freq_file;
     $upload_freq_file = $query->param('upload_freq_file');
     if ($upload_freq_file) {
       ## Support compressed .gz files
@@ -256,6 +255,10 @@ $command .=  "$motif_command -i $sequence_file $parameters";
 #print '<style> <!-- pre {overflow: auto;} --></style>';
 #print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>" if ($ENV{rsat_echo} >=1);
 
+## Output file
+$result_file = $tmp_file_path.".tab";
+push @result_files, "Result file (tab)", $result_file;
+
 print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>";
 
 #&SaveCommand("$command", "$TMP/$tmp_file_name");
@@ -265,7 +268,6 @@ if ($query->param('output') =~ /display/i) {
     &PipingWarning();
     
     ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
     open RESULT, "$command  |";
 
     
@@ -280,7 +282,8 @@ if ($query->param('output') =~ /display/i) {
 	(&IsReal($query->param('lth_occ_sig')))) {
 
       ## Assemble the significant patterns with pattern-assembly
-      $assembly_file = "$TMP/$tmp_file_name.asmb";
+      $assembly_file = $tmp_file_path.".asmb";
+      push @result_files, "Assembly", $assembly_file;
       $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
       if ($query->param('strand') =~ /single/) {
 	$pattern_assembly_command .= " -1str";
@@ -350,18 +353,27 @@ if ($query->param('output') =~ /display/i) {
 # 	system "$pssm_command";
 
 
-	## Convert pattern-assembly result into PSSM 
-	$pssm_prefix = $TMP."/".$tmp_file_name."_pssm";
-	$sig_matrix_file = $pssm_prefix."_sig_matrices.tf";
-	$pssm_file = $pssm_prefix."_count_matrices.txt";
-	$pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
-	$pssm_command .= " -seq ".$sequence_file;
-	$pssm_command .= " -format $sequence_format";
-	$pssm_command .= " -asmb ".$assembly_file;
-	$pssm_command .= " -uth Pval 0.00025";
-	$pssm_command .= " -bginput -markov 0";
-	$pssm_command .= " -o ".$pssm_prefix;
+# 	## Convert pattern-assembly result into PSSM 
+# 	$pssm_prefix = $tmp_file_path."_pssm";
+# 	$sig_matrix_file = $pssm_prefix."_sig_matrices.tf";
+# 	$pssm_file = $pssm_prefix."_count_matrices.txt";
+# 	$pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
+# 	$pssm_command .= " -seq ".$sequence_file;
+# 	$pssm_command .= " -format $sequence_format";
+# 	$pssm_command .= " -asmb ".$assembly_file;
+# 	$pssm_command .= " -uth Pval 0.00025";
+# 	$pssm_command .= " -bginput -markov 0";
+# 	$pssm_command .= " -o ".$pssm_prefix;
 
+	## THIS DOES NOT WORK, I SHOULD DEBUG (2012-08-02)
+	## Convert pattern-assembly result into PSSM
+#	if ($query->param('to_matrix')) {
+#	  if ($sequence_type eq "dna") {
+#	    &MatrixFromPatterns_run();
+#	  } else {
+#	    &RSAT::message::Warning("Conversion to matrix is only supported for DNA sequences");
+#	  }
+#	}
 
 	#print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	#system "$pssm_command";
@@ -386,16 +398,14 @@ if ($query->param('output') =~ /display/i) {
 	#print "</PRE>\n";
 	#close(PSSM);
 
-  }
-
-
+      }
     }
-    
+    &PrintURLTable(@result_files);
     &PipingForm();
     print '<HR SIZE=3>';
 
 } else {
-    &EmailTheResult("$command", $query->param('user_email'), $tmp_file_name);
+    &EmailTheResult("$command", $query->param('user_email'), $result_file);
 }
 
 print $query->end_html;
@@ -405,7 +415,7 @@ exit(0);
 
 sub PipingForm {
     ### prepare data for piping
-    
+
     #### title
     $title = $query->param('title');
     $title =~ s/\"/\'/g;
