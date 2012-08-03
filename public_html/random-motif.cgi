@@ -90,12 +90,19 @@ if (&RSAT::util::IsNatural($motif_nb)) {
 
 ## Concatenate parameters to the command
 $command .= " ".$parameters;
+
 local $tab_result_file = $tmp_file_path.".tab";
+push @result_files, 'tab', $tab_result_file;
+
 $command  .= " -o ".$tab_result_file;
 
+
 ## Convert the matrices
-local $output_format = $query->param('output_format');
-local $result_file = $tmp_file_path.".".$output_format;
+$output_format = $query->param('output_format');
+$result_file = $tmp_file_path.".".$output_format;
+if ($output_format ne "tab") {
+  push @result_files, "$output_format", $result_file;
+}
 if ($output_format ne "tab") {
   $command .= "; ".$convert_matrix_command;
   $command  .= " -i ".$tab_result_file;
@@ -120,11 +127,6 @@ if ($query->param('output') eq "display") {
 
     ################################################################
     ## Table with links to the raw result files in various formats
-
-    @result_files = ('tab', $tab_result_file);
-    if ($output_format ne "tab") {
-     push @result_files, "$output_format", $tmp_file_path.".".$output_format;
-    }
     &PrintURLTable(@result_files);
 
 
@@ -137,7 +139,7 @@ if ($query->param('output') eq "display") {
     print "<hr size=\"3\">";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 
 print $query->end_html;
