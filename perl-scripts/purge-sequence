@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.43 2012/01/17 07:18:07 jvanheld Exp $
+# $Id: purge-sequence,v 1.44 2012/08/03 11:28:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -73,8 +73,14 @@ if ($inputfile) {
 #$tmp_file= `$tmp_file`;
 #chomp($tmp_file);
 #$command = "cd $TMP ; ";
-$tmp_file = &RSAT::util::make_temp_file($TMP, "purge");
-$command = " $convert_seq_command -from $in_format -to fasta -o $tmp_file -noempty ";
+# $tmp_file = &RSAT::util::make_temp_file("", "purge");
+$prefix = "purge"; 
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+&RSAT::message::Debug("\ntmp_file_path = ", $tmp_file_path,
+		      "\ntmp_file_dir = ", $tmp_file_dir,
+		      "\ntmp_file_name = ", $tmp_file_name,
+		     ) if ($main::verbose >= 0);
+$command = " $convert_seq_command -from $in_format -to fasta -o ".$tmp_file_path." -noempty ";
 $command .= " -mask_short ".$mask_short if ($mask_short);
 $command .= " -mask non-dna " if ($dna);
 $command .= " -i $dir{input}/$basename" if ($inputfile);
@@ -95,8 +101,8 @@ $mkvtree_options .= " -sti1"; # output reduced inverse suffix array (sti1tab) to
 $mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
 $mkvtree_options .= " -ois"; # output the parsed input string to a file
 $mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
-$mkvtree_options .= " -db $tmp_file"; # sequence file
-$command = "cd $TMP; $skdir/mkvtree $mkvtree_options";
+$mkvtree_options .= " -db ".$tmp_file_name; # sequence file
+$command = "cd $tmp_file_dir; $skdir/mkvtree $mkvtree_options";
 &doit($command, $dry_run, $die_on_error, $verbose);
 
 #### locate the duplications
@@ -115,22 +121,23 @@ $vmatch_options .= " -d"; # compute direct matches
 $vmatch_options .= " -showdesc 0"; # use the original sequence identifier 
 if ($both_strands) {
     $vmatch_options .= " -p"; # compute reverse complemented (palindromic) matches
-} 
-$vmatch_options .= " $tmp_file ";
+}
+$vmatch_options .= " $tmp_file_name ";
 $vmatch_options .= " | grep -v '^#' ";
 #$vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
 $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
 
 $vmatch_options .= "> $dir{output}/$basename{out}" if ($outputfile);
-$command = "cd $TMP ; $skdir/vmatch $vmatch_options";
+$command = "cd $tmp_file_dir ; $skdir/vmatch $vmatch_options";
 &doit($command, $dry_run, $die_on_error, $verbose);
-foreach $ext  (@extensions) {
-    my $command = "rm -f ${TMP}/${tmp_file}.${ext}";
-    &doit($command, $dry_run, $die_on_error, $verbose);
-}
 
-#### remove the temp file
-$command = "rm -f ${TMP}/$tmp_file";
+#### Remove temporary files
+foreach $ext  (@extensions) {
+  my $command = "rm -f ".$tmp_file_path.".".$ext;
+  &doit($command, $dry_run, $die_on_error, $verbose);
+}
+$command = "rm -f $tmp_file_path";
+#$command = "rm -f ${TMP}/$tmp_file_name";
 &doit($command, $dry_run, $die_on_error, $verbose);
 
 
