@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.48 2012/08/03 12:02:06 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.49 2012/08/03 12:07:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -54,14 +54,14 @@ $parameters .= " -timeout 3600 ";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
-push @result_files, ("input sequence",$sequence_file);
+push @result_files, ("Input sequence",$sequence_file);
 
 $purge = $query->param('purge');
 if ($purge) {
   #### purge sequence option
   #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format | $dyad_analysis_command ";
   $purged_seq_file = $sequence_file.".purged";
-  push @result_files, ("Purged sequence",$purged_seq_file);
+  push @result_files, ("Purged sequence", $purged_seq_file);
   $command = $purge_sequence_command;
   $command .= " -i ".$sequence_file;
   $command .= " -format ".$sequence_format;
