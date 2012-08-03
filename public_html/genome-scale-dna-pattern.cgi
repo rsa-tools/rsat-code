@@ -182,7 +182,7 @@ if ($query->param("output") =~ /display/i) {
 
 
     ### execute the command ###
-    $result_file = $tmp_file_path.".res";
+    $result_file = $tmp_file_path.".dnapat";
     push @result_files, ("result",$result_file);
     open RESULT, "$command & |";
 

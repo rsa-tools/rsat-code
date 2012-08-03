@@ -144,7 +144,7 @@ $parameters .= " -ref $tmp_ref_features";
 
 print "<PRE>command: $command $return_fields $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
-$result_file = $tmp_file_path.".res";
+$result_file = $tmp_file_path.".tab";
 push @result_files, "Comparison result", $result_file;
 
 if ($query->param('output') =~ /display/i) {
