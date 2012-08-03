@@ -49,7 +49,7 @@ $parameters .= " -sort";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
-push @result_files, ("Input sequence",$sequence_file);
+push @result_files, ("Input sequence", $sequence_file);
 
 ## Sequence purging seems not to work with proteins -> only apply it
 ## for DNA sequences
@@ -61,7 +61,7 @@ if ($sequence_type eq "dna") {
 ## Purge sequence if required, and start oligo-analysis command
 if ($purge) {
   $purged_seq_file = $sequence_file.".purged";
-  push @result_files, ("Purged sequence",$purged_seq_file);
+  push @result_files, ("Purged sequence", $purged_seq_file);
 
   #### purge sequence option
   #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
