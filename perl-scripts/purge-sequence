@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.44 2012/08/03 11:28:30 jvanheld Exp $
+# $Id: purge-sequence,v 1.45 2012/08/03 11:29:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -79,7 +79,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 &RSAT::message::Debug("\ntmp_file_path = ", $tmp_file_path,
 		      "\ntmp_file_dir = ", $tmp_file_dir,
 		      "\ntmp_file_name = ", $tmp_file_name,
-		     ) if ($main::verbose >= 0);
+		     ) if ($main::verbose >= 5);
 $command = " $convert_seq_command -from $in_format -to fasta -o ".$tmp_file_path." -noempty ";
 $command .= " -mask_short ".$mask_short if ($mask_short);
 $command .= " -mask non-dna " if ($dna);
