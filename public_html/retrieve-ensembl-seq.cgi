@@ -37,8 +37,11 @@ $query = new CGI;
 &RSA_header("retrieve-ensembl-seq result", 'results');
 #print $query->header();
 
-#### update log file ####
-#&UpdateLogFile();
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
 
 # $ENV{rsat_echo}=2;
 &ListParameters() if ($ENV{rsat_echo} >= 2);

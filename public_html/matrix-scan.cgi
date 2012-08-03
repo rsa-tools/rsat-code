@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.42 2012/08/02 16:47:07 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.43 2012/08/03 19:33:24 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -40,7 +40,11 @@ $query = new CGI;
 &RSA_header("matrix-scan result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 ################################################################
