@@ -33,7 +33,7 @@ my $img_format = $query->param('img_format')||'png';
 $prefix = "roc-stats";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
-my $score_file = $tmp_file_path.".input";
+my $score_file = $tmp_file_path."_input.tab";
 push @result_files, "Input score file", $score_file;
 my $data = $query->param('data');
 if ($data){
@@ -92,7 +92,7 @@ if (&IsInteger($query->param('total'))) {
 ## Return fields
 #&CGI_return_fields();
 my $result_file = $tmp_file_path.".tab";
-push @result_file, "ROC statistics (tab)", $result_file;
+push @result_files, "ROC statistics (tab)", $result_file;
 
 ## graphs 
 if ($query->param('graphs')) {
