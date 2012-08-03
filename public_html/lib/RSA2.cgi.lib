@@ -549,7 +549,7 @@ sub GetSequenceFile {
 }
 
 ########################
-# MultiGetSequenceFile
+## MultiGetSequenceFile
 sub MultiGetSequenceFile {
   my ($seq_num, $sequence_file, $required_opt) = @_ ;
 
@@ -1439,7 +1439,7 @@ sub PrintHtmlTable {
   }
 
   ## Open the table
-  $TABLE="<TABLE  class=\"sortable\"  CELLSPACING=1 CELLPADDING=3 BORDER=$border>";
+  $TABLE_OPENING="<table  class=\"sortable\"  cellspacing=1 cellpadding=3 border=$border>";
   unless ($main::font{variable}) {
     $font_spec_start = "<TT>";
     $font_spec_end = "</TT>";
@@ -1469,13 +1469,18 @@ sub PrintHtmlTable {
       print MIRROR $_
 	unless ((/^;/) && !($mirror_verbose));
     }
-    if (/^\s*$/) {			#nothing on the line
-    } elsif (/^;WARNING/) {		# warning
+
+    if (/^\s*$/) { ## Empty rows
+      print $out "<br>\n";
+
+    } elsif (/^;\s*WARNING/) {		# Warning
       push @warnings, $_;
+
+
     } elsif ((/^;/) ||
 	     (/^\-\-/) ||
 	     (/^\#/) ||
-	     (/^\/\//)) {	# comment line
+	     (/^\/\//)) {	# Comment line
       if ($table_opened) {
 	print $out "<\/TABLE><PRE>\n";
 	$table_opened = 0;
@@ -1489,45 +1494,47 @@ sub PrintHtmlTable {
     } elsif (!($table_opened)) { # first line of the table
       $table_opened = 1;
       $line_count = 0;
-      print $out "</PRE>\n\n$TABLE\n";
+      print $out "</pre>\n\n", $TABLE_OPENING, "\n";
 
       # print the header line
       chomp($last_line);
       $last_line =~ s/^;//;
       $last_line =~ s/^#//;
       $last_line =~ s/^--//;
-      $last_line =~ s/\t/ <\/TT><\/TH>\n<TH ALIGN=LEFT>$font_spec_start/g;
-      $header_line = "<TR VALIGN=top>\n<TH ALIGN=LEFT >".$font_spec_start.$last_line.$font_spec_end."</TH>\n</TR>\n\n";
+      $last_line =~ s|\t|$font_spec_end</th>\n<th align='left'>$font_spec_start|g;
+      $header_line = "<tr valign='top'>\n<th align='left' >".$font_spec_start.$last_line.$font_spec_end."</th>\n</tr>\n\n";
       print $out $header_line;
       $last_line = "";
 
       ### print the first result line
       chomp;
-      s/\t/ <\/TT><\/TD>\n<TD>$font_spec_start/g;
-      print $out "<TR VALIGN=top>\n<TD>".$font_spec_start;
+      s|\t|$font_spec_end</td>\n<td>$font_spec_start|g;
+      print $out "<tr valign='top'>\n<td>".$font_spec_start;
       print $out $_;
-      print $out $font_spec_end."</TD>\n</TR>\n\n";
+      print $out $font_spec_end."</td>\n</tr>\n\n";
 
     } else {			# other line of the table
       $line_count++;
       if ($line_count%$chunk == 0) {
 	### avoid HTML tables with too many rows
-	print $out "</TABLE>\n\n$TABLE";
+	print $out "</table>\n\n", $TABLE_OPENING, "\n";
 	print $out $header_line;
       }
       chomp;
-      s/\t/ <\/TT><\/TD>\n<TD>$font_spec_start/g;
-      print $out "<TR VALIGN=top>\n<TD>".$font_spec_start.$_.$font_spec_end."</TD>\n</TR>\n\n";
+      s|\t|$font_spec_end</td>\n<td>$font_spec_start|g;
+      print $out "<tr valign=top>\n<TD>".$font_spec_start.$_.$font_spec_end."</TD>\n</TR>\n\n";
     }
   }
   if ($table_opened) {
-    print $out "</TABLE>\n\n";
+    print $out "</table>\n\n";
     print $out @warnings;
-    print $out "<PRE>\n";
+    print $out "<pre>\n";
     $table_opened = 0;
   }
+
   print $out $last_line;
   print $out "</PRE>\n";
+
   if ($mirror_file ne "") {
     close MIRROR;
   }
@@ -1598,6 +1605,7 @@ sub EmailTheResult {
 #      $result_URL = $ENV{rsat_www}."/tmp/".$args{index};
     } else {
       $result_URL .= &RSAT::util::RelativePath($TMP, $tmp_file_path);
+#die "HELLO\n", join "\n", $TMP, $tmp_file_path, $result_URL, "\n";
 #      $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_path";
     }
     $result_URL =~ s|//tmp|/tmp|g;
@@ -2430,7 +2438,8 @@ sub display_matrices_web {
     $out_matrix_file = $in_matrix_file;
   } else {
 #    $out_matrix_file = ${TMP}."/".$matrix_prefix."_converted.tab";
-    $out_matrix_file = ${TMP}."/".$matrix_prefix."_converted.tab";
+    $out_matrix_file = &RSAT::util::make_temp_file("",$matrix_prefix, 1);
+    $out_matrix_file .= "_converted.tab";
 
     my $cmd = "$ENV{RSAT}/perl-scripts/convert-matrix -v 1 ";
     $cmd .= " -i ".$in_matrix_file;
