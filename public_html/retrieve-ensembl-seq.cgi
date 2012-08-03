@@ -25,9 +25,10 @@ use File::Basename;
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$prefix = "retrieve-ensembl-seq";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$prefix = "retrieve-ensembl-seq";
+#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #$tmp_file_name = sprintf "retrieve-ensembl-seq.%s", &AlphaDate();
+#@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -301,7 +302,7 @@ if (($query->param('output') =~ /display/i) ||
 #			-media => 'screen' }
 ##	);
 
-    ### transfer to the result page via a hidden form###
+    ## Transfer to the result page via a hidden form
     print '<FORM name="send2result" id="send2result" method="POST" action="ws_async.cgi">';
     print ' <INPUT type="hidden" name="output" value="'.$query->param('output').'">';
     print ' <INPUT type="hidden" name="ticket" value="'.$ticket.'">';
