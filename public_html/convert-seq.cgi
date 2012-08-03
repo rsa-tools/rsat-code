@@ -29,7 +29,11 @@ $query = new CGI;
 &RSA_header("convert-seq result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 #### read parameters ####
@@ -86,7 +90,7 @@ if ($query->param('line_width') =~ /\d+/) {
 }
 
 ### open the sequence file on the server
-$sequence_file = $tmp_file_path.".res";
+$sequence_file = $tmp_file_path.".".$out_format;
 push @result_files, ("Converted sequence ($out_format)",$sequence_file);
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);

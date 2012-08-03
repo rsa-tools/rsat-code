@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.30 2012/08/02 17:05:24 jvanheld Exp $
+# $Id: patser.cgi,v 1.31 2012/08/03 19:33:24 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -44,7 +44,11 @@ $query = new CGI;
 &RSA_header("patser result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 
