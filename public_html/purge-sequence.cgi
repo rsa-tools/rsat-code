@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.14 2012/08/02 01:34:45 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.15 2012/08/03 19:36:49 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -39,8 +39,12 @@ $query = new CGI;
 &RSA_header("purge-sequence result", "results");
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-#### update log file ####
-&UpdateLogFile;
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
 
 ################################################################
 #
