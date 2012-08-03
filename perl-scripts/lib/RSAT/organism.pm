@@ -12,6 +12,7 @@ use RSAT::SequenceOnDisk;
 use RSAT::GenomeFeature;
 use RSAT::Index;
 use RSAT::stats;
+use RSAT::util;
 
 
 @ISA = qw( RSAT::GenericObject );
@@ -1411,7 +1412,8 @@ Usage
 
 sub serial_file_name {
   my ($self, $imp_pos, $synonyms) = @_;
-  my $serial_dir = $ENV{RSAT}."/public_html/tmp";
+  my $serial_dir = $ENV{RSAT}."/public_html/tmp/serialized_genomes";
+  &RSAT::util::CheckOutDir($serial_dir, "", "0777");
   my $serial_file = join ("", $self->get_attribute("name"),
 			  "_imp_pos",$imp_pos,
 			  "_synonyms",$synonyms,
