@@ -33,12 +33,15 @@ $query = new CGI;
 ### Print the header
 &RSA_header("gene-info result", "results");
 
+## Check security issues
+#&CheckWebInput($query);
+
 #### read parameters ####
 $parameters = " -v 1";
 
 ################################################################
 #### queries
-if ( $query->param('queries') =~ /\S/) {
+if ($query->param('queries') =~ /\S/) {
   $query_file = $tmp_file_path."_query.txt";
   push @result_files, ("query",$query_file);
   open QUERY, ">".$query_file;
@@ -87,7 +90,6 @@ print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo});
 if ($query->param('output') eq "display") {
     &PipingWarning();
 
-
     open RESULT, "$command $parameters |";
 
     print '<H2>Result</H2>';
@@ -100,7 +102,7 @@ if ($query->param('output') eq "display") {
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 print $query->end_html();
 
