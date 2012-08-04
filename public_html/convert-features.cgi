@@ -29,7 +29,11 @@ $query = new CGI;
 ### print the header
 &RSA_header("convert-features result", 'results');
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
