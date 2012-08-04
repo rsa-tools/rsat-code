@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.37 2012/08/04 13:42:02 rsat Exp $
+# $Id: server.mk,v 1.38 2012/08/04 13:43:19 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -184,7 +184,7 @@ denied_ips:
 	@echo 
 	@echo "Detecting suspicious IP addresses (Web spammers)"
 	@echo "	frequent HTML tags in queries (> ${TAG_DENIAL_THRESHOLD})"
-	@cut -f 3 ${RSAT}/logs/web_attacks_log_bigre_${YEAR}_*.txt \
+	@cut -f 3 ${RSAT}/logs/web_attacks_log_${RSAT_SITE}_${YEAR}_*.txt \
 			| perl -pe 's|\@||' \
 			| perl -pe 's| \(\)||' \
 			| contingency-table  -col1 1 -col2 1 -margin \
