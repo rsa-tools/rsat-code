@@ -120,7 +120,6 @@ $parameters .= " -taxon $taxon";
 
 $tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism_name, $query_prefix, &AlphaDate());
 $result_subdir = $tmp_file_name;
-
 $result_dir = &RSAT::util::make_temp_file("", $result_subdir, 1, 1);
 $result_prefix = "footprint-discovery";
 system("mkdir -p $result_dir");
