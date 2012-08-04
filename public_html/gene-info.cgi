@@ -33,9 +33,6 @@ $query = new CGI;
 ## Check security issues
 &CheckWebInput($query);
 
-#### update log file ####
-&UpdateLogFile();
-
 #### read parameters ####
 $parameters = " -v 1";
 
@@ -84,6 +81,9 @@ push @result_files, ("gene info",$result_file);
 
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo});
 
+
+## Update log file
+&UpdateLogFile();
 
 ################################################################
 #### run the command
