@@ -17,7 +17,11 @@ $query = new CGI;
 ### Print the header
 &NeAT_header("roc-stats result", "results");
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 #$ENV{rsat_echo}= 2; # TMP

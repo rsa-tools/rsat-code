@@ -26,11 +26,15 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 ### Read the CGI query
 $query = new CGI;
 
-#### update log file ####
-&UpdateLogFile();
-
 ### Print the header
 &RSA_header("pattern-assembly result", "results");
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
+
 &ListParameters if ($ENV{rsat_echo} >=2);
 
 #### read parameters ####
