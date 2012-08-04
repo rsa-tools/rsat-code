@@ -1459,7 +1459,9 @@ sub PrintHtmlTable {
 
   print $out "<PRE>";
   while (<$FILE>) {
-    s|$ENV{RSAT}/(public_html/)*||g; #### avoid exposing the full path through the web interface
+    #### avoid exposing the full path through the web interface
+    $_ = &RSAT::util::hide_RSAT_path($_);
+    #    s|$ENV{RSAT}/(public_html/)*||g; 
 
     if ($autolink) {
       s|(http://[\w\d+\.\-\/\?\&\=\~]+)|<a href="$1">$1</a>|g;
@@ -1584,7 +1586,9 @@ sub EmailTheResult {
     $clean_command =~ s|\$|\\\$|;
 
     my $script_name = $0;
-    $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g; ## Avoid providing the full path of the RSAT package
+    ## Avoid providing the full path of the RSAT package
+    $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g;
+#    $script_name = &RSAT::util::hide_RSAT_path($script_name);
     $script_name =~ s|\.cgi$||;
 
     unless ($mail_title) {
@@ -2327,7 +2331,7 @@ sub MatrixFromPatterns_run {
   $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
 
   ## Generate the command to extract matrices from patterns
-  $pssm_command = $SCRIPTS."/matrix-from-patterns -v 1 -links -logo ";
+  $pssm_command = $SCRIPTS."/matrix-from-patterns -v 1 -logo ";
   #  $pssm_command .= " ".$str;
   $pssm_command .= " -seq ".$sequence_file;
   $pssm_command .= " -format $sequence_format";
@@ -2344,7 +2348,7 @@ sub MatrixFromPatterns_run {
 
   ## Run the command
   system("$pssm_command");
-  print "<PRE>command to generate matrices (PSSM): ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+  print "<PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
   push @result_files, ('significance matrices', $sig_matrix_file);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
   push @result_files, ('final matrices (transfac format)', $pssm_file_tf);
@@ -2469,12 +2473,16 @@ End_of_form
 sub display_matrices_web {
   my ($in_matrix_file, $in_format, $no_convert, $logo_dir) = @_;
 
+
+  print "\n<hr>\n";
+
   &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
   &RSAT::error::FatalError("missing input matrix format for display_matices_web()") unless ($in_format);
 
   my $matrix_prefix = &ShortFileName($in_matrix_file);
   $matrix_prefix .= s/\.${in_format}$//;
   my $out_matrix_file;
+
   if ($no_convert) {
     $out_matrix_file = $in_matrix_file;
   } else {
@@ -2500,13 +2508,14 @@ sub display_matrices_web {
     $cmd .= " -logo_opt '-M' "; ## Small sample correction
     $cmd .= " -logo_dir ".$logo_dir;
     $cmd .= " -o ".$out_matrix_file;
-    print "<pre>Matrix conversion command:," &RSAT::util::hide_RSAT_path($cmd), "\n</pre>" if ($ENV{rsat_echo} >=1);
-    system "$cmd";
+    print "<pre><b>Matrix conversion command:</b> ", &RSAT::util::hide_RSAT_path($cmd), "\n</pre>" if ($ENV{rsat_echo} >=1);
+    system ($cmd);
+
     &DelayedRemoval($out_matrix_file);
   }
 
   ### Print result on the web page
-  print '<h4>Matrices</h4>';
+  print '<h2>Matrices</h2>';
   print "<pre>";
 #  print `cat $out_matrix_file`;
   my ($res) = &OpenInputFile($out_matrix_file);
@@ -2515,11 +2524,18 @@ sub display_matrices_web {
     if ($_ =~ /logo file:(.*)\.png$/){
       (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
       $logo =~ s/\.png//;
-      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a> ";
+      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a>";
+
+      ## A trick to print the carriage return only after the second logo (reverse complement)
+      if ($after_logo) {
+	print "\n";
+      }
+      $after_logo = 1;
 #      &DelayedRemoval("$TMP/$1");
     } else {
-      s|$ENV{RSAT}/||g;
-      print $_;
+      $after_logo = 0;
+#      s|$ENV{RSAT}/||g;
+      print &RSAT::util::hide_RSAT_path($_);
     }
   }
   close ($res);
