@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.21 2009/03/11 18:52:59 rsat Exp $
+# $Id: gibbs.cgi,v 1.22 2012/08/04 05:05:14 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -38,8 +38,12 @@ $query = new CGI;
 &RSA_header("gibbs result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-#### update log file ####
-&UpdateLogFile;
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
 
 ################################################################
 #
