@@ -19,7 +19,11 @@ $query = new CGI;
 ### Print the header
 &RSA_header("footprint-scan result", "results");
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
@@ -87,12 +91,17 @@ unless ($taxon = $query->param('taxon')) {
 $parameters .= " -taxon $taxon";
 
 ################################################################
-## File prefix
-$tmp_file_name = join( "_", "footprint-scan", $taxon, $organism, $query_prefix, &AlphaDate());
+## Create output directory
+$tmp_file_name = join( "_", "footprint-scan", $taxon, $organism_name, $query_prefix, &AlphaDate());
 $result_subdir = $tmp_file_name;
-$result_dir = $TMP."/".$result_subdir;
-$result_dir =~ s|\/\/|\/|g;
-`mkdir -p $result_dir`;
+$result_dir = &RSAT::util::make_temp_file("", $result_subdir, 1, 1);
+$result_prefix = "footprint-discovery";
+#system("mkdir -p $result_dir");
+#$tmp_file_name = join( "_", "footprint-scan", $taxon, $organism, $query_prefix, &AlphaDate());
+#$result_subdir = $tmp_file_name;
+#$result_dir = $TMP."/".$result_subdir;
+#$result_dir =~ s|\/\/|\/|g;
+#`mkdir -p $result_dir`;
 $file_prefix = $result_dir."/".$query_prefix;
 $query_file = $file_prefix."_genes";
 
@@ -103,20 +112,16 @@ $matrix_file = $result_dir."/input_matrix";
 local $input_format = lc($query->param('matrix_format'));
 
 if ($query->param('matrix')) {
-    open MAT, "> $matrix_file";
-    print MAT $query->param('matrix');
-    close MAT;
-    &DelayedRemoval($matrix_file);
-    ($input_format) = split (/\s+/, $input_format);
-    $parameters .= " -m $matrix_file";
-    
+  open MAT, "> $matrix_file";
+  print MAT $query->param('matrix');
+  close MAT;
+  &DelayedRemoval($matrix_file);
+  ($input_format) = split (/\s+/, $input_format);
+  $parameters .= " -m $matrix_file";
 } else {
-    &RSAT::error::FatalError('You did not enter any data in the matrix box');
+  &RSAT::error::FatalError('You did not enter any data in the matrix box');
 }
-
-
 $parameters .=  " -matrix_format " . $input_format;
-
 
 ################################################################
 ## Prepare a file on the server with the query genes
@@ -145,68 +150,69 @@ if ($query->param('info_lines')) {
 }
 
 ################################################################
-## Background model method
+## Background model
 
- ## Markov order
+## Markov order
 my $markov_order = $query->param('markov_order');
 &RSAT::error::FatalError("Markov model should be a Natural number") unless &IsNatural($markov_order);
 
- ##BG method
- my $bg_method = $query->param('bg_method');
-  if ($bg_method eq "bginput") {
-    $parameters .= " -bginput";
-    $parameters .= " -markov ".$markov_order;
+## Method for specifyung the background model
+my $bg_method = $query->param('bg_method');
+if ($bg_method eq "bginput") {
+  $parameters .= " -bginput";
+  $parameters .= " -markov ".$markov_order;
 
-  } elsif ($bg_method eq "window") {
-    my $window_size = $query->param('window_size');
-    &RSAT::message::FatalError(join("\t",$window_size, "Invalid value for the window size. Should be a Natural number." )) unless (&IsNatural($window_size));
+} elsif ($bg_method eq "window") {
+  my $window_size = $query->param('window_size');
+  &RSAT::message::FatalError(join("\t",$window_size, "Invalid value for the window size. Should be a Natural number." )) unless (&IsNatural($window_size));
 
-    $parameters .= " -window ".$window_size;
-    $parameters .= " -markov ".$markov_order;
+  $parameters .= " -window ".$window_size;
+  $parameters .= " -markov ".$markov_order;
 
-  } elsif ($bg_method eq "bgfile") {
-    ## Select pre-computed background file in RSAT genome directory
-    my $organism_name = $query->param("organism");
-    my $noov = "ovlp";
-    my $background_model = $query->param("background");
-    my $oligo_length = $markov_order + 1;
-    $bg_file = &ExpectedFreqFile($organism_name,
-				 $oligo_length, $background_model,
-				 noov=>$noov, str=>"-1str");
+} elsif ($bg_method eq "bgfile") {
+  ## Select pre-computed background file in RSAT genome directory
+  my $organism_name = $query->param("organism");
+  my $noov = "ovlp";
+  my $background_model = $query->param("background");
+  my $oligo_length = $markov_order + 1;
+  $bg_file = &ExpectedFreqFile($organism_name,
+			       $oligo_length, $background_model,
+			       noov=>$noov, str=>"-1str");
 
-    $parameters .= " -bgfile ".$bg_file.".gz";
-   
-  } elsif ($bg_method =~ /upload/i) {
-    ## Upload user-specified background file
-    my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
-    my $upload_bgfile = $query->param('upload_bgfile');
-    if ($upload_bgfile) {
-      if ($upload_bgfile =~ /\.gz$/) {
-	$bgfile .= ".gz";
-      }
-      my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
-      open BGFILE, ">$bgfile" ||
-	&cgiError("Cannot store background file in temp dir.");
-      while (<$upload_bgfile>) {
-	print BGFILE;
-      }
-      close BGFILE;
-      $parameters .= " -bgfile $bgfile";
-      $parameters .= " -bg_format ".$query->param('bg_format');
-    } else {
-      &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+  $parameters .= " -bgfile ".$bg_file.".gz";
+
+} elsif ($bg_method =~ /upload/i) {
+  ## Upload user-specified background file
+  my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  my $upload_bgfile = $query->param('upload_bgfile');
+  if ($upload_bgfile) {
+    if ($upload_bgfile =~ /\.gz$/) {
+      $bgfile .= ".gz";
     }
-		
+    my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+    open BGFILE, ">$bgfile" ||
+      &cgiError("Cannot store background file in temp dir.");
+    while (<$upload_bgfile>) {
+      print BGFILE;
+    }
+    close BGFILE;
+    $parameters .= " -bgfile $bgfile";
+    $parameters .= " -bg_format ".$query->param('bg_format');
   } else {
-    &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+    &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
-  ## bg_pseudo
-if (&IsReal($query->param('bg_pseudo'))) {
-    $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
+
+} else {
+  &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
 }
 
-## image format
+## Pseudo-frequency for the background model
+if (&IsReal($query->param('bg_pseudo'))) {
+  $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
+}
 
+
+## Image format
 if ($query->param('img_format')) {
     $image_format = $query->param('img_format');
 } else {
@@ -221,9 +227,11 @@ $parameters .= " -o ".$file_prefix;
 ## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 2);
 
-$index_file = $result_subdir."/".$query_prefix."/".$taxon."/".$organism."/all_matrices_report.html";
+$index_file = $result_dir."/".$query_prefix."/".$taxon."/".$organism."/all_matrices_report.html";
 my $mail_title = join (" ", "[RSAT]", "footprint-scan", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
-&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
+#&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
+my $log_file = $result_subdir."/server_log.txt";
+&EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, title=>$mail_title);
 
 print $query->end_html();
 
