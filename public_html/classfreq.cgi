@@ -19,18 +19,20 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/classfreq";
 $prefix = "classfreq";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "classfreq.%s", &AlphaDate();
-$result_file = "$TMP/$tmp_file_name.res";
 @result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
 
-#### update log file ####
-&UpdateLogFile();
-
 ### Print the header
 &RSA_header("classfreq result", "results");
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
+
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
@@ -40,7 +42,7 @@ $parameters = " -v 1";
 ## Input data table
 
 ## Define data file
-$data_file = $TMP."/".$tmp_file_name;
+$data_file = $tmp_file_path."_input.tab";
 
 
 if ($query->param('transferred_file') =~ /\S/) {
@@ -103,6 +105,9 @@ if (&IsReal($query->param('to'))) {
   $parameters .= " -to ".$query->param('to');
 }
 
+$result_file = $tmp_file_path."_classfreq.tab";
+push @result_files, ("class frequencies",$result_file);
+
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo});
 
 ################################################################
@@ -115,7 +120,6 @@ if ($query->param('output') eq "display") {
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
-    push @result_files, ("class frequencies",$result_file);
 
     &PrintURLTable(@result_files);
     &PipingForm();
@@ -123,7 +127,7 @@ if ($query->param('output') eq "display") {
     print "<HR SIZE = 3>";
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 print $query->end_html();
 
