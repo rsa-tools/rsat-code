@@ -40,7 +40,7 @@ $default{weights}="";
 $default{pseudo_counts}=1;
 $default{header}="checked";
 $default{margins}="";
-$default{links}="checked";
+#$default{links}="checked";
 $default{max_profile}=10;
 $default{decimals}=1;
 $default{rc} = "";
@@ -111,7 +111,7 @@ print "<BR>\n";
 #### Return fields
 print "<p><b><a href='help.convert-matrix.html#return'>Return fields</a></B>&nbsp;<br>\n";
 my $i = 0;
-foreach my $stat qw(counts frequencies weights info header margins consensus parameters profile links) {
+foreach my $stat qw(counts frequencies weights info header margins consensus parameters profile) {
   print $query->checkbox(-name=>$stat,
 			 -checked=>$default{$stat},
 			 -label=>'');
@@ -193,7 +193,7 @@ print $query->hidden(-name=>'margins',-default=>"off");
 #print $query->hidden(-name=>'info',-default=>"on");
 #print $query->hidden(-name=>'weights',-default=>"on");
 print $query->hidden(-name=>'parameters',-default=>"on");
-print $query->hidden(-name=>'links',-default=>"on");
+#print $query->hidden(-name=>'links',-default=>"on");
 print $query->hidden(-name=>'logo',-default=>"on");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
