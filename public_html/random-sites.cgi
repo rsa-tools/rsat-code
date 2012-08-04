@@ -37,7 +37,11 @@ $query = new CGI;
 &RSA_header("random-sites result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 ################################################################
