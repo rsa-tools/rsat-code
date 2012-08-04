@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.52 2012/04/20 07:17:00 rsat Exp $
+# $Id: mirror.mk,v 1.53 2012/08/04 14:26:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -162,23 +162,11 @@ medicel:
 		${RSYNC} data/$${org} ${MEDICEL}/data/;	\
 	done
 
-# ################################################################
-# ## Clean temporary directory
-# CLEAN_LIMIT=3
-# clean_tmp:
-# 	@echo "Cleaning temporary directory	${RSAT}/tmp"
-# 	@echo "Measuring disk usage before cleaning"
-# 	@echo "Before cleaning	" `du -sh public_html/tmp`
-# 	@echo "Removing all files older than ${CLEAN_LIMIT} days"
-# 	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_LIMIT} -type f -exec rm -f {} \;	
-# 	@echo "Measuring disk usage after cleaning"
-# 	@echo "After cleaning	" `du -sh public_html/tmp`
-# 	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@bigre.ulb.ac.be
-
-
 
 ################################################################
 ## Clean temporary directory
+
+## Days
 CLEAN_LIMIT=3
 clean_tmp:
 	@echo "Cleaning temporary directory	`hostname` ${RSAT}/public_html/tmp/"
