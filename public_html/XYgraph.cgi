@@ -20,23 +20,25 @@ require "cgi-lib.pl";
 $XYgraph_command = "$SCRIPTS/XYgraph";
 $prefix = "XYgraph";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "XYgraph.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
 
-#### update log file ####
+$ENV{rsat_echo}=1;
+
+## Open result page
+&RSA_header("XYgraph result");
+
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
-#$ENV{rsat_echo}=2;
-
-if ($ENV{rsat_echo} >= 2) {
-    &RSA_header();
-    &ListParameters();
-}
-
 #### read parameters ####
-$parameters = " -v ";
+$parameters = " -v 1";
 
 ### general parameters ###
 if ($query->param('title')) {
@@ -139,7 +141,7 @@ if ($query->param('data_file') =~ /\S/) {
 
 } elsif ($query->param('uploaded_file')) {
     ### upload file from the client
-    $data_file = "$TMP/$tmp_file_name.tab";
+    $data_file = $tmp_file_path."_data.tab";
     open DATA, ">$data_file";
     $upload_data_file = $query->param('uploaded_file');
     $type = $query->uploadInfo($upload_data_file)->{'Content-Type'};
@@ -147,7 +149,6 @@ if ($query->param('data_file') =~ /\S/) {
 	print DATA;
     }
     close DATA;
-    
 
 ### data from the textarea
 } else {
@@ -155,54 +156,72 @@ if ($query->param('data_file') =~ /\S/) {
  	&RSA_header("XYgraph");
  	&FatalError("The data box should not be empty.");
     }
-    $data_file = "$TMP/$tmp_file_name.tab";
+    $data_file = $tmp_file_path."_data.tab";
     open DATA, ">$data_file";
     print DATA $query->param('data');
     close DATA;
 }
-#     $data_file = "$tmp_file_name.data";
-#     open DATA, ">$TMP/$data_file";
-#     print DATA $query->param('data');
-#     close DATA;
-#     $parameters .= " -i $TMP/$data_file ";
+push @result_files, "Input data (tab)", $data_file;
 
-$parameters .= " -i $data_file ";
+$parameters .= " -i ".$data_file;
 
 ### graph file ###
 $image_format = $query->param('format') || $ENV{rsat_img_format} || "png";
-$graph_file = "$tmp_file_name.${image_format}";
+$graph_file = $tmp_file_path.".".$image_format;
+push @result_files, "XY graph ($image_format)", $graph_file;
 $parameters .= " -format ".$image_format;
-$parameters .= " -o $TMP/$graph_file ";
+$parameters .= " -o ".$graph_file;
 
 if ($query->param('htmap')) {
     $htmap = 1;
-    $htmap_file = "$tmp_file_name.html";
-    $parameters .= " -htmap ";
-    $parameters .= " -htmap > $TMP/$htmap_file ";
+    $htmap_file = $tmp_file_path.".html";
+    push @result_files, "HTML map", $htmap_file;
+#    $parameters .= " -htmap ";
+    $parameters .= " -htmap > ".$htmap_file;
 }
+
+$XYgraph_command .= $parameters;
 
 ### execute the command ###
-@data_report = `$XYgraph_command $parameters`;
-
-if ($ENV{rsat_echo} >= 2) {
-    print &RSA_header("XYgraph");
-    print "<PRE>$XYgraph_command $parameters</PRE>";
-}
+@data_report = `$XYgraph_command`;
 
 ### print the result ###
+### display the result ###
+my $graph_URL = $ENV{rsat_www}."/tmp/"; $graph_URL .= &RSAT::util::RelativePath($TMP, $graph_file);
+my $data_URL = $ENV{rsat_www}."/tmp/"; $data_URL .= &RSAT::util::RelativePath($TMP, $data_file);
 if ($htmap) {
-    print "Location: $WWW_TMP/$htmap_file", "\n\n";
+  my $short_graph_file = &ShortFileName($graph_file);
+  my $short_data_file = &ShortFileName($data_file);
+  my $htmap_content = `cat $htmap_file`;
+  $htmap_content =~ s/<\/*html>//gi;
+  $htmap_content =~ s/<\/*body>//gi;
+  $htmap_content =~ s/<\/*head>//gi;
+  $htmap_content =~ s/<title>.*<\/title>//gi;
+  $htmap_content =~ s/${short_graph_file}/${graph_URL}/g;
+  $htmap_content =~ s/${short_data_file}/${data_URL}/g;
+#  $htmap_content =~ s/</&lt;/g;
+#  $htmap_content =~ s/>/&gt;/g;
+  print $htmap_content;
 } else {
-    ### display the result ###
-    print &RSA_header("XYgraph result");
-    print "<CENTER><IMG SRC=\"$WWW_TMP/$graph_file\"></CENTER><P>\n";
-    print "<H4 ALIGN=CENTER>Data report</H4>";
-    print "<PRE>";
-    print @data_report;
-    print "</PRE>";
-    print "<HR SIZE = 3>";
-    print &HtmlBot;
-}    
+  print "<center><a href='".$graph_URL."'><img src='".$graph_URL."'></a></center><P>\n";
+}
+
+# ## Print out the data report
+# ## OBSOLETE
+# if (scalar(@data_report) >= 0) {
+#   print "<h4 align='center'>Data report</h4>";
+#   print "<pre>";
+#   print join "\n",  @data_report;
+#   print "</pre>";
+# }
+
+&PrintURLTable(@result_files);
+
+print "<PRE><b>Command: </b>", &RSAT::util::hide_RSAT_path($XYgraph_command), "</PRE>\n" if ($ENV{rsat_echo} >= 1);
+
+
+print "<hr size='3'>";
+print &HtmlBot();
 
 &DelayedRemoval("$TMP/$graph_file");
 &DelayedRemoval("$TMP/$data_file");
