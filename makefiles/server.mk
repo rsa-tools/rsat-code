@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.35 2012/03/21 07:35:36 rsat Exp $
+# $Id: server.mk,v 1.36 2012/08/04 13:20:19 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -172,4 +172,22 @@ clean_tmp:
 	@df -h ${RSAT}/public_html/tmp/
 
 
+################################################################
+## Detect web spammers (2012). Several IP addresses are repeatedly sending Web
+## spam to the Web interfaces of gene-info.cgi and convert-matrix.cgi.
+YEAR=`date +%Y`
+DENIED_IP_FILE=denied_IP_addresses_${RSAT_SITE}_${YEAR}.tab
+DENIAL_THRESHOLD=500
+denied_ips:
+	grep gene-info.cgi logs/log-file_${RSAT_SITE}_${YEAR}_*  \
+		| cut -f 3 \
+		| perl -pe 's|\@||' \
+		| perl -pe 's| \(\)||' \
+		| contingency-table  -col1 1 -col2 1 -margin \
+		| grep -v '^;' \
+		| grep -v '^#' \
+		| cut -f 1,2 \
+		| awk '$$2 > ${DENIAL_THRESHOLD}' \
+		| sort > ${DENIED_IP_FILE}
+	@echo "	${DENIED_IP_FILE}"
 
