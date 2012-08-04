@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.53 2012/08/04 14:26:11 jvanheld Exp $
+# $Id: mirror.mk,v 1.54 2012/08/04 16:17:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -150,17 +150,17 @@ wget_one_org:
 	wget -rNL -P data/genomes/ ${RSAT_HTTP}/data/genomes/${ORG} --cut-dirs=3 -nH
 
 
-################################################################
-#### Server in finland
-################################################################
-ORGS=Saccharomyces_cerevisiae Escherichia_coli_K12 Bacillus_subtilis
-medicel:
-	${RSYNC} config/medicel.config ${MEDICEL}/config/
-	${RSYNC} doc/*.pdf ${MEDICEL}/doc/
-	rsync ${SSH} -ruptvL distrib/* ${MEDICEL}/perl-scripts
-	for org in ${ORGS}; do				\
-		${RSYNC} data/$${org} ${MEDICEL}/data/;	\
-	done
+# ################################################################
+# #### Server in finland
+# ################################################################
+# ORGS=Saccharomyces_cerevisiae Escherichia_coli_K12 Bacillus_subtilis
+# medicel:
+# 	${RSYNC} config/medicel.config ${MEDICEL}/config/
+# 	${RSYNC} doc/*.pdf ${MEDICEL}/doc/
+# 	rsync ${SSH} -ruptvL distrib/* ${MEDICEL}/perl-scripts
+# 	for org in ${ORGS}; do				\
+# 		${RSYNC} data/$${org} ${MEDICEL}/data/;	\
+# 	done
 
 
 ################################################################
