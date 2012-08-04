@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.20 2012/03/31 09:11:52 jvanheld Exp $
+# $Id: gene-info,v 1.21 2012/08/04 05:08:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -54,7 +54,8 @@ $out = &RSAT::util::OpenOutputFile($outputfile);
 &Verbose();
 
 ### Read ORF information
-my $serial_file = $TMP."/".$organism_name."1syn.serial";
+#my $serial_file = $TMP."/serialized_genomes/".$organism_name."1syn.serial";
+my $serial_file = $organism->serial_file_name($imp_pos, $synonyms);
 if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
   $organism = retrieve $serial_file;
 } else {
