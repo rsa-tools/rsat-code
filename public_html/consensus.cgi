@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.21 2012/08/03 12:09:17 jvanheld Exp $
+# $Id: consensus.cgi,v 1.22 2012/08/04 05:25:42 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -38,10 +38,14 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 $query = new CGI;
 
 ### print the result page
-&RSA_header("consensus result", "results");
+&RSA_header("Consensus result file", "results");
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 ################################################################
@@ -147,8 +151,8 @@ if ($query->param('output') eq "display") {
 
     ## Display matrices with logos and links
     my ($out_matrix_file) = &display_matrices_web($result_file, "consensus");
-    push @result_files, "Input matrix", $matrix_file;
-    push @result_files, ('Converted matrix', $out_matrix_file);
+    push @result_files, "Output matrix", $matrix_file;
+#    push @result_files, ("Converted matrix", $out_matrix_file);
 
     &PrintURLTable(@result_files);
     &PipingForm();
