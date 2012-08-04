@@ -144,7 +144,7 @@ sub DetectDeniedIP {
 	my ($ip, $nb, $reason) = split(/\t/, $_);
 	&RSAT::message::Debug("Denied", $ip) if ($main::verbose >= 10);
 	if ($client_ip eq $ip) {
-	    die "Access denied to IP address $client_ip\t$reason\n";e
+	    die "Access denied to IP address $client_ip\t$reason\n";
 	}
     }
     return (0);
