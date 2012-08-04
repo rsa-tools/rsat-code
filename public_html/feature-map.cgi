@@ -44,17 +44,18 @@ $features_from_patser_cmd = "$SCRIPTS/features-from-patser";
 ### Read the CGI query
 $query = new CGI;
 
-# ### replace defaults by parameters from the cgi call, if defined
-# foreach $key (keys %default) {
-#   if ($query->param($key)) {
-#     $default{$key} = $query->param($key);
-#   }
-# } 
+## Open result page
+&RSA_header("feature-map result", "results");
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
+
 
 $title = "feature-map result";
-
-#### update log file ####
-&UpdateLogFile();
 
 #### read parameters ####
 $parameters = "";
@@ -206,7 +207,7 @@ if ($query->param('color_file')) {
   $upload_color_file = $query->param('color_file');
   while (<$upload_color_file>) {
     print COLOR;
-	}
+  }
   close COLOR;
   $parameters .= " -colors $color_file ";
 }
@@ -256,7 +257,6 @@ if ($query->param('feature_file') =~ /\S/) {
   if ($query->param('uploaded_file')) {
     $upload_feature_file = $query->param('uploaded_file');
     $type = $query->uploadInfo($upload_feature_file)->{'Content-Type'};
-    #	&RSA_header("Debugging");
     #	&Info($feature_file, "\n", $upload_feature_file, "\n", $type);
     while (<$upload_feature_file>) {
       #	    print $_;
@@ -277,7 +277,6 @@ if ($query->param('feature_file') =~ /\S/) {
   close DATA;
 
 } else {
-    print $query->header();
     &cgiError("The feature list should not be empty.");
 }
 
@@ -285,40 +284,54 @@ push @result_files, "Input features (.ft)", $feature_file;
 $parameters .= " -i $feature_file ";
 
 ### map file ###
-$map_file = $tmp_file_path.".".$image_format;
-push @result_files, "Map file ($image_format)", $map_file;
-$html_file = $tmp_file_path.".html";
-push @result_file, "Html report (html)", $html_file;
-$parameters .= " -o $map_file > $html_file";
+$graph_file = $tmp_file_path.".".$image_format;
+push @result_files, "Map file ($image_format)", $graph_file;
+$htmap_file = $tmp_file_path.".html";
+push @result_file, "Html report (html)", $htmap_file;
+$parameters .= " -o $graph_file > $htmap_file";
 
-## report the command (for debugging)
-#$ENV{rsat_echo} = 2;
-if ($ENV{rsat_echo} >= 2) {
-    print $query->header();
-    print $query->start_html;
-    &ListParameters();
+$feature_map_command .= " ".$parameters;
 
-    print "<PRE>command = $feature_map_command $parameters \n\n\n</PRE>";
-    print $query->end_html();
-    exit(0)
-}
+## Report the command
+print "<PRE><b>Command: </b>", &RSAT::util::hide_RSAT_path($feature_map_command), "</PRE>\n" if ($ENV{rsat_echo} >= 1);
 
 ### execute the command
-system "$feature_map_command $parameters ";
+system($feature_map_command);
 &DelayedRemoval($feature_file);
-&DelayedRemoval($map_file);
-&DelayedRemoval($html_file);
+&DelayedRemoval($graph_file);
+&DelayedRemoval($htmap_file);
 
 ### display the result ###
-my $result_URL = $ENV{rsat_www}."/tmp/";
+my $graph_URL = $ENV{rsat_www}."/tmp/"; $graph_URL .= &RSAT::util::RelativePath($TMP, $graph_file);
+my $html_URL = $ENV{rsat_www}."/tmp/"; $html_URL .= &RSAT::util::RelativePath($TMP, $htmap_file);
+my $short_graph_file = &ShortFileName($graph_file);
+my $short_feature_file = &ShortFileName($feature_file);
+
 if (($image_format ne 'ps')
     && (lc($query->param('htmap')) eq "on")) {
-  $result_URL .= &RSAT::util::RelativePath($TMP, $html_file);
+  my $htmap_content = `cat $htmap_file`;
+  $htmap_content =~ s/<\/*html>//gi;
+  $htmap_content =~ s/<\/*body>//gi;
+  $htmap_content =~ s/<\/*head>//gi;
+  $htmap_content =~ s/<title>.*<\/title>//gi;
+  $htmap_content =~ s/${short_graph_file}/${graph_URL}/g;
+  $htmap_content =~ s/${short_feature_file}/${data_URL}/g;
+#  $htmap_content =~ s/</&lt;/g;
+#  $htmap_content =~ s/>/&gt;/g;
+  print $htmap_content;
 } else {
-  $result_URL .= &RSAT::util::RelativePath($TMP, $map_file);
-#   $location = "$ENV{rsat_www}/tmp/$map_file";
+  print "<center><a href='".$graph_URL."'><img src='".$graph_URL."'></a></center><P>\n";
 }
-print "Location: $result_URL", "\n\n";
+
+&PrintURLTable(@result_files);
+
+
+print "<hr>";
+
+# die join "\n",
+#   "graph_file = ".$graph_file,
+#   "graph_URL = ".$graph_URL,
+#   "short_graph_file = ".$short_graph_file;
 
 exit(0);
 
