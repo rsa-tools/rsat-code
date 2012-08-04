@@ -5,6 +5,7 @@ use LWP::Simple;
 package main;
 require RSAT::OrganismManager;
 require RSAT::server;
+require RSAT::error;
 
 ################################################################
 ## Print a tag for Google Analytics, a tool for monitoring the access to the
@@ -1685,6 +1686,7 @@ sub CheckWebInput {
 
   my $user_email = $cgi->param('user_email');
 
+
   foreach my $field (@fields_to_check) {
     my $field_contents = $cgi->param($field);
 
@@ -1692,10 +1694,9 @@ sub CheckWebInput {
 
     ## Detect HTML tags
     $field_contents =~ s/\s+/ /g; ## make a single-line of the field content
-    if ($field_contents =~ /(\<[^\<]*\>)/) {
+    if ($field_contents =~ /(\<[^\<\>]*\>)/) {
       my $tag = $1;
-      &RSAT::server::ReportWebAttack($0, "HTML tag", $tag, $user_email);
-
+      &RSAT::server::ReportWebAttack(&ShortFileName($0), "HTML tag", $tag, $user_email);
       $tag =~ s/</&lt;/g;
       $tag =~ s/>/&gt;/g;
       &RSAT::error::FatalError("Invalid content for field \"$field\"", "<pre>$tag</pre>", "HTML tags are not allowed.");
