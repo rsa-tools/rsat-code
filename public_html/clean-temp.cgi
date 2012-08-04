@@ -46,17 +46,22 @@ my $clean_limit = 3;
 $clean_temp_command = "echo '<br>started'; date; \n";
 $clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp/ -mtime +".${clean_limit}." -type f -exec rm -f {} \\; ; \n";
 $clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp/ -mtime +".${clean_limit}." -type d -exec rm -rf {} \\; ; \n";
-$clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp/ -name '*_serial_*' -type f -exec rm -f {} \\; ; \n";
+$clean_temp_command .= "rm -f ".$ENV{RSAT}."/public_html/tmp/serialized_genomes/*.serial ; \n";
 $clean_temp_command .= "echo '<br>done\n'; date; \n";
 
+print "<h2>Disk free before cleaning</h2>";
+print "<pre>"; system("df -h $ENV{RSAT}"); print "</pre>";
 
 &RSAT::message::TimeWarn("Cleaning temporary directory from files older than ".$clean_limit." days + all serialized files");
 
 print "<PRE>\n";
-print $clean_temp_command if ($ENV{rsat_echo} >= 0);
+print $clean_temp_command if ($ENV{rsat_echo} >= 2);
 print "</PRE>\n";
 
 $err = system($clean_temp_command);
+
+print "<hr><h2>Disk free after cleaning</h2>";
+print "<pre>"; system("df -h $ENV{RSAT}"); print "</pre>";
 
 &RSAT::message::TimeWarn("Cleaning finished");
 
