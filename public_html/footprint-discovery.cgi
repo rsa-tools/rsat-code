@@ -20,7 +20,11 @@ $query = new CGI;
 ### Print the header
 &RSA_header("footprint-discovery result", "results");
 
-#### update log file ####
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
@@ -101,11 +105,11 @@ $parameters .= " -taxon $taxon";
 
 ################################################################
 ## File prefix
-# $tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism_name, $query_prefix, &AlphaDate());
-# $result_subdir = $tmp_file_name;
-# $result_dir = $TMP."/".$result_subdir;
-# $result_dir =~ s|\/\/|\/|g;
-# &RSAT::util::CheckOutDir($result_dir);
+#$tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism_name, $query_prefix, &AlphaDate());
+#$result_subdir = $tmp_file_name;
+#$result_dir = $TMP."/".$result_subdir;
+#$result_dir =~ s|\/\/|\/|g;
+#&RSAT::util::CheckOutDir($result_dir);
 
 #$prefix = "footprint-discovery";
 #$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
@@ -116,10 +120,10 @@ $parameters .= " -taxon $taxon";
 
 $tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism_name, $query_prefix, &AlphaDate());
 $result_subdir = $tmp_file_name;
+
 $result_dir = &RSAT::util::make_temp_file("", $result_subdir, 1, 1);
 $result_prefix = "footprint-discovery";
 system("mkdir -p $result_dir");
-
 
 #`mkdir -p $result_dir`;
 #$file_prefix = $result_dir."/".$query_prefix;
@@ -182,6 +186,7 @@ print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 #$index_file = $result_subdir."/";
 $index_file = $result_dir."/";
 $index_file .= (&MainIndexFileName())[0];
+
 #$index_file .= join("_", $taxon, $organism_name, "bg", $bg_model, "result_index.html");
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism_name, &AlphaDate());
 my $log_file = $result_subdir."/server_log.txt";
