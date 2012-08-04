@@ -138,17 +138,44 @@ sub DetectDeniedIP {
     my $denied_ip_file= $ENV{RSAT}."/denied_IP_addresses_".$rsat_site."_".$year.".tab";
     &RSAT::message::Info("Denied IP file", &RSAT::util::hide_RSAT_path($denied_ip_file)) if ($main::verbose >= 5);
 
-    my ($in) = &RSAT::util::OpenInputFile($denied_ip_file);
-    while (<$in>) {
+    if (-e $denied_ip_file) {
+      my ($in) = &RSAT::util::OpenInputFile($denied_ip_file);
+      while (<$in>) {
 	chomp();
 	my ($ip, $nb, $reason) = split(/\t/, $_);
 	&RSAT::message::Debug("Denied", $ip) if ($main::verbose >= 10);
 	if ($client_ip eq $ip) {
-	    die "Access denied to IP address $client_ip\t$reason\n";
+	  ################################################################
+	  ## Report denied access
+
+	  ## Check script name
+	  my $script_name = &RSAT::util::ShortFileName($0);
+
+	  ## Update web attacks denial file
+	  my $denial_file = $main::denied_access_log_file;
+	  if (open DENIAL, ">>".$denial_file) {
+	    my $date = &RSAT::util::AlphaDate();
+	    print DENIAL join ("\t",
+			       $date,
+			       $ENV{rsat_site},
+			       $ENV{'REMOTE_ADDR'},
+			       $script_name,
+			       $user_email,
+			       $reason,
+			      ), "\n";
+	    close DENIAL;
+	  }
+	  chmod 0777, $denial_file;
+
+	  ## Issue denial message and die
+	  die "Access denied to IP address $client_ip\t$reason\n";
+
 	}
+      }
     }
     return (0);
 }
+
 
 
 
@@ -211,18 +238,8 @@ sub ReportWebAttack {
     $script_name = &RSAT::util::ShortFileName($0);
   }
 
-  ## Check log file
-  unless ($log_file) {
-    $log_file = $main::web_attacks_log_file;
-  }
-
-  &RSAT::message::Debug("&RSAT::server::ReportWebAttack()",
-			"<p>script=".$script_name,
-			"<p>message=".$message,
-			"<p>log=".$log_file,
-			"<p>email=".$user_email,
-			 ) if ($main::verbose >= 5);
-
+  ## Update web attacks log file
+  $log_file = $main::web_attacks_log_file;
   if (open LOG, ">>".$log_file) {
     #flock(LOG,2);
     $date = &RSAT::util::AlphaDate();
@@ -230,7 +247,8 @@ sub ReportWebAttack {
     print LOG join ("\t",
 		    $date,
 		    $ENV{rsat_site},
-		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
+#		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
+		    $ENV{'REMOTE_ADDR'},
 		    $script_name,
 		    $user_email,
 		    $attack_type,
@@ -240,6 +258,14 @@ sub ReportWebAttack {
     close LOG;
   }
   chmod 0777, $log_file;
+
+  &RSAT::message::Debug("&RSAT::server::ReportWebAttack()",
+			"<p>script=".$script_name,
+			"<p>message=".$message,
+			"<p>log=".$log_file,
+			"<p>email=".$user_email,
+			 ) if ($main::verbose >= 5);
+
 }
 
 
@@ -521,6 +547,7 @@ sub InitRSAT {
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
   $main::log_file = join("", $LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
   $main::web_attacks_log_file = join("", $LOGS, "/web_attacks_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::denied_access_log_file = join("", $LOGS, "/denied_access_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::exec_time_log_file = join("", $LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::start_time_log_file = join("", $LOGS, "/start_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::date = &RSAT::util::AlphaDate();
