@@ -1974,9 +1974,9 @@ sub _readFromJasparFile {
     my @temp_alphabet = qw(A C G T);
 
     ## Initialize the matrix LIST
-    my @matrices = ();
-    my $matrix;
-    my $current_matrix_nb = 1;
+    local @matrices = (); ## updated in subroutine
+    local $matrix; ## updated in subroutine
+    local $current_matrix_nb = 1; ## updated in subroutine
     my $l = 0;
     my $ncol = 0;
     while ($line = <$in>) {
@@ -1989,6 +1989,8 @@ sub _readFromJasparFile {
       #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
       ## Create a new matrix if required
       if  ($line =~ /^\>(\S+)/) {
+
+	## Parse ID and name from JASPAR header line
 	my $id = $1;
 	my $postmatch = $'; #'
 	my $name = $id;
@@ -1996,22 +1998,32 @@ sub _readFromJasparFile {
 	  $name = &RSAT::util::trim($postmatch);
 	  $name =~ s/\s+/_/g;
 	}
-	$matrix = new RSAT::matrix();
-	&RSAT::message::Debug("_readFromJasparFile", $id, $name, $matrix) if ($main::verbose >= 5);
-	$matrix->set_parameter("program", "jaspar");
-	$ncol = 0;
-	@temp_alphabet = qw(A C G T);
 
-	## For TRANSFAC, the accession number is the real identifier, whereas the identifier is a sort of name
-	$matrix->set_attribute("id", $id);
-	$matrix->set_attribute("name", $name);
-	$matrix->set_attribute("accession", $id); ## For TRANSFAC
-	$matrix->set_attribute("description", join("", $id, " ", $name, "; from JASPAR"));
-	push @matrices, $matrix;
-	$current_matrix_nb++;
-	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
+	## Instantiate new matrix
+	$matrix = &NewJasparMatrix($id, $name);
 	next;
+
       } elsif ($line =~ /^\s*(\S+)\s+/) {
+
+	## JASPAR matrices are supposed to start with a fasta-like
+	## header, as in the distribution file
+	## http://jaspar.genereg.net/html/DOWNLOAD/jaspar_CORE/redundant/all_species/matrix_only/matrix_only.txt
+	##
+	## However, the Web interface provides matrices without header
+	## e.g. http://jaspar.genereg.net/cgi-bin/jaspar_db.pl?ID=MA0001.1&rm=present&collection=CORE
+	##
+	## If no header is provided, 
+	unless ($matrix) {
+	  if ($line =~ /\[/) {
+	    my $id = "m".$current_matrix_nb;
+	    my $name = $id;
+	    $matrix = &NewJasparMatrix($id, $name);
+	    &RSAT::message::Warning("Matrix does not contain the expected JASPAR header (row starting with \">\").") if ($main::verbose >= 1);
+	  } else {
+	    &RSAT::message::Warning("Skipped line $l", "does not conform to JASPAR format", $line) if ($main::verbose >= 2);
+	  }
+	}
+
 	$line = &main::trim($line);
 	$line =~ s/\[//;
 	$line =~ s/\]//;
@@ -2043,6 +2055,31 @@ sub _readFromJasparFile {
     return (@matrices);
 }
 
+=pod
+
+Instantiate a new matrix with a JASPAR record.
+
+=cut
+
+sub NewJasparMatrix {
+  my ($id, $name) = @_;
+  $matrix = new RSAT::matrix();
+  &RSAT::message::Debug("_readFromJasparFile", $id, $name, $matrix) if ($main::verbose >= 5);
+  $matrix->set_parameter("program", "jaspar");
+  $ncol = 0;
+  @temp_alphabet = qw(A C G T);
+
+  ## JASPAR header line contains an ID and a name
+  $matrix->set_attribute("id", $id);
+  $matrix->set_attribute("name", $name);
+  $matrix->set_attribute("accession", $id); ## For compatibility with TRANSFAC format
+  $matrix->set_attribute("description", join("", $id, " ", $name, "; from JASPAR"));
+  push @matrices, $matrix;
+  $current_matrix_nb++;
+  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
+
+  return ($matrix);
+}
 
 ################################################################
 
