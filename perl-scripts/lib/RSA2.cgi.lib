@@ -2350,7 +2350,8 @@ sub MatrixFromPatterns_run {
   push @result_files, ('final matrices (transfac format)', $pssm_file_tf);
   push @result_files, ('final matrices (tab format)', $pssm_file_tab);
 
-  my ($out_matrix_file) = &display_matrices_web($pssm_file_tab, "tab", 1);
+  my ($out_matrix_file) = &display_matrices_web($pssm_file_tab, "tab", 0);
+  return ($out_matrix_file);
 }
 
 ################################################################
@@ -2466,7 +2467,8 @@ End_of_form
 ## Usage:
 ##   my ($out_matrix_file) = &display_matrices_web($in_matrix_file, $in_format, $no_convert);
 sub display_matrices_web {
-  my ($in_matrix_file, $in_format, $no_convert) = @_;
+  my ($in_matrix_file, $in_format, $no_convert, $logo_dir) = @_;
+
   &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
   &RSAT::error::FatalError("missing input matrix format for display_matices_web()") unless ($in_format);
 
@@ -2476,22 +2478,27 @@ sub display_matrices_web {
   if ($no_convert) {
     $out_matrix_file = $in_matrix_file;
   } else {
-#    $out_matrix_file = ${TMP}."/".$matrix_prefix."_converted.tab";
     $out_matrix_file = &RSAT::util::make_temp_file("",$matrix_prefix, 1);
     $out_matrix_file .= "_converted.tab";
+    unless ($logo_dir) {
+      #    $logo_dir = $ENV{RSAT}."/public_html/tmp";
+      ($out_matrix_dir, $out_matrix_filename) = &SplitFileName($out_matrix_file);
+      $logo_dir = $out_matrix_dir."/logos";
+      system("mkdir -p $logo_dir");
+    }
 
     my $cmd = "$ENV{RSAT}/perl-scripts/convert-matrix -v 1 ";
     $cmd .= " -i ".$in_matrix_file;
     $cmd .= " -from ".$in_format;
     $cmd .= " -to tab ";
-    $cmd .= " -return counts,links";
+    $cmd .= " -return counts";
     $cmd .= " -return consensus";
     #  $cmd .= " -return parameters";
     ## Logo parameters
     $cmd .= " -return logo -logo_format png,pdf ";
     $cmd .= " -logo_opt '-e' "; ## Error bar
     $cmd .= " -logo_opt '-M' "; ## Small sample correction
-    $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
+    $cmd .= " -logo_dir ".$logo_dir;
     $cmd .= " -o ".$out_matrix_file;
     print "<pre>Matrix conversion command:," &RSAT::util::hide_RSAT_path($cmd), "\n</pre>" if ($ENV{rsat_echo} >=1);
     system "$cmd";
