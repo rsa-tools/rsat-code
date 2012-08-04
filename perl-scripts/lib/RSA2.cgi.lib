@@ -1685,12 +1685,15 @@ potential attacks (e.g. HTML tags).
 
 sub CheckWebInput {
   my ($cgi, @fields_to_check) = @_;
-
-  @fields_to_check = $query->param unless (scalar(@fields_to_check));
-
   my $user_email = $cgi->param('user_email');
 
+  ################################################################
+  ## Check if clien IP is blacklisted on this server
+  &RSAT::server::DetectDeniedIP();
 
+  ################################################################
+  ## Detect HTML tags in CGI fields
+  @fields_to_check = $query->param unless (scalar(@fields_to_check));
   foreach my $field (@fields_to_check) {
     my $field_contents = $cgi->param($field);
 
