@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.74 2012/07/27 06:32:03 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.75 2012/08/04 14:24:50 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -14,8 +14,9 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
-$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+require RSAT::server;
 
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $query = new CGI;
 print $query->header;
@@ -25,6 +26,8 @@ print $query->start_html(-class => "info",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
 print "<blockquote>";
+
+&RSAT::server::DetectDeniedIP();
 
 print <<EndText;
 

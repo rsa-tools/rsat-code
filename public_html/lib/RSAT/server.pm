@@ -116,6 +116,42 @@ sub UpdateCounterFile {
 }
 
 
+=pod
+
+=item B<DetectDeniedIP()>
+
+Check that the client IP address is not blacklisted on this RSAT
+server. If denied, die with error message.
+
+=cut
+
+sub DetectDeniedIP {
+
+    ## IP address of the client computer
+    my $client_ip = $ENV{'REMOTE_ADDR'};
+    &RSAT::message::Info("Your IP address: ".$client_ip) if ($main::verbose >= 5);
+
+    ## File with the list of denied addresses
+    my $rsat_site = $ENV{rsat_site};
+    my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
+    $year += 1900;
+    my $denied_ip_file= $ENV{RSAT}."/denied_IP_addresses_".$rsat_site."_".$year.".tab";
+    &RSAT::message::Info("Denied IP file", &RSAT::util::hide_RSAT_path($denied_ip_file)) if ($main::verbose >= 5);
+
+    my ($in) = &RSAT::util::OpenInputFile($denied_ip_file);
+    while (<$in>) {
+	chomp();
+	my ($ip, $nb, $reason) = split(/\t/, $_);
+	&RSAT::message::Debug("Denied", $ip) if ($main::verbose >= 10);
+	if ($client_ip eq $ip) {
+	    die "Access denied to IP address $client_ip\t$reason\n";e
+	}
+    }
+    return (0);
+}
+
+
+
 ################################################################
 ### store info into a log file in a conveninent way for 
 ### subsequent login statistics
@@ -148,7 +184,8 @@ sub UpdateLogFile {
     print LOG join ("\t",
 		    $date,
 		    $ENV{rsat_site},
-		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
+#		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
+		    $ENV{'REMOTE_ADDR'},
 		    $script_name,
 		    $user_email,
 		    $message
