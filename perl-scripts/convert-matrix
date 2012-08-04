@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.144 2012/03/05 05:44:24 jvanheld Exp $
+# $Id: convert-matrix,v 1.145 2012/08/04 06:26:51 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -73,7 +73,7 @@ local $flanks = 0;
 			  "margins"=>1,
 			  "sites"=>1,
 			  "wdistrib"=>1,
-			  "links"=>1,
+			  "links"=>1, ## Obsolete but accepted (with warning) for backward compatibility
 			  "logo"=>1,
 			  "logo_table"=>1,
 			 );
@@ -1099,21 +1099,6 @@ RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
 	    as in Bailey, Bioinformatics, 1999).
             WARNING: use matrix-distrib instead
 
-
-	links
-
-  	    HTML buttons with links to external tools for comparing
-  	    the input matrices to a collection of annotated motifs.
-
-	    Supportd links: TOMTOM.
-
-	    The reason for inserting the Web buttons in the script
-  	    rather than in the Web interface is that the matrix
-  	    matching tool TOMTOM takes as input a single matrix ->
-  	    when convert-matrix is used to convert multiple matrices,
-  	    a separate HTML button has to be dispplayed aftr each
-  	    matrix.
-
 	logo 
 	    Sequence logo, a visual representation of the motif, where
 	    each column of the matrix is represented as a stack of
@@ -1624,14 +1609,18 @@ sub ExportMatrix {
     }
   }
 
-  ## links to external tools for HTML forms The reason for inserting
-  ## this in the script dather than in the Web interface is that the
-  ## matrix matching tool TOMTOM takes as input a single matrix ->
-  ## when convert-matrix is used to convert multiple matrices, a
-  ## separate HTML button has to be dispplayed aftr each matrix
-  if ($return_fields{links}) {
-    print $out_handle "\n", $matrix->link_button_TOMTOM(), "\n";
-  }
+#   ## links to external tools for HTML forms The reason for inserting
+#   ## this in the script rather than in the Web interface is that the
+#   ## matrix matching tool TOMTOM takes as input a single matrix ->
+#   ## when convert-matrix is used to convert multiple matrices, a
+#   ## separate HTML button has to be dispplayed aftr each matrix
+   if ($return_fields{links}) {
+     #     print $out_handle "\n", $matrix->link_button_TOMTOM(), "\n";
+     unless ($obsolete_report_done) {
+       &RSAT::message::Warning("The option -return link is not supported anymore by convert-matrix");
+       $obsolete_report_done = 1;
+     }
+   }
 
 
   ## Return weight distrsibution
