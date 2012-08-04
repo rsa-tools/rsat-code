@@ -5,6 +5,9 @@
 ## ${RSAT}/makefiles/util.mk, which is itself loaded by all the RSAT
 ## makefile scripts.
 
+## Name of the site (which will appear in the log file)
+RSAT_SITE=your_server_name
+
 ## Operating system
 ## Supported: linux  | macosx
 #OS=linux
