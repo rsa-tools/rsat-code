@@ -34,12 +34,9 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 ### Read the CGI query
 $query = new CGI;
 
-
-### print the result page
+## Open result page
 &RSA_header("oligo-analysis result", "results");
 &ListParameters() if ($ENV{rsat_echo} >= 2);
-
-
 
 ## Check security issues
 &CheckWebInput($query);
