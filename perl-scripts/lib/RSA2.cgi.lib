@@ -254,6 +254,13 @@ sub RSA_header {
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
   print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</a> - $title</h3>";
+
+  ################################################################
+  ## Check if client IP is blacklisted on this server.
+  ##
+  ## We insert this control here so it is applied to each Web form.
+  &RSAT::server::DetectDeniedIP();
+
 }
 
 ## ##############################################################
@@ -1688,7 +1695,7 @@ sub CheckWebInput {
   my $user_email = $cgi->param('user_email');
 
   ################################################################
-  ## Check if clien IP is blacklisted on this server
+  ## Check if client IP is blacklisted on this server
   &RSAT::server::DetectDeniedIP();
 
   ################################################################
