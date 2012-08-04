@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.22 2012/08/04 05:25:42 jvanheld Exp $
+# $Id: consensus.cgi,v 1.23 2012/08/04 08:45:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -112,8 +112,11 @@ if ($query->param('seed') eq "on") {
 }
 
 #### Output and input files
-$matrix_file = $tmp_file_path.".matrix";
 $result_file = $tmp_file_path.".txt";
+push @result_files, ('Consensus result', $result_file);
+
+$matrix_file = $tmp_file_path.".tab";
+push @result_files, "Output matrix (tab)", $matrix_file;
 
 #### Matrix conversion command
 $convert_matrix_command.= " -i ".$result_file." -o ".$matrix_file;
@@ -135,7 +138,6 @@ if ($query->param('output') eq "display") {
     open RESULT, "$command $parameters | ";
     open RES_FILE, ">$result_file";
   #    system "$command $parameters >$result_file ";
-    push @result_files, ('consensus result', $result_file);
 
     ### Print result on the web page
     print '<H4>Result</H4>';
@@ -149,9 +151,8 @@ if ($query->param('output') eq "display") {
     close(RES_FILE);
 
 
-    ## Display matrices with logos and links
+    ## Display matrices with logos
     my ($out_matrix_file) = &display_matrices_web($result_file, "consensus");
-    push @result_files, "Output matrix", $matrix_file;
 #    push @result_files, ("Converted matrix", $out_matrix_file);
 
     &PrintURLTable(@result_files);
