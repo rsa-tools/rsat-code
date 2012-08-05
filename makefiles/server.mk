@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.39 2012/08/05 00:44:07 rsat Exp $
+# $Id: server.mk,v 1.40 2012/08/05 00:47:24 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -191,7 +191,7 @@ denied_ips:
 			| grep -v '^;' \
 			| grep -v '^#' \
 			| cut -f 1,2 \
-			| awk '$$2 > ${TAG_DENIAL_THRESHOLD} {print $$1"\t"$$2"\tHTML tags"}' \
+			| awk '$$2 > ${TAG_DENIAL_THRESHOLD} {print $$1"\t"$$2"\tHTML_tags"}' \
 			| sort > ${DENIED_IP_FILE}
 	@for form in ${ATTACKED_FORMS}; do \
 		echo "	abusive use of form $${form}  (> ${FORM_DENIAL_THRESHOLD})"; \
