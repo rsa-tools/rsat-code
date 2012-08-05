@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.40 2012/08/05 00:47:24 rsat Exp $
+# $Id: server.mk,v 1.41 2012/08/05 13:13:10 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -178,7 +178,7 @@ clean_tmp:
 YEAR=`date +%Y`
 DENIED_IP_FILE=denied_IP_addresses_${RSAT_SITE}_${YEAR}.tab
 FORM_DENIAL_THRESHOLD=500
-TAG_DENIAL_THRESHOLD=30
+TAG_DENIAL_THRESHOLD=5
 ATTACKED_FORMS=gene-info.cgi convert-matrix.cgi RSAT_home.cgi
 denied_ips:
 	@echo 
