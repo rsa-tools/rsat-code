@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-quality,v 1.7 2012/07/18 07:59:32 jvanheld Exp $
+# $Id: peak-quality,v 1.8 2012/08/06 22:48:14 jvanheld Exp $
 #
 ############################################################
 
@@ -79,7 +79,6 @@ Histogram of peak score distribution.
 
 Decreasing curve of peak scores (score as a function of the rank).
 
-
 =head1 SEE ALSO
 
 =head1 WISH LIST
@@ -144,7 +143,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -180,6 +179,7 @@ package main;
 			    enrichment
 			    peakmo
 			  );
+  our $supported_tasks = join ",", @supported_tasks;
   our %supported_task = ();
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
@@ -203,6 +203,11 @@ package main;
     %task = %supported_task;
   }
 
+  ## If option -task all was called, activate all tasks
+  if ($task{all}) {
+    %task = %supported_task;
+  }
+
   ################################################################
   ## Check argument values
 
@@ -215,8 +220,10 @@ package main;
 
   ## Prefix
   unless ($param{prefix}) {
-    &RSAT::error::FatalError("You must define a prefix for the output files (option -prefix)");
+    $param{prefix} = "peak_quality";
+#    &RSAT::error::FatalError("You must define a prefix for the output files (option -prefix)");
   }
+  push @param_list, "prefix";
 
    ## Reference motif file
   if ($task{enrichment}) {
@@ -226,11 +233,8 @@ package main;
   }
 
   ################################################################
-  ## Define log file name
+  ## Open log file
   $outfile{log} = &OutFileName("", ".txt", "log");
-
-  ################################################################
-  ## Open output stream
   $out = &OpenOutputFile($outfile{log});
 
   ################################################################
@@ -813,6 +817,8 @@ parameter -top_matrices.
 
 Output directory. All result files will be stored in this directory.
 
+Mandatory argument.
+
 =cut
     } elsif ($arg eq "-o") {
       $dir{output} = shift(@arguments);
@@ -944,8 +950,7 @@ Analyze sequence slices with I<peak-motifs>.
 	if ($supported_task{$task}) {
 	  $task{$task} = 1;
 	} else {
-## TEMPORARILY DISACTIVATED FOR PROGRAMMING ###
-#	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
+	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
 	}
       }
 
@@ -982,28 +987,18 @@ analyze single-strand motifs (option -1str).
 
 }
 
+
 ################################################################
 ## Verbose message
 sub Verbose {
   print $out "; peak-quality ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
-  if (%infile) {
-    print $out "; Input files\n";
-    foreach my $key (sort keys (%infile)) {
-      my $value = $infile{$key};
-#    while (my ($key,$value) = each %infile) {
-      printf $out ";\t%-13s\t%s\n", $key, $value;
-    }
-  }
-  if (%outfile) {
-    print $out "; Output files\n";
-    foreach my $key (sort keys (%outfile)) {
-      my $value = $outfile{$key};
-#    while (my ($key,$value) = each %outfile) {
-      printf $out ";\t%-13s\t%s\n", $key, $value;
-    }
-  }
+
+  ## List tasks
+  printf $out "; %-22s\t%s\n", "Requested tasks", join(",", sort keys %task);
+
+  ## List directories
   if (%dir) {
     print $out "; Directories\n";
     foreach my $key (sort keys (%dir)) {
@@ -1013,7 +1008,27 @@ sub Verbose {
     }
   }
 
-  ## Parameter values
+  ## List input files
+  if (%infile) {
+    print $out "; Input files\n";
+    foreach my $key (sort keys (%infile)) {
+      my $value = $infile{$key};
+#    while (my ($key,$value) = each %infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  ## List output files
+  if (%outfile) {
+    print $out "; Output files\n";
+    foreach my $key (sort keys (%outfile)) {
+      my $value = $outfile{$key};
+#    while (my ($key,$value) = each %outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  ## List parameter values
   print $out "; Parameter values\n";
   foreach my $param_name (@param_list) {
     print $out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
