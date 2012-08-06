@@ -288,7 +288,13 @@ sub UpdateExecTimeLogFile {
     $elapsed = "Unspecified";
   }
   my $login = getlogin || getpwuid($<) || "Kilroy";
-  my $hostname = hostname();
+  my $hostname = `hostname`;
+  chomp($hostname);
+
+  my $remote_addr = "";
+  if (defined($ENV{REMOTE_ADDR})) {
+    $remote_addr = $ENV{REMOTE_ADDR};
+  }
 
   &RSAT::message::TimeWarn("Updating execution time log file", $main::exec_time_log_file)
     if ($main::verbose >= 4);
@@ -321,7 +327,7 @@ sub UpdateExecTimeLogFile {
 		  $login,
 		  $script_name,
 		  $command,
-		  $ENV{REMOTE_ADDR},
+		  $remote_addr,
 		 ), "\n";
   close LOG;
   chmod 0777, $main::exec_time_log_file;
