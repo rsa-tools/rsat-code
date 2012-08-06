@@ -267,13 +267,12 @@ if ($purge) {
 }
 
 #print '<style> <!-- pre {overflow: auto;} --></style>';
-#print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>" if ($ENV{rsat_echo} >=1);
 
 ## Output file
 $result_file = $tmp_file_path.".tab";
 push @result_files, "Result file (tab)", $result_file;
 
-print "<pre>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</pre>";
+&ReportWebCommand($command);
 
 #&SaveCommand("$command", "$TMP/$tmp_file_name");
 
