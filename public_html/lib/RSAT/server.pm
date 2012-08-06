@@ -211,7 +211,6 @@ sub UpdateLogFile {
     print LOG join ("\t",
 		    $date,
 		    $ENV{rsat_site},
-#		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
 		    $ENV{'REMOTE_ADDR'},
 		    $script_name,
 		    $user_email,
@@ -247,7 +246,6 @@ sub ReportWebAttack {
     print LOG join ("\t",
 		    $date,
 		    $ENV{rsat_site},
-#		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
 		    $ENV{'REMOTE_ADDR'},
 		    $script_name,
 		    $user_email,
@@ -290,6 +288,7 @@ sub UpdateExecTimeLogFile {
     $elapsed = "Unspecified";
   }
   my $login = getlogin || getpwuid($<) || "Kilroy";
+  my $hostname = hostname();
 
   &RSAT::message::TimeWarn("Updating execution time log file", $main::exec_time_log_file)
     if ($main::verbose >= 4);
@@ -303,9 +302,11 @@ sub UpdateExecTimeLogFile {
 		    "done_date.time  ",
 		    "seconds",
 		    "PID",
+		    "hostname",
 		    "username",
 		    "script_name",
 		    "command",
+		    "REMOTE_ADDR",
 		   ), "\n";
     close LOG;
   }
@@ -315,10 +316,12 @@ sub UpdateExecTimeLogFile {
 		  $start_time,
 		  $done_time,
 		  $elapsed,
+		  $hostname,
 		  $$,
 		  $login,
 		  $script_name,
 		  $command,
+		  $ENV{REMOTE_ADDR},
 		 ), "\n";
   close LOG;
   chmod 0777, $main::exec_time_log_file;
