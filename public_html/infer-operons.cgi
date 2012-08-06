@@ -137,7 +137,7 @@ if ($query->param('genes') eq "all") {
 $result_file = $tmp_file_path.".tab";
 push (@result_files, 'operons', $result_file);
 
-print  "<PRE><B>Command :</B> ", &RSAT::util::hide_RSAT_path($command." ".$parameters), "</PRE><P>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 
 ################################################################
