@@ -136,7 +136,7 @@ if ($query->param('proba') eq "alphabet") {
     }
   }
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 ## Output file
 $sequence_file = $tmp_file_path.".".$out_format;

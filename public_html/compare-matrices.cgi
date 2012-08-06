@@ -225,7 +225,7 @@ $output_file = $output_path."/".$output_prefix.".tab";
 $parameters .= " -o ".$output_file;
 
 ## Report the full command before executing
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+&ReportWebCommand($command." ".$parameters);
 
 ################################################################
 ## Display or send result by email

@@ -102,7 +102,7 @@ $result_file = $tmp_file_path.".tab";
 push @result_files, ("gene info",$result_file);
 
 ## Report the command
-print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 ################################################################
 #### run the command

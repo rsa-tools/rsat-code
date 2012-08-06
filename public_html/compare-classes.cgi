@@ -259,7 +259,7 @@ if ($upload_ref_classes) {
 $parameters .= " -r $tmp_ref_classes";
 
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+&ReportWebCommand($command." ".$parameters);
 
 if ($query->param('output') =~ /display/i) {
 
