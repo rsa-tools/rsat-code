@@ -293,7 +293,7 @@ $parameters .= " -o $graph_file > $htmap_file";
 $feature_map_command .= " ".$parameters;
 
 ## Report the command
-print "<PRE><b>Command: </b>", &RSAT::util::hide_RSAT_path($feature_map_command), "</PRE>\n" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($feature_map_command);
 
 ### execute the command
 system($feature_map_command);

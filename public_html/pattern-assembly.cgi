@@ -123,11 +123,13 @@ if ($query->param('strand') =~ /insensitive/) {
 $result_file = $tmp_file_path.".asmb";
 push @result_files, "Assembly", $result_file;
 
+$pattern_assembly_command .= " ".$parameters;
+
 ################################################################
 #### run the command
-print "<PRE>command: $pattern_assembly_command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+&ReportWebCommand($pattern_assembly_command);
 if ($query->param('output') eq "display") {
-  open RESULT, "$pattern_assembly_command $parameters |";
+  open RESULT, "$pattern_assembly_command |";
   print '<H2>Result</H2>';
   &PrintHtmlTable(RESULT, $result_file, true);
   close(RESULT);
@@ -136,7 +138,7 @@ if ($query->param('output') eq "display") {
   print "<HR SIZE = 3>";
 
 } else { 
-    &EmailTheResult("$pattern_assembly_command $parameters", $query->param('user_email'), $result_file);
+    &EmailTheResult($pattern_assembly_command, $query->param('user_email'), $result_file);
 }
 print $query->end_html();
 

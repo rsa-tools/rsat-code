@@ -180,7 +180,7 @@ if ($query->param('htmap')) {
     $parameters .= " -htmap > ".$htmap_file;
 }
 
-$XYgraph_command .= $parameters;
+$XYgraph_command .= " ".$parameters;
 
 ### execute the command ###
 @data_report = `$XYgraph_command`;
@@ -217,7 +217,7 @@ if ($htmap) {
 
 &PrintURLTable(@result_files);
 
-print "<PRE><b>Command: </b>", &RSAT::util::hide_RSAT_path($XYgraph_command), "</PRE>\n" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($XYgraph_command);
 
 
 print "<hr size='3'>";
