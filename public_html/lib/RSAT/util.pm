@@ -248,6 +248,17 @@ sub StartScript {
     my $script_name = &RSAT::util::ShortFileName($0) || 'undefined';
     my $command = join (" ", $script_name, @ARGV);
     my $login = getlogin || getpwuid($<) || "Kilroy";
+
+    ## Get hostname
+    my $hostname = `hostname`;
+    chomp($hostname);
+
+    ## Get remote address (only for Web queries)
+    my $remote_addr = "";
+    if (defined($ENV{REMOTE_ADDR})) {
+      $remote_addr = $ENV{REMOTE_ADDR};
+    }
+
     &RSAT::message::TimeWarn("Updating start script log file", $main::start_time_log_file)
       if ($main::verbose >= 4);
 
@@ -256,10 +267,12 @@ sub StartScript {
       open LOG, ">".$main::start_time_log_file;
       print LOG join ("\t",
 		      "#start_date.time",
+		      "hostname",
 		      "PID",
 		      "username",
 		      "script_name",
 		      "command",
+		      "remote_addr",
 		     ), "\n";
       close LOG;
     }
@@ -271,6 +284,7 @@ sub StartScript {
 		    $login,
 		    $script_name,
 		    $command,
+		    $remote_addr,
 		   ), "\n";
     close LOG;
     chmod 0777, $main::start_time_log_file;
