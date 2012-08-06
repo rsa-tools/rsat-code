@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.23 2012/08/04 08:45:45 jvanheld Exp $
+# $Id: consensus.cgi,v 1.24 2012/08/06 08:43:50 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -128,8 +128,8 @@ $convert_matrix_command.= " -i ".$result_file." -o ".$matrix_file;
 if ($query->param('output') eq "display") {
     #### echo the commands
     if ($ENV{rsat_echo} >= 1) {
-	print "<PRE><B>Command:</B> $command $parameters </PRE>";
-	print "<PRE><b>Conversion:</b> $convert_matrix_command</PRE>";
+      &ReportWebCommand($command." ".$parameters);
+      &ReportWebCommand($convert_matrix_command);
     }
 
     ### prepare data for piping

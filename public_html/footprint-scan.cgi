@@ -225,7 +225,7 @@ $parameters .= " -map_format ".$image_format;
 $parameters .= " -o ".$file_prefix;
 
 ## Report the command
-print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 2);
+&ReportWebCommand($command." ".$parameters);
 
 $index_file = $result_dir."/".$query_prefix."/".$taxon."/".$organism."/all_matrices_report.html";
 my $mail_title = join (" ", "[RSAT]", "footprint-scan", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());

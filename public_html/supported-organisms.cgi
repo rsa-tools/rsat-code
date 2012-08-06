@@ -38,10 +38,13 @@ $query = new CGI;
 
 $parameters = " -return ID,nb,source,last_update,taxonomy,up_from,up_to";
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+$command .= " ".$parameters;
+
+&ReportWebCommand($command);
+
 
 ### execute the command ###
-open RESULT, "$command $parameters | awk '{print \$0\"\t<a href=$ENV{rsat_www}/data/genomes/\"\$1\"/>data</a>\"}' | perl -pe 's|/;/|/|' | ";
+open RESULT, "$command | awk '{print \$0\"\t<a href=$ENV{rsat_www}/data/genomes/\"\$1\"/>data</a>\"}' | perl -pe 's|/;/|/|' | ";
 
 ### Print result on the web page
 #$result_file = "$TMP/$tmp_file_name.res";
