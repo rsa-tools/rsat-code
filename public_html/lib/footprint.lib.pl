@@ -1178,9 +1178,14 @@ sub GetOrthologs {
 
 ################################################################
 ## Predict operon leader genes for the orthologous genes
+##
+## NOTE: THIS IS VERY INEFFICIENT WHEN footprint-discovery RUNS ON ALL
+## GENES SEPARATELY, BECAUSE LEADERS ARE COMPUTED FOR EACH GENE
+## SEPARATELY. I SHOULD IMPROVE THIS BY COMPUTING LEADER GENES FOR ALL
+## THE GENES OF EACH SPECIES ONCE FOR THE WHOLE PROCESS.
 sub InferOrthoOperons {
   if  ($task{operons}) {
-    &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Get leaders of orthologous genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 2);
     &CheckDependency("operons", "orthologs");
     my $cmd = $SCRIPTS."/get-leader-multigenome ";
     $cmd .= " -i ".$outfile{orthologs};
