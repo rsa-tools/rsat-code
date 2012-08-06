@@ -174,7 +174,7 @@ if ($query->param('genes') eq "all") {
   $parameters .= " -i ".$gene_list_file;
   &DelayedRemoval($gene_list_file);
 }
-print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 $sequence_file = "$tmp_file_path.".$out_format;
 push @result_files, ("sequences", $sequence_file);
 

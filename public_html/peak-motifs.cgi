@@ -43,14 +43,11 @@ $query = new CGI;
 &RSA_header("peak-motifs result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-
-#
 ## Check security issues
 &CheckWebInput($query);
 
 ## update log file
 &UpdateLogFile();
-
 
 ################################################################
 ## command line paramters
@@ -296,6 +293,8 @@ $parameters .= " -noov -img_format png ";
 
 ### output directory
 $parameters .= " -outdir ".$output_dir_full_path;
+
+&ReportWebCommand($command." ".$parameters);
 
 ################################################################
 ## Display or send result

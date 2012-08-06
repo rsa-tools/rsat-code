@@ -93,7 +93,7 @@ push @result_files, "Result (fasta)", $result_file;
 $out_format = "fasta"; ## implant-site always exports fasta, but this variable is required for the piping form
 $command  .= " -o ".$result_file;
 
-print "<pre>$command\n</pre>" if ($ENV{rsat_echo} >=1);
+&ReportWebCommand($command);
 
 if ($query->param('output') eq "display") {
     &PipingWarning();

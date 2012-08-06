@@ -93,7 +93,7 @@ if ($query->param('line_width') =~ /\d+/) {
 $sequence_file = $tmp_file_path.".".$out_format;
 push @result_files, ("Converted sequence ($out_format)",$sequence_file);
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||

@@ -115,7 +115,7 @@ $command  .= " -o ".$result_file;
   #$command = $command . " -m " . $matrix_file;
 #}
 
-print "<pre>$command\n</pre>" if ($ENV{rsat_echo} >=1);
+&ReportWebCommand($command);
 
 if ($query->param('output') eq "display") {
     &PipingWarning();
