@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.19 2012/07/18 14:47:44 jvanheld Exp $
+# $Id: install_software.mk,v 1.20 2012/08/06 11:48:15 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -434,9 +434,8 @@ _compile_gibbs:
 
 ################################################################
 ## Get and install patser (matrix-based pattern matching)
-#PATSER_TAR=patser-v3e.1.tar.gz
 PATSER_VERSION=patser-v3b.5
-#PATSER_VERSION=patser-v3b.5
+#PATSER_VERSION=patser-v3e.1
 PATSER_TAR=${PATSER_VERSION}.tar.gz
 PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 PATSER_DIR=${SRC_DIR}/patser/${PATSER_VERSION}

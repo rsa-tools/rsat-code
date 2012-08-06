@@ -159,7 +159,6 @@ print ("<b><a href=help.oligo-analysis.html#pseudo>Pseudo-frequency</a></b> &nbs
 
 print "<hr>\n";
 
-
 &OligoReturnTable();
 
 print "<hr width=550 align=left>\n";
