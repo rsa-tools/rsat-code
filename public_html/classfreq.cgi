@@ -108,7 +108,7 @@ if (&IsReal($query->param('to'))) {
 $result_file = $tmp_file_path."_classfreq.tab";
 push @result_files, ("class frequencies",$result_file);
 
-print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo});
+&ReportWebCommand($command." ".$parameters);
 
 ################################################################
 ## Run the command
