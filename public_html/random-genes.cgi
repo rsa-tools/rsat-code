@@ -85,7 +85,7 @@ if ($query->param('replacement')) {
 $result_file = $tmp_file_path.".txt";
 push @result_files, ("random genes",$result_file);
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo});
+&ReportWebCommand($command." ".$parameters);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
