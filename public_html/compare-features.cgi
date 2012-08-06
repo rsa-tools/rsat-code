@@ -145,8 +145,9 @@ if ($uploaded_file) {
 }
 $parameters .= " -ref $tmp_ref_features";
 
+$command .= " ".$return_fields." ".$parameters;
 
-print "<PRE>command: $command $return_fields $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+&ReportWebCommand($command);
 
 $result_file = $tmp_file_path.".tab";
 push @result_files, "Comparison result", $result_file;
@@ -156,7 +157,7 @@ if ($query->param('output') =~ /display/i) {
 #    &PipingWarning();
 
     ### execute the command ###
-    open RESULT, "$command $parameters $return_fields |";
+    open RESULT, "$command |";
 
     ### Print result on the web page
     print '<H2>Result</H2>';
@@ -168,7 +169,7 @@ if ($query->param('output') =~ /display/i) {
     print '<HR SIZE=3>';
 
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
+    &EmailTheResult("$command ", $query->param('user_email'), $tmp_file_path);
 }
 
 print $query->end_html;
