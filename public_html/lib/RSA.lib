@@ -599,25 +599,6 @@ sub DelayedRemoval {
 # }
 
 
-# ################################################################
-# #### print the command-line arguments
-# sub PrintArguments {
-#   my ($local_out) = @_;
-#   my $argument_string = "";
-
-#   foreach my $a (@main::ARGV) {
-#     if (($a =~ /\s+/)  ||
-# 	($a !~ /\S+/) ||
-# 	($a =~ /[\(\)\>\<\&]/)) {
-#       $argument_string .= " '$a'";
-#     } else {
-#       $argument_string .= " $a";
-#     }
-#   }
-#   print $local_out $argument_string, "\n" if ($local_out);
-#   return $argument_string;
-# }
-
 
 ############################################################
 ###############  Genome data ###############################
