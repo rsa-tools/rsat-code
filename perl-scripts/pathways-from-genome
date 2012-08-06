@@ -1,0 +1,471 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: pathways-from-genome,v 1.1 2012/08/06 16:12:27 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+pathways-from-genome
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Taks manager developed in the context of the MICROME project,
+implemening a workflow to infer metabolic pathways from Bacterial
+genomes.
+
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item metabolism
+
+=item genome analysis
+
+=back
+
+=head1 USAGE
+
+pathways-from-genome -org Organism_name [-v #] [-o output_directory]  [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "RSA.disco.lib";
+require "footprint.lib.pl";
+require RSAT::organism;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $organism_name = "";
+
+
+  # Supported tasks
+  our @supported_tasks = qw(operons
+			    syntons
+			  );
+  our $supported_tasks = join ",", @supported_tasks;
+  our %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
+
+
+  ## Default parameters
+  our %param = ();
+  $param{operon_dist} = 55; push @param_list, "operon_dist";  ## optimal value for E.coli and B.subtilis, after an evaluation by Rekin's Janky (PhD thesis)
+  $param{operon_min_genes} = 1; push @param_list, "operon_min_genes"; ## We also want singletons because they may contain a separate enzyme-coding gene
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Organism name is mandatory
+  unless ($organism_name) {
+    &RSAT::error::FatalError("You must specify the organism (option -org)");
+  }
+
+  ## Organism must be supported in RSAT
+  my $organism = new RSAT::organism();
+  $organism->check_name($organism_name);
+
+  ## Output directory
+  if ($dir{output}) {
+    &RSAT::util::CheckOutDir($dir{output}, "", 755);
+  } else {
+    &RSAT::error::FatalError("You must define the output directory (option -outdir)");
+  }
+
+
+  ## Prefix
+  unless ($param{prefix}) {
+    $param{prefix} = $organism_name;
+  }
+  push @param_list, "prefix";
+
+
+  ## If no task is specified, run all of them
+  unless (scalar(keys(%task))) {
+    %task = %supported_task;
+  }
+
+  ## If option -task all was called, activate all tasks
+  if ($task{all}) {
+    %task = %supported_task;
+  }
+
+  ## Set all file names
+  &SetFileNames();
+
+  ################################################################
+  ## Open log file
+  $out = &OpenOutputFile($outfile{log});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Infer operons and syntons
+  &InferOperonsOrSyntons("operons");
+  &InferOperonsOrSyntons("syntons");
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{log});
+
+  &RSAT::message::TimeWarn("Output directory", $dir{output}) if ($main::verbose >= 2);
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-org Organism_name>
+
+Organsm name. Must be an organism supported in this RSAT server. The
+list of supported organisms can be obtained with
+I<supported-organisms>.
+
+=cut
+    } elsif ($arg eq "-org") {
+      $organism_name = shift(@arguments);
+
+
+=pod
+
+=item	B<-prefix output_prefix>
+
+Prefix for the output files.
+
+=cut
+    } elsif ($arg eq "-prefix") {
+      $param{prefix} = shift(@arguments);
+
+=pod
+
+=item	B<-o output_directory>
+
+Output directory.
+
+Mandatory argument.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $dir{output} = shift(@arguments);
+
+
+
+=pod
+
+=item B<-task>
+
+Specify a subset of tasks to be executed.
+
+By default, the program runs all necessary tasks. However, in some
+cases, it can be useful to select one or several tasks to be executed
+separately.
+
+Beware: task selection requires expertise, because some tasks depends
+on the prior execution of other tasks in the workflow. Selecting tasks
+before their prerequisite tasks have been completed will provoke fatal
+errors.
+
+B<Default tasks>
+
+=over
+
+=item I<all> (default)
+
+Run all supported tasks.
+
+=item I<operons>
+
+Infer operons from intergenic distances (tool I<infer-operon>).
+
+=back
+
+=cut
+    } elsif ($arg eq "-task") {
+      my @requested_tasks = split ",", shift (@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
+	}
+      }
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; peak-quality ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+
+  ## List tasks
+  printf $out "; %-22s\t%s\n", "Requested tasks", join(",", sort keys %task);
+
+  ## List directories
+  if (%dir) {
+    print $out "; Directories\n";
+    foreach my $key (sort keys (%dir)) {
+      my $value = $dir{$key};
+#    while (my ($key,$value) = each %dir) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  ## List input files
+  if (%infile) {
+    print $out "; Input files\n";
+    foreach my $key (sort keys (%infile)) {
+      my $value = $infile{$key};
+#    while (my ($key,$value) = each %infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  ## List output files
+  if (%outfile) {
+    print $out "; Output files\n";
+    foreach my $key (sort keys (%outfile)) {
+      my $value = $outfile{$key};
+#    while (my ($key,$value) = each %outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  ## List parameter values
+  print $out "; Parameter values\n";
+  foreach my $param_name (@param_list) {
+    print $out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
+  }
+}
+
+
+################################################################
+## Infer operons from gene coordinates
+sub InferOperonsOrSyntons {
+  my ($operons_or_syntons) = @_;
+  unless ($operons_or_syntons) {
+    $operons_or_syntons = "operon";
+  }
+  my $dist = $param{operon_dist};
+
+  ## For syntons, set distance to a very very large value
+  if ($operons_or_syntons eq "syntons") {
+    $dist = 10000000;
+  }
+
+  ## Define suffix for operon and synton files
+  my $operon_suffix = "ming".$param{operon_min_genes};
+  unless ($operons_or_syntons eq "syntons") {
+    $operon_suffix .= "_dist".$dist;
+  }
+
+  ## Inferred operons
+  $dir{$operons_or_syntons} = $dir{output}."/".$operons_or_syntons;
+  $outfile{"gene_".$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", "gene_".$operons_or_syntons."_".$operon_suffix);
+  $outfile{"gene_".$operons_or_syntons."_html"} = $outfile{"gene_".$operons_or_syntons}; $outfile{"gene_".$operons_or_syntons."_html"} =~ s/\.tab$/\.html/;
+
+  ## Infer operon for each gene
+  if ($task{$operons_or_syntons}) {
+    &RSAT::message::TimeWarn("Inferring ".$operons_or_syntons, $organism_name, "dist=".$dist, "min_gene_nb=".$param{operon_min_genes}) if ($main::verbose >= 2);
+    &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
+    my $cmd = $SCRIPTS."/infer-operon -v 1 ";
+    $cmd .= " -sep '-' -return q_info,operon,leader,gene_nb";
+    $cmd .= " -org ".$organism_name;
+    $cmd .= " -all ";
+    $cmd .= " -min_gene_nb ".$param{operon_min_genes};
+    $cmd .= " -dist ".$dist;
+    $cmd .= " | ".$SCRIPTS."/add-gene-info";
+    $cmd .= " -org ".$organism_name;
+    $cmd .= " -col 2 -info descr";
+    $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons};
+    $cmd .= "; ".$SCRIPTS."/text-to-html ";
+    $cmd .= " -i ".$outfile{"gene_".$operons_or_syntons};
+    $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons."_html"};
+    $cmd .= " -chunk 10000";
+    &one_command($cmd, 1) ;
+    &RSAT::message::Info("Gene-operons (tab)", $outfile{"gene_".$operons_or_syntons}) if ($main::verbose >= 3);
+    &RSAT::message::Info("Gene-operons (html)", $outfile{"gene_".$operons_or_syntons."_html"}) if ($main::verbose >= 3);
+  }
+
+   ## Generate a table with a single line per operon
+  $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix);
+  $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/;
+  if ($task{$operons_or_syntons}) {
+    my $cmd = "";
+    $cmd .= "echo '; ".$operons_or_syntons." ' > ".$outfile{$operons_or_syntons};
+    $cmd .= "; echo '; Organism               \t".$organism_name."' >> ".$outfile{$operons_or_syntons};
+    $cmd .= "; echo '; Max intergenic distance\t".$dist."' >> ".$outfile{$operons_or_syntons};
+    $cmd .= "; echo '#".$operons_or_syntons."\tleader\tgene_nb' >> ".$outfile{$operons_or_syntons};
+    $cmd .= "; grep -v '^;' ".$outfile{"gene_".$operons_or_syntons};
+    $cmd .= " | grep -v '^#'";
+    $cmd .= " | cut -f 7,8,9";
+    $cmd .= " | sort -u ";
+    $cmd .= ">> ".$outfile{$operons_or_syntons};
+    $cmd .= "; ".$SCRIPTS."/text-to-html ";
+    $cmd .= " -i ".$outfile{$operons_or_syntons};
+    $cmd .= " -o ".$outfile{$operons_or_syntons."_html"};
+    $cmd .= " -chunk 10000";
+    &one_command($cmd, 1) ;
+    &RSAT::message::Info("Operons (tab)", $outfile{$operons_or_syntons}) if ($main::verbose >= 3);
+    &RSAT::message::Info("Operons (html)", $outfile{$operons_or_syntons."_html"}) if ($main::verbose >= 3);
+  }
+}
+
+
+################################################################
+## Specify output directory and files.
+##
+## Output directories and files are specified irrespective of the
+## requested tasks, because they are needed to generate the reports.
+sub SetFileNames {
+  $outfile{log} = &OutFileName("", ".txt", "log");
+}
+
+
+__END__
