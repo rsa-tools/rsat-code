@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.50 2012/08/03 19:49:18 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.51 2012/08/06 22:52:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -206,7 +206,7 @@ $command .= $parameters;
 $result_file = $tmp_file_path.".tab";
 push @result_files, ('dyads', $result_file);
 
-print "<PRE><B>Command:</B> ", &RSAT::util::hide_RSAT_path($command), "</PRE>" if ($ENV{rsat_echo});
+&ReportWebCommand($command);
 
 &SaveCommand("$command", $tmp_file_path);
 
