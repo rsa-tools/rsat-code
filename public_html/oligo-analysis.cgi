@@ -253,7 +253,7 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
 
 $command .= $parameters;
 
-print "<PRE>command: ", &RSAT::util::hide_RSAT_path($command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+&ReportWebCommand($command." ".$parameters);
 
 &SaveCommand("$command", $tmp_file_path);
 
@@ -294,7 +294,6 @@ if ($query->param('output') =~ /display/i) {
       $pattern_assembly_command .= " -o ".$assembly_file;
 
       unless ($ENV{RSA_ERROR}) {
-
 	## Assemble the significant patterns
 	print "<H2>Pattern assembly</H2>\n";
 	print "<PRE>pattern-assembly command: ", &RSAT::util::hide_RSAT_path($pattern_assembly_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
@@ -302,12 +301,11 @@ if ($query->param('output') =~ /display/i) {
 	open ASSEMBLY, $assembly_file;
 	print "<PRE>\n";
 	while (<ASSEMBLY>) {
-	  s|$ENV{RSAT}/||g;
+#	  s|$ENV{RSAT}/||g;
 	  print;
 	}
 	print "</PRE>\n";
 	close(ASSEMBLY);
-
 
 	## Convert pattern-assembly result into PSSM
 	if ($query->param('to_matrix')) {

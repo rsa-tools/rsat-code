@@ -434,6 +434,14 @@ sub MultiSequenceChoice {
 
 
 ################################################################
+## Print the commande on the Web interface (for debugging)
+sub ReportWebCommand {
+  my ($command) = @_;
+  print "<PRE>", &RSAT::util::hide_RSAT_path($command), "\n</PRE>\n" if ($ENV{rsat_echo} >= 1);
+}
+
+
+################################################################
 ## Treat input sequence for the RSAT web server
 ## The seqence can be specified in 3 ways :
 ## - as a file to upload from the client to the server $query->param('uploaded_file')

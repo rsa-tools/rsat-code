@@ -131,7 +131,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 }
 
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 ### execute the command ###
 

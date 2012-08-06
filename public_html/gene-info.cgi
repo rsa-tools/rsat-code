@@ -79,7 +79,7 @@ $parameters .= " -org $organism";
 $result_file = $tmp_file_path.".tab";
 push @result_files, ("gene info",$result_file);
 
-print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo});
+&ReportWebCommand($command." ".$parameters);
 
 
 ## Update log file

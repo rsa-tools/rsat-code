@@ -180,7 +180,7 @@ $parameters .= $tasks;
 $parameters .= " -o ".$result_dir;
 
 ## Report the command
-print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 #$index_file = $result_subdir."/";
 $index_file = $result_dir."/";

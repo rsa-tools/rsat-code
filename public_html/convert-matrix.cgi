@@ -36,9 +36,6 @@ $query = new CGI;
 ## Check security issues
 &CheckWebInput($query);
 
-## update log file
-&UpdateLogFile();
-
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
@@ -159,7 +156,10 @@ if ($output_format eq 'tab') {
 }
 $parameters .= " -o ".$result_file;
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
+
+## Update log file
+&UpdateLogFile();
 
 ### execute the command ###
 if ($query->param('output') eq "display") {

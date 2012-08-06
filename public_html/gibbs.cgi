@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.22 2012/08/04 05:05:14 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.23 2012/08/06 08:43:50 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -29,7 +29,7 @@ $command = "$BIN/gibbs";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -to tab -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "gibbs.%s", &AlphaDate;
+$tmp_file_name = sprintf "gibbs.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -88,16 +88,16 @@ if ($query->param('output') eq "display") {
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
     $matrix_file = "$TMP/$tmp_file_name.matrix";
-    
+
     system "$command $parameters > $result_file";
 
     $convert_matrix_command .= " -i ".$result_file." -o ".$matrix_file;
     system "$convert_matrix_command";
     if ($ENV{rsat_echo} >= 1) {
-	print "<PRE><B>Command:</B> $command $parameters </PRE>";
-	print "<PRE><B>Conversion:</B> $convert_matrix_command </PRE>";
+      &ReportWebCommand($command." ".$parameters);
+      &ReportWebCommand($convert_matrix_command);
     }
-    
+
     ### Print result on the web page
     print '<H4>Result</H4>';
     print "<PRE>";
