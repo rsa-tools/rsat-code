@@ -110,7 +110,7 @@ if ($query->param('graphs')) {
 ################################################################
 
 ## Report the command
-print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 ## execute the command
 

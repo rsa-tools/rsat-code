@@ -178,7 +178,7 @@ unless (($query->param("sequence_type") =~ /chromosome/) ||
 #    }
 }
 
-print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command);
 
 ################################################################
 ### execute the command ###

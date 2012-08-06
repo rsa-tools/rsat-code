@@ -214,7 +214,7 @@ $parameters .= " -archive -o ".$result_dir."/".$file_prefix;
 ###########################
 #Command
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 ## Convert the absolute path of the directory into a path relative to the tmp directory for the Web link
 #$result_subdir = $tmp_file_name;
