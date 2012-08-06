@@ -572,7 +572,8 @@ sub CheckOutDir {
 
 Define one output file name by concatenating arguments.
 
-A variable $main::dir{output} must have been defined beforehand.
+The variable $main::dir{output} and $main::param{prefix} must have
+been defined beforehand.
 
 Usage:
  $outfile{key} = &OutFileName($subdir, $extension, @name_elements);
