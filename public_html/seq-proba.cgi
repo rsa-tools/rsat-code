@@ -106,7 +106,7 @@ foreach my $field (@return_fields) {
 $result_file = $tmp_file_path.".tab";
 push @result_files, ("Result file",$result_file);
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||

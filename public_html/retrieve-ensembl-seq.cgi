@@ -241,7 +241,7 @@ if ($query->param('header_org')) {
 ### Line width
 my $lw = 60;
 
-#print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
+#&ReportWebCommand($command." ".$parameters);
 
 my %args = (
             'organism' => $organism_name,

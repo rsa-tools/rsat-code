@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.15 2012/08/03 19:36:49 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.16 2012/08/06 23:00:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -84,7 +84,7 @@ if (&IsNatural($query->param('mismatches'))) {
 
 #$parameters .= " -o $TMP/bounpurged";
 
-print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {

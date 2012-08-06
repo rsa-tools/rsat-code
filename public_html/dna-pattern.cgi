@@ -153,6 +153,7 @@ if ($query->param('subst') =~ /^\d+$/) {
   $parameters .= " -subst ".$query->param('subst');
 }
 
+&ReportWebCommand($command." ".$parameters);
 
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
@@ -163,7 +164,6 @@ if ($query->param("output") =~ /display/i) {
   $result_file = $tmp_file_path.".dnapat";
   push @result_files, ('dna-pattern result', $result_file);
   open RESULT, "$command $parameters |";
-  print "<pre>$command $parameters </b></pre>" if ($ENV{rsat_echo});
 
   ### Print the result on Web page
   print "<h2>Result</h2>";
