@@ -60,13 +60,13 @@ $command .= "| $patser_command $patser_parameters ";
 $command .= "| $features_from_patser_cmd ";
 $command .= "| $add_orf_function_command -org $org ";
 
+&ReportWebCommand($command);
 
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
     open RESULT, "$command & |";
 
     unless ($query->param('table')) {
