@@ -84,7 +84,7 @@ local $result_file = $tmp_file_path."_output.".$output_format;
 push @result_files, ("Result file",$result_file);
 $parameters .= " -o ".$result_file;
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {

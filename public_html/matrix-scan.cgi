@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.43 2012/08/03 19:33:24 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.44 2012/08/06 23:00:42 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -96,7 +96,7 @@ push @result_files, ("Scan result (FT)",$result_file);
 
 ################################################################
 #### echo the command (for debugging)
-print "<pre>$command</pre>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command);
 
 ################################################################
 ### execute the command ###

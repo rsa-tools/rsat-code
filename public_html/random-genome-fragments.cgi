@@ -144,7 +144,7 @@ push @result_files, ("Genome fragments ($output_format)",$result_file);
 ############################################################
 ## Command
 
-print "<PRE>command: $command $parameters <P>\n</PRE>"  if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 ### execute the command ###
 open RESULT, "$command $parameters |";

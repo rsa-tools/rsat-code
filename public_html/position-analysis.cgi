@@ -155,8 +155,7 @@ if ((&IsInteger($offset)) && ($offset != 0)) {
   $parameters .= " -offset ".$offset;
 }
 
-print "<PRE>command: ", &RSAT::util::hide_RSAT_path($command." ".$parameters), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-
+&ReportWebCommand($command." ".$parameters);
 
 if ($query->param('output') =~ /display/i) {
 
