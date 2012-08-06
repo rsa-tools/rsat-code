@@ -1718,7 +1718,7 @@ sub CheckWebInput {
     $field_contents =~ s/\s+/ /g; ## make a single-line of the field content
     if ($field_contents =~ /(\<[^\<\>]*\>)/) {
       my $tag = $1;
-      &RSAT::server::ReportWebAttack(&ShortFileName($0), "HTML tag", $tag, $user_email);
+      &RSAT::server::ReportWebAttack(&ShortFileName($0), "HTML_tag", $tag, $user_email);
       $tag =~ s/</&lt;/g;
       $tag =~ s/>/&gt;/g;
       &RSAT::error::FatalError("Invalid content for field \"$field\"", "<pre>$tag</pre>", "HTML tags are not allowed.");
