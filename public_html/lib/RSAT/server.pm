@@ -288,9 +288,12 @@ sub UpdateExecTimeLogFile {
     $elapsed = "Unspecified";
   }
   my $login = getlogin || getpwuid($<) || "Kilroy";
+
+  ## Get host name
   my $hostname = `hostname`;
   chomp($hostname);
 
+  ## Get remote address (only for Web queries)
   my $remote_addr = "";
   if (defined($ENV{REMOTE_ADDR})) {
     $remote_addr = $ENV{REMOTE_ADDR};
@@ -312,7 +315,7 @@ sub UpdateExecTimeLogFile {
 		    "username",
 		    "script_name",
 		    "command",
-		    "REMOTE_ADDR",
+		    "remote_addr",
 		   ), "\n";
     close LOG;
   }
