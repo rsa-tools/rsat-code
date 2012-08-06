@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.11 2012/06/15 07:09:25 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.12 2012/08/06 11:38:42 jvanheld Exp $
 #
 ############################################################
 
@@ -287,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
   my ($input,
        $isinputfile,
@@ -551,7 +551,7 @@ my ($inputfile,
 #     &RSAT::message::Info("KWALKS_ROOT: ", $ENV{KWALKS_ROOT}) if ($verbose >= 1);
 #     &RSAT::message::Info("CLASSPATH: ",$ENV{CLASSPATH}) if ($verbose >= 1); 
 #     &RSAT::message::TimeWarn("Loading reactions from extracted graph") if ($verbose >= 1);
-    open (INFILE, '<'.$inputfile) or die "couldn't open the file!: $inputfile";
+    open (INFILE, '<'.$inputfile) || &RSAT::error::FatalError("Could not open file", $inputfile);
     my $i = 0;
     my $stop = "";
     my $line;
@@ -652,8 +652,8 @@ my ($inputfile,
     ################################################################
     # Adding description to the pathway graph
     &RSAT::message::TimeWarn("Adding descriptions to pathway graph") if ($verbose >= 1);
-    open (INFILE, '<'.$inputfile) or die "couldn't open the file!";
-    open (OUTFILE, '>'.$outfile{graph_annot}) or die "couldn't open the file!";
+    open (INFILE, '<'.$inputfile) || &RSAT::error::FatalError("Could not open file", $inputfile);
+    open (OUTFILE, '>'.$outfile{graph_annot}) || &RSAT::error::FatalError("Could not write file", $outfile{graph_annot});
     #     print $group_descriptor;
     while (<INFILE>) {
       my($line) = $_;
@@ -765,7 +765,7 @@ sub MapSeeds{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -880,7 +880,7 @@ sub QueryExactMetabNames{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
