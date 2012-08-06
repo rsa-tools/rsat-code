@@ -146,7 +146,7 @@ $command .= $parameters;
 $result_file = $tmp_file_path.".tab";
 push @result_files, ("oligos", $result_file);
 
-print "<PRE>command: $command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+&ReportWebCommand($command);
 
 if ($query->param('output') =~ /display/i) {
     &PipingWarning();

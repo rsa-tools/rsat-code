@@ -142,7 +142,7 @@ $draw_heatmap = 0 unless ($output_format eq 'transitions');
 $result_file = $tmp_file_path.".".$output_format;
 push @result_files, "Background model file ($output_format)", $result_file;
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+&ReportWebCommand($command." ".$parameters);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
