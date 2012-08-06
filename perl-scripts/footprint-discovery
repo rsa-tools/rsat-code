@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.92 2012/07/25 16:52:26 amedina Exp $
+# $Id: footprint-discovery,v 1.93 2012/08/06 22:48:30 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -488,6 +488,7 @@ sub RunFootprintDisco {
   local $batch_cmd = "";
   local $out = "";
   local $genes = "";
+  local $rand = 0; ## anlyze promoters of randomly selected genes rather than groups of orthologs
 
   ################################################################
   ## Initialize output directory + output files
@@ -1245,7 +1246,7 @@ sub OpenMainIndex {
   $html_title = $taxon if ($taxon);
   $html_title .= " ".$organism_name if ($organism_name);
   $html_title .= " ".$bg_model if ($bg_model);
-  $html_title .= " "."_rand" if ($main::rand);
+  $html_title .= " "."_rand" if ($rand);
   print $main_index &PrintHtmlResultHeader(program=>"footprint-discovery", title=>"$html_title", refresh_time=>$refresh_time);
 
 #  print $main_index "<h1>", $html_title, "</h1\n";
