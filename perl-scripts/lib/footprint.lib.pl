@@ -983,7 +983,8 @@ sub MainIndexFileName {
 ## Add one file to the index file
 sub IndexOneFile {
   my ($name, $file, %args) = @_;
-  my $short_file = `basename $file`;
+#  my $short_file = `basename $file`;
+  my $short_file = &ShortFileName($file);
   print $index "<tr valign=top>\n";
   print $index "<td>", $name, "<td>",  &LinkOneFile($outfile{index}, $file, $short_file), "</td>\n";
 
@@ -992,24 +993,6 @@ sub IndexOneFile {
   }
   print $index ("</tr>\n\n");
 }
-
-
-################################################################
-## Return a HTML link from an index file to a target file
-sub LinkOneFile {
-  my ($from_file, $to_file, $text) = @_;
-  my $path = "";
-  my $link = "";
-  $text = $text || $to_file;
-  if (-e ($to_file)) {
-    $path = &RSAT::util::RelativePath($from_file, $to_file);
-    $link = join ("",  "<a href='",$path, "'>", $text, "</a>");
-  } else {
-    $link = join ("",  "<font color='red'>", $text, "</font>");
-  }
-  return $link;
-}
-
 
 ################################################################
 ## Predict operon leader genes of the query genes
