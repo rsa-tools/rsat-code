@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.5 2012/08/07 14:35:26 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.6 2012/08/07 16:44:08 jvanheld Exp $
 #
 ############################################################
 
@@ -80,7 +80,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -93,6 +93,7 @@ package main;
 
   ## Image formats
   our @image_formats = ("png", "pdf");
+  our $icon_height = "200"; ## Height for the previsualization icons in the HTML reports
 
   ## Supported tasks
   our @supported_tasks = qw(all
@@ -116,6 +117,23 @@ package main;
   our %param = ();
   $param{operon_dist} = 55; push @param_list, "operon_dist";  ## optimal value for E.coli and B.subtilis, after an evaluation by Rekin's Janky (PhD thesis)
   $param{operon_min_genes} = 1; push @param_list, "operon_min_genes"; ## We also want singletons because they may contain a separate enzyme-coding gene
+  $param{skip_org} = 0; ## Skip the first entries of the organism table
+  $param{last_org} = 0; ## Stop reading organism table after a user-specified number of organisms
+
+  ## Default column order for organism cross-table
+  our @org_table_columns = qw(tax_id 
+			     microscope_genome_id
+			     microscope_metacyc_id
+			     organism_name
+			     uniprot_proteome
+			     rsat_organism_id
+			     obiw_genome_id
+			     family_name
+			     family_taxid
+			     order_name
+			     order_taxid);
+  our %org_table_column = ();
+  &IndexOrgTableColumns();
 
   ################################################################
   ## Read argument values
@@ -136,7 +154,13 @@ package main;
     %task = %supported_task;
   }
 
-  ## Organism name is mandatory
+  ################################################################
+  ## Read organism names + cross references from organism table if
+  ## specified.
+
+  &ReadOrganismCrossTable() if ($infile{organism_table});
+
+  ## Check organism names
   our $org_nb = scalar(@organism_names);
   if ($org_nb <= 0) {
     &RSAT::error::FatalError("You must specify at least one organism (option -org)");
@@ -255,6 +279,58 @@ package main;
 ################################################################
 
 ################################################################
+## Index columns of the organism cross-table
+sub IndexOrgTableColumns {
+  for my $col (1..scalar(@org_table_columns)) {
+    $field = lc($org_table_columns[$col-1]);
+    $org_table_column{$field} = $col;
+  }
+}
+
+################################################################
+## Read organism cross-table
+sub ReadOrganismCrossTable {
+  my ($orgs) = &OpenInputFile($infile{organism_table});
+
+  my $l = 0;
+  while (<$orgs>) {
+    $l++;
+    next if /^;/;		## Skip comment lines
+    next unless /\S/;		## Skip empty lines
+    chomp();
+
+    ## Check last organism option
+    if (($param{last_org} > 0) && (scalar@organism_names >= $param{last_org})) {
+      &RSAT::message::Info("Stop reading organism table, due to option -last_org ".$param{last_org});
+      last;
+    }
+    ## Check skip organism option
+    if (scalar@organism_names < $param{skip_org}) {
+      &RSAT::message::Info("Skipping line ".$l, "option -skip_org ".$param{skip_org});
+      next;
+    }
+
+    ## Parse header line
+    if (/^#/) {
+      s/^#//;
+      @org_table_columns = split "\t/";
+      &IndexOrgTableColumns(); ## Update the column index of organism cross-table
+      next;
+    }
+
+    ## Parse one line
+    my @fields = split /\t/;
+    my $organism_name = $fields[$org_table_column{rsat_organism_id}-1];
+    if ($organism_name) {
+      push @organism_names, $organism_name;
+    } else {
+      &RSAT::message::Warning($infile{organism_table}, "line ".$l, "missing field", "rsat_organism_id", "expected in column ".$org_table_column{rsat_organism_id}, );
+    }
+  }
+  close $orgs;
+}
+
+################################################################
 ## Clos the synthetic table
 sub CloseSynthesis {
   my ($handle) = @_;
@@ -336,6 +412,8 @@ Organism name. Must be an organism supported in this RSAT server. The
 list of supported organisms can be obtained with
 I<supported-organisms>.
 
+This option is incompatible with the option -org_table.
+
 Multiple organisms can be specifie by calling repeatedly the option
 -org.
 
@@ -349,9 +427,72 @@ Example:
 
 =cut
     } elsif ($arg eq "-org") {
+      &RSAT::error::FatalError("Options -org and -org_table are mutually incompatible") if ($infiel{organism_table});
       my $organism_name = shift(@arguments);
       push @organism_names, $organism_name;
 
+=pod
+
+=item B<-org Organism_table>
+
+
+Tab-delimited text file indicating the organism names + their
+cross-references to a series of external databases.
+
+This option is incompatible with the option -org.
+
+The first columns of the organism table must contain the following
+fields.
+
+=over
+
+=item RSAT organism identifier
+
+All RSAT organism IDs must be an organism supported in this RSAT
+server.
+
+=item Microscope genome identifier
+
+=item NCBI TAXID
+
+=back
+
+Additional columns are currently ignored.
+
+
+=cut
+    } elsif ($arg eq "-org_table") {
+      &RSAT::error::FatalError("Options -org and -org_table are mutually incompatible") if (scalar(@Organism_names) > 0);
+      $infile{organism_table} = shift(@arguments);
+
+
+=pod
+
+=item B<-last_org last_organism_number>
+
+Stop after having analyzed the specified number of organisms. This
+option is useful for debugging or for analyzing subsets of the
+organism table.
+
+=cut
+    } elsif ($arg eq "-last_org") {
+      $param{last_org} = shift(@arguments);
+      &RSAT::error::FatalError($param{last_org}, "Invalid value for option -last_org. Should be a Natural number.")
+	unless (&RSAT::util::IsNatural($param{last_org}));
+
+=pod
+
+=item B<-skip_org skip_organism_number>
+
+Skip the specified number of organisms when reading organism
+table. This option is useful for debugging, or for resuming an
+interrupted analysis.
+
+=cut
+    } elsif ($arg eq "-skip_org") {
+      $param{skip_org} = shift(@arguments);
+      &RSAT::error::FatalError($param{skip_org}, "Invalid value for option -skip_org. Should be a Natural number.")
+	unless (&RSAT::util::IsNatural($param{skip_org}));
 
 =pod
 
@@ -562,7 +703,7 @@ sub InferOperonsOrSyntons {
        $cmd .= " -format ".$img_format;
        $cmd .= " -xgstep1 5" unless ($img_format eq "pdf");
        $cmd .= " -xmin 0 -ymin 0";
-       $cmd .= " -lines -legend  -xsize 600 -ysize 400";
+       $cmd .= " -lines -legend  -xsize 800 -ysize 400";
        $cmd .= " -xleg1 'Number of genes per ".$operons_or_syntons."' -yleg1 'Number of predicted ".$operons_or_syntons."'";
        $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_syntons." in ".$organism_name."\"";
        $cmd .= " -o ".$outfile{$operons_or_syntons."_stats_".$img_format};
@@ -585,6 +726,9 @@ sub InferOperonsOrSyntons {
   }
 
   print $syn "<h3>Statistics</h3>";
+  print $syn "<table class='whitebg'>";
+  print $syn "<tr>";
+  print $syn "<td>";
 
   ## Read statistics
   if (-e $outfile{$operons_or_syntons."_stats"}) {
@@ -601,28 +745,32 @@ sub InferOperonsOrSyntons {
     }
 
     ## Add information in the organism-specific synthesis
-    print $syn "Nb genes: ", $stats{sum};
+    print $syn "<br>Nb genes: ", $stats{sum};
     print $syn "<br>Nb ".$operons_or_syntons.": ", $stats{count};
-    print $syn "<br>Mean size: ", $stats{mean};
+    print $syn "<br>Mean size: ", sprintf("%.1f", $stats{mean});
     print $syn "<br>Max size: ", $stats{max};
 
     ## Add info in the main synthesis
-    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $stats{count}),  "</td>";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $stats{count}),  "</td>\n";
 
   } else {
     print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_syntons."_stats"}, "</font></p>\n";
   }
 
   ## Display size distribution
+  print $syn "<td>";
   if (-e $outfile{$operons_or_syntons."_stats_png"}) {
     print $syn "<p>", &HtmlDisplayOneImage($outfile{$operons_or_syntons."_stats_png"},
 					   base=>$outfile{synthesis},
 					   href=>$outfile{$operons_or_syntons."_stats_pdf"},
-					   href_param=>"height='2' border=1",
+					   img_param=>"height='".$icon_height."' border=1",
 					  ), "</p>\n";
   } else {
     print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{$operons_or_syntons."_stats_png"}, "</font></p>\n";
   }
+  print $syn "</td>";
+  print $syn "<tr>";
+  print $syn "</table>\n";
 
   ## Append table of links to the HTML report
   print $syn &LinkTable("Files: ".$operons_or_syntons, @for_synthesis);;
@@ -634,11 +782,13 @@ sub InferOperonsOrSyntons {
 sub HtmlDisplayOneImage {
   my ($img_file, %args) = @_;
   my $href = $args{href} || $img_file;
+  my $href_param = $args{href_param} || "";
   my $base  = $args{base} || ".";
+  my $img_param = $args{img_param} || "";
   my $img_path = &RSAT::util::RelativePath($base, $img_file);
   my $href_path = &RSAT::util::RelativePath($base, $href);
-  my $html = "<a href='".$href_path."' ".$args{href_param}.">";
-  $html .= "<img src='".$img_path."'>";
+  my $html = "<a href='".$href_path."' ".$href_param.">";
+  $html .= "<img src='".$img_path."' ".$img_param.">";
   $html .= "</a>";
 #   &RSAT::message::Debug("\nimg_file=".$img_file,
 # 		       "\nhref=".$href,
