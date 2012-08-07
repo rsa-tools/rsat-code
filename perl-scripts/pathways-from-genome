@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.3 2012/08/07 06:59:27 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.4 2012/08/07 09:44:41 jvanheld Exp $
 #
 ############################################################
 
@@ -80,7 +80,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -108,6 +108,8 @@ package main;
     $supported_task{$task} = 1;
   }
 
+  ## Organism must be supported in RSAT
+  my $organism = new RSAT::organism();
 
   ## Default parameters
   our %param = ();
@@ -121,14 +123,7 @@ package main;
   ################################################################
   ## Check argument values
 
-  ## Organism name is mandatory
-  unless ($organism_name) {
-    &RSAT::error::FatalError("You must specify the organism (option -org)");
-  }
-
-  ## Organism must be supported in RSAT
-  my $organism = new RSAT::organism();
-  $organism->check_name($organism_name);
+  &RSAT::message::TimeWarn("Checking parameters") if ($main::verbose >= 1);
 
   ## Output directory
   if ($dir{output}) {
@@ -136,13 +131,6 @@ package main;
   } else {
     &RSAT::error::FatalError("You must define the output directory (option -outdir)");
   }
-
-
-  ## Prefix
-  unless ($param{prefix}) {
-    $param{prefix} = $organism_name;
-  }
-  push @param_list, "prefix";
 
 
   ## If no task is specified, run all of them
@@ -155,36 +143,61 @@ package main;
     %task = %supported_task;
   }
 
-  ################################################################
-  ## Open log file
-  $outfile{log} = &OutFileName("", ".txt", "log");
-  $out = &OpenOutputFile($outfile{log});
+  ## Organism name is mandatory
+  our $org_nb = scalar(@organism_names);
+  if ($org_nb <= 0) {
+    &RSAT::error::FatalError("You must specify at least one organism (option -org)");
+  }
+
 
   ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose >= 1);
+  ## Iterate over selected organisms
 
-  ################################################################
-  ## Open the organism-specific HTML report
-  $outfile{synthesis} = &OutFileName("html", ".html", $organism_name."_synthesis");
-  $syn = &OpenOutputFile($main::outfile{synthesis});
-  print $syn &PrintHtmlResultHeader(program=>"pathways-from-genomes", "title"=>$main::param{title}, "result_toc"=>0, refresh_time=>$refresh_time);
+  my $org_counter = 0;
+  foreach $organism_name (@organism_names) {
+    $org_counter++;
+    &RSAT::message::TimeWarn("Organism", $org_counter."/".$org_nb, $organism_name) if ($main::verbose >= 1);
 
-  ################################################################
-  ## Infer operons and syntons
-  &InferOperonsOrSyntons("operons");
-  &InferOperonsOrSyntons("syntons");
+    ## Theck that organism is supported in RSAT
+    $organism->check_name($organism_name);
 
-  ################################################################
-  ## Report execution time and close output stream
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-  close $out if ($outfile{log});
-  ## End of the HTML file
-  &CloseSynthesis();
+    ## Prefix
+    unless ($param{prefix}) {
+      $param{prefix} = $organism_name;
+    }
+    push @param_list, "prefix";
 
-  &RSAT::message::TimeWarn("Output directory", $dir{output}) if ($main::verbose >= 2);
-  &RSAT::message::TimeWarn("Synthesis", $outfile{synthesis}) if ($main::verbose >= 2);
+    ################################################################
+    ## Open log file
+    $outfile{log} = &OutFileName("", ".txt", "log");
+    $out = &OpenOutputFile($outfile{log});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose >= 1);
+
+    ################################################################
+    ## Open the organism-specific HTML report
+    $outfile{synthesis} = &OutFileName("html", ".html", $organism_name."_synthesis");
+    $syn = &OpenOutputFile($main::outfile{synthesis});
+    print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$main::param{title}, "result_toc"=>0, refresh_time=>$refresh_time);
+
+    ################################################################
+    ## Infer operons and syntons
+    &InferOperonsOrSyntons("operons");
+    &InferOperonsOrSyntons("syntons");
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out if ($outfile{log});
+    ## End of the HTML file
+    &CloseSynthesis();
+
+    &RSAT::message::TimeWarn("\tOutput directory", $dir{output}) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\tSynthesis", $outfile{synthesis}) if ($main::verbose >= 1);
+  }
 
   exit(0);
 }
@@ -274,10 +287,21 @@ Organsm name. Must be an organism supported in this RSAT server. The
 list of supported organisms can be obtained with
 I<supported-organisms>.
 
+Multiple organisms can be specifie by calling repeatedly the option
+-org.
+
+Example:
+
+ pathways-from-genome -v 1 \
+    -org Bacillus_subtilis_168_uid57675 \
+    -org Mycoplasma_pneumoniae_M129_uid57709 \
+    -o results/pathways_from_genome
+
+
 =cut
     } elsif ($arg eq "-org") {
-      $organism_name = shift(@arguments);
-
+      my $organism_name = shift(@arguments);
+      push @organism_names, $organism_name;
 
 =pod
 
@@ -435,7 +459,7 @@ sub InferOperonsOrSyntons {
 
   ## Infer operon for each gene
   if ($task{$operons_or_syntons}) {
-    &RSAT::message::TimeWarn("Inferring ".$operons_or_syntons, $organism_name, "dist=".$dist, "min_gene_nb=".$param{operon_min_genes}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("\tInferring ".$operons_or_syntons, "dist=".$dist, "min_gene_nb=".$param{operon_min_genes}) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
     my $cmd = $SCRIPTS."/infer-operon -v 1 ";
     $cmd .= " -sep '-' -return q_info,operon,leader,gene_nb";
@@ -480,7 +504,7 @@ sub InferOperonsOrSyntons {
   }
 
   ## Compute statistics on operon sizes
-  &RSAT::message::TimeWarn("Distribution of ".$operons_or_syntons." sizes for", $organism_name);
+  &RSAT::message::TimeWarn("\tComputing ".$operons_or_syntons." size distribution") if ($main::verbose >= 1);
   $outfile{$operons_or_syntons."_stats"} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix."_stats"); push @for_synthesis, $operons_or_syntons."_stats";
   for my $img_format (@image_formats) {
     $outfile{$operons_or_syntons."_stats_".$img_format} = &OutFileName($operons_or_syntons, ".".$img_format, $operons_or_syntons."_".$operon_suffix."_stats"); push @for_synthesis, $operons_or_syntons."_stats_".$img_format;
@@ -495,7 +519,8 @@ sub InferOperonsOrSyntons {
        $cmd .= " -i ".$outfile{$operons_or_syntons."_stats"};
        $cmd .= " -xcol 1 -ycol 4,5,6";
        $cmd .= " -format ".$img_format;
-       $cmd .= " -xgstep1 5 -xmin 0 -ymin 0";
+       $cmd .= " -xgstep1 5" unless ($img_format eq "pdf");
+       $cmd .= " -xmin 0 -ymin 0";
        $cmd .= " -lines -legend  -xsize 600 -ysize 400";
        $cmd .= " -xleg1 'Number of genes per ".$operons_or_syntons."' -yleg1 'Number of predicted ".$operons_or_syntons."'";
        $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_syntons." in ".$organism_name."\"";
@@ -511,6 +536,13 @@ sub InferOperonsOrSyntons {
   ################################################################
   ## Summarize the operon results
   print $syn "<hr><h2>", ucfirst($operons_or_syntons), "</h2>";
+
+  print $syn "<br>Min nb of genes per ".$operons_or_syntons.": ".$param{operon_min_genes}."\n";
+  if ($operons_or_syntons eq "operons") {
+    print $syn "<br>Max intergenic distance : ".$param{operon_dist}."\n";
+  } else {
+  }
+
   print $syn "<h3>Statistics</h3>";
 
   ## Read statistics
@@ -570,7 +602,8 @@ sub LinkTable {
   my ($title, @output_file_keys) = @_;
   $html = "";
   $html .= "<h3>".$title."</h3>\n";
-  $html .= "<table>\n";
+  $html .= "<table class='whitebg'>\n";
+#  $html .= "<table>\n";
   for my $key (@output_file_keys) {
     $html .= "<tr>";
     $html .= "<td>".$key."</td>\n";
