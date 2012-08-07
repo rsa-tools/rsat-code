@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.1 2012/08/06 16:12:27 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.2 2012/08/07 00:18:04 jvanheld Exp $
 #
 ############################################################
 
@@ -80,7 +80,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -91,11 +91,16 @@ package main;
   our $out = STDOUT;
 
   our $organism_name = "";
+  our $refresh_time = 120;
 
+  ## Image formats
+  our @image_formats = ("png", "pdf");
 
-  # Supported tasks
-  our @supported_tasks = qw(operons
+  ## Supported tasks
+  our @supported_tasks = qw(all
+			    operons
 			    syntons
+			    synthesis
 			  );
   our $supported_tasks = join ",", @supported_tasks;
   our %supported_task = ();
@@ -150,16 +155,20 @@ package main;
     %task = %supported_task;
   }
 
-  ## Set all file names
-  &SetFileNames();
-
   ################################################################
   ## Open log file
+  $outfile{log} = &OutFileName("", ".txt", "log");
   $out = &OpenOutputFile($outfile{log});
 
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Open the organism-specific HTML report
+  $outfile{synthesis} = &OutFileName("html", ".html", $organism_name."_synthesis");
+  $syn = &OpenOutputFile($main::outfile{synthesis});
+  print $syn &PrintHtmlResultHeader(program=>"pathways-from-genomes", "title"=>$main::param{title}, "result_toc"=>0, refresh_time=>$refresh_time);
 
   ################################################################
   ## Infer operons and syntons
@@ -171,8 +180,11 @@ package main;
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out if ($outfile{log});
+  ## End of the HTML file
+  &CloseSynthesis();
 
   &RSAT::message::TimeWarn("Output directory", $dir{output}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Synthesis", $outfile{synthesis}) if ($main::verbose >= 2);
 
   exit(0);
 }
@@ -180,6 +192,15 @@ package main;
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
+
+################################################################
+## Clos the synthetic table
+sub CloseSynthesis {
+  print $syn "<hr>\n";
+  print $syn "</body>\n";
+  print $syn "</html>\n";
+  close $syn;
+}
 
 
 ################################################################
@@ -394,6 +415,8 @@ sub InferOperonsOrSyntons {
   }
   my $dist = $param{operon_dist};
 
+  my @for_synthesis = ();
+
   ## For syntons, set distance to a very very large value
   if ($operons_or_syntons eq "syntons") {
     $dist = 10000000;
@@ -407,8 +430,8 @@ sub InferOperonsOrSyntons {
 
   ## Inferred operons
   $dir{$operons_or_syntons} = $dir{output}."/".$operons_or_syntons;
-  $outfile{"gene_".$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", "gene_".$operons_or_syntons."_".$operon_suffix);
-  $outfile{"gene_".$operons_or_syntons."_html"} = $outfile{"gene_".$operons_or_syntons}; $outfile{"gene_".$operons_or_syntons."_html"} =~ s/\.tab$/\.html/;
+  $outfile{"gene_".$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", "gene_".$operons_or_syntons."_".$operon_suffix); push @for_synthesis, "gene_".$operons_or_syntons;
+  $outfile{"gene_".$operons_or_syntons."_html"} = $outfile{"gene_".$operons_or_syntons}; $outfile{"gene_".$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @for_synthesis, "gene_".$operons_or_syntons."_html";
 
   ## Infer operon for each gene
   if ($task{$operons_or_syntons}) {
@@ -429,13 +452,13 @@ sub InferOperonsOrSyntons {
     $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons."_html"};
     $cmd .= " -chunk 10000";
     &one_command($cmd, 1) ;
-    &RSAT::message::Info("Gene-operons (tab)", $outfile{"gene_".$operons_or_syntons}) if ($main::verbose >= 3);
-    &RSAT::message::Info("Gene-operons (html)", $outfile{"gene_".$operons_or_syntons."_html"}) if ($main::verbose >= 3);
+    &RSAT::message::Info("Gene-".$operons_or_syntons." (tab)", $outfile{"gene_".$operons_or_syntons}) if ($main::verbose >= 3);
+    &RSAT::message::Info("Gene-".$operons_or_syntons." (html)", $outfile{"gene_".$operons_or_syntons."_html"}) if ($main::verbose >= 3);
   }
 
    ## Generate a table with a single line per operon
-  $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix);
-  $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/;
+  $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix); push @for_synthesis, $operons_or_syntons;
+  $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @for_synthesis, $operons_or_syntons."_html";
   if ($task{$operons_or_syntons}) {
     my $cmd = "";
     $cmd .= "echo '; ".$operons_or_syntons." ' > ".$outfile{$operons_or_syntons};
@@ -452,19 +475,72 @@ sub InferOperonsOrSyntons {
     $cmd .= " -o ".$outfile{$operons_or_syntons."_html"};
     $cmd .= " -chunk 10000";
     &one_command($cmd, 1) ;
-    &RSAT::message::Info("Operons (tab)", $outfile{$operons_or_syntons}) if ($main::verbose >= 3);
-    &RSAT::message::Info("Operons (html)", $outfile{$operons_or_syntons."_html"}) if ($main::verbose >= 3);
+    &RSAT::message::Info($operons_or_syntons." (tab)", $outfile{$operons_or_syntons}) if ($main::verbose >= 3);
+    &RSAT::message::Info($operons_or_syntons." (html)", $outfile{$operons_or_syntons."_html"}) if ($main::verbose >= 3);
   }
+
+  ## Compute statistics on operon sizes
+  &RSAT::message::TimeWarn("Distribution of ".$operons_or_syntons." sizes for", $organism_name);
+  $outfile{$operons_or_syntons."_stats"} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix."_stats"); push @for_synthesis, $operons_or_syntons."_stats";
+  for my $img_format (@image_formats) {
+    $outfile{$operons_or_syntons."_stats_".$img_format} = &OutFileName($operons_or_syntons, ".".$img_format, $operons_or_syntons."_".$operon_suffix."_stats"); push @for_synthesis, $operons_or_syntons."_stats_".$img_format;
+  }
+  if ($task{$operons_or_syntons}) {
+    $cmd = $SCRIPTS."/classfreq -v 1 -ci 1";
+    $cmd .= " -i ".$outfile{$operons_or_syntons};
+    $cmd .= " -o ".$outfile{$operons_or_syntons."_stats"};
+
+     for my $img_format (@image_formats) {
+       $cmd .= "; ".$SCRIPTS."/XYgraph";
+       $cmd .= " -i ".$outfile{$operons_or_syntons."_stats"};
+       $cmd .= " -xcol 1 -ycol 4,5,6";
+       $cmd .= " -format ".$img_format;
+       $cmd .= " -xgstep1 5 -xmin 0 -ymin 0";
+       $cmd .= " -lines -legend  -xsize 600 -ysize 400";
+       $cmd .= " -xleg1 'Number of genes per ".$operons_or_syntons."' -yleg1 'Number of predicted ".$operons_or_syntons."'";
+       $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_syntons." in ".$organism_name."\"";
+       $cmd .= " -o ".$outfile{$operons_or_syntons."_stats_".$img_format};
+     }
+    &one_command($cmd, 1) ;
+    &RSAT::message::Info($operons_or_syntons." stats (tab)", $outfile{$operons_or_syntons."_stats"}) if ($main::verbose >= 3);
+    for my $img_format (@image_formats) {
+      &RSAT::message::Info($operons_or_syntons." size distrib (".$img_format.")", $outfile{$operons_or_syntons."_stats_".$img_format}) if ($main::verbose >= 3);
+    }
+  }
+
+  ## Append links to operon results + stats to the HTML report
+  $link_table = &LinkTable($operons_or_syntons, @for_synthesis);
+  print $syn $link_table;
 }
 
-
 ################################################################
-## Specify output directory and files.
+## Generate a table with links to a set of output files
 ##
-## Output directories and files are specified irrespective of the
-## requested tasks, because they are needed to generate the reports.
-sub SetFileNames {
-  $outfile{log} = &OutFileName("", ".txt", "log");
+## Usage:
+##  &LinkTable($title, @output_file_keys);
+sub LinkTable {
+  my ($title, @output_file_keys) = @_;
+  $html = "";
+  $html .= "<h2>".$title."</h2>\n";
+  $html .= "<table>\n";
+  for my $key (@output_file_keys) {
+    $html .= "<tr>";
+    $html .= "<td>".$key."</td>\n";
+    $html .= "<td>";
+    if (-e $outfile{$key}) {
+      $html .= "<a href='".&RSAT::util::RelativePath($outfile{synthesis}, $outfile{$key})."'>\n";
+      $html .= &ShortFileName($outfile{$key});
+      $html .= "</a>\n";
+    } else {
+      $html .= "<font color='red'>",
+      $html .= &ShortFileName($outfile{$key});
+      $html .= "</font>",
+    }
+
+    $html .= "</tr>\n";
+  }
+  $html .= "</table>\n";
+  return ($html);
 }
 
 
