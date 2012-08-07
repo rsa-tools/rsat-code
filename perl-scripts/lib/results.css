@@ -213,6 +213,8 @@ table.simple th {
 }
 
 /* TABLE */
+
+/* table with white bg and small fonts */
 table.whitebg {
 	margin: 10px 20px 20px;
 	color: #000000;
@@ -229,6 +231,8 @@ table.whitebg td,table.whitebg th {
 	background-color: #FFFFFF;
 }
 
+
+/* table with blue bg and small font */
 table.whitebg th {
 	font-size: 70%;
 	background-color: #F6E6CA;
@@ -252,19 +256,31 @@ table.bluebg th {
 	color: #D6EEFA;
 }
 	
-/* TABLE ON RESULT PAGES - COMPATIBLE WITH THE SORTTABLE TYPE
-   DEFINED BY JAVASCRIPT */
+/* Table on result pages - compatible with the sorttable type defined by javascript */
 
 table.sortable {
-/* 	margin: 10px 20px 20px; */
+	margin: 10px 20px 20px;
+	color: #000000;
+	border-left: 1px solid #cbcbb4;
+	border-right: 1px solid #cbcbb4;
+	border-top: 1px solid #cbcbb4;
+	border-bottom: 1px solid #cbcbb4;
 	border-spacing: 0px;
 }
 
 table.sortable td,table.sortable th {
 	padding: 2px 10px;
+	font-size: 70%;
+	border-right: 1px solid #cbcbb4;
+	border-bottom: 1px solid #cbcbb4;
+	padding: 2px 10px;
+	background-color: #FFFFFF;
 }
 
 table.sortable th {
+	font-size: 70%;
+	background-color: #0D73A7;
+	color: #D6EEFA;
 }
 
 
