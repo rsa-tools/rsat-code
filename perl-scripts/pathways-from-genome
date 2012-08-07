@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.2 2012/08/07 00:18:04 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.3 2012/08/07 06:59:27 jvanheld Exp $
 #
 ############################################################
 
@@ -80,7 +80,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -91,7 +91,7 @@ package main;
   our $out = STDOUT;
 
   our $organism_name = "";
-  our $refresh_time = 120;
+  our $refresh_time = 0;
 
   ## Image formats
   our @image_formats = ("png", "pdf");
@@ -508,10 +508,58 @@ sub InferOperonsOrSyntons {
     }
   }
 
-  ## Append links to operon results + stats to the HTML report
-  $link_table = &LinkTable($operons_or_syntons, @for_synthesis);
-  print $syn $link_table;
+  ################################################################
+  ## Summarize the operon results
+  print $syn "<hr><h2>", ucfirst($operons_or_syntons), "</h2>";
+  print $syn "<h3>Statistics</h3>";
+
+  ## Read statistics
+  my ($stats) = &OpenInputFile($outfile{$operons_or_syntons."_stats"});
+  my $in_stats = 0;
+  my %stats = ();
+  while (<$stats>) {
+    $in_stats = 1 if (/; Statistics/);
+    next unless ($in_stats);
+    $in_stats = 0 if (/; Seconds/);
+    s/^; //;
+    my ($key, $value) = split /\t/;
+    $stats{$key} = $value;
+  }
+  print $syn "Nb genes: ", $stats{sum};
+  print $syn "<br>Nb ".$operons_or_syntons.": ", $stats{count};
+  print $syn "<br>Mean size: ", $stats{mean};
+  print $syn "<br>Max size: ", $stats{max};
+
+  ## Display size distribution
+  print $syn "<p>", &HtmlDisplayOneImage($outfile{$operons_or_syntons."_stats_png"},
+					 base=>$outfile{synthesis},
+					 href=>$outfile{$operons_or_syntons."_stats_pdf"},
+					 href_param=>"height='2' border=1",
+					), "</p>\n";
+
+
+  ## Append table of links to the HTML report
+  print $syn &LinkTable("Files: ".$operons_or_syntons, @for_synthesis);;
 }
+
+################################################################
+## Display one image on a HTML page with a link (href) to the original
+## (or other) file.
+sub HtmlDisplayOneImage {
+  my ($img_file, %args) = @_;
+  my $href = $args{href} || $img_file;
+  my $base  = $args{base} || ".";
+  my $img_path = &RSAT::util::RelativePath($base, $img_file);
+  my $href_path = &RSAT::util::RelativePath($base, $href);
+  my $html = "<a href='".$href_path."' ".$args{href_param}.">";
+  $html .= "<img src='".$img_path."'>";
+  $html .= "</a>";
+#   &RSAT::message::Debug("\nimg_file=".$img_file,
+# 		       "\nhref=".$href,
+# 		       ) if ($main::verbose >= 10);
+  return $html;
+}
+
 
 ################################################################
 ## Generate a table with links to a set of output files
@@ -521,22 +569,13 @@ sub InferOperonsOrSyntons {
 sub LinkTable {
   my ($title, @output_file_keys) = @_;
   $html = "";
-  $html .= "<h2>".$title."</h2>\n";
+  $html .= "<h3>".$title."</h3>\n";
   $html .= "<table>\n";
   for my $key (@output_file_keys) {
     $html .= "<tr>";
     $html .= "<td>".$key."</td>\n";
     $html .= "<td>";
-    if (-e $outfile{$key}) {
-      $html .= "<a href='".&RSAT::util::RelativePath($outfile{synthesis}, $outfile{$key})."'>\n";
-      $html .= &ShortFileName($outfile{$key});
-      $html .= "</a>\n";
-    } else {
-      $html .= "<font color='red'>",
-      $html .= &ShortFileName($outfile{$key});
-      $html .= "</font>",
-    }
-
+    $html .= &LinkOneFile($outfile{synthesis}, $outfile{$key}, &ShortFileName($outfile{$key}));
     $html .= "</tr>\n";
   }
   $html .= "</table>\n";
