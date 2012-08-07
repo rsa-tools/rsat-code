@@ -260,8 +260,26 @@ sub RSA_header {
   ##
   ## We insert this control here so it is applied to each Web form.
   &RSAT::server::DetectDeniedIP();
-
 }
+
+
+
+################################################################
+## Return a HTML link from an index file to a target file
+sub LinkOneFile {
+  my ($from_file, $to_file, $text) = @_;
+  my $pathv = "";
+  my $link = "";
+  $text = $text || $to_file;
+  if (-e ($to_file)) {
+    $path = &RSAT::util::RelativePath($from_file, $to_file);
+    $link = join ("",  "<a href='",$path, "'>", $text, "</a>");
+  } else {
+    $link = join ("",  "<font color='red'>", $text, "</font>");
+  }
+  return $link;
+}
+
 
 ## ##############################################################
 ## send results by e-mail or display on the browser
