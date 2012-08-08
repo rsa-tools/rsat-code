@@ -27,12 +27,6 @@ $dir{output_root} = "footprints"; ## Default root output directory. Can be chang
 
 
 ################################################################
-## The procedure &one_command() has been moved to RSAT::util
-sub one_command {
-  &RSAT::util::one_command(@_);
-}
-
-################################################################
 ## Read a list of organisms from a file, and select those supported on
 ## the RSAT server (issue a warning for non-supported organisms).
 sub ReadOrganismsFromFile {

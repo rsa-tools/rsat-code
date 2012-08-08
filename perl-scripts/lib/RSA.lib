@@ -1104,6 +1104,10 @@ sub doit {
   RSAT::util::doit(@_);
 }
 
+sub one_command {
+  &RSAT::util::one_command(@_);
+}
+
 sub PrintArguments {
   &RSAT::util::PrintArguments(@_);
 }
