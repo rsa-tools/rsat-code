@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.7 2012/08/08 04:09:39 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.8 2012/08/08 08:14:42 jvanheld Exp $
 #
 ############################################################
 
@@ -42,11 +42,23 @@ Jacques.van-Helden@univ-amu.fr
 
 pathways-from-genome -org Organism_name [-v #] [-o output_directory]  [...]
 
-=head1 INPUT FORMAT
-
 =head1 OUTPUT FORMAT
 
+The user-specified output directory is subdivided into organism- and
+task-specific subdirectories. Results are presented in the form of
+tab-delimited text files, associated with HTML formatted reports.
+
 =head1 SEE ALSO
+
+=item I<infer-operon>
+
+used to infer operons and syntons.
+
+=item I<compare-classes>
+
+used for pathway projections (comparing sets of genes/EC numbers with
+annotated pathways) and for pathway-to-pathway comparisons.
+
 
 =head1 WISH LIST
 
@@ -80,7 +92,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -182,7 +194,7 @@ package main;
   if ($output_dir) {
     &RSAT::util::CheckOutDir($output_dir, "", 755);
   } else {
-    &RSAT::error::FatalError("You must define the output directory (option -outdir)");
+    &RSAT::error::FatalError("You must define the output directory (option -o)");
   }
 
   ## Open a text file for the main (multi-organisms) logs
@@ -538,9 +550,11 @@ interrupted analysis.
 
 =pod
 
-=item	B<-o output_directory>
+=item	B<-o output_base>
 
-Output directory.
+Base for the output directories. Subdirectories will be created for
+each organism, and with organism-specific directories, for each result
+type.
 
 Mandatory argument.
 
@@ -575,7 +589,25 @@ Run all supported tasks.
 
 =item I<operons>
 
-Infer operons from intergenic distances (tool I<infer-operon>).
+Infer operons from intergenic distances (tool I<infer-operon>), using
+a simple distance-based method (I<infer-operons>). This method assigns
+each intergenic region with a status, either intra-operon or
+inter-operons. The accuracy is estimated to ~80% (Rekin's Janky, PhD
+thesis), with a balanced rate between false positives (intra-operons
+considered as inter-operons) and false negatives (the opposite).
+
+=item I<syntons>
+
+Compute syntons from gene orientations. Syntons are defined as maximal
+(non-extendable) sets of contiguous genes transcribed in the same
+direction. A synton can contain one or several successive operons.
+
+Note: in practice, we detect by running I<infer-operon> with a
+virtually infinite threshold on intergenic distance. Since all genes
+of an operon are (by definition) transcribed in the same direction,
+syntons contain all the full operons (they can be considered as a
+maximization of the sensitivity for operon prediction, but with an
+important cost in specificity).
 
 =back
 
