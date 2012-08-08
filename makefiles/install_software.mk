@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.21 2012/08/08 11:27:46 jvanheld Exp $
+# $Id: install_software.mk,v 1.22 2012/08/08 11:35:19 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -111,6 +111,9 @@ _compile_python:
 
 install_python_suds: _download_python_suds _compile_python_suds
 
+################################################################
+## Install suds library for python2.7, required for the MICROME Web
+## clients to connect Genoscope/Microscope Web services.
 SUDS_VERSION=0.4
 SUDS_TAR=python-suds-${SUDS_VERSION}.tar.gz
 SUDS_URL=https://fedorahosted.org/releases/s/u/suds/${SUDS_ARCHIVE}
@@ -122,9 +125,9 @@ _download_python_suds:
 	@echo "suds dir	${SUDS_DIR}"
 
 SUDS_INSTALL_DIR=${SUDS_DIR}/python-suds-${SUDS_VERSION}
-_install_python_suds:
+_compile_python_suds:
 	@echo "Installing suds"
-	(cd @${SUDO} ${SUDS_INSTALL_DIR}; python setup.py build; ${SUDO} python setup.py install)
+	(cd ${SUDS_INSTALL_DIR}; python2.7 setup.py build; ${SUDO} python2.7 setup.py install)
 
 ################################################################
 ## Install the EnsEMBL Perl API
