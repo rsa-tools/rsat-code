@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.20 2012/08/06 11:48:15 jvanheld Exp $
+# $Id: install_software.mk,v 1.21 2012/08/08 11:27:46 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -109,6 +109,22 @@ _compile_python:
 	@echo "Compiling python2.7"
 	(cd ${PYTHON_COMPILE_DIR}/Python-2.7; ./configure; make; ${SUDO} make install)
 
+install_python_suds: _download_python_suds _compile_python_suds
+
+SUDS_VERSION=0.4
+SUDS_TAR=python-suds-${SUDS_VERSION}.tar.gz
+SUDS_URL=https://fedorahosted.org/releases/s/u/suds/${SUDS_ARCHIVE}
+SUDS_DIR=${SRC_DIR}/suds
+_download_python_suds:
+	@mkdir -p ${SUDS_DIR}
+	@echo "Getting suds (Python library) using wget"
+	(cd ${SUDS_DIR}; wget -nv -nd ${SUDS_URL}/${SUDS_TAR}; tar -xpzf ${SUDS_TAR})
+	@echo "suds dir	${SUDS_DIR}"
+
+SUDS_INSTALL_DIR=${SUDS_DIR}/python-suds-${SUDS_VERSION}
+_install_python_suds:
+	@echo "Installing suds"
+	(cd @${SUDO} ${SUDS_INSTALL_DIR}; python setup.py build; ${SUDO} python setup.py install)
 
 ################################################################
 ## Install the EnsEMBL Perl API
@@ -201,14 +217,14 @@ BED_VERSION=2.13.3
 BED_ARCHIVE=BEDTools.v${BED_VERSION}.tar.gz
 BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE}
 BED_BASE_DIR=${SRC_DIR}/BEDTools
-BED__DOWNLOAD_DIR=${BED_BASE_DIR}/BEDTools-Version-${BED_VERSION}
+BED_DOWNLOAD_DIR=${BED_BASE_DIR}/BEDTools-Version-${BED_VERSION}
 _download_bedtools:
 	@echo
 	@echo "Downloading BEDTools ${BED_VERSION}"
 	@echo
 	@mkdir -p ${BED_BASE_DIR}
 	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE})
-	@echo ${BED__DOWNLOAD_DIR}
+	@echo ${BED_DOWNLOAD_DIR}
 
 BED_GIT_DIR=${SRC_DIR}/bedtools
 _git_bedtools:
@@ -216,7 +232,7 @@ _git_bedtools:
 	(cd ${SRC_DIR}; git clone git://github.com/arq5x/bedtools.git)
 
 #BED_SRC_DIR=${BED_GIT_DIR}
-BED_SRC_DIR=${BED__DOWNLOAD_DIR}
+BED_SRC_DIR=${BED_DOWNLOAD_DIR}
 BED_BIN_DIR=${BED_SRC_DIR}/bin
 _compile_bedtools:
 	@echo
