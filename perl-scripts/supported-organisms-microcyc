@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-genoscope,v 1.2 2012/08/08 08:14:25 jvanheld Exp $
+# $Id: supported-organisms-microcyc,v 1.1 2012/08/08 15:58:56 jvanheld Exp $
 #
 ############################################################
 
@@ -20,17 +20,17 @@ $program_version
 
 =head1 DESCRIPTION
 
-This script is a Web services client that opens a connection to the
-Genoscope/Microscope Web services and requests the list of supported
-organisms.
+Get the list of organisms supported at the MicroCyc database
+(https://www.genoscope.cns.fr/agc/microscope/), using the Web services
+(http://www.genoscope.cns.fr/microme/microcyc-wsc/).
 
 =head2 AUTHOR
 
 Jacques van Helden
 
-Adapted from the Python script developed by Quentin DA COSTA and
-Jonathan VERNEAU, Master students at Aix-Marseille Unviersité, March
-2012.
+Adapted from a prototype Python script implemented by Quentin DA COSTA
+and Jonathan VERNEAU, Master students at Aix-Marseille Unviersité,
+March 2012.
 
 =head2 DOCUMENTATION
 
@@ -91,7 +91,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
