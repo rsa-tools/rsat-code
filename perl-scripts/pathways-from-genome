@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.9 2012/08/08 08:28:08 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.10 2012/08/08 12:13:45 jvanheld Exp $
 #
 ############################################################
 
@@ -22,7 +22,6 @@ $program_version
 Taks manager developed in the context of the MICROME project,
 implemening a workflow to infer metabolic pathways from Bacterial
 genomes.
-
 
 =head1 AUTHORS
 
@@ -59,7 +58,6 @@ used to infer operons and syntons.
 used for pathway projections (comparing sets of genes/EC numbers with
 annotated pathways) and for pathway-to-pathway comparisons.
 
-
 =head1 WISH LIST
 
 =over
@@ -92,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -100,8 +98,12 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
+  our @organism_names = ();
+  our %organism_info = ();
   our $organism_name = "";
+
   our $refresh_time = 0;
+
 
   ## Image formats
   our @image_formats = ("png", "pdf");
@@ -109,6 +111,7 @@ package main;
 
   ## Supported tasks
   our @supported_tasks = qw(all
+			    ger
 			    operons
 			    syntons
 			    synthesis
@@ -133,17 +136,17 @@ package main;
   $param{last_org} = 0; ## Stop reading organism table after a user-specified number of organisms
 
   ## Default column order for organism cross-table
-  our @org_table_columns = qw(tax_id 
-			     microscope_genome_id
-			     microscope_metacyc_id
-			     organism_name
-			     uniprot_proteome
-			     rsat_organism_id
-			     obiw_genome_id
-			     family_name
-			     family_taxid
-			     order_name
-			     order_taxid);
+  our @org_table_columns = qw(tax_id
+			      microscope_genome_id
+			      metacyc_frame_version
+			      organism_name
+			      uniprot_proteome
+			      rsat_organism_id
+			      obiw_genome_id
+			      family_name
+			      family_taxid
+			      order_name
+			      order_taxid);
   our %org_table_column = ();
   &IndexOrgTableColumns();
 
@@ -152,7 +155,7 @@ package main;
   our $job_prefix; $job_prefix = "pathways-from-genomes";
   our $die_on_error; $die_on_error = 1;
   our $batch; $batch = 0;
-  our $batch_cmd; $batch_cmd = "";
+  our $batch_cmd;
   our $dry; $dry = 0;
   our $max_jobs; $max_jobs = 100000; ## Max number of allowed jobs to send to batch queue
 
@@ -214,23 +217,25 @@ package main;
 
   ## Open the HTML file for the main (multi-organisms) synthesis
   $main_synthesis_file = $output_dir."/synthesis.html";
-  our $main_syn = &OpenOutputFile($main_synthesis_file);
-  print $main_syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>"Access by organism", "result_toc"=>0, refresh_time=>$refresh_time);
-  print $main_syn "<table class='sortable'>\n";
+  if ($task{synthesis}) {
+    our $main_syn = &OpenOutputFile($main_synthesis_file);
+    print $main_syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>"Access by organism", "result_toc"=>0, refresh_time=>$refresh_time);
+    print $main_syn "<table class='sortable'>\n";
 
-  ## Print header line of the main synthesis table
-  @main_syn_fields = qw (nb
-			 organism_name
-			 dir
-			 log
-			 operons
-			 syntons
-			);
-  print $main_syn "<tr>\n";
-  foreach my $field (@main_syn_fields) {
-    print $main_syn "<th>", $field, "</th>\n";
+    ## Print header line of the main synthesis table
+    my @main_syn_fields = qw (nb
+			      organism_name
+			      dir
+			      log
+			      operons
+			      syntons
+			     );
+    print $main_syn "<tr>\n";
+    foreach my $field (@main_syn_fields) {
+      print $main_syn "<th>", $field, "</th>\n";
+    }
+    print $main_syn "</tr>\n";
   }
-  print $main_syn "</tr>\n";
 
 
   ################################################################
@@ -273,20 +278,22 @@ package main;
     ################################################################
     ## Open the organism-specific HTML report
     $outfile{synthesis} = &OutFileName("html", ".html", $organism_name."_synthesis");
-    $syn = &OpenOutputFile($main::outfile{synthesis});
-    print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$organism_name, "result_toc"=>0, refresh_time=>$refresh_time);
+    if ($task{synthesis}) {
+      $syn = &OpenOutputFile($main::outfile{synthesis});
+      print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$organism_name, "result_toc"=>0, refresh_time=>$refresh_time);
 
-    print $main_syn "<tr>";
-    print $main_syn "<td>", $org_counter, "</td>";
-    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
-    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{output}, " [dir]"), "</td>";
-    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{log}, " [log]"), "</td>";
+      print $main_syn "<tr>";
+      print $main_syn "<td>", $org_counter, "</td>";
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{output}, " [dir]"), "</td>";
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{log}, " [log]"), "</td>";
+    }
 
     ## Check that organism is supported in RSAT
     unless ($organism->check_name($organism_name, 1)) {
 
       ## Close line of HTML report table
-      print $main_syn "</tr>";
+      print $main_syn "</tr>" if ($task{synthesis});
 
       ## Issue a warning
       my $warning = join ("\t", "Skipping non-supported organism", $org_counter."/".$org_nb, $organism_name);
@@ -299,6 +306,21 @@ package main;
     ## Report organism to be analyzed
     &RSAT::message::TimeWarn("Organism", $org_counter."/".$org_nb, $organism_name) if ($main::verbose >= 1);
 
+
+    ################################################################
+    ## Collect Gene-EC-reaction table from the Microscope database at Genoscope
+    ## (CEA, France).
+    &GetGER(get_reactions=>0);
+    &GetGER(get_reactions=>1);
+
+    ## Append table of links to the HTML report
+    if ($task{synthesis}) {
+      print $syn "<h2>Metabolic annotations from Genoscope/Microscope</h2>\n";
+      my $microscope_url = "https://www.genoscope.cns.fr/agc/microscope/";
+      print $syn "<p>Source: <a target='_blank' href='".$microscope_url."'>".$microscope_url."</a></p>\n";
+      print $syn &LinkTable("Files: metabolic annotations", @files_to_index);
+    }
+    @files_to_index = ();
 
     ################################################################
     ## Infer operons and syntons
@@ -317,15 +339,17 @@ package main;
 
 
     ## End of the HTML file
-    &CloseSynthesis($syn);
+    &CloseSynthesis($syn) if ($task{synthesis});
 
     ## Report organism-specific output dir and synthesis file
     &RSAT::message::TimeWarn("\tOrganism directory", $dir{output}) if ($main::verbose >= 2);
     &RSAT::message::TimeWarn("\tOrganism synthesis", $outfile{synthesis}) if ($main::verbose >= 2);
   }
 
-  print $main_syn "</table>\n";
-  &CloseSynthesis($main_syn);
+  if ($task{synthesis}) {
+    print $main_syn "</table>\n";
+    &CloseSynthesis($main_syn);
+  }
 
   if (scalar(@warnings) > 0) {
     print $main_log (join "\n; ",  "; Warning messages",
@@ -345,6 +369,49 @@ package main;
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
 
+
+################################################################
+## Display one image on a HTML page with a link (href) to the original
+## (or other) file.
+sub HtmlDisplayOneImage {
+  my ($img_file, %args) = @_;
+  my $href = $args{href} || $img_file;
+  my $href_param = $args{href_param} || "";
+  my $base  = $args{base} || ".";
+  my $img_param = $args{img_param} || "";
+  my $img_path = &RSAT::util::RelativePath($base, $img_file);
+  my $href_path = &RSAT::util::RelativePath($base, $href);
+  my $html = "<a href='".$href_path."' ".$href_param.">";
+  $html .= "<img src='".$img_path."' ".$img_param.">";
+  $html .= "</a>";
+#   &RSAT::message::Debug("\nimg_file=".$img_file,
+# 		       "\nhref=".$href,
+# 		       ) if ($main::verbose >= 10);
+  return $html;
+}
+
+################################################################
+## Generate a table with links to a set of output files
+##
+## Usage:
+##  &LinkTable($title, @output_file_keys);
+sub LinkTable {
+  my ($title, @output_file_keys) = @_;
+  $html = "";
+  $html .= "<h3>".$title."</h3>\n";
+  $html .= "<table class='whitebg'>\n";
+#  $html .= "<table>\n";
+  for my $key (@output_file_keys) {
+    $html .= "<tr>";
+    $html .= "<td>".$key."</td>\n";
+    $html .= "<td>";
+    $html .= &LinkOneFile($outfile{synthesis}, $outfile{$key}, &ShortFileName($outfile{$key}));
+    $html .= "</tr>\n";
+  }
+  $html .= "</table>\n";
+  return ($html);
+}
+
 ################################################################
 ## Index columns of the organism cross-table
 sub IndexOrgTableColumns {
@@ -360,7 +427,7 @@ sub ReadOrganismCrossTable {
   my ($orgs) = &OpenInputFile($infile{organism_table});
 
   my $l = 0;
-  my $read_organisms = 0;
+  my $org_counter = 0;
   while (<$orgs>) {
     $l++;
     next if /^;/;		## Skip comment lines
@@ -376,17 +443,23 @@ sub ReadOrganismCrossTable {
     }
 
     ## Parse one line
-
     my @fields = split /\t/;
     my $organism_name = $fields[$org_table_column{rsat_organism_id}-1];
-    if ($organism_name) {
-      $read_organisms++;
 
-      &RSAT::message::Info("Adding organism", $read_organisms, $organism_name,  "line ".$l) if ($main::verbose >= 3);
+    if ($organism_name) {
+      $org_counter++;
+      &RSAT::message::Info("Adding organism", $org_counter, $organism_name,  "line ".$l) if ($main::verbose >= 3);
       push @organism_names, $organism_name;
 
+      ## Store all organism information (cross-references) in a hash table indexed by organism names
+      foreach my $field (keys %org_table_column) {
+	my $column = $org_table_column{$field}-1;
+	my $value = $fields[$column];
+	$organism_info{$organism_name}->{$field} = $value;
+      }
+
     } else {
-      &RSAT::message::Warning($infile{organism_table}, "line ".$l, "missing field", "rsat_organism_id", "expected in column ".$org_table_column{rsat_organism_id}, );
+      &RSAT::message::Warning($infile{organism_table}, "Organism", $org_counter, $fields[0], "line ".$l, "missing field", "rsat_organism_id", "expected in column ".$org_table_column{rsat_organism_id}, );
     }
 
   }
@@ -596,6 +669,11 @@ B<Default tasks>
 
 Run all supported tasks.
 
+=item I<ger>
+
+Get gene-EC-reaction table from the Genoscope/Microscope database, via
+their Web services.
+
 =item I<operons>
 
 Infer operons from intergenic distances (tool I<infer-operon>), using
@@ -745,7 +823,7 @@ sub InferOperonsOrSyntons {
   }
   my $dist = $param{operon_dist};
 
-  my @for_synthesis = ();
+  @files_to_index = ();
 
   ## For syntons, set distance to a very very large value
   if ($operons_or_syntons eq "syntons") {
@@ -760,8 +838,8 @@ sub InferOperonsOrSyntons {
 
   ## Inferred operons
   $dir{$operons_or_syntons} = $dir{output}."/".$operons_or_syntons;
-  $outfile{"gene_".$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", "gene_".$operons_or_syntons."_".$operon_suffix); push @for_synthesis, "gene_".$operons_or_syntons;
-  $outfile{"gene_".$operons_or_syntons."_html"} = $outfile{"gene_".$operons_or_syntons}; $outfile{"gene_".$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @for_synthesis, "gene_".$operons_or_syntons."_html";
+  $outfile{"gene_".$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", "gene_".$operons_or_syntons."_".$operon_suffix); push @files_to_index, "gene_".$operons_or_syntons;
+  $outfile{"gene_".$operons_or_syntons."_html"} = $outfile{"gene_".$operons_or_syntons}; $outfile{"gene_".$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, "gene_".$operons_or_syntons."_html";
 
   ## Infer operon for each gene
   if ($task{$operons_or_syntons}) {
@@ -787,8 +865,8 @@ sub InferOperonsOrSyntons {
   }
 
    ## Generate a table with a single line per operon
-  $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix); push @for_synthesis, $operons_or_syntons;
-  $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @for_synthesis, $operons_or_syntons."_html";
+  $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix); push @files_to_index, $operons_or_syntons;
+  $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, $operons_or_syntons."_html";
   if ($task{$operons_or_syntons}) {
     my $cmd = "";
     $cmd .= "echo '; ".$operons_or_syntons." ' > ".$outfile{$operons_or_syntons};
@@ -810,9 +888,9 @@ sub InferOperonsOrSyntons {
   }
 
   ## Compute statistics on operon sizes
-  $outfile{$operons_or_syntons."_stats"} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix."_stats"); push @for_synthesis, $operons_or_syntons."_stats";
+  $outfile{$operons_or_syntons."_stats"} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_syntons."_stats";
   for my $img_format (@image_formats) {
-    $outfile{$operons_or_syntons."_stats_".$img_format} = &OutFileName($operons_or_syntons, ".".$img_format, $operons_or_syntons."_".$operon_suffix."_stats"); push @for_synthesis, $operons_or_syntons."_stats_".$img_format;
+    $outfile{$operons_or_syntons."_stats_".$img_format} = &OutFileName($operons_or_syntons, ".".$img_format, $operons_or_syntons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_syntons."_stats_".$img_format;
   }
   if ($task{$operons_or_syntons}) {
     &RSAT::message::TimeWarn("\tComputing size distribution", $operons_or_syntons) if ($main::verbose >= 1);
@@ -839,12 +917,8 @@ sub InferOperonsOrSyntons {
     }
   }
 
-
-  ## Sent the batch command to the cluster manager
-  if ($batch) {
-    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
-  }
-
+  ## Submit the batch command to the cluster manager
+  if ($batch) { &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix); $batch_cmd = ""; }
 
   ################################################################
   ## Summarize the operon results
@@ -868,8 +942,7 @@ sub InferOperonsOrSyntons {
     my $operon_mean_size = "NA";
     my $operon_max_size = "NA";
 
-
-    ## Read statistics
+    ## Read statistics about operon/synton sizes
     if (-e $outfile{$operons_or_syntons."_stats"}) {
       my ($stats) = &OpenInputFile($outfile{$operons_or_syntons."_stats"});
       my $in_stats = 0;
@@ -917,51 +990,55 @@ sub InferOperonsOrSyntons {
     print $syn "</table>\n";
 
     ## Append table of links to the HTML report
-    print $syn &LinkTable("Files: ".$operons_or_syntons, @for_synthesis);;
+    print $syn &LinkTable("Files: ".$operons_or_syntons, @files_to_index);
+    @files_to_index = ();
   }
 }
 
 ################################################################
-## Display one image on a HTML page with a link (href) to the original
-## (or other) file.
-sub HtmlDisplayOneImage {
-  my ($img_file, %args) = @_;
-  my $href = $args{href} || $img_file;
-  my $href_param = $args{href_param} || "";
-  my $base  = $args{base} || ".";
-  my $img_param = $args{img_param} || "";
-  my $img_path = &RSAT::util::RelativePath($base, $img_file);
-  my $href_path = &RSAT::util::RelativePath($base, $href);
-  my $html = "<a href='".$href_path."' ".$href_param.">";
-  $html .= "<img src='".$img_path."' ".$img_param.">";
-  $html .= "</a>";
-#   &RSAT::message::Debug("\nimg_file=".$img_file,
-# 		       "\nhref=".$href,
-# 		       ) if ($main::verbose >= 10);
-  return $html;
-}
+## Collect Gene-EC-Reaction (GER) table from the Microscope database
+## at Genoscope (CEA, France).
+sub GetGER() {
+  my (%args) = @_;
+  my $suffix;
 
-
-################################################################
-## Generate a table with links to a set of output files
-##
-## Usage:
-##  &LinkTable($title, @output_file_keys);
-sub LinkTable {
-  my ($title, @output_file_keys) = @_;
-  $html = "";
-  $html .= "<h3>".$title."</h3>\n";
-  $html .= "<table class='whitebg'>\n";
-#  $html .= "<table>\n";
-  for my $key (@output_file_keys) {
-    $html .= "<tr>";
-    $html .= "<td>".$key."</td>\n";
-    $html .= "<td>";
-    $html .= &LinkOneFile($outfile{synthesis}, $outfile{$key}, &ShortFileName($outfile{$key}));
-    $html .= "</tr>\n";
+  ## Determine suffix
+  if ($args{get_reactions}) {
+    $suffix = "gene-reaction";
+  } else {
+    $suffix = "gene-ec";
   }
-  $html .= "</table>\n";
-  return ($html);
+
+  ## Define output files
+  $dir{GER} = $dir{output}."/GER";
+  $outfile{$suffix} = &OutFileName("GER", ".tab", $suffix); push @files_to_index, $suffix;
+  $outfile{$suffix."_html"} = $outfile{$suffix}; $outfile{$suffix."_html"} =~ s/\.tab$/\.html/; push @files_to_index, $suffix."_html";
+
+  ## Collect Gene-EC-Reactiojns from MICROSCOPE database
+  if ($task{ger}) {
+
+    ## Check that organism table contains a cross-reference to the MICROSCOPE database for the organism
+    unless ($organism_info{$organism_name}->{metacyc_frame_version}) {
+      my $warning = join ("\t", "Cannot collect GER for organism", $organism_name, "because missing cross-reference to Genoscope/Microscope.", $organism_name);
+      push @warnings, $warning;
+      &RSAT::message::Warning($warning) if ($main::verbose >= 1);
+      return();
+    }
+
+    ## Run the MICROME/MICROSCOPE Web client
+    my $ms_org_id = $organism_info{$organism_name}->{metacyc_frame_version};
+    my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
+    my $cmd = "python2.7 ".$ger_cmd;
+    $cmd .= " --ms_org_id ".$ms_org_id;
+    $cmd .= " --reactions" if ($args{get_reactions});
+    $cmd .= " -o ".$outfile{$suffix};
+
+    $cmd .= " ; ".$SCRIPTS."/text-to-html ";
+    $cmd .= " -i ".$outfile{$suffix};
+    $cmd .= " -o ".$outfile{$suffix."_html"};
+    &one_command($cmd, 1) ;
+    if ($batch) { &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix); $batch_cmd = ""; }
+  }
 }
 
 
