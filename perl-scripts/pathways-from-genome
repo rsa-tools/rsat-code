@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.8 2012/08/08 08:14:42 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.9 2012/08/08 08:28:08 jvanheld Exp $
 #
 ############################################################
 
@@ -92,7 +92,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -146,6 +146,15 @@ package main;
 			     order_taxid);
   our %org_table_column = ();
   &IndexOrgTableColumns();
+
+
+  ## Job management options
+  our $job_prefix; $job_prefix = "pathways-from-genomes";
+  our $die_on_error; $die_on_error = 1;
+  our $batch; $batch = 0;
+  our $batch_cmd; $batch_cmd = "";
+  our $dry; $dry = 0;
+  our $max_jobs; $max_jobs = 100000; ## Max number of allowed jobs to send to batch queue
 
   ################################################################
   ## Read argument values
@@ -623,6 +632,47 @@ important cost in specificity).
 	}
       }
 
+
+=pod
+
+=item B<-batch>
+
+Run tasks in batch on a PC cluster (requires proper configuration of
+the qsub parameters in RSAT_config.props).
+
+=cut
+  } elsif ($arg eq "-batch") {
+    $main::batch = 1;
+
+
+    ## Dry run
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them.
+
+=cut
+  } elsif ($arg eq "-dry") {
+    $main::dry = 1;;
+
+    ## Don't die on error
+=pod
+
+=item B<-nodie>
+
+Do not die in case a sub-program returns an error.
+
+The option -nodie allows you to circumvent problems with specific
+sub-tasks, but this is not recommended because the results may be
+incomplete.
+
+=cut
+
+} elsif ($arg eq "-nodie") {
+  $main::die_on_error = 0;
+
+
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
 
@@ -789,77 +839,86 @@ sub InferOperonsOrSyntons {
     }
   }
 
+
+  ## Sent the batch command to the cluster manager
+  if ($batch) {
+    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  }
+
+
   ################################################################
   ## Summarize the operon results
-  print $syn "<hr><h2>", ucfirst($operons_or_syntons), "</h2>";
+  if ($task{synthesis}) {
+    print $syn "<hr><h2>", ucfirst($operons_or_syntons), "</h2>";
 
-  print $syn "<br>Min nb of genes per ".$operons_or_syntons.": ".$param{operon_min_genes}."\n";
-  if ($operons_or_syntons eq "operons") {
-    print $syn "<br>Max intergenic distance : ".$param{operon_dist}."\n";
-  } else {
-  }
-
-  print $syn "<h3>Statistics</h3>";
-  print $syn "<table class='whitebg'>";
-  print $syn "<tr>";
-  print $syn "<td>";
-
-  ## Initialize statistics
-  my $nb_genes = "NA";
-  my $nb_operons = "NA";
-  my $operon_mean_size = "NA";
-  my $operon_max_size = "NA";
-
-
-  ## Read statistics
-  if (-e $outfile{$operons_or_syntons."_stats"}) {
-    my ($stats) = &OpenInputFile($outfile{$operons_or_syntons."_stats"});
-    my $in_stats = 0;
-    my %stats = ();
-    while (<$stats>) {
-      $in_stats = 1 if (/; Statistics/);
-      next unless ($in_stats);
-      $in_stats = 0 if (/; Seconds/);
-      s/^; //;
-      my ($key, $value) = split /\t/;
-      $stats{$key} = $value;
+    print $syn "<br>Min nb of genes per ".$operons_or_syntons.": ".$param{operon_min_genes}."\n";
+    if ($operons_or_syntons eq "operons") {
+      print $syn "<br>Max intergenic distance : ".$param{operon_dist}."\n";
+    } else {
     }
 
-    $nb_genes = $stats{sum};
-    $nb_operons = $stats{count};
-    $operon_mean_size = $stats{mean};
-    $operon_max_size = $stats{max};
+    print $syn "<h3>Statistics</h3>";
+    print $syn "<table class='whitebg'>";
+    print $syn "<tr>";
+    print $syn "<td>";
 
-    ## Add information in the organism-specific synthesis
-    print $syn "<br>Nb genes: ", $nb_genes;
-    print $syn "<br>Nb ".$operons_or_syntons.": ", $nb_operons;
-    print $syn "<br>Mean size: ", sprintf("%.1f", $operon_mean_size);
-    print $syn "<br>Max size: ", $operon_max_size;
+    ## Initialize statistics
+    my $nb_genes = "NA";
+    my $nb_operons = "NA";
+    my $operon_mean_size = "NA";
+    my $operon_max_size = "NA";
 
-    ## Add info in the main synthesis
-    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $nb_operons),  "</td>\n";
 
-  } else {
-    print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_syntons."_stats"}, "</font></p>\n";
+    ## Read statistics
+    if (-e $outfile{$operons_or_syntons."_stats"}) {
+      my ($stats) = &OpenInputFile($outfile{$operons_or_syntons."_stats"});
+      my $in_stats = 0;
+      my %stats = ();
+      while (<$stats>) {
+	$in_stats = 1 if (/; Statistics/);
+	next unless ($in_stats);
+	$in_stats = 0 if (/; Seconds/);
+	s/^; //;
+	my ($key, $value) = split /\t/;
+	$stats{$key} = $value;
+      }
+
+      $nb_genes = $stats{sum};
+      $nb_operons = $stats{count};
+      $operon_mean_size = $stats{mean};
+      $operon_max_size = $stats{max};
+
+      ## Add information in the organism-specific synthesis
+      print $syn "<br>Nb genes: ", $nb_genes;
+      print $syn "<br>Nb ".$operons_or_syntons.": ", $nb_operons;
+      print $syn "<br>Mean size: ", sprintf("%.1f", $operon_mean_size);
+      print $syn "<br>Max size: ", $operon_max_size;
+
+      ## Add info in the main synthesis
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $nb_operons),  "</td>\n";
+
+    } else {
+      print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_syntons."_stats"}, "</font></p>\n";
+    }
+
+    ## Display size distribution
+    print $syn "<td>";
+    if (-e $outfile{$operons_or_syntons."_stats_png"}) {
+      print $syn "<p>", &HtmlDisplayOneImage($outfile{$operons_or_syntons."_stats_png"},
+					     base=>$outfile{synthesis},
+					     href=>$outfile{$operons_or_syntons."_stats_pdf"},
+					     img_param=>"height='".$icon_height."' border=1",
+					    ), "</p>\n";
+    } else {
+      print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{$operons_or_syntons."_stats_png"}, "</font></p>\n";
+    }
+    print $syn "</td>";
+    print $syn "<tr>";
+    print $syn "</table>\n";
+
+    ## Append table of links to the HTML report
+    print $syn &LinkTable("Files: ".$operons_or_syntons, @for_synthesis);;
   }
-
-  ## Display size distribution
-  print $syn "<td>";
-  if (-e $outfile{$operons_or_syntons."_stats_png"}) {
-    print $syn "<p>", &HtmlDisplayOneImage($outfile{$operons_or_syntons."_stats_png"},
-					   base=>$outfile{synthesis},
-					   href=>$outfile{$operons_or_syntons."_stats_pdf"},
-					   img_param=>"height='".$icon_height."' border=1",
-					  ), "</p>\n";
-  } else {
-    print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{$operons_or_syntons."_stats_png"}, "</font></p>\n";
-  }
-  print $syn "</td>";
-  print $syn "<tr>";
-  print $syn "</table>\n";
-
-  ## Append table of links to the HTML report
-  print $syn &LinkTable("Files: ".$operons_or_syntons, @for_synthesis);;
 }
 
 ################################################################
