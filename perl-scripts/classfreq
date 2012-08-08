@@ -127,6 +127,7 @@ while($current_line = <$in>) {
 }
 close($in);
 
+
 ##### calculate min and max of the list of numbers ######
 @values = sort {$a <=> $b} keys %freq;
 $min = $values[0];
@@ -173,6 +174,12 @@ if ($display_to eq "") {
     $display_to= $classmax;
 }
 
+## If no value is provided, instantiate a single frequency class
+if (scalar(@values) == 0) {
+  $classmax = $classmin + $class_interval;
+}
+
+#&RSAT::message::Debug("classmin=".$classmin, "classmax=".$classmax, scalar(@values)." values", join (";", @values));
 
 ##### make a list with the limits of classes #####
 @ListOfClasses = ();
