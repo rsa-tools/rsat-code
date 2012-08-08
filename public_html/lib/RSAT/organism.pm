@@ -1,7 +1,7 @@
 ###############################################################
-#
-# Class to handle organisms
-#
+##
+## Class to handle organisms
+##
 
 package RSAT::organism;
 
@@ -137,19 +137,28 @@ site. If not, die.
 
 =cut
 sub check_name {
-    my ($self, $organism_name) = @_;
-    unless ($organism_name) {
-	$organism_name = $self->get_attribute("name");
-    }
-    unless ($organism_name) {
-	&RSAT::error::FatalError("you should specify an organism name");
-    }
-    my $supported = $self->is_supported($organism_name);
-    unless ($supported) {
-	 &RSAT::error::FatalError("Organism $organism_name is not supported.",
-	 "Use the command supported-organisms for a list of supported organisms");
+  my ($self, $organism_name, $warn_only) = @_;
+  unless ($organism_name) {
+    $organism_name = $self->get_attribute("name");
+  }
+  unless ($organism_name) {
+    &RSAT::error::FatalError("you should specify an organism name");
+  }
+  my $supported = $self->is_supported($organism_name);
 
-     }
+  ## Report error
+  @error_message = ("Organism $organism_name is not supported.",
+		    "Use the command supported-organisms for a list of supported organisms");
+  if ($supported) {
+    return(1);
+  } else {
+    if ($warn_only) {
+      &RSAT::message::Warning(@error_message);
+    } else {
+      &RSAT::error::FatalError(@error_message);
+    }
+    return(0);
+  }
 }
 
 
