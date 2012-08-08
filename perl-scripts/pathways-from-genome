@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.6 2012/08/07 16:44:08 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.7 2012/08/08 04:09:39 jvanheld Exp $
 #
 ############################################################
 
@@ -80,7 +80,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -168,11 +168,12 @@ package main;
     ## Check that all organisms are supported before starting any analysis
     &RSAT::message::TimeWarn("Checking $org_nb organism names") if ($main::verbose >= 1);
     my $org_counter = 0;
-    foreach $organism_name (@organism_names) {
+    foreach my $organism_name (@organism_names) {
       $org_counter++;
-      &RSAT::message::TimeWarn("", $org_counter, $organism_name) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("", $org_counter, $organism_name) if ($main::verbose >= 2);
+
       ## Check that organism is supported in RSAT
-      $organism->check_name($organism_name);
+      $organism->check_name($organism_name, 1);
     }
   }
 
@@ -184,6 +185,12 @@ package main;
     &RSAT::error::FatalError("You must define the output directory (option -outdir)");
   }
 
+  ## Open a text file for the main (multi-organisms) logs
+  $main_log_file = $output_dir."/log.txt";
+  our $main_log = &OpenOutputFile($main_log_file);
+  print $main_log "; pathways-from-genome ";
+  &PrintArguments($main_log);
+
   ## Open the HTML file for the main (multi-organisms) synthesis
   $main_synthesis_file = $output_dir."/synthesis.html";
   our $main_syn = &OpenOutputFile($main_synthesis_file);
@@ -191,7 +198,8 @@ package main;
   print $main_syn "<table class='sortable'>\n";
 
   ## Print header line of the main synthesis table
-  @main_syn_fields = qw (Organism_name
+  @main_syn_fields = qw (nb
+			 organism_name
 			 dir
 			 log
 			 operons
@@ -210,7 +218,19 @@ package main;
   my $org_counter = 0;
   foreach $organism_name (@organism_names) {
     $org_counter++;
-    &RSAT::message::TimeWarn("Organism", $org_counter."/".$org_nb, $organism_name) if ($main::verbose >= 1);
+
+    ## Check skip organism option
+    if ($org_counter <= $param{skip_org}) {
+      &RSAT::message::Info("Skipping organism", $org_counter."/".$org_nb, $organism_name, "(option -skip_org ".$param{skip_org}.")") if ($main::verbose >= 1);
+      next;
+    }
+
+    ## Check last organism option
+    if (($param{last_org} > 0) && ($org_counter > $param{last_org})) {
+      &RSAT::message::Info("Stop reading organism table, due to option -last_org ".$param{last_org}) if ($main::verbose >= 1);
+      last;
+    }
+
 
     ## Clean the %outfile and %dir hash tables
     our %outfile = ();
@@ -219,7 +239,6 @@ package main;
     ## Define organism-specific subdirectory
     $dir{output} = $output_dir."/".$organism_name;
     &RSAT::util::CheckOutDir($dir{output}, "", 755);
-
 
     ## Prefix
     $param{prefix} = $organism_name;
@@ -237,9 +256,28 @@ package main;
     print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$organism_name, "result_toc"=>0, refresh_time=>$refresh_time);
 
     print $main_syn "<tr>";
+    print $main_syn "<td>", $org_counter, "</td>";
     print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
     print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{output}, " [dir]"), "</td>";
     print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{log}, " [log]"), "</td>";
+
+    ## Check that organism is supported in RSAT
+    unless ($organism->check_name($organism_name, 1)) {
+
+      ## Close line of HTML report table
+      print $main_syn "</tr>";
+
+      ## Issue a warning
+      my $warning = join ("\t", "Skipping non-supported organism", $org_counter."/".$org_nb, $organism_name);
+      push @warnings, $warning;
+      &RSAT::message::TimeWarn($warning) if ($main::verbose >= 2);
+
+      next;
+    }
+
+    ## Report organism to be analyzed
+    &RSAT::message::TimeWarn("Organism", $org_counter."/".$org_nb, $organism_name) if ($main::verbose >= 1);
+
 
     ################################################################
     ## Infer operons and syntons
@@ -261,15 +299,23 @@ package main;
     &CloseSynthesis($syn);
 
     ## Report organism-specific output dir and synthesis file
-    &RSAT::message::TimeWarn("\tOrgansim directory", $dir{output}) if ($main::verbose >= 1);
-    &RSAT::message::TimeWarn("\tOrganism synthesis", $outfile{synthesis}) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\tOrganism directory", $dir{output}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("\tOrganism synthesis", $outfile{synthesis}) if ($main::verbose >= 2);
   }
 
   print $main_syn "</table>\n";
   &CloseSynthesis($main_syn);
 
+  if (scalar(@warnings) > 0) {
+    print $main_log (join "\n; ",  "; Warning messages",
+		     @warnings), "\n";
+  }
+  close $main_log;
+
+
   ## Report main output dir and synthesis file
   &RSAT::message::TimeWarn("Output directory", $output_dir) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Log file", $main_log_file) if ($main::verbose >= 1);
   &RSAT::message::TimeWarn("Synthesis", $main_synthesis_file) if ($main::verbose >= 1);
   exit(0);
 }
@@ -293,22 +339,12 @@ sub ReadOrganismCrossTable {
   my ($orgs) = &OpenInputFile($infile{organism_table});
 
   my $l = 0;
+  my $read_organisms = 0;
   while (<$orgs>) {
     $l++;
     next if /^;/;		## Skip comment lines
     next unless /\S/;		## Skip empty lines
     chomp();
-
-    ## Check last organism option
-    if (($param{last_org} > 0) && (scalar@organism_names >= $param{last_org})) {
-      &RSAT::message::Info("Stop reading organism table, due to option -last_org ".$param{last_org});
-      last;
-    }
-    ## Check skip organism option
-    if (scalar@organism_names < $param{skip_org}) {
-      &RSAT::message::Info("Skipping line ".$l, "option -skip_org ".$param{skip_org});
-      next;
-    }
 
     ## Parse header line
     if (/^#/) {
@@ -319,13 +355,19 @@ sub ReadOrganismCrossTable {
     }
 
     ## Parse one line
+
     my @fields = split /\t/;
     my $organism_name = $fields[$org_table_column{rsat_organism_id}-1];
     if ($organism_name) {
+      $read_organisms++;
+
+      &RSAT::message::Info("Adding organism", $read_organisms, $organism_name,  "line ".$l) if ($main::verbose >= 3);
       push @organism_names, $organism_name;
+
     } else {
       &RSAT::message::Warning($infile{organism_table}, "line ".$l, "missing field", "rsat_organism_id", "expected in column ".$org_table_column{rsat_organism_id}, );
     }
+
   }
   close $orgs;
 }
@@ -427,7 +469,7 @@ Example:
 
 =cut
     } elsif ($arg eq "-org") {
-      &RSAT::error::FatalError("Options -org and -org_table are mutually incompatible") if ($infiel{organism_table});
+      &RSAT::error::FatalError("Options -org and -org_table are mutually incompatible") if ($infile{organism_table});
       my $organism_name = shift(@arguments);
       push @organism_names, $organism_name;
 
@@ -462,7 +504,7 @@ Additional columns are currently ignored.
 
 =cut
     } elsif ($arg eq "-org_table") {
-      &RSAT::error::FatalError("Options -org and -org_table are mutually incompatible") if (scalar(@Organism_names) > 0);
+      &RSAT::error::FatalError("Options -org and -org_table are mutually incompatible") if (scalar(@organism_names) > 0);
       $infile{organism_table} = shift(@arguments);
 
 
@@ -692,7 +734,7 @@ sub InferOperonsOrSyntons {
   }
   if ($task{$operons_or_syntons}) {
     &RSAT::message::TimeWarn("\tComputing size distribution", $operons_or_syntons) if ($main::verbose >= 1);
-    $cmd = $SCRIPTS."/classfreq -v 1 -ci 1";
+    $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 3";
     $cmd .= " -i ".$outfile{$operons_or_syntons};
     $cmd .= " -o ".$outfile{$operons_or_syntons."_stats"};
 
@@ -730,6 +772,13 @@ sub InferOperonsOrSyntons {
   print $syn "<tr>";
   print $syn "<td>";
 
+  ## Initialize statistics
+  my $nb_genes = "NA";
+  my $nb_operons = "NA";
+  my $operon_mean_size = "NA";
+  my $operon_max_size = "NA";
+
+
   ## Read statistics
   if (-e $outfile{$operons_or_syntons."_stats"}) {
     my ($stats) = &OpenInputFile($outfile{$operons_or_syntons."_stats"});
@@ -744,14 +793,19 @@ sub InferOperonsOrSyntons {
       $stats{$key} = $value;
     }
 
+    $nb_genes = $stats{sum};
+    $nb_operons = $stats{count};
+    $operon_mean_size = $stats{mean};
+    $operon_max_size = $stats{max};
+
     ## Add information in the organism-specific synthesis
-    print $syn "<br>Nb genes: ", $stats{sum};
-    print $syn "<br>Nb ".$operons_or_syntons.": ", $stats{count};
-    print $syn "<br>Mean size: ", sprintf("%.1f", $stats{mean});
-    print $syn "<br>Max size: ", $stats{max};
+    print $syn "<br>Nb genes: ", $nb_genes;
+    print $syn "<br>Nb ".$operons_or_syntons.": ", $nb_operons;
+    print $syn "<br>Mean size: ", sprintf("%.1f", $operon_mean_size);
+    print $syn "<br>Max size: ", $operon_max_size;
 
     ## Add info in the main synthesis
-    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $stats{count}),  "</td>\n";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $nb_operons),  "</td>\n";
 
   } else {
     print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_syntons."_stats"}, "</font></p>\n";
