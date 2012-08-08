@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-genoscope,v 1.1 2012/08/08 07:20:20 jvanheld Exp $
+# $Id: supported-organisms-genoscope,v 1.2 2012/08/08 08:14:25 jvanheld Exp $
 #
 ############################################################
 
@@ -91,7 +91,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -297,6 +297,7 @@ sub GetOrganismInfo {
 			 id
 			 commonName
 			 taxon
+			 frame
 			);
   my %descr = (frameVersion=>"concatenation of MetaCyc organism identifier (\"frame\") and version.",
 	       frame=>"MetaCyc organism identifier (\"frame\").",
