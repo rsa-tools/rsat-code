@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.11 2012/08/08 13:30:10 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.12 2012/08/10 05:57:38 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -1043,42 +1043,40 @@ sub GetGER() {
   if ($task{ger}) {
 
     ## Check that organism table contains a cross-reference to the MICROSCOPE database for the organism
-    unless ($organism_info{$organism_name}->{metacyc_frame_version}) {
+    if ($organism_info{$organism_name}->{metacyc_frame_version}) {
+      ## Run the MICROME/MICROSCOPE Web client
+      my $ms_org_id = $organism_info{$organism_name}->{metacyc_frame_version};
+      my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
+      my $cmd = "python2.7 ".$ger_cmd;
+      $cmd .= " --ms_org_id ".$ms_org_id;
+      $cmd .= " --reactions" if ($args{get_reactions});
+      $cmd .= " -o ".$outfile{$suffix};
+      &one_command($cmd, 1);
+
+      if ($suffix eq "gene-ec") {
+	## Select non-redundant subset of the GER table, using the column ID
+	## to identify genes
+	$cmd = "grep '^#' ".$outfile{$suffix};
+	$cmd .= " | perl -pe 's/^\#//'";
+	$cmd .= " | awk -F'\\t' '{print \"#\"\$4\"\\t\"\$2\"\\t\"\$1}'";
+	$cmd .= " > ".$outfile{$suffix."_by_id"};
+	$cmd .= "; grep -v '^; ' ".$outfile{$suffix};
+	$cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"id\"'";
+	$cmd .= " | awk -F '\\t' '{print \$4\"\\t\"\$2\"\\t\"\$1}'";
+	$cmd .= " >> ".$outfile{$suffix."_by_id"};
+
+	## Convert gene-ec table to HTML format
+	$cmd .= " ; ".$SCRIPTS."/text-to-html ";
+	$cmd .= " -i ".$outfile{$suffix."_by_id"};
+	$cmd .= " -o ".$outfile{$suffix."_by_id_html"};
+	&one_command($cmd, 1);
+      }
+    } else {
       my $warning = join ("\t", "Cannot collect GER for organism", $organism_name, "because missing cross-reference to Genoscope/MicroCyc.", $organism_name);
       push @warnings, $warning;
       &RSAT::message::Warning($warning) if ($main::verbose >= 1);
-      return();
-    }
-
-    ## Run the MICROME/MICROSCOPE Web client
-    my $ms_org_id = $organism_info{$organism_name}->{metacyc_frame_version};
-    my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
-    my $cmd = "python2.7 ".$ger_cmd;
-    $cmd .= " --ms_org_id ".$ms_org_id;
-    $cmd .= " --reactions" if ($args{get_reactions});
-    $cmd .= " -o ".$outfile{$suffix};
-    &one_command($cmd, 1);
-
-    if ($suffix eq "gene-ec") {
-      ## Select non-redundant subset of the GER table, using the column ID
-      ## to identify genes
-      $cmd = "grep '^#' ".$outfile{$suffix};
-      $cmd .= " | perl -pe 's/^\#//'";
-      $cmd .= " | awk -F'\\t' '{print \"#\"\$4\"\\t\"\$2\"\\t\"\$1}'";
-      $cmd .= " > ".$outfile{$suffix."_by_id"};
-      $cmd .= "; grep -v '^; ' ".$outfile{$suffix};
-      $cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"id\"'";
-      $cmd .= " | awk -F '\\t' '{print \$4\"\\t\"\$2\"\\t\"\$1}'";
-      $cmd .= " >> ".$outfile{$suffix."_by_id"};
-
-      ## Convert gene-ec table to HTML format
-      $cmd .= " ; ".$SCRIPTS."/text-to-html ";
-      $cmd .= " -i ".$outfile{$suffix."_by_id"};
-      $cmd .= " -o ".$outfile{$suffix."_by_id_html"};
-      &one_command($cmd, 1);
     }
   }
-
 
   ## Add info in the main synthesis
   if ($task{synthesis}) {
