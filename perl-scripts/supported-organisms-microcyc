@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-microcyc,v 1.1 2012/08/08 15:58:56 jvanheld Exp $
+# $Id: supported-organisms-microcyc,v 1.2 2012/08/10 05:57:48 jvanheld Exp $
 #
 ############################################################
 
@@ -91,7 +91,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -123,8 +123,10 @@ package main;
 
 
   ## Open a connection to the Genoscope Web services
-  my $service= SOAP::Lite
-    -> service('http://www.genoscope.cns.fr/microcyc-webservice/services/fr.genoscope.agc.microcyc.business.MicrocycService.wsdl');
+  my $microcyc_ws_url = 'http://www.genoscope.cns.fr/microcyc-webservice/services/fr.genoscope.agc.microcyc.business.MicrocycService.wsdl';
+  &RSAT::message::TimeWarn("Opening connection to Web services", $microcyc_ws_url) if ($main::verbose >= 2);
+  my $service = SOAP::Lite->service($microcyc_ws_url);
+  &RSAT::message::TimeWarn("Connection established", $service) if ($main::verbose >= 3);
 
 #  my @organism_ids = &GetOrganismIDList($service); &PrintOrganismIDs(@organism_ids);
 
