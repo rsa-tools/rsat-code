@@ -68,7 +68,11 @@ setenv RSAT [PARENT_PATH]/rsa-tools
 set path=($RSAT/bin $path)
 set path=($RSAT/perl-scripts $path)
 set path=($RSAT/python-scripts $path)
-set CLASSPATH=($RSAT/java/lib/NeAT_javatools.jar=${CLASSPATH})
+if ($?CLASSPATH) then
+       setenv CLASSPATH ${RSAT}/java/lib/NeAT_javatools.jar:${CLASSPATH}
+else
+       setenv CLASSPATH ${RSAT}/java/lib/NeAT_javatools.jar
+endif
 \end{lstlisting}
 %% closing $
 
@@ -85,9 +89,13 @@ export RSAT=[PARENT_PATH]/rsa-tools
 export PATH=${RSAT}/bin:${PATH}
 export PATH=${RSAT}/perl-scripts:${PATH}
 export PATH=${RSAT}/python-scripts:${PATH}
-export CLASSPATH=${RSAT}/java/lib/NeAT_javatools.jar:${CLASSPATH}
+if  [ ${CLASSPATH} ]; then
+       export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
+else
+       export CLASSPATH=${RSAT}/java/lib/NeAT_javatools.jar
+fi
 \end{lstlisting}
-
+%% closing $
 
 \item If you are using a different shell than bash, csh or tcsh, the
 specification of environment variables might differ from the syntax
