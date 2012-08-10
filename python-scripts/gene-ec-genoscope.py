@@ -102,7 +102,7 @@ def getGPR(ms_Organism_id):
 		for i in range(len(getallPgdb)):
 			if "commonName" in getallPgdb[i].__keylist__ and "taxon" in getallPgdb[i].__keylist__:
 				l.append(str(getallPgdb[i].frameVersion))
-		print "List of the available attributes:\n", l
+##		print "List of the available attributes:\n", l
 		raise AttributeError, ms_Organism_id
 	return getGPR
 
