@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.145 2012/07/08 21:01:08 jvanheld Exp $
+# $Id: matrix-quality,v 1.146 2012/08/17 01:00:38 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -622,10 +622,11 @@ package main;
       ## Define file names here because we need them for the index, even
       ## if we don't run the export task
       $outfile{matrix_info} = $matrix_prefix{$matrix_name}."_matrix_info.txt";  push @files_to_index, "matrix_info";
-      &RSAT::message::Debug("Adding file to index ",  "matrix_info",  $matrix_prefix{$matrix_name}."_matrix_info.txt" ) if ($main::verbose >= 15);
+      &RSAT::message::Debug("Adding file to index ",  "matrix_info",  $matrix_prefix{$matrix_name}."_matrix_info.txt" ) if ($main::verbose >= 10);
 
       #    $outfile{matrix_rc} = $matrix_prefix{$matrix_name}."_matrix_rc"; push @files_to_index, "matrix_rc";
-      $outfile{matrix_logo}= $matrix_prefix{$matrix_name}."_".$matrix_name."_logo" ;
+      #$outfile{matrix_logo}= $matrix_prefix{$matrix_name}."_".$matrix_name."_logo" ;
+      $outfile{matrix_logo}= $matrix_prefix{$matrix_name}."_logo" ;
       $matrix_info_general_index{$matrix_name}{logo}=$outfile{matrix_logo};
       $matrix_info_general_index{$matrix_name}{synthesis}=$outfile{matrix_synthesis};
 
