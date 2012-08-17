@@ -3906,8 +3906,8 @@ sub makeLogo{
 #    my $logo_cmd = $seqlogo_path;
     my $logo_cmd = "cd ".$logo_dir;
     $logo_cmd .= "; ".$seqlogo_path;
-   # $logo_cmd .= " -f ".$fake_seq_file;
-    $logo_cmd .= " -f ".$fake_seq_file_short;
+   $logo_cmd .= " -f ".$fake_seq_file;
+   # $logo_cmd .= " -f ".$fake_seq_file_short;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
     $logo_cmd .= " -x '".$logo_info."'";
@@ -3918,7 +3918,7 @@ sub makeLogo{
 #    $logo_cmd .= " -o "."$logo_dir/". $logo_basename;
     $logo_cmd .= " -t '".$logo_title."'";
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
-    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
+    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 0);
 
 
 #     &RSAT::message::Debug("logo_dir=".$logo_dir,
@@ -4007,19 +4007,19 @@ sub fake_seq_from_matrix {
       $fake_seq .= $array->[$residue];
     }
     $fake_seq = &RSAT::SeqUtil::ReverseComplement($fake_seq) if ($rev_compl);
-    &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "Fake sequence", $col_seq) if ($main::verbose >= 0);
+    &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "Fake sequence", $col_seq) if ($main::verbose >= 10);
     push @seqs, $fake_seq;
   }
-  &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 0);
+  &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 10);
 
   ## create a temporary sequence file which will be deleted after logo creation
-  my $tmp_seq_file = &RSAT::util::make_temp_file("", ( $self->get_attribute("id")|| $self->get_attribute("identifier") ) );
+  my $tmp_seq_file = &RSAT::util::make_temp_file( $logo_dir, ( $self->get_attribute("id")|| $self->get_attribute("identifier") ) );
 #  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
  
 
- &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 0);
+ &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 10);
   print "==".`less $tmp_seq_file`."==";
   close $seq_handle;
   return ($tmp_seq_file,$seq_number);
