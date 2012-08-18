@@ -186,6 +186,7 @@ export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'profile_heatmap'
 
 
 ## Cut the tree in k clusters
+nb.clusters=min(nb.clusters, nb.patterns) ## Check that number of clusters does not exceed the number of selected patterns
 clusters <- cutree(pos.tree,k=nb.clusters)
 write.table(as.data.frame(clusters), file=file.path(dir.clusters, paste(sep='', 'clusters_', suffix, '.tab')), row.names=TRUE, col.names=FALSE, quote=FALSE)
 table(clusters)
