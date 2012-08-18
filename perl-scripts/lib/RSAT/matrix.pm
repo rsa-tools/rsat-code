@@ -3887,11 +3887,7 @@ sub makeLogo{
   my $logo_info = $seq_number." sites";
 
   ## Run seqlogo to generate the logo(s)
-#  die "HERE"
-#  &RSAT::error::FatalError("BOUM");
   my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{seqlogo_dir});
-#  my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
-#  &RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 10);
   foreach my $logo_format (@logo_formats){
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
@@ -3902,21 +3898,22 @@ sub makeLogo{
     }
     my ($dir_aux, $fake_seq_file_short) = &RSAT::util::SplitFileName($fake_seq_file);
 
+
     ## Prepare the seqlogo command
-#    my $logo_cmd = $seqlogo_path;
-    my $logo_cmd = "cd ".$logo_dir;
-    $logo_cmd .= "; ".$seqlogo_path;
-   $logo_cmd .= " -f ".$fake_seq_file;
-   # $logo_cmd .= " -f ".$fake_seq_file_short;
+    my $logo_cmd = $seqlogo_path;
+#    my $logo_cmd = "cd ".$logo_dir;
+#    $logo_cmd .= "; ".$seqlogo_path;
+#    $logo_cmd .= " -f ".$fake_seq_file_short;
+    $logo_cmd .= " -f ".$fake_seq_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
     $logo_cmd .= " -x '".$logo_info."'";
     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
 #    $logo_cmd .= " -e -M";
     $logo_cmd .= " ".$logo_options;
-    $logo_cmd .= " -o ". $logo_basename;
-#    $logo_cmd .= " -o "."$logo_dir/". $logo_basename;
+#    $logo_cmd .= " -o ". $logo_basename;
     $logo_cmd .= " -t '".$logo_title."'";
+    $logo_cmd .= " -o "."$logo_dir/".$logo_basename;
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
 
@@ -3937,13 +3934,19 @@ sub makeLogo{
     &RSAT::util::doit($logo_cmd,$logo_dry,$logo_die,$logo_verbose,$logo_prefix);
 
     my $logo_file = $logo_basename.".".$logo_format;
+#     &RSAT::message::Debug("pwd", `pwd`,
+# 			  "\nlogo_dir", $logo_dir,
+# 			  "\nlogo_file", $logo_file,
+# 			 ) if ($main::verbose >= 10);
+
     push @logo_files, $logo_file;
     &RSAT::message::Info("matrix", $self->get_attribute("id"), "Logo file", $logo_file) if ($main::verbose >= 5);
-    ## Remove the fake sequences, not necessary anymore
-#    &RSAT::server::DelayedRemoval($fake_seq_file);
-    system "rm -f $fake_seq_file";
-#    unlink ($fake_seq_file); ## The file removal  makes a problem that I don't understand
   }
+
+  ## Remove the fake sequences, not necessary anymore
+  #    &RSAT::server::DelayedRemoval($fake_seq_file);
+  #    unlink ($fake_seq_file);
+  system "rm -f $fake_seq_file";
   return(@logo_files);
 }
 
@@ -4013,15 +4016,17 @@ sub fake_seq_from_matrix {
   &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 10);
 
   ## create a temporary sequence file which will be deleted after logo creation
-  my $tmp_seq_file = &RSAT::util::make_temp_file( $logo_dir, ( $self->get_attribute("id")|| $self->get_attribute("identifier") ) );
-#  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
+  my $id = $self->get_attribute("id")|| $self->get_attribute("identifier") ;
+  my $tmp_seq_file = &RSAT::util::make_temp_file($logo_dir, $id);
+#  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $id);
+  if ($main::verbose >= 5) {
+    &RSAT::message::Debug("Fake sequence files",
+			"\nlogo_dir", $logo_dir,
+			  "\ntmp_seq_file ", $tmp_seq_file);
+    print "====".`less $tmp_seq_file`."====" if ($main::verbose >= 10);
+  }
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
-
-  if ($main::verbose >= 5) {
-    &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file);
-    print "==".`less $tmp_seq_file`."==" if ($main::verbose >= 10);
-  }
   close $seq_handle;
   return ($tmp_seq_file,$seq_number);
 }
