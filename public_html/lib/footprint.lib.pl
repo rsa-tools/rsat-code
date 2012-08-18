@@ -969,7 +969,6 @@ sub MainIndexFileName {
   my $main_prefix = &MainPrefix();
   $outfile{main_index_file} = $main_prefix."_result_index.html"; 
   $outfile{main_table_file} = $main_prefix."_result_table.tab";
-
   return($outfile{main_index_file},$outfile{main_table_file});
 }
 
