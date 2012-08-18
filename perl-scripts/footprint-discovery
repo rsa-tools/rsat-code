@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.96 2012/08/18 08:58:41 jvanheld Exp $
+# $Id: footprint-discovery,v 1.97 2012/08/18 09:06:58 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.96 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.97 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -1115,14 +1115,14 @@ sub DyadAnalysis {
 	my $logo_file = $prefix{pssm}."_count_matrices_logo_m".$m.".png";
 	my $logo_link = &RSAT::util::RelativePath($outfile{index}, $logo_file);
 	print $index "<td>\n";
-	print $index &LinkOneFile($outfile{index}, $logo_file, "<img src='".$logo_link."' height='100' align='right'>");
+	print $index &LinkOneFile($outfile{index}, $logo_file, "<img src='".$logo_link."' height='80' align='right'>");
 	print $index "<td>\n";
 
 	## Link to reverse complementary matrix logo
 	my $logo_rc_file = $prefix{pssm}."_count_matrices_logo_m".$m."_rc.png";
 	my $logo_rc_link = &RSAT::util::RelativePath($outfile{index}, $logo_rc_file);
 	print $index "<td>\n";
-	print $index &LinkOneFile($outfile{index}, $logo_rc_file, "<img src='".$logo_rc_link."' height='100' align='left'>");
+	print $index &LinkOneFile($outfile{index}, $logo_rc_file, "<img src='".$logo_rc_link."' height='80' align='left'>");
 	print $index "<td>\n";
 
 
