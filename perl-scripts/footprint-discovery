@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.94 2012/08/18 08:07:34 jvanheld Exp $
+# $Id: footprint-discovery,v 1.95 2012/08/18 08:54:14 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.94 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -399,7 +399,7 @@ package main;
   if ($infile{bg_model}) {
     &RSAT::message::TimeWarn("Checking background model file", $infile{bg_model}) if ($main::verbose >= 2);
     unless (-e $infile{bg_model}) {
-      &RSAT::error::FatalError("Background model file does not exist", $infile{bg_model});
+      &RSAT::message::Warning("Background model file does not exist", $infile{bg_model}) if ($main::verbose >= 2);
     }
   }
 
