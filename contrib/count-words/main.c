@@ -44,7 +44,7 @@ void help(char *progname)
 "        --version        print version\n"
 "        -v #             change verbosity level (0, 1, 2)\n"
 "        -l #             set oligomer length to # (monad size when using dyads)\n"
-"        -  #             input filename\n"
+"        -i #             input filename\n"
 "        -2str            add reverse complement\n"
 "        -1str            do not add reverse complement\n"
 "        -sp #-#          spacing between the two parts of the dyads from # to # \n"
