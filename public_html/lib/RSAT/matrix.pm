@@ -4017,10 +4017,11 @@ sub fake_seq_from_matrix {
 #  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("id"));
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
- 
 
- &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 10);
-  print "==".`less $tmp_seq_file`."==";
+  if ($main::verbose >= 5) {
+    &RSAT::message::Debug("Fake sequences stored in temp file\n", $tmp_seq_file);
+    print "==".`less $tmp_seq_file`."==" if ($main::verbose >= 10);
+  }
   close $seq_handle;
   return ($tmp_seq_file,$seq_number);
 }
