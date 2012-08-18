@@ -3891,7 +3891,7 @@ sub makeLogo{
 #  &RSAT::error::FatalError("BOUM");
   my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{seqlogo_dir});
 #  my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
-#  &RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 0);
+#  &RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 10);
   foreach my $logo_format (@logo_formats){
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
@@ -3918,7 +3918,7 @@ sub makeLogo{
 #    $logo_cmd .= " -o "."$logo_dir/". $logo_basename;
     $logo_cmd .= " -t '".$logo_title."'";
     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
-    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 0);
+    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
 
 
 #     &RSAT::message::Debug("logo_dir=".$logo_dir,
@@ -3959,7 +3959,7 @@ sub makeLogo{
 ##
 sub fake_seq_from_matrix {
   my ($self,$rev_compl) = @_;
-  &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "rev_compl=".$rev_compl) if ($main::verbose >= 0);
+  &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "rev_compl=".$rev_compl) if ($main::verbose >= 5);
 
   my $null_residue = "n"; ##  to fill up sequences for matrices having columns with different number of residues
   my $nb_col = $self->ncol();
