@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.93 2012/08/06 22:48:30 jvanheld Exp $
+# $Id: footprint-discovery,v 1.94 2012/08/18 08:07:34 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.94 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -305,7 +305,7 @@ package main;
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
-  local ($main_index, $main_index_table) = &OpenMainIndex() unless ($batch);
+  local ($main_index, $main_summary_table) = &OpenMainIndex() unless ($batch);
 
   ################################################################
   ## Parameters for dyad-analysis
@@ -323,7 +323,8 @@ package main;
   if ($bg_model eq "file") {
     &RSAT::error::FatalError("The option '-bg_model file' requires to specify a file with the option '-bgfile'")
       unless ($bgfile);
-      $infile{bg_model} = $bgfile;
+    $infile{bg_model} = $bgfile;
+
   } elsif ($bg_model eq "org_list") {
 
     ## Check that the list of organisms has been specified
@@ -372,6 +373,7 @@ package main;
     if ((-e $infile{bg_model}) ||
 	    (-e ($infile{bg_model}.".gz"))) {
 	&RSAT::message::Info("Background model file already exists. Not re-computed.", $infile{bg_model}) if ($main::verbose >= 2);
+
     } else {
 
       ## Store the background model in the parent directory of the query sub-directories
@@ -389,12 +391,17 @@ package main;
       }
       &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
     }
-      
   } else {
       &RSAT::error::FatalError($bg_model, "Invalid background model. Supported: ", $supported_bg_models) unless ($supported_bg_model{$bg_model});
   }
-  &RSAT::message::TimeWarn("Background model file", $infile{bg_model}) if ($main::verbose >= 3);
 
+  ## Check if background model file exists
+  if ($infile{bg_model}) {
+    &RSAT::message::TimeWarn("Checking background model file", $infile{bg_model}) if ($main::verbose >= 2);
+    unless (-e $infile{bg_model}) {
+      &RSAT::error::FatalError("Background model file does not exist", $infile{bg_model});
+    }
+  }
 
   ################################################################
   ## Analyze query genes separately or altogether
@@ -447,20 +454,23 @@ package main;
 
 
   ## Close the main index stream
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
   unless ($batch) {
       print $main_index "</table>\n";
-      print $main_index "<h2>File index</h2>\n";
-      print $main_index "<p><table>\n";
-      foreach my $key (@to_index) {
+
+      if (scalar(@network_files) >= 1) {
+	print $main_index "<h2>Inferred co-regulation network</h2>\n";
+	print $main_index "<table class='resultlink'>\n";
+	#      print $main_index "<p><table>\n";
+	foreach my $key (@network_files) {
 	  print $main_index "<tr>\n";
 	  print $main_index "<td>".$key."</td>\n";
 	  my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
 	  print $main_index "<td>".$link."</td>\n";
 	  print $main_index "</tr>\n";
+	}
+	print $main_index "</table></p>\n";
       }
-      print $main_index "</table></p>\n";
-      
+      my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
       print $main_index "<p><pre>", $exec_time, "</pre></p>\n";
       print $main_index "</body>\n";
       print $main_index "</html>\n";
@@ -517,10 +527,10 @@ sub RunFootprintDisco {
   $outfile{map} = $outfile{dyad_prefix}.".".${map_format};
 
   ## Conversion to matrix
-  $outfile{pssm_prefix} = $outfile{dyad_prefix}."_pssm";
-  $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.tf";
-  $outfile{count_PSSM_txt} = $outfile{pssm_prefix}."_count_matrices.txt";
-  $outfile{count_PSSM_tf} = $outfile{pssm_prefix}."_count_matrices.tf";
+  $prefix{pssm} = $outfile{dyad_prefix}."_pssm";
+  $outfile{sig_PSSM} = $prefix{pssm}."_sig_matrices.tf";
+  $outfile{count_PSSM_txt} = $prefix{pssm}."_count_matrices.txt";
+  $outfile{count_PSSM_tf} = $prefix{pssm}."_count_matrices.tf";
 
   ## Index files for the main index
   $main_index{$query_prefix}{dyads} = $outfile{dyads};
@@ -587,8 +597,9 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
-  local $dyad_nb = "NA";
-  $dyad_nb = &DyadAnalysis() if (($status eq "OK") || ($batch));
+  local $dyad_nb = 0;
+  local $matrix_nb = 0;
+  ($dyad_nb, $matrix_nb) = &DyadAnalysis() if (($status eq "OK") || ($batch));
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
@@ -609,7 +620,7 @@ sub RunFootprintDisco {
     $cmd .= " -o ".$outfile{map};
     &one_command($cmd);
   }
-  &IndexOneFile("Feature map", $outfile{map}, image=>1) if (($status eq "OK") || ($batch));
+  &IndexOneFile("Dyad map", $outfile{map}, image=>1) if (($status eq "OK") || ($batch));
 
 
   ################################################################
@@ -681,17 +692,18 @@ sub RunFootprintDisco {
       my $top_sig = "NA";
       my $sig_color = '#000000';
       $dyad_nb = 0; ## Re-initialize the number of dyads
+
       local %header_col = ();
 
       if (-e $outfile{dyads}) {
 	  &RSAT::message::Info("Indexing dyads", $query_prefix, $outfile{dyads}) if ($main::verbose >= 4);
 	  my ($dyads) = &OpenInputFile($outfile{dyads});
-    
+
 	  while (<$dyads>) {
 	      next if (/^;/); ## Skip comments
 	      next unless (/\S/); ## Skip empty lines
 	      chomp();
-	      
+
 
 	      ## Read the header to idenfify occ_sig column
 	      if (/^#/) {
@@ -704,7 +716,7 @@ sub RunFootprintDisco {
 		  }
 		  next;
 	      }
-	      
+
 	      $dyad_nb++;
 
 	      ## Report top significant dyad
@@ -724,24 +736,22 @@ sub RunFootprintDisco {
       print $main_index "<td>", $ortho_seq_len, "</td>\n";
       print $main_index "<td><tt>", $top_id, "</tt></td>\n";
 
-   
-
       if ($status ne "OK") {
-	  $sig_color = '#BBBBBB';
+	$sig_color = '#BBBBBB';
       } elsif ($top_sig <= 2) {
-	  $sig_color = '#888888';
+	$sig_color = '#888888';
       } elsif ($top_sig >= 5) {
-	  $sig_color = '#0000CC';
+	$sig_color = '#0000CC';
       } else {
-	  $sig_color = '#000000';
+	$sig_color = '#000000';
       }
       print $main_index "<td>", "<font color='".$sig_color."'>", $top_sig, "</font>",,"</td>\n";
       print $main_index "<td>", "<font color='".$sig_color."'>", $dyad_nb, "</font>",,"</td>\n";
-#  print $main_index "<td>", $dyad_nb, "<td>";
-      
+      print $main_index "<td>", "<font color='".$sig_color."'>", $matrix_nb, "</font>",,"</td>\n";
       print $main_index "</tr>\n";
-      
-      print $main_index_table join ("\t",$q,$query_prefix,$query_name_index,$status,$query_prom_len,$ortholog_nb,$ortho_seq_len,$top_id,$top_sig,$dyad_nb );
+
+      ## Update the summary table
+      print $main_summary_table join ("\t",$q,$query_prefix,$query_name_index,$status,$query_prom_len,$ortholog_nb,$ortho_seq_len,$top_id,$top_sig,$dyad_nb, $matrix_nb );
 
   }
 }
@@ -762,7 +772,7 @@ sub PrintOptions {
 }
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
 
 =pod
@@ -999,7 +1009,8 @@ sub Verbose {
 ################################################################
 ## Run dyad-analysis
 sub DyadAnalysis {
-  my $dyad_nb = 0; ## The method returns the number of significant dyads
+  my $dyad_nb = "NA"; ## The method returns the number of significant dyads and matrices
+  my $matrix_nb = "NA";
 
   if ($task{dyads}) {
     &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
@@ -1070,29 +1081,66 @@ sub DyadAnalysis {
       $cmd .= " -bginput -markov 0";
       $cmd .= " ".$strands;
       $cmd .= " -logo";
-      $cmd .= " -o ".$outfile{pssm_prefix};
+      $cmd .= " -o ".$prefix{pssm};
       &one_command($cmd);
     }
-  } else {
-    ## Even if the task dyads has not been selected, we count the previous number of significant dyads
+  }
+
+
+  ## Even if the task dyads has not been selected, we count the previous number of significant dyads for the index
+  if ($dyad_nb eq "NA") {
     $dyad_nb = &CountDyads();
   }
+  $matrix_nb = &CountMatrices();
 
   &IndexOneFile("Dyads (tab format)", $outfile{dyads});
   &IndexOneFile("<b>Dyads</b> (html format)", $outfile{dyads_html});
-
   if ((&IsNatural($dyad_nb)) && ($dyad_nb >= 1)) {
     &IndexOneFile("Assembled dyads", $outfile{asmb});
     &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
     &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
     &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
+
+
+    ## Index logo files
+    if ($matrix_nb > 0) {
+      print $index "<tr>\n";
+      print $index "<td>",$matrix_nb," matrices</td>\n";
+      print $index "<td><table class='simple'>\n";
+      foreach my $m (1..$matrix_nb) {
+	print $index "<tr>\n";
+	print $index "<td>m",$m,"</td>\n";
+
+	## Link to matrix logo
+	my $logo_file = $prefix{pssm}."_count_matrices_logo_m".$m.".png";
+	my $logo_link = &RSAT::util::RelativePath($outfile{index}, $logo_file);
+	print $index "<td>\n";
+	print $index &LinkOneFile($outfile{index}, $logo_file, "<img src='".$logo_link."' height='80'>");
+	print $index "<td>\n";
+
+	## Link to reverse complementary matrix logo
+	my $logo_rc_file = $prefix{pssm}."_count_matrices_logo_m".$m."_rc.png";
+	my $logo_rc_link = &RSAT::util::RelativePath($outfile{index}, $logo_rc_file);
+	print $index "<td>\n";
+	print $index &LinkOneFile($outfile{index}, $logo_rc_file, "<img src='".$logo_rc_link."' height='80'>");
+	print $index "<td>\n";
+
+
+	print $index "</tr>\n";
+      }
+      print $index "</table></td>\n";
+      print $index "</tr>\n";
+    }
   }
 
-  return($dyad_nb);
+  return($dyad_nb, $matrix_nb);
 }
 
+
+################################################################
+## Count the number of significant dyads
 sub CountDyads {
-  my $dyad_nb = "NA";
+  my $dyad_nb = 0;
   return ($dyad_nb) if ($batch);
   if (-e $outfile{dyads}) {
     $dyad_nb = `grep -v '^;' $outfile{dyads} | grep -v '^#' | wc -l`;
@@ -1105,8 +1153,26 @@ sub CountDyads {
     &RSAT::message::Warning("Missing dyad file", $outfile{dyads});
     $status = "Missing dyad file:".$outfile{dyads};
   }
-
   return($dyad_nb);
+}
+
+################################################################
+## Count the number of final matrices
+sub CountMatrices {
+  my $matrix_nb = 0;
+  return ($matrix_nb) if ($batch);
+  if (-e $outfile{count_PSSM_tf}) {
+    $matrix_nb = `grep '^AC  ' $outfile{count_PSSM_tf} | wc -l`;
+    chomp($matrix_nb);
+    ## Detect if there is no significant dyad
+    if (($status eq "OK") && ($matrix_nb < 1)) {
+      $status = "No matrix";
+    }
+  } else {
+    &RSAT::message::Warning("Missing matrix file", $outfile{count_PSSM_tf});
+    $status = "Missing matrix file:".$outfile{count_PSSM_tf};
+  }
+  return($matrix_nb);
 }
 
 ################################################################
@@ -1128,7 +1194,7 @@ sub CoregulationNetwork {
     print $out $main_index{$query_prefix}{dyads}."\n" if (-e $main_index{$query_prefix}{dyads});
   }
   &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 2);
-  push @to_index, "dyad_file_list";
+  push @network_files, "dyad_file_list";
 
   ################################################################
   ## Generate a dyad significance profiles.  Instead of a table with 1
@@ -1152,7 +1218,7 @@ sub CoregulationNetwork {
   $compare_scores_cmd .= " -o ".$outfile{dyad_sig_classes};
   &doit($compare_scores_cmd);
   &RSAT::message::TimeWarn("Dyad sig classes", $outfile{dyad_sig_classes}) if ($main::verbose >= 2);
-  push @to_index, "dyad_sig_classes";
+  push @network_files, "dyad_sig_classes";
 
   ################################################################
   ## Build the network by comparing dyads score profiles between each
@@ -1169,7 +1235,7 @@ sub CoregulationNetwork {
   $compare_classes_cmd .= " -o ".$outfile{gene_pairs};
   &doit($compare_classes_cmd);
   &RSAT::message::TimeWarn("Gene pairs", $outfile{gene_pairs}) if ($main::verbose >= 2);
-  push @to_index, "gene_pairs";
+  push @network_files, "gene_pairs";
 
   ################################################################
   ## Add columns with gene names and IDs
@@ -1182,7 +1248,7 @@ sub CoregulationNetwork {
   $cc_gene_info_cmd .= " -o ".$outfile{gene_pairs_names};
   &doit($cc_gene_info_cmd);
   &RSAT::message::TimeWarn("Gene pairs (with names)", $outfile{gene_pairs_names}) if ($main::verbose >= 2);
-  push @to_index, "gene_pairs_names";
+  push @network_files, "gene_pairs_names";
 
   ################################################################
   ## Convert the compare-classes result into a graph
@@ -1209,7 +1275,7 @@ sub CoregulationNetwork {
   $convert_graph_cmd .= " -o ".$outfile{gene_pairs_gml};
   &doit($convert_graph_cmd);
   &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 2);
-  push @to_index, "gene_pairs_gml";
+  push @network_files, "gene_pairs_gml";
 
 
   ################################################################
@@ -1224,7 +1290,7 @@ sub CoregulationNetwork {
   $gn_cmd .= " -o ".$outfile{gene_neighbours};
   &doit($gn_cmd);
   &RSAT::message::TimeWarn("Gene neighbours", $outfile{gene_neighbours}) if ($main::verbose >= 2);
-  push @to_index, "gene_neighbours";
+  push @network_files, "gene_neighbours";
 
 }
 
@@ -1241,7 +1307,7 @@ sub OpenMainIndex {
   &RSAT::message::Info("Main table file", $outfile{main_index_table}) if ($main::verbose >= 1);
 
   my $main_index = &OpenOutputFile($outfile{main_index});
-  my $main_index_table=&OpenOutputFile($outfile{main_index_table}) ;
+  my $main_summary_table=&OpenOutputFile($outfile{main_index_table}) ;
 
   $html_title = $taxon if ($taxon);
   $html_title .= " ".$organism_name if ($organism_name);
@@ -1255,7 +1321,7 @@ sub OpenMainIndex {
   print $main_index $arguments;
   print $main_index "</p>\n";
 
-  
+
 
   ## Open the index table
   print $main_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
@@ -1271,12 +1337,13 @@ sub OpenMainIndex {
   print $main_index "<th>","Top dyad","</th>\n";
   print $main_index "<th>","Max sig","</th>\n";
   print $main_index "<th>","Nb dyads","</th>\n";
+  print $main_index "<th>","Nb matrices","</th>\n";
   print $main_index "</tr>\n";
 
 
-  print $main_index_table "; Command: footprint-discovery ".$arguments. "\n ";
-  print $main_index_table "<tr>\n";
-  print $main_index_table join ("\t","#Query nb",
+  print $main_summary_table "; Command: footprint-discovery ".$arguments. "\n ";
+  print $main_summary_table "<tr>\n";
+  print $main_summary_table join ("\t","#Query nb",
 				"Query",
 				"Query name",
 				"Status",
@@ -1285,10 +1352,12 @@ sub OpenMainIndex {
 				"Sum ortholog sequence sizes",
 				"Top dyad",
 				"Max sig",
-				"Nb dyads")."\n";
+				"Nb dyads",
+				"Nb matrices"
+			       )."\n";
 
 
-  return ($main_index,$main_index_table);
+  return ($main_index, $main_summary_table);
 
 
 }
