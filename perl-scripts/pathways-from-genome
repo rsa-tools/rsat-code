@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.13 2012/08/19 02:20:38 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.14 2012/08/19 02:30:56 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -469,7 +469,7 @@ sub ReadOrganismCrossTable {
     chomp();
 
     ## Parse header line
-    if ($header =/^#/) {
+    if (/^#/) {
       s/^#//;
       @org_table_columns = split /\t/;
       &IndexOrgTableColumns(); ## Update the column index of organism cross-table
