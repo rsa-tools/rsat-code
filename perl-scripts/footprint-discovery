@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.97 2012/08/18 09:06:58 jvanheld Exp $
+# $Id: footprint-discovery,v 1.98 2012/08/19 00:31:57 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.97 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -277,7 +277,7 @@ package main;
   local @query_genes = ();	## list of query genes
   local $infer_operons = 0;     ## Infer operon leader genes
   local $dist_thr = 55;	        ## Distance threshold for operon inference
-  $main::sep_genes = 0;	        ## Analyze each gene separately
+  local $sep_genes = 0;	        ## Analyze each gene separately
   local $promoter = "ortho";    ## Alternatively: leader when the option "infer operons" is active
 #  local $all_genes = 0;         ## Analyze all the genes of the query organism
 #  local $max_genes = undef;     ## Analyze a restricted number of genes
@@ -307,6 +307,11 @@ package main;
 
   local ($main_index, $main_summary_table) = &OpenMainIndex() unless ($batch);
 
+  my $main_prefix = &MainPrefix();
+  $outfile{main_log} = $dir{output_root}."/".$main_prefix."_log.txt";
+  local $main_log = &OpenOutputFile($outfile{main_log});
+  print $main_log &MainVerbose();
+
   ################################################################
   ## Parameters for dyad-analysis
 
@@ -316,8 +321,7 @@ package main;
   }
 
   ##Bg model for orthologs_list is monad
-  $bg_model = "monad" if  $main::orthologs_list_file ;
-
+  $bg_model = "monad" if ($main::orthologs_list_file);
 
   ## Background model file for dyad-analysis
   if ($bg_model eq "file") {
@@ -326,7 +330,6 @@ package main;
     $infile{bg_model} = $bgfile;
 
   } elsif ($bg_model eq "org_list") {
-
     ## Check that the list of organisms has been specified
     &RSAT::error::FatalError("The option '-bg_model org_list' requires to specify a list of organisms with the option '-org_list org_list_file'")
       unless ($orglist_file);
@@ -344,12 +347,12 @@ package main;
     $infile{bg_model} = $dir{bg_model}."/";
     $infile{bg_model} .= "dyads_3nt_sp0-20_upstream-noorf_org_list".$noov.$strands.".freq";
 #    dyads_3nt_sp0-20_upstream-noorf_Actinobacteria-noov-1str.freq.gz
-    if ($task{bg_model}) {
-      my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
-      $cmd .= " -org_list ".$orglist_file;
-      $cmd .= " > ".$infile{bg_model};
-      &doit($cmd);
-    }
+#    if ($task{bg_model}) {
+    my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+    $cmd .= " -org_list ".$orglist_file;
+    $cmd .= " > ".$infile{bg_model};
+    &one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+#    }
 
   } elsif ($bg_model eq "taxfreq") {
     ## Check that the taxon has been specified
@@ -383,12 +386,12 @@ package main;
       &RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
-      if ($task{bg_model}) {
+#      if ($task{bg_model}) {
 	  my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
 	  $cmd .= " -taxon ".$taxon;
 	  $cmd .= " > ".$infile{bg_model};
-	  &doit($cmd);
-      }
+	  &one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+#      }
       &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
     }
   } else {
@@ -410,7 +413,6 @@ package main;
     ## Get the index of genome features by names and ID, which will be
     ## used to indicate gene names in the indexes
     $feature_index = $organism->get_attribute("name_index");
-
 
     local $query_nb = scalar(@query_genes);
     foreach $query (@query_genes) {
@@ -434,7 +436,7 @@ package main;
 
   ################################################################
   ## Generate co-regulation network by comparing gene-wise footprints
-  &CoregulationNetwork() if ($task{network});
+  &CoregulationNetwork() if ((scalar(@query_genes) > 1) && ($sep_genes));
 
   ################################################################
   ## Give a warning to report the gene-specific and main index files
@@ -477,6 +479,8 @@ package main;
       close ($main_index);
       &RSAT::message::TimeWarn("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
   }
+  &RSAT::message::TimeWarn("Main log file", $outfile{main_log}) if ($main::verbose >= 1);
+  close ($main_log);
   exit(0);
 }
 
@@ -512,7 +516,7 @@ sub RunFootprintDisco {
 
   local $status = "OK";
   if ($batch) {
-      $status = "batch mode";
+    $status = "batch mode";
   }
   local $refresh_time = 10;
 
@@ -603,7 +607,8 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
-  if ((($status eq "OK") || ($batch)) && ($task{map})) {
+#  if ((($status eq "OK") || ($batch)) && ($task{map})) {
+  if (($status eq "OK") || ($batch)) {
     my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
     &CheckDependency("map", "dyads");
     &CheckDependency("map", "seq");
@@ -618,7 +623,7 @@ sub RunFootprintDisco {
     $cmd .= " -scalebar -legend";
     $cmd .= " -scorethick";
     $cmd .= " -o ".$outfile{map};
-    &one_command($cmd);
+    &one_command($cmd, 1, 0, task=>'map');
   }
   &IndexOneFile("Dyad map", $outfile{map}, image=>1) if (($status eq "OK") || ($batch));
 
@@ -734,17 +739,21 @@ sub RunFootprintDisco {
       print $main_index "<td>", $query_prom_len, "</td>\n" unless ($nofilter);
       print $main_index "<td>", $ortholog_nb, "</td>\n";
       print $main_index "<td>", $ortho_seq_len, "</td>\n";
-      print $main_index "<td><tt>", $top_id, "</tt></td>\n";
-
-      if ($status ne "OK") {
-	$sig_color = '#BBBBBB';
-      } elsif ($top_sig <= 2) {
-	$sig_color = '#888888';
-      } elsif ($top_sig >= 5) {
-	$sig_color = '#0000CC';
+      if ($status eq "OK") {
+	if ($top_sig eq "NA") {
+	  $sig_color = '#BB0000';
+	} elsif ($top_sig <= 2) {
+	  $sig_color = '#888888';
+	} elsif ($top_sig >= 5) {
+	  $sig_color = '#0000CC';
+	} else {
+	  $sig_color = '#000000';
+	}
       } else {
-	$sig_color = '#000000';
+	$sig_color = '#BBBBBB';
       }
+#      print $main_index "<td><tt>", $top_id, "</tt></td>\n";
+      print $main_index "<td>", "<font color='".$sig_color."'>", $top_id, "</font>",,"</td>\n";
       print $main_index "<td>", "<font color='".$sig_color."'>", $top_sig, "</font>",,"</td>\n";
       print $main_index "<td>", "<font color='".$sig_color."'>", $dyad_nb, "</font>",,"</td>\n";
       print $main_index "<td>", "<font color='".$sig_color."'>", $matrix_nb, "</font>",,"</td>\n";
@@ -950,22 +959,33 @@ query gene, in the query organism. (will cancel -filter option if selected)
 }
 
 ################################################################
+## Return verbosity for the main parameters (common to all queries)
+sub MainVerbose {
+  my $main_header_verbose = "";
+  $main_header_verbose .=  "; footprint-discovery ";
+  $main_header_verbose .= &PrintArguments();
+  $main_header_verbose .= "\n";
+  $main_header_verbose .= sprintf "; %-22s\t%s\n", "Program version", $program_version;
+  $main_header_verbose .= sprintf "; %-22s\t%s", "Working directory", `pwd`;
+  $main_header_verbose .= sprintf "; %-22s\t%s", "Computer name", `hostname`;
+  $main_header_verbose .= sprintf "; %-22s\t%s\n", "Query organism", $organism_name;
+  if($main::orglist_file) {
+    $main_header_verbose .= sprintf "; %-22s\t%s\n", "Organism list", $orglist_file;
+  } else {
+    $main_header_verbose .= sprintf "; %-22s\t%s\n", "Reference taxon", $taxon;
+  }
+  $main_header_verbose .= sprintf "; %s\n", "Promoters from predicted operon leader genes (dist $dist_thr)" if ($infer_operons);
+  return ($main_header_verbose);
+}
+
+################################################################
 ## Verbose message
 sub Verbose {
-  my $header_verbose = "";
-  $header_verbose .=  "; footprint-discovery ";
-  $header_verbose .= &PrintArguments();
-  $header_verbose .= "\n";
-  $header_verbose .= sprintf "; %-22s\t%s\n", "Program version", $program_version;
-  $header_verbose .= sprintf "; %-22s\t%s", "Working directory", `pwd`;
-  $header_verbose .= sprintf "; %-22s\t%s", "Computer name", `hostname`;
-  $header_verbose .= sprintf "; %-22s\t%s\n", "Query organism", $organism_name;
-  if($main::orglist_file) {
-    $header_verbose .= sprintf "; %-22s\t%s\n", "Organism list", $orglist_file;
-  } else {
-    $header_verbose .= sprintf "; %-22s\t%s\n", "Reference taxon", $taxon;
-  }
-  $header_verbose .= sprintf "; %s\n", "Promoters from predicted operon leader genes (dist $dist_thr)" if ($infer_operons);
+
+  ## Parameters for the whole analysis
+  my $header_verbose = &MainVerbose();
+
+  ## Parameters for the current query
   if (scalar(@current_query_genes) == 1) {
     $header_verbose .= sprintf "; %-22s\t%s\n", "Query gene", $current_query_genes[0];
   } elsif (scalar(@current_query_genes) <= 10) {
@@ -997,7 +1017,6 @@ sub Verbose {
   }
   print $out $header_verbose;
 
-
   $header_verbose =~ s/^; //;
   $header_verbose =~ s/\n; /\n/gm;
   print $index "<pre>";
@@ -1012,80 +1031,87 @@ sub DyadAnalysis {
   my $dyad_nb = "NA"; ## The method returns the number of significant dyads and matrices
   my $matrix_nb = "NA";
 
-  if ($task{dyads}) {
-    &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
-    &CheckDependency("dyads", "purged");
-    $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
-    $cmd .= " -return ".$dyad_return_fields;
-    ## Backgroun model
-    if ($bg_model eq "monads") {
-      $cmd .= " -bg monads" ;
-    } elsif ($bg_model eq "taxfreq" || $bg_model eq "file") {
-      $cmd .= " -expfreq ".$infile{bg_model} ;
-    }
-    ## dyad filtering (only accept dyads found in the promoter of the query gene(s)
-    if (!$nofilter) {
-      $cmd .= " -accept ".$outfile{filter_dyads};
-    }
-    foreach my $field (sort keys %lth) {
+  &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
+  &CheckDependency("dyads", "purged");
+  $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
+  $cmd .= " -return ".$dyad_return_fields;
+  ## Backgroun model
+  if ($bg_model eq "monads") {
+    $cmd .= " -bg monads" ;
+  } elsif ($bg_model eq "taxfreq" || $bg_model eq "file") {
+    $cmd .= " -expfreq ".$infile{bg_model} ;
+  }
+  ## dyad filtering (only accept dyads found in the promoter of the query gene(s)
+  if (!$nofilter) {
+    $cmd .= " -accept ".$outfile{filter_dyads};
+  }
+  foreach my $field (sort keys %lth) {
     $cmd .= " -lth ".$field." ".$lth{$field};
   }
-    foreach my $field (sort keys %uth) {
-      $cmd .= " -uth ".$field." ".$uth{$field};
-    }
-    $cmd .= " -i ".$outfile{purged};
-    $cmd .= " -l 3 -sp 0-20";
-    $cmd .= " ".$strands;
-    $cmd .= " ".$noov;
-    $cmd .= " -sort";
-    $cmd .= " -o ".$outfile{dyads};
-    &one_command($cmd);
+  foreach my $field (sort keys %uth) {
+    $cmd .= " -uth ".$field." ".$uth{$field};
+  }
+  $cmd .= " -i ".$outfile{purged};
+  $cmd .= " -l 3 -sp 0-20";
+  $cmd .= " ".$strands;
+  $cmd .= " ".$noov;
+  $cmd .= " -sort";
+  $cmd .= " -o ".$outfile{dyads};
+#  &report_command ($cmd, "dyad-analysis");
+  &one_command($cmd, 1, 0, task=>'dyads');
+  &IndexOneFile("Dyads (tab format)", $outfile{dyads});
 
-    ## Generate a HTML table with the discovered dyads
-    &CheckDependency("dyads_html", "dyads");
-    $cmd = "$SCRIPTS/text-to-html";
-    $cmd .= " -i ".$outfile{dyads};
-    $cmd .= " -font variable -chunk 1000";
-    $cmd .= " -o ".$outfile{dyads_html};
-    &one_command($cmd);
+  ## Generate a HTML table with the discovered dyads
+  &CheckDependency("dyads_html", "dyads");
+  $cmd = "$SCRIPTS/text-to-html";
+  $cmd .= " -i ".$outfile{dyads};
+  $cmd .= " -font variable -chunk 1000";
+  $cmd .= " -o ".$outfile{dyads_html};
+#  &report_command ($cmd, "dyads_html");
+  &one_command($cmd, 1, 0, task=>'dyads');
+  &IndexOneFile("<b>Dyads</b> (html format)", $outfile{dyads_html});
+
+
+  ################################################################
+  ## Make sure that there is at least one significant dyad before
+  ## doing the assembly and conversion to matrix
+  $dyad_nb = &CountDyads();
+  if (!($batch) && ($dyad_nb < 1)) {
+    $status = "No significant dyad" if (($status eq "OK") || ($batch));
+  } else {
 
     ################################################################
-    ## Make sure that there is at least one significant dyad before
-    ## doing the assembly and conversion to matrix
-    $dyad_nb = &CountDyads();
-    if (!($batch) && ($dyad_nb < 1)) {
-      $status = "No significant dyad" if (($status eq "OK") || ($batch));
-    } else {
+    ## Assemble significant dyads
+    &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
+    &CheckDependency("asmb", "dyads");
+    $cmd = "$SCRIPTS/pattern-assembly -v 1";
+    $cmd .= " -i ".$outfile{dyads};
+    $cmd .= " -subst 0 -maxfl 1 -toppat 50";
+    $cmd .= " -o ".$outfile{asmb};
+#    &report_command ($cmd, "pattern-assembly");
+    &one_command($cmd, 1, 0, task=>'dyads');
 
-      ################################################################
-      ## Assemble significant dyads
-      &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
-      &CheckDependency("asmb", "dyads");
-      $cmd = "$SCRIPTS/pattern-assembly -v 1";
-      $cmd .= " -i ".$outfile{dyads};
-      $cmd .= " -subst 0 -maxfl 1 -toppat 50";
-      $cmd .= " -o ".$outfile{asmb};
-      &one_command($cmd);
 
-      ################################################################
-      ## Convert assembled dyads into a position-specific scoring matrix
-      #    if ($to_matrix) {
-      &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 2);
-      &CheckDependency("pssm", "asmb");
-      &CheckDependency("pssm", "seq");
-      $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
-      $cmd .= " -seq ".$outfile{seq};
-      $cmd .= " -asmb ".$outfile{asmb};
-      $cmd .= " -format fasta";
-      $cmd .= " -uth Pval 0.00025";
-      $cmd .= " -bginput -markov 0";
-      $cmd .= " ".$strands;
-      $cmd .= " -logo";
-      $cmd .= " -o ".$prefix{pssm};
-      &one_command($cmd);
-    }
+    ################################################################
+    ## Convert assembled dyads into a position-specific scoring matrix
+    #    if ($to_matrix) {
+    &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $prefix{pssm}) if ($verbose >= 2);
+    &CheckDependency("pssm", "asmb");
+    &CheckDependency("pssm", "seq");
+
+    $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
+    $cmd .= " -seq ".$outfile{seq};
+    $cmd .= " -asmb ".$outfile{asmb};
+    $cmd .= " -format fasta";
+    $cmd .= " -uth Pval 0.00025";
+    $cmd .= " -bginput -markov 0";
+    $cmd .= " ".$strands;
+    $cmd .= " -logo";
+    $cmd .= " -o ".$prefix{pssm};
+#    &report_command ($cmd, "matrix-from-patterns");
+    &one_command($cmd, 1, 0, task=>'dyads');
+
   }
-
 
   ## Even if the task dyads has not been selected, we count the previous number of significant dyads for the index
   if ($dyad_nb eq "NA") {
@@ -1093,14 +1119,12 @@ sub DyadAnalysis {
   }
   $matrix_nb = &CountMatrices();
 
-  &IndexOneFile("Dyads (tab format)", $outfile{dyads});
-  &IndexOneFile("<b>Dyads</b> (html format)", $outfile{dyads_html});
+  ## Index result files from dyad-analysis
   if ((&IsNatural($dyad_nb)) && ($dyad_nb >= 1)) {
     &IndexOneFile("Assembled dyads", $outfile{asmb});
     &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
     &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
     &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
-
 
     ## Index logo files
     if ($matrix_nb > 0) {
@@ -1149,7 +1173,7 @@ sub CountDyads {
     if (($status eq "OK") && ($dyad_nb < 1)) {
       $status = "No significant dyad";
     }
-  } else {
+  } elsif ($status eq "OK") {
     &RSAT::message::Warning("Missing dyad file", $outfile{dyads});
     $status = "Missing dyad file:".$outfile{dyads};
   }
@@ -1168,7 +1192,7 @@ sub CountMatrices {
     if (($status eq "OK") && ($matrix_nb < 1)) {
       $status = "No matrix";
     }
-  } else {
+  } elsif ($status eq "OK") {
     &RSAT::message::Warning("Missing matrix file", $outfile{count_PSSM_tf});
     $status = "Missing matrix file:".$outfile{count_PSSM_tf};
   }
@@ -1216,7 +1240,7 @@ sub CoregulationNetwork {
   $compare_scores_cmd .= " -org ".$organism_name;
   $compare_scores_cmd .= " -info name,id";
   $compare_scores_cmd .= " -o ".$outfile{dyad_sig_classes};
-  &doit($compare_scores_cmd);
+  &one_command($compare_scores_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Dyad sig classes", $outfile{dyad_sig_classes}) if ($main::verbose >= 2);
   push @network_files, "dyad_sig_classes";
 
@@ -1233,7 +1257,7 @@ sub CoregulationNetwork {
   $compare_classes_cmd .= " -sc 3";
   $compare_classes_cmd .= " -lth dotprod 2 -lth QR 2 -lth Q 2 -lth R 2";
   $compare_classes_cmd .= " -o ".$outfile{gene_pairs};
-  &doit($compare_classes_cmd);
+  &one_command($compare_classes_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene pairs", $outfile{gene_pairs}) if ($main::verbose >= 2);
   push @network_files, "gene_pairs";
 
@@ -1246,7 +1270,7 @@ sub CoregulationNetwork {
   $cc_gene_info_cmd .= " -org ".$organism_name;
   $cc_gene_info_cmd .= " -info name,id";
   $cc_gene_info_cmd .= " -o ".$outfile{gene_pairs_names};
-  &doit($cc_gene_info_cmd);
+  &one_command($cc_gene_info_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene pairs (with names)", $outfile{gene_pairs_names}) if ($main::verbose >= 2);
   push @network_files, "gene_pairs_names";
 
@@ -1273,7 +1297,7 @@ sub CoregulationNetwork {
   $convert_graph_cmd .= " -ewidth -ecolors fire";
   $convert_graph_cmd .= " -i ".$outfile{gene_pairs};
   $convert_graph_cmd .= " -o ".$outfile{gene_pairs_gml};
-  &doit($convert_graph_cmd);
+  &one_command($convert_graph_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 2);
   push @network_files, "gene_pairs_gml";
 
@@ -1288,7 +1312,7 @@ sub CoregulationNetwork {
   $gn_cmd .= " -in_format gml";
   $gn_cmd .= " -i ".$outfile{gene_pairs_gml};
   $gn_cmd .= " -o ".$outfile{gene_neighbours};
-  &doit($gn_cmd);
+  &one_command($gn_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene neighbours", $outfile{gene_neighbours}) if ($main::verbose >= 2);
   push @network_files, "gene_neighbours";
 
@@ -1361,6 +1385,15 @@ sub OpenMainIndex {
 
 
 }
+
+
+################################################################
+## Report a command in the log file
+# sub report_command {
+#   my ($cmd, $task_name) = @_;
+#   print $out "\n; ", $task_name," command:\n";
+#   print $out $cmd, "\n\n";
+# }
 
 #######################################################################
 ## Returns the number of jobs running currently for the current user
