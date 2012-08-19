@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.12 2012/08/10 05:57:38 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.13 2012/08/19 02:20:38 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -115,6 +115,7 @@ package main;
 			    ger
 			    operons
 			    syntons
+			    footprints
 			    synthesis
 			  );
   our $supported_tasks = join ",", @supported_tasks;
@@ -133,21 +134,34 @@ package main;
   our %param = ();
   $param{operon_dist} = 55; push @param_list, "operon_dist";  ## optimal value for E.coli and B.subtilis, after an evaluation by Rekin's Janky (PhD thesis)
   $param{operon_min_genes} = 1; push @param_list, "operon_min_genes"; ## We also want singletons because they may contain a separate enzyme-coding gene
-  $param{skip_org} = 0; ## Skip the first entries of the organism table
-  $param{last_org} = 0; ## Stop reading organism table after a user-specified number of organisms
+  $param{skip_org} = 0; ## Skip the first entries in the list of organisms
+  $param{last_org} = 0; ## Stop after a user-specified number of organisms
 
   ## Default column order for organism cross-table
-  our @org_table_columns = qw(tax_id
-			      microscope_genome_id
-			      metacyc_frame_version
-			      organism_name
-			      uniprot_proteome
-			      rsat_organism_id
-			      obiw_genome_id
-			      family_name
-			      family_taxid
-			      order_name
-			      order_taxid);
+#   our @org_table_columns_old = qw(tax_id
+# 			      microscope_genome_id
+# 			      metacyc_frame_version
+# 			      organism_name
+# 			      uniprot_proteome
+# 			      rsat_organism_id
+# 			      obiw_genome_id
+# 			      family_name
+# 			      family_taxid
+# 			      order_name
+# 			      order_taxid);
+
+  our @org_table_columns = qw (ulb_ncbi_name_id
+			       tax_id
+			       microscope_genome_id
+			       microscope_metacyc_id
+			       organism_name
+			       uniprot_proteome
+			       obiw_genome_id
+			       ncbi_family_name
+			       ncbi_family_taxid
+			       ncbi_order_name
+			       ncbi_order_taxid
+			       );
   our %org_table_column = ();
   &IndexOrgTableColumns();
 
@@ -179,10 +193,22 @@ package main;
     %task = %supported_task;
   }
 
+
+  ## Check conditions for which the organism cross-reference table is
+  ## required.
+  if ($all_organisms) {
+    &RSAT::error::FatalError("Option -all_organisms requires to specify an organism table with the option -org_table.") 
+      unless ($infile{organism_table});
+  }
+
+  if ($task{ger}) {
+    &RSAT::error::FatalError("Task 'ger' requires to specify an organism cross-reference table with the option -org_table.")
+      unless ($infile{organism_table});
+  }
+
   ################################################################
   ## Read organism names + cross references from organism table if
   ## specified.
-
   &ReadOrganismCrossTable() if ($infile{organism_table});
 
   ## Check organism names
@@ -283,7 +309,6 @@ package main;
     if ($task{synthesis}) {
       $syn = &OpenOutputFile($main::outfile{synthesis});
       print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$organism_name, "result_toc"=>0, refresh_time=>$refresh_time);
-
       print $main_syn "<tr>";
       print $main_syn "<td>", $org_counter, "</td>";
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
@@ -293,21 +318,17 @@ package main;
 
     ## Check that organism is supported in RSAT
     unless ($organism->check_name($organism_name, 1)) {
-
       ## Close line of HTML report table
       print $main_syn "</tr>" if ($task{synthesis});
-
       ## Issue a warning
       my $warning = join ("\t", "Skipping non-supported organism", $org_counter."/".$org_nb, $organism_name);
       push @warnings, $warning;
       &RSAT::message::TimeWarn($warning) if ($main::verbose >= 2);
-
       next;
     }
 
     ## Report organism to be analyzed
     &RSAT::message::TimeWarn("Organism", $org_counter."/".$org_nb, $organism_name) if ($main::verbose >= 1);
-
 
     ################################################################
     ## Collect Gene-EC-reaction table from the MicroCyc database at Genoscope
@@ -330,6 +351,12 @@ package main;
     ## Infer operons and syntons
     &InferOperonsOrSyntons("operons");
     &InferOperonsOrSyntons("syntons");
+
+    ################################################################
+    ## Discover phylogenetic footprints (conserved cis-regulatory
+    ## elements) and infer a co-regulation network by linking pairs of
+    ## genes having similar footprints.
+    &FootprintsAndCoregulation();
 
     ## Submit the batch command to the cluster manager.
     if ($batch) { &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix); $batch_cmd = ""; }
@@ -442,21 +469,21 @@ sub ReadOrganismCrossTable {
     chomp();
 
     ## Parse header line
-    if (/^#/) {
+    if ($header =/^#/) {
       s/^#//;
-      @org_table_columns = split "\t/";
+      @org_table_columns = split /\t/;
       &IndexOrgTableColumns(); ## Update the column index of organism cross-table
       next;
     }
 
     ## Parse one line
     my @fields = split /\t/;
-    my $organism_name = $fields[$org_table_column{rsat_organism_id}-1];
+    my $organism_name = $fields[$org_table_column{ulb_ncbi_name_id}-1];
 
     if ($organism_name) {
       $org_counter++;
       &RSAT::message::Info("Adding organism", $org_counter, $organism_name,  "line ".$l) if ($main::verbose >= 3);
-      push @organism_names, $organism_name;
+      push @organism_names, $organism_name if ($all_organisms);
 
       ## Store all organism information (cross-references) in a hash table indexed by organism names
       foreach my $field (keys %org_table_column) {
@@ -466,7 +493,7 @@ sub ReadOrganismCrossTable {
       }
 
     } else {
-      &RSAT::message::Warning($infile{organism_table}, "Organism", $org_counter, $fields[0], "line ".$l, "missing field", "rsat_organism_id", "expected in column ".$org_table_column{rsat_organism_id}, );
+      &RSAT::message::Warning($infile{organism_table}, "Organism", $org_counter, $fields[0], "line ".$l, "missing field", "ulb_ncbi_name_id", "expected in column ".$org_table_column{ulb_ncbi_name_id}, );
     }
 
   }
@@ -555,9 +582,7 @@ Organism name. Must be an organism supported in this RSAT server. The
 list of supported organisms can be obtained with
 I<supported-organisms>.
 
-This option is incompatible with the option -org_table.
-
-Multiple organisms can be specifie by calling repeatedly the option
+Multiple organisms can be specified by calling repeatedly the option
 -org.
 
 Example:
@@ -567,22 +592,18 @@ Example:
     -org Mycoplasma_pneumoniae_M129_uid57709 \
     -o results/pathways_from_genome
 
-
 =cut
     } elsif ($arg eq "-org") {
-      &RSAT::error::FatalError("Options -org and -org_table are mutually incompatible") if ($infile{organism_table});
       my $organism_name = shift(@arguments);
       push @organism_names, $organism_name;
 
 =pod
 
-=item B<-org Organism_table>
+=item B<-org organism_table>
 
 
-Tab-delimited text file indicating the organism names + their
-cross-references to a series of external databases.
-
-This option is incompatible with the option -org.
+Tab-delimited text file indicating organism cross-references to a series of
+external databases.
 
 The first columns of the organism table must contain the following
 fields.
@@ -602,11 +623,22 @@ server.
 
 Additional columns are currently ignored.
 
-
 =cut
     } elsif ($arg eq "-org_table") {
-      &RSAT::error::FatalError("Options -org and -org_table are mutually incompatible") if (scalar(@organism_names) > 0);
       $infile{organism_table} = shift(@arguments);
+
+=pod
+
+=item B<-all_organisms>
+
+Analyze all the organisms of the organism table.
+
+This option requires to specify an organism table (option
+I<-org_table>).
+
+=cut
+    } elsif ($arg eq "-all_organisms") {
+      $all_organisms = 1;
 
 
 =pod
@@ -627,8 +659,8 @@ organism table.
 
 =item B<-skip_org skip_organism_number>
 
-Skip the specified number of organisms when reading organism
-table. This option is useful for debugging, or for resuming an
+Skip the specified number of organisms in the specified list of
+organisms. This option is useful for debugging, or for resuming an
 interrupted analysis.
 
 =cut
@@ -786,9 +818,18 @@ incomplete.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $out "; peak-quality ";
+  print $out "; pathways-from-genomes ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
+
+  ## Print organism-specific information
+  printf $out "; %-22s\t%s\n", "Organism name", $organism_name;
+  my %org_info = %{$organism_info{$organism_name}};
+  foreach my $key (sort keys %org_info) {
+    my $value = $org_info{$key};
+    printf $out ";\t%-22s\t%s\n", $key, $value;
+  }
+
 
   ## List tasks
   printf $out "; %-22s\t%s\n", "Requested tasks", join(",", sort keys %task);
@@ -854,13 +895,15 @@ sub InferOperonsOrSyntons {
     $operon_suffix .= "_dist".$dist;
   }
 
-  ## Inferred operons
+  ## Define output directory and files
   $dir{$operons_or_syntons} = $dir{output}."/".$operons_or_syntons;
+  &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
+
   $outfile{"gene_".$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", "gene_".$operons_or_syntons."_".$operon_suffix); push @files_to_index, "gene_".$operons_or_syntons;
   $outfile{"gene_".$operons_or_syntons."_html"} = $outfile{"gene_".$operons_or_syntons}; $outfile{"gene_".$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, "gene_".$operons_or_syntons."_html";
 
   ## Infer operon for each gene
-  if ($task{$operons_or_syntons}) {
+#  if ($task{$operons_or_syntons}) {
     &RSAT::message::TimeWarn("\tInferring ".$operons_or_syntons, "dist=".$dist, "min_gene_nb=".$param{operon_min_genes}) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
     my $cmd = $SCRIPTS."/infer-operon -v 1 ";
@@ -877,16 +920,16 @@ sub InferOperonsOrSyntons {
     $cmd .= " -i ".$outfile{"gene_".$operons_or_syntons};
     $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons."_html"};
     $cmd .= " -chunk 10000";
-    &one_command($cmd, 1) ;
+    &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
     &RSAT::message::Info("Gene-".$operons_or_syntons." (tab)", $outfile{"gene_".$operons_or_syntons}) if ($main::verbose >= 3);
     &RSAT::message::Info("Gene-".$operons_or_syntons." (html)", $outfile{"gene_".$operons_or_syntons."_html"}) if ($main::verbose >= 3);
-  }
+#  }
 
    ## Generate a table with a single line per operon
   $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix); push @files_to_index, $operons_or_syntons;
   $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, $operons_or_syntons."_html";
-  if ($task{$operons_or_syntons}) {
-    my $cmd = "";
+#  if ($task{$operons_or_syntons}) {
+    $cmd = "";
     $cmd .= "echo '; ".$operons_or_syntons." ' > ".$outfile{$operons_or_syntons};
     $cmd .= "; echo '; Organism               \t".$organism_name."' >> ".$outfile{$operons_or_syntons};
     $cmd .= "; echo '; Max intergenic distance\t".$dist."' >> ".$outfile{$operons_or_syntons};
@@ -900,17 +943,17 @@ sub InferOperonsOrSyntons {
     $cmd .= " -i ".$outfile{$operons_or_syntons};
     $cmd .= " -o ".$outfile{$operons_or_syntons."_html"};
     $cmd .= " -chunk 10000";
-    &one_command($cmd, 1) ;
+    &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
     &RSAT::message::Info($operons_or_syntons." (tab)", $outfile{$operons_or_syntons}) if ($main::verbose >= 3);
     &RSAT::message::Info($operons_or_syntons." (html)", $outfile{$operons_or_syntons."_html"}) if ($main::verbose >= 3);
-  }
+#  }
 
   ## Compute statistics on operon sizes
   $outfile{$operons_or_syntons."_stats"} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_syntons."_stats";
   for my $img_format (@image_formats) {
     $outfile{$operons_or_syntons."_stats_".$img_format} = &OutFileName($operons_or_syntons, ".".$img_format, $operons_or_syntons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_syntons."_stats_".$img_format;
   }
-  if ($task{$operons_or_syntons}) {
+#  if ($task{$operons_or_syntons}) {
     &RSAT::message::TimeWarn("\tComputing size distribution", $operons_or_syntons) if ($main::verbose >= 1);
     $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 3";
     $cmd .= " -i ".$outfile{$operons_or_syntons};
@@ -928,11 +971,12 @@ sub InferOperonsOrSyntons {
        $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_syntons." in ".$organism_name."\"";
        $cmd .= " -o ".$outfile{$operons_or_syntons."_stats_".$img_format};
      }
-    &one_command($cmd, 1) ;
+    &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
     &RSAT::message::Info($operons_or_syntons." stats (tab)", $outfile{$operons_or_syntons."_stats"}) if ($main::verbose >= 3);
     for my $img_format (@image_formats) {
       &RSAT::message::Info($operons_or_syntons." size distrib (".$img_format.")", $outfile{$operons_or_syntons."_stats_".$img_format}) if ($main::verbose >= 3);
-    }
+#    }
+
   }
 
 
@@ -1011,6 +1055,33 @@ sub InferOperonsOrSyntons {
   }
 }
 
+
+################################################################
+## Discover phylogenetic footprints (conserved cis-regulatory
+## elements) and infer a co-regulation network by linking pairs of
+## genes having similar footprints.
+sub FootprintsAndCoregulation {
+  my $fp_skip = 0; ## For testing only
+  my $fp_last = 0; ## For testing only
+
+  ## Choose the taxon
+  $param{taxon} = $organism_info{$organism_name}->{ncbi_family_name};
+
+  ## Output directory for footprints
+  $dir{footprints} = $dir{output}."/footprints";
+  &RSAT::util::CheckOutDir($dir{footprints}, "", 755);
+
+  ## Build the command
+  my $cmd = $SCRIPTS."/footprint-discovery -v 1";
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -taxon ".$param{taxon};
+  $cmd .= " -filter -sep_genes -task all -infer_operons -all_genes -nodie";
+  $cmd .= " -skip ".$fp_skip if ($fp_skip > 0);
+  $cmd .= " -last ".$fp_last if ($fp_last > 0);
+  $cmd .= " -o ".$dir{footprints};
+  &one_command($cmd, 1, 0, task=>"footprints");
+}
+
 ################################################################
 ## Collect Gene-EC-Reaction (GER) table from the MicroCyc database
 ## at Genoscope (CEA, France).
@@ -1020,6 +1091,7 @@ sub GetGER() {
 
   ## Output directory for GER
   $dir{GER} = $dir{output}."/GER";
+  &RSAT::util::CheckOutDir($dir{GER}, "", 755);
 
   ## Determine suffix
   if ($args{get_reactions}) {
@@ -1040,18 +1112,18 @@ sub GetGER() {
   ## because all synonyms and cross-references are represented by line
   ## duplications. This is convenient for the path building tool, but
   ## inconvenient for computing statistics.
-  if ($task{ger}) {
+#  if ($task{ger}) {
 
     ## Check that organism table contains a cross-reference to the MICROSCOPE database for the organism
-    if ($organism_info{$organism_name}->{metacyc_frame_version}) {
+    if ($organism_info{$organism_name}->{microscope_metacyc_id}) {
       ## Run the MICROME/MICROSCOPE Web client
-      my $ms_org_id = $organism_info{$organism_name}->{metacyc_frame_version};
+      my $ms_org_id = $organism_info{$organism_name}->{microscope_metacyc_id};
       my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
-      my $cmd = "python2.7 ".$ger_cmd;
+      $cmd = "python2.7 ".$ger_cmd;
       $cmd .= " --ms_org_id ".$ms_org_id;
       $cmd .= " --reactions" if ($args{get_reactions});
       $cmd .= " -o ".$outfile{$suffix};
-      &one_command($cmd, 1);
+      &one_command($cmd, 1, 0, task=>"ger");
 
       if ($suffix eq "gene-ec") {
 	## Select non-redundant subset of the GER table, using the column ID
@@ -1069,14 +1141,14 @@ sub GetGER() {
 	$cmd .= " ; ".$SCRIPTS."/text-to-html ";
 	$cmd .= " -i ".$outfile{$suffix."_by_id"};
 	$cmd .= " -o ".$outfile{$suffix."_by_id_html"};
-	&one_command($cmd, 1);
+	&one_command($cmd, 1, 0, task=>"ger");
       }
     } else {
       my $warning = join ("\t", "Cannot collect GER for organism", $organism_name, "because missing cross-reference to Genoscope/MicroCyc.", $organism_name);
       push @warnings, $warning;
       &RSAT::message::Warning($warning) if ($main::verbose >= 1);
     }
-  }
+#  }
 
   ## Add info in the main synthesis
   if ($task{synthesis}) {
