@@ -863,9 +863,9 @@ sub make_temp_file {
     $tmp_prefix = 'tmp';
   }
 
-  ## Check that temp dir is define and create it if required
+  ## Check that temp dir is defined and create it if required
   unless ($tmp_dir) {
-    my ($sec, $min, $hour,$day,$month,$year) = localtime(time()); 
+    my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
     my $login = getpwuid($<) || "temp_user";
     $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $main::TMP, $login, 1900+$year,$month+1,$day);
   }
@@ -1055,7 +1055,7 @@ sub doit {
 ## further batch processing
 ##
 ## Usage: 
-##   &one_command($cmd, $print_out, $time_file);
+##   &one_command($cmd, $print_out, $time_file, %args);
 ##
 ## If the variable $print_out is set to 1, the command is printed to
 ## the output file $main::out.
@@ -1063,9 +1063,26 @@ sub doit {
 ## If the variable $time_file is specified, the execution time is
 ## measured and stored in this file.
 ##
+## Some additional parameters can be specified with the hash table %args:
+##    task=>$depending_task
+##        execute the command only if ($main::task{depending_task} != 0)
+##
+##    out=>$output_handle
+##        specify the handle for the log file (where commands are
+##        printed before execution when the option print_out is
+##        active)
+##
 sub one_command {
 #  my ($cmd, $print_out, $time_file, $err_file) = @_;
-  my ($cmd, $print_out, $time_file) = @_;
+  my ($cmd, $print_out, $time_file, %args) = @_;
+
+  ## Check dependency on a specific task
+  my $local_dry = $main::dry;
+  if ($args{task}) {
+    $required_task = $args{task};
+    $local_dry = 1 unless ($main::task{$required_task});
+
+  }
 
   ## Store execution time in a file
   if ($time_file) {
@@ -1095,8 +1112,19 @@ sub one_command {
       $main::batch_cmd = "$cmd";
     }
   } else {
-    print $main::out ("\n", "; ", &AlphaDate(), "\n", &hide_RSAT_path($cmd), "\n\n") if (($print_out) || ($main::verbose >= 3));
-    &doit($cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+    ## Report command in the log file
+    if (($print_out) || ($main::verbose >= 3)) {
+      my $local_out;
+      if ($args{out}) {
+	$local_out = $args{out};
+      } elsif ($main::out) {
+	$local_out = $main::out;
+      } else {
+	$local_out = STDOUT;
+      }
+      print $local_out ("\n", "; ", &AlphaDate(), "\n", &hide_RSAT_path($cmd), "\n\n");
+    }
+    &doit($cmd, $local_dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
   }
 }
 
