@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.77 2011/12/07 23:55:30 jvanheld Exp $
+# $Id: compare-classes,v 1.78 2012/08/19 00:31:19 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1805,8 +1805,10 @@ sub PrintOneComparison {
   ## Dot product
   if ($return_fields{dotprod}) {
     printf $out "\t%7g", $current_compa{dotprod};
+
+    ## DPbits
     if ($current_compa{dotprod} > 0) {
-      printf $out "\t%7g", log($current_compa{dotprod})/$log2;
+      printf $out "\t%.2f", log($current_compa{dotprod})/$log2;
       printf $out "\t%d", log($current_compa{dotprod})/$log2;
     } else {
       printf $out "\t-Inf";
