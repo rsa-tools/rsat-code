@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.14 2012/08/19 02:30:56 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.15 2012/08/19 22:44:26 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -336,15 +336,6 @@ package main;
     &GetGER(get_reactions=>0);
 #    &GetGER(get_reactions=>1);
 
-    ## Append table of links to the HTML report
-    if ($task{synthesis}) {
-      print $syn "<h2>Metabolic annotations from Genoscope/MicroCyc</h2>\n";
-      my $microscope_url = "https://www.genoscope.cns.fr/agc/microscope/";
-      print $syn "<p>Source: MicroCyc database (<a target='_blank' href='".$microscope_url."'>".$microscope_url."</a>)\n";
-      my $microcyc_ws_url = "http://www.genoscope.cns.fr/microme/microcyc-wsc/";
-      print $syn "<br>Downloaded using Web services: <a target='_blank' href='".$microcyc_ws_url."'>".$microcyc_ws_url."</a></p>\n";
-      print $syn &LinkTable("Files: metabolic annotations", @files_to_index);
-    }
     @files_to_index = ();
 
     ################################################################
@@ -479,6 +470,8 @@ sub ReadOrganismCrossTable {
     ## Parse one line
     my @fields = split /\t/;
     my $organism_name = $fields[$org_table_column{ulb_ncbi_name_id}-1];
+    $organism_name =~ s|/$||; ## Check that there is no / at the end of the name (bug in the data file 2012-08-19)
+    $organism_name =~ s| |_|g; ## Suppress spaces from organism name
 
     if ($organism_name) {
       $org_counter++;
@@ -490,6 +483,7 @@ sub ReadOrganismCrossTable {
 	my $column = $org_table_column{$field}-1;
 	my $value = $fields[$column];
 	$organism_info{$organism_name}->{$field} = $value;
+	&RSAT::message::Debug("organism_info", $organism_name, $field, $value);
       }
 
     } else {
@@ -903,79 +897,80 @@ sub InferOperonsOrSyntons {
   $outfile{"gene_".$operons_or_syntons."_html"} = $outfile{"gene_".$operons_or_syntons}; $outfile{"gene_".$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, "gene_".$operons_or_syntons."_html";
 
   ## Infer operon for each gene
-#  if ($task{$operons_or_syntons}) {
-    &RSAT::message::TimeWarn("\tInferring ".$operons_or_syntons, "dist=".$dist, "min_gene_nb=".$param{operon_min_genes}) if ($main::verbose >= 1);
-    &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
-    my $cmd = $SCRIPTS."/infer-operon -v 1 ";
-    $cmd .= " -sep '-' -return q_info,operon,leader,gene_nb";
-    $cmd .= " -org ".$organism_name;
-    $cmd .= " -all ";
-    $cmd .= " -min_gene_nb ".$param{operon_min_genes};
-    $cmd .= " -dist ".$dist;
-    $cmd .= " | ".$SCRIPTS."/add-gene-info";
-    $cmd .= " -org ".$organism_name;
-    $cmd .= " -col 2 -info descr";
-    $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons};
-    $cmd .= "; ".$SCRIPTS."/text-to-html ";
-    $cmd .= " -i ".$outfile{"gene_".$operons_or_syntons};
-    $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons."_html"};
-    $cmd .= " -chunk 10000";
-    &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
-    &RSAT::message::Info("Gene-".$operons_or_syntons." (tab)", $outfile{"gene_".$operons_or_syntons}) if ($main::verbose >= 3);
-    &RSAT::message::Info("Gene-".$operons_or_syntons." (html)", $outfile{"gene_".$operons_or_syntons."_html"}) if ($main::verbose >= 3);
-#  }
+  #  if ($task{$operons_or_syntons}) {
+  &RSAT::message::TimeWarn("\tInferring ".$operons_or_syntons, "dist=".$dist, "min_genes=".$param{operon_min_genes}) if ($main::verbose >= 1);
+  &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
+  my $cmd = $SCRIPTS."/infer-operon -v 1 ";
+  $cmd .= " -sep '-' -return q_info,operon,leader,genes";
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -all ";
+  $cmd .= " -min_genes ".$param{operon_min_genes};
+  $cmd .= " -dist ".$dist;
+  $cmd .= " | ".$SCRIPTS."/add-gene-info";
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -col 2 -info descr";
+  $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons};
+  $cmd .= "; ".$SCRIPTS."/text-to-html ";
+  $cmd .= " -i ".$outfile{"gene_".$operons_or_syntons};
+  $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons."_html"};
+  $cmd .= " -chunk 10000";
+  &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
+  &RSAT::message::Info("Gene-".$operons_or_syntons." (tab)", $outfile{"gene_".$operons_or_syntons}) if ($main::verbose >= 3);
+  &RSAT::message::Info("Gene-".$operons_or_syntons." (html)", $outfile{"gene_".$operons_or_syntons."_html"}) if ($main::verbose >= 3);
+  #  }
 
-   ## Generate a table with a single line per operon
+  ## Generate a table with a single line per operon
   $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix); push @files_to_index, $operons_or_syntons;
   $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, $operons_or_syntons."_html";
-#  if ($task{$operons_or_syntons}) {
-    $cmd = "";
-    $cmd .= "echo '; ".$operons_or_syntons." ' > ".$outfile{$operons_or_syntons};
-    $cmd .= "; echo '; Organism               \t".$organism_name."' >> ".$outfile{$operons_or_syntons};
-    $cmd .= "; echo '; Max intergenic distance\t".$dist."' >> ".$outfile{$operons_or_syntons};
-    $cmd .= "; echo '#".$operons_or_syntons."\tleader\tgene_nb' >> ".$outfile{$operons_or_syntons};
-    $cmd .= "; grep -v '^;' ".$outfile{"gene_".$operons_or_syntons};
-    $cmd .= " | grep -v '^#'";
-    $cmd .= " | cut -f 7,8,9";
-    $cmd .= " | sort -u ";
-    $cmd .= ">> ".$outfile{$operons_or_syntons};
-    $cmd .= "; ".$SCRIPTS."/text-to-html ";
-    $cmd .= " -i ".$outfile{$operons_or_syntons};
-    $cmd .= " -o ".$outfile{$operons_or_syntons."_html"};
-    $cmd .= " -chunk 10000";
-    &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
-    &RSAT::message::Info($operons_or_syntons." (tab)", $outfile{$operons_or_syntons}) if ($main::verbose >= 3);
-    &RSAT::message::Info($operons_or_syntons." (html)", $outfile{$operons_or_syntons."_html"}) if ($main::verbose >= 3);
-#  }
+  #  if ($task{$operons_or_syntons}) {
+  $cmd = "";
+  $cmd .= "echo '; ".$operons_or_syntons." ' > ".$outfile{$operons_or_syntons};
+  $cmd .= "; echo '; Organism               \t".$organism_name."' >> ".$outfile{$operons_or_syntons};
+  $cmd .= "; echo '; Max intergenic distance\t".$dist."' >> ".$outfile{$operons_or_syntons};
+  $cmd .= "; echo '#".$operons_or_syntons."\tleader\tgenes' >> ".$outfile{$operons_or_syntons};
+  $cmd .= "; grep -v '^;' ".$outfile{"gene_".$operons_or_syntons};
+  $cmd .= " | grep -v '^#'";
+  $cmd .= " | cut -f 7,8,9";
+  $cmd .= " | sort -u ";
+  $cmd .= ">> ".$outfile{$operons_or_syntons};
+  $cmd .= "; ".$SCRIPTS."/text-to-html ";
+  $cmd .= " -i ".$outfile{$operons_or_syntons};
+  $cmd .= " -o ".$outfile{$operons_or_syntons."_html"};
+  $cmd .= " -chunk 10000";
+  &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
+  &RSAT::message::Info($operons_or_syntons." (tab)", $outfile{$operons_or_syntons}) if ($main::verbose >= 3);
+  &RSAT::message::Info($operons_or_syntons." (html)", $outfile{$operons_or_syntons."_html"}) if ($main::verbose >= 3);
+  #  }
 
   ## Compute statistics on operon sizes
   $outfile{$operons_or_syntons."_stats"} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_syntons."_stats";
   for my $img_format (@image_formats) {
     $outfile{$operons_or_syntons."_stats_".$img_format} = &OutFileName($operons_or_syntons, ".".$img_format, $operons_or_syntons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_syntons."_stats_".$img_format;
   }
-#  if ($task{$operons_or_syntons}) {
-    &RSAT::message::TimeWarn("\tComputing size distribution", $operons_or_syntons) if ($main::verbose >= 1);
-    $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 3";
-    $cmd .= " -i ".$outfile{$operons_or_syntons};
-    $cmd .= " -o ".$outfile{$operons_or_syntons."_stats"};
+  #  if ($task{$operons_or_syntons}) {
+  &RSAT::message::TimeWarn("\tComputing size distribution", $operons_or_syntons) if ($main::verbose >= 1);
+  $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 3";
+  $cmd .= " -i ".$outfile{$operons_or_syntons};
+  $cmd .= " -o ".$outfile{$operons_or_syntons."_stats"};
 
-     for my $img_format (@image_formats) {
-       $cmd .= "; ".$SCRIPTS."/XYgraph";
-       $cmd .= " -i ".$outfile{$operons_or_syntons."_stats"};
-       $cmd .= " -xcol 1 -ycol 4,5,6";
-       $cmd .= " -format ".$img_format;
-       $cmd .= " -xgstep1 5" unless ($img_format eq "pdf");
-       $cmd .= " -xmin 0 -ymin 0";
-       $cmd .= " -lines -legend  -xsize 800 -ysize 400";
-       $cmd .= " -xleg1 'Number of genes per ".$operons_or_syntons."' -yleg1 'Number of predicted ".$operons_or_syntons."'";
-       $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_syntons." in ".$organism_name."\"";
-       $cmd .= " -o ".$outfile{$operons_or_syntons."_stats_".$img_format};
-     }
-    &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
-    &RSAT::message::Info($operons_or_syntons." stats (tab)", $outfile{$operons_or_syntons."_stats"}) if ($main::verbose >= 3);
-    for my $img_format (@image_formats) {
-      &RSAT::message::Info($operons_or_syntons." size distrib (".$img_format.")", $outfile{$operons_or_syntons."_stats_".$img_format}) if ($main::verbose >= 3);
-#    }
+  ## Generate graphs of operon/synton size distribution
+  for my $img_format (@image_formats) {
+    $cmd .= "; ".$SCRIPTS."/XYgraph";
+    $cmd .= " -i ".$outfile{$operons_or_syntons."_stats"};
+    $cmd .= " -xcol 1 -ycol 4,5,6";
+    $cmd .= " -format ".$img_format;
+    $cmd .= " -xgstep1 5" unless ($img_format eq "pdf");
+    $cmd .= " -xmin 0 -ymin 0";
+    $cmd .= " -lines -legend  -xsize 800 -ysize 400";
+    $cmd .= " -xleg1 'Number of genes per ".$operons_or_syntons."' -yleg1 'Number of predicted ".$operons_or_syntons."'";
+    $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_syntons." in ".$organism_name."\"";
+    $cmd .= " -o ".$outfile{$operons_or_syntons."_stats_".$img_format};
+  }
+  &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
+  &RSAT::message::Info($operons_or_syntons." stats (tab)", $outfile{$operons_or_syntons."_stats"}) if ($main::verbose >= 3);
+  for my $img_format (@image_formats) {
+    &RSAT::message::Info($operons_or_syntons." size distrib (".$img_format.")", $outfile{$operons_or_syntons."_stats_".$img_format}) if ($main::verbose >= 3);
+    #    }
 
   }
 
@@ -997,10 +992,10 @@ sub InferOperonsOrSyntons {
     print $syn "<td>";
 
     ## Initialize statistics
-    my $nb_genes = "NA";
-    my $nb_operons = "NA";
-    my $operon_mean_size = "NA";
-    my $operon_max_size = "NA";
+    $organism_info{$organism_name}->{genes} = "NA";
+    $organism_info{$organism_name}->{$operons_or_syntons} = "NA";
+    $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"} = "NA";
+    $organism_info{$organism_name}->{$operons_or_syntons."_max_size"} = "NA";
 
     ## Read statistics about operon/synton sizes
     if (-e $outfile{$operons_or_syntons."_stats"}) {
@@ -1008,6 +1003,7 @@ sub InferOperonsOrSyntons {
       my $in_stats = 0;
       my %stats = ();
       while (<$stats>) {
+	chomp();
 	$in_stats = 1 if (/; Statistics/);
 	next unless ($in_stats);
 	$in_stats = 0 if (/; Seconds/);
@@ -1016,19 +1012,19 @@ sub InferOperonsOrSyntons {
 	$stats{$key} = $value;
       }
 
-      $nb_genes = $stats{sum};
-      $nb_operons = $stats{count};
-      $operon_mean_size = $stats{mean};
-      $operon_max_size = $stats{max};
+      $organism_info{$organism_name}->{genes} = $stats{sum};
+      $organism_info{$organism_name}->{$operons_or_syntons} = $stats{count};
+      $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"} = $stats{mean};
+      $organism_info{$organism_name}->{$operons_or_syntons."_max_size"} = $stats{max};
 
       ## Add information in the organism-specific synthesis
-      print $syn "<br>Nb genes: ", $nb_genes;
-      print $syn "<br>Nb ".$operons_or_syntons.": ", $nb_operons;
-      print $syn "<br>Mean size: ", sprintf("%.1f", $operon_mean_size);
-      print $syn "<br>Max size: ", $operon_max_size;
+      print $syn "<br>Nb genes: ", $organism_info{$organism_name}->{genes};
+      print $syn "<br>Nb ".$operons_or_syntons.": ", $organism_info{$organism_name}->{$operons_or_syntons};
+      print $syn "<br>Mean size: ", sprintf("%.1f", $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"});
+      print $syn "<br>Max size: ", $organism_info{$organism_name}->{$operons_or_syntons."_max_size"};
 
       ## Add info in the main synthesis
-      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $nb_operons),  "</td>\n";
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $organism_info{$organism_name}->{$operons_or_syntons}),  "</td>\n";
 
     } else {
       print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_syntons."_stats"}, "</font></p>\n";
@@ -1112,43 +1108,192 @@ sub GetGER() {
   ## because all synonyms and cross-references are represented by line
   ## duplications. This is convenient for the path building tool, but
   ## inconvenient for computing statistics.
-#  if ($task{ger}) {
+  #  if ($task{ger}) {
 
-    ## Check that organism table contains a cross-reference to the MICROSCOPE database for the organism
-    if ($organism_info{$organism_name}->{microscope_metacyc_id}) {
-      ## Run the MICROME/MICROSCOPE Web client
-      my $ms_org_id = $organism_info{$organism_name}->{microscope_metacyc_id};
-      my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
-      $cmd = "python2.7 ".$ger_cmd;
-      $cmd .= " --ms_org_id ".$ms_org_id;
-      $cmd .= " --reactions" if ($args{get_reactions});
-      $cmd .= " -o ".$outfile{$suffix};
+  ## Check that organism table contains a cross-reference to the MICROSCOPE database for the organism
+  if ($organism_info{$organism_name}->{microscope_metacyc_id}) {
+    ## Run the MICROME/MICROSCOPE Web client
+    my $ms_org_id = $organism_info{$organism_name}->{microscope_metacyc_id};
+    my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
+    $cmd = "python2.7 ".$ger_cmd;
+    $cmd .= " --ms_org_id ".$ms_org_id;
+    $cmd .= " --reactions" if ($args{get_reactions});
+    $cmd .= " -o ".$outfile{$suffix};
+    &one_command($cmd, 1, 0, task=>"ger");
+
+    if ($suffix eq "gene-ec") {
+      ## Select non-redundant subset of the GER table, using the column ID
+      ## to identify genes
+      $cmd = "grep '^#' ".$outfile{$suffix};
+      $cmd .= " | perl -pe 's/^\#//'";
+      $cmd .= " | awk -F'\\t' '{print \"#\"\$4\"\\t\"\$2\"\\t\"\$1}'";
+      $cmd .= " > ".$outfile{$suffix."_by_id"};
+      $cmd .= "; grep -v '^; ' ".$outfile{$suffix};
+      $cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"id\"'";
+      $cmd .= " | awk -F '\\t' '{print \$4\"\\t\"\$2\"\\t\"\$1}'";
+      $cmd .= " >> ".$outfile{$suffix."_by_id"};
+
+      ## Convert gene-ec table to HTML format
+      $cmd .= " ; ".$SCRIPTS."/text-to-html ";
+      $cmd .= " -i ".$outfile{$suffix."_by_id"};
+      $cmd .= " -o ".$outfile{$suffix."_by_id_html"};
       &one_command($cmd, 1, 0, task=>"ger");
-
-      if ($suffix eq "gene-ec") {
-	## Select non-redundant subset of the GER table, using the column ID
-	## to identify genes
-	$cmd = "grep '^#' ".$outfile{$suffix};
-	$cmd .= " | perl -pe 's/^\#//'";
-	$cmd .= " | awk -F'\\t' '{print \"#\"\$4\"\\t\"\$2\"\\t\"\$1}'";
-	$cmd .= " > ".$outfile{$suffix."_by_id"};
-	$cmd .= "; grep -v '^; ' ".$outfile{$suffix};
-	$cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"id\"'";
-	$cmd .= " | awk -F '\\t' '{print \$4\"\\t\"\$2\"\\t\"\$1}'";
-	$cmd .= " >> ".$outfile{$suffix."_by_id"};
-
-	## Convert gene-ec table to HTML format
-	$cmd .= " ; ".$SCRIPTS."/text-to-html ";
-	$cmd .= " -i ".$outfile{$suffix."_by_id"};
-	$cmd .= " -o ".$outfile{$suffix."_by_id_html"};
-	&one_command($cmd, 1, 0, task=>"ger");
-      }
-    } else {
-      my $warning = join ("\t", "Cannot collect GER for organism", $organism_name, "because missing cross-reference to Genoscope/MicroCyc.", $organism_name);
-      push @warnings, $warning;
-      &RSAT::message::Warning($warning) if ($main::verbose >= 1);
     }
-#  }
+  } else {
+    my $warning = join ("\t", "Cannot collect GER for organism", $organism_name, "because missing cross-reference to Genoscope/MicroCyc.", $organism_name);
+    push @warnings, $warning;
+    &RSAT::message::Warning($warning) if ($main::verbose >= 1);
+  }
+  #  }
+
+
+  ################################################################
+  ## Compute statistics on gene-EC assiciations
+  &RSAT::message::TimeWarn("Computing statistincs on gene-EC associations") if ($main::verbose >= 0);
+
+  $outfile{ecs_per_gene} = &OutFileName("GER", ".tab", "ecs_per_gene"); push @files_to_index, "ecs_per_gene";
+  $outfile{genes_per_ec} = &OutFileName("GER", ".tab", "genes_per_ec"); push @files_to_index, "genes_per_ec";
+
+  if ($task{ger}) {
+
+    ## Count gene-EC associations
+    if (-e $outfile{$suffix."_by_id"}) {
+      my ($gene_ec) = &OpenInputFile($outfile{$suffix."_by_id"});
+      while (<$gene_ec>) {
+	chomp();
+	next unless (/\S/);	## Skip empty lines
+	next if (/; ^/);	## Skip comment lines
+	next if (/^#/);		## Skip header line
+	my ($gene, $ec) = split /\t/;
+	unless (defined($ecs_per_gene{$gene})) {
+	  $ecs_per_gene{$gene} = 0;
+	}
+	unless (defined($genes_per_ec{$ec})) {
+	  $genes_per_ec{$ec} = 0;
+	}
+	if ($ec) {
+	  $ecs_per_gene{$gene}++;
+	  $genes_per_ec{$ec}++;
+	}
+      }
+
+      ## Print number of ECs per gene
+      my $ecs_per_gene_handler = &OpenOutputFile($main::outfile{ecs_per_gene});
+      foreach my $gene (sort  {$ecs_per_gene{$b} <=> $ecs_per_gene{$a}}  keys %ecs_per_gene) {
+	print $ecs_per_gene_handler $gene, "\t", $ecs_per_gene{$gene},"\n";
+      }
+      close $ecs_per_gene_handler;
+
+      ## Print number of genes per EC
+      my $genes_per_ec_handler = &OpenOutputFile($main::outfile{genes_per_ec});
+      foreach my $ec (sort {$genes_per_ec{$b} <=> $genes_per_ec{$a}} keys %genes_per_ec) {
+	print $genes_per_ec_handler $ec, "\t", $genes_per_ec{$ec},"\n";
+      }
+      close $genes_per_ec_handler;
+    }
+  }
+
+  ## Distribution of number of ECs per gene
+  $outfile{ecs_per_gene_distrib} = &OutFileName("GER", ".tab", "ecs_per_gene_distrib"); push @files_to_index, "ecs_per_gene_distrib";
+  $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 2";
+  $cmd .= " -i ".$outfile{ecs_per_gene};
+  $cmd .= " -o ".$outfile{ecs_per_gene_distrib};
+
+  ## Generate graphs of ECs per gene distribution
+  for my $img_format (@image_formats) {
+    $outfile{"ecs_per_gene_distrib_".$img_format} = &OutFileName("GER", ".".$img_format, "ecs_per_gene_distrib"); push @files_to_index, "ecs_per_gene_distrib_".$img_format;
+    $cmd .= "; ".$SCRIPTS."/XYgraph";
+    $cmd .= " -i ".$outfile{ecs_per_gene_distrib};
+    $cmd .= " -xcol 1 -ycol 4,5,6";
+    $cmd .= " -format ".$img_format;
+    #      $cmd .= " -xgstep1 1" unless ($img_format eq "pdf");
+    $cmd .= " -xmin 0 -ymin 0";
+    $cmd .= " -lines -legend  -xsize 800 -ysize 400";
+    $cmd .= " -xleg1 'Number of ECs'";
+    $cmd .= " -yleg1 'Number of genes'";
+    $cmd .= " -title1 \"Distribution of number of ECs per gene in ".$organism_name."\"";
+    $cmd .= " -o ".$outfile{"ecs_per_gene_distrib_".$img_format};
+  }
+  &one_command($cmd, 1, 0, task=>"ger") ;
+
+  ## Distribution of number of genes per EC
+  $outfile{genes_per_ec_distrib} = &OutFileName("GER", ".tab", "genes_per_ec_distrib"); push @files_to_index, "genes_per_ec_distrib";
+  $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 2";
+  $cmd .= " -i ".$outfile{genes_per_ec};
+  $cmd .= " -o ".$outfile{genes_per_ec_distrib};
+  for my $img_format (@image_formats) {
+    $outfile{"genes_per_ec_distrib_".$img_format} = &OutFileName("GER", ".".$img_format, "genes_per_ec_distrib"); push @files_to_index, "genes_per_ec_distrib_".$img_format;
+    $cmd .= "; ".$SCRIPTS."/XYgraph";
+    $cmd .= " -i ".$outfile{genes_per_ec_distrib};
+    $cmd .= " -xcol 1 -ycol 4,5,6";
+    $cmd .= " -format ".$img_format;
+    $cmd .= " -xgstep1 1" unless ($img_format eq "pdf");
+    $cmd .= " -xmin 0 -ymin 0";
+    $cmd .= " -lines -legend  -xsize 800 -ysize 400";
+    $cmd .= " -xleg1 'Number of genes'";
+    $cmd .= " -yleg1 'Number of ECs'";
+    $cmd .= " -title1 \"Distribution of number of genes per EC in ".$organism_name."\"";
+    $cmd .= " -o ".$outfile{"genes_per_ec_distrib_".$img_format};
+  }
+  &one_command($cmd, 1, 0, task=>"ger") ;
+
+  ## Append table of links to the HTML report
+  if ($task{synthesis}) {
+    print $syn "<h2>Metabolic annotations from Genoscope/MicroCyc</h2>\n";
+    my $microscope_url = "https://www.genoscope.cns.fr/agc/microscope/";
+    print $syn "<p>Source: MicroCyc database (<a target='_blank' href='".$microscope_url."'>".$microscope_url."</a>)\n";
+    my $microcyc_ws_url = "http://www.genoscope.cns.fr/microme/microcyc-wsc/";
+    print $syn "<br>Downloaded using Web services: <a target='_blank' href='".$microcyc_ws_url."'>".$microcyc_ws_url."</a></p>\n";
+    print $syn &LinkTable("Files: metabolic annotations", @files_to_index);
+
+    print $syn "<h3>Size distribution</h3>";
+    print $syn "<table class='whitebg'>";
+    print $syn "<tr>";
+    print $syn "<td>";
+
+    ## Add summary stats on gene-EC associatios
+    $organism_info{$organism_name}->{genes_with_ec} = `grep -v '^#' $outfile{genes_per_ec} | grep -v '^;' | awk '\$2 > 0' | wc -l`;
+    chomp($organism_info{$organism_name}->{genes_with_ec});
+    print $syn "<br>Nb genes with at least one EC: ", $organism_info{$organism_name}->{genes_with_ec};
+
+
+    $organism_info{$organism_name}->{ecs_with_gene} = `grep -v '^#' $outfile{ecs_per_gene} | grep -v '^;' | awk '\$2 > 0' | wc -l`;
+    chomp($organism_info{$organism_name}->{ecs_with_gene});
+    print $syn "<br>Nb ECs with at least one gene: ", $organism_info{$organism_name}->{ecs_with_gene};
+    print $syn "</td>";
+
+
+    ## Display distribution of ECs per gene
+    print $syn "<td>";
+    if (-e $outfile{"ecs_per_gene_distrib_png"}) {
+      print $syn "<p>", &HtmlDisplayOneImage($outfile{"ecs_per_gene_distrib_png"},
+					     base=>$outfile{synthesis},
+					     href=>$outfile{"ecs_per_gene_distrib_pdf"},
+					     img_param=>"height='".$icon_height."' border=1",
+					    ), "</p>\n";
+    } else {
+      print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{"ecs_per_gene_distrib_png"}, "</font></p>\n";
+    }
+    print $syn "</td>";
+
+    ## Display distribution of genes per EC
+    print $syn "<td>";
+    if (-e $outfile{"genes_per_ec_distrib_png"}) {
+      print $syn "<p>", &HtmlDisplayOneImage($outfile{"genes_per_ec_distrib_png"},
+					     base=>$outfile{synthesis},
+					     href=>$outfile{"genes_per_ec_distrib_pdf"},
+					     img_param=>"height='".$icon_height."' border=1",
+					    ), "</p>\n";
+    } else {
+      print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{"genes_per_ec_distrib_png"}, "</font></p>\n";
+    }
+    print $syn "</td>";
+
+
+    print $syn "<tr>";
+    print $syn "</table>\n";
+
+  }
 
   ## Add info in the main synthesis
   if ($task{synthesis}) {
