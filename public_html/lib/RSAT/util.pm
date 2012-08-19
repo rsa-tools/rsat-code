@@ -1014,7 +1014,7 @@ sub doit {
     } else {
       ## qsub command functionning using Sun Grid Engine (note: this is the cluster management system installed at the BiGRe lab, 2012)
 	$qsub_cmd = join(" ", "qsub", 
-			 "-m",$batch_mail,
+			 "-m", $batch_mail,
 			 "-q ", $cluster_queue, 
 			 " -j y ",
 			 "-N ", $job_name,
