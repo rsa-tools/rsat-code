@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.16 2012/08/20 00:05:22 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.17 2012/08/20 07:27:34 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -162,6 +162,11 @@ package main;
 			       ncbi_order_name
 			       ncbi_order_taxid
 			       );
+
+  our @mandatory_info = qw (ulb_ncbi_name_id
+			    tax_id
+			    microscope_metacyc_id
+			   );
   our %org_table_column = ();
   &IndexOrgTableColumns();
 
@@ -252,7 +257,8 @@ package main;
     ## Print header line of the main synthesis table
     my @main_syn_fields = ("nb",
 			   "organism name",
-			   "MicroCyc fame",
+			   "MicroCyc frame",
+			   "NCBI TAXID",
 			   "dir",
 			   "log",
 			   "CDS",
@@ -322,7 +328,14 @@ package main;
       print $main_syn "<tr>";
       print $main_syn "<td>", $org_counter, "</td>";
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
-      print $main_syn "<td>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</td>";
+      my $microscope_link;
+      if ($organism_info{$organism_name}->{microscope_metacyc_id} =~ /(\S+)\-/) {
+	$microscope_link = "http://microcyc.genoscope.cns.fr/".$1."/";
+      }
+      print $main_syn "<td><a target='_blank' href='".$microscope_link."'>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</a></td>";
+#      print $main_syn "<td>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</td>";
+      my $taxid_link = "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=".$organism_info{$organism_name}->{tax_id}."";
+      print $main_syn "<td><a target='_blank' href='".$taxid_link."'>", $organism_info{$organism_name}->{tax_id}, "</a></td>";
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{output}, " [dir]"), "</td>";
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{log}, " [log]"), "</td>";
 
@@ -519,8 +532,10 @@ sub ReadOrganismCrossTable {
 
   ## Check that there is a Microscope fram associated to each organism
   foreach my $organism_name (@organism_names) {
-    unless ($organism_info{$organism_name}->{microscope_metacyc_id}) {
-      $organism_info{$organism_name}->{microscope_metacyc_id} = "<NA>";
+    foreach my $field (@mandatory_info) {
+      unless ($organism_info{$organism_name}->{$field} =~ /\S/) {
+	$organism_info{$organism_name}->{$field} = "<NA>";
+      }
     }
   }
 }
