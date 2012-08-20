@@ -73,9 +73,8 @@ foreach $key (keys %default) {
 &RSA_header("peak-motifs", "form");
 
 print <<end_part_1;
-<CENTER>
+<center>
 <p>Pipeline for discovering motifs in massive ChIP-seq peak sequences.</p>
-
 <!--
 <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
 <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>,
@@ -85,13 +84,25 @@ print <<end_part_1;
 <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>,
 and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>,
 -->
-<p>Reference: Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand,
+</center>
+<p><b>References</b>
+<ol>
+<li>Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand,
   O., Thieffry, D. and van Helden, J. (2011). RSAT peak-motifs: motif
   analysis in full-size ChIP-seq datasets Nucleic Acids Research
   doi:10.1093/nar/gkr1104, 9.  [<a target='_blank'
   href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full?keytype=ref&ijkey=zOvloLjtKzL73F8'>Open
   access</a>]
-</center>
+</li>
+<li>
+    Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry
+    D, van Helden J. (2012). A complete workflow for the analysis
+    of full-size ChIP-seq (and similar) data sets using
+    peak-motifs. Nat Protoc 7(8): 1551-1568.  
+    [<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/22836136'>PMID 22836136</a>]
+</li>
+</ol>
+</p>
 
 <div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\">
 
