@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.15 2012/08/19 22:44:26 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.16 2012/08/20 00:05:22 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -250,14 +250,18 @@ package main;
     print $main_syn "<table class='sortable'>\n";
 
     ## Print header line of the main synthesis table
-    my @main_syn_fields = qw (nb
-			      organism_name
-			      dir
-			      log
-			      ger
-			      operons
-			      syntons
-			     );
+    my @main_syn_fields = ("nb",
+			   "organism name",
+			   "MicroCyc fame",
+			   "dir",
+			   "log",
+			   "CDS",
+			   "genes > EC",
+			   "ECs > gene",
+			   "genes",
+			   "operons",
+			   "syntons"
+			  );
     print $main_syn "<tr>\n";
     foreach my $field (@main_syn_fields) {
       print $main_syn "<th>", $field, "</th>\n";
@@ -309,11 +313,29 @@ package main;
     if ($task{synthesis}) {
       $syn = &OpenOutputFile($main::outfile{synthesis});
       print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$organism_name, "result_toc"=>0, refresh_time=>$refresh_time);
+
+      print $syn &LinkTable("Files: log and synthesis",
+		 "synthesis",
+		 "log");
+
+      ## open a new row in the organism table
       print $main_syn "<tr>";
       print $main_syn "<td>", $org_counter, "</td>";
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
+      print $main_syn "<td>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</td>";
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{output}, " [dir]"), "</td>";
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{log}, " [log]"), "</td>";
+
+      ## Count number of CDS in the RSAT annotations
+      my $cds_file = $ENV{RSAT}."/data/genomes/".$organism_name."/genome/cds.tab";
+      if (-e $cds_file) {
+	$organism_info{$organism_name}->{CDS} = `grep -v '^;' $cds_file | grep -v '^#' | wc -l | awk '{print \$1}'`;
+	chomp($organism_info{$organism_name}->{CDS});
+	$organism_info{$organism_name}->{CDS} = &RSAT::util::trim($organism_info{$organism_name}->{CDS});
+      } else {
+	$organism_info{$organism_name}->{CDS} = "NA";
+      }
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $cds_file, $organism_info{$organism_name}->{CDS}), "</td>";
     }
 
     ## Check that organism is supported in RSAT
@@ -334,7 +356,7 @@ package main;
     ## Collect Gene-EC-reaction table from the MicroCyc database at Genoscope
     ## (CEA, France).
     &GetGER(get_reactions=>0);
-#    &GetGER(get_reactions=>1);
+    ##    &GetGER(get_reactions=>1);
 
     @files_to_index = ();
 
@@ -373,6 +395,7 @@ package main;
 
   if ($task{synthesis}) {
     print $main_syn "</table>\n";
+
     &CloseSynthesis($main_syn);
   }
 
@@ -483,7 +506,7 @@ sub ReadOrganismCrossTable {
 	my $column = $org_table_column{$field}-1;
 	my $value = $fields[$column];
 	$organism_info{$organism_name}->{$field} = $value;
-	&RSAT::message::Debug("organism_info", $organism_name, $field, $value);
+#	&RSAT::message::Debug("organism_info", $organism_name, $field, $value) if ($main::verbose >= 10);
       }
 
     } else {
@@ -492,7 +515,16 @@ sub ReadOrganismCrossTable {
 
   }
   close $orgs;
+
+
+  ## Check that there is a Microscope fram associated to each organism
+  foreach my $organism_name (@organism_names) {
+    unless ($organism_info{$organism_name}->{microscope_metacyc_id}) {
+      $organism_info{$organism_name}->{microscope_metacyc_id} = "<NA>";
+    }
+  }
 }
+
 
 ################################################################
 ## Clos the synthetic table
@@ -1024,6 +1056,7 @@ sub InferOperonsOrSyntons {
       print $syn "<br>Max size: ", $organism_info{$organism_name}->{$operons_or_syntons."_max_size"};
 
       ## Add info in the main synthesis
+      print $main_syn "<td>", $organism_info{$organism_name}->{genes},  "</td>\n" if ($operons_or_syntons eq 'operons');
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $organism_info{$organism_name}->{$operons_or_syntons}),  "</td>\n";
 
     } else {
@@ -1154,9 +1187,9 @@ sub GetGER() {
   $outfile{ecs_per_gene} = &OutFileName("GER", ".tab", "ecs_per_gene"); push @files_to_index, "ecs_per_gene";
   $outfile{genes_per_ec} = &OutFileName("GER", ".tab", "genes_per_ec"); push @files_to_index, "genes_per_ec";
 
-  if ($task{ger}) {
 
-    ## Count gene-EC associations
+  ## Count gene-EC associations
+  if ($task{ger}) {
     if (-e $outfile{$suffix."_by_id"}) {
       my ($gene_ec) = &OpenInputFile($outfile{$suffix."_by_id"});
       while (<$gene_ec>) {
@@ -1214,7 +1247,9 @@ sub GetGER() {
     $cmd .= " -title1 \"Distribution of number of ECs per gene in ".$organism_name."\"";
     $cmd .= " -o ".$outfile{"ecs_per_gene_distrib_".$img_format};
   }
-  &one_command($cmd, 1, 0, task=>"ger") ;
+  if (-e $outfile{ecs_per_gene}) {
+    &one_command($cmd, 1, 0, task=>"ger");
+  }
 
   ## Distribution of number of genes per EC
   $outfile{genes_per_ec_distrib} = &OutFileName("GER", ".tab", "genes_per_ec_distrib"); push @files_to_index, "genes_per_ec_distrib";
@@ -1235,7 +1270,11 @@ sub GetGER() {
     $cmd .= " -title1 \"Distribution of number of genes per EC in ".$organism_name."\"";
     $cmd .= " -o ".$outfile{"genes_per_ec_distrib_".$img_format};
   }
-  &one_command($cmd, 1, 0, task=>"ger") ;
+  if (-e $outfile{genes_per_ec}) {
+    &one_command($cmd, 1, 0, task=>"ger") ;
+  }
+
+
 
   ## Append table of links to the HTML report
   if ($task{synthesis}) {
@@ -1244,7 +1283,6 @@ sub GetGER() {
     print $syn "<p>Source: MicroCyc database (<a target='_blank' href='".$microscope_url."'>".$microscope_url."</a>)\n";
     my $microcyc_ws_url = "http://www.genoscope.cns.fr/microme/microcyc-wsc/";
     print $syn "<br>Downloaded using Web services: <a target='_blank' href='".$microcyc_ws_url."'>".$microcyc_ws_url."</a></p>\n";
-    print $syn &LinkTable("Files: metabolic annotations", @files_to_index);
 
     print $syn "<h3>Size distribution</h3>";
     print $syn "<table class='whitebg'>";
@@ -1252,14 +1290,22 @@ sub GetGER() {
     print $syn "<td>";
 
     ## Add summary stats on gene-EC associatios
-    $organism_info{$organism_name}->{genes_with_ec} = `grep -v '^#' $outfile{genes_per_ec} | grep -v '^;' | awk '\$2 > 0' | wc -l`;
-    chomp($organism_info{$organism_name}->{genes_with_ec});
-    print $syn "<br>Nb genes with at least one EC: ", $organism_info{$organism_name}->{genes_with_ec};
+    if (-e $outfile{genes_per_ec}) {
+      $organism_info{$organism_name}->{genes_with_ec} = `grep -v '^#' $outfile{genes_per_ec} | grep -v '^;' | awk '\$2 > 0' | wc -l`;
+      chomp($organism_info{$organism_name}->{genes_with_ec});
+      $organism_info{$organism_name}->{genes_with_ec} = &RSAT::util::trim($organism_info{$organism_name}->{genes_with_ec});
+      print $syn "<br>Nb genes with at least one EC: ", $organism_info{$organism_name}->{genes_with_ec};
+    } else {
+      $organism_info{$organism_name}->{genes_with_ec} = "NA";
+    }
 
-
-    $organism_info{$organism_name}->{ecs_with_gene} = `grep -v '^#' $outfile{ecs_per_gene} | grep -v '^;' | awk '\$2 > 0' | wc -l`;
-    chomp($organism_info{$organism_name}->{ecs_with_gene});
-    print $syn "<br>Nb ECs with at least one gene: ", $organism_info{$organism_name}->{ecs_with_gene};
+    if (-e $outfile{ecs_per_gene}) {
+      $organism_info{$organism_name}->{ecs_with_gene} = `grep -v '^#' $outfile{ecs_per_gene} | grep -v '^;' | awk '\$2 > 0' | wc -l`;
+      chomp($organism_info{$organism_name}->{ecs_with_gene});
+      print $syn "<br>Nb ECs with at least one gene: ", $organism_info{$organism_name}->{ecs_with_gene};
+    } else {
+      $organism_info{$organism_name}->{ecs_with_gene} = "NA";
+    }
     print $syn "</td>";
 
 
@@ -1293,11 +1339,18 @@ sub GetGER() {
     print $syn "<tr>";
     print $syn "</table>\n";
 
+    print $syn &LinkTable("Files: metabolic annotations", @files_to_index);
   }
 
   ## Add info in the main synthesis
   if ($task{synthesis}) {
-    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER}, $suffix),  "</td>\n";
+#    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER},
+#					 $organism_info{$organism_name}->{genes_with_ec}." gn <-> ".$organism_info{$organism_name}->{ecs_with_gene}." ECs"
+#					),  "</td>\n";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER}, $organism_info{$organism_name}->{genes_with_ec}),  "</td>\n";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER}, $organism_info{$organism_name}->{ecs_with_gene}),  "</td>\n";
+#    print $main_syn "<td>", $organism_info{$organism_name}->{genes_with_ec},  "</td>\n";
+#    print $main_syn "<td>", $organism_info{$organism_name}->{ecs_with_gene},  "</td>\n";
   }
 }
 
