@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.79 2011/04/10 13:49:58 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.80 2012/08/20 11:37:13 rsat Exp $
 #
 # Time-stamp
 #
@@ -1800,7 +1800,8 @@ sub GetSequence {
 	  # Get classifications
 	  foreach my $beast (@species) {
 	      my $meta_container = Bio::EnsEMBL::Registry->get_adaptor($beast, 'Core', 'MetaContainer');
-	      my $_species = $meta_container->get_Species();
+#	      my $_species = $meta_container->get_Species();  # get_Species is deprecated
+	      my $_species = $meta_container->get_common_name();
 	      my %info = %{$_species};
 	      $classifications{$beast} = [@{$info{'classification'}}];
 	  }
