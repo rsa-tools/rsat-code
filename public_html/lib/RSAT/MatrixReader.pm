@@ -2267,7 +2267,7 @@ the matrix (or matrices).
 =cut
 sub _readFromFeatureFile {
   my ($file) = @_;
-  &RSAT::message::Info("Reading matrix from feature file\t", $file) if ($main::verbose >= 3);
+  &RSAT::message::Info("Reading matrix from feature file\t", $file) if ($main::verbose >= 3); 
 
   ## open input stream
   my ($in, $dir) = &main::OpenInputFile($file);
@@ -2286,7 +2286,6 @@ sub _readFromFeatureFile {
     next unless ($line =~ /\S/);
     $line =~ s/\r//;
     chomp($line);
-
     ## Instantiate an object to store feature information
     my $feature = new RSAT::feature();
     $feature->parse_from_row($line, "ft");
