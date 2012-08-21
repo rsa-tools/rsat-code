@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.98 2012/08/19 00:31:57 jvanheld Exp $
+# $Id: footprint-discovery,v 1.99 2012/08/21 21:43:24 amedina Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -1102,7 +1102,8 @@ sub DyadAnalysis {
     $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
     $cmd .= " -seq ".$outfile{seq};
     $cmd .= " -asmb ".$outfile{asmb};
-    $cmd .= " -format fasta";
+    $cmd .= " -format fasta " ;
+    $cmd .= " -sites" ;
     $cmd .= " -uth Pval 0.00025";
     $cmd .= " -bginput -markov 0";
     $cmd .= " ".$strands;
