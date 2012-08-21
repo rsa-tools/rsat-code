@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.145 2012/08/04 06:26:51 jvanheld Exp $
+# $Id: convert-matrix,v 1.146 2012/08/21 21:36:33 amedina Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -285,7 +285,7 @@ if (scalar(@matrix_files >= 1)) {
   $m = 0;
   foreach my $matrix_file (@matrix_files) {
     last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
-    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);
+    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);  
     foreach my $matrix (@matrices_from_file) {
       $m++;
       last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
@@ -349,7 +349,6 @@ foreach my $matrix (@matrices) {
       $matrix->add_column("left",@empty_col);
     }
   }
-
   ## Compute reverse complement
   $matrix->reverse_complement() if ($rc);
   $matrix->force_attribute("pseudo", $pseudo_weight);
@@ -386,7 +385,7 @@ foreach my $matrix (@matrices) {
     }
     $logo_dir .= "/";
     $logo_dir =~ s|/+|/|g;
-    #      &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 10);
+    &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 10);
 
     ## Create logo directory if required
     &RSAT::util::CheckOutDir($logo_dir);
