@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.24 2012/08/22 14:11:52 jvanheld Exp $
+# $Id: install_software.mk,v 1.25 2012/08/22 14:27:28 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -132,8 +132,9 @@ _compile_python_suds:
 ################################################################
 ## Install the EnsEMBL Perl API
 ENSEMBL_VERSION=68
-ENSEMBL_API_DIR=${PWD}/perllib
+ENSEMBL_API_DIR=${SOFT_DIR}/perllib
 install_ensembl_api:	
+	@echo
 	@echo "Installing ENSEMBL Perl modules in directory ${ENSEMBL_API_DIR}"
 	@mkdir -p "${ENSEMBL_API_DIR}"
 	@echo  "Password is 'CVSUSER'"
@@ -145,6 +146,8 @@ install_ensembl_api:
 			checkout -r branch-ensembl-${ENSEMBL_VERSION} ensembl-compara ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
 			checkout -r branch-ensembl-${ENSEMBL_VERSION} ensembl-variation)
+	@echo
+	@echo "Installed ENSEMBL Perl modules in directory ${ENSEMBL_API_DIR}"
 	@echo "Don't forget to adapt the following lines in your bash profile"
 	@echo 'export PERL5LIB=$${PERL5LIB}l:${SOFT_DIR}/perllib/ensembl/modules'
 	@echo 'export PERL5LIB=$${PERL5LIB}:${SOFT_DIR}/perllib/ensembl-compara/modules'
@@ -425,9 +428,8 @@ _compile_blast_macosx:
 ################################################################
 ## Generic call for installing a program. This tag is called with
 ## specific parameters for each program (consensus, patser, ...)
-APP_DIR=${RSAT}/applications
 PROGRAM=consensus
-PROGRAM_DIR=${APP_DIR}/${PROGRAM}
+PROGRAM_DIR=${SRC_DIR}/${PROGRAM}
 PROGRAM_ARCHIVE=`ls -1t ${SRC_DIR}/${PROGRAM}* | head -1`
 uncompress_program:
 	@echo installing ${PROGRAM_ARCHIVE} in dir ${PROGRAM_DIR}
@@ -437,7 +439,7 @@ uncompress_program:
 
 ################################################################
 ## Common frame for installing programs
-INSTALLED_PROGRAM=`ls -1t ${APP_DIR}/${PROGRAM}/${PROGRAM}*`
+INSTALLED_PROGRAM=`ls -1t ${SRC_DIR}/${PROGRAM}/${PROGRAM}*`
 _compile_program:
 	(cd ${PROGRAM_DIR}; make ${_COMPILE_OPT})
 	(cd bin; ln -fs ${INSTALLED_PROGRAM} ./${PROGRAM})
@@ -445,7 +447,7 @@ _compile_program:
 
 ################################################################
 ## Install Andrew Neuwald's gibbs sampler (1995 version)
-GIBBS_DIR=${APP_DIR}/gibbs/gibbs9_95
+GIBBS_DIR=${SRC_DIR}/gibbs/gibbs9_95
 _compile_gibbs:
 	${MAKE} uncompress_program PROGRAM=gibbs
 	(cd ${GIBBS_DIR}; ./compile; cd ${GIBBS_DIR}/code; make clean)
