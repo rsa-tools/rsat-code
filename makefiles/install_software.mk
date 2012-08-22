@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.23 2012/08/22 14:11:26 jvanheld Exp $
+# $Id: install_software.mk,v 1.24 2012/08/22 14:11:52 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -131,7 +131,7 @@ _compile_python_suds:
 
 ################################################################
 ## Install the EnsEMBL Perl API
-ENSEMBL_BRANCH=68
+ENSEMBL_VERSION=68
 ENSEMBL_API_DIR=${PWD}/perllib
 install_ensembl_api:	
 	@echo "Installing ENSEMBL Perl modules in directory ${ENSEMBL_API_DIR}"
@@ -140,11 +140,11 @@ install_ensembl_api:
 	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
 	@(cd ${ENSEMBL_API_DIR}; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-			checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl ; \
+			checkout -r branch-ensembl-${ENSEMBL_VERSION} ensembl ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-			checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-compara ; \
+			checkout -r branch-ensembl-${ENSEMBL_VERSION} ensembl-compara ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-			checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-variation)
+			checkout -r branch-ensembl-${ENSEMBL_VERSION} ensembl-variation)
 	@echo "Don't forget to adapt the following lines in your bash profile"
 	@echo 'export PERL5LIB=$${PERL5LIB}l:${SOFT_DIR}/perllib/ensembl/modules'
 	@echo 'export PERL5LIB=$${PERL5LIB}:${SOFT_DIR}/perllib/ensembl-compara/modules'
