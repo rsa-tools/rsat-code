@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.17 2012/08/20 07:27:34 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.18 2012/08/22 15:32:17 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -1202,7 +1202,6 @@ sub GetGER() {
   $outfile{ecs_per_gene} = &OutFileName("GER", ".tab", "ecs_per_gene"); push @files_to_index, "ecs_per_gene";
   $outfile{genes_per_ec} = &OutFileName("GER", ".tab", "genes_per_ec"); push @files_to_index, "genes_per_ec";
 
-
   ## Count gene-EC associations
   if ($task{ger}) {
     if (-e $outfile{$suffix."_by_id"}) {
@@ -1273,12 +1272,13 @@ sub GetGER() {
   $cmd .= " -o ".$outfile{genes_per_ec_distrib};
   for my $img_format (@image_formats) {
     $outfile{"genes_per_ec_distrib_".$img_format} = &OutFileName("GER", ".".$img_format, "genes_per_ec_distrib"); push @files_to_index, "genes_per_ec_distrib_".$img_format;
-    $cmd .= "; ".$SCRIPTS."/XYgraph";
-    $cmd .= " -i ".$outfile{genes_per_ec_distrib};
+    $cmd .= "; grep -v NIL ".$outfile{genes_per_ec_distrib};
+    $cmd .= "| ".$SCRIPTS."/XYgraph";
     $cmd .= " -xcol 1 -ycol 4,5,6";
     $cmd .= " -format ".$img_format;
-    $cmd .= " -xgstep1 1" unless ($img_format eq "pdf");
-    $cmd .= " -xmin 0 -ymin 0";
+#    $cmd .= " -xgstep1 1" unless ($img_format eq "pdf");
+    $cmd .= " -xmax 50";
+    $cmd .= " -xmin 1 -ymin 0 -xlog 2";
     $cmd .= " -lines -legend  -xsize 800 -ysize 400";
     $cmd .= " -xleg1 'Number of genes'";
     $cmd .= " -yleg1 'Number of ECs'";
@@ -1287,6 +1287,7 @@ sub GetGER() {
   }
   if (-e $outfile{genes_per_ec}) {
     &one_command($cmd, 1, 0, task=>"ger") ;
+    &one_command($cmd, 1, 0, task=>"synthesis") ;
   }
 
 
