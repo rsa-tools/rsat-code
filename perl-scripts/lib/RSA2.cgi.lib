@@ -1435,7 +1435,7 @@ sub PrintHtmlResultHeader {
     $header .=  "<div id='Menu_wait'>\n";
     if ($refresh_time > 0) {
       $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
-      $header .= "<p style='text-align:center;color:green'>Results will progressively appear on this page <br/>\n";
+      $header .= "<p style='text-align:center;color:green'>Results will progressively be displayed on this page <br/>\n";
       $header .= "<b>This page should be automatically refreshed every ".$refresh_time." seconds until this message disappears.</b></p>\n";
     }
     $header .=  "</div>\n";
