@@ -1112,6 +1112,7 @@ sub one_command {
       $main::batch_cmd = "$cmd";
     }
   } else {
+
     ## Report command in the log file
     if (($print_out) || ($main::verbose >= 3)) {
       my $local_out;
