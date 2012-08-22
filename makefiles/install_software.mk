@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.22 2012/08/08 11:35:19 rsat Exp $
+# $Id: install_software.mk,v 1.23 2012/08/22 14:11:26 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -131,7 +131,7 @@ _compile_python_suds:
 
 ################################################################
 ## Install the EnsEMBL Perl API
-ENSEMBL_BRANCH=67
+ENSEMBL_BRANCH=68
 ENSEMBL_API_DIR=${PWD}/perllib
 install_ensembl_api:	
 	@echo "Installing ENSEMBL Perl modules in directory ${ENSEMBL_API_DIR}"
