@@ -546,6 +546,17 @@ sub Panel5  {
   print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href='help.matrix-scan.html'>[matrix-scan]</a>\n";
   print "<br/>";
 
+  ## Markov order for scanning (site prediction + motif enrichment)
+  print "<b>Markov order</b> (m) of the background model for sequence scanning (site prediction + motif enrichment)\n";
+  $scanMarkovPopup = "<br>";
+  $scanMarkovPopup .=  "<select name='scan_markov'>\n";
+  $scanMarkovPopup .=  "<option value='0'>m=0 (generally not ideal)</option>\n";
+  $scanMarkovPopup .=  "<option selected value='1'>m=1</option>\n";
+  $scanMarkovPopup .=  "<option value='2'>m=2 (slower)</option>\n";
+  $scanMarkovPopup .=  "<option value='3'>m=3 (may be very slow)</option>\n";
+  $scanMarkovPopup .=  "</select>";
+  print $scanMarkovPopup;
+
 
   print "</fieldset><p/>";
 
@@ -558,11 +569,11 @@ sub Panel5  {
   print "<br/>";
 
   print ("<INPUT TYPE='radio' NAME='visualize' value='galaxy' $checked{'galaxy'}>",
-	 "<b>Peak coordinates specified in fasta headers of the test sequence file (<a href=''>Galaxy</a> format)</b>",
+	 "Peak coordinates specified in <b>fasta headers</b> of the test sequence file (<a href=''>Galaxy</a> format)",
 	 "<br>","&nbsp;"x7,"(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
 
   print "<br/>";
-  print ("<INPUT TYPE='radio' NAME='visualize' value='bed_coord' $checked{'bed_coord'}>","<b>Peak coordinates provided as a custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
+  print ("<INPUT TYPE='radio' NAME='visualize' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
   print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
 
   print "&nbsp;"x7, $query->filefield(-name=>'bed_file',
