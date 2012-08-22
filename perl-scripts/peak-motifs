@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.240 2012/08/22 14:53:48 jvanheld Exp $
+# $Id: peak-motifs,v 1.241 2012/08/22 15:32:34 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.240 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.241 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -550,7 +550,7 @@ sub DefaultParameters {
   $main::param{scan_pseudo} = 1;
   $main::param{scan_decimals} = 1;
   $main::param{scan_bg_pseudo} =  0.01;
-  $main::param{scan_markov} = 2; ## Used for computing the background model in inclusive format (required by matrix-scan-quick).
+  $main::param{scan_markov} = 1; ## Used for computing the background model in inclusive format (required by matrix-scan-quick).
 
   ## Options used for site scanning but not for enrichment analysis
   $main::param{scan_min_score} = 7.5;
@@ -3193,7 +3193,10 @@ sub Synthesis {
 
   ## References
   print $syn &open_menu_heading($menu_nb++, "<a name='refs'></a><h3>Publications</h3>", 0);
-  print $syn "<p>Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand, O., Thieffry, D. & van Helden, J. (2011). RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res.</p>\n";
+  print $syn "<ol>\n";
+  print $syn "<li>Thomas-Chollier M, Herrmann C, Defrance M, Sand O, Thieffry D, van Helden J. (2012). RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res 40(4): e31.</li>\n";
+  print $syn "<li>Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry D, van Helden J. (2012). A complete workflow for the analysis of full-size ChIP-seq (and similar) data sets using peak-motifs. Nat Protoc 7(8): 1551-1568..</li>\n";
+  print $syn "</ol>\n";
 
   ## End of the HTML file
   &CloseSynthesis();
@@ -4523,6 +4526,14 @@ between the two trinucleotide monads.
 Order of the Markov model used to estimate expected oligonucleotide
 frequencies for I<oligo-analysis> and I<local-word-analysis>.
 
+B<Note:> the option I<-markov> only applies to motif
+discovery. Sequence scanning is performed with a different Markov
+order, because the scanning time strongly increases with Markov order,
+whereas the computing time for I<oligo-analysis> and
+I<local-word-analysis> is independent of the Markov order. The Markov
+order for sequence scanning (site prediction and enrichment analysis)
+can be specified with the option I<-scan_markov>.
+
 Higher order Markov models are more stringent, lower order are more
 sensitive, but tend to return a large number of false positives.
 
@@ -4573,6 +4584,14 @@ min_markov_order and max_markov_order.
 	&RSAT::error::FatalError($main::param{oligo_max_mkv}, "Invalid value for max Markov order. Should be an Integer")
 	  unless (&RSAT::util::IsInteger($main::param{oligo_max_mkv}));
       }
+
+=pod
+
+=cut
+    } elsif ($arg eq "-scan_markov") {
+      $main::param{scan_markov} = shift (@arguments);
+      &RSAT::error::FatalError($main::param{scan_markov}, "Invalid value for scanning Markov order. Should be an Integer")
+	unless (&RSAT::util::IsInteger($main::param{scan_markov}));
 
 =pod
 
