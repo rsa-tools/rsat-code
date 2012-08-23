@@ -151,6 +151,11 @@ $header_char{bed} = "## ";
 $comment_char{galaxy_seq} = "#";
 $header_char{galaxy_seq} = "#";
 
+## Define specific formats
+our %format = ();
+$format{"start"} = '%d';
+$format{"end"} = '%d';
+
 
 require "RSA.seq.lib";
 use RSAT::GenericObject;
@@ -669,6 +674,7 @@ sub parse_from_row {
   my @fields = ();
   if ($in_format eq "galaxy_seq"){
     $row =~ s/^\s*>//;
+
     ## PROBLEM HERE: DOES NOT WORK IF THE ID CONTAINS "_" characters
 #    @fields = split("_", $row);
     if ($row =~ /(\S+)*_(\S+)_(\d+)_(\d+)_([+-])$/) {
@@ -694,6 +700,7 @@ sub parse_from_row {
       &RSAT::message::Warning("Missing attribute ".$attr, "column:".($c+1)) if ($main::verbose >= 3);
     }
   }
+
 
   ## Convert strand format
   my $strand = $self->get_attribute("strand");
@@ -805,17 +812,16 @@ sub parse_from_row {
   }
 
   ## parsed row
-  &RSAT::message::Info(join("\t",
-			    "Parsed new feature",
-			    $self->get_attribute("seq_name"),
-			    $self->get_attribute("ft_type"),
-			    $self->get_attribute("feature_name"),
-			    $self->get_attribute("id"),
-			    $self->get_attribute("start"),
-			    $self->get_attribute("end"),
-			    $self->get_attribute("strand"),
-			    $self->get_attribute("description"),
-			    $self->get_attribute("score"))
+  &RSAT::message::Info("Parsed new feature",
+		       $self->get_attribute("seq_name"),
+		       $self->get_attribute("ft_type"),
+		       $self->get_attribute("feature_name"),
+		       $self->get_attribute("id"),
+		       $self->get_attribute("start"),
+		       $self->get_attribute("end"),
+		       $self->get_attribute("strand"),
+		       $self->get_attribute("description"),
+		       $self->get_attribute("score"),
 		      ) if ($main::verbose >= 4);
 
   return();
@@ -898,7 +904,7 @@ sub to_text {
   }
 
 
-  ## tab-delimited column files
+  ## Tab-delimited column files
   my @cols = @{$columns{$out_format}};
 
 
@@ -911,16 +917,24 @@ sub to_text {
   ## Select the fields
   my @fields = ();
   foreach my $c (0..$#cols) {
-    $attr = $cols[$c];
-    $field_value = $self->get_attribute($attr);
+    my $attr = $cols[$c];
+    my $field_value = $self->get_attribute($attr);
+
+    ## Check null attributes
     unless ($field_value) {
       if (defined($default{$attr})) {
 	$field_value = $default{$attr};
       } elsif ($attr eq "source") {
 	$field_value = $main::input_format;
-      } else {
+      } elsif (!defined($format{$attr})) {
 	$field_value = $null;
       }
+    }
+
+    ## Check attribute formats
+    if (defined($format{$attr})) {
+#      &RSAT::message::Warning("Formatting attriubte", $attr, $format{$attr}, $field_value);
+      $field_value = sprintf $format{$attr}, $field_value;
     }
     $fields[$c] =  $field_value;
     #      &RSAT::message::Debug("field", $c, sprintf("%-15s", $attr), $fields[$c])if ($main::verbose >= 10);
