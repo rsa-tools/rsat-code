@@ -800,15 +800,21 @@ sub parse_from_row {
     $self->force_attribute("ft_type", "pattern");
   }
 
-  ## bed format: convert to 1-based coordinates
-  if ($in_format eq "bed") {
-     $start_0_based = $self->get_attribute("start");
+  ## bed format: convert start position from 0-based to 1-based coordinate
+  ##
+  ## See http://genome.ucsc.edu/FAQ/FAQformat.html#format1
+  ##
+  ##  chromStart - The starting position of the feature in the
+  ##    chromosome or scaffold. The first base in a chromosome is
+  ##    numbered 0.
+  ##  chromEnd - The ending position of the feature in the
+  ##     chromosome or scaffold. The chromEnd base is not included
+  ##     in the display of the feature. For example, the first 100
+  ##     bases of a chromosome are defined as chromStart=0,
+  ##     chromEnd=100, and span the bases numbered 0-99.
+  if (($in_format eq "bed") || ($in_format eq "galaxy_seq")) {
+     my $start_0_based = $self->get_attribute("start");
      $self->force_attribute("start",$start_0_based+1); ## only the fist base is shifted
-  }
-    ## bed format: convert to 1-based coordinates
-  if ($in_format eq "galaxy_seq") {
-     $start_0_based = $self->get_attribute("start");
-     $self->force_attribute("start",$start_0_based+1); ## nedd +1 because galaxy is 0-based
   }
 
   ## parsed row
@@ -870,7 +876,8 @@ sub to_text {
   ## For the BED format
   if ($out_format eq "bed") {
 
-    ## suppress seq start and end features (temporary fix for UCSC genome browser)
+    ## Suppress sequence start and end features (temporary fix for
+    ## UCSC genome browser)
     my $ft_type = $self->get_attribute("ft_type");
     if ($self->get_attribute("ft_type") eq "limit") {
       if ($self->get_attribute("feature_name") eq "START_END") {
@@ -885,7 +892,18 @@ sub to_text {
       }
     }
 
-    ## Transform the coordinates into zero-based
+    ## Transform the start position into zero-based coordinate.
+    ##
+    ## See http://genome.ucsc.edu/FAQ/FAQformat.html#format1
+    ##
+    ##  chromStart - The starting position of the feature in the
+    ##    chromosome or scaffold. The first base in a chromosome is
+    ##    numbered 0.
+    ##  chromEnd - The ending position of the feature in the
+    ##     chromosome or scaffold. The chromEnd base is not included
+    ##     in the display of the feature. For example, the first 100
+    ##     bases of a chromosome are defined as chromStart=0,
+    ##     chromEnd=100, and span the bases numbered 0-99.
     my $start_1_based = $self->get_attribute("start");
     $self->force_attribute("start",$start_1_based-1); ## only the fist base is shifted
   }
