@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.241 2012/08/22 15:32:34 jvanheld Exp $
+# $Id: peak-motifs,v 1.242 2012/08/23 04:50:19 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.241 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.242 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -3195,7 +3195,7 @@ sub Synthesis {
   print $syn &open_menu_heading($menu_nb++, "<a name='refs'></a><h3>Publications</h3>", 0);
   print $syn "<ol>\n";
   print $syn "<li>Thomas-Chollier M, Herrmann C, Defrance M, Sand O, Thieffry D, van Helden J. (2012). RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res 40(4): e31.</li>\n";
-  print $syn "<li>Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry D, van Helden J. (2012). A complete workflow for the analysis of full-size ChIP-seq (and similar) data sets using peak-motifs. Nat Protoc 7(8): 1551-1568..</li>\n";
+  print $syn "<li>Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry D, van Helden J. (2012). A complete workflow for the analysis of full-size ChIP-seq (and similar) data sets using peak-motifs. Nat Protoc 7(8): 1551-1568.</li>\n";
   print $syn "</ol>\n";
 
   ## End of the HTML file
@@ -3424,10 +3424,14 @@ sub SynthesisSequenceComposition {
 	$title = "Nucleotide";
       } elsif ($ol == 2) {
 	$title = "Dinucleotide";
+      } elsif ($ol == 3) {
+	$title = "Trinucleotide";
+      } elsif ($ol == 4) {
+	$title = "Tetranucleotide";
       } else {
 	$title = $ol."nucleotide";
       }
-      $title .= " composition profiles : ";
+      $title .= " composition profiles";
       &SyntheticTableAddRow_New($title,
 				$table,
 				$ol."nt", ["freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
