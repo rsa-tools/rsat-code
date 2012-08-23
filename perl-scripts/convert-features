@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.34 2012/07/02 12:57:59 jvanheld Exp $
+# $Id: convert-features,v 1.35 2012/08/23 04:49:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -40,9 +40,9 @@ local $origin = "start";
 local %supported_origin = ('start'=>1, 'end'=>1, 'center' => 1);
 local $supported_origins = join (",", keys (%supported_origin));
 
-local $supported_input_formats = 
+local $supported_input_formats =
   join (",", keys %RSAT::feature::supported_input_format);
-local $supported_output_formats = 
+local $supported_output_formats =
   join (",", keys %RSAT::feature::supported_output_format);
 
 # Feature colors for BED format
@@ -77,16 +77,18 @@ my %coord =();
 if ($infile{coord}){
   ($coord) = &OpenInputFile($infile{coord});
   while (my $line = <$coord>) {
-    ## Comment lines
+
+    ## Skip comment lines and empty rows
     next if ($line =~ /^;/);
     next if ($line =~ /^--/);
     next if $line =~ (/^#/);
     next unless ($line =~ /\S/);
     next if ($line =~ /track name=/);
     next if ($line =~ /^browser/);
-    ## get the absolute coordinates
+
+    ## Get the absolute coordinates
     &RSAT::error::FatalError("Coord file (BED format) is not tab delimited. Convert the space into tabulations first.")
-      unless ($line =~ /\t/); 
+      unless ($line =~ /\t/);
     chomp($line);
     my @splitOnTab = split(/\t/,$line);
     my $featID=$splitOnTab[3];
@@ -102,8 +104,6 @@ if ($infile{coord}){
     	$feat_strand = "+";
     }
     $coord{$featID} -> {'strand'} = $feat_strand ;
-
-
   }
   close $coord;
 }
@@ -139,19 +139,25 @@ while (<$in>) {
     $feature->force_attribute("ft_id", $id);
   }
 
+  ## Check BED-specific attributes
   if ($output_format eq "bed") {
+
+    ## Add "chr" prefix to chromosome names if requested
+    &add_chr($feature)  if ($add_chr_bed);
+
+    ## set feature color
     &set_color($feature);
 #    &RSAT::message::Debug("assigned color to feature", $feature->get_attribute("feature_name"),$feature->get_attribute("itemRgb")) if ($main::verbose >= 5);
-  	&add_chr($feature)  if ($add_chr_bed);
   }
 
-    if (($output_format eq "gff")||($output_format eq "gff3")) {
-  	&remove_chr($feature)  if ($remove_chr_gff);
+  ## Remove "chr" prefix from the chromomome names if requested
+  if (($output_format eq "gff") || ($output_format eq "gff3")) {
+    &remove_chr($feature)  if ($remove_chr_gff);
   }
 
   ## convert the coordinates if necessary
   if ($infile{coord}){
-  	&convert_coords($feature);
+    &convert_coords($feature);
   }
 
   print $out $feature->to_text($output_format, $null);
@@ -207,17 +213,17 @@ sub remove_chr {
 #	## mm9_chr1_3473041_3473370_+ with assembly_start_end_strand of the feature
 #  	if ($seq_name =~/^[^_]+_([^_]+)_(\d+)_(\d+)_(\+|\-)$/) {
 #
-#	my ($chr,$new_start,$new_end,$new_strand) = 
+#	my ($chr,$new_start,$new_end,$new_strand) =
 #	&calc_absolute($feature->get_attribute("start"),## feature relative coord
 #					$feature->get_attribute("end"),
-#					$feature->get_attribute("strand"), 
+#					$feature->get_attribute("strand"),
 #					$2, ## feature absolute coord
 #					$3,
 #					$1,
 #					$4,
 #	);
 #
-#    ## update the feature 
+#    ## update the feature
 #    $feature->force_attribute("seq_name", $chr);
 #    $feature->force_attribute("start",$new_start);
 #    $feature->force_attribute("end",$new_end);
@@ -238,17 +244,17 @@ sub convert_coords {
 
   if ($coord{$seq_name}) {
 
-	my ($chr,$new_start,$new_end,$new_strand) = 
+	my ($chr,$new_start,$new_end,$new_strand) =
 	&calc_absolute($feature->get_attribute("start"),## feature relative coord
 					$feature->get_attribute("end"),
-					$feature->get_attribute("strand"), 
+					$feature->get_attribute("strand"),
 					$coord{$seq_name} -> {'start'}, ## feature absolute coord
 					$coord{$seq_name} -> {'end'},
 					$coord{$seq_name}->{'chr'},
 					$coord{$seq_name}->{'strand'},
 	);
 
-    ## update the feature 
+    ## update the feature
     $feature->force_attribute("seq_name", $chr);
     $feature->force_attribute("start",$new_start);
     $feature->force_attribute("end",$new_end);
@@ -262,115 +268,114 @@ sub convert_coords {
 ################################################################
 ## Convert relative coordinates to genomic coordinate
 sub calc_absolute {
-	
-	## feature relative coord
-	my $feat_start = shift;
-	my $feat_end = shift;
-	my $feat_strand = shift;
+  ## feature relative coord
+  my $feat_start = shift;
+  my $feat_end = shift;
+  my $feat_strand = shift;
 
-    ## chromosome (absolute)
-    my $genomic_start=shift;
-    my $genomic_end=shift;
-    my $chr = shift;
-    my $chr_strand = shift;
-    #&RSAT::message::Debug("old values",$feat_start,$feat_end,$feat_strand);
-    #&RSAT::message::Debug("chr coord", $chr,$genomic_start,$genomic_end,$chr_strand);
+  ## chromosome (absolute)
+  my $genomic_start=shift;
+  my $genomic_end=shift;
+  my $chr = shift;
+  my $chr_strand = shift;
+  #&RSAT::message::Debug("old values",$feat_start,$feat_end,$feat_strand);
+  #&RSAT::message::Debug("chr coord", $chr,$genomic_start,$genomic_end,$chr_strand);
 
-    my $new_start ="";
-    my $new_end ="";
+  my $new_start ="";
+  my $new_end ="";
 
-    if ($chr_strand eq "+") {
-      ### START origine
-      if ($origin eq "start") {
+  if ($chr_strand eq "+") {
+    ### START origine
+    if ($origin eq "start") {
 
-	## length
-	my $feat_length = $feat_end - $feat_start +1;
-	## start
-	$new_start = $genomic_start + $feat_start - 1;
-	## end
-	$new_end   = $new_start + $feat_length - 1 ;
-	#&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand) if ($main::verbose >= 3);
+      ## length
+      my $feat_length = $feat_end - $feat_start +1;
+      ## start
+      $new_start = $genomic_start + $feat_start - 1;
+      ## end
+      $new_end   = $new_start + $feat_length - 1 ;
+      #&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand) if ($main::verbose >= 3);
 
-	### END origin
-      } elsif ($origin eq "end") {
-	## length
-	my $feat_length = abs($feat_end - $feat_start);
-	## end
-	$new_end   = $genomic_end + $feat_end + 1 ;
-	## start
-	$new_start = $new_end - $feat_length;
-	
-	## CENTER origin
-      } elsif ($origin eq "center") {
-      	## length
-		my $feat_length = abs($feat_end - $feat_start) + 1;
-		## genomic center
-		my $genomic_center = $genomic_start + ceil(($genomic_end - $genomic_start)/2);
-		## start
-		$new_start = $genomic_center + $feat_start;
-		## end
-		$new_end = $new_start + $feat_length - 1 ;
-		#&RSAT::message::Debug("length:", $feat_length,"genomic center:",$genomic_center) if ($main::verbose >= 0);
-      }
+      ### END origin
+    } elsif ($origin eq "end") {
+      ## length
+      my $feat_length = abs($feat_end - $feat_start);
+      ## end
+      $new_end   = $genomic_end + $feat_end + 1 ;
+      ## start
+      $new_start = $new_end - $feat_length;
 
-    } else {
-      ### START origine
-      if ($origin eq "start") {
-
-	## length
-	my $feat_length = $feat_end - $feat_start +1;
-	## start
-	$new_end = $genomic_end - $feat_start + 1;
-	## end
-	$new_start = $new_end - $feat_length + 1 ;
-	#&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand);
-
-	### END origin
-      } elsif ($origin eq "end") {
-	&RSAT::message::Warning("check your results, this combination of parameters has not been verified extensively !");
-	## length
-	my $feat_length = abs($feat_end - $feat_start);
-	## end
-	$new_start   = $genomic_start - $feat_start - 1 ;
-	## start
-	$new_end = $new_start + $feat_length;
-
-     ## CENTER origin
-      } elsif ($origin eq "center") {
-      	&RSAT::message::Warning("check your results, this combination of parameters has not been verified extensively !");
-      	## length
-		my $feat_length = abs($feat_end - $feat_start) + 1;
-		## genomic center
-		my $genomic_center = $genomic_start + ceil(($genomic_end - $genomic_start)/2);
-		## end
-		$new_end = $genomic_center + $feat_end;
-		## start
-		$new_start = $new_end - $feat_length + 1 ;
-		
-		#&RSAT::message::Debug("length:", $feat_length,"genomic center:",$genomic_center) if ($main::verbose >= 0);
-      }
-
+      ## CENTER origin
+    } elsif ($origin eq "center") {
+      ## length
+      my $feat_length = abs($feat_end - $feat_start) + 1;
+      ## genomic center
+      my $genomic_center = $genomic_start + ceil(($genomic_end - $genomic_start)/2);
+      ## start
+      $new_start = $genomic_center + $feat_start;
+      ## end
+      $new_end = $new_start + $feat_length - 1 ;
+      #&RSAT::message::Debug("length:", $feat_length,"genomic center:",$genomic_center) if ($main::verbose >= 0);
     }
 
-    ## strand
-    #&RSAT::message::Debug("absolute strand", $chr_strand);
-    my $new_strand   = "";
-    if ($chr_strand eq "+") {
-      if ($feat_strand eq "R") {
-	$new_strand = "R";
-      } else {
-	$new_strand = "D";
-      }	 
-    } else {
-      if ($feat_strand eq "R") {
-	$new_strand = "D";
-      } else {
-	$new_strand = "R";
-      }
-    }
-	&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand) if ($main::verbose >= 3);
+  } else {
+    ### START origine
+    if ($origin eq "start") {
 
-   return ($chr,$new_start,$new_end,$new_strand);
+      ## length
+      my $feat_length = $feat_end - $feat_start +1;
+      ## start
+      $new_end = $genomic_end - $feat_start + 1;
+      ## end
+      $new_start = $new_end - $feat_length + 1 ;
+      #&RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand);
+
+      ### END origin
+    } elsif ($origin eq "end") {
+      &RSAT::message::Warning("check your results, this combination of parameters has not been verified extensively !");
+      ## length
+      my $feat_length = abs($feat_end - $feat_start);
+      ## end
+      $new_start   = $genomic_start - $feat_start - 1 ;
+      ## start
+      $new_end = $new_start + $feat_length;
+
+      ## CENTER origin
+    } elsif ($origin eq "center") {
+      &RSAT::message::Warning("check your results, this combination of parameters has not been verified extensively !");
+      ## length
+      my $feat_length = abs($feat_end - $feat_start) + 1;
+      ## genomic center
+      my $genomic_center = $genomic_start + ceil(($genomic_end - $genomic_start)/2);
+      ## end
+      $new_end = $genomic_center + $feat_end;
+      ## start
+      $new_start = $new_end - $feat_length + 1 ;
+
+      #&RSAT::message::Debug("length:", $feat_length,"genomic center:",$genomic_center) if ($main::verbose >= 0);
+    }
+
+  }
+
+  ## strand
+  #&RSAT::message::Debug("absolute strand", $chr_strand);
+  my $new_strand   = "";
+  if ($chr_strand eq "+") {
+    if ($feat_strand eq "R") {
+      $new_strand = "R";
+    } else {
+      $new_strand = "D";
+    }
+  } else {
+    if ($feat_strand eq "R") {
+      $new_strand = "D";
+    } else {
+      $new_strand = "R";
+    }
+  }
+  &RSAT::message::Debug("new values", $chr, $new_start,$new_end,$new_strand) if ($main::verbose >= 3);
+
+  return ($chr,$new_start,$new_end,$new_strand);
 }
 
 ################################################################
@@ -393,7 +398,7 @@ exit(0);
 
 
 ################################################################
-#### display full help message 
+#### display full help message
 sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
@@ -436,9 +441,9 @@ CONVERSION TO GENOMIC COORDINATES
 		The coord file should be a BED file (zero-based) containing the genomic coordinates of fragments of interests.
 		The file to convert contain features with coordinates relative to these fragments (eg: from matrix-scan).
 		Make sure that the 4th column of the BED file (feature name) contain the same name as the feature name of the file to convert (that is in relative coordinates)
-	
+
 	-origin [start|end] should be provided. This refer to the origin of relative coordinates in the file to convert.
-	
+
 
 INPUT FORMATS
        ft: RSAT feature-map (extension .ft)
@@ -449,14 +454,14 @@ INPUT FORMATS
 
        gff: General Feature Format as specified by the Sanger insitute (extension .gff)
        	    http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
- 
+
        gff3: Generic feature format version 3
        	     An adaptation of GFF by Lincoln Stein
        	     http://flybase.net/annot/gff3.html
-       	 
+       
        bed:	Genomic features in the UCSC format.
        		http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
-       		
+
        galaxy_seq: Fasta sequences fetched from the Galaxy website
        		http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
 
@@ -483,7 +488,7 @@ FORMAT DESCRIPTIONS
 		col 4 	strand (D for Direct, R for Reverse),
 		col 5 	feature start position
 		col 6 	feature end position
-		col 7 	(optional) description 
+		col 7 	(optional) description
 		col 8 	(optional) score
 
        gft: RSAT Genome features (file Feature.tab in the directory data/genomes)
@@ -531,7 +536,7 @@ FORMAT DESCRIPTIONS
         	     there is no score value, enter ".".
 
 		col  7: strand (+, - or .)
-        	     Valid entries include '+', '-', or 
+        	     Valid entries include '+', '-', or
 		     '.' (for don't know/don't care).
 
 		col  8: frame (0, 1, 2 or .)
@@ -580,44 +585,44 @@ FORMAT DESCRIPTIONS
 			Ontology_term:	cross-reference to an ontology term
 
 		Example of gff3
-		##gff-version 3 
-		##sequence-region ctg123 1 1497228 
-		ctg123	.	gene	1000	9000	.	+	.	ID=gene00001;Name=EDEN	
-		ctg123	.	TF_binding_site	1000	1012	.	+	.	ID=tfbs00001;Parent=gene00001	
-		ctg123	.	mRNA	1050	9000	.	+	.	ID=mRNA00001;Parent=gene00001;Name=EDEN.1	
+		##gff-version 3
+		##sequence-region ctg123 1 1497228
+		ctg123	.	gene	1000	9000	.	+	.	ID=gene00001;Name=EDEN
+		ctg123	.	TF_binding_site	1000	1012	.	+	.	ID=tfbs00001;Parent=gene00001
+		ctg123	.	mRNA	1050	9000	.	+	.	ID=mRNA00001;Parent=gene00001;Name=EDEN.1
 		ctg123	.	mRNA	1050	9000	.	+	.	ID=mRNA00002;Parent=gene00001;Name=EDEN.2
-		ctg123	.	mRNA	1300	9000	.	+	.	ID=mRNA00003;Parent=gene00001;Name=EDEN.3	
-		ctg123	.	exon	1300	1500	.	+	.	ID=exon00001;Parent=mRNA00003	
-		ctg123	.	exon	1050	1500	.	+	.	ID=exon00002;Parent=mRNA00001,mRNA00002	
-		ctg123	.	exon	3000	3902	.	+	.	ID=exon00003;Parent=mRNA00001,mRNA00003	
-		ctg123	.	exon	5000	5500	.	+	.	ID=exon00004;Parent=mRNA00001,mRNA00002,mRNA00003	
-		ctg123	.	exon	7000	9000	.	+	.	ID=exon00005;Parent=mRNA00001,mRNA00002,mRNA00003	
-		ctg123	.	CDS	1201	1500	.	+	0	ID=cds00001;Parent=mRNA00001;Name=edenprotein.1	
-		ctg123	.	CDS	3000	3902	.	+	0	ID=cds00001;Parent=mRNA00001;Name=edenprotein.1	
-		ctg123	.	CDS	5000	5500	.	+	0	ID=cds00001;Parent=mRNA00001;Name=edenprotein.1	
-		ctg123	.	CDS	7000	7600	.	+	0	ID=cds00001;Parent=mRNA00001;Name=edenprotein.1	
-		ctg123	.	CDS	1201	1500	.	+	0	ID=cds00002;Parent=mRNA00002;Name=edenprotein.2	
-		ctg123	.	CDS	5000	5500	.	+	0	ID=cds00002;Parent=mRNA00002;Name=edenprotein.2	
-		ctg123	.	CDS	7000	7600	.	+	0	ID=cds00002;Parent=mRNA00002;Name=edenprotein.2	
-		ctg123	.	CDS	3301	3902	.	+	0	ID=cds00003;Parent=mRNA00003;Name=edenprotein.3	
-		ctg123	.	CDS	5000	5500	.	+	2	ID=cds00003;Parent=mRNA00003;Name=edenprotein.3	
-		ctg123	.	CDS	7000	7600	.	+	2	ID=cds00003;Parent=mRNA00003;Name=edenprotein.3	
-		ctg123	.	CDS	3391	3902	.	+	0	ID=cds00004;Parent=mRNA00003;Name=edenprotein.4	
-		ctg123	.	CDS	5000	5500	.	+	2	ID=cds00004;Parent=mRNA00003;Name=edenprotein.4	
+		ctg123	.	mRNA	1300	9000	.	+	.	ID=mRNA00003;Parent=gene00001;Name=EDEN.3
+		ctg123	.	exon	1300	1500	.	+	.	ID=exon00001;Parent=mRNA00003
+		ctg123	.	exon	1050	1500	.	+	.	ID=exon00002;Parent=mRNA00001,mRNA00002
+		ctg123	.	exon	3000	3902	.	+	.	ID=exon00003;Parent=mRNA00001,mRNA00003
+		ctg123	.	exon	5000	5500	.	+	.	ID=exon00004;Parent=mRNA00001,mRNA00002,mRNA00003
+		ctg123	.	exon	7000	9000	.	+	.	ID=exon00005;Parent=mRNA00001,mRNA00002,mRNA00003
+		ctg123	.	CDS	1201	1500	.	+	0	ID=cds00001;Parent=mRNA00001;Name=edenprotein.1
+		ctg123	.	CDS	3000	3902	.	+	0	ID=cds00001;Parent=mRNA00001;Name=edenprotein.1
+		ctg123	.	CDS	5000	5500	.	+	0	ID=cds00001;Parent=mRNA00001;Name=edenprotein.1
+		ctg123	.	CDS	7000	7600	.	+	0	ID=cds00001;Parent=mRNA00001;Name=edenprotein.1
+		ctg123	.	CDS	1201	1500	.	+	0	ID=cds00002;Parent=mRNA00002;Name=edenprotein.2
+		ctg123	.	CDS	5000	5500	.	+	0	ID=cds00002;Parent=mRNA00002;Name=edenprotein.2
+		ctg123	.	CDS	7000	7600	.	+	0	ID=cds00002;Parent=mRNA00002;Name=edenprotein.2
+		ctg123	.	CDS	3301	3902	.	+	0	ID=cds00003;Parent=mRNA00003;Name=edenprotein.3
+		ctg123	.	CDS	5000	5500	.	+	2	ID=cds00003;Parent=mRNA00003;Name=edenprotein.3
+		ctg123	.	CDS	7000	7600	.	+	2	ID=cds00003;Parent=mRNA00003;Name=edenprotein.3
+		ctg123	.	CDS	3391	3902	.	+	0	ID=cds00004;Parent=mRNA00003;Name=edenprotein.4
+		ctg123	.	CDS	5000	5500	.	+	2	ID=cds00004;Parent=mRNA00003;Name=edenprotein.4
 		ctg123	.	CDS	7000	7600	.	+	2 	ID=cds00004;Parent=mRNA00003;Name=edenprotein.4
 
 
 	bed
 	   Genomic features in the UCSC format
 	   Ref: http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
-	 
-	   Warning: this format assumes that features are described with chromosomal positions, 
+
+	   Warning: this format assumes that features are described with chromosomal positions,
 	   and should be zero-based (meaning that the first position is 0, not 1).
-	 
-	   To ensure compatibility with other formats, convert-features internally transforms 
+
+	   To ensure compatibility with other formats, convert-features internally transforms
 	   coordinates from BED into 1-based system (when BED as input). convert-features transforms coordinates so
 	   that output BED files are correctly zero-based (when BED as output).
-	 
+
 	   1. chrom - The name of the chromosome (e.g. chr3, chrY,
 	      chr2_random) or scaffold (e.g. scaffold10671).
 
@@ -648,7 +653,7 @@ FORMAT DESCRIPTIONS
 	   8. thickEnd - The ending position at which the feature is
 	      drawn thickly (for example, the stop codon in gene
 	      displays).
- 
+
 	   9. itemRgb An RGB value of the form R,G,B
    	      (e.g. 255,0,0). If the track line itemRgb attribute is
    	      set to "On", this RBG value will determine the display
@@ -674,8 +679,8 @@ FORMAT DESCRIPTIONS
 
 	      browser position chr7:127471196-127495720
 	      browser hide all
-	      track name="ItemRGBDemo" description="Item RGB demonstration" visibility=2 
-	      itemRgb="On" 
+	      track name="ItemRGBDemo" description="Item RGB demonstration" visibility=2
+	      itemRgb="On"
 	      chr7	127471196  127472363  Pos1  0  +  127471196  127472363  255,0,0
 	      chr7	127472363  127473530  Pos2  0  +  127472363  127473530  255,0,0
 	      chr7	127473530  127474697  Pos3  0  +  127473530  127474697  255,0,0
@@ -722,7 +727,7 @@ FORMAT DESCRIPTIONS
 		CAAAAAGTCCAAGATGACACCAAAACCCTCATCAAGACAATTGTCACCAG
 		GATCAATGACATTTCACACACG
 
-	
+
 WISH LIST
 
    Add support for importing cluster-buster and clover files.
@@ -758,7 +763,7 @@ End_short_help
 }
 
 ################################################################
-#### read arguments 
+#### read arguments
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
 	### verbose
