@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.146 2012/08/17 01:00:38 amedina Exp $
+# $Id: matrix-quality,v 1.147 2012/08/29 05:29:36 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -835,6 +835,7 @@ package main;
 
       ################################################################
       ##Calculate NWD
+      &RSAT::message::TimeWarn("Calculate NWD file", $outfile{$perm_suffix}) if ($main::verbose >= 0);
       &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab") if $tasks{nwd} ;
 
       ################################################################
@@ -896,7 +897,7 @@ package main;
     print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     close $main::out if ($main::prefix{main});
 
-    &CloseGeneralHTMLReport($outfile{synthesis});
+    &CloseGeneralHTMLReport($outfile{synthesis}) if ($tasks{synthesis});
 
     ## Give the warning about the output prefix
     if ($main::verbose >= 1) {
@@ -2634,12 +2635,16 @@ sub Calculate_NWD {
 		$j++;
 		last if($case_col && $base_col);
 	    }
+	    @head2=@head;
+	    shift(@head2);
+	    &RSAT::error::FatalError("Please specify an adecuate distribution to calculate the NWD"."\n"."Select one of the following distributions: ".join("\t",@head2)) unless $case_col ;
+
 	    &RSAT::message::Debug("Case column",$case_dist,"#",$case_col) if ($main::verbose >= 10);
 	    &RSAT::message::Debug("Base column",$base_dist,"#",$base_col) if ($main::verbose >=10);
 	    next;
 	}
 	next if (/'^#'/ ) ;		# skip coments once the header has been saved
-
+	#next unless ($case_col);
 	@line = split /\t+/ ;
 
 	my $score = $line[0];
