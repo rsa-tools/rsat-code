@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.147 2012/08/29 05:29:36 amedina Exp $
+# $Id: matrix-quality,v 1.148 2012/08/29 23:00:56 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -299,7 +299,14 @@ package main;
     $main::verbose = 0;
     $main::out = STDOUT;
     $main::html_title="";
-    $main::nwd_seq_type=0;
+    @main::plot_seq_type=();
+
+    #additional plot types
+    $main::plottypes="";
+    %main::supported_plot_types=();
+    $main::supported_plot_types{nwd}=1;
+    $main::supported_plot_types{occ_proba}=1;
+    %main::plot_types=();
 
     ## Parameters for the &doit() command
     $dry = 0;
@@ -314,7 +321,7 @@ package main;
 
     ## Reference distribution for the ROC curve
     $roc_ref = "theor";
-    $tasks{nwd}=0;
+    $tasks{plot}=0;
 
     ## Tasks
     local @supported_tasks = ("all", ## Run all other tasks
@@ -328,7 +335,7 @@ package main;
 			      "graphs", ## Draw the graphs with distrib comparisons
 			      "synthesis", ## Generate a HTML file with a synthetic report + links to all result files
 			      "clean", ## Clean temporary files
-			      "nwd", ## Calculte NWD data
+			      "plot", ## Calculte NWD data
 		       );
     $supported_tasks = join (",", @supported_tasks);
     local %supported_tasks = ();
@@ -352,7 +359,17 @@ package main;
     ################################################################
     ## Read argument values
     &ReadArguments();
-    $supported_tasks{nwd} = 0 unless $tasks{nwd};
+
+    ################################################################
+    ## Additional plots
+    $supported_tasks{plot} = 0 unless $tasks{plot};
+    
+    my @add_plots= split (/,/,$main::plottypes);
+    foreach (@add_plots){
+	&RSAT::error::FatalError("The requested additional plot is not available", "$_") unless ($main::supported_plot_types{$_});
+	$main::plot_types{$_}=1;
+    }
+    
     ## Class interval for classfreq
     $class_interval = 1/(10**$decimals);
 
@@ -462,10 +479,12 @@ package main;
     &RSAT::message::Info("Image formats for logos: ".join (",", sort(@logo_formats))) if ($main::verbose >= 2);
 
      ## NWD
-    $tasks{nwd}=1 if ($main::nwd_seq_type) ;
-    if ($tasks{nwd} && (!$main::nwd_seq_type)){
-	&RSAT::error::FatalError("For NWD task you have to specify the seq_type");
+    $tasks{plot}=1 if (scalar(@main::plot_seq_type));
+    unless ($tasks{plot} && scalar(@main::plot_seq_type)){
+	&RSAT::error::FatalError("For drawing additional plots you have to specify al least one seq_type and plot_type");
     }
+
+    
 
     ################################################################
     ## Background file
@@ -541,6 +560,7 @@ package main;
       local @distrib_files=(); ## check something named  @main::distrib_files
       local @temporary_distrib_files=();
       local @local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
+      local @local_plot_seq_type=@main::plot_seq_type;
       ## Redefine the matrix name (in case it would have been modified above)
       $matrix->set_attribute("pseudo", $pseudo_counts);
       $matrix->set_attribute("decimals", $decimals);
@@ -835,9 +855,24 @@ package main;
 
       ################################################################
       ##Calculate NWD
-      &RSAT::message::TimeWarn("Calculate NWD file", $outfile{$perm_suffix}) if ($main::verbose >= 0);
-      &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab") if $tasks{nwd} ;
+      &RSAT::message::TimeWarn("Calculate NWD file")  if ($main::verbose >= 0);
 
+
+      if ($tasks{plot}) {
+	  foreach (@local_plot_seq_type) {
+	      my $st= $_;
+	      &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab",$st) if ($main::plot_types{nwd}) ;	      
+	      &Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options) if  ($main::plot_types{occ_proba})   ;
+	  }
+      }
+
+      ################
+      #Calculate the occ_proba
+      &RSAT::message::TimeWarn("Calculate occ probability distribution") if ($main::verbose >= 0);
+      foreach (@main::plot_seq_type) {
+	  my $st= $_;
+	  
+      }
       ################################################################
       ## Synthesis results in a HTML file
       if ($tasks{synthesis}) {
@@ -1506,11 +1541,16 @@ Example:
 ## NWD curves
 =pod
 
-=item B<-nwd>
+=item B<-plot seq_id nwd,occ_proba>
 
-The option will calculate the NWD data for the score distribution of
-the specified sequence set (Medina-Rivera, et al. 2010).  At each
-frequency value (y-axis) we calculate the weigh difference (WD),
+Additions plots will be drawn to compare:
+  a) The enrichment of scores in a set of
+sequences for different matrices
+  b) The enrichment of scores in different sequence 
+sets for one matrix
+
+
+I<NWD curve>:  At each frequency value (y-axis) we calculate the weigh difference (WD),
 defined as the difference between the observed Ws in all upstream
 non-codingsequence set and the expected Ws in the theoretical
 distribution of the PSSM for a given P-value.
@@ -1521,11 +1561,24 @@ divided the difference bye the matrix width to obtain the normalized
 weight difference.
 
 Usage:
-   -nwd seq_type
+   -plot seq_type nwd
+
+I<OCC Proba Curve>: Probability of the number of matches in the input
+sequence
+For each matrix and each score value, calculate the statistical
+significance of the number of matches. This allows to select the
+score associated with te maximal significance, on the basis of
+the matrix-specific distribution, rather than by selecting some
+a priori threshold.
+
+Usage:
+   -plot seq_type occ_proba
+
 
 =cut
-	} elsif ($arg eq "-nwd") {
-	  $main::nwd_seq_type = shift(@arguments);
+	} elsif ($arg eq "-plot") {
+	  push (@main::plot_seq_type, shift(@arguments));
+	  $main::plottypes= shift(@arguments);
 
 
  ## Archive
@@ -1610,10 +1663,12 @@ result files.
 In order to be correctly indexed, the graphs have to be generated in
 png format.
 
-=item B<nwd>
+=item B<plot>
 
 Calculate the Normalized Weight Distance between the theoretical
 distribution and a score distribution in a specified sequence_type
+
+Calculate the OCC proba.
 
 =back
 
@@ -2592,16 +2647,17 @@ sub CalcTheorScoreDistribution {
 ## Read matrix quality file and calculate the NWD curve
 
 sub Calculate_NWD {
-    my ($m_width, $comp_distrib_file)= @_;
-    $outfile{distrib_nwd} = $matrix_prefix{$matrix_name}."_score_distrib_".$main::nwd_seq_type."_nwd.tab"; push @files_to_index, "distrib_nwd";
+    my ($m_w,$comp_distrib_file,$nwd_seq_type)= @_;
+    $outfile{'distrib_nwd'.$nwd_seq_type} = $matrix_prefix{$matrix_name}."_score_distrib_".$nwd_seq_type."_nwd.tab"; 
+    push @files_to_index, 'distrib_nwd'.$nwd_seq_type;
     &RSAT::message::Debug("Adding file to index ", "distrib_nwd",  $matrix_prefix{$matrix_name}."_score_distrib_".$main::nwd_seq_type."_nwd.tab") if ($main::verbose >= 15);
-    $main::out_nwd = &OpenOutputFile($outfile{distrib_nwd});
-    #die "width " . $m_width. "file " . $comp_distrib_file;
+    $main::out_nwd = &OpenOutputFile( $outfile{'distrib_nwd'.$nwd_seq_type});
+    #die "width " . $m_w. "file " . $comp_distrib_file;
     my $dists;
     my ($dist_file) =  &OpenInputFile($comp_distrib_file) ;
 
     my $head=1;
-    my $case_dist= $main::nwd_seq_type;
+    my $case_dist= $nwd_seq_type;
     my $base_dist= "theor";
 
     &RSAT::message::Info("Calculating NWD between ", $base_dist ," and ",$case_dist , " distributions ")if ($main::verbose >= 2);
@@ -2611,7 +2667,10 @@ sub Calculate_NWD {
     my $j=0;
     my $point=0;
     my %p_val_score_case=();
-    my %p_val_score_base=();
+    my %p_val_score_base=();   
+
+    #print join ("\t",";Pvalue","score_". $base_dist,"score_".$case_dist,"NWD")."\n";
+
     print $main::out_nwd join ("\t",";Pvalue","score_". $base_dist,"score_".$case_dist,"NWD")."\n";
 
     my %sort_pval;
@@ -2684,11 +2743,11 @@ sub Calculate_NWD {
        	my $NWD="";
 	my $case_max_score= &RSAT::stats::max(@{$p_val_score_case{$pval}});
 	my $base_max_score= &RSAT::stats::max(@{$p_val_score_base{$pval}});
-	$NWD = ($case_max_score - $base_max_score) / $m_width ;
+	$NWD = ($case_max_score - $base_max_score) / $m_w ;
 
 	$main::key_diferences_results{$pval}{$matrix_name}=$NWD if ($NWD);
 
-	&RSAT::message::Debug("Score diference ",$matrix_name,"Pval", $pval," $case_max_score - $base_max_score  $m_width " ,$main::key_diferences_results{$pval}{$matrix_name}=$NWD) if ($main::verbose >= 10);
+	&RSAT::message::Debug("Score diference ",$matrix_name,"Pval", $pval," $case_max_score - $base_max_score  $m_w " ,$main::key_diferences_results{$pval}{$matrix_name}=$NWD) if ($main::verbose >= 10);
 
 	$hash_print{$pval}=join ("\t",$pval,$base_max_score ,$case_max_score,$NWD)."\n"
     }
@@ -2769,6 +2828,56 @@ sub Calculate_NWD {
 #     print($XY_command."\n");
 #     system ($XY_command);
 
+
+
+################################################################
+## Calculate NWD
+################################################################
+## Read matrix quality file and calculate the NWD curve
+
+sub Calculate_OCC { 
+    local ($sequence_file, $matrix_file, $matrix_format, $seq_type, $index, @args) = @_; 
+    ## Only tab format is supported
+    if ($matrix_format ne "tab") {
+	&RSAT::error::FatalError("&Calculate_OCC only supports tab format in quick scan mode", $seq_type, $matrix_format, $matrix_file);
+    }
+
+    ## Define the output file for the current sequence type
+    $outfile{'occ_proba_'.$seq_type} = $matrix_prefix{$matrix_name}."_occ_proba_".$seq_type.".tab";  
+
+    ## Add the file to the list for the comparison of distributions
+    if ($index) {
+	push @files_to_index, 'occ_proba_'.$seq_type;
+	&RSAT::message::Debug("Adding file to index ", 'occ_proba_'.$seq_type,  $outfile{'occ_proba_'.$seq_type}  ) if ($main::verbose >= 0);
+    }
+    
+    #-decimals 1 -bg_pseudo 0.01 -n score -lth score -5 \
+    
+    local $matrix_scan_cmd = "";
+    
+    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
+    #    $matrix_scan_cmd .= " -quick"; ## Run in quick mode if possible
+    #    $matrix_scan_cmd .= " -m ".$matrix_file;
+    #    $matrix_scan_cmd .= " -top_matrices 1";
+    #    $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+    $matrix_scan_cmd .= " -quick "; 
+    $matrix_scan_cmd .= " -matrix_format tab"; ## We use tab as matrix format for compatibiliy with matrix-scan-quick
+    $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
+    
+    $matrix_scan_cmd .= " -i ".$sequence_file;
+    $matrix_scan_cmd .= " -m ".$matrix_file;
+    $matrix_scan_cmd .= " -pseudo ".$main::pseudo_counts; 
+    $matrix_scan_cmd .= " -2str ";
+    $matrix_scan_cmd .= "  -return distrib  -return occ_proba ";
+    $matrix_scan_cmd .= " -decimals ".$decimals;
+    $matrix_scan_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
+    
+    $matrix_scan_cmd .= " > ".  $outfile{'occ_proba_'.$seq_type};
+
+    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix)
+    &RSAT::message::Info("Scanning to compute occurence probability", $matrix_scan_cmd) if ($main::verbose >= 1);
+
+}
 
 ################################################################
 #### Pre-verbose message
