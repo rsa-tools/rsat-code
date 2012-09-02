@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.18 2012/08/22 15:32:17 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.19 2012/09/02 04:43:00 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -279,7 +279,7 @@ package main;
   ################################################################
   ## Iterate over selected organisms
 
-  my $org_counter = 0;
+  our $org_counter = 0;
   foreach $organism_name (@organism_names) {
     $org_counter++;
 
@@ -315,41 +315,7 @@ package main;
 
     ################################################################
     ## Open the organism-specific HTML report
-    $outfile{synthesis} = &OutFileName("html", ".html", $organism_name."_synthesis");
-    if ($task{synthesis}) {
-      $syn = &OpenOutputFile($main::outfile{synthesis});
-      print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$organism_name, "result_toc"=>0, refresh_time=>$refresh_time);
-
-      print $syn &LinkTable("Files: log and synthesis",
-		 "synthesis",
-		 "log");
-
-      ## open a new row in the organism table
-      print $main_syn "<tr>";
-      print $main_syn "<td>", $org_counter, "</td>";
-      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
-      my $microscope_link;
-      if ($organism_info{$organism_name}->{microscope_metacyc_id} =~ /(\S+)\-/) {
-	$microscope_link = "http://microcyc.genoscope.cns.fr/".$1."/";
-      }
-      print $main_syn "<td><a target='_blank' href='".$microscope_link."'>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</a></td>";
-#      print $main_syn "<td>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</td>";
-      my $taxid_link = "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=".$organism_info{$organism_name}->{tax_id}."";
-      print $main_syn "<td><a target='_blank' href='".$taxid_link."'>", $organism_info{$organism_name}->{tax_id}, "</a></td>";
-      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{output}, " [dir]"), "</td>";
-      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{log}, " [log]"), "</td>";
-
-      ## Count number of CDS in the RSAT annotations
-      my $cds_file = $ENV{RSAT}."/data/genomes/".$organism_name."/genome/cds.tab";
-      if (-e $cds_file) {
-	$organism_info{$organism_name}->{CDS} = `grep -v '^;' $cds_file | grep -v '^#' | wc -l | awk '{print \$1}'`;
-	chomp($organism_info{$organism_name}->{CDS});
-	$organism_info{$organism_name}->{CDS} = &RSAT::util::trim($organism_info{$organism_name}->{CDS});
-      } else {
-	$organism_info{$organism_name}->{CDS} = "NA";
-      }
-      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $cds_file, $organism_info{$organism_name}->{CDS}), "</td>";
-    }
+    &OpenOrganismHTML();
 
     ## Check that organism is supported in RSAT
     unless ($organism->check_name($organism_name, 1)) {
@@ -948,10 +914,10 @@ sub InferOperonsOrSyntons {
   &RSAT::message::TimeWarn("\tInferring ".$operons_or_syntons, "dist=".$dist, "min_genes=".$param{operon_min_genes}) if ($main::verbose >= 1);
   &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
   my $cmd = $SCRIPTS."/infer-operon -v 1 ";
-  $cmd .= " -sep '-' -return q_info,operon,leader,genes";
+  $cmd .= " -sep '-' -return q_info,operon,leader,gene_nb";
   $cmd .= " -org ".$organism_name;
   $cmd .= " -all ";
-  $cmd .= " -min_genes ".$param{operon_min_genes};
+  $cmd .= " -min_gene_nb ".$param{operon_min_genes};
   $cmd .= " -dist ".$dist;
   $cmd .= " | ".$SCRIPTS."/add-gene-info";
   $cmd .= " -org ".$organism_name;
@@ -966,6 +932,7 @@ sub InferOperonsOrSyntons {
   &RSAT::message::Info("Gene-".$operons_or_syntons." (html)", $outfile{"gene_".$operons_or_syntons."_html"}) if ($main::verbose >= 3);
   #  }
 
+
   ## Generate a table with a single line per operon
   $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix); push @files_to_index, $operons_or_syntons;
   $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, $operons_or_syntons."_html";
@@ -974,7 +941,7 @@ sub InferOperonsOrSyntons {
   $cmd .= "echo '; ".$operons_or_syntons." ' > ".$outfile{$operons_or_syntons};
   $cmd .= "; echo '; Organism               \t".$organism_name."' >> ".$outfile{$operons_or_syntons};
   $cmd .= "; echo '; Max intergenic distance\t".$dist."' >> ".$outfile{$operons_or_syntons};
-  $cmd .= "; echo '#".$operons_or_syntons."\tleader\tgenes' >> ".$outfile{$operons_or_syntons};
+  $cmd .= "; echo '#".$operons_or_syntons."\tleader\tnb_genes' >> ".$outfile{$operons_or_syntons};
   $cmd .= "; grep -v '^;' ".$outfile{"gene_".$operons_or_syntons};
   $cmd .= " | grep -v '^#'";
   $cmd .= " | cut -f 7,8,9";
@@ -1039,7 +1006,7 @@ sub InferOperonsOrSyntons {
     print $syn "<td>";
 
     ## Initialize statistics
-    $organism_info{$organism_name}->{genes} = "NA";
+    $organism_info{$organism_name}->{nb_genes} = "NA";
     $organism_info{$organism_name}->{$operons_or_syntons} = "NA";
     $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"} = "NA";
     $organism_info{$organism_name}->{$operons_or_syntons."_max_size"} = "NA";
@@ -1059,19 +1026,19 @@ sub InferOperonsOrSyntons {
 	$stats{$key} = $value;
       }
 
-      $organism_info{$organism_name}->{genes} = $stats{sum};
+      $organism_info{$organism_name}->{nb_genes} = $stats{sum};
       $organism_info{$organism_name}->{$operons_or_syntons} = $stats{count};
       $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"} = $stats{mean};
       $organism_info{$organism_name}->{$operons_or_syntons."_max_size"} = $stats{max};
 
       ## Add information in the organism-specific synthesis
-      print $syn "<br>Nb genes: ", $organism_info{$organism_name}->{genes};
+      print $syn "<br>Nb genes: ", $organism_info{$organism_name}->{nb_genes};
       print $syn "<br>Nb ".$operons_or_syntons.": ", $organism_info{$organism_name}->{$operons_or_syntons};
       print $syn "<br>Mean size: ", sprintf("%.1f", $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"});
       print $syn "<br>Max size: ", $organism_info{$organism_name}->{$operons_or_syntons."_max_size"};
 
       ## Add info in the main synthesis
-      print $main_syn "<td>", $organism_info{$organism_name}->{genes},  "</td>\n" if ($operons_or_syntons eq 'operons');
+      print $main_syn "<td>", $organism_info{$organism_name}->{nb_genes},  "</td>\n" if ($operons_or_syntons eq 'operons');
       print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $organism_info{$organism_name}->{$operons_or_syntons}),  "</td>\n";
 
     } else {
@@ -1370,5 +1337,45 @@ sub GetGER() {
   }
 }
 
+
+################################################################
+## Open the organism-specific HTML report
+sub OpenOrganismHTML {
+  $outfile{synthesis} = &OutFileName("html", ".html", $organism_name."_synthesis");
+  if ($task{synthesis}) {
+    $syn = &OpenOutputFile($main::outfile{synthesis});
+    print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$organism_name, "result_toc"=>0, refresh_time=>$refresh_time);
+
+    print $syn &LinkTable("Files: log and synthesis",
+			  "synthesis",
+			  "log");
+
+    ## open a new row in the organism table
+    print $main_syn "<tr>";
+    print $main_syn "<td>", $org_counter, "</td>";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
+    my $microscope_link;
+    if ($organism_info{$organism_name}->{microscope_metacyc_id} =~ /(\S+)\-/) {
+      $microscope_link = "http://microcyc.genoscope.cns.fr/".$1."/";
+    }
+    print $main_syn "<td><a target='_blank' href='".$microscope_link."'>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</a></td>";
+    #      print $main_syn "<td>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</td>";
+    my $taxid_link = "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=".$organism_info{$organism_name}->{tax_id}."";
+    print $main_syn "<td><a target='_blank' href='".$taxid_link."'>", $organism_info{$organism_name}->{tax_id}, "</a></td>";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{output}, " [dir]"), "</td>";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{log}, " [log]"), "</td>";
+
+    ## Count number of CDS in the RSAT annotations
+    my $cds_file = $ENV{RSAT}."/data/genomes/".$organism_name."/genome/cds.tab";
+    if (-e $cds_file) {
+      $organism_info{$organism_name}->{CDS} = `grep -v '^;' $cds_file | grep -v '^#' | wc -l | awk '{print \$1}'`;
+      chomp($organism_info{$organism_name}->{CDS});
+      $organism_info{$organism_name}->{CDS} = &RSAT::util::trim($organism_info{$organism_name}->{CDS});
+    } else {
+      $organism_info{$organism_name}->{CDS} = "NA";
+    }
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $cds_file, $organism_info{$organism_name}->{CDS}), "</td>";
+  }
+}
 
 __END__
