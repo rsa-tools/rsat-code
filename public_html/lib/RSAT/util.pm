@@ -1026,8 +1026,8 @@ sub doit {
 
   } else {
     ## Verbose
-    if (($dry) || ($verbose >= 2)) {
-#      warn "\n";
+#    if (($dry) || ($verbose >= 2)) {
+    if ($verbose >= 2) {
       &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 4);
       &RSAT::message::TimeWarn($command);
     }
@@ -1081,7 +1081,6 @@ sub one_command {
   if ($args{task}) {
     $required_task = $args{task};
     $local_dry = 1 unless ($main::task{$required_task});
-
   }
 
   ## Store execution time in a file
