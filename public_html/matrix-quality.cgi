@@ -109,7 +109,10 @@ if (&IsInteger($query->param('kfold'))) {
 my $sequence_format="fasta";
 ($sequence_file1, $sequence_format1) = &MultiGetSequenceFile(1,$result_dir."sequence1.fasta", 1);
 if ($query->param('tag1') ){
-    $tag1=$query->param('tag1') ;
+  $tag1 = $query->param('tag1') ;
+  $tag1 =~ s|\s|_|g;
+  $tag1 =~ s|/|_|g;
+  $tag1 =~ s|:|_|g;
 }
 $parameters .= " -seq ". $tag1 ." ".$sequence_file1 ;
 $parameters .= " -seq_format ". "fasta" ;
@@ -124,6 +127,9 @@ if (lc($query->param('nwd')) eq "on") {
 if ($sequence_file2) {
   if ($query->param('tag2') ){
     $tag2 =$query->param('tag2') ;
+    $tag2 =~ s|\s|_|g;
+    $tag2 =~ s|/|_|g;
+    $tag2 =~ s|:|_|g;
   } else {
     $tag2 = "seq_file2";
   }
