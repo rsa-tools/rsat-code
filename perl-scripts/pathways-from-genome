@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.20 2012/09/03 01:40:08 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.21 2012/09/03 23:34:28 jvanheld Exp $
 #
 ############################################################
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -378,8 +378,8 @@ package main;
     &CloseSynthesis($syn) if ($task{synthesis});
 
     ## Report organism-specific output dir and synthesis file
-    &RSAT::message::TimeWarn("\tOrganism directory", $dir{output}) if ($main::verbose >= 2);
-    &RSAT::message::TimeWarn("\tOrganism synthesis", $outfile{synthesis}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("\tOrganism directory", $dir{output}) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\tOrganism synthesis", $outfile{synthesis}) if ($main::verbose >= 1);
   }
 
   if ($task{synthesis}) {
@@ -1154,8 +1154,19 @@ sub GetGER() {
   ## Define output files
   $outfile{$GPR_suffix} = &OutFileName("GER", ".tab", $GPR_suffix); push @files_to_index, $GPR_suffix;
   if ($GPR_suffix eq "gene-ec") {
-    $outfile{$GPR_suffix."_by_id"} = &OutFileName("GER", ".tab", $GPR_suffix."_by_id"); push @files_to_index, $GPR_suffix."_by_id";
-    $outfile{$GPR_suffix."_by_id_html"} = $outfile{$GPR_suffix."_by_id"}; $outfile{$GPR_suffix."_by_id_html"} =~ s/\.tab$/\.html/; push @files_to_index, $GPR_suffix."_by_id_html";
+
+    ## Gene-EC association with MicroCyc ID as unique gene identifier
+    $outfile{$GPR_suffix."_by_name"} = &OutFileName("GER", ".tab", $GPR_suffix."_by_name"); push @files_to_index, $GPR_suffix."_by_name";
+    $outfile{$GPR_suffix."_by_name_html"} = $outfile{$GPR_suffix."_by_name"}; $outfile{$GPR_suffix."_by_name_html"} =~ s/\.tab$/\.html/; push @files_to_index, $GPR_suffix."_by_name_html";
+
+    ## Gene-EC association with refseqId as unique gene identifier
+    $outfile{$GPR_suffix."_refseqid"} = &OutFileName("GER", ".tab", $GPR_suffix."_refseqid"); push @files_to_index, $GPR_suffix."_refseqid";
+    $outfile{$GPR_suffix."_refseqid_html"} = $outfile{$GPR_suffix."_refseqid"}; $outfile{$GPR_suffix."_refseqid_html"} =~ s/\.tab$/\.html/; push @files_to_index, $GPR_suffix."_refseqid_html";
+
+
+    ## Gene-EC association using RSAT identifiers (actually NCBI protein_ids)
+    $outfile{$GPR_suffix."_rsat_id"} = &OutFileName("GER", ".tab", $GPR_suffix."_rsat_id"); push @files_to_index, $GPR_suffix."_rsat_id";
+    $outfile{$GPR_suffix."_rsat_id_html"} = $outfile{$GPR_suffix."_rsat_id"}; $outfile{$GPR_suffix."_rsat_id_html"} =~ s/\.tab$/\.html/; push @files_to_index, $GPR_suffix."_rsat_id_html";
   }
 
   &RSAT::message::Info("GPR file", $GPR_suffix, $outfile{$GPR_suffix}) if ($main::verbose >= 3);
@@ -1168,32 +1179,89 @@ sub GetGER() {
 
   ## Check that organism table contains a cross-reference to the MICROSCOPE database for the organism
   if ($organism_info{$organism_name}->{microscope_metacyc_id}) {
-    ## Run the MICROME/MICROSCOPE Web client
+   ## Run the MICROME/MICROSCOPE Web client
+    &RSAT::message::TimeWarn("\tCollecting GPR from MicroCyc via Web services") if ($main::verbose >= 1);
     my $ms_org_id = $organism_info{$organism_name}->{microscope_metacyc_id};
     my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
     $cmd = "python2.7 ".$ger_cmd;
     $cmd .= " --ms_org_id ".$ms_org_id;
     $cmd .= " --reactions" if ($args{get_reactions});
     $cmd .= " -o ".$outfile{$GPR_suffix};
-    &one_command($cmd, 1, 0, task=>"ger");
+
+################################################################
+################################################################
+################################################################
+## TEMPORARILY DISABLED BECAUSE MICROCYC IS UNAVAILABLE
+#    &one_command($cmd, 1, 0, task=>"ger");
+    &RSAT::message::Warning("GPR collection is temporarily disactivated because MicroCyc DB seems to be offline") if ($main::verbose >= 0);
+################################################################
+################################################################
+################################################################
 
     if ($GPR_suffix eq "gene-ec") {
+      &RSAT::message::TimeWarn("\tSelecting unique gene identifiers") if ($main::verbose >= 1);
       ## Select non-redundant subset of the GER table, using the column ID
       ## to identify genes
       $cmd = "grep '^#' ".$outfile{$GPR_suffix};
       $cmd .= " | perl -pe 's/^\#//'";
       $cmd .= " | awk -F'\\t' '{print \"#\"\$4\"\\t\"\$2\"\\t\"\$1}'";
-      $cmd .= " > ".$outfile{$GPR_suffix."_by_id"};
+      $cmd .= " > ".$outfile{$GPR_suffix."_by_name"};
       $cmd .= "; grep -v '^; ' ".$outfile{$GPR_suffix};
       $cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"id\"'";
       $cmd .= " | awk -F '\\t' '{print \$4\"\\t\"\$2\"\\t\"\$1}'";
-      $cmd .= " >> ".$outfile{$GPR_suffix."_by_id"};
+      $cmd .= " >> ".$outfile{$GPR_suffix."_by_name"};
 
       ## Convert gene-ec table to HTML format
       $cmd .= " ; ".$SCRIPTS."/text-to-html ";
-      $cmd .= " -i ".$outfile{$GPR_suffix."_by_id"};
-      $cmd .= " -o ".$outfile{$GPR_suffix."_by_id_html"};
+      $cmd .= " -i ".$outfile{$GPR_suffix."_by_name"};
+      $cmd .= " -o ".$outfile{$GPR_suffix."_by_name_html"};
+##      &one_command($cmd, 1, 0, task=>"ger");
+
+      ## Select non-redundant subset of the GER table, using refseqId
+      ## to identify genes
+      $cmd = "grep '^#' ".$outfile{$GPR_suffix};
+      $cmd .= " | perl -pe 's/^\#//'";
+      $cmd .= " | awk -F'\\t' '{print \"#\"\$1\"\\t\"\$2\"\\t\"\$4}'";
+      $cmd .= " > ".$outfile{$GPR_suffix."_refseqid"};
+      $cmd .= "; grep -v '^; ' ".$outfile{$GPR_suffix};
+      $cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"refseqId\"'";
+      $cmd .= " | awk -F '\\t' '{print \$1\"\\t\"\$2\"\\t\"\$4}'";
+      $cmd .= " >> ".$outfile{$GPR_suffix."_refseqid"};
+
+      ## Convert gene-ec table to HTML format
+      $cmd .= " ; ".$SCRIPTS."/text-to-html ";
+      $cmd .= " -i ".$outfile{$GPR_suffix."_refseqid"};
+      $cmd .= " -o ".$outfile{$GPR_suffix."_refseqid_html"};
+##      &one_command($cmd, 1, 0, task=>"ger");
+
+      ## Identify gene-EC relationships using RSAT identifiers (actually NCBI protein_id)
+      $dir{rsat_genome} = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
+      $infile{rsat_cds_names} = $dir{rsat_genome}."/cds_names.tab";
+      my $null = "";
+      &RSAT::message::TimeWarn("\tIdentifying gene-EC relationships with RSAT identifiers") if ($main::verbose >= 1);
+      $cmd = $SCRIPTS."/compare-scores";
+      $cmd .= " -i ".$outfile{$GPR_suffix."_refseqid"};
+      $cmd .= " -ic1 1";
+      $cmd .= " -suppress '".$dir{GER}."/'";
+      $cmd .= " -suppress ".$organism_name."_gene-ec_";
+      $cmd .= " -suppress .tab";
+      $cmd .= " -i ".$infile{rsat_cds_names};
+      $cmd .= " -ic2 2 -sc2 1";
+      $cmd .= " -suppress '".$dir{rsat_genome}."/'";
+      $cmd .= " -null '".$null."'";
+      $cmd .= " | awk -F'\t' '\$3 != \"".$null."\"' ";
+      $cmd .= " | add-gene-info -org ".$organism_name;
+      $cmd .= " -info name";
+      $cmd .= " | awk -F'\t' '{print \$5\"\t\"\$2\"\t\"\$4\"\t\"\$1\"\t\"\$3}'";
+      $cmd .= " > ".$outfile{$GPR_suffix."_rsat_id"};
+
+      ## Convert gene-ec table to HTML format
+      $cmd .= " ; ".$SCRIPTS."/text-to-html ";
+      $cmd .= " -i ".$outfile{$GPR_suffix."_rsat_id"};
+      $cmd .= " -o ".$outfile{$GPR_suffix."_rsat_id_html"};
       &one_command($cmd, 1, 0, task=>"ger");
+
+
     }
   } else {
     my $warning = join ("\t", "Cannot collect GER for organism", $organism_name, "because missing cross-reference to Genoscope/MicroCyc.", $organism_name);
@@ -1211,8 +1279,8 @@ sub GetGER() {
 
   ## Count gene-EC associations
   if ($task{ger}) {
-    if (-e $outfile{$GPR_suffix."_by_id"}) {
-      my ($gene_ec) = &OpenInputFile($outfile{$GPR_suffix."_by_id"});
+    if (-e $outfile{$GPR_suffix."_by_name"}) {
+      my ($gene_ec) = &OpenInputFile($outfile{$GPR_suffix."_by_name"});
       while (<$gene_ec>) {
 	chomp();
 	next unless (/\S/);	## Skip empty lines
@@ -1381,13 +1449,8 @@ sub GetGER() {
 
   ## Add info in the main synthesis
   if ($task{synthesis}) {
-#    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER},
-#					 $organism_info{$organism_name}->{genes_with_ec}." gn <-> ".$organism_info{$organism_name}->{ecs_with_gene}." ECs"
-#					),  "</td>\n";
     print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER}, $organism_info{$organism_name}->{genes_with_ec}),  "</td>\n";
     print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER}, $organism_info{$organism_name}->{ecs_with_gene}),  "</td>\n";
-#    print $main_syn "<td>", $organism_info{$organism_name}->{genes_with_ec},  "</td>\n";
-#    print $main_syn "<td>", $organism_info{$organism_name}->{ecs_with_gene},  "</td>\n";
   }
 
 }
@@ -1476,7 +1539,7 @@ sub GeneSets2ECs {
   } else {
 
     ## Use the GPR file downloaded from MicroCyc
-    $gpr_file = $outfile{"gene-ec"};
+    $gpr_file = $outfile{"gene-ec_rsat_id"};
   }
   &RSAT::message::Info("GPR file", $gpr_file) if ($main::verbose >= 3);
   &RSAT::error::FatalError("Cannot read GPR file", $gpr_file) unless (-r $gpr_file);
@@ -1488,7 +1551,6 @@ sub GeneSets2ECs {
   $outfile{$geneset_key."_ec"} = $prefix{$geneset_key."_ec"}."_gene-ecs.tab"; push @files_to_index, $geneset_key."_ec";
   $outfile{$geneset_key."_ec_set"} = $prefix{$geneset_key."_ec"}."_ec-set.tab"; push @files_to_index, $geneset_key."_ec_set";
   $outfile{$geneset_key."_ecs_per_set"} = $prefix{$geneset_key."_ec"}."_ecs-per-set.tab"; push @files_to_index, $geneset_key."_ecs_per_set";
-
 
   my $cmd = $SCRIPTS."/gene2ec -v 1";
   $cmd .= " -id_col 3";
