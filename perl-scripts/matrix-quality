@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.148 2012/08/29 23:00:56 amedina Exp $
+# $Id: matrix-quality,v 1.149 2012/09/03 19:22:49 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -363,13 +363,12 @@ package main;
     ################################################################
     ## Additional plots
     $supported_tasks{plot} = 0 unless $tasks{plot};
-    
     my @add_plots= split (/,/,$main::plottypes);
     foreach (@add_plots){
 	&RSAT::error::FatalError("The requested additional plot is not available", "$_") unless ($main::supported_plot_types{$_});
 	$main::plot_types{$_}=1;
     }
-    
+
     ## Class interval for classfreq
     $class_interval = 1/(10**$decimals);
 
@@ -1132,12 +1131,12 @@ leend of the plots), and the second next argument the file name.
        } elsif ($arg eq "-seq") {
 	 my $seq_type = shift(@arguments);
 	 ## Substitue special characters which cannot be used inside a file name
+	 $seq_type =~ s|\s|_|g;
 	 $seq_type =~ s|/|_|g;
 	 $seq_type =~ s|:|_|g;
 	 $main::seqfile{$seq_type} =
 	   shift(@arguments);
          push @main::seq_types, $seq_type;
-
 
 =pod
 
@@ -1161,6 +1160,10 @@ end of the matrix-scan command for scanning the specified sequence set.
 =cut
        } elsif ($arg eq "-scanopt") {
 	 my $seq_type = shift(@arguments);
+	 ## Substitue special characters which cannot be used inside a file name
+	 $seq_type =~ s|\s|_|g;
+	 $seq_type =~ s|/|_|g;
+	 $seq_type =~ s|:|_|g;
 	 $main::scanopt{$seq_type} =
 	   " ".shift(@arguments);
 
@@ -1288,6 +1291,10 @@ Number of permutations for a specific set (default 0).
 =cut
 	} elsif ($arg eq "-perm") {
 	  my $seq_type = shift(@arguments);
+	 ## Substitue special characters which cannot be used inside a file name
+	 $seq_type =~ s|\s|_|g;
+	 $seq_type =~ s|/|_|g;
+	 $seq_type =~ s|:|_|g;
 	  $main::perm_nb{$seq_type} = shift(@arguments);
 	  &RSAT::error::FatalError($perm_nb{$seq_type}, "Invalid value for option -perm. Should be a Natural number.")
 	    unless (&IsNatural($main::perm_nb{$seq_type}));
