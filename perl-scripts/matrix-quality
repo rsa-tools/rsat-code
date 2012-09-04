@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.149 2012/09/03 19:22:49 jvanheld Exp $
+# $Id: matrix-quality,v 1.150 2012/09/04 14:16:31 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -307,6 +307,10 @@ package main;
     $main::supported_plot_types{nwd}=1;
     $main::supported_plot_types{occ_proba}=1;
     %main::plot_types=();
+    %tab_files_for_aux_plots_nwd_per_matrix=();
+    %tab_files_for_aux_plots_occ_proba_per_matrix=();
+    %tab_files_for_aux_plots_nwd_per_seq=();
+    %tab_files_for_aux_plots_occ_proba_per_seq=();
 
     ## Parameters for the &doit() command
     $dry = 0;
@@ -479,9 +483,9 @@ package main;
 
      ## NWD
     $tasks{plot}=1 if (scalar(@main::plot_seq_type));
-    unless ($tasks{plot} && scalar(@main::plot_seq_type)){
-	&RSAT::error::FatalError("For drawing additional plots you have to specify al least one seq_type and plot_type");
-    }
+    # unless ( ((scalar(@main::plot_seq_type))&& !($tasks{plot})) || (!(scalar(@main::plot_seq_type))&& ($tasks{plot})) ){
+    # 	&RSAT::error::FatalError("For drawing additional plots you have to specify al least one seq_type and plot_type");
+    # }
 
     
 
@@ -856,13 +860,22 @@ package main;
       ##Calculate NWD
       &RSAT::message::TimeWarn("Calculate NWD file")  if ($main::verbose >= 0);
 
-
       if ($tasks{plot}) {
 	  foreach (@local_plot_seq_type) {
 	      my $st= $_;
-	      &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab",$st) if ($main::plot_types{nwd}) ;	      
-	      &Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options) if  ($main::plot_types{occ_proba})   ;
+	      my $nwd_st= &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab",$st) if ($main::plot_types{nwd}) ;	      
+	      my $occ_proba_st=&Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options) if  ($main::plot_types{occ_proba})   ;
+	      push ( @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }, $nwd_st);
+	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }, $occ_proba_st);
+	      push ( @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }, $nwd_st);
+	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);	      
 	  }
+
+	  #&Draw_NWD (@{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} });
+	  
+
+	#  XYgraph -i results/LexA_multiple_matrices/LexA.2nt_upstream-noorf-ovlp-2str.23_m1/Multiple_matrices_score_distrib_peaks_nwd.tab  -o aver.pdf -format pdf -xcol 1 -ycol 4 -lines -xlog -yleg1 "NWD" -xleg1 "Pvalue" -legend -pointsize 0
+
       }
 
       ################
@@ -2678,7 +2691,7 @@ sub Calculate_NWD {
 
     #print join ("\t",";Pvalue","score_". $base_dist,"score_".$case_dist,"NWD")."\n";
 
-    print $main::out_nwd join ("\t",";Pvalue","score_". $base_dist,"score_".$case_dist,"NWD")."\n";
+    print $main::out_nwd join ("\t","#Pvalue","score_". $base_dist,"score_".$case_dist,"NWD_".$case_dist."_vs_".$base_dist)."\n";
 
     my %sort_pval;
 
@@ -2763,7 +2776,7 @@ sub Calculate_NWD {
 	next unless $hash_print{$pval};
 	print $main::out_nwd $hash_print{$pval} ;
     }
-
+    return ($outfile{'distrib_nwd'.$nwd_seq_type});
 }
 ###############
     ##Options for a future NWD curve calculation
@@ -2883,6 +2896,12 @@ sub Calculate_OCC {
 
     &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix)
     &RSAT::message::Info("Scanning to compute occurence probability", $matrix_scan_cmd) if ($main::verbose >= 1);
+    return ($outfile{'occ_proba_'.$seq_type});
+}
+
+sub Draw_NWD{
+   my @nwd_files= @_;
+   die join ("==",@nwd_files). "BOOM";
 
 }
 
