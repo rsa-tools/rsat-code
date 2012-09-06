@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.21 2012/09/03 23:34:28 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.22 2012/09/06 01:53:57 jvanheld Exp $
 #
 ############################################################
 
@@ -51,7 +51,7 @@ tab-delimited text files, associated with HTML formatted reports.
 
 =item I<infer-operon>
 
-used to infer operons and syntons.
+used to infer operons and directons.
 
 =item I<compare-classes>
 
@@ -90,7 +90,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -114,7 +114,7 @@ package main;
 			    metanet
 			    ger
 			    operons
-			    syntons
+			    directons
 			    footprints
 			    genesets2ecs
 			    pathway_proj
@@ -268,7 +268,7 @@ package main;
 			   "ECs > gene",
 			   "genes",
 			   "operons",
-			   "syntons"
+			   "directons"
 			  );
     print $main_syn "<tr>\n";
     foreach my $field (@main_syn_fields) {
@@ -342,9 +342,9 @@ package main;
     @files_to_index = ();
 
     ################################################################
-    ## Infer operons and syntons
-    &InferOperonsOrSyntons("operons");
-    &InferOperonsOrSyntons("syntons");
+    ## Infer operons and directons
+    &InferOperonsOrDirectons("operons");
+    &InferOperonsOrDirectons("directons");
 
     ################################################################
 
@@ -355,7 +355,7 @@ package main;
 #    &FootprintsAndCoregulation();
 
     ## Link gene sets to EC numbers
-#    foreach my $geneset ("gene_operons", "gene_syntons") {
+#    foreach my $geneset ("gene_operons", "gene_directons") {
 #      &GeneSets2ECs($geneset);
 #      &PathwayProjection($geneset);
 #    }
@@ -593,31 +593,9 @@ Same as -h
 
 =pod
 
-=item B<-org Organism_name>
-
-Organism name. Must be an organism supported in this RSAT server. The
-list of supported organisms can be obtained with
-I<supported-organisms>.
-
-Multiple organisms can be specified by calling repeatedly the option
--org.
-
-Example:
-
- pathways-from-genome -v 1 \
-    -org Bacillus_subtilis_168_uid57675 \
-    -org Mycoplasma_pneumoniae_M129_uid57709 \
-    -o results/pathways_from_genome
-
-=cut
-    } elsif ($arg eq "-org") {
-      my $organism_name = shift(@arguments);
-      push @organism_names, $organism_name;
-
-=pod
-
 =item B<-org organism_table>
 
+Mandatory option.
 
 Tab-delimited text file indicating organism cross-references to a series of
 external databases.
@@ -646,15 +624,31 @@ Additional columns are currently ignored.
 
 =pod
 
-=item B<-ec2pathway>
+=item B<-org Organism_name>
 
-Tab-delimited text file indicating the relationships between EC
-numbers (first column) and annotated pathways second column). 
+Select one or several organisms from the organism table, on which the
+analysis will be performed.
+
+Must be an organism supported in this RSAT server. The list of
+supported organisms can be obtained with I<supported-organisms>.
+
+Multiple organisms can be specified by calling repeatedly the option
+-org.
+
+Example:
+
+ pathways-from-genome -v 1 \
+    -org Bacillus_subtilis_168_uid57675 \
+    -org Mycoplasma_pneumoniae_M129_uid57709 \
+    -o results/pathways_from_genome
+
+Alternative option: I<-all_organisms>.
+
 
 =cut
-
-    } elsif ($arg eq "-ec2pathway") {
-      $infile{ec2pathway} = shift(@arguments);
+    } elsif ($arg eq "-org") {
+      my $organism_name = shift(@arguments);
+      push @organism_names, $organism_name;
 
 =pod
 
@@ -662,8 +656,7 @@ numbers (first column) and annotated pathways second column).
 
 Analyze all the organisms of the organism table.
 
-This option requires to specify an organism table (option
-I<-org_table>).
+Alternative option: I<-org>.
 
 =cut
     } elsif ($arg eq "-all_organisms") {
@@ -697,6 +690,19 @@ interrupted analysis.
       $param{skip_org} = shift(@arguments);
       &RSAT::error::FatalError($param{skip_org}, "Invalid value for option -skip_org. Should be a Natural number.")
 	unless (&RSAT::util::IsNatural($param{skip_org}));
+
+
+=pod
+
+=item B<-ec2pathway>
+
+Tab-delimited text file indicating the relationships between EC
+numbers (first column) and annotated pathways second column).
+
+=cut
+
+    } elsif ($arg eq "-ec2pathway") {
+      $infile{ec2pathway} = shift(@arguments);
 
 =pod
 
@@ -756,16 +762,16 @@ inter-operons. The accuracy is estimated to ~80% (Rekin's Janky, PhD
 thesis), with a balanced rate between false positives (intra-operons
 considered as inter-operons) and false negatives (the opposite).
 
-=item I<syntons>
+=item I<directons>
 
-Compute syntons from gene orientations. Syntons are defined as maximal
+Compute directons from gene orientations. Directons are defined as maximal
 (non-extendable) sets of contiguous genes transcribed in the same
-direction. A synton can contain one or several successive operons.
+direction. A directon can contain one or several successive operons.
 
 Note: in practice, we detect by running I<infer-operon> with a
 virtually infinite threshold on intergenic distance. Since all genes
 of an operon are (by definition) transcribed in the same direction,
-syntons contain all the full operons (they can be considered as a
+directons contain all the full operons (they can be considered as a
 maximization of the sensitivity for operon prediction, but with an
 important cost in specificity).
 
@@ -913,38 +919,38 @@ sub Verbose {
 
 ################################################################
 ## Infer operons from gene coordinates
-sub InferOperonsOrSyntons {
-  my ($operons_or_syntons) = @_;
-  unless ($operons_or_syntons) {
-    $operons_or_syntons = "operon";
+sub InferOperonsOrDirectons {
+  my ($operons_or_directons) = @_;
+  unless ($operons_or_directons) {
+    $operons_or_directons = "operon";
   }
   my $dist = $param{operon_dist};
 
 
   @files_to_index = ();
 
-  ## For syntons, set distance to a very very large value
-  if ($operons_or_syntons eq "syntons") {
+  ## For directons, set distance to a very very large value
+  if ($operons_or_directons eq "directons") {
     $dist = 10000000;
   }
 
-  ## Define suffix for operon and synton files
+  ## Define suffix for operon and directon files
   my $operon_suffix = "ming".$param{operon_min_genes};
-  unless ($operons_or_syntons eq "syntons") {
+  unless ($operons_or_directons eq "directons") {
     $operon_suffix .= "_dist".$dist;
   }
 
   ## Define output directory and files
-  $dir{$operons_or_syntons} = $dir{output}."/".$operons_or_syntons;
-  &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
+  $dir{$operons_or_directons} = $dir{output}."/".$operons_or_directons;
+  &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 755);
 
-  $outfile{"gene_".$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", "gene_".$operons_or_syntons."_".$operon_suffix); push @files_to_index, "gene_".$operons_or_syntons;
-  $outfile{"gene_".$operons_or_syntons."_html"} = $outfile{"gene_".$operons_or_syntons}; $outfile{"gene_".$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, "gene_".$operons_or_syntons."_html";
+  $outfile{"gene_".$operons_or_directons} = &OutFileName($operons_or_directons, ".tab", "gene_".$operons_or_directons."_".$operon_suffix); push @files_to_index, "gene_".$operons_or_directons;
+  $outfile{"gene_".$operons_or_directons."_html"} = $outfile{"gene_".$operons_or_directons}; $outfile{"gene_".$operons_or_directons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, "gene_".$operons_or_directons."_html";
 
   ## Infer operon for each gene
-  #  if ($task{$operons_or_syntons}) {
-  &RSAT::message::TimeWarn("\tInferring ".$operons_or_syntons, "dist=".$dist, "min_genes=".$param{operon_min_genes}) if ($main::verbose >= 1);
-  &RSAT::util::CheckOutDir($dir{$operons_or_syntons}, "", 755);
+  #  if ($task{$operons_or_directons}) {
+  &RSAT::message::TimeWarn("\tInferring ".$operons_or_directons, "dist=".$dist, "min_genes=".$param{operon_min_genes}) if ($main::verbose >= 1);
+  &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 755);
   my $cmd = $SCRIPTS."/infer-operon -v 1 ";
   $cmd .= " -sep '-' -return q_info,operon,leader,gene_nb";
   $cmd .= " -org ".$organism_name;
@@ -954,87 +960,87 @@ sub InferOperonsOrSyntons {
   $cmd .= " | ".$SCRIPTS."/add-gene-info";
   $cmd .= " -org ".$organism_name;
   $cmd .= " -col 2 -info descr";
-  $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons};
+  $cmd .= " -o ".$outfile{"gene_".$operons_or_directons};
   $cmd .= "; ".$SCRIPTS."/text-to-html ";
-  $cmd .= " -i ".$outfile{"gene_".$operons_or_syntons};
-  $cmd .= " -o ".$outfile{"gene_".$operons_or_syntons."_html"};
+  $cmd .= " -i ".$outfile{"gene_".$operons_or_directons};
+  $cmd .= " -o ".$outfile{"gene_".$operons_or_directons."_html"};
   $cmd .= " -chunk 10000";
-  &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
-  &RSAT::message::Info("Gene-".$operons_or_syntons." (tab)", $outfile{"gene_".$operons_or_syntons}) if ($main::verbose >= 3);
-  &RSAT::message::Info("Gene-".$operons_or_syntons." (html)", $outfile{"gene_".$operons_or_syntons."_html"}) if ($main::verbose >= 3);
+  &one_command($cmd, 1, 0, task=>$operons_or_directons) ;
+  &RSAT::message::Info("Gene-".$operons_or_directons." (tab)", $outfile{"gene_".$operons_or_directons}) if ($main::verbose >= 3);
+  &RSAT::message::Info("Gene-".$operons_or_directons." (html)", $outfile{"gene_".$operons_or_directons."_html"}) if ($main::verbose >= 3);
   #  }
 
 
   ## Generate a table with a single line per operon
-  $outfile{$operons_or_syntons} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix); push @files_to_index, $operons_or_syntons;
-  $outfile{$operons_or_syntons."_html"} = $outfile{$operons_or_syntons}; $outfile{$operons_or_syntons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, $operons_or_syntons."_html";
-  #  if ($task{$operons_or_syntons}) {
+  $outfile{$operons_or_directons} = &OutFileName($operons_or_directons, ".tab", $operons_or_directons."_".$operon_suffix); push @files_to_index, $operons_or_directons;
+  $outfile{$operons_or_directons."_html"} = $outfile{$operons_or_directons}; $outfile{$operons_or_directons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, $operons_or_directons."_html";
+  #  if ($task{$operons_or_directons}) {
   $cmd = "";
-  $cmd .= "echo '; ".$operons_or_syntons." ' > ".$outfile{$operons_or_syntons};
-  $cmd .= "; echo '; Organism               \t".$organism_name."' >> ".$outfile{$operons_or_syntons};
-  $cmd .= "; echo '; Max intergenic distance\t".$dist."' >> ".$outfile{$operons_or_syntons};
-  $cmd .= "; echo '#".$operons_or_syntons."\tleader\tnb_genes' >> ".$outfile{$operons_or_syntons};
-  $cmd .= "; grep -v '^;' ".$outfile{"gene_".$operons_or_syntons};
+  $cmd .= "echo '; ".$operons_or_directons." ' > ".$outfile{$operons_or_directons};
+  $cmd .= "; echo '; Organism               \t".$organism_name."' >> ".$outfile{$operons_or_directons};
+  $cmd .= "; echo '; Max intergenic distance\t".$dist."' >> ".$outfile{$operons_or_directons};
+  $cmd .= "; echo '#".$operons_or_directons."\tleader\tnb_genes' >> ".$outfile{$operons_or_directons};
+  $cmd .= "; grep -v '^;' ".$outfile{"gene_".$operons_or_directons};
   $cmd .= " | grep -v '^#'";
   $cmd .= " | cut -f 7,8,9";
   $cmd .= " | sort -u ";
-  $cmd .= ">> ".$outfile{$operons_or_syntons};
+  $cmd .= ">> ".$outfile{$operons_or_directons};
   $cmd .= "; ".$SCRIPTS."/text-to-html ";
-  $cmd .= " -i ".$outfile{$operons_or_syntons};
-  $cmd .= " -o ".$outfile{$operons_or_syntons."_html"};
+  $cmd .= " -i ".$outfile{$operons_or_directons};
+  $cmd .= " -o ".$outfile{$operons_or_directons."_html"};
   $cmd .= " -chunk 10000";
-  &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
-  &RSAT::message::Info($operons_or_syntons." (tab)", $outfile{$operons_or_syntons}) if ($main::verbose >= 3);
-  &RSAT::message::Info($operons_or_syntons." (html)", $outfile{$operons_or_syntons."_html"}) if ($main::verbose >= 3);
+  &one_command($cmd, 1, 0, task=>$operons_or_directons) ;
+  &RSAT::message::Info($operons_or_directons." (tab)", $outfile{$operons_or_directons}) if ($main::verbose >= 3);
+  &RSAT::message::Info($operons_or_directons." (html)", $outfile{$operons_or_directons."_html"}) if ($main::verbose >= 3);
   #  }
 
   ## Compute statistics on operon sizes
-  $outfile{$operons_or_syntons."_stats"} = &OutFileName($operons_or_syntons, ".tab", $operons_or_syntons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_syntons."_stats";
+  $outfile{$operons_or_directons."_stats"} = &OutFileName($operons_or_directons, ".tab", $operons_or_directons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_directons."_stats";
   for my $img_format (@image_formats) {
-    $outfile{$operons_or_syntons."_stats_".$img_format} = &OutFileName($operons_or_syntons, ".".$img_format, $operons_or_syntons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_syntons."_stats_".$img_format;
+    $outfile{$operons_or_directons."_stats_".$img_format} = &OutFileName($operons_or_directons, ".".$img_format, $operons_or_directons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_directons."_stats_".$img_format;
   }
-  #  if ($task{$operons_or_syntons}) {
-  &RSAT::message::TimeWarn("\tComputing size distribution", $operons_or_syntons) if ($main::verbose >= 1);
+  #  if ($task{$operons_or_directons}) {
+  &RSAT::message::TimeWarn("\tComputing size distribution", $operons_or_directons) if ($main::verbose >= 1);
   $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 3";
-  $cmd .= " -i ".$outfile{$operons_or_syntons};
-  $cmd .= " -o ".$outfile{$operons_or_syntons."_stats"};
+  $cmd .= " -i ".$outfile{$operons_or_directons};
+  $cmd .= " -o ".$outfile{$operons_or_directons."_stats"};
 
-  ## Generate graphs of operon/synton size distribution
+  ## Generate graphs of operon/directon size distribution
   for my $img_format (@image_formats) {
     $cmd .= "; ".$SCRIPTS."/XYgraph";
-    $cmd .= " -i ".$outfile{$operons_or_syntons."_stats"};
+    $cmd .= " -i ".$outfile{$operons_or_directons."_stats"};
     $cmd .= " -xcol 1 -ycol 4,5,6";
     $cmd .= " -format ".$img_format;
     $cmd .= " -xgstep1 5" unless ($img_format eq "pdf");
     $cmd .= " -xmin 0 -ymin 0";
     $cmd .= " -lines -legend  -xsize 800 -ysize 400";
-    $cmd .= " -xleg1 'Number of genes per ".$operons_or_syntons."' -yleg1 'Number of predicted ".$operons_or_syntons."'";
-    $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_syntons." in ".$organism_name."\"";
-    $cmd .= " -o ".$outfile{$operons_or_syntons."_stats_".$img_format};
+    $cmd .= " -xleg1 'Number of genes per ".$operons_or_directons."' -yleg1 'Number of predicted ".$operons_or_directons."'";
+    $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_directons." in ".$organism_name."\"";
+    $cmd .= " -o ".$outfile{$operons_or_directons."_stats_".$img_format};
   }
-  &one_command($cmd, 1, 0, task=>$operons_or_syntons) ;
-  &RSAT::message::Info($operons_or_syntons." stats (tab)", $outfile{$operons_or_syntons."_stats"}) if ($main::verbose >= 3);
+  &one_command($cmd, 1, 0, task=>$operons_or_directons) ;
+  &RSAT::message::Info($operons_or_directons." stats (tab)", $outfile{$operons_or_directons."_stats"}) if ($main::verbose >= 3);
   for my $img_format (@image_formats) {
-    &RSAT::message::Info($operons_or_syntons." size distrib (".$img_format.")", $outfile{$operons_or_syntons."_stats_".$img_format}) if ($main::verbose >= 3);
+    &RSAT::message::Info($operons_or_directons." size distrib (".$img_format.")", $outfile{$operons_or_directons."_stats_".$img_format}) if ($main::verbose >= 3);
     #    }
 
   }
 
   if ((defined($outfile{"gene-ec"})) &&
       (-e $outfile{"gene-ec"})) {
-    ## Link ECs to operons / syntons
-    &GeneSets2ECs("gene_".$operons_or_syntons);
-    ## Project operons / syntons onto annotated pathways
-    &PathwayProjection("gene_".$operons_or_syntons);
+    ## Link ECs to operons / directons
+    &GeneSets2ECs("gene_".$operons_or_directons);
+    ## Project operons / directons onto annotated pathways
+    &PathwayProjection("gene_".$operons_or_directons);
   }
 
   ################################################################
   ## Summarize the operon results
   if ($task{synthesis}) {
-    print $syn "<hr><h2>", ucfirst($operons_or_syntons), "</h2>";
+    print $syn "<hr><h2>", ucfirst($operons_or_directons), "</h2>";
 
-    print $syn "<br>Min nb of genes per ".$operons_or_syntons.": ".$param{operon_min_genes}."\n";
-    if ($operons_or_syntons eq "operons") {
+    print $syn "<br>Min nb of genes per ".$operons_or_directons.": ".$param{operon_min_genes}."\n";
+    if ($operons_or_directons eq "operons") {
       print $syn "<br>Max intergenic distance : ".$param{operon_dist}."\n";
     } else {
     }
@@ -1046,13 +1052,13 @@ sub InferOperonsOrSyntons {
 
     ## Initialize statistics
     $organism_info{$organism_name}->{nb_genes} = "NA";
-    $organism_info{$organism_name}->{$operons_or_syntons} = "NA";
-    $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"} = "NA";
-    $organism_info{$organism_name}->{$operons_or_syntons."_max_size"} = "NA";
+    $organism_info{$organism_name}->{$operons_or_directons} = "NA";
+    $organism_info{$organism_name}->{$operons_or_directons."_mean_size"} = "NA";
+    $organism_info{$organism_name}->{$operons_or_directons."_max_size"} = "NA";
 
-    ## Read statistics about operon/synton sizes
-    if (-e $outfile{$operons_or_syntons."_stats"}) {
-      my ($stats) = &OpenInputFile($outfile{$operons_or_syntons."_stats"});
+    ## Read statistics about operon/directon sizes
+    if (-e $outfile{$operons_or_directons."_stats"}) {
+      my ($stats) = &OpenInputFile($outfile{$operons_or_directons."_stats"});
       my $in_stats = 0;
       my %stats = ();
       while (<$stats>) {
@@ -1066,34 +1072,34 @@ sub InferOperonsOrSyntons {
       }
 
       $organism_info{$organism_name}->{nb_genes} = $stats{sum};
-      $organism_info{$organism_name}->{$operons_or_syntons} = $stats{count};
-      $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"} = $stats{mean};
-      $organism_info{$organism_name}->{$operons_or_syntons."_max_size"} = $stats{max};
+      $organism_info{$organism_name}->{$operons_or_directons} = $stats{count};
+      $organism_info{$organism_name}->{$operons_or_directons."_mean_size"} = $stats{mean};
+      $organism_info{$organism_name}->{$operons_or_directons."_max_size"} = $stats{max};
 
       ## Add information in the organism-specific synthesis
       print $syn "<br>Nb genes: ", $organism_info{$organism_name}->{nb_genes};
-      print $syn "<br>Nb ".$operons_or_syntons.": ", $organism_info{$organism_name}->{$operons_or_syntons};
-      print $syn "<br>Mean size: ", sprintf("%.1f", $organism_info{$organism_name}->{$operons_or_syntons."_mean_size"});
-      print $syn "<br>Max size: ", $organism_info{$organism_name}->{$operons_or_syntons."_max_size"};
+      print $syn "<br>Nb ".$operons_or_directons.": ", $organism_info{$organism_name}->{$operons_or_directons};
+      print $syn "<br>Mean size: ", sprintf("%.1f", $organism_info{$organism_name}->{$operons_or_directons."_mean_size"});
+      print $syn "<br>Max size: ", $organism_info{$organism_name}->{$operons_or_directons."_max_size"};
 
       ## Add info in the main synthesis
-      print $main_syn "<td>", $organism_info{$organism_name}->{nb_genes},  "</td>\n" if ($operons_or_syntons eq 'operons');
-      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_syntons}, $organism_info{$organism_name}->{$operons_or_syntons}),  "</td>\n";
+      print $main_syn "<td>", $organism_info{$organism_name}->{nb_genes},  "</td>\n" if ($operons_or_directons eq 'operons');
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_directons}, $organism_info{$organism_name}->{$operons_or_directons}),  "</td>\n";
 
     } else {
-      print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_syntons."_stats"}, "</font></p>\n";
+      print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_directons."_stats"}, "</font></p>\n";
     }
 
     ## Display size distribution
     print $syn "<td>";
-    if (-e $outfile{$operons_or_syntons."_stats_png"}) {
-      print $syn "<p>", &HtmlDisplayOneImage($outfile{$operons_or_syntons."_stats_png"},
+    if (-e $outfile{$operons_or_directons."_stats_png"}) {
+      print $syn "<p>", &HtmlDisplayOneImage($outfile{$operons_or_directons."_stats_png"},
 					     base=>$outfile{synthesis},
-					     href=>$outfile{$operons_or_syntons."_stats_pdf"},
+					     href=>$outfile{$operons_or_directons."_stats_pdf"},
 					     img_param=>"height='".$icon_height."' border=1",
 					    ), "</p>\n";
     } else {
-      print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{$operons_or_syntons."_stats_png"}, "</font></p>\n";
+      print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{$operons_or_directons."_stats_png"}, "</font></p>\n";
     }
     print $syn "</td>";
     print $syn "<tr>";
@@ -1101,7 +1107,7 @@ sub InferOperonsOrSyntons {
 
 
     ## Append table of links to the HTML report
-    print $syn &LinkTable("Files: ".$operons_or_syntons, @files_to_index);
+    print $syn &LinkTable("Files: ".$operons_or_directons, @files_to_index);
     @files_to_index = ();
   }
 }
@@ -1187,16 +1193,8 @@ sub GetGER() {
     $cmd .= " --ms_org_id ".$ms_org_id;
     $cmd .= " --reactions" if ($args{get_reactions});
     $cmd .= " -o ".$outfile{$GPR_suffix};
-
-################################################################
-################################################################
-################################################################
-## TEMPORARILY DISABLED BECAUSE MICROCYC IS UNAVAILABLE
-#    &one_command($cmd, 1, 0, task=>"ger");
+    &one_command($cmd, 1, 0, task=>"ger");
     &RSAT::message::Warning("GPR collection is temporarily disactivated because MicroCyc DB seems to be offline") if ($main::verbose >= 0);
-################################################################
-################################################################
-################################################################
 
     if ($GPR_suffix eq "gene-ec") {
       &RSAT::message::TimeWarn("\tSelecting unique gene identifiers") if ($main::verbose >= 1);
@@ -1215,7 +1213,7 @@ sub GetGER() {
       $cmd .= " ; ".$SCRIPTS."/text-to-html ";
       $cmd .= " -i ".$outfile{$GPR_suffix."_by_name"};
       $cmd .= " -o ".$outfile{$GPR_suffix."_by_name_html"};
-##      &one_command($cmd, 1, 0, task=>"ger");
+      &one_command($cmd, 1, 0, task=>"ger");
 
       ## Select non-redundant subset of the GER table, using refseqId
       ## to identify genes
@@ -1232,7 +1230,7 @@ sub GetGER() {
       $cmd .= " ; ".$SCRIPTS."/text-to-html ";
       $cmd .= " -i ".$outfile{$GPR_suffix."_refseqid"};
       $cmd .= " -o ".$outfile{$GPR_suffix."_refseqid_html"};
-##      &one_command($cmd, 1, 0, task=>"ger");
+      &one_command($cmd, 1, 0, task=>"ger");
 
       ## Identify gene-EC relationships using RSAT identifiers (actually NCBI protein_id)
       $dir{rsat_genome} = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
@@ -1497,10 +1495,10 @@ sub OpenOrganismHTML {
 }
 
 ################################################################
-## Link a set of genes (e.g. operons, syntons, co-regulated genes) to
+## Link a set of genes (e.g. operons, directons, co-regulated genes) to
 ## EC numbers.  This function takes as arguments a gene set file,
 ## i.e. a tab-delimited file with two columns. The first column
-## indicates the gene, the second the gene set (e.g. operon, synton,
+## indicates the gene, the second the gene set (e.g. operon, directon,
 ## co-regulation set).
 ##
 ## The GPR file can either be taken from the RSAT server (needs to be
@@ -1572,9 +1570,9 @@ sub GeneSets2ECs {
 
 ################################################################
 ## Pathway projection: project the EC numbers of a set of gene
-## (e.g. operon, synton, putative co-regulation group) onto annotated
-## metabolic pathways, and compute the significance of the
-## intersection.
+## (e.g. operon, directon, phyogenetic profile group, putative
+## co-regulation group) onto annotated metabolic pathways, and compute
+## the significance of the intersection.
 ##
 sub PathwayProjection {
   my ($geneset_key, %args) = @_;
