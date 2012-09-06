@@ -512,19 +512,9 @@ To obtain EnsEMBL \footnote{Full instructions at
 ## Make sure you start from the right directory
 cd $RSAT/lib
 
-## Login on the EnsEMBL CVS server
-cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
-## (password is CVSUSER)
+## Install the ensembl library
+make -f makefiles/install_software.mk install_ensembl_api
 
-## Download the current version of EnsEMBL
-cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-66 ensembl
-## (you need to adapt the branch number, e.g. 66, as it updates).
-
-## Download the current version of the EnsEMBL module for comparative genomics
-cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-66 ensembl-compara
-## (you need to adapt the branch number, e.g. 66, as it updates).
 \end{lstlisting}
 %%$ 
 
@@ -559,9 +549,9 @@ If your shell is bash, add the following lines in the file
 \file{.bashrc} at the root of your account.
 
 \begin{lstlisting}
-export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl/modules
-export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl-compara/modules
-export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl-variation/modules
+export PERL5LIB=${RSAT}/lib/ensembl/modules:${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensembl-compara/modules:${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensembl-variation/modules:${PERL5LIB}
 \end{lstlisting}
 
 If your shell is tcsh or chs, add the following lines in the file
@@ -573,16 +563,15 @@ setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-compara/modules
 setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-variation/modules
 \end{lstlisting}
 
-
 The EnsEMBL libraries also require the SQL client Perl module
 \file{DBD::mysql}, as well as \file{DBI}, which can be installed with
 \program{cpan} (for this you need root privileges). Note that the
-installation of the CPAN module DBD:mysql requires a prior
+installation of the CPAN module DBD:mysql may require a prior
 installation of a MySQL client on your machine
 (\url{http://dev.mysql.com/downloads/}).
 
-To access EnsEMBL versions above 47, you need port 5306 to be opened
-on your machine. This might require to consult the system
+\emph{Note}: to access EnsEMBL versions above 47, you need port 5306
+to be opened on your machine. This might require to consult the system
 administrator of your network in order to ensure that the Firewall
 accepts this port.
 
