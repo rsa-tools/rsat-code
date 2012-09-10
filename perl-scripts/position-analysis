@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.67 2012/07/07 11:02:25 jvanheld Exp $
+# $Id: position-analysis,v 1.68 2012/09/10 20:50:39 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -204,10 +204,7 @@ if ($return{graphs}) {
 
   &RSAT::message::Info("Index file", $outfile{graph_index}) if ($main::verbose >= 2);
   open INDEX, ">".$outfile{graph_index};
-  print INDEX "<html>";
-  print INDEX "<title>$title ; ${oligo_len}nt $strands $noov</title>";
-  print INDEX "<body>\n";
-  print INDEX "<h1>$title</h1>";
+  print INDEX  &PrintHtmlResultHeader(program=>"position-analysis", "title"=>"$title  ; ${oligo_length}nt $strands $noov", "result_toc"=>0);
 
   ## Links to output files
   my ($short_outfile) = &ShortFileName($outfile{output});
@@ -219,14 +216,19 @@ if ($return{graphs}) {
 #  print INDEX "<p>Output file (html): <a href='".$link."'>$short_html_file</a></p>";
 
   ## Open the table linking oligos to their position profile graphs
-  print INDEX "<table>\n";
+  print INDEX "<p><table class='sortable'>\n";
+#  print INDEX "<table>\n";
   print INDEX "<tr>\n";
   print INDEX "<th>Sequence</th>\n";
-  print INDEX "<th>Occ</th>\n";
+  print INDEX "<th>ID</th>\n";
+  print INDEX "<th>Occ</th>\n"; 
+  print INDEX "<th>Overlaps</th>\n"; 
   print INDEX "<th>Chi2</th>\n";
-  print INDEX "<th>Rank</th>\n";
+  print INDEX "<th>df</th>\n";
+  print INDEX "<th>Pval</th>\n";
   print INDEX "<th>Eval</th>\n";
   print INDEX "<th>Sig</th>\n";
+  print INDEX "<th>Rank</th>\n";
   print INDEX "<th>Score</th>\n" if ($score_column > 0);
   print INDEX "</tr>\n";
 #  close INDEX;
@@ -294,14 +296,28 @@ if ($return{graphs}) {
 #    open INDEX, ">>".$outfile{graph_index};
     print INDEX "<tr>\n";
     print INDEX "<td><A HREF=\"$rel_dir{graphs}/$graph_file_name\">$oligo_seq</A></td>\n";
+    print INDEX "<td>", &PatternID($oligo_seq, $sum_rc), "</td>\n";
     print INDEX "<td>", $pattern{$oligo_seq}->{in_bound_occ}, "</td>\n";
-    print INDEX "<td>", $chi2, "</td>\n";
+    print INDEX "<td>", $pattern{$oligo_seq}->{overlaps}, "</td>\n";
+    print INDEX "<td>", sprintf("\t%.1f", $pattern{$oligo_seq}->{chi_square}), "</td>\n";
+    print INDEX "<td>", sprintf("\t%d", $pattern{$oligo_seq}->{df}), "</td>\n";
+    print INDEX "<td>", sprintf("\t%.1e", $pattern{$oligo_seq}->{Pval}), "</td>\n";
+    print INDEX "<td>", sprintf("\t%.2g", $pattern{$oligo_seq}->{Eval}), "</td>\n";
+    print INDEX "<td>", sprintf("\t%.1f", $pattern{$oligo_seq}->{sig}), "</td>\n";
     print INDEX "<td>", $pattern{$oligo_seq}->{rank}, "</td>\n";
-    print INDEX "<td>", $Eval, "</td>\n";
-    print INDEX "<td>", $sig, "</td>\n";
     print INDEX "<td>", $score, "</td>\n" if ($score_column > 0);
     print INDEX "</tr>\n";
 #    close INDEX;
+# ;	1	seq            	pattern sequence
+# ;	2	id             	pattern identifier
+# ;	3	occ            	pattern occurrences
+# ;	4	over           	overlapping occurrences (discarded)
+# ;	5	chi2           	observed chi-square
+# ;	6	df             	degrees of freedom
+# ;	7	Pval           	P-value (probability for one word to be a false positive)
+# ;	8	Eval           	E-value; expected number of false positives (Eval = Pval * nb_tests)
+# ;	9	sig            	Significance (sig = -log10(Eval))
+# ;	10	rank           	rank of the pattern according to sorting criterion
   }
 #  open INDEX, ">>".$outfile{graph_index};
   print INDEX "<table>\n";
@@ -935,7 +951,8 @@ OPTIONS
 	-nogrouprc      do not group reverse complement pairs
 
 	-sort
-		sort oligonucleotides according to the bias in
+		sort oligonucleotides according to the chi2
+		statistics, reflecting the level of bias in
 		distribution profile
 
 	-1str
@@ -1051,7 +1068,7 @@ position-analysis options
 -grouprc	group reverse complement pairs (default)
 -nogrouprc	do not group reverse complement pairs
 -noov		no overlap
--sort		sort oligonucleotides according to the score
+-sort		sort oligonucleotides according to the chi2 statistics
 -return		chi,distrib,exp,graph,rank
 -lth_chi	lower threshold on chi2
 -lth_sig	lower threshold on significance of the chi2 statistics
@@ -1141,7 +1158,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-nogrouprc") {
 	    $group_rc = 0;
 
-	    ### sort the result according to significance
+	    ### sort the result according to chi2 statistics
 	} elsif ($ARGV[$a] eq "-sort") {
 	    $sort_result = 1;
 
