@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert2metapath-seeds,v 1.2 2012/04/13 07:00:20 rsat Exp $
+# $Id: convert2metapath-seeds,v 1.3 2012/09/11 14:36:11 rsat Exp $
 #
 ############################################################
 
@@ -9,18 +9,23 @@
 
 =pod
 
-=head1 Extract Pathway from gene list
+=head1 Name to metabolic graph node_id
 
 =head1 VERSION 1.0
 
 =head1 DESCRIPTION
 
-This tools maps input stringd to node id. 
+This tools maps input string to node id. 
 1. Gene to reaction mapping. Identify the set of reactions ("seed
 reactions") catalyzed by the set of input genes ("seed genes"). The
 mapping relies on a user-specified file describing the mapping of
 genes to reactions (GNN and NNN, Gene-Node Name and Network Node
 Name<>NodeID file).
+
+2. EC number mapping (Enzyme acivities) to node name
+
+2.Compound mapping. Match Compound name and ID to node_id (Network Node
+Name<>NodeID)
 
 
 
@@ -40,7 +45,12 @@ Graph tool
 
 convert2metapathseeds -h [-i inputfile] [-o output_file] [-v verbosity] -a gene2ec -b ec/rxn/cpd2rxnid/cpdid
 
-=head1 INPUT FORMAT
+=head1 INPUT FORMATS
+
+=head2 input File/std Input (-i)
+
+Flux containing a list of name (genes, compound, EC ...) or their id 
+
 
 Warning: the same gene identifiers should be used in all input files.
 
@@ -71,7 +81,7 @@ These files are used for the reaction ids/compound ids to gene annotation (backw
 
 =head3 Gene to Node Names (gnn) file (option I<-gnn>)
 
-not mandatory, in this cas the queyr file or stdin must contains only Node Names.
+not mandatory, in this cas the query file or stdin must contains only Node Names.
 
 The GNN files makes the link between external identifier and node names (example: gene name, refseq, locuslink) . 
 
@@ -80,7 +90,7 @@ The GNN files makes the link between external identifier and node names (example
 
 #query	id	qualifier	name	taxonomy_id	species
 aas	2.3.1.40	GENE_NAME	aas	83333	Escherichia coli (strain K12)
-aas	6.2.1.20	GENE_NAME	aas	83333	Escherichia coli (strain K12)
+aas	6.2.1.20	GENE_NAME	aas	83333	Escherichia coli (strain K12)pathway-extractor_seeds.php
 aat	2.3.2.6	GENE_NAME	aat	83333	Escherichia coli (strain K12)
 
 
@@ -236,7 +246,7 @@ sub ReadArguments {
 
 =item B<-v>
 
-Verbose mode
+Set verbosity level
 
 =cut
     if ($arg eq "-v") {
@@ -280,7 +290,7 @@ If present the match is partial (*input*). if absent match is absolute
 =pod
 
 =item B<-i inputfile>
-
+list of genes, compounds, EC.....
 If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
 
@@ -292,7 +302,7 @@ allows to use the command within a pipe.
 
 =item	B<-gnn GE Genes file>
 
-Gene -> EC (GE) annotation file.
+Gene -> EC (GE) annotation file. See File formats section
 
 =cut
     } elsif ($arg eq "-gnn") {
@@ -301,7 +311,7 @@ Gene -> EC (GE) annotation file.
 
 =item	B<-nnn ECR file>
 
-EC -> REACTION and COUMPOUNDS (ECR) annotation file.
+EC -> REACTION and COUMPOUNDS (ECR) annotation file. See file formats section
 
 =cut
     } elsif ($arg eq "-nnn") {

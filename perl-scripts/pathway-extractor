@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.35 2012/06/28 09:51:37 rsat Exp $
+# $Id: pathway-extractor,v 1.36 2012/09/11 14:36:11 rsat Exp $
 #
 ############################################################
 
@@ -249,6 +249,7 @@ package main;
   $dir{temp}= "";     # temporary directory
 
   our $verbose = "3";
+  our $ECgenericitylevel = "4"; # number of dash in an EC number equal the max genericity level ->>>>> 1.-.-.- (level 3) or 1.2.-.- (level2) or 1.2.3.- (level 1) or 1.2.3.4 (level 0 = no generic EC) 
   our $in = STDIN;
   our $out = STDOUT;
   our $directed;
@@ -276,7 +277,7 @@ package main;
     print STDERR "SEEDS:" .$input;
   }
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
-  my $output = &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$directed,$dir{temp},$group_descriptor,$verbose,\%otherPIoptions);
+  my $output = &RSAT::PathwayExtraction::Inferpathway($input,$isInputFile, $dir{output},$infile{gnn},$infile{nnn},$infile{graph},$directed,$dir{temp},$group_descriptor,$ECgenericitylevel,$verbose,\%otherPIoptions);
    print $out "OUTPUTFILE = $output\n";
   if ($process && -e $output){
     &RSAT::message::TimeWarn("processing files:Start") if ($verbose >= 2); 
@@ -431,22 +432,25 @@ EC -> REACTION and COUMPOUNDS (ECR) annotation file.
 #     } elsif ($arg eq "-b") {
 #       $outfile{gr} = shift(@arguments);
 
-# =pod
+=pod
 
-# =item	B<-n Graph name>
-#
-# Name of the Graph (default: Name of the graph file).
-#
-# =cut
-#     } elsif ($arg eq "-n") {
-#       $graph = shift(@arguments);
-#
+=item	B<-ecg Max EC genericity>
+
+Ec max genericity level. Used to limit the level of genericity of EC when mapping. 
+The max genericity level may have level from 0 to 4 :  1.-.-.- (level 3) or 1.2.-.- (level2) or 1.2.3.- (level 1) or 1.2.3.4 (level 0 = no generic EC)
+Generic EC may contained a large number of reaction node that can increase drasticaly computatioal time and gives little information.
+Default is 4;
+
+=cut
+    } elsif ($arg eq "-ecg") {
+      $ECgenericitylevel = shift(@arguments);
+
 
 =pod
 
 =item	B<-gd group descriptor>
 
-??? (Check with Didier)
+Give a group descriptor. a prefix name to teh output files.
 
 =cut
     } elsif ($arg eq "-gd") {
@@ -455,9 +459,9 @@ EC -> REACTION and COUMPOUNDS (ECR) annotation file.
 
 =pod
 
-=item	B<-d Unique descriptor>
+=item	B<-g Graph file >
 
-Unique name to differenciate output files. If not set With -i, the name of the input file will be used.
+Graph file 
 
 =cut
     } elsif ($arg eq "-g") {
