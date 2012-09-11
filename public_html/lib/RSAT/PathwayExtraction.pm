@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.12 2012/08/06 11:38:42 jvanheld Exp $
+# $Id: PathwayExtraction.pm,v 1.13 2012/09/11 14:36:11 rsat Exp $
 #
 ############################################################
 
@@ -33,7 +33,7 @@ genes to reactions (GNN and NNN, Gene-Node Name and Network Node Name<>NodeID fi
 2. Pathway extraction (=Pathway inference). PathwayInference takes as
 input a network (typically a metabolic network made of compounds +
 reactions) and a set of "seed" nodes. The program attempts to return a
-subnetwork that interconnects the seed nodes at a minimal “cost",
+subnetwork that interconnects the seed nodes at a minimal “cost",pathway-extractor_seeds.php
 where the cost is a weighted sum of the intermediate compounds and
 reactions used to link the seed nodes (Faust, et al., 2011; Faust and
 van Helden, 2011).
@@ -287,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
   my ($input,
        $isinputfile,
@@ -298,6 +298,7 @@ sub Inferpathway{
        $directed,
        $tempdir,
        $localgroup_descriptor,
+       $ECgenericitylevel,
        $verbose,
        $piparameters) = @_;
 
@@ -403,16 +404,18 @@ my %localotherPIparameters = %{$piparameters} if ($piparameters);
   print MYFILE "# EC number grouping: true". "\n";
 
    while (my ($key, $val) = each(%mappedseeds)){
-    foreach my $reaction (@{$val}) {
- 
-    if ($directed){
-      print MYFILE $reaction .">\t".$reaction. "\n";
-      print MYFILE $reaction ."<\t".$reaction. "\n";
+   my $dashcount = $key =~ tr/-//;
+    if ($dashcount <= $ECgenericitylevel){
+      foreach my $reaction (@{$val}) {
+	if ($directed){
+	  print MYFILE $reaction .">\t".$reaction. "\n";
+	  print MYFILE $reaction ."<\t".$reaction. "\n";
+	}
+	print MYFILE $reaction ."\t".$key. "\n";
+	$seednum++;
+      }
+    print MYFILE "$key\t$groupid\n";
     }
-    print MYFILE $reaction ."\t".$key. "\n";
-    $seednum++;
-   }
-   print MYFILE "$key\t$groupid\n";
    }
 
 # processing compound seeds   
@@ -577,7 +580,7 @@ my ($inputfile,
 
     ################################################################
     # Searching all reactions information for the reaction that are in  the inferred pathway graph
-    &RSAT::message::TimeWarn("Searching information about extracted reactions") if ($verbose >= 1);
+    &RSAT::message::TimeWarn("Searching information about extracted reactions") if ($verbose >= 1);my $dashcount = t$EC =~ tr/-//;
     $reactioncpdquery =~s/\|+$//;
    
  
@@ -765,7 +768,7 @@ sub MapSeeds{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -795,6 +798,7 @@ sub MapSeeds{
 
   &RSAT::message::TimeWarn("Mapping seeds to reactions") if ($verbose >= 1);
   chomp(@query_id_list);
+  if ( @query_id_list){
   
 # $query_ids = (join "\$|^",@query_id_list );	# build a query from the input file or stdin
   my $separator = "\$|^";
@@ -809,6 +813,7 @@ sub MapSeeds{
   my @ercconversiontable;
   my %querylist=();
   ## search into the GEC or GR file to find EC or Reactionid from gene input
+  
   my $seed_converter_cmd = "awk -F'\\t+' '\$1~\"".$query_ids."\" {print \$2\"\\t\"\$1\"\\t\"\$3\"\\t\"\$4}' \"$gnnfile\"";
 
   &RSAT::message::TimeWarn("Seed conversion:", $seed_converter_cmd) if ($verbose >= 2);
@@ -871,16 +876,21 @@ sub MapSeeds{
    }
    
 return \%invertedconversiontablehash,\%compounds; 
-
+} else {
+  &RSAT::message::Info("Empty Input\n");
+  return ;
 }
 
+}
+#####
+## Map query names to Network node ID using nnn et gnn files
 sub QueryExactMetabNames{
 
   ################################################################
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -1031,6 +1041,7 @@ sub QueryExactMetabNames{
      my $EC = "NA";
      $EC = $key if ($hashreac{"type"} eq "EC");
      $return .=  $key."\t$EC\t".$hashreac{"ids"}."\t".$hashreac{"type"}."\t".$hashreac{"name"}."\n";
+     
    } 
   
   
