@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.36 2012/09/11 14:36:11 rsat Exp $
+# $Id: pathway-extractor,v 1.37 2012/09/12 08:19:47 rsat Exp $
 #
 ############################################################
 
@@ -71,7 +71,7 @@ Graph tool
 =head1 USAGE
 
 pathway_extractor -h -hp [-i inputfile] [-o output_directory] [-v verbosity] \
-    -g infile{graph} -a gene2ec -b ec/rxn/cpd2rxnid/cpdid [-d unique_descriptor] [-t temp_directory] [-show]
+    -g infile{graph} -a gene2ec -b ec/rxn/cpd2rxnid/cpdid [-d unique_descriptor] [-t temp_directory] [-ecg ECGenericity level] [-show]
 
 =head1 INPUT FORMAT
 
