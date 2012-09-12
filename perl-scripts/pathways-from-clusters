@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-clusters,v 1.14 2012/06/28 09:41:29 rsat Exp $
+# $Id: pathways-from-clusters,v 1.15 2012/09/12 08:19:47 rsat Exp $
 #
 ############################################################
 
@@ -39,7 +39,7 @@ Revised by Jacques van Helden (van-helden.j@univmed.fr)
 
 =head1 USAGE
 
-pathways-from-clusters -h [-i inputfile] [-o outputdirectory] [-v] -g graphfile -gnn gene2ec2reactions
+pathways-from-clusters -h [-i inputfile] [-o outputdirectory] [-v] -g graphfile -gnn gene2ec2reactions [-ecg ECGenericity level]
 
 =head1 INPUT FORMATS
 
@@ -84,7 +84,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   ## Input files
@@ -95,7 +95,7 @@ package main;
   our $operoncolnum="3"; 
   our %outfile = ();
   our %dir = ();
-
+  our $ECgenericitylevel = "4";
   our $verbose = "";
   our $in = STDIN;
   our $out = STDOUT;
@@ -118,7 +118,7 @@ package main;
   }
   %task = ();			## List of tasks to be executed
 
-  ################################################################
+  ################################################################$pathway_extractor_cmd .= " -
   ## Read argument values
   &ReadArguments();
 
@@ -210,6 +210,7 @@ unless (defined($infile{nnn})) {
       $pathway_extractor_cmd .= " -nnn ".$main::infile{nnn};
       $pathway_extractor_cmd .= " -C -d -F 7 -T pathsUnion ";
       $pathway_extractor_cmd .= " -o ".$main::dir{output};
+      $pathway_extractor_cmd .= " -ecg $ECgenericitylevel";
       $pathway_extractor_cmd .= " -process";
       
       ## TO DO WITH DIDIER: redirect STDER from pathway-extractor to a
@@ -382,6 +383,18 @@ If no output file is specified, the current directory is used.
     } elsif ($arg eq "-o") {
       $main::dir{output} = shift(@arguments);
 
+=pod
+
+=item	B<-ecg Max EC genericity>
+
+Ec max genericity level. Used to limit the level of genericity of EC when mapping. 
+The max genericity level may have level from 0 to 4 :  1.-.-.- (level 3) or 1.2.-.- (level2) or 1.2.3.- (level 1) or 1.2.3.4 (level 0 = no generic EC)
+Generic EC may contained a large number of reaction node that can increase drasticaly computatioal time and gives little information.
+Default is 4;
+
+=cut
+    } elsif ($arg eq "-ecg") {
+      $ECgenericitylevel = shift(@arguments);
 
 =pod
 
