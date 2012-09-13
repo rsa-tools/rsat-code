@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.44 2012/08/06 23:00:42 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.45 2012/09/13 08:51:56 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -57,11 +57,11 @@ if ($query->param("quick")) {
 
 ################################################################
 ## sequence file
-#if ($quick_mode) {
-#  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
-#} else {
+if ($quick_mode) {
+  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
+} else {
   ($sequence_file,$sequence_format) = &GetSequenceFile();
-#}
+}
 
 
 #### matrix-scan parameters
