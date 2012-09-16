@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.25 2012/08/22 14:27:28 jvanheld Exp $
+# $Id: install_software.mk,v 1.26 2012/09/16 22:53:59 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -909,3 +909,24 @@ install_homer_genome:
 	@echo
 	@echo "Installing HOMER genome	HOMER_GENOME=${HOMER_GENOME}"
 	(cd ${HOMER_BASE_DIR}; perl ./configureHomer.pl -install ${HOMER_GENOME})
+
+
+################################################################
+## clustalW (multiple alignment)
+install_clustalw: _download_clustalw _compile_clustalw
+
+CLUSTALW_BASE_DIR=${SRC_DIR}/clustalw
+CLUSTALW_ARCHIVE=clustalw-${CLUSTALW_VERSION}.tar.gz
+CLUSTALW_VERSION=2.1
+CLUSTALW_URL=http://www.clustal.org/download/current/${CLUSTALW_ARCHIVE}
+CLUSTALW_SOURCE_DIR=clustalw_latest
+_download_clustalw:
+	@mkdir -p ${CLUSTALW_BASE_DIR}
+	wget --no-directories  --directory-prefix ${CLUSTALW_BASE_DIR} -rNL ${CLUSTALW_URL} -A "${CLUSTALW_ARCHIVE}"
+	(cd ${CLUSTALW_BASE_DIR}; tar -xvzf ${CLUSTALW_ARCHIVE})
+	@echo ${CLUSTALW_BASE_DIR}
+
+_compile_clustalw:
+	(cd ${CLUSTALW_BASE_DIR}/${CLUSTALW_SOURCE_DIR}; ./configure; make clean ; make ; \
+	${SUDO} rsync -ruptvl src/clustalw2 ${BIN_DIR}/)
+	@echo "	clustalw2 should now be executable from ${BIN_DIR}";
