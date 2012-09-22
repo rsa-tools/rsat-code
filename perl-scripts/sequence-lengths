@@ -221,7 +221,7 @@ sub ReadArguments {
 
     } elsif ($ARGV[$a] eq "-format") {
       $in_format = $ARGV[$a+1];
-      &RSAT::message::Warning("Option -format has been replaced by -in_format");
+      &RSAT::message::Warning("sequence-lengths: option -format has been replaced by -in_format");
 
       ### only return sum of lengths
     } elsif ($ARGV[$a] eq "-sum") {
