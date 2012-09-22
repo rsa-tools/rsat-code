@@ -319,7 +319,49 @@ with specific options in order to create a position index, which will
 be further used for fast retrieval of the conserved regions under
 peaks.
 
+\section{Importing genomes from NCBI Bioproject}
 
 
+\begin{enumerate}
+\item Open a connection to the Bioproject Web site \\
+  \url{http://www.ncbi.nlm.nih.gov/bioproject}
+
+\item Enter a query to select the organism of interest.
+  E.g. \texttt{ostreococcus+tauri[orgn]}
+
+\item If the organism genome has been sequenced, you should see a
+  title ``Genome Sequencing Projects'' in the record. Find the
+  relevant project and open the link.
+
+  For example, for
+  \org{Ostreococcus tauri}, the most relevant project is PRJNA51609 \\
+  \url{http://www.ncbi.nlm.nih.gov/bioproject/51609}
+
+\item Take note of the \option{Accesssion} of this genome project:
+  since a same organism mighthave been sequenced several times, it
+  will be useful to include this Accession in the suffix of the name
+  of the file fo be downloaded.
+
+\item On the left side of the page, under \option{Related
+    information}, click the link \option{Nucleotide genomic
+    data}. This will display a list of Genbank entries (one per contig).
 
 
+\item \textbf{Important:} we recommend to create one separate
+  directory per organism, and to name this directory according to the
+  organism name followed by the genome project Accession number. For
+  example, for \org{Ostreococcus tauri}, the folder name would be
+  \file{Ostreococcus_tauri_PRJNA51609ID}.
+
+  This convention will facilitate the further steps of installation,
+  in particular the parsing of genbank-formatted files with the
+  program \program{parse-genbank.pl}.
+
+\item In the top corner of the page, click \option{Send to > File >
+    Genbank full > Create file}. Save the file in the
+  organism-specific directory described in the previous step.
+
+%% \item In 'Project Data', click the 'Genome: 20' link
+%%5) now you will be presented with a list of all 20 chromosomes. To get the full sequence + annotation in genbank format, set 'Display' to 'Genbank' (now your browser will take a while to load all the sequences).
+%%6) Use the download button to extract the files: Download -> GenBank (Full)
+\end{enumerate}
