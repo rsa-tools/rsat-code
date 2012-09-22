@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.114 2011/11/25 18:41:25 rsat Exp $
+# $Id: install-organism,v 1.115 2012/09/22 15:14:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -328,9 +328,13 @@ sub UpdateConfig {
 
   ## default limits of upstream region for retrieve-seq
   unless (defined($up_from)) {
+    ## If already defined in the file supported-organism.tab, keep
+    ## previously defined value (might have been specifically tuned
+    ## for some reason).
     if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
       $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
     } else {
+      ## Taxon-specific default values for sequence lengths
       if (($taxonomy =~ /^Bacteria/) || ($taxonomy =~ /^Archaea/)) {
 	$up_from=-400;
       } elsif ($taxonomy =~ /^Viruses/) {
@@ -338,6 +342,8 @@ sub UpdateConfig {
       } elsif ($taxonomy =~ /^Eukaryota; *Fungi/) {
 	$up_from=-800;
       } elsif ($taxonomy =~ /^Eukaryota; *Metazoa/) {
+	$up_from=-5000;
+      } elsif ($taxonomy =~ /^Eukaryota; *Viridiplantae/) {
 	$up_from=-5000;
       } else {
 	$up_from=-1000;
@@ -511,35 +517,43 @@ sub CreatePhylogeny {
 ################################################################
 ### extract the non-redudant set of intergenic and gene sequences
 sub IntergenicSegments {
-    chdir $dir{genome};
+  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 1);
 
-    ## retrieve intergenic sequences
-    my $command = "coding-or-not ";
-    $command .= "-v 1 " if ($verbose >= 1);
-    $command .= "-org $organism_short_name -return ncs,cs,pos,seq,stats";
-    &doit($command, $dry_run, $die_on_error, $verbose);
+  chdir $dir{genome};
 
-    my @types = ();
-    push @types, "gene";
-    push @types, "intergenic";
+  ## Retrieve sequences for different subtypes of genome regions
+  &RSAT::message::TimeWarn("coding-or-not: extracting sequences for different types of genomic regions") if ($main::verbose >= 2);
+  my $command = "coding-or-not ";
+  $command .= "-v 1 " if ($verbose >= 1);
+  $command .= "-org $organism_short_name -return ncs,cs,pos,seq,stats";
+  &doit($command, $dry_run, $die_on_error, $verbose);
 
-    foreach my $seq_type (@types) {
-	my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}_segments.fasta";
+  my @types = ();
+  push @types, "gene";
+  push @types, "intergenic";
 
-	#### draw sequence length distributions
-	&SeqLengthDistribution($seq_file, "fasta", $seq_type, 50) if ($task{seq_len_distrib});
+  foreach my $seq_type (@types) {
+    my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}_segments.fasta";
 
-	#### compress sequence file
-	if (-e $seq_file) {
-	  $command = "gzip -f $seq_file";
-	  &doit($command, $dry_run, $die_on_error, $verbose);
-	}
+    #### draw sequence length distributions
+    &RSAT::message::TimeWarn("Computing sequence length for genomic regions", $seq_type) if ($main::verbose >= 2);
+    &SeqLengthDistribution($seq_file, "fasta", $seq_type, 50) if ($task{seq_len_distrib});
 
-	#### purge sequences
-	&PurgeSequences($seq_file) if ($purged_frequencies);
+    #### compress sequence file
+    if (-e $seq_file) {
+      &RSAT::message::TimeWarn("Compressing sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
+      $command = "gzip -f $seq_file";
+      &doit($command, $dry_run, $die_on_error, $verbose);
     }
 
-    chdir $dir{main};
+    #### purge sequences
+    if ($purged_frequencies) {
+      &RSAT::message::TimeWarn("Purging sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
+      &PurgeSequences($seq_file);
+    }
+  }
+
+  chdir $dir{main};
 }
 
 
@@ -600,7 +614,7 @@ sub SeqLengthDistribution {
 	&RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $seq_type, "Working dir", $pwd);
     }
 
-    my $command = "sequence-lengths -i $seq_file -format ".$format;
+    my $command = "sequence-lengths -i $seq_file -in_format ".$format;
     $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.tab";
     $command .= "; cut -f 2 ${organism_short_name}_${seq_type}_segments_lengths.tab ";
     $command .= "| classfreq -ci $ci -v -from $classfreq_from";
