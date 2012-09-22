@@ -2,6 +2,7 @@ package RSAT::server;
 
 require RSAT::util;
 require RSAT::message;
+require RSAT::error;
 
 unless ($ENV{RSAT}) {
     $ENV{RSAT} = $0; #
@@ -128,8 +129,8 @@ server. If denied, die with error message.
 sub DetectDeniedIP {
 
     ## IP address of the client computer
-    my $client_ip = $ENV{'REMOTE_ADDR'};
-    &RSAT::message::Info("Your IP address: ".$client_ip) if ($main::verbose >= 5);
+    my $client_ip = &RSAT::util::trim($ENV{'REMOTE_ADDR'});
+    &RSAT::message::Info("Your IP address: '".$client_ip."'") if ($main::verbose >= 10);
 
     ## File with the list of denied addresses
     my $rsat_site = $ENV{rsat_site};
@@ -142,8 +143,13 @@ sub DetectDeniedIP {
       my ($in) = &RSAT::util::OpenInputFile($denied_ip_file);
       while (<$in>) {
 	chomp();
-	my ($ip, $nb, $reason) = split(/\t/, $_);
-	&RSAT::message::Debug("Denied", $ip) if ($main::verbose >= 10);
+	next unless /\S/; ## Skip empty lines
+	next if /^;/; ## Skip comment lines
+	next if /^#/; ## Skip comment lines
+	my ($ip, $nb, $reason) = split(/\s+/, $_);
+	&RSAT::message::Debug("Denied '".$ip."'",
+			      "Your IP address: '".$client_ip."'") if ($main::verbose >= 10);
+
 	if ($client_ip eq $ip) {
 	  ################################################################
 	  ## Report denied access
@@ -168,8 +174,8 @@ sub DetectDeniedIP {
 	  chmod 0777, $denial_file;
 
 	  ## Issue denial message and die
-	  die "Access denied to IP address $client_ip\t$reason\n";
-
+	  &RSAT::error::FatalError("Access denied: your IP address (".$client_ip.") has been blacklisted on this server.", 
+				   "Reason: ".$reason);
 	}
       }
     }
@@ -553,7 +559,6 @@ sub InitRSAT {
   }
   $main::HTML = "$ENV{RSAT}/public_html"; 
   $main::WWW_TMP = "$ENV{rsat_www}/tmp";
-  #$ENV{SERVER_ADMIN} = "jvanheld\@bigre.ulb.ac.be";
   $main::LOGS = "$ENV{RSAT}/logs";
   $main::counter_file = "$LOGS/count-file";
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
