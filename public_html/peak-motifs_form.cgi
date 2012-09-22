@@ -328,7 +328,7 @@ sub Panel2 {
   print  $query->textfield(-name=>'max_seq_len',
 			   -default=>$default{max_seq_len},
 			   -size=>3);
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<b>bp on each site of peak centers</b>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b>bp on each side of peak centers</b>\n";
 
 
   print "</fieldset><p/>";
