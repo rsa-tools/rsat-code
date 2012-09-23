@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.242 2012/08/23 04:50:19 jvanheld Exp $
+# $Id: peak-motifs,v 1.243 2012/09/23 05:34:32 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.242 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.243 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -4662,7 +4662,7 @@ Class interval for I<position-analysis>.
 
       ## Other parameters are not accepted
     } else {
-      &RSAT::error::FatalError(join("\t", "Invalid option", $arg));
+      &RSAT::error::FatalError("Invalid option", $arg);
 
     }
 
