@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.68 2011/11/11 06:46:25 rsat Exp $
+# $Id: parse-genbank.pl,v 1.69 2012/09/23 05:34:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -46,7 +46,7 @@ package main;
     $user="rsat";
     $password="rsat";
     $full_path = 0;
-    $test = 0; 
+    $test = 0;
     $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
     $test_lines = 10000; ## macimal number of lines to parse per file
 
@@ -105,17 +105,17 @@ package main;
 		   Genbank::Organism
 		   Genbank::Gene
 		   Genbank::CDS
-		   Genbank::mRNA 
-		   Genbank::scRNA 
-		   Genbank::tRNA 
-		   Genbank::rRNA 
+		   Genbank::mRNA
+		   Genbank::scRNA
+		   Genbank::tRNA
+		   Genbank::rRNA
 		   Genbank::repeat_region
-		   Genbank::misc_RNA 
-		   Genbank::misc_feature 
+		   Genbank::misc_RNA
+		   Genbank::misc_feature
 		   Genbank::Source);
 
     ## Default output fields
-    $features->set_out_fields(qw(id 
+    $features->set_out_fields(qw(id
 				 type
 				 name
 				 contig
@@ -152,7 +152,7 @@ package main;
 	unless (-d $dir{input}) {
 	    &RSAT::error::FatalError("Input directory '$dir{input}' does not exist.\n");
 	}
-    } 
+    }
 
     #### organism name
     unless ($org) {
@@ -246,13 +246,13 @@ package main;
     $out_file{error} = "$dir{output}/genbank.errors.txt";
     $out_file{stats} = "$dir{output}/genbank.stats.txt";
 
-    ### Sequence directory 
+    ### Sequence directory
     unless ($noseq) {
 	$dir{sequences} = $dir{output};
     }
 
     ### open error report file
-    open ERR, ">$out_file{error}" 
+    open ERR, ">$out_file{error}"
 	|| die "Error: cannot write error file $out_file{error}\n";
 
     #### verbose ####
@@ -277,7 +277,7 @@ package main;
     chdir $dir{main};
     $chrom = &OpenOutputFile("$dir{output}/contigs.txt"); # file with contig IDs
     foreach my $contig ($contigs->get_objects()) {
-	print $chrom join ("\t", 
+	print $chrom join ("\t",
 			   $contig->get_attribute("file"),
 			   $contig->get_attribute("id"),
 			   $contig->get_attribute("form")), "\n";
@@ -302,7 +302,7 @@ package main;
     &PrintStats($out_file{stats}, @classes);
 
     @class_factories = qw (
-			   organisms 
+			   organisms
 			   features
 			   contigs
 			   genes
@@ -319,7 +319,7 @@ package main;
 
     foreach my $factory_name (@class_factories) {
 	my $class_factory = $$factory_name;
-	&RSAT::message::TimeWarn("Dumping class $factory_name") 
+	&RSAT::message::TimeWarn("Dumping class $factory_name")
 	  if ($verbose >= 1);
 	$suffix = "_$org" unless ($no_suffix);
 	$class_factory->dump_tables($suffix);
@@ -364,24 +364,24 @@ NAME
 	parse-genbank.pl
 
         2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
-	
+
 USAGE
         parse-genbank.pl [-dir input_dir][-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
 	Parse one or sveral Genbank files for extracting genome
 	information.
-	
+
 	Genbank genomes can be retrieved by anonymous ftp :
 		ftp://ftp.ncbi.nlm.nih.gov/genomes
 
 	Genome sequence and annotations are parsed from the genbank
-	flat files (extension .gbk).  
+	flat files (extension .gbk or .gb).
 
 	Each directory contains the genome of one organism.  Note that
 
 	  - a single directoy can contain several files, if the
-	    organism has several contigs.  
+	    organism has several contigs.
 
           - a single .gbk file can contain several contigs, if the
 	    genome is not fully assembled for example.
@@ -413,11 +413,11 @@ OPTIONS
 
 	-i	input directory
 		input directory. This directory must contain one or
-		several genbank files (extension .gbk by default). 
+		several genbank files (extension .gbk by default).
 
 	-source	data source (default: $data_source).
 
-	-ext    extension to be found in the directory specified 
+	-ext    extension to be found in the directory specified
 	        with the option -i. Default: $ext
 
 	-org    organism name (you should replace spaces by
@@ -488,7 +488,7 @@ OPTIONS
 	-schema database schema (default: $schema)
 	-host	database host (efault: $host)
 	-user	database user (efault: $user)
-	-password	
+	-password
 		database password (default: $password)
 	-fullpath
 		Specify the full table path
@@ -525,7 +525,7 @@ parse-genbank.pl options
 -host		database host (default: $host)
 -user		database user (default: $user)
 -password	database password (default: $password)
--fullpath	Specify the full table path in the SQL scripts. 
+-fullpath	Specify the full table path in the SQL scripts.
 End_short_help
   close HELP;
   exit(0);
@@ -533,7 +533,7 @@ End_short_help
 
 
 ################################################################
-#### read arguments 
+#### read arguments
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
 	### verbose ###
@@ -543,16 +543,16 @@ sub ReadArguments {
 	    } else {
 		$verbose = 1;
 	    }
-	    
+
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
-	    
-	    ### input file 
+
+	    ### input file
 	} elsif ($ARGV[$a] eq "-f") {
 	    $inputfiles++;
 	    push @genbank_files, $ARGV[$a+1];
@@ -606,23 +606,23 @@ sub ReadArguments {
 	    ### database schema
 	} elsif ($ARGV[$a] eq "-schema") {
 	    $schema = $ARGV[$a+1];
-	    
+
 	    ### database host
 	} elsif ($ARGV[$a] eq "-host") {
 	    $host = $ARGV[$a+1];
-	    
+
 	    ### database user
 	} elsif ($ARGV[$a] eq "-user") {
 	    $user = $ARGV[$a+1];
-	    
-	    ### password 
+
+	    ### password
 	} elsif ($ARGV[$a] eq "-password") {
 	    $password = $ARGV[$a+1];
-	    
+
 	    ### full path
 	} elsif ($ARGV[$a] eq "-fullpath") {
 	    $full_path  = 1;
-	    
+
 	}
     }
 }
@@ -672,7 +672,7 @@ sub RefseqPostProcessing {
 	} else {
 	    &ErrorMessage(join ("\t", "Protein", $id, "version", $version, "Invalid GI"));
 	}
-	
+
 	$protein->set_attribute("GI", $gi);
 	$protein->set_attribute("version_id", $version_id);
 	$protein->set_attribute("EMBl_XRef", $embl_xref);
@@ -710,9 +710,9 @@ sub ExportProteinSequences {
         my $description = join($separator, $org,$id,$gene);
 	$description .= $separator;
 	if ($cds->get_attribute("description")) {
-          $description .= $cds->get_attribute("description"); 
+          $description .= $cds->get_attribute("description");
 	} else {
-          $description .= join ("; ", $org, $gene, $cds->get_attribute("note"));   
+          $description .= join ("; ", $org, $gene, $cds->get_attribute("note"));
        }
 
         my $pp_description;
@@ -738,7 +738,7 @@ sub ExportMaskedSequences {
 	my $contig_id = $contig->get_attribute("id");
 	my $sequence = `cat $file`;
 	&RSAT::message::TimeWarn(join("\t", "Masking sequence",
-				      "contig", 
+				      "contig",
 				      $contig_id,
 				      "length", $contig_len)) if ($main::verbose >= 2);
 
@@ -755,10 +755,10 @@ sub ExportMaskedSequences {
 	    $end =~ s/\>//g;
 	    next unless ((&IsReal($start)) && (&IsReal($end)));
 	    my $len = $end - $start + 1;
-	    
+
 #	    my $before = substr($sequence, $offset - 3, $len + 6);
 #	    my $after = substr($sequence, $offset - 3, $len + 6);
-# 	    &RSAT::message::Debug("Masking region", 
+# 	    &RSAT::message::Debug("Masking region",
 # 				  $region_contig,
 # 				  "contig len=".$contig_len,
 # 				  "start=".$start,
@@ -768,7 +768,7 @@ sub ExportMaskedSequences {
 # ##				  $before,
 # ##				  $after,
 # 				  ) if ($main::verbose >= 20);
-	    
+
 	    substr($sequence, $offset, $len) = "n"x$len;
 	}
 	my $masked_sequence_file = $contig_id."_repeat_masked.raw";
@@ -776,11 +776,11 @@ sub ExportMaskedSequences {
 	print $masked $sequence;
 	close $masked;
 	&RSAT::message::TimeWarn(join("\t", "Exported masked sequence",
-				      "contig", 
+				      "contig",
 				      $contig_id,
-				      "dir", 
+				      "dir",
 				      $dir{sequence},
-				      "file", 
+				      "file",
 				      $masked_sequence_file)
 				 ) if ($main::verbose >= 2);
 
