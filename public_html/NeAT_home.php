@@ -1,6 +1,5 @@
-<?php
-  require ('functions.php');
-  echo("
+<!-- Note by JvH: there is not a single dynamic element here, we should check the interest of using a php rather than a html page -->
+
 <html>
 <head>
 <title>NeAT Home Page</title>
@@ -9,65 +8,64 @@
 </head>
 <body class='info'>
 <br>
-<table class = 'title' cellpadding=10 width = 100%>
+<table class = 'title' cellpadding='10' width ='100%'>
     <tr>
 
 
     <td align=center valign = top>
-    <font color='#0000dd' size=-2>
+    <font color='#0000dd' size='-2'>
     <a href='http://www.bigre.ulb.ac.be' target=_blank>
-    <img src='images/bigre_logo.png' alt='BiGRe lab' border=1 height=75>
+    <img src='images/bigre_logo.png' alt='BiGRe lab' border='1' height='75'>
     <br>BiGRe</a>
     </font>
     </td>
 
     <td align=center>
     <H1>Network analysis tools</H1>
-
     </td>
 
 
     <td align=center valign = top width='160'>
       <font color='#006600' size=-2><a href='http://www.ulb.ac.be' target=_blank>
-	  <img src='images/logo_ULB.jpg' alt='ULB logo' border=0 width=75 height = 75>
+	  <img src='images/logo_ULB.jpg' alt='ULB logo' border='0' width='75' height='75'>
 	  <br>
 	  Universit&eacute; Libre de Bruxelles</a>
       </FONT>
-    </TD>
+    </td>
     </TR>
 </TABLE>
 
      <div class = 'serverlist'>
     <table border=0 cellspacing=3 cellpadding=7 class='serverlist'>
     <TR>
-    <TD><A HREF='images/NeAT_flowchart.png'><B>
-    Tool Map</B></A></TD>
+    <td><a href='images/NeAT_flowchart.png'><B>
+    Tool Map</B></A></td>
 
-    <TD><A HREF='neat_intro.html'><B>
-    Introduction</B></A></TD>
+    <td><a href='neat_intro.html'><B>
+    Introduction</B></A></td>
 
-    <TD><A HREF='http://www.bigre.ulb.ac.be/forums/'><B>
-    Forum</B></A></TD>
+    <td><a href='http://www.bigre.ulb.ac.be/forums/'><B>
+    Forum</B></A></td>
 
-    <TD><A HREF='neat_tutorial.html'><B>
-    Tutorials</B></A></TD>
+    <td><a href='neat_tutorial.html'><B>
+    Tutorials</B></A></td>
 
 
-    <TD><A HREF='neat_publications.html'><B>
-    Publications</B></A></TD>
+    <td><a href='neat_publications.html'><B>
+    Publications</B></A></td>
 
-    <TD><A HREF='neat_credits.html'><B>
-    Credits</B></A></TD>
+    <td><a href='neat_credits.html'><B>
+    Credits</B></A></td>
 
-    <TD><A HREF='data/'><B>
-    Data</B></A></TD>
+    <td><a href='data/'><B>
+    Data</B></A></td>
 
-    <TD><A HREF='neat_links.html'><B>
+    <td><a href='neat_links.html'><B>
 
-    Links</B></A></TD>
+    Links</B></A></td>
 
-    <TD><A HREF='distrib/index.html'><B>
-    Download</B></A></TD>
+    <td><a href='distrib/index.html'><B>
+    Download</B></A></td>
 
     </tr>
     </table>
@@ -80,37 +78,74 @@
 
 
 <h3>News</h3>
+
+<h4>New tools</h4>
+
 <ul>
-<p><li>Lima-Mendez, G. and van Helden, J. (2009). <b>The powerful law of
-the power law and other myths in network biology</b>. <br>Mol. BioSyst., 2009,
-5, 1482 - 1493, DOI: 10.1039/b908681a.
-<a target='_blank'
-   href='http://www.ncbi.nlm.nih.gov/pubmed/20023717'>Pubmed
-  20023717</a>.
-</li></p>
-
-<p><li><font color='red'>New !</font> An evaluation of parametric
-  choices for <b><i>metabolic pathfinder</i></b> in
-  <a target='_top'
-     href='http://www.ncbi.nlm.nih.gov/pubmed/19281817'><b>Journal of
-      Molecular Biology</b></a> (May 2009)
-</li></p>
-
-<p><li>Four articles explaining <b><i>how to use
-  <a target='_top' href='$WWW_RSA'>RSAT</a> and
-  <a target='_top' href='$WWW_RSA/index_neat.html'>NeAT</a> 
-  </i></b> in <a target='_top'
-  href='http://www.nature.com/nprot/journal/v3/n10/index.html'><b>Nature
-  Protocols</b></a> (Sept 2008)
-</li></p>
-
-<p><li><b><i>Summary of the NeAT tools</i></b> in the
-  <a target='_top'
-     href='http://nar.oxfordjournals.org/cgi/content/abstract/gkn336'><b>NAR Web server issue 2008</b></a>
-  <a target=_blank
-     href='http://nar.oxfordjournals.org/cgi/screenpdf/gkn336v1'>[Free PDF]</a> (June 2008)
-</li></p>
+	<li>
+	  <p>In the context of the EU-funded
+	    MICROME project, focused on the
+	    annotation of bacterial metabolism, we
+	    developed a simplified interface for the
+	    pathway extraction tool, specifically
+	    adapted to discover metabolic pathways
+	    from sets of functionally related
+	    bacterial genes (e.g. co-expression
+	    clusters, operons, syntons, synteny
+	    groups, ...).</p>
+	</li>
 </ul>
+
+<h4>Recent publications</h4>		      
+<ol>
+
+<p><li><u>Book:</u> Jacques van Helden, Ariane Toussaint and Denis
+  Thieffry (2012). Bacterial Molecular Networks. Volume in the series
+  Methods in Molecular Biology 804 (28 chapters). 
+  [<a target='_blank' href='http://www.springer.com/life+sciences/microbiology/book/978-1-61779-360-8'>Publisher's site</a>]
+</li></p>
+
+<p><li>
+  van Helden, J., Toussaint, A. and Thieffry, D. (2012). Bacterial
+  molecular networks: bridging the gap between functional genomics and
+  dynamical modelling. Methods Mol Biol 804, 1-11.
+  [<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/22144145'>PMID 22144145</a>]
+</li></p>
+
+<p><li>Lima-Mendez, G. (2012). Reticulate Classification of Mosaic
+    Microbial Genomes Using NeAT Website. Methods Mol Biol 804, 81-91.
+  [<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/22144149'>PMID 22144149</a>]
+</li></p>
+
+<p><li>
+  Faust, K. and van Helden, J. (2012). Predicting Metabolic Pathways
+  by Sub-network Extraction. Methods Mol Biol 804, 107-30.
+  [<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/22144151'>PMID 22144151</a>]
+</li></p>
+
+<p><li>Broh&eacute;e, S. (2012). Using the NeAT Toolbox to Compare Networks
+    to Networks, Clusters to Clusters, and Network to Clusters. Methods
+    Mol Biol 804, 327-42.
+    [<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/22144162'>PMID 22144162</a>]
+</li></p>
+
+<li>Faust, K., Croes, D. and van Helden, J. (2011). Prediction of
+  metabolic pathways from genome-scale metabolic networks. Biosystems
+  105, 109-21.
+  [<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/21645586'>PMID 21645586</a>]
+  [<a target='_blank' href='http://www.sciencedirect.com/science/article/pii/S0303264711000839'>doi:10.1016/j.biosystems.2011.05.004</a>]
+</li>
+
+<li>Faust, K., Dupont, P., Callut, J. and van Helden,
+  J. (2010). Pathway discovery in metabolic networks by subgraph
+  extraction. Bioinformatics 26:1211-8. <a target='_blank'
+					   href='http://www.ncbi.nlm.nih.gov/pubmed/20228128'>[Pubmed 20228128]</a>
+</li>
+
+<li><p><a href='publications.html'> ... other
+publications </a></p></li>
+
+</ol>
 
 <p>This website is free and open to all users.</p>
 
@@ -124,12 +159,15 @@ the power law and other myths in network biology</b>. <br>Mol. BioSyst., 2009,
 <H4 class='footer'><i>
 For suggestions or information request, please contact :
 <BR>
-<A HREF='mailto:sylvain-at-bigre.ulb.ac.be'>
+<a href='mailto:sylvain-at-bigre.ulb.ac.be'>
 Sylvain Broh&eacute;e (sylvain-at-bigre.ulb.ac.be)</i>
 </A>
 </H4>
 
 </body>
 
-</html>");
+</html>
+<?php
+  require ('functions.php');
+  echo("");
 ?>
