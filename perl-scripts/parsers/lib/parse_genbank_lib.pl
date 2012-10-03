@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.45 2011/10/21 22:56:53 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.46 2012/10/03 05:21:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -142,7 +142,7 @@ sub ParseAllGenbankFiles {
     }
     push @preferred_ids_cds, qw (locus_tag protein_id GI GeneID gene); ## These IDs will be used if the preferred ID is not found
 
-    &RSAT::message::TimeWarn("Finding preferred IDs for CDS", join(",", @preferred_ids_cds)) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Finding preferred IDs for CDS", join(",", @preferred_ids_cds)) if ($main::verbose >= 3);
     foreach my $object ($CDSs->get_objects()) {
       $object->UseAttributesAsID(@preferred_ids_cds);
     }
@@ -155,7 +155,7 @@ sub ParseAllGenbankFiles {
     } else {
       @preferred_ids_mrna = qw (locus_tag transcript_id GI);
     }
-    &RSAT::message::TimeWarn("Finding preferred IDs for mRNA", join(",", @preferred_ids_mrna)) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Finding preferred IDs for mRNA", join(",", @preferred_ids_mrna)) if ($main::verbose >= 3);
     foreach my $object ($mRNAs->get_objects()) {
       $object->UseAttributesAsID(@preferred_ids_mrna);
     }
@@ -166,7 +166,7 @@ sub ParseAllGenbankFiles {
       my $object_type = lc($holder->get_object_type());
       $object_type =~ s/genbank:://;
       my $preferred_id = $preferred_id{$object_type} || "locus_tag";
-      &RSAT::message::TimeWarn("Finding preferred IDs for class", $object_type, $preferred_id) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Finding preferred IDs for class", $object_type, $preferred_id) if ($main::verbose >= 3);
       foreach my $object ($holder->get_objects()) {
 	$object->UseAttributesAsID($preferred_id);
       }
@@ -683,7 +683,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 
 
       } else {
-	&RSAT::message::Warning("file ".$short_name{$org}."line",$l,"\tnot parsed",$line) if ($main::verbose >= 2);
+	&RSAT::message::Warning("file ".$short_name{$org}."line",$l,"\tnot parsed",$line) if ($main::verbose >= 3);
       }
     }
     close GBK;
