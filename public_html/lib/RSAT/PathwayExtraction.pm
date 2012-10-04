@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: PathwayExtraction.pm,v 1.13 2012/09/11 14:36:11 rsat Exp $
+# $Id: PathwayExtraction.pm,v 1.14 2012/10/04 07:57:26 rsat Exp $
 #
 ############################################################
 
@@ -287,7 +287,7 @@ sub Inferpathway{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
   my ($input,
        $isinputfile,
@@ -580,7 +580,7 @@ my ($inputfile,
 
     ################################################################
     # Searching all reactions information for the reaction that are in  the inferred pathway graph
-    &RSAT::message::TimeWarn("Searching information about extracted reactions") if ($verbose >= 1);my $dashcount = t$EC =~ tr/-//;
+    &RSAT::message::TimeWarn("Searching information about extracted reactions") if ($verbose >= 1);my $dashcount = $EC =~ tr/-//;
     $reactioncpdquery =~s/\|+$//;
    
  
@@ -768,7 +768,7 @@ sub MapSeeds{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
@@ -890,7 +890,7 @@ sub QueryExactMetabNames{
   ## Initialise parameters
   #
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
    my $query_ids;
   my @query_id_list;
