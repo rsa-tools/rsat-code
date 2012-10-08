@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.19 2011/12/05 12:51:40 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.20 2012/10/08 22:53:39 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -146,21 +146,30 @@ foreach my $org (sort(keys( %genes_per_org))) {
 
   my @genes = @{$genes_per_org{$org}};
   if (scalar(@genes) > 0) {
+    my $quick_mode_done = 0;
     if ($quick_mode) {
       my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$org."/genome";
       my $seq_file = $genome_dir."/".$org."_upstream-noorf.ft";
-      &RSAT::message::TimeWarn ($org, "Extracting sequences from pre-computed upstream sequences", $seq_file) if ($main::verbose >= 2);
-      foreach my $gene (@genes) {
+      if (-e $seq_file) {
+	  &RSAT::message::TimeWarn ($org, "Extracting sequences from pre-computed upstream sequences", $seq_file) if ($main::verbose >= 2);
+	  foreach my $gene (@genes) {
 #	$command = "grep '$gene' ".$seq_file;
-	$command = "awk -F'\\t' '\$3 == \"".$gene."\"";
-	$command .= '{print ">"$10"\t"$9"\n"$7}\' ';
-	$command .= " ".$seq_file;
-	$command .= ">> ".$outfile{output};
-	&RSAT::message::Debug($command)  if ($main::verbose >= 5);
-	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      $command = "awk -F'\\t' '\$3 == \"".$gene."\"";
+	      $command .= '{print ">"$10"\t"$9"\n"$7}\' ';
+	      $command .= " ".$seq_file;
+	      $command .= ">> ".$outfile{output};
+	      &RSAT::message::Debug($command)  if ($main::verbose >= 5);
+	      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  }
+	  $quick_mode_done = 1;
+      } else {
+	  &RSAT::message::Warning($org, "missing pre-computed upstream sequence file", $seq_file) if ($main::verbose >= 1);
+	  $quick_mode_done = 0;
       }
+    }
 
-    } else {
+    ## Retrieve the sequence with retrieve-seq unless it has already been retrieve in quick mode
+    unless ($quick_mode_done) {
 
       my $command = "$retrieve_seq_cmd -org ".$org;
       unless ($label_specified) {
@@ -332,19 +341,21 @@ Quick mode assumes that
 
 =over
 
-=item queries are formulated as IDs (not gene names). Note that this
-corresponds to the default output format of I<get-orthologs>, the
-program usually evoked to obtain the lists of orthologs used as input
-for I<retrieve-seq-multigenome>.
+=item queries are formulated as I<IDs> (I<not gene names>). Note that this
+corresponds to the default output format of I<get-orthologs>, the program
+usually evoked to obtain the lists of orthologs used as input for
+I<retrieve-seq-multigenome>.
 
-=item Upstream sequences have been pre-installed in features format
-the $RSAT genome folder. This is automatically done with the command
-I<install-organism -task allup>.
+=item Upstream I<sequences have been pre-installed> in features format the
+$RSAT genome folder. This is automatically done during genome installation
+with the command I<install-organism -task allup>.
 
-=item Sequences have the default length and are truncated to avoid
-overlap with upstream orfs (option I<-noorf> is active). All
-additional parameters (e.g. -from, -to, ...) are ignored instead of
-being passed to I<retrieve-seq> as in slow mode.
+=item Sequences have the I<default length> and are truncated to avoid overlap
+with upstream orfs (option I<-noorf> is active). All additional parameters
+(e.g. -from, -to, ...) are ignored instead of being passed to I<retrieve-seq>
+as in slow mode.
+
+=back
 
 =cut
 
