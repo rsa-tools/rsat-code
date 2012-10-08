@@ -1,12 +1,11 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.22 2012/10/08 23:06:07 rsat Exp $
+# $Id: retrieve-seq-multigenome,v 1.23 2012/10/08 23:08:44 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
-
 #use strict;
 
 =pod
