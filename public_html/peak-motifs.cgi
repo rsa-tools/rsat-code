@@ -32,7 +32,7 @@ $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
 $output_dir_prefix = sprintf "peak-motifs.%s", &AlphaDate();
 $output_dir_full_path = &RSAT::util::make_temp_file("", $output_dir_prefix, 1, 1); $output_dir = &ShortFileName($tmp_file_path);
 $output_prefix = "peak-motifs";
-system("mkdir -p $output_dir_full_path");
+system("mkdir -p $output_dir_full_path; chmod 755 $output_dir_full_path");
 
 ################################################################
 ## result page header
