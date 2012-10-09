@@ -99,7 +99,7 @@ $parameters .= " -nowarn";
 
 ## Output file
 $result_file = $tmp_file_path.".tab";
-push @result_files, ("gene info",$result_file);
+push @result_files, ("Orthology table",$result_file);
 
 ## Report the command
 &ReportWebCommand($command." ".$parameters);
