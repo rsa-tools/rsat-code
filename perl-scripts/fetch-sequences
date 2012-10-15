@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.20 2012/10/15 19:57:20 jvanheld Exp $
+# $Id: fetch-sequences,v 1.21 2012/10/15 20:13:30 jvanheld Exp $
 #
 ############################################################
 
@@ -220,7 +220,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -422,6 +422,10 @@ package main;
       } else {
 	$left = $right;
       }
+    } elsif ($reference eq "center") {
+      $center = ($left + $right)/2;
+      $left = $center;
+      $right = $center;
     }
 
     ## Check if the right position is not outside the genome
@@ -740,7 +744,7 @@ sides.
 
 =pod
 
-=item B<-reference segment|end|start>
+=item B<-reference segment|end|start|center>
 
 Reference from which the sequences should be fetched.
 
@@ -752,14 +756,15 @@ Retrieve sequences from the start to the end positions of each feature
 (possibly extended with the options I<-upstr_ext>, I<-downstr_ext> or
 I<-extend>).
 
-=item start | end
+=item start | end | center
 
-Retrieve sequences relative to repsectively the start or the end
-position of each feature. 
+Retrieve sequences relative to repsectively the start, the end or the
+central position of each feature.
 
 This option is generally combined with the options I<-upstr_ext>,
-I<-downstr_ext> or I<-extend>, in order to retrieve sequences of a fixed
-width around the end coordinate.
+I<-downstr_ext> or I<-extend>, in order to retrieve sequences of a
+fixed width around the reference coordinate (e.g. 200 bp on each side
+of peak centers).
 
 =back
 
