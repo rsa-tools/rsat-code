@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.19 2012/08/06 11:45:24 jvanheld Exp $
+# $Id: fetch-sequences,v 1.20 2012/10/15 19:57:20 jvanheld Exp $
 #
 ############################################################
 
@@ -74,6 +74,14 @@ The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold
 
 The starting position of the feature in the chromosome or
 scaffold. The first base in a chromosome is numbered 0.
+
+B<Note> from Jacques van Helden: the UCSC genome browser adopts a
+somewhat inconsistent convention for start and end coordinates: the
+start position is zero-based (first nucleotide of a
+chromosome/scaffold has coordinate 0), but the end position is
+considered not included in the selection. This is equivalent to have a
+zero-based coordinate for the start, and a 1-base coordinate for the
+end.
 
 =item 3. chromEnd
 
@@ -212,7 +220,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -248,7 +256,7 @@ package main;
 
   ## Parameters for connecting the DAS server
   our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
-  our $timeout = 20; ## seconds for the timeout at UCSC
+  our $timeout = 60; ## seconds for the timeout at UCSC
   our $max_trials = 20; ## Number of trials in case of timeout
 
   ################################################################
@@ -286,15 +294,15 @@ package main;
   $log = &OpenOutputFile($outfile{log});
 
   ################################################################
-  ##Initialising parameter for length of each chr
+  ## Initialize parameter for length of each chr
   our %chr_end  = ();
 
   ## Send request to DAS server
-  my @response = $das->entry_points(-dsn=>[$das_server_url]);
+  my @entry_points = $das->entry_points(-dsn=>[$das_server_url]);
 
   ## Treat request results
-  for my $id (@response) {
-     if ($id->is_success) {
+  for my $id (@entry_points) {
+    if ($id->is_success) {
       my @dsns = $id->results;
       foreach (@dsns) {
         $chr_end{"chr".$_->ref} = $_->end; #put result in hash table with key "chr" and value "chr_end"
@@ -310,22 +318,25 @@ package main;
   if ($main::infile{input_url}) {
     &RSAT::message::TimeWarn("Transferring input file from URL", $main::infile{input_url}) if ($main::verbose >= 2);
     use LWP::Simple;
-#    my $content = get($main::infile{input_url});
-#    my @content_lines = split (/[\n\r]/, $content);
-#    die "Could not get URL ".$infile{input_url} unless ($content);
+    #    my $content = get($main::infile{input_url});
+    #    my @content_lines = split (/[\n\r]/, $content);
+    #    die "Could not get URL ".$infile{input_url} unless ($content);
     if (defined($outfile{output})) {
       $main::outfile{input} = $main::outfile{output};
       $main::outfile{input} =~ s/\.fasta$//;
       $main::outfile{input} =~ s/\.fa$//;
       $main::outfile{input} .= ".bed";
     } else {
-      ## Define temporary directory
-      if ($main::TMP) {
-	$tmp_dir = $main::TMP;
-      } else {
-	$tmp_dir = ".";
-      }
-      $main::outfile{input} = &RSAT::util::make_temp_file($tmp_dir, "fetch-sequences");
+      ## Create a temporary directory to store the downloaded file
+#      $tmp_dir = &RSAT::util::make_temp_file("", "fetch-sequences", 1, 1);
+#      ## Define temporary directory
+#      if ($main::TMP) {
+#	$tmp_dir = $main::TMP;
+#      } else {
+#	$tmp_dir = ".";
+#      }
+      $main::outfile{input} = &RSAT::util::make_temp_file("", "fetch-sequences");
+      &RSAT::message::Info("Storing downloaded input file as", $main::outfile{input}) if ($main::verbose >= 3);
     }
     getstore($main::infile{input_url}, $main::outfile{input});
     &RSAT::message::TimeWarn("Genomic coordinates transferred to local file", $main::outfile{input}) if ($main::verbose >= 2);
@@ -339,11 +350,13 @@ package main;
   &RSAT::message::TimeWarn("Reading genomic coordinates") if ($main::verbose >= 2);
   my $i = 0;
   my $l = 0;
+  my $query_nb = 0;
   while (<$main::in>) {
     $l++;
     next if (/^#/); ## Skip comment lines
+    next if (/^;/); ## Skip RSAT-like comment lines
     next unless (/\S/); ## Skip empty lines
-    next unless (/\t/); ## Skip starting comment lines
+    next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
     chomp();
 
     if (($top > 0) && ($i >= $top)) {
@@ -351,6 +364,11 @@ package main;
       last;
     }
     my ($chrom, $left, $right, $name, $score, $strand) = split(/\t/);
+
+    ## BEWARE: in bed format the left limit is zero-based. However the
+    ## DAS server expects 1-based coordinates. We convert here the
+    ## zero-based into 1-based coordinate.
+    $left += 1;
 
     &RSAT::message::Debug($l, $chrom, $left, $right, $strand) if ($main::verbose >= 5);
 
@@ -390,7 +408,8 @@ package main;
       $strand = "+";
     }
 
-    ## Treat reference
+    ## Treat specific references (use tart or end position as
+    ## reference, rather than the whole feature)
     if ($reference eq "start") {
       if ($strand eq "-") {
 	$left = $right;
@@ -405,7 +424,7 @@ package main;
       }
     }
 
-    ## Check if the right position is not outside the genome ################
+    ## Check if the right position is not outside the genome
     if ($right > $chr_end{$chrom}) {
       &RSAT::message::Warning("$chrom:$left-$right", "invalid position. Skipping line", $l) if ($main::verbose >= 2);
       push @skipped_rows, $_;
@@ -427,17 +446,26 @@ package main;
 #    &RSAT::message::Debug("chrom=".$chrom, "left=".$left, "right=".$right) aif ($main::verbose >= 5);
 
 
+    ################################################################
     ## Formulate the query
+
+    ## Increment query counter
+    $query_nb++;
     my $query = $chrom.":".$left.",".$right;
+
+    ## Store queries, strands and header in separate arrays.
+    push @queries, $query;
+    push @strand, $strand;
+    my $header = "";
     if ($header_format eq 'ucsc') {
-      $header{$query} = ">".$genome."_".$chrom."_".$left."_".$right.$strand."\trange=".$chrom.":".$left."-".$right." 5'pad=0 3'pad=0 strand=".$strand." repeatMasking=none";
+      $header = ">".$genome."_".$chrom."_".$left."_".$right.$strand."\trange=".$chrom.":".$left."-".$right." 5'pad=0 3'pad=0 strand=".$strand." repeatMasking=none";
     } elsif ($header_format eq "galaxy") {
-      $header{$query} = ">".$genome."_".$chrom."_".$left."_".$right."_".$strand;
+      $header = ">".$genome."_".$chrom."_".$left."_".$right."_".$strand;
     } else {
-      $header{$query} = $name || $query;
+      $header = $name || $query;
     }
-    push(@queries, $query);
-    &RSAT::message::Debug("Query", $query, $header{$query}) if ($main::verbose >= 5);
+    push @header, $header;
+    &RSAT::message::Debug("Query", $query_nb, $queries[$query_nb-1], $strand[$query_nb-1], $header[$query_nb-1]) if ($main::verbose >= 5);
 
     $i++;
   }
@@ -465,9 +493,12 @@ package main;
     if ($error) {
       &RSAT::message::TimeWarn("Retrying, trial number", $trial_nb);
     } else {
+
       ## Splice a chunk of queries from the list
       $next_chunk_size = &RSAT::stats::min($chunk, $remaining);
       @query_chunk = splice (@queries, 0, $next_chunk_size);
+      @strand_chunk = splice (@strand, 0, $next_chunk_size);
+      @header_chunk = splice (@header, 0, $next_chunk_size);
       &RSAT::message::Debug("Query chunk", join "; ", @query_chunk) if ($main::verbose >= 10);
       &RSAT::message::TimeWarn( "Remaining queries", $remaining, ,"Treating next chunk",$next_chunk_size, scalar(@query_chunk)) 	if ($main::verbose >= 2);
     }
@@ -476,16 +507,33 @@ package main;
     &RSAT::message::TimeWarn("Sending request to DAS server", $das_server_url) if ($main::verbose >= 3);
     my @request = $das->dna(-dsn=>[$das_server_url],-segment=> \@query_chunk);
 
+#    &RSAT::message::Debug(join ("\n\t", "query chunk", @query_chunk)) if ($main::verbose >= 10);
+
+#    &RSAT::message::Debug(join ("\n\t", "request", @request)) if ($main::verbose >= 10);
+
+
     ################################################################
     ## Treat request results
     for my $request (@request) {
       &RSAT::message::TimeWarn("Treating result") if ($main::verbose >= 3);
       if ($request->is_success) {
 	my %results = %{$request->results};
-	foreach my $query (@query_chunk) {
+
+#	&RSAT::message::Debug(scalar(keys(%results)), "results") if ($main::verbose >= 10);
+
+#	&RSAT::message::Debug("results", join "\n", keys(%results)) if ($main::verbose >= 10);
+
+
+#	foreach my $query (@query_chunk) {
+	foreach my $q (0..$#query_chunk) {
+	  my $query = $query_chunk[$q];
 	  my $sequence = $results{$query};
-#	while (($query,$sequence) = each %$results) {
-	  print $out $header{$query}, "\n";
+	  my $strand = $strand_chunk[$q];
+	  if ($strand eq '-') {
+	    $sequence = &ReverseComplement($sequence);
+	  }
+#	  &RSAT::message::Debug($q, $query, $sequence) if ($main::verbose >= 10);
+	  print $out $header_chunk[$q], "\n";
 	  print $out uc($sequence),"\n"; ## TEMPORARY: convert all sequences to uppercases
 #	  print $out $sequence,"\n";
 	}
