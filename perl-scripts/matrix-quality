@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.150 2012/09/04 14:16:31 amedina Exp $
+# $Id: matrix-quality,v 1.151 2012/10/16 07:09:53 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -858,7 +858,7 @@ package main;
 
       ################################################################
       ##Calculate NWD
-      &RSAT::message::TimeWarn("Calculate NWD file")  if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn("Calculating NWD file")  if ($main::verbose >= 0);
 
       if ($tasks{plot}) {
 	  foreach (@local_plot_seq_type) {
@@ -880,7 +880,7 @@ package main;
 
       ################
       #Calculate the occ_proba
-      &RSAT::message::TimeWarn("Calculate occ probability distribution") if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn("Calculating occ probability distribution") if ($main::verbose >= 0);
       foreach (@main::plot_seq_type) {
 	  my $st= $_;
 	  
@@ -2670,7 +2670,7 @@ sub Calculate_NWD {
     my ($m_w,$comp_distrib_file,$nwd_seq_type)= @_;
     $outfile{'distrib_nwd'.$nwd_seq_type} = $matrix_prefix{$matrix_name}."_score_distrib_".$nwd_seq_type."_nwd.tab"; 
     push @files_to_index, 'distrib_nwd'.$nwd_seq_type;
-    &RSAT::message::Debug("Adding file to index ", "distrib_nwd",  $matrix_prefix{$matrix_name}."_score_distrib_".$main::nwd_seq_type."_nwd.tab") if ($main::verbose >= 15);
+    &RSAT::message::Debug("Adding file to index ", "distrib_nwd",  $matrix_prefix{$matrix_name}."_score_distrib_".$nwd_seq_type."_nwd.tab") if ($main::verbose >= 15);
     $main::out_nwd = &OpenOutputFile( $outfile{'distrib_nwd'.$nwd_seq_type});
     #die "width " . $m_w. "file " . $comp_distrib_file;
     my $dists;
@@ -2894,7 +2894,7 @@ sub Calculate_OCC {
     
     $matrix_scan_cmd .= " > ".  $outfile{'occ_proba_'.$seq_type};
 
-    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix)
+    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
     &RSAT::message::Info("Scanning to compute occurence probability", $matrix_scan_cmd) if ($main::verbose >= 1);
     return ($outfile{'occ_proba_'.$seq_type});
 }
