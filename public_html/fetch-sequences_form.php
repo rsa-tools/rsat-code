@@ -94,8 +94,8 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
             <ul>     
               <input type="radio" name="reference" value="segment" checked="checked"/><b>Segment</b>
               <input type="radio" name="reference" value="start"/><b>Start</b>
-              <input type="radio" name="reference" value="end"/><b>End</b></p>
               <input type="radio" name="reference" value="center"/><b>Center</b></p>
+              <input type="radio" name="reference" value="end"/><b>End</b></p>
             </ul>
           <p>
             <b><a href='help.fetch-sequences.html#options'>Extend</a></b>
