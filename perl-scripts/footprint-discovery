@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.99 2012/08/21 21:43:24 amedina Exp $
+# $Id: footprint-discovery,v 1.100 2012/10/17 18:35:37 amedina Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -558,6 +558,7 @@ sub RunFootprintDisco {
   foreach my $gene (@current_query_genes) {
     print $genes $gene, "\t", $organism_name, "\n";
   }
+  close $genes;
   &IndexOneFile("Query genes", $outfile{genes});
 
   ################################################################
