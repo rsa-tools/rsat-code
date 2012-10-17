@@ -344,7 +344,6 @@ sub GetOutfilePrefix {
 ##
 ##
 sub InitQueryOutput {
-
   my ($outfile_prefix, $query_prefix) = &GetOutfilePrefix();
 
   ## Create output directory if required
@@ -360,7 +359,7 @@ sub InitQueryOutput {
   ## File for storing the list of query gene names
   $outfile{genes} = $outfile{prefix}."_query_genes.tab";
   #$outfile{genes_info} = $outfile{prefix}."_query_genes_info.tab";
-  $genes = &OpenOutputFile($outfile{genes});
+  $genes = &OpenOutputFile($outfile{genes}) ;
 
   ## Specify other file names
   $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab"; ## orthologs of the query gene(s)
