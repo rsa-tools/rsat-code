@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.112 2012/01/19 04:38:38 amedina Exp $
+# $Id: footprint-scan,v 1.113 2012/10/17 18:33:34 amedina Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.112 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -1617,7 +1617,6 @@ sub Verbose {
 ## Run footprint scan flow chart for one or several query genes
 sub RunFootprintScan {
   local (@current_query_genes) = @_;
-
   local $query_start_time = &AlphaDate();
   local $batch_cmd = "";
   local $out = "";
@@ -1647,6 +1646,7 @@ sub RunFootprintScan {
   foreach my $gene (@current_query_genes) {
     print $genes $gene, "\t", $organism_name, "\n";
   }
+  close $genes;
   &IndexOneFile("genes", $outfile{genes});
 
 
