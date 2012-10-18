@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.113 2012/10/17 18:33:34 amedina Exp $
+# $Id: footprint-scan,v 1.114 2012/10/18 18:26:39 amedina Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -1790,6 +1790,7 @@ sub GetOrthologsTF {
   foreach my $gene (@current_query_genes) {
     print $genes $gene, "\t", $organism_name, "\n";
   }
+  close $genes;
   &IndexOneFile("genes", $outfile{genes});
   $inferoperons_original=$infer_operons; # for the sake of getting the orthologs of TFs we don't need to infer operons
   $infer_operons=0;
