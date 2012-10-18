@@ -1178,6 +1178,7 @@ sub SetBackgroundModel {
 				 $oligo_length, $background_model,
 				 noov=>$noov, str=>"-1str");
     $parameters .= " -bgfile ".$bg_file;
+    $parameters .= " -bg_format oligos";
 
   } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
