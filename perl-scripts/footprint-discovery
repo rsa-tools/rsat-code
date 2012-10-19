@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.100 2012/10/17 18:35:37 amedina Exp $
+# $Id: footprint-discovery,v 1.101 2012/10/19 14:56:12 amedina Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.101 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -502,7 +502,7 @@ sub RunFootprintDisco {
   local $batch_cmd = "";
   local $out = "";
   local $genes = "";
-  local $rand = 0; ## anlyze promoters of randomly selected genes rather than groups of orthologs
+  #local $rand = 0; ## anlyze promoters of randomly selected genes rather than groups of orthologs
 
   ################################################################
   ## Initialize output directory + output files
