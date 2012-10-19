@@ -857,7 +857,8 @@ reference taxon.
 =cut
 
   } elsif ($arg eq "-rand") {
-    $main::rand = 1;
+    $main::rand = 1; 
+
 
 =pod
 
