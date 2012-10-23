@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.26 2012/09/16 22:53:59 jvanheld Exp $
+# $Id: install_software.mk,v 1.27 2012/10/23 06:09:18 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -905,11 +905,19 @@ _install_homer:
 
 
 HOMER_GENOME=mm9
-install_homer_genome:
+install_homer_one_genome:
 	@echo
 	@echo "Installing HOMER genome	HOMER_GENOME=${HOMER_GENOME}"
 	(cd ${HOMER_BASE_DIR}; perl ./configureHomer.pl -install ${HOMER_GENOME})
 
+HOMER_GENOMES=dm3 mm8 mm9 hg18 hg19
+install_homer_some_genomes:
+	@echo
+	@echo "Installing genomes for HOMER"
+	@echo "	${HOMER_GENOMES}"
+	@for g in ${HOMER_GENOMES}; do \
+		${MAKE} install_homer_one_genome HOMER_GENOME=$${g} ; \
+	done
 
 ################################################################
 ## clustalW (multiple alignment)
