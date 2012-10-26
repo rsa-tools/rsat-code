@@ -77,7 +77,7 @@ if ($bed_specifications == 0) {
 
 // Header format
 if ($fs_header == "galaxy") {
-  $argument .= " -header galaxy";
+  $argument .= " -header_format galaxy";
  }
 
 // Downstream extension
@@ -263,17 +263,13 @@ if (!$errors) {
   	}
   }
   
-  
-  
-  
   // Run the command
   exec($cmd, $error);
 
   // Display the command
-  /*
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
   info("Command : ".$cmd_report);
-  echo "<hr>";*/
+  echo "<hr>";
   
   //display log file
 
@@ -329,7 +325,7 @@ if (!$errors) {
       $msg = "fetch-sequences result\n\n";
       $msg .= "Result files:\n";
       foreach ($URL as $key => $value) {
-				$msg .= "\t".$key."\t".$value."\n";
+	$msg .= "\t".$key."\t".$value."\n";
       }
     }
 
