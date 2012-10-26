@@ -19,6 +19,8 @@ package main;
     $line_width = 70;
     $sequence_type = "dna";
 
+    local %infile;
+
     ################################################################
     ## Supported background models
     %supported_bg = (
@@ -29,6 +31,15 @@ package main;
 	'protein'=>1,
 	);
     $supported_bg = join(",", sort keys %supported_bg);
+
+    ## Template formats
+    our %supported_template_format = (
+				      bed=>1, ## bed coordinates
+				      fasta=>1,   ## fasta sequence
+				      len=>1,   ## sequence lengths
+				     );
+    $supported_template_formats = join (",", sort(keys(%supported_template_format)));
+    our $template_format = "fasta";
 
     &ReadArguments();
 
@@ -62,45 +73,61 @@ package main;
     ## Output formaat
     &CheckOutputSeqFormat($out_format);
 
+
+    ################################################################
+    ## File with template sequences
+    if ($main::infile{template_file}) {
+      if ($template_format eq "len") {
+	$main::infile{length_file} = $main::infile{template_file};
+      } else {
+	## Compute sequence lengths
+	my $job_prefix = "random-genome-fragments";
+	my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate();
+	$main::infile{length_file} = "$TMP/$tmp_file_name".".lengths";
+	my $seqlength_cmd = "sequence-lengths -v 1";
+	$seqlength_cmd .= " -i ".$main::infile{template_file};
+	$seqlength_cmd .= " -in_format ".$template_format;
+	$seqlength_cmd .= " -o ".$main::infile{length_file};
+	&doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
+      }
+    }
+
     ################################################################
     ## File with the specification of sequence lengths
-    if ($length_file) {
-	($len_handle, $input_dir) = &OpenInputFile($length_file);
-	#    open LEN, $length_file;
-	while (<$len_handle>) {
-	    chomp;
-	    next if (/^;/);
-	    next if (/^--/);
-	    next if (/^#/);
-	    next unless (/\S/);
-	    my @fields = split "\t";
-	    $length = $fields[1];
-	    if (&IsNatural($length)) {
-		push @lengths, $length;
-	    }
+    if ($main::infile{length_file}) {
+      ($len_handle, $input_dir) = &OpenInputFile($main::infile{length_file});
+      #    open LEN, $main::infile{length_file};
+      while (<$len_handle>) {
+	chomp;
+	next if (/^;/);
+	next if (/^--/);
+	next if (/^#/);
+	next unless (/\S/);
+	my @fields = split "\t";
+	$length = $fields[1];
+	if (&IsNatural($length)) {
+	  push @lengths, $length;
 	}
-	close $len_handle;
+      }
+      close $len_handle;
 
-	## Repeat sequence length list if requested
-	if ($repetitions > 1) {
-	    my @rep_lengths = @lengths;
-	    for my $r (1..$repetitions) {
-		push @rep_lengths, @lengths;
-	    }
-	    @lengths = @rep_lengths;
+      ## Repeat sequence length list if requested
+      if ($repetitions > 1) {
+	my @rep_lengths = @lengths;
+	for my $r (1..$repetitions) {
+	  push @rep_lengths, @lengths;
 	}
-	
-
-	$seq_nb = $#lengths +1;
+	@lengths = @rep_lengths;
+      }
+      $seq_nb = $#lengths +1;
     } else {
-
-	#### check sequence lengths and number of sequences
-	unless (&IsNatural($seq_length)) {
-	    &RSAT::error::FatalError ("You should specify the sequence length");
-	}
-	unless ($seq_nb >=1) {
-	    &RSAT::error::FatalError( "Number of sequences should be >=1 (option -n)");
-	}
+      #### check sequence lengths and number of sequences
+      unless (&IsNatural($seq_length)) {
+	&RSAT::error::FatalError ("You should specify the sequence length");
+      }
+      unless ($seq_nb >=1) {
+	&RSAT::error::FatalError( "Number of sequences should be >=1 (option -n)");
+      }
     }
 
     ################################################################
@@ -163,7 +190,6 @@ package main;
     for $r (1..$seq_nb) {
 	### initialization
 	my $current_seq_length = $lengths[$r-1] || $seq_length;
-	
 	$sequence = "";
 	$seq_id = "rand_$r";
 	my @comments = ();
@@ -174,6 +200,7 @@ package main;
 	if ($background_model) {
 	    $comment .= "; bg model: ".$background_model;
 	    $comment .= "; organism: ".$organism_name if ($organism_name);
+	    $comment .= "; markov: ".$markov;
 	}
 	push @comments, $comment;
 
@@ -235,57 +262,62 @@ package main;
 ################################################################
 ## Read arguments
 sub ReadArguments {
-  foreach $a (0..$#ARGV) {
-    if ($ARGV[$a] eq "-v") {
-      if (&IsNatural($ARGV[$a+1])) {
-	$verbose = $ARGV[$a+1];
+#  foreach $a (0..$#ARGV) {
+#    my $arg = $ARGV[$a];
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
       } else {
-	$verbose = 1;
+	$main::verbose = 1;
       }
 
-    } elsif ($ARGV[$a] eq "-l") {
-      $seq_length = $ARGV[$a+1];
+    } elsif ($arg eq "-l") {
+      $seq_length = shift @arguments;
 
-    } elsif ($ARGV[$a] eq "-h") {
+    } elsif ($arg eq "-h") {
       &PrintHelp();
 
-    } elsif ($ARGV[$a] eq "-help") {
+    } elsif ($arg eq "-help") {
       &PrintOptions();
 
-    } elsif ($ARGV[$a] eq "-o") {
-      $outputfile = $ARGV[$a+1];
+    } elsif ($arg eq "-o") {
+      $outputfile = shift @arguments;
 
-    } elsif ($ARGV[$a] eq "-format") {
-      $out_format = lc($ARGV[$a+1]);
+    } elsif ($arg eq "-format") {
+      $out_format = lc(shift @arguments);
 
       ## Sequence type (supported=dna,protein)
-    } elsif ($ARGV[$a] eq "-type") {
-      $sequence_type = lc($ARGV[$a+1]);
+    } elsif ($arg eq "-type") {
+      $sequence_type = lc(shift @arguments);
 
       ## Number of sequences
-    } elsif ($ARGV[$a] eq "-n") {
-      $seq_nb = $ARGV[$a+1];
+    } elsif ($arg eq "-n") {
+      $seq_nb = shift @arguments;
 
-    } elsif ($ARGV[$a] eq "-expfreq") {
-      $exp_freq_file = $ARGV[$a+1];
+    } elsif ($arg eq "-expfreq") {
+      $exp_freq_file = shift @arguments;
 
-    } elsif ($ARGV[$a] eq "-lw") {
-      $line_width = $ARGV[$a+1];
+    } elsif ($arg eq "-lw") {
+      $line_width = shift @arguments;
 
-    } elsif ($ARGV[$a] eq "-seed") {
-      $seed = $ARGV[$a+1];
+    } elsif ($arg eq "-seed") {
+      $seed = shift @arguments;
 
-    } elsif ($ARGV[$a] eq "-a") {
-      if ($ARGV[$a+1] eq "yeast") {
+    } elsif ($arg eq "-a") {
+      if (shift @arguments eq "yeast") {
 	$alphabet{'A'} = $alphabet{'T'} = 0.308512197555054;
 	$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
       # if argument between quotes
-      } elsif (($ARGV[$a+1] =~ /a:t\s(\S+)\sc:g\s(\S+)/i) && ($1 <= 1) && ($1 >=0) && ($2 <= 1) && ($2 >= 0)) {
+      } elsif (($arguments[0] =~ /a:t\s(\S+)\sc:g\s(\S+)/i) && ($1 <= 1) && ($1 >=0) && ($2 <= 1) && ($2 >= 0)) {
         $alphabet{'A'} = $alphabet{'T'} = $1;
         $alphabet{'C'} = $alphabet{'G'} = $2;
-      } elsif (("$ARGV[$a+1] $ARGV[$a+2]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)) {
+      } elsif (("$arguments[0] $arguments[1]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)) {
 	$alphabet{'A'} = $alphabet{'T'} = $1;
-	if (("$ARGV[$a+3] $ARGV[$a+4]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)) {
+	if (("$arguments[2] $arguments[3]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)) {
 	  $alphabet{'C'} = $alphabet{'G'} = $1;
 	}
       } else {
@@ -293,13 +325,13 @@ sub ReadArguments {
     }
 
       ### use oligo intergenic frequencies as expected frequencies
-    } elsif ($ARGV[$a] =~ /^-ncf/i) {
+    } elsif ($arg =~ /^-ncf/i) {
       &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
       $background_model = "intergenic";
 
       ### specify a background model for estimating expected frequencies
-    } elsif ($ARGV[$a] =~ /^-bg/i) {
-      $background_model = $ARGV[$a+1];
+    } elsif ($arg =~ /^-bg/i) {
+      $background_model = shift @arguments;
       $background_model =~ s/ncf/intergenic/;
       if ($background_model eq "protein") {
 	  $sequence_type = "protein";
@@ -308,29 +340,48 @@ sub ReadArguments {
       }
 
       ### organism (for selecting the appropriate expected frequencies)
-    } elsif ($ARGV[$a] =~ /^-org/i) {
-      $organism_name = $ARGV[$a+1];
+    } elsif ($arg =~ /^-org/i) {
+      $organism_name = shift @arguments;
 
       #### oligonucleotide length
-    } elsif ($ARGV[$a] eq "-ol") {
+    } elsif ($arg eq "-ol") {
       &RSAT::error::FatalError("Options -ol and -mkv are mutually exclusive") if ($markov_given);
-      $oligo_length = $ARGV[$a+1];
+      $oligo_length = shift @arguments;
+      $markov = $oligo_len -1;
       $length_given = 1;
 
 
       #### markov order
-    } elsif ($ARGV[$a] eq "-markov") {
+    } elsif ($arg eq "-markov") {
       &RSAT::error::FatalError("Options -ol and -mkv are mutually exclusive") if ($oligo_given);
-      $oligo_length = $ARGV[$a+1] + 1;
+      $markov = shift @arguments;
+      $oligo_length = $markov + 1;
       $markov_given = 1;
 
-      #### file containing a list of the desired lengths of random sequences
-    } elsif ($ARGV[$a] eq "-lf") {
-      $length_file =$ARGV[$a+1];
+      ## Template file
+      } elsif ($arg eq "-i") {
+	&RSAT::error::FatalError("Option -i is incompatible with option -lf") if ($main::outfile{length_file});
+	$main::infile{template_file} = shift(@arguments);
+
+	## Template format
+      } elsif ($arg eq "-template_format") {
+	$main::template_format = shift(@arguments);
+	&RSAT::error::FatalError($main::template_format, "Invalid template format. Supported: ".$supported_template_formats)
+	  unless ($supported_template_format{$main::template_format});
+
+	## file containing a list of the desired lengths of random sequences
+      } elsif ($arg eq "-lf") {
+	&RSAT::error::FatalError("Option -lf is incompatible with option -i") if ($main::infile{template_file});
+	$main::infile{length_file} = shift(@arguments);
+	&RSAT::message::Warning("Option -lf is deprecated, use -i len_file -template_format len");
+
+#      ## file containing a list of the desired lengths of random sequences
+#    } elsif ($arg eq "-lf") {
+#      $main::infile{length_file} =shift @arguments;
 
       ## Number of repetition for length file
-    } elsif ($ARGV[$a] eq "-rep") {
-      $repetitions = $ARGV[$a+1];
+    } elsif ($arg eq "-rep") {
+      $repetitions = shift @arguments;
 
 
     }
@@ -378,6 +429,68 @@ OPTIONS
 	-type	protein|DNA|other
 
 	-seed #	seed for the random generator
+
+   TEMPLATE FILES
+
+   The following options allow to taylor the sequence number and the
+   size of each sequence on the basis of template files (sequence
+   file, bed file or sequence-length output file).
+
+    -i template_file
+
+        Generate random sequences with lengths specified in a template
+        file.
+
+        Various template types are supported (option -template_format):
+        sequences (in fasta), genomic coordinates (in bed), sequence
+        lengths.
+
+        This option is incompatible with options -l and -n.
+
+    -template_format template_format
+        Format for the template set (specified with the option -i).
+
+        Supported formats:
+
+        fasta (default)
+            Templates are provided as a fasta-formatted sequence file. The
+            program random-genome-fragments calls sequence-lengths to define
+            the template lengths.
+
+        bed
+            Templates are provided as a bed-formatted file of genomic
+            coordinates. The program random-genome-fragments calls
+            sequence-lengths -format bed to define the lengths of the bed
+            features.
+
+            Bed file must contain at least 3 columns, indicating, for each
+            feature:
+
+            1. id (ignored)
+            2. start coordinate
+            3. end coordinate
+
+        len
+            Templates are provided as a tab-delimited file indicating the
+            length of each template sequence (this file can be produced by
+            sequence-lengths).
+
+    -lf length file
+        Deprecated. Replaced by -i template_file -template_format len.
+        Maintained for backward compatibility.
+
+        Generate random sequences with the same lengths as a set of template
+        sequences. The sequence length file can be obtained with the command
+        sequence-lengths.
+
+        This option is incompatible with options -l and -n.
+
+        The length file contains two columns :
+
+        -sequence ID (ignored)
+        -sequence length
+
+
 
     PROBABILITIES
 	-a	alphabet
@@ -515,23 +628,25 @@ sub PrintOptions {
     print HELP <<End_short_help;
 random-seq options
 ==================
--l		sequence length
--n		number of sequences
--v		verbose
--o		outputfile
--format		output format
--lw ##		Line width
--a		alphabet. ex: -a a:t 0.3 c:g 0.2
--expfreq	file containing expected oligomer frequencies
--type		protein|DNA|other
--seed #	seed for the random generator
--ncf		(deprecated, use '-bg intergenic' instead)
--bg		background model (supported: $supported_bg)
--org		organism
--markov		markov order (incompatible with -ol)
--ol		Oligo length (incompatible with -markov)
--lf		Length file (incompatible with options -l and -n)
--rep		Number of repetitions (incompatible with options -l and -n)
+-l		 sequence length
+-n		 number of sequences
+-v		 verbose
+-o		  outputfile
+-format		 output format
+-lw ##		 Line width
+-a		 alphabet. ex: -a a:t 0.3 c:g 0.2
+-expfreq	 file containing expected oligomer frequencies
+-type		 protein|DNA|other
+-seed #	         seed for the random generator
+-ncf		 (deprecated, use '-bg intergenic' instead)
+-bg		 background model (supported: $supported_bg)
+-org		 organism
+-markov		 markov order (incompatible with -ol)
+-ol		 Oligo length (incompatible with -markov)
+-i               Template file
+-template_format template_format
+-lf		 Length file (incompatible with options -l and -n)
+-rep		 Number of repetitions (incompatible with options -l and -n)
 End_short_help
     close HELP;
     exit(0);
@@ -542,8 +657,8 @@ End_short_help
 sub Verbose {
   print $out "; random-seq ";
   &PrintArguments($out);
-  if ($length_file) {
-      print $out "; Sequence length file	        $length_file\n";
+  if ($main::infile{length_file}) {
+      print $out "; Sequence length file	        $main::infile{length_file}\n";
       print $out "; Repetitions          	        $repetitions\n";
   } else {
       print $out "; sequence length                     $seq_length\n";
@@ -557,6 +672,7 @@ sub Verbose {
   if ($exp_freq_file) {
     print $out "; Calibrated oligomer frequencies\n";
     print $out "; 	oligomer length:         $oligo_length\n";
+    print $out "; 	Makov order:             $markov\n";
     print $out "; 	expected frequency file: $exp_freq_file\n";
 
     if ($main::verbose >= 3) {
