@@ -11,6 +11,7 @@ package RSAT::feature;
 			  dnapat=>1,
 			  bed=>1,
 			  galaxy_seq=>1,
+			  swembl=>1,
 			 );
 
 %supported_output_format =(ft=>1,
@@ -137,6 +138,24 @@ $header_char{gff3} = "## ";
 @{$strands{bed}} = ("+", "-", ".");
 $comment_char{bed} = "## ";
 $header_char{bed} = "## ";
+
+## SWEMBL
+## http://www.ebi.ac.uk/~swilder/SWEMBL/
+## SWEMBL exports a bed-like format for the 3 first columns, and custom info in the other columns
+@{$columns{swembl}} = qw (seq_name
+		       start
+		       end
+		       count
+		       length
+		       unique_pos
+		       score
+		       ref_count
+		       max_coverage
+		       summit
+		      );
+@{$strands{swembl}} = ("+", "-", ".");
+$comment_char{swembl} = "#";
+$header_char{swembl} = "#";
 
 ## Galaxy sequences
 ## http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
@@ -709,6 +728,8 @@ sub parse_from_row {
     $strand =~ s/\+/D/;
     $strand =~ s/\-/R/;
     $strand =~ s/\./D/;
+  } else {
+    $strand = "DR";
   }
   $self->force_attribute("strand", $strand);
 
@@ -716,8 +737,16 @@ sub parse_from_row {
   if (($in_format eq "gff") || ($in_format eq "gff3")) {
     $self->set_attribute("feature_name", $self->get_attribute("source"));
     $self->set_attribute("description", $self->get_attribute("attribute"));
-  }
-  if ($in_format eq "galaxy_seq")  {
+  } elsif ($in_format eq "swembl")  {
+    my $name = join("_", 
+		    $self->get_attribute("seq_name"),
+		    $self->get_attribute("start"),
+		    $self->get_attribute("end"),
+		    "+"
+		    );
+    $self->set_attribute("feature_name", $name);
+    $self->set_attribute("description", $self->get_attribute("feature_name"));
+  } elsif ($in_format eq "galaxy_seq")  {
     $self->set_attribute("ft_type", "");
     $row =~ s/^\s*>//;
     $self->set_attribute("feature_name", $row);
@@ -769,7 +798,6 @@ sub parse_from_row {
 	  if (lc($attr) eq "id") {
 	    $self->force_attribute("ft_id", $value);
 	    ## Use ID as name unless name has already been defined
-	    #		      die "HELLO";
 	    $self->force_attribute("feature_name", $value);
 	    ##			$self->force_attribute("id", $value);
 	  }
@@ -878,8 +906,8 @@ sub to_text {
 
     ## Suppress sequence start and end features (temporary fix for
     ## UCSC genome browser)
-    my $ft_type = $self->get_attribute("ft_type");
-    if ($self->get_attribute("ft_type") eq "limit") {
+    my $ft_type = $self->get_attribute("ft_type") || "feature";
+    if ($ft_type eq "limit") {
       if ($self->get_attribute("feature_name") eq "START_END") {
 	my $seq_name = $self->get_attribute("seq_name");
 	my $seq_start = $self->get_attribute("start");
@@ -1002,9 +1030,13 @@ sub to_text {
   my @strands = @{$strands{$out_format}};
   my $strand = $self->get_attribute("strand") || $default{strand};
   my $f = $col_index{"strand"};
+  my $s;
   if ($strand) {
     $s = $strand_index{$strand};
+  } else {
+    $s = $strand_index{'D'};
   }
+#  &RSAT::message::Debug($f, $strand, $s, @strands, %strand_index) if ($main::verbose >= 10);
   $fields[$f] = $strands[$s];
   #    &RSAT::message::Debug( "strand", $strand, "f=$f", 
   #			   "index:".join(";", %strand_index),
