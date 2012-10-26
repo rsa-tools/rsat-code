@@ -63,23 +63,22 @@ if ($query->param('feature')){
   print FEAT $query->param('feature');
   close FEAT;
 } else  {
-    ## Upload user-specified  file
-    my $upload_file = $query->param('uploaded_file');
-    if ($upload_file) {
-	if ($upload_file =~ /\.gz$/) {
-	    $input_file .= ".gz";
-	}
-	my $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-	open FEAT, ">$input_file" ||
-	    &cgiError("Cannot store feature file in temp dir.");
-	while (<$upload_bgfile>) {
-	    print FEAT;
-	}
-	close FEAT;
-    } else {
-	&FatalError ("If you want to upload a file, you should specify the location of this file on your hard drive with the Browse button");
+  ## Upload user-specified  file
+  my $upload_file = $query->param('uploaded_file');
+  if ($upload_file) {
+    if ($upload_file =~ /\.gz$/) {
+      $input_file .= ".gz";
     }
-
+    my $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+    open FEAT, ">$input_file" ||
+      &cgiError("Cannot store feature file in temp dir.");
+    while (<$upload_file>) {
+      print FEAT;
+    }
+    close FEAT;
+  } else {
+    &FatalError ("If you want to upload a file, you should specify the location of this file on your hard drive with the Browse button");
+  }
 }
 &DelayedRemoval($input_file);
 $parameters .= " -i $input_file";
