@@ -20,7 +20,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 #local @supported_input_formats = sort(keys(%RSAT::feature::supported_input_format));
-local @supported_input_formats = qw(ft gft gff gff3 dnapat bed);
+local @supported_input_formats = qw(ft gft gff gff3 dnapat bed swembl);
 
 #local @supported_output_formats = sort(keys(%RSAT::feature::supported_output_format));
 local @supported_output_formats = qw(ft fasta gft gff gff3 dnapat bed);
@@ -84,9 +84,9 @@ print  "<BR>\n";
 ### option to upload the feature file from the client machine 
 print "Or select a file to upload<BR>\n";
 print  $query->filefield(-name=>'uploaded_file',
-						    -default=>'',
-						    -size=>45,
-						    -maxlength=>200);
+			 -default=>'',
+			 -size=>45,
+			 -maxlength=>200);
 
 print "<HR/>";
 ### Output bg format
