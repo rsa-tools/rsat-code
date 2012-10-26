@@ -55,9 +55,9 @@ print $default{demo_descr2};
 
 print $query->start_multipart_form(-action=>"random-genome-fragments.cgi");
 
+
 #### fragments
-print "<fieldset>
-<legend><b><a href='help.random-genome-fragments.html#fragments'>Random fragments </a></b></legend>";
+print "<fieldset><legend><b><a href='help.random-genome-fragments.html#fragments'>Random fragments </a></b></legend>";
 
 # number of fragments
 print "<B><A HREF='help.random-genome-fragments.html#r_repetitions'>Number of fragments</A>&nbsp;</B>\n";
