@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.21 2012/10/15 20:13:30 jvanheld Exp $
+# $Id: fetch-sequences,v 1.22 2012/10/26 03:59:47 jvanheld Exp $
 #
 ############################################################
 
@@ -220,7 +220,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -363,12 +363,13 @@ package main;
       &RSAT::message::Info("Stopped after $top top queries. Further lines are ignored.");
       last;
     }
-    my ($chrom, $left, $right, $name, $score, $strand) = split(/\t/);
 
+    ################################################################
     ## BEWARE: in bed format the left limit is zero-based. However the
     ## DAS server expects 1-based coordinates. We convert here the
     ## zero-based into 1-based coordinate.
-    $left += 1;
+    my ($chrom, $zero_left, $right, $name, $score, $strand) = split(/\t/);
+    $left = $zero_left + 1;
 
     &RSAT::message::Debug($l, $chrom, $left, $right, $strand) if ($main::verbose >= 5);
 
@@ -462,11 +463,19 @@ package main;
     push @strand, $strand;
     my $header = "";
     if ($header_format eq 'ucsc') {
-      $header = ">".$genome."_".$chrom."_".$left."_".$right.$strand."\trange=".$chrom.":".$left."-".$right." 5'pad=0 3'pad=0 strand=".$strand." repeatMasking=none";
-    } elsif ($header_format eq "galaxy") {
+      ## UCSC header reports 1-based coordinates
       $header = ">".$genome."_".$chrom."_".$left."_".$right."_".$strand;
+      $header .= "\trange=".$chrom.":".$left."-".$right." 5'pad=0 3'pad=0 strand=".$strand." repeatMasking=none";
+    } elsif ($header_format eq "galaxy") {
+      ## Galaxy header reports 0-based coordinates
+      $header = ">".$genome."_".$chrom."_".$zero_left."_".$right."_".$strand;
     } else {
-      $header = $name || $query;
+      $header = ">";
+      if ($name) {
+	$header .= $name." ";
+      }
+      $header .= $query;
+      $header .= "_".$strand;
     }
     push @header, $header;
     &RSAT::message::Debug("Query", $query_nb, $queries[$query_nb-1], $strand[$query_nb-1], $header[$query_nb-1]) if ($main::verbose >= 5);
