@@ -49,29 +49,53 @@ $query = new CGI;
 #### read parameters ####
 $parameters = "";
 
-#### sequence length
-$length = $query->param('length');
-if (&IsNatural($length)) {
+## template file (optional)
+($template_file, $template_format) = &MultiGetSequenceFile(1, "$TMP/$tmp_file_name"."_template.fa", 0);
+
+## a template file has been given
+if ($template_file) {
+  push @result_files, ("Template file ($template_format)",$template_file);
+
+  ## Compute sequence lengths from the template sequence file
+  my $length_file = "$TMP/$tmp_file_name".".lengths";
+  push @result_files, ("Sequence lengths",$length_file);
+
+  my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;
+  $seqlength_cmd .= " -in_format ".$template_format;
+  $seqlength_cmd .= " -o ".$length_file;
+  system($seqlength_cmd);
+
+  ## Add the sequence length file as template for random-genome-fragments
+  $parameters .= " -template_format len -i ".$length_file;
+#  $parameters .= " -template_format fasta -i ".$template_file;
+
+#  $parameters .= " -template_format fasta -i ".$template_file;
+} else {
+  #### sequence length
+  $length = $query->param('length');
+  if (&IsNatural($length)) {
     $parameters .= " -l $length ";
-} else {
+  } else {
     &FatalError("Sequence length must be a natural number");
-}
+  }
 
-#### number of repetitions
-$repet = $query->param('repet');
-if (&IsNatural($repet)) {
+
+  #### number of repetitions
+  $repet = $query->param('repet');
+  if (&IsNatural($repet)) {
     $parameters .= " -n $repet";
-} else {
+  } else {
     &FatalError("Repetitions must be a natural number");
+  }
+  #### check lengths and repetitions
+  if ($repet * $length == 0) {
+    &FatalError("Sequence length and reperitions must be non-null");
+  }
+  if ($repet*$length > $size_limit) {
+    &FatalError("The web interface does not support queries of this size. Maximum size per query (length * repetitions) = ".$size_limit);
+  }
 }
 
-#### check lengths and repetitions
-if ($repet * $length == 0) {
-    &FatalError("Sequence length and repeitions must be non-null");
-}
-if ($repet*$length > $size_limit) {
-    &FatalError("The web interface does not support queries of this size. Maximum size per query (length * repetitions) = ".$size_limit);
-}
 
 #### line width
 if (&IsNatural($query->param('lw'))) {
