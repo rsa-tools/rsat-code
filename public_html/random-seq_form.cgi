@@ -43,18 +43,20 @@ foreach $key (keys %default) {
 ### print the form ###
 &RSA_header("random sequence", "form");
 
-### head
-print "<CENTER>";
+### header
+print "<center>";
 print "Generate random DNA or protein sequences according to various probabilistic models<br>(independently distributed residues or Markov models)<P>\n";
-print "</CENTER>";
+print "</center>";
 
 
 print $query->start_multipart_form(-action=>"random-seq.cgi");
 
-print "<FONT FACE='Helvetica'>";
+print "<font face='Helvetica'>";
 
+#### fragments
+print "<fieldset><legend><b>Sequence number and sizes</b></legend>";
 
-print "<h2>General options </h2>\n";
+#print "<h2>Sequence number and sizes</h2>\n";
 
 print "<UL>\n";
 
@@ -87,7 +89,17 @@ print $query->textfield(-name=>'lw',
 print "</UL>\n";
 
 
-print "<h2><a href='help.random-seq.html#alphabet'>Background model</a></h2>";
+# File lengths
+print "<p/><b> OR </b> <p/>";
+print "<b><A HREF='help.random-genome-fragments.html#lf_length_file'>Use a set of sequences as template (same nb of fragments, same lengths): </a></b><br/> \n";
+print "<div style='padding-left:30px'>";
+&MultiSequenceChoice("Template sequences",1);
+print "</div>";
+
+print "</fieldset><p/>";
+
+print "<fieldset><legend><a href='help.random-seq.html#alphabet'>Background model</a></legend>";
+#print "<h2><a href='help.random-seq.html#alphabet'>Background model</a></h2>";
 
 print "<ul>";
 
@@ -145,6 +157,8 @@ print "</UL>";
 print "<INPUT TYPE='radio' NAME='proba' VALUE='equi'>Independent and equiprobable nucleotides<BR>";
 
 print "</UL>";
+
+print "</fieldset><p/>";
 
 
 ### send results by email or display on the browser
