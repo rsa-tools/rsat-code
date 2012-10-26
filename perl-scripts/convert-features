@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.35 2012/08/23 04:49:41 jvanheld Exp $
+# $Id: convert-features,v 1.36 2012/10/26 06:58:37 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -176,7 +176,7 @@ sub set_color {
     $feature_color{$feature_name} = join(",", $R, $G, $B);
     &RSAT::message::Warning("Feature color", $feature_name, $feature_color{$feature_name}, $name) if ($main::verbose >= 3);
   }
-  $feature->set_attribute("itemRgb", $feature_color{$feature_name});
+  $feature->force_attribute("itemRgb", $feature_color{$feature_name});
 }
 
 ################################################################
