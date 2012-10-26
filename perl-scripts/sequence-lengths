@@ -45,20 +45,24 @@ if ($in_format eq "bed") {
     next unless (/\S/);		## Skip empty rows
     next if (/^#/);		## Skip comment lines
     chomp();
-    my ($chrom, $start, $end) = split('\t');
-#    &RSAT::message::Debug("chrom=".$chrom, "start=".$start, "end=".$end) if ($main::verbose >= 10);
-    unless ((&RSAT::util::IsNatural($start)) &&
-	    (&RSAT::util::IsNatural($end))) {
+    my ($chrom, $zero_left, $right) = split('\t');
+    #    &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right) if ($main::verbose >= 10);
+    unless ((&RSAT::util::IsNatural($zero_left)) &&
+	    (&RSAT::util::IsNatural($right))) {
       &RSAT::message::Warning("Skipping line", $l, "invalid start and end positions.") if ($main::verbose >= 2);
       next;
     }
-    if ($start > $end) {
-      &RSAT::message::Warning("Skipping line", $l, "start ($start) larger than end ($end).") if ($main::verbose >= 2);
+
+    my $left = $zero_left + 1; ## BED files have zero-based coordinates for the left side but not the right side !
+
+    ## Swap left and right coordinates if required
+    if ($left > $right) {
+      &RSAT::message::Warning("Skipping line", $l, "start ($left) larger than end ($right).") if ($main::verbose >= 2);
       next;
     }
 
-    my ($length, $rounded_length) = &apply_units($end - $start + 1);
-    my $current_id = $chrom.":".$start."..".$end.":1";
+    my ($length, $rounded_length) = &apply_units($right - $left + 1);
+    my $current_id = $chrom.":".$left."..".$right.":1";
     $sum+= $length;
     print $out $current_id, "\t", $rounded_length , "\n"
       unless ($sum_only);
