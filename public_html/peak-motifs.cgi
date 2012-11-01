@@ -79,7 +79,8 @@ if ($query->param('title')){
 	  "motifs_vs_motifs",
 	  "timelog",
 	  "archive",
-	  "synthesis");
+	  "synthesis",
+	  "small_summary");
 
 ################################################################
 ## Peak sequences file

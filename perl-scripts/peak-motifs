@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.243 2012/09/23 05:34:32 jvanheld Exp $
+# $Id: peak-motifs,v 1.244 2012/11/01 14:46:31 morgane Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.243 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.244 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -168,6 +168,7 @@ package main;
 		    "timelog",
 		    "synthesis",
 		    "archive",
+		    "small_summary"
 		    );
 
   ## Extra tasks are only executed on explicit demand of the user
@@ -432,6 +433,10 @@ package main;
     $progressive_synthesis = 0;
     &Synthesis();
   }
+  
+  ## Will create a separate html file
+  ## with a very synthetic view of the results
+  &SmallSummary() if ($task{small_summary});
 
   if ($main::verbose >= 1) {
     &RSAT::message::TimeWarn("Log file", $main::outfile{log}) if ($main::verbose >= 2);
@@ -2723,6 +2728,10 @@ sub SynthesisOneMotifComparison {
     $db_match_table .= "<tr>\n";
     my @fields = split("\t");
     #&RSAT::message::Debug("DB matches", join ("; ", @fields)) if ($main::verbose >= 10);
+    
+    ## small summary file
+    print $small_sum_txt $fields[$col_index{'name2'}].", " if (defined($fields[$col_index{'name2'}]));
+    
     my @values = ();
     foreach my $field (@match_fields) {
       my $value = "NA";
@@ -2738,6 +2747,7 @@ sub SynthesisOneMotifComparison {
     }
     $db_match_table .= "</tr>\n";
   }
+  print $small_sum_txt "</br>";
 
   ## Report number of matches
   my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
@@ -2763,6 +2773,10 @@ sub SynthesisByMotif {
 
   ## Header line
   &SyntheticTableAddHeaderRow("Motif discovery");
+  
+  ## Prepare summary text file
+  $small_sum_txt = &OpenOutputFile($main::outfile{small_summary_txt}) if ($task{small_summary}); 
+  print $small_sum_txt "#Motif\tLogo\tTop hits in databases\n";
 
   &ReadMotifTable();
 
@@ -2793,6 +2807,9 @@ sub SynthesisByMotif {
     print $syn "<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
     print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n";
     print $syn "<td><table align='center' ><tr>";
+    
+    print $small_sum_txt $matrix->get_attribute("name")."\t";
+    
     ## Sequence logo
     my $file = $main::outfile{$motif_id."_logo"};
     if (-e $file) {
@@ -2801,9 +2818,15 @@ sub SynthesisByMotif {
 		  "<a href='", $logo_link, "'>",
 		  "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
 		  "' src='",$logo_link,"'>","</a>","</td>\n");
+	  
+	  print $small_sum_txt "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
+		  "' src='",$logo_link,"'>"."\t";
     } else {
       print $syn "<td><font color='red'>No logo</font>","</td>\n";
+      print $small_sum_txt "\t";
     }
+    
+
 
     ## Sequence logo, reverse complementary
     $file = $main::outfile{$motif_id."_logo_rc"};
@@ -2843,6 +2866,9 @@ sub SynthesisByMotif {
       my $db_name = $compa_names[$f];
       my $file = $compa_files[$f];
       my $prefix = $compa_prefixes[$f];
+      
+      print $small_sum_txt "<u>$db_name:</u>";
+		  
       if (-e $file) {
 	my ($db_match_table, $match_nb) = &SynthesisOneMotifComparison($db_name, $file,$colored_consensus);
 
@@ -2875,6 +2901,7 @@ sub SynthesisByMotif {
 
     }
     print $syn "</td></tr>\n";
+    print $small_sum_txt "\n";
 
     ## Scan results
     my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
@@ -3851,6 +3878,27 @@ sub SynthesisMotifsVersusDatabase {
 }
 
 ################################################################
+## Creates a separate HTML file
+## with a very synthetic view of the results
+sub SmallSummary {
+	## close the text file handler
+	close $small_sum_txt;
+	## convert into html file
+	my $cmd = $SCRIPTS."/text-to-html ";
+    $cmd .= " -i ".$main::outfile{small_summary_txt};
+    $cmd .= " -no_sort ";
+    $cmd .= " -o ".$main::outfile{small_summary};
+
+    &one_command($cmd, 1);
+
+
+
+
+}
+
+
+
+################################################################
 ## Delete purged sequence files after analysis has been completed.
 sub CleanSequences {
   foreach my $seq_type (@seq_types) {
@@ -4761,6 +4809,10 @@ sub CheckArguments {
     $progressive_synthesis = 0;
   }
 
+  ## Small summary
+  $main::outfile{small_summary_txt} = &OutFileName("reports", ".txt", "small_summary");
+  $main::outfile{small_summary} = &OutFileName("", ".html", "small_summary");
+	
 
   ################################################################
   ## Specify scanning options after having read command-line arguments
@@ -4860,6 +4912,10 @@ sub CheckArguments {
   ## Dependency between task merge_words and motif discovery type merged_words
   if (($task{disco}) && ($disco{merged_words})) {
       $task{merge_words} = 1;
+  }
+  
+  if ($task{small_summary}) {
+  	  $task{synthesis} = 1;
   }
 
   ## Prepare a list of the requested tasks (by order of execution)
