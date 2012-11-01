@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.244 2012/11/01 14:46:31 morgane Exp $
+# $Id: peak-motifs,v 1.245 2012/11/01 14:58:28 morgane Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.244 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.245 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2663,6 +2663,9 @@ sub ResultTOC {
   $result_toc .=  "<a href='#merged_sites'>Motif locations (sites)</a><br/>";
   $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
   $result_toc .=  "<a href='#logs'>Logs & Commands</a><br/>";
+   if ($task{small_summary}) {
+  	$result_toc .=  "<font color='red'>New ! </font><a href='".$main::param{prefix}."_small_summary.html' target=_blank>Small summary</a><br/>";
+  }
   $result_toc .=  "</div>";
 
 
