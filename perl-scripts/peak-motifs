@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.245 2012/11/01 14:58:28 morgane Exp $
+# $Id: peak-motifs,v 1.246 2012/11/02 08:45:14 morgane Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.245 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.246 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2750,6 +2750,7 @@ sub SynthesisOneMotifComparison {
     }
     $db_match_table .= "</tr>\n";
   }
+  print $small_sum_txt "no match" if ($match_nb == 0);
   print $small_sum_txt "</br>";
 
   ## Report number of matches
@@ -2779,7 +2780,7 @@ sub SynthesisByMotif {
   
   ## Prepare summary text file
   $small_sum_txt = &OpenOutputFile($main::outfile{small_summary_txt}) if ($task{small_summary}); 
-  print $small_sum_txt "#Motif\tLogo\tTop hits in databases\n";
+  print $small_sum_txt "#Motif\tLogo\t3 Top hits in databases\n";
 
   &ReadMotifTable();
 
@@ -2870,7 +2871,7 @@ sub SynthesisByMotif {
       my $file = $compa_files[$f];
       my $prefix = $compa_prefixes[$f];
       
-      print $small_sum_txt "<u>$db_name:</u>";
+      print $small_sum_txt "<u>versus $db_name:</u>  ";
 		  
       if (-e $file) {
 	my ($db_match_table, $match_nb) = &SynthesisOneMotifComparison($db_name, $file,$colored_consensus);
