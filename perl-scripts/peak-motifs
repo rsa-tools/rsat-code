@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.246 2012/11/02 08:45:14 morgane Exp $
+# $Id: peak-motifs,v 1.247 2012/11/07 13:15:02 morgane Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.246 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.247 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -2779,8 +2779,10 @@ sub SynthesisByMotif {
   &SyntheticTableAddHeaderRow("Motif discovery");
   
   ## Prepare summary text file
-  $small_sum_txt = &OpenOutputFile($main::outfile{small_summary_txt}) if ($task{small_summary}); 
-  print $small_sum_txt "#Motif\tLogo\t3 Top hits in databases\n";
+  if ($task{small_summary}) {
+  	$small_sum_txt = &OpenOutputFile($main::outfile{small_summary_txt}) ; 
+  	print $small_sum_txt "#Motif\tLogo\t3 Top hits in databases\n";
+  }
 
   &ReadMotifTable();
 
