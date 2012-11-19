@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.22 2012/10/26 03:59:47 jvanheld Exp $
+# $Id: fetch-sequences,v 1.23 2012/11/19 12:01:28 jvanheld Exp $
 #
 ############################################################
 
@@ -220,7 +220,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -439,14 +439,17 @@ package main;
 
     ## Treat left and right extensions
     if ($strand eq "-") {
-      $left = &RSAT::stats::max(0, $left - $downstr_extension);
+      $left = &RSAT::stats::max(1, $left - $downstr_extension);
       $right = &RSAT::stats::min($chr_end{$chrom}, $right + $upstr_extension);
       #$right += $upstr_extension;
     } else {
-      $left = &RSAT::stats::max(0, $left - $upstr_extension);
+      $left = &RSAT::stats::max(1, $left - $upstr_extension);
       $right = &RSAT::stats::min($chr_end{$chrom}, $right + $downstr_extension);
       #$right += $downstr_extension;
     }
+
+    ## Restore zero-based left after all these checks
+    $zero_left = $left - 1;
 
 #    &RSAT::message::Debug("chrom=".$chrom, "left=".$left, "right=".$right) aif ($main::verbose >= 5);
 
@@ -456,6 +459,8 @@ package main;
 
     ## Increment query counter
     $query_nb++;
+
+    ## UCSC takes queries in one-based coordinates (although their bed format is zero-based for the left coordinate)
     my $query = $chrom.":".$left.",".$right;
 
     ## Store queries, strands and header in separate arrays.
@@ -478,8 +483,9 @@ package main;
       $header .= "_".$strand;
     }
     push @header, $header;
-    &RSAT::message::Debug("Query", $query_nb, $queries[$query_nb-1], $strand[$query_nb-1], $header[$query_nb-1]) if ($main::verbose >= 5);
-
+    &RSAT::message::Debug("Query", $query_nb, $queries[$query_nb-1], $strand[$query_nb-1], $header[$query_nb-1],
+			  "1-based_left=".$left, "0-based_left=".$zero_left,
+			 ) if ($main::verbose >= 5);
     $i++;
   }
   close $main::in if ($main::infile{input});
