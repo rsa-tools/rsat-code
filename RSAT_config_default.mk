@@ -20,14 +20,15 @@ SUDO=sudo
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
 
+## Directory to store the downloaded software (sources, before compilation)
+SRC_DIR=${SOFT_DIR}/src
+
+## Main directory for software installation (compilation)
+SOFT_DIR=${PWD}
+
 ## Default installation dir for binaries
 BIN_DIR=/usr/local/bin
 
-## Main directory for software installation
-SOFT_DIR=${PWD}
-
-## Directory to store the downloaded software (sources, before compilation)
-SRC_DIR=${SOFT_DIR}/src
 
 ################################################################
 ##
