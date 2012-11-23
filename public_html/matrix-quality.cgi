@@ -75,7 +75,7 @@ if ($query->param('matrix')) {
     close MAT;
     &DelayedRemoval($matrix_file);
       ($input_format) = split (/\s+/, $input_format);
-    if (  ( $input_format eq "consensus" ) ||( $input_format eq "meme" ) ||( $input_format eq "infogibbs" ) ){
+    if (  ( $input_format eq "consensus" ) ||( $input_format eq "meme" ) ||( $input_format eq "infogibbs" ) ||( $input_format eq "transfac" ) ){
 	$parameters .= " -ms $matrix_file";
     }
     else{
