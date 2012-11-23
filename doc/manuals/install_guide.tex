@@ -510,7 +510,7 @@ To obtain EnsEMBL \footnote{Full instructions at
 \begin{lstlisting}
 
 ## Make sure you start from the right directory
-cd $RSAT/lib
+cd $RSAT
 
 ## Install the ensembl library
 make -f makefiles/install_software.mk install_ensembl_api
@@ -570,10 +570,18 @@ installation of the CPAN module DBD:mysql may require a prior
 installation of a MySQL client on your machine
 (\url{http://dev.mysql.com/downloads/}).
 
-\emph{Note}: to access EnsEMBL versions above 47, you need port 5306
-to be opened on your machine. This might require to consult the system
-administrator of your network in order to ensure that the Firewall
-accepts this port.
+\emph{Notes}: 
+\begin{enumerate}
+\item to access EnsEMBL versions above 47, you need port 5306 to be
+  opened on your machine. This might require to consult the system
+  administrator of your network in order to ensure that the Firewall
+  accepts this port.
+\item On Mac OSX, there seems to be problem with the mysql bundle,
+  which can be fixed by adding a soft link as follows\footnote{\url{http://www.blog.bridgeutopiaweb.com/post/how-to-fix-mysql-load-issues-on-mac-os-x/}}:
+  \begin{lstlisting}
+sudo ln -s /usr/local/mysql/lib/libmysqlclient.18.dylib /usr/lib/libmysqlclient.18.dylib
+  \end{lstlisting}
+\end{enumerate}
 
 Detailed information about the EnsEMBL libraries can be obtained on
 the EnsEMBL web site
