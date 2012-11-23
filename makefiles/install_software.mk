@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.28 2012/10/23 11:46:25 rsat Exp $
+# $Id: install_software.mk,v 1.29 2012/11/23 00:19:40 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -67,8 +67,8 @@ PERL_MODULES= \
 	SOAP::WSDL \
 	SOAP::Lite \
 	Module::Build::Compat \
-	DBD::mysql \
 	DBI \
+	DBD::mysql \
 	DB_File \
 	LWP::Simple \
 	Bio::Perl \
@@ -261,30 +261,39 @@ MEME_VERSION=4.8.1
 #MEME_VERSION=current
 MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
 MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
-MEME_INSTALL_DIR=${SOFT_DIR}/meme_${MEME_VERSION}
+MEME_INSTALL_SUBDIR=${SOFT_DIR}/MEME
+MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
 install_meme: _download_meme _compile_meme
 
 _download_meme:
 	@echo
 	@echo "Downloading MEME ${MEME_VERSION}"
 	@echo
+	@echo "MEME base directory	${MEME_BASE_DIR}"
 	@mkdir -p ${MEME_BASE_DIR}
 	(cd ${MEME_BASE_DIR}; wget -nv -nd ${MEME_URL})
-	@echo ${MEME_INSTALL_DIR}
+	@echo "MEME base directory	${MEME_BASE_DIR}"
+	@echo "MEME install directory	${MEME_INSTALL_DIR}"
 
-MEME_BIN_DIR=${MEME_INSTALL_DIR}/bin
+## BEWARE, MEME creates a lot of folders and files, it should NOT be
+## installed in /usr/local nor ${RSAT} directories
+MEME_COMPILE_DIR=${MEME_INSTALL_DIR}
+MEME_BIN_DIR=${MCL_COMPILE_DIR}/bin
 _compile_meme:
 	@echo
 	@echo "Installing MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
 	@mkdir -p ${MEME_INSTALL_DIR}
-	(cd ${MEME_INSTALL_DIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
-	(cd ${MEME_INSTALL_DIR}; ./configure --prefix=${MEME_INSTALL_DIR} --with-url="http://localhost/meme")
+	(cd ${MEME_INSTALL_SUBDIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
+	@echo "MEME configuration prefix	${MEME_CONFIG_PREFIX}"
+	(cd ${MEME_INSTALL_DIR}; ./configure --prefix=${MEME_COMPILE_DIR} --with-url="http://localhost/meme")
 	(cd ${MEME_INSTALL_DIR}; make clean; make ; make test; ${SUDO} make install)
-	@cd ${SOFT_DIR}; rm -f meme; ln -s meme_${MEME_VERSION} meme
+	@echo "MEME installed in ${MEME_COMPILE_DIR}"
+
+after:
+#	@cd ${MEME_BIN_DIR}; rm -f meme; ln -s meme_${MEME_VERSION} meme
 	@echo "Please edit the bashrc file"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
-	@echo "	export PATH=${SOFT_DIR}/meme/bin:\$$PATH"
-
+	@echo "	export PATH=${BIN_DIR}/meme/bin:\$$PATH"
 
 ################################################################
 ## Install a clustering algorithm "cluster"
@@ -761,14 +770,17 @@ _download_ceas:
 	@mkdir -p ${CEAS_BASE_DIR}
 	wget -nd  --directory-prefix ${CEAS_BASE_DIR} -rNL ${CEAS_URL}
 
+CEAS_COMPILE_DIR=`dirname ${BIN_DIR}`
 _compile_ceas:
 	@echo
 	@echo "Installing CEAS in dir	${CEAS_DISTRIB_DIR}"
 	(cd ${CEAS_BASE_DIR}; tar -xpzf ${CEAS_ARCHIVE})
 	@echo ${CEAS_DISTRIB_DIR}
-	@chmod a+x ${CEAS_DISTRIB_DIR}/bin/*
-	${SUDO} rsync -ruptvl ${CEAS_DISTRIB_DIR}/bin/* ${BIN_DIR}
-
+	(cd  ${CEAS_DISTRIB_DIR}; ${SUDO} python setup.py install --prefix=${CEAS_COMPILE_DIR})
+	@echo "CEAS was installed in dir ${BIN_DIR}"
+	@echo "Before using CEAS, you need to add a line to the log-in shell script (i.e. .bashrc in case of bash shell)"
+	@echo "Adapt the python version in the path below"
+	@echo 'export PYTHONPATH=$$PYTHONPATH:${BIN_DIR}/lib/python2.7/site-packages'
 
 
 ################################################################
