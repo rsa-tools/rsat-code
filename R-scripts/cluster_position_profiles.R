@@ -31,7 +31,8 @@ dir.main <- getwd()
 ## calling the script with command-line arguments.
 
 ## URL of Jacques van Helden course "Statistics for bioinformatics", required to load some libraries
-dir.course <- 'http://www.bigre.ulb.ac.be/Users/jvanheld/statistics_bioinformatics'
+dir.course <- 'http://www.bigre.ulb.ac.be/courses/statistics_bioinformatics'
+#dir.course <- '/Users/jvanheld/statistics_bioinformatics'
 
 ## Threshold for selecting patterns
 sig.threshold <- 1 ## Min level of chi2 significance
@@ -211,7 +212,7 @@ par(mfrow=c(mfrow.rows, mfrow.cols))
 for (i in 1:nb.clusters) {
   cluster.size <- sum(clusters==i)
   plot.profiles(as.data.frame(pos.profiles.freq.norm[clusters==i,]),
-                ylim=c(0,max(pos.profiles.freq.norm[clusters==i,])),
+#                ylim=c(min(pos.profiles.freq.norm[clusters==i,]),max(pos.profiles.freq.norm[clusters==i,])),
                 main=paste(sep='', 'cluster ', i, '/', nb.clusters),
                 col.profiles=rainbow(n=cluster.size),
                 plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F
@@ -242,7 +243,7 @@ par(cex.lab=0.7)
 for (i in 1:length(table(clusters))) {
   cluster.size <- sum(clusters==i)
   plot.profiles(as.data.frame(pos.profiles[clusters==i,]),
-                ylim=c(0,max(pos.profiles[clusters==i,])),
+#                ylim=c(0,max(pos.profiles[clusters==i,])),
                 main=paste(sep='', 'k-mer occurrences; cluster ', i, '/', nb.clusters),
                 col.profiles=rainbow(n=cluster.size),
                 plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F
