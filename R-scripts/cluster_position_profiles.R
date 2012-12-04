@@ -228,7 +228,7 @@ par(cex.lab=0.7)
 for (i in 1:length(table(clusters))) {
   cluster.size <- sum(clusters==i)
   plot.profiles(as.data.frame(pos.profiles.freq.norm[clusters==i,]),
-                ylim=c(0,max(pos.profiles.freq.norm[clusters==i,])),
+#                ylim=c(0,max(pos.profiles.freq.norm[clusters==i,])),
                 main=paste(sep='', 'k-mer frequencies; cluster ', i, '/', nb.clusters),
                 col.profiles=rainbow(n=cluster.size),
                 plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F
