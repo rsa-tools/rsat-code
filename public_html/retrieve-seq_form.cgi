@@ -125,7 +125,7 @@ print "</UL>\n";
 print "<BR>\n";
 
 #### feature type
-print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type (reference coordinate for positions)</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-seq.html#feattype'>Reference feature type (reference coordinate for positions)</A></B>&nbsp;<br>";
 print $query->radio_group(-name=>'feattype',
 			  -values=>[@supported_feature_types],
 			  -default=>$default{feattype});
