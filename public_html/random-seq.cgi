@@ -108,7 +108,7 @@ $out_format = $query->param('format');
 $parameters .= " -format $out_format ";
 
 #### alphabet
-if ($query->param('proba') eq "alphabet") {
+if ($query->param('bg_method') eq "alphabet") {
 
     $freq{A} = $query->param('Afreq');
     $freq{C} = $query->param('Cfreq');
@@ -134,8 +134,8 @@ if ($query->param('proba') eq "alphabet") {
     &DelayedRemoval($alphabet_file);
 
 ## Pre-calibrated Markov models
-} elsif (($query->param('proba') =~ /upstream/i) ||
-	 ($query->param('proba') =~ /protein/i)) {
+} elsif (($query->param('bg_method') =~ /upstream/i) ||
+	 ($query->param('bg_method') =~ /protein/i)) {
     ### check organism
     unless ($organism = $query->param('organism')) {
 	&cgiError("You should specify an organism to use upstream frequency calibration");
@@ -143,7 +143,7 @@ if ($query->param('proba') eq "alphabet") {
     unless (defined(%{$supported_organism{$organism}})) {
 	&cgiError("Organism $organism is not supported on this site");
     }
-    if ($query->param('proba') =~ /protein/i) {
+    if ($query->param('bg_method') =~ /protein/i) {
       $oligopept_size = $query->param("oligopept_size");
       unless (&IsNatural($oligopept_size)) {
 	&cgiError("Invalid oligopeptide length $oligopept_size");
@@ -158,7 +158,31 @@ if ($query->param('proba') eq "alphabet") {
       $seq_type = "dna"; ## Used for the piping form
       $parameters .= " -bg upstream-noorf -org $organism -ol $oligo_size -type dna";
     }
+  } elsif ($query->param('bg_method') eq 'file_upload') {
+
+  ## User-specific background model (any Markov order)
+  my $bgfile = $tmp_file_path.".bgfile";
+  push @result_files, ('Background file', $bgfile);
+  my $upload_bgfile = $query->param('upload_bgfile');
+  if ($upload_bgfile) {
+    ## Support compressed .gz files
+    if ($upload_bgfile =~ /\.gz$/) {
+      $bgfile .= ".gz";
+    }
+    $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+    open BG, ">$bgfile" ||
+      &cgiError("Cannot store background model file in temp dir.");
+    while (<$upload_bgfile>) {
+      print BG;
+    }
+    close BG;
+    $parameters .= " -expfreq ".$bgfile;
+
+  } else {
+    &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
+  }
+  
 
 &ReportWebCommand($command." ".$parameters);
 
