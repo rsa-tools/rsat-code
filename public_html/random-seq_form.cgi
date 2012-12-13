@@ -109,14 +109,14 @@ print "<UL>";
 &OrganismPopUp();
 
 ### oligo size
-print "<br><INPUT TYPE='radio' NAME='proba' VALUE='upstream' checked>";
+print "<br><INPUT TYPE='radio' NAME='bg_method' VALUE='upstream' checked>";
 print "DNA sequences calibrated on non-coding upstream sequences)";
 print "&nbsp"x3, "<b><a href='help.random-seq.html#oligo_size'>Oligonucleotide size</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'oligo_size',
 			 -Values=>[1..8],
 			 -default=>$default{oligo_size});
 
-print "<br><INPUT TYPE='radio' NAME='proba' VALUE='protein'>";
+print "<br><INPUT TYPE='radio' NAME='bg_method' VALUE='protein'>";
 print "Protein sequences (<font color='red'>new</font>) calibrated on all proteins of this organism";
 print "&nbsp"x3, "<b><a href='help.random-seq.html#oligopept_size'>Oligonupeptide size</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'oligopept_size',
@@ -127,7 +127,7 @@ print "</UL>";
 
 ################################################################
 ## Independent nucleotides with distinct probabilities
-print "<INPUT TYPE='radio' NAME='proba' VALUE='alphabet'>Independent nucleotides with distinct probabilities<BR>";
+print "<INPUT TYPE='radio' NAME='bg_method' VALUE='alphabet'>Independent nucleotides with distinct probabilities<BR>";
 
 print "<UL>";
 print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
@@ -154,9 +154,21 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 
 print "</UL>";
 
-print "<INPUT TYPE='radio' NAME='proba' VALUE='equi'>Independent and equiprobable nucleotides<BR>";
+print "<INPUT TYPE='radio' NAME='bg_method' VALUE='equi'>Independent and equiprobable nucleotides<BR>";
+print "<p/>";
+ print ("<b>Custom background model</b><br>");
+ print "<input type='radio' NAME='bg_method' VALUE='file_upload'>";
+    print "Upload your own background file (oligo-analysis format)", "&nbsp;"x5;
+    print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+  print $query->filefield(-name=>'upload_bgfile',
+			    -default=>'starting value',
+			    -size=>30,
+			    -maxlength=>200);
+  print "<p>\n";
 
 print "</UL>";
+
+
 
 print "</fieldset><p/>";
 
