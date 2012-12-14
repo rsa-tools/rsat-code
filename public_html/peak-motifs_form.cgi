@@ -376,6 +376,9 @@ print "<br>", $query->checkbox(-name=>'local-word-analysis',
 		       -checked=>$default{'local-word-analysis'},
 		       -label=>'');
 print "&nbsp;<b>Discover words with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
+print "&nbsp;"x2;
+print "<br><i>Note:position-analysis and local-word-analysis will not run if a control set is provided</i>";
+
 
 ## Word size
 print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer length</a>&nbsp;</b> for the three programs above\n";
