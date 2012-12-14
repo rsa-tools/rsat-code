@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.247 2012/11/07 13:15:02 morgane Exp $
+# $Id: peak-motifs,v 1.248 2012/12/14 09:02:08 morgane Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.247 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.248 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -4769,6 +4769,17 @@ sub CheckArguments {
       &RSAT::error::FatalError("The option -disco oligo_diff requires to specify a control sequence file (option -ctrl)");
     }
   }
+  
+  ## if control file, only keep the differential motifs
+  ## for the moment, we will only keep oligo_diff, oligo-analysis and dyad-analysis and dreme
+  if ($infile{ctrl_seq}) {
+  	my %disco_ctrl = ();
+  	$disco_ctrl{dyads} = 1 if ($disco{dyads});
+  	$disco_ctrl{oligos} = 1 if ($disco{oligos});
+  	$disco_ctrl{oligo_diff} = 1 if ($disco{oligo_diff});
+  	$disco_ctrl{oligo_diff} = 1 if ($disco{dreme});
+  	%disco = %disco_ctrl;
+  }	
 
   ################################################################
   ## Check if the scanning markov order (m) is higher than 2 (in which
