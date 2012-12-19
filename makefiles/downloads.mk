@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.40 2012/01/28 01:05:56 rsat Exp $
+# $Id: downloads.mk,v 1.41 2012/12/19 13:12:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -49,7 +49,7 @@ GENBANK_DIRS =					\
 	genbank/genomes				\
 	refseq 
 
-NCBI_DIR=Saccharomyces_cerevisiae
+NCBI_DIR=Fungi/Saccharomyces_cerevisiae_uid128
 NCBI_EXCLUDE=	\
 		--exclude '*_alt_*'							\
 		--exclude 'lproks*_*'							\
