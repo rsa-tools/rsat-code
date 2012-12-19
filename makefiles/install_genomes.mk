@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.46 2012/06/17 11:11:31 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.47 2012/12/19 13:27:02 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -182,8 +182,8 @@ install_all_fungi:
 		${MAKE} install_one_fungus FUNGUS=$${fungus} ;	\
 	done
 
-FUNGUS=Saccharomyces_cerevisiae
 ### Install a single fungus genome
+FUNGUS=Saccharomyces_cerevisiae_uid128
 install_one_fungus:
 	@echo
 	@echo "${DATE}	Installing fungus ${FUNGUS}"
