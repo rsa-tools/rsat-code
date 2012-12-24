@@ -211,8 +211,7 @@
   
 	<li><p>Leave the other options to their default value, and
 	    click <b>Execute</b>. The upload may take several
-	    minutes. When the file will be uploaded, the yellow box on
-	    the right side will turn to green.
+	    minutes. 
 	    <ul>
 	      <li><b>Note:</b> the upload speed depends on the
 		availability of the two servers. Indeed, the coordinates of
@@ -221,28 +220,69 @@
 	    </ul>
 	</p></li>
 
-	<li><p>Click on this box and make sure that the format is BED and
-	    the genome is mm8. </p></li>
+	<li><p>When the file will be uploaded, the yellow box on the
+	    right side will turn to green. Click on this box and check
+	    that the format is BED and the genome ("database") is
+	    mm8. </p></li>
 
-	<li><p>Optionally, you can rename the Galaxy entry for the
-	    sake of readability
+	<li>Always check the content of a dataset before using it. For
+	  this, Galaxy provides a very convenient interface: click on
+	  the eye icon in the green box. The page should look like this: 
+	  <pre>
+chr1	100000123	100000148	0	0	+
+chr1	100000387	100000412	0	0	-
+chr1	100001969	100001994	0	0	-
+chr1	100002597	100002622	0	0	+
+chr1	100002637	100002662	0	0	+
+chr1	10000261	10000286	0	0	-
+chr1	100003474	100003499	0	0	-
+chr1	100004023	100004048	0	0	+
+chr1	100004191	100004216	0	0	+
+chr1	100005158	100005183	0	0	-
+chr1	100005335	100005360	0	0	+
+...</pre>
+	</li>
+
+	<li><p>We recommend to rename the Galaxy entry for the sake of
+	    readability.
 	    <ul>
-	      <li>In the green box represeting your uploaded data, click
-		on the pencil (<i><b>Edit attributes</i></b>).
+	      <li>In the green box representing your uploaded data,
+		click on the pencil (<i><b>Edit attributes</i></b>).
 	      <li>The field <b><i>Name</i></b> currently contains the
-		ftp location from which the bed fiel was retrieved. Cut
+		ftp location from which the bed file was retrieved. Cut
 		this information and paste it in the <b><i>Info</i></b>
 		box.</li>
 	      <li>Type a more informative content in
-		the <i><b>Name</b></i> box, for example <i>Chen 2008,
+		the <i><b>Name</b></i> box, for example <i>Chen 2008
 		  ES_Oct4 reads</i>.</li>
 	      <li>Don't forget to click <b>Save</b>, and check that the
 		information has been updated in the history panel at the
 		right of the window.</li>
 	    </ul>
 	</p></li>
-	
+
+	<li>By clicking on the title of the green box ("1: Chen 2008
+	  ES_Oct4 reads"), you obtain some quantitative information
+	  about the dataset. Check that the downloaded read contains
+	  the expected number of reads. Its should display the
+	  following information.
+	  <pre>
+ ~4,700,000 regions
+format: bed, database: mm8
+Info: ftp://ftp.ncbi.nih.gov/pub/geo/DATA/supplementary/samples/GSM288nnn/GSM288346/GSM288346%5FOct4%2Ebed%2E</pre>
+	</li>
       </ol>
+    </div>
+
+    <div class='exo'>
+      <h3>Exercise</h3>
+
+      <p>Run the same protocol to download the sample GSM288358 from
+	GEO. This sample was obtained by immunoprecipitating green
+	fluorescent protein (GFP). In principle, it should thus not
+	contain any specific peak. It can optionally be used as
+	control ("mock") for peak-calling programs. After download,
+	rename the dataset "Chen 2008 ES_GFP reads".</p>
     </div>
 
     <hr><a name='peak_calling'></a><h2>Peak calling with MACS</h2>
@@ -256,19 +296,21 @@
 	<li><p>Click <b>NGS:Peak Calling > MACS Model-based Analysis of
 	      ChIP-Seq</b>.</p></li>
 	
-	<li><p>Enter an <b>Experiment Name</b> (e.g. <i>OCT4 Chen-2008</i>.</p></li>
+	<li><p>Enter an <b>Experiment Name</b> (e.g. <i>OCT4 Chen-2008
+	peaks MACS no input</i>).</p></li>
 	
 	<li><p>For the <b>ChIP-seq tag file</b>, select the file you
 	    uploaded in the previous step (if you performed all the steps
-	    above, it should appear as <i>Oct4 reads</i> in the pop-up
+	    above, it should appear as "<i>Chen 2008 ES_Oct4 reads</i>" in the pop-up
 	    menu). </p></li>
 
 	<ul>
-	  <li><p><b>Note:</b>Since we dispose of a single set of reads, we
-	      will run the peak-calling without providing any control. In
-	      case you would dispose of a control set, you could enter its
+	  <li><p><b>Note:</b> in a first time, we will run the
+	      peak-calling without providing any control. In case you
+	      would dispose of a control set, you could enter its
 	      mapped read BED file as
-	      <b>Control tag file</b>.</p></li>
+	      <b>Control tag file</b> This wil be done as an exercise
+	      below.</p></li>
 	</uL>
 	
 	<li><p><b>Effective genome size</b>: this is the size of the genome
@@ -296,6 +338,16 @@
 	      </uL>
 	      </p></li>
 	  -->
+
+	<li>Optionally, you can activate the option <i>Save shifted
+	    raw tag count at every bp into a wiggle file</i> (by
+	    default, it displays (<i>Do not create a wig file
+	    (faster)</i>). It is useful to activate this option
+	    (select <i>Save</i>) in order to obtain a wig file, which
+	    indicates the density of reads at regular intervals along
+	    the chromosomes. Wig files are convenient for visual
+	    inspection of the peak-calling results (e.g. visualizing
+	    the density of reads under the peaks).</li>
 	
 	<li><p>Leave all other options to their default values and
 	    click <b>Execute</b>.</p></li>
@@ -319,8 +371,36 @@
 	    link <b>display at UCSC main</b> in the green box <i>Oct4
 	      peaks from MACS</i> of the History frame.</p></li>
       </ol>
-
     </div>
+
+    <div class="exo">
+
+      <h3>Exercises</h3>
+
+
+      <p>In the protocol above, we used the simplest approach to
+	detect peaks with MACS: we entered a single file (the "test"
+	reads) and adapted some parameters to the particularity of our
+	experiment (e.g. genome size, tag size).</p>
+      <p>Some peak-calling programs (including MACS) allow users to
+	submit a second set of reads as control. Typical controls are
+	"mock" datasets, i.e. genomic sequences obtained from a
+	non-immunoprecipitated protein, or genomic DNA. In Chen's
+	experiment, the control consisted in performing the ChIP-seq
+	with the Green Fluorescent Protein (GFP) instead of a
+	transcripiton factor.</p>
+      
+      <ol>
+	<li>Compute peaks with MACS, using the Oct4 reads as test
+	  dayaset, and the GFP experiment as control. Compare the
+	  number of peaks with the result of Oct4 when no control set
+	  was provided. </li>
+	<li>Run the MACS peak-calling procedure using GFP as test
+	  dataset, and no dataset as control. Count the number of
+	  peaks. Does it correspond to your expectation ?</li>
+      </ol>
+    </div>
+
 
     <hr><a name='seq'></a><h2>Retrieving peak sequences with Galaxy</h2>
 
