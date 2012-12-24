@@ -1,0 +1,104 @@
+<html>
+  <head>
+    <title>RSA-tools - tutorials - peak-motifs</title>
+    <!--   <link rel="stylesheet" type="text/css" href = "../main.css" media="screen">-->
+    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+  </head>
+  <body>
+    
+    <center>
+      <h1><a href="../RSAT_home.cgi">RSA-tools</A> - 
+	<a href="tutorials.html">Tutorials</a> - 
+	<a href="../peak-motifs_form.cgi">peak-motifs</a> 
+      </h1>
+    </center>
+    
+    <a name='toc'></a><h2>Contents</h2>
+    
+    <p>
+      <ol>
+	<li><a href='#prerequisite'>Prerequisite</a>
+	<li><a href='#intro'>Introduction</a></li>
+	<li><a href='#references'>References</a></li>
+      </ol>
+    </p>
+      
+    <hr><a name='prerequisite'></a><h2>Prerequisite</h2>
+    
+    <p>This tutorial assumes that you are familiar with the concepts
+      developed in the following parts of the theoretical course.
+      <ol>
+	<li><a href='../course/pdf_files/01.4.PSSM_theory.pdf'>PSSM theory</a></li>
+	<li><a href='../course/pdf_files/03.2.1.pattern_discovery_strings.pdf'>String-based motif discovery</a></li>
+      </ol>
+    </p>
+
+    <p>It is better to follow the corresponding tutorials before this one.
+      <ol>
+	<li><a href='tut_PSSM.html'>Position-specific scoring matrices</a>.</li>
+	<li><a href="tut_oligo-analysis.html"><i>oligo-analysis</i></a>: detection of over-represented words.</li>
+	<li><a href="tut_position-analysis.html"><i>position-analysis</i></a>: detection of words having a positional bias in sequences aligned on some reference position.</li>
+      </ol>
+      
+    <p>A companion tutorial explains how to <a href='tut_galaxy.html'>retrieve peak
+	sequences from Galaxy</a>.</p>
+
+    <hr><a name='intro'></a><h2>Introduction</h2>
+
+    <p>The RSAT software suite includes a set of powerful tools
+      allowing to analyse motifs in peak sets obtained from ChIP-seq
+      and related methods. The goal of this tutorial is to provide a
+      short introduction of these tools, and show how they can be
+      combine to extract the best of your chip-seq peaks.</p>
+
+    <table>
+      <tr><td>peak-motifs</td>
+	<td><p>A workflow integrating a series of pre-existing tools for
+	    motif discovery (oligo-analysis, dyad-analysis,
+	    position-analysis, local-word-analysis), which enables to
+	    discover motifs in ChIP-seq peak sequences, compare the motifs
+	    scan the peaks to detect putative binding sites.</p>
+	  <p>The accuracy and time-efficiency of the workflow have
+	    been described in detail (Thomas-Chollier et al.,
+	    2012a. Nucleic Acids Res 40: e31), and a detailed protocol
+	    has been published (Thomas-Chollier et al., 2012, Nat
+	    Protoc 7(8): 1551-1568).</p>
+	</td>
+	</tr>
+
+
+      <tr></tr>
+    </table>
+
+
+
+    <hr><a name='references'></a><h2>References</h2>
+    
+    <ol>
+      <li>
+	Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry
+	D, van Helden J. (2012). A complete workflow for the analysis
+	of full-size ChIP-seq (and similar) data sets using
+	peak-motifs. Nat Protoc 7(8): 1551-1568.  [<a target='_blank'
+						      href='http://www.ncbi.nlm.nih.gov/pubmed/22836136'>PMID
+	  22836136</a>]
+      </li>
+      
+      <li>Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand, O., Thieffry,
+	D. and van Helden, J. (2011). RSAT peak-motifs: motif analysis in
+	full-size ChIP-seq datasets Nucleic Acids Research
+	doi:10.1093/nar/gkr1104, 9.
+	[<a target='_blank' href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full?keytype=ref&ijkey=zOvloLjtKzL73F8'>Open access</a>]
+      </li>
+    </ol>
+    
+    <hr width="100%">
+    
+    <address>
+      For suggestions or information request, please contact 
+      <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a> or 
+      <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a>
+    </address>
+    
+  </body>
+</html>
