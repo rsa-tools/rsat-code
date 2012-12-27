@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-ucsc,v 1.3 2012/03/22 09:09:38 jeremy Exp $
+# $Id: supported-organisms-ucsc,v 1.4 2012/12/27 16:04:43 jvanheld Exp $
 #
 ############################################################
 
@@ -60,7 +60,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 	our $taxon = "";
@@ -69,7 +69,7 @@ package main;
   our $verbose = 0;
 
   ## Parameters for connecting the DAS server
-  our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
+  our $das_server_url ="http://genome.cse.ucsc.edu/cgi-bin/das";
 
   ################################################################
   ## Read argument values
@@ -77,11 +77,14 @@ package main;
 
   ################################################################
   ## Define the URL fo the DAS server
-  our $das_server_url = $das_server;
+#  our $das_server_url = $das_server;
   &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
 
   ## Open DAS client
-  my $das = Bio::Das->new(5);  # timeout of 5 sec
+  my $das = Bio::Das->new(10);  # timeout of 10 sec
+  unless ($das) {
+    &RSAT::error::FatalError("Cannot establish connection to UCSC DAS server", $das_server_url);
+  }
 
   ################################################################
   ## Open output stream
@@ -94,7 +97,7 @@ package main;
   ## Send request to DAS server to obtain the list of supported organisms
   &RSAT::message::TimeWarn("Sending request to DAS server", $das_server_url) if ($main::verbose >= 3);
   my @response = $das->dsn('http://genome.cse.ucsc.edu/cgi-bin/das');
-  
+
   for my $url (@response) {
     if ($url->is_success) {
 	    my @dsns = $url->results;
