@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.26 2012/08/02 00:50:03 jvanheld Exp $
+# $Id: compare-features,v 1.27 2013/01/03 09:59:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -230,7 +230,7 @@ package main;
 
 
   ################################################################
-  #### check argument values
+  ## Check argument values
 
   ## Number of input files should be >= 2
   if ($ref_file) {
@@ -249,7 +249,7 @@ package main;
 
 
   ################################################################
-  ##### read input
+  ## Read input
   my $feat_nb = 0;
   my %feature_ids = ();
   &RSAT::message::TimeWarn("Reading features") if ($main::verbose >= 2);
@@ -578,7 +578,6 @@ sub CreateIntersection {
     $description .= $next_ft->full_id();
     $inter_ft->set_attribute("description", $description);
 
-
     $inter_ft->set_attribute("score", sprintf("%.2f", $inter_ft->get_attribute("inter_cov")*$max_score));
 
     ## Files of the intersecting features
@@ -603,34 +602,34 @@ sub CreateIntersection {
 ################################################################
 #### Prepare the output for -oft option
 sub PrintOFT {
-		my ($inter_feat,$feature_ids) = @_;
+  my ($inter_feat,$feature_ids) = @_;
 
-		my @ids =  $inter_feat->get_attribute("feature_ids");
-		my $originalFeat;
-		my $originalFeat1 = $feature_ids->{$ids[0]};
-		my $originalFeat2 = $feature_ids->{$ids[1]};
+  my @ids =  $inter_feat->get_attribute("feature_ids");
+  my $originalFeat;
+  my $originalFeat1 = $feature_ids->{$ids[0]};
+  my $originalFeat2 = $feature_ids->{$ids[1]};
 
-		if ($ref_file) {
-			if (!$originalFeat1->get_attribute("ref")) {
-				$originalFeat = $originalFeat1;
-			} elsif (!$originalFeat2->get_attribute("ref")){
-				$originalFeat = $originalFeat2;
-			}
-		} else {
-			$originalFeat = $feature_ids->{$ids[1]};
-		}
+  if ($ref_file) {
+    if (!$originalFeat1->get_attribute("ref")) {
+      $originalFeat = $originalFeat1;
+    } elsif (!$originalFeat2->get_attribute("ref")) {
+      $originalFeat = $originalFeat2;
+    }
+  } else {
+    $originalFeat = $feature_ids->{$ids[1]};
+  }
 
-		my $ft_out = new RSAT::feature();
-		$ft_out->set_attribute("seq_name", $inter_feat->get_attribute("seq_name"));
-		$ft_out->set_attribute("id", $originalFeat->get_attribute("id"));
-		$ft_out->set_attribute("ft_type", $originalFeat->get_attribute("ft_type"));
-		$ft_out->set_attribute("feature_name", $originalFeat->get_attribute("feature_name"));
-		$ft_out->set_attribute("start", $inter_feat->get_attribute("start"));
-		$ft_out->set_attribute("end", $inter_feat->get_attribute("end"));
-		$ft_out->set_attribute("strand", $inter_feat->get_attribute("strand"));
-		$ft_out->set_attribute("description", $inter_feat->get_attribute("description"));
+  my $ft_out = new RSAT::feature();
+  $ft_out->set_attribute("seq_name", $inter_feat->get_attribute("seq_name"));
+  $ft_out->set_attribute("id", $originalFeat->get_attribute("id"));
+  $ft_out->set_attribute("ft_type", $originalFeat->get_attribute("ft_type"));
+  $ft_out->set_attribute("feature_name", $originalFeat->get_attribute("feature_name"));
+  $ft_out->set_attribute("start", $inter_feat->get_attribute("start"));
+  $ft_out->set_attribute("end", $inter_feat->get_attribute("end"));
+  $ft_out->set_attribute("strand", $inter_feat->get_attribute("strand"));
+  $ft_out->set_attribute("description", $inter_feat->get_attribute("description"));
 
-		return ($ft_out);
+  return ($ft_out);
 }
 
 
@@ -746,16 +745,15 @@ allows to use the command within a pipe.
 
 =pod
 
-=item	B<-oft outputfeaturefile>
+=item	B<-oft output_feature_file>
 
-In addition to the output, export a feature file containing
-the type of the feature, and chromosomal location of each features.
-This option is compatible with -return inter.
+In addition to the output, export a feature file containing the type
+of the feature, and chromosomal location of each feature.  This option
+is compatible with -return inter.
 
 =cut
 	} elsif ($ARGV[$a] eq "-oft") {
 	    $main::outfile{output_ft} = $ARGV[$a+1];
-
 
 =pod
 
@@ -872,22 +870,22 @@ total length covered by the pair of intersecting features.
 ## Calculate differences: detect features with no intersection in
 ## other files
 sub Differences {
-    &RSAT::message::TimeWarn("Calculating differences") if ($main::verbose >= 2);
-    for my $a (0..$#input_files) {
-	&RSAT::message::TimeWarn(join("\t","", "Detecting unmatched features in file",
-				      ($a+1)."/".scalar(@input_files),
-				      $input_files[$a])) if ($main::verbose >= 2);
-	my $feature_list_ref = $feature_lists[$a];
-	foreach my $feature (@{$feature_list_ref}) {
-	    my %inter_files = $feature->get_attribute("inter_files");
-	    foreach my $f (0..$#input_files) {
-		next if ($a == $f);
-		unless ($inter_feature_file{$feature->full_id()}->{$f}) {
-		    &CreateDifference($feature, $f);
-		}
-	    }
+  &RSAT::message::TimeWarn("Calculating differences") if ($main::verbose >= 2);
+  for my $a (0..$#input_files) {
+    &RSAT::message::TimeWarn(join("\t","", "Detecting unmatched features in file",
+				  ($a+1)."/".scalar(@input_files),
+				  $input_files[$a])) if ($main::verbose >= 2);
+    my $feature_list_ref = $feature_lists[$a];
+    foreach my $feature (@{$feature_list_ref}) {
+      my %inter_files = $feature->get_attribute("inter_files");
+      foreach my $f (0..$#input_files) {
+	next if ($a == $f);
+	unless ($inter_feature_file{$feature->full_id()}->{$f}) {
+	  &CreateDifference($feature, $f);
 	}
+      }
     }
+  }
 }
 
 ################################################################
@@ -1034,7 +1032,7 @@ sub Validation {
 ## of feature score
 sub ScoreStatistics {
 
-    ## Count numbre of reference features
+    ## Count number of reference features
     my $ft_r = $feature_lists[0];
     my $ref_nb = scalar(@$ft_r);
 
