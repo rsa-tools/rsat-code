@@ -34,12 +34,9 @@ A:hover {
 
 h1 {
      font-size:16px;
-/*     color: #002266;*/
      text-align: center;
-/*     color: #DDEEFF; */
      color: #002266;
      background-color: #F6E6CA;
-/*     background-color: #115588;*/
      border: 1px solid #cc6600;
      margin-left: 0px;
      margin-right: 0px;
@@ -94,7 +91,6 @@ pre,tt {
          background-color: #d8d8d8;
          }
 
-
 .tips {
        margin-top: 5px;
        margin-bottom: 5px;
@@ -104,7 +100,7 @@ pre,tt {
        padding-right: 5px;
        border: 1px dashed #2f6fab;
        #color: Black;
-       background-color: #DDFFDD;
+       background-color: #EEFFEE;
        #color: #330066;
        #margin-right: 20%
 }
@@ -130,7 +126,7 @@ pre,tt {
             padding-left: 5px;
             padding-right: 5px;
             border: 1px dashed #FFFFFF;
-            background-color: #DDDDFF;
+            background-color: #EEEEFF;
             color: #0000BB;
             font-size: 11px;
             #margin-right: 20%
@@ -179,7 +175,7 @@ pre,tt {
        padding-right: 5px;
        #border: 1px solid #9999ff;
        #color: Black;
-       background-color: #DDFFDD;
+       background-color: #EEFFEE;
        color: rgb(51, 51,153);
        #margin-right: 30%
 }
@@ -206,8 +202,8 @@ p.attention
 
 .tbw {
        font-style:italic;
-        margin-top: 5px;
-        margin-bottom: 5px;
+       margin-top: 5px;
+       margin-bottom: 5px;
        padding-top: 5px;
        padding-bottom: 5px;
        padding-left: 5px;
@@ -227,7 +223,7 @@ p.attention
             padding-right: 5px;
             #border: 1px solid #9999ff;
             color: #000055;
-            background-color: #D8E8FF;
+            background-color: #EEEEFF;
             }
 
 /* TABLE */
