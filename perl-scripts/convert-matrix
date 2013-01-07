@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.146 2012/08/21 21:36:33 amedina Exp $
+# $Id: convert-matrix,v 1.147 2013/01/07 00:44:59 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -121,6 +121,11 @@ $supported_logo_formats = join ",", sort keys %supported_logo_format;
 
 ################################################################
 ## Check argument values ####
+
+## Verbosity is only accepted for the tab-delimited format
+unless (lc($output_format ) eq "tab") {
+  $main::verbose = 0;
+}
 
 ## Input format
 unless ($input_format) {
