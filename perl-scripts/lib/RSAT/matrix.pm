@@ -236,6 +236,7 @@ the program consensus (Hertz), but not by other programs.
 			    "tf"=>1,
 			    "stamp"=>1,
 			    "tab"=>1,
+			    "tomtom"=>1, ## a tab-delimited file without row headers (residues)
 			    "consensus"=>1,
 			    "cluster-buster" =>1,
 			    "cb" =>1,
@@ -676,8 +677,13 @@ sub toString {
       return $self->to_consensus(%args);
     } elsif ($output_format eq "infogibbs") {
       return $self->to_infogibbs(%args);
+
     } elsif ($output_format eq "tomtom") {
-      return $self->to_tomtom(%args);
+      ## TOMTOM now accepts tab-delimited format without residues at the beginning of each row
+      return $self->to_tab(pipe=>"", no_residues=>1);
+
+    } elsif ($output_format eq "tomtom_previous") {
+      return $self->to_tomtom_previous(%args);
     }else {
       &RSAT::error::FatalError($output_format, "Invalid output format for a matrix");
     }
@@ -685,13 +691,13 @@ sub toString {
 
 =pod
 
-=item to_tomtom()
+=item to_tomtom_previous()
 
 Convert the matrix into a string that can be read by TOMTOM form
 (version >= 4.4).
 
 =cut
-sub to_tomtom {
+sub to_tomtom_previous {
     my ($self, %args) = @_;
     my $to_print = "";
 
@@ -1040,7 +1046,8 @@ sub to_consensus {
 =pod
 
 =item to_tab(sep=>$sep, col_width=>$col_width, type=>$type,
-             comment_char=>$comment_char, no_comment=>0|1)
+             comment_char=>$comment_char, no_comment=>0|1, 
+             pipe=>0|1, no_residues=>1|0)
 
 Return a string description of the matrix in the same format as Jerry
 Hertz programs. Additional parameters are also exported as comments,
@@ -1067,6 +1074,22 @@ A character or string to print before each row of the matrix.
 Do not export the comment chars (header, margins). This is useful for
 the piping buttons when the option -link is used in convert-matrix.
 
+=item no_residudes
+
+Do not print the residue at the beginning of each row.
+
+Some tools, such as TOMTOM (http://meme.nbcr.net/meme/cgi-bin/tomtom.cgi),
+expect a matrix with residue counts only, without letter at the
+beginning of each row. Rows should thus be provided in the right order
+(A, C, G, T).
+
+=item pipe
+
+Print the pipe character to separate the residue (first letter of each
+row) from the malues (counts, frequencies). This convention was
+introduced with Jerry Hertz' programs consensus and patser, but has
+not been adopted by other softare tools and databases.
+
 =back
 
 =cut
@@ -1077,11 +1100,15 @@ sub to_tab {
   $output_format = lc($output_format);
 
   ## Separator between row names (residues) and matrix content
-  my $pipe =  "|";
+  my $pipe =  "";
   if (defined($args{pipe})) {
     $pipe = $args{pipe};
+    $self->force_attribute("pipe", $pipe);
   }
-  $self->force_attribute("pipe", $pipe);
+
+  if ($args{no_residues}) {
+    $self->force_attribute("no_residues", 1);
+  }
 
   ## Matrix type
   $type = $args{type} || "counts";
@@ -1156,8 +1183,8 @@ sub to_tab {
     my $nrow = $self->nrow();
 
       ## Header of the matrix
-      if (($self->get_attribute("header")) 
-	  && (!$args{no_comment})){
+      if (($self->get_attribute("header"))
+	  && (!$args{no_comment})) {
 	$to_print .= ";\n";
 	$to_print .= "; Matrix type: $type\n";
 	if (($col_width) && ($col_width < 6)) {
@@ -2475,63 +2502,76 @@ Print a row for the matrix output.
 =cut
 
 sub _printMatrixRow {
-    my ($self, $row_name, @values) = @_;
-    my $row_string = $row_name;
-    my $ncol = scalar(@values);
+  my ($self, $row_name, @values) = @_;
 
-    ## Format for the matrix entries
-    my $col_width = $self->get_attribute("col_width");
-    my $number_width = 0;
-    if ($col_width) {
-  	$number_width = $col_width - 1;
+  my $row_string;
+  unless ($self->get_attribute("no_residues")) {
+    $row_string = $row_name;
+  }
+
+  my $ncol = scalar(@values);
+
+  ## Format for the matrix entries
+  my $col_width = $self->get_attribute("col_width");
+  my $number_width = 0;
+  if ($col_width) {
+    $number_width = $col_width - 1;
+  } else {
+    $number_width = 5;
+  }
+
+  ## Number of decimals for floating numbers
+  my $decimals;
+  if (defined($self->{decimals})) {
+    $decimals = $self->get_attribute("decimals");
+  } else {
+    if ($type eq "counts") {
+      $decimals = 0;
     } else {
-	$number_width = 5;
+      $decimals = $number_width - 3;
+    }
+  }
+
+  ## Separator between columns
+  my $sep = $self->get_attribute("sep") || "\t";
+  #    my $sep="boum";
+
+  #    &RSAT::message::Debug("w=".$col_width, "sep='".$sep."'", "pos=".$pos, "decimals=".$decimals, "number_width=".$number_width) if ($main::verbose >= 10);
+
+  ## Print the matrix row
+  my $pipe = $self->get_attribute("pipe");
+  $row_string .= $sep.$pipe if ($pipe);
+
+  for $c (0..($ncol-1)) {
+    my $value;
+    if (defined($values[$c])) {
+      $value = $values[$c];
+    } else {
+      $value = "UNDEF";
     }
 
-    ## Number of decimals for floating numbers
-    my $decimals;
-    if (defined($self->{decimals})) {
-      $decimals = $self->get_attribute("decimals");
+    if (($self->get_attribute("no_residues")) && ($c == 0)) {
+      $row_string .= $value;
     } else {
-      if ($type eq "counts") {
-	$decimals = 0;
+      if ($col_width) {
+	## Fixed-width columns
+	my $value_format = "%${number_width}s";
+	if (&main::IsReal($value)) {
+	  if ($type eq "counts") {
+	    $value_format = "%${number_width}d";
+	  } else {
+	    $value_format= "%${number_width}.${decimals}f";
+	  }
+	}
+	$row_string .= sprintf " ${value_format}", $value;
       } else {
-	$decimals = $number_width - 3;
+	## Column separator
+	$row_string .= $sep.$value;
       }
     }
-
-    ## Separator between columns
-    my $sep = $self->get_attribute("sep") || "\t";
-#    my $sep="boum";
-
-#    &RSAT::message::Debug("w=".$col_width, "sep='".$sep."'", "pos=".$pos, "decimals=".$decimals, "number_width=".$number_width) if ($main::verbose >= 10);
-
-    ## Print the matrix row
-    my $pipe = $self->get_attribute("pipe");
-    $row_string .= $sep.$pipe if ($pipe);
-    for $c (0..($ncol-1)) {
-	my $value;
-	if (defined($values[$c])) {
-	  $value = $values[$c];
-	} else {
-	  $value = "UNDEF";
-	}
-	if ($col_width) {
-	    my $value_format = "%${number_width}s";
-	    if (&main::IsReal($value)){
-		if ($type eq "counts") {
-		    $value_format = "%${number_width}d";
-		} else {
-		    $value_format= "%${number_width}.${decimals}f";
-		}
-	    }
-	    $row_string .= sprintf " ${value_format}", $value;
-	} else {
-	    $row_string .= $sep.$value;
-	}
-    }
-    $row_string .= "\n";
-    return $row_string;
+  }
+  $row_string .= "\n";
+  return $row_string;
 }
 
 ################################################################
