@@ -31,6 +31,7 @@ $default{matrix_file}="";
 $default{matrix_format} = "tab";
 $default{output_format} = "tab";
 $default{counts}="checked";
+$default{comments}="checked";
 $default{consensus}="checked";
 $default{frequencies}="";
 $default{info}="";
@@ -64,7 +65,7 @@ foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-} 
+}
 
 
 ################################################################
@@ -111,7 +112,7 @@ print "<BR>\n";
 #### Return fields
 print "<p><b><a href='help.convert-matrix.html#return'>Return fields</a></B>&nbsp;<br>\n";
 my $i = 0;
-foreach my $stat qw(counts frequencies weights info header margins consensus parameters profile) {
+foreach my $stat qw(counts frequencies weights info header margins consensus parameters profile comments) {
   print $query->checkbox(-name=>$stat,
 			 -checked=>$default{$stat},
 			 -label=>'');
