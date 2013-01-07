@@ -39,7 +39,8 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-local $parameters = " -v 1";
+local $parameters;
+
 
 ################################################################
 ## Matrix input format
@@ -110,7 +111,6 @@ if (&IsInteger($query->param('perm'))) {
 }
 
 
-
 ################################################################
 ## Background model method
 &SetBackgroundModel();
@@ -147,9 +147,12 @@ foreach my $stat qw (counts frequencies weights info consensus parameters profil
 }
 
 if ($output_format eq 'tab') {
-    $parameters .= " -v 1 ";
-    $parameters .= " -return ";
-    $parameters .= join ",", @return_fields;
+  ## verbosity
+  if ($query->param("comments")) {
+    $parameters .= " -v 1";
+  }
+  $parameters .= " -return ";
+  $parameters .= join ",", @return_fields;
 }else {
     $parameters .= " -to ".$output_format;
     $parameters .= " -return counts";
