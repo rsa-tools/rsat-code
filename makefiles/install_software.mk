@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.29 2012/11/23 00:19:40 jvanheld Exp $
+# $Id: install_software.mk,v 1.30 2013/01/08 07:30:11 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -175,9 +175,13 @@ _compile_seqlogo:
 ################################################################
 ## Get and install the program ghostscript
 ## Note: for Mac users, please go to the ghostscript Web site
-GS_URL=http://ghostscript.com/releases/
-GS_VER=ghostscript-8.64
-GS_TAR=${GS_TAR}.tar.gz
+##
+## GS_URL=http://ghostscript.com/releases/
+## GS_VER=ghostscript-8.64
+## GS_TAR=${GS_VER}.tar.gz
+GS_URL=http://downloads.ghostscript.com/public/binaries/
+GS_VER=ghostscript-9.06-linux-x86_64
+GS_TAR=${GS_VER}.tgz
 GS_DIR=${SRC_DIR}/ghostscript
 install_ghostscript: _download_gs _compile_gs
 
@@ -189,7 +193,6 @@ _download_gs:
 
 _compile_gs:
 	@echo "Installing gs"
-	(cd ${GS_DIR}; wget -nv -nd ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
 	(cd ${GS_DIR}/${GS_VER}; ./configure && make)
 
 ################################################################
