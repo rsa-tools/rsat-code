@@ -2368,7 +2368,8 @@ sub MatrixFromPatterns_run {
   $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
 
   ## Generate the command to extract matrices from patterns
-  $pssm_command = $SCRIPTS."/matrix-from-patterns -v 1 -logo ";
+  $pssm_command = $SCRIPTS."/matrix-from-patterns -v 1";
+  $pssm_command .= " -logo ";
   #  $pssm_command .= " ".$str;
   $pssm_command .= " -seq ".$sequence_file;
   $pssm_command .= " -format $sequence_format";
@@ -2384,8 +2385,8 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -o ".$pssm_prefix;
 
   ## Run the command
+  print "<PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
   system("$pssm_command");
-  print "<PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
   push @result_files, ('significance matrices', $sig_matrix_file);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
   push @result_files, ('final matrices (transfac format)', $pssm_file_tf);
@@ -2540,12 +2541,12 @@ sub display_matrices_web {
     $cmd .= " -return consensus";
     #  $cmd .= " -return parameters";
     ## Logo parameters
-    $cmd .= " -return logo -logo_format png,pdf ";
+    $cmd .= " -return logo -logo_format png,pdf "; 
     $cmd .= " -logo_opt '-e' "; ## Error bar
     $cmd .= " -logo_opt '-M' "; ## Small sample correction
     $cmd .= " -logo_dir ".$logo_dir;
     $cmd .= " -o ".$out_matrix_file;
-    print "<pre><b>Matrix conversion command:</b> ", &RSAT::util::hide_RSAT_path($cmd), "\n</pre>" if ($ENV{rsat_echo} >=1);
+    print "<pre><b>Matrix conversion command:</b> ", &RSAT::util::hide_RSAT_path($cmd), "\n</pre>" if ($ENV{rsat_echo} >= 1);
     system ($cmd);
 
     &DelayedRemoval($out_matrix_file);
