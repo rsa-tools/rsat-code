@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.76 2013/01/09 08:23:52 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.77 2013/01/09 08:25:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -176,6 +176,7 @@ print <<EndText;
 	  http://rsat.sb-roscoff.fr/</a>
       </td>
 
+<!--
     <td>
       <a href="http://tagc.univ-mrs.fr/metabolix/" target="_top">
 	<b>Marseille - France</b>
@@ -184,7 +185,7 @@ print <<EndText;
   http://tagc.univ-mrs.fr/metabolix/
     </a>
     </td>
-
+-->
 
     </tr><tr>
 
