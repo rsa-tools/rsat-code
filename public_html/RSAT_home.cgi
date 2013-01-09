@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.75 2012/08/04 14:24:50 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.76 2013/01/09 08:23:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -159,13 +159,21 @@ print <<EndText;
 	  <img src="images/manneken_pis.jpg" height=80 border=0><br>
 	  http://rsat.ulb.ac.be/rsat/</a>
       </td>
-      
-      
+
+<!--
       <td>
 	<a href="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
 	  <b>Brussels (2) - Belgium</b><br>
 	  <img src="images/Atomium_icon_80.png" height=80 border=0><br>
 	  http://wwwsup.scmbb.ulb.ac.be/rsat/</a>
+      </td>
+-->
+
+      <td>
+	<a href="http://rsat.sb-roscoff.fr/" target="_top">
+	  <b>Roscoff - France</b><br>
+	  <img src="images/roscoff.png" height=80 border=0><br>
+	  http://rsat.sb-roscoff.fr/</a>
       </td>
 
     <td>
