@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.77 2013/01/09 08:25:28 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.78 2013/01/10 11:31:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -169,13 +169,6 @@ print <<EndText;
       </td>
 -->
 
-      <td>
-	<a href="http://rsat.sb-roscoff.fr/" target="_top">
-	  <b>Roscoff - France</b><br>
-	  <img src="images/roscoff.png" height=80 border=0><br>
-	  http://rsat.sb-roscoff.fr/</a>
-      </td>
-
 <!--
     <td>
       <a href="http://tagc.univ-mrs.fr/metabolix/" target="_top">
@@ -187,24 +180,6 @@ print <<EndText;
     </td>
 -->
 
-    </tr><tr>
-
-      <td ALIGN=CENTER>
-	<a href="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
-	  <b>Cuernavaca - Mexico</b><br>
-	  <img src="images/zapata.jpg" height=80 border=0><br>
-	  http://embnet.ccg.unam.mx/rsa-tools/</a>
-      </td>
-      
-      <td align=center>
-	<a href="http://bongcam1.hgen.slu.se/rsat/" target="_top">
-	  <!--  <a href="http://liv.hgen.slu.se/rsa-tools/" target="_top">-->
-	  <b>Uppsala - Sweden</b><br>
-	  <img src="images/uppsala_lcb.jpg" height=80 border=0><br>
-	  http://bongcam1.hgen.slu.se/rsat/</a>
-	<!--http://liv.hgen.slu.se/rsa-tools/</a>-->
-      </td>
-      
       <td align=center>
 	<a href='http://tagc.univ-mrs.fr/rsa-tools/' target='_top'>
 	  <b>Marseille TAGC - France</b><br>
@@ -213,15 +188,41 @@ print <<EndText;
 	<br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
       </td>
 
+      <td ALIGN=CENTER>
+	<a href="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
+	  <b>Cuernavaca - Mexico</b><br>
+	  <img src="images/zapata.jpg" height=80 border=0><br>
+	  http://embnet.ccg.unam.mx/rsa-tools/</a>
+      </td>
+
     </tr><tr>
-      
+
       <td align=center>
 	<a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
 	  <b>ENS Paris - France</b><br>
 	  <img src="images/paris.jpg" height=80 border=0><br>
 	  http://rsat01.biologie.ens.fr/rsa-tools/</a>
       </td>
-      
+
+
+      <td align=center>
+	<a href="http://bongcam1.hgen.slu.se/rsat/" target="_top">
+	  <!--  <a href="http://liv.hgen.slu.se/rsa-tools/" target="_top">-->
+	  <b>Uppsala - Sweden</b><br>
+	  <img src="images/uppsala_lcb.jpg" height=80 border=0><br>
+	  http://bongcam1.hgen.slu.se/rsat/</a>
+	<!--http://liv.hgen.slu.se/rsa-tools/</a>-->
+      </td>
+
+      <td align=center>
+	<a href="http://lmmge-webserver.unisa.it/rsat/" target="_top">
+	  <b>Salerno - Italia</b><br>
+	  <img src="images/salerno_icon.jpg" height=80 border=0><br>
+	  http://lmmge-webserver.unisa.it/rsat//</a>
+      </td>
+
+
+    </tr><tr>
       <td align=center>
 	<a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
 	  <b>Pretoria - South-Africa</b><br>
@@ -229,12 +230,13 @@ print <<EndText;
 	  http://anjie.bi.up.ac.za/rsa-tools/</a>
       </td>
       
-      <td align=center>
-	<a href="http://lmmge-webserver.unisa.it/rsat/" target="_top">
-	  <b>Salerno - Italia</b><br>
-	  <img src="images/salerno_icon.jpg" height=80 border=0><br>
-	  http://lmmge-webserver.unisa.it/rsat//</a>
+      <td>
+	<a href="http://rsat.sb-roscoff.fr/" target="_top">
+	  <b>Roscoff - France</b><br>
+	  <img src="images/roscoff_sb.jpg" height=80 border=0><br>
+	  http://rsat.sb-roscoff.fr/</a>
       </td>
+
 
       <!--
 	  <td align=center>
