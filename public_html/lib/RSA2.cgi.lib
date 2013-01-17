@@ -1614,6 +1614,9 @@ sub EmailTheResult {
     my $mail_title = $args{title};
     my $no_email = $args{no_email} || 0;
 
+    ## Run the task in nice mode
+    $command = "nice -n 20 ".$command;
+
     my $clean_command = &RSAT::util::hide_RSAT_path($command);
 
     ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
