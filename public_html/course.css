@@ -88,7 +88,7 @@ hr.solid {
 
 pre,tt {
          font-size: 12px;
-         background-color: #d8d8d8;
+         background-color: #EEEEEE;
          }
 
 .tips {
@@ -185,7 +185,7 @@ pre,tt {
              font-size: larger;
              padding:10px;
              background-color: #FFEEEE;
-             border: 4px solid #B40404;
+             border: 2px solid #B40404;
              margin-right: 5%;
              margin-left: 5%;
              }  
@@ -193,8 +193,8 @@ pre,tt {
 p.attention
 {
   padding:10px;
-  background-color: #F78181;
-  border: 3px solid #B40404;
+  background-color: #FFEEEE;
+  border: 2px solid #B40404;
   margin-right: 5%;
   margin-left: 5%;
 }
