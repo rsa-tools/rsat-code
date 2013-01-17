@@ -1615,7 +1615,7 @@ sub EmailTheResult {
     my $no_email = $args{no_email} || 0;
 
     ## Run the task in nice mode
-    $command = "nice -n 20 ".$command;
+    $command = "nice -n 19 ".$command;
 
     my $clean_command = &RSAT::util::hide_RSAT_path($command);
 
