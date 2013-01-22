@@ -513,8 +513,22 @@ To obtain EnsEMBL \footnote{Full instructions at
 cd $RSAT
 
 ## Install the ensembl library
-make -f makefiles/install_software.mk install_ensembl_api
+make -f makefiles/install_software.mk install_ensembl_api 
+\end{lstlisting}
+%%$ 
 
+Note that there may be incompatibilities between successive versions
+of the Ensembl API. The install script includes a parameter
+\texttt{ENSEMBL\_VERSION} to specify the version ("branch") of the
+Ensembl API distribution. Before installing Ensembl API, always check
+the latest release on the Ensembl web page
+(\url{http://www.ensembl.org/index.html}), and adapt the following
+command accordingly.
+
+\begin{lstlisting}
+## Install the ensembl library witha  specific branch number
+make -f makefiles/install_software.mk install_ensembl_api \
+   ENSEMBL_VERSION=70
 \end{lstlisting}
 %%$ 
 

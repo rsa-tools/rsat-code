@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.30 2013/01/08 07:30:11 rsat Exp $
+# $Id: install_software.mk,v 1.31 2013/01/22 22:26:58 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -129,9 +129,26 @@ _compile_python_suds:
 	@echo "Installing suds"
 	(cd ${SUDS_INSTALL_DIR}; python2.7 setup.py build; ${SUDO} python2.7 setup.py install)
 
+# ################################################################
+# ## Install the EnsEMBL Perl API
+# ENSEMBL_BRANCH=70
+# ensembl_api:	
+# 	@echo  "Password is 'CVSUSER'"
+# 	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
+# 	@(cd ${RSAT}/lib; \
+# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl ; \
+# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-compara)
+# 	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
+# 	@echo "ensembl=${RSAT}/lib/ensembl/modules"
+# 	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
+# 	@echo "bioperl=${RSAT}/lib/bioperl-live"
+
+
 ################################################################
 ## Install the EnsEMBL Perl API
-ENSEMBL_VERSION=68
+ENSEMBL_VERSION=70
 ENSEMBL_API_DIR=${SOFT_DIR}/perllib
 install_ensembl_api:	
 	@echo
@@ -256,6 +273,24 @@ _install_bedtools:
 	@echo
 	@mkdir -p ${BIN_DIR}
 	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}
+
+################################################################
+## Install Biotoolbox
+install_biotoolbox: _download_biotoolbox
+
+BTB_VERSION=1.9.4
+BTB_ARCHIVE=biotoolbox_v${BTB_VERSION}.tgz
+BTB_URL=http://biotoolbox.googlecode.com/files/${BTB_ARCHIVE}
+BTB_BASE_DIR=${SRC_DIR}/biotoolbox
+BTB_DOWNLOAD_DIR=${BTB_BASE_DIR}/biotoolbox
+_download_biotoolbox:
+	@echo
+	@echo "Downloading biotoolbox ${BTB_VERSION}"
+	@echo
+	@mkdir -p ${BTB_BASE_DIR}
+	(cd ${BTB_BASE_DIR}; wget -nv -nd ${BTB_URL} ; tar -xpzf ${BTB_ARCHIVE})
+	@echo ${BTB_DOWNLOAD_DIR}
+
 
 ################################################################
 ## Install MEME (Tim Bailey)
@@ -600,6 +635,14 @@ _compile_peaksplitter_linux:
 
 __compile_peaksplitter:
 	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR})
+
+################################################################
+## FindPeaks
+FINDPEAKS_VERSION=3-1-9-2
+FINDPEAKS_VERSION_DIR=3.1.9.2
+FINDPEAKS_URL=http://www.bcgsc.ca/platform/bioinfo/software/findpeaks/releases/${FINDPEAKS_VERSION_DIR}/findpeaks${FINDPEAKS_VERSION}-tar.gz
+install_findpeaks:
+	@echo "TO BE IMPLEMENTED"
 
 ################################################################
 ## SICER (peak calling for large regions e.g. methylation)
