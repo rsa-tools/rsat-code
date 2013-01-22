@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-ensembl,v 1.4 2011/11/16 21:07:31 jvanheld Exp $
+# $Id: supported-organisms-ensembl,v 1.5 2013/01/22 22:28:12 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -13,9 +13,8 @@ use DBI();
 ## Read arguments
 &ReadArguments();
 
-
-#my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org:port=5306", "anonymous", "", {'RaiseError' => 1});
-my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org:port=5306", "anonymous", "", {'RaiseError' => 1});
+my $host_db = "host=ensembldb.ensembl.org";
+my $dbh = DBI->connect("DBI:mysql:".$host_db.":port=5306", "anonymous", "", {'RaiseError' => 1});
 my $sth = $dbh->prepare("SHOW DATABASES");
 $sth->execute();
 my $dbversion;
