@@ -241,8 +241,6 @@ if ($query->param('header_org')) {
 ### Line width
 my $lw = 60;
 
-#&ReportWebCommand($command." ".$parameters);
-
 my %args = (
             'organism' => $organism_name,
 #            'query' => \@gene_selection,
@@ -268,7 +266,8 @@ my %args = (
             'header_organism' => $header_org
     );
 
-#### execute the command #####
+
+## Execute the command
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
 
@@ -277,15 +276,17 @@ if (($query->param('output') =~ /display/i) ||
 
     my ($ticket, $command, $results) = &Retrieve(%args);
 
+#    &ReportWebCommand($command) if ($ENV{rsat_echo} >= 1);
+
     @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
     @weekDays = qw(Sun Mon Tue Wed Thu Fri Sat Sun);
     ($second, $minute, $hour, $dayOfMonth, $month, $yearOffset, $dayOfWeek, $dayOfYear, $daylightSavings) = localtime();
     $year = 1900 + $yearOffset;
     if ($second <10) {
-	$second = "0".$second;	
+	$second = "0".$second;
     }
     if ($minute <10) {
-	$minute = "0".$minute;	
+	$minute = "0".$minute;
     }
     my $submit_time = "$hour:$minute:$second, $weekDays[$dayOfWeek] $months[$month] $dayOfMonth, $year";
 
@@ -338,7 +339,7 @@ if (($query->param('output') =~ /display/i) ||
     &Info($notification);
 }
 
-print $query->end_html . "\n";    
+print $query->end_html . "\n";
 
 exit(0);
 
@@ -359,7 +360,7 @@ sub Retrieve {
 	## Report the remote command
 	my $command = $results -> get_command();
 	my $ticket = $results -> get_server();
-	return $ticket, $command, $results;
+	return ($ticket, $command, $results);
     } else {
 	my $notification = $results -> get_client();
 	return $notification;
