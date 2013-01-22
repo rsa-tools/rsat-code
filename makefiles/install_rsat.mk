@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.69 2012/06/20 23:06:00 rsat Exp $
+# $Id: install_rsat.mk,v 1.70 2013/01/22 22:26:58 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -162,22 +162,6 @@ bioperl_git:
 bioperl_test:
 	perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
 
-
-################################################################
-## Install the EnsEMBL Perl API
-ENSEMBL_BRANCH=56
-ensembl_api:	
-	@echo  "Password is 'CVSUSER'"
-	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
-	@(cd ${RSAT}/lib; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-compara)
-	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
-	@echo "ensembl=${RSAT}/lib/ensembl/modules"
-	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
-	@echo "bioperl=${RSAT}/lib/bioperl-live"
 
 
 ################################################################
