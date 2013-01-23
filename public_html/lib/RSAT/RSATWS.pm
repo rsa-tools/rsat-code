@@ -371,7 +371,11 @@ sub retrieve_ensembl_seq {
   if ($args{"features"}) {
     my $features = $args{"features"};
     chomp $features;
-    $tmp_ft_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+##    $tmp_ft_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+    $prefix = "retrieve-ensemb-seq_WS";
+    $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
+    $tmp_ft_file = $tmp_file_path.".ft";
+    $tmp_ft_infile = $tmp_file_path."_input.ft";
     open TMP_IN, ">".$tmp_ft_infile or die "cannot open temp file ".$tmp_ft_infile."\n";
     print TMP_IN $feature;
     close TMP_IN;
@@ -2108,7 +2112,9 @@ sub get_orthologs {
 #        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #    }
 
-    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(get_orthologs.XXXXXXXXXX, DIR => $TMP);
+#    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(get_orthologs.XXXXXXXXXX, DIR => $TMP);
+  my $tmp_outfile = &RSAT::util::make_temp_file("","get-orthologs", 1,0); 
+  my $TMP_OUT = open ">".$tmp_outfile || die "Cannot open temporary file ".$tmp_outfile;
     print $TMP_OUT $result;
     close $TMP_OUT;
 
@@ -2254,7 +2260,9 @@ sub footprint_discovery {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
 #    my $result = `$command`;
-    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
+#    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
+  my $tmp_outfile = &RSAT::util::make_temp_file("","footprint-discovery", 1,0); 
+  my $TMP_OUT = open ">".$tmp_outfile || die "Cannot open temporary file ".$tmp_outfile;
     print $TMP_OUT $result;
     close $TMP_OUT;
     $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
@@ -5956,8 +5964,13 @@ Run a command for the web services.
 =cut
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
-  my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile($method_name.".".XXXXXXXXXX, SUFFIX => "$out_format", DIR => $TMP);
-  chomp($tmp_outfile);
+
+
+#  my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile($method_name.".".XXXXXXXXXX, SUFFIX => "$out_format", DIR => $TMP);
+#  chomp($tmp_outfile);
+  my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0); 
+  my $TMP_OUT = open ">".$tmp_outfile || die "Cannot open temporary file ".$tmp_outfile;
+
   &UpdateLogFileWS(command=>$command,
 		   tmp_outfile=>$tmp_outfile,
 		   method_name=>$method_name,
