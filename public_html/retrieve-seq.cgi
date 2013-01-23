@@ -19,7 +19,6 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $prefix = "retrieve-seq";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
 @result_files = ();
 
 ### Read the CGI query
