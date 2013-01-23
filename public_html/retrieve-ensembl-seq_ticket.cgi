@@ -25,11 +25,12 @@ use File::Basename;
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$tmp_file_name = sprintf "retrieve-ensembl-seq.%s", &AlphaDate();
+#$tmp_file_name = sprintf "retrieve-ensembl-seq.%s", &AlphaDate();
+$prefix = "retrieve-ensembl-seq";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
 
 ### Read the CGI query
 $query = new CGI;
-
 
 #### update log file ####
 #&UpdateLogFile();
@@ -70,7 +71,8 @@ if ($query->param('homology_selection')) {
 
 #### queries ####
 my @gene_selection = ();
-$gene_list_file = "${TMP}/${tmp_file_name}.genes";
+#$gene_list_file = "${TMP}/${tmp_file_name}.genes";
+$gene_list_file = $tmp_file_path.".genes";
 if ($query->param('uploaded_file')) {
     $upload_file = $query->param('uploaded_file');
 #    if ($upload_file =~ /\.gz$/) {
