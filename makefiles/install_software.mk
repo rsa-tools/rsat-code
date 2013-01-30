@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.31 2013/01/22 22:26:58 jvanheld Exp $
+# $Id: install_software.mk,v 1.32 2013/01/30 17:47:00 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -229,6 +229,32 @@ _download_gnuplot:
 _compile_gnuplot:
 	@echo "Installing gnuplot"
 	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER}; ./configure && make; ${SUDO} make install)
+
+
+################################################################
+## Install fastqc, a software tool to control the quality of read
+## files (next generation sequencing).
+FASTQC_VER=0.10.1
+FASTQC_ZIP=fastqc_v${FASTQC_VER}.zip
+FASTQC_URL=http://www.bioinformatics.babraham.ac.uk/projects/fastqc/${FASTQC_ZIP}
+FASTQC_DOWNLOAD_DIR=${SRC_DIR}/fastqc
+FASTQC_INSTALL_DIR=${FASTQC_DOWNLOAD_DIR}
+FASTQC_EXEC_DIR=${FASTQC_INSTALL_DIR}/FastQC
+FASTQC=${FASTQC_EXEC_DIR}/fastqc
+install_fastqc: _download_fastqc _install_fastqc
+
+_download_fastqc:
+	@mkdir -p ${FASTQC_DOWNLOAD_DIR}
+	@echo "Getting fastqc using wget"
+#	(cd ${FASTQC_DOWNLOAD_DIR}; wget -nv -nd ${FASTQC_URL}; unzip ${FASTQC_ZIP})
+	@echo "	fastqc download dir	${FASTQC_DOWNLOAD_DIR}"
+	@echo "	fastqc install dir	${FASTQC_INSTALL_DIR}"
+	@chmod 755 ${FASTQC}
+	@echo "	fastqc executable dir	${FASTQC_EXEC_DIR}"
+	@echo "	fastqc script    	${FASTQC}"
+	@echo
+	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
+	@echo "export PATH=\$$PATH:${FASTQC_EXEC_DIR}"
 
 ################################################################
 ## Install BEDTools
