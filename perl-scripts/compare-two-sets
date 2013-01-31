@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-two-sets,v 1.7 2013/01/31 13:38:38 sylvain Exp $
+# $Id: compare-two-sets,v 1.8 2013/01/31 14:17:55 sylvain Exp $
 #
 ############################################################
 
@@ -76,7 +76,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -325,7 +325,6 @@ sub readList {
     if (!($keepfirst && $results{$elem})) {
       my @props = ();
       for (my $i = 0; $i < scalar @propcols; $i++) {
-        print "$elem $i\n";
         $col = $propcols[$i];
         $prop = $lignecp[$col];
         $props[$i] = $prop;
