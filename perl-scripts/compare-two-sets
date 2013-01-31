@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-two-sets,v 1.6 2012/02/07 09:50:56 rsat Exp $
+# $Id: compare-two-sets,v 1.7 2013/01/31 13:38:38 sylvain Exp $
 #
 ############################################################
 
@@ -76,7 +76,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -92,6 +92,11 @@ package main;
     $venn = 0;
     
     my %vennargs = ();
+    our @qpropcols = ();
+    our @rpropcols = ();
+    our @qproperties = (); 
+    our @rproperties = ();
+    our $keepfirst = 0;
 
 
     ################################################################
@@ -103,6 +108,14 @@ package main;
     &FatalError("File ".$main::infile{query}." does not exist") if (!-e $main::infile{query});
     &FatalError("File ".$main::infile{reference}." does not exist") if (!-e $main::infile{reference});
     
+    if (scalar @qpropcols != scalar @qproperties) {
+       &FatalError("Not the same number of query properties as query property names")
+    }
+    
+    if (scalar @rpropcols != scalar @rproperties) {
+       &FatalError("Not the same number of query properties as reference property names")
+    }
+
     
     $query_name = $main::infile{query} if (!$query_name);
     $reference_name = $main::infile{reference} if (!$reference_name);
@@ -113,8 +126,8 @@ package main;
 
     ################################################################
     ## Read input
-    my %query = readList($main::infile{query});
-    my %reference = readList($main::infile{reference});
+    my %query = readList($main::infile{query}, \@qpropcols, \@qproperties);
+    my %reference = readList($main::infile{reference}, \@rpropcols, \@rproperties);
     my %query_duplicated = &get_duplicated_elements(\%query);
     my %reference_duplicated = &get_duplicated_elements(\%reference);
     my $query_size = scalar keys %query;
@@ -217,12 +230,39 @@ package main;
     
     # results
     if (!$statsonly) {
-      print $main::out "#Intersection elements\n";
-      print $main::out (join "\n", @common)."\n";
-      print $main::out "#Query only elements\n";
-      print $main::out (join "\n", @q_only)."\n";;
-      print $main::out "#Reference only elements\n";
-      print $main::out (join "\n", @r_only)."\n";;
+      print $main::out "#Intersection elements";
+      if (scalar @rproperties > 0) {
+        print $main::out "\t";
+        print $main::out join "\t", @rproperties;
+      }
+      if (scalar @qproperties > 0) {
+        print $main::out "\t";
+        print $main::out join "\t", @qproperties;
+      }
+      print $main::out "\n";
+      my $towrite = print_element_array(\@common, \%reference, \%query);
+      print $main::out ($towrite);
+      
+      
+      print $main::out "#Reference only elements";
+      if (scalar @rproperties > 0) {
+        print $main::out "\t";
+        print $main::out join "\t", @rproperties;
+      }
+      print  $main::out  "\n";
+      $towrite = print_element_array(\@r_only, \%reference);
+      print $main::out ($towrite);
+      
+      
+      print $main::out "#Query only elements";
+      if (scalar @qproperties > 0) {
+        print $main::out "\t";
+        print $main::out join "\t", @qproperties;
+      }
+      print $main::out "\n";
+      $towrite = print_element_array(\@q_only, \%query);
+      print $main::out ($towrite);
+      
     }
     
     if ($venn) {
@@ -263,6 +303,8 @@ sub PrintHelp {
 ## Function to read input files
 sub readList {
   my $input_file = shift;
+  my $propcols_ref = shift;
+  my @propcols = @{$propcols_ref};
   my %results = ();
   ($main::in) = &OpenInputFile($input_file);
   while (my $ligne = <$main::in>) {
@@ -279,8 +321,19 @@ sub readList {
     if ($elem eq "") {
           RSAT::message::Warning("Skipped empty element") if ($main::verbose >= 2);
           next;
-    }    
-    $results{$elem}++;
+    }
+    if (!($keepfirst && $results{$elem})) {
+      my @props = ();
+      for (my $i = 0; $i < scalar @propcols; $i++) {
+        print "$elem $i\n";
+        $col = $propcols[$i];
+        $prop = $lignecp[$col];
+        $props[$i] = $prop;
+      }
+      
+      $results{$elem}{properties} = \@props;
+    }
+    $results{$elem}{number}++;
   }
   close $main::in if ($input_file);
   return %results;
@@ -314,6 +367,35 @@ sub compare_lists {
   return (\@common, \@q_only, \@r_only);
 }
 
+
+
+sub print_element_array {
+  my $element_array_ref = shift;
+  my $element_properties_1_ref = shift;
+  my $element_properties_2_ref = shift || 0;
+  my @element_array = @{$element_array_ref};
+  my %element_properties_1 = %{$element_properties_1_ref};
+  my %element_properties_2 = ();
+  if ($element_properties_2_ref != 0) {
+    %element_properties_2 = %{$element_properties_2_ref};
+  }
+  my $result = "";
+  for (my $i = 0; $i < scalar @element_array; $i++) {
+    my $element = $element_array[$i];
+    my $props = "";
+    if (scalar @{$element_properties_1{$element}{properties}} > 0) {
+      $props = "\t".(join "\t", @{$element_properties_1{$element}{properties}});
+    }
+    if ($element_properties_2_ref && scalar @{$element_properties_2{$element}{properties}} > 0) {
+      $props .= "\t".(join "\t", @{$element_properties_2{$element}{properties}});
+    }
+    $result .= $element;
+    $result .= "$props" if ($props ne "");
+    $result .= "\n";
+  }
+  return $result;
+}
+
 sub print_duplicated_elements {
   my $elem_array_ref = shift;
   my %elem_array = %{$elem_array_ref};
@@ -321,7 +403,7 @@ sub print_duplicated_elements {
   my @result_array = ();
   
   foreach my $elem (keys %elem_array) {
-    my $nb = $elem_array{$elem};
+    my $nb = $elem_array{$elem}{number};
     if ($nb > 1) {
       
       $toadd = "$elem ($nb)";
@@ -337,7 +419,7 @@ sub get_duplicated_elements {
   my @result_array = ();
   my %elem_array = %{$elem_array_ref};
   foreach my $elem (keys %elem_array) {
-    my $nb = $elem_array{$elem};
+    my $nb = $elem_array{$elem}{number};
     if ($nb > 1) {
       $result{$elem} = $nb
     }
@@ -520,7 +602,73 @@ Use this option to draw a postscript venn diagramm representing the comparaison.
       $main::outfile{venn} = shift(@arguments);
       $venn = 1;
       
+
+=pod
+
+=item	B<-qprop query_property>
+
+Name of the property of the query. This option can be used iteratively
+
+
+=cut
+    } elsif ($arg eq "-qprop") {
+      push @qproperties, shift(@arguments);
       
+=pod
+
+=item	B<-qpropcol column_number>
+
+Number of the column corresponding to property of the reference
+
+
+=cut
+
+    } elsif ($arg eq "-qpropcol") {
+      my $col = shift(@arguments);
+      unless (&IsInteger($col)) {
+        &RSAT::error::FatalError(join("\t", $col, "Invalid value for the column number containing the query properties"));
+      }
+      $col--;
+      push @qpropcols, $col;
+=pod
+
+=item	B<-rprop reference_property>
+
+Name of the reference of the query. This option can be used iteratively
+
+
+=cut
+    } elsif ($arg eq "-rprop") {
+      push @rproperties, shift(@arguments);
+      
+=pod
+
+=item	B<-keepfirst>
+
+Keep only the property value of the first element found
+
+
+=cut
+    } elsif ($arg eq "-keepfirst") {
+      $keepfirst = 1;
+      
+      
+=pod
+
+=item	B<-qpropcol column_number>
+
+Number of the column corresponding to property of the query
+
+
+=cut
+
+    } elsif ($arg eq "-rpropcol") {
+      my $col = shift(@arguments);
+      unless (&IsInteger($col)) {
+        &RSAT::error::FatalError(join("\t", $col, "Invalid value for the column number containing the reference properties"));
+      } 
+       $col--;
+      push @rpropcols, $col;     
 =pod
 
 =item	B<-n total>
