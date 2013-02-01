@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.248 2012/12/14 09:02:08 morgane Exp $
+# $Id: peak-motifs,v 1.249 2013/02/01 09:45:59 morgane Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.248 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.249 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -3162,13 +3162,20 @@ sub Archive {
   my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
   my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
 
-#   &RSAT::message::Debug("&Archive()",
+	## avoids crash of the program when run from the "$archive_dir_dir"
+ 	if ($archive_dir_dir eq "") {
+ 		$archive_dir_dir = ".";
+ 		$to_archive_rel_path = $to_archive;
+ 		$archive_rel_path = $main::outfile{archive};	 
+ 	}
+	
+#&RSAT::message::Debug("&Archive()",
 # 			"\n\tto_archive", $to_archive,
 # 			"\n\tarchive_dir", $archive_dir,
 # 			"\n\tarchive_dir_dir", $archive_dir_dir,
 # 			"\n\tto_archive_rel_path", $to_archive_rel_path,
 # 			"\n\tarchive_rel_path", $archive_rel_path,
-#		       ) if ($main::verbose >= 10);
+#		       ) if ($main::verbose >= 1);
 
   my $cmd = "";
   if ($main::param{archive_format} eq "zip") {
@@ -3235,7 +3242,7 @@ sub Synthesis {
   &CloseSynthesis();
 
   ## Add the HTML synthesis report to the archive
-  &Archive(0, $main::outfile{synthesis}) if ($task{archive});
+  &Archive(0, $main::outfile{synthesis}) if ($task{archive}); 
 
   &RSAT::message::TimeWarn("Synthetic report", $main::outfile{synthesis}) if ($main::verbose >= 2);
 }
@@ -3897,7 +3904,8 @@ sub SmallSummary {
 
     &one_command($cmd, 1);
 
-
+	## Add the small summary to the archive
+  	&Archive(0, $main::outfile{small_summary}) if ($task{archive});
 
 
 }
