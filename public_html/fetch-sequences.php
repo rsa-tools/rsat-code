@@ -43,7 +43,7 @@ if ($fs_genome == "none" or $fs_genome == "" ) {
 
 //Check syntax of email address (ensure the texte netered in email box was an email address)
 if($fs_output =="email") {
-  if (!preg_match("#^[^@]+@([a-z]+\.)+[a-z]{2,4}$#", $fs_user_email)) {
+  if (!preg_match("#^[^@\.]+(\.[^@]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$#", $fs_user_email)) {
      error( "Email not valid");
      $errors=true;
   }
