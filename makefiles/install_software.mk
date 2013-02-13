@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.32 2013/01/30 17:47:00 jvanheld Exp $
+# $Id: install_software.mk,v 1.33 2013/02/13 19:46:23 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -321,10 +321,11 @@ _download_biotoolbox:
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${SRC_DIR}/MEME
-MEME_VERSION=4.8.1
+MEME_VERSION=4.9.0
 #MEME_VERSION=current
 MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
-MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
+##MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
+MEME_URL=ftp://ftp.ebi.edu.au/pub/software/MEME/r${MEME_VERSION}/rc5/${MEME_ARCHIVE}
 MEME_INSTALL_SUBDIR=${SOFT_DIR}/MEME
 MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
 install_meme: _download_meme _compile_meme
@@ -342,7 +343,7 @@ _download_meme:
 ## BEWARE, MEME creates a lot of folders and files, it should NOT be
 ## installed in /usr/local nor ${RSAT} directories
 MEME_COMPILE_DIR=${MEME_INSTALL_DIR}
-MEME_BIN_DIR=${MCL_COMPILE_DIR}/bin
+MEME_BIN_DIR=${MEME_COMPILE_DIR}/bin
 _compile_meme:
 	@echo
 	@echo "Installing MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
@@ -403,7 +404,7 @@ _download_mcl:
 	@echo ${MCL_DISTRIB_DIR}
 
 MCL_COMPILE_DIR=`dirname ${BIN_DIR}`
-MCL_BIN_DIR=${MCL_COMPILE_DIR}/bin
+MCL_BIN_DIR=${BIN_DIR}
 _compile_mcl:
 	@echo
 	@echo "Installing MCL"
@@ -418,7 +419,7 @@ _compile_mcl:
 RNSC_BASE_DIR=${SRC_DIR}/rnsc
 RNSC_ARCHIVE=rnsc.tar.gz
 RNSC_URL=http://www.cs.utoronto.ca/~juris/data/rnsc/${RNSC_ARCHIVE}
-install_rnsc: _download_rncs _compile_rnsc
+install_rnsc: _download_rnsc _compile_rnsc
 
 _download_rnsc:
 	@echo
