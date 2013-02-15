@@ -83,6 +83,9 @@
   if ($_REQUEST['jac_sim'] == 'on') {
     array_push($return, "jac_sim");
   }  
+  if ($_REQUEST['sor_sim'] == 'on') {
+    array_push($return, "sor_sim");
+  }  
   if ($_REQUEST['entropy'] == 'on') {
     array_push($return, "entropy");
   }  
@@ -156,6 +159,7 @@
       warning("$thr is not a valid E-value lower threshold");
     }
   }    
+
   if ($_REQUEST['lth_jac'] != "") {
     $thr = $_REQUEST['lth_jac'];
     if (preg_match("/\d/", $thr)) {
@@ -165,6 +169,17 @@
       warning("$thr is not a valid Jaccard similarity lower threshold");
     }
   }      
+
+  if ($_REQUEST['lth_sor'] != "") {
+    $thr = $_REQUEST['lth_sor'];
+    if (preg_match("/\d/", $thr)) {
+      array_push($l_thr_field, "sor_sim");
+      array_push($l_thr_val, $thr);
+    } else if ($thr != 'none'){
+      warning("$thr is not a valid Sorensen similarity lower threshold");
+    }
+  }      
+
   if ($_REQUEST['lth_mi'] != "") {
     $thr = $_REQUEST['lth_mi'];
     if (preg_match("/\d/", $thr)) {
@@ -229,6 +244,7 @@
       warning("$thr is not a valid E-value upper threshold");
     }
   }    
+
   if ($_REQUEST['uth_jac'] != "") {
     $thr = $_REQUEST['uth_jac'];
     if (preg_match("/\d/", $thr)) {
@@ -238,6 +254,17 @@
       warning("$thr is not a valid Jaccard similarity index threshold");
     }
   }      
+
+  if ($_REQUEST['uth_sor'] != "") {
+    $thr = $_REQUEST['uth_sor'];
+    if (preg_match("/\d/", $thr)) {
+      array_push($u_thr_field, "sor_sim");
+      array_push($u_thr_val, $thr);
+    } else if ($thr != 'none'){
+      warning("$thr is not a valid Sorensen similarity index threshold");
+    }
+  }      
+
   if ($_REQUEST['uth_mi'] != "") {
     $thr = $_REQUEST['uth_mi'];
     if (preg_match("/\d/", $thr)) {
