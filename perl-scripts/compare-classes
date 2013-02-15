@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.78 2012/08/19 00:31:19 jvanheld Exp $
+# $Id: compare-classes,v 1.79 2013/02/15 23:21:58 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -72,6 +72,7 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 		'E(QR)'=>'freq',
 
 		'jac_sim'=>'jac_sim',
+		'sor_sim'=>'sor_sim',
 
 		'dotprod'=>'dotprod',
 		'rDPbits'=>'dotprod',
@@ -106,7 +107,7 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 ## Field descriptions
 local %field_description = &DescribeFields();
 local $field_description_text = join ("\t", "", "group", "field", "description")."\n";
-foreach my $group qw(rank occ freq proba  jac_sim dotprod entropy members) {
+foreach my $group qw(rank occ freq proba  jac_sim sor_sim dotprod entropy members) {
     foreach my $field (sort @calc_keys) {
 	if ($calc_groups{$field} eq $group) {
 	    $field_description_text .= join("\t", "", $group, $field, $field_description{$field});
@@ -191,6 +192,7 @@ $field_formats{'F(Q!R)'} = "%.5f";
 $field_formats{'F(R!Q)'} = "%.5f";
 $field_formats{'F(!Q!R)'} = "%.5f";
 $field_formats{'jac_sim'} = "%.5f";
+$field_formats{'sor_sim'} = "%.5f";
 $field_formats{'dotprod'} = "%7g";
 $field_formats{'E(QR)'} = "%7.2f";
 $field_formats{'P_val'} = "%.2g";
@@ -278,6 +280,10 @@ if ($calc_fields{entropy}) {
 }
 
 if ($calc_fields{jac_sim}) {
+    $calc_fields{freq} = 1;
+}
+
+if ($calc_fields{sor_sim}) {
     $calc_fields{freq} = 1;
 }
 
@@ -650,7 +656,7 @@ ${field_description_text}
         instead of the hypergeometric.
 
     -sym    symmetric comparison
-        (only useful when -rep is activated, because th
+        (only useful when -rep is activated, because the
         hypergeometric is by definition symmetric)
 
     -distinct
@@ -734,10 +740,9 @@ PROBABILITIES
 
     BINOMIAL
 
-        When the option -rep (replacement) is active,
-        probabilities are calculated on the basis of the
-        binomial distribution instead of the hypergeometric.
-
+        When the option -rep (replacement) is active, probabilities
+        are calculated on the basis of the binomial distribution
+        instead of the hypergeometric.
 
         The binomial formula is applied with
                 p_r = r/n probability of success at each trial
@@ -846,7 +851,7 @@ PROBABILITIES
     Jaccard similarity
 
     	The Jaccard similarity is the ratio between the intersection
-    	and the union of two classes. 
+    	and the union of two classes.
 
 	    jac_sim = (Q and R)/(Q or R)
 
@@ -861,6 +866,18 @@ PROBABILITIES
 	thus generally be considered as the most relevant indicator
 	for the significance of the mutual overlap.
 
+    Sorensen similarity
+
+        A variant of Jaccard's simlarity.
+
+            sor_sim = 2* (Q and R) / (Q + R)
+
+        As the Jaccard similarity, Sorensen similarity ranges from 0
+        to 1, but has systematically higher values. 
+
+	Note: the interpretation of Sorensen is less direct than
+        Jaccard, I am not sure there is any good reason to use it, but
+        I let users choose.
 
 OUTPUT FORMAT
 
@@ -1375,6 +1392,24 @@ sub CompareClasses {
       }
 
       ################################################################
+      ## Calculate Sorensen's similarity
+      if ($calc_fields{sor_sim}) {
+	if ($QvR > 0) {
+	  $current_compa{sor_sim} = 2*$QR/($Q + $R);
+	} else {
+	  $current_compa{sor_sim} = "NA";
+	}
+	if ((defined($lth{sor_sim})) &&
+	    ($current_compa{sor_sim}< $lth{sor_sim})) {
+	  next;
+	}
+	if ((defined($uth{sor_sim})) &&
+	    ($current_compa{sor_sim} > $uth{sor_sim})) {
+	  next;
+	}
+      }
+
+      ################################################################
       ## Calculate frequencies
       if ($calc_fields{freq}) {
 	&RSAT::message::Debug("Calculating frequencies", $compa_key) if ($verbose >= 5);
@@ -1619,9 +1654,14 @@ sub PrintHeader {
       push @header_fields, "E(QR)" ;
     }
 
-    ## Jaccard's similarity
+    ## Jaccard similarity
     if ($return_fields{jac_sim}) {
       push @header_fields, "jac_sim" ;
+    }
+
+    ## Sorensen similarity
+    if ($return_fields{sor_sim}) {
+      push @header_fields, "sor_sim" ;
     }
 
     ## Dot product
@@ -1797,9 +1837,14 @@ sub PrintOneComparison {
     printf $out "\t%7.2f", $current_compa{'E(QR)'};
   }
 
-  ## Jaccard's similarity
+  ## Jaccard similarity
   if ($return_fields{jac_sim}) {
     printf $out "\t%-.5f", $current_compa{jac_sim};
+  }
+
+  ## Sorensen similarity
+  if ($return_fields{sor_sim}) {
+    printf $out "\t%-.5f", $current_compa{sor_sim};
   }
 
   ## Dot product
@@ -2165,7 +2210,8 @@ sub DescribeFields {
     $field_description{'P(QR)'} = "Probability of Q and R (Q^R), assuming independence. P(QR) = F(Q)*F(R)";
     $field_description{'P(Q|R)'} = "Probability of Q given R. P(Q|R) = F(QR)/F(R)";
     $field_description{'P(R|Q)'} = "Probability of R given Q. P(R|Q) = F(QR)/F(Q)";
-    $field_description{'jac_sim'}  = "Jaccard' similarity. jac_sim = intersection/union = (Q and R)/(Q or R)";
+    $field_description{'jac_sim'}  = "Jaccard similarity. jac_sim = intersection/union = (Q and R)/(Q or R)";
+    $field_description{'sor_sim'}  = "Sorensen similarity. sor_sim = 2 * intersection/sum = 2*(Q and R)/(Q + R)";
     $field_description{'dotprod'}  = "Dot product (using the score column)";
     $field_description{'DPbits'}  = "Log2 of the dot product";
     $field_description{'rDPbits'}  = "rDPbits = round(DPbits). The log2 of the dot product is rounded to obtain an integer value";
