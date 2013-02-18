@@ -1441,6 +1441,41 @@ sub ReadNextSequence {
 }
 
 
+=pod
+
+=item check_fasta_file
+
+Quickly check if a fiel seems to contain fasta sequence, by selecting
+the fasta header lines.
+
+By default, the function selects all the lines 
+
+Usage
+
+my $fasta_header_lines = &CheckFastaFile($sequence_file, $top_lines);
+
+Input parameters:
+
+  $sequence_file : path of the sequence file
+  $top_lines (optional) : restrict the analysis to the top lines of the file.
+
+=cut
+sub CheckFastaFile {
+  my ($sequence_file, $top_lines) = @_;
+
+  &RSAT::error::FatalError("&CheckfastaFile() function requires a sequence file.") unless ($sequence_file);
+  if ($top_lines) {
+    $cmd = "head - ".$top_lines." ".$sequence_file;
+    $cmd .= " | grep '^>'";
+  } else {
+    $cmd = "grep ''^>' ".$sequence_file;
+  }
+  $cmd .= " | wc -l | awk '{print \$1}'";
+  $fasta_header_lines = `$cmd`;
+  chomp($fasta_header_lines);
+  return($fasta_header_lines);
+}
+
 ################################################################
 
 =pod
