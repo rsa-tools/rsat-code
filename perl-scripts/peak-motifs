@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.249 2013/02/01 09:45:59 morgane Exp $
+# $Id: peak-motifs,v 1.250 2013/02/18 12:51:26 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.249 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.250 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -259,6 +259,7 @@ package main;
   local $synthesis_path;
   local $menu_nb = 100;
 
+  local $check_fasta_top = 1000; ## Number of top lines for checking fasta headers in the input sequence files
 
   ################################################################
   ## Set default parameters
@@ -4750,6 +4751,16 @@ sub CheckArguments {
       &RSAT::error::FatalError("Test sequence file does not exist", $infile{test_seq});
     }
     @main::seq_types = ("test");
+
+    ## Check that the test file contains fasta-formatted sequences.
+    ## This is important because some users of the Web site seem to
+    ## submit coordinates (bed filesà) rather than sequences (fasta
+    ## files).
+    my $fasta_header_lines = &CheckFastaFile($infile{test_seq}, $check_fasta_top);
+    &RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_fasta_top, "lines") if ($main::verbose >= 0);
+    &RSAT::error::FatalError("Test sequence file does not contain fasta headers (checked the ".$check_fasta_top." top lines)",
+			     $infile{test_seq}) unless ($fasta_header_lines);
+
   } else {
     &RSAT::error::FatalError("You must define the test sequence set (option -i)");
   }
@@ -4768,6 +4779,16 @@ sub CheckArguments {
     unless (-e $infile{ctrl_seq}) {
       &RSAT::error::FatalError("Control sequence file does not exist", $infile{ctrl_seq});
     }
+
+    ## Check that the ctrl file contains fasta-formatted sequences.
+    ## This is important because some users of the Web site seem to
+    ## submit coordinates (bed filesà) rather than sequences (fasta
+    ## files).
+    my $fasta_header_lines = &CheckFastaFile($infile{ctrl_seq}, $check_fasta_top);
+    &RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_fasta_top, "lines") if ($main::verbose >= 0);
+    &RSAT::error::FatalError("Control sequence file does not contain fasta headers (checked the ".$check_fasta_top." top lines)",
+			     $infile{ctrl_seq}) unless ($fasta_header_lines);
+
     push @main::seq_types, ("ctrl");
   }
 
@@ -5111,7 +5132,7 @@ motifs. Nucleic Acids Res 39, 808-24.
 
 =over
 
-=item N<site treatment>
+=item B<site treatment>
 
 Add an option to include or not sites in the Transfac-formatted
 PSSM.
