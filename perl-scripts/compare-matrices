@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.115 2012/03/12 05:43:39 jvanheld Exp $
+# $Id: compare-matrices,v 1.116 2013/02/18 12:50:35 jvanheld Exp $
 #
 ############################################################
 
@@ -60,8 +60,8 @@ description).
 
 By default, the output format is a tab-delimited file with one row per
 matrix comparison, and one column per statistics. Depending on the
-requested return fields, I<compare-matrices> can also export a series
-of additional files.
+requested output fields (option I<-return>), I<compare-matrices> can
+also export a series of additional files.
 
 =over
 
@@ -75,6 +75,16 @@ one row per field (score, matrix descriptor, ...).
 
 HTML file presenting the comparison table in a user-friendly way. The
 clickable headers allow to re-order the table according to any column.
+
+=item [output_prefix].gml
+
+Matrix comparison graph in GML format, which can be open with
+CitoScape or Yed.
+
+=item [output_prefix].dot
+
+Matrix comparison graph in dot format, which can be open with
+graphviz.
 
 =item [output_prefix_alignments_pairwise.tab]
 
@@ -411,6 +421,10 @@ use RSAT::stats;
 use Data::Dumper;
 use RSAT::MatrixAlignment;
 
+use RSAT::Graph;
+use RSAT::GraphNode;
+use RSAT::GraphArc;
+
 ################################################################
 ## Main package
 package main;
@@ -419,7 +433,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.115 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.116 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -475,6 +489,7 @@ package main;
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "offset_rank", ## Rank of the match according to the sorting criterion
+				    "graph", ## Export a matrix comparison graph
 				    "alignments_pairwise", ## Shifted matrices resulting from the pairwise alignments.
 				    "alignments_1ton", ## Shifted matrices resulting from the 1-to-N alignments.
 				    "alignments", ## Shifted matrices resulting from the alignments (pairwise and 1-to-N).
@@ -795,6 +810,11 @@ package main;
     print $html_index "<p><tt><b>Command:</b> compare-matrices ";
     &PrintArguments($main::html_index, 1);
     print $html_index "</tt></p>\n";
+
+    if ($return_field{graph}) {
+      $main::outfile{gml} = $main::outfile{output_prefix}.".gml";
+      push @outfiles, "gml";
+    }
 
     ## Matrix alignments
     if (($return_field{alignments_pairwise}) ||
@@ -1766,9 +1786,10 @@ package main;
 
 
       ################################################################
-      ## Specific treatment for the rank of the pairwise comparison.
-      ## In mode -return match, this rank is the way to select the
-      ## best matching offset and strand for a give pair of matrices.
+      ## Specific treatment for the offset rank of the pairwise
+      ## comparison.  In mode -return match, this rank is the way to
+      ## select the best matching offset and strand for a give pair of
+      ## matrices.
       my %offset_rank = ();
       my $max_offset_rank = "NA";
       if ($calc_field{offset_rank}) {
@@ -1850,37 +1871,66 @@ package main;
   ## Compute matching rank for various metrics
   my $selected_rank_metrics = 0; ## Number of metrics to take into account for mean rank computation
   if ($return_field{match_rank}) {
+    my @match_ids = keys(%sort_score);
 
     foreach my $metric (@rank_metrics) {
+      &RSAT::message::Debug("Computing ranks for metric", $metric) if ($main::verbose >= 0);
+      my @sorted_match_ids = ();
       next unless ($return_field{$metric});
 #      next if ($metric eq "match_rank");
       $selected_rank_metrics++;
 
       ## Sort the matches
       my $metric_order = $supported_sort_field{$metric};
-      my @match_ids = keys(%sort_score);
       &RSAT::message::Debug("Computing matching rank on", $metric, $metric_order) if ($main::verbose >= 5);
       if ($metric_order eq "asc") {
 	## Sort results in ascending order
-	@ranked_match_id = sort {$score{$metric}{$a} <=> $score{$metric}{$b}} @match_ids;
+	@sorted_match_ids = sort {$score{$metric}{$a} <=> $score{$metric}{$b}} @match_ids;
       } else {
 	## Sort results in descending order
-	@ranked_match_id = sort {$score{$metric}{$b} <=> $score{$metric}{$a}} @match_ids;
+	@sorted_match_ids = sort {$score{$metric}{$b} <=> $score{$metric}{$a}} @match_ids;
       }
-#      &RSAT::message::Debug("Ranked", join(',', @ranked_match_id)) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("Ranked", join(',', @sorted_match_ids)) if ($main::verbose >= 10);
 
-      ## Adapt scores and output line
-      my $rank = 0;
-      foreach my $compa_id (@ranked_match_id) {
-	$rank++;
+      ## Compute ranks.
+      my $rank = 1;
+      my $compa_id;
+      my $previous_compa_id;
+      my $epsilon = 1e-13;
+
+      if (($metric eq "cor") && ($main::verbose >= 0)) {
+	&RSAT::message::Debug($metric, join(" ", @sorted_match_ids));
+      }
+
+      for my $i (0..$#sorted_match_ids) {
+	#	$rank++;
+	$compa_id = $sorted_match_ids[$i];
+
+	## When several matrix pairs have the same score (ties), we
+	## assign the first rank to all of them.
+	if ($i > 0) {
+	  $previous_compa_id = $sorted_match_ids[$i-1];
+	  if (abs($score{$metric}{$compa_id} - $score{$metric}{$previous_compa_id}) > $epsilon) {
+	    $rank = $i + 1;
+	  }
+	}
+
+	if (($metric eq "cor") && ($main::verbose >= 0)) {
+	  &RSAT::message::Debug($metric, $i, $rank, $compa_id, $previous_compa_id, 
+				$score{$metric}{$compa_id} - $score{$metric}{$previous_compa_id},
+				$epsilon);
+	}
+
+	## Adapt the scores and the output line
 	$rank_sum{$compa_id} += $rank;
 	$match_score{$compa_id}{"r".$metric} = $rank;
 	$match_out_line{$compa_id} .= "\t".$rank;
       }
+#      $previous_compa_id = $compa_id;
     }
 
     ## Compute mean rank
-    foreach my $compa_id (@ranked_match_id) {
+    foreach my $compa_id (@match_ids) {
       my $rank_mean = "NA";
       if ($selected_rank_metrics > 0) {
 	$rank_mean = sprintf("%.4f", $rank_sum{$compa_id} / $selected_rank_metrics);
@@ -1936,6 +1986,15 @@ package main;
       print $out "\n";
     }
   }
+
+
+
+  ################################################################
+  ## Generate the comparison graph
+  if ($return_field{graph}) {
+    &GenerateGraph();
+  }
+
 
   ################################################################
   ## Pairwise matrix alignments
@@ -1997,6 +2056,61 @@ package main;
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
 
+################################################################
+## Generate matrix comparison graph
+sub GenerateGraph {
+  &RSAT::message::TimeWarn("Generating matrix comparison graph") if ($main::verbose >= 2);
+  my $graph = new RSAT::Graph();
+  $graph->set_attribute("label", "compare-matrices result");
+
+  ## Parameters for graph drawing
+  my %node_color = (file1=>"darkgreen", file2=>"blue");
+  my %shape =  (file1=>"box", file2=>"ellipse");
+  my $node_label = "name"; ## can be changed to id or consensus for example
+
+  ## Node indexes
+  my %nodes1 = ();
+  my %nodes2 = ();
+
+  ## Instantiate nodes for first matrix set
+  foreach my $matrix (@matrices1) {
+    my $node_id = $matrix->get_attribute("id");
+    my $node_label = $matrix->get_attribute($node_label);
+    my $node = $graph->create_node(id=>$node_id,
+				   label=>$node_label,
+				   color=>$node_color{file1},
+				   fontcolor=>$color{file1},
+				   shape=>$shape{file1},
+				   fontsize=>12,
+				  );
+    $nodes1{$node_id} = $node;
+  }
+
+  ## Instantiate nodes for the second matrix file (only if distinct
+  ## from first matrix file)
+  if ($single_input_file) {
+    %nodes2 = %nodes1;
+  } else {
+    foreach my $matrix (@matrices2) {
+      my $node_id = $matrix->get_attribute("id");
+      my $node_label = $matrix->get_attribute($node_label);
+      my $node = $graph->create_node(id=>$node_id,
+				     label=>$node_label,
+				     color=>$node_color{file2},
+				     fontcolor=>$color{file2},
+				   shape=>$shape{file2},
+				     fontsize=>12,
+				  );
+      $nodes2{$node_id} = $node;
+    }
+  }
+
+  ## Export graph in GML format
+  &RSAT::message::TimeWarn("Exporting matri comparison graph to GML file", $outfile{gml}) if ($main::verbose >= 2);
+  $gml_handle = &OpenOutputFile($outfile{gml});
+  $gml = $graph->to_gml();
+  print $gml_handle $gml;
+}
 
 ################################################################
 ## Print pairwise matrix alignments
@@ -2659,7 +2773,7 @@ TRANSFAC, RegulonDB, ...).
 For a given pair of matrices (one from file1 and one from file2), the
 program tests all possible offsets, and measures one or several
 matching scores (see section "(Dis)similarity metrics" above). The
-program only returns the sore of the best alignemnt between the two
+program only returns the score of the best alignemnt between the two
 matrices. The "best" alignement is the combination of offset and
 strand (with the option -strand DR) that maximizes the default score
 (Ncor). Alternative scores can be used as optimality criteria with the
@@ -2903,6 +3017,18 @@ indicates the rank of an offset in this sorted list. This is a
 
 In matching mode, ranks can be computed for all the selected metrics,
 and a mean rank is computed.
+
+=item I<graph>
+
+Return a matrix comparison graph where nodes correspond to matrices,
+and edges represent similarities between pairs of matrices.
+
+The graph is exported in GML (open with CytoScape or yet) and dot
+(graphiviz) format.
+
+An advantage if the GML and dot formats is that they include
+disconnected nodes, in contrast with the tab-delimited matrix
+comparison table.
 
 =item I<alignments_pairwise>
 
