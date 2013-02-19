@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-clustering,v 1.4 2011/07/26 11:46:25 rsat Exp $
+# $Id: matrix-clustering,v 1.5 2013/02/19 05:35:16 jvanheld Exp $
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-matrix-clustering
+cluster-matrices
 
 =head1 VERSION
 
@@ -20,9 +20,10 @@ $program_version
 =head1 DESCRIPTION
 
 Taking as input a set of position-specific scoring matrices, identify
-clusters of similar matrices and build consensus motifs.
+clusters of similar matrices and build consensus motifs by merging the
+matrices that belong to the same cluster.
 
-=head1 DEPENTENCIES
+=head1 DEPENDENCIES
 
 The clustering step relies on I<MCL>, the graph-based clustering
 algorithm developed by Stijn Van Dongen. MCL must be installed and its
@@ -31,8 +32,7 @@ path indicated in the RSAT configuration file
 RSAT makefile:
 
   cd $RSAT
-  make -f makefiles/install_rsat.mk download_mcl
-  make -f makefiles/install_rsat.mk install_mcl
+  make -f makefiles/install_software.mk install_mcl
 
 =head1 AUTHORS
 
@@ -46,7 +46,7 @@ util
 
 =head1 USAGE
 
-matrix-clustering [-i inputfile] [-o outputfile] [-v #] [...]
+cluster-matrices [-i inputfile] [-o outputfile] [-v #] [...]
 
 
 =head1 OUTPUT FORMAT
@@ -57,7 +57,7 @@ matrix-clustering [-i inputfile] [-o outputfile] [-v #] [...]
 
 =item I<compare-matrices>
 
-The program I<compare-matrices> is used by I<matrix-clustering> to
+The program I<compare-matrices> is used by I<cluster-matrices> to
 measure pairwise similarities and define the best alignment (offset,
 strand) between each pair of matrices.
 
@@ -84,7 +84,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -111,12 +111,11 @@ package main;
     local %param = ();
     $param{matrix_compa_min_w} = 5; ## min number of aligned columns
     $param{matrix_compa_min_Wr} = 0.3; ## min relative width
-    $param{matrix_compa_min_cor} = 0.75; ## min correlation
+    $param{matrix_compa_min_cor} = 0.7; ## min correlation
     $param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
     $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
-    $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NsEucl,SSD,NSW,ranks";
+    $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NSW,match_rank";
     $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
-
 
     ################################################################
     ## Read argument values
@@ -270,7 +269,7 @@ matrices.
 
 =pod
 
-=item B<-format matrix_format1>
+=item B<-format matrix_format>
 
 Specify the input matrix format.
 
@@ -278,11 +277,10 @@ Specify the input matrix format.
 B<Supported matrix formats>
 
 Since the program takes several matrices as input, it only accepts
-matrices in the following formats:, transfac, tf, tab, clusterbuster,
-cb, infogibbs, meme, stamp, uniprobe.
+matrices in formats supporting several matrices per file (transfac,
+tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
 
-For a description of those formats, see the help of I<convert-matrix>.
-
+For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
     } elsif ($arg eq "-format") {
@@ -294,19 +292,19 @@ For a description of those formats, see the help of I<convert-matrix>.
 
 =pod
 
-=item	B<-o output prefix>
+=item	B<-o output_prefix>
 
-Prefix for the output files. This program returns a list of output
-files, with intermediate (pariwise matrix comparisons) and final
-results (matrix clusters). It is thus require to specify the output
-prefix.
+Prefix for the output files.
+
+Mandatory option: since the program I<cluster-matrices> returns a
+list of output files (pariwise matrix comparisons, matrix clusters).
 
 =cut
     } elsif ($arg eq "-o") {
       $main::outfile{prefix} = shift(@arguments);
 
     } else {
-      &FatalError(join("\t", "Invalid option", $arg));
+      &FatalError("Invalid option", $arg);
 
     }
   }
@@ -322,7 +320,7 @@ prefix.
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; matrix-clustering ";
+    print $main::out "; cluster-matrices ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
     if (%main::infile) {
@@ -360,7 +358,6 @@ sub ClusterMotifs {
   $cmd .= " -DR";
 #  $cmd .= " -distinct"; ## We disactivate the option "distinct" in order to ensure that all the motifs are in the output graph even if they are not related to any other motif
   $cmd .= " -sort cor";
-  $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
@@ -369,6 +366,8 @@ sub ClusterMotifs {
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
+
+  &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
 
   ## Use the mean_rank as score column
   open COMPA, $main::outfile{pairwise_compa};
