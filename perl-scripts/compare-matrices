@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.116 2013/02/18 12:50:35 jvanheld Exp $
+# $Id: compare-matrices,v 1.117 2013/02/19 05:30:39 jvanheld Exp $
 #
 ############################################################
 
@@ -433,7 +433,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.116 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.117 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -567,6 +567,10 @@ package main;
   ## Matrices
   local @matrices1 = ();
   local @matrices2 = ();
+
+  ## Matches
+  local @match_ids = (); ## Identifiers of the matches
+  local %sort_score = (); ## Hash table with the association between match IDs and matching scores used for sorting them
 
   ## Input formats
   %supported_input_format = %RSAT::MatrixReader::supported_input_format;
@@ -895,8 +899,6 @@ package main;
   ## Read input matrices
 
   ## First motif set
-  my @matrices1 = ();
-  my @matrix_files1 = ();
   if ($infile{file1}){
     @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
     &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
@@ -925,8 +927,6 @@ package main;
   }
 
   ## Second matrix set
-  my @matrices2 = ();
-  my @matrix_files2 = ();
   if ($infile{file2}){
     if ($single_input_file) {
       @matrices2 = @matrices1;
@@ -1867,14 +1867,16 @@ package main;
   }				## matrix 1
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
 
+  @match_ids = keys(%sort_score);
+
   ################################################################
   ## Compute matching rank for various metrics
   my $selected_rank_metrics = 0; ## Number of metrics to take into account for mean rank computation
   if ($return_field{match_rank}) {
-    my @match_ids = keys(%sort_score);
+    &RSAT::message::TimeWarn("Computing match ranks") if ($main::verbose >= 2);
 
     foreach my $metric (@rank_metrics) {
-      &RSAT::message::Debug("Computing ranks for metric", $metric) if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn("Computing ranks for metric", $metric) if ($main::verbose >= 3);
       my @sorted_match_ids = ();
       next unless ($return_field{$metric});
 #      next if ($metric eq "match_rank");
@@ -1898,9 +1900,6 @@ package main;
       my $previous_compa_id;
       my $epsilon = 1e-13;
 
-      if (($metric eq "cor") && ($main::verbose >= 0)) {
-	&RSAT::message::Debug($metric, join(" ", @sorted_match_ids));
-      }
 
       for my $i (0..$#sorted_match_ids) {
 	#	$rank++;
@@ -1915,11 +1914,11 @@ package main;
 	  }
 	}
 
-	if (($metric eq "cor") && ($main::verbose >= 0)) {
-	  &RSAT::message::Debug($metric, $i, $rank, $compa_id, $previous_compa_id, 
-				$score{$metric}{$compa_id} - $score{$metric}{$previous_compa_id},
-				$epsilon);
-	}
+# 	if (($metric eq "cor") && ($main::verbose >= 10)) {
+# 	  &RSAT::message::Debug($metric, $i, $rank, $compa_id, $previous_compa_id, 
+# 				$score{$metric}{$compa_id} - $score{$metric}{$previous_compa_id},
+# 				$epsilon);
+# 	}
 
 	## Adapt the scores and the output line
 	$rank_sum{$compa_id} += $rank;
@@ -2073,7 +2072,8 @@ sub GenerateGraph {
   my %nodes2 = ();
 
   ## Instantiate nodes for first matrix set
-  foreach my $matrix (@matrices1) {
+  foreach my $m (0..$#matrices1) {
+    my $matrix = $matrices1[$m];
     my $node_id = $matrix->get_attribute("id");
     my $node_label = $matrix->get_attribute($node_label);
     my $node = $graph->create_node(id=>$node_id,
@@ -2084,6 +2084,7 @@ sub GenerateGraph {
 				   fontsize=>12,
 				  );
     $nodes1{$node_id} = $node;
+#    &RSAT::message::Debug($m+1, $node_id, $node_label, $matrix, $node) if ($main::verbose >= 10);
   }
 
   ## Instantiate nodes for the second matrix file (only if distinct
@@ -2103,6 +2104,15 @@ sub GenerateGraph {
 				  );
       $nodes2{$node_id} = $node;
     }
+  }
+
+  ## Add edges to the graph
+  foreach my $compa_id (@match_ids) {
+    my ($id1, $id2, $offset, $strand) = split (":", $compa_id);
+    my $arc_label = $sort_score{$compa_id};
+    my $source_node = $nodes1{$id1};
+    my $target_node = $nodes2{$id2};
+    $graph->create_arc($source_node, $target_node, label=>$arc_label);
   }
 
   ## Export graph in GML format
