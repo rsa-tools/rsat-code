@@ -995,32 +995,31 @@ sub doit {
     ################################################################
     ## Choose the queue manager depending on the local configuration
     if (lc($qsub_manager) eq "torque") {
-	$wd = `pwd`;
-	chomp($wd);
-	
-	## qsub command functionning using Torque (e.g. new-hydra.ulb.ac.be)
-#      $qsub_cmd = "qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}";
-	$qsub_cmd = "qsub ".$selected_nodes;
-	$qsub_cmd .= " -d ".$wd;
-	$qsub_cmd .= " -m ".$batch_mail;
-	$qsub_cmd .= " -N ".$job_file;
-#      $qsub_cmd .= " -j oe ";
-	$qsub_cmd .= " -e ".$job_file.".err";
-	$qsub_cmd .= " -o ".$job_file.".log";
-	$qsub_cmd .= " ".$job_file;
+      $wd = `pwd`;
+      chomp($wd);
 
-	&RSAT::message::Debug("qsub command for torque", $qsub_cmd) if ($main::verbose >= 2);
+      ## qsub command functionning using Torque (e.g. new-hydra.ulb.ac.be)
+      $qsub_cmd = "qsub ".$selected_nodes;
+      $qsub_cmd .= " -d ".$wd;
+      $qsub_cmd .= " -m ".$batch_mail;
+      $qsub_cmd .= " -N ".$job_file;
+      #      $qsub_cmd .= " -j oe ";
+      $qsub_cmd .= " -e ".$job_file.".err";
+      $qsub_cmd .= " -o ".$job_file.".log";
+      $qsub_cmd .= " ".$job_file;
+
+      &RSAT::message::Debug("qsub command for torque", $qsub_cmd) if ($main::verbose >= 2);
 
     } else {
       ## qsub command functionning using Sun Grid Engine (note: this is the cluster management system installed at the BiGRe lab, 2012)
-	$qsub_cmd = join(" ", "qsub", 
-			 "-m", $batch_mail,
-			 "-q ", $cluster_queue, 
-			 " -j y ",
-			 "-N ", $job_name,
-			 "-o ".$job_log, 
-			 $qsub_options,
-			 $job_file);
+      $qsub_cmd = join(" ", "qsub",
+		       "-m", $batch_mail,
+		       "-q ", $cluster_queue,
+		       " -j y ",
+		       "-N ", $job_name,
+		       "-o ".$job_log,
+		       $qsub_options,
+		       $job_file);
     }
     &doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
 
