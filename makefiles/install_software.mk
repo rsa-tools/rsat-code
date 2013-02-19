@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.33 2013/02/13 19:46:23 rsat Exp $
+# $Id: install_software.mk,v 1.34 2013/02/19 05:02:50 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -323,9 +323,11 @@ _download_biotoolbox:
 MEME_BASE_DIR=${SRC_DIR}/MEME
 MEME_VERSION=4.9.0
 #MEME_VERSION=current
-MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
+MEME_PATCH=_4
+MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
 ##MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
 MEME_URL=ftp://ftp.ebi.edu.au/pub/software/MEME/r${MEME_VERSION}/rc5/${MEME_ARCHIVE}
+MEME_URL=http://ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
 MEME_INSTALL_SUBDIR=${SOFT_DIR}/MEME
 MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
 install_meme: _download_meme _compile_meme
