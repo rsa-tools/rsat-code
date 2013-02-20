@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.20 2011/05/06 11:58:28 jvanheld Exp $
+# $Id: draw-heatmap,v 1.21 2013/02/20 12:11:56 jvanheld Exp $
 #
 ############################################################
 
@@ -73,7 +73,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -249,12 +249,14 @@ package main;
 
   ## attribution of the minimal and maximal value if specified as arguments
   if (defined($min_val)) {
-    $display_min = &RSAT::stats::max($min_val, $min);
+    $display_min = $min_val;
+#    $display_min = &RSAT::stats::min($min_val, $min);
   } else {
     $display_min = $min;
   }
   if (defined($max_val)) {	#&& ($max_val >= $max)) {
-    $display_max = &RSAT::stats::min($max_val, $max);
+    $display_max = $max_val;
+#    $display_max = &RSAT::stats::max($max_val, $max);
   } else {
     $display_max = $max;
   }
