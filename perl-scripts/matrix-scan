@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.209 2012/07/03 01:31:17 jvanheld Exp $
+# $Id: matrix-scan,v 1.210 2013/02/20 12:12:28 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2458,11 +2458,11 @@ matrix-scan options
 -v #		verbose
 -i		sequence file
 -seq_format     sequence format (default: fasta). Supported format: all format supported by convert-seq
--n [skip|score]	Treatment of N characters.
+-n [skip|score]	Treatment of undefined residues (N characters).
 		skip:  sites that contain N characters are skipped
 		score: sites that contain N characters are scored
 -mask [upper|lower|non-dna] Mask specific types of characters (lower, uppercases or non-dna), i.e replace them  by N characters.
--origin [start|end|chrom]	Define pos as the origin for the calculatin of positions
+-origin [start|center|end|chrom]	Define pos as the origin for the calculatin of positions
 -offset #	add a given number to site positions (change the reference point).
 -o		outputfile
 -m		matrix file
@@ -2943,7 +2943,7 @@ following value:
 
 =pod
 
-=item B<-origin [start|end|chrom]>
+=item B<-origin [start|end|center|chrom]>
 
 Specify the origin for the calculation of positions.
 
@@ -2954,14 +2954,20 @@ Supported values:
 =item B<start>
 
 Site coordinates indicate their distance from the start of the input
-sequence. The first residue of each sequence has posiiton
+sequence. The first residue of each sequence has a coordinate value of
 1.
+
+=item B<center>
+
+Site coordinates are computed relative to the center of each sequence:
+sequence centers have coordinate 0, negative coordinates indicate
+positions at the left of the center.
 
 =item B<end>
 
 Site coordinates are negative and indicate the distance from the site
 to the end of the sequence. The last residue of the input sequence has
-posiiton -1.
+a coordinate value of -1.
 
 =item B<chrom>
 
