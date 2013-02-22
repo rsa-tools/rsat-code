@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.24 2012/12/27 16:04:43 jvanheld Exp $
+# $Id: fetch-sequences,v 1.25 2013/02/22 16:48:46 jvanheld Exp $
 #
 ############################################################
 
@@ -220,7 +220,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -327,7 +327,15 @@ package main;
       $main::outfile{input} = $main::outfile{output};
       $main::outfile{input} =~ s/\.fasta$//;
       $main::outfile{input} =~ s/\.fa$//;
-      $main::outfile{input} .= ".bed";
+
+      ## Add extension to the input file, in order to recognize compressed files
+      if ($main::infile{input_url} =~ /\.(\w+)$/) {
+	my $extension = $1;
+	$main::outfile{input} .= ".".$extension;
+      } else {
+	$main::outfile{input} .= ".bed";
+      }
+
     } else {
       ## Create a temporary directory to store the downloaded file
 #      $tmp_dir = &RSAT::util::make_temp_file("", "fetch-sequences", 1, 1);
