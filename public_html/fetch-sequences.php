@@ -194,8 +194,16 @@ if (!$errors) {
 if (!$errors) { 
 
   // Specify output file
-  $output_file = str_replace(".bed",".fasta",$bed_file);
-  $error_file = str_replace(".bed","_log.txt",$bed_file);
+  $output_file = $bed_file.".fasta";
+  $output_file = str_replace(".bed.fasta",".fasta",$output_file);
+  $output_file = str_replace(".gz.fasta",".fasta",$output_file);
+
+  // Specify log file
+  $err_file = $bed_file."_log.txt";
+  $err_file = str_replace(".bed_log.txt","_log.txt",$err_file);
+  $err_file = str_replace(".gz_log.txt","_log.txt",$err_file);
+
+#  $error_file = str_replace(".bed","_log.txt",$bed_file);
   $argument .= " -o $output_file";	  	
   $URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
   $URL['Fetched sequences (fasta)'] = rsat_path_to_url($output_file);
