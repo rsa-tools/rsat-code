@@ -172,15 +172,16 @@ if (!$errors) {
     if ($url[0]=="http:" or $url[0]=='ftp:') {
       $argument .= " -u $fs_sequence_url";
 	  		
-	    //Add randum value to $bedfile for the outputfile
-	    $bed_file = $properties['rsat_tmp']."/".$bed_file;
+      //Add randum value to $bedfile for the outputfile
+      $bed_file = $properties['rsat_tmp']."/".$bed_file;
       $extension = end( explode( ".", $bed_file));
     
-	    if ($extension == "bed") {
-	    	$bed_file = str_replace(".bed",$suffix,$bed_file);
-	    } else {
-	    	$bed_file = $bed_file.$suffix;
-	    }
+      if ($extension == "bed") {
+	$bed_file = str_replace(".bed",$suffix,$bed_file);
+      } else {
+	//	$bed_file = $bed_file.$suffix;
+    	$bed_file = $bed_file.$suffix.".".$extension; ## We hold the original extension in order to support uncompression of .gz files
+      }
 	    
     } else {
       error($fs_sequence_url." is not a valid URL (should start with http: or ftp:.");
