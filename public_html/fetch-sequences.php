@@ -123,7 +123,7 @@ if (!$errors) {
     if ($extension == "bed") {
     	$bed_file = str_replace(".bed",$suffix,$bed_file);
     } else {
-    	$bed_file = $bed_file.$suffix;
+    	$bed_file = $bed_file.$suffix.".".$extension; ## We hold the original extension in order to support uncompression of .gz files
     }
     
     if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
