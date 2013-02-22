@@ -71,7 +71,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 	      
               <textarea name='bed' rows='6' cols='45'></textarea></li>
 
-          <li>Specify the URL of bed file on remorte server (e.g. Galaxy)<br/>
+          <li>Specify the URL of bed file on remote server (e.g. Galaxy)<br/>
               <input type="text" name="sequence_url" size="62" /><br/></li>
 
             <li>Upload a file from your computer<br/>
