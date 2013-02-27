@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.70 2013/01/22 22:26:58 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.71 2013/02/27 10:04:56 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -144,6 +144,7 @@ install_perl_modules_locally:
 
 ################################################################
 ## Install the BioPerl library
+##
 ## For this example, we install Bioperl and EnsEMBL libraries 
 ## in $RSAT/lib, but you can install it in some other place
 ### (password is 'cvs')
