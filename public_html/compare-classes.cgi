@@ -51,7 +51,6 @@ $return_fields = "";
 ### occurrences
 if ($query->param('occ')) {
     $return_fields .= "occ,";
-    
 } 
 
 ### frequencies

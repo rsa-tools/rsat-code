@@ -219,7 +219,9 @@ print $query->end_form;
 print $query->start_multipart_form(-action=>"oligo-diff_form.cgi");
 
 $demo_test = $ENV{RSAT}."/public_html/demo_files/MET_up800-noorf.fasta";
+#$demo_test = $ENV{RSAT}."/public_html/demo_files/peak-motifs_GSM348066_limb_p300_1000peaks.fa";
 $demo_ctrl = $ENV{RSAT}."/public_html/demo_files/PHO_up800-noorf.fasta";
+#$demo_ctrl = $ENV{RSAT}."/public_html/demo_files/peak-motifs_GSM559652_heart_p300_1000peaks.fa";
 $demo_test_seq=`cat $demo_test`;
 $demo_ctrl_seq=`cat $demo_ctrl`;
 
