@@ -1585,7 +1585,7 @@ sub SaveCommand {
 
   #### temporary file for storing the result
   unless ($tmp_file_path) {
-    $tmp_file_path = sprintf "command.%s%s", &AlphaDate(), ".txt";
+    $tmp_file_path = join("", "command_", &AlphaDate(), ".txt");
   }
   open CMD, ">".$tmp_file_path."_command.txt";
   print CMD $command, "\n";
@@ -1640,7 +1640,9 @@ sub EmailTheResult {
 
     #### temporary file for storing the result
     unless ($tmp_file_path) {
-      $tmp_file_path = sprintf "result.%s", &AlphaDate.".txt";
+#      $tmp_file_path = sprintf "result.%s", &AlphaDate.".txt";
+      $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); 
+      #($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
     }
     my $result_URL = $ENV{rsat_www}."/tmp/";
     if ($args{index}) {
