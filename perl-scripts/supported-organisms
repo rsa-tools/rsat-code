@@ -7,7 +7,12 @@ require "RSA.lib";
 require RSAT::Tree;
 require RSAT::TreeNode;
 require RSAT::OrganismManager;
+
+## SOAP::WSDL modules are required for getting supported organisms on remote server
 use SOAP::WSDL;
+use XML::Compile::SOAP11;
+use XML::Compile::WSDL11;
+use XML::Compile::Transport::SOAPHTTP;
 #use strict;
 
 
@@ -89,9 +94,6 @@ $out = &OpenOutputFile($outfile{output});
 if ($from_server) {
     # import the modules we need for this test; XML::Compile is included on the server
     # by default.
-    use XML::Compile::SOAP11;
-    use XML::Compile::WSDL11;
-    use XML::Compile::Transport::SOAPHTTP;
 
 
     ## Retrieve-seq parameters
@@ -213,7 +215,7 @@ DESCRIPTION
 	taxonomic level (option -taxon).
 
 CATEGORY
-	Data management.
+	Genomes
 
 OPTIONS
 	-h	(must be first argument) display full help message
