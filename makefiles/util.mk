@@ -19,6 +19,8 @@ RSYNC = rsync  ${RSYNC_OPT}
 
 WGET=wget --passive-ftp -np -rNL
 
+DATE=`date +%Y-%M-%d_%H:%M:%S`
+
 ################################################################
 #### list of targets
 usage:
