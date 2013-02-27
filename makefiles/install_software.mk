@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.34 2013/02/19 05:02:50 jvanheld Exp $
+# $Id: install_software.mk,v 1.35 2013/02/27 10:04:56 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -143,7 +143,6 @@ _compile_python_suds:
 # 	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
 # 	@echo "ensembl=${RSAT}/lib/ensembl/modules"
 # 	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
-# 	@echo "bioperl=${RSAT}/lib/bioperl-live"
 
 
 ################################################################
