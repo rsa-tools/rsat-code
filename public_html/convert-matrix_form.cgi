@@ -109,8 +109,8 @@ print $query->popup_menu(-name=>'output_format',
 print "<BR>\n";
 
 ################################################################
-#### Return fields
-print "<p><b><a href='help.convert-matrix.html#return'>Return fields</a></B>&nbsp;<br>\n";
+## Output fields
+print "<p><b><a href='help.convert-matrix.html#return'>Output fields</a></B>&nbsp;<br>\n";
 my $i = 0;
 foreach my $stat qw(counts frequencies weights info header margins consensus parameters profile comments) {
   print $query->checkbox(-name=>$stat,
