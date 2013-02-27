@@ -48,7 +48,7 @@ sub EmailTheResult {
 
     #### temporary file for storing the result
     unless ($tmp_file_name) {
-      $tmp_file_name = join("", "result.", &AlphaDate(), ".txt");
+      $tmp_file_name = join("", "result_", &AlphaDate(), ".txt");
     }
 #    my $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_name";
     my $result_URL = "$tmp_file_name";
