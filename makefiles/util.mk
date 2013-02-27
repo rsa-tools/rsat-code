@@ -11,6 +11,7 @@ V=1
 ### commands
 MAKEFILE=makefile
 MAKE=make -s -f ${MAKEFILE}
+DATE=`date +%Y-%m-%d_%Hh%Mm%Ss`
 
 SSH_OPT = -e ssh 
 RSYNC_OPT= -ruptvlz  ${SSH_OPT} 
