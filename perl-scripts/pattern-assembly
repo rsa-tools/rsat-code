@@ -716,12 +716,13 @@ sub AssemblePatterns {
     undef %position;
     my $origin = 0;
 
+
     #### new seed for the next assembly
     local $seed = local $first_seed = $to_assemble[0];
     $position{$first_seed} = 0;
     delete $seed{$to_assemble[0]};
 
-    &RSAT::message::TimeWarn(join ("\t", "new seed", $seed, "remaining", scalar(@to_assemble)))
+    &RSAT::message::TimeWarn("Assembly", $assembly_nb, "new seed", $seed, "remaining", scalar(@to_assemble))
       if ($main::verbose >= 2);
 
     #### all input oligos are considered for assembly with the new seed
