@@ -32,6 +32,7 @@ local @supported_output_formats = qw(ft fasta gft gff gff3 dnapat bed);
 $default{output}="display";
 $default{feature_format} = "dnapat";
 $default{feature} = "";
+$default{bed_coord} = "";
 $default{input_format}="ft";
 $default{output_format}="gff3";
 
@@ -89,6 +90,26 @@ print  $query->filefield(-name=>'uploaded_file',
 			 -maxlength=>200);
 
 print "<HR/>";
+
+### change coordinates
+
+print "<B>(Optional) Conversion from relative to genomic coordinates</B>\n<p/>";
+
+  print "The file to convert (from the box above) must contain features which coordinates are <i>relative</i> to larger fragments. To transform these relative coordinates into <i>genomic</i> coordinates, enter below a BED file (zero-based) containing the genomic coordinates of these larger fragments." ;
+  print "&nbsp;"x3, "<br>The 4th column of this BED file (feature name) must correspond to the name of the feature in the file to convert.<br/>";
+
+  print $query->textarea(-name=>'bed_coord',
+		       -default=>$default{bed_coord},
+			   -rows=>4,
+			-columns=>55);
+						  
+print  "<BR>\n";
+print "Or select a file to upload<BR>\n";
+  print $query->filefield(-name=>'bed_file',
+				      -size=>10);
+
+print "<HR/>";
+
 ### Output bg format
 print "<BR>";
 
@@ -159,6 +180,23 @@ print $query->hidden(-name=>'output_format',-default=>"ft");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
+
+print "<TD><B>";
+print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
+print $query->start_multipart_form(-action=>"convert-features_form.cgi");
+my $demo_file1= $ENV{RSAT}."/public_html/demo_files/seq_mm9_galaxy_matrix-scan.ft";
+my $demo_file1_content=`cat $demo_file1`;
+my $demo_file2= $ENV{RSAT}."/public_html/demo_files/seq_mm9_galaxy.bed";
+my $demo_file2_content=`cat $demo_file2`;
+print "<TD><b>";
+print $query->hidden(-name=>'feature',-default=>$demo_file1_content);
+print $query->hidden(-name=>'bed_coord',-default=>$demo_file2_content);
+print $query->hidden(-name=>'feature_format',-default=>'ft');
+print $query->hidden(-name=>'output_format',-default=>"bed");
+print $query->submit(-label=>"DEMO genomic coordinates conversion");
+print "</B></TD>\n";
+print $query->end_form;
+
 
 print "<TD><B><A HREF='help.convert-features.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
