@@ -50,7 +50,7 @@ if ($query->param('queries') =~ /\S/) {
     }elsif ($fields[0] =~ /^[actg]+$/i){
       &cgiError("Sequences format are not valid as input. Please use gene identifiers (eg: YFL021W) or gene names (eg: GAL4, NIL1).<P>\n");      
     }elsif(length($fields[0])>= $max_genename_size){ # put a threshold on the size of the gene name
-      &cgiError("The name of the gene is too long and nay not be valid.<P>\n");
+      &cgiError("The name of the gene is too long and may not be valid.<P>\n");
     }
     push @query_genes,  $fields[0];
   }
