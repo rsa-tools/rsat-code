@@ -1,0 +1,24 @@
+#id1	id2	name1	name2	cor	Ncor	Ncor1	Ncor2	w1	w2	offset	strand
+oligos_7nt_mkv5_m1	MA0067.1	oligos_7nt_mkv5_m1	Pax2	0.701966	0.467978	0.467978	0.701966	12	8	1	R
+oligos_7nt_mkv5_m1	MA0077.1	oligos_7nt_mkv5_m1	SOX9	0.790156	0.486250	0.526771	0.702361	12	9	4	D
+oligos_7nt_mkv5_m1	MA0078.1	oligos_7nt_mkv5_m1	Sox17	0.914391	0.457196	0.533395	0.711193	12	9	5	R
+oligos_7nt_mkv5_m1	MA0084.1	oligos_7nt_mkv5_m1	SRY	0.744683	0.558512	0.558512	0.744683	12	9	2	D
+oligos_7nt_mkv5_m1	MA0087.1	oligos_7nt_mkv5_m1	Sox5	0.828174	0.483101	0.483101	0.828174	12	7	4	D
+oligos_7nt_mkv5_m1	MA0089.1	oligos_7nt_mkv5_m1	NFE2L1::MafG	0.842402	0.421201	0.421201	0.842402	12	6	2	D
+oligos_7nt_mkv5_m1	MA0142.1	oligos_7nt_mkv5_m1	Pou5f1	0.944151	0.755321	0.944151	0.755321	12	15	-3	R
+oligos_7nt_mkv5_m1	MA0143.1	oligos_7nt_mkv5_m1	Sox2	0.961589	0.769271	0.961589	0.769271	12	15	-2	R
+oligos_7nt_mkv5_m1	MA0442.1	oligos_7nt_mkv5_m1	SOX10	0.944673	0.472337	0.472337	0.944673	12	6	6	R
+oligos_7nt_mkv5_m2	MA0075.1	oligos_7nt_mkv5_m2	Prrx2	0.751430	0.313096	0.313096	0.751430	12	5	7	D
+oligos_7nt_mkv5_m2	MA0132.1	oligos_7nt_mkv5_m2	Pdx1	0.752321	0.376160	0.376160	0.752321	12	6	5	D
+oligos_7nt_mkv5_m3	MA0075.1	oligos_7nt_mkv5_m3	Prrx2	0.886214	0.402824	0.402824	0.886214	11	5	6	R
+oligos_7nt_mkv5_m3	MA0132.1	oligos_7nt_mkv5_m3	Pdx1	0.928079	0.506225	0.506225	0.928079	11	6	5	D
+positions_7nt_m1	MA0077.1	positions_7nt_m1	SOX9	0.765687	0.344559	0.344559	0.765687	20	9	1	R
+positions_7nt_m1	MA0078.1	positions_7nt_m1	Sox17	0.844859	0.380187	0.380187	0.844859	20	9	0	D
+positions_7nt_m1	MA0087.1	positions_7nt_m1	Sox5	0.807064	0.282472	0.282472	0.807064	20	7	3	R
+positions_7nt_m1	MA0089.1	positions_7nt_m1	NFE2L1::MafG	0.735641	0.220692	0.220692	0.735641	20	6	6	R
+positions_7nt_m1	MA0095.1	positions_7nt_m1	YY1	0.755974	0.226792	0.226792	0.755974	20	6	14	R
+positions_7nt_m1	MA0142.1	positions_7nt_m1	Pou5f1	0.988684	0.741513	0.741513	0.988684	20	15	2	D
+positions_7nt_m1	MA0143.1	positions_7nt_m1	Sox2	0.947556	0.710667	0.710667	0.947556	20	15	1	D
+positions_7nt_m1	MA0442.1	positions_7nt_m1	SOX10	0.947330	0.284199	0.284199	0.947330	20	6	2	D
+positions_7nt_m2	MA0033.1	positions_7nt_m2	FOXL1	0.756953	0.288363	0.288363	0.756953	21	8	10	R
+; Analysis performed in 0.066820s

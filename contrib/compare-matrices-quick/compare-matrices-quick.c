@@ -4,7 +4,7 @@ compare-matrices-quick.c: 25/09/2012 Sebastien Jaeger
 compare-matrices-quick.c is a simplified C translation of compare_matrices developed by Jacques Van Helden.
 	
 Compilation: gcc compare-matrices-quick.c -o compare-matrices-quick -lm
-Exucution example: ./compare-matrices-quick -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5
+Execution example: ./compare-matrices-quick -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5
 
 Synopsis: compare-matrices-quick -o <ouput_file> -file1 <ref_matrices_file> -file2 <query_matrices_file> \
 			[-lth_w <min_aligned_columns>]	min treshold on matrices overlap (default 5)
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]){
 	
 	t2 = clock();
 	exec_time = (float)(t2-t1)/CLOCKS_PER_SEC;
-	fprintf(fp,"#Analysis performed in %fs\n",exec_time);
+	fprintf(fp,"; Analysis performed in %fs\n",exec_time);
 	printf("Analysis performed in %fs\n",exec_time);
 	
 	fclose(fp);
@@ -416,7 +416,7 @@ void print_help(void){
 	printf("\t\t[-h]\t\t\t\t\tprint this help\n");
 	printf("\t\t[-v]\t\t\t\t\tVerbose mode (debuging...)\n\n");
 	
-	printf("Exucution example: ./compare-matrices-quick -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5\n");
+	printf("Execution example: ./compare-matrices-quick -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5\n");
 }
 	
 
