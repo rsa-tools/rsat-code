@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.35 2013/02/27 10:04:56 jvanheld Exp $
+# $Id: install_software.mk,v 1.36 2013/03/05 21:41:13 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -63,6 +63,7 @@ PERL_MODULES= \
 	XML::Compile::Cache \
 	XML::Compile::SOAP11 \
 	XML::Compile::WSDL11 \
+	XML::Parser::Expat \
 	XML::Compile::Transport::SOAPHTTP \
 	SOAP::WSDL \
 	SOAP::Lite \

@@ -8,9 +8,12 @@
 ## Name of the site (which will appear in the log file)
 RSAT_SITE=your_server_name
 
+
+## Email address of RSAT administrator
+RSAT_ADMIN_EMAIL=your.address@your.domain
+
 ## Operating system
 ## Supported: linux  | macosx
-#OS=linux
 OS=linux
 ARCHITECTURE=x64
 
@@ -44,7 +47,4 @@ QUEUE_MANAGER=sge
 
 ## Name of the queue where the jobs have to be sent
 QUEUE=
-
-## Email address of RSAT administrator
-RSAT_ADMIN_EMAIL=your.address@your.domain
 
