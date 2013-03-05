@@ -24,3 +24,30 @@ clean:
 	rm -f *.o $(APP)
 
 all: clean compile
+
+################################################################
+## Test compare-matrices-quick (this C version)
+
+test: test_quick test_slow
+
+#MATRIX_DB=JasparCore_Transfac.txt
+
+LTH_W=3
+LTH_NCOR2=0.7
+MATRIX_DB=${RSAT}/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf
+QUERY_MATRICES=DemoCompMat.txt
+test_quick:
+	time compare-matrices-quick -o result_quick.tab -file1 ${QUERY_MATRICES} -file2 ${MATRIX_DB} -lth_ncor2 ${LTH_NCOR2} -lth_w ${LTH_W}
+	@echo "	-o result_quick.tab "
+	text-to-html -i result_quick.tab -o result_quick.html
+	@echo "	-o result_quick.html "
+
+## Test compare-matrices (the original RSAT Perl script)
+V=1
+test_slow:
+	time compare-matrices -v ${V} -file1 ${QUERY_MATRICES} -file2 ${MATRIX_DB} -format transfac \
+		-lth Ncor2 ${LTH_NCOR2} -lth w ${LTH_W} \
+		-mode profiles \
+		-return matrix_id,cor,Ncor,Ncor1,Ncor2,w,offset,strand \
+		-o result_slow.tab 
+	@echo "	-o result_slow.tab "
