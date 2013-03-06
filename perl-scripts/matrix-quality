@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.151 2012/10/16 07:09:53 jvanheld Exp $
+# $Id: matrix-quality,v 1.152 2013/03/06 20:20:18 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -551,6 +551,11 @@ package main;
     ## Evaluate the quality of each matrix of the input file
     my $m = 0; ## Matrix counter
     my %matrix_index = (); ## %matrix_index indexes matrix numbers (value) as a function of matrix names (keys)
+
+
+    #prefix is user dfined, in casa there are more than one matrices in the matrix file, the amtrix name is added to the general prefix
+    my $several_matrices = 1 if  (scalar(@matrices) > 1) ;
+
     foreach my $matrix (@matrices) {
       $m++;
 
@@ -609,6 +614,8 @@ package main;
       &RSAT::util::CheckOutDir($dir{matrix_output});
       ## Define matrix-specific prefix
       $matrix_prefix{$matrix_name} = $dir{matrix_output}."/".$short_prefix;
+
+      $matrix_prefix{$matrix_name} .= "_".$matrix_name if $several_matrices ;
 
       ## Open matrix-specific log and synthesis file handles
       $outfile{matrix_log} = $main::matrix_prefix{$matrix_name}."_log.txt"; push @files_to_index, "matrix_log";
@@ -870,12 +877,20 @@ package main;
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }, $nwd_st);
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);	      
 	  }
-
-	  #&Draw_NWD (@{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} });
 	  
 
-	#  XYgraph -i results/LexA_multiple_matrices/LexA.2nt_upstream-noorf-ovlp-2str.23_m1/Multiple_matrices_score_distrib_peaks_nwd.tab  -o aver.pdf -format pdf -xcol 1 -ycol 4 -lines -xlog -yleg1 "NWD" -xleg1 "Pvalue" -legend -pointsize 0
+	  #Draw NWD for matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
+	  if ($main::plot_types{nwd}){
+	      ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
+	      push (@files_to_index,'matrix_nwd_table');
+	  }
+	  
+	 
+
+
+
+	
       }
 
       ################
@@ -931,13 +946,22 @@ package main;
 
       ## Give the warning about the output prefix
       if ($main::verbose >= 1) {
-	&RSAT::message::Info("Matrix-specific matrix output directory", $dir{matrix_output});
-	&RSAT::message::Info("Matrix-specific matrix log file", $outfile{matrix_log});
-	&RSAT::message::Info("Matrix-specific matrix synthesis file", $outfile{matrix_synthesis});
+	  &RSAT::message::Info("Matrix-specific matrix output directory", $dir{matrix_output});
+	  &RSAT::message::Info("Matrix-specific matrix log file", $outfile{matrix_log});
+	  &RSAT::message::Info("Matrix-specific matrix synthesis file", $outfile{matrix_synthesis});
+	  
       }
 
+    
+      
     }
-
+    
+     foreach (@main::plot_seq_type) {
+	 my $st= $_;
+	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_types{nwd}) ;
+	 
+    }
+      
     ################################################################
     ## Close output stream
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
@@ -1577,7 +1601,7 @@ distribution of the PSSM for a given P-value.
 
 The WD can be visualized as the horizontal distance between the
 distribution curves. As larger matrices allow higher scores, we
-divided the difference bye the matrix width to obtain the normalized
+divided the difference by the matrix width to obtain the normalized
 weight difference.
 
 Usage:
@@ -2464,7 +2488,10 @@ sub CompareDistrib {
       ################################################################
       ## Draw a graph with all the decreasing cumulative distributions
       my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
+
+      
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1 -ygstep1 0.1 -ygstep2 0.02";
@@ -2670,7 +2697,7 @@ sub Calculate_NWD {
     my ($m_w,$comp_distrib_file,$nwd_seq_type)= @_;
     $outfile{'distrib_nwd'.$nwd_seq_type} = $matrix_prefix{$matrix_name}."_score_distrib_".$nwd_seq_type."_nwd.tab"; 
     push @files_to_index, 'distrib_nwd'.$nwd_seq_type;
-    &RSAT::message::Debug("Adding file to index ", "distrib_nwd",  $matrix_prefix{$matrix_name}."_score_distrib_".$nwd_seq_type."_nwd.tab") if ($main::verbose >= 15);
+    &RSAT::message::Debug("Adding file to index ", "distrib_nwd",  $matrix_prefix{$matrix_name}."_score_distrib_".$nwd_seq_type."_nwd.tab") if ($main::verbose >= 1);
     $main::out_nwd = &OpenOutputFile( $outfile{'distrib_nwd'.$nwd_seq_type});
     #die "width " . $m_w. "file " . $comp_distrib_file;
     my $dists;
@@ -2900,8 +2927,49 @@ sub Calculate_OCC {
 }
 
 sub Draw_NWD{
-   my @nwd_files= @_;
-   die join ("==",@nwd_files). "BOOM";
+   my ($prefix,@nwd_files)= @_;
+
+
+   my $ycols = "";
+   if ((scalar(@nwd_files)>=2)){
+       $ycols = join ",", 2..(scalar(@nwd_files)+1);
+   }else{
+       $ycols = 2;
+   }
+   
+   my $nwd_input_files =" -i ". join (" -i " ,@nwd_files)." ";
+   my $ic_column= 1;
+   my $sc_column= 4;
+   my $nwd_outfile_prefix= $prefix ;
+   my $nwd_compare_scores_file=$nwd_outfile_prefix."_compare-scores.tab";
+
+   my $compare_nwd_cmd =  $SCRIPTS."/compare-scores " ;
+   $compare_nwd_cmd .= " ". $nwd_input_files ." " ;
+   $compare_nwd_cmd .= " -ic ". $ic_column . " " ;
+   $compare_nwd_cmd .= " -sc ". $sc_column . " ";
+   $compare_nwd_cmd .= " -numeric  -basename ";
+   $compare_nwd_cmd .= " -o ".  $nwd_compare_scores_file . " ";
+   &doit($compare_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+   &RSAT::message::Info("Merging NWD files with compare-scores ", $compare_nwd_cmd ) if ($main::verbose >= 0);
+
+
+   my $nwd_xygrpah_file=$nwd_outfile_prefix."_compare-scores.";
+   
+   foreach my $image_format (@image_formats) {
+       my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph " ;
+       $XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
+       $XYgraph_nwd_cmd .= " -format ". $image_format  ." " ;
+       $XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
+       $XYgraph_nwd_cmd .= " -lines -xlog " ;
+       $XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'Pvalue' ";
+       $XYgraph_nwd_cmd .= " -legend -pointsize 0 ";
+       $XYgraph_nwd_cmd .= " -o ". $nwd_xygrpah_file.$image_format." ";
+       &doit($XYgraph_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+       &RSAT::message::Info(" Drawing NWD  curves ",  $XYgraph_nwd_cmd) if ($main::verbose >= 0);   
+   }
+   return($nwd_compare_scores_file, $nwd_xygrpah_file )
+   
+
 
 }
 
@@ -2996,6 +3064,18 @@ sub GenerateHTMLReport {
   &index_one_image($synthesis_per_matrix,$outfile{distrib_compa}."_logy".".png");
   print $synthesis_per_matrix "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
   &index_one_image($synthesis_per_matrix,$outfile{distrib_compa}."_roc_xlog".".png");
+
+  ## NWD curves and table
+    
+    if ($tasks{plot}) {
+	if ($main::plot_types{nwd}){
+	    print $synthesis_per_matrix "\n<h3>NWD curve</h3>\n";
+	    &index_one_image($synthesis_per_matrix,$outfile{matrix_nwd_plots}."png", 'height=120'); 
+	}
+    }
+
+
+
 
   ## Type the matrix information
   print $synthesis_per_matrix "\n<h3>Matrix information</h3>\n";
@@ -3113,8 +3193,38 @@ sub OpenGeneralHTMLReport{
 }
 
 sub CloseGeneralHTMLReport{
+
     my $synthesis_general_file=$_[0];
     print  $synthesis_general   "</table>";
+
+
+    ## Draw NWD curve for al matrices for each required set of sequences
+
+    if ($tasks{plot}) {
+	if ($main::plot_types{nwd}){
+	    print $synthesis_general "\n<h3>NWD curves </h3>\n";
+	    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
+	    print  $synthesis_general "<tr>";
+	    print  $synthesis_general "<th>Plot</th>" ;
+	    print  $synthesis_general "<th>Table</th>";
+	    print  $synthesis_general "</tr>";
+	    foreach (@main::plot_seq_type) {
+		my $st= $_;
+		print  $synthesis_general "<tr>";
+		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_nwd_plot"}."png");
+		print $synthesis_general  "<td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n"."</td>";
+		my ($link2, $shared_path2)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_nwd_table"});
+		print $synthesis_general  "<td><a href='",$link2,"'>", "report","</a></td>\n";
+		print  $synthesis_general "</tr>";
+
+	    }
+	    print  $synthesis_general   "</table>"; 
+	}
+    }
+
+ 
+
+
     print $synthesis_general "</pre>";
     ## Close the index file
     print $synthesis_general "</body></html>\n";
@@ -3146,6 +3256,11 @@ sub Add_info_to_GeneralHTML_Report{
     }
 
     print  $synthesis_general "</tr>";
+
+	 
+    #}
+
+
 
 }
 
