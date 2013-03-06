@@ -117,7 +117,8 @@ if ($query->param('tag1') ){
 $parameters .= " -seq ". $tag1 ." ".$sequence_file1 ;
 $parameters .= " -seq_format ". "fasta" ;
 if (lc($query->param('nwd')) eq "on") {
-  $parameters .= " -nwd ". $tag1 ;
+    
+  $parameters .= " -plot ". $tag1." nwd " ;
 }
 
 
@@ -133,7 +134,12 @@ if ($sequence_file2) {
   } else {
     $tag2 = "seq_file2";
   }
-  $parameters .= " -seq ". $tag2 ." ".$sequence_file2
+  $parameters .= " -seq ". $tag2 ." ".$sequence_file2 ;
+  if (lc($query->param('nwd')) eq "on") {
+      
+      $parameters .= " -plot ". $tag2." nwd " ;
+  }
+
 }
 
 ################################################################
