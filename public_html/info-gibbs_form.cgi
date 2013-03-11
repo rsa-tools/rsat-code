@@ -48,9 +48,11 @@ foreach $key (keys %default) {
 print '<style><!-- textarea {height: 100px; width: 510px;}--></style>';
 print "<center>\n";
 print "<p>An enhanced gibbs sampler, based on a stochastic optimization of the information content of position-specific scoring matrices.</p>\n";
-print "<p>Reference: <a target='_blank' href=\"http://www.ncbi.nlm.nih.gov/pubmed/19689955\">Defrance & van Helden, Bioinformatics 2009</a>.</a>";
 print "</center>\n";
-
+print "<p><b>Reference:</b> Defrance M, van Helden J. (2009) <i>Info-gibbs</i>: a motif discovery algorithm that directly optimizes information content during sampling. Bioinformatics 25(20):2715-22.\n";
+print "[<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/19689955'>Pubmed 19689955</a>]\n";
+print "[<a target='_blank' href='http://bioinformatics.oxfordjournals.org/content/25/20/2715.long'>Open acces</a>]\n";
+print "<hr>\n";
 
 print $query->start_multipart_form(-action=>"info-gibbs.cgi");
 
