@@ -1,0 +1,636 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: retrieve-snp-seq,v 1.1 2013/03/11 16:43:36 jeremy Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+    
+    =head1 NAME
+    
+    retrieve-snp-seq
+    
+    =head1 VERSION
+
+    $program_version
+
+    =head1 DESCRIPTION
+    
+    Retrieve snp and haplotypes sequence for a set of coordinates specified in a bed
+    
+    =head1 AUTHORS
+    
+    jeremy.delerce@univ-amu.fr
+    
+    =head1 CATEGORY
+    
+    =over
+    
+    =item util
+    
+    =back
+
+    =head1 USAGE
+    
+    retrive-snp-seq -i bedfile -genome # -population # -length # [-o outputfile] [-v #] [...]
+    
+    Examples
+    
+    retrive-snp-seq -i file.bed -genome human -population 1000GENOMES:phase_1_YRI -length 30
+    
+    
+    =head1 INPUT FORMAT
+    
+    The definition of the BED format is provided on the UCSC Genome
+    Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).
+    
+    The first three required BED fields are:
+
+    =over
+    
+=item 1. chrom
+    
+    The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold
+    (e.g. scaffold10671).
+    
+    =item 2. chromStart
+    
+    The starting position of the feature in the chromosome or
+    scaffold. The first base in a chromosome is numbered 0.
+    
+    B<Note> from Jacques van Helden: the UCSC genome browser adopts a
+    somewhat inconsistent convention for start and end coordinates: the
+    start position is zero-based (first nucleotide of a
+    chromosome/scaffold has coordinate 0), but the end position is
+    considered not included in the selection. This is equivalent to have a
+    zero-based coordinate for the start, and a 1-base coordinate for the
+    end.
+
+    =item 3. chromEnd
+    
+    The ending position of the feature in the chromosome or scaffold. The
+    chromEnd base is not included in the display of the feature. For
+    example, the first 100 bases of a chromosome are defined as
+    chromStart=0, chromEnd=100, and span the bases numbered 0-99.
+    
+    =back
+    
+    =head1 OUTPUT FORMAT
+    
+    A tab delimited file.
+    
+    =over
+    
+    =item 1. chrom
+    The name of the chromosome (e.g. 1, X, 8...)
+    
+    =item 2. chromStart
+    The starting position of the feature in the chromosome
+    
+    =item 3. chromEnd
+    The ending position of the feature in the chromosome
+    
+    =item 4. chromStrand
+    The strand of the feature in the chromosome
+    
+    =item 5. snp
+    rsID, variant and position on which the sequence is center. All information are separate by a '-'.
+    
+    =item 6. NeighboorsSnp
+    rsID, variant and position of all snp present in the sequence except the center snp. All neighboors snp are separate by a "/".
+    
+    =item 7. sequence
+    
+    =item 8. number
+    The numer of time that this sequence is observed in the population
+    
+    =back
+    
+    =head1 SEE ALSO
+    
+    =head1 WISH LIST
+    
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    push (@INC, "/jolidisk/software/rsa-tools/perl-scripts/lib");
+}
+require "RSA.lib";
+
+use Bio::EnsEMBL::Registry; ##require to connect to Ensembl API
+
+
+################################################################
+## Main package
+package main;
+{
+    
+    ################################################################
+    ## Initialise parameters
+    our $start_time = &RSAT::util::StartScript();
+    our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    #    $program_version = "0.00";
+    
+    our %infile = ();
+    our %outfile = ();
+    
+    our $verbose = 0;
+    our $in = STDIN;
+    our $out = STDOUT;
+    our @output_lines = ();
+    
+    our $species = '';
+    our $population = '';
+    our $len ='';
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+    
+    ################################################################
+    ## Check argument values
+    
+    unless ($species) {
+	&RSAT::error::FatalError("Species must be specified with option -species (e.g. 'human')");
+    }
+    
+    unless ($population) {
+	&RSAT::error::FatalError("Population must be specified with option -population");
+    }
+    
+    unless ($len) {
+	&RSAT::error::FatalError("Length of flank of the sequence must be specified with option -length");
+    }
+    
+    unless (&IsNatural($len)) {
+	&RSAT::error::FatalError("Length must be a int");
+    }
+    
+    
+    ## Open a connection to Ensebl
+    &RSAT::message::TimeWarn("Connectiong to Ensembl") if ($main::verbose >= 2);
+    
+    my $registry = 'Bio::EnsEMBL::Registry';
+    $registry->load_registry_from_db(
+	-host => 'ensembldb.ensembl.org',
+	-user => 'anonymous'
+	);
+    
+    ##Get adaptor
+    my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
+    my $vf_adaptor = $registry->get_adaptor($species, 'variation', 'variationfeature');
+    my $population_adaptor = $registry->get_adaptor($species, 'variation', 'population');
+    my $individual_adaptor = $registry->get_adaptor($species,'variation','individual');
+    
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outfile{output});
+    
+    ################################################################
+    ## Download input from remote URL
+    if ($main::infile{input_url}) {
+	&RSAT::message::TimeWarn("Transferring input file from URL", $main::infile{input_url}) if ($main::verbose >= 2);
+	use LWP::Simple;
+	if (defined($outfile{output})) {
+	    $main::outfile{input} = $main::outfile{output};
+	    $main::outfile{input} =~ s/\.fasta$//;
+	    $main::outfile{input} =~ s/\.fa$//;
+	    
+	    ## Add extension to the input file, in order to recognize compressed files
+	    if ($main::infile{input_url} =~ /\.(\w+)$/) {
+		my $extension = $1;
+		$main::outfile{input} .= ".".$extension;
+	    } else {
+		$main::outfile{input} .= ".bed";
+	    }
+	    
+	} else {
+	    $main::outfile{input} = &RSAT::util::make_temp_file("", "test");
+	    &RSAT::message::Info("Storing downloaded input file as", $main::outfile{input}) if ($main::verbose >= 3);
+	}
+	getstore($main::infile{input_url}, $main::outfile{input});
+	&RSAT::message::TimeWarn("Genomic coordinates transferred to local file", $main::outfile{input}) if ($main::verbose >= 2);
+	($main::in) = &OpenInputFile($main::outfile{input});
+    } else {
+	($main::in) = &OpenInputFile($main::infile{input});
+    }
+
+
+    ################################################################
+    ## Read input
+    &RSAT::message::TimeWarn("Reading genomic coordinates") if ($main::verbose >= 2);
+    
+    my @slice_list = ();
+    
+    ($main::in) = &OpenInputFile($main::infile{input});
+    while (<$main::in>) {
+	next if (/^#/); ## Skip comment lines
+	next if (/^;/); ## Skip RSAT-like comment lines
+	next unless (/\S/); ## Skip empty lines
+	next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
+	chomp();
+	
+	################################################################
+	## BEWARE: in bed format the left limit is zero-based. However the
+	## DAS server expects 1-based coordinates. We convert here the
+	## zero-based into 1-based coordinate.
+	my ($chrom, $zero_left, $right) = split(/\t/);
+	$left = $zero_left + 1;
+	
+	&RSAT::message::Debug($chrom, $left, $right) if ($main::verbose >= 5);
+	
+	##Removing "chr" in front of chr name
+	if ( $chrom =~ /chr/) {
+	    $chrom = substr($chrom,3);
+	}
+	
+	## Check that the left is smaller than the right
+	if ($left > $right) {
+	    my $tmp = $left;
+	    $left = $right;
+	    $right = $tmp;
+	}
+	
+	##Slice bigger than the region of interest to getting neighboors variation
+	push(@slice_list, $slice_adaptor->fetch_by_region('chromosome',$chrom,$left-$len,$right+$len) );
+	
+    }
+    close $main::in if ($main::infile{input});
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose >= 1);
+    
+    ################################################################
+    ## Execute the command
+    
+    foreach my $slice (@slice_list)  {
+	
+	##Get variation in $slice
+	my $vfs = $vf_adaptor->fetch_all_by_Slice($slice);
+	
+	##Remove non-analizable Variation feature
+	my @vfs_good = ();
+	foreach my $vf (@{$vfs}) {
+	    
+	    my $variation_start = $vf->seq_region_start();
+	    my $variation_end   = $vf->seq_region_end();
+	    
+	    unless ( $vf->variation()->is_failed() || $vf->allele_string() =~ /[^ACTG\-\/]/ || ($variation_start > $variation_end && $vf->allele_string() =~ /^[^\-]/)  ) {
+		push(@vfs_good, $vf);
+	    }
+	}
+	
+	##Search all individu name in $population
+	my $pop = $population_adaptor->fetch_by_name($population); #get population object from database                                                             
+	my $individuals = $individual_adaptor->fetch_all_by_Population($pop);
+	
+	my %population_individual = ();
+	foreach my $indidual (@{$individuals}) {
+	    $population_individual{$indidual->name} = ();
+	}
+	
+	##Search haplotype
+	my @vfs_good2 = ();
+	
+	foreach my $vf ( @vfs_good ) {
+	    
+	    my $igs = $vf->variation()->get_all_IndividualGenotypes();
+	    my @list_variants = ();
+	    
+	    foreach my $individual_genotype (@{$igs}) {
+		
+		my $individual_name = $individual_genotype->individual()->name();
+		my $variation_name = $vf->variation_name();
+		
+		if ( grep($_ eq $individual_name, keys(%population_individual) ) ) {
+		    
+		    $population_individual{$individual_name}{$variation_name}{'allele1'} = $individual_genotype->allele(1);
+		    $population_individual{$individual_name}{$variation_name}{'allele2'} = $individual_genotype->allele(2);
+		    
+		    unless ( grep($_ eq $individual_genotype->allele(1) , @list_variants ) ) {
+			push (@list_variants,$individual_genotype->allele(1));
+		    }
+		    
+		    unless ( grep($_ eq $individual_genotype->allele(2) , @list_variants ) ) {
+			push (@list_variants,$individual_genotype->allele(2));
+		    }    
+		}
+	    }
+	    
+	    ##Only keep variations with more than 1 variant in $population
+	    if ( scalar (@list_variants) > 1) {
+		push (@vfs_good2,$vf);
+	    }
+	    
+	}
+	
+	##"Create" haplotype sequence
+	my %pop_alleles = ();
+	my $ref_allele = $slice->seq();
+	
+	foreach my $individual ( keys(%population_individual)) {
+	    my $allele1=$ref_allele;
+	    my $allele2=$ref_allele;
+	    
+	    foreach my $vf ( @vfs_good2 ) {
+		
+		my $variation_name = $vf->variation_name();
+		
+		$allele1 = substr($allele1,0,$vf->start()-1).$population_individual{$individual}{$variation_name}{'allele1'}.substr( $allele1,$vf->end() );
+		$allele2 = substr($allele2,0,$vf->start()-1).$population_individual{$individual}{$variation_name}{'allele2'}.substr( $allele2,$vf->end() );
+		
+	    }
+	    
+	    unless ( $pop_alleles{$allele1} ) {
+		$pop_alleles{$allele1} = 0;
+	    }	
+	    
+	    unless ($pop_alleles{$allele2}) {	    
+		$pop_alleles{$allele2} = 0;
+	    }
+	    
+	    $pop_alleles{$allele1} = $pop_alleles{$allele1}+1;
+	    $pop_alleles{$allele2} = $pop_alleles{$allele2}+1;
+	}
+	
+	##"Create" haplotype sequence
+	foreach my $vf (@vfs_good2)  {
+	    
+	    my $variation_start = $vf->seq_region_start();
+	    my $variation_end = $vf->seq_region_end(); 
+	    
+	    if ( $variation_start >= $slice->start()+$len && $variation_end <= $slice->end()-$len ) {
+		
+		my $variation_name = $vf->variation_name();
+		
+		
+		##Get all alleles center on $vf
+		my %var_alleles =();
+		
+		foreach my $allele (keys(%pop_alleles) ) {
+		    my $centred_allele = substr($allele, $vf->start()-$len, ($len-1)*2+$vf->length());
+		    if ( $var_alleles{$centred_allele} ) {
+			$var_alleles{$centred_allele} = $var_alleles{$centred_allele} + $pop_alleles{$allele};
+		    } else {
+			$var_alleles{$centred_allele} = $pop_alleles{$allele};
+		    }
+		}
+		
+		##Get all variation in the region (-/+)len center on $vf
+		my %neighboors_var = ();
+		
+		foreach my $neighboors_vf (@vfs_good2) {
+		    
+		    my $neighboors_name = $neighboors_vf->variation_name();
+		    my $neighboors_start = $neighboors_vf->seq_region_start();
+		    my $neighboors_end = $neighboors_vf->seq_region_end();
+		    
+			    
+		    if ( $neighboors_start >= $variation_end-$len && $neighboors_end <= $variation_start+$len && $neighboors_name ne $variation_name) {
+			$neighboors_var{$neighboors_name}{'pos'} = $len+$neighboors_vf->start()-$vf->start();
+			$neighboors_var{$neighboors_name}{'length'} = $neighboors_vf->length();
+		    }
+		}
+		
+		##Make output line
+		my $variation_chr = $vf->seq_region_name();
+		my $variation_strand = "+"; 
+		
+		unless ($vf->seq_region_strand()) {
+		    $variation_strand = "-";
+		}
+		
+		foreach my $centred_allele ( keys(%var_alleles) ) {
+		    
+		    my $line = '';
+		    my $ref_pos = $len-$vf->length();
+		    my $ref_variant = substr($centred_allele , $ref_pos, $vf->length());
+		    
+		    $line .= "$variation_chr\t".($variation_end-$len+1)."\t".($variation_start+$len-1)."\t$variation_strand\t";
+		    $line .= "$variation_name-$ref_variant-".($ref_pos+1)."\t";
+		    
+		    my $neighboors_info = "/";
+		    foreach my $neighboors_vf_name (keys(%neighboors_var)) {
+			$neighboors_info .= $neighboors_vf_name."-";
+			$neighboors_info .= substr($centred_allele , $neighboors_var{$neighboors_vf_name}{'pos'}-1,$neighboors_var{$neighboors_vf_name}{'length'} )."-";
+			$neighboors_info .=$neighboors_var{$neighboors_vf_name}{'pos'}."/";
+		    }
+		    $neighboors_info = substr($neighboors_info,1,length($neighboors_info)-2);
+		    
+		    $line .= $neighboors_info."\t";
+			    $line .= "$centred_allele\t$var_alleles{$centred_allele}\n";
+		    
+		    push(@output_lines,$line);
+		}
+	    }
+	}
+    }
+    
+    ################################################################
+    ## Insert here output printing
+    foreach my $output_line (@output_lines) {
+	print $out $output_line;
+    }
+	
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out if ($outfile{output});
+    
+    exit(0);
+}
+    
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+    
+	
+################################################################
+## Display full help message 
+	sub PrintHelp {
+	    system "pod2text -c $0";
+	    exit()
+	}
+
+################################################################
+## Display short help message
+	sub PrintOptions {
+	    &PrintHelp();
+	}
+	
+################################################################
+## Read arguments 
+	sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+	$arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+if ($arg eq "-v") {
+    if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+    } else {
+	$main::verbose = 1;
+    }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+} elsif ($arg eq "-h") {
+    &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+} elsif ($arg eq "-help") {
+    &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+The input file should be in bed format (see section INPUT FORMATS
+above).
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+This option is mutually exclusive with option I<-u>.
+
+=cut
+} elsif ($arg eq "-i") {
+    &RSAT::error::FatalError("Options -i and -u are mutually exclusive") if ($main::infile{input_url});
+    $main::infile{input} = shift(@arguments);
+=pod
+
+=item B<-u input_file_URL>
+
+Use as input a file available on a remote Web server (e.g. a bed file
+on your Galaxy account).
+
+This option is mutually exclusive with option I<-i>.
+
+=cut
+} elsif ($arg eq "-u") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") 
+	  if ($main::infile{input});
+      $main::infile{input_url} = shift(@arguments);
+
+=pod
+
+=item B<-species species_name>
+
+Species (e.g. 'human','mouse').
+
+This option is mandatory.
+
+=cut
+} elsif ($arg eq "-species") {
+    $main::species = shift(@arguments);
+
+=pod
+
+=item B<-population population_name>
+
+Population name on ensembl data base (e.g. '1000GENOMES:phase_1_YRI').
+
+This option is mandatory.
+
+=cut
+} elsif ($arg eq "-population") {
+    $main::population = shift(@arguments);
+
+=pod
+
+
+=item B<-length int>
+
+Length of flank of the sequence.
+
+The total length of the sequence return is equal to (flank length - 1)*2 + snp length
+
+This option is mandatory.
+
+=cut
+} elsif ($arg eq "-len") {
+    $main::len = shift(@arguments);
+
+=pod
+
+    =itemB<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+} elsif ($arg eq "-o") {
+    $outfile{output} = shift(@arguments);
+
+} else {
+    &FatalError(join("\t", "Invalid option", $arg));
+
+}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $out "; template ";
+    &PrintArguments($out);
+    printf $out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    printf $out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    printf $out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
