@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.36 2013/03/05 21:41:13 rsat Exp $
+# $Id: install_software.mk,v 1.37 2013/03/19 09:26:55 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -166,7 +166,7 @@ install_ensembl_api:
 	@echo
 	@echo "Installed ENSEMBL Perl modules in directory ${ENSEMBL_API_DIR}"
 	@echo "Don't forget to adapt the following lines in your bash profile"
-	@echo 'export PERL5LIB=$${PERL5LIB}l:${SOFT_DIR}/perllib/ensembl/modules'
+	@echo 'export PERL5LIB=$${PERL5LIB}:${SOFT_DIR}/perllib/ensembl/modules'
 	@echo 'export PERL5LIB=$${PERL5LIB}:${SOFT_DIR}/perllib/ensembl-compara/modules'
 	@echo 'export PERL5LIB=$${PERL5LIB}:${SOFT_DIR}/perllib/ensembl-variation/modules'
 
