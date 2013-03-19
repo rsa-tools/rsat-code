@@ -179,10 +179,19 @@ if ($fs_seeds == "") {
 // Run commands
 if ($errors == 0) { 
   $cmd .= $argumenta;
-/*
+
+// SHOW COMMAND and SEEDS can be commented
+?> 
+<fieldset><legend class="clickable" onclick="javascript:collapseAll(document.getElementById('showcommand'));">
+      <b><span id="showcommandSign" class="sign"><img src="images/arrow_box.gif" alt="-"></span></b><u>Show Command</u></legend>
+      <div id="showcommand" style="display: none;">
+<?php      
   info("Command : ".str_replace($properties['RSAT'], '$RSAT', $cmd));
   info("Seeds : ".$seeds);
-  */
+?>
+</div>
+</fieldset>
+<?php
 flush(); 
   //  Run the command
 $descriptorspec = array(
