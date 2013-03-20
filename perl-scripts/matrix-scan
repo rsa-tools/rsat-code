@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.210 2013/02/20 12:12:28 jvanheld Exp $
+# $Id: matrix-scan,v 1.211 2013/03/20 14:12:02 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3662,8 +3662,17 @@ sub QuickScan {
   $quick_verbose = 1; ## matrix-scan-quick does not accept verbosity higher than 2
   #  }
   my $quick_path = &RSAT::server::GetProgramPath("matrix-scan-quick");
-  my $quick_cmd = $quick_path;
-  $quick_cmd .= " -i ".$main::infile{input};
+  my $quick_cmd = "";
+  if ($top_seq > 0) {
+    $quick_cmd = $SCRIPTS."/convert-seq";
+    $quick_cmd .= " -i ".$main::infile{input};
+    $quick_cmd .= " -from fasta -to fasta";
+    $quick_cmd .= " -top ".$top_seq;
+    $quick_cmd .= " | $quick_path";
+  } else {
+    $quick_cmd = $quick_path;
+    $quick_cmd .= " -i ".$main::infile{input};
+  }
   $quick_cmd .= " -decimals ".$decimals;
   $quick_cmd .= " -m ".$matrix_quick_file;
   $quick_cmd .= " -pseudo ".$pseudo_counts; ## pseudocounts are added here
