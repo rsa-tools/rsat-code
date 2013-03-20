@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.211 2013/03/20 14:12:02 jvanheld Exp $
+# $Id: matrix-scan,v 1.212 2013/03/20 14:18:24 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1394,18 +1394,19 @@ package main;
 
     ################################################################
     ## Detect sites
-    &RSAT::message::TimeWarn("Scanning sequence", 
-			     $sequence_number,
+    unless ($quick_scan) {
+      &RSAT::message::TimeWarn("Scanning sequence", 
+			       $sequence_number,
 			     $seq_id,"len=".$seq_len,
-			     "orig=".$origin, "offset=".$offset,
-			     "with ".$matrix_nb." PSSM")
-      if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 10) == 1)));
-    &RSAT::message::psWarn("Scanning sequence with ".$matrix_nb." PSSM", $sequence_number,
+			       "orig=".$origin, "offset=".$offset,
+			       "with ".$matrix_nb." PSSM")
+	if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 10) == 1)));
+      &RSAT::message::psWarn("Scanning sequence with ".$matrix_nb." PSSM", $sequence_number,
 			   $seq_id,"len=".$seq_len, 
 			   "orig=".$origin, "offset=".$offset,
 			   $seq_id) 
       if (($main::verbose >= 4) && (($sequence_number % 100) == 1));
-
+    }
 
     if ($calc_fields{sites}) {
       #	  $n_containing_region = 0;
