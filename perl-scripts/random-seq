@@ -298,6 +298,10 @@ sub ReadArguments {
     } elsif ($arg eq "-n") {
       $seq_nb = shift @arguments;
 
+    } elsif ($arg eq "-r") {
+      &RSAT::message::Warning("Option -r is obsolete to specify sequence number. Please use the option -n instead.");
+      $seq_nb = shift @arguments;
+
     } elsif ($arg eq "-expfreq") {
       $exp_freq_file = shift @arguments;
 
