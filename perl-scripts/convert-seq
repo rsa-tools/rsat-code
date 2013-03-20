@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.42 2012/07/02 19:17:49 jvanheld Exp $
+# $Id: convert-seq,v 1.43 2013/03/20 14:12:20 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -96,7 +96,6 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
       &RSAT::message::Info("Exported the $top top sequences only (option -top). Remaining sequences are ignored.") if ($main::verbose >= 1);
       last;
     }
-    
     if (($skip) && ($seq_nb <= $skip)) {
       next;	
     }
