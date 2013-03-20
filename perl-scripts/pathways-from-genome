@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.23 2012/09/23 05:35:58 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.24 2013/03/20 14:12:43 jvanheld Exp $
 #
 ############################################################
 
@@ -40,6 +40,15 @@ Jacques.van-Helden@univ-amu.fr
 =head1 USAGE
 
 pathways-from-genome -org Organism_name [-v #] [-o output_directory]  [...]
+
+=head2 Example
+
+ pathways-from-genome -v 1 \
+     -org_table organisms_table.tab \
+     -org Rhodobacter_sphaeroides_2_4_1_uid57653 \
+     -task operons,synthesis \
+     -ec2pathway metacyc_ec_pathway.tab \
+     -o pathways_from_genome
 
 =head1 OUTPUT FORMAT
 
@@ -90,7 +99,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -593,7 +602,7 @@ Same as -h
 
 =pod
 
-=item B<-org organism_table>
+=item B<-org_table organism_table>
 
 Mandatory option.
 
