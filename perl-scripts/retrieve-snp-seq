@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-snp-seq,v 1.7 2013/03/20 13:03:32 jvanheld Exp $
+# $Id: retrieve-snp-seq,v 1.8 2013/03/20 13:11:20 jvanheld Exp $
 #
 ############################################################
 
@@ -40,9 +40,12 @@ retrieve-snp-seq -i bedfile [-species #] [-population #] -len # [-o outputfile] 
 
 =head2 Example
 
- retrieve-snp-seq -i file.bed -species human -population \
-   1000GENOMES:phase_1_YRI -len 30
-
+ retrieve-snp-seq -v 1 \
+   -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
+   -species human \
+   -population 1000GENOMES:phase_1_YRI \
+   -len 30 \
+   -o variations.tab
 
 =head1 INPUT FORMAT
 
@@ -150,7 +153,7 @@ package	main;
     ###############################################################
     ## Initialise parameters
     our $start_time = &RSAT::util::StartScript();
-    our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+    our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
     our %infile	= ();
     our %outfile = ();
