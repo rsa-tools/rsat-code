@@ -31,16 +31,19 @@ int read_matrix(Array &matrix, char *filename, double pseudo)
     int c = -1;
     while (l < 4 && !feof(fp))
     {
-        fscanf(fp, "%c", &base[l]);
+        if (fscanf(fp, "%c", &base[l]) < 0)
+            return 0;
 
         if (base[l] == ';') // skip comments
         {
             char buffer[1024];
-            fgets(buffer, 1024, fp);
+            if (fgets(buffer, 1024, fp) == NULL)
+                return 0;
             continue;
         }
 
-        fscanf(fp, " | ");
+        if (fscanf(fp, " | ") < 0)
+            return 0;
         c = -1;
         while (++c < 256)
         {
@@ -73,12 +76,14 @@ int read_matrix(Array &matrix, char *filename, double pseudo)
     // security check
     while (!feof(fp))
     {
-        fscanf(fp, "%c", &base[0]);
+        if (fscanf(fp, "%c", &base[0]) < 0)
+            return 0;
 
-        if (base[0] == ';' | base[0] == ' ') // skip comments
+        if (base[0] == ';' || base[0] == ' ') // skip comments
         {
             char buffer[1024];
-            fgets(buffer, 1024, fp);
+            if (fgets(buffer, 1024, fp) == NULL)
+                return 0;
             continue;
         }
         else if (base[0] == '\n')
