@@ -92,7 +92,8 @@ int load_inclusive(Markov &m, string filename)
             {
                  if (s < m.msize)
                  {
-                    sscanf(buffer, "%f", &val[0]);
+                    if (sscanf(buffer, "%f", &val[0]) == EOF)
+                        break;
                     m.S[s] = (double) val[0];
                     s++;
                  }

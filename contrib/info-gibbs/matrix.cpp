@@ -42,19 +42,22 @@ Array read_matrix(FILE *fp)
             break;
         }
         
-        fscanf(fp, "%c", &base[l]);
+        if (fscanf(fp, "%c", &base[l]) == EOF)
+            break;
 
         if (base[l] == ';') // skip comments
         {
             char buffer[1024];
-            fgets(buffer, 1024, fp);
+            if (fgets(buffer, 1024, fp) == NULL)
+                break;
             if (feof(fp))
                 return Array(0, 0);
             else
                 continue;
         }
 
-        fscanf(fp, " | ");
+        if (fscanf(fp, " | ") == EOF)
+            break;
         c = -1;
         while (++c < 256)
         {

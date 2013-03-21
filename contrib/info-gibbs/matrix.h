@@ -128,31 +128,6 @@ struct Array
         }
     }
 
-    // Array reverse_complement()
-    // {
-    //     Array rc = Array(I, J, 0.0);
-    // 
-    //     int j;
-    //     for (j = 0; j < J; j++)
-    //     {
-    //         int i;
-    //         for (i = 0; i < I; i++)
-    //         {
-    //             int rci;
-    //             if (i == 0)
-    //                 rci = 3;
-    //             else if (i == 1)
-    //                 rci = 2;
-    //             else if (i == 2)
-    //                 rci = 1;
-    //             else if (i == 3)
-    //                 rci = 0;
-    //             rc[rci][J - j - 1] = data[i][j];
-    //         }
-    //     }
-    //     return rc;       
-    // }
-
     double sum(int *word)
     {
         double s = 0.0;
