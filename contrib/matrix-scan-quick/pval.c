@@ -44,7 +44,9 @@ pvalues_t *read_distrib(char *filename)
     if (fp == NULL)
         ERROR("unable to open '%s'", filename);
 
-    fscanf(fp, "#%*s\t%*s%*s\t%*s%*s\t%*s\t%*s\n");
+    if (fscanf(fp, "#%*s\t%*s%*s\t%*s%*s\t%*s\t%*s\n") < 0)
+        ERROR("unable read '%s'", filename);
+        
 
     float weight, Pval;
     pvalues_t *table = new_pvalues();
