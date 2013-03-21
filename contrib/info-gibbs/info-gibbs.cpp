@@ -29,7 +29,7 @@ using namespace std;
 #include "sampler.h"
 #include "scan.h"
 
-int VERSION = 20100426;
+int VERSION = 20130321;
 char *COMMAND_LINE;
 
 /*
@@ -67,7 +67,7 @@ void help()
 "        motif discovery\n"
 "        \n"
 "USAGE        \n"
-"        info-gibbs -l motiflength [-i inputfile] [-h | --help]\n"
+"        info-gibbs -w motif_width [-i inputfile] [-h | --help]\n"
 "\n"
 "ARGUMENTS\n"
 "  GENERAL OPTIONS\n"
@@ -126,7 +126,7 @@ void help()
 "\n"
 "    --seedmatrix_sites=#  when using seed matrix specify the number of sites for each matrix (n1,n2,n3) \n"
 "\n"
-"    --flanks=#            when using --seedmatrix add extra # positions arround the matrix\n"
+"    --flanks=#            when using --seedmatrix add extra # positions around the matrix\n"
 "\n"
 "    --rseed=#             set random seed to #\n"
 "\n"
@@ -169,37 +169,37 @@ int main(int argc, char *argv[])
 {
     VERBOSITY = 0;
     Parameters params;
-    params.iter     = 2000;    // iterations
-    params.n        = 0;       // a motif is composed of w sites (or words)
-    params.e        = 1.0;     // expected number of motif occurrences per sequence
-    params.nrun     = 4;       // run gibbs main loop n times
-    params.rc       = true;    // search also on reverse strand
-    params.dmin     = 0;       // minimal distance between 2 sites
-    params.motifs   = 1;       // number of motifs t find
-    params.m1       = 6;       // left part motifs length
-    params.m2       = 0;       // right part motifs length
-    params.update   = 1;
+    params.iter             = 2000;    // iterations
+    params.n                = 0;       // a motif is composed of w sites (or words)
+    params.e                = 1.0;     // expected number of motif occurrences per sequence
+    params.nrun             = 4;       // run gibbs main loop n times
+    params.rc               = true;    // search also on reverse strand
+    params.dmin             = 0;       // minimal distance between 2 sites
+    params.motifs           = 1;       // number of motifs t find
+    params.m1               = 6;       // left part motifs length
+    params.m2               = 0;       // right part motifs length
+    params.update           = 1;
     params.start_from_sites = false;
-    params.minspacing   = 0;
-    params.maxspacing   = 0;
-    params.temperature  = 1.0;
-    params.score_type = LLR_IC_SCORE;
-    params.title = (char *) "";
-    params.collect = false;
-    params.id = 1;
-    params.flanks = 0;
-    params.nseq = 0;
-    params.shift = true;
+    params.minspacing       = 0;
+    params.maxspacing       = 0;
+    params.temperature      = 1.0;
+    params.score_type       = LLR_IC_SCORE;
+    params.title            = (char *) "";
+    params.collect          = false;
+    params.id               = 1;
+    params.flanks           = 0;
+    params.nseq             = 0;
+    params.shift            = true;
 
-    int optchar;
-    int l;
-    int w_is_set = FALSE;
-    char *strand;    // "+-" "+"
-    char *seqfile = NULL;
-    char *bgfile  = NULL;
-    char *matfile = NULL;
-    int   seedmatrix_sites[16];
-    int seedmatrix_sites_count = 0;
+    int optchar                = 0;
+    int  l                     = 8;
+    int  w_is_set              = FALSE;
+    char *strand               = NULL;    // "+-" "+"
+    char *seqfile              = NULL;
+    char *bgfile               = NULL;
+    char *matfile              = NULL;
+    int  seedmatrix_sites[16];
+    int  seedmatrix_sites_count = 0;
 
     for (int i = 0; i < 16; i++)
     {
