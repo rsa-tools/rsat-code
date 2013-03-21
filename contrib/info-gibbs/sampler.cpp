@@ -35,14 +35,14 @@ struct LLR
     Sequence *sequences; // avoid sequences copy
     double **logp;
 
-    LLR(SITES &motif, int r, Array &matrix, int length, Markov &markov_model, Sequences &seqs, double **logprob, double pseudo=PSEUDO)
+    LLR(SITES &motif, int r, Array &matrix, int length, 
+        Markov &markov_model, Sequences &seqs, double **logprob, double pseudo = PSEUDO)
     {
-        l = length;
-        n = motif.size();
-        //markov = markov_model;
-        p = markov_model.priori;
+        l         = length;
+        n         = motif.size();
+        p         = markov_model.priori;
         sequences = seqs.data; // sequences store only data !
-        logp = logprob;
+        logp      = logprob;
         
         // compute the matrix
         for (i = 0; i < l; i++)
@@ -118,7 +118,7 @@ struct LLR
 
 void count_matrix(Array &matrix, SITES &motif, Sequences &sequences)
 {
-    int i,j,k;
+    int i, j, k;
     int n = (int) motif.size();
     for (i = 0; i < matrix.I; i++)
     {
@@ -139,7 +139,8 @@ void count_matrix(Array &matrix, SITES &motif, Sequences &sequences)
  *  Convert a list of words to a frequency matrix using priori probabilities p
  *  m_{b,i} = ( f_{b,i} + p_i ) / (N + 1)
  */
-inline void freq_matrix(Array &matrix, SITES &motif, Sequences &sequences, Markov &markov, double pseudo=PSEUDO, int r=-1)
+inline void freq_matrix(Array &matrix, SITES &motif, Sequences &sequences, \
+                        Markov &markov, double pseudo=PSEUDO, int r=-1)
 {
     int i,j,k;
     int n = (int) motif.size();
@@ -174,7 +175,8 @@ inline void freq_matrix(Array &matrix, SITES &motif, Sequences &sequences, Marko
     matrix -- frequency matrix
     p      -- priori probability [0.25, 0.25, 0.25, 0.25]
 */
-double IC_Bernoulli(SITES &motif, Sequences &sequences, Array &matrix, Markov &markov, double pseudo=PSEUDO)
+double IC_Bernoulli(SITES &motif, Sequences &sequences, Array &matrix, \
+                    Markov &markov, double pseudo=PSEUDO)
 {
     // matrix
     freq_matrix(matrix, motif, sequences, markov, pseudo);
@@ -193,7 +195,8 @@ double IC_Bernoulli(SITES &motif, Sequences &sequences, Array &matrix, Markov &m
 }
 
 // do not allow spaces
-double PQ_Bernoulli(SITES &motif, Sequences &sequences, Array &matrix, Markov &markov, double pseudo=PSEUDO, int r=0)
+double PQ_Bernoulli(SITES &motif, Sequences &sequences, Array &matrix, \
+                    Markov &markov, double pseudo=PSEUDO, int r = 0)
 {
     // matrix
     freq_matrix(matrix, motif, sequences, markov, pseudo, r);
@@ -232,7 +235,8 @@ double P_M(Array &matrix, int w, int l, int start)
     See Paper
     IC = A - (X + Y)
 */
-double IC_Markov(SITES &motif, Sequences &sequences, Array &matrix, Markov &markov, double pseudo=PSEUDO)
+double IC_Markov(SITES &motif, Sequences &sequences, Array &matrix, \
+                 Markov &markov, double pseudo = PSEUDO)
 {
     // special Bernoulli case
     if (markov.order == 0)
@@ -262,7 +266,8 @@ double IC_Markov(SITES &motif, Sequences &sequences, Array &matrix, Markov &mark
         X += P_M(matrix, wp, order, 0) * log(markov.S[wp]);
     }
 
-    //Y = sum[i in (0..l-1-order)] sum[ws in ALPHABET] sum[wp in (0..S.lastIndex)] P_mi(wp*ALPHABET.size+ws, order+1, i) * ln T[wp][ws]    
+    //Y = sum[i in (0..l-1-order)] sum[ws in ALPHABET]
+    // sum[wp in (0..S.lastIndex)] P_mi(wp*ALPHABET.size+ws, order+1, i) * ln T[wp][ws]    
     double Y = 0.0;
     for (int i = 0; i < I-order; i++) 
     {
@@ -270,7 +275,7 @@ double IC_Markov(SITES &motif, Sequences &sequences, Array &matrix, Markov &mark
         {
             for (int ws = 0; ws < ALPHABET_SIZE; ws++) 
             {
-                Y += P_M(matrix, wp*ALPHABET_SIZE+ws, order+1, i) * log(markov.T[wp][ws]);
+                Y += P_M(matrix, wp * ALPHABET_SIZE + ws, order + 1, i) * log(markov.T[wp][ws]);
             }
         }
     }
@@ -283,7 +288,8 @@ double IC_Markov(SITES &motif, Sequences &sequences, Array &matrix, Markov &mark
   \sum_w log -------
              P(w|Bg)
 */
-double llr_Bernoulli(SITES &motif, Sequences &sequences, Array &matrix, Markov &markov, double pseudo=PSEUDO)
+double llr_Bernoulli(SITES &motif, Sequences &sequences, Array &matrix, \
+                     Markov &markov, double pseudo = PSEUDO)
 {
     // matrix
     freq_matrix(matrix, motif, sequences, markov, pseudo);
@@ -497,7 +503,7 @@ bool inline is_in_sites(Site &site, SITES &sites)
     return false;
 }
 
-SITES random_motif(SITES &allsites, int n, int nseq, int dmin=0)
+SITES random_motif(SITES &allsites, int n, int nseq, int dmin = 0)
 {
     SITES motif;
     int j = 0;
@@ -567,8 +573,8 @@ struct Is_a_site
 struct SamplingData 
 {
     int l;
-    int nsites; // max number of sites
-    int S; // number of sequences
+    int nsites;          // max number of sites
+    int S;               // number of sequences
     double **logp;       // log P(word) cache for each p
     double *cdf;         // cumulative dist function 
     Site *sampled_sites; // sites (corresponds to cdf)
