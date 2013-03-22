@@ -4,119 +4,123 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-#### initialise parameters ####
-$start_time = &RSAT::util::StartScript();
-$null = $default_null = "<NULL>"; 
-$default_ic = 1;
+################################################################
+## Initialise parameters
+local $start_time = &RSAT::util::StartScript();
+local $null = $default_null = "<NULL>"; 
+local $default_ic = 1;
 
-%supported_export_format = (profiles=>1,
+local %supported_export_format = (profiles=>1,
 			     classes=>1
 			     );
-$supported_export_formats = join ",", sort keys %supported_export_format;
-$export_format = "profiles";
+local $supported_export_formats = join ",", sort keys %supported_export_format;
+local $export_format = "profiles";
 
 %subst_header = ();
 
 &ReadArguments();
 
+################################################################
 ## read file list
 if ($filelist) {
-    my ($in) = &OpenInputFile($filelist);
-    while (<$in>) {
-	next if /^;/; ## Skip comment lines
-	next if /^\#/; ## Skip comment lines
-	next unless /\S/; ## Skip empty lines
-	chomp(); ## remove carriage return
-	my ($file) = split (/\s/, $_);
-	push @input_files, $file;
-	&RSAT::message::Info(join("\t", "Added file", scalar(@input_files), $file)) if ($main::verbose >= 3); 
-    }
-    close $in if ($filelist);
+  my ($in) = &OpenInputFile($filelist);
+  while (<$in>) {
+    next if /^;/; ## Skip comment lines
+    next if /^\#/; ## Skip comment lines
+    next unless /\S/; ## Skip empty lines
+    chomp(); ## remove carriage return
+    my ($file) = split (/\s/, $_);
+    push @input_files, $file;
+    &RSAT::message::Info(join("\t", "Added file", scalar(@input_files), $file)) if ($main::verbose >= 3); 
+  }
+  close $in if ($filelist);
 }
 
 &RSAT::message::Info(join ("\n\t", "Input files", @input_files)) if ($main::verbose >= 2);
 
-### read input file
+################################################################
+## Read input files
 $last_col;
 foreach $f (0..$#input_files) {
-    #### select the input file
-    $inputfile = $input_files[$f];
+  ## select the input file
+  $inputfile = $input_files[$f];
 
-    #### identifier column for the current file
-    unless (defined ($ic[$f])) {
-	$ic[$f] = $default_ic;
+  ## identifier column for the current file
+  unless (defined ($ic[$f])) {
+    $ic[$f] = $default_ic;
+  }
+  my $ii = $ic[$f] - 1;		### identifier column index
+
+  #### score column for the current file
+  if ((defined($default_sc)) && !(defined ($sc[$f]))) {
+    $sc[$f] = $default_sc;
+  }
+
+  ($in, $input_dir) = &OpenInputFile($inputfile);
+  $max_fields{$f} = 0;
+  while (<$in>) {
+    next unless (/\S/);		## Skip empty lines
+    next if (/^\#/);		## Skip header or comment lines
+    next if (/^;/);		## Skip comment lines
+    chomp;
+    @fields = split "\t";
+    if (defined($sc[$f])) {
+      $max_fields{$f}= 1;
+    } else {
+      $max_fields{$f} = &max($max_fields{$f},$#fields);
     }
-    my $ii = $ic[$f] - 1; ### identifier column index
-    
-    #### score column for the current file
-    if ((defined($default_sc)) && !(defined ($sc[$f]))) {
-	$sc[$f] = $default_sc;
+
+    $id =  &trim($fields[$ii]);
+    ### By default, the comparison is case-insensitive, but the ID
+    ### case is maintained in the output. This can however b
+    ### modified with the options '-lc' (IDs converted to
+    ### lowercases) and '-uc' (IDs converted to uppercases).
+    if ($to_lower) {
+      $id = lc($id);
+    } elsif ($to_lower) {
+      $id = uc($id);
     }
-    
-    ($in, $input_dir) = &OpenInputFile($inputfile);
-    $max_fields{$f} = 0;
-    while (<$in>) {
-      next unless (/\S/); ## Skip empty lines
-      next if (/^\#/); ## Skip header or comment lines
-      next if (/^;/); ## Skip comment lines
-      chomp;
-      @fields = split "\t";
-      if (defined($sc[$f])) {
-	$max_fields{$f}= 1;
-      } else {
-	$max_fields{$f} = &max($max_fields{$f},$#fields);
-      }
 
-      $id =  &trim($fields[$ii]);
-      ### By default, the comparison is case-insensitive, but the ID
-      ### case is maintained in the output. This can however b
-      ### modified with the options '-lc' (IDs converted to
-      ### lowercases) and '-uc' (IDs converted to uppercases).
-      if ($to_lower) {
-	$id = lc($id);
-      } elsif ($to_lower) {
-	$id = uc($id);
-      }
-
-      ## reformat numeric IDs to avoid problems if they have different numbers of digits in the different files
-      if ($numeric_IDs) {
-	$id = sprintf("%g", $id);
-      }
-
-	$key = lc($id);
-	$id{$key} = $id;
-	if (defined($sc[$f])) {
-	    $col = $last_col + 1;
-	    $score{$key}{$col} = $fields[$sc[$f]-1];
-	} else {
-	    for $c (1..$#fields) {
-		$col = $last_col + $c;
-		$score{$key}{$col} = $fields[$c];
-	    }
-	}
-
+    ## Reformat numeric IDs to avoid problems if they have different
+    ## numbers of digits in the different files
+    if ($numeric_IDs) {
+      $id = sprintf("%g", $id);
     }
-    close $in;
-    $last_col += $max_fields{$f};
+
+    $key = lc($id);
+    $id{$key} = $id;
+    if (defined($sc[$f])) {
+      $col = $last_col + 1;
+      $score{$key}{$col} = $fields[$sc[$f]-1];
+    } else {
+      for $c (1..$#fields) {
+	$col = $last_col + $c;
+	$score{$key}{$col} = $fields[$c];
+#	push @{$scores{$key}{$col}}, $fields[$c];
+      }
+    }
+  }
+  close $in;
+  $last_col += $max_fields{$f};
 }
 
-### open output file ###
+## Open output file
 $out = &OpenOutputFile($outputfile);
 
 
-#### verbose ####
+## Verbose
 if ($verbose) {
-    print $out "; compare-scores";
-    &PrintArguments($out);
+  print $out "; compare-scores";
+  &PrintArguments($out);
 
-    print $out ";Input files :\n";
-    print $out join( "\t", ";", "nb", "id_col", "sc_col", "file_name"), "\n";
-    for $f (0..$#input_files) {
-	print $out join( "\t", ";", $f+1, $ic[$f], $sc[$f], $input_files[$f]), "\n";
-    }
-    if ($outputfile ne "") {
-	print $out ";Output file	$outputfile\n";
-    }
+  print $out ";Input files :\n";
+  print $out join( "\t", ";", "nb", "id_col", "sc_col", "file_name"), "\n";
+  for $f (0..$#input_files) {
+    print $out join( "\t", ";", $f+1, $ic[$f], $sc[$f], $input_files[$f]), "\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
 }
 
 
@@ -124,104 +128,101 @@ if ($verbose) {
 ## Print result
 my @sorted_keys = ();
 if ($numeric_IDs) {
-    if ($decreasing) {
-	@sorted_keys = sort {$b <=> $a } keys %id;
-    } else {
-	@sorted_keys = sort {$a <=> $b } keys %id;
-    }
+  if ($decreasing) {
+    @sorted_keys = sort {$b <=> $a } keys %id;
+  } else {
+    @sorted_keys = sort {$a <=> $b } keys %id;
+  }
 } else {
-    @sorted_keys = sort keys %id;
+  @sorted_keys = sort keys %id;
 }
 
 ## Calculate header names
 my @column_names = ();
 my $col_nb = 0;
 foreach $f (0..$#input_files) {
-    foreach $c (1..$max_fields{$f}) {
-	$col_nb++;
-	my $column_name = $input_files[$f];
-	
-	## Basename
-	if ($basename) {
-	    $column_name = &ShortFileName($column_name);
-	}
-	
-	## Suppress substrings
-	for my $sub (@suppress) {
-	    $column_name =~ s/$sub//g;
-	}
-	
-	## Substitute substrings
-	for my $old_string (keys(%subst_header)) {
-		my $new_string = $subst_header{$old_string};
-	    $column_name =~ s/$old_string/$new_string/g;
-	}
-	
-	## Add column number
-	if ($max_fields[$f] > 1 ) {
-	    $column_name .=  "_$c";
-	}
-	
-	$column_names[$col_nb] = $column_name;
-#	&RSAT::message::Debug($column_name) if ($main::verbose >= 10);
+  foreach $c (1..$max_fields{$f}) {
+    $col_nb++;
+    my $column_name = $input_files[$f];
+
+    ## Basename
+    if ($basename) {
+      $column_name = &ShortFileName($column_name);
     }
+
+    ## Suppress substrings
+    for my $sub (@suppress) {
+      $column_name =~ s/$sub//g;
+    }
+
+    ## Substitute substrings
+    for my $old_string (keys(%subst_header)) {
+      my $new_string = $subst_header{$old_string};
+      $column_name =~ s/$old_string/$new_string/g;
+    }
+
+    ## Add column number
+    if ($max_fields[$f] > 1 ) {
+      $column_name .=  "_$c";
+    }
+
+    $column_names[$col_nb] = $column_name;
+    #	&RSAT::message::Debug($column_name) if ($main::verbose >= 10);
+  }
 }
 
-
+################################################################
 ## Print result  as score profiles
 if ($export_format eq "profiles") {
-    #### print header line
-    print $out "#key";
-    $col_nb = 0;
-    foreach $f (0..$#input_files) {
-	foreach $c (1..$max_fields{$f}) {
-	    $col_nb++;
-	    my $column_name = $column_names[$col_nb];
-	    print $out "\t", $column_name;
-	}
+  #### print header line
+  print $out "#key";
+  $col_nb = 0;
+  foreach $f (0..$#input_files) {
+    foreach $c (1..$max_fields{$f}) {
+      $col_nb++;
+      my $column_name = $column_names[$col_nb];
+      print $out "\t", $column_name;
+    }
+  }
+  print $out "\n";
+
+  ## Print the score profiles
+  foreach $key (@sorted_keys) {
+    print $out $id{$key};
+    for $f (1..$last_col) {
+      $score = $score{$key}{$f};
+      if ($score eq "") {
+	print $out "\t$null";
+      } else {
+	print $out "\t$score";
+      }
     }
     print $out "\n";
-
-    ## Print the score profiles
-    foreach $key (@sorted_keys) {
-	print $out $id{$key};
-	for $f (1..$last_col) {
-	    $score = $score{$key}{$f};
-	    if ($score eq "") {
-		print $out "\t$null";
-	    } else {
-		print $out "\t$score";
-	    }
-	}
-	print $out "\n";
-    }
+  }
 } elsif ($export_format eq "classes") {
-    ## Print the scores
-    foreach $key (@sorted_keys) {
-	for $f (1..$last_col) {
-	    my $column_name = $column_names[$f]; ## TEMPORARY
-	    if (defined($score{$key}{$f})) {
-		my $score = $score{$key}{$f};
-		print $out join("\t", 
-				$id{$key},
-				$column_name,
-				$score
-				),  "\n";
-	    }
-	}
+  ## Print the scores
+  foreach $key (@sorted_keys) {
+    for $f (1..$last_col) {
+      my $column_name = $column_names[$f]; ## TEMPORARY
+      if (defined($score{$key}{$f})) {
+	my $score = $score{$key}{$f};
+	print $out join("\t", 
+			$id{$key},
+			$column_name,
+			$score
+		       ),  "\n";
+      }
     }
+  }
 }
 
 
-###### close output file ######
+## Close output file
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
 print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 close $out unless ($outputfile eq "");
 
-
 exit(0);
-
-########################## subroutine definition ############################
 
 
 ################################################################
@@ -233,7 +234,7 @@ NAME
 	compare-scores
 
         1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
-	
+
 USAGE
         compare-scores -i inputfile_1 -i inputfile_2 [-i inputfile_n] [-o outputfile] [-v] [-ic \#] -sc \#
 
