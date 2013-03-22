@@ -795,7 +795,7 @@ sub GnuPlotEPS {
   $gnuplot_cmd .= "set tics font big;\n";
 
   ## grid
-  $gnuplot_cmd .= "set grid ".($lw-1).";\n";
+  $gnuplot_cmd .= "set grid '".($lw-1)."';\n";
 
   ## x axis
   if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
