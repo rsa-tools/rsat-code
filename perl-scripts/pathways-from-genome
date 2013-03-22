@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.25 2013/03/22 11:03:58 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.26 2013/03/22 11:04:34 jvanheld Exp $
 #
 ############################################################
 
@@ -99,7 +99,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -1220,7 +1220,7 @@ sub GetGER() {
     $cmd .= " --ms_org_id ".$ms_org_id;
     $cmd .= " --reactions" if ($args{get_reactions});
     $cmd .= " -o ".$outfile{$GPR_suffix};
-#TEMP HELLO#    &one_command($cmd, 1, 0, task=>"ger");
+    &one_command($cmd, 1, 0, task=>"ger");
 
     if ($GPR_suffix eq "gene-ec") {
       &RSAT::message::TimeWarn("\tSelecting unique gene identifiers") if ($main::verbose >= 1);
@@ -1264,21 +1264,6 @@ sub GetGER() {
       $dir{rsat_genome} = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
       $infile{rsat_cds_names} = $dir{rsat_genome}."/cds_names.tab";
       &RSAT::message::TimeWarn("\tIdentifying gene-EC relationships with RSAT identifiers") if ($main::verbose >= 1);
-#       $cmd = $SCRIPTS."/compare-scores";
-#       $cmd .= " -i ".$outfile{$GPR_suffix."_refseqid"};
-#       $cmd .= " -ic1 1";
-#       $cmd .= " -suppress '".$dir{GER}."/'";
-#       $cmd .= " -suppress ".$organism_name."_gene-ec_";
-#       $cmd .= " -suppress .tab";
-#       $cmd .= " -i ".$infile{rsat_cds_names};
-#       $cmd .= " -ic2 2 -sc2 1";
-#       $cmd .= " -suppress '".$dir{rsat_genome}."/'";
-#       $cmd .= " -null '".$null."'";
-#       $cmd .= " | awk -F'\t' '\$3 != \"".$null."\"' ";
-#       $cmd .= " | add-gene-info -org ".$organism_name;
-#       $cmd .= " -info name";
-#       $cmd .= " | awk -F'\t' '{print \$5\"\t\"\$2\"\t\"\$4\"\t\"\$1\"\t\"\$3}'";
-#       $cmd .= " > ".$outfile{$GPR_suffix."_rsat_id"}."_bof";
 
       ## Join the files using the join command
       $cmd = "sort -b -k 2 ".$infile{rsat_cds_names}." > tmp_cds_names_sorted.tab";
