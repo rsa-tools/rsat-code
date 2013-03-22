@@ -726,8 +726,8 @@ sub GnuPlotEPS {
 
   $gnuplot_cmd = "gnuplot << EOF\n";
   ## fonts
-  $gnuplot_cmd .= "small='Arial,9'\n";
-  $gnuplot_cmd .= "big='Arial,11'\n";
+  $gnuplot_cmd .= "small='Arial,9';\n";
+  $gnuplot_cmd .= "big='Arial,11';\n";
   ## add the ; to the default comment character #
   $gnuplot_cmd .= "set datafile commentschars '#;'\n";
 
@@ -744,15 +744,15 @@ sub GnuPlotEPS {
   ## the idea here is to get the ratio from the input x and y size
   ## and let gnuplot adapt automatically
 
-  $gnuplot_cmd .= "set term post landscape enh ".$color." font small\n";
+  $gnuplot_cmd .= "set term post landscape enh ".$color." font small;\n";
 
   if (($x_axis_size)&&($y_axis_size)) {
     my $ratio = $y_axis_size/$x_axis_size;
-    $gnuplot_cmd .= "set size ratio '".$ratio."'\n";
+    $gnuplot_cmd .= "set size ratio '".$ratio."';\n";
   }
 
   ## output file
-  $gnuplot_cmd .= "set output '".$outputfile."'\n";
+  $gnuplot_cmd .= "set output '".$outputfile."';\n";
 
   ## title
   if ($title1) {
@@ -762,7 +762,7 @@ sub GnuPlotEPS {
     }
     $title = $title1.$title;
     $title =~ s/_/-/g;
-    $gnuplot_cmd .= 'set title "'.$title.'" font big'."\n";
+    $gnuplot_cmd .= 'set title "'.$title.'" font big'.";\n";
   }
 
   ## labels
@@ -773,7 +773,7 @@ sub GnuPlotEPS {
     }
     $x_legend = $x_legend1.$x_legend;
     $x_legend =~ s/_/-/g;
-    $gnuplot_cmd .= 'set xlabel "'.$x_legend.'" font big'."\n";
+    $gnuplot_cmd .= 'set xlabel "'.$x_legend.'" font big'.";\n";
   }
 
   if ($y_legend1) {
@@ -783,16 +783,16 @@ sub GnuPlotEPS {
     }
     $y_legend = $y_legend1.$y_legend;
     $y_legend =~ s/_/-/g;
-    $gnuplot_cmd .= 'set ylabel "'.$y_legend.'" font big'."\n";
+    $gnuplot_cmd .= 'set ylabel "'.$y_legend.'" font big'.";\n";
   }
 
   ## default linewidth
   $lw = 4;
   ## default pointsize
-  $gnuplot_cmd .= "set pointsize ".($point_size/2)."\n";
+  $gnuplot_cmd .= "set pointsize ".($point_size/2).";\n";
 
   ## tics
-  $gnuplot_cmd .= "set tics font big\n";
+  $gnuplot_cmd .= "set tics font big;\n";
 
   ## grid
   $gnuplot_cmd .= "set grid ".($lw-1).";\n";
@@ -814,7 +814,7 @@ sub GnuPlotEPS {
 	$x_axis_max = "";
       }
     }
-    $gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."]\n";
+    $gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."];\n";
   }
 
   ## y axis
@@ -835,28 +835,28 @@ sub GnuPlotEPS {
 	$y_axis_max = "";
       }
     }
-    $gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."]\n";
+    $gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."];\n";
   }
 
   ## log
   if ($xlog) {
-    $gnuplot_cmd .= "set logscale x ".$x_log_base."\n";
+    $gnuplot_cmd .= "set logscale x ".$x_log_base.";\n";
   }
   if ($ylog) {
-    $gnuplot_cmd .= "set logscale y ".$y_log_base."\n";
+    $gnuplot_cmd .= "set logscale y ".$y_log_base.";\n";
   }
 
   ## legend (key box)
   if (($header)||($legend)) {
-    $gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";
+    $gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox;\n";
   } else {
-    $gnuplot_cmd .= "set key off\n";
+    $gnuplot_cmd .= "set key off;\n";
   }
   ## get legend from columnheader
   if (($header)||($legend)) {
     ## remove # from data file comments charaters
-    $gnuplot_cmd .= "set datafile commentschars '!;%'\n";
-    $gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";
+    $gnuplot_cmd .= "set datafile commentschars '!;%';\n";
+    $gnuplot_cmd .= "set key autotitle columnheader samplen 1;\n";
   }
 
   ## colors
@@ -915,29 +915,29 @@ sub GnuPlotEPS {
   ## symbols
   if ($symbols) {
     foreach my $i (0..$#color_list) {
-      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt ".($i+1)." lc rgb '".$color_list[$i]."'\n";
+      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt ".($i+1)." lc rgb '".$color_list[$i]."';\n";
     }
   } else {
     ## no symbols (only lines and circle points)
     foreach my $i (0..$#color_list) {
-      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt 6 lc rgb '".$color_list[$i]."'\n";
+      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt 6 lc rgb '".$color_list[$i]."';\n";
     }
   }
-  $gnuplot_cmd .= "set style increment user\n";
+  $gnuplot_cmd .= "set style increment user;\n";
 
   ## hlines and vlines
   if ($hline){
     for $h (0..$#hline_pos) {
       $hline_color = $hline_colors[$h];
       $hline_pos = $hline_pos[$h];
-      $gnuplot_cmd .= "set arrow from graph 0, first ".$hline_pos." to graph 1, first ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."'\n";
+      $gnuplot_cmd .= "set arrow from graph 0, first ".$hline_pos." to graph 1, first ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."';\n";
     }
   }
   if ($vline){
     for $v (0..$#vline_pos) {
       $vline_color = $vline_colors[$v];
       $vline_pos = $vline_pos[$v];
-      $gnuplot_cmd .= "set arrow from first ".$vline_pos.", graph 0  to first ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."'\n";
+      $gnuplot_cmd .= "set arrow from first ".$vline_pos.", graph 0  to first ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."';\n";
     }
   }
 
@@ -945,7 +945,7 @@ sub GnuPlotEPS {
   if ($gp_supp_commands) {
     @gp = split(",",$gp_supp_commands);
     foreach my $cmd (@gp) {
-      $gnuplot_cmd .= $cmd."\n";
+      $gnuplot_cmd .= $cmd.";\n";
     }
   }
 
@@ -968,7 +968,7 @@ sub GnuPlotEPS {
 
     ## end line
     if ($k == $#y_col_list) {
-      $gnuplot_cmd .= "\n";
+      $gnuplot_cmd .= ";\n";
     } else {
       $gnuplot_cmd .= ",";
     }
