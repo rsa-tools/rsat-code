@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.27 2013/03/22 11:09:53 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.28 2013/03/22 12:05:02 jvanheld Exp $
 #
 ############################################################
 
@@ -99,7 +99,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -1209,10 +1209,16 @@ sub GetGER() {
   ## inconvenient for computing statistics.
 
   ## Check that organism table contains a cross-reference to the MICROSCOPE database for the organism
-  if ($organism_info{$organism_name}->{microscope_metacyc_id}) {
-   ## Run the MICROME/MICROSCOPE Web client
+  if (($organism_info{$organism_name}->{microscope_metacyc_id}) &&
+      ($organism_info{$organism_name}->{microscope_metacyc_id} ne "<NA>")) {
+    ## Run the MICROME/MICROSCOPE Web client
     &RSAT::message::TimeWarn("\tCollecting GPR from MicroCyc via Web services") if ($main::verbose >= 1);
     my $ms_org_id = $organism_info{$organism_name}->{microscope_metacyc_id};
+#    if {
+#      &RSAT::message::Warning("Skipping", $organism_name, $organism_info{$organism_name}->{microscope_metacyc_id});
+#      next;
+#    }
+
     my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
     $cmd = "python2.7 ".$ger_cmd;
     $cmd .= " --ms_org_id ".$ms_org_id;
