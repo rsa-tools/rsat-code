@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.24 2013/03/20 14:12:43 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.25 2013/03/22 11:03:58 jvanheld Exp $
 #
 ############################################################
 
@@ -99,7 +99,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -118,6 +118,8 @@ package main;
   our @image_formats = ("png", "pdf");
   our $icon_height = "200"; ## Height for the previsualization icons in the HTML reports
 
+  our $null = "__NULL__";
+
   ## Supported tasks
   our @supported_tasks = qw(all
 			    metanet
@@ -127,6 +129,7 @@ package main;
 			    footprints
 			    genesets2ecs
 			    pathway_proj
+			    pathway_disco
 			    synthesis
 			  );
   our $supported_tasks = join ",", @supported_tasks;
@@ -791,7 +794,22 @@ Run footprint discovery on each gene separately (Janky and van Helden,
 2008), and infer a co-regulation network (Brohee et al., 2011) in
 order to predict putative regulons.
 
-=item I<>
+=item I<genesets2ecs>
+
+Generate a table with the associations between genes and EC numbers.
+
+=item I<pathway_proj>
+
+Compare operons to annotated pathways by computing, for each
+operon/pathway comparison, the number of shared EC numbers and their
+significance.
+
+=item I<pathway_disco>
+
+Run pathway extraction to predict (discover) a metabolic pathway from
+the ec numbers associated to each operon or directon.
+
+TO BE IMPLEMENTED
 
 =back
 
@@ -1202,7 +1220,7 @@ sub GetGER() {
     $cmd .= " --ms_org_id ".$ms_org_id;
     $cmd .= " --reactions" if ($args{get_reactions});
     $cmd .= " -o ".$outfile{$GPR_suffix};
-    &one_command($cmd, 1, 0, task=>"ger");
+#TEMP HELLO#    &one_command($cmd, 1, 0, task=>"ger");
 
     if ($GPR_suffix eq "gene-ec") {
       &RSAT::message::TimeWarn("\tSelecting unique gene identifiers") if ($main::verbose >= 1);
@@ -1232,6 +1250,8 @@ sub GetGER() {
       $cmd .= "; grep -v '^; ' ".$outfile{$GPR_suffix};
       $cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"refseqId\"'";
       $cmd .= " | awk -F '\\t' '{print \$1\"\\t\"\$2\"\\t\"\$4}'";
+      $cmd .= " | perl -pe 's|\\t\\t|\\t".$null."\\t|g' "; ## Required for the join command
+      $cmd .= " | sort -b -k 1"; ## Sorting with option -b is required for the unix "join" command, used below to link genes to ECs!
       $cmd .= " >> ".$outfile{$GPR_suffix."_refseqid"};
 
       ## Convert gene-ec table to HTML format
@@ -1243,29 +1263,45 @@ sub GetGER() {
       ## Identify gene-EC relationships using RSAT identifiers (actually NCBI protein_id)
       $dir{rsat_genome} = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
       $infile{rsat_cds_names} = $dir{rsat_genome}."/cds_names.tab";
-      my $null = "";
       &RSAT::message::TimeWarn("\tIdentifying gene-EC relationships with RSAT identifiers") if ($main::verbose >= 1);
-      $cmd = $SCRIPTS."/compare-scores";
-      $cmd .= " -i ".$outfile{$GPR_suffix."_refseqid"};
-      $cmd .= " -ic1 1";
-      $cmd .= " -suppress '".$dir{GER}."/'";
-      $cmd .= " -suppress ".$organism_name."_gene-ec_";
-      $cmd .= " -suppress .tab";
-      $cmd .= " -i ".$infile{rsat_cds_names};
-      $cmd .= " -ic2 2 -sc2 1";
-      $cmd .= " -suppress '".$dir{rsat_genome}."/'";
-      $cmd .= " -null '".$null."'";
-      $cmd .= " | awk -F'\t' '\$3 != \"".$null."\"' ";
-      $cmd .= " | add-gene-info -org ".$organism_name;
-      $cmd .= " -info name";
-      $cmd .= " | awk -F'\t' '{print \$5\"\t\"\$2\"\t\"\$4\"\t\"\$1\"\t\"\$3}'";
+#       $cmd = $SCRIPTS."/compare-scores";
+#       $cmd .= " -i ".$outfile{$GPR_suffix."_refseqid"};
+#       $cmd .= " -ic1 1";
+#       $cmd .= " -suppress '".$dir{GER}."/'";
+#       $cmd .= " -suppress ".$organism_name."_gene-ec_";
+#       $cmd .= " -suppress .tab";
+#       $cmd .= " -i ".$infile{rsat_cds_names};
+#       $cmd .= " -ic2 2 -sc2 1";
+#       $cmd .= " -suppress '".$dir{rsat_genome}."/'";
+#       $cmd .= " -null '".$null."'";
+#       $cmd .= " | awk -F'\t' '\$3 != \"".$null."\"' ";
+#       $cmd .= " | add-gene-info -org ".$organism_name;
+#       $cmd .= " -info name";
+#       $cmd .= " | awk -F'\t' '{print \$5\"\t\"\$2\"\t\"\$4\"\t\"\$1\"\t\"\$3}'";
+#       $cmd .= " > ".$outfile{$GPR_suffix."_rsat_id"}."_bof";
+
+      ## Join the files using the join command
+      $cmd = "sort -b -k 2 ".$infile{rsat_cds_names}." > tmp_cds_names_sorted.tab";
+      $cmd .= "; join";       ## BEWARE: join assumes that the files are sorted according to the join field.
+      $cmd .= " -11";
+      $cmd .= " -22";
+      $cmd .= " -e '".$null."'";
+#      $cmd .= " -o 1.1,1.3,1.2,2.1,1.1,2.2";
+      $cmd .= " -t '	'";
+      $cmd .= " ".$outfile{$GPR_suffix."_refseqid"};
+      $cmd .= " tmp_cds_names_sorted.tab";
+      $cmd .= " | add-gene-info -info name -org ".$organism_name;
+      $cmd .= " | awk '\$2 !=\"".$null."\" {print \$6\"\t\"\$2\"\t\"\$4\"\t\"\$1\"\t\"\$3}'";
       $cmd .= " > ".$outfile{$GPR_suffix."_rsat_id"};
+      $cmd .= " ; rm tmp_cds_names_sorted.tab";
 
       ## Convert gene-ec table to HTML format
       $cmd .= " ; ".$SCRIPTS."/text-to-html ";
       $cmd .= " -i ".$outfile{$GPR_suffix."_rsat_id"};
       $cmd .= " -o ".$outfile{$GPR_suffix."_rsat_id_html"};
+
       &one_command($cmd, 1, 0, task=>"ger");
+
 
 
     }
@@ -1542,12 +1578,12 @@ sub GeneSets2ECs {
     $gpr_file = $ENV{RSAT}."/public_html/data/metabolic_networks/GER_files/".$microcyc_name."-".$tax_id."-microcyc/";
     $gpr_file .= $microcyc_name."-".$tax_id."-microcyc-gene_ec.tab";
     &RSAT::message::Info("RSAT-installed GPR file", $infile{RSAT_GPR}) if ($main::verbose >= 3);
-  } else {
 
+  } else {
     ## Use the GPR file downloaded from MicroCyc
     $gpr_file = $outfile{"gene-ec_rsat_id"};
   }
-  &RSAT::message::Info("GPR file", $gpr_file) if ($main::verbose >= 3);
+  &RSAT::message::Info("GPR file", $gpr_file) if ($main::verbose >= 0);
   &RSAT::error::FatalError("Cannot read GPR file", $gpr_file) unless (-r $gpr_file);
 
   ################################################################
@@ -1555,6 +1591,7 @@ sub GeneSets2ECs {
   $prefix{$geneset_key."_ec"} = $outfile{$geneset_key};
   $prefix{$geneset_key."_ec"} =~ s/\.tab$//;
   $outfile{$geneset_key."_ec"} = $prefix{$geneset_key."_ec"}."_gene-ecs.tab"; push @files_to_index, $geneset_key."_ec";
+  $outfile{$geneset_key."_ec_html"} = $prefix{$geneset_key."_ec"}."_gene-ecs.html"; push @files_to_index, $geneset_key."_ec_html";
   $outfile{$geneset_key."_ec_set"} = $prefix{$geneset_key."_ec"}."_ec-set.tab"; push @files_to_index, $geneset_key."_ec_set";
   $outfile{$geneset_key."_ecs_per_set"} = $prefix{$geneset_key."_ec"}."_ecs-per-set.tab"; push @files_to_index, $geneset_key."_ecs_per_set";
 
@@ -1571,8 +1608,9 @@ sub GeneSets2ECs {
   $cmd .= " | cut -f 2 | uniq -c ";
   $cmd .= " | sort -nr -k 1";
   $cmd .= " > ".$outfile{$geneset_key."_ecs_per_set"};
+  $cmd .= " ; text-to-html -i ".$outfile{$geneset_key."_ec"};
+  $cmd .= " -o ".$outfile{$geneset_key."_ec_html"};
   &one_command($cmd, 1, 0, task=>genesets2ecs);
-
 }
 
 
