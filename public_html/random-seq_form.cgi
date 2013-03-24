@@ -38,7 +38,7 @@ foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-} 
+}
 
 ### print the form ###
 &RSA_header("random sequence", "form");
@@ -72,10 +72,10 @@ print $query->textfield(-name=>'repet',
 
 print "<BR>\n";
 
-### sequence format 
+### sequence format
 print "<A HREF='help.random-seq.html#formats'>Sequence format</A>&nbsp;";
 print $query->popup_menu(-name=>'format',
-			 -Values=>['fasta', 
+			 -Values=>['fasta',
 				   'IG',
 				   'wconsensus',
 				   'multi'],
@@ -118,7 +118,7 @@ print $query->popup_menu(-name=>'oligo_size',
 
 print "<br><INPUT TYPE='radio' NAME='bg_method' VALUE='protein'>";
 print "Protein sequences (<font color='red'>new</font>) calibrated on all proteins of this organism";
-print "&nbsp"x3, "<b><a href='help.random-seq.html#oligopept_size'>Oligonupeptide size</A>&nbsp;</b>\n";
+print "&nbsp"x3, "<b><a href='help.random-seq.html#oligopept_size'>Oligopeptide size</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'oligopept_size',
 			 -Values=>[1..3],
 			 -default=>$default{oligopept_size});
