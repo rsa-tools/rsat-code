@@ -117,7 +117,7 @@ print $query->popup_menu(-name=>'oligo_size',
 			 -default=>$default{oligo_size});
 
 print "<br><INPUT TYPE='radio' NAME='bg_method' VALUE='protein'>";
-print "Protein sequences (<font color='red'>new</font>) calibrated on all proteins of this organism";
+print "Protein sequences calibrated on all proteins of this organism";
 print "&nbsp"x3, "<b><a href='help.random-seq.html#oligopept_size'>Oligopeptide size</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'oligopept_size',
 			 -Values=>[1..3],
