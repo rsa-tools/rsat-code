@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-snp-seq,v 1.9 2013/03/20 15:37:20 jeremy Exp $
+# $Id: retrieve-snp-seq,v 1.10 2013/03/26 11:07:18 jeremy Exp $
 #
 ############################################################
 
@@ -36,14 +36,14 @@ jeremy.delerce@univ-amu.fr
 
 =head1 USAGE
 
-retrieve-snp-seq -i bedfile [-species #] [-population #] -len # [-o outputfile] [-v#] [...]
+retrieve-snp-seq -i bedfile -len # [-species #] [-population #] [-o outputfile] [-v#] [...]
 
 =head2 Example
 
  retrieve-snp-seq -v 1 \
    -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
    -species human \
-   -population 1000GENOMES:phase_1_YRI \
+   -population 1000GENOMES:phase_1_ALL \
    -len 30 \
    -o variations.tab
 
@@ -63,8 +63,7 @@ The first three required fields are:
 
 =item 1. chrom
 
-The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold
-(e.g. scaffold10671).
+The name of the chromosome (e.g. chr3, chrY, chr2_random).
 
 =item 2. chromStart
 
@@ -153,7 +152,7 @@ package	main;
     ###############################################################
     ## Initialise parameters
     our $start_time = &RSAT::util::StartScript();
-    our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+    our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
     our %infile	= ();
     our %outfile = ();
@@ -163,7 +162,10 @@ package	main;
     our $out = STDOUT;
 
     our $species = 'Homo_sapiens';
-    our $population = '1000GENOMES:phase_1_YRI';
+    our $population = '1000GENOMES:phase_1_ALL';
+    our $want_pop = 0;
+    our $want_pop_1k =0;
+    our $want_pop_hap =0;
     our $len ='';
 
     our $marge = 50; #in case of indel on extremity of slice
@@ -176,16 +178,71 @@ package	main;
     ################################################################
     ## Check argument values
 
-    if ($species ne 'Homo_sapiens' && $population eq '1000GENOMES:phase_1_ALL') {
-       &RSAT::error::FatalError("Population is mandatory if species different of human");
+    my @species_l = qx($ENV{'RSAT'}/perl-scripts/supported-organisms-ensembl);
+    unless ( grep($_ eq $species."\n", @species_l ) ) {
+	&RSAT::error::FatalError("$species not avalaible on ensembl\n\tUse : supported-organisms-ensembl to get all avalaible species");
     }
 
-    unless ($len) {
-    	   &RSAT::error::FatalError("Length of flank of the sequence must be specified with option -length");
+    if ( ($want_pop_1k || $want_pop_hap) && $species ne "Homo_sapiens") {
+        &RSAT::error::FatalError("-pop1k and -popHap only avalaible for Homo_sapiens");
     }
 
-    unless (&IsNatural($len)) {
-    	   &RSAT::error::FatalError("Length must be a int");
+    unless ($want_pop || $want_pop_1k || $want_pop_hap) { 
+	if ($species ne 'Homo_sapiens' && $population eq '1000GENOMES:phase_1_ALL') {
+	    &RSAT::error::FatalError("Population is mandatory if species different of Homo_sapiens");
+	}
+	
+	unless ($len) {
+	    &RSAT::error::FatalError("Length of flank of the sequence must be specified with option -length");
+	}
+
+	unless (&IsNatural($len)) {
+	    &RSAT::error::FatalError("Length must be a int");
+	}
+    }
+
+    ################################################################
+    ## Open a connection to Ensembl
+    &RSAT::message::TimeWarn("Connection to Ensembl") if ($main::verbose >= 2);
+
+    my $registry = 'Bio::EnsEMBL::Registry';
+    $registry->load_registry_from_db(
+        -host => 'ensembldb.ensembl.org',
+        -user => 'anonymous'
+        );
+
+    ##Get adaptor
+    my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
+    my $vf_adaptor = $registry->get_adaptor($species, 'variation','variationfeature');
+    my $population_adaptor = $registry->get_adaptor($species, 'variation', 'population');
+    my $individual_adaptor = $registry->get_adaptor($species,'variation','individual');
+
+    ##Print all population
+    if ($want_pop) {
+        foreach my $population (@{$population_adaptor->fetch_all()}) {
+	    print $population->name(),"\n";
+	}
+	exit(1);
+    }
+
+    if ($want_pop_1k) {
+        foreach my $population (@{$population_adaptor->fetch_all_1KG_Populations()}) {
+            print $population->name(),"\n";
+        }
+        exit(1);
+    }
+
+    if ($want_pop_hap) {
+        foreach my $population (@{$population_adaptor->fetch_all_HapMap_Populations()}) {
+            print $population->name(),"\n";
+        }
+        exit(1);
+    }
+
+
+    ##Check argument BIS
+    unless ( scalar(@{$population_adaptor->fetch_all_by_name_search($population)}) == 1) {
+	&RSAT::error::FatalError("$population don't exist in $species");
     }
 
     ################################################################
@@ -224,33 +281,11 @@ package	main;
 	($main::in) = &OpenInputFile($main::infile{input});
     }
 
-
-    ################################################################
-    ## Open a connection to Ensebl
-    &RSAT::message::TimeWarn("Connection to Ensembl") if ($main::verbose >= 2);
-
-    my $registry = 'Bio::EnsEMBL::Registry';
-    $registry->load_registry_from_db(
-        -host => 'ensembldb.ensembl.org',
-        -user => 'anonymous'
-        );
-
-    ##Get adaptor
-    my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
-    my $vf_adaptor = $registry->get_adaptor($species, 'variation','variationfeature');
-    my $population_adaptor = $registry->get_adaptor($species, 'variation', 'population');
-    my $individual_adaptor = $registry->get_adaptor($species,'variation','individual');
-
-    ##Check argument BIS
-    unless ( scalar(@{$population_adaptor->fetch_all_by_name_search($population)}) == 1) {
-	    &RSAT::error::FatalError("$population don't exist in $species");
-    }
-    
     ################################################################
     ## Read input
     &RSAT::message::TimeWarn("Reading genomic coordinates") if ($main::verbose >= 2);
     
-    my @region_list = ();
+    my @slices = ();
     my %chr_length = ();
     
     ($main::in) = &OpenInputFile($main::infile{input});
@@ -275,11 +310,15 @@ package	main;
 	    $chrom = substr($chrom,3);
 	}
 
-	##Get length of chrom
+	##Get length of chrom and chr name
 	unless ($chr_length{$chrom}) {
-	    my $slice = $slice_adaptor->fetch_by_region( 'chromosome', $chrom );
-	    $chr_length{$chrom}{'start'} = $slice->start();
-	    $chr_length{$chrom}{'end'} = $slice->end();
+	    my @slices = @{ $slice_adaptor->fetch_all('chromosome') };
+
+	    foreach my $slice (@slices) {
+		my $chr = $slice->seq_region_name();
+		$chr_length{$chr}{'start'} = $slice->start();
+		$chr_length{$chr}{'end'} = $slice->end();
+	    }
 	}
 
 	## Check that the left is smaller than the right
@@ -289,12 +328,15 @@ package	main;
 	    $right = $tmp;
 	}
 
-	##Slice is bigger than the region of interest to getting neighboors variation
-	if ( $left < $chr_length{$chrom}{'start'} || $right > $chr_length{$chrom}{'end'} ) {
-	    &RSAT::message::Warning( "Wrong coordinate : $_") if ($main::verbose >= 1);
-	} else {
-	    push(@region_list, $chrom."-".$left."-".$right);
+        ##Remove wrong line
+        unless ( $chr_length{$chrom} && $chr_length{$chrom}{'start'} <= $left && $chr_length{$chrom}{'end'} >= $right) {
+            &RSAT::message::Warning( "Wrong coordinate : $_") if ($main::verbose >= 1);
+	    next;
 	}
+
+	##Slice is bigger than the region of interest to getting neighboors variation
+	push(@slices, $slice_adaptor->fetch_by_region('chromosome',$chrom,$left-($len+$marge),$right+($len+$marge) ) );
+
     }
     close $main::in if ($main::infile{input});
 
@@ -305,28 +347,13 @@ package	main;
     ################################################################
     ## Execute the command
     my $i = 0;
-    my $nb_slice = scalar(@region_list);
+    my $nb_slice = scalar(@slices);
 
-    foreach my $region (@region_list)  {
+    foreach my $slice (@slices)  {
 	$i++;
 
-	my ($chrom, $left, $right) = split(/\-/,$region);
-	my $slice = $slice_adaptor->fetch_by_region('chromosome',$chrom,$left-($len+$marge),$right+($len+$marge) );
-	my $vfs = $vf_adaptor->fetch_all_by_Slice($slice);
-
-	##Remove non-analizable Variation feature
-	my @vfs_good = ();
-
-	foreach my $vf (@{$vfs}) {
-
-	    ## !!!!!!!! $vf-get_all_validation_states class at Risk and remove all indel but removeproblem with 2 variations in same coordinate,
-	    unless ( $vf->variation()->is_failed()
-		     || $vf->allele_string() =~ /[^ACTG\-\/]/
-		     || ($vf->start() > $vf->end() && $vf->ref_allele_string() ne "-")
-		     || scalar(@{$vf->get_all_validation_states()}) == 0 ) {
-		push(@vfs_good, $vf);
-	    }
-	}
+	##Search all variation in $slice
+	my @vfs = @{ $vf_adaptor->fetch_all_by_Slice($slice) };
 
 	##Search all individu name in $population
 	my $pop = $population_adaptor->fetch_by_name($population);
@@ -338,11 +365,21 @@ package	main;
 	}
 
 	##Search haplotype and get info on variation of interst
-	my @vfs_good2 = ();
+	my @vfs_good = ();
 	my %variation_info = ();
 	my $pos_diff = 0;
 
-	foreach my $vf ( @vfs_good ) {
+	foreach my $vf ( @vfs ) {
+
+	    ##Remove non-analizable Variation feature
+            ## !!!!!!!! $vf-get_all_validation_states class at Risk and remove all indel but remove problem of 2 variations with same coordinate
+            if ( $vf->variation()->is_failed()
+                     || $vf->allele_string() =~ /[^ACTG\-\/]/
+                     || ($vf->start() > $vf->end() && $vf->ref_allele_string() ne "-")
+#                     || scalar(@{$vf->get_all_validation_states()}) == 0 ) {
+		){
+                next;
+            }
 
 	    my $igs = $vf->variation()->get_all_IndividualGenotypes();
 	    my $variation_name = $vf->variation_name();
@@ -361,55 +398,52 @@ package	main;
 			push (@list_variants,$variant1 );
 		    }
 
-		    unless (  ( $slice->seq_region_name() eq "X" || $slice->seq_region_name() eq "Y") && $individual_genotype->individual()->gender() eq "Male") {
+		    next if (  ( $slice->seq_region_name() eq "X" && $individual_genotype->individual()->gender() eq "Male") || $slice->seq_region_name() eq "Y");
 
-			$variant2 = $individual_genotype->allele(2);
-			$population_individual{$individual_name}{$variation_name}{'allele2'} = $variant2;
+		    $variant2 = $individual_genotype->allele(2);
+		    $population_individual{$individual_name}{$variation_name}{'allele2'} = $variant2;
 
-			unless ( grep($_ eq $variant2 , @list_variants ) ) {
-			    push (@list_variants,$variant2 );
-			}
+		    unless ( grep($_ eq $variant2 , @list_variants ) ) {
+			push (@list_variants,$variant2 );
 		    }
 		}
 	    }
 
 	    ##Only keep variations with more than 1 variant in $population
-	    if ( scalar (@list_variants) > 1) {
+	    next unless ( scalar (@list_variants) > 1);
+	    
+	    push (@vfs_good,$vf);
+	    $variation_name = $vf->variation_name();
 
-		push (@vfs_good2,$vf);
-
-		## Get max length of variant
-		$len_max_var = 0;
-		foreach my $variant (@list_variants ) {
-		    if ($len_max_var < length($variant)) {
-			$len_max_var = length($variant);
-		    }
+	    ## Get max length of variant
+	    $variation_info{$variation_name}{'len_max_var'} = 0;
+	    foreach my $variant (@list_variants ) {
+		if ($variation_info{$variation_name}{'len_max_var'} < length($variant)) {
+		    $variation_info{$variation_name}{'len_max_var'} = length($variant);
 		}
-		$variation_info{$variation_name}{'len_max_var'} = $len_max_var;
+	    }
 
-		##Get length of ref variant
-		$variation_info{$variation_name}{'len_ref_var'} = length($vf->ref_allele_string());
+	    ##Get length of ref variant
+	    $variation_info{$variation_name}{'len_ref_var'} = length($vf->ref_allele_string());
 
-		##Get change in position foreach $vf
-		$variation_info{$variation_name}{'diff_pos'} = $pos_diff;
+	    ##Get change in position foreach $vf
+	    $variation_info{$variation_name}{'diff_pos'} = $pos_diff;
+	    
+	    if ( $variation_info{$variation_name}{'len_max_var'} != length($vf->ref_allele_string()) ) {
+		$pos_diff += $variation_info{$variation_name}{'len_max_var'}-length($vf->ref_allele_string());
+	    }
 
-		if ( $variation_info{$variation_name}{'len_max_var'} != length($vf->ref_allele_string()) ) {
-		    $pos_diff += $variation_info{$variation_name}{'len_max_var'}-length($vf->ref_allele_string());
-		}
-
-		if ( $vf->ref_allele_string() eq "-" ) {
-		    $variation_info{$variation_name}{'len_ref_var'} = 0;
-		    $pos_diff++;
-		}
-
+	    if ( $vf->ref_allele_string() eq "-" ) {
+		$variation_info{$variation_name}{'len_ref_var'} = 0;
+		$pos_diff++;
 	    }
 	}
 
-	if ( scalar(@vfs_good2) == 0) {
+	if ( scalar(@vfs_good) == 0) {
 	    &RSAT::message::TimeWarn("Slice $i/".$nb_slice."\t".$slice->seq_region_name().":".$slice->start()."-".$slice->end()."\tNo variation found") if ($main::verbose >= 2);
 	    next;
 	} else {
-	    &RSAT::message::TimeWarn("Slice $i/".$nb_slice."\t".$slice->seq_region_name().":".$slice->start()."-".$slice->end()."\t".scalar(@vfs_good2)." variation(s) found") if ($main::verbose >= 2);
+	    &RSAT::message::TimeWarn("Slice $i/".$nb_slice."\t".$slice->seq_region_name().":".$slice->start()."-".$slice->end()."\t".scalar(@vfs_good)." variation(s) found") if ($main::verbose >= 2);
 	}
 
 
@@ -422,17 +456,16 @@ package	main;
 	    my $allele2=$ref_allele;
 	    my $two_alleles = 0;
 
-	    foreach my $vf ( @vfs_good2 ) {
-
+	    foreach my $vf ( @vfs_good ) {
 		my $variation_name = $vf->variation_name();
-		my %variation = %{$variation_info{$variation_name}};
+		my %vf_inf = %{$variation_info{$variation_name}};
 		my %genotype = %{$population_individual{$individual}{$variation_name}};
 
-		$allele1 = substr($allele1,0,$vf->start()-1+$variation{'diff_pos'}).$genotype{'allele1'}."-"x($variation{'len_max_var'}-length($genotype{'allele1'})).substr( $allele1,$vf->end()+$variation{'diff_pos'} );
+		$allele1 = substr($allele1,0,$vf->start()-1+$vf_inf{'diff_pos'}).$genotype{'allele1'}."-"x($vf_inf{'len_max_var'}-length($genotype{'allele1'})).substr( $allele1,$vf->end()+$vf_inf{'diff_pos'} );
 
 		if ($genotype{'allele2'}) {
 		    $two_alleles = 1;
-		    $allele2 = substr($allele2,0,$vf->start()-1+$variation{'diff_pos'}).$genotype{'allele2'}."-"x($variation{'len_max_var'}-length($genotype{'allele2'})).substr( $allele2,$vf->end()+$variation{'diff_pos'} );
+		    $allele2 = substr($allele2,0,$vf->start()-1+$vf_inf{'diff_pos'}).$genotype{'allele2'}."-"x($vf_inf{'len_max_var'}-length($genotype{'allele2'})).substr( $allele2,$vf->end()+$vf_inf{'diff_pos'} );
 		}
 
 	    }
@@ -452,66 +485,48 @@ package	main;
 	}
 
 	##Selected region of interest on each haplotype sequence
-	foreach my $vf (@vfs_good2)  {
+	foreach my $vf (@vfs_good)  {
 
-	    my $variation_name = $vf->variation_name();
-	    my %variation = %{$variation_info{$variation_name}};
-	    
-	    unless ( $vf->start() > $len+$marge && $vf->end() < $slice->length()-$len-$marge ) {
-		next;
-	    }
-
-	    my $pos_diff = $variation{'diff_pos'};
+	    next unless ( $vf->start() > $len+$marge && $vf->end() < $slice->length()-$len-$marge );
 
 	    ##Get all alleles center on $vf
 	    my %var_alleles =();
+	    my %vf_inf = %{$variation_info{$vf->variation_name()}};
 	    
+
 	    foreach my $allele (keys(%pop_alleles) ) {
-		
-		my $five_prime_seq = substr($allele, $vf->start()-$len+$variation{'diff_pos'}, $len-1 );
-		my $variant_three_prime_seq = substr($allele, $vf->start()-1+$variation{'diff_pos'}, $len-1+$variation{'len_max_var'} );
-		
-		##Take a bigger sequence if indel in the 5' sequence
-		my @indel = $five_prime_seq =~/\-/g;
-		my $nb_indel = scalar(@indel);
+		my @indel = ();
+
+		##Get $len-1+nb_indel nucleotide in the 5' sequence
 		my $five_prime_nb_indel = 0;
 		
-		while ( $nb_indel != 0) {
-		    $five_prime_seq = substr($allele, $vf->start()-$len+$variation{'diff_pos'}-$nb_indel, $len-1+$nb_indel );
+		while (1) {
+		    $five_prime_seq = substr($allele, $vf->start()-$len+$vf_inf{'diff_pos'}-$five_prime_nb_indel, $len-1+$five_prime_nb_indel );
 		    @indel = $five_prime_seq =~/\-/g;
-		    
-		    if ( scalar(@indel) - $nb_indel != 0) {
-			$nb_indel = scalar(@indel);
-		    } else {
-			$five_prime_nb_indel = $nb_indel;
-			$nb_indel = 0;
-		    }
+		    $five_prime_nb_indel = scalar(@indel);
+
+		    last if ( length($five_prime_seq) - $five_prime_nb_indel == $len-1 );
 		}
 
-		##Take a bigger sequence if indel in variant and 3' sequence
-		@indel = $variant_three_prime_seq =~/\-/g;
-		$nb_indel = scalar(@indel);
+		##Get $len-1+$len_max_var+$nb_indel in variant and 3' sequence
+		@indel = ();
 		
-		while ( $nb_indel != 0) {
-		    $variant_three_prime_seq = substr($allele, $vf->start()-1+$variation{'diff_pos'}, $len-1+$variation{'len_max_var'}+$nb_indel );
+		while (1) {
+		    $variant_three_prime_seq = substr($allele, $vf->start()-1+$vf_inf{'diff_pos'}, $len-1+$vf_inf{'len_max_var'}+scalar(@indel) );
 		    @indel = $variant_three_prime_seq =~/\-/g;
 		    
-		    if ( scalar(@indel) - $nb_indel != 0) {
-			$nb_indel = scalar(@indel);
-		    } else {
-			$nb_indel = 0;
-		    }
+		    last if ( length($variant_three_prime_seq)- ( $vf_inf{'len_max_var'}+scalar(@indel)) == $len-1 );
 		}
 
 		my $centred_allele = $five_prime_seq.$variant_three_prime_seq;
 
 		if ( $var_alleles{$centred_allele} ) {
-		    $var_alleles{$centred_allele}{'count'} = $var_alleles{$centred_allele}{'count'} + $pop_alleles{$allele};
+		    $var_alleles{$centred_allele}{'count'} += $pop_alleles{$allele};
 		} else {
 		    $var_alleles{$centred_allele}{'count'} = $pop_alleles{$allele};
 		    $var_alleles{$centred_allele}{'five_prime_nb_indel'} = $five_prime_nb_indel;
 		    $var_alleles{$centred_allele}{'five_prime_seq_len'} = length($five_prime_seq);
-		    $var_alleles{$centred_allele}{'three_prime_seq_len'} = length($variant_three_prime_seq)-$variation{'len_max_var'};
+		    $var_alleles{$centred_allele}{'three_prime_seq_len'} = length($variant_three_prime_seq)-$vf_inf{'len_max_var'};
 		}
 	    }
 	    
@@ -525,63 +540,59 @@ package	main;
 	    
 	    foreach my $centred_allele ( keys(%var_alleles) ) {
 		
-		my $line = '';
-		$line .= "$variation_chr\t".($vf->seq_region_start()-$var_alleles{$centred_allele}{'five_prime_seq_len'})."\t";
+		my $line = "$variation_chr\t".($vf->seq_region_start()-$var_alleles{$centred_allele}{'five_prime_seq_len'})."\t";
 		$line .= ($vf->seq_region_end()+$var_alleles{$centred_allele}{'three_prime_seq_len'})."\t$variation_strand\t"; #chromo start end strand
-		$line .= "$variation_name/".substr($centred_allele , $len-1+$var_alleles{$centred_allele}{'five_prime_nb_indel'}, $variation_info{$variation_name}{'len_max_var'} )."/".$len."\t"; #rsID/variant/pos
+		$line .= $vf->variation_name()."/".substr($centred_allele , $len-1+$var_alleles{$centred_allele}{'five_prime_nb_indel'}, $vf_inf{'len_max_var'} )."/".$len."\t"; #rsID/variant/pos
 		
 		my $co_var_str = ",";
-		foreach my $co_vf (@vfs_good2) {
+		foreach my $co_vf (@vfs_good) {
 		    
-		    my $co_var_name = $co_vf->variation_name();
-		    my %co_var_info = %{$variation_info{$co_var_name}};
-		    
-		    if ( $co_vf->end() >= $vf->start()-$var_alleles{$centred_allele}{'five_prime_seq_len'} && $co_vf->start() <= $vf->end()+$var_alleles{$centred_allele}{'three_prime_seq_len'} && $co_var_name ne $variation_name) {
-			
-			$co_var_str .= $co_var_name."/";
-			
-			##get nb_nucleotide between $co_vf and $vf
-			my $pos = 0;
-			my $co_variant_pos = 0;
-			
-			if ($co_vf->start() > $vf->start()) {
-			    $pos = $co_vf->start()-$vf->end();
+		    next unless ( $co_vf->end() >= $vf->start()-$var_alleles{$centred_allele}{'five_prime_seq_len'} && $co_vf->start() <= $vf->end()+$var_alleles{$centred_allele}{'three_prime_seq_len'} && $co_vf->variation_name() ne $vf->variation_name());
+		    my %co_vf_inf = %{$variation_info{$co_vf->variation_name()}};
+		    $co_var_str .= $co_vf->variation_name."/";
 
-			    ##If co_var and var are insertion
-			    if ($vf->ref_allele_string() eq "-" && $co_vf->ref_allele_string() eq "-") {
-				$co_variant_pos =-1;
-			    }
+		    ##get nb_nucleotide between $co_vf and $vf
+		    my $pos = 0;
+		    my $co_variant_pos = 0;
+			
+		    if ($co_vf->start() > $vf->start()) {
+			$pos = $co_vf->start()-$vf->end();
 
-			} else {
-			    $pos = $co_vf->end()-$vf->start();
-
-			    ##If co_var and var are insertion
-			    if ($vf->ref_allele_string() eq "-" && $co_vf->ref_allele_string() eq "-") {
-				$co_variant_pos =+1;
-			    }
+			##If co_var and var are insertion
+			if ($vf->ref_allele_string() eq "-" && $co_vf->ref_allele_string() eq "-") {
+			    $co_variant_pos =-1;
 			}
 
-			##get position of the co_vatiarion in the centred allele
-			$co_variant_pos += $len-1; ##length of five prime seq
-			$co_variant_pos += $pos; ##distance between variations
-			$co_variant_pos += $co_var_info{'diff_pos'}-$variation{'diff_pos'}; ##change in position du to insertion
-			$co_variant_pos += $variation{'len_ref_var'}-$co_var_info{'len_ref_var'}; ##change in position du to deletion
-			$co_variant_pos += $var_alleles{$centred_allele}{'five_prime_nb_indel'};
+		    } else {
+			$pos = $co_vf->end()-$vf->start();
 
-			my $co_var_len = $co_var_info{'len_max_var'};
-
-			##Change position et length of co_var if only a part of a co-variation is present
-			if ( $co_variant_pos < 0) {
-			    $co_var_len += $co_variant_pos;
-			    $co_variant_pos = 0;
-			} elsif ( $co_variant_pos+$co_var_len > length($centred_allele)) {
-			    $co_var_len -= $co_variant_pos+$co_var_len-length($centred_allele);
+			##If co_var and var are insertion
+			if ($vf->ref_allele_string() eq "-" && $co_vf->ref_allele_string() eq "-") {
+			    $co_variant_pos =+1;
 			}
-
-			$co_var_str .= substr($centred_allele , $co_variant_pos,$co_var_len)."/";
-			$co_var_str .= $pos.",";
 		    }
+
+		    ##get position of the co_vatiarion in the centred allele
+		    $co_variant_pos += $len-1; ##length of five prime seq
+		    $co_variant_pos += $pos; ##distance between variations
+		    $co_variant_pos += $co_vf_inf{'diff_pos'}-$vf_inf{'diff_pos'}; ##change in position du to insertion
+		    $co_variant_pos += $vf_inf{'len_ref_var'}-$co_vf_inf{'len_ref_var'}; ##change in position du to deletion
+		    $co_variant_pos += $var_alleles{$centred_allele}{'five_prime_nb_indel'};
+
+		    my $co_var_len = $co_vf_inf{'len_max_var'};
+
+		    ##Change position et length of co_var if only a part of a co-variation is present
+		    if ( $co_variant_pos < 0) {
+			$co_var_len += $co_variant_pos;
+			$co_variant_pos = 0;
+		    } elsif ( $co_variant_pos+$co_var_len > length($centred_allele)) {
+			$co_var_len -= $co_variant_pos+$co_var_len-length($centred_allele);
+		    }
+
+		    $co_var_str .= substr($centred_allele , $co_variant_pos,$co_var_len)."/";
+		    $co_var_str .= $pos.",";
 		}
+
 		$line .= substr($co_var_str,1,length($co_var_str)-2)."\t";
 
 		my $count = $var_alleles{$centred_allele}{'count'};
@@ -708,13 +719,15 @@ This option is mutually exclusive with option I<-i>.
 
 =item B<-species species_name>
 
-Species (e.g. "human","mouse").
+Species (e.g. "Homo_sapiens","mus_musculus").
 
-Default: "human".
+Default: "Homo_sapiens".
+
+Help : Use supported-organisms-ensembl to get all avalaible species
 
 =cut
 } elsif ($arg eq "-species") {
-    $main::species = shift(@arguments);
+    $main::species = ucfirst(shift(@arguments));
 
 =pod
 
@@ -722,7 +735,9 @@ Default: "human".
 
 Population name on ensembl data base (e.g. '1000GENOMES:phase_1_YRI').
 
-This option is mandatory.
+Default : 1000GENOMES:phase_1_ALL
+
+Help : Use retrieve-snp-seq -species # -pop to get all avalaible population for this species.
 
 =cut
 } elsif ($arg eq "-population") {
@@ -730,12 +745,29 @@ This option is mandatory.
 
 =pod
 
+=item B<-pop | -pop1k | -popHap>
+
+Get all population avalaible for a species.
+
+Get all 1000 populations.
+
+Get all HapMap populations.
+
+=cut
+} elsif ($arg eq "-pop") {
+    $main::want_pop = 1;
+} elsif ($arg eq "-pop1k") {
+    $main::want_pop_1k = 1;
+} elsif ($arg eq "-popHap") {
+    $main::want_pop_hap = 1;
+=pod
+
 =item B<-len int>
 
 Length of flank of the sequence.
 
-The total length of the sequence return is equal to (flank length - 1)*2 + snp
-length
+The total length of the sequence return is equal to 
+(flank length-1)*2 + snp length
 
 This option is mandatory.
 
@@ -745,7 +777,7 @@ This option is mandatory.
 
 =pod
 
-=itemB<-o outputfile>
+=item B<-o outputfile>
 
 If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
