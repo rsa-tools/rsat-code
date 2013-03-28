@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-snp-seq,v 1.10 2013/03/26 11:07:18 jeremy Exp $
+# $Id: retrieve-snp-seq,v 1.11 2013/03/28 13:15:21 jeremy Exp $
 #
 ############################################################
 
@@ -152,7 +152,7 @@ package	main;
     ###############################################################
     ## Initialise parameters
     our $start_time = &RSAT::util::StartScript();
-    our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+    our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
     our %infile	= ();
     our %outfile = ();
@@ -373,13 +373,11 @@ package	main;
 
 	    ##Remove non-analizable Variation feature
             ## !!!!!!!! $vf-get_all_validation_states class at Risk and remove all indel but remove problem of 2 variations with same coordinate
-            if ( $vf->variation()->is_failed()
-                     || $vf->allele_string() =~ /[^ACTG\-\/]/
-                     || ($vf->start() > $vf->end() && $vf->ref_allele_string() ne "-")
-#                     || scalar(@{$vf->get_all_validation_states()}) == 0 ) {
-		){
-                next;
-            }
+            next if ( $vf->variation()->is_failed() );
+	    next if ( $vf->allele_string() =~ /[^ACTG\-\/]/);
+            next if ( ($vf->start() > $vf->end() && $vf->ref_allele_string() ne "-"));
+	    next if ( $vf->var_class() ne "SNP");
+#	    next if ( scalar(@{$vf->get_all_validation_states()}) == 0 );
 
 	    my $igs = $vf->variation()->get_all_IndividualGenotypes();
 	    my $variation_name = $vf->variation_name();
