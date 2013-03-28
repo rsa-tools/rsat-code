@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-snp-seq,v 1.11 2013/03/28 13:15:21 jeremy Exp $
+# $Id: retrieve-snp-seq,v 1.12 2013/03/28 14:03:30 jvanheld Exp $
 #
 ############################################################
 
@@ -36,16 +36,27 @@ jeremy.delerce@univ-amu.fr
 
 =head1 USAGE
 
-retrieve-snp-seq -i bedfile -len # [-species #] [-population #] [-o outputfile] [-v#] [...]
+retrieve-snp-seq -i bedfile -len # [-org #] [-population #] [-o outputfile] [-v#] [...]
 
 =head2 Example
 
- retrieve-snp-seq -v 1 \
-   -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
-   -species human \
-   -population 1000GENOMES:phase_1_ALL \
-   -len 30 \
-   -o variations.tab
+  Get the list of supported populations for a given species
+      retrieve-snp-seq -org Homo_sapiens -pop
+
+  Get the SNPs for a given population
+    retrieve-snp-seq -v 2 \
+      -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
+      -org Homo_sapiens \
+      -population 1000GENOMES:phase_1_ALL \
+      -len 30 \
+      -o variations.tab
+
+    retrieve-snp-seq -v 2 \
+      -i $RSAT/public_html/demo_files/seq_mm9_galaxy.bed  \
+      -org Mus_musculus \
+      -population EUROPE \
+      -len 30 \
+      -o variations.tab
 
 =head1 INPUT FORMAT
 
@@ -152,7 +163,7 @@ package	main;
     ###############################################################
     ## Initialise parameters
     our $start_time = &RSAT::util::StartScript();
-    our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+    our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
     our %infile	= ();
     our %outfile = ();
@@ -715,7 +726,7 @@ This option is mutually exclusive with option I<-i>.
 
 =pod
 
-=item B<-species species_name>
+=item B<-org species_name>
 
 Species (e.g. "Homo_sapiens","mus_musculus").
 
@@ -724,7 +735,7 @@ Default: "Homo_sapiens".
 Help : Use supported-organisms-ensembl to get all avalaible species
 
 =cut
-} elsif ($arg eq "-species") {
+} elsif ($arg eq "-org") {
     $main::species = ucfirst(shift(@arguments));
 
 =pod
@@ -735,7 +746,7 @@ Population name on ensembl data base (e.g. '1000GENOMES:phase_1_YRI').
 
 Default : 1000GENOMES:phase_1_ALL
 
-Help : Use retrieve-snp-seq -species # -pop to get all avalaible population for this species.
+Help : Use retrieve-snp-seq -org # -pop to get all avalaible population for this species.
 
 =cut
 } elsif ($arg eq "-population") {
