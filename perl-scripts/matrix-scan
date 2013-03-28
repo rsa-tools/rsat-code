@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.212 2013/03/20 14:18:24 jvanheld Exp $
+# $Id: matrix-scan,v 1.213 2013/03/28 13:52:23 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -397,6 +397,9 @@ package main;
   local %lth_file = ();		# threshold values in the mth file
   local %uth_file = ();		# threshold values in the mth file
 
+
+  $uth{pval} = 1; ## By default, the upper threshold on the p-value is 1, which means that all sites are returned
+
   @supported_thresholds = qw (
 			      score
 			      normw
@@ -445,8 +448,8 @@ package main;
 				    limits=>1, ## Sequence limits (for drawing feature maps)
 				    seq_scores=>1, ## sequence-wise scores
 				    p_score=>1,	## score as defenined in Bailey 2003
-				    bg_residues=>1, ## composition is atgc of the background model (useful for bg_window)
-				    weight_limits=>1, ## composition is atgc of the background model (useful for bg_window)
+				    bg_residues=>1, ## composition in ATGC of the background model (useful for bg_window)
+				    weight_limits=>1, ## lower and upper limits of the weight for each matrix
 				    crer0=>1, ## Cis Regulatory element Enriched Region => CRER) with the first version of the algorithm
 				    crer=>1, ## Cis Regulatory element Enriched Region => CRER)
 				    crer_details=>1, ## Table with detailed information about the CRERs
@@ -1662,8 +1665,8 @@ package main;
     ## New algorithm for CRER detection (July 2011).
     ##
     ## Compute CRERs in an alternative way, from the list of sorted
-    ## matches, using from the algorithm developed
-    ## by Julien Van Braekel (Master thesis in bioinformatics at ULB,
+    ## matches, using an approach from the algorithm developed by
+    ## Julien Van Braekel (Master thesis in bioinformatics at ULB,
     ## June 2011), adapted and upgraded by Jacques van Helden.
 
     if ($return_fields{crer}) {
@@ -1778,6 +1781,7 @@ package main;
 	      $discarded_sites++;
 	      $j++;
 	      next;
+
 	    } elsif ((defined($uth{crer_site_distance})) && ($site_distance > $uth{crer_site_distance})) {
 	      &RSAT::message::Debug("Stopping CRER extension at site", $seq_id,
 				    "i=".$i, "j=".$j,
@@ -1786,6 +1790,7 @@ package main;
 				    "site_distance:".$site_distance, "> ".$uth{crer_site_distance}
 				   ) if ($main::verbose >= 5);
 	      last;
+
 	    } else {
 	      ## Update the end match
 	      $last_match_start = $end_match_start;
