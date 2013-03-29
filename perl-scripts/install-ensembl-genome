@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.1 2013/03/29 10:26:10 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.2 2013/03/29 17:44:54 jvanheld Exp $
 #
 ############################################################
 
@@ -39,6 +39,10 @@ Jacques.van-Helden\@univ-amu.fr
 =head1 USAGE
 
 install-ensembl-genome [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head2 Example
+
+ install-ensembl-genome -v 1 -org Homo_sapiens
 
 =head1 OUTPUT FORMAT
 
@@ -94,8 +98,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
-
-
+use Bio::EnsEMBL::Registry; ## Required to connect to Ensembl API
 
 ################################################################
 ## Main package
@@ -105,7 +108,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -115,24 +118,68 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
+
+  our @org_names = ();
+  our $registry = "Bio::EnsEMBL::Registry";
+
+
   ################################################################
   ## Read argument values
   &ReadArguments();
 
   ################################################################
   ## Check argument values
+  if (scalar(@org_names) < 1) {
+    &RSAT::error::FatalError("You must specify at least one organism (option -org).");
+  }
+
+  ################################################################
+  ## Open a connection to Ensembl
+  &RSAT::message::TimeWarn("Opening connection to Ensembl registry", $registry) if ($main::verbose >= 1);
+  $registry->load_registry_from_db(
+				   -host => 'ensembldb.ensembl.org',
+				   -user => 'anonymous'
+				  );
+
+
+  my $org_nb = scalar(@org_names);
+  my $i = 0;
+  for my $org_name (@org_names) {
+    $i++;
+
+    ################################################################
+    ## Open adaptors for selected organism
+    &RSAT::message::TimeWarn("Opening adaptors for organism", $i."/".$org_nb,  $org_name) if ($main::verbose >= 0);
+    my $slice_adaptor = $registry->get_adaptor($org_name, 'core', 'slice');
+    my $vf_adaptor = $registry->get_adaptor($org_name, 'variation','variationfeature');
+
+    ## Get the list of chromosomes with their names and sizes
+    my @slices = @{$slice_adaptor->fetch_all('chromosome')};
+
+    ## Identify the list of slices for each chromosome. Each slice
+    ## actually corresponds to one contig
+    my @sorted_slices = sort {$a->seq_region_name() cmp $b->seq_region_name()} @slices;
+
+#     my @sorted_slices = sort { (!&IsNatural($a->seq_region_name()))
+# 				 || (!&IsNatural($b->seq_region_name()))
+# 				   || ($a->seq_region_name() <=> $b->seq_region_name())
+# 				 } @slices;
+
+    foreach my $slice (@sorted_slices) {
+      my $name=$slice->name();
+      my $seq_region_name=$slice->seq_region_name();
+      my $start=$slice->start();
+      my $end=$slice->end();
+      my $len=$slice->length();
+      &RSAT::message::TimeWarn("Retrieving sequence for chromosome slice", $seq_region_name, $name, $start, $end, $len) if ($main::verbose >= 1);
+      #      my $seq = $slice->seq();
+    }
+  }
 
   ################################################################
   ## Open output stream
   $out = &OpenOutputFile($outfile{output});
 
-  ################################################################
-  ## Read input
-  ($main::in) = &OpenInputFile($main::infile{input});
-  while (<$main::in>) {
-
-  }
-  close $main::in if ($main::infile{input});
 
   ################################################################
   ## Print verbose
@@ -220,18 +267,33 @@ Same as -h
     } elsif ($arg eq "-help") {
       &PrintOptions();
 
+=pod
+
+=item B<-org organism_name>
+
+Name of the species (organism).
+
+The list of supported species in Ensembl can be obtained withb
+I<supported-organisms-ensembl>.
+
+This option can be used iteratively to install multiple
+genomes. Alternatively, a list of organisms can be entered with the
+option I<-i>.
+
+=cut
+    } elsif ($arg eq "-org") {
+      push @org_names, shift(@arguments);
+
 
 =pod
 
 =item B<-i inputfile>
 
-If no input file is specified, the standard input is used.  This
-allows to use the command within a pipe.
+Specify an input file containing a list of organisms to be installed.
 
 =cut
     } elsif ($arg eq "-i") {
       $main::infile{input} = shift(@arguments);
-
 
 =pod
 
