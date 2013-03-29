@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.36 2012/10/26 06:58:37 jvanheld Exp $
+# $Id: convert-features,v 1.37 2013/03/29 12:14:05 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -39,11 +39,6 @@ local $remove_chr_gff = 0;
 local $origin = "start";
 local %supported_origin = ('start'=>1, 'end'=>1, 'center' => 1);
 local $supported_origins = join (",", keys (%supported_origin));
-
-local $supported_input_formats =
-  join (",", keys %RSAT::feature::supported_input_format);
-local $supported_output_formats =
-  join (",", keys %RSAT::feature::supported_output_format);
 
 # Feature colors for BED format
 local @palette = ();
@@ -427,8 +422,8 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
-	-from	input format (Supported: $supported_input_formats)
-	-to	output format (Supported: $supported_output_formats)
+	-from	input format (Supported: $RSAT::feature::supported_input_formats)
+	-to	output format (Supported: $RSAT::feature::supported_output_formats)
 	-add_chr only for BED output: add "chr" in front of the chromosome name and change MT into chrM
 	-remove_chr only for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
 	-coord bedfile with absolute coordinate of the sequence fragment
@@ -746,13 +741,13 @@ sub PrintOptions {
   print HELP <<End_short_help;
 convert-features options
 ----------------
--h		(must be first argument) display full help message
--help		(must be first argument) display options
+-h		display full help message
+-help		display options
 -i		input file
 -o		output file
 -v		verbose
--from		input format (Supported: $supported_input_formats)
--to		output format (Supported: $supported_output_formats)
+-from		input format (Supported: $RSAT::feature::supported_input_formats)
+-to		output format (Supported: $RSAT::feature::supported_output_formats)
 -add_chr only for BED output: add "chr" in front of the chromosome name and change MT into chrM
 -remove_chr only for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
 -coord bedfile with absolute coordinate of the sequence fragment
@@ -793,13 +788,13 @@ sub ReadArguments {
 	    ### input format
 	} elsif ($ARGV[$a] eq "-from") {
 	    $input_format = $ARGV[$a+1];
-	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: $supported_input_formats")
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: ", $RSAT::feature::supported_input_formats)
 		unless ($RSAT::feature::supported_input_format{$input_format});
 
 	    ### output format
 	} elsif ($ARGV[$a] eq "-to") {
 	    $output_format = $ARGV[$a+1];
-	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: ", $RSAT::feature::supported_output_formats)
 		unless ($RSAT::feature::supported_output_format{$output_format});
 
 	    ### add "chr" in front of chromosome names for BED output
