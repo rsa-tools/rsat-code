@@ -72,9 +72,9 @@ if ($org) {
     die "Error: there is no organism named $org in the EnsEMBL database. Use the command supported-organisms-ensembl to obtain a full list of supported organisms.\n";
   }
 } else { 
-  die "; You must provide an organism name (-org)\n";      
+  die "; You must provide an organism name (-org)\n";
 }
-  
+
 &RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 1);
 
 ################################################################
@@ -82,7 +82,7 @@ if ($org) {
 $dbversion = $dbname;
 $dbversion =~ s/($org)_core_//;
 $dbversion =~ s/_.+//;
-  
+
 &RSAT::message::Info (join("\t", "dbversion", $dbversion)) if ($main::verbose >= 1);
 
 ################################################################
