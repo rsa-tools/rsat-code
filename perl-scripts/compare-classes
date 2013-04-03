@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.79 2013/02/15 23:21:58 jvanheld Exp $
+# $Id: compare-classes,v 1.80 2013/04/03 01:10:38 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -2192,8 +2192,8 @@ sub CalcMargins {
 sub DescribeFields {
     my %field_descrition = ();
     $field_description{'rank'}  = "Rank of the comparison";
-    $field_description{'query'}  = "Name of the second class (called class R hereafter)";
-    $field_description{'ref'}  = "Name of the first class (called class Q hereafter)";
+    $field_description{'query'}  = "Name of the second class (called class Q hereafter)";
+    $field_description{'ref'}  = "Name of the first class (called class R hereafter)";
     $field_description{'Q'}  = "Number of elements in class Q";
     $field_description{'R'} = "Number of elements in class R";
     $field_description{'QR'}  = "Number of elements found in the intersecion between classes R and Q";
