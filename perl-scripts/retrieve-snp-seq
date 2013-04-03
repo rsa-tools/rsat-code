@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-snp-seq,v 1.13 2013/03/29 10:52:57 jvanheld Exp $
+# $Id: retrieve-snp-seq,v 1.14 2013/04/03 01:08:54 jvanheld Exp $
 #
 ############################################################
 
@@ -165,6 +165,18 @@ The numer of time that this sequence is observed in the population
 
 =back
 
+=head2 SNPs and haplotypes
+
+Ideally, we would like to restrict the analysis to all the haplotypes
+present in a population. We are facing problems to retrieve
+haplotypes. An alternative is to reconstruct haplotypes from
+individual genotypes, but this represents a huge transfer (140Gb for
+the Human genome).
+
+For the time being, we report all possible combinations of SNPs in the
+neighborhood of the reference SNP, irrespective of the fact that these
+combinations do or not occur in a population.
+
 =head1 SEE ALSO
 
 =head2 install-enembl-genome
@@ -204,7 +216,7 @@ package	main;
     ###############################################################
     ## Initialise parameters
     our $start_time = &RSAT::util::StartScript();
-    our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+    our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
     our %infile	= ();
     our %outfile = ();
@@ -327,10 +339,10 @@ package	main;
     ################################################################
     ## Read input
     &RSAT::message::TimeWarn("Reading genomic coordinates") if ($main::verbose >= 2);
-    
+
     my @slices = ();
     my %chr_length = ();
-    
+
     ($main::in) = &OpenInputFile($main::infile{input});
     while (<$main::in>) {
 	next if (/^#/); ## Skip comment lines
