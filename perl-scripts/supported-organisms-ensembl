@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-ensembl,v 1.5 2013/01/22 22:28:12 jvanheld Exp $
+# $Id: supported-organisms-ensembl,v 1.6 2013/04/03 01:07:38 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -13,24 +13,24 @@ use DBI();
 ## Read arguments
 &ReadArguments();
 
-my $host_db = "host=ensembldb.ensembl.org";
-my $dbh = DBI->connect("DBI:mysql:".$host_db.":port=5306", "anonymous", "", {'RaiseError' => 1});
+my $host_db = "ensembldb.ensembl.org";
+my $dbh = DBI->connect("DBI:mysql:host=".$host_db.":port=5306", "anonymous", "", {'RaiseError' => 1});
 my $sth = $dbh->prepare("SHOW DATABASES");
 $sth->execute();
 my $dbversion;
 my $previous_org = "bogus";
 
 while (my $ref = $sth->fetchrow_hashref()) {
-    if ($ref->{'Database'} =~ /_core_\d+/) {
-	$dbversion = $ref->{'Database'};
-	$dbversion =~ s/.+_core_//;
-	$dbversion =~ s/_.+//;
-	$ref->{'Database'} =~s/_core_.+//;
-	if ($ref->{'Database'} ne $previous_org) {
-	    print ucfirst($ref->{'Database'}), "\n";
-	    $previous_org = $ref->{'Database'};
-	}
+  if ($ref->{'Database'} =~ /_core_\d+/) {
+    $dbversion = $ref->{'Database'};
+    $dbversion =~ s/.+_core_//;
+    $dbversion =~ s/_.+//;
+    $ref->{'Database'} =~s/_core_.+//;
+    if ($ref->{'Database'} ne $previous_org) {
+      print ucfirst($ref->{'Database'}), "\n";
+      $previous_org = $ref->{'Database'};
     }
+  }
 }
 
 print "; EnsEMBL database version : ", $dbversion, "\n";

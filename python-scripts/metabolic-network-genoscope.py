@@ -34,7 +34,7 @@ Columns:
 2. Object type
    Node type: reaction or compound.
 
-3. Exclusion attribut
+3. Exclusion attribute
    Reaction or compound excluded during the reconstruction of metabolic
    network.
 
@@ -82,7 +82,7 @@ def reactions():
 	## Open a connection to the GenoScope Web services
 	url='http://www.genoscope.cns.fr/microcyc-webservice/services/fr.genoscope.agc.microcyc.business.MicrocycService.wsdl'
 	client=suds.client.Client(url, timeout=3600)
-	## Running getAllReactions on GenoScope Web serivce
+	## Running getAllReactions on GenoScope Web service
 	reactions=client.service.getAllReactions().reactionSimpleVO
 	return reactions
 
@@ -156,7 +156,7 @@ def Create_file(fileName, reactions):
 					if compoundFrame not in compoundsList:
 						## Add the compound to the list of compounds
 						compoundsList.append(compoundFrame)
-						## Running getCompoundSimple for the lC compoundId on GenoScope Web serivce
+						## Running getCompoundSimple for the lC compoundId on GenoScope Web service
 						CompoundSimple=client.service.getCompoundSimple(lC.compoundId)
 						## If "commonName" attribute is part of the keys list (print dir(CompoundSimple) to see different methods of CompoundSimple)
 						if "commonName" in CompoundSimple.__keylist__:
@@ -199,7 +199,7 @@ def Create_file(fileName, reactions):
 		header=""";Column content
 ;\t1\tNODES
 ;\t2\tObject type
-;\t3\tExclusion attribut
+;\t3\tExclusion attribute
 ;\t4\tLabel
 ;\t5\tPubChem
 ;\t6\tCAS
@@ -210,7 +210,7 @@ def Create_file(fileName, reactions):
 		File.write(header)
 
 		## Write header line
-		File.write(";NODES\tObject type\tExclusion attribut\tLabel\tPubChem\tCAS\tKEGG_identifier\tFORMULA\n")
+		File.write(";NODES\tObject type\tExclusion attribute\tLabel\tPubChem\tCAS\tKEGG_identifier\tFORMULA\n")
 
 		url='http://www.genoscope.cns.fr/microcyc-webservice/services/fr.genoscope.agc.microcyc.business.MicrocycService.wsdl'
 		client=suds.client.Client(url)
