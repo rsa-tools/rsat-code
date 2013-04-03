@@ -89,8 +89,8 @@ def Connection():
 def getGPR(ms_Organism_id):
 	client=Connection()
 
-	print "Running getGPR on GenoScope Web serivce..."
-	## Running getGPR for the microscope organism ID specified on GenoScope Web serivce
+	print "Running getGPR on GenoScope Web service..."
+	## Running getGPR for the microscope organism ID specified on GenoScope Web service
 	try:
 		getGPR=client.service.getGPR(ms_Organism_id)
 
