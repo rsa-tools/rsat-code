@@ -13,6 +13,7 @@ package RSAT::feature;
 			  galaxy_seq=>1,
 			  swembl=>1,
 			 );
+$supported_input_formats = join (",", keys %supported_input_format);
 
 %supported_output_format =(ft=>1,
 			   fasta=>1,
@@ -22,6 +23,7 @@ package RSAT::feature;
 			   dnapat=>1,
 			   bed=>1,
 			  );
+$supported_output_formats = join (",", keys %supported_output_format);
 
 %strand_index = (D=>0,
 		 R=>1,
