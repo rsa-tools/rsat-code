@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.34 2012/11/19 12:02:15 jvanheld Exp $
+# $Id: random-genome-fragments,v 1.35 2013/04/03 01:09:13 jvanheld Exp $
 #
 ############################################################
 
@@ -149,11 +149,12 @@ package main;
   if ($main::infile{template_file}) {
     if ($template_format eq "len") {
       $main::outfile{length_file} = $main::infile{template_file};
+
     } else {
       ## Compute sequence lengths
       my $job_prefix = "random-genome-fragments";
-#      my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate();
-#      $main::outfile{length_file} = "$TMP/$tmp_file_name".".lengths";
+      #      my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate();
+      #      $main::outfile{length_file} = "$TMP/$tmp_file_name".".lengths";
       my $tmp_file_path = &RSAT::util::make_temp_file("","random-genome-fragments", 1); # ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
       $main::outfile{length_file} = $tmp_file_path."_lengths.tab";
       my $seqlength_cmd = "sequence-lengths -v 1";
@@ -161,8 +162,10 @@ package main;
       $seqlength_cmd .= " -in_format ".$template_format;
       $seqlength_cmd .= " -o ".$main::outfile{length_file};
       &doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
+#      die "HELLO\n", $seqlength_cmd, "\n";
     }
   }
+
 
   ################################################################
   ## File with the specification of sequence lengths
