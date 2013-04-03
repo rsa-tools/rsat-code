@@ -12,6 +12,8 @@ $in_format = "fasta";
 $verbose = 0;
 local $units = "bp";
 
+
+
 &ReadArguments();
 
 ################################################################
@@ -45,8 +47,9 @@ if ($in_format eq "bed") {
     next unless (/\S/);		## Skip empty rows
     next if (/^#/);		## Skip comment lines
     chomp();
+
     my ($chrom, $zero_left, $right) = split('\t');
-    #    &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right) if ($main::verbose >= 10);
+    &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right) if ($main::verbose >= 2);
     unless ((&RSAT::util::IsNatural($zero_left)) &&
 	    (&RSAT::util::IsNatural($right))) {
       &RSAT::message::Warning("Skipping line", $l, "invalid start and end positions.") if ($main::verbose >= 2);
@@ -55,11 +58,14 @@ if ($in_format eq "bed") {
 
     my $left = $zero_left + 1; ## BED files have zero-based coordinates for the left side but not the right side !
 
-    ## Swap left and right coordinates if required
+    &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right, "left=".$left, "right=".$right) if ($main::verbose >= 2);
+
+    ## Check left and right coordinates
     if ($left > $right) {
       &RSAT::message::Warning("Skipping line", $l, "start ($left) larger than end ($right).") if ($main::verbose >= 2);
       next;
     }
+
 
     my ($length, $rounded_length) = &apply_units($right - $left + 1);
     my $current_id = $chrom.":".$left."..".$right.":1";
@@ -68,8 +74,8 @@ if ($in_format eq "bed") {
       unless ($sum_only);
   }
 
-## Compute sequence lengths by reading the sequences
 } else {
+  ## Compute sequence lengths by reading the sequences
   while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
 	 (($current_seq ne "") || ($current_id ne ""))) {
     my ($length, $rounded_length) = &apply_units(length(&FoldSequence($current_seq,0)));
