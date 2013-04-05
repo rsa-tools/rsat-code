@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.29 2013/04/03 01:10:06 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.30 2013/04/05 14:40:47 jvanheld Exp $
 #
 ############################################################
 
@@ -99,7 +99,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -250,6 +250,16 @@ package main;
     }
   }
 
+  ## Check that there is a Microscope frame associated to each organism
+  foreach my $organism_name (@organism_names) {
+    foreach my $field (@mandatory_info) {
+      unless ($organism_info{$organism_name}->{$field} =~ /\S/) {
+	$organism_info{$organism_name}->{$field} = "<NA>";
+	&RSAT::message::Warning("Missing information", $field, "for organism", $organism_name) if ($main::verbose >= 0);
+      }
+    }
+  }
+
 
   ## Output directory
   if ($output_dir) {
@@ -292,6 +302,11 @@ package main;
     print $main_syn "</tr>\n";
   }
 
+  ################################################################
+  ## Collect metabolic network
+  if ($task{metanet}) {
+    &RSAT::error::FatalError("Task metanet is not implemented yet. Contact Jacques van Helden to tell him it is time to implement this !");
+  }
 
   ################################################################
   ## Iterate over selected organisms
@@ -476,8 +491,8 @@ sub IndexOrgTableColumns {
 ################################################################
 ## Read organism cross-table
 sub ReadOrganismCrossTable {
+  &RSAT::message::TimeWarn("Reading organism cross-table", $infile{organism_table}) if ($main::verbose >= 1);
   my ($orgs) = &OpenInputFile($infile{organism_table});
-
   my $l = 0;
   my $org_counter = 0;
   while (<$orgs>) {
@@ -485,6 +500,8 @@ sub ReadOrganismCrossTable {
     next if /^;/;		## Skip comment lines
     next unless /\S/;		## Skip empty lines
     chomp();
+
+#    &RSAT::message::Debug($l, $_) if ($main::verbose >= 10);
 
     ## Parse header line
     if (/^#/) {
@@ -520,15 +537,8 @@ sub ReadOrganismCrossTable {
   }
   close $orgs;
 
+  &RSAT::message::Info("Number of organisms in organism cross-table", $org_counter) if ($main::verbose >= 1);
 
-  ## Check that there is a Microscope fram associated to each organism
-  foreach my $organism_name (@organism_names) {
-    foreach my $field (@mandatory_info) {
-      unless ($organism_info{$organism_name}->{$field} =~ /\S/) {
-	$organism_info{$organism_name}->{$field} = "<NA>";
-      }
-    }
-  }
 }
 
 
@@ -1609,6 +1619,7 @@ sub CheckGERFile {
 ## Project annotated pathways onto the whole genome, i.e. compare the
 ## EC composition of each pathway
 sub pathways_vs_genome {
+  my (%args) = @_;
   &RSAT::message::TimeWarn("\tprojecting all pathways onto genome ECs") if ($main::verbose >= 1);
   @files_to_index = ();
 
