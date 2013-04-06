@@ -136,6 +136,27 @@ sub DetectDeniedIP {
     my $rsat_site = $ENV{rsat_site};
     my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
     $year += 1900;
+
+    ## The authorized IP file contains manually entered addresses that are
+    ## corrections for erroneous denial. If the client IP appears in this
+    ## list, no need to check denied addresses.
+    my $authorized_ip_file= $ENV{RSAT}."/authorized_IP_addresses_".$rsat_site."_".$year.".tab";
+    if (-e $authorized_ip_file) {
+      my ($in) = &RSAT::util::OpenInputFile($authorized_ip_file);
+      while (<$in>) {
+	chomp();
+	next unless /\S/; ## Skip empty lines
+	next if /^;/; ## Skip comment lines
+	next if /^#/; ## Skip comment lines
+	my ($ip, $nb, $reason) = split(/\s+/, $_);
+	if ($client_ip eq $ip) {
+	    &RSAT::message::Info("Welcome", $client_ip) if ($ENV{rsat_echo} >= 3);
+	    return (0);	
+	}
+      }
+    }    
+
+    ## Read the file of denied IP addresses
     my $denied_ip_file= $ENV{RSAT}."/denied_IP_addresses_".$rsat_site."_".$year.".tab";
     &RSAT::message::Info("Denied IP file", &RSAT::util::hide_RSAT_path($denied_ip_file)) if ($main::verbose >= 5);
 
@@ -175,7 +196,8 @@ sub DetectDeniedIP {
 
 	  ## Issue denial message and die
 	  &RSAT::error::FatalError("Access denied: your IP address (".$client_ip.") has been blacklisted on this server.", 
-				   "Reason: ".$reason);
+				   "Reason: ".$reason,
+				   "If you are a real user of the tools, please contact the system administrator: ".$ENV{rsat_server_admin});
 	}
       }
     }
@@ -411,7 +433,7 @@ sub ReadProperties {
       &RSAT::message::Warning("This RSAT site is not properly configured.\n",
 			      '$ENV{RSAT}='.$ENV{RSAT},
 			      "\n\tPoperty file does not exist: ".$property_file,
-			      "\n\tPlease contact the system administrator.");
+			      "\n\tPlease contact the system administrator ".$ENV{SERVER_ADMIN});
       $property_file = $`."../RSAT_config_default.props"; #`
       $default_props = 1;
     }
