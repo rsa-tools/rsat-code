@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.115 2012/09/22 15:14:03 jvanheld Exp $
+# $Id: install-organism,v 1.116 2013/04/08 16:47:37 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -1275,7 +1275,7 @@ sub ReadArguments {
       &FatalError(join ("\t", $up_to, "Invalid value for the to parameter (must be integer)")) unless (&IsInteger($up_to));
 
     } elsif ($arg eq "-prefid") {
-      $parse_options .= join(" " , " -prefid", shift(@arguments), $ARGV[$a+2]);
+      $parse_options .= join(" " , " -prefid", shift(@arguments), shift(@arguments));
 
     } elsif ($arg eq "-date") {
       $force_date = shift(@arguments);
