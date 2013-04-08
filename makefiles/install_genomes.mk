@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.47 2012/12/19 13:27:02 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.48 2013/04/08 22:35:33 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -82,16 +82,16 @@ install_all_prokaryotes:
 	done
 
 ### Install all prokaryotes genomes on RSAT
-NEW_PROKARYOTES_FILE=${RSAT}/downloads/new_bact.txt
-NEW_PROKARYOTES=`cat ${NEW_PROKARYOTES_FILE}`
+NEW_PRO_FILE=${RSAT}/new_bact.txt
+NEW_PRO=`cat ${NEW_PRO_FILE}`
 list_new_prokaryotes:
 	@echo
-	@echo "New prokaryotes from file	${NEW_PROKARYOTES_FILE}"
-	@echo "${NEW_PROKARYOTES}"
+	@echo "New prokaryotes from file	${NEW_PRO_FILE}"
+	@echo "${NEW_PRO}"
 
 
 install_new_prokaryotes:
-	@for pro in ${NEW_PROKARYOTES}; do				\
+	@for pro in ${NEW_PRO}; do				\
 		${MAKE} install_one_prokaryote PRO=$${pro};	\
 	done
 
@@ -164,6 +164,10 @@ FUNGI= ${NCBI_FUNGI} ${OTHER_FUNGI}
 list_fungi:
 	@echo "Fungi"
 	@echo "${FUNGI}"
+
+list_ncbi_fungi:
+	@echo "NCBI Fungi"
+	@echo "${NCBI_FUNGI}"
 
 ### Pare fungal genomes from NCBI
 parse_ncbi_fungi:
