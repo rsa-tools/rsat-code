@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.213 2013/03/28 13:52:23 jvanheld Exp $
+# $Id: matrix-scan,v 1.214 2013/04/08 11:18:03 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -398,7 +398,7 @@ package main;
   local %uth_file = ();		# threshold values in the mth file
 
 
-  $uth{pval} = 1; ## By default, the upper threshold on the p-value is 1, which means that all sites are returned
+#  $uth{pval} = 1; ## By default, the upper threshold on the p-value is 1, which means that all sites are returned
 
   @supported_thresholds = qw (
 			      score
@@ -612,10 +612,10 @@ package main;
 
   ## calculation of p_score requires a threshold on Pval, LogPval or sig
   if ($return_fields{p_score}) {
-    unless ((defined($uth{pval})||(defined($uth_file{pval}))) || (defined($lth{pval})||(defined($lth_file{pval})))) {
+    unless ((defined($uth{pval}) || (defined($uth_file{pval}))) ||
+	    (defined($lth{pval}) || (defined($lth_file{pval})))) {
       &RSAT::error::FatalError("Computation of p_score requires a pval threshold defined with option -uth pval");
     }
-
   }
 
   ## CRER details
@@ -1058,7 +1058,7 @@ package main;
       delete $matrix_thr{$thr_matrix_name}; #remove this unfound matrix from the list of matrices
     }
 
-    ## replace the global thresholds by specific thresholds
+    ## Replace the global thresholds by specific thresholds
     foreach my $matrix_name (sort keys %matrix_thr) {
       foreach my $thr_field (sort keys %{$matrix_thr_val->{$matrix_name}}) {
 	if (defined($matrix_thr_val->{$matrix_name}->{$thr_field}->{'lth'})) {
@@ -1188,7 +1188,7 @@ package main;
       print $out "\t", "eval";
     }
 
-    print $out "\t", "p_score" if (defined($uth{pval})&&($return_fields{p_score}));
+    print $out "\t", "p_score" if ((defined($uth{pval}) && ($return_fields{p_score})));
 
     if ($return_fields{weight_limits}) {
       print $out "\t", "Wmin";
@@ -1400,15 +1400,15 @@ package main;
     unless ($quick_scan) {
       &RSAT::message::TimeWarn("Scanning sequence", 
 			       $sequence_number,
-			     $seq_id,"len=".$seq_len,
+			       $seq_id,"len=".$seq_len,
 			       "orig=".$origin, "offset=".$offset,
 			       "with ".$matrix_nb." PSSM")
 	if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 10) == 1)));
       &RSAT::message::psWarn("Scanning sequence with ".$matrix_nb." PSSM", $sequence_number,
-			   $seq_id,"len=".$seq_len, 
-			   "orig=".$origin, "offset=".$offset,
-			   $seq_id) 
-      if (($main::verbose >= 4) && (($sequence_number % 100) == 1));
+			     $seq_id,"len=".$seq_len, 
+			     "orig=".$origin, "offset=".$offset,
+			     $seq_id) 
+	if (($main::verbose >= 4) && (($sequence_number % 100) == 1));
     }
 
     if ($calc_fields{sites}) {
@@ -1423,7 +1423,7 @@ package main;
 	    ($pos > $main::window/2) &&	## condition where matrix is not exactly centered on the window, as same bg for all matrices
 	    ## ($pos + $main::window <= $seq_len))  ## old condition which seems incorrect
 	    ##  => miss window/2 last nucleotides in the calculation of bg model, replaced with following line
-	    (($window_offset + 1) + $main::window <= $seq_len)) { ## continue updating until the window covers the last portion of the sequence		  	
+	    (($window_offset + 1) + $main::window <= $seq_len)) { ## keep updating until the window covers the last portion of the sequence
 
 	  my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
 	  my $deleted_word = substr($current_seq, $window_offset, $markov+1);
@@ -3662,9 +3662,8 @@ sub QuickScan {
   }
 
   ################################################################
-  ## prepare matrix-scan-quick cmd
-  ## do NOT pass the pseudocount
-  #  if ($main::verbose >= 1) {
+  ## Prepare matrix-scan-quick cmd do NOT pass the pseudocount if
+  ## ($main::verbose >= 1) {
   $quick_verbose = 1; ## matrix-scan-quick does not accept verbosity higher than 2
   #  }
   my $quick_path = &RSAT::server::GetProgramPath("matrix-scan-quick");
@@ -3689,6 +3688,8 @@ sub QuickScan {
   } else {
     $quick_cmd .= " -1str";
   }
+
+#  die "HELLO\t", $quick_cmd;
 
   ## Run matrix-scan-quick and parse the result
   ## Different for each scan mode
@@ -3922,14 +3923,14 @@ sub score_segment {
 	$pval_value = ${$main::pval{$matrix}}{$score};
 	$pval = sprintf("%.1e", $pval_value);
 	#	      $uth{pval} = 0.1;#,"\n";
-	
+
 	####computing p_scores
 	# 	      if (defined($uth{pval})){
 	if ($calc_fields{p_score}) {
 	  $p_score = &p_score($uth{pval},$pval_value);
 	  $p_score = sprintf("%.${decimals}f",$p_score);
 	}
-	
+
 	if ($pval_value > 0) {
 	  $ln_pval = sprintf("%.3f", log($pval_value));
 	  $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
