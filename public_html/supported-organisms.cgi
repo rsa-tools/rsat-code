@@ -23,12 +23,12 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 $font{variable} = 1;
 $command = "$SCRIPTS/supported-organisms -v 1";
 
+
 ### Read the CGI query
 $query = new CGI;
 
 ### print the header
 &RSA_header("Supported organisms", "results");
-
 
 ## Check security issues
 &CheckWebInput($query);
