@@ -592,7 +592,7 @@ class MotifProcessor( Processor):
         
         # Remove the RSAT compare-matrices result dir
         os.chdir( out_path)
-        shutil.rmtree( file_info[0], True)
+        #shutil.rmtree( file_info[0], True)
 
     
     
@@ -633,15 +633,26 @@ class MotifProcessor( Processor):
             sub_prefix = prefix + "_" + str( db_index)
             # Compose the compare-matrices command line with all required options
             Log.trace( "MotifProcessor.executeCompareMatrices : " + threading.currentThread().getName() + " sub_prefix before execution = " + sub_prefix)
-            cmd = os.path.join( RSAT_PATH , "perl-scripts/compare-matrices")
-            cmd += " -file1 " + file_path + " -format1 tf"
-            cmd += " -file2 " + database_file_list[db_index] + " -format2 " + database_format_list[db_index]
-            cmd += " -mode profiles"
-            cmd += " -lth w 3"
-            cmd += " -lth ncor2 0.7"
-            cmd += " -return matrix_id,cor,Ncor2,w,consensus,offset" 
-            cmd += " -o " + sub_prefix
-            cmd += " " + command_options
+            
+            # Command for the PERL version of compare-matrices 
+	    #cmd = os.path.join( RSAT_PATH , "perl-scripts/compare-matrices")
+            #cmd += " -file1 " + file_path + " -format1 tf"
+            #cmd += " -file2 " + database_file_list[db_index] + " -format2 " + database_format_list[db_index]
+            #cmd += " -mode profiles"
+            #cmd += " -lth w 3"
+            #cmd += " -lth ncor2 0.7"
+            #cmd += " -return matrix_id,cor,Ncor2,w,consensus,offset" 
+            #cmd += " -o " + sub_prefix
+            #cmd += " " + command_options
+
+            # Command for the C version of compare-matrices
+            cmd = os.path.join( RSAT_PATH , "contrib/peak-footprints/tools/compare-matrices")
+            cmd += " -file1 " + file_path
+            cmd += " -file2 " + database_file_list[db_index]
+            cmd += " -lth_w 3"
+            cmd += " -lth_ncor2 0.7"
+            cmd += " -o " + sub_prefix + ".tab"	
+            cmd += " > " + sub_prefix + ".log"	
             
             Log.info( "MotifProcessor.executeCompareMatrices : Starting comparison with database : " + database_file_list[db_index])
             Log.info( "MotifProcessor.executeCompareMatrices : command used is : " + cmd)
@@ -669,6 +680,8 @@ class MotifProcessor( Processor):
             if result == None:
                 Log.log( "MotifProcessor.executeCompareMatrices : Compare-matrices result file gave a null result :" + result_file_path)
                 continue
+	    else:
+		Log.trace("MotifProcessor.executeCompareMatrices : " + threading.currentThread().getName() + " : Number of motif read = " + str(len(result))) 
                 
             # Analyze the result list and store the conserved elements in the thread_result of the analysis
             if hypergeometric_test == False:
@@ -782,6 +795,7 @@ class MotifProcessor( Processor):
         consensus2_header = "consensus2"
         strand_header     = "strand"
         
+	total_kept = 0
         motif_list = []
         input_motif_to_remove = {}
         # parse the bedseq and the bedseq alignment to get the motifs
@@ -792,6 +806,7 @@ class MotifProcessor( Processor):
                     for input_motif in alignment.motifs:
                         # if the motif name is in the results, retrieve the list of result series
                         if input_motif.name in result.keys():
+			    Log.trace( "FOUND MOTIF = " + input_motif.name)
                             motif_dics = result[ input_motif.name]
                             #for each entry in the result series, create an output motif if the result ncor2 > correlation_limit
                             Log.info( "MotifProcessor.analyseCompareMatricesResult : motif_dics size for " + input_motif.name + " = " + str( len( motif_dics)))
@@ -807,7 +822,8 @@ class MotifProcessor( Processor):
                                         Log.info( "Detected motif = " + output_motif_name)
                                         # build the new motif
                                         output_motif = Motif( input_motif.indexStart + output_motif_offset, input_motif.indexStart + output_motif_offset + output_motif_length, output_motif_name, None )
-                                        output_motif.consensus = self.removeNoInfoChar( motif_dic[ consensus2_header])
+                                        #output_motif.consensus = self.removeNoInfoChar( motif_dic[ consensus2_header])
+					output_motif.consensus = ""
                                         output_motif.id = motif_dic[ name2_header]
                                         output_motif.offset = output_motif_offset
                                         output_motif.score = n_cor2
@@ -824,6 +840,7 @@ class MotifProcessor( Processor):
                                         analysis_result[ input_motif].append( output_motif)
                                         # add the new motif to the result list
                                         motif_list.append( output_motif)
+					total_kept = total_kept + 1
                                 except ParsingException, par_exce:
                                     Log.log( "MotifProcessor.analyseCompareMatricesResult : Some value of a motif correlation is not a float : " + str( motif_dic) + ". From:\n\t--->" + str( par_exce))
                     
@@ -857,6 +874,8 @@ class MotifProcessor( Processor):
                                     
                         self.threadLock.release()
         
+	Log.trace( "MotifProcessor.analyseCompareMatricesResult : Total number of motif kept = " + str(total_kept))
+
         return input_motif_to_remove
 
 
