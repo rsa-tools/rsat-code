@@ -44,6 +44,8 @@ class BEDParser:
                             sequence_dic[ bedsequence_key].append( bedsequence)
                         else:
                             Log.log( "BEDParser.getBEDSequenceDictionnary : A sequence has inversed start and end coordinates : " + line)
+		else:
+		    Log.log( "No 'chr' in line :" + line)
         except ParsingException, par_exce:
             raise ParsingException( "BEDParser.getBEDSequenceDictionnary : Some attributes are mor numbers. From:\n\t-->  " +  str( par_exce))
         except IOError, io_exce:
