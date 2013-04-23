@@ -197,9 +197,7 @@ setenv CVS_RSH ssh
 export CVS_RSH=ssh
 \end{lstlisting}
 
-
-
-\subsection{Obtaining a first version of \RSAT programs}
+\subsection{Obtaining the \RSAT package}
 
 The following command should be used the first time you retrieve the
 tools from the server (you need to replace \texttt{[mylogin]} by the
@@ -257,19 +255,31 @@ make -f makefiles/init_RSAT.mk init
 
 The \RSAT distribution comes with two template configuration files
 located in the \file{rsa-tools} directory:
+
 \begin{itemize}
 \item \file{RSAT\_config\_default.props} 
 \item \file{RSAT\_config\_default.mk}
 \end{itemize}
 
-You must copy these two file to create site-specific configuration
-files \file{RSAT\_config.props} and \file{RSAT\_config.mk}, which will
-be further edited.
+During the initialization script executed in the previous section,
+these two default files were automatically copied to your
+site-specific configuration files \file{RSAT\_config.props} and
+\file{RSAT\_config.mk}.
+
+Check this before going any further: 
 
 \begin{lstlisting}
-cp RSAT_config_default.props RSAT_config.props ; 
-cp RSAT_config_default.mk RSAT_config.mk
+ls -1 RSAT_config*
 \end{lstlisting}
+
+You should see this:
+\begin{verbatim}
+RSAT_config_default.mk
+RSAT_config_default.props
+RSAT_config.mk
+RSAT_config.props
+\end{verbatim}
+
 
 \emph{Beware:} this operation should be done only once. If you redo
 the copy commands after having edited the files, you will loose all
@@ -322,10 +332,11 @@ modify this file, see the system administrator.
 
 \subsection{Checking the java path (required for pathway tools only)}
 
-The \program{java} language is necessary for the path finding tools
-included in the \program{NeAT} suite. If you want to use those tools,
-you can check the correct setting for the java-based pathway tools, by
-typing the following command.
+The \program{java} language is only necessary for the path finding and
+pathway extraction tools of the Network Analysis Tools \program{NeAT}
+suite. If you want to use these tools, you can check the correct
+setting for the java-based pathway tools, by typing the following
+command.
 
 \begin{lstlisting}
 java graphtools.util.ListTools
@@ -377,7 +388,7 @@ sudo bash;
 ## where rsa-tools directory has been installed
 export RSAT=[PARENT_PATH]/rsa-tools;
 
-cd ${RSAT};
+cd $RSAT
 
 ## Display the list of Perl modules that will be installed
 make -f makefiles/install_rsat.mk list_perl_modules;
@@ -422,6 +433,7 @@ section.
   The following modules are required for the Web services. 
 
   \begin{itemize}
+    \item \program{XML::Compile}
     \item \program{XML::Compile::Cache}
     \item \program{XML::Compile::SOAP11}
     \item \program{XML::Compile::WSDL11}
@@ -468,13 +480,17 @@ section.
   the XML::Parser::Expat library. It is necessary for some RSAT
   applications.
 
-\item \program{DBD::mysql} and \program{DBI} those two libraries are
+\item \program{DBI}  and \program{DBD::mysql}: those two libraries are
   required by the program \program{retrieve-ensembl-seq} in order to
   access the ENSEMBL database.
 
 \item \program{Bio::Perl} is required for the Ensembl API, which in
   turn is required for handling genomes installed on the ENSEMBL
   database (\url{http://www.ensembl.org/}).
+
+\item \program{IPC::Run} is required for the analysis of linkage
+  desequilibrium with ENSEMBL API
+  \footnote{\url{http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl-variation/C\_code/README.txt?root=ensembl&view=markup}}.
 
 \item \program{Bio::Das} is required to retrieve sequences from DAS
   servers with the program \program{bed-to-seq}.
@@ -487,6 +503,9 @@ section.
 
 \section{Additional Perl modules required to support EnsEMBL genomes}
 \label{sect:ensembl_libraries}
+
+This section is required only if you intend to use the \RSAT programs
+interfaced to the Ensembl database. 
 
 Since 2009, a series of \RSAT programs support a direct access to the
 EnsEMBL database in order to ensure a convenient access to genomes
