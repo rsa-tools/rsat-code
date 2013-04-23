@@ -158,6 +158,8 @@ $header_char{bed} = "## ";
 @{$strands{swembl}} = ("+", "-", ".");
 $comment_char{swembl} = "#";
 $header_char{swembl} = "#";
+#$header_char{swembl} = "Region";
+
 
 ## Galaxy sequences
 ## http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
