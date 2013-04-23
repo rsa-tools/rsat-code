@@ -60,7 +60,8 @@ if ($verbose) {
     printf $out "; %-29s\t%d\n", "max number of patterns", $max_pattern_nb if ($max_pattern_nb);
     printf $out "; %-29s\t%d\n", "top number of patterns", $top_pattern_nb if ($top_pattern_nb);
     printf $out "; %-29s\t%d\n", "number of input patterns", $pattern_nb;
-    printf $out "; %-29s\t%d %s\n", "THE ANALYSIS WAS RESTRICTED TO THE", $top_pattern_nb, "TOP PATTERNS" if ($pattern_nb > $top_pattern_nb);
+    printf $out "; %-29s\t%d %s\n", "THE ANALYSIS WAS RESTRICTED TO THE", $top_pattern_nb, "TOP PATTERNS" 
+      if (($top_pattern_nb > 0) && ($pattern_nb > $top_pattern_nb));
     printf $out ";\n";
 }
 
@@ -308,22 +309,23 @@ sub BestOffset {
     return ($best_offset,$best_flanking,$best_score);
 }
 
-#### print assembly header
+################################################################
+## Print assembly header
 sub PrintAssemblyHeader {
-    $seed_length = length($seed);
-    $l = $seed_length -1;
-    printf $out ";%${l}s", "alignt";
-    printf $out "\t%${seed_length}s","rev_cpl" if ($strand_insensitive);
-    if (&IsNatural($score_column)) {
-	print $out "\tscore";
-    } else {
-	print $out "\tinfo";
-    }
-    print $out "\n";
+  $seed_length = length($seed);
+  $l = $seed_length -1;
+  printf $out ";%${l}s", "alignt";
+  printf $out "\t%${seed_length}s","rev_cpl" if ($strand_insensitive);
+  if (&IsNatural($score_column)) {
+    print $out "\tscore";
+  } else {
+    print $out "\tinfo";
+  }
+  print $out "\n";
 }
 
-
-#### print a assembly
+################################################################
+## Print assembly
 sub PrintAssembly {
     undef($assembly_score);
     print $out  "\n";
@@ -341,14 +343,14 @@ sub PrintAssembly {
 	print $out  ";assembly # $assembly_nb";
 	    print $out "\tseed: $first_seed";
 	print $out  "\t$word_nb words";
-	print $out "\tlength $seed_length";
+	print $out "\tlength ", length($seed);
 	print $out "\n";
 	&PrintAssemblyHeader();
     }
+
     foreach $word (sort {($position{$a} <=> $position{$b}) || ($sort_score{$b} <=> $sort_score{$a})} keys %position) {
 	$assembly_score = &max($assembly_score, $score{$word}) if (&IsNatural($score_column));
 	$position = $position{$word} - $min_pos;
-
 	for $p (0..$position-1) {
 	    print $out ".";
 	}
