@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.37 2013/03/29 12:14:05 jvanheld Exp $
+# $Id: convert-features,v 1.38 2013/04/23 16:37:48 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -117,6 +117,9 @@ while (<$in>) {
   if ($input_format eq "bed") {
   	next if (/track name=/);
   	next if (/^browser/);
+  }
+ if ($input_format eq "swembl") {
+  	next if (/^Region/);
   }
   if ($input_format eq "galaxy_seq") {
   	next unless (/^\s*>/);
