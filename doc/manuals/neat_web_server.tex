@@ -64,7 +64,8 @@ To perform the following steps, you might dipose of the administrator permission
 \subsubsection{PHP module for Mac OSX}
 
 If your server is running under Mac OSX, you need to install a recent
-version (at least v5) of the php module, which can be found at the following site.
+version (at least v5) of the php module, which can be found at the
+following site. \\
 \url{http://www.entropy.ch/software/macosx/php/}
 
 \subsubsection{PHP module for LINUX}
@@ -73,19 +74,20 @@ Generally, PHP5 is included with the Linux distribution or can easyly
 be installed using the installer (YAST, YUM, etc). Take care that the
 PHP5 Module for Apache 2.0 (apache2-mod\_php5) is installed.
 
-PHP5 can also be installed manually from the PHP website
-(\url{http://www.php.net/downloads.php}).
+PHP5 can also be installed manually from the PHP website \\
+\url{http://www.php.net/downloads.php}
 
 In addition, you will need to install the module php5-SOAP.
 
 \subsubsection{Modification of php.ini}
 
-In order for the server to work with \neat, you have to edit the file
-\file{php.ini} which is the main configuration file of PHP. Depending
-on your PHP installation, this file might be in different
-directory. In computers running Suse 10.3, this file is in the
-\url{/etc/php5/apache2/} directory. In this file, you must modify the
-following fields accordingly.
+In order for the server to work with \neat, you have to edit the main
+PHP configuration file \file{php.ini}. Depending on your PHP
+installation, this file might be in different directory. On Linux
+computers, it is usually found here: \\
+\file{/etc/php5/apache2/php.ini}
+directory. In this file, you must modify the following fields
+accordingly.
 
 \begin{lstlisting}
 soap.wsdl_cache_enabled=0
@@ -117,18 +119,23 @@ sudo chmod 777 /tmp/php
 
 \subsection{Tomcat}
 
-A part of \neat is using axis web services, JSP and Java servlet pages
-and needs Tomcat or an equivalent servlet engine to run.  Tomcat can
-be easily installed on SUSE with yast and is usually located in
-\file{/usr/share/tomcat} after installation.
+The path finding and pathway extraction tools are using axis web
+services, JSP and Java servlet pages and needs Tomcat
+(\url{http://tomcat.apache.org/}) or an equivalent servlet engine to
+run.  
+
+Tomcat can be easily installed on SUSE with yast and is usually
+located in \file{/usr/share/tomcat} after installation.
 
 %% On MacOS, it is already installed by default.
 On MaxOS, you need to install TomCat
 (\url{http://tomcat.apache.org/}).
 
 Make sure to install at least Tomcat version 5.  We noticed however
-that Tomcat version 6 is more stable.  We will refer from now on to
-the Tomcat root directory as \$CATALINA\_HOME.
+that Tomcat version 6 is more stable.  
+
+We will refer from now on to the Tomcat root directory as
+\$CATALINA\_HOME (for example, \file{/usr/share/tomcat7}).
 
 \subsubsection{Tomcat configuration}
 
@@ -215,6 +222,7 @@ To install and configure mod\_jk, you can follow the steps below:
 \end{enumerate}
 
 An alternative to mod\_jk is mod\_proxy, which requires less configuration.
+
 
 \subsubsection{Preparation of folders for Tomcat}
 In Linux, a tomcat user is created if Tomcat is installed via yast. Make sure
