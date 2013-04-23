@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.58 2012/03/05 05:50:16 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.59 2013/04/23 22:06:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -828,9 +828,10 @@ sub QuickScanForSites {
   unlink($outfile{'sig_sites'});
 
   ## Append the sites for each matrix in a feature file
-  for my $m (0..scalar(@split_files)) {
-    my $matrix_file = $split_files[$m];
-    my $matrix_id = $split_ids[$m];
+  my $matrix_nb = scalar(@split_files);
+  for my $m (1..$matrix_nb) {
+    my $matrix_file = $split_files[$m-1];
+    my $matrix_id = $split_ids[$m-1];
 
     my $matrix_name;
     if ($main::matrix_prefix) {
@@ -840,7 +841,7 @@ sub QuickScanForSites {
     }
 #    my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
 
-    &RSAT::message::Debug("\n\tScanning sequences (quick) with sig matrix", $m, $matrix_file) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("\n\tScanning sequences (quick) with sig matrix", $m."/".$matrix_nb, $matrix_file) if ($main::verbose >= 3);
     if ((defined($matrix_file)) && (-e $matrix_file)) {
 #      $matrix_scan_cmd = $ENV{RSAT_BIN}."/matrix-scan-quick";
       my $scan_cmd = $matrix_scan_cmd." -v 1";
@@ -979,6 +980,13 @@ sub InfoGibbs {
 ################################################################
 ## Close output stream
 sub terminate {
+
+  ## Clean the sites (can be huge files for peak-motif results)
+  if (-e $outfile{sig_sites}) {
+    my $clean_cmd = "rm -f ".$outfile{sig_sites};
+    &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  }
+
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $log if ($outfile{output});
