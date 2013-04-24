@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: microcyc-get-gpr,v 1.3 2012/09/23 05:35:14 jvanheld Exp $
+# $Id: microcyc-get-gpr,v 1.4 2013/04/24 12:37:18 jvanheld Exp $
 #
 ############################################################
 
@@ -28,7 +28,7 @@ services (http://www.genoscope.cns.fr/microme/microcyc-wsc/).
 
 Jacques van Helden
 
- from a prototype Python script implemented by Quentin DA COSTA
+Adapted from a prototype Python script implemented by Quentin DA COSTA
 and Jonathan VERNEAU, Master students at Aix-Marseille Unviersité,
 March 2012.
 
@@ -89,7 +89,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
