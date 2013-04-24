@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.37 2012/09/12 08:19:47 rsat Exp $
+# $Id: pathway-extractor,v 1.38 2013/04/24 07:37:20 jvanheld Exp $
 #
 ############################################################
 
@@ -79,13 +79,19 @@ Warning: the same gene identifiers should be used in all input files.
 
 =head2 1) List of seed genes (gene identifiers):
 
-(Warning at least 2 gene ids must be present in the graph file see
-below) in this example we use gene IDs. Beware, the gene IDs must be
-compatible with the genome version installed on RSAT. Depending on the
-organism source, the IDs can correspond to RefSeq, EnsEMBL, or other
-references.
+B<Warning>: at least 2 gene ids must be present in the graph file (see
+below).
 
-Example of seed gene file:
+=head2 Example of seed gene file
+
+The example below gives a list if gene identifiers from
+I<Escherichia_coli_K_12_substr__MG1655_uid57779>. Beware, the gene IDs
+must be compatible with the genome version installed on
+RSAT. Depending on the organism source, the IDs can correspond to
+RefSeq, EnsEMBL, or other references. The compatibility of gene IDs
+can be checked with the RSAT command I<gene-info>.
+
+
 NP_414739
 NP_414740
 NP_414741
@@ -128,9 +134,11 @@ The seed mapping file makes the link between different types of seeds
 
 Mandatory.
 
-The NNN files makes the link between EC numbers/rxn name/cpd name and node id in the network .
+The NNN files makes the link between EC numbers/rxn name/cpd name and
+node id in the network .
 
-These files are used for the reaction ids/compound ids to gene annotation (backward).
+These files are used for the reaction ids/compound ids to gene
+annotation (backward).
 
 
 =head3 Example of NNN file
@@ -172,6 +180,7 @@ attribute (ID, start, end, name, ...).
 =head3 Commands
 
 Extract all E.coli genes whose name starts with met
+
  gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -full -q '^met.*' -o met_genes.tab
 
 Select the first column, containing gene Ids.
@@ -179,8 +188,8 @@ Select the first column, containing gene Ids.
 
 Extract a pathway connecting at best the reactions catalyzed by these gene products
   pathway-extractor -i met_genes_IDs.txt \
-     -g data/networks/MetaCyc/MetaCyc_directed_141.txt \
-     -gnn ${RSAT}/data/metabolic_networks/GER_files/GPR_Uniprot_112011_Escherichia_coli_K12.tab \
+     -g ${RSAT}/data/networks/MetaCyc/MetaCyc_v141_directed-metab-network.tab \
+     -gnn ${RSAT}/data/metabolic_networks/GER_files/Escherichia_coli_K12-83333-genoscope/Escherichia_coli_K12-83333-genoscope-gene_ec.tab
      -o result_dir \
      -t temp_dir
 
@@ -188,8 +197,8 @@ Extract a pathway connecting at best the reactions catalyzed by these gene produ
 
 =head2 Using standard input
 
-The script pathway-extractor can also use as input the STDIN. This
-allows to use it in aconcatenation of commands. For example, all the
+The script I<pathway-extractor> can also use as input the STDIN. This
+allows to use it in a concatenation of commands. For example, all the
 commands above could be combined in a single pipeline as follows.
 
  gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q 'met.*' \
@@ -420,7 +429,8 @@ EC -> REACTION and COUMPOUNDS (ECR) annotation file.
 
 =cut
     } elsif ($arg eq "-nnn") {
-      $infile{nnn} = shift(@arguments);      
+      $infile{nnn} = shift(@arguments);
+
 # =item	B<-b GR Gene -> REACTION annotation>
 #
 # An gene annotation file with diredt link gene to reaction. Does not rely on the EC number annotation
