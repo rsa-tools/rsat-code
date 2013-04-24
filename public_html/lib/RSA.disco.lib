@@ -13,6 +13,7 @@ package main;
 			   occ_P
 			   occ_E
 			   occ_sig
+			   occ_FWER
 			   observed_freq
 			   exp_freq
 			   zscore
@@ -52,6 +53,9 @@ $quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
 ##  my $quick_count = &CheckQuickCount();
 ##
 sub CheckQuickCount {
+
+  ## Quick mode requires input file (cannot be done with STDIN as
+  ## input).
   unless ($infile{input}) {
     &RSAT::message::Warning("Quick count mode requires to specify an input file")
       if (($main::verbose >= 1) || ($quick_count));
@@ -74,7 +78,7 @@ sub CheckQuickCount {
     return(0);
   }
 
-  ## Sequecne type
+  ## Sequence type
   unless (lc($seq_type) eq "dna") {
     &RSAT::message::Warning("Quick count mode is only compatible with DNA sequences.")
       if (($main::verbose >= 2) || ($quick_count));
@@ -88,7 +92,7 @@ sub CheckQuickCount {
     return(0);
   }
 
-  ## dyad-specific options
+  ## Dyad-specific options
   if ($pattern_type eq "dyads") {
     ## dyad-analysis options incompatible with quick mode
     if (($dyad_type eq "dr") ||
@@ -491,21 +495,31 @@ sub CheckPatternThresholds {
 
 
 ################################################################
-### Corrections for multi-testing
+## Corrections for multi-testing
 sub MultiTestCorrections {
   my ($nb_tested_patterns, %patterns) = @_;
   &RSAT::message::TimeWarn(join ("\t", "Correcting for multiple testing", $nb_tested_patterns)) if ($main::verbose >= 2);
   foreach my $pattern_seq (keys %patterns) {
     if (&IsReal ($patterns{$pattern_seq}->{occ_P})) {
+
+      ## Compute the E-value and significance
       $patterns{$pattern_seq}->{occ_E} =  $patterns{$pattern_seq}->{occ_P}*$nb_tested_patterns;
       if ($patterns{$pattern_seq}->{occ_E} > 0) {
 	$patterns{$pattern_seq}->{occ_sig} =  -log($patterns{$pattern_seq}->{occ_E})/log(10);
       } else {
 	$patterns{$pattern_seq}->{occ_sig} =  $MAX_SIG;
       }
+
+      ## Compute family-wise error rate (FWER), i.e. the probability
+      ## to observe at least one false positive within a series of
+      ## test.
+      $patterns{$pattern_seq}->{occ_FWER} = my $p_val = &RSAT::stats::binomial_boe($patterns{$pattern_seq}->{occ_P},
+										   $nb_tested_patterns, 1);
+
     } else {
       $patterns{$pattern_seq}->{occ_E} = "NA";
       $patterns{$pattern_seq}->{occ_sig} = "NA";
+      $patterns{$pattern_seq}->{occ_FWER} = "NA";
     }
     # 	&RSAT::message::Debug("Calculating E-value",  
     # 			      $pattern_seq,
@@ -514,6 +528,7 @@ sub MultiTestCorrections {
     # 			      $nb_tested_patterns,
     # 			      $patterns{$pattern_seq}->{occ_E},
     # 			      $patterns{$pattern_seq}->{occ_sig},
+    # 			      $patterns{$pattern_seq}->{occ_FWER},
     # 			     ) if ($main::verbose >= 10);
   }
 }
@@ -602,9 +617,10 @@ sub CGI_return_fields {
 		     rank=>"rank",
 		     mseq=>"mseq",
 		     ratio=>"ratio",
-		     occ_sig=>"proba",
 		     occ_P=>"proba",
 		     occ_E=>"proba",
+		     occ_sig=>"proba",
+		     occ_FWER=>"proba",
 		     pos=>"pos"
 		    );
   my %return_fields = ();
