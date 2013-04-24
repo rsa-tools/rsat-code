@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.165 2012/02/09 07:28:00 jvanheld Exp $
+# $Id: oligo-analysis,v 1.166 2013/04/24 12:36:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -20,7 +20,7 @@ require RSAT::MarkovModel;
 ################################################################
 ## Initialize parameters
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.165 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.166 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -1479,6 +1479,7 @@ sub CalcProba {
   &CheckThresholds("occ_P");
   &CheckThresholds("occ_E");
   &CheckThresholds("occ_sig");
+  &CheckThresholds("occ_FWER");
   &CheckThresholds("ms_P");
   &CheckThresholds("ms_E");
   &CheckThresholds("ms_sig");
@@ -1499,8 +1500,8 @@ sub PrintHeaderLine {
     $col_description{"exp_occ"} = "expected occurrences";
     $col_description{"occ_P"} = "occurrence probability (binomial)";
     $col_description{"occ_E"} = "E-value for occurrences (binomial)";
-#    $col_description{"occ_FWER"} = "Family-Wise Error Rate for occurrences (binomial)";
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
+    $col_description{"occ_FWER"} = "Family-wise error rate (FWER) for occurrences (binomial).";
     $col_description{"zscore"} = "z-score (Gaussian approximation)";
     $col_description{"occ_likelihood"} = "occurrence likelihood";
     $col_description{"ovl_occ"} = "number of overlapping occurrences (discarded from the count)";
@@ -1560,8 +1561,8 @@ sub PrintHeaderLine {
 	if ($return{'proba'}) {
 	    push(@out_col,"occ_P");
 	    push(@out_col,"occ_E");
-#	    push(@out_col,"occ_FWER");
 	    push(@out_col,"occ_sig");
+	    push(@out_col,"occ_FWER");
 	}
     }
 
@@ -1860,15 +1861,19 @@ sub PrintResult {
 	if ($patterns{$pattern_seq}->{'occ_P'} >= 0.0001) {
 	  printf $out "\t%.5f", $patterns{$pattern_seq}->{'occ_P'};
 	  printf $out "\t%.1e", $patterns{$pattern_seq}->{'occ_E'};
+	  printf $out "\t%.2f", $patterns{$pattern_seq}->{'occ_sig'};
+	  printf $out "\t%.1e", $patterns{$pattern_seq}->{'occ_FWER'};
 	} elsif ($patterns{$pattern_seq}->{'occ_P'} <= 1e-100) {
 	  printf $out "\t%.0g", $patterns{$pattern_seq}->{'occ_P'};
 	  printf $out "\t%.0e", $patterns{$pattern_seq}->{'occ_E'};
+	  printf $out "\t%.2f", $patterns{$pattern_seq}->{'occ_sig'};
+	  printf $out "\t%.0e", $patterns{$pattern_seq}->{'occ_FWER'};
 	} else {
 	  printf $out "\t%.2g", $patterns{$pattern_seq}->{'occ_P'};
 	  printf $out "\t%.1e", $patterns{$pattern_seq}->{'occ_E'};
+	  printf $out "\t%.2f", $patterns{$pattern_seq}->{'occ_sig'};
+	  printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_FWER};
 	}
-	#		printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_FWER};
-	printf $out "\t%.2f", $patterns{$pattern_seq}->{'occ_sig'};
       }
     }
 
