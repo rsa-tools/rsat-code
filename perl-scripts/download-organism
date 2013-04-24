@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.29 2013/03/22 11:10:41 jvanheld Exp $
+# $Id: download-organism,v 1.30 2013/04/24 07:37:56 jvanheld Exp $
 #
 ############################################################
 
@@ -128,7 +128,7 @@ package main;
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
   $get_command = "wget";
-  $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
   $ssh_login = "rsat\@rsat.ulb.ac.be";
@@ -246,6 +246,9 @@ package main;
   $i = 0;
   foreach my $org (@organisms) {
     $i++;
+
+    next if (($skip_org > 0) && ($i <= $skip_org));
+    next if (($last_org > 0) && ($i > $last_org));
 
     ## download one genome
     my $cmd = "";
@@ -475,7 +478,29 @@ Example:
 	    $main::get_command = "rsync";
 	    $main::ssh_login = shift(@arguments);
 
-	    ## Dry run
+=pod
+
+=item B<-skip>
+
+Skip the N first organisms of the list. This option is useful for
+resuming an interrupted download.
+
+=cut
+	} elsif ($arg eq "-skip") {
+	    $main::skip_org = shift(@arguments);
+
+=pod
+
+=item B<-last>
+
+Stop after the N first organisms of the list. This option is useful
+for testing the options with taxon-wise queries.
+
+=cut
+	} elsif ($arg eq "-last") {
+	    $main::last_org = shift(@arguments);
+
+
 =pod
 
 =item B<-dry>
