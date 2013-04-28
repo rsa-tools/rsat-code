@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.29 2012/04/27 04:10:44 rsat Exp $
+# $Id: genome-blast,v 1.30 2013/04/28 21:28:07 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -478,7 +478,8 @@ sub iterate_blast {
 			shift @args_to_pass;
 			next;
 		    } elsif ($arg eq "-batch") {
-			if (&IsNatural($args_to_pass[0])) {
+			if ((scalar(@args_to_pass) > 0) &&
+			    (&IsNatural($args_to_pass[0]))) {
 			    shift @args_to_pass;
 			}
 			next;
@@ -558,7 +559,7 @@ Level of verbosity (detail in the warning messages during execution)
 
 =cut
 	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
+	    if ((scalar(@ARGV) > 0) && (&IsNatural($ARGV[$a+1]))) {
 		$verbose = $ARGV[$a+1];
 	    } else {
 		$verbose = 1;
