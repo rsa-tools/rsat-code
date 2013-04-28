@@ -36,8 +36,9 @@ Returns 1 if the first argument is a natural number, 0 otherwise
 Usage: &RSAT::util::IsNatural($x);
 
 =cut
+
 sub IsNatural {
-    if ($_[0] =~ /^ *\d+ *$/) {
+    if ($_[0] =~ /^\s*\d+\s*$/) {
 	return 1;
     } else {
 	return 0;
