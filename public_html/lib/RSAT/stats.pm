@@ -385,12 +385,13 @@ sub sum_of_binomials {
 }
 
 
-
-### usage:
-###     &RSAT::stats::binomial_boe($proba,$trials,$successes)
-### Calculates the probability of observing >=s successes with a
-### probability $p and $r repeats, with the sum of binomials for j
-### varying from s to r.
+################################################################
+## Usage:
+##    my $p_val = &RSAT::stats::binomial_boe($proba,$trials,$successes);
+##
+## Calculate the probability of observing >=s successes with a
+## probability $p and $r repeats, with the sum of binomials for j
+## varying from s to r.
 sub binomial_boe {
     my ($proba, $trials, $succ) = @_;
     if ($main::verbose >=5) {
@@ -401,9 +402,10 @@ sub binomial_boe {
 
 
 ##############################################################
-### usage: &binomial_approx($proba,$trials,$successes)
-### this is the entropy approximation for the sum of binomials
-### note that the approximation is only valid for s/r > p
+## usage: &binomial_approx($proba,$trials,$successes)
+##
+## This is the entropy approximation for the sum of binomials.
+## Note that the approximation is only valid for s/r > p.
 sub binomial_approx {
     my ($proba, $trials, $successes) = @_;
     my $beta = $successes/$trials;
