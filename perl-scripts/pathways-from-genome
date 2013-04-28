@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.30 2013/04/05 14:40:47 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.31 2013/04/28 21:23:03 jvanheld Exp $
 #
 ############################################################
 
@@ -99,7 +99,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -1648,7 +1648,7 @@ sub pathways_vs_genome {
   &one_command($cmd, 1, 0, task=>"pathways_vs_genome");
 
   ## Append table of links to the HTML report
-  print $syn &LinkTable("Files: pathway projections onto genome", @files_to_index);
+  print $syn &LinkTable("Files: pathway projections onto genome", @files_to_index) if ($syn); ## $syn is not instantiated in dry mode -> test before printing
   @files_to_index = ();
 }
 
