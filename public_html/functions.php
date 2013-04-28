@@ -19,13 +19,13 @@ Function warning($warning) {
 
 // NeAT WARNING
 Function demo($demo) {
-  echo "<H4>Comment on the demonstration example</H4>\n<blockquote class ='demo'>$demo</blockquote><hr>";
+  echo "<H4>Comment on the demonstration example</H4>\n<blockquote class ='demo'>$demo</blockquote><hr>\n\n";
 }
 
 
 // NeAT INFO
 Function info($info) {
-  echo "<h2>Info</h2><class='information'><font color='#00BB00'>$info</font></class><br>";
+  echo "<h4>Info</h4><class='information'><font color='#00BB00'>".str_replace($properties['RSAT'], '$RSAT', $info)."</font></class><br>\n\n";
   //    echo "<h2>Info</h2><blockquote class='information'><font color='#00BB00'>$info</font></blockquote><br>";
 }
 
