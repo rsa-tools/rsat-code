@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.102 2012/10/22 18:52:15 amedina Exp $
+# $Id: footprint-discovery,v 1.103 2013/04/28 21:21:32 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.102 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -238,7 +238,6 @@ package main;
 			all
 			bg_model
 			operons
-			regulons
 			query_seq
 			filter_dyads
 			orthologs
@@ -246,6 +245,7 @@ package main;
 			purge
 			dyads
 			map
+			gene_index
 			network
 			index
 		       );
@@ -254,6 +254,10 @@ package main;
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
   }
+  %task = ();
+
+  ## List of tasks that do not require iyerating over all genes
+  %global_task = (bg_model=>1);
 
 
   ## Supported bg_models
@@ -304,6 +308,15 @@ package main;
 
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
+
+  ## Check if some tasks require to perform gene-wise analysis
+  local $some_gene_wise_task = 0;
+  foreach my $task (keys %task) {
+    unless ($global_task{$task}) {
+      $some_gene_wise_task = 1;
+      last;
+    }
+  }
 
   local ($main_index, $main_summary_table) = &OpenMainIndex() unless ($batch);
 
@@ -415,23 +428,26 @@ package main;
     $feature_index = $organism->get_attribute("name_index");
 
     local $query_nb = scalar(@query_genes);
-    foreach $query (@query_genes) {
-      $q++;
-      &RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $query) if ($main::verbose >= 1);
-      if ($feature_index->contains(uc($query))) {
-	$current_feature = $feature_index->get_first_value(uc($query));
-	$current_gene = $query; ## needs to be declared globally for some methods of footprint.lib.pl (not very clean, I know)
-	&RunFootprintDisco($current_gene);
-      } else {
-	&RSAT::message::Warning("Query", $q."/".$query_nb, "Unknown gene", $query) if ($main::verbose >= 1);
-	$status = "Unknown gene name";
+
+    if ($some_gene_wise_task) {
+      foreach $query (@query_genes) {
+	$q++;
+	&RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $query) if ($main::verbose >= 1);
+	if ($feature_index->contains(uc($query))) {
+	  $current_feature = $feature_index->get_first_value(uc($query));
+	  $current_gene = $query; ## needs to be declared globally for some methods of footprint.lib.pl (not very clean, I know)
+	  &RunFootprintDisco($current_gene);
+	} else {
+	  &RSAT::message::Warning("Query", $q."/".$query_nb, "Unknown gene", $query) if ($main::verbose >= 1);
+	  $status = "Unknown gene name";
+	}
       }
     }
   } else {
-      $q = 1;
-      $query_nb = 1;
-      &RSAT::message::TimeWarn("Analyzing a group of ",scalar(@query_genes)," genes", join(";", @query_genes)) if ($main::verbose >= 1);
-      &RunFootprintDisco(@query_genes);
+    $q = 1;
+    $query_nb = 1;
+    &RSAT::message::TimeWarn("Analyzing a group of ",scalar(@query_genes)," genes", join(";", @query_genes)) if ($main::verbose >= 1);
+    &RunFootprintDisco(@query_genes);
   }
 
   ################################################################
@@ -547,7 +563,7 @@ sub RunFootprintDisco {
   }
 
   ## Open the file to store the HTML index
-  &OpenQueryReport("footprint-discovery");
+  &OpenQueryReport("footprint-discovery") if ($task{gene_index});
 
   ################################################################
   ## Print query genes in the gene file
@@ -559,7 +575,7 @@ sub RunFootprintDisco {
     print $genes $gene, "\t", $organism_name, "\n";
   }
   close $genes;
-  &IndexOneFile("Query genes", $outfile{genes});
+  &IndexOneFile("Query genes", $outfile{genes}) if ($task{gene_index});
 
   ################################################################
   ## Print verbose
@@ -567,7 +583,7 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Predict operon leader genes of the query gene(s)
-  &InferQueryOperons() if ($infer_operons);
+  &InferQueryOperons() if ($infer_operons); # && ($task{operons}));
 
   ################################################################
   ## Dyad filter tasks
@@ -663,12 +679,14 @@ sub RunFootprintDisco {
   }
 
   ## Close query-specific index file
-  print $index "</table>\n";
-  print $index "Query status: <font color='>", $status_color, "'>", $status, "</font>\n";
-  print $index "<hr size=2 color='#000088'>";
-  print $index "</body>";
-  print $index "</html>";
-  close $index;
+  if ($task{gene_index}) {
+    print $index "</table>\n";
+    print $index "Query status: <font color='>", $status_color, "'>", $status, "</font>\n";
+    print $index "<hr size=2 color='#000088'>";
+    print $index "</body>";
+    print $index "</html>";
+    close $index;
+  }
 
   ################################################################
   ## Update the main index
@@ -677,6 +695,7 @@ sub RunFootprintDisco {
       print $main_index "<td>", $q, "</td>\n";
       ## Link to the query-specific index file
 #  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
+      unless (defined($outfile{index})) { $outfile{index} = $outfile{prefix}."_index.html"; }
       print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
       my $query_name_index;
       if ($main::sep_genes){
@@ -1018,11 +1037,13 @@ sub Verbose {
   }
   print $out $header_verbose;
 
-  $header_verbose =~ s/^; //;
-  $header_verbose =~ s/\n; /\n/gm;
-  print $index "<pre>";
-  print $index $header_verbose;
-  print $index "</pre>";
+  if ($task{gene_index}) {
+    $header_verbose =~ s/^; //;
+    $header_verbose =~ s/\n; /\n/gm;
+    print $index "<pre>";
+    print $index $header_verbose;
+    print $index "</pre>";
+  }
 }
 
 
@@ -1033,7 +1054,7 @@ sub DyadAnalysis {
   my $matrix_nb = "NA";
 
   &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
-  &CheckDependency("dyads", "purged");
+  &CheckDependency("dyads", "purged") if ($task{dyads});
   $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
   $cmd .= " -return ".$dyad_return_fields;
   ## Backgroun model
@@ -1123,39 +1144,41 @@ sub DyadAnalysis {
 
   ## Index result files from dyad-analysis
   if ((&IsNatural($dyad_nb)) && ($dyad_nb >= 1)) {
-    &IndexOneFile("Assembled dyads", $outfile{asmb});
-    &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
-    &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
-    &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
+    if ($task{gene_index}) {
+      &IndexOneFile("Assembled dyads", $outfile{asmb});
+      &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
+      &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
+      &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
 
-    ## Index logo files
-    if ($matrix_nb > 0) {
-      print $index "<tr>\n";
-      print $index "<td>",$matrix_nb," matrices</td>\n";
-      print $index "<td><table class='simple'>\n";
-      foreach my $m (1..$matrix_nb) {
+      ## Index logo files
+      if ($matrix_nb > 0) {
 	print $index "<tr>\n";
-	print $index "<td>m",$m,"</td>\n";
+	print $index "<td>",$matrix_nb," matrices</td>\n";
+	print $index "<td><table class='simple'>\n";
+	foreach my $m (1..$matrix_nb) {
+	  print $index "<tr>\n";
+	  print $index "<td>m",$m,"</td>\n";
 
-	## Link to matrix logo
-	my $logo_file = $prefix{pssm}."_count_matrices_logo_m".$m.".png";
-	my $logo_link = &RSAT::util::RelativePath($outfile{index}, $logo_file);
-	print $index "<td>\n";
-	print $index &LinkOneFile($outfile{index}, $logo_file, "<img src='".$logo_link."' height='80' align='right'>");
-	print $index "<td>\n";
+	  ## Link to matrix logo
+	  my $logo_file = $prefix{pssm}."_count_matrices_logo_m".$m.".png";
+	  my $logo_link = &RSAT::util::RelativePath($outfile{index}, $logo_file);
+	  print $index "<td>\n";
+	  print $index &LinkOneFile($outfile{index}, $logo_file, "<img src='".$logo_link."' height='80' align='right'>");
+	  print $index "<td>\n";
 
-	## Link to reverse complementary matrix logo
-	my $logo_rc_file = $prefix{pssm}."_count_matrices_logo_m".$m."_rc.png";
-	my $logo_rc_link = &RSAT::util::RelativePath($outfile{index}, $logo_rc_file);
-	print $index "<td>\n";
-	print $index &LinkOneFile($outfile{index}, $logo_rc_file, "<img src='".$logo_rc_link."' height='80' align='left'>");
-	print $index "<td>\n";
+	  ## Link to reverse complementary matrix logo
+	  my $logo_rc_file = $prefix{pssm}."_count_matrices_logo_m".$m."_rc.png";
+	  my $logo_rc_link = &RSAT::util::RelativePath($outfile{index}, $logo_rc_file);
+	  print $index "<td>\n";
+	  print $index &LinkOneFile($outfile{index}, $logo_rc_file, "<img src='".$logo_rc_link."' height='80' align='left'>");
+	  print $index "<td>\n";
 
 
+	  print $index "</tr>\n";
+	}
+	print $index "</table></td>\n";
 	print $index "</tr>\n";
       }
-      print $index "</table></td>\n";
-      print $index "</tr>\n";
     }
   }
 
@@ -1202,11 +1225,12 @@ sub CountMatrices {
 }
 
 ################################################################
-## Generate co-regulation network by comparing gene-wise footprints
+## Generate co-regulation network by linking pairs of genes presenting
+## similar footprints.
 sub CoregulationNetwork {
   my $main_prefix = &MainPrefix();
   my $dyad_suffix = &DyadSuffix();
-
+$verbose = 3;
   ## Create a directory for the inferred co-reglation network
   $dir{network} = $dir{output_root}."/network";
   &RSAT::util::CheckOutDir($dir{network});
@@ -1221,6 +1245,7 @@ sub CoregulationNetwork {
   }
   &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 2);
   push @network_files, "dyad_file_list";
+
 
   ################################################################
   ## Generate a dyad significance profiles.  Instead of a table with 1
@@ -1237,6 +1262,7 @@ sub CoregulationNetwork {
   $compare_scores_cmd .= " -suppress ".$dyad_suffix.".tab";
   $compare_scores_cmd .= " -suppress _".$organism_name."_".$taxon;
   $compare_scores_cmd .= " -format classes";
+  $compare_scores_cmd .= " | perl -pe 's|_operons||g' ";
   $compare_scores_cmd .= " | add-gene-info";
   $compare_scores_cmd .= " -col 2";
   $compare_scores_cmd .= " -org ".$organism_name;

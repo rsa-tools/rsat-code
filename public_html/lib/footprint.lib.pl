@@ -979,13 +979,14 @@ sub IndexOneFile {
   my ($name, $file, %args) = @_;
 #  my $short_file = `basename $file`;
   my $short_file = &ShortFileName($file);
-  print $index "<tr valign=top>\n";
-  print $index "<td>", $name, "<td>",  &LinkOneFile($outfile{index}, $file, $short_file), "</td>\n";
-
-  if ($args{image}) {
-    print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
+  if (defined($index)) {
+    print $index "<tr valign=top>\n";
+    print $index "<td>", $name, "<td>",  &LinkOneFile($outfile{index}, $file, $short_file), "</td>\n";
+    if ($args{image}) {
+      print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
+    }
+    print $index ("</tr>\n\n");
   }
-  print $index ("</tr>\n\n");
 }
 
 ################################################################
@@ -995,8 +996,8 @@ sub InferQueryOperons {
   &CheckDependency("operons", "genes");
   my $cmd = $SCRIPTS."/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{genes};
-  $cmd .= " -o ".$outfile{leader_qgenes};
   $cmd .= " -uth interg_dist ".$dist_thr;
+  $cmd .= " -o ".$outfile{leader_qgenes};
   &RSAT::message::Debug("Command to infer operon leaders ", $cmd) if ($task{operons}  && ($main::verbose >= 5)) ;
   &one_command($cmd) if ($task{operons});
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
