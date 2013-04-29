@@ -1465,12 +1465,13 @@ sub CheckFastaFile {
 
   &RSAT::error::FatalError("&CheckfastaFile() function requires a sequence file.") unless ($sequence_file);
   if ($top_lines) {
-    $cmd = "head - ".$top_lines." ".$sequence_file;
+    $cmd = "head -n ".$top_lines." ".$sequence_file;
     $cmd .= " | grep '^>'";
   } else {
     $cmd = "grep ''^>' ".$sequence_file;
   }
   $cmd .= " | wc -l | awk '{print \$1}'";
+
   $fasta_header_lines = `$cmd`;
   chomp($fasta_header_lines);
   return($fasta_header_lines);
