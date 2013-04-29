@@ -2692,12 +2692,12 @@ sub permute_columns {
   }
 #  @{$self->{perm_columns}} = @perm_matrix;
   @{$self->{table}} = @perm_matrix;
-  foreach my $attr qw(frequencies_specified
+  foreach my $attr (qw(frequencies_specified
 		      crudeFrequencies_specified
 		      weight_specified
 		      information_specified
 		      consensus_specified
-		     ) {
+		     )) {
     $self->force_attribute($attr, 0);
   }
 }
