@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.251 2013/04/08 09:49:08 rsat Exp $
+# $Id: peak-motifs,v 1.252 2013/04/29 12:02:04 rsat Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.251 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.252 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -4756,7 +4756,9 @@ sub CheckArguments {
     ## This is important because some users of the Web site seem to
     ## submit coordinates (bed filesà) rather than sequences (fasta
     ## files).
+    &RSAT::message::Debug("Checking fasta format for test sequence file", $infile{test_seq}) if ($main::verbose >= 2);
     my $fasta_header_lines = &CheckFastaFile($infile{test_seq}, $check_fasta_top);
+
     &RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_fasta_top, "lines") if ($main::verbose >= 3);
     &RSAT::error::FatalError("Test sequence file does not contain fasta headers (checked the ".$check_fasta_top." top lines)",
 			     $infile{test_seq}) unless ($fasta_header_lines);
@@ -4770,6 +4772,7 @@ sub CheckArguments {
       &RSAT::error::FatalError("-from option: this sequence source is not supported", $main::param{seq_source});
     }
   }
+
 
   ################################################################
   ## Control file
