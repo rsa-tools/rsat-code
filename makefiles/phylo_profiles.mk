@@ -8,7 +8,8 @@ MAKEFILE=${RSAT}/makefiles/phylo_profiles.mk
 #ORG=Saccharomyces_cerevisiae
 
 TAXON=Bacteria
-ORG=Escherichia_coli_K12
+#ORG=Escherichia_coli_K12
+ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
 
 
 CDS=${RSAT}/data/genomes/${ORG}/genome/cds.tab
@@ -30,13 +31,13 @@ one_taxon: genus_species profiles profiles_sig profile_pairs sig_vs_MI
 
 ################################################################
 ## Identify all the putative orthologs (BBH) 
-RES_DIR=results/${ORG}/${TAXON}
+RES_DIR=results/phylo_profiles/${ORG}/${TAXON}
 ORTHO=${RES_DIR}/${ORG}_vs_${TAXON}_bbh_len50_ident30_e1e-10
 ortho:
 	@mkdir -p ${RES_DIR}
 	@echo ${ORTHO}.tab
 	get-orthologs -v 2 \
-		-i ${CDS} \
+		-all \
 		-org ${ORG} \
 		-taxon ${TAXON} \
 		-uth rank 1 -lth ali_len 50 -lth ident 30 -uth e_value 1e-10 \
