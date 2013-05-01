@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.104 2013/05/01 15:06:23 jvanheld Exp $
+# $Id: footprint-discovery,v 1.105 2013/05/01 15:12:12 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.104 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.105 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -294,7 +294,7 @@ package main;
   local $die_on_error = 1;
   local $batch = 0;
   local $dry = 0;
-  local $max_jobs = 100000; ## Max number of allowed jobs to send to batch queue
+  local $max_jobs = 12000; ## Max number of allowed jobs to send to batch queue
 
   ## File index
   local %main_index = ();
@@ -643,7 +643,7 @@ sub RunFootprintDisco {
     $cmd .= " -o ".$outfile{map};
     &one_command($cmd, 1, 0, task=>'map');
   }
-  &RSAT::message::Debug("Indexing dyad map", $outfile{map}) if ($main::verbose >= 0);
+#  &RSAT::message::Debug("Indexing dyad map", $outfile{map}) if ($main::verbose >= 10);
   &IndexOneFile("Dyad map", $outfile{map}, image=>1) if (($status eq "OK") || ($batch));
 
 
@@ -656,7 +656,7 @@ sub RunFootprintDisco {
       $jobnb = &get_job_nb();
     }
     while ($jobnb > $max_jobs) {
-      &RSAT::message::TimeWarn("Already $jobnb jobs in queue ... waiting $delay seconds before submitting new jobs") if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn("Already ", $jobnb, "jobs in queue ... waiting", $delay, "seconds before submitting new jobs") if ($main::verbose >= 0);
       sleep($delay);
       $jobnb = &get_job_nb();
     }
