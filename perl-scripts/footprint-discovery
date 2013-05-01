@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.103 2013/04/28 21:21:32 jvanheld Exp $
+# $Id: footprint-discovery,v 1.104 2013/05/01 15:06:23 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.104 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -431,6 +431,8 @@ package main;
 
     if ($some_gene_wise_task) {
       foreach $query (@query_genes) {
+	local $status = "OK";
+	local $status_color = "#CC0000";
 	$q++;
 	&RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $query) if ($main::verbose >= 1);
 	if ($feature_index->contains(uc($query))) {
@@ -530,7 +532,6 @@ sub RunFootprintDisco {
     $current_gene = $current_query_genes[0];
   }
 
-  local $status = "OK";
   if ($batch) {
     $status = "batch mode";
   }
@@ -642,6 +643,7 @@ sub RunFootprintDisco {
     $cmd .= " -o ".$outfile{map};
     &one_command($cmd, 1, 0, task=>'map');
   }
+  &RSAT::message::Debug("Indexing dyad map", $outfile{map}) if ($main::verbose >= 0);
   &IndexOneFile("Dyad map", $outfile{map}, image=>1) if (($status eq "OK") || ($batch));
 
 
@@ -671,7 +673,7 @@ sub RunFootprintDisco {
   close $genes if ($outfile{genes});
 
   ## Choose the color according to status
-  my $status_color = "#CC0000";
+  $status_color = "#CC0000";
   if ($batch) {
       $status_color = "#BBBBBB";
   } elsif ($status eq "OK") {
@@ -1230,7 +1232,10 @@ sub CountMatrices {
 sub CoregulationNetwork {
   my $main_prefix = &MainPrefix();
   my $dyad_suffix = &DyadSuffix();
-$verbose = 3;
+
+### TEMP FOR DEBUGGING
+## $verbose = 3;
+
   ## Create a directory for the inferred co-reglation network
   $dir{network} = $dir{output_root}."/network";
   &RSAT::util::CheckOutDir($dir{network});
@@ -1308,13 +1313,15 @@ $verbose = 3;
   ## Identify score column
   my $score = "DPbits";
   my $score_column = 21;
-  my ($in) = &OpenInputFile($outfile{gene_pairs});
-  while (<$in>) {
-    if (/^;\t(\d+)\t${score}\s+/) {
-      $score_column = $1;
+  if (-e $outfile{gene_pairs}) {
+    my ($in) = &OpenInputFile($outfile{gene_pairs});
+    while (<$in>) {
+      if (/^;\t(\d+)\t${score}\s+/) {
+	$score_column = $1;
+      }
     }
+    close $in;
   }
-  close $in;
 
   ## Run the graph conversion
   $outfile{gene_pairs_gml} .= $dir{network}."/".$main_prefix."_gene_pairs_".$score.".gml";
