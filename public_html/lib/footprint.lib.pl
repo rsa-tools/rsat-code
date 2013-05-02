@@ -219,7 +219,7 @@ sub CheckFootprintParameters {
     if (scalar(@query_genes) > $last) {
 #      @query_genes = @query_genes[0..($last-1)];
       @query_genes= splice(@query_genes,0,$last);
-      &RSAT::message::Warning("Truncated the end of the gene list (last $last)", "Remaining genes", scalar(@query_genes));
+      &RSAT::message::Warning("Skipping the end of the gene list (last $last)", "Remaining genes", scalar(@query_genes));
     } else {
       &RSAT::message::Warning("Cannot apply option -last $last because query list is too short (".scalar(@query_genes).")");
     }
@@ -228,7 +228,7 @@ sub CheckFootprintParameters {
     if (scalar(@query_genes) > $skip) {
 #      @query_genes = @query_genes[$skip..$#query_genes];
       @query_genes= splice(@query_genes,$skip, (scalar(@query_genes) - $skip));
-      &RSAT::message::Warning("Truncated the beginning of the gene list (skip $skip)", "Remaining genes", scalar(@query_genes));
+      &RSAT::message::Warning("Skipping the beginning of the gene list (skip $skip)", "Remaining genes", scalar(@query_genes));
     } else {
       &RSAT::error::FatalError("No gene left after applying the option -skip $skip (gene list contains ".scalar(@query_genes)." genes)");
     }
@@ -282,6 +282,20 @@ sub GetQueryPrefix {
 
 
 ################################################################
+## Define and index the output directory for the whole analysis, but
+## concatenating output root, taxon, species, and (for footprint-scan
+## only) matrix suffix.
+sub SetMainOutputDir {
+#  if($m_suffix){
+#    $dir{main_output} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name,$m_suffix);
+#  }else{
+    $dir{main_output} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name);
+#  }
+  &RSAT::util::CheckOutDir($dir{main_output});
+  return($dir{main_output});
+}
+
+################################################################
 ## Define the result sub-directories and the prefix for all output
 ## files for a given query (separated queries are dealt successively
 ## by this function).
@@ -298,12 +312,12 @@ sub GetOutfilePrefix {
 
   ## Create the query-specific sub-directory
   my $query_prefix = &GetQueryPrefix();
- 
   if($m_suffix){
-      $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name,$m_suffix, $query_prefix);
+#    $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name,$m_suffix, $query_prefix);
+    $dir{output_per_query} = join("/",$main::dir{main_output}, $m_suffix, $query_prefix);
   }else{
-      $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name, $query_prefix);
-
+#    $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name, $query_prefix);
+    $dir{output_per_query} = join("/",$main::dir{main_output}, $query_prefix);
   }
   &RSAT::util::CheckOutDir($dir{output_per_query});
 
@@ -323,7 +337,7 @@ sub GetOutfilePrefix {
   $outfile{prefix} .= "_rand" if ($main::rand);
   &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 4);
 
-  &RSAT::message::Info("&GetOutfilePrefix()", 
+  &RSAT::message::Info("&GetOutfilePrefix()",
   		       "query_prefix", $outfile_prefix,
   		       "dir{output_per_query}", $dir{output_per_query},
   		       "outfile{prefix}", $outfile{prefix},
@@ -374,8 +388,8 @@ sub InitQueryOutput {
     $promoter = "ortho";
   }
   $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab"; ##
-  $outfile{seq_notclean} = $outfile{prefix}."_".$promoter."_seq_notclean.fasta"; 
-  $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta"; 
+  $outfile{seq_notclean} = $outfile{prefix}."_".$promoter."_seq_notclean.fasta";
+  $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta";
   # $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
   return($outfile_prefix, $query_prefix);
@@ -494,10 +508,10 @@ orthologs for specific reference organisms instead of using the BBH set of ortho
 
 The query genes included here will be the ones analyzed by the program.
 
-File format: Tab delimited file with three columns. 
+File format: Tab delimited file with three columns.
 
   ID of the query gene (in the query organism)
-  ID of the reference gene 
+  ID of the reference gene
   ID of the reference organism
 
 Further columns will be ignored.
@@ -631,7 +645,7 @@ Dry run: print the commands but do not execute them.
 
 =item B<-nodie>
 
-Do not die in case a sub-program returns an error.  
+Do not die in case a sub-program returns an error.
 
 The option -nodie allows you to circumvent problems with specific
 sub-tasks, but this is not recommended because the results may be
@@ -676,7 +690,7 @@ the orthologs. This method uses a threshold on the intergenic distance.
 
 =pod
 
-=item B<-dist_thr value> 
+=item B<-dist_thr value>
 
 Specify here the intergenic distance threshold in base pairs. Pair of adjacent genes with intergenic distance equal or less than this value are predicted to be within operon. (default : 55)
 
@@ -756,7 +770,7 @@ generated using the option -synthesis.
 
 Generate a HTML table with links to the individual result files. The
 table contains one row per query gene, one column by output type
-(sequences, dyads, maps, ...) for footpritn-discovery and for 
+(sequences, dyads, maps, ...) for footpritn-discovery and for
 footprint-scan on line per TF-gene interacction.
 
 =back
@@ -857,7 +871,7 @@ reference taxon.
 =cut
 
   } elsif ($arg eq "-rand") {
-    $main::rand = 1; 
+    $main::rand = 1;
 
 
 =pod
@@ -967,7 +981,7 @@ sub MainPrefix {
 ## function is to ensure consistency between the index file names.
 sub MainIndexFileName {
   my $main_prefix = &MainPrefix();
-  $outfile{main_index_file} = $main_prefix."_result_index.html"; 
+  $outfile{main_index_file} = $main_prefix."_result_index.html";
   $outfile{main_table_file} = $main_prefix."_result_table.tab";
   return($outfile{main_index_file},$outfile{main_table_file});
 }
@@ -1073,7 +1087,7 @@ sub ComputeFilterScan {
 	&RSAT::error::FatalError("Matrix file $file does not exist.Matrix file is mandatory.")  unless (-s $file ) ;
 	$cmd .= " -m ".$file;
     }
-    $cmd .= " -bgfile ".$main::filter_bgfile ; 
+    $cmd .= " -bgfile ".$main::filter_bgfile ;
     $cmd .= " -matrix_format ".$matrix_format2;
     $cmd .= " ".$strands;
     $cmd .= " -quick ";
@@ -1089,7 +1103,7 @@ sub ComputeFilterScan {
     $filter_genes = &OpenOutputFile($outfile{genes});
     print  $filter_genes $filterg;
     close $filter_genes if ($outfile{genes} && $main::filter);
-    &RSAT::message::Info("Filter genes  ", $outfile{genes} ) if ($main::verbose >= 1);  
+    &RSAT::message::Info("Filter genes  ", $outfile{genes} ) if ($main::verbose >= 1);
     &IndexOneFile("Filter genes", $outfile{genes});
     $main::skip_gene = 1 unless ($filterg=~/\w/);
 }
@@ -1344,132 +1358,128 @@ sub OccurrenceSig {
 }
 
 ################################################################
-## Evaluate if the gene occurrence significance in the given p-value 
-## can pass the threshold for selecting conserved interactions based 
+## Evaluate if the gene occurrence significance in the given p-value
+## can pass the threshold for selecting conserved interactions based
 ## on overrepresentation
-
 sub Select_interaction{
-	&CheckDependency("synthesis","matrix_distrib");
-	my $min_weight = &GetMinWeight();
- 	my ($occ_sig_file) = &OpenInputFile($outfile{occ_sig});
-	my %scores_occ_th=(); # hash to store all scores avobe the pval threshold, 
-	                       #$score and that also pass the threshold set on occ, for selecting possible interactions
-	my %all_scores_occ_th=(); ## All scores are reported to select the highest for all genes even if they don't pass the threshold
-	my $score_column=1; #perl count, 2 for bash
-	my $occ_sig_column=10; #perl count, 11 for bash
-	my $select_interaction=0;
-	
+  &CheckDependency("synthesis","matrix_distrib");
+  my $min_weight = &GetMinWeight();
+  my ($occ_sig_file) = &OpenInputFile($outfile{occ_sig});
+  my %scores_occ_th=();	# hash to store all scores avobe the pval threshold,
+  #$score and that also pass the threshold set on occ, for selecting possible interactions
+  my %all_scores_occ_th=(); ## All scores are reported to select the highest for all genes even if they don't pass the threshold
+  my $score_column=1;		#perl count, 2 for bash
+  my $occ_sig_column=10;	#perl count, 11 for bash
+  my $select_interaction=0;
 
-	################
-	# Calcule the number of sites satisfying the user-specified upper threshold on P-value: " occ_at_th "
-	# report the inv_cum value for the weight
-	my $occ_column=3; #count for bash. Number of sites with a score equal to the min_weight 
-	my $exp_occ_column=8;  #count for bash. Expected number of sites with a score equal to the min_weight 
-	my $sig_occ_column=11; #count for bash. Significance of the number of sites with a score equal to the min_weight 
 
-	## Recover the values for the weights around the minweight value
-	## Upper  bound on weight
-	$cmd= "sort -n -k ". ($score_column+1) ." ". $outfile{occ_sig};
-	$cmd .= "| grep -v '^;' ";
-	$cmd .= "| grep -v '^#' ";
-	$cmd .= "| awk '\$".($score_column+1)." > ".$min_weight."'";
-	$cmd .= "| head -1";
-	$cmd .= "|cut -f ".($score_column+1).",".$occ_column.",".$exp_occ_column.",".$sig_occ_column;
-	#print "$cmd ";<STDIN>;
-	my $upper_occ_at_th = `$cmd`;
-	chomp($upper_occ_at_th);
-	my ($weight_near_th, $occ_at_th,$exp_at_th,$sig_at_th) = split('\t', $upper_occ_at_th );
-	&RSAT::message::Debug("weight_near_th=".$weight_near_th,
-			      "occ_at_th=".$occ_at_th,
-			      "exp_at_th=".$exp_at_th,
-			      "sig_at_th=".$sig_at_th,
-	    ) if ($main::verbose >= 4);
-	$values_at_th{$current_gene}=join("\t",$weight_near_th,$occ_at_th,$exp_at_th,$sig_at_th);
+  ################
+  # Calcule the number of sites satisfying the user-specified upper threshold on P-value: " occ_at_th "
+  # report the inv_cum value for the weight
+  my $occ_column=3; #count for bash. Number of sites with a score equal to the min_weight
+  my $exp_occ_column=8;	#count for bash. Expected number of sites with a score equal to the min_weight
+  my $sig_occ_column=11; #count for bash. Significance of the number of sites with a score equal to the min_weight
 
-	&RSAT::message::Info("occ_at_th_minweight", $occ_at_minweigth, "\n","weigth_near_th", $weigth_near_th ) if ($main::verbose >= 4); 
+  ## Recover the values for the weights around the minweight value
+  ## Upper  bound on weight
+  $cmd= "sort -n -k ". ($score_column+1) ." ". $outfile{occ_sig};
+  $cmd .= "| grep -v '^;' ";
+  $cmd .= "| grep -v '^#' ";
+  $cmd .= "| awk '\$".($score_column+1)." > ".$min_weight."'";
+  $cmd .= "| head -1";
+  $cmd .= "|cut -f ".($score_column+1).",".$occ_column.",".$exp_occ_column.",".$sig_occ_column;
+  #print "$cmd ";<STDIN>;
+  my $upper_occ_at_th = `$cmd`;
+  chomp($upper_occ_at_th);
+  my ($weight_near_th, $occ_at_th,$exp_at_th,$sig_at_th) = split('\t', $upper_occ_at_th );
+  &RSAT::message::Debug("weight_near_th=".$weight_near_th,
+			"occ_at_th=".$occ_at_th,
+			"exp_at_th=".$exp_at_th,
+			"sig_at_th=".$sig_at_th,
+		       ) if ($main::verbose >= 4);
+  $values_at_th{$current_gene}=join("\t",$weight_near_th,$occ_at_th,$exp_at_th,$sig_at_th);
 
-	################
-	# Read the occ significance file and select the scores and corresponding occurence significance,
-	&RSAT::message::TimeWarn ("Reading Occurrence significance table to select genes with a probabliy conserved interactions", $outfile{occ_sig}) if ($main::verbose >=2 ) ;
-	my @zero_sig=();
-	while (<$occ_sig_file>) {
-	    chomp;
-	    next if ($_=~/^;/);		# skip comment lines
-	    next if ($_=~/^#/);		# skip header lines
-	    next if ($_=~/^--/);	# skip mysql-type comment lines
-	    next unless (/\S/);	# skip empty lines
-	    my @fields = split /\t+/;
-	    my $one_score=$fields[$score_column];
-	    my $one_occ_sig=$fields[$occ_sig_column];
-	 
-	    #store even if they don't pass the threhold
-	    $all_scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
-	    if ( $one_score==0){
-		push(@zero_sig,$one_occ_sig);
-		&RSAT::message::Debug("Zero occurrence significance", $one_occ_sig, "Associated score",$one_score,$current_gene) if ($main::verbose >= 0);
-	    }
-	    
-	    ## store the ones that pass both thresholds in the hash
-	    
-	    if ($one_score>=$min_weight && $one_occ_sig >= $main::occ_th ){
-		$scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
-		&RSAT::message::Debug("Occ_sig ", $one_occ_sig, "Score",$one_score,$current_gene) if ($main::verbose >=5);
-	    }
-	    
+  &RSAT::message::Info("occ_at_th_minweight", $occ_at_minweigth, "\n","weigth_near_th", $weigth_near_th ) if ($main::verbose >= 4);
+
+  ################
+  # Read the occ significance file and select the scores and corresponding occurence significance,
+  &RSAT::message::TimeWarn ("Reading Occurrence significance table to select genes with a probabliy conserved interactions", $outfile{occ_sig}) if ($main::verbose >=2 ) ;
+  my @zero_sig=();
+  while (<$occ_sig_file>) {
+    chomp;
+    next if ($_=~/^;/);			# skip comment lines
+    next if ($_=~/^#/);			# skip header lines
+    next if ($_=~/^--/);	# skip mysql-type comment lines
+    next unless (/\S/);		# skip empty lines
+    my @fields = split /\t+/;
+    my $one_score=$fields[$score_column];
+    my $one_occ_sig=$fields[$occ_sig_column];
+
+    #store even if they don't pass the threhold
+    $all_scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
+    if ( $one_score==0) {
+      push(@zero_sig,$one_occ_sig);
+      &RSAT::message::Debug("Zero occurrence significance", $one_occ_sig, "Associated score",$one_score,$current_gene) if ($main::verbose >= 0);
+    }
+
+    ## store the ones that pass both thresholds in the hash
+
+    if ($one_score>=$min_weight && $one_occ_sig >= $main::occ_th ) {
+      $scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
+      &RSAT::message::Debug("Occ_sig ", $one_occ_sig, "Score",$one_score,$current_gene) if ($main::verbose >=5);
+    }
+
+  }
+
+  #Sort scores that pass the threholds
+  my @all_notsorted_scores= keys (%scores_occ_th);
+  my @sorted_scores=sort {$a<=>$b}  @all_notsorted_scores;
+
+  if (scalar(@sorted_scores) >0 ) { #If there are occ significances that passed th threshold
+    my $highest_occ_sig=pop (@sorted_scores);
+    my @sorted_highest_occ_score=sort (keys %{$scores_occ_th{$highest_occ_sig}});
+
+    if (scalar(@sorted_highest_occ_score) >0 ) { #If there are scores that passed the pvalue threshold
+      my $highest_occ_score=pop(@sorted_highest_occ_score);
+      #Report the values for the gene for the synthesis table
+      $top_sig{$current_gene} = $highest_occ_sig;
+      $top_score{$current_gene} = $highest_occ_score;
+      $top_sig_row{$current_gene} = $scores_occ_th{$highest_occ_sig}{$highest_occ_score};
+      &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
+    }
+  }
+
+  #Sort all scores to report all interactios
+  #Report either the score that passed the threshold or the zero scores if there where none scores that passed the thresholds
+
+
+  if ($top_sig{$current_gene} ) {
+    &RSAT::message::Debug("ALL Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
+    $report_top_scores= join("\t", $top_sig{$current_gene}, $top_score{$current_gene} );
+
+  } else {
+
+    my @all_sorted_scores=sort ( keys %all_scores_occ_th);	    
+
+    if (scalar(@all_sorted_scores) >0 ) { #If there are occ significances that passed th threshold
+      my $all_highest_occ_sig=pop (@all_sorted_scores);
+      my @all_sorted_highest_occ_score=sort (keys %{$all_scores_occ_th{$all_highest_occ_sig}});
+
+      if (scalar(@all_sorted_highest_occ_score) >0 ) { #If there are scores that passed the pvalue threshold
+	my $all_highest_occ_score=pop(@all_sorted_highest_occ_score);
+	if ($all_highest_occ_score<0) {	# In case the highest significance is associated to a negative value, use the significance reported for the score zero
+	  $all_highest_occ_sig=0;
+	  @zero_sig=sort(@zero_sig);
+	  $all_highest_occ_score=pop(@zero_sig);
 	}
 
-	#Sort scores that pass the threholds
-	my @all_notsorted_scores= keys (%scores_occ_th);
-	my @sorted_scores=sort {$a<=>$b}  @all_notsorted_scores;
-
-	if (scalar(@sorted_scores) >0 ){ #If there are occ significances that passed th threshold
-	    my $highest_occ_sig=pop (@sorted_scores);
-	    my @sorted_highest_occ_score=sort (keys %{$scores_occ_th{$highest_occ_sig}});
-	
-	    if (scalar(@sorted_highest_occ_score) >0 ){ #If there are scores that passed the pvalue threshold
-		my $highest_occ_score=pop(@sorted_highest_occ_score);   
-		#Report the values for the gene for the synthesis table
-		$top_sig{$current_gene} = $highest_occ_sig;
-		$top_score{$current_gene} = $highest_occ_score;
-		$top_sig_row{$current_gene} = $scores_occ_th{$highest_occ_sig}{$highest_occ_score};
-		&RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
-	    }
-	}
-    
-	#Sort all scores to report all interactios
-	#Report either the score that passed the threshold or the zero scores if there where none scores that passed the thresholds
-
-
-	if($top_sig{$current_gene} ){
-	    &RSAT::message::Debug("ALL Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
-	    $report_top_scores= join("\t", $top_sig{$current_gene}, $top_score{$current_gene} );
-	    
-	}else{
-	    
-	    my @all_sorted_scores=sort ( keys %all_scores_occ_th);	    	    
-	    
-	    if (scalar(@all_sorted_scores) >0 ){ #If there are occ significances that passed th threshold
-		my $all_highest_occ_sig=pop (@all_sorted_scores);
-		my @all_sorted_highest_occ_score=sort (keys %{$all_scores_occ_th{$all_highest_occ_sig}});
-		
-		if (scalar(@all_sorted_highest_occ_score) >0 ){ #If there are scores that passed the pvalue threshold
-		    my $all_highest_occ_score=pop(@all_sorted_highest_occ_score); 
-		    if($all_highest_occ_score<0){ # In case the highest significance is associated to a negative value, use the significance reported for the score zero
-			$all_highest_occ_sig=0;
-			@zero_sig=sort(@zero_sig);
-			$all_highest_occ_score=pop(@zero_sig);
-		    }
-		   
-		    &RSAT::message::Debug("ALL Top sig", $current_gene,  $all_highest_occ_sig , "score",  $all_highest_occ_score ) if ($main::verbose >= 0);
-		    ## Print information in the table for all the interactions
-		       $report_top_scores= join("\t",$all_highest_occ_sig,  $all_highest_occ_score);
-		}
-	    }
-	}
-	print $synthesis_all_table  join("\t",$m_suffix, $current_gene, $weight_near_th,$occ_at_th,$exp_at_th,$sig_at_th, $report_top_scores )."\n";
-
-
-	
+	&RSAT::message::Debug("ALL Top sig", $current_gene,  $all_highest_occ_sig , "score",  $all_highest_occ_score ) if ($main::verbose >= 0);
+	## Print information in the table for all the interactions
+	$report_top_scores= join("\t",$all_highest_occ_sig,  $all_highest_occ_score);
+      }
+    }
+  }
+  print $synthesis_all_table  join("\t",$m_suffix, $current_gene, $weight_near_th,$occ_at_th,$exp_at_th,$sig_at_th, $report_top_scores )."\n";
 }
 
 
@@ -1558,11 +1568,11 @@ sub OccurrenceSigGraph {
     ##  info lines
     if ($main::draw_info_lines) {
       $cmd .= " -hline violet 0 "; #line showing the significance zero line.
-      $cmd .= " -vline violet 0 " ; # line showing the score zero value 
+      $cmd .= " -vline violet 0 " ; # line showing the score zero value
 
       #Calculate the positive score with maximal significance
       my $tab="\t";
-      my $new_line="\n"; 
+      my $new_line="\n";
       my $top_sig_cmd = "grep -v '^;' $outfile{occ_sig} | grep -v '^#' | perl -ane 'if(\$F[1]>0) {print join(\"\t\",\@F).\"\n\" }' | head -n 1";
       my $top_sig_pos_score_row = `$top_sig_cmd`;
       if ($top_sig_pos_score_row) {
@@ -1571,7 +1581,7 @@ sub OccurrenceSigGraph {
 	$cmd .= " -vline red ". $sig_max;
       }
 
-      if(-s $outfile{matrix_distrib}){ 
+      if(-s $outfile{matrix_distrib}){
 	  my $min_weight = &GetMinWeight();
 	  $cmd .= " -vline green ". $min_weight;
       }
@@ -1603,7 +1613,7 @@ sub OccurrenceSigGraph {
 #     $top_score{$current_gene} = $fields[1];
 #     $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
 #     &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
-  
+
 #   }
 
 
