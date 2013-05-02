@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.105 2013/05/01 15:12:12 jvanheld Exp $
+# $Id: footprint-discovery,v 1.106 2013/05/02 05:45:24 jvanheld Exp $
 #
 ############################################################
 
@@ -209,9 +209,9 @@ package main;
 {
 
   ################################################################
-  ## Initialise parameters
+  ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.105 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.106 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -233,6 +233,7 @@ package main;
   local $strands = "-2str"; ## Strands for motif discovery and pattern matching
   local $start_time = &RSAT::util::StartScript();
   $main::orthologs_list_file=0;
+
   ## Supported tasks
   @supported_tasks = qw(
 			all
@@ -296,6 +297,9 @@ package main;
   local $dry = 0;
   local $max_jobs = 12000; ## Max number of allowed jobs to send to batch queue
 
+  ## Network inference
+  local $max_dyad_degree = 100;
+
   ## File index
   local %main_index = ();
 
@@ -318,10 +322,17 @@ package main;
     }
   }
 
+  ## Check that output directory exists or create it
+  &RSAT::util::CheckOutDir($dir{output_root});
+
+  ## Define main output directory by concatenagint output root, taxon
+  ## and organism name
+  &SetMainOutputDir();
+
   local ($main_index, $main_summary_table) = &OpenMainIndex() unless ($batch);
 
   my $main_prefix = &MainPrefix();
-  $outfile{main_log} = $dir{output_root}."/".$main_prefix."_log.txt";
+  $outfile{main_log} = $dir{main_output}."/".$main_prefix."_log.txt";
   local $main_log = &OpenOutputFile($outfile{main_log});
   print $main_log &MainVerbose();
 
@@ -352,7 +363,10 @@ package main;
     ## taxon-frequencies -org_list org_list_file.
     &RSAT::message::TimeWarn("Computing background model for organism list") if ($main::verbose >= 1);
 
-    ## Store the background model in the parent directory of the query sub-directories
+    ## Store the background model in the parent directory of the query
+    ## sub-directories. The background directory is different from the
+    ## main output dir, because it can be re-used for various query
+    ## organism, as far as the reference organism list is the same.
     $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", "org_list");
     &RSAT::util::CheckOutDir($dir{bg_model});
 
@@ -392,7 +406,10 @@ package main;
 
     } else {
 
-      ## Store the background model in the parent directory of the query sub-directories
+      ## Store the background model in the parent directory of the
+      ## query sub-directories. The background directory is different from the
+      ## main output dir, because it can be re-used for various query
+      ## organisms, as far as the taxon is the same.
       $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
       &RSAT::util::CheckOutDir($dir{bg_model});
 
@@ -423,6 +440,8 @@ package main;
   ## Analyze query genes separately or altogether
   local $q = 0;
   if ($main::sep_genes) {
+    ## Analyze each gene separately
+
     ## Get the index of genome features by names and ID, which will be
     ## used to indicate gene names in the indexes
     $feature_index = $organism->get_attribute("name_index");
@@ -434,20 +453,27 @@ package main;
 	local $status = "OK";
 	local $status_color = "#CC0000";
 	$q++;
-	&RSAT::message::TimeWarn("Analyzing gene", $q."/".$query_nb, $query) if ($main::verbose >= 1);
 	if ($feature_index->contains(uc($query))) {
-	  $current_feature = $feature_index->get_first_value(uc($query));
-	  $current_gene = $query; ## needs to be declared globally for some methods of footprint.lib.pl (not very clean, I know)
+	  local $current_feature = $feature_index->get_first_value(uc($query));
+	  local $current_gene_name = $current_feature->get_attribute("name");
+	  local $current_gene = $query; ## needs to be declared globally for some methods of footprint.lib.pl (not very clean, I know)
+	  &RSAT::message::TimeWarn("Analyzing query", $q."/".$query_nb, $query, $current_gene_name) if ($main::verbose >= 1);
 	  &RunFootprintDisco($current_gene);
 	} else {
-	  &RSAT::message::Warning("Query", $q."/".$query_nb, "Unknown gene", $query) if ($main::verbose >= 1);
+	  &RSAT::message::Warning("Skipping query", $q."/".$query_nb, $query, "Unknown gene") if ($main::verbose >= 1);
 	  $status = "Unknown gene name";
 	}
       }
     }
   } else {
+    ## Analyze all genes as a single query
     $q = 1;
     $query_nb = 1;
+    if (scalar(@main::query_genes) <= 5){
+      $current_gene_name = join("_" ,@main::query_genes) ;
+    } else {
+      $current_gene_name= "query_genes" ;
+    }
     &RSAT::message::TimeWarn("Analyzing a group of ",scalar(@query_genes)," genes", join(";", @query_genes)) if ($main::verbose >= 1);
     &RunFootprintDisco(@query_genes);
   }
@@ -532,6 +558,9 @@ sub RunFootprintDisco {
     $current_gene = $current_query_genes[0];
   }
 
+  ## Index gene name for exporting file lists etc ...
+  $main_index{$query_prefix}{name} = $current_gene_name; 
+
   if ($batch) {
     $status = "batch mode";
   }
@@ -603,7 +632,6 @@ sub RunFootprintDisco {
   local $ortholog_nb = "NA";
   $ortholog_nb = &GetOrthologs() if (($status eq "OK") || ($batch));
 
-
   ################################################################
   ## Predict operon leader genes for the orthologous genes
   &InferOrthoOperons() if ((($status eq "OK") || ($batch)) && ($infer_operons));
@@ -645,7 +673,6 @@ sub RunFootprintDisco {
   }
 #  &RSAT::message::Debug("Indexing dyad map", $outfile{map}) if ($main::verbose >= 10);
   &IndexOneFile("Dyad map", $outfile{map}, image=>1) if (($status eq "OK") || ($batch));
-
 
   ################################################################
   ## Send the command to a batch queue (e.g. PC cluster)
@@ -699,19 +726,17 @@ sub RunFootprintDisco {
 #  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
       unless (defined($outfile{index})) { $outfile{index} = $outfile{prefix}."_index.html"; }
       print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
-      my $query_name_index;
-      if ($main::sep_genes){
-	  $query_name_index=$current_feature->get_attribute("name");
-      }
-      else{
-	  if (scalar(@main::query_genes)<=3){
-	     $query_name_index=join("_" ,@main::query_genes) ;
-	  }
-	  else{
-	     $query_name_index= "all_query_genes" ;
-	  }
-      }
-      print $main_index "<td>",$query_name_index , "</td>\n" ;
+#      my $current_gene_name;
+#      if ($main::sep_genes){
+#	  $current_gene_name = $current_feature->get_attribute("name");
+#      } else {
+#	if (scalar(@main::query_genes) <= 3){
+#	  $current_gene_name = join("_" ,@main::query_genes) ;
+#	} else {
+#	  $current_gene_name= "all_query_genes" ;
+#	}
+#      }
+      print $main_index "<td>",$current_gene_name , "</td>\n" ;
 
 
       ## Report the significant dyads
@@ -782,7 +807,7 @@ sub RunFootprintDisco {
       print $main_index "</tr>\n";
 
       ## Update the summary table
-      print $main_summary_table join ("\t",$q,$query_prefix,$query_name_index,$status,$query_prom_len,$ortholog_nb,$ortho_seq_len,$top_id,$top_sig,$dyad_nb, $matrix_nb );
+      print $main_summary_table join ("\t",$q,$query_prefix,$current_gene_name,$status,$query_prom_len,$ortholog_nb,$ortho_seq_len,$top_id,$top_sig,$dyad_nb, $matrix_nb );
 
   }
 }
@@ -948,8 +973,6 @@ This option must be used in combination with the option -bg_model file
     } elsif ($arg eq "-bgfile") {
       $main::bgfile = shift(@arguments);
 
-	  ## Dyad filtering
-
 =pod
 
 =item B<-filter>
@@ -972,6 +995,26 @@ query gene, in the query organism. (will cancel -filter option if selected)
 
     } elsif ($arg eq "-no_filter") {
       $main::nofilter = 1;
+
+
+=pod
+
+=item B<-max_dyad_degree #>
+
+Maximal dyad degree for network inference. Default: 100.
+
+Some dyads are found significant in a very large number of genes, for
+various reasons (binding motifs of global factors, low-complexity
+motifs). These "ubiquitous" dyads create many links in the network,
+which makes problem to extract clusters of putatively co-regulated
+genes. To circumvent this problem, we discard "hub" dyads, i.e. dyads
+found in the footprints of too many query genes.
+
+=cut
+    } elsif ($arg eq "-max_dyad_degree") {
+      $main::max_dyad_degree = shift(@arguments);
+      &RSAT::error::FatalError($main::max_dyad_degree, "Invalid value for max dyad degree. Must be a Natural number.") 
+	unless (&IsNatural($main::max_dyad_degree));
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
@@ -1130,6 +1173,7 @@ sub DyadAnalysis {
     $cmd .= " -sites" ;
     $cmd .= " -uth Pval 0.00025";
     $cmd .= " -bginput -markov 0";
+    $cmd .= " -flanks 2";
     $cmd .= " ".$strands;
     $cmd .= " -logo";
     $cmd .= " -o ".$prefix{pssm};
@@ -1234,22 +1278,21 @@ sub CoregulationNetwork {
   my $dyad_suffix = &DyadSuffix();
 
 ### TEMP FOR DEBUGGING
-## $verbose = 3;
+  $verbose = 3;
 
   ## Create a directory for the inferred co-reglation network
-  $dir{network} = $dir{output_root}."/network";
+  $dir{network} = $dir{main_output}."/network";
   &RSAT::util::CheckOutDir($dir{network});
   &RSAT::message::TimeWarn("Network directory", $dir{network}) if ($main::verbose >= 2);
 
   ################################################################
   ## Write a list of dyad files
-  $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt";
+  $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt"; push @network_files, "dyad_file_list";
   my $out= &OpenOutputFile($outfile{dyad_file_list});
   foreach my $query_prefix (sort keys %main_index) {
-    print $out $main_index{$query_prefix}{dyads}."\n" if (-e $main_index{$query_prefix}{dyads});
+    print $out join ("\t", $main_index{$query_prefix}{dyads}, $query_prefix, $main_index{$query_prefix}{name}), "\n" if (-e $main_index{$query_prefix}{dyads});
   }
   &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 2);
-  push @network_files, "dyad_file_list";
 
 
   ################################################################
@@ -1258,7 +1301,7 @@ sub CoregulationNetwork {
   ## "class": first column indicates the dyad, second column the gene,
   ## third column the score. We add two columns with primary gene name
   ## and ID, because the query gene list may contain synonyms.
-  $outfile{dyad_sig_classes} .= $dir{network}."/".$main_prefix."_dyad_sig_classes.tab";
+  $outfile{dyad_sig_classes} = $dir{network}."/".$main_prefix."_dyad_sig_classes.tab"; push @network_files, "dyad_sig_classes";
   my $compare_scores_cmd = "compare-scores -v 0";
   $compare_scores_cmd .= " -filelist ".$outfile{dyad_file_list};
   $compare_scores_cmd .= " -sc 8 -null .";
@@ -1275,13 +1318,58 @@ sub CoregulationNetwork {
   $compare_scores_cmd .= " -o ".$outfile{dyad_sig_classes};
   &one_command($compare_scores_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Dyad sig classes", $outfile{dyad_sig_classes}) if ($main::verbose >= 2);
-  push @network_files, "dyad_sig_classes";
+
 
   ################################################################
-  ## Build the network by comparing dyads score profiles between each
-  ## pair of genes
-  $outfile{gene_pairs} .= $dir{network}."/".$main_prefix."_gene_pairs.tab";
-  my $compare_classes_cmd = 'awk \'{print $1"\t"$4"\t"$3}\' '.$outfile{dyad_sig_classes};
+  ## Analyse degree distribution of the dyads and genes
+  $outfile{dyad_gene_degrees} = $dir{network}."/".$main_prefix."_dyad_gene_degrees.tab";  push @network_files, "dyad_gene_degrees";
+  $outfile{dyad_degree_distrib} = $dir{network}."/".$main_prefix."_dyad_degree_distrib.tab";  push @network_files, "dyad_degree_distrib";
+  $outfile{dyad_degree_distrib_graph} = $dir{network}."/".$main_prefix."_dyad_degree_distrib_grap.pdf";  push @network_files, "dyad_degree_distrib_graph";
+  my $degree_cmd = $SCRIPTS."/graph-node-degree -v 1";
+  $degree_cmd .= " -i ". $outfile{dyad_sig_classes};
+  $degree_cmd .= " -in_format tab";
+  $degree_cmd .= " -scol 1";
+  $degree_cmd .= " -tcol 2";
+  $degree_cmd .= " -all";
+  $degree_cmd .= " -sort"; ## Sort dyads and genes by decreasing degree value
+  $degree_cmd .= " -o ". $outfile{dyad_gene_degrees};
+  $degree_cmd .= "; awk '\$3 > 0' ".$outfile{dyad_gene_degrees};
+  $degree_cmd .= " | classfreq -v -1 -col 3 -ci 1 -o ".$outfile{dyad_degree_distrib};
+  $degree_cmd .= " ; XYgraph -i ".$outfile{dyad_degree_distrib};
+  $degree_cmd .= " -xcol 1 -ycol 4,5,6 -format pdf -lines -pointsize 0";
+  $degree_cmd .= " -xsize 800 -ysize 400";
+  $degree_cmd .= " -title1 'Dyad degree distribution'";
+  $degree_cmd .= " -xleg1 'Dyad degree (number of footprints)'";
+  $degree_cmd .= " -yleg1 'Number of dyads'";
+  $degree_cmd .= " -o ". $outfile{dyad_degree_distrib_graph};
+  &one_command($degree_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Dyad and gene degrees", $outfile{dyad_gene_degrees}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Dyad degree distribution", $outfile{dyad_degree_distrib}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Dyad degree distribution graph", $outfile{dyad_degree_distrib_graph}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Filter out hub dyads, i.e. dyads appearing in too many genes
+  ## (likely to be generic or low-complexity motifs).
+  $outfile{dyad_hubs} = $dir{network}."/".$main_prefix."_dyad_hubs_deg_gt".$max_dyad_degree.".tab";  push @network_files, "dyad_hubs";
+  $outfile{dyads_filtered} = $dir{network}."/".$main_prefix."_dyads_filtered_max_deg".$max_dyad_degree.".tab"; push @network_files, "dyads_filtered";
+  my $dyad_hubs_cmd = "grep -v '^;' ".$outfile{dyad_gene_degrees};
+  $dyad_hubs_cmd .= " | grep -v '^#'";
+  $dyad_hubs_cmd .= ' |awk -F\'\t\' \'$3 > '.$max_dyad_degree.' {print $1} \'';
+  $dyad_hubs_cmd .= " > " .$outfile{dyad_hubs};
+  $dyad_hubs_cmd .= "; grep -v -f ".$outfile{dyad_hubs};
+  $dyad_hubs_cmd .= " ".$outfile{dyad_sig_classes};
+  $dyad_hubs_cmd .= " > ".$outfile{dyads_filtered};
+  &one_command($dyad_hubs_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Dyad hubs", $outfile{dyad_hubs}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Filtered dyads", $outfile{dyads_filtered}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Build the gene-gene co-regulation network by comparing dyads
+  ## score profiles between each pair of genes
+  $outfile{gene_pairs} .= $dir{network}."/".$main_prefix."_gene_pairs.tab"; push @network_files, "gene_pairs";
+  my $compare_classes_cmd = 'awk \'{print $1"\t"$4"\t"$3}\' '.$outfile{dyads_filtered};
   $compare_classes_cmd .=  " | compare-classes -v 1";
   $compare_classes_cmd .= " -i /dev/stdin";
   $compare_classes_cmd .= " -triangle -distinct";
@@ -1292,11 +1380,10 @@ sub CoregulationNetwork {
   $compare_classes_cmd .= " -o ".$outfile{gene_pairs};
   &one_command($compare_classes_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene pairs", $outfile{gene_pairs}) if ($main::verbose >= 2);
-  push @network_files, "gene_pairs";
 
   ################################################################
   ## Add columns with gene names and IDs
-  $outfile{gene_pairs_names} .= $dir{network}."/".$main_prefix."_gene_pairs_names.tab";
+  $outfile{gene_pairs_names} .= $dir{network}."/".$main_prefix."_gene_pairs_names.tab"; push @network_files, "gene_pairs_names";
   my $cc_gene_info_cmd = "add-gene-info";
   $cc_gene_info_cmd .= " -i ".$outfile{gene_pairs};
   $cc_gene_info_cmd .= " -col 1 -col 2";
@@ -1305,7 +1392,6 @@ sub CoregulationNetwork {
   $cc_gene_info_cmd .= " -o ".$outfile{gene_pairs_names};
   &one_command($cc_gene_info_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene pairs (with names)", $outfile{gene_pairs_names}) if ($main::verbose >= 2);
-  push @network_files, "gene_pairs_names";
 
   ################################################################
   ## Convert the compare-classes result into a graph
@@ -1318,13 +1404,16 @@ sub CoregulationNetwork {
     while (<$in>) {
       if (/^;\t(\d+)\t${score}\s+/) {
 	$score_column = $1;
+	last;
       }
     }
     close $in;
   }
 
-  ## Run the graph conversion
-  $outfile{gene_pairs_gml} .= $dir{network}."/".$main_prefix."_gene_pairs_".$score.".gml";
+  ################################################################
+  ## Convert tab-delimited network into GML file (that can be open
+  ## with CytoScape or Yed).
+  $outfile{gene_pairs_gml} .= $dir{network}."/".$main_prefix."_gene_pairs_".$score.".gml"; push @network_files, "gene_pairs_gml";
   my $convert_graph_cmd = "convert-graph";
   $convert_graph_cmd .= " -scol 1 -tcol 2";
   $convert_graph_cmd .= " -wcol ".$score_column;
@@ -1334,12 +1423,11 @@ sub CoregulationNetwork {
   $convert_graph_cmd .= " -o ".$outfile{gene_pairs_gml};
   &one_command($convert_graph_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 2);
-  push @network_files, "gene_pairs_gml";
 
 
   ################################################################
   ## Get the neighborhood of each gene in the co-regulation network
-  $outfile{gene_neighbours} .= $dir{network}."/".$main_prefix."_gene_neighbours.tab";
+  $outfile{gene_neighbours} .= $dir{network}."/".$main_prefix."_gene_neighbours.tab"; push @network_files, "gene_neighbours";
   my $gn_cmd = "graph-neighbours -v 1";
   $gn_cmd .= " -self";
 #  $gn_cmd .= " -seed $gene";
@@ -1349,7 +1437,6 @@ sub CoregulationNetwork {
   $gn_cmd .= " -o ".$outfile{gene_neighbours};
   &one_command($gn_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene neighbours", $outfile{gene_neighbours}) if ($main::verbose >= 2);
-  push @network_files, "gene_neighbours";
 
 }
 
@@ -1357,10 +1444,9 @@ sub CoregulationNetwork {
 ## Main index. This is a HTML table with links to the query-specific
 ## results: one row per query, one column per output type.
 sub OpenMainIndex {
-  &RSAT::util::CheckOutDir($dir{output_root});
   my ($name_index,$name_table)=&MainIndexFileName();
-  $outfile{main_index} = $dir{output_root}."/".$name_index;
-  $outfile{main_index_table} = $dir{output_root}."/".$name_table;
+  $outfile{main_index} = $dir{main_output}."/".$name_index;
+  $outfile{main_index_table} = $dir{main_output}."/".$name_table;
 
   &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
   &RSAT::message::Info("Main table file", $outfile{main_index_table}) if ($main::verbose >= 1);
