@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.114 2012/10/18 18:26:39 amedina Exp $
+# $Id: footprint-scan,v 1.115 2013/05/02 06:02:41 jvanheld Exp $
 #
 ############################################################
 
@@ -326,7 +326,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.115 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   $main::verbose = 0;
@@ -495,6 +495,9 @@ package main;
 
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
+
+  ## Define main output directory
+  &SetMainOutputDir();
 
   ################################################################
   ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems
@@ -814,8 +817,8 @@ package main;
 	($synthesis_index, $synthesis_table,$synthesis_all_table) = &OpenSynthesisPerMatrix ;
 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
 	print $synthesis_all_table join ("\t", "#gene","TF","weight_at_th","occ_at_th","exp_at_th","sig_at_th","top_sig","score_at_topsig"),"\n"; ## Header for the complete report table
-	
-    }
+      }
+
     ################
     ## Obtain the score related to the threshold p-value for selecting the recovered interactions
     ## if a bg_file is given this calculus can be done per matrix, if -bginput is used the calculaiton
