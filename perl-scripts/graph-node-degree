@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.18 2011/02/17 05:15:54 rsat Exp $
+# $Id: graph-node-degree,v 1.19 2013/05/02 10:33:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -208,10 +208,10 @@ package main;
       my $id = $nodes_name_id{$node};
       my $in_deg = 0;
       my $out_deg = 0;
-      if (@{$in_neighbours[$id]}) {
+      if (defined(@{$in_neighbours[$id]})) {
         $in_deg = scalar(@{$in_neighbours[$id]});
       }
-      if (@{$out_neighbours[$id]}) {
+      if (defined(@{$out_neighbours[$id]})) {
         $out_deg = scalar(@{$out_neighbours[$id]});
       }
       my $degree = $in_deg + $out_deg;
@@ -438,7 +438,7 @@ several nodes.
 
 =item B<-sort>
 
-Sort nodes by decreasing value of degree.
+Sort nodes by decreasing degree value.
 
 =cut
 	} elsif ($arg eq "-sort") {
