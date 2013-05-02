@@ -13,7 +13,6 @@ package main;
 			   occ_P
 			   occ_E
 			   occ_sig
-			   occ_FWER
 			   observed_freq
 			   exp_freq
 			   zscore
@@ -513,13 +512,13 @@ sub MultiTestCorrections {
       ## Compute family-wise error rate (FWER), i.e. the probability
       ## to observe at least one false positive within a series of
       ## test.
-      $patterns{$pattern_seq}->{occ_FWER} = my $p_val = &RSAT::stats::binomial_boe($patterns{$pattern_seq}->{occ_P},
-										   $nb_tested_patterns, 1);
+#      $patterns{$pattern_seq}->{occ_FWER} = my $p_val = &RSAT::stats::binomial_boe($patterns{$pattern_seq}->{occ_P},
+#										   $nb_tested_patterns, 1);
 
     } else {
       $patterns{$pattern_seq}->{occ_E} = "NA";
       $patterns{$pattern_seq}->{occ_sig} = "NA";
-      $patterns{$pattern_seq}->{occ_FWER} = "NA";
+#      $patterns{$pattern_seq}->{occ_FWER} = "NA";
     }
     # 	&RSAT::message::Debug("Calculating E-value",  
     # 			      $pattern_seq,
@@ -620,7 +619,7 @@ sub CGI_return_fields {
 		     occ_P=>"proba",
 		     occ_E=>"proba",
 		     occ_sig=>"proba",
-		     occ_FWER=>"proba",
+#		     occ_FWER=>"proba",
 		     pos=>"pos"
 		    );
   my %return_fields = ();
