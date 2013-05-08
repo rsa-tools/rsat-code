@@ -83,34 +83,35 @@ my @gene_selection = ();
 #$gene_list_file = "${TMP}/${tmp_file_name}.genes";
 $gene_list_file = $tmp_file_path.".genes";
 if ($query->param('uploaded_file')) {
-    $upload_file = $query->param('uploaded_file');
-#    if ($upload_file =~ /\.gz$/) {
-#	$gene_list_file .= ".gz";
-#    }
-    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-    open QUERY, ">$gene_list_file" || &cgiError("Cannot store gene list file in temporary directory");
-    while (<$upload_file>) {
-	chomp;
-	print QUERY;
-	print QUERY "\n";
-#	push @gene_selection, $_;
-    }
-    close QUERY;
+  $upload_file = $query->param('uploaded_file');
+  #    if ($upload_file =~ /\.gz$/) {
+  #	$gene_list_file .= ".gz";
+  #    }
+  $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+  open QUERY, ">$gene_list_file" || &cgiError("Cannot store gene list file in temporary directory");
+  while (<$upload_file>) {
+    chomp;
+    s/\r//g;
+    print QUERY $_, "\n";
+#    print QUERY "\n";
+    #	push @gene_selection, $_;
+  }
+  close QUERY;
 
 } else {
-    my $gene_selection = $query->param('gene_selection');
-    $gene_selection =~ s/\r/\n/g;
-    $gene_selection =~ s/\n\n/\n/g;
-    if ($gene_selection =~ /\S/) {
-	@gene_selection = split ("\n", $gene_selection);
-	open QUERY, ">$gene_list_file" || &cgiError("Cannot store gene list file in temporary directory");;
-	foreach my $row (@gene_selection) {
-	    print QUERY $row, "\n";
-	}
-	close QUERY;
-    } else {
-	&cgiError("You should enter at least one gene identifier in the query box..");
+  my $gene_selection = $query->param('gene_selection');
+  $gene_selection =~ s/\r/\n/g;
+  $gene_selection =~ s/\n\n/\n/g;
+  if ($gene_selection =~ /\S/) {
+    @gene_selection = split ("\n", $gene_selection);
+    open QUERY, ">$gene_list_file" || &cgiError("Cannot store gene list file in temporary directory");;
+    foreach my $row (@gene_selection) {
+      print QUERY $row, "\n";
     }
+    close QUERY;
+  } else {
+    &cgiError("You should enter at least one gene identifier in the query box..");
+  }
 }
 #&RSAT::message::Debug("Gene list", $gene_list_file, "\n", `cat $gene_list_file`);
 
