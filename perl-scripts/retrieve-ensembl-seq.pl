@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.80 2012/08/20 11:37:13 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.81 2013/05/08 15:30:38 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -328,6 +328,8 @@ package main;
       &RSAT::message::Info("Reading queries from query file", $query_file) if ($main::verbose >= 1);
       my ($in, $input_dir) = &OpenInputFile($query_file);
       while (<$in>) {
+	chomp();
+	s/\r//g;
 	next if ((/^;/) || (/^\#/) || (/^--/)); ## Skip comment and header lines
 	if (/(\S+)/) {
 	  push @queries, $1;
