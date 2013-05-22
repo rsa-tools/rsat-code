@@ -18,6 +18,7 @@ package main;
     $repetitions = 1;
     $line_width = 70;
     $sequence_type = "dna";
+    $seq_prefix = "rand";
 
     local %infile;
 
@@ -191,7 +192,7 @@ package main;
 	### initialization
 	my $current_seq_length = $lengths[$r-1] || $seq_length;
 	$sequence = "";
-	$seq_id = "rand_$r";
+	$seq_id = $seq_prefix."_".$r;
 	my @comments = ();
 	my $comment = join ("; ", "random sequence ".$r."/".$seq_nb,
 			    "type: ".$sequence_type,
@@ -286,6 +287,9 @@ sub ReadArguments {
 
     } elsif ($arg eq "-o") {
       $outputfile = shift @arguments;
+
+    } elsif ($arg eq "-prefix") {
+      $seq_prefix = shift @arguments;
 
     } elsif ($arg eq "-format") {
       $out_format = lc(shift @arguments);
@@ -419,9 +423,13 @@ OPTIONS
                 Generate a set of n sequences, each of length l.
 
 	-v	verbose.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the comand within a pipe.
+
+	-prefix	prefix for sequence identifiers (default: rand).
+
 	-format	output format. 
 		Two options are available:
 		IG	IG suite from IntelliGenetics
@@ -635,7 +643,8 @@ random-seq options
 -l		 sequence length
 -n		 number of sequences
 -v		 verbose
--o		  outputfile
+-o		 outputfile
+-prefix		 prefix for sequence identifiers (default: rand).
 -format		 output format
 -lw ##		 Line width
 -a		 alphabet. ex: -a a:t 0.3 c:g 0.2
