@@ -288,7 +288,7 @@ sub StartScript {
 		    $remote_addr,
 		   ), "\n";
     close LOG;
-    chmod 0777, $main::start_time_log_file;
+    chmod 0666, $main::start_time_log_file;
   }
   return($start_time);
 }
