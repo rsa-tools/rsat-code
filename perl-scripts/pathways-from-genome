@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.31 2013/04/28 21:23:03 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.32 2013/05/24 02:36:14 jvanheld Exp $
 #
 ############################################################
 
@@ -99,7 +99,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -135,7 +135,7 @@ package main;
 			    pathway_disco
 			    synthesis
 			  );
-  our $supported_tasks = join ",", @supported_tasks;
+  our $supported_tasks = join(",", @supported_tasks);
   our %supported_task = ();
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
@@ -354,7 +354,7 @@ package main;
       ## Close line of HTML report table
       print $main_syn "</tr>" if ($task{synthesis});
       ## Issue a warning
-      my $warning = join ("\t", "Skipping non-supported organism", $org_counter."/".$org_nb, $organism_name);
+      my $warning = join("\t", "Skipping non-supported organism", $org_counter."/".$org_nb, $organism_name);
       push @warnings, $warning;
       &RSAT::message::TimeWarn($warning) if ($main::verbose >= 2);
       next;
@@ -419,8 +419,7 @@ package main;
   }
 
   if (scalar(@warnings) > 0) {
-    print $main_log (join "\n; ",  "; Warning messages",
-		     @warnings), "\n";
+    print $main_log (join("\n; ",  "; Warning messages",@warnings), "\n";
   }
   close $main_log;
 
@@ -882,7 +881,7 @@ incomplete.
 
 
     } else {
-      &FatalError(join("\t", "Invalid option", $arg));
+      &RSAT::error::FatalError("Invalid option", $arg);
 
     }
   }
@@ -1300,9 +1299,6 @@ sub GetGER() {
       $cmd .= " -o ".$outfile{$GER_suffix."_rsat_id_html"};
 
       &one_command($cmd, 1, 0, task=>"ger");
-
-
-
     }
   } else {
     my $warning = join ("\t", "Cannot collect GER for organism", $organism_name, "because missing cross-reference to Genoscope/MicroCyc.", $organism_name);
@@ -1555,10 +1551,18 @@ sub GeneSets2ECs {
   ################################################################
   ## Check gene set file
   unless (defined($outfile{$geneset_key})) {
-    &RSAT::error::FatalError("Invalid key for gene set file", $geneset_key);
+    if ($die_on_error) {
+      &RSAT::error::FatalError("Invalid key for gene set file", $geneset_key);
+    }
+    &RSAT::message::Warning("Invalid key for gene set file", $geneset_key);
+    return();
   }
   unless (-r $outfile{$geneset_key}) {
-    &RSAT::error::FatalError("Cannot read gene set file", $outfile{$geneset_key});
+    if ($die_on_error) {
+      &RSAT::error::FatalError("Cannot read gene set file", $outfile{$geneset_key});
+    }
+    &RSAT::message::Warning("Cannot read gene set file", $outfile{$geneset_key});
+    return();
   }
 
   ## Check ger file depending on the arguments
@@ -1611,7 +1615,10 @@ sub CheckGERFile {
     $ger_file = $outfile{"gene-ec_rsat_id"};
   }
   &RSAT::message::Info("GER file", $ger_file) if ($main::verbose >= 3);
-  &RSAT::error::FatalError("Cannot read GER file", $ger_file) unless (-r $ger_file);
+  if ($die_on_error) {
+    &RSAT::error::FatalError("Cannot read GER file", $ger_file) unless (-r $ger_file);
+  }
+  &RSAT::message::Warning("Cannot read GER file", $ger_file) unless (-r $ger_file);
   return($ger_file);
 }
 
@@ -1669,7 +1676,11 @@ sub genesets_vs_pathways {
     &RSAT::error::FatalError("Invalid key for gene set file", $geneset_key);
   }
   unless (-r $outfile{$geneset_key}) {
-    &RSAT::error::FatalError("Cannot read gene set file", $outfile{$geneset_key});
+    if ($die_on_error) {
+      &RSAT::error::FatalError("Cannot read gene set file", $outfile{$geneset_key});
+    }
+    &RSAT::message::Warning("Cannot read gene set file", $outfile{$geneset_key});
+    return();
   }
 
 

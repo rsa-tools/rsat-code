@@ -10,13 +10,28 @@ MAKEFILE=${RSAT}/makefiles/phylo_profiles.mk
 TAXON=Bacteria
 #ORG=Escherichia_coli_K12
 ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
+TAXON=Bacteria
+DEPTH=5
+#RES_DIR=results/phylo_profiles/${ORG}/${TAXON}
+RES_DIR=results/phylo_profiles/${ORG}_${TAXON}_depth${DEPTH}
 
 
-CDS=${RSAT}/data/genomes/${ORG}/genome/cds.tab
-CDS_NAMES=${RSAT}/data/genomes/${ORG}/genome/cds_names.tab
+## Threshold on BLAST identity
 TH_ID=30
+## Threshold on BLAST alignment length
 TH_LEN=50
-TH_2=1e-10
+## Threshold on BLAST expect (e-value)
+TH_EXPECT=1e-10
+
+list_param:
+	@echo "ORG		${ORG}"
+	@echo "TAXON		${TAXON}"
+	@echo "DEPTH		${DEPTH}"
+	@echo "TH_ID		${TH_ID}"
+	@echo "TH_EXPECT	${TH_EXPECT}"
+	@echo "TH_LEN		${TH_LEN}"
+	@echo "RES_DIR		${RES_DIR}"
+
 
 all_taxa:
 	${MAKE} one_taxon TAXON=Fungi
@@ -31,22 +46,27 @@ one_taxon: genus_species profiles profiles_sig profile_pairs sig_vs_MI
 
 ################################################################
 ## Identify all the putative orthologs (BBH) 
-RES_DIR=results/phylo_profiles/${ORG}/${TAXON}
-ORTHO=${RES_DIR}/${ORG}_vs_${TAXON}_bbh_len50_ident30_e1e-10
+ORTHO=${RES_DIR}/${ORG}_vs_${TAXON}_bbh_len${TH_LEN}_ident${TH_ID}_e${TH_EXPECT}
 ortho:
+	@echo
+	@echo "Detecting all orthologs (BBH)	${ORG}	${TAXON}"
 	@mkdir -p ${RES_DIR}
 	@echo ${ORTHO}.tab
 	get-orthologs -v 2 \
 		-all \
 		-org ${ORG} \
 		-taxon ${TAXON} \
-		-uth rank 1 -lth ali_len 50 -lth ident 30 -uth e_value 1e-10 \
+		-uth rank 1 -lth ali_len ${TH_LEN} -lth ident ${TH_ID} -uth e_value ${TH_EXPECT} \
 		-return e_value,bit_sc,ident,ali_len \
 		-o ${ORTHO}.tab
+	@echo "	${ORTHO}.tab"
 
+## Generate a tab-delimited file with the genus (col1), species (col2) and both names (col3)
 GENUS_SPECIES=${RES_DIR}/${TAXON}_genus_species.tab
 genus_species:
-	grep -v '^;' ${ORTHO}.tab | cut -f 2 | sort -u | perl -pe 's|_|\t|' | awk '{print $$1"\t"$$2"\t"$$0}' > ${GENUS_SPECIES}
+	@echo
+	@echo "Generating a genus-species file"
+	grep -v '^;' ${ORTHO}.tab | cut -f 2 | sort -u | perl -pe 's|_|\t|' | awk '{print $$1"\t"$$2"\t"$$1"_"$$2}' > ${GENUS_SPECIES}
 	@echo ${GENUS_SPECIES}
 
 ################################################################
@@ -75,7 +95,7 @@ profiles_sig:
 
 
 ################################################################
-## Generate a neetwork of co-presence/absence
+## Generate a neetwork of co-occurrence (presence/absence)
 PROFILE_PAIRS=${ORTHO}_profile_pairs
 profile_pairs:
 	@grep primary ${CDS_NAMES} > results/${ORG}/cds_primary_names.tab
@@ -93,7 +113,7 @@ sig_vs_MI:
 	XYgraph  -format ${IMG_FORMAT} -xcol 27 -ycol 15,18 -legend \
 		-i ${PROFILE_PAIRS}.tab \
 		-xleg1 "I(A,B)" -yleg1 "hypergeometric significance" \
-		-title1 "${ORG}_vs_${TAXON}_bbh_len50_ident30_e1e-10" \
+		-title1 "${SUFFIX}" \
 		-o ${PROFILE_PAIRS}_sig_vs_MI.${IMG_FORMAT} 
 	@echo ${PROFILE_PAIRS}_sig_vs_MI.${IMG_FORMAT} \
 
@@ -101,7 +121,7 @@ sig_vs_MI:
 ################################################################
 ## Merge the profiles from the trhee main taxa
 MERGED_DIR=results/${ORG}/all
-MERGED_ORTHO=${MERGED_DIR}/${ORG}_vs_all_bbh_len50_ident30_e1e-10
+MERGED_ORTHO=${MERGED_DIR}/${ORG}_vs_all_bbh_len${TH_LEN}_ident${TH_ID}_e${TH_EXPECT}
 TAXA=Fungi Bacteria Archaea
 merged_ortho:
 	@mkdir -p ${MERGED_DIR}
@@ -121,8 +141,6 @@ merged_profiles:
 	@${MAKE} TAXON=all profile_pairs
 
 
-
-
 ################################################################
 ################################################################
 ################################################################
@@ -135,16 +153,23 @@ merged_profiles:
 ################################################################
 ## Generate phylogenetic profiles
 
-all: gene_names select_species bbh profiles compa
+## Iterate over organisms
+ORGANISMS=Escherichia_coli_K_12_substr__MG1655_uid57779 Bacillus_subtilis_168_uid57675 Pseudomonas_putida_KT2440_uid57843 Salmonella_enterica_serovar_Typhimurium_LT2_uid57799
+
+## Run all the tasks for one organism
+one_org: gene_names select_species bbh profiles compa sig_vs_mi network_genes result_summary
 
 ################################################################
 ## Extract the primary name of each gene
-GENE_NAMES=${RES_DIR}/gene_names.tab
 CDS=${RSAT}/data/genomes/${ORG}/genome/cds.tab
+CDS_NAMES=${RSAT}/data/genomes/${ORG}/genome/cds_names.tab
+GENE_NAMES=${RES_DIR}/${ORG}_gene_names.tab
 gene_names:
+	@echo
+	@echo "Getting gene names	${ORG}"
 	@mkdir -p ${RES_DIR}
 	grep -v '^--'  ${CDS} | cut -f 1 | add-gene-info -org ${ORG} -info name -o ${GENE_NAMES}
-	@echo ${GENE_NAMES}
+	@echo "	${GENE_NAMES}"
 
 
 ################################################################
@@ -152,19 +177,14 @@ gene_names:
 ## closely related species. This is a bit tricky: we cut the organism
 ## tree at a given depth (e.g. 5) and select a single species of each
 ## taxon at this depth.
-#ORG=Saccharomyces_cerevisiae
-TAXON=Fungi
-ORG=Escherichia_coli_K12
-TAXON=Bacteria
-DEPTH=4
-RES_DIR=results/profiles/${ORG}/${TAXON}_depth${DEPTH}
 SPECIES=${RES_DIR}/selected_species_${TAXON}_depth${DEPTH}.tab
 select_species:
 	@echo "Selecting species	${TAXON}	depth=${DEPTH}"
 	@mkdir -p ${RES_DIR}
+	@supported-organisms -return ID,taxonomy | awk '$$1 == "${ORG}"' > ${SPECIES}
 	@supported-organisms -return ID,taxonomy -taxon ${TAXON} | perl -pe 's|; |\t|g' \
 		| cut -f 1-${DEPTH} | sort -k 2 -u | perl -pe 's|\t|; |g' | perl -pe 's|; |\t|' \
-		> ${SPECIES}
+		>> ${SPECIES}
 	@echo "species	`wc -l ${SPECIES}`"
 
 
@@ -172,14 +192,17 @@ select_species:
 ## Identify all the putative orthologs according to the criterion of
 ## bidirectional best hits (BBH)
 V=2
-BBH=${RES_DIR}/bbh_${ORG}_vs_${TAXON}_eval_1e-10_ident30_len50
+SUFFIX=${ORG}_vs_${TAXON}_eval_${TH_EXPECT}_ident${TH_ID}_len${TH_LEN}
+BBH=${RES_DIR}/bbh_${SUFFIX}
 bbh:
+	@echo
+	@echo "Detecting all orthologs (BBH)	${ORG}	${TAXON}"
 	@mkdir -p ${RES_DIR}
 	get-orthologs -v ${V} \
 		-i ${CDS} \
 		-org ${ORG} \
 		-org_list ${SPECIES} \
-		-uth rank 1 -lth ali_len 50 -lth ident 30 -uth e_value 1e-10 \
+		-uth rank 1 -lth ali_len ${TH_LEN} -lth ident ${TH_ID} -uth e_value ${TH_EXPECT} \
 		-return e_value,bit_sc,ident,ali_len \
 		-o ${BBH}.tab
 	@echo "BBH	${BBH}.tab"
@@ -191,38 +214,72 @@ bbh:
 ## with the IDs of the putative orthologs 
 profiles: profiles_id profiles_boolean profiles_evalue
 
-PROFILES=${RES_DIR}/profiles_${ORG}_vs_${TAXON}_eval_1e-10_ident30_len50
+PROFILES=${RES_DIR}/profiles_${ORG}_vs_${TAXON}_eval_${TH_EXPECT}_ident${TH_ID}_len${TH_LEN}
 profiles_id:
+	@echo
+	@echo "Computing phylogenetic profiles (gene IDs) from BBH"
+	@wc -l ${BBH}.tab
 	convert-classes -v 2 -i ${BBH}.tab \
 		-from tab -to profiles \
 		-ccol 2 -mcol 3 -scol 1 -null "<NA>" \
-		-o ${PROFILES}_ids.tab
+		| grep -v '^;' \
+		> ${PROFILES}_ids.tab
 	@echo "ID profiles	${PROFILES}_ids.tab"
 
 ## Convert ortholog table into a Boolean profile table 
 profiles_boolean:
+	@echo
+	@echo "Computing Boolean phylogenetic profiles from BBH"
+	@wc -l ${BBH}.tab
 	convert-classes -v 2 -i ${BBH}.tab \
 		-from tab -to profiles \
 		-ccol 2 -mcol 3  -null 0 \
-		-o ${PROFILES}_boolean.tab
-	add-gene-info -org ${ORG} -before -i ${PROFILES}_boolean.tab -info name -o ${PROFILES}_boolean_names.tab
+		| grep -v '^;' \
+		> ${PROFILES}_boolean.tab
+	add-gene-info -org ${ORG} -before -i ${PROFILES}_boolean.tab -info name > ${PROFILES}_boolean_names.tab
 	@echo "Boolean profiles	${PROFILES}_boolean_names.tab"
 
 ## Convert ortholog table into a profile table with E-values 
 profiles_evalue:
+	@echo
+	@echo "Computing E-value phylogenetic profiles from BBH"
+	@wc -l ${BBH}.tab
 	convert-classes -v 2 -i ${BBH}.tab \
 		-from tab -to profiles \
 		-ccol 2 -mcol 3  -scol 4 -null "NA" \
-		-o ${PROFILES}_Evalue.tab
+		| grep -v '^;' \
+		> ${PROFILES}_Evalue.tab
+	@echo "E-value profiles	${PROFILES}_boolean_names.tab"
+
+# ## Convert the orthology into "classes", where each class (second
+# ## column) corresponds to a gene from Saccharomyces cerevisiae, and
+# ## indicates the set of genomes (first column) in which this gene is
+# ## present.
+# profile_classes:
+# 	convert-classes -from tab -to tab -mcol 2 -ccol 3 -scol 5 \
+# 		-i ${BBH}.tab \
+# 		-o ${BBH}_classes.tab
+#
+#
+# ## Compare profiles using the program compare-classes.
+# compare-classes -v 3 \
+# 	-i ${BBH}_classes.tab \
+# 	-lth QR 1 -lth sig 0 -sort sig -sc 3 \
+# 	-return occ,proba,dotprod,jac_sim,rank \
+# 	-o ${BBH}_gene_pairs.tab
 
 
 ################################################################
 ## Pairwise comparisons between each gene pair 
+
+## Compare profiles using compare-classes
 COMPA=${PROFILES}_compa
-SIG_COL=`grep -P '^;\t\d+\tsig' results/profiles/Escherichia_coli_K12/Bacteria_depth5/profiles_Escherichia_coli_K12_vs_Bacteria_eval_1e-10_ident30_len50_compa.tab | cut -f 2`
+SIG_COL=`grep -P '^;\t\d+\tsig' ${COMPA}.tab | cut -f 2`
 MIN_SPEC=5
 compa:
-	grep -v '^;' ${BBH}.tab | grep -v '^#' \
+	@echo
+	@echo "Extracting co-occurrence network from phylogenetic profiles"
+	@grep -v '^;' ${BBH}.tab | grep -v '^#' \
 		| awk '{print $$2"\t"$$3"\t"$$4}' \
 		| compare-classes -v ${V}  -i /dev/stdin -sc 3 \
 		-return occ,freq,proba,entropy,jac_sim,rank -sort sig \
@@ -230,11 +287,103 @@ compa:
 		-lth sig 0 -lth Q ${MIN_SPEC} -lth R ${MIN_SPEC} -lth QR ${MIN_SPEC} \
 		-rnames ${GENE_NAMES} -qnames ${GENE_NAMES} \
 		-o ${COMPA}.tab
-	@echo ${COMPA}.tab
+	@echo "	${COMPA}.tab"
 	@text-to-html -i ${COMPA}.tab -o ${COMPA}.html
-	@echo ${COMPA}.html
-	convert-graph -i ${COMPA}.tab -from tab -to gml -scol 3 -tcol 4 \
+	@echo "	${COMPA}.html"
+	@echo
+	@echo "Generating network graph	SIG_COL=${SIG_COL}"
+	@convert-graph -i ${COMPA}.tab -from tab -to gml -scol 3 -tcol 4 \
 		-wcol ${SIG_COL} -ewidth -ecolors fire \
 		-o ${COMPA}.gml 
-	@echo ${COMPA}.gml 
+	@echo "	${COMPA}.gml"
 
+
+################################################################
+## Compare mutual information with the hypergeometric significance
+IMG_FORMAT=pdf
+SIG_COL=`grep -P '^;\t\d+\tsig' ${COMPA}.tab | cut -f 2`
+MI_COL=`grep -P '^;\t\d+\tI.Q.R' ${COMPA}.tab | cut -f 2`
+sig_vs_mi:
+	@echo "Comparing mutual information (${MI_COL}) to hypergeometric significance ${SIG_COL}"
+	XYgraph  -format ${IMG_FORMAT} -xcol ${MI_COL} -ycol ${SIG_COL} \
+		-i ${COMPA}.tab \
+		-xleg1 "I(A,B)" \
+		-yleg1 "hypergeometric significance" \
+		-title1 "${SUFFIX}" \
+		-o ${COMPA}_sig_vs_MI.${IMG_FORMAT} 
+	@echo ${COMPA}_sig_vs_MI.${IMG_FORMAT} \
+
+################################################################
+## Extract the set of genes fond in the network, with their names and
+## description. This file can be loaded in CyctoScape (for example)
+## with the function "Import > Attributes from table".
+network_genes:
+	@echo
+	@echo "Extracting description for network genes"
+	@grep -v '^;' ${COMPA}.tab | grep -v '^#' | cut -f 1,2 | perl -pe 's|\t|\n|g' | sort -u > ${COMPA}_node_IDs.tab
+	@wc -l ${COMPA}_node_IDs.tab
+	add-gene-info -org ${ORG} -i ${COMPA}_node_IDs.tab \
+		-info name,id,left,right,strand,descr | cut -f 2-10 \
+		> ${COMPA}_node_descr.tab
+	@echo "	${COMPA}_node_descr.tab"
+
+
+################################################################
+## Compute the distribution of node degrees to detect "hubs"
+degree_distrib:
+	@echo
+	@echo "Computing degree distribution"
+	graph-node-degree -v 1 -i ${COMPA}.gml -in_format gml -all -sort -o ${COMPA}_degrees.tab
+	@echo "	${COMPA}_degrees.tab"
+	classfreq -v 1 -i ${COMPA}_degrees.tab -col 4 -ci 1 -o ${COMPA}_degree_distrib.tab
+	@echo "	${COMPA}_degree_distrib.tab"
+	@${MAKE} _degree_distrib_graph LOG=-log
+	@${MAKE} _degree_distrib_graph LOG=-ylog
+	@${MAKE} _degree_distrib_graph LOG=''
+	@${MAKE} filter_hubs MAX_DEGREE=50
+	@${MAKE} filter_hubs MAX_DEGREE=20
+
+_degree_distrib_graph:
+	@XYgraph -i ${COMPA}_degree_distrib.tab \
+		-xcol 1 -ycol 4,5,6 -xleg1 "degree" \
+		-yleg1 "Number of genes" -title1 "${SUFFIX}" \
+		-format ${IMG_FORMAT} \
+		${LOG} -lines -pointsize 0 \
+		-o ${COMPA}_degree_distrib${LOG}.${IMG_FORMAT}
+	@echo "	${COMPA}_degree_distrib${LOG}.${IMG_FORMAT}"
+
+################################################################
+## Filter the graph by degree: suppress hubs above a given degree
+## threshold.
+MAX_DEGREE=50
+HUB_LIST=${COMPA}_hubs_deg_gt${MAX_DEGREE}
+filter_hubs:
+	@echo 
+	@echo "Filtering out hubs (degree > ${MAX_DEGREE}"
+	grep -v '^;'  ${COMPA}_degrees.tab | grep -v '^#'| awk -F'\t' '$$4 > ${MAX_DEGREE}'  | cut -f 1 > ${HUB_LIST}.tab
+	@echo "	${HUB_LIST}.tab"
+	@grep -v -f ${HUB_LIST}.tab ${COMPA}.tab > ${COMPA}_maxdeg${MAX_DEGREE}.tab
+	@echo "	${COMPA}_maxdeg${MAX_DEGREE}.tab"
+	@convert-graph -i ${COMPA}_maxdeg${MAX_DEGREE}.tab -from tab -to gml -scol 3 -tcol 4 \
+		-wcol ${SIG_COL} -ewidth -ecolors fire \
+		-o ${COMPA}_maxdeg${MAX_DEGREE}.gml 
+	@echo "	${COMPA}_maxdeg${MAX_DEGREE}.gml"
+
+## Print a result summary
+SUMMARY=${RES_DIR}/result_summary.tab
+EDGE_NB=`grep -v '^;' ${COMPA}.tab | grep -v '^\#'| wc -l | awk '{print $$1}'`
+NODE_NB=`grep -v '^;' ${COMPA}_node_IDs.tab | grep -v '^\#'| wc -l | awk '{print $$1}'`
+SPECIES_NB=`grep -v '^;' ${SPECIES} | grep -v '^\#'| wc -l | awk '{print $$1}'`
+result_summary:
+	@echo
+	@echo "Generating result summary"
+	@echo "Result summary" > ${SUMMARY}
+	@${MAKE} list_param >> ${SUMMARY}
+	@echo "SPECIES_NB	${SPECIES_NB}" >> ${SUMMARY}
+	@echo "EDGE_NB		${EDGE_NB}" >> ${SUMMARY}
+	@echo "NODE_NB		${NODE_NB}" >> ${SUMMARY}
+	@echo "BBH		${BBH}.tab" >> ${SUMMARY}
+	@echo "NETWORK		${COMPA}.tab" >> ${SUMMARY}
+	@echo "GRAPH		${COMPA}.gml" >> ${SUMMARY}
+	@echo "NODE DESCR	${COMPA}_node_descr.tab" >> ${SUMMARY}
+	@echo "	${SUMMARY}"

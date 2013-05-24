@@ -23,7 +23,6 @@
 ##    [...] --args "nb.clusters=4; rank.threshold=100; file.pos=position_result.tab"
 
 
-
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
 
