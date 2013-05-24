@@ -24,6 +24,8 @@ TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar
 all: clean_emacs_bk tar_archive clean_distrib_site publish
 
 ## List parameters
+PUB_SERVER=rsat.ulb.ac.be
+PUB_LOGIN=rsat
 SSH_OPT=
 PUB_FORMAT=tar.gz
 list_params:
@@ -42,7 +44,7 @@ manuals:
 
 ## Install manuals on the RSAT Web server
 publish_manuals:
-	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/distrib/
+	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf rsat@${PUB_SERVER}:rsa-tools/public_html/distrib/
 
 
 ################################################################
@@ -136,5 +138,5 @@ tar_wsclients:
 	@echo ${TAR_WSCLIENTS}
 
 publish_tar_wsclients:
-	rsync -ruptvl -e "ssh ${SSH_OPT}" ${TAR_WSCLIENTS} rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/web_services/
+	rsync -ruptvl -e "ssh ${SSH_OPT}" ${TAR_WSCLIENTS} ${PUB_LOGIN}@${PUB_SERVER}:rsa-tools/public_html/web_services/
 
