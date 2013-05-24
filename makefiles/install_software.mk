@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.38 2013/05/01 16:07:22 jvanheld Exp $
+# $Id: install_software.mk,v 1.39 2013/05/24 09:35:32 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -83,16 +83,16 @@ list_perl_modules:
 	@echo ${PERL_MODULES} | perl -pe 's|\s+|\n|g'
 	@echo
 
-_compile_perl_modules:
+install_perl_modules:
 	@for module in ${PERL_MODULES} ; do \
-		${MAKE} _compile_one_perl_module PERL_MODULE=$${module}; \
+		${MAKE} _install_one_perl_module PERL_MODULE=$${module}; \
 	done
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
 #PERL=`which perl`
 PERL='/usr/bin/perl'
-_compile_one_perl_module:
+_install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
