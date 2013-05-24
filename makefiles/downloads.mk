@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.41 2012/12/19 13:12:00 jvanheld Exp $
+# $Id: downloads.mk,v 1.42 2013/05/24 09:35:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -85,7 +85,7 @@ ncbi:
 
 GENBANK_GENOMES=ftp://ftp.ncbi.nih.gov
 GB_DIR=genomes/Saccharomyces_cerevisiae
-one_genbank_dir_ori:
+one_ncbi_dir_wget:
 	@mkdir -p logs
 	@echo "${DATE}	updating dir	$${GB_DIR}" >> wget_updates.txt
 	${WGET}							\
