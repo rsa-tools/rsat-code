@@ -108,9 +108,13 @@ colnames(pos.data)[profile.col] <- sub("X\\.", "-", colnames(pos.data)[profile.c
 colnames(pos.data)[profile.col] <- sub("X", "+", colnames(pos.data)[profile.col], perl="TRUE")
 
 ## Draw distribution of chi2 significance scores
-x11(width=7, height=5)
-hist(pos.data$sig, breaks=100, main=paste(suffix, "; chi2 sig distribution"), xlab="sig of chi2 test", ylab="Number of k-mers", col="#DDDDDD")
-export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'sig_distrib', suffix)), export.formats=export.formats.plots, width=7,height=5)
+
+all.plots <- FALSE
+if (all.plots) {
+  x11(width=7, height=5)
+  hist(pos.data$sig, breaks=100, main=paste("chi2 sig distribution"), xlab="sig of chi2 test", ylab="Number of k-mers", col="#DDDDDD")
+  export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'sig_distrib', suffix)), export.formats=export.formats.plots, width=7,height=5)
+}
 
 ## Define the selected patterns
 selected.patterns <- (pos.data$sig >= sig.threshold) & (pos.data$rank <= rank.threshold)
@@ -146,18 +150,20 @@ shuffled.cor <- cor(t(shuffled.profiles))
 export.object(shuffled.cor, file=file.path(dir.clusters, paste(sep='_', 'shuffled_correlations', suffix)), export.format='table')
 
 ## Draw the distributions of correlation values (position profiles + shuffled data)
-x11(width=7, height=8)
-par(mfrow=c(2,1))
-hist(pos.cor, breaks=100, xlim=c(-1,1), col=colors["pos"], main=paste(suffix, "; correlations between k-mer profiles"), xlab="Correlation", ylab="Pairs of k-mers")
-hist(shuffled.cor, breaks=100, xlim=c(-1,1), col=colors["shuffled"], main=paste(suffix, "; correlations between shuffled profiles"), xlab="Correlation", ylab="Pairs of k-mers")
-par(mfrow=c(1,1))
-export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'profile_correlations', suffix)), export.formats=export.formats.plots, width=7,height=8)
+if (all.plots) {
+  x11(width=7, height=8)
+  par(mfrow=c(2,1))
+  hist(pos.cor, breaks=100, xlim=c(-1,1), col=colors["pos"], main=paste("correlations between k-mer profiles"), xlab="Correlation", ylab="Pairs of k-mers")
+  hist(shuffled.cor, breaks=100, xlim=c(-1,1), col=colors["shuffled"], main=paste("correlations between shuffled profiles"), xlab="Correlation", ylab="Pairs of k-mers")
+  par(mfrow=c(1,1))
+  export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'profile_correlations')), export.formats=export.formats.plots, width=7,height=8)
+}
 
 ## Draw a heatmap of the correlation matrix
 heatmap.palette <- blue.to.yellow()
 X11(width=12, height=12)
 heatmap(pos.cor, scale="none",
-        main=paste(suffix, '; correlations between position profiles'),
+        main='Correlations between position profiles',
         zlim=c(-1,1),
         col=heatmap.palette)
 export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'profile_correlations_heatmap', suffix)), export.formats=export.formats.plots, width=12,height=12)
@@ -165,7 +171,7 @@ export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'profile_correlat
 ## Draw a heatmap of the correlation matrix of shuffled profiles
 X11(width=12, height=12)
 heatmap(shuffled.cor, scale="none",
-        main=paste(suffix, '; correlations between shuffled profiles'),
+        main='Correlations between shuffled profiles',
         zlim=c(-1,1),
         col=heatmap.palette)
 export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'shuffled_correlations_heatmap', suffix)), export.formats=export.formats.plots, width=12,height=12)
@@ -178,12 +184,14 @@ pos.tree <- hclust(as.dist(1-pos.cor), method=clust.method)
 shuffled.tree <- hclust(as.dist(1-shuffled.cor), method=clust.method)
 
 ## Plot the tree structure for position profiles and shuffled data
-x11(width=16, height=8)
-par(mfrow=c(2,1))
-plot(pos.tree, main=paste(suffix, ": clustering of position profiles;", "dist= 1 - cor; ", clust.method, "linkage"), xlab=NA)
-plot(shuffled.tree, main=paste(suffix, ": clustering of shuffled profiles;", "dist= 1 - cor; ", clust.method, "linkage"), xlab=NA)
-par(mfrow=c(1,1))
-export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'profile_tree', suffix)), export.formats=export.formats.plots, width=16,height=8)
+if (all.plots) {
+  x11(width=16, height=8)
+  par(mfrow=c(2,1))
+  plot(pos.tree, main=paste(suffix, ": clustering of position profiles;", "dist= 1 - cor; ", clust.method, "linkage"), xlab=NA)
+  plot(shuffled.tree, main=paste(suffix, ": clustering of shuffled profiles;", "dist= 1 - cor; ", clust.method, "linkage"), xlab=NA)
+  par(mfrow=c(1,1))
+  export.plot(file.prefix=file.path(dir.clusters, paste(sep='_', 'profile_tree', suffix)), export.formats=export.formats.plots, width=16,height=8)
+}
 
 
 ## Draw a heatmap of the clustered position profiles
@@ -191,7 +199,7 @@ X11(width=12, height=12)
 zmax <- max(abs(range(pos.profiles.freq.norm)))
 heatmap(as.matrix(pos.profiles.freq.norm),
         scale="none",
-        main=paste(suffix, ": clustered position profiles; ", 'd=1-cor; ', clust.method, "linkage"),
+        main=paste("Clustered position profiles; ", 'd=1-cor; ', clust.method, "linkage"),
         zlim=c(-zmax,zmax),
         col=green.white.red(),
         xlab='position relative to summit', 
@@ -214,15 +222,33 @@ x11(width=6*mfrow.cols, height=4*mfrow.rows)
 par(mfrow=c(mfrow.rows, mfrow.cols))
 for (i in 1:nb.clusters) {
   cluster.size <- sum(clusters==i)
-  plot.profiles(as.data.frame(pos.profiles.freq.norm[clusters==i,]),
+  profile.stats <- plot.profiles(as.data.frame(pos.profiles.freq.norm[clusters==i,]),
                                         #                ylim=c(min(pos.profiles.freq.norm[clusters==i,]),max(pos.profiles.freq.norm[clusters==i,])),
-                main=paste(sep='', suffix, '; cluster ', i, '/', nb.clusters),
-                col.profiles=rainbow(n=cluster.size),
-                plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F
-                )
+                                 main=paste(sep='', 'cluster ', i, '/', nb.clusters),
+                                 col.profiles=rainbow(n=cluster.size),
+                                 plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F
+                                 )
 }
 par(mfrow=c(1,1))
 export.plot(file.prefix=file.path(dir.clusters, paste(sep='', 'freq_profiles_k',nb.clusters,'_all_clusters_', suffix)), export.formats=export.formats.plots, width=6*mfrow.cols, height=4*mfrow.rows)
+
+################################################################
+## Compute median profile for each cluster
+median.profiles <- data.frame(matrix(nrow=nb.clusters, ncol=ncol(pos.profiles.freq.norm)))
+colnames(median.profiles) <- colnames(pos.profiles.freq.norm)
+rownames(median.profiles) <- paste("cl", 1:nb.clusters, sep="")
+for (i in 1:nb.clusters) {
+  cluster.size <- sum(clusters==i)
+  median.profiles[i,] <- apply(pos.profiles.freq.norm[clusters==i,], 2, median)
+}
+
+## A single plot with the median profile for each cluster
+x11(width=12,height=7)
+median.profile.stats <- plot.profiles(median.profiles, main="median profiles per cluster",
+                                      col.profiles=rainbow(n=nb.clusters+2),
+                                      plot.median.profile=F, plot.mean.profile=F, plot.sd.profile=F,
+                                      xlab='Position (peak summit=0)', ylab='Relative frequency', lwd=2
+                                      )
 
 
 ## Plot occurrence profiles for all clusters together
@@ -232,7 +258,7 @@ for (i in 1:nb.clusters) {
   cluster.size <- sum(clusters==i)
   plot.profiles(as.data.frame(pos.profiles[clusters==i,]),
                                         #                ylim=c(0,max(pos.profiles[clusters==i,])),
-                main=paste(sep='', suffix, '; cluster ', i, '/', nb.clusters),
+                main=paste(sep='', 'Cluster ', i, '/', nb.clusters),
                 col.profiles=rainbow(n=cluster.size),
                 plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F
                 )
