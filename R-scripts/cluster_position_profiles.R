@@ -31,8 +31,8 @@ dir.main <- getwd()
 ## calling the script with command-line arguments.
 
 ## URL of Jacques van Helden course "Statistics for bioinformatics", required to load some libraries
-#dir.course <- 'http://www.bigre.ulb.ac.be/courses/statistics_bioinformatics'
-dir.course <- '/Users/jvanheld/statistics_bioinformatics'
+dir.course <- 'http://www.bigre.ulb.ac.be/courses/statistics_bioinformatics'
+#dir.course <- '/Users/jvanheld/statistics_bioinformatics'
 
 ## Load some libraries
 source(file.path(dir.course, 'R-files/config.R'))
@@ -260,12 +260,14 @@ if (draw.plots) {
   file.prefix <- file.path(dir.clusters, paste(sep='', 'median_freq_profiles_k',nb.clusters,'_all_clusters_', suffix))
   ##  x11(width=12,height=7)
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=12,height=7)
+
   median.profile.stats <- plot.profiles(median.profiles, main="median profiles per k-mer cluster",
                                         col.profiles=rainbow(n=nb.clusters+2),
                                         plot.median.profile=F, plot.mean.profile=F, plot.sd.profile=F,
 #                                        lty=c("solid", "dashed"),
                                         xlab='Position (peak summit=0)', ylab='Relative frequency', lwd=2, xlab.by=xlab.by
                                         )
+
   if (plot.device.format == "x11") {
     export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=12, height=7)
   } else {
