@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.42 2013/05/24 09:35:32 jvanheld Exp $
+# $Id: downloads.mk,v 1.43 2013/05/31 20:35:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -83,11 +83,11 @@ ncbi:
 		-avz rsync://bio-mirror.net/biomirror/ncbigenomes/*	\
 		ftp.ncbi.nih.gov/genomes/
 
-GENBANK_GENOMES=ftp://ftp.ncbi.nih.gov
-GB_DIR=genomes/Saccharomyces_cerevisiae
+NCBI_GENOMES_FTP=ftp://ftp.ncbi.nih.gov/genomes
+#NCBI_DIR=Fungi/Saccharomyces_cerevisiae_uid128
 one_ncbi_dir_wget:
 	@mkdir -p logs
-	@echo "${DATE}	updating dir	$${GB_DIR}" >> wget_updates.txt
+	@echo "${DATE}	updating dir	$${NCBI_DIR}" >> wget_updates.txt
 	${WGET}							\
 		--exclude-directories 'Bacteria.OLD'		\
 		--exclude-directories ARCHIVE			\
@@ -97,22 +97,22 @@ one_ncbi_dir_wget:
 		--accept=gaa --accept=faa --accept=gbk.gz	\
 		--accept=README.gz --accept=gbff.gz		\
 		--accept=gaa.gz --accept=faa.gz			\
-		"${GENBANK_GENOMES}/${GB_DIR}" 
-	@echo "${DATE}	updated dir	$${GB_DIR}" >> wget_updates.txt
+		"${NCBI_GENOMES_FTP}/${NCBI_DIR}" 
+	@echo "${DATE}	updated dir	$${NCBI_DIR}" >> wget_updates.txt
 
-one_genbank_dir:
-	${MAKE} one_ncbi_dir_from_mirror
+#one_genbank_dir:
+#	${MAKE} one_ncbi_dir_from_mirror
 
-genbank_ori:
-	@echo "${DATE}	starting to update	${GENBANK_DIRS}" >> wget_updates.txt; 
-	@for dir in ${GENBANK_DIRS} ; do		\
-		make one_genbank_dir_ori GB_DIR=$${dir} ;	\
-	done
-	@${WGET} ${GENBANK_GENOMES}/acc
-	@${WGET} ${GENBANK_GENOMES}/README
-	@${WGET} ${GENBANK_GENOMES}/Bacteria/README
-	@${WGET} ${GENBANK_GENOMES}/Bacteria/accessions
-	@echo "${DATE}	finished to update	${GENBANK_DIRS}" >> wget_updates.txt; 
+#genbank_ori:
+#	@echo "${DATE}	starting to update	${GENBANK_DIRS}" >> wget_updates.txt; 
+#	@for dir in ${GENBANK_DIRS} ; do		\
+#		make one_genbank_dir_ori NCBI_DIR=$${dir} ;	\
+#	done
+#	@${WGET} ${NCBI_GENOMES_FTP}/acc
+#	@${WGET} ${NCBI_GENOMES_FTP}/README
+#	@${WGET} ${NCBI_GENOMES_FTP}/Bacteria/README
+#	@${WGET} ${NCBI_GENOMES_FTP}/Bacteria/accessions
+#	@echo "${DATE}	finished to update	${GENBANK_DIRS}" >> wget_updates.txt; 
 
 
 

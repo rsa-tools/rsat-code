@@ -229,10 +229,9 @@ organisms. To avoid filling up your hard drive, we illustrate the protocol
 with the smallest procaryote genome to date: \textit{Mycoplasma
   genitamlium}.
 
-
 \begin{footnotesize}
 \begin{verbatim}
-## Creating a directory for downloading genomes in your home account
+## Creating a directory for downloading genomes
 cd $RSAT
 mkdir -p downloads
 cd downloads
@@ -248,7 +247,7 @@ We will now download a small genome from NCBI/Genbank.
 \begin{verbatim}
 ## Downloading one directory from NCBI Genbank
 cd $RSAT/downloads/
-make one_genbank_dir NCBI_DIR=Bacteria/Mycoplasma_genitalium
+make one_genbank_dir NCBI_DIR=Bacteria/Mycoplasma_genitalium_G37_uid57707
 \end{verbatim}
 \end{footnotesize}
 
@@ -258,7 +257,7 @@ We can now check the list of files that have been downloaded.
 \begin{verbatim}
 ## Downloading one directory from NCBI Genbank
 cd $RSAT/downloads/
-ls -l ftp.ncbi.nih.gov/genomes/Bacteria/Mycoplasma_genitalium/
+ls -l ftp.ncbi.nih.gov/genomes/Bacteria/Mycoplasma_genitalium_G37_uid57707
 \end{verbatim}
 \end{footnotesize}
 
