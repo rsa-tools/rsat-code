@@ -37,7 +37,7 @@ $default{"position-analysis_dyads"} ="";
 $default{'matrix-scan-quick'}="checked";
 $default{compare_motif_db}="checked";
 $default{title}="";
-$default{max_seq_len}=500;
+$default{max_seq_len}="500";
 $default{top_sequences}="";
 $default{nmotifs} = 3;
 
