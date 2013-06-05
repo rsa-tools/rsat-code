@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.27 2013/04/03 00:47:41 jvanheld Exp $
+# $Id: fetch-sequences,v 1.28 2013/06/05 21:26:44 jvanheld Exp $
 #
 ############################################################
 
@@ -174,7 +174,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -207,6 +207,9 @@ package main;
   our @queries = (); ## List of queries for the DAS server
   our %header = (); ## Header for each sequence
   our @skipped_rows = (); ## Invalid rows skipped during parsing
+
+  our $seq_nb = 0;
+  our $sum_seq_len = 0;
 
   ## Parameters for connecting the DAS server
   our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
@@ -531,8 +534,10 @@ package main;
 
 #	foreach my $query (@query_chunk) {
 	foreach my $q (0..$#query_chunk) {
+	  $seq_nb++;
 	  my $query = $query_chunk[$q];
 	  my $sequence = $results{$query};
+	  $sum_seq_len += length($sequence);
 	  my $strand = $strand_chunk[$q];
 	  if ($strand eq '-') {
 	    $sequence = &ReverseComplement($sequence);
@@ -562,6 +567,10 @@ package main;
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  if ($main::verbose >= 1) {
+    print $log sprintf ";%-20s\t%d\n", "sequences", $seq_nb;
+    print $log sprintf ";%-20s\t%d\n", "length sum", $sum_seq_len;
+  }
   print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out if ($outfile{output});
   close $log if ($outfile{log});
