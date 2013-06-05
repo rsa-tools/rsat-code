@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.30 2013/06/05 21:30:11 jvanheld Exp $
+# $Id: fetch-sequences,v 1.31 2013/06/05 21:32:41 jvanheld Exp $
 #
 ############################################################
 
@@ -174,7 +174,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -568,8 +568,8 @@ package main;
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   if ($main::verbose >= 1) {
-    print $log sprintf ";%-20s\t%d\n", "sequences", $seq_nb;
-    print $log sprintf ";%-20s\t%d\n", "length sum", $sum_seq_len;
+    print $log sprintf "; %-20s\t%d\n", "sequences", $seq_nb;
+    print $log sprintf "; %-20s\t%d\n", "length sum", $sum_seq_len;
   }
   print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out if ($outfile{output});
