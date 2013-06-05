@@ -26,7 +26,7 @@ $default{demo_descr} = "";
 $default{lth_occ_sig}=0;
 $default{uth_pval} = "1e-4";
 $default{assembly} = "";
-$default{oligo_length6}="";
+$default{oligo_length6}="checked";
 $default{oligo_length7}="checked";
 $default{"oligo-analysis"}="checked";
 $default{"dyad-analysis"}="";
@@ -37,7 +37,7 @@ $default{"position-analysis_dyads"} ="";
 $default{'matrix-scan-quick'}="checked";
 $default{compare_motif_db}="checked";
 $default{title}="";
-$default{max_seq_len}="";
+$default{max_seq_len}=500;
 $default{top_sequences}="";
 $default{nmotifs} = 3;
 
