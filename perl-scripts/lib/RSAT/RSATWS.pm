@@ -2646,7 +2646,7 @@ sub text_to_html {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  my $command = "$SCRIPTS/text-to-html";
+  my $command = $SCRIPTS."/text-to-html";
   if ($args{inputfile}) {
    my $input_file = $args{inputfile};
    chomp $input_file;
@@ -5965,10 +5965,10 @@ Run a command for the web services.
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
 
-
 #  my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile($method_name.".".XXXXXXXXXX, SUFFIX => "$out_format", DIR => $TMP);
 #  chomp($tmp_outfile);
-  my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0); 
+  my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0);
+  $tmp_outfile .= ".".$out_format if ($out_format);
   my $TMP_OUT = open ">".$tmp_outfile || die "Cannot open temporary file ".$tmp_outfile;
 
   &UpdateLogFileWS(command=>$command,
