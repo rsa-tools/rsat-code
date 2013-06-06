@@ -299,7 +299,7 @@ sub retrieve_seq_multigenome {
     $command .= " -imp_pos";
   }
 
-  &run_WS_command($command, $output_choice, "retrieve-seq-multigenome");
+  &run_WS_command($command, $output_choice, "retrieve-seq-multigenome", $format);
 }
 
 ##########
@@ -573,7 +573,7 @@ sub retrieve_ensembl_seq {
       $command .= " -i '".$tmp_infile."'";
   }
 
- &run_WS_command($command, $output_choice, "retrieve-ensembl-seq")
+ &run_WS_command($command, $output_choice, "retrieve-ensembl-seq", $format)
 }
 
 ##########
@@ -791,7 +791,7 @@ sub oligo_analysis {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "oligo-analysis", ".tab");
+    &run_WS_command($command, $output_choice, "oligo-analysis", "tab");
 }
 
 ##########
@@ -913,7 +913,7 @@ sub oligo_diff {
     $command .= " -test '".$tmp_test_infile."'";
     $command .= " -ctrl '".$tmp_control_infile."'";
 
-    &run_WS_command($command, $output_choice, "oligo-diff", ".tab");
+    &run_WS_command($command, $output_choice, "oligo-diff", "tab");
 }
 
 ################################################################
@@ -1020,6 +1020,7 @@ sub peak_motifs {
      	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
      }
 }
+
 
 sub peak_motifs_cmd {
     my ($self, %args) =@_;
@@ -1232,7 +1233,7 @@ sub peak_motifs_cmd {
     }
 
     return $command;
-#    &run_WS_command($command, $output_choice, "peak-motifs", ".tab");
+#    &run_WS_command($command, $output_choice, "peak-motifs", "tab");
 #    &run_WS_command($command, $output_choice, "peak-motifs");
 }
 
@@ -1390,7 +1391,7 @@ sub dyad_analysis {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "dyad-analysis", ".tab");
+    &run_WS_command($command, $output_choice, "dyad-analysis", "tab");
 }
 
 ##########
@@ -1602,7 +1603,7 @@ sub position_analysis {
 
     $command .= " -pl '".$tmp_pattern_infile."'";
 
-    &run_WS_command($command, $output_choice, "position-analysis", ".tab");
+    &run_WS_command($command, $output_choice, "position-analysis", "tab");
 }
 
 ##########
@@ -1693,7 +1694,7 @@ sub pattern_assembly {
     $command .= " -toppat ".$toppat;
   }
 
-    &run_WS_command($command, $output_choice, "pattern-assembly");
+    &run_WS_command($command, $output_choice, "pattern-assembly", "asmb");
 }
 
 ##########
@@ -1816,7 +1817,7 @@ sub dna_pattern {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "dna-pattern");
+    &run_WS_command($command, $output_choice, "dna-pattern", "tab");
 }
 
 ##########
@@ -1858,7 +1859,7 @@ sub convert_features {
 
     $command .= " -i '".$tmp_infile."'";
 
-     &run_WS_command($command, $output_choice, "convert-features");
+     &run_WS_command($command, $output_choice, "convert-features", $to);
 }
 
 ##########
@@ -1870,11 +1871,11 @@ sub feature_map {
 	$output_choice = 'both';
     }
 
-    my $suffix;
+    my $extension;
     if ($args{'format'}) {
-        $suffix = ".".$args{'format'};
+        $extension = $args{'format'};
     } else {
-        $suffix = ".jpg";
+        $extension = "jpg";
     }
 
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
@@ -2071,7 +2072,7 @@ sub feature_map {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "feature_map", $suffix);
+    &run_WS_command($command, $output_choice, "feature_map", $extension);
 }
 
 ##########
@@ -2549,7 +2550,7 @@ sub infer_operon {
     $command .= " -i '".$tmp_infile."'";
   }
 
-  &run_WS_command($command, $output_choice, "infer-operon", ".tab");
+  &run_WS_command($command, $output_choice, "infer-operon", "tab");
 }
 
 ##########
@@ -2605,7 +2606,7 @@ sub gene_info {
       $command .= " -feattype '".$args{feattype}."'";
   }
 
-    &run_WS_command($command, $output_choice, "gene-info", ".tab");
+    &run_WS_command($command, $output_choice, "gene-info", "tab");
 }
 
 ##########
@@ -2635,7 +2636,7 @@ sub supported_organisms {
     $command .= " -taxon '".$args{taxon}."'";
   }
 
-  &run_WS_command($command, $output_choice, "supported-organisms");
+  &run_WS_command($command, $output_choice, "supported-organisms", "tab");
 }
 
 ##########
@@ -2673,7 +2674,7 @@ sub text_to_html {
       $command .= " -no_sort";
   }
 
-  &run_WS_command($command, $output_choice, "text-to-html", ".html");
+  &run_WS_command($command, $output_choice, "text-to-html", "html");
 }
 
 ##########
@@ -2723,7 +2724,7 @@ sub roc_stats{
   if ($args{total}) {
       $command .= " -total";
   }
-  &run_WS_command($command, $output_choice, "roc-stats", ".tab");
+  &run_WS_command($command, $output_choice, "roc-stats", "tab");
 }
 
 ##########
@@ -2785,7 +2786,7 @@ sub classfreq {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "classfreq", ".tab");
+  &run_WS_command($command, $output_choice, "classfreq", "tab");
 }
 
 ##########
@@ -2866,7 +2867,7 @@ sub convert_classes {
    chomp $tmp_input;
    $command .= " -names '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "convert-classes", ".$extension");
+  &run_WS_command($command, $output_choice, "convert-classes", $extension);
 }
 
 ##########
@@ -2928,7 +2929,7 @@ sub contingency_stats {
    chomp $tmp_input;
    $command .= " -csizes '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "contingency-stats", ".tab");
+  &run_WS_command($command, $output_choice, "contingency-stats", "tab");
 }
 
 ##########
@@ -2976,7 +2977,7 @@ sub contingency_table {
    $command .= " -i '".$tmp_input."'";
   }
   open FILE, ">/home/rsat/rsa-tools/public_html/tmp/brol.truc3";
-  &run_WS_command($command, $output_choice, "contingency-table", ".tab");
+  &run_WS_command($command, $output_choice, "contingency-table", "tab");
 }
 
 ##########
@@ -3181,7 +3182,7 @@ sub convert_seq {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "convert-seq");
+    &run_WS_command($command, $output_choice, "convert-seq", $args{to});
 }
 
 ##########
@@ -3339,7 +3340,7 @@ sub compare_classes {
     $command .= " -multi_cor '".$multi_correction."'";
   }
 
- &run_WS_command($command, $output_choice, "compare-classes", ".tab");
+ &run_WS_command($command, $output_choice, "compare-classes", "tab");
 }
 
 ##########
@@ -3625,7 +3626,7 @@ if ($args{"equi_pseudo"} == 1 ) {
       $command .= " -crer_ids";
   }
 
- &run_WS_command($command, $output_choice, ".matrix-scan")
+ &run_WS_command($command, $output_choice, ".matrix-scan", "ft")
 }
 
 ##########
@@ -3756,7 +3757,7 @@ sub convert_matrix {
     $command .= " -rc";
   }
 
- &run_WS_command($command, $output_choice, ".convert-matrix")
+ &run_WS_command($command, $output_choice, ".convert-matrix", $to)
 }
 
 ##########
@@ -3843,7 +3844,7 @@ sub matrix_distrib {
     $command .= " -bg_pseudo '".$background_pseudo."'";
   }
 
-  &run_WS_command($command, $output_choice, ".matrix-distrib")
+  &run_WS_command($command, $output_choice, ".matrix-distrib", "tab")
 }
 
 ##########
@@ -4259,7 +4260,7 @@ sub random_seq {
     $command .= " -lf '".$tmp_length."'";
   }
 
- &run_WS_command($command, $output_choice, ".random-seq")
+ &run_WS_command($command, $output_choice, ".random-seq", $args{format})
 }
 
 ################################################################
@@ -4503,7 +4504,7 @@ sub alter_graph {
    $command .= " -i '".$tmp_input."'";
   }
   my $extension = $args{outformat} || "tab";
-  &run_WS_command($command, $output_choice, "alter-graph", ".$extension");
+  &run_WS_command($command, $output_choice, "alter-graph", $extension);
 }
 
 
@@ -4562,7 +4563,7 @@ sub graph_cliques {
   }
 
 
-  &run_WS_command($command, $output_choice, "graph-clique", ".tab");
+  &run_WS_command($command, $output_choice, "graph-clique", "tab");
 }
 ##########
 sub display_graph {
@@ -4917,7 +4918,7 @@ sub graph_get_clusters {
    $command .= " -clusters '".$tmp_input."'";
   }
   my $extension = $args{outformat} || "tab";
-  &run_WS_command($command, $output_choice, "graph-get-clusters", ".$extension");
+  &run_WS_command($command, $output_choice, "graph-get-clusters", $extension);
 }
 
 
@@ -4982,7 +4983,7 @@ sub graph_node_degree {
    chomp $tmp_input;
    $command .= " -nodef '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "graph-node-degree", ".tab");
+  &run_WS_command($command, $output_choice, "graph-node-degree", "tab");
 
 }
 
@@ -5246,7 +5247,7 @@ sub compare_graphs {
     my $tmp_outfile = `mktemp $TMP/compare-graphs-out.XXXXXXXXXX`;
     chomp($tmp_outfile);
     my $extension = $args{outformat} || "tab";
-    $tmp_outfile .= ".$extension";
+    $tmp_outfile .= $extension;
     system ("rm $tmp_outfile");
 
     my $tmp_comments = $tmp_outfile.".comments";
@@ -5470,7 +5471,7 @@ sub graph_neighbours {
    chomp $tmp_input;
    $command .= " -seedf '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "graph-neighbours", ".tab");
+  &run_WS_command($command, $output_choice, "graph-neighbours", "tab");
 }
 
 ##########
@@ -5774,7 +5775,7 @@ sub parse_psi_xml {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "parse-psi-xml", ".tab");
+  &run_WS_command($command, $output_choice, "parse-psi-xml", "tab");
 }
 ##########
 sub random_graph {
@@ -5904,7 +5905,7 @@ sub random_graph {
    $command .= " -nodefile '".$tmp_input."'";
   }
   my $extension = $args{outformat} || "tab";
-  &run_WS_command($command, $output_choice, "random-graph", ".$extension");
+  &run_WS_command($command, $output_choice, "random-graph", $extension);
 }
 
 ################################################################
