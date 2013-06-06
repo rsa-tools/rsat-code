@@ -189,7 +189,8 @@ sub retrieve_seq_multigenome {
   if ($args{"input"}) {
     my $input = $args{"input"};
     chomp $input;
-    $tmp_input_file = `mktemp $TMP/retrieve-seq-multigenome.XXXXXXXXXX`;
+#    $tmp_input_file = `mktemp $TMP/retrieve-seq-multigenome.XXXXXXXXXX`;
+    $tmp_input_file = &RSAT::util::make_temp_file("","retrieve-seq-multigenome", 1,0);
     open TMP_IN, ">".$tmp_input_file or die "cannot open temp file ".$tmp_input_file."\n";
     print TMP_IN $input;
     close TMP_IN;
@@ -587,7 +588,8 @@ sub purge_seq {
     if ($args{"sequence"}) {
 	my $sequence = $args{"sequence"};
 	chomp $sequence;
-	$tmp_infile = `mktemp $TMP/purge-sequence.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/purge-sequence.XXXXXXXXXX`;
+	$tmp_infile = &RSAT::util::make_temp_file("","purge-sequence", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $sequence;
 	close TMP_IN;
@@ -660,7 +662,8 @@ sub oligo_analysis {
     if ($args{"sequence"}) {
 	my $sequence = $args{"sequence"};
 	chomp $sequence;
-	$tmp_infile = `mktemp $TMP/oligo.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/oligo.XXXXXXXXXX`;
+	$tmp_infile = &RSAT::util::make_temp_file("","oligo-analysis", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $sequence;
 	close TMP_IN;
@@ -806,7 +809,8 @@ sub oligo_diff {
     if ($args{"test"}) {
 	my $test = $args{"test"};
 	chomp $test;
-	$tmp_test_infile = `mktemp $TMP/oligo-diff.XXXXXXXXXX`;
+#	$tmp_test_infile = `mktemp $TMP/oligo-diff.XXXXXXXXXX`;
+	$tmp_test_infile = &RSAT::util::make_temp_file("","oligo-diff-test", 1,0);
 	open TMP_IN, ">".$tmp_test_infile or die "cannot open temp file ".$tmp_test_infile."\n";
 	print TMP_IN $test;
 	close TMP_IN;
@@ -818,7 +822,8 @@ sub oligo_diff {
     if ($args{"control"}) {
 	my $control = $args{"control"};
 	chomp $control;
-	$tmp_control_infile = `mktemp $TMP/oligo-diff.XXXXXXXXXX`;
+#	$tmp_control_infile = `mktemp $TMP/oligo-diff.XXXXXXXXXX`;
+	$tmp_control_infile = &RSAT::util::make_temp_file("","oligo-diff-ctrl", 1,0);
 	open TMP_IN, ">".$tmp_control_infile or die "cannot open temp file ".$tmp_control_infile."\n";
 	print TMP_IN $control;
 	close TMP_IN;
@@ -1027,7 +1032,8 @@ sub peak_motifs_cmd {
     if ($args{"test"}) {
 	my $test = $args{"test"};
 	chomp $test;
-	$tmp_test_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+#	$tmp_test_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+	$tmp_test_infile = &RSAT::util::make_temp_file("","peak-motifs", 1,0);
 	open TMP_IN, ">".$tmp_test_infile or die "cannot open temp file ".$tmp_test_infile."\n";
 	print TMP_IN $test;
 	close TMP_IN;
@@ -1039,7 +1045,8 @@ sub peak_motifs_cmd {
     if ($args{"control"}) {
 	my $control = $args{"control"};
 	chomp $control;
-	$tmp_control_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+#	$tmp_control_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+	$tmp_control_infile = &RSAT::util::make_temp_file("","peak-motifs-ctrl", 1,0);
 	open TMP_IN, ">".$tmp_control_infile or die "cannot open temp file ".$tmp_control_infile."\n";
 	print TMP_IN $control;
 	close TMP_IN;
@@ -1055,7 +1062,8 @@ sub peak_motifs_cmd {
     if ($args{"ref_motif"}) {
         my $ref_motif = $args{"ref_motif"};
         chomp $ref_motif;
-        $tmp_ref_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+#        $tmp_ref_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+	$tmp_ref_motif_infile = &RSAT::util::make_temp_file("","peak-motifs_ref-motifs", 1,0);
         open TMP_REF, ">".$tmp_ref_motif_infile or die "cannot open temp file ".$tmp_ref_motif_infile."\n";
         print TMP_REF $ref_motif;
         close TMP_REF;
@@ -1082,7 +1090,8 @@ sub peak_motifs_cmd {
 ## 	$db =~s/\"//g;
 ## 	@_db = split / /, $db;
 
-## 	$tmp_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+## 	#$tmp_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
+##	$tmp_motif_infile = &RSAT::util::make_temp_file("","peak-motifs_tmp-motifs", 1,0);
 ## 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
 ## 	print TMP_IN $_db[2];
 ## 	close TMP_IN;
@@ -1092,7 +1101,8 @@ sub peak_motifs_cmd {
 ##     } elsif ($motif_db_ref) {
 ## 	@_db = split / /, $motif_db_ref;
 
-## 	$tmp_motif_infile = `mktemp $TMP/chip-motifs.XXXXXXXXXX`;
+## 	#$tmp_motif_infile = `mktemp $TMP/chip-motifs.XXXXXXXXXX`;
+##	$tmp_motif_infile = &RSAT::util::make_temp_file("","peak-motifs_tmp-motifs", 1,0);
 ## 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
 ## 	print TMP_IN $_db[2];
 ## 	close TMP_IN;
@@ -1248,7 +1258,8 @@ sub dyad_analysis {
     if ($args{"sequence"}) {
 	my $sequence = $args{"sequence"};
 	chomp $sequence;
-	$tmp_infile = `mktemp $TMP/dyad.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/dyad.XXXXXXXXXX`;
+	$tmp_infile = &RSAT::util::make_temp_file("","dyad-analysis", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $sequence;
 	close TMP_IN;
@@ -1405,7 +1416,8 @@ sub position_analysis {
     if ($args{"sequence"}) {
 	my $sequence = $args{"sequence"};
 	chomp $sequence;
-	$tmp_infile = `mktemp $TMP/position.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/position.XXXXXXXXXX`;
+	$tmp_infile = &RSAT::util::make_temp_file("","position-analysis", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $sequence;
 	close TMP_IN;
@@ -1436,7 +1448,8 @@ sub position_analysis {
     if ($args{"pattern"}) {
 	my $pattern = $args{"pattern"};
 	chomp $pattern;
-	$tmp_pattern_infile = `mktemp $TMP/position.XXXXXXXXXX`;
+#	$tmp_pattern_infile = `mktemp $TMP/position.XXXXXXXXXX`;
+	$tmp_pattern_infile = &RSAT::util::make_temp_file("","position-analysis_patterns", 1,0);
 	open TMP_PATT_IN, ">".$tmp_pattern_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_PATT_IN $pattern;
 	close TMP_PATT_IN;
@@ -1620,7 +1633,8 @@ sub pattern_assembly {
   if ($args{"input"}) {
     my $input = $args{"input"};
     chomp $input;
-    $tmp_infile = `mktemp $TMP/pattern-assembly.XXXXXXXXXX`;
+#    $tmp_infile = `mktemp $TMP/pattern-assembly.XXXXXXXXXX`;
+    $tmp_infile = &RSAT::util::make_temp_file("","pattern-assembly", 1,0);
     open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
     print TMP_IN $input;
     close TMP_IN;
@@ -1708,7 +1722,8 @@ sub dna_pattern {
     if ($args{"sequence"}) {
 	my $sequence = $args{"sequence"};
 	chomp $sequence;
-	$tmp_infile = `mktemp $TMP/dna_pattern.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/dna_pattern.XXXXXXXXXX`;
+	$tmp_infile = &RSAT::util::make_temp_file("","dna-pattern", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $sequence;
 	close TMP_IN;
@@ -1721,7 +1736,8 @@ sub dna_pattern {
     if ($args{"pattern_file"}) {
 	my $patterns = $args{"pattern_file"};
 	chomp $patterns;
-	$tmp_pattern_file = `mktemp $TMP/dnapatt-pattern_file.XXXXXXXXXX`;
+#	$tmp_pattern_file = `mktemp $TMP/dnapatt-pattern_file.XXXXXXXXXX`;
+	$tmp_pattern_file = &RSAT::util::make_temp_file("","dnapat_patterns", 1,0);
 	open TMP_IN, ">".$tmp_pattern_file or die "cannot open temp file ".$tmp_pattern_file."\n";
 	print TMP_IN $patterns;
 	close TMP_IN;
@@ -1831,7 +1847,8 @@ sub convert_features {
     if ($args{"input"}) {
 	my $input = $args{"input"};
 	chomp $input;
-	$tmp_infile = `mktemp $TMP/convert-features.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/convert-features.XXXXXXXXXX`;
+	$tmp_infile = &RSAT::util::make_temp_file("","convert-features", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $input;
 	close TMP_IN;
@@ -1884,7 +1901,8 @@ sub feature_map {
     if ($args{"features"}) {
 	my $features = $args{"features"};
 	chomp $features;
-	$tmp_infile = `mktemp $TMP/feature-map.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/feature-map.XXXXXXXXXX`;
+	$tmp_infile = &RSAT::util::make_temp_file("","feature-map", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $features;
 	close TMP_IN;
@@ -1896,7 +1914,8 @@ sub feature_map {
     if ($args{"sequence"}) {
 	my $sequence = $args{"sequence"};
 	chomp $sequence;
-	$tmp_sequence_file = `mktemp $TMP/feature-map.XXXXXXXXXX`;
+#	$tmp_sequence_file = `mktemp $TMP/feature-map.XXXXXXXXXX`;
+	$tmp_sequence_file = &RSAT::util::make_temp_file("","feature-map_seq", 1,0);
 	open TMP_IN, ">".$tmp_sequence_file or die "cannot open temp file ".$tmp_sequence_file."\n";
 	print TMP_IN $sequence;
 	close TMP_IN;
@@ -2289,7 +2308,8 @@ sub footprint_discovery_cmd {
     if ($args{"genes"}) {
 	my $genes = $args{"genes"};
 	chomp $genes;
-	$tmp_infile = `mktemp $TMP/footprint-discovery.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/footprint-discovery.XXXXXXXXXX`;
+	$tmp_infile = &RSAT::util::make_temp_file("","footprint-discovery", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $genes;
 	close TMP_IN;
@@ -2651,7 +2671,8 @@ sub text_to_html {
   if ($args{inputfile}) {
    my $input_file = $args{inputfile};
    chomp $input_file;
-   my $tmp_input = `mktemp $TMP/text-to-html-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/text-to-html-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","text-to-html-input", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open input temp file ".$tmp_input."\n";
    print TMP_IN $input_file;
    close TMP_IN;
@@ -2691,7 +2712,8 @@ sub roc_stats{
   if ($args{inputfile}) {
    my $input_file = $args{inputfile};
    chomp $input_file;
-   my $tmp_input = `mktemp $TMP/roc-stats-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/roc-stats-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","roc-stats-input", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_file;
    close TMP_IN;
@@ -2777,7 +2799,8 @@ sub classfreq {
   if ($args{inputFile}) {
    my $input_file = $args{inputFile};
    chomp $input_file;
-   my $tmp_input = `mktemp $TMP/classfreq-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/classfreq-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","classfreq-input", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_file;
    close TMP_IN;
@@ -2846,7 +2869,8 @@ sub convert_classes {
   if ($args{inputclasses}) {
    my $inputclasses = $args{inputclasses};
    chomp $inputclasses;
-   my $tmp_input = `mktemp $TMP/convert-classes-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/convert-classes-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","convert-classes-input", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $inputclasses;
    close TMP_IN;
@@ -2858,7 +2882,8 @@ sub convert_classes {
   if ($args{names}) {
    my $inputclasses_names = $args{names};
    chomp $inputclasses_names;
-   my $tmp_input = `mktemp $TMP/convert-classes-input-names.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/convert-classes-input-names.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","convert-classes-input-names", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $inputclasses_names;
    close TMP_IN;
@@ -2896,7 +2921,8 @@ sub contingency_stats {
   if ($args{inputfile}) {
    my $inputfile = $args{inputfile};
    chomp $inputfile;
-   my $tmp_input = `mktemp $TMP/contingency-stats-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/contingency-stats-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","contingency-stats-input", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $inputfile;
    close TMP_IN;
@@ -2908,7 +2934,8 @@ sub contingency_stats {
   if ($args{rsizes}) {
    my $inputfile = $args{rsizes};
    chomp $inputfile;
-   my $tmp_input = `mktemp $TMP/contingency-stats-rsizes.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/contingency-stats-rsizes.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","contingency-stats-rsizes", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $inputfile;
    close TMP_IN;
@@ -2920,7 +2947,8 @@ sub contingency_stats {
   if ($args{csizes}) {
    my $inputfile = $args{csizes};
    chomp $inputfile;
-   my $tmp_input = `mktemp $TMP/contingency-stats-csizes.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/contingency-stats-csizes.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","contingency-stats-csizes", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $inputfile;
    close TMP_IN;
@@ -2967,7 +2995,8 @@ sub contingency_table {
   if ($args{inputfile}) {
    my $inputfile = $args{inputfile};
    chomp $inputfile;
-   my $tmp_input = `mktemp $TMP/contingency-table-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/contingency-table-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","contingency-table-input", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $inputfile;
    close TMP_IN;
@@ -2994,7 +3023,8 @@ sub xygraph {
     my $out_format = $args{format};
     $out_format =~ s/\'//g;
     $out_format =~ s/\'//g;
-    my $tmp_outfile = `mktemp $TMP/xygraph.XXXXXXXXXX`;
+#    my $tmp_outfile = `mktemp $TMP/xygraph.XXXXXXXXXX`;
+    my $tmp_outfile = &RSAT::util::make_temp_file("","XYgraph", 1,0);
     chomp $tmp_outfile;
     system("rm $tmp_outfile");
     $tmp_outfile .= ".$out_format";
@@ -3133,7 +3163,8 @@ sub xygraph_cmd {
   if ($args{inputFile}) {
    my $input_file = $args{inputFile};
    chomp $input_file;
-   my $tmp_input = `mktemp $TMP/xygraph-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/xygraph-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","XYgraph-input", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_file;
    close TMP_IN;
@@ -3157,7 +3188,8 @@ sub convert_seq {
     if ($args{"sequence"}) {
 	my $sequence = $args{"sequence"};
 	chomp $sequence;
-	$tmp_infile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
+#	$tmp_infile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
+	$tmp_input = &RSAT::util::make_temp_file("","convert-seq", 1,0);
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $sequence;
 	close TMP_IN;
@@ -3198,7 +3230,8 @@ sub compare_classes {
   if ($args{"ref_classes"}) {
     my $reference = $args{"ref_classes"};
     chomp $reference;
-    $tmp_ref = `mktemp $TMP/compare-ref-classes.XXXXXXXXXX`;
+#    $tmp_ref = `mktemp $TMP/compare-ref-classes.XXXXXXXXXX`;
+    $tmp_ref = &RSAT::util::make_temp_file("","compare-classes-ref", 1,0);
     open TMP_IN, ">".$tmp_ref or die "cannot open temp file ".$tmp_ref."\n";
     print TMP_IN $reference;
     close TMP_IN;
@@ -3208,7 +3241,8 @@ sub compare_classes {
   if ($args{"query_classes"}) {
     my $query = $args{"query_classes"};
     chomp $query;
-    $tmp_query = `mktemp $TMP/compare-query-classes.XXXXXXXXXX`;
+#    $tmp_query = `mktemp $TMP/compare-query-classes.XXXXXXXXXX`;
+    $tmp_query = &RSAT::util::make_temp_file("","compare-classes-query", 1,0);
     open TMP_IN, ">".$tmp_query or die "cannot open temp file ".$tmp_query."\n";
     print TMP_IN $query;
     close TMP_IN;
@@ -3218,7 +3252,8 @@ sub compare_classes {
   if ($args{"input_classes"}) {
     my $input = $args{"input_classes"};
     chomp $input;
-    $tmp_input = `mktemp $TMP/compare-input-classes.XXXXXXXXXX`;
+#    $tmp_input = `mktemp $TMP/compare-input-classes.XXXXXXXXXX`;
+    $tmp_input = &RSAT::util::make_temp_file("","compare-classes-input", 1,0);
     open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
     print TMP_IN $input;
     close TMP_IN;
@@ -3357,7 +3392,8 @@ sub matrix_scan {
 #     die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #   }
 #   my $result = `$command`;
-#   my $tmp_outfile = `mktemp $TMP/matrix-scan.XXXXXXXXXX`;
+#   # my $tmp_outfile = `mktemp $TMP/matrix-scan.XXXXXXXXXX`;
+#   my $tmp_outfile = &RSAT::util::make_temp_file("","matrix-scan", 1,0);
 #   open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
 #   print TMP $result;
 #   close TMP;
@@ -3377,11 +3413,12 @@ sub matrix_scan {
 # sub matrix_scan_cmd {
 #   my ($self,%args) = @_;
 
-  #creation d'un fichier temporaire qui sera integre dans la commande
+  ## Creation of a temporary file
   if ($args{"sequence"}) {
     my $sequence = $args{"sequence"};
     chomp $sequence;
-    $tmp_sequence_infile = `mktemp $TMP/matscan-sequence.XXXXXXXXXX`;
+#    $tmp_sequence_infile = `mktemp $TMP/matscan-sequence.XXXXXXXXXX`;
+    $tmp_sequence_infile = &RSAT::util::make_temp_file("","matrix-scan-sequence", 1,0);
     open TMP_IN, ">".$tmp_sequence_infile or die "cannot open temp file ".$tmp_sequence_infile."\n";
     print TMP_IN $sequence;
     close TMP_IN;
@@ -3394,7 +3431,8 @@ sub matrix_scan {
   if ($args{"matrix"}) {
       my $input_matrix = $args{"matrix"};
       chomp $input_matrix;
-      $tmp_matrix_infile = `mktemp $TMP/matscan-matrix.XXXXXXXXXX`;
+#      $tmp_matrix_infile = `mktemp $TMP/matscan-matrix.XXXXXXXXXX`;
+      $tmp_matrix_infile = &RSAT::util::make_temp_file("","matrix-scan-matrix", 1,0);
       open TMP_IN, ">".$tmp_matrix_infile or die "cannot open temp file ".$tmp_matrix_infile."\n";
       print TMP_IN $input_matrix;
       close TMP_IN;
@@ -3406,7 +3444,8 @@ sub matrix_scan {
 #  if ($args{"matrix_list"}) {
 #      my $input_list = $args{"matrix_list"};
 #      chomp $input_list;
-#      $tmp_input_list = `mktemp $TMP/matscan-matrix_list.XXXXXXXXXX`;
+#     # $tmp_input_list = `mktemp $TMP/matscan-matrix_list.XXXXXXXXXX`;
+#       $tmp_input_list = &RSAT::util::make_temp_file("","matrix-scan_matrix-list", 1,0);
 #      open TMP_IN, ">".$tmp_input_list or die "cannot open temp file ".$tmp_input_list."\n";
 #      print TMP_IN $input_list;
 #      close TMP_IN;
@@ -3524,7 +3563,8 @@ if ($args{"equi_pseudo"} == 1 ) {
   if ($args{"background_model"}) {
       my $background = $args{"background_model"};
       chomp $background;
-      $tmp_background_infile = `mktemp $TMP/matscan-background.XXXXXXXXXX`;
+#      $tmp_background_infile = `mktemp $TMP/matscan-background.XXXXXXXXXX`;
+      $tmp_background_infile = &RSAT::util::make_temp_file("","matrix-scan_bg", 1,0);
       open TMP_IN, ">".$tmp_background_infile or die "cannot open temp file ".$tmp_background_infile ."\n";
       print TMP_IN $background;
       close TMP_IN; 
@@ -3641,7 +3681,8 @@ sub convert_matrix {
   if ($args{"matrix"}) {
       my $input_matrix = $args{"matrix"};
       chomp $input_matrix;
-      $tmp_matrix_infile = `mktemp $TMP/convert-matrix.XXXXXXXXXX`;
+#      $tmp_matrix_infile = `mktemp $TMP/convert-matrix.XXXXXXXXXX`;
+      $tmp_matrix_infile = &RSAT::util::make_temp_file("","convert-matrix", 1,0);
       open TMP_IN, ">".$tmp_matrix_infile or die "cannot open temp file ".$tmp_matrix_infile."\n";
       print TMP_IN $input_matrix;
       close TMP_IN;
@@ -3772,7 +3813,8 @@ sub matrix_distrib {
   if ($args{"matrix_file"}) {
     my $input_matrix = $args{"matrix_file"};
     chomp $input_matrix;
-    $tmp_input_matrix = `mktemp $TMP/matdistrib-matrix_file.XXXXXXXXXX`;
+#    $tmp_input_matrix = `mktemp $TMP/matdistrib-matrix_file.XXXXXXXXXX`;
+    $tmp_input_matrix = &RSAT::util::make_temp_file("","matrix-distrib_infile", 1,0);
     open TMP_IN, ">".$tmp_input_matrix or die "cannot open temp file ".$tmp_input_matrix."\n";
     print TMP_IN $input_matrix;
     close TMP_IN;
@@ -3785,7 +3827,8 @@ sub matrix_distrib {
   if ($args{"background"}) {
     my $background = $args{"background"};
     chomp $background;
-    $tmp_background = `mktemp $TMP/matdistrib-background.XXXXXXXXXX`;
+#    $tmp_background = `mktemp $TMP/matdistrib-background.XXXXXXXXXX`;
+    $tmp_background = &RSAT::util::make_temp_file("","matrix-distrib_bg", 1,0);
     open TMP_IN, ">".$tmp_background or die "cannot open temp file ".$tmp_background ."\n";
     print TMP_IN $background;
     close TMP_IN;
@@ -3924,7 +3967,8 @@ sub compare_matrices_cmd {
   if ($args{"matrix_1"}) {
       my $input_matrix1 = $args{"matrix_1"};
       chomp $input_matrix1;
-      $tmp_matrix1_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#      $tmp_matrix1_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+      $tmp_matrix1_infile = &RSAT::util::make_temp_file("","compare-matrices_infile1", 1,0);
       open TMP_IN1, ">".$tmp_matrix1_infile or die "cannot open temp file ".$tmp_matrix1_infile."\n";
       print TMP_IN1 $input_matrix1;
       close TMP_IN1;
@@ -3936,7 +3980,8 @@ sub compare_matrices_cmd {
   if ($args{"matrix_2"}) {
       my $input_matrix2 = $args{"matrix_2"};
       chomp $input_matrix2;
-      $tmp_matrix2_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#      $tmp_matrix2_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+      $tmp_matrix2_infile = &RSAT::util::make_temp_file("","compare-matrices_infile2", 1,0);
       open TMP_IN2, ">".$tmp_matrix2_infile or die "cannot open temp file ".$tmp_matrix2_infile."\n";
       print TMP_IN2 $input_matrix2;
       close TMP_IN2;
@@ -3948,7 +3993,8 @@ sub compare_matrices_cmd {
   if ($args{"matrix"}) {
       my $input_matrix = $args{"matrix"};
       chomp $input_matrix;
-      $tmp_matrix_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#      $tmp_matrix_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+      $tmp_matrix_infile = &RSAT::util::make_temp_file("","compare-matrices_infile", 1,0);
       open TMP_IN, ">".$tmp_matrix_infile or die "cannot open temp file ".$tmp_matrix_infile."\n";
       print TMP_IN $input_matrix;
       close TMP_IN;
@@ -3960,7 +4006,8 @@ sub compare_matrices_cmd {
 #   if ($args{"matrix_list1"}) {
 #       my $matrix_list1 = $args{"matrix_list1"};
 #       chomp $matrix_list1;
-#       $tmp_matrix_list1_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#      # $tmp_matrix_list1_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#       $tmp_matrix_list1_infile = &RSAT::util::make_temp_file("","compare-matrices_list1", 1,0);
 #       open TMP_LIST1, ">".$tmp_matrix_list1_infile or die "cannot open temp file ".$tmp_matrix_list1_infile."\n";
 #       print TMP_LIST1 $matrix_list1;
 #       close TMP_LIST1;
@@ -3972,7 +4019,8 @@ sub compare_matrices_cmd {
 #   if ($args{"matrix_list2"}) {
 #       my $matrix_list2 = $args{"matrix_list2"};
 #       chomp $matrix_list2;
-#       $tmp_matrix_list2_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#      # $tmp_matrix_list2_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#       $tmp_matrix_list2_infile = &RSAT::util::make_temp_file("","compare-matrices_list2", 1,0);
 #       open TMP_LIST2, ">".$tmp_matrix_list2_infile or die "cannot open temp file ".$tmp_matrix_list2_infile."\n";
 #       print TMP_LIST2 $matrix_list2;
 #       close TMP_LIST2;
@@ -3988,7 +4036,8 @@ sub compare_matrices_cmd {
   if ($args{"background_model"}) {
       my $background_model = $args{"background_model"};
       chomp $background_model;
-      $tmp_background_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+#      $tmp_background_infile = `mktemp $TMP/compare-matrices.XXXXXXXXXX`;
+      $tmp_background_infile = &RSAT::util::make_temp_file("","compare-matrices_bg", 1,0);
       open TMP_BCKGND, ">".$tmp_background_infile or die "cannot open temp file ".$tmp_background_infile."\n";
       print TMP_BCKGND $background_model;
       close TMP_BCKGND;
@@ -4230,7 +4279,8 @@ sub random_seq {
   if ($args{"expfreq"}) {
     my $expfreq = $args{"expfreq"};
     chomp $expfreq;
-    $tmp_expfreq = `mktemp $TMP/expfreq.XXXXXXXXXX`;
+#    $tmp_expfreq = `mktemp $TMP/expfreq.XXXXXXXXXX`;
+    $tmp_expfreq = &RSAT::util::make_temp_file("","expfreq", 1,0);
     open TMP_IN, ">".$tmp_expfreq or die "cannot open temp file ".$tmp_expfreq."\n";
     print TMP_IN $expfreq;
     close TMP_IN;
@@ -4246,7 +4296,8 @@ sub random_seq {
   if ($args{length_file}) {
     my $length_file = $args{length_file};
     chomp $length_file;
-    $tmp_length = `mktemp $TMP/length.XXXXXXXXXX`;
+#    $tmp_length = `mktemp $TMP/length.XXXXXXXXXX`;
+    $tmp_length = &RSAT::util::make_temp_file("","length", 1,0);
     open TMP_IN, ">".$tmp_length or die "cannot open temp file ".$tmp_length."\n";
     print TMP_IN $length_file;
     close TMP_IN;
@@ -4274,7 +4325,8 @@ sub convert_graph {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-    my $tmp_outfile = `mktemp $TMP/convert-graph.XXXXXXXXXX`;
+#    my $tmp_outfile = `mktemp $TMP/convert-graph.XXXXXXXXXX`;
+    my $tmp_outfile = &RSAT::util::make_temp_file("","convert-graph_outfile", 1,0);
     my $out_format = $args{outformat};
     $out_format =~ s/\'//g;
     $out_format =~ s/\'//g;
@@ -4399,7 +4451,8 @@ sub convert_graph_cmd {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/convert-graph-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/convert-graph-input.XXXXXXXXXX`;
+    my $tmp_input = &RSAT::util::make_temp_file("","convert-graph_infile", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -4494,7 +4547,8 @@ sub alter_graph {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/alter-graph-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/alter-graph-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","alter-graph_infile", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -4552,7 +4606,8 @@ sub graph_cliques {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/graph-clique-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-clique-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-clique_infile", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -4579,7 +4634,8 @@ sub display_graph {
     my $out_format = $args{outformat};
     $out_format =~ s/\'//g;
     $out_format =~ s/\'//g;
-    my $tmp_outfile = `mktemp $TMP/display_graph.XXXXXXXXXX`;
+#    my $tmp_outfile = `mktemp $TMP/display_graph.XXXXXXXXXX`;
+    my $tmp_outfile = &RSAT::util::make_temp_file("","display-graph_outfile", 1,0);
     chop $tmp_outfile;
     system("rm $tmp_outfile");
     $tmp_outfile .= ".$out_format";
@@ -4677,7 +4733,8 @@ sub display_graph_cmd {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/display-graph-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/display-graph-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","display-graph_infile", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -4708,7 +4765,8 @@ sub draw_heatmap {
     my $out_format = $args{outformat} || "png";
     $out_format =~ s/\'//g;
     $out_format =~ s/\'//g;
-    my $tmp_outfile = `mktemp $TMP/draw-heatmap.XXXXXXXXXX`;
+#    my $tmp_outfile = `mktemp $TMP/draw-heatmap.XXXXXXXXXX`;
+    my $tmp_outfile = &RSAT::util::make_temp_file("","draw-heatmap_outfile", 1,0);
     chomp $tmp_outfile;
     system("rm $tmp_outfile");
     $tmp_outfile .= ".$out_format";
@@ -4793,7 +4851,8 @@ sub draw_heatmap_cmd {
   if ($args{inputfile}) {
    my $input_file = $args{inputfile};
    chomp $input_file;
-   my $tmp_input = `mktemp $TMP/draw-heatmap-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/draw-heatmap-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","draw-heatmap_infile", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $input_file;
    close TMP_IN;
@@ -4821,7 +4880,8 @@ sub draw_heatmap_cmd {
 #     if ($stderr) {
 # 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #     }
-#     my $tmp_outfile = `mktemp $TMP/graph-get-clusters-out.XXXXXXXXXX`;
+#     #my $tmp_outfile = `mktemp $TMP/graph-get-clusters-out.XXXXXXXXXX`;
+#     my $tmp_outfile = &RSAT::util::make_temp_file("","graph-get-clusters_outfile", 1,0);
 #     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
 #     print TMP_OUT $result;
 # #     print TMP_OUT "KEYS ".keys(%args);
@@ -4896,7 +4956,8 @@ sub graph_get_clusters {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/graph-get-clusters-input-graph.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-get-clusters-input-graph.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-get-clusters_ingraph", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -4908,7 +4969,8 @@ sub graph_get_clusters {
   if ($args{clusters}) {
    my $input_clusters = $args{clusters};
    chomp $input_clusters;
-   my $tmp_input = `mktemp $TMP/graph-get-clusters-input-clusters.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-get-clusters-input-clusters.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-get-clusters_inclusters", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
    print TMP_IN $input_clusters;
    close TMP_IN;
@@ -4962,7 +5024,8 @@ sub graph_node_degree {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/graph-node-degree-input-graph.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-node-degree-input-graph.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-node-degree_ingraph", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -4974,7 +5037,8 @@ sub graph_node_degree {
   if ($args{nodefile}) {
    my $nodefile = $args{nodefile};
    chomp $nodefile;
-   my $tmp_input = `mktemp $TMP/graph-node-degree-input-nodes.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-node-degree-input-nodes.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-node-degree_innodes", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
    print TMP_IN $nodefile;
    close TMP_IN;
@@ -4998,7 +5062,8 @@ sub graph_topology {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-    my $tmp_outfile = `mktemp $TMP/graph_topology.XXXXXXXXXX`;
+#    my $tmp_outfile = `mktemp $TMP/graph_topology.XXXXXXXXXX`;
+    my $tmp_outfile = &RSAT::util::make_temp_file("","graph-topology_outfile", 1,0);
     chomp $tmp_outfile;
     $tmp_outfile.".tab";
     system ("rm $tmp_outfile");
@@ -5082,7 +5147,8 @@ sub graph_topology_cmd {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/graph-topology-input-graph.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-topology-input-graph.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-topology_ingraph", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -5094,7 +5160,8 @@ sub graph_topology_cmd {
   if ($args{nodefile}) {
    my $nodefile = $args{nodefile};
    chomp $nodefile;
-   my $tmp_input = `mktemp $TMP/graph-topology-input-nodes.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-topology-input-nodes.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-topology_innodes", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
    print TMP_IN $nodefile;
    close TMP_IN;
@@ -5122,7 +5189,8 @@ sub graph_cluster_membership {
     if ($stderr != "" && $stderr !~ /INFO/ && $stderr !~ /WARNING/) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
-    my $tmp_outfile = `mktemp $TMP/graph-cluster-membership-out.XXXXXXXXXX`;
+#    my $tmp_outfile = `mktemp $TMP/graph-cluster-membership-out.XXXXXXXXXX`;
+    my $tmp_outfile = &RSAT::util::make_temp_file("","graph-cluster-membership_out", 1,0);
     chomp($tmp_outfile);
     my $prefix = $tmp_outfile;
     my $tmp_comments = $prefix.".tab.comments";
@@ -5199,7 +5267,8 @@ sub graph_cluster_membership_cmd {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/graph-cluster-membership-graph.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-cluster-membership-graph.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-cluster-membership_ingraph", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -5211,7 +5280,8 @@ sub graph_cluster_membership_cmd {
   if ($args{clusters}) {
    my $clusters = $args{clusters};
    chomp $clusters;
-   my $tmp_input = `mktemp $TMP/graph-cluster-membership-clusters.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph-cluster-membership-clusters.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph-cluster-membership_inclusters", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
    print TMP_IN $clusters;
    close TMP_IN;
@@ -5225,10 +5295,9 @@ sub graph_cluster_membership_cmd {
 
 ##########
 sub compare_graphs {
-    ## In order to recuperate the statistics calculated
-    ## by compare-graphs, I place all the standard error
-    ## in a separate file but. Indeed the computation is
-    ## blocked if the standard error contains the word "Error" 
+    ## In order to recuperate the statistics calculated by compare-graphs, I
+    ## place all the standard error in a separate file. Indeed the computation
+    ## is blocked if the standard error contains the word "Error" .
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
@@ -5244,10 +5313,11 @@ sub compare_graphs {
     if ($stderr =~ /Warning/) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
-    my $tmp_outfile = `mktemp $TMP/compare-graphs-out.XXXXXXXXXX`;
-    chomp($tmp_outfile);
+#    my $tmp_outfile = `mktemp $TMP/compare-graphs-out.XXXXXXXXXX`;
+#    chomp($tmp_outfile);
+    my $tmp_outfile = &RSAT::util::make_temp_file("","compare-graphs-out", 1,0);
     my $extension = $args{outformat} || "tab";
-    $tmp_outfile .= $extension;
+    $tmp_outfile .= ".".$extension;
     system ("rm $tmp_outfile");
 
     my $tmp_comments = $tmp_outfile.".comments";
@@ -5363,7 +5433,8 @@ sub compare_graphs_cmd {
   if ($args{Qinputgraph}) {
    my $input_graph = $args{Qinputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/compare-graphs-query-input-graph.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/compare-graphs-query-input-graph.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","compare-graphs-query-input-graph", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -5376,7 +5447,8 @@ sub compare_graphs_cmd {
   if ($args{Rinputgraph}) {
    my $input_graph = $args{Rinputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/compare-graphs-reference-input-graph.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/compare-graphs-reference-input-graph.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","compare-graphs-reference-input-graph", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -5450,7 +5522,8 @@ sub graph_neighbours {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/graph_neighbours-input-graph.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph_neighbours-input-graph.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph_neighbours-input-graph", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -5462,7 +5535,8 @@ sub graph_neighbours {
   if ($args{seedfile}) {
    my $seedfile = $args{seedfile};
    chomp $seedfile;
-   my $tmp_input = `mktemp $TMP/graph_neighbours-seed-nodes.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/graph_neighbours-seed-nodes.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","graph_neighbours-seed-nodes", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
    print TMP_IN $seedfile;
    close TMP_IN;
@@ -5484,7 +5558,8 @@ sub rnsc {
     }
 
     my $command = $self->rnsc_cmd(%args);
-    my $tmp_outfile = `mktemp $TMP/rnsc-out.XXXXXXXXXX`;
+#    my $tmp_outfile = `mktemp $TMP/rnsc-out.XXXXXXXXXX`;
+    my $tmp_outfile = &RSAT::util::make_temp_file("","rnsc-out", 1,0);
     chomp $tmp_outfile;
     $tmp_logfile = $tmp_outfile.".log";
 
@@ -5554,7 +5629,8 @@ sub rnsc_cmd {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/rnsc-input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/rnsc-input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","rnsc-input", 1,0);
    chomp $tmp_input;
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
@@ -5632,7 +5708,8 @@ sub mcl {
 	$output_choice = 'both';
     }
     my $command = $self->mcl_cmd(%args);
-    my $tmp_outfile = `mktemp $TMP/mcl-out.XXXXXXXXXX`;
+#    my $tmp_outfile = `mktemp $TMP/mcl-out.XXXXXXXXXX`;
+    my $tmp_outfile = &RSAT::util::make_temp_file("","mcl-out", 1,0);
     chomp $tmp_outfile;
     $command .= "-o $tmp_outfile";
 #     my $result = `$command`;
@@ -5699,8 +5776,9 @@ sub mcl_cmd {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/mcl-input-graph.XXXXXXXXXX`;
-   ## REMOVE ALL LEADING #
+#   my $tmp_input = `mktemp $TMP/mcl-input-graph.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","mcl-input-graph", 1,0);
+       ## REMOVE ALL LEADING #
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    my @input_graph_cp = split("\n", $input_graph);
    foreach my $line (@input_graph_cp) {
@@ -5766,7 +5844,8 @@ sub parse_psi_xml {
   if ($args{inputfile}) {
    my $input_graph = $args{inputfile};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/parse-psi-xml_input.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/parse-psi-xml_input.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","parse-psi-xml_input", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -5882,20 +5961,22 @@ sub random_graph {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
    if ($input_graph ne "") {
-     my $tmp_input = `mktemp $TMP/random_graph-input-graph.XXXXXXXXXX`;
-     open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
-     print TMP_IN $input_graph;
-     close TMP_IN;
-     $tmp_input =~ s/\'//g;
-     $tmp_input =~ s/\"//g;
-     chomp $tmp_input;
-     $command .= " -i '".$tmp_input."'";
-    }
+#     my $tmp_input = `mktemp $TMP/random_graph-input-graph.XXXXXXXXXX`;
+       my $tmp_input = &RSAT::util::make_temp_file("","random-graph-input-graph", 1,0);
+       open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+       print TMP_IN $input_graph;
+       close TMP_IN;
+       $tmp_input =~ s/\'//g;
+       $tmp_input =~ s/\"//g;
+       chomp $tmp_input;
+       $command .= " -i '".$tmp_input."'";
+   }
   }
   if ($args{nodefile}) {
    my $nodefile = $args{nodefile};
    chomp $nodefile;
-   my $tmp_input = `mktemp $TMP/random-graph-nodes.XXXXXXXXXX`;
+#   my $tmp_input = `mktemp $TMP/random-graph-nodes.XXXXXXXXXX`;
+   my $tmp_input = &RSAT::util::make_temp_file("","random-graph-nodes", 1,0);
    open TMP_IN, ">".$tmp_input or die "cannot open nodes temp file ".$tmp_input."\n";
    print TMP_IN $nodefile;
    close TMP_IN;
