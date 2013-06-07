@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.31 2013/06/05 21:32:41 jvanheld Exp $
+# $Id: fetch-sequences,v 1.32 2013/06/07 14:03:52 jvanheld Exp $
 #
 ############################################################
 
@@ -174,7 +174,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -537,6 +537,7 @@ package main;
 	  $seq_nb++;
 	  my $query = $query_chunk[$q];
 	  my $sequence = $results{$query};
+	  $sequence = &FoldSequence($sequence, 0);
 	  $sum_seq_len += length($sequence);
 	  my $strand = $strand_chunk[$q];
 	  if ($strand eq '-') {
