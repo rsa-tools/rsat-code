@@ -1,11 +1,12 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.43 2013/05/31 20:35:58 jvanheld Exp $
+# $Id: downloads.mk,v 1.44 2013/06/12 15:49:07 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
 ############################################################
 
+DOWNLOAD_DIR=${RSAT}/downloads
 
 ################################################################
 #### programs
@@ -69,11 +70,14 @@ NCBI_EXCLUDE=	\
 		--exclude Bacteria.OLD							\
 		--exclude '*.tar.gz'						
 
+
 one_ncbi_dir_from_mirror:
-	@mkdir -p ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
+	@echo "DOWNLOAD_DIR	${DOWNLOAD_DIR}"
+	@mkdir -p ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
 	rsync ${NCBI_EXCLUDE}						\
 		-av ${OPT} rsync://bio-mirror.net/biomirror/ncbigenomes/${NCBI_DIR}/*	\
-		ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
+		${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
+	@echo "NCBI directory downloaded to ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/"
 
 one_ncbi_dir:
 	${MAKE} one_ncbi_dir_from_mirror
