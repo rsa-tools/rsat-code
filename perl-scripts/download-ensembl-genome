@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.1 2013/06/13 12:04:41 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.2 2013/06/13 14:01:22 jvanheld Exp $
 #
 ############################################################
 
@@ -99,10 +99,10 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $verbose = 0;
-  our $species = "homo_sapiens";
+  our $species = "";
   our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
   our $in = "";
   our $out = SDTOUT;
@@ -131,6 +131,11 @@ package	main;
       print ucfirst($species),"\n";
     }
     exit(0);
+  }
+
+
+  unless ($species) {
+    &RSAT::message::FatalError("You must specify a species to download. To get the list of supported species, type: download-ensembl-genome -available_species");
   }
 
   my @output = qx{rsync -navP "${ensembl_url}" "."};
