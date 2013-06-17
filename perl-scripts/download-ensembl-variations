@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.1 2013/06/13 14:20:14 jvanheld Exp $
+# $Id: download-ensembl-variations,v 1.2 2013/06/17 14:18:22 jeremy Exp $
 #
 ############################################################
 
@@ -141,21 +141,21 @@ Why the variation is remove
 
 =head1 SEE ALSO
 
-=head2 supported-variation-organisms-ensembl
+=head2 downlo
 
 Returns the list of species with variation on Ensembl and all release avalaible.
 
-=head2 install-ensembl-genome
+=head2 download-ensembl-genome
 
 I<download-ensembl-variations> uses the sequences downloaded
-from Ensembl using the tool I<install-ensembl-genome>.
+from Ensembl using the tool I<download-ensembl-genome>.
 
-=head2 retrieve-snp-seq
+=head2 retrieve-variation-seq
 
-I<retrieve-snp-seq> uses files product by I<download-ensembl-variations>
+I<retrieve-variation-seq> uses files product by I<download-ensembl-variations>
 to make all the sequence of a variation.
 
-=head2 snp-scan
+=head2 variation-scan
 
 Scan SNP sequences with one or several position-specific scoring
 matrices.
@@ -182,7 +182,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -217,81 +217,6 @@ package	main;
 
   ################################################################
   ## Check argument values
-  $latest_file = $genomes_dir."/latest_genome.tab";
-  $latest_genome = "";
-
-  #Check if genomes install
-  if (-f $latest_file) {
-
-    my ($file) = &OpenInputFile($latest_file);
-    while (<$file>) {
-      my ($species_l,$version) = split("\t");
-      $version =~ s/\n//g;
-      $latest_genome = $version if ($species_l eq $species);
-    }
-    close $file;
-
-  } else {
-    &RSAT::error::FatalError("Genome sequences are not installed for species ".$species.". use download-ensembl-genome before download-ensembl-variations.");
-  }
-
-  #Check if $species install
-  if ($latest_genome eq "") {
-    &RSAT::error::FatalError("$species not install in $genomes_dir. Use install-ensembl-genome");
-  }
-
-  $genomes_dir .= ucfirst($species);
-  unless (-d $genomes_dir) {
-    &RSAT::error::FatalError("$species not install in $genomes_dir");
-  }
-
-  #Check if genome install for $species
-  $genomes_dir .= "/$latest_genome";
-  unless (-d $genomes_dir) {
-    &RSAT::error::FatalError("$genomes_dir not found. Please reinstall $species");
-  }
-
-  unless (-d $genomes_dir."/genome") {
-    &RSAT::error::FatalError("No genome install install in $genomes_dir");
-  }
-
-
-  #Check if no file is missing
-  my %chr_file = ();
-  my %file_info = ();
-
-  my $contig = $genomes_dir."/genome/contig.tab";
-  if (-f $contig) {
-    my ($file) = &OpenInputFile($contig);
-    while (<$file>) {
-      next if (/--/);
-      my ($chr,$acc) = split("\t");
-      $acc =~ s/\n//g;
-      $file_info{$acc} = $chr;
-    }
-    close $file;
-  } else {
-    &RSAT::error::FatalError("$contig missing .Please reinstall $species using install-ensembl-genome");
-  }
-
-  my $contigs = $genomes_dir."/genome/contigs.txt";
-  if (-f $contigs) {
-    my ($file) = &OpenInputFile($contigs);
-    while (<$file>) {
-      my ($file_name,$acc) = split("\t");
-      $acc =~ s/\n//g;
-      $chr_file{$file_info{$acc}} = $file_name;
-    }
-    close $file;
-  } else {
-    &RSAT::error::FatalError("$contigs missing .Please reinstall $species using install-ensembl-genome");
-  }
-
-  foreach my $file (keys(%chr_file)) {
-    unless (-f $genomes_dir."/genome/".$chr_file{$file}) {
-      &RSAT::error::FatalError($genomes_dir."/genome/$chr_file{$file} missing .Please reinstall $species using install-ensembl-genome");
-    }
-  }
 
   #Check if variation available on Ensembl
   my @output = qx{rsync -navP "rsync://ftp.ensembl.org/ensembl/pub/current_variation/gvf" "."};
@@ -300,20 +225,95 @@ package	main;
     &RSAT::error::FatalError("No variation avalaible for $species on Ensembl");
   }
 
+  #Check if $species install
+  $species_dir = $genomes_dir.ucfirst($species);
+  unless (-d $species_dir) {
+    &RSAT::error::FatalError("$species not install. $species_dir don't exist. Use download-ensembl-genome before download-ensembl-variations.");
+  }
+
+
+  #Check if genomes install
+  $latest_file = $genomes_dir."latest_genome.tab";
+  $latest_genome = "";
+  print "$latest_file\n";
+  if (-f $latest_file) {
+
+    my ($file) = &OpenInputFile($latest_file);
+    while (<$file>) {
+      chomp();
+      my ($species_l,$version) = split("\t");
+      $latest_genome = $version if ($species_l eq $species);
+    }
+    close $file;
+
+  } else {
+    &RSAT::error::FatalError("Genome sequences are not installed for species ".$species.".");
+  }
+
+
+  #Check if genome install for $species
+  $species_dir .= "/$latest_genome";
+  unless (-d $species_dir) {
+    &RSAT::error::FatalError("Latest version $latest_genome of $species not install. $species_dir don't exist");
+  }
+
+  unless (-d $species_dir."/genome") {
+    &RSAT::error::FatalError("No genome install in $species_dir");
+  }
+
+
+  #Check if no file is missing
+  my %chr_file = ();
+  my %file_info = ();
+
+  my $contig = $species_dir."/genome/contig.tab";
+  if (-f $contig) {
+    my ($file) = &OpenInputFile($contig);
+    while (<$file>) {
+      next if (/--/);
+      chomp();
+      my ($chr,$acc) = split("\t");
+      $file_info{$acc} = $chr;
+    }
+    close $file;
+  } else {
+    &RSAT::error::FatalError("$contig is missing.");
+  }
+
+  my $contigs = $species_dir."/genome/contigs.txt";
+  if (-f $contigs) {
+    my ($file) = &OpenInputFile($contigs);
+    while (<$file>) {
+      chomp();
+      my ($file_name,$acc) = split("\t");
+      $chr_file{$file_info{$acc}} = $file_name;
+    }
+    close $file;
+  } else {
+    &RSAT::error::FatalError("$contigs is missing.");
+  }
+
+  foreach my $file (keys(%chr_file)) {
+    unless (-f $species_dir."/genome/".$chr_file{$file}) {
+      &RSAT::error::FatalError($species_dir."/genome/$chr_file{$file} missing.");
+    }
+  }
+
   ################################################################
   ###Dowload variation
 
   ## Download gvf.gz file
   &RSAT::message::TimeWarn("Download gvf file") if ($main::verbose >= 2);
-  my $variation_dir = $genomes_dir."/variations";
+  my $variation_dir = $species_dir."/variations";
   my $ftp = "ftp.ensembl.org/ensembl/pub/current_variation/gvf/$species";
 
   mkpath( $variation_dir, 0, 0777 ) unless (-d $variation_dir);
-  #	system("rsync -avP rsync://$ftp/".ucfirst($species).".gvf.gz $variation_dir");
+  system("rsync -avP rsync://$ftp/".ucfirst($species).".gvf.gz $variation_dir");
 
   ##Check genome version
   my $spe = $variation_dir."/".ucfirst($species).".gvf.gz";
-  #	@output = qx{gzip -cd "$spe" | head -n 20};
+
+  @output = qx{gzip -cd "$spe" | head -n 20};
   my $variation_version = "";
 
   foreach (@output) {
@@ -325,17 +325,17 @@ package	main;
   }
 
   if ($variation_version ne $latest_genome) {
-    #		&RSAT::error::FatalError("The last version of $species not install. Find $latest_genome, require : $variation_version");
+    &RSAT::error::FatalError("The last version of $species not install. Find $latest_genome, require : $variation_version");
   }
 
   ################################################################
   ## Decompress variation file
   &RSAT::message::TimeWarn("Decompress gvf file") if ($main::verbose >= 2);
-  #	system ("gzip -dv $variation_dir/*.gz");
+  system ("gzip -dv $variation_dir/*.gz");
 
   ################################################################
   ## Execute the command
-  my $out_rm = &OpenOutputFile($variation_dir."/Remove.tab");
+  my $out_rm = &OpenOutputFile($variation_dir."/Failed.tab");
 
   my $last_chr = "";
   my $last_end = 0;
@@ -374,7 +374,7 @@ package	main;
 
       close $out unless ($out eq STDOUT);
 
-      my $raw_file = $genomes_dir."/genome/".$chr_file{$chr};
+      my $raw_file = $species_dir."/genome/".$chr_file{$chr};
       $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);
 
       $out = &OpenOutputFile("$variation_dir/$chr.tab");
@@ -443,7 +443,7 @@ package	main;
 
 
   close $file;
-  #	unlink($variation_dir."/".ucfirst($species).".gvf");
+  unlink($variation_dir."/".ucfirst($species).".gvf");
 
   ################################################################
   ## Report execution time and close output stream
