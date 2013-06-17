@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.2 2013/06/13 14:01:22 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.3 2013/06/17 14:17:04 jeremy Exp $
 #
 ############################################################
 
@@ -89,7 +89,6 @@ BEGIN {
 
 require "RSA.lib";
 use File::Path qw( mkpath );
-use IO::Dir;
 
 ################################################################
 ## Main package
@@ -99,7 +98,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $verbose = 0;
   our $species = "";
@@ -123,8 +122,9 @@ package	main;
 
   ###############################################################
   ## Check arguments
+  my @output = qx{rsync -navP "${ensembl_url}" "."};
+
   if ($get_available_species) {
-    my @output = qx{rsync -navP "${ensembl_url}" "."};
     foreach (@output) {
       next unless (/\/dna\/\n/);
       my ($species) = split("\/");
@@ -133,18 +133,16 @@ package	main;
     exit(0);
   }
 
-
   unless ($species) {
     &RSAT::message::FatalError("You must specify a species to download. To get the list of supported species, type: download-ensembl-genome -available_species");
   }
 
-  my @output = qx{rsync -navP "${ensembl_url}" "."};
+  print scalar(@output),"\n";
   unless ( grep($_ eq $species."/dna/\n", @output )) {
     &RSAT::error::FatalError("Sequence of $species not avalaible on Ensembl");
   }
 
   &RSAT::util::CheckOutDir($genomes_dir);
-#  mkpath( $genomes_dir, 0, 0777 ) unless (-d $genomes_dir);
 
   ################################################################
   ##Download sequence
@@ -152,14 +150,14 @@ package	main;
   my $genome_version = 0;
   my $contig_file = "";
   my @seq_avalaible = ();
-#  my $species_url = "ftp.ensembl.org/ensembl/pub/current_fasta/$species";
-  my $species_url = $ensembl_url."/".$species;
+  my $species_url = $ensembl_url."/".$species."/dna";
   &RSAT::message::Info("Species URL", $species_url) if ($main::verbose >= 1);
 
 
   ##Get all fasta file available for $species
   &RSAT::message::TimeWarn("Check latest sequence") if ($main::verbose >= 2);
-  @output = qx{rsync -navP "$species_url/dna" "."};
+
+  @output = qx{rsync -navP $species_url "."};
   foreach (@output) {
     my $species = ucfirst($species);
     next unless (/$species/);
@@ -177,7 +175,7 @@ package	main;
   }
 
   if (scalar(@seq_avalaible) == 0) {
-    &RSAT::error::FatalError("No sequence to download\n Check if sequence type $type avalaible in $species_url/dna/README");
+    &RSAT::error::FatalError("No sequence to download\n Check if sequence type $type avalaible in $species_url/README");
   }
 
 
@@ -195,23 +193,22 @@ package	main;
   %seq_install = ();
 
   if (-d $genomes_dir) {
-    my $dir = IO::Dir->new($genomes_dir);
-#    &RSAT::util::CheckOutDir($genomes_dir);
-    while (defined($_ = $dir->read)) {
-      next unless (-f $genomes_dir."/".$_ && $_ =~ /raw/ && $_ =~ /$type\./);
+    $wanted_file = $genomes_dir."/*$type.raw";
 
+    foreach ( glob($wanted_file) ) {
+      $_ =~s/$genomes_dir\///g;
       my @token = split("_");
 
       if ( $token[0] ne "chromosome" ) {
-	$seq_install{'nonchromosomal'} = 1;
+	      $seq_install{'nonchromosomal'} = 1;
       } else {
-	$seq_install{'chromosome'}{$token[2]} = 1;
+	      $seq_install{'chromosome'}{$token[2]} = 1;
       }
     }
-    undef $dir;
   } else {
     mkpath( $genomes_dir, 0, 0777 ) unless (-d $genomes_dir);
   }
+
 
   ##Compare install to avalaible seq
   @seq_to_download = ();
@@ -241,7 +238,7 @@ package	main;
   print $out_down join("",@seq_to_download),"\n";
   close $out_down;
 
-  system ("rsync -avP --files-from='$to_download_file' ${ensembl_url}$species/dna $genomes_dir");
+  system ("rsync -avP --files-from='$to_download_file' $species_url $genomes_dir");
   unlink ($to_download_file);
 
   ################################################################
@@ -365,10 +362,10 @@ package	main;
   close $out;
 
   ##Call get_ensembl_variation
-  &RSAT::message::TimeWarn("Call get_ensembl_variation") if ($main::verbose >= 2);
+
   if ($var) {
-    system("perl /Users/jeremy/Downloads/download-ensembl-genome.pl -species $species -v 2")
-      #system($ENV{'RSAT'}."perl-scripts/download-ensembl-genome $species -v 2")
+    &RSAT::message::TimeWarn("Call get_ensembl_variation") if ($main::verbose >= 2);
+    system("perl /Users/jeremy/Downloads/download-ensembl-variation -species $species -v 2");
   }
 
   exit(0);
