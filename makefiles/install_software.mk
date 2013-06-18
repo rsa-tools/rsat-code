@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.39 2013/05/24 09:35:32 jvanheld Exp $
+# $Id: install_software.mk,v 1.40 2013/06/18 00:16:09 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -323,15 +323,18 @@ _download_biotoolbox:
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${SRC_DIR}/MEME
 MEME_VERSION=4.9.0
-#MEME_VERSION=current
 MEME_PATCH=_4
+#MEME_VERSION=4.8.0
+#MEME_PATCH=
+#MEME_VERSION=current
 MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
 ##MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
-MEME_URL=ftp://ftp.ebi.edu.au/pub/software/MEME/r${MEME_VERSION}/rc5/${MEME_ARCHIVE}
+#MEME_URL=ftp://ftp.ebi.edu.au/pub/software/MEME/r${MEME_VERSION}/rc5/${MEME_ARCHIVE}
+#MEME_URL=http://ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
 MEME_URL=http://ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
 MEME_INSTALL_SUBDIR=${SOFT_DIR}/MEME
 MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
-install_meme: _download_meme _compile_meme
+install_meme: _download_meme _compile_meme _after_meme
 
 _download_meme:
 	@echo
@@ -352,16 +355,16 @@ _compile_meme:
 	@echo "Installing MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
 	@mkdir -p ${MEME_INSTALL_DIR}
 	(cd ${MEME_INSTALL_SUBDIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
-	@echo "MEME configuration prefix	${MEME_CONFIG_PREFIX}"
+#	@echo "MEME configuration prefix	${MEME_CONFIG_PREFIX}"
 	(cd ${MEME_INSTALL_DIR}; ./configure --prefix=${MEME_COMPILE_DIR} --with-url="http://localhost/meme")
 	(cd ${MEME_INSTALL_DIR}; make clean; make ; make test; ${SUDO} make install)
 	@echo "MEME installed in ${MEME_COMPILE_DIR}"
 
-after:
+_after_meme:
 #	@cd ${MEME_BIN_DIR}; rm -f meme; ln -s meme_${MEME_VERSION} meme
 	@echo "Please edit the bashrc file"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
-	@echo "	export PATH=${BIN_DIR}/meme/bin:\$$PATH"
+	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"
 
 ################################################################
 ## Install a clustering algorithm "cluster"
