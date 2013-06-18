@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.6 2013/06/18 15:18:52 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.7 2013/06/18 20:18:50 jvanheld Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
   
   our $verbose = 0;
   our $species = "";
@@ -111,14 +111,12 @@ package	main;
 
 #  our $ensembl_url = "ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/";
   our $ensembl_url = "rsync://ftp.ensembl.org/ensembl/pub/current_fasta/";
-  
+
   ################################################################
   ## Read argument values
   &ReadArguments();
-  
 
   &RSAT::message::Info("Ensembl URL", $ensembl_url) if ($main::verbose >= 1);
-  
 
   ###############################################################
   ## Check arguments
