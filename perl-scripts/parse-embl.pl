@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.29 2011/02/17 05:07:46 rsat Exp $
+# $Id: parse-embl.pl,v 1.30 2013/06/18 20:18:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -225,6 +225,10 @@ package main;
     $user="embl";
     $password="embl";
 
+    ## Extension for embl-formatted files
+    $extension = ".embl";
+
+
 #    my $genes = classes::ClassFactory->new_class(object_type=>"EMBL::Gene",
 #						 prefix=>"gene_");
 
@@ -342,11 +346,11 @@ package main;
     #### find embl files in the input directory
     chdir ($dir{input});
     @embl_files =();
-    push @embl_files, glob("*.embl");
-    push @embl_files, glob("*.embl.Z");
-    push @embl_files, glob("*.embl.gz");
+    push @embl_files, glob("*".$extension);
+    push @embl_files, glob("*".$extension.".Z");
+    push @embl_files, glob("*".$extension.".gz");
     if ($#embl_files < 0) {
-	&RSAT::error::FatalError("There is no embl file in the input directory $dir{input}\n");
+	&RSAT::error::FatalError("There is no file with extension ${extension} in the input directory $dir{input}\n");
     } else {
 	&RSAT::message::Info("EMBL files\n;\t", join("\n;\t", @embl_files)) if ($main::verbose >= 1);
     }
@@ -358,8 +362,9 @@ package main;
 	#### default output directory
 	$export_subdir = "embl";
 	$dir{output} = "$parsed_data/$export_subdir/$delivery_date/$org";
+	$dir{output} = "parsed_embl/".$org."/".$delivery_date;
 #	$dir{output} = "$ENV{RSAT}/public_html/data/embl_genomes/$org/genome";
-	warn "; Auto selection of output dir\t$dir{output}\n" if ($main::verbose >= 1);
+	&RSAT::message::Warning("Auto selection of output dir", $dir{output}) if ($main::verbose >= 1);
     }
     &CheckOutputDir($dir{output});
     chdir $dir{output};
@@ -590,19 +595,27 @@ CATEGORY
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
+
 	-v	verbose
+
 	-test #	quick test (for debugging): only parse the # first
 		lines of each Genabnk file (default $test_lines).
+
 	-i	input directory
 		input directory. This directory must contain one or
 		several embl files (extension .contig). 
+
+	-ext	extension for EMBL flat files (default: $extension)
+
 	-o	output directory
 		The parsing result will be saved in this directory. If
 		the directory does not exist, it will be created.
-	-org	organism name
-	-noseq  do not export sequences in .raw files
-	-source	data source (default: $data_source)
 
+	-org	organism name
+
+	-noseq  do not export sequences in .raw files
+
+	-source	data source (default: $data_source)
 
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
@@ -708,6 +721,7 @@ parse-embl options
 -o	output dir
 -source	data source (default: $data_source)
 -v	verbose
+-ext	extension for EMBL flat files (default: $extension)
 -org	organism name
 -prefid preferred ID for a given feature type
 -schema database schema (default: $schema)
@@ -731,15 +745,15 @@ sub ReadArguments {
 	    } else {
 		$main::verbose = 1;
 	    }
-	    
+
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
-	    
+
 	    ### quick test
 	} elsif ($ARGV[$a] eq "-test") {
 	    $test = 1;
@@ -751,10 +765,14 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-i") {
 	    $dir{input} = $ARGV[$a+1];
 
+	    ### extension
+	} elsif ($ARGV[$a] eq "-ext") {
+	    $extension = $ARGV[$a+1];
+
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
 	    $dir{output} = $ARGV[$a+1];
-	    
+
 	    ### organism ###
 	} elsif ($ARGV[$a] eq "-org") {
 	    $org = $ARGV[$a+1];
@@ -774,19 +792,19 @@ sub ReadArguments {
 	    ### schema
 	} elsif ($ARGV[$a] eq "-schema") {
 	    $schema = $ARGV[$a+1];
-	    
+
 	    ### host
 	} elsif ($ARGV[$a] eq "-host") {
 	    $host = $ARGV[$a+1];
-	    
+
 	    ### user
 	} elsif ($ARGV[$a] eq "-user") {
 	    $user = $ARGV[$a+1];
-	    
+
 	    ### password 
 	} elsif ($ARGV[$a] =~ /^-pass/) {
 	    $password = $ARGV[$a+1];
-	    
+
 	}
     }
 }
@@ -961,10 +979,10 @@ sub ParseEMBLFile {
 
 	#### new feature
 	if ($line =~ /^FT   (\S+)\s+(.*)/) {
-	    
+
 	    #### feature type
 	    $feature_type = $1;
-	    
+
 	    #### read the feature position
 	    $position = &trim($2);
 	    if ($position =~ /join\(/){
@@ -1062,7 +1080,7 @@ sub ParseEMBLFile {
 		    }
 		}
 	    }
-	    
+
 	    #### remove spaces from sequences
 	    if ($key eq "translation") {
 		$value =~ s/\s//g;
@@ -1171,7 +1189,7 @@ sub ExportProteinSequences {
     foreach my $feature ($features->get_objects()) {
 	next unless ($feature);
 	if ($feature->get_attribute("type") eq "CDS") {
-	    my ($translation) = $feature->get_attribute("translation");	    
+	    my ($translation) = $feature->get_attribute("translation");
 	    next unless ($translation =~ /\S+/);
 
 	    my $id = $feature->get_attribute("id");
@@ -1184,7 +1202,7 @@ sub ExportProteinSequences {
 	    my $description;
 	    $description .= $feature->get_attribute("description");
 	    $description .= "; ".join ("|", $id, $feature->get_attribute("names"));
-	    
+
 
 	    print PP $header, "\n";
 #	    &PrintNextSequence(PP,"fasta",60,$translation,$pp_id);
