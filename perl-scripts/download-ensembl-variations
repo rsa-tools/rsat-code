@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.3 2013/06/17 14:46:29 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.4 2013/06/18 11:44:48 jeremy Exp $
 #
 ############################################################
 
@@ -182,7 +182,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -190,7 +190,7 @@ package	main;
   our $verbose = 2;
   our $out = STDOUT;
 
-  our $species = "homo_sapiens";
+  our $species = "";
   our $genomes_dir = "$ENV{'RSAT'}/data/genomes/";
 
   our $available = 0;
@@ -217,6 +217,11 @@ package	main;
 
   ################################################################
   ## Check argument values
+  
+  unless ($species) {
+    &RSAT::error::FatalError("No species indicate. Use -species");
+  }
+
 
   #Check if variation available on Ensembl
   my @output = qx{rsync -navP "rsync://ftp.ensembl.org/ensembl/pub/current_variation/gvf" "."};
