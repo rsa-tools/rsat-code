@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.4 2013/06/18 14:25:38 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.5 2013/06/18 14:29:17 jvanheld Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $verbose = 0;
   our $species = "";
@@ -244,9 +244,9 @@ package	main;
   ################################################################
   ##Get fasta file
 
-  ##Gunzip
+  ## gunzip
   &RSAT::message::TimeWarn("Decompress fasta sequence") if ($main::verbose >= 2);
-  system ("gzip -dv $genome_dir/*.gz");
+  system ("gzip -d $genome_dir/*.gz");
 
 
   ##Make one fasta file per contigs
