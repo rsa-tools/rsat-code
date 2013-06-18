@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.3 2013/06/17 14:17:04 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.4 2013/06/18 14:25:38 jvanheld Exp $
 #
 ############################################################
 
@@ -98,11 +98,11 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $verbose = 0;
   our $species = "";
-  our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
+  our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
   our $in = "";
   our $out = SDTOUT;
   our $type = "dna";
@@ -142,7 +142,7 @@ package	main;
     &RSAT::error::FatalError("Sequence of $species not avalaible on Ensembl");
   }
 
-  &RSAT::util::CheckOutDir($genomes_dir);
+  &RSAT::util::CheckOutDir($genome_dir);
 
   ################################################################
   ##Download sequence
@@ -189,14 +189,14 @@ package	main;
 
   ##Check if latest genome install and seq install
   &RSAT::message::TimeWarn("Check local version") if ($main::verbose >= 2);
-  $genomes_dir .= ucfirst($species)."/$genome_version/genome";
+  $genome_dir .= ucfirst($species)."_ensembl_".$genome_version."/genome";
   %seq_install = ();
 
-  if (-d $genomes_dir) {
-    $wanted_file = $genomes_dir."/*$type.raw";
+  if (-d $genome_dir) {
+    $wanted_file = $genome_dir."/*$type.raw";
 
     foreach ( glob($wanted_file) ) {
-      $_ =~s/$genomes_dir\///g;
+      $_ =~s/$genome_dir\///g;
       my @token = split("_");
 
       if ( $token[0] ne "chromosome" ) {
@@ -206,7 +206,7 @@ package	main;
       }
     }
   } else {
-    mkpath( $genomes_dir, 0, 0777 ) unless (-d $genomes_dir);
+    mkpath( $genome_dir, 0, 0777 ) unless (-d $genome_dir);
   }
 
 
@@ -225,7 +225,7 @@ package	main;
   }
 
   if (scalar(@seq_to_download) == 0) {
-    &RSAT::message::TimeWarn("Latest version of $species already installed in $genomes_dir");
+    &RSAT::message::TimeWarn("Latest version of $species already installed in $genome_dir");
     exit(0);
   }
 
@@ -233,12 +233,12 @@ package	main;
   ##Download
   &RSAT::message::TimeWarn("Download sequence") if ($main::verbose >= 2);
 
-  my $to_download_file = $genomes_dir."/to_download.txt";
+  my $to_download_file = $genome_dir."/to_download.txt";
   my $out_down = &OpenOutputFile($to_download_file);
   print $out_down join("",@seq_to_download),"\n";
   close $out_down;
 
-  system ("rsync -avP --files-from='$to_download_file' $species_url $genomes_dir");
+  system ("rsync -avP --files-from='$to_download_file' $species_url $genome_dir");
   unlink ($to_download_file);
 
   ################################################################
@@ -246,17 +246,17 @@ package	main;
 
   ##Gunzip
   &RSAT::message::TimeWarn("Decompress fasta sequence") if ($main::verbose >= 2);
-  system ("gzip -dv $genomes_dir/*.gz");
+  system ("gzip -dv $genome_dir/*.gz");
 
 
   ##Make one fasta file per contigs
   &RSAT::message::TimeWarn("Make contig fasta file") if ($main::verbose >= 2);
-  print $genomes_dir."/".substr($contig_file,0,length($contig_file)-1),"\n";
+  print $genome_dir."/".substr($contig_file,0,length($contig_file)-1),"\n";
 
-  if ($contig_file ne "" && -f $genomes_dir."/".substr($contig_file,0,length($contig_file)-4)) {
+  if ($contig_file ne "" && -f $genome_dir."/".substr($contig_file,0,length($contig_file)-4)) {
     $contig_file =~ s/\.gz\n//g;
 
-    ($file) = &OpenInputFile($genomes_dir."/".$contig_file);
+    ($file) = &OpenInputFile($genome_dir."/".$contig_file);
     my $out_cont = 0;
 
     while (<$file>) {
@@ -268,7 +268,7 @@ package	main;
 	my $file_name = $infos[2].".fa";
 	$file_name =~s/:/_/g;
 
-	$out_cont = &OpenOutputFile($genomes_dir."/".$file_name);
+	$out_cont = &OpenOutputFile($genome_dir."/".$file_name);
 	push (@seq_to_download, $file_name);
       }
       print $out_cont $_;
@@ -287,11 +287,11 @@ package	main;
     $fasta =~ s/\.gz\n//g;
 
     if ($fasta =~ /non/) {
-      unlink($genomes_dir."/".$fasta);
+      unlink($genome_dir."/".$fasta);
       next;
     }
 
-    my ($file) = &OpenInputFile($genomes_dir."/".$fasta);
+    my ($file) = &OpenInputFile($genome_dir."/".$fasta);
     my @infos = split(" ", substr(<$file>,1));
     my @infos2 = split(":", $infos[2]);
 
@@ -302,22 +302,22 @@ package	main;
     push ( @contig, $infos[0]."\t".$infos[2]."\t".$infos2[1]."\t".$infos2[0]."\t".$infos2[4]."\t".$infos2[0]." ".$infos[0]);
     push ( @contigs, $file_name."\t".$infos[2]);
 
-    system("$ENV{'RSAT'}/perl-scripts/convert-seq -i $genomes_dir/$fasta -from fasta -o $genomes_dir/$file_name -to raw");
+    system("$ENV{'RSAT'}/perl-scripts/convert-seq -i $genome_dir/$fasta -from fasta -o $genome_dir/$file_name -to raw");
     close $in;
-    unlink($genomes_dir."/".$fasta);
+    unlink($genome_dir."/".$fasta);
   }
 
   if ($type eq "dna") {
-    ##Make contigs.txt
+    ## Make contigs.txt
     &RSAT::message::TimeWarn("Make contigs.txt") if ($main::verbose >= 2);
-    my $out_contigs = &OpenOutputFile($genomes_dir."/contigs.txt");
+    my $out_contigs = &OpenOutputFile($genome_dir."/contigs.txt");
     print $out_contigs join("\n", @contigs),"\n";
     close $out_contigs;
 
 
-    ##Make contig.tab
+    ## Make contig.tab
     &RSAT::message::TimeWarn("Make contig.tab") if ($main::verbose >= 2);
-    my $out_contig =  &OpenOutputFile($genomes_dir."/contig.tab");
+    my $out_contig =  &OpenOutputFile($genome_dir."/contig.tab");
     print $out_contig "-- dump date    2007_06_25.105229
 		-- class    EnsEMBL::Contig
 		-- table    contig
@@ -355,16 +355,17 @@ package	main;
   }
 
 
+  &RSAT::message::Info("Genome installed in dir", $genome_dir) if ($main::verbose >= 1);
+
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $exec_time if ($main::verbose >= 2); ## only report exec time if verbosity is specified
+  print $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out;
 
-  ##Call get_ensembl_variation
-
+  ## Call get_ensembl_variation
   if ($var) {
-    &RSAT::message::TimeWarn("Call get_ensembl_variation") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Calling get_ensembl_variation") if ($main::verbose >= 2);
     system("perl /Users/jeremy/Downloads/download-ensembl-variation -species $species -v 2");
   }
 
@@ -516,7 +517,7 @@ Default : $RSAT/data/genomes/
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::genomes_dir = shift(@arguments);
+      $main::genome_dir = shift(@arguments);
     }
   }
 
