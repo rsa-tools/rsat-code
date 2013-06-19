@@ -427,12 +427,12 @@ sub RelativePath {
   my $shared_path = "";
   my $link = "";
 
-#   &RSAT::message::Debug("&RSAT::util::RelativePath()",
-# 			"\n\treferring_file", $referring_file,
-# 			"\n\treferring_dir", $referring_dir, join("; ", @referring_path),
-# 			"\n\treferred_file", $referred_file,
-# 			"\n\treferred_dir", $referred_dir, join("; ", @referred_path)) 
-#     if ($main::verbose >= 10);
+  #   &RSAT::message::Debug("&RSAT::util::RelativePath()",
+  # 			"\n\treferring_file", $referring_file,
+  # 			"\n\treferring_dir", $referring_dir, join("; ", @referring_path),
+  # 			"\n\treferred_file", $referred_file,
+  # 			"\n\treferred_dir", $referred_dir, join("; ", @referred_path)) 
+  #     if ($main::verbose >= 10);
 
 
   ## Particular cases
@@ -445,16 +445,16 @@ sub RelativePath {
     $link = $1 || ".";
     $shared_path = $referring_file;
 
+
+  } elsif (($referred_file =~ /^\//)
+	   && ($referring_file !~ /^\//)) {
+    ## Referred file path is absolute
+    $link = $referred_file;
+    $shared_path = "";
+
   } else {
 
-#  my $level = 0;
     while ((scalar(@referring_path) > 0) && (scalar(@referred_path) > 0)) {
-      #    $level++;
-      #    &RSAT::message::Debug("level=".$level,
-      #			  "\n\treferring=".$referring_path[0], join("; ", @referring_path),
-      #			  "\n\treferred:".$referred_path[0], join("; ", @referred_path))
-      #      if ($main::verbose >= 10);
-
       if ($referring_path[0] eq $referred_path[0]) {
 	my $shared_folder = shift(@referring_path);
 	shift(@referred_path);
@@ -466,7 +466,6 @@ sub RelativePath {
 
     my $up_levels = 0;
     $shared_path = join "/", @shared_path;
-
     if ((defined($referring_path[0])) && ($referring_path[0] eq $referred_basename)) {
       ## The referred path is the folder of the referring file
       $link = ".";
