@@ -1488,7 +1488,7 @@ sub ChiSquare {
 	    $not_valid = 1 if ($exp < 5);
 	    if ($exp == 0) {
 		$chi_square = "ERR_exp0";
-		&RSA::message::Warning("Cannot calculate the observed chi2 because class $col has an expected value of 0");
+		&RSAT::message::Warning("Cannot calculate the observed chi2 because class $col has an expected value of 0");
 		last;
 	    } else {
 		$chi_square +=  (($obs - $exp)**2)/$exp;
