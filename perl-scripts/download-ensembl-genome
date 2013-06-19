@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.7 2013/06/18 20:18:50 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.8 2013/06/19 10:03:24 jeremy Exp $
 #
 ############################################################
 
@@ -98,13 +98,14 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
   
-  our $verbose = 0;
-  our $species = "";
-  our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
   our $in = "";
   our $out = SDTOUT;
+  our $verbose = 0;
+
+  our $species = "";
+  our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
   our @types = ();
   our $var = 0;
   our $get_available_species = 0;
@@ -125,9 +126,6 @@ package	main;
   unless (scalar(@types)) {
       @types = ("dna");
   }
-  foreach my $type (@types) {
-    $download_type{$type} = 1;
-  }
 
   if ($get_available_species) {
     foreach (@output) {
@@ -142,7 +140,6 @@ package	main;
     &RSAT::message::FatalError("You must specify a species to download. To get the list of supported species, type: download-ensembl-genome -available_species");
   }
 
-  print scalar(@output),"\n";
   unless ( grep($_ eq $species."/dna/\n", @output )) {
     &RSAT::error::FatalError("Sequence of $species not available on Ensembl");
   }
@@ -150,87 +147,87 @@ package	main;
   &RSAT::util::CheckOutDir($genome_dir);
 
   ################################################################
-  ## Download sequence
-  my %seq_type = ();
-  my $genome_version = 0;
-  my $contig_file = "";
-  my @seq_available = ();
-  my %seq_install = ();
-  my $species_url = $ensembl_url."/".$species."/dna";
+  ## Get available sequence on Ensembl and compare with sequence already install
+  my $species_url = $ensembl_url.$species."/dna";
   &RSAT::message::Info("Species URL", $species_url) if ($main::verbose >= 1);
 
 
   ##Get all fasta file available for $species
-  &RSAT::message::TimeWarn("Check latest sequence") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Get fasta file available") if ($main::verbose >= 2);
+  my @available_fasta = qx{rsync -navP $species_url "."};
 
-  @output = qx{rsync -navP $species_url "."};
 
-  my %seq_available = ();
+  ##Get genome version
+  $species = ucfirst($species);
+  my $genome_version = "";
+
+  foreach (@available_fasta) {
+    next unless (/$species/);
+
+    my $file = $_;
+    $file =~ s/dna\/$species\.//g;
+    my @token = split(".dna",$file);
+    my @token2 = split(/\./,$token[0]);
+    $genome_version = join '.', @token2[0..$#token2-1];
+
+    last;
+  }
+
+
+  ## Get install sequence
+  &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
+  $species_dir = $genome_dir."/".ucfirst($species)."_ensembl_".$genome_version."/genome"; 
+
+  &RSAT::util::CheckOutDir($species_dir);
+
+  my @contig_files = ();
+  my @seq_to_download = ();
 
   ## Iterate over sequence types (dna, dna_rm, dna_sm)
   foreach my $type (@types) {
-
     &RSAT::message::Info("Getting file list for sequence type", $type) if ($main::verbose >= 2);
-    @{$seq_available{$type}} = ();
+    my @seq_available = ();
+    my %seq_install = ();
+
     ## Select the files to download for the selected type
-    foreach (@output) {
-      my $species = ucfirst($species);
+    foreach (@available_fasta) {
       next unless (/$species/);
-      my @info = split(/\./,substr($_,4));
       next unless (/\.$type\./);		##Remove non $type seq
       next unless (/chrom/);	##Remove non chromosomal or contig seq
-      next if ($info[5] =~ "_");	##Remove patch
-      $genome_version = $_;
-      my $seq_file = substr($_,4);
-      push(@{$seq_available{$type}}, $seq_file);
-      $seq_type{$seq_file} = $type;
-      $contig_file = substr($_,4) if (/\.nonchrom/);
+
+      my @info = split(/$type/,substr($_,4));
+      next if ($info[1] =~ "_");	##Remove patch
+      my $seq_file = join(".",substr($_,4));
+
+      push(@seq_available, $seq_file);
     }
-    if (scalar(@{$seq_available{$type}}) > 0) {
-      &RSAT::message::Info(scalar(@{$seq_available{$type}}),"sequences of type", $type);
-      push @seq_available, @{$seq_available{$type}};
+
+    if (scalar(@seq_available) > 0) {
+      &RSAT::message::Info(scalar(@seq_available),"sequences of type", $type);
     } else {
       &RSAT::error::FatalError("No sequence to download\n Check if sequence type $type available in $species_url/README");
     }
 
-    ## Get genome version
-    my @token = split(".$type", $genome_version);
-    $genome_version = $token[0];
-    $to_remove = "dna/".ucfirst($species).".";
-    $genome_version =~ s/$to_remove//g;
-    @token = split(/\./,$genome_version);
-    $genome_version =~s/\.$token[$#token]//g;
-    $species_dir = $genome_dir."/".ucfirst($species)."_ensembl_".$genome_version."/genome";
+    ## Get install sequence for the selected type
+    foreach ( glob($species_dir."/*") ) {
+      next if (/contig/);
+      next unless (/$type\./);
 
-    ## Check if latest genome version is already installed and seq install
-    &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
-    if (-d $species_dir) {
-      $wanted_file = $species_dir."/*$type.raw";
-      foreach ( glob($wanted_file) ) {
-	$_ =~s/$species_dir\///g;
-	my @token = split("_");
-	if ( $token[0] ne "chromosome" ) {
-	  $seq_install{'nonchromosomal'} = 1;
-	} else {
-	  $seq_install{'chromosome'}{$token[2]} = 1;
-	}
+      $_ =~s/$species_dir\///g;
+      $_ =~s/\.raw/\.fa\.gz/g;
+
+      $seq_install{$_} = 1;
+    }
+
+    ## Compare available and install seq
+    foreach my $seq (@seq_available) {
+      chomp($seq);
+
+      unless ( $seq_install{$seq} ) {
+        push (@seq_to_download, $seq);
+        push(@contig_files, $seq) if ($seq =~ "nonchr");
       }
-    } else {
-      mkpath( $species_dir, 0, 0777 ) unless (-d $species_dir);
     }
-  }
-
-  ##Compare install to available seq
-  @seq_to_download = ();
-  foreach my $seq (@seq_available) {
-    my @token = split(/\./,$seq);
-    @token = reverse(@token);
-    if ( $seq =~ /non/ && $seq_install{'nonchromosomal'} ) {
-	next;
-    } elsif ( $seq_install{'chromosome'}{$token[2]} ) {
-	next;
-    }
-    push (@seq_to_download, $seq);
   }
 
   if (scalar(@seq_to_download) == 0) {
@@ -239,69 +236,63 @@ package	main;
   }
 
 
+  ################################################################
   ##Download
   &RSAT::message::TimeWarn("Download sequence") if ($main::verbose >= 2);
 
-  my $to_download_file = $species_dir."/to_download.txt";
-  my $out_down = &OpenOutputFile($to_download_file);
-  print $out_down join("",@seq_to_download),"\n";
-  close $out_down;
+  my $seq_to_download_file = $species_dir."/to_download.txt";
+  my $out_file = &OpenOutputFile($seq_to_download_file);
+  print $out_file join("\n",@seq_to_download),"\n";
+  close $out_file;
 
-  system ("rsync -avP --files-from='$to_download_file' $species_url $species_dir");
-  unlink ($to_download_file);
+  system ("rsync -avP --files-from='$seq_to_download_file' $species_url $species_dir");
+  unlink ($seq_to_download_file);
+
 
   ################################################################
-  ##Get fasta file
+  ## Make one fasta file per contigs file
+  &RSAT::message::TimeWarn("Make one fasta file per contig") if ($main::verbose >= 2);
 
-  ## gunzip
-  &RSAT::message::TimeWarn("Decompress fasta sequence") if ($main::verbose >= 2);
-  system ("gzip -d $species_dir/*.gz");
+  foreach my $contig_file (@contig_files) {
 
+    system ("gzip -d $species_dir/$contig_file");
 
-  ##Make one fasta file per contigs
-  &RSAT::message::TimeWarn("Make contig fasta file") if ($main::verbose >= 2);
-  print $species_dir."/".substr($contig_file,0,length($contig_file)-1),"\n";
+    $contig_file =~ s/\.gz//g;
 
-  if ($contig_file ne "" && -f $species_dir."/".substr($contig_file,0,length($contig_file)-4)) {
-    $contig_file =~ s/\.gz\n//g;
-
-    ($file) = &OpenInputFile($species_dir."/".$contig_file);
-    my $out_cont = 0;
+    my ($file) = &OpenInputFile($species_dir."/".$contig_file);
+    my $out_contig_file = "";
 
     while (<$file>) {
 
       if (/>/) {
-	close $out_cont if ($out_cont);
+	      close $out_contig_file if ($out_contig_file);
 
-	my @infos = split(" ", substr($_,1));
-	my $file_name = $infos[2].".fa";
-	$file_name =~s/:/_/g;
+        my @file_name_info = split("dna",$contig_file);
+	      my @fasta_infos = split(" ", substr($_,1));
+        $fasta_infos[1] =~ s/:/\./g;
 
-	$out_cont = &OpenOutputFile($species_dir."/".$file_name);
-	push (@seq_to_download, $file_name);
+	      my $file_name = $file_name_info[0].".".$fasta_infos[1].".".$fasta_infos[0].".fa";
+
+	      $out_contig_file = &OpenOutputFile($species_dir."/".$file_name);
+	      push (@seq_to_download, $file_name);
       }
-      print $out_cont $_;
+
+      print $out_contig_file $_;
     }
-    close $out_cont if ($out_cont);
-    close $in;
+
+    close $out_contig_file;
+    unlink ($species_dir."/".$contig_file);
   }
+
 
   ################################################################
   ## Convert fasta files into  raw file
   &RSAT::message::TimeWarn("Make raw file") if ($main::verbose >= 2);
-  @contigs = ();
-  @contig = ();
+  my @contigs = (); ## To make contigs.txt
+  my @contig = (); ##To make contig.tab
 
   foreach my $fasta (@seq_to_download) {
-    $fasta =~ s/\.gz\n//g;
-    if ($fasta =~ /non/) {
-      unlink($species_dir."/".$fasta);
-      next;
-    }
-
-    my ($file) = &OpenInputFile($species_dir."/".$fasta);
-    my @infos = split(" ", substr(<$file>,1));
-    my @infos2 = split(":", $infos[2]);
+    next if ($fasta =~ /nonch/);
 
     my $file_name = $fasta;
     $file_name =~ s/\.gz//;
@@ -310,65 +301,77 @@ package	main;
 
     &RSAT::message::TimeWarn("Converting fasta", $fasta, "to raw", $file_name);
     system("$ENV{'RSAT'}/perl-scripts/convert-seq -i $species_dir/$fasta -from fasta -o $species_dir/$file_name -to raw");
-    &RSAT::message::Debug($fasta, $seq_type{$fasta}) if ($main::verbose >= 0);
 
-    ## TO DEBUG !!! ##
-    if ($seq_type{$fasta.".gz"} eq "dna") {
-	push ( @contig, $infos[0]."\t".$infos[2]."\t".$infos2[1]."\t".$infos2[0]."\t".$infos2[4]."\t".$infos2[0]." ".$infos[0]);
-	push ( @contigs, $file_name."\t".$infos[2]);
+    if ($fasta =~ /dna\./) {
+
+      my ($file) = &OpenInputFile($species_dir."/".$fasta);
+      my @infos = split(" ", substr(<$file>,1));
+      my @infos2 = split(":", $infos[2]);
+
+	    push ( @contig, $infos[0]."\t".$infos[2]."\t".$infos2[1]."\t".$infos2[0]."\t".$infos2[4]."\t".$infos2[0]." ".$infos[0]);
+	    push ( @contigs, $file_name."\t".$infos[2]);
     }
-#    close $in;
+
     unlink($species_dir."/".$fasta);
   }
 
-  if ($download_type{dna}) {
-#  if ($type eq "dna") {
 
-    ## Generate the contig file list (contigs.txt)
+  ################################################################
+  ## Make contigs.txt
+  if (scalar(@contigs) > 0) {
     &RSAT::message::TimeWarn("Make contigs.txt") if ($main::verbose >= 2);
     my $out_contigs = &OpenOutputFile($species_dir."/contigs.txt");
     print $out_contigs join("\n", @contigs),"\n";
-    close $out_contigs;
+    close $out_contigs;  
+  }
 
 
-    ## Generate the contig description table contig.tab
+  ################################################################
+  ## Make contig.tab
+  if (scalar(@contig) > 0) {
     &RSAT::message::TimeWarn("Make contig.tab") if ($main::verbose >= 2);
     my $out_contig =  &OpenOutputFile($species_dir."/contig.tab");
-    print $out_contig "-- dump date    2007_06_25.105229";
-    print $out_contig "-- class    EnsEMBL::Contig";
-    print $out_contig "-- table    contig";
-    print $out_contig "-- table    main";
-    print $out_contig "-- field 1    id";
-    print $out_contig "-- field 2    accession";
-    print $out_contig "-- field 3    version";
-    print $out_contig "-- field 4    type";
-    print $out_contig "-- field 5    length";
-    print $out_contig "-- field 6    description";
-    print $out_contig "-- header";
+    print $out_contig "-- dump date    2007_06_25.105229\n";
+    print $out_contig "-- class    EnsEMBL::Contig\n";
+    print $out_contig "-- table    contig\n";
+    print $out_contig "-- table    main\n";
+    print $out_contig "-- field 1    id\n";
+    print $out_contig "-- field 2    accession\n";
+    print $out_contig "-- field 3    version\n";
+    print $out_contig "-- field 4    type\n";
+    print $out_contig "-- field 5    length\n";
+    print $out_contig "-- field 6    description\n";
+    print $out_contig "-- header\n";
     print $out_contig "-- id    accession    version    type    length    description\n";
     print $out_contig join("\n", @contig),"\n";
     close $out_contig;
-
-
-    ##Write last genome install
-    &RSAT::message::TimeWarn("Update latest_genome.tab") if ($main::verbose >= 2);
-    $latest = $ENV{'RSAT'}."/data/genomes/latest_genome.tab";
-    @species_last = ();
-    if (-f $latest) {
-
-      ($latest_file) = &OpenInputFile($latest);
-      while (<$latest_file>) {
-	my ($species_l,$version) = split("\t");
-	push (@species_last, $_) unless ($species_l eq $species);
-      }
-      close $latest_file;
-    }
-    push (@species_last, $species."\t".$genome_version."\n");
-
-    $latest_file = &OpenOutputFile($latest);
-    print $latest_file join("",@species_last);
-    close $latest_file;
   }
+
+
+  ################################################################
+  ##Write last genome install
+  &RSAT::message::TimeWarn("Update supported_organisms_ensembl.tab") if ($main::verbose >= 2);
+  $supperted_organism_file = $ENV{'RSAT'}."/data/supported_organisms_ensembl.tab";
+
+  @species_last = ();
+
+  if (-f $supperted_organism_file) {
+
+      my ($s_o_file) = &OpenInputFile($supperted_organism_file);
+
+      while (<$s_o_file>) {
+	      my ($species_f,$name,$directory) = split("\t");
+	      push (@species_last, $_) unless ($species_f eq $species."_ensembl_".$genome_version);
+      }
+      close $s_o_file;
+  }
+
+  push (@species_last, $species."_ensembl_".$genome_version."\t".$species." ".$genome_version."\t".$species_dir."\n");
+
+  my $s_o_file = &OpenOutputFile($supperted_organism_file);
+  print $s_o_file join("",@species_last);
+  close $s_o_file;
+
 
 
   &RSAT::message::Info("Genome installed in dir", $species_dir) if ($main::verbose >= 1);
