@@ -2655,5 +2655,72 @@ sub PrintFileLinks {
 }
 
 
+################################################################
+## Generate a HTML index with links to all input/output files
+sub IndexFiles {
+  &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
+
+  ## Input files
+  if (scalar(@infiles) >= 1) {
+    print $html_index "<h2>Input files</h2>";
+    print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+    print $html_index "<tr>\n";
+    print $html_index "<th>Type</th>";
+    print $html_index "<th>File</th>";
+    print $html_index "</tr>\n";
+    foreach my $key (@infiles) {
+      my $file = $infile{$key};
+      my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+      print $html_index "<tr>\n";
+      print $html_index "<td>".$key."</td>";
+      print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+      print $html_index "</tr>\n";
+    }
+    print $html_index "</table>\n";
+  }
+
+  ## Output files
+  if (scalar(@outfiles) >= 1) {
+    print $html_index "<h2>Output files</h2>";
+    print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+    print $html_index "<tr>\n";
+    print $html_index "<th>Type</th>";
+    print $html_index "<th>File</th>";
+    print $html_index "</tr>\n";
+    foreach my $key (@outfiles) {
+      next if ($key eq "html_index");
+      my $file = $outfile{$key};
+      my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+      print $html_index "<tr>\n";
+      print $html_index "<td>".$key."</td>";
+      print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+      print $html_index "</tr>\n";
+    }
+    print $html_index "</table>\n";
+  }
+
+  ## Directories
+  if (scalar(@dirs) >= 1) {
+    print $html_index "<h2>Directories</h2>";
+    print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+    print $html_index "<tr>\n";
+    print $html_index "<th>Type</th>";
+    print $html_index "<th>Directory</th>";
+    print $html_index "</tr>\n";
+    foreach my $key (@dirs) {
+      my $file = $main::dir{$key};
+      my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+      &RSAT::message::Debug("indexing dir", $key, $file, $link) if ($main::verbose >= 5);
+      print $html_index "<tr>\n";
+      print $html_index "<td>".$key."</td>";
+      print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+      print $html_index "</tr>\n";
+    }
+    print $html_index "</table>\n";
+  }
+
+  &RSAT::message::TimeWarn("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
+}
+
 1; # return true
 
