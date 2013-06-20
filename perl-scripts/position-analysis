@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.74 2013/06/20 15:47:03 jvanheld Exp $
+# $Id: position-analysis,v 1.75 2013/06/20 16:20:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -657,14 +657,17 @@ sub CalcExpectedUsingMarkov {
 
     ## Compute transition frequencies from transition occurrences
     foreach my $prefix (keys(%prefix_occ)) {
-      $prefix_freq{$prefix} = $prefix_occ{$prefix}/$window_occ_sum;
+      if ($window_occ_sum <= 0) {
+	$prefix_freq{$prefix} = 0;
+      } else {
+	$prefix_freq{$prefix} = $prefix_occ{$prefix}/$window_occ_sum;
+      }
       foreach my $suffix (keys(%suffix_occ)) {
-	if ($prefix_occ{$prefix} > 0) {
-	  $transition_freq{$prefix}{$suffix} = $transition_occ{$prefix}{$suffix} / $prefix_occ{$prefix};
-	} else {
+	if (($window_occ_sum <= 0) || ($prefix_occ{$prefix} <= 0)) {
 	  $transition_freq{$prefix}{$suffix} = 0;
+	} else {
+	  $transition_freq{$prefix}{$suffix} = $transition_occ{$prefix}{$suffix} / $prefix_occ{$prefix};
 	}
-
 	## Store transition frequencies (for checking, can be
 	## suppressed later, or set as option).
 	print $transition_out join ("\t", $window,
@@ -1728,12 +1731,13 @@ sub PrintExpectedProfiles {
 ## incompletely specified nucleotides).
 sub CheckDNA {
     &RSAT::message::TimeWarn("Checking DNA") if ($main::verbose >= 2);
-
     foreach my $oligo_seq (sort keys %pattern) {
 	if ($oligo_seq =~ /[^atcg]/i) {
 	    delete $pattern{$oligo_seq};
 	}
     }
+    &RSAT::message::TimeWarn("Number of patterns after DNA filtering", scalar(keys %pattern))
+      if ($main::verbose >= 2);
 }
 
 ################################################################
