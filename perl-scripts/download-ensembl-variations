@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.6 2013/06/20 12:22:48 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.7 2013/06/20 14:48:34 jeremy Exp $
 #
 ############################################################
 
@@ -179,7 +179,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -248,17 +248,18 @@ package	main;
 
 
   # Check if genome version install
-  my $species_dir = Get_species_dir(ucfirst($species)."_ensembl_".$genome_version);
+  my $species_dir = &Get_species_dir(ucfirst($species),$genome_version);
+  my $genome_dir = &Get_genome_dir($species_dir);
 
   &RSAT::error::FatalError("$species $genome_version not find in supported_organisms_ensembl.tab. Use download-ensembl-genome before download-ensembl-variations.") unless ($species_dir);
-  &RSAT::error::FatalError("$species_dir/genome don't exist. Use download-ensembl-genome before download-ensembl-variations.") unless (-d $species_dir."/genome");
+  &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before download-ensembl-variations.") unless (-d $genome_dir);
 
   # Check if sequence file are not missing
-  my %chr_file = &Get_file_seq_name($species_dir."/genome");
+  my %chr_file = &Get_file_seq_name($genome_dir);
 
   foreach my $file (keys(%chr_file)) {
-    unless (-f $species_dir."/genome/".$chr_file{$file}) {
-      &RSAT::error::FatalError($species_dir."/genome/$chr_file{$file} missing.");
+    unless (-f $genome_dir.$chr_file{$file}) {
+      &RSAT::error::FatalError($genome_dir.$chr_file{$file}, " is missing.");
     }
   }
 
@@ -266,8 +267,8 @@ package	main;
   ################################################################
   ###Dowload variation file
   &RSAT::message::TimeWarn("Download gvf file") if ($main::verbose >= 2);
+  my $variation_dir = &Get_variation_dir($species_dir);
 
-  my $variation_dir = $species_dir."/variations";
   &RSAT::util::CheckOutDir($variation_dir);
   system("rsync -avP $species_gvf_url $variation_dir");
 
