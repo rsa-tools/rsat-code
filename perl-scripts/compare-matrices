@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.117 2013/02/19 05:30:39 jvanheld Exp $
+# $Id: compare-matrices,v 1.118 2013/06/20 00:30:30 jvanheld Exp $
 #
 ############################################################
 
@@ -433,7 +433,7 @@ package main;
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.117 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.118 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -2043,6 +2043,7 @@ package main;
 
 
   if ($main::outfile{html_index}) {
+    print $main::html_index "<hr>";
     print $main::html_index "</body>";
     print $main::html_index "</html>";
     close $main::html_index;
@@ -3210,67 +3211,6 @@ sub Verbose {
   printf $out &PrintThresholdValues();
 }
 
-
-################################################################
-## Generate a HTML index with links to all input/output files
-sub IndexFiles {
-  &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
-
-#   ## Input files
-#   print $html_index "<h2>Input files</h2>";
-#   print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
-#   print $html_index "<tr>\n";
-#   print $html_index "<th>Type</th>";
-#   print $html_index "<th>File</th>";
-#   print $html_index "</tr>\n";
-#   foreach my $key (@infiles) {
-#     my $file = $infile{$key};
-#     my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
-#     print $html_index "<tr>\n";
-#     print $html_index "<td>".$key."</td>";
-#     print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-#     print $html_index "</tr>\n";
-#   }
-#   print $html_index "</table>\n";
-
-  ## Output files
-  print $html_index "<h2>Output files</h2>";
-  print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
-  print $html_index "<tr>\n";
-  print $html_index "<th>Type</th>";
-  print $html_index "<th>File</th>";
-  print $html_index "</tr>\n";
-  foreach my $key (@outfiles) {
-    next if ($key eq "html_index");
-    my $file = $outfile{$key};
-    my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
-    print $html_index "<tr>\n";
-    print $html_index "<td>".$key."</td>";
-    print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-    print $html_index "</tr>\n";
-  }
-  print $html_index "</table>\n";
-
-  ## Directories
-  print $html_index "<h2>Directories</h2>";
-  print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
-  print $html_index "<tr>\n";
-  print $html_index "<th>Type</th>";
-  print $html_index "<th>Directory</th>";
-  print $html_index "</tr>\n";
-  foreach my $key (@dirs) {
-    my $file = $main::dir{$key};
-    my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
-    &RSAT::message::Debug("indexing dir", $key, $file, $link) if ($main::verbose >= 5);
-    print $html_index "<tr>\n";
-    print $html_index "<td>".$key."</td>";
-    print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-    print $html_index "</tr>\n";
-  }
-  print $html_index "</table>\n";
-
-  &RSAT::message::TimeWarn("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
-}
 
 ################################################################
 #### check threshold on some parameter
