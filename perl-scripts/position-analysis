@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.71 2013/06/20 10:05:34 jvanheld Exp $
+# $Id: position-analysis,v 1.72 2013/06/20 14:22:53 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -175,6 +175,8 @@ package main;
     &LocalReadPatterns() if ($pattern_file);
     &ReadSequence();
     &CheckDNA() if ($seq_type == "dna");
+
+    &CheckZeroOcc();
     &CalcWindows();
 
     ### statistics on oligo occurrences
@@ -467,6 +469,7 @@ sub ReadSequence {
   close $in;
 
 
+
   ### statistics on sequence lengths
   &RSAT::message::TimeWarn ("Calculating stats on sequence lengths")
     if ($main::verbose >= 2);
@@ -490,9 +493,20 @@ sub ReadSequence {
 
 }
 
+## Explicitly set to 0 the oligos not found in a given window
+sub CheckZeroOcc {
+  &RSAT::message::TimeWarn("Setting zero values to patterns absent in specific windows.") if ($main::verbose >= 2);
+  foreach my $oligo_seq (sort keys %pattern) {
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      unless ($window_occ{$oligo_seq}{$window}) {
+	$window_occ{$oligo_seq}{$window} = 0;
+      }
+    }
+  }
+}
 
 ################################################################
-## Calculate window intervals.
+## Calculate window intervals
 sub CalcWindows {
     &RSAT::message::TimeWarn("Calculating windows") if ($main::verbose >= 2);
 
@@ -554,151 +568,173 @@ sub CalcExpected {
     ## Calculate expected occurrences for each window
     &RSAT::message::TimeWarn("Calculating expected occurrences (homogeneous model)") if ($main::verbose >= 2);
     foreach my $oligo_seq (sort keys %pattern) {
-	#	foreach my $window ($min_calc_window..$max_calc_window) {
-	#	    $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
-#	}
+
+      ## Note 2013-06-20: moved to a separte routine because required as well for Markov bg mmodels.
+      #	foreach my $window ($min_calc_window..$max_calc_window) {
+      #	    $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
+      #	}
+
 	foreach my $window ($min_calc_window..$max_calc_window) {
 
-	    ## check that the window_occ has been defined
-	    unless (&IsNatural($window_occ{$oligo_seq}{$window})) {
-		$window_occ{$oligo_seq}{$window} = 0;
-	    }
-	    if ($sum_pos_per_window > 0) {
-		$exp_occ{$oligo_seq}{$window} =  $pattern{$oligo_seq}->{in_bound_occ} * $pos_per_window{$window}/$sum_pos_per_window;
-	    } else {
-		$exp_occ{$oligo_seq}{$window} =  "NA";
-	    }
-#	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
-#	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+	  ################################################################
+	  ## check that the window_occ has been defined
+	  ## Note: 2013-06-20: I disactivate the checking from here, it has to come earlier, with sequence reading
+	  #	    unless (&IsNatural($window_occ{$oligo_seq}{$window})) {
+	  #		$window_occ{$oligo_seq}{$window} = 0;
+	  #	    }
+
+	  ## Compute expected occurrences for a given oligo in a given window
+	  if ($sum_pos_per_window > 0) {
+	    $exp_occ{$oligo_seq}{$window} =  $pattern{$oligo_seq}->{in_bound_occ} * $pos_per_window{$window}/$sum_pos_per_window;
+	    $pattern{$oligo_seq}->{in_bound_exp_occ} += $exp_occ{$oligo_seq}{$window};
+	  } else {
+	    $exp_occ{$oligo_seq}{$window} =  "NA";
+	  }
+	  #	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+	  #	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
 	}
-    }
-}
+      }
+  }
 
 ################################################################
 ## Calculate expected occurrences per window interval using a Markov model
 sub CalcExpectedUsingMarkov {
-    ## Calculate expected occurrences for each window
-    &RSAT::message::TimeWarn("Calculating expected occurrences (Markov model, m=".$markov.")") if ($main::verbose >= 2);
+  ## Calculate expected occurrences for each window
+  &RSAT::message::TimeWarn("Calculating expected occurrences (Markov model, m=".$markov.")") if ($main::verbose >= 2);
 
-    ## Open a file to store windows-specific transition frequencies
-    $outfile{transitions} = $output_prefix."_markov".$markov."_transitions.tab"; push @outfiles, "transitions";
-    my $transition_out = &OpenOutputFile($outfile{transitions});
-    print $transition_out join ("\t", "#window",
-				"[left",
-				"right[",
-				"center",
-				"occ_sum",
-				"prefix",
-				"pr_occ",
-				"pr_freq",
-				"suffix",
-				"tr_occ",
-				"tr_freq"), "\n";
+  ## Open a file to store windows-specific transition frequencies
+  $outfile{transitions} = $output_prefix."_markov".$markov."_transitions.tab"; push @outfiles, "transitions";
+  my $transition_out = &OpenOutputFile($outfile{transitions});
+  print $transition_out join ("\t", "#window",
+			      "[left",
+			      "right[",
+			      "center",
+			      "occ_sum",
+			      "prefix",
+			      "pr_occ",
+			      "pr_freq",
+			      "suffix",
+			      "tr_occ",
+			      "tr_freq"), "\n";
 
-    ## Open a file to store expected oligonucleotide fequencies
-    $outfile{markov_freq} = $output_prefix."_markov".$markov."_markov_freq.tab"; push @outfiles, "markov_freq";
-    my $markov_freq_out = &OpenOutputFile($outfile{markov_freq});
-    print $markov_freq_out join ("\t", "#window",
-				"[left",
-				"right[",
-				"center",
-				"oligo",
-				"occ",
-				"exp_occ",
-				"exp_frq"), "\n";
-
-    ## NOT IMPLEMENTED YET !!!
+  ## Open a file to store expected oligonucleotide fequencies
+  $outfile{markov_freq} = $output_prefix."_markov".$markov."_markov_freq.tab"; push @outfiles, "markov_freq";
+  my $markov_freq_out = &OpenOutputFile($outfile{markov_freq});
+  print $markov_freq_out join ("\t", "#window",
+			       "[left",
+			       "right[",
+			       "center",
+			       "oligo",
+			       "occ",
+			       "exp_occ",
+			       "exp_frq"), "\n";
 
 
-    foreach my $window ($min_calc_window..$max_calc_window) {
-	## Compute transition frequencies for the current window
-	my %transition_occ = ();
-	my %prefix_occ = ();
-	my %suffix_occ = ();
-	my %transition_freq = ();
-	my %prefix_freq = ();
-	my $window_occ_sum = 0;
-	foreach my $oligo_seq (sort keys %pattern) {
-	    my $prefix = substr($oligo_seq,0,$markov) || "n";
-	    my $suffix = substr($oligo_seq,$markov,1);
-	    #&RSAT::message::Debug("Markov", $markov, "window", $window, $oligo_seq, $prefix, $suffix) if ($main::verbose >= 10);
-	    $transition_occ{$prefix}{$suffix} += $window_occ{$oligo_seq}{$window};
-	    $prefix_occ{$prefix} += $window_occ{$oligo_seq}{$window};
-	    $suffix_occ{$suffix} += $window_occ{$oligo_seq}{$window};
-	    $window_occ_sum +=  $window_occ{$oligo_seq}{$window};
-	}
 
-	foreach my $prefix (keys(%prefix_occ)) {
-	    $prefix_freq{$prefix} = $prefix_occ{$prefix}/$window_occ_sum;
-	    foreach my $suffix (keys(%suffix_occ)) {
-		if ($prefix_occ{$prefix} > 0) {
-		    $transition_freq{$prefix}{$suffix} = $transition_occ{$prefix}{$suffix} / $prefix_occ{$prefix};
-		} else {
-		    $transition_freq{$prefix}{$suffix} = 0;
-		}
-		print $transition_out join ("\t", $window,
-					    $window_min{$window},
-					    $window_max{$window},
-					    $window_center{$window},
-					    $window_occ_sum,
-					    $prefix,
-					    $prefix_occ{$prefix},
-					    $prefix_freq{$prefix},
-					    $suffix,
-					    $transition_occ{$prefix}{$suffix},
-					    $transition_freq{$prefix}{$suffix}), "\n";
-	    }
-	}
-
-	## Compute expected word frequencies for the current window
-	foreach my $oligo_seq (sort keys %pattern) {
-	    my $prefix = substr($oligo_seq, 0, $markov);
-	    $exp_freq{$oligo_seq}{$window} = $prefix_freq{$prefix};
-#	    &RSAT::message::Debug("first prefix", "m=".$markov, "w=".$window, $oligo_seq, $offset, $prefix, $prefix_freq{$prefix}, $exp_freq{$oligo_seq}{$window}) if ($main::verbose >= 10);
-	    for my $offset (0..($oligo_length - $markov -1)) {
-		$prefix = substr($oligo_seq, $offset, $markov);
-		$suffix = substr($oligo_seq, $offset+$markov, 1);
-		$exp_freq{$oligo_seq}{$window} *= $transition_freq{$prefix}{$suffix};
-#		&RSAT::message::Debug("extension", "m=".$markov, "w=".$window, $oligo_seq, $offset, $suffix."|".$prefix,
-#				      $transition_freq{$prefix}{$suffix},
-#				      $exp_freq{$oligo_seq}{$window}) if ($main::verbose >= 10);
-	    }
-	    $exp_occ{$oligo_seq}{$window} = $window_occ_sum * $exp_freq{$oligo_seq}{$window};
-	    print $markov_freq_out join ("\t", $window,
-					 $window_min{$window},
-					 $window_max{$window},
-					 $window_center{$window},
-					 $oligo_seq,
-					 $window_occ{$oligo_seq}{$window} || 0,
-					 sprintf("%.1f", $exp_occ{$oligo_seq}{$window}),
-					 $exp_freq{$oligo_seq}{$window}), "\n";
-	}
+  foreach my $window ($min_calc_window..$max_calc_window) {
+    ################################################################
+    ## Compute transition frequencies from the frequencies of all
+    ## oligonucleotides found in the current window (note, this is
+    ## not perfect because we only take into account the m+1
+    ## residues of each oligonucleotide. The alternative would
+    ## require to count all occurrences pf m+1-mers in the
+    ## sequences. I still have to think about the pros and cons.
+    my %transition_occ = ();
+    my %prefix_occ = ();
+    my %suffix_occ = ();
+    my %transition_freq = ();
+    my %prefix_freq = ();
+    my $window_occ_sum = 0;
+    foreach my $oligo_seq (sort keys %pattern) {
+      my $prefix = substr($oligo_seq,0,$markov) || "n";
+      my $suffix = substr($oligo_seq,$markov,1);
+      #&RSAT::message::Debug("Markov", $markov, "window", $window, $oligo_seq, $prefix, $suffix) if ($main::verbose >= 10);
+      $transition_occ{$prefix}{$suffix} += $window_occ{$oligo_seq}{$window};
+      $prefix_occ{$prefix} += $window_occ{$oligo_seq}{$window};
+      $suffix_occ{$suffix} += $window_occ{$oligo_seq}{$window};
+      $window_occ_sum +=  $window_occ{$oligo_seq}{$window};
     }
-    close $transition_out;
-    &RSAT::message::Info("Markov transitions", $outfile{transitions}) if ($main::verbose >= 2);
 
-    close $markov_freq_out;
-    &RSAT::message::Info("Markov frequencies", $outfile{markov_freq}) if ($main::verbose >= 2);
+    ## Compute transition frequencies from transition occurrences
+    foreach my $prefix (keys(%prefix_occ)) {
+      $prefix_freq{$prefix} = $prefix_occ{$prefix}/$window_occ_sum;
+      foreach my $suffix (keys(%suffix_occ)) {
+	if ($prefix_occ{$prefix} > 0) {
+	  $transition_freq{$prefix}{$suffix} = $transition_occ{$prefix}{$suffix} / $prefix_occ{$prefix};
+	} else {
+	  $transition_freq{$prefix}{$suffix} = 0;
+	}
 
-#     foreach my $oligo_seq (sort keys %pattern) {
-# 	foreach my $window ($min_calc_window..$max_calc_window) {
-# 	    $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
-# 	}
-# 	foreach my $window ($min_calc_window..$max_calc_window) {
+	## Store transition frequencies (for checking, can be
+	## suppressed later, or set as option).
+	print $transition_out join ("\t", $window,
+				    $window_min{$window},
+				    $window_max{$window},
+				    $window_center{$window},
+				    $window_occ_sum,
+				    $prefix,
+				    $prefix_occ{$prefix},
+				    $prefix_freq{$prefix},
+				    $suffix,
+				    $transition_occ{$prefix}{$suffix},
+				    $transition_freq{$prefix}{$suffix}), "\n";
+      }
+    }
 
-# 	    ## check that the window_occ has been defined
-# 	    unless (&IsNatural($window_occ{$oligo_seq}{$window})) {
-# 		$window_occ{$oligo_seq}{$window} = 0;
-# 	    }
-# 	    if ($sum_pos_per_window > 0) {
-# 		$exp_occ{$oligo_seq}{$window} =  $pattern{$oligo_seq}->{in_bound_occ} * $pos_per_window{$window}/$sum_pos_per_window;
-# 	    } else {
-# 		$exp_occ{$oligo_seq}{$window} =  "NA";
-# 	    }
-# 	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
-# 	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
-# 	}
-#     }
+    ################################################################
+    ## Compute expected word frequencies for the current window
+    foreach my $oligo_seq (sort keys %pattern) {
+      if ($sum_pos_per_window <= 0) {
+	$exp_freq{$oligo_seq}{$window} =  "NA";
+	$exp_occ{$oligo_seq}{$window} =  "NA";
+      } else {
+	my $prefix = substr($oligo_seq, 0, $markov);
+	$exp_freq{$oligo_seq}{$window} = $prefix_freq{$prefix} || 0;
+	#	    &RSAT::message::Debug("first prefix", "m=".$markov, "w=".$window, $oligo_seq, $offset, $prefix, $prefix_freq{$prefix}, $exp_freq{$oligo_seq}{$window}) if ($main::verbose >= 10);
+	for my $offset (0..($oligo_length - $markov -1)) {
+	  $prefix = substr($oligo_seq, $offset, $markov);
+	  $suffix = substr($oligo_seq, $offset+$markov, 1);
+	  $exp_freq{$oligo_seq}{$window} *= $transition_freq{$prefix}{$suffix};
+	  #		&RSAT::message::Debug("extension", "m=".$markov, "w=".$window, $oligo_seq, $offset, $suffix."|".$prefix,
+	  #				      $transition_freq{$prefix}{$suffix},
+	  #				      $exp_freq{$oligo_seq}{$window}) if ($main::verbose >= 10);
+	}
+	$exp_occ{$oligo_seq}{$window} = $window_occ_sum * $exp_freq{$oligo_seq}{$window};
+	$pattern{$oligo_seq}->{in_bound_exp_occ} += $exp_occ{$oligo_seq}{$window};
+	print $markov_freq_out join ("\t", $window,
+				     $window_min{$window},
+				     $window_max{$window},
+				     $window_center{$window},
+				     $oligo_seq,
+				     $window_occ{$oligo_seq}{$window},
+				     sprintf("%.1f", $exp_occ{$oligo_seq}{$window}),
+				     $exp_freq{$oligo_seq}{$window}), "\n";
+      }
+    }
+  }
+
+  ################################################################
+  ## Rescale expected frequencies and occurrences to obtain, for each
+  ## oligo, the same sum for observed and expected occurrences. If
+  ## not, the program will detect words that are globally over- or
+  ## under-represented relative to the Markov expectation, rather than
+  ## positionnally biased oligos.
+  foreach my $oligo_seq (sort keys %pattern) {
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      $exp_occ{$oligo_seq}{$window} *= $pattern{$oligo_seq}->{in_bound_occ};
+      $exp_occ{$oligo_seq}{$window} /= $pattern{$oligo_seq}->{in_bound_exp_occ};
+    }
+  }
+
+  ## Close the transition and Markov frequency files
+  close $transition_out;
+  &RSAT::message::Info("Markov transitions", $outfile{transitions}) if ($main::verbose >= 2);
+
+  close $markov_freq_out;
+  &RSAT::message::Info("Markov frequencies", $outfile{markov_freq}) if ($main::verbose >= 2);
+
+  # 	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+  # 	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
 }
 
 ################################################################
@@ -713,11 +749,13 @@ sub CalcChi {
 
     @chi_values = ();
     foreach my $window ($min_calc_window..$max_calc_window) {
-      push @chi_values, $window_occ{$oligo_seq}{$window};
+      push @chi_values, $window_occ{$oligo_seq}{$window} || 0;
     }
     foreach my $window ($min_calc_window..$max_calc_window) {
-      push @chi_values, $exp_occ{$oligo_seq}{$window};
+      push @chi_values, $exp_occ{$oligo_seq}{$window} || 0;
     }
+#    &RSAT::message::Debug("chi_values", join(" ", @chi_values)) if ($main::verbose >= 10);
+
     ($pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}) = &ChiSquare("goodfit", 2, $calc_window_nb, 1, @chi_values);
     #	&RSAT::message::Debug($oligo_seq, "chi2=".$pattern{$oligo_seq}->{chi_square}, "df=".$pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
 
