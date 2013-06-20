@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.43 2013/03/20 14:12:20 jvanheld Exp $
+# $Id: convert-seq,v 1.44 2013/06/20 10:05:21 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -307,7 +307,7 @@ OPTIONS
 		Export the # top sequences only.
 
 	-skip #
-		Skip the # top sequences. 
+		Skip the # top sequences.
 
 		Options -skip and -top can be combined to extract a
 		subset from the i^th to the j^th sequence (a "slice"
