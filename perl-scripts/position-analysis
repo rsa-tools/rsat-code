@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.73 2013/06/20 15:25:28 jvanheld Exp $
+# $Id: position-analysis,v 1.74 2013/06/20 15:47:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -706,7 +706,7 @@ sub CalcExpectedUsingMarkov {
 				     $window_max{$window},
 				     $window_center{$window},
 				     $oligo_seq,
-				     $window_occ{$oligo_seq}{$window},
+				     $window_occ{$oligo_seq}{$window} || 0,
 				     sprintf("%.1f", $exp_occ{$oligo_seq}{$window}),
 				     $exp_freq{$oligo_seq}{$window}), "\n";
       }
@@ -1639,7 +1639,7 @@ sub PrintResult {
     ### Position distribution
     if ($return{'distrib'}) {
       for my $window ($min_calc_window..$max_calc_window) {
-	print $out "\t$window_occ{$oligo_seq}{$window}";
+	print $out "\t", $window_occ{$oligo_seq}{$window} || 0;
       }
     }
 
@@ -1706,7 +1706,7 @@ sub PrintExpectedProfiles {
     print $out_exp "$oligo_seq";	### Pattern sequence
     print $out_exp "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
     for my $window ($min_calc_window..$max_calc_window) {
-      printf $out_exp "\t%.1f", $exp_occ{$oligo_seq}{$window};
+      printf $out_exp "\t%.1f", $exp_occ{$oligo_seq}{$window} || 0;
     }
     print $out_exp "\n";
   }
@@ -1886,7 +1886,7 @@ sub GenerateGraphs {
 	print XY ";window\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
 	foreach my $window ($min_window..$max_window) {
 	    print XY "$window_center{$window}\t";
-	    print XY "$window_occ{$oligo_seq}{$window}\t";
+	    print XY $window_occ{$oligo_seq}{$window} || 0, "\t";
 	    print XY "$exp_occ{$oligo_seq}{$window}\n";
 	}
 	close XYgraph;
