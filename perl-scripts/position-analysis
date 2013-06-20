@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.69 2013/06/19 22:46:09 jvanheld Exp $
+# $Id: position-analysis,v 1.70 2013/06/20 00:30:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -182,6 +182,14 @@ package main;
 	$sum_overlaps += $pattern{$oligo_seq}->{overlaps};
     }
 
+    &CalcInboundOcc();
+
+    if ($bg_method eq "markov") {
+	&CalcExpectedUsingMarkov();
+    } else {
+	&CalcExpected();
+    }
+
     &SumStrands() if ($strands eq "2str");
 
     &RSAT::message::Info("Number of patterns before filtering", scalar(keys(%pattern))) if ($main::verbose >= 2);
@@ -209,12 +217,7 @@ package main;
 	&RSAT::message::Info("Filtered by occurrences", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
     }
 
-    if ($bg_method eq "markov") {
-	&CalcExpectedUsingMarkov();
-    } else {
-	&CalcExpected();
-    }
-
+    ## Compute the chi-squared statistics and p-value
     &CalcChi() if ($return{chi});
 
     &RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
@@ -238,32 +241,43 @@ package main;
 sub SumStrands {
   &RSAT::message::TimeWarn("Summing occurrences of reverse complementary patterns") if ($main::verbose >= 2);
 
+
   ################################################################
   ## Sum occurrences
+  my %occurrences_2strands = ();
+  my %inbound_occ_2strands = ();
   foreach my $oligo_seq (keys %pattern) {
     $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
-    $occurrences_2strands{$oligo_seq} = $pattern{$oligo_seq}->{occ} + $occurrences{$rc_oligo_seq};
-    $occurrences_2strands{$rc_oligo_seq} = $occurrences_2strands{$oligo_seq};
+    if ($rc_oligo_seq eq $oligo_seq) {
+	$occurrences_2strands{$oligo_seq}  = $pattern{$oligo_seq}->{occ} + $pattern{$rc_oligo_seq}->{occ};
+	$inbound_occ_2strands{$oligo_seq}  = $pattern{$oligo_seq}->{in_bound_occ} + $pattern{$rc_oligo_seq}->{in_bound_occ};
+    } else {
+    }
   }
   foreach my $oligo_seq (keys %pattern_2strands) {
     $pattern{$oligo_seq}->{occ} = $occurrences_2strands{$oligo_seq};
+    $pattern{$oligo_seq}->{in_bound_occ} = $inbound_occ_2strands{$oligo_seq};
   }
   undef %pattern_2strands;
 
   ################################################################
   ## Sum position profiles
+  my %window_occ_2str = ();
+  my %exp_occ_2str = ();
   for my $window ($min_window..$max_window) {
     foreach my $oligo_seq (sort keys %pattern) {
       $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
       if ($rc_oligo_seq eq $oligo_seq) {
-	$m_pos_bothstrands{$oligo_seq}{$window} = $window_freq{$oligo_seq}{$window};
+	$window_occ_2str{$oligo_seq}{$window} = $window_occ{$oligo_seq}{$window};
+	$exp_occ_2str{$oligo_seq}{$window} = $exp_occ{$oligo_seq}{$window};
       } else {
-	$m_pos_bothstrands{$oligo_seq}{$window} = $window_freq{$oligo_seq}{$window} + $window_freq{$rc_oligo_seq}{$window};
+	$window_occ_2str{$oligo_seq}{$window} = $window_occ{$oligo_seq}{$window} + $window_occ{$rc_oligo_seq}{$window};
+	$exp_occ_2str{$oligo_seq}{$window} = $exp_occ{$oligo_seq}{$window} + $exp_occ{$rc_oligo_seq}{$window};
       }
     }
     foreach my $oligo_seq (sort keys %pattern) {
-      $window_freq{$oligo_seq}{$window} = $m_pos_bothstrands{$oligo_seq}{$window};
-      undef $m_pos_bothstrands{$oligo_seq}{$window};
+      $window_occ{$oligo_seq}{$window} = $window_occ_2str{$oligo_seq}{$window};
+      $exp_occ{$oligo_seq}{$window} = $exp_occ_2str{$oligo_seq}{$window};
     }
   }
 
@@ -274,7 +288,9 @@ sub SumStrands {
       my $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
       if ($rc_oligo_seq gt $oligo_seq) { ### only suppress one oligo from the dyad 
 	delete $pattern{$rc_oligo_seq};
-	delete $window_freq{$rc_oligo_seq};
+	delete $window_occ{$rc_oligo_seq};
+	delete $exp_occ{$rc_oligo_seq};
+	delete $exp_freq{$rc_oligo_seq};
       }
     }
   }
@@ -403,7 +419,7 @@ sub ReadSequence {
 	$pattern{$oligo_seq}->{overlaps}++;
       } else {
 	$pattern{$oligo_seq}->{occ}++;
-	$window_freq{$oligo_seq}{$window}++;
+	$window_occ{$oligo_seq}{$window}++;
 	$last_pos{$oligo_seq} = $current_pos;
       }
       $current_pos++;
@@ -520,30 +536,38 @@ sub CalcWindows {
 }
 
 
+################################################################
+## Calculate the sum of in-bound occurrences for each oligo
+sub CalcInboundOcc {
+  foreach my $oligo_seq (sort keys %pattern) {
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
+    }
+  }
+}
 
 ################################################################
 ## Calculate expected occurrences per window interval
 sub CalcExpected {
-
     ## Calculate expected occurrences for each window
     &RSAT::message::TimeWarn("Calculating expected occurrences (homogeneous model)") if ($main::verbose >= 2);
     foreach my $oligo_seq (sort keys %pattern) {
-	foreach my $window ($min_calc_window..$max_calc_window) {
-	    $pattern{$oligo_seq}->{in_bound_occ} += $window_freq{$oligo_seq}{$window};
-	}
+	#	foreach my $window ($min_calc_window..$max_calc_window) {
+	#	    $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
+#	}
 	foreach my $window ($min_calc_window..$max_calc_window) {
 
-	    ## check that the window_freq has been defined
-	    unless (&IsNatural($window_freq{$oligo_seq}{$window})) {
-		$window_freq{$oligo_seq}{$window} = 0;
+	    ## check that the window_occ has been defined
+	    unless (&IsNatural($window_occ{$oligo_seq}{$window})) {
+		$window_occ{$oligo_seq}{$window} = 0;
 	    }
 	    if ($sum_pos_per_window > 0) {
 		$exp_occ{$oligo_seq}{$window} =  $pattern{$oligo_seq}->{in_bound_occ} * $pos_per_window{$window}/$sum_pos_per_window;
 	    } else {
 		$exp_occ{$oligo_seq}{$window} =  "NA";
 	    }
-#	    $max_freq = &max($max_freq,$window_freq{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
-#	    $min_freq = &min($min_freq,$window_freq{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+#	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+#	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
 	}
     }
 }
@@ -551,7 +575,6 @@ sub CalcExpected {
 ################################################################
 ## Calculate expected occurrences per window interval using a Markov model
 sub CalcExpectedUsingMarkov {
-    
     ## Calculate expected occurrences for each window
     &RSAT::message::TimeWarn("Calculating expected occurrences (Markov model, m=".$markov.")") if ($main::verbose >= 2);
 
@@ -591,19 +614,19 @@ sub CalcExpectedUsingMarkov {
 	my %suffix_occ = ();
 	my %transition_freq = ();
 	my %prefix_freq = ();
-	my $window_occ = 0;
+	my $window_occ_sum = 0;
 	foreach my $oligo_seq (sort keys %pattern) {
 	    my $prefix = substr($oligo_seq,0,$markov) || "n";
 	    my $suffix = substr($oligo_seq,$markov,1);
 	    #&RSAT::message::Debug("Markov", $markov, "window", $window, $oligo_seq, $prefix, $suffix) if ($main::verbose >= 10);
-	    $transition_occ{$prefix}{$suffix} += $window_freq{$oligo_seq}{$window};
-	    $prefix_occ{$prefix} += $window_freq{$oligo_seq}{$window};
-	    $suffix_occ{$suffix} += $window_freq{$oligo_seq}{$window};
-	    $window_occ +=  $window_freq{$oligo_seq}{$window};
+	    $transition_occ{$prefix}{$suffix} += $window_occ{$oligo_seq}{$window};
+	    $prefix_occ{$prefix} += $window_occ{$oligo_seq}{$window};
+	    $suffix_occ{$suffix} += $window_occ{$oligo_seq}{$window};
+	    $window_occ_sum +=  $window_occ{$oligo_seq}{$window};
 	}
 
 	foreach my $prefix (keys(%prefix_occ)) {
-	    $prefix_freq{$prefix} = $prefix_occ{$prefix}/$window_occ;
+	    $prefix_freq{$prefix} = $prefix_occ{$prefix}/$window_occ_sum;
 	    foreach my $suffix (keys(%suffix_occ)) {
 		if ($prefix_occ{$prefix} > 0) {
 		    $transition_freq{$prefix}{$suffix} = $transition_occ{$prefix}{$suffix} / $prefix_occ{$prefix};
@@ -642,7 +665,7 @@ sub CalcExpectedUsingMarkov {
 					 $window_max{$window}, 
 					 $window_center{$window}, 
 					 $oligo_seq,
-					 $window_freq{$oligo_seq}{$window},
+					 $window_occ{$oligo_seq}{$window},
 					 sprintf("%.1f", $exp_occ{$oligo_seq}{$window}),
 					 $exp_freq{$oligo_seq}{$window}), "\n";
 	}	
@@ -656,21 +679,21 @@ sub CalcExpectedUsingMarkov {
 
 #     foreach my $oligo_seq (sort keys %pattern) {
 # 	foreach my $window ($min_calc_window..$max_calc_window) {
-# 	    $pattern{$oligo_seq}->{in_bound_occ} += $window_freq{$oligo_seq}{$window};
+# 	    $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
 # 	}
 # 	foreach my $window ($min_calc_window..$max_calc_window) {
 
-# 	    ## check that the window_freq has been defined
-# 	    unless (&IsNatural($window_freq{$oligo_seq}{$window})) {
-# 		$window_freq{$oligo_seq}{$window} = 0;
+# 	    ## check that the window_occ has been defined
+# 	    unless (&IsNatural($window_occ{$oligo_seq}{$window})) {
+# 		$window_occ{$oligo_seq}{$window} = 0;
 # 	    }
 # 	    if ($sum_pos_per_window > 0) {
 # 		$exp_occ{$oligo_seq}{$window} =  $pattern{$oligo_seq}->{in_bound_occ} * $pos_per_window{$window}/$sum_pos_per_window;
 # 	    } else {
 # 		$exp_occ{$oligo_seq}{$window} =  "NA";
 # 	    }
-# 	    $max_freq = &max($max_freq,$window_freq{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
-# 	    $min_freq = &min($min_freq,$window_freq{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+# 	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+# 	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
 # 	}
 #     }
 }
@@ -687,7 +710,7 @@ sub CalcChi {
 
     @chi_values = ();
     foreach my $window ($min_calc_window..$max_calc_window) {
-      push @chi_values, $window_freq{$oligo_seq}{$window};
+      push @chi_values, $window_occ{$oligo_seq}{$window};
     }
     foreach my $window ($min_calc_window..$max_calc_window) {
       push @chi_values, $exp_occ{$oligo_seq}{$window};
@@ -1559,7 +1582,7 @@ sub PrintResult {
     ### Position distribution
     if ($return{'distrib'}) {
       for my $window ($min_calc_window..$max_calc_window) {
-	print $out "\t$window_freq{$oligo_seq}{$window}";
+	print $out "\t$window_occ{$oligo_seq}{$window}";
       }
     }
 
@@ -1806,7 +1829,7 @@ sub GenerateGraphs {
 	print XY ";window\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
 	foreach my $window ($min_window..$max_window) {
 	    print XY "$window_center{$window}\t";
-	    print XY "$window_freq{$oligo_seq}{$window}\t";
+	    print XY "$window_occ{$oligo_seq}{$window}\t";
 	    print XY "$exp_occ{$oligo_seq}{$window}\n";
 	}
 	close XYgraph;
