@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.80 2013/06/20 17:49:26 jvanheld Exp $
+# $Id: position-analysis,v 1.81 2013/06/20 22:30:20 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -72,13 +72,14 @@ package main;
 
     ## Supported return fields
     our @supported_return_fields = qw(distrib
-				    exp
-				    chi
-				    rank
-				    graphs
-				    clusters
-				    html
-				   );
+				      exp
+				      chi
+				      sig
+				      rank
+				      graphs
+				      clusters
+				      html
+				     );
 
     our %supported_return_field = ();
     foreach my $field (@supported_return_fields) {
