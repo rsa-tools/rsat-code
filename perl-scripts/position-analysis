@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.72 2013/06/20 14:22:53 jvanheld Exp $
+# $Id: position-analysis,v 1.73 2013/06/20 15:25:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -34,7 +34,7 @@ package main;
     our $log_base = log(10);
     our $max_sig = 300; ## Value to be displayed for the significance when the P-value is lower than precision limit (thus, P-val = 0)
 
-    our $bg_method = "homogeneous";
+    our $bg_method = "homogeneous repartition";
 #    our $bg_method = "markov";
     our $markov = -2;
 
@@ -566,7 +566,7 @@ sub CalcInboundOcc {
 ## Calculate expected occurrences per window interval
 sub CalcExpected {
     ## Calculate expected occurrences for each window
-    &RSAT::message::TimeWarn("Calculating expected occurrences (homogeneous model)") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating expected occurrences (homogeneous repartition model)") if ($main::verbose >= 2);
     foreach my $oligo_seq (sort keys %pattern) {
 
       ## Note 2013-06-20: moved to a separte routine because required as well for Markov bg mmodels.
@@ -721,8 +721,19 @@ sub CalcExpectedUsingMarkov {
   ## positionnally biased oligos.
   foreach my $oligo_seq (sort keys %pattern) {
     foreach my $window ($min_calc_window..$max_calc_window) {
-      $exp_occ{$oligo_seq}{$window} *= $pattern{$oligo_seq}->{in_bound_occ};
-      $exp_occ{$oligo_seq}{$window} /= $pattern{$oligo_seq}->{in_bound_exp_occ};
+      &RSAT::message::Debug("Rescaling expected occurrences",
+			    "w=".$window,
+			    $oligo_seq,
+			    $pattern{$oligo_seq}->{in_bound_exp_occ},
+			    $pattern{$oligo_seq}->{in_bound_occ},
+			    "expinwind=".$exp_occ{$oligo_seq}{$window},
+			   ) if ($main::verbose >= 10);
+      if ($pattern{$oligo_seq}->{in_bound_exp_occ} == 0) {
+	$exp_occ{$oligo_seq}{$window} = "NA";
+      } else {
+	$exp_occ{$oligo_seq}{$window} *= $pattern{$oligo_seq}->{in_bound_occ};
+	$exp_occ{$oligo_seq}{$window} /= $pattern{$oligo_seq}->{in_bound_exp_occ};
+      }
     }
   }
 
@@ -865,7 +876,7 @@ NAME
 DESCRIPTION
 	Calculates the positional distribution of oligonucleotides in
 	a set of sequences, and detects those which significantly
-	discard from a homogeneous distribution.
+	discard from a homogeneous repartition.
 
 CATEGORY
 	sequences
@@ -880,11 +891,11 @@ DETAILED DESCRIPTION
 	interval).
 
 	The expected number of occurrences per window is then computed
-	on the basis of a model of homogeneous repartitionof the
-	occurrences. Beware : homogeneous does not necessarily means
-	"flat". Indeed, if the sequence set contains sequences of
-	unequal lengths, the number of sequence fragments varies from
-	window to window.
+	on the basis of a model of homogeneous repartition of the
+	occurrences. Beware : homogeneous repartition does not
+	necessarily mean "flat". Indeed, if the sequence set contains
+	sequences of unequal lengths, the number of sequence fragments
+	varies from window to window.
 
 	Observed and expected occurrences are compared using the
 	chi-squared formula:
@@ -1067,9 +1078,9 @@ OPTIONS
 	-markov markov_order
 		Order for the Markov model use to compute
 		position-specific expected word frequencies.
-		
+
 		By default, expected frequencies are estimated by
-		assuming a homogeneous distribution of k-mer
+		assuming a homogeneous repartition of k-mer
 		occurrences (as in the original publication by van
 		Helden et al., 2000).
 
@@ -1318,8 +1329,8 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-markov/i) {
 	    $main::markov = lc($ARGV[$a+1]);
 	    $main::bg_method = "markov";
-	    unless (&IsNatural($markov)) {
-		&RSAT::error::FatalError($markov, "is not a valid value for -markov. Must be a Natural number.");
+	    unless (&IsInteger($markov)) {
+		&RSAT::error::FatalError($markov, "is not a valid value for -markov. Must be an Integer number.");
 	    }
 
 	    ## sequence type
@@ -1438,17 +1449,14 @@ sub Verbose {
     printf $out "; %-29s\t%s\n", "Sequence file", $infile{sequences} if ($infile{sequences});
     printf $out "; %-29s\t%s\n", "Sequence format", $in_format;
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
-    printf $out "; %-29s\t%d\n", "Skipped sequence", $skip_seq if ($skip_seq > 0);
-    printf $out "; %-29s\t%d\n", "Fist sequence", $skip_seq + 1 if ($skip_seq > 0);
-    printf $out "; %-29s\t%d\n", "Last sequence", $last_seq if ($last_seq > 0);
     printf $out "; %-29s\t%s\n", "Output file", $outfile{output} if ($outfile{output});
     printf $out "; %-29s\t%d\n", "Oligo length", $oligo_length;
     printf $out "; %-29s\t%f\n", "Lower threshold on chi", $lth{chi} if (&IsReal($lth{chi}));
     printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $lth{'occ'} if (&IsNatural($lth{'occ'}));
     if ($strands eq "2str") {
-	printf $out "; %-29s\n", "Occurrences counted  on both strands";
+	printf $out "; %s\n", "Occurrences counted  on both strands";
 	if ($group_rc) {
-	    printf $out "; %-29s\n", "grouped by pairs of reverse complements";
+	    printf $out "; %s\n", "Grouping reverse complements";
 	}
     } else {
 	printf $out "; %-29s\n", "Occurrences counted  on a single  strands";
@@ -1456,7 +1464,15 @@ sub Verbose {
     print $out "; Conditions of applicability not checked !\n" if ($no_check);
     print $out "; WARNING ! chi2 is shown between curly braces when the applicability conditions are not satisfied.\n" if ($no_filter);
 
+    print $out "; Background model estimation: $bg_method\n";
+    if ($bg_method eq "markov") {
+      printf $out ";\t%-29s\t%d\n", "Markov order", $markov;
+    }
+
     print $out "; Sequence statistics:\n";
+    printf $out ";\t%-29s\t%d\n", "Skipped sequence", $skip_seq if ($skip_seq > 0);
+    printf $out ";\t%-29s\t%d\n", "First sequence", $skip_seq + 1 if ($skip_seq > 0);
+    printf $out ";\t%-29s\t%d\n", "Last sequence", $last_seq if ($last_seq > 0);
     printf $out ";\t%-29s\t%d\n", "Nb of sequences", $sequence_number;
     printf $out ";\t%-29s\t%d\n", "Sum of sequence lengths", $sum_seq_length;
     printf $out ";\t%-29s\t%d\n", "Min sequence length", $min_seq_length;
