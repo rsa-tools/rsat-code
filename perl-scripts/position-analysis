@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.77 2013/06/20 16:57:44 jvanheld Exp $
+# $Id: position-analysis,v 1.78 2013/06/20 17:13:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -140,7 +140,7 @@ package main;
 	chomp $dir{output};
     } else {
 	## Output profile is required for some return types
-	for my $return_type qw(graphs exp clusters) {
+	for my $return_type (qw(graphs exp clusters)) {
 	    if ($return{$return_type}) {
 		&RSAT::error::FatalError("The option '-return $return_type' requires to specify an output file (-o)");
 	    }
