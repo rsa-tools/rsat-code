@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.79 2013/06/20 17:32:03 jvanheld Exp $
+# $Id: position-analysis,v 1.80 2013/06/20 17:49:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -37,6 +37,8 @@ package main;
     our $bg_method = "homogeneous repartition";
 #    our $bg_method = "markov";
     our $markov = -2;
+    our $export_transitions = 0; ## For debugging
+    our $export_markov_freq = 0; ## For debugging
 
     ## Origin and offset
     our $origin = "start";
@@ -603,33 +605,36 @@ sub CalcExpectedUsingMarkov {
   ## Calculate expected occurrences for each window
   &RSAT::message::TimeWarn("Calculating expected occurrences (Markov model, m=".$markov.")") if ($main::verbose >= 2);
 
-  ## Open a file to store windows-specific transition frequencies
-  $outfile{transitions} = $output_prefix."_markov".$markov."_transitions.tab"; push @outfiles, "transitions";
-  my $transition_out = &OpenOutputFile($outfile{transitions});
-  print $transition_out join ("\t", "#window",
-			      "[left",
-			      "right[",
-			      "center",
-			      "occ_sum",
-			      "prefix",
-			      "pr_occ",
-			      "pr_freq",
-			      "suffix",
-			      "tr_occ",
-			      "tr_freq"), "\n";
+  if ($export_transitions) {
+    ## Open a file to store windows-specific transition frequencies
+    $outfile{transitions} = $output_prefix."_markov".$markov."_transitions.tab"; push @outfiles, "transitions";
+    my $transition_out = &OpenOutputFile($outfile{transitions});
+    print $transition_out join ("\t", "#window",
+				"[left",
+				"right[",
+				"center",
+				"occ_sum",
+				"prefix",
+				"pr_occ",
+				"pr_freq",
+				"suffix",
+				"tr_occ",
+				"tr_freq"), "\n";
+  }
 
-  ## Open a file to store expected oligonucleotide fequencies
-  $outfile{markov_freq} = $output_prefix."_markov".$markov."_exp_freq.tab"; push @outfiles, "markov_freq";
-  my $markov_freq_out = &OpenOutputFile($outfile{markov_freq});
-  print $markov_freq_out join ("\t", "#window",
-			       "[left",
-			       "right[",
-			       "center",
-			       "oligo",
-			       "occ",
-			       "exp_occ",
-			       "exp_frq"), "\n";
-
+  if ($export_markov_freq) {
+    ## Open a file to store expected oligonucleotide fequencies
+    $outfile{markov_freq} = $output_prefix."_markov".$markov."_exp_freq.tab"; push @outfiles, "markov_freq";
+    my $markov_freq_out = &OpenOutputFile($outfile{markov_freq});
+    print $markov_freq_out join ("\t", "#window",
+				 "[left",
+				 "right[",
+				 "center",
+				 "oligo",
+				 "occ",
+				 "exp_occ",
+				 "exp_frq"), "\n";
+  }
 
 
   foreach my $window ($min_calc_window..$max_calc_window) {
@@ -671,17 +676,19 @@ sub CalcExpectedUsingMarkov {
 	}
 	## Store transition frequencies (for checking, can be
 	## suppressed later, or set as option).
-	print $transition_out join ("\t", $window,
-				    $window_min{$window},
-				    $window_max{$window},
-				    $window_center{$window},
-				    $window_occ_sum,
-				    $prefix,
-				    $prefix_occ{$prefix},
-				    $prefix_freq{$prefix},
-				    $suffix,
-				    $transition_occ{$prefix}{$suffix},
-				    $transition_freq{$prefix}{$suffix}), "\n";
+	if ($export_transitions) {
+	  print $transition_out join ("\t", $window,
+				      $window_min{$window},
+				      $window_max{$window},
+				      $window_center{$window},
+				      $window_occ_sum,
+				      $prefix,
+				      $prefix_occ{$prefix},
+				      $prefix_freq{$prefix},
+				      $suffix,
+				      $transition_occ{$prefix}{$suffix},
+				      $transition_freq{$prefix}{$suffix}), "\n";
+	}
       }
     }
 
@@ -707,14 +714,16 @@ sub CalcExpectedUsingMarkov {
 	}
 	$exp_occ{$oligo_seq}{$window} = $window_occ_sum * $exp_freq{$oligo_seq}{$window};
 	$pattern{$oligo_seq}->{in_bound_exp_occ} += $exp_occ{$oligo_seq}{$window};
-	print $markov_freq_out join ("\t", $window,
-				     $window_min{$window},
-				     $window_max{$window},
-				     $window_center{$window},
-				     $oligo_seq,
-				     $window_occ{$oligo_seq}{$window} || 0,
-				     sprintf("%.1f", $exp_occ{$oligo_seq}{$window}),
-				     $exp_freq{$oligo_seq}{$window}), "\n";
+	if ($export_markov_freq) {
+	  print $markov_freq_out join ("\t", $window,
+				       $window_min{$window},
+				       $window_max{$window},
+				       $window_center{$window},
+				       $oligo_seq,
+				       $window_occ{$oligo_seq}{$window} || 0,
+				       sprintf("%.1f", $exp_occ{$oligo_seq}{$window}),
+				       $exp_freq{$oligo_seq}{$window}), "\n";
+	}
       }
     }
   }
