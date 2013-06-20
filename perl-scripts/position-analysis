@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.75 2013/06/20 16:20:46 jvanheld Exp $
+# $Id: position-analysis,v 1.76 2013/06/20 16:52:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -584,11 +584,12 @@ sub CalcExpected {
 	  #	    }
 
 	  ## Compute expected occurrences for a given oligo in a given window
-	  if ($sum_pos_per_window > 0) {
+	  if ($sum_pos_per_window <= 0) {
+#	    $exp_occ{$oligo_seq}{$window} =  "NA";
+	    $exp_occ{$oligo_seq}{$window} =  0;
+	  } else {
 	    $exp_occ{$oligo_seq}{$window} =  $pattern{$oligo_seq}->{in_bound_occ} * $pos_per_window{$window}/$sum_pos_per_window;
 	    $pattern{$oligo_seq}->{in_bound_exp_occ} += $exp_occ{$oligo_seq}{$window};
-	  } else {
-	    $exp_occ{$oligo_seq}{$window} =  "NA";
 	  }
 	  #	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
 	  #	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
@@ -688,8 +689,10 @@ sub CalcExpectedUsingMarkov {
     ## Compute expected word frequencies for the current window
     foreach my $oligo_seq (sort keys %pattern) {
       if ($sum_pos_per_window <= 0) {
-	$exp_freq{$oligo_seq}{$window} =  "NA";
-	$exp_occ{$oligo_seq}{$window} =  "NA";
+#	$exp_freq{$oligo_seq}{$window} =  "NA";
+#	$exp_occ{$oligo_seq}{$window} =  "NA";
+	$exp_freq{$oligo_seq}{$window} =  0;
+	$exp_occ{$oligo_seq}{$window} =  0;
       } else {
 	my $prefix = substr($oligo_seq, 0, $markov);
 	$exp_freq{$oligo_seq}{$window} = $prefix_freq{$prefix} || 0;
