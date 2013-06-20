@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.78 2013/06/20 17:13:21 jvanheld Exp $
+# $Id: position-analysis,v 1.79 2013/06/20 17:32:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -619,7 +619,7 @@ sub CalcExpectedUsingMarkov {
 			      "tr_freq"), "\n";
 
   ## Open a file to store expected oligonucleotide fequencies
-  $outfile{markov_freq} = $output_prefix."_markov".$markov."_markov_freq.tab"; push @outfiles, "markov_freq";
+  $outfile{markov_freq} = $output_prefix."_markov".$markov."_exp_freq.tab"; push @outfiles, "markov_freq";
   my $markov_freq_out = &OpenOutputFile($outfile{markov_freq});
   print $markov_freq_out join ("\t", "#window",
 			       "[left",
@@ -694,11 +694,11 @@ sub CalcExpectedUsingMarkov {
 	$exp_freq{$oligo_seq}{$window} =  0;
 	$exp_occ{$oligo_seq}{$window} =  0;
       } else {
-	my $prefix = substr($oligo_seq, 0, $markov);
+	my $prefix = substr($oligo_seq, 0, $markov) || "n";
 	$exp_freq{$oligo_seq}{$window} = $prefix_freq{$prefix} || 0;
 	#	    &RSAT::message::Debug("first prefix", "m=".$markov, "w=".$window, $oligo_seq, $offset, $prefix, $prefix_freq{$prefix}, $exp_freq{$oligo_seq}{$window}) if ($main::verbose >= 10);
 	for my $offset (0..($oligo_length - $markov -1)) {
-	  $prefix = substr($oligo_seq, $offset, $markov);
+	  $prefix = substr($oligo_seq, $offset, $markov) || "n";
 	  $suffix = substr($oligo_seq, $offset+$markov, 1);
 	  $exp_freq{$oligo_seq}{$window} *= $transition_freq{$prefix}{$suffix};
 	  #		&RSAT::message::Debug("extension", "m=".$markov, "w=".$window, $oligo_seq, $offset, $suffix."|".$prefix,
