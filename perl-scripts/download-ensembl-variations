@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.5 2013/06/19 14:24:11 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.6 2013/06/20 12:22:48 jeremy Exp $
 #
 ############################################################
 
@@ -179,30 +179,38 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
   our $verbose = 2;
   our $out = STDOUT;
-
-  our $species = "";
   our $genomes_dir = "$ENV{'RSAT'}/data/genomes/";
 
+  our $species = "";
   our $available = 0;
   our $ref_seq = "";
+  our $ensembl_version = "safe";
 
-  our $ensembl_url = "rsync://ftp.ensembl.org/ensembl/pub/";
 
   ################################################################
   ## Read argument values
   &ReadArguments();
 
+  if ($ensembl_version eq "safe") {
+    $ensembl_version = &Get_ensembl_version_safe();
+  } elsif ($ensembl_version eq "latest") {
+    $ensembl_version = &Get_ensembl_version();
+  } else {
+      &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
+  }
 
   ################################################################
   ##Print available species
+  my $variation_url = &Get_variation_url($ensembl_version);
+
   if ($available) {
-    my @available_species = qx{rsync -navP $ensembl_url."current_variation/gvf/" "."};
+    my @available_species = qx{rsync -navP $variation_url "."};
     foreach (@available_species) {
       next if (/\./);
       next unless (/\/\n/);
@@ -219,22 +227,24 @@ package	main;
     &RSAT::error::FatalError("No species indicate. Use -species");
   }
 
-  my $species_dna_url = $ensembl_url."current_fasta/".$species."/dna";
-  my $species_variation_url = $ensembl_url."current_variation/gvf/".$species;
-  &RSAT::message::Info("Species dna URL", $species_variation_url) if ($main::verbose >= 1);
-  &RSAT::message::Info("Species variation URL", $species_variation_url) if ($main::verbose >= 1);
-
-
   # Check if variation available on Ensembl
-  my @available_species = qx{rsync -navP $ensembl_url"current_variation/gvf" "."};
+  my @available_species = qx{rsync -navP $variation_url "."};
 
   unless ( grep($_ = $species."\/\n", @available_species )) {
     &RSAT::error::FatalError("No variation avalaible for $species on Ensembl");
   }
 
 
+  # Get url
+  my $species_fasta_url = &Get_species_url(&Get_fasta_url($ensembl_version),$species,'fasta',$ensembl_version);
+  my $species_variation_url = &Get_species_url($variation_url,$species,'variation',$ensembl_version);
+  my $species_gvf_url = &Get_gvf_url($species_variation_url,$species,$ensembl_version);
+  &RSAT::message::Info("Species dna URL", $species_fasta_url) if ($main::verbose >= 1);
+  &RSAT::message::Info("Species variation URL", $species_variation_url) if ($main::verbose >= 1);
+  &RSAT::message::Info("Species gvf URL", $species_gvf_url) if ($main::verbose >= 1);
+
   # Get genome version
-  my $genome_version = &Get_genome_version($species_dna_url, ucfirst($species));
+  my $genome_version = &Get_genome_version($species_fasta_url, ucfirst($species));
 
 
   # Check if genome version install
@@ -254,32 +264,13 @@ package	main;
 
 
   ################################################################
-  ###Dowload variation
-
-  ## Download gvf.gz file
+  ###Dowload variation file
   &RSAT::message::TimeWarn("Download gvf file") if ($main::verbose >= 2);
+
   my $variation_dir = $species_dir."/variations";
   &RSAT::util::CheckOutDir($variation_dir);
+  system("rsync -avP $species_gvf_url $variation_dir");
 
-  system("rsync -avP $species_variation_url/".ucfirst($species).".gvf.gz $variation_dir");
-
-  ##Check genome version
-  my $spe = $variation_dir."/".ucfirst($species).".gvf.gz";
-
-  @header = qx{gzip -cd "$spe" | head -n 20};
-  my $variation_version = "";
-
-  foreach (@header) {
-    if (/\#\#genome-build ensembl/) {
-      $variation_version = substr($_,0,length($_)-1);
-      $variation_version =~ s/\#\#genome-build ensembl //g ;
-      last;
-    }
-  }
-
-  if ($variation_version ne $genome_version) {
-    &RSAT::error::FatalError("The last version of $species not install. Find $genome_version, require : $variation_version");
-  }
 
   ################################################################
   ## Decompress variation file
@@ -374,7 +365,7 @@ package	main;
     }
 
     if ( $info{'Reference_seq'} ne "-" && ($info{'Reference_seq'} ne substr($ref_seq,$start-1,$end-$start+1))) {
-      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$rs.substr($ref_seq,1,2);
+      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$rs;
       print $out_rm "\tReference sequence $info{'Reference_seq'} do not match Sequence file ".substr($ref_seq,$start-1,$end-$start+1)."\n";
       next;
     }
@@ -399,10 +390,12 @@ package	main;
   close $file;
   unlink($variation_dir."/".ucfirst($species).".gvf");
 
+  &RSAT::message::Info("Variations installed in dir", $variation_dir) if ($main::verbose >= 1);
+
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $exec_time if ($main::verbose >= 2); ## only report exec time if verbosity is specified
+  print $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out;
 
   exit(0);
@@ -726,6 +719,28 @@ Get all available species on Ensembl
 =cut
     } elsif ($arg eq "-available_species") {
       $main::available = 1;
+
+=pod
+
+=item B<-version #>
+
+The release version of ensEMBL. 
+
+Supported version : 70 to 72, safe, latest
+
+safe is corresponding to the last version of ensembl working with this script
+latest is corresponding to the lastest version of ensembl
+
+Default : "safe"
+
+=cut
+    } elsif ($arg eq "-version") {
+      my $version = shift(@arguments);
+      if ( &IsNatural($version) || $version eq "safe" || $version eq "latest" ) {
+        $main::ensembl_version = $version;
+      } else {
+        &RSAT::error::FatalError($version,"is not supported");
+      }
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));

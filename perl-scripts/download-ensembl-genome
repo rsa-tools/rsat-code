@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.8 2013/06/19 10:03:24 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.9 2013/06/20 12:23:16 jeremy Exp $
 #
 ############################################################
 
@@ -40,7 +40,7 @@ Revised by Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
- download-ensembl-genome -species # [-type #] [-o genomesDirectory] [-var] [-available_species] [-v #]
+ download-ensembl-genome -species # [-type #] [-version #] [-o genomesDirectory] [-var] [-available_species] [-v #]
 
 =head2 Examples
 
@@ -88,7 +88,7 @@ BEGIN {
 }
 
 require "RSA.lib";
-use File::Path qw( mkpath );
+require "EnsEMBL.lib";
 
 ################################################################
 ## Main package
@@ -98,37 +98,44 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
   
-  our $in = "";
   our $out = SDTOUT;
   our $verbose = 0;
+  our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
 
   our $species = "";
-  our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
+  our $ensembl_version = "safe";
   our @types = ();
   our $var = 0;
   our $get_available_species = 0;
 
-#  our $ensembl_url = "ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/";
-  our $ensembl_url = "rsync://ftp.ensembl.org/ensembl/pub/current_fasta/";
 
   ################################################################
   ## Read argument values
   &ReadArguments();
 
-  &RSAT::message::Info("Ensembl URL", $ensembl_url) if ($main::verbose >= 1);
+  if ($ensembl_version eq "safe") {
+    $ensembl_version = &Get_ensembl_version_safe();
+  } elsif ($ensembl_version eq "latest") {
+    $ensembl_version = &Get_ensembl_version();
+  } else {
+      &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
+  }
+
+  my $fasta_url = &Get_fasta_url($ensembl_version);
+  &RSAT::message::Info("Ensembl URL", $fasta_url) if ($main::verbose >= 1);
 
   ###############################################################
   ## Check arguments
-  my @output = qx{rsync -navP "${ensembl_url}" "."};
-  
+  my @available_species = qx{rsync -navP $fasta_url "."};
+
   unless (scalar(@types)) {
       @types = ("dna");
   }
 
   if ($get_available_species) {
-    foreach (@output) {
+    foreach (@available_species) {
       next unless (/\/dna\/\n/);
       my ($species) = split("\/");
       print ucfirst($species),"\n";
@@ -140,7 +147,7 @@ package	main;
     &RSAT::message::FatalError("You must specify a species to download. To get the list of supported species, type: download-ensembl-genome -available_species");
   }
 
-  unless ( grep($_ eq $species."/dna/\n", @output )) {
+  unless ( grep($_ eq $species."/dna/\n", @available_species )) {
     &RSAT::error::FatalError("Sequence of $species not available on Ensembl");
   }
 
@@ -148,7 +155,8 @@ package	main;
 
   ################################################################
   ## Get available sequence on Ensembl and compare with sequence already install
-  my $species_url = $ensembl_url.$species."/dna";
+
+  my $species_url = &Get_species_url($fasta_url,$species,"fasta",$version);
   &RSAT::message::Info("Species URL", $species_url) if ($main::verbose >= 1);
 
 
@@ -159,24 +167,12 @@ package	main;
 
   ##Get genome version
   $species = ucfirst($species);
-  my $genome_version = "";
-
-  foreach (@available_fasta) {
-    next unless (/$species/);
-
-    my $file = $_;
-    $file =~ s/dna\/$species\.//g;
-    my @token = split(".dna",$file);
-    my @token2 = split(/\./,$token[0]);
-    $genome_version = join '.', @token2[0..$#token2-1];
-
-    last;
-  }
+  my $genome_version = &Get_genome_version($species_url, $species);
 
 
   ## Get install sequence
   &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
-  $species_dir = $genome_dir."/".ucfirst($species)."_ensembl_".$genome_version."/genome"; 
+  $species_dir = $genome_dir.$species."_ensembl_".$genome_version."/genome"; 
 
   &RSAT::util::CheckOutDir($species_dir);
 
@@ -213,8 +209,14 @@ package	main;
       next if (/contig/);
       next unless (/$type\./);
 
+
       $_ =~s/$species_dir\///g;
       $_ =~s/\.raw/\.fa\.gz/g;
+
+
+      my @token = split(".$type",$_);
+      my @token2 = split(/\./,$token[0]);
+      $_ =~s/\.$token2[-1]\.$type/\.$type/g;
 
       $seq_install{$_} = 1;
     }
@@ -222,8 +224,10 @@ package	main;
     ## Compare available and install seq
     foreach my $seq (@seq_available) {
       chomp($seq);
+      my $seq_without_version = $seq;
+      $seq_without_version =~s/\.$ensembl_version\.$type/\.$type/g;
 
-      unless ( $seq_install{$seq} ) {
+      unless ( $seq_install{$seq_without_version} ) {
         push (@seq_to_download, $seq);
         push(@contig_files, $seq) if ($seq =~ "nonchr");
       }
@@ -234,7 +238,6 @@ package	main;
     &RSAT::message::TimeWarn("Latest version of $species already installed in $species_dir");
     exit(0);
   }
-
 
   ################################################################
   ##Download
@@ -366,7 +369,7 @@ package	main;
       close $s_o_file;
   }
 
-  push (@species_last, $species."_ensembl_".$genome_version."\t".$species." ".$genome_version."\t".$species_dir."\n");
+  push (@species_last, $species."_ensembl_".$genome_version."\t".$species." ".$genome_version."\t".substr($species_dir,0,length($species_dir)-7)."\n");
 
   my $s_o_file = &OpenOutputFile($supperted_organism_file);
   print $s_o_file join("",@species_last);
@@ -429,9 +432,9 @@ Level of verbosity (detail in the warning messages during execution)
 =cut
     if ($arg eq "-v") {
       if (&IsNatural($arguments[0])) {
-	$main::verbose = shift(@arguments);
+        $main::verbose = shift(@arguments);
       } else {
-	$main::verbose = 1;
+        $main::verbose = 1;
       }
 
 =pod
@@ -508,22 +511,22 @@ Also install variation for this $species
 
 =pod
 
-=item B<-url>
-
-Specify an alternative URL to download Ensembl genomes.
-
-Default URL: rsync://ftp.ensembl.org/ensembl/pub/current_fasta/
-
-Example: to download protists, 
-
- download-ensembl-genome -v 1 -available_species \
-   -url ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/
-
-=cut
-    } elsif ($arg eq "-url") {
-      $main::ensembl_url = shift(@arguments);
-
-=pod
+#=item B<-url>
+#
+#Specify an alternative URL to download Ensembl genomes.
+#
+#Default URL: rsync://ftp.ensembl.org/ensembl/pub/current_fasta/
+#
+#Example: to download protists, 
+#
+# download-ensembl-genome -v 1 -available_species \
+#   -url ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/
+#
+#=cut
+#    } elsif ($arg eq "-url") {
+#      $main::ensembl_url = shift(@arguments);
+#
+#=pod
 
 =item B<-available_species>
 
@@ -534,6 +537,26 @@ Get all available species on Ensembl
       $main::get_available_species = 1;
 
 =pod
+
+=item B<-version #>
+
+The release version of ensEMBL. 
+
+Supported version : 48 to 72, safe, latest
+
+safe is corresponding to the last version of ensembl working with this script
+latest is corresponding to the lastest version of ensembl
+
+Default : "safe"
+
+=cut
+    } elsif ($arg eq "-version") {
+      my $version = shift(@arguments);
+      if ( &IsNatural($version) || $version eq "safe" || $version eq "latest" ) {
+        $main::ensembl_version = $version;
+      } else {
+        &RSAT::error::FatalError($version,"is not supported");
+      }
 
 =item B<-o #>
 
@@ -546,7 +569,11 @@ Default : $RSAT/data/genomes/
 =cut
     } elsif ($arg eq "-o") {
       $main::genome_dir = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
     }
+
   }
 
 =pod
