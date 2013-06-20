@@ -31,8 +31,8 @@ dir.main <- getwd()
 ## calling the script with command-line arguments.
 
 ## URL of Jacques van Helden course "Statistics for bioinformatics", required to load some libraries
-#dir.course <- 'http://www.bigre.ulb.ac.be/courses/statistics_bioinformatics'
-#dir.course <- '/Users/jvanheld/statistics_bioinformatics'
+                                        #dir.course <- 'http://www.bigre.ulb.ac.be/courses/statistics_bioinformatics'
+                                        #dir.course <- '/Users/jvanheld/statistics_bioinformatics'
 dir.rsat <- Sys.getenv("RSAT");
 if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
@@ -73,6 +73,7 @@ heatmap.palette <- blue.to.yellow()
 ## pos.offset <- -25.5
 ## file.pos <- '/Users/jvanheld/test/positions/results/positions/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.05_nof_5nt_ci20-2str-ovlp_top1000.tab'
 ## file.pos <- '/Users/jvanheld/test/positions/results/positions/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.05_nof_5nt_ci20-2str-ovlp_top0.tab'
+## file.pos <- '/Users/jvanheld/test/positions/results/positions/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.05_nof_skip0_last0_4nt_ci20-2str-ovlp_sig1_mkv-2.tab'
 
 ################################################################
 ## Read arguments from the command line.
@@ -120,6 +121,7 @@ verbose(paste("Output directory for clusters", dir.clusters), 1)
 
 ################################################################
 ## Read position-analysis result file
+verbose(paste("Reading position profiles", file.pos), 2)
 pos.data <- read.delim(file.pos, comment.char=";", sep="\t", row.names=NULL)
 
 ## Extract k-mer sequences
@@ -145,11 +147,15 @@ nb.windows <- length(profile.col)
 colnames(pos.data)[1] <- sub('X.', '', colnames(pos.data)[1])
 colnames(pos.data)[profile.col] <- sub("X\\.", "-", colnames(pos.data)[profile.col], perl="TRUE")
 colnames(pos.data)[profile.col] <- sub("X", "+", colnames(pos.data)[profile.col], perl="TRUE")
-  
+
 ## Define the selected patterns
 selected.patterns <- (pos.data$sig >= sig.threshold) & (pos.data$rank <= rank.threshold)
 nb.patterns <- sum(selected.patterns)
-verbose(paste(nb.patterns , "selected patterns"))
+verbose(paste(nb.patterns , "selected patterns"), 1)
+
+if (nb.patterns < 2) {
+  stop("Clustering is irrelevant with less than two selected patterns")
+}
 
 ## Create a separate data frame for the position profiles.
 ## This is redundant (-> memory-inefficient) but convenient.
@@ -169,8 +175,10 @@ if (export.detailed.tables) {
   export.object(pos.profiles.freq.norm, file=file.path(dir.clusters, paste(sep='_', prefix, 'position_profiles_norm_freq')), export.format='table')
 }
 
-## perform a random shuffling of the position profiles, as a negative
-## control for correlation and clustering
+## ##############################################################
+## Perform a random shuffling of the position profiles, as a negative
+## control for correlation and clustering.
+verbose("Shuffling position profiles for negative controls", 2)
 shuffled.profiles <- as.data.frame(matrix(nrow=nb.patterns, ncol=nb.windows, sample(as.vector(as.matrix(pos.profiles, replace=FALSE)))))
 rownames(shuffled.profiles) <- rownames(pos.profiles)
 colnames(shuffled.profiles) <- colnames(pos.profiles)
@@ -183,6 +191,7 @@ if (export.detailed.tables) {
 ## Correlation analysis
 
 ## Compute correlations between profiles
+verbose("Computing correlation between profiles", 2)
 pos.cor <- cor(t(pos.profiles))
 shuffled.cor <- cor(t(shuffled.profiles))
 if (export.detailed.tables) {
@@ -193,11 +202,13 @@ if (export.detailed.tables) {
 ## ##############################################################
 ## Hierarchical clustering
 clust.method <- "complete"
+verbose(paste(sep="", "Hierarchical clustering; method=", clust.method), 2)
 pos.tree <- hclust(as.dist(1-pos.cor), method=clust.method)
 shuffled.tree <- hclust(as.dist(1-shuffled.cor), method=clust.method)
 
 ## Cut the tree in k clusters
 nb.clusters <- min(nb.clusters, nb.patterns) ## Check that number of clusters does not exceed the number of selected patterns
+verbose(paste(sep="", "Cutting the tree; k=", nb.clusters), 2)
 clusters <- cutree(pos.tree,k=nb.clusters)
 clusters <- clusters[order(clusters)]
 cluster.table <- data.frame("sequence"=names(clusters),
@@ -213,7 +224,7 @@ cluster.file <- file.path(dir.pos, paste(sep='', prefix, '_clusters.tab'))
 write.table(cluster.table, file=cluster.file, row.names=FALSE, col.names=TRUE, quote=FALSE, sep='\t')
 
 ## Report the number of elements per cluster
-verbose(paste("Cluster file:", cluster.file))
+verbose(paste("Cluster file:", cluster.file), 1)
 cluster.sizes <- table(clusters)
 cluster.sizes <- as.data.frame(cluster.sizes)
 names(cluster.sizes) <- c("cluster", "n")
