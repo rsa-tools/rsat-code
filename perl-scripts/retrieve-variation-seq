@@ -1,0 +1,567 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: retrieve-variation-seq,v 1.1 2013/06/21 14:30:17 jeremy Exp $
+#
+############################################################
+
+=pod
+
+=head1 NAME
+
+retrieve-variation-seq
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Retrieve variation sequences of length L for a set of coordinates
+specified in a bed-formatted file, for a variation id list or
+variation in retrieve-variation-seq-formatted file.
+
+=head1 AUTHORS
+
+Jeremy.Delerce@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+ retrieve-snp-seq -species # -version #  [-i #] -format # [-col #] [-len #] [-o outputfile] [-v #] [...]
+
+=head2 Example
+
+  Get variation sequence of Homo_sapiens from a bed file 
+    retrieve-snp-seq -v 2 \
+      -species Homo_sapiens -version GRCh37    
+      -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
+      -len 30 \
+      -o variations.tab
+
+
+=head1 INPUT FORMAT
+
+=head2 Genomic coordinate file
+
+The option I<-i> allows to specify a genomic coordinate file in bed
+format. The program only takes into account the 3 first columns of the
+bed file, which specify the genomic coordinates. 
+
+B<Note> (from Jacques van Helden): the UCSC genome browser adopts a
+somewhat inconsistent convention for start and end coordinates: the
+start position is zero-based (first nucleotide of a
+chromosome/scaffold has coordinate 0), but the end position is
+considered not included in the selection. This is equivalent to have a
+zero-based coordinate for the start, and a 1-base coordinate for the
+end.
+
+=head Example of bed file
+
+ chr1	3473041	3473370
+ chr1	4380371	4380650
+ chr1	4845581	4845781
+ chr1	4845801	4846260
+
+
+The definition of the BED format is provided on the UCSC Genome
+Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).
+
+This program only takes into account the 3 first columns, which
+specify the genomic coordinates.
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold
+(e.g. scaffold10671).
+
+=item 2. chromStart
+
+The starting position of the feature in the chromosome or
+scaffold. For RSAT programs, the first base in a chromosome is
+numbered 1 (this differs from the UCSC-specific zero-based notation
+for the start).
+
+B<Note> from Jacques van Helden: the UCSC genome browser adopts a
+somewhat inconsistent convention for start and end coordinates: the
+start position is zero-based (first nucleotide of a
+chromosome/scaffold has coordinate 0), and the end position is
+considered not included in the selection. This is equivalent to have a
+zero-based coordinate for the start, and a 1-base coordinate for the
+end. We find this representation completely counter-intuitive, and we
+herefore decided to adopt a "normal" convention, where:
+
+=over
+
+=item start and end position represent the first and last positions
+I<included> in the region of interest.
+
+=item start and end positions are provided in one-based notation
+(first base of a chromosome or contig has coordinate 1).
+
+=back
+
+=item 3. chromEnd
+
+The ending position of the feature in the chromosome or scaffold.
+
+=head2 Variation file
+
+See I<download-ensembl-variation> output format.
+
+=head2 Variation ID list
+
+A tab delimited file with id of variation in column.
+
+=head1 OUTPUT FORMAT
+
+A tab delimited file with the following column content.
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. 1, X, 8...)
+
+=item 2. chromStart
+
+The starting position of the feature in the chromosome
+
+=item 3. chromEnd
+
+The ending position of the feature in the chromosome
+
+=item 4. chromStrand
+
+The strand of the feature in the chromosome
+
+=item 5. variation id
+
+ID of the variation
+
+=item 8. SO term
+
+SO Term of the the variation
+
+=item 7. ref variant
+
+Variant of the variation in the reference sequence
+
+=item 8. variant
+
+Variant of the variation in the sequence
+
+=item 9. sequence
+
+Sequence of lenght L center on the variation
+
+=back
+
+=head1 SEE ALSO
+
+=head2 download-ensembl-genome
+
+I<retrieve-variation-seq> uses the sequences and variation coordinates downloaded
+from Ensembl using the tool I<download-ensembl-genome>.
+
+=head2 variation-scan
+
+Scan variation sequences with one or several position-specific scoring
+matrices.
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+	if ($0 =~ /([^(\/)]+)$/) {
+		push (@INC, "$`lib/");
+	}
+	push (@INC, "../rsa-tools/perl-scripts/lib");
+	$ENV{'RSAT'} = "/Users/jeremy/rsa-tools";
+}
+
+require "RSA.lib";
+require "EnsEMBL.lib";
+
+################################################################
+## Main package
+package	main;
+{
+
+	###############################################################
+	## Initialise parameters
+	our $start_time = &RSAT::util::StartScript();
+	our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+
+	our %infile	= ();
+	our %outfile = ();
+
+	our $verbose = 0;
+	our $validate = 0;
+	our $in = STDIN;
+	our $out = STDOUT;
+
+	our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
+	our $species = '';
+	our $genome_version = "";
+
+	our $ref_seq = "";	   
+	our $flank_len = 29;
+
+	our $format = "";
+	our $col = 1;
+
+	our $available = 0;
+
+	################################################################
+	## Read argument values
+	&ReadArguments();
+
+	################################################################
+	## Check argument values
+	
+	my $supported_file = &Get_supported_file();
+	if (-f $supported_file) {
+		if ($available) {
+			my ($file) = &OpenInputFile($supported_file);
+			while (<$file>) {
+				next if (/^#/);
+				chomp();
+				my ($id,$name) = split("\t");
+				my ($species,$version) = split("_ensembl_");
+				print $species,"\t",$version,"\n";
+			}
+		 exit(0);
+		}
+	} else {
+		&RSAT::error::FatalError("No species install. $supported_file don't exist");
+	}
+
+	#Check argument
+	&RSAT::error::FatalError("No species specified. Use -species") unless ($species);
+	&RSAT::error::FatalError("No version specified. Use -version") unless ($genome_version);
+	&RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
+	
+	$main::infile{'input_variation'} = $main::infile{'input'} if ($format eq "rsat");
+	
+	
+	# Check directory
+	my $species_dir = &Get_species_dir(ucfirst($species),$genome_version);
+	my $genome_dir = &Get_genome_dir($species_dir);
+	my $variation_dir = &Get_variation_dir($species_dir);
+
+	&RSAT::error::FatalError("$species version $genome_version not install.") unless (-d $species_dir);
+	&RSAT::error::FatalError("Genome of $species not install.") unless (-d $genome_dir);
+	&RSAT::error::FatalError("Variation of $species not install.") unless (-d $species_dir);
+
+
+	# Check if sequence file are not missing
+	my %chr_file = &Get_file_seq_name($genome_dir);
+
+	foreach my $file (keys(%chr_file)) {
+		unless (-f $genome_dir.$chr_file{$file}) {
+			&RSAT::error::FatalError($genome_dir.$chr_file{$file}," is missing.");
+		}
+	}
+
+
+	################################################################	
+	##Get local variation file 
+	my @variation_file = ();
+	
+	foreach ( glob ( $variation_dir."*.tab") ) {
+		push (@variation_file,$_) unless (/Failed/);
+	}
+
+
+	################################################################	
+	##Retrieve variation from id
+
+	if ($format eq "id") {
+		&RSAT::message::TimeWarn("Retrieve variations from id") if ($main::verbose >= 2);
+
+		my $var_file = $ENV{'RSAT'}."/tmp/variation.tab";
+		$out = &OpenOutputFile($var_file);
+
+		my @variation_id = ();
+
+		##Get id list
+		my ($file) = &OpenInputFile($main::infile{'input'});
+		while (<$file>) {
+			next if (/^#/);
+			next if (/^;/);
+			next unless (/\t/);
+			chomp();
+			my @token = split("\t");
+			push (@variation_id,$token[$col-1])
+		}
+		close $file;	
+
+		#Retrieve var
+		my $grep_id = "'".join('\|',@variation_id)."'";
+		foreach (@variation_file) {
+
+			my @result = qx{grep -r $grep_id $_};
+			
+			foreach (@result) {
+				chomp();
+				my @token = split("\t");			
+				print $out $_,"\n" unless ($token[9] == 1 );		
+			}
+		}
+
+		$main::infile{'input_variation'} = $var_file;
+	}
+
+
+	################################################################	
+	##Get variation from coordinate
+	if ($format eq "bed") {
+		&RSAT::message::TimeWarn("Retrieve variations from coordinate") if ($main::verbose >= 2);
+		my $var_file = $ENV{'RSAT'}."/tmp/variation.tab";
+		unlink($var_file);
+		##Get coordinate
+		my ($file) = &OpenInputFile($main::infile{'input'});
+		while (<$file>) {
+			next if (/^#/);
+			next if (/^;/);
+			next unless (/\t/);
+			chomp();
+
+			my ($chr,$left,$right,$strand)= split("\t");
+
+			$chr =~ s/chr//g;
+			$left ++;
+
+			if ($left > $right) {
+				&RSAT::message::Warning("Skipping line : ", $_, "Left (".$left.") > right (".$right.").") if ($main::verbose >= 2);
+				next;
+			}
+
+			unless ($chr_file{$chr}) {
+				&RSAT::message::Warning("Skipping line : ", $_, "No variation file for chromosome $chr.") if ($main::verbose >= 2);
+				next;
+			}
+
+			$cmd = "awk '{if (\$2<=".$right." && \$3>=".$left.") print \$0}' ".$variation_dir.$chr.".tab >> ".$var_file;
+			system ($cmd);
+		}
+		close $file;
+		$main::infile{'input_variation'} = $var_file;
+
+	}
+
+	################################################################
+	##Change default variation file
+	if ($main::infile{'input_variation'}) {
+		@variation_file = ();
+		push (@variation_file,$main::infile{'input_variation'});
+	} 
+
+	################################################################
+	##Get sequence
+	$out = &OpenOutputFile($main::outfile{output});
+	
+	&RSAT::message::TimeWarn("Retrieve sequence for all variant of variations") if ($main::verbose >= 2);
+	foreach (@variation_file) {	
+		my $last_chr = "";
+		my $ref_seq = "";	
+
+		################################################################
+		($file) = &OpenInputFile($_);
+		my @neigboor_var = ();
+
+		while (<$file>) {
+			chomp;
+			my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
+			next if ($invar && $validate == 0 && $format ne "id");
+
+			if ($chr ne $last_chr) {
+				$ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir/$chr_file{$chr} -from 1 -to 250000000 -format raw);
+				$last_chr = $chr;
+			}
+
+			$var .= ",$ref";
+			@variants = split(",",$var);
+		
+			foreach (@variants) {
+				print $out "$chr\t$start\t$end\t$strand\t$id\t$type\t$ref\t$_\t";
+				$_ =~ s/-//g;			
+				print $out substr($ref_seq,$start-$flank_len-1,$flank_len),"$_".substr($ref_seq,$end,$flank_len),"\n";
+			}
+		}
+	}
+
+	my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+	print $out $exec_time;
+	exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit(0);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+	my $arg;
+	my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+	while (scalar(@arguments) >= 1) {
+		$arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+		if ($arg eq "-v") {
+			if (&IsNatural($arguments[0])) {
+				$main::verbose = shift(@arguments);
+			} else {
+				$main::verbose = 1;
+		}
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+		} elsif ($arg eq "-h") {
+			&PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+		} elsif ($arg eq "-help") {
+			&PrintOptions();
+
+=pod
+
+=item B<-species species_name>
+
+Species of the variation/bed/id file
+
+=cut
+		} elsif ($arg eq "-species") {
+			$main::species = lc(shift(@arguments));
+
+=pod
+
+=item B<-version #>
+
+The version of the assembly of the genome
+
+=cut
+		} elsif ($arg eq "-version") {
+			$main::genome_version = shift(@arguments);
+
+=pod
+
+=item B<-available_species>
+
+Get all localy supported species and genome assembly
+
+=cut
+		} elsif ($arg eq "-available_species") {
+			$main::available = 1;
+
+=pod
+
+=item B<-i #>
+
+Input File
+
+=cut
+		} elsif ($arg eq "-i") {
+      		$main::infile{input} = shift(@arguments);
+=pod
+
+=item B<-format #>
+
+Format of the input file
+
+Supported format : bed, rsat (format of variation file used by all RSAT script), 
+id (tab delimetd file with all variation id in 1 col) 
+
+=cut
+		} elsif ($arg eq "-format") {
+			$main::format = shift(@arguments);
+
+=pod
+
+=item B<-col #>
+
+Colonne contening variation id
+Supported format : bed, rsat (format of variation file used by all RSAT script), 
+id (tab delimetd file with all variation id in 1 col) 
+
+Default : 1
+
+=cut
+		} elsif ($arg eq "-col") {
+			if (&IsNatural($arguments[0])) {
+				$main::col = shift(@arguments);
+			} else {
+				&RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
+			}
+
+=pod
+
+=item	B<-o outputfile>
+
+The output file is in fasta format.
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+		} elsif ($arg eq "-o") {
+			$outfile{output} = shift(@arguments);
+
+=pod
+
+=back
+
+=cut
+
+		} else {
+			&FatalError(join("\t", "Invalid option", $arg));
+		}
+	}
+}
