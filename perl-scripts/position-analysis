@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.81 2013/06/20 22:30:20 jvanheld Exp $
+# $Id: position-analysis,v 1.82 2013/06/21 03:54:20 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -36,7 +36,7 @@ package main;
 
     our $bg_method = "homogeneous repartition";
 #    our $bg_method = "markov";
-    our $markov = -2;
+    our $markov = 0;
     our $export_transitions = 0; ## For debugging
     our $export_markov_freq = 0; ## For debugging
 
@@ -104,7 +104,8 @@ package main;
     }
 
     ## Markov order
-    if (defined($markov)) {
+    if ($bg_method eq "markov") {
+#    if (defined($markov)) {
 	if ($markov < 0) {
 	    $markov += $oligo_length;
 	}
