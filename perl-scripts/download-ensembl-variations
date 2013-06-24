@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.7 2013/06/20 14:48:34 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.8 2013/06/24 09:48:49 jvanheld Exp $
 #
 ############################################################
 
@@ -168,7 +168,7 @@ BEGIN {
 }
 
 require "RSA.lib";
-require "EnsEMBL.lib";
+require "RSAT_to_ensembl.lib.pl";
 use File::Path qw( mkpath );
 
 ################################################################
@@ -179,7 +179,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -207,10 +207,10 @@ package	main;
 
   ################################################################
   ##Print available species
-  my $variation_url = &Get_variation_url($ensembl_version);
+  my $variation_rsync = &Get_variation_rsync($ensembl_version);
 
   if ($available) {
-    my @available_species = qx{rsync -navP $variation_url "."};
+    my @available_species = qx{rsync -navP $variation_rsync "."};
     foreach (@available_species) {
       next if (/\./);
       next unless (/\/\n/);
@@ -228,7 +228,7 @@ package	main;
   }
 
   # Check if variation available on Ensembl
-  my @available_species = qx{rsync -navP $variation_url "."};
+  my @available_species = qx{rsync -navP $variation_rsync "."};
 
   unless ( grep($_ = $species."\/\n", @available_species )) {
     &RSAT::error::FatalError("No variation avalaible for $species on Ensembl");
@@ -236,15 +236,15 @@ package	main;
 
 
   # Get url
-  my $species_fasta_url = &Get_species_url(&Get_fasta_url($ensembl_version),$species,'fasta',$ensembl_version);
-  my $species_variation_url = &Get_species_url($variation_url,$species,'variation',$ensembl_version);
-  my $species_gvf_url = &Get_gvf_url($species_variation_url,$species,$ensembl_version);
-  &RSAT::message::Info("Species dna URL", $species_fasta_url) if ($main::verbose >= 1);
-  &RSAT::message::Info("Species variation URL", $species_variation_url) if ($main::verbose >= 1);
-  &RSAT::message::Info("Species gvf URL", $species_gvf_url) if ($main::verbose >= 1);
+  my $species_fasta_rsync = &Get_species_rsync(&Get_fasta_rsync($ensembl_version),$species,'fasta',$ensembl_version);
+  my $species_variation_rsync = &Get_species_rsync($variation_rsync,$species,'variation',$ensembl_version);
+  my $species_gvf_rsync = &Get_gvf_rsync($species_variation_rsync,$species,$ensembl_version);
+  &RSAT::message::Info("Species dna URL", $species_fasta_rsync) if ($main::verbose >= 1);
+  &RSAT::message::Info("Species variation URL", $species_variation_rsync) if ($main::verbose >= 1);
+  &RSAT::message::Info("Species gvf URL", $species_gvf_rsync) if ($main::verbose >= 1);
 
   # Get genome version
-  my $genome_version = &Get_genome_version($species_fasta_url, ucfirst($species));
+  my $genome_version = &Get_genome_version($species_fasta_rsync, ucfirst($species));
 
 
   # Check if genome version install
@@ -270,7 +270,7 @@ package	main;
   my $variation_dir = &Get_variation_dir($species_dir);
 
   &RSAT::util::CheckOutDir($variation_dir);
-  system("rsync -avP $species_gvf_url $variation_dir");
+  system("rsync -avP $species_gvf_rsync $variation_dir");
 
 
   ################################################################
