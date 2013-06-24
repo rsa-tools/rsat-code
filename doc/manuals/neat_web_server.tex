@@ -333,110 +333,93 @@ The KEGG network provider is also using the file rpairs.tab located in
 \file{\$RSAT/data/KEGG} to convert reaction into RPAIR graphs. To
 update this file, use the KeggLigandDataManager command line tool.
 
-Finally, the KEGG network provider displays a list of KEGG
-organisms. To obtain the organism list for the recent KEGG version,
-use the MetabolicGraphProvider command line tool. For details on this
-tool, type: \textit{java graphtools.util.MetabolicGraphProvider -h}
-Place the updated list in the folder \file{\$RSAT/data/KEGG} to
-replace the old list.
+Finally, the KEGG network provider displays a list of KEGG organisms. To obtain the
+organism list for the recent KEGG version, use the MetabolicGraphProvider command line
+tool. For details on this tool, type: \textit{java graphtools.util.MetabolicGraphProvider -h}
+Place the updated list in the folder \file{\$RSAT/data/KEGG} to replace the old list.
 
 \subsection{Metabolic Pathfinder and Pathway extraction}
-
-After successful installation of the Java web services, you may
-install metabolic pathfinder and Pathway extraction, which are clients
-of the pathfinder and pathwayinference web services respectively.
+After successful installation of the Java web services, you may install metabolic pathfinder
+and Pathway extraction, which are clients of the pathfinder and pathwayinference web services respectively.
 
 \subsubsection{Requirements of metabolic pathfinder and pathway extraction}
 
-Metabolic pathfinder and pathway extraction have a number of
-additional requirements.
+Metabolic pathfinder and pathway extraction have a number of additional requirements.
 
 \begin{enumerate}
 
 \item Dot
 
-  Dot is needed to draw graphs and can be obtained freely from
-  \textit{http://www.graphviz.org/}.
+Dot is needed to draw graphs and can be obtained freely from \textit{http://www.graphviz.org/}.
 
 \item Postgres
-
 \begin{enumerate}
-
 \item Installation
-  
-  Postgres (version 8.2 or later) is needed to store KEGG and MetaCyc
-  data.  Postgres can be obtained freely from
-  \textit{http://www.postgresql.org/}.  For MacOS, you can use
-  Darwinports to install postgres. On SUSE, you may install it with
-  yast (install postgresql and postgresql-server).  Usually, a
-  postgres user is created during installation of postgres.
+
+Postgres (version 8.2 or later) is needed to store KEGG and MetaCyc data.
+Postgres can be obtained freely from
+\textit{http://www.postgresql.org/}.
+For MacOS, you can use Darwinports to install postgres. On SUSE, you may
+install it with yast (install postgresql and postgresql-server).
+Usually, a postgres user is created during installation of postgres.
 
 \item Postgres configuration
 
-  You may need to configure the postgres server. You can simply allow
-  all users on your machine (but not from outside) to access all
-  postgres databases.  This can be achieved by modifying the
-  pg\_hba.conf file located in the postgres home directory. Paste the
-  following in this file:
-
+You may need to configure the postgres server. You can simply
+allow all users on your machine (but not from outside) to access
+all postgres databases.
+This can be achieved by modifying the pg\_hba.conf file
+located in the postgres home directory. Paste the following in this file:
 \begin{lstlisting}
 host    all         all         127.0.0.1/32          trust
 # IPv6 local connections:
 host    all         all         ::1/128               trust
 host    all         all         127.0.0.1             trust
 \end{lstlisting}
-
 For more details on postgres configuration, check the postgres manual
 on the pg\_hba.conf and pg\_ident.conf files.
 
 \item Start the server
 
-  On SUSE, you may start the postgres server with
-  \textit{/etc/init.d/postgresql start}. On MacOS, you may start the
-  postgres server using a command similar to
+On SUSE, you may start the postgres server with
+\textit{/etc/init.d/postgresql start}. On MacOS, you may start the postgres server
+using a command similar to
 
-  \textit{pg\_ctl -D /usr/local/pgsql/data/ -l logfile start}.
+\textit{pg\_ctl -D /usr/local/pgsql/data/ -l logfile start}.
 
 
 \item Obtain the data file
 
-  Download the postgres backup file
-  \file{metabolicdb\_dump\_day\_month\_year.backup} from the data
-  section of the official NeAT web site.
+Download the postgres backup file \file{metabolicdb\_dump\_day\_month\_year.backup}
+from the data section of the official NeAT web site.
 
 \item Load data into postgres
 
-  Load the \file{metabolicdb\_dump\_day\_month\_year.backup} file into
-  postgres as follows:
+Load the \file{metabolicdb\_dump\_day\_month\_year.backup} file into postgres as follows:
+\begin{enumerate}
+\item Start postgres by typing the following on command line:
 
-  \begin{enumerate}
-  \item Start postgres by typing the following on command line:
-    
-    \textit{psql -U postgres}
-  \item In postgres, do:
-    
-    \textit{create user metabolic with password 'metabolic';}
-    
-    \textit{create database "metabolicdb" with owner "metabolic"
-      encoding='UTF8';}
+\textit{psql -U postgres}
+\item In postgres, do:
 
-  \item Quit postgres and type the following command in one line:
-    
-    \textit{pg\_restore -d metabolicdb
-      metabolicdb\_dump\_day\_month\_year.backup -U postgres}
-  \end{enumerate}
+\textit{create user metabolic with password 'metabolic';}
+
+\textit{create database "metabolicdb" with owner "metabolic" encoding='UTF8';}
+\item Quit postgres and type the following command in one line:
+
+\textit{pg\_restore -d metabolicdb metabolicdb\_dump\_day\_month\_year.backup -U postgres}
+\end{enumerate}
 
 \end{enumerate}
 
 \end{enumerate}
 
 \subsubsection{Installation of metabolic pathfinder and pathway extraction}
+Either place the war file \textit{metabolicpathfinding.war} located
+in \file{\$RSAT/java/web} in
 
-Either place the war file \textit{metabolicpathfinding.war} located in
-\file{\$RSAT/java/web} in
-
-\$CATALINA\_HOME/webapps and then start Tomcat or use the Tomcat
-manager to deploy the war file.
+\$CATALINA\_HOME/webapps and then start
+Tomcat or use the Tomcat manager to deploy the war file.
 
 \subsubsection{Configuration of metabolic pathfinder and pathway extraction}
 
@@ -512,28 +495,6 @@ See the section on the update of metabolic pathfinder for the KEGG data.
 \item Reload the metabolicpathfinding web application in tomcat.
 
 \end{enumerate}
-
-
-\subsubsection{(Re)starting the server for pathway extraction tools}
-
-The Web server requires up-and-running servers for PostgreSQL and
-tomcat. Assuming these two servers have been installed as described
-above, you need to start them in order to activate the support for the
-pathway tools.
-
-\begin{lstlisting}
-## Start the Postgres server
-## pg_ctl start works when launched from the postgres user as:
-sudo bash
-su - postgres
-pg_ctl -D data -l logfile restart
-
-## Start the Tomcat server
-## You can execute the catalina.sh script in /usr/share/tomcat6/bin.
-cd /usr/share/tomcat6/bin
-sudo ./catalina.sh start
-\end{lstlisting}
-
 
 \subsection{Web services}
 
