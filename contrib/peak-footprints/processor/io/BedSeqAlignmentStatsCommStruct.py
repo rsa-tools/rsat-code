@@ -518,7 +518,9 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
 class MotifStatistics:
     
     MOTIF_HIT_SCORE = "HitScore"
+    MOTIF_UNCOUNT = "Uncount"
     MOTIF_HYP_HIT_SCORE = "HypergeometricTestHitScore"
+    MOTIF_HYP_UNCOUNT = "HypergometricUncount"
     MOTIF_HYP_PVALUE = "HypergeometricPValue"
     MOTIF_CHI2 = "Chi2"
     MOTIF_CHI2_PVALUE = "Chi2PValue"
@@ -581,11 +583,11 @@ class MotifStatistics:
             if mandatory:
                 raise ExecutionException( "MotifStatistics.getAttributeAsint : Unable to convert the value of attribute :'" + att_name + "'. From:\n\t---> " + str( val_exce))
             else:
-                return None
+                return 0
  
 
     # --------------------------------------------------------------------------------------
-    # Return the attribute value as int
+    # Return the attribute value as float
     def getAttributeAsfloat(self, att_name, mandatory = False):
         
         try:
@@ -595,7 +597,7 @@ class MotifStatistics:
             if mandatory:
                 raise ExecutionException( "MotifStatistics.getAttributeAsint : Unable to convert the value of attribute :'" + att_name + "'. From:\n\t---> " + str( val_exce))
             else:
-                return None
+                return 0
          
 
     # --------------------------------------------------------------------------------------
