@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.17 2013/06/24 15:43:27 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.18 2013/06/24 15:47:58 jeremy Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our $verbose = 0;
@@ -205,6 +205,8 @@ package	main;
   ## Get install sequence
   &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
   $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
+  $genome_dir =~ s|\$ENV\{RSAT\}\/|$ENV{RSAT}|g;
+  
   &RSAT::util::CheckOutDir($genome_dir);
 
   my @contig_files = ();
