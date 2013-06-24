@@ -43,25 +43,25 @@ sub Get_ensembl_version() {
 
 ## Get rsync fasta url
 sub Get_fasta_rsync() {
-  my ($version) = @_;
-  return $ensembl_rsync."/release-".$version."/fasta/";     # Version 48 to 72
+  my ($ensembl_version) = @_;
+  return $ensembl_rsync."/release-".$ensembl_version."/fasta/";     # Version 48 to 72
 }
 
 ## Get rsync variation url
 sub Get_variation_rsync() {
-  my ($version) = @_;
+  my ($ensembl_version) = @_;
 
-  if ($version < 64) {
-    return $ensembl_rsync."/release-".$version."/variation/";     # Version 60 to 63
+  if ($ensembl_version < 64) {
+    return $ensembl_rsync."/release-".$ensembl_version."/variation/";     # Version 60 to 63
 
   } else {
-    return $ensembl_rsync."/release-".$version."/variation/gvf/";     # Version 64 to 72
+    return $ensembl_rsync."/release-".$ensembl_version."/variation/gvf/";     # Version 64 to 72
   }
 }
 
 ## Get rsync species url
 sub Get_species_rsync() {
-  my ($url,$species,$type,$version) = @_;
+  my ($url,$species,$type,$ensembl_version) = @_;
 
   if ($type eq "fasta") {
     return $url.$species."/dna";      # Version 48 to 72
@@ -69,7 +69,7 @@ sub Get_species_rsync() {
   
   if ($type eq "variation") {
     
-    if ($version == 61) {
+    if ($ensembl_version == 61) {
       return $url.ucfirst($species)."/";      # Version 61
     } else {
       return $url.$species."/";     # Version 60 and 62 to 72
@@ -80,9 +80,9 @@ sub Get_species_rsync() {
 ##Get rsync gvf file url
 
 sub Get_gvf_rsync() {
-  my ($url,$species,$version) = @_;
+  my ($url,$species,$ensembl_version) = @_;
 
-  if ($version == 60) {
+  if ($ensembl_version == 60) {
     return $url.$species.".gvf.gz";     # Version 60
   } else {
     return $url.ucfirst($species).".gvf.gz";      # Version 61 to 72
@@ -91,7 +91,7 @@ sub Get_gvf_rsync() {
 
 
 ## Get the genome version for a species
-sub Get_genome_version() {
+sub Get_assembly_version() {
   my ($species_rsync,$species) = @_;
   my @available_fasta = qx{rsync -navP $species_rsync/ "."};
 
@@ -121,24 +121,35 @@ our $supported_file = $ENV{'RSAT'}."/data/supported_organisms_ensembl.tab";
 
 ############################ Fct get dir
 
-## Species dir
+## Get the local directory for the user-specified species
 sub Get_species_dir() {
-  my ($species,$verion) = @_;
+  my ($species,$assembly_version) = @_;
+  my $species_dir = "";
+  &RSAT::message::Info("Getting species directory", "species=".$species, "assembly=".$assembly_version) if ($main::verbose >= 0);
+
+  ## Open the file containing the list of supported Ensembl species
   my ($file) = &OpenInputFile($supported_file);
 
   foreach (<$file>) {
-    chomp();
-    my ($id,$name,$dir) = split("\t");
-    return $dir if ($id eq $species."_ensembl_".$verion);
+      chomp();
+      my ($id,$name,$dir) = split("\t");
+      if ($id eq $species."_ensembl_".$assembly_version.".".$ensembl_version) {
+	  $species_dir = $dir;
+	  last;
+      }
   }
 
-  return "";
+  &RSAT::message::Info("Species directory", $species_dir) if ($main::verbose >= 0);
+  return $species_dir;
 }
 
 ## Genome dir
 sub Get_genome_dir() {
-  my ($species_dir) = @_;
-  return $species_dir."/genome/";
+  my ($species, $assembly_version) = @_;
+  my $species_dir = &Get_species_dir($species, $assembly_version);
+  my $genome_dir = $species_dir."/genome/";
+  &RSAT::message::Info("Genome directory", $genome_dir) if ($main::verbose >= 0);
+  return $genome_dir;
 }
 
 ## Variation dir
