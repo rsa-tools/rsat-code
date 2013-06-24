@@ -7,28 +7,37 @@ require "RSA.seq.lib";
 
 ## TO DO: use the matching weight rather than the number of matches as criterion
 
-#### initialise parameters ####
-$start_time = &RSAT::util::StartScript();;
-$max_flanking = 1;
-$max_subst = 0;
-$max_asmb_size = 50;
-$max_pattern_nb = 0;
-$max_asmb_nb = 0;
-$strand_insensitive = 1;
-$top_pattern_nb = 100;
-$separate_singletons = 0; ## Report isolated words separately from the assemblies
+## initialise parameters
+our $start_time = &RSAT::util::StartScript();;
+our $max_flanking = 1;
+our $max_subst = 0;
+our $max_asmb_size = 50;
+our $strand_insensitive = 1;
+our $pattern_nb = 0;
+our $max_pattern_nb = 0;
+our $max_asmb_nb = 0;
+our $max_asmb_nb_per_cluster = 1;
+our $top_pattern_nb = 100;
+our $separate_singletons = 0; ## Report isolated words separately from the assemblies
+our $score_column = 0;
+our $cluster_column = 0;
+our $assembly_nb = 0;
+our $current_cluster = 1;
+
+our %cluster_index;
+our %patterns_per_cluster;
+our @clusters = ();
 
 &ReadArguments();
 
-#### check argument values ####
+################################################################
+## Check argument values
 
-### open output file ###
-$out = &OpenOutputFile($outputfile);
-
-
-#### read patterns
-@patterns = &ReadPatterns(pattern_file=>$inputfile,
+################################################################
+## Read patterns
+@patterns = &ReadPatterns(pattern_file=>$infile{patterns},
 			  score_column=>$score_column,
+			  cluster_column=>$cluster_column,
 			  noid=>$noid,
 			  pattern_score=>$pattern_score,
 			  pattern_id=>$pattern_id,
@@ -37,38 +46,16 @@ $out = &OpenOutputFile($outputfile);
 			  inf_scores=>1, ## Accept infinite score values (e.g. from position-analysis)
 			 );
 $pattern_nb = scalar(@patterns);
-#&IndexScores(@patterns);
-
-#### verbose ####
-if ($verbose) {
-    print $out "; pattern-assembly ";
-    &PrintArguments($out);
-    print $out "; Input file	$inputfile\n" if $inputfile;
-    print $out "; Output file	$outputfile\n" if $outputfile;
-    if (&IsNatural($score_column)) {
-	printf $out "; %-29s\t%d\n", "Input score column", $score_column;
-	printf $out "; %-29s\t%d\n", "Output score column", $3;
-    }
-    if ($strand_insensitive) {
-	print $out "; two strand assembly\n";
-    } else {
-	print $out "; single strand assembly\n";
-    }
-    printf $out "; %-29s\t%d\n", "max flanking bases", $max_flanking;
-    printf $out "; %-29s\t%d\n", "max substitutions", $max_subst;
-    printf $out "; %-29s\t%d\n", "max assembly size", $max_asmb_size;
-    printf $out "; %-29s\t%d\n", "max number of patterns", $max_pattern_nb if ($max_pattern_nb);
-    printf $out "; %-29s\t%d\n", "top number of patterns", $top_pattern_nb if ($top_pattern_nb);
-    printf $out "; %-29s\t%d\n", "number of input patterns", $pattern_nb;
-    printf $out "; %-29s\t%d %s\n", "THE ANALYSIS WAS RESTRICTED TO THE", $top_pattern_nb, "TOP PATTERNS" 
-      if (($top_pattern_nb > 0) && ($pattern_nb > $top_pattern_nb));
-    printf $out ";\n";
-}
-
 
 ################################################################
-#### Check that pattern number does not exceed the limit
+## Open output stream
+our $out = &OpenOutputFile($outfile{assembly});
 
+## Print initial verbosity
+&Verbose if ($main::verbose >= 1);
+
+################################################################
+## Check that pattern number does not exceed the limit
 
 ## With the option -top_patterns, the exceeding patterns are ignored
 if (($top_pattern_nb > 0) &&
@@ -83,46 +70,117 @@ if (($top_pattern_nb > 0) &&
   @patterns = @patterns[0..($top_pattern_nb-1)];
   $pattern_nb = scalar(@patterns);
   &RSAT::message::Debug("remaining patterns", scalar(@patterns)) if ($main::verbose >= 2);
-#    &IndexScores(@patterns);
-}
-&IndexScores(@patterns);
-
-## Report patterns to assemble
-if ($main::verbose >= 3) {
-  my $message = "Patterns to assemble\t".scalar(@to_assemble)."\n";
-  foreach my $pattern (@patterns) {
-    $message .= join("\t", ";", 
-		     $pattern->get_attribute("sequence"),
-		     $pattern->get_attribute("score"));
-    $message .= "\n";
-  }
-  &RSAT::message::Info($message);
 }
 
-## With the option -max_patterns, the program does not perform the
-## assemblies if there are too many patterns
-if (($max_pattern_nb > 0) &&
-    ($pattern_nb > $max_pattern_nb)) {
-    my $message = join("\t", "Too many patterns to assemble. ",
-		       "Number of patterns = $pattern_nb.",
-		       "Maximum nb allowed = $max_pattern_nb.",
-		       "Assembly is cancelled.");
-    print $out ";", $message, "\n";
-    &RSAT::message::Warning ($message) if ($main::vernose >= 1);
+&IndexClusters(@patterns);
+
+# Run the assembly
+if ($cluster_column > 0) {
+    foreach our $cluster (@clusters) {
+	@cluster_patterns = @{$cluster_index{$cluster}};
+	&RSAT::message::TimeWarn("Assembling",scalar(@cluster_patterns),"patterns for cluster", $cluster) if ($main::verbose >= 2);
+#	print $out ("\n; Asembling\t", scalar(@cluster_patterns),"\tpatterns for cluster\t", $cluster) if ($main::verbose >= 1);
+	&AssembleCluster(@cluster_patterns);
+    }
 } else {
-    &AssemblePatterns(@to_assemble);
+    &AssembleCluster(@patterns);
 }
 
-##### Close output file
+
+## Close output file
 my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
 print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-close $out unless ($outputfile eq "");
-
+close $out unless ($outfile{assembly} eq "");
 
 exit(0);
 
+################################################################
+################### Subroutine definition ######################
+################################################################
 
-########################## subroutine definition ############################
+################################################################
+## Run pattern assembly for one pattern cluster
+sub AssembleCluster {
+    my (@patterns) = @_;
+    &IndexScores(@patterns);
+
+    ## Report patterns to assemble
+    if ($main::verbose >= 3) {
+	my $message = "Patterns to assemble\t".scalar(@to_assemble)."\n";
+	foreach my $pattern (@patterns) {
+	    $message .= join("\t", ";", 
+			     $pattern->get_attribute("sequence"),
+			     $pattern->get_attribute("score"));
+	    $message .= "\n";
+	}
+	&RSAT::message::Info($message);
+    }
+
+    ## With the option -max_patterns, the program does not perform the
+    ## assemblies if there are too many patterns
+    if (($max_pattern_nb > 0) &&
+	($pattern_nb > $max_pattern_nb)) {
+	my $message = join("\t", "Too many patterns to assemble. ",
+			   "Number of patterns = $pattern_nb.",
+			   "Maximum nb allowed = $max_pattern_nb.",
+			   "Assembly is cancelled.");
+	print $out ";", $message, "\n";
+	&RSAT::message::Warning ($message) if ($main::vernose >= 1);
+	exit(0);
+    }
+
+    &AssemblePatterns(@to_assemble);
+}
+
+################################################################
+## Verbose
+sub Verbose {
+    print $out "; pattern-assembly ";
+    &PrintArguments($out);
+    print $out "; Input file	$infile{patterns}\n" if $infile{patterns};
+    print $out "; Output file	$outfile{assembly}\n" if $outfile{assembly};
+    if (&IsNatural($score_column)) {
+	printf $out "; %-29s\t%d\n", "Input score column", $score_column;
+	printf $out "; %-29s\t%d\n", "Output score column", $3;
+    }
+    if ($strand_insensitive) {
+	print $out "; Strand-insensitive assembly\n";
+    } else {
+	print $out "; Strand-sensitive assembly\n";
+    }
+    printf $out "; %-29s\t%d\n", "Max flanking bases", $max_flanking;
+    printf $out "; %-29s\t%d\n", "Max substitutions", $max_subst;
+    printf $out "; %-29s\t%d\n", "Max assembly size", $max_asmb_size;
+    printf $out "; %-29s\t%d\n", "Max number of patterns", $max_pattern_nb if ($max_pattern_nb);
+    printf $out "; %-29s\t%d\n", "Top number of patterns", $top_pattern_nb if ($top_pattern_nb);
+    printf $out "; %-29s\t%d\n", "Number of input patterns", $pattern_nb;
+    printf $out "; %-29s\t%d %s\n", "THE ANALYSIS WAS RESTRICTED TO THE", $top_pattern_nb, "TOP PATTERNS" 
+      if (($top_pattern_nb > 0) && ($pattern_nb > $top_pattern_nb));
+    printf $out ";\n";
+}
+
+################################################################
+## Index pattern clusters
+sub IndexClusters {
+  my (@patterns) = @_;
+  &RSAT::message::TimeWarn("Indexing", scalar(@patterns), "patterns by cluster") if ($main::verbose >= 2);
+
+  ## A has table with cluster names/ids as keys, and lists of patterns as values
+  %cluster_index = ();
+  %patterns_per_cluster = ();
+  $pattern_nb = scalar(@patterns);
+  for my $i (0..$#patterns) {
+    my $pattern = $patterns[$i];
+    my $cluster = $pattern->get_attribute("cluster");
+#    &RSAT::message::Debug("&IndexClusters()", $pattern, "cluster=".$cluster) if ($main::verbose >= 10);
+    push @{$cluster_index{$cluster}}, $pattern;
+    $patterns_per_cluster{$cluster}++;
+  }
+
+  ## Sort clusters
+  @clusters = sort {$a <=> $b} keys %patterns_per_cluster;
+  &RSAT::message::Info("cluster col", $cluster_column, scalar(@pattern_clusters), "pattern clusters", join(",", @clusters)) if ($main::verbose >= 3);
+}
 
 ################################################################
 ## Create a hash with pattern scores
@@ -153,12 +211,10 @@ sub  IndexScores {
       $score{$word} = 1;
       $info{$word} = $description;
     }
-
     &RSAT::message::Debug("IndexScores", $score{$word}) if ($main::verbose>= 5);
   }
 
-
-  ## #### reverse complement
+  ## Reverse complement
   %seed = %score;
   if ($strand_insensitive) {
     foreach $word (keys %seed) {
@@ -167,17 +223,15 @@ sub  IndexScores {
     }
   }
 
-  #### sort patterns according to their score
+  ## sort patterns according to their score
   @to_assemble = sort {$sort_score{$b} <=> $sort_score{$a}} keys %seed;
 
-
   &RSAT::message::Info("Patterns to assemble", scalar(@to_assemble)) if ($main::verbose >= 3);
-
 }
 
 ################################################################
-## Usage
-## AssembleFragments ($word1,$word2,$offset)
+## Usage:
+##   AssembleFragments ($word1,$word2,$offset)
 sub AssembleFragments {
     local($word1) = $_[0];
     local($word2) = $_[1];
@@ -240,11 +294,11 @@ sub BaseAnd {
     return($base_and);
 }
 
-
-#### finds the best offset for aligning two sequences without mismatches
-#### usage
-####     ($best_offset,$flanking_length,$assembly_score) = &BestOffset($word1,$word2,$max_flanking);
-####
+################################################################
+## Find the best offset for aligning two sequences without mismatches.
+##
+## Usage
+##     ($best_offset,$flanking_length,$assembly_score) = &BestOffset($word1,$word2,$max_flanking);
 sub BestOffset {
     local($word1) = $_[0];
     local($word2) = $_[1];
@@ -286,10 +340,10 @@ sub BestOffset {
 	}
 
 	unless ($mis) {
-	    #### calculate the flanking length
-	    #### by summing the lengthes of word2 segments flanking word1
-	    #### on both sides. This might be necessary when word2 is larger
-	    #### than word1.
+	    ## calculate the flanking length
+	    ## by summing the lengthes of word2 segments flanking word1
+	    ## on both sides. This might be necessary when word2 is larger
+	    ## than word1.
 	    if ($offset < 0) {
 		$flanking_length -= $offset;
 	    }
@@ -340,9 +394,11 @@ sub PrintAssembly {
 	$word_nb++;
     }
     if ($verbose) {
-	print $out  ";assembly # $assembly_nb";
-	    print $out "\tseed: $first_seed";
-	print $out  "\t$word_nb words";
+	print $out  "; assembly # ".$assembly_nb;
+	print $out  "\tcluster # ".$cluster if ($cluster_column);
+	print $out "\tseed: $first_seed";
+#	print $pit scalar(@to_assemble), " initial patterns";
+	print $out  "\t$word_nb assembled patterns";
 	print $out "\tlength ", length($seed);
 	print $out "\n";
 	&PrintAssemblyHeader();
@@ -386,11 +442,11 @@ sub PrintAssembly {
 }
 
 
-
-### returns a score for the matching between two bases
-### the score reflects the probability for the match to be obtained at random
+################################################################
+## Return a score for the matching between two bases the score
+## reflects the probability for the match to be obtained at random.
 ###
-### Usage:
+## Usage:
 ###	$score = &MatchScore($base1,$base2);
 sub MatchScore {
     local($base1) = uc($_[0]);
@@ -437,17 +493,15 @@ sub InfoLength {
     $info_value{'G'} = 1;
     $info_value{'T'} = 1;
     $info_value{'N'} = 0;
-
     foreach $p (0..$string_length-1) {
 	$b = uc(substr($word,$p,1));
 	$info_length += $info_value{$b};
     }
-
     return $info_length;
 }
 
 sub PrintHelp {
-  #### display full help message #####
+  ## display full help message #####
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -496,6 +550,11 @@ OPTIONS
 		of entry of the patterns. When a score column is
 		specified, patterns are incorporated accordingly to
 		their scores (higher scores are incorporated first.
+
+	-cc	cluster column
+		Define a column containing cluster names or numbers.
+		If cluster column is specified, each cluster is
+		treated as a separate set of patterns for assembly.
 
 	-maxfl #
 		maximum flanking segment size (default $max_flanking).
@@ -572,7 +631,7 @@ End_of_help
 }
 
 sub PrintOptions {
-  #### display short help message #####
+  ## display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
 pattern-assembly options
@@ -585,6 +644,7 @@ pattern-assembly options
 -1str		strand sensitive assembly
 -2str		strand insensitive assembly
 -sc		score column
+-cc		cluster column
 -maxfl #	maximum flanking segment size (default $max_flanking).
 -subst #	maximum allowed substitutions (default $max_subst).
 -max_asmb_nb #	maximal number of assemblies (default: $max_asmb_nb)
@@ -598,102 +658,106 @@ End_short_help
 }
 
 ################################################################
-#### Read arguments
+## Read arguments
 sub ReadArguments {
-    foreach $a (0..$#ARGV) {
-	### verbose ###
-	if ($ARGV[$a] eq "-v") {
-	  if (&IsNatural($ARGV[$a+1])) {
-	    $verbose = $ARGV[$a+1];
-	  } else {
-	    $verbose = 1;
-	  }
+  foreach $a (0..$#ARGV) {
+    ### verbose
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
 
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
 
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
-
-
-	    ### input file ###
-	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
-
-	    ### output file ###
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
-
-	    ### strand-insensitive assembly
-	} elsif ($ARGV[$a] eq "-2str") {
-	    $strand_insensitive = 1;
-	} elsif ($ARGV[$a] eq "-1str") {
-	    $strand_insensitive = 0;
-
-	    ### max number of allowed patterns
-	} elsif (($ARGV[$a] eq "-maxpat") && (&IsNatural($ARGV[$a+1]))) {
-	    $max_pattern_nb = $ARGV[$a+1];
-	    $top_pattern_nb = 0;
-
-	    ### max number of patterns to assemble
-	} elsif (($ARGV[$a] eq "-toppat") && (&IsNatural($ARGV[$a+1]))) {
-	    $top_pattern_nb = $ARGV[$a+1];
-	    $max_pattern_nb = 0;
-
-	    ### score column
-	} elsif ($ARGV[$a] eq "-sc") {
-	    $score_column = $ARGV[$a+1];
-	    if (!(&IsNatural($score_column)) || ($score_column == 0)) {
-		print "Error: the score column must be a strictly positive integer\n";
-		exit;
-	    }
-
-	    ### substitutions
-	} elsif ($ARGV[$a] =~ /-subs/) {
-	    $max_subst = $ARGV[$a+1];
-	    unless (&IsNatural($max_subst)) {
-		print "Error: the number of substitutions must be a positive integer\n";
-		exit;
-	    }
-
-	    ### max flank
-	} elsif ($ARGV[$a] =~ /^-maxfl/i) {
-	    $max_flanking = $ARGV[$a+1];
-	    unless (&IsNatural($max_flanking)) {
-		print "Error: the flanking segment size must be a positive integer\n";
-		exit;
-	    }
-
-	    ### max number of clusters
-	} elsif ($ARGV[$a] =~ /^-max_asmb_nb/i) {
-	    $max_asmb_nb = $ARGV[$a+1];
-	    unless (&IsNatural($max_asmb_nb)) {
-		&RSAT::error::FatalErro("maximal number of assemblies must be a positive integer");
-	    }
-
-	    ### max cluster size
-	} elsif ($ARGV[$a] =~ /^-max_asmb_size/i) {
-	    $max_asmb_size = $ARGV[$a+1];
-	    unless (&IsNatural($max_asmb_size)) {
-		&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
-	    }
-
-	} elsif ($ARGV[$a] =~ /^-maxcl/i) {
-	    &RSAT::message::Warning("Option -maxcl has been replaced by -mac_cl_size.");
-	    $max_asmb_size = $ARGV[$a+1];
-	    unless (&IsNatural($max_asmb_size)) {
-		&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
-	    }
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
 
 
-	    ### report isolated words separately
-	} elsif ($ARGV[$a] eq "-single_sep") {
-	    $separate_singletons = 1;
+      ### input file
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{patterns} = $ARGV[$a+1];
 
-	}
+      ### output file
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{assembly} = $ARGV[$a+1];
+
+      ### strand-insensitive assembly
+    } elsif ($ARGV[$a] eq "-2str") {
+      $strand_insensitive = 1;
+    } elsif ($ARGV[$a] eq "-1str") {
+      $strand_insensitive = 0;
+
+      ### max number of allowed patterns
+    } elsif (($ARGV[$a] eq "-maxpat") && (&IsNatural($ARGV[$a+1]))) {
+      $max_pattern_nb = $ARGV[$a+1];
+      $top_pattern_nb = 0;
+
+      ### max number of patterns to assemble
+    } elsif (($ARGV[$a] eq "-toppat") && (&IsNatural($ARGV[$a+1]))) {
+      $top_pattern_nb = $ARGV[$a+1];
+      $max_pattern_nb = 0;
+
+      ### score column
+    } elsif ($ARGV[$a] eq "-sc") {
+      $score_column = $ARGV[$a+1];
+      if (!(&IsNatural($score_column)) || ($score_column == 0)) {
+	&RSAT::error::FatalError("the score column must be a strictly positive integer");
+      }
+
+      ### cluster column
+    } elsif ($ARGV[$a] eq "-cc") {
+      $cluster_column = $ARGV[$a+1];
+      if (!(&IsNatural($cluster_column)) || ($cluster_column == 0)) {
+	&RSAT::error::FatalError("The cluster column must be a strictly positive integer");
+      }
+
+      ### substitutions
+    } elsif ($ARGV[$a] =~ /-subs/) {
+      $max_subst = $ARGV[$a+1];
+      unless (&IsNatural($max_subst)) {
+	&RSAT::error::FatalError("the number of substitutions must be a positive integer");
+      }
+
+      ### max flank
+    } elsif ($ARGV[$a] =~ /^-maxfl/i) {
+      $max_flanking = $ARGV[$a+1];
+      unless (&IsNatural($max_flanking)) {
+	&RSAT::error::FatalError("the flanking segment size must be a positive integer");
+      }
+
+      ### max number of clusters
+    } elsif ($ARGV[$a] =~ /^-max_asmb_nb/i) {
+      $max_asmb_nb = $ARGV[$a+1];
+      unless (&IsNatural($max_asmb_nb)) {
+	&RSAT::error::FatalErro("maximal number of assemblies must be a positive integer");
+      }
+
+      ### max cluster size
+    } elsif ($ARGV[$a] =~ /^-max_asmb_size/i) {
+      $max_asmb_size = $ARGV[$a+1];
+      unless (&IsNatural($max_asmb_size)) {
+	&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
+      }
+
+    } elsif ($ARGV[$a] =~ /^-maxcl/i) {
+      &RSAT::message::Warning("Option -maxcl has been replaced by -mac_cl_size.");
+      $max_asmb_size = $ARGV[$a+1];
+      unless (&IsNatural($max_asmb_size)) {
+	&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
+      }
+
+
+      ### report isolated words separately
+    } elsif ($ARGV[$a] eq "-single_sep") {
+      $separate_singletons = 1;
+
     }
+  }
 }
 
 
@@ -701,25 +765,37 @@ sub ReadArguments {
 ## Assemble patterns
 sub AssemblePatterns {
   my (@to_assemble) = @_;
-  $assembly_nb = 0;
+  &RSAT::message::TimeWarn("Starting pattern assembly", scalar(@to_assemble)) if ($main::verbose >= 2);
 
-  &RSAT::message::TimeWarn(join "\t", "Starting pattern assembly", scalar(@to_assemble)) if ($main::verbose >= 2);
+  my $assembly_nb_current_cluster = 0;
 
   ################################################################
-  #### make a list of patterns remaining to assemble
+  ## Generate a list of patterns remaining to assemble
   while ($#to_assemble > -1) {
     if (($max_asmb_nb > 0) && ($assembly_nb >= $max_asmb_nb)) {
       print $out ("; Maximal number of assemblies is reached (", $max_asmb_nb,
 		  "). Remaining patterns: ", $#to_assemble, ".\n");
+      $max_asmb_reached = 1;
       last;
     }
 
-    #### reinitialize variables
+    if ($cluster_column) {
+	if (($max_asmb_nb_per_cluster > 0) && ($assembly_nb_current_cluster >= $max_asmb_nb_per_cluster)) {
+	    print $out ("; Maximal number of assemblies (".$max_asmb_nb_per_cluster.") ",
+			" reached for cluster ", $current_cluster,
+			". Remaining patterns: ", $#to_assemble, ".\n") if (scalar(@to_assemble) >= 1);
+	    $max_asmb_per_cluster_reached = 1;
+	    last;
+	}
+    }
+
+
+    ## Reinitialize variables
     undef %position;
     my $origin = 0;
 
 
-    #### new seed for the next assembly
+    ## New seed for the next assembly
     local $seed = local $first_seed = $to_assemble[0];
     $position{$first_seed} = 0;
     delete $seed{$to_assemble[0]};
@@ -727,25 +803,25 @@ sub AssemblePatterns {
     &RSAT::message::TimeWarn("Assembly", $assembly_nb, "new seed", $seed, "remaining", scalar(@to_assemble))
       if ($main::verbose >= 2);
 
-    #### all input oligos are considered for assembly with the new seed
+    ## all input oligos are considered for assembly with the new seed
     my %to_align = %score;
     delete $to_align{$first_seed};
     @to_align =  sort {$sort_score{$b} <=> $sort_score{$a}} keys %to_align;
 
-    #### try to align each remaining pattern to the current assembly
+    ## try to align each remaining pattern to the current assembly
     my $assembly_size = 1;
     while (($assembly_size < $max_asmb_size) && ($#to_align > -1)) {
       $found = 0;
       while (($assembly_size < $max_asmb_size) && ($#to_align > -1)) {
 	$best_offset = "";
 
-	#### best alignment for the direct word
+	## Best alignment for the direct word
 	$best_word = $word = shift(@to_align);
 	$min_score = &InfoLength($word) - $max_flanking;
 	#		&RSAT::message::TimeWarn(join ("\t", "aligning word", $word, "remaining", scalar(@to_align)))
 	#		    if ($main::verbose >= 10);
 
-	#### alignment by substitutions ####
+	## Alignment by substitutions
 	if ($max_subst > 0) {
 	  $word_length = length($word);
 	  $last_pos = length($seed) - $word_length;
@@ -772,7 +848,7 @@ sub AssemblePatterns {
 
 	#		($match, $weight, $Pval, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
 
-	#### alignment by offset ###
+	## Alignment by offset
 	unless ($found) {
 	  ($best_offset,$flanking_length,$assembly_score) = (&BestOffset($seed,$word));
 
@@ -815,12 +891,13 @@ sub AssemblePatterns {
       push @singletons, $seed;
     } else {
       $assembly_nb++;
+      $assembly_nb_current_cluster++;
       &PrintAssembly();
     }
     @to_assemble = sort {$sort_score{$b} <=> $sort_score{$a}} keys %seed;
   }
 
-  #### singleton patterns ####
+  ## Singleton patterns
   if ($#singletons >=0) {
     printf $out "\n; Isolated patterns: %d\n", $#singletons+1;
     &PrintAssemblyHeader() if ($verbose);
@@ -839,5 +916,6 @@ sub AssemblePatterns {
       print $out "\n";
 
     }
+
   }
 }
