@@ -26,13 +26,6 @@
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
 
-################################################################
-## Default parameters.  These parameters can be over-written by
-## calling the script with command-line arguments.
-
-## URL of Jacques van Helden course "Statistics for bioinformatics", required to load some libraries
-                                        #dir.course <- 'http://www.bigre.ulb.ac.be/courses/statistics_bioinformatics'
-                                        #dir.course <- '/Users/jvanheld/statistics_bioinformatics'
 dir.rsat <- Sys.getenv("RSAT");
 if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
@@ -43,6 +36,10 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 source(file.path(dir.util, 'util.R'))
 source(file.path(dir.util, 'util_plots.R'))
 source(file.path(dir.util, 'util_chip_analysis.R'))
+
+################################################################
+## Default parameters.  These parameters can be over-written by
+## calling the script with command-line arguments.
 
 ## Threshold for selecting patterns
 sig.threshold <- 1 ## Min level of chi2 significance
@@ -211,10 +208,11 @@ nb.clusters <- min(nb.clusters, nb.patterns) ## Check that number of clusters do
 verbose(paste(sep="", "Cutting the tree; k=", nb.clusters), 2)
 clusters <- cutree(pos.tree,k=nb.clusters)
 clusters <- clusters[order(clusters)]
-cluster.table <- data.frame("sequence"=names(clusters),
-                            "cluster"=clusters,
-                            "chi2"=pos.data[names(clusters),"chi2"],
-                            "sig"=pos.data[names(clusters),"sig"],
+cluster.table <- data.frame('sequence'=pos.data[names(clusters),'seq'],
+                            'cluster'=clusters,
+                            'chi2'=pos.data[names(clusters),'chi2'],
+                            'sig'=pos.data[names(clusters),'sig'],
+                            'identifier'=names(clusters),
                             row.names=NULL)
 
 ## Export the cluster file in the same directory as the position
