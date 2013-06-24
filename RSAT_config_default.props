@@ -122,7 +122,7 @@ ensembl_host=ensembldb.ensembl.org
 ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 
 ## Safe version of the ensembl database (for download-ensembl-genome, download-ensembl-variations, ...)
-ensembl_version_safe=76
+ensembl_version_safe=72
 
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
 ensembl=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl/modules
