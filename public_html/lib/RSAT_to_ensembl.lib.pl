@@ -9,8 +9,8 @@ package main;
 #  our $ensembl_url = "ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/";
 
 ####### Variables
-our $ensembl_rsync = $ENV{ensembl_ftp} || "rsync://ftp.ensembl.org/ensembl/pub";
-our $ensembl_version_safe = 72;
+our $ensembl_rsync = $ENV{ensembl_rsync} || "rsync://ftp.ensembl.org/ensembl/pub";
+our $ensembl_version_safe = $ENV{ensembl_version_safe} = 72;
 
 
 ####### Fct
