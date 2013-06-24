@@ -10,7 +10,7 @@ package main;
 
 ####### Variables
 our $ensembl_rsync = $ENV{ensembl_rsync} || "rsync://ftp.ensembl.org/ensembl/pub";
-our $ensembl_version_safe = $ENV{ensembl_version_safe} = 72;
+our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
 
 
 ####### Fct
@@ -31,7 +31,7 @@ sub Get_ensembl_version() {
   my @available_fasta = qx{rsync -navP $ensembl_rsync/current_fasta/homo_sapiens/dna/ "."};
 
   foreach (@available_fasta) {
-    next unless (/$species/);
+    next unless (/Homo_sapiens/);
 
     $_ =~ s/$species\.//g;
     my @token = split(".dna",$_);
@@ -64,7 +64,7 @@ sub Get_species_rsync() {
   my ($url,$species,$type,$ensembl_version) = @_;
 
   if ($type eq "fasta") {
-    return $url.$species."/dna";      # Version 48 to 72
+    return $url.$species."/dna/";      # Version 48 to 72
   }
   
   if ($type eq "variation") {
@@ -119,13 +119,11 @@ sub Get_assembly_version() {
 our $supported_file = $ENV{'RSAT'}."/data/supported_organisms_ensembl.tab";
 
 
-############################ Fct get dir
+############################ Fct get local dir
 
 ## Get the local directory for the user-specified species
 sub Get_species_dir() {
-  my ($species,$assembly_version) = @_;
-  my $species_dir = "";
-  &RSAT::message::Info("Getting species directory", "species=".$species, "assembly=".$assembly_version) if ($main::verbose >= 0);
+  my ($species,$assembly_version,$ensembl_version) = @_;
 
   ## Open the file containing the list of supported Ensembl species
   my ($file) = &OpenInputFile($supported_file);
@@ -133,23 +131,23 @@ sub Get_species_dir() {
   foreach (<$file>) {
       chomp();
       my ($id,$name,$dir) = split("\t");
-      if ($id eq $species."_ensembl_".$assembly_version.".".$ensembl_version) {
-	  $species_dir = $dir;
-	  last;
-      }
+      return $dir if ($name =~ /$species.*$assembly_version.*$ensembl_version/);
   }
 
-  &RSAT::message::Info("Species directory", $species_dir) if ($main::verbose >= 0);
-  return $species_dir;
+  return $genomes_dir.&Get_species_dir_name($species,$assembly_version,$ensembl_version);
 }
+
+
+sub Get_species_dir_name() {
+  my ($species,$assembly_version,$ensemb_version) = @_;
+  return $species."_ensembl_".$assembly_version."_".$ensembl_version;
+}
+
 
 ## Genome dir
 sub Get_genome_dir() {
-  my ($species, $assembly_version) = @_;
-  my $species_dir = &Get_species_dir($species, $assembly_version);
-  my $genome_dir = $species_dir."/genome/";
-  &RSAT::message::Info("Genome directory", $genome_dir) if ($main::verbose >= 0);
-  return $genome_dir;
+  my ($species, $assembly_version,$ensembl_version) = @_;
+  return &Get_species_dir($species, $assembly_version,$ensembl_version)."/genome/";
 }
 
 ## Variation dir
