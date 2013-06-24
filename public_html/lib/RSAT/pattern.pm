@@ -23,7 +23,7 @@ Class for managing patterns.
 =cut
 
 
-################################################################
+
 =pod
 
 =item new()
@@ -44,14 +44,13 @@ sub new {
 	description=>$args{description},
 	score=>$args{score},
     }, $class;
-    
     foreach my $key (keys %args) {
 	$self->force_attribute($key, $args{$key});
     }
     return $self;
 }
 
-################################################################
+
 =pod
 
 =item contains()
@@ -85,9 +84,8 @@ sub contains {
     } elsif ($args{perfect}) {
 	$min_score = $len2;
     }
-    
+
     return 0 if ($len2 > $len1);
-    
     push @seqs, $seq2;
     unless ($args{single_strand}){ ### reverse complement
 	push @seqs, &main::ReverseComplement($seq2) 

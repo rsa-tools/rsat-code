@@ -14,6 +14,203 @@ because this genome is not supported on the main \RSAT server. For
 this, you can use the programs that we use to install new genomes on
 the main \RSAT server.
 
+\section{Adding support for Ensembl genomes}
+
+In addition to the genomes imported and maintained on your local \RSAT
+server, the program \program{retrieve-ensembl-seq} allows you to
+retrieve sequences for any organism supported in the Ensembl database
+(\url{http://ensembl.org}).
+
+For this, you first need to install the Bioperl and Ensembl Perl
+libraries (see section \ref{sect:ensembl_libraries}).
+
+\subsection{Handling genomes from Ensembl}
+
+The first step to work with Ensembl genomes is to check the list of
+organisms currently supported on their Web server.
+
+\begin{lstlisting}
+supported-organisms-ensembl
+\end{lstlisting}
+
+You can then get more precise information about a given organism
+(build, chromosomes) with the command \program{ensembl-org-info}.
+
+\begin{lstlisting}
+ensembl-org-info -org Drosophila_melanogaster
+\end{lstlisting}
+
+Sequences can be retrieved from Ensembl with the command
+\program{retrieve-ensembl-seq}. 
+
+You can for example retrieve the 2kb sequence upstream of the
+transcription start site of the gene \gene{PAX6} of the mouse. 
+
+\begin{lstlisting}
+retrieve-ensembl-seq.pl -org Mus_musculus -q PAX6 \
+  -type upstream -feattype mrna -from -2000 -to -1 -nogene -rm \
+  -alltranscripts -uniqseqs
+\end{lstlisting}
+
+Options
+
+\begin{itemize}
+
+\item \option{-type upstream} specifies that we want to collect the
+  sequences located upstream of the gene (more procisely, upstream of
+  the mRNA).
+
+\item \option{-feattype mrna} indicates that the reference for computing
+  coordinates is the mRNA. Since we collect upstream sequences, the
+  5'most position of the mRNA has coordinate 0, and upstream sequences
+  have negative coordinates. Note that many genes are annotated with
+  multiple RNAs for different reasons (alternative splicing,
+  alternative transcription start sites). By default, the program will
+  return the sequences upstream of each mRNA annotated for the query
+  gene.
+
+\item \option{-nogene} clip the sequences to avoid overlapping the next
+  upstream gene.
+
+\item \option{-rm} repeat masking (important for pattern
+  discovery). Repetitive sequences are replaced by \seq{N} characters.
+
+\end{itemize} 
+
+\section{Importing genomes from NCBI BioProject}
+
+Tne BioProject database hosts the results of genome sequencing and
+transcriptome projects. 
+
+\begin{enumerate}
+\item Open a connection to the Bioproject Web site \\
+  \url{http://www.ncbi.nlm.nih.gov/bioproject}
+
+\item Enter a query to select the organism of interest.
+  E.g. \texttt{ostreococcus+tauri[orgn]}
+
+\item If the organism genome has been sequenced, you should see a
+  title ``Genome Sequencing Projects'' in the record. Find the
+  relevant project and open the link.
+
+  For example, for
+  \org{Ostreococcus tauri}, the most relevant project is PRJNA51609 \\
+  \url{http://www.ncbi.nlm.nih.gov/bioproject/51609}
+
+\item Take note of the \option{Accesssion} of this genome project:
+  since a same organism might have been sequenced several times, it
+  will be useful to include this Accession in the suffix of the name
+  of the file fo be downloaded.
+
+\item On the left side of the page, under \option{Related
+    information}, click the link ``\option{Nucleotide genomic
+    data}''. This will display a list of Genbank entries (one per contig).
+
+\item \textbf{Important:} we recommend to create one separate
+  directory per organism, and to name this directory according to the
+  organism name followed by the genome project Accession number. For
+  example, for \org{Ostreococcus tauri}, the folder name would be
+  \file{Ostreococcus\_tauri\_PRJNA51609}.
+
+  This convention will facilitate the further steps of installation,
+  in particular the parsing of genbank-formatted files with the
+  program \program{parse-genbank.pl}.
+
+\item In the top corner of the page, click on the \option{Send to}
+  link and activate the following options.
+
+  \option{Send to > File >  Genbank full > Create file} 
+
+  Save the file in the organism-specific directory described in the
+  previous step.
+
+\item You can now parse the genome with the program
+  \program{parse-genbank.pl}. Note that \program{parse-genbank.pl}
+  expects files with extension .gbk or .gbk.gz (as in the NCBI genome
+  repository), whereas the BioProject genome appends the extension
+  \file{.gb}. You should thus use the option \option{-ext gb}.
+
+\begin{lstlisting}
+parse-genbank.pl -v 2 -i Ostreococcus_tauri_PRJNA51609 -ext gb
+\end{lstlisting}
+
+After parsing, run the program \program{install-organism} with the
+following parameters (adapt organism name).
+
+\begin{lstlisting}
+install-organism  -v 2 -org Ostreococcus_tauri_PRJNA51609 \
+  -task config,phylogeny,start_stop,allup,seq_len_distrib \
+  -task genome_segments,upstream_freq,oligos,dyads,protein_freq
+\end{lstlisting}
+
+
+%% \item In 'Project Data', click the 'Genome: 20' link
+%%5) now you will be presented with a list of all 20 chromosomes. To get the full sequence + annotation in genbank format, set 'Display' to 'Genbank' (now your browser will take a while to load all the sequences).
+%%6) Use the download button to extract the files: Download -> GenBank (Full)
+\end{enumerate}
+
+
+\section{Importing multi-genome alignment files from UCSC}
+
+
+\subsection{Warning: disk space requirement}
+
+The UCSC multi-genome alignment files occupy a hige disk space. The
+alignments of 30 vertebrates onto the mouse genome (mm9 multiz30)
+requires 70Gb. If you intend to offer support for multi-genome
+alignments, it might be safe acquiring a separate hard drive for this
+data.
+
+The complete data set available at UCSC in April 2012 occupies 1Tb in
+compressed form, and probably 7 times more once uncompressed. For
+efficiency reasons, it is necessary to uncompress these files for
+using them with the indexing system of  \program{peak-footprints}.
+
+\subsection{Checking supported genomes at UCSC}
+
+As a first step, we will check the list of supported genomes at the
+UCSC Genome Browser.
+
+\begin{lstlisting}
+supported-organisms-ucsc
+\end{lstlisting}
+
+Each genome is assocaited with a short identifier, followed by a
+description. For example, several versions of the mouse genome are
+currently available.
+
+
+\begin{small}
+\begin{verbatim}
+mm10	Mouse Dec. 2011 (GRCm38/mm10) Genome at UCSC
+mm9	Mouse July 2007 (NCBI37/mm9) Genome at UCSC
+mm8	Mouse Feb. 2006 (NCBI36/mm8) Genome at UCSC
+mm7	Mouse Aug. 2005 (NCBI35/mm7) Genome at UCSC
+\end{verbatim}
+\end{small}
+
+\subsection{Downloading multiz files from UCSC}
+
+Multi-genome alignments at UCSC are generated with the program
+\program{multiz}, which produces files in a custom text format called
+\concept{maf} for Multi-Alignment file.
+
+We show hereafter the command to download the mm9 version of the mouse
+genome, and install it in the proper directory for
+\program{peak-footprints} (\file{\$RSAT/data/UCSC\_multiz}).
+
+\begin{lstlisting}
+download-ucsc-multiz -v 1 -org mm9
+\end{lstlisting}
+
+The program will create the sub-directory for the mm9 genome, download
+the coresponding compressed multiz files (files with extension
+\file{.maf.gz}), uncompress them, and call \program{peak-footprint}
+with specific options in order to create a position index, which will
+be further used for fast retrieval of the conserved regions under
+peaks.
+
+
 \section{Installing genomes from  NCBI/Genbank files}
 
 In the section \ref{downloading_genomes}, we saw that the genomes
@@ -229,9 +426,10 @@ organisms. To avoid filling up your hard drive, we illustrate the protocol
 with the smallest procaryote genome to date: \textit{Mycoplasma
   genitamlium}.
 
+
 \begin{footnotesize}
 \begin{verbatim}
-## Creating a directory for downloading genomes
+## Creating a directory for downloading genomes in your home account
 cd $RSAT
 mkdir -p downloads
 cd downloads
@@ -247,7 +445,7 @@ We will now download a small genome from NCBI/Genbank.
 \begin{verbatim}
 ## Downloading one directory from NCBI Genbank
 cd $RSAT/downloads/
-make one_genbank_dir NCBI_DIR=Bacteria/Mycoplasma_genitalium_G37_uid57707
+make one_genbank_dir NCBI_DIR=Bacteria/Mycoplasma_genitalium
 \end{verbatim}
 \end{footnotesize}
 
@@ -257,7 +455,7 @@ We can now check the list of files that have been downloaded.
 \begin{verbatim}
 ## Downloading one directory from NCBI Genbank
 cd $RSAT/downloads/
-ls -l ftp.ncbi.nih.gov/genomes/Bacteria/Mycoplasma_genitalium_G37_uid57707
+ls -l ftp.ncbi.nih.gov/genomes/Bacteria/Mycoplasma_genitalium/
 \end{verbatim}
 \end{footnotesize}
 
