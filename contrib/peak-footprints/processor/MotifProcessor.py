@@ -63,6 +63,9 @@ class MotifProcessor( Processor):
 
     # Parameter for multi-threading
     THREAD_CHECK_DELAY = 2
+
+    # Parameter for shifting in comparison of matrices
+    MAXIMAL_SHIFT = 3
     
     # Parameter indicating the max number of blocks sent to a single processor.
     # In case of multi-threads, this number is devided over all threads 
@@ -406,14 +409,19 @@ class MotifProcessor( Processor):
         
         # compute the total number of success "balls"
         # m = total number of possible motif start index in the conserved regions (input motifs)
-        m = 0
+        # This number has to take into account position that have been avoided for algorithm reasons (uncount)
+        possible_position = 0
         for input_size in input_motif_size_list:
-            if input_size >= output_motif_length:
-                m += input_size - output_motif_length + 1
+            length_to_add = input_size + output_motif_length - 2*MotifProcessor.MAXIMAL_SHIFT + 1
+            if length_to_add > 0:
+                possible_position += length_to_add
+
+	m = (2 * possible_position) - motif_stats.getAttributeAsint( MotifStatistics.MOTIF_UNCOUNT)
 
         # compute the total number of failure "balls"
         # n = total number of possible motif start index in the conserved regions (input motifs)
-        n = m
+        # This number has to take into account position that have been avoided for algorithm reasons (uncount)
+        n = (2 * possible_position) - motif_stats.getAttributeAsint( MotifStatistics.MOTIF_HYP_UNCOUNT)
         
         # Compute the total number of succes "balls" drawned :
         # x = number of motif hit with non permuted matrix
@@ -592,7 +600,7 @@ class MotifProcessor( Processor):
         
         # Remove the RSAT compare-matrices result dir
         os.chdir( out_path)
-        #shutil.rmtree( file_info[0], True)
+        shutil.rmtree( file_info[0], True)
 
     
     
@@ -639,7 +647,7 @@ class MotifProcessor( Processor):
             #cmd += " -file1 " + file_path + " -format1 tf"
             #cmd += " -file2 " + database_file_list[db_index] + " -format2 " + database_format_list[db_index]
             #cmd += " -mode profiles"
-            #cmd += " -lth w 3"
+            #cmd += " -lth w " + str( MotifProcessor.MAXIMAL_SHIFT)
             #cmd += " -lth ncor2 0.7"
             #cmd += " -return matrix_id,cor,Ncor2,w,consensus,offset" 
             #cmd += " -o " + sub_prefix
@@ -649,7 +657,7 @@ class MotifProcessor( Processor):
             cmd = os.path.join( RSAT_PATH , "contrib/peak-footprints/tools/compare-matrices")
             cmd += " -file1 " + file_path
             cmd += " -file2 " + database_file_list[db_index]
-            cmd += " -lth_w 3"
+            cmd += " -lth_w " + str( MotifProcessor.MAXIMAL_SHIFT)
             cmd += " -lth_ncor2 0.7"
             cmd += " -o " + sub_prefix + ".tab"	
             cmd += " > " + sub_prefix + ".log"	
@@ -756,7 +764,7 @@ class MotifProcessor( Processor):
                     headers[0] = headers[0][1:]
                     headers_ok = True
                 else:
-                    if headers_ok:
+                    if headers_ok and line[0] != ";":
                         # read each column and assign it to the corresponding header
                         tokens = line.split()
                         input_motif = tokens[ input_motif_col]
@@ -794,6 +802,7 @@ class MotifProcessor( Processor):
         offset_header     = "offset"
         consensus2_header = "consensus2"
         strand_header     = "strand"
+	uncount_header    = "uncounted"
         
 	total_kept = 0
         motif_list = []
@@ -806,7 +815,7 @@ class MotifProcessor( Processor):
                     for input_motif in alignment.motifs:
                         # if the motif name is in the results, retrieve the list of result series
                         if input_motif.name in result.keys():
-			    Log.trace( "FOUND MOTIF = " + input_motif.name)
+			    #Log.trace( "FOUND MOTIF = " + input_motif.name)
                             motif_dics = result[ input_motif.name]
                             #for each entry in the result series, create an output motif if the result ncor2 > correlation_limit
                             Log.info( "MotifProcessor.analyseCompareMatricesResult : motif_dics size for " + input_motif.name + " = " + str( len( motif_dics)))
@@ -818,6 +827,7 @@ class MotifProcessor( Processor):
                                         # retrieve the data
                                         output_motif_offset = self.getTokenAsint( motif_dic[ offset_header])
                                         output_motif_length = self.getTokenAsint( motif_dic[ w2_header])
+                                        output_motif_uncount = self.getTokenAsint( motif_dic[ uncount_header])
                                         output_motif_name = motif_dic[ id2_header]
                                         Log.info( "Detected motif = " + output_motif_name)
                                         # build the new motif
@@ -827,6 +837,7 @@ class MotifProcessor( Processor):
                                         output_motif.id = motif_dic[ name2_header]
                                         output_motif.offset = output_motif_offset
                                         output_motif.score = n_cor2
+					output_motif.uncount = output_motif_uncount
                                         strand = motif_dic[ strand_header].upper()
                                         if strand == Constants.DIRECT_STRAND:
                                             output_motif.strand = Constants.POSITIVE_STRAND
@@ -866,11 +877,18 @@ class MotifProcessor( Processor):
                                 motif_stats = output_commstruct.motifStatistics[ output_motif_name]
                                 motif_stats.motifSize = output_motif.indexEnd - output_motif.indexStart
                                 motif_stats.motifID = output_motif.id
+				# Add hit score to statistics
                                 if motif_stats.hasAttribute( MotifStatistics.MOTIF_HIT_SCORE):
                                     score = motif_stats.getAttributeAsint( MotifStatistics.MOTIF_HIT_SCORE)
                                 else:
                                     score = 0
                                 motif_stats.setAttribute( MotifStatistics.MOTIF_HIT_SCORE, score + 1)
+				# Add uncount position to statistics
+                                if motif_stats.hasAttribute( MotifStatistics.MOTIF_UNCOUNT):
+                                    score_uncount = motif_stats.getAttributeAsint( MotifStatistics.MOTIF_UNCOUNT)
+                                else:
+                                    score_uncount = 0
+				motif_stats.setAttribute( MotifStatistics.MOTIF_UNCOUNT, score_uncount + output_motif.uncount)
                                     
                         self.threadLock.release()
         
@@ -886,6 +904,7 @@ class MotifProcessor( Processor):
         # define some constants for the analysis
         ncor2_header      = "Ncor2"
         id2_header        = "id2"
+	uncount_header    = "uncounted"
         
         self.threadLock.acquire()
         
@@ -901,11 +920,20 @@ class MotifProcessor( Processor):
                         output_motif_name = output_motif_name_perm[:-6] ## remove the '_perm1' suffix added by the matrix permutation tool
                         if output_motif_name in output_commstruct.motifStatistics.keys():
                             motif_stats = output_commstruct.motifStatistics[ output_motif_name]
+                            # Add hit score to statistics
                             if motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_HIT_SCORE):
                                 score = motif_stats.getAttributeAsint( MotifStatistics.MOTIF_HYP_HIT_SCORE)
                             else:
                                 score = 0
                             motif_stats.setAttribute( MotifStatistics.MOTIF_HYP_HIT_SCORE, score + 1)
+                            # Add uncount position to statistics
+			    output_motif_uncount = self.getTokenAsint( motif_dic[ uncount_header])
+                            if motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_UNCOUNT):
+                                score_uncount = motif_stats.getAttributeAsint( MotifStatistics.MOTIF_HYP_UNCOUNT)
+                            else:
+                                score_uncount = 0
+			    motif_stats.setAttribute( MotifStatistics.MOTIF_HYP_UNCOUNT, score_uncount + output_motif_uncount)
+                                
                 except ParsingException, par_exce:
                     Log.log( "MotifProcessor.analyseCompareMatricesHypResult : Some value of a motif correlation is not a float : " + str( motif_dic) + ". From:\n\t--->" + str( par_exce))
         
