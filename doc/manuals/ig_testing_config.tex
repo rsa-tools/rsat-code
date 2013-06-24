@@ -16,7 +16,7 @@ This should display the on-line help for the random sequence
 generator.
 
 \begin{lstlisting}
-random-seq -l 200 -r 4 -a a:t 0.3 c:g 0.2
+random-seq -l 200 -n 4 -a a:t 0.3 c:g 0.2
 \end{lstlisting}
 
 Should generate a random sequence of 200 nucleotides, with approximate
@@ -54,8 +54,8 @@ scripts. To test that they are running correctly, you can try.
 random-motif  -l 10 -c 0.85 -n 20
 \end{lstlisting}
 
-This command will generate a 20-columns position-specific scoring
-matrix (PSSM) with 85\% conservation of one residue in each column.
+This command will generate 20 position-specific scoring
+matrix (PSSM) of 10-columns  with 85\% conservation of one residue in each column.
 
 \subsection{C programs}
 

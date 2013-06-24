@@ -7,7 +7,11 @@ should know the directory where the tools have been installed (if you
 don't know, ask assistance to your system administrator).
 
 In the following instruction, we will assume that \RSAT is installed
-in the directory \texttt{/home/rsat/rsa-tools}. This path has to be
+in the directory 
+
+\texttt{/home/fred/rsa-tools}. 
+
+This path has to be
 replaced by the actual path where \RSAT has been installed on your
 computer.
 
@@ -52,8 +56,7 @@ The answer should be something like \result{/sbin/bash} or
   We will define configuration parameters necessary for \RSAT.  This
   includes an environment variable named \texttt{RSAT}.  We will then
   add the path of the \RSAT \ perl scripts, python scripts and
-  binaries to your path. In addition, add java jar files to your
-  \texttt{CLASSPATH}.
+  binaries to your path.
 
 \begin{itemize}
 
@@ -71,11 +74,6 @@ setenv RSAT [PARENT_PATH]/rsa-tools
 set path=($RSAT/bin $path)
 set path=($RSAT/perl-scripts $path)
 set path=($RSAT/python-scripts $path)
-if ($?CLASSPATH) then
-       setenv CLASSPATH ${RSAT}/java/lib/NeAT_javatools.jar:${CLASSPATH}
-else
-       setenv CLASSPATH ${RSAT}/java/lib/NeAT_javatools.jar
-endif
 \end{lstlisting}
 %% closing $
 
@@ -95,11 +93,6 @@ export RSAT=[PARENT_PATH]/rsa-tools
 export PATH=${RSAT}/bin:${PATH}
 export PATH=${RSAT}/perl-scripts:${PATH}
 export PATH=${RSAT}/python-scripts:${PATH}
-if  [ ${CLASSPATH} ]; then
-       export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
-else
-       export CLASSPATH=${RSAT}/java/lib/NeAT_javatools.jar
-fi
 \end{lstlisting}
 %% closing $
 
