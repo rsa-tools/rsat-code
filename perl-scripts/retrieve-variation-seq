@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.1 2013/06/21 14:30:17 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.2 2013/06/24 07:22:18 jeremy Exp $
 #
 ############################################################
 
@@ -187,8 +187,6 @@ BEGIN {
 	if ($0 =~ /([^(\/)]+)$/) {
 		push (@INC, "$`lib/");
 	}
-	push (@INC, "../rsa-tools/perl-scripts/lib");
-	$ENV{'RSAT'} = "/Users/jeremy/rsa-tools";
 }
 
 require "RSA.lib";
@@ -202,7 +200,7 @@ package	main;
 	###############################################################
 	## Initialise parameters
 	our $start_time = &RSAT::util::StartScript();
-	our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+	our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
 	our %infile	= ();
 	our %outfile = ();
