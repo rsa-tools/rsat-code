@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.9 2013/06/24 13:57:24 jvanheld Exp $
+# $Id: download-ensembl-variations,v 1.10 2013/06/24 14:44:36 rsat Exp $
 #
 ############################################################
 
@@ -179,7 +179,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -244,14 +244,14 @@ package	main;
   &RSAT::message::Info("Species gvf URL", $species_gvf_rsync) if ($main::verbose >= 1);
 
   # Get genome version
-  my $genome_version = &Get_genome_version($species_fasta_rsync, ucfirst($species));
+  my $assembly_version = &Get_assembly_version($species_fasta_rsync, ucfirst($species));
 
 
   # Check if genome version install
-  my $species_dir = &Get_species_dir(ucfirst($species),$genome_version);
-  my $genome_dir = &Get_genome_dir($species_dir);
+  my $species_dir = &Get_species_dir(ucfirst($species),$assembly_version);
+  my $genome_dir = &Get_genome_dir($species, $assembly_version);
 
-  &RSAT::error::FatalError("$species $genome_version not find in supported_organisms_ensembl.tab. Use download-ensembl-genome before download-ensembl-variations.") unless ($species_dir);
+  &RSAT::error::FatalError("$species $assembly_version not find in supported_organisms_ensembl.tab. Use download-ensembl-genome before download-ensembl-variations.") unless ($species_dir);
   &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before download-ensembl-variations.") unless (-d $genome_dir);
 
   # Check if sequence file are not missing
