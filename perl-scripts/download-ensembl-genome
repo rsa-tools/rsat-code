@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.12 2013/06/24 13:49:17 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.13 2013/06/24 13:51:22 jvanheld Exp $
 #
 ############################################################
 
@@ -106,14 +106,14 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our $verbose = 0;
   our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
 
   our $species = "";
-  our $ensembl_version = &Get_ensembl_version_default();
+  our $ensembl_version = &Get_ensembl_version_safe();
   our $ensembl_rsync = &Get_ensembl_rsync();
   our @types = ();
   our $var = 0;
@@ -129,7 +129,7 @@ package	main;
 
   ## Get the Ensembl version
   if ($ensembl_version eq "safe") {
-    $ensembl_version = &Get_ensembl_version_default();
+    $ensembl_version = &Get_ensembl_version_safe();
   } elsif ($ensembl_version eq "latest") {
     $ensembl_version = &Get_ensembl_version();
   } else {
@@ -170,7 +170,7 @@ package	main;
   ## Create the local directory for genomes
   &RSAT::util::CheckOutDir($genome_dir);
 
-  ## Use default sequence type if not specified. 
+  ## Use default sequence type if not specified.
   unless (scalar(@types)) {
       @types = ("dna");
   }
@@ -662,7 +662,7 @@ sub Verbose {
     }
   }
 
-#  printf $out "; %-22s\t%s\n", "Ensembl default version", $ensembl_version_default;
+  printf $out "; %-22s\t%s\n", "Ensembl safe version", $ensembl_version_safe;
   printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
   printf $out "; %-22s\t%s\n", "Ensembl rsync", $ensembl_rsync;
   printf $out "; %-22s\t%s\n", "URL of fasta files", $fasta_rsync;
