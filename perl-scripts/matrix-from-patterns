@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.59 2013/04/23 22:06:46 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.60 2013/06/24 09:09:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -129,6 +129,7 @@ package main;
 
     ## Parameters for pattern-assembly
     local $score_column = 0;
+    local $cluster_column = 0;
     local $asmb_maxfl = 1;
     local $asmb_subst = 1;
     local $max_asmb_size = 50;
@@ -243,6 +244,7 @@ package main;
       $assembly_cmd .= " -max_asmb_size ".$max_asmb_size;
       $assembly_cmd .= " -max_asmb_nb ".$max_asmb_nb;
       $assembly_cmd .= " -sc ".$score_column if ($score_column > 0);
+      $assembly_cmd .= " -cc ".$cluster_column if ($cluster_column > 0);
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
       &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -488,6 +490,20 @@ argument is pased to I<pattern-assembly>.
 	  $main::score_column = shift (@arguments);
 	  &RSAT::error::FatalError($score_column, "is not a valid value for option -sc (should be Natural number).")
 	    unless (&IsNatural($score_column));
+
+=pod
+
+=item B<-sc #>
+
+Column indicating the pattern clusters in the input pattern file. This
+argument is pased to I<pattern-assembly>.
+
+=cut
+
+	} elsif ($arg eq "-cc") {
+	  $main::cluster_column = shift (@arguments);
+	  &RSAT::error::FatalError($cluster_column, "is not a valid value for option -sc (should be Natural number).")
+	    unless (&IsNatural($cluster_column));
 
 =pod
 
