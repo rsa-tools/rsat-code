@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.2 2013/06/24 07:22:18 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.3 2013/06/24 07:34:55 jeremy Exp $
 #
 ############################################################
 
@@ -170,8 +170,13 @@ Sequence of lenght L center on the variation
 
 =head2 download-ensembl-genome
 
-I<retrieve-variation-seq> uses the sequences and variation coordinates downloaded
+I<retrieve-variation-seq> uses the sequences downloaded
 from Ensembl using the tool I<download-ensembl-genome>.
+
+=head2 download-ensembl-variations
+
+I<retrieve-variation-seq> uses variation coordinates downloaded
+from Ensembl using the tool I<download-ensembl-variations>.
 
 =head2 variation-scan
 
@@ -200,7 +205,7 @@ package	main;
 	###############################################################
 	## Initialise parameters
 	our $start_time = &RSAT::util::StartScript();
-	our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+	our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
 	our %infile	= ();
 	our %outfile = ();
