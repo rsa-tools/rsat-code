@@ -50,8 +50,6 @@ RSAT=[RSAT_PARENT_PATH]/rsa-tools
 ## complementary to RSAT (patser, consensus, ...).
 RSAT_BIN=[RSAT_PARENT_PATH]/rsa-tools/bin
 
-
-
 ## Directory for storing temporary file (for stand-alone scripts + web server + web services)
 rsat_tmp=[RSAT_PARENT_PATH]/rsa-tools/public_html/tmp
 
@@ -119,6 +117,12 @@ GENKBANK_DIR=
 ## URL of the server for the EnsEMBL DB. By default, the
 ## main ensembl server is called, but a local server can be specified.
 ensembl_host=ensembldb.ensembl.org
+
+## rsync site to download the ensembl data
+ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
+
+## Safe version of the ensembl database (for download-ensembl-genome, download-ensembl-variations, ...)
+ensembl_version_safe=76
 
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
 ensembl=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl/modules
