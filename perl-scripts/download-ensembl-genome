@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.9 2013/06/20 12:23:16 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.10 2013/06/24 09:48:49 jvanheld Exp $
 #
 ############################################################
 
@@ -88,7 +88,7 @@ BEGIN {
 }
 
 require "RSA.lib";
-require "EnsEMBL.lib";
+require "RSAT_to_ensembl.lib.pl";
 
 ################################################################
 ## Main package
@@ -98,8 +98,8 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
-  
+  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+
   our $out = SDTOUT;
   our $verbose = 0;
   our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
@@ -115,6 +115,19 @@ package	main;
   ## Read argument values
   &ReadArguments();
 
+  ###############################################################
+  ## Check arguments
+
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Get information about Genome URL + available species
+
+  ## Get the Ensembl version
   if ($ensembl_version eq "safe") {
     $ensembl_version = &Get_ensembl_version_safe();
   } elsif ($ensembl_version eq "latest") {
@@ -123,51 +136,60 @@ package	main;
       &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
   }
 
-  my $fasta_url = &Get_fasta_url($ensembl_version);
-  &RSAT::message::Info("Ensembl URL", $fasta_url) if ($main::verbose >= 1);
+  ## Get the URL of the ensembl rsync site
+  my $fasta_rsync = &Get_fasta_rsync($ensembl_version);
+  &RSAT::message::Info("Ensembl URL", $fasta_rsync) if ($main::verbose >= 2);
 
-  ###############################################################
-  ## Check arguments
-  my @available_species = qx{rsync -navP $fasta_url "."};
+  ## Get the list of available species
+  my @available_species = qx{rsync -navP $fasta_rsync "."};
 
-  unless (scalar(@types)) {
-      @types = ("dna");
-  }
-
+  ## Print out the list of available species
   if ($get_available_species) {
     foreach (@available_species) {
       next unless (/\/dna\/\n/);
       my ($species) = split("\/");
-      print ucfirst($species),"\n";
+      print $out ucfirst($species),"\n";
     }
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out;
     exit(0);
   }
 
+  ## Create the local directory for genomes
+  &RSAT::util::CheckOutDir($genome_dir);
+
+  ## Use default sequence type if not specified. 
+  unless (scalar(@types)) {
+      @types = ("dna");
+  }
+
+
+  ## Check that the species has been specified
   unless ($species) {
     &RSAT::message::FatalError("You must specify a species to download. To get the list of supported species, type: download-ensembl-genome -available_species");
   }
 
+  ## Check that the user-specified species exists on Ensembl server
   unless ( grep($_ eq $species."/dna/\n", @available_species )) {
     &RSAT::error::FatalError("Sequence of $species not available on Ensembl");
   }
 
-  &RSAT::util::CheckOutDir($genome_dir);
-
   ################################################################
   ## Get available sequence on Ensembl and compare with sequence already install
 
-  my $species_url = &Get_species_url($fasta_url,$species,"fasta",$version);
-  &RSAT::message::Info("Species URL", $species_url) if ($main::verbose >= 1);
+  my $species_rsync = &Get_species_rsync($fasta_rsync, $species, "fasta", $ensembl_version);
+  &RSAT::message::Info("Species URL", $species_rsync) if ($main::verbose >= 1);
 
 
   ##Get all fasta file available for $species
   &RSAT::message::TimeWarn("Get fasta file available") if ($main::verbose >= 2);
-  my @available_fasta = qx{rsync -navP $species_url "."};
+  my @available_fasta = qx{rsync -navP $species_rsync "."};
 
 
   ##Get genome version
   $species = ucfirst($species);
-  my $genome_version = &Get_genome_version($species_url, $species);
+  my $genome_version = &Get_genome_version($species_rsync, $species);
 
 
   ## Get install sequence
@@ -201,7 +223,7 @@ package	main;
     if (scalar(@seq_available) > 0) {
       &RSAT::message::Info(scalar(@seq_available),"sequences of type", $type);
     } else {
-      &RSAT::error::FatalError("No sequence to download\n Check if sequence type $type available in $species_url/README");
+      &RSAT::error::FatalError("No sequence to download\n Check if sequence type $type available in $species_rsync/README");
     }
 
     ## Get install sequence for the selected type
@@ -248,7 +270,7 @@ package	main;
   print $out_file join("\n",@seq_to_download),"\n";
   close $out_file;
 
-  system ("rsync -avP --files-from='$seq_to_download_file' $species_url $species_dir");
+  system ("rsync -avP --files-from='$seq_to_download_file' $species_rsync $species_dir");
   unlink ($seq_to_download_file);
 
 
@@ -382,7 +404,7 @@ package	main;
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out;
 
   ## Call get_ensembl_variation
@@ -524,7 +546,7 @@ Also install variation for this $species
 #
 #=cut
 #    } elsif ($arg eq "-url") {
-#      $main::ensembl_url = shift(@arguments);
+#      $main::ensembl_rsync = shift(@arguments);
 #
 #=pod
 
@@ -558,7 +580,7 @@ Default : "safe"
         &RSAT::error::FatalError($version,"is not supported");
       }
 
-=item B<-o #>
+=item B<-dir #>
 
 The directory in wich RSAT genomes must be installed. The selected
 species will be isntalled in a sub-directory composed of Species name
@@ -567,8 +589,23 @@ and Ensembl genome version.
 Default : $RSAT/data/genomes/
 
 =cut
-    } elsif ($arg eq "-o") {
+    } elsif ($arg eq "-dir") {
       $main::genome_dir = shift(@arguments);
+
+=pod
+
+=item	B<-o outputfile>
+
+The output file is used to hold a trace of the transfers (verbosity),
+and to store the list of species when the option -available_species is
+activated.
+
+If no output file is specified, the standard output is used.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
@@ -587,13 +624,13 @@ Default : $RSAT/data/genomes/
 ################################################################
 ## Verbose message
 sub Verbose {
-  print "; download-ensembl-genome ";
+  print $out "; download-ensembl-genome ";
   &PrintArguments($out);
 
   if (%main::outfile) {
-    print "; Output files\n";
+    print $out "; Output files\n";
     while (my ($key,$value) = each %main::outfile) {
-      printf ";\t%-13s\t%s\n", $key, $value;
+      printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
 }
