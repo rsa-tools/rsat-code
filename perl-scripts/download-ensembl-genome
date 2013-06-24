@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.15 2013/06/24 13:57:55 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.16 2013/06/24 14:44:36 rsat Exp $
 #
 ############################################################
 
@@ -106,13 +106,14 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our $verbose = 0;
-  our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
+  our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
 
   our $species = "";
+  our $assembly_version = "";
   our $ensembl_version = &Get_ensembl_version_safe();
   our $ensembl_rsync = &Get_ensembl_rsync();
   our @types = ();
@@ -168,7 +169,7 @@ package	main;
   }
 
   ## Create the local directory for genomes
-  &RSAT::util::CheckOutDir($genome_dir);
+  &RSAT::util::CheckOutDir($genomes_dir);
 
   ## Use default sequence type if not specified.
   unless (scalar(@types)) {
@@ -200,14 +201,16 @@ package	main;
 
   ##Get genome version
   $species = ucfirst($species);
-  my $genome_version = &Get_genome_version($species_rsync, $species);
+  $assembly_version = &Get_assembly_version($species_rsync, $species);
 
 
   ## Get install sequence
   &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
-  $species_dir = $genome_dir.$species."_ensembl_".$genome_version."/genome"; 
+  $genome_dir = &Get_genome_dir($species, $assembly_version);
 
-  &RSAT::util::CheckOutDir($species_dir);
+#  $genome_dir = $genome_dir.$species."_ensembl_".$assembly_version."/genome"; 
+
+  &RSAT::util::CheckOutDir($genome_dir);
 
   my @contig_files = ();
   my @seq_to_download = ();
@@ -238,12 +241,12 @@ package	main;
     }
 
     ## Get install sequence for the selected type
-    foreach ( glob($species_dir."/*") ) {
+    foreach ( glob($genome_dir."/*") ) {
       next if (/contig/);
       next unless (/$type\./);
 
 
-      $_ =~s/$species_dir\///g;
+      $_ =~s/$genome_dir\///g;
       $_ =~s/\.raw/\.fa\.gz/g;
 
 
@@ -268,7 +271,7 @@ package	main;
   }
 
   if (scalar(@seq_to_download) == 0) {
-    &RSAT::message::TimeWarn("Latest version of $species already installed in $species_dir");
+    &RSAT::message::TimeWarn("Latest version of species", $species, "already installed in directory\n", $genome_dir);
     exit(0);
   }
 
@@ -276,12 +279,12 @@ package	main;
   ##Download
   &RSAT::message::TimeWarn("Download sequence") if ($main::verbose >= 2);
 
-  my $seq_to_download_file = $species_dir."/to_download.txt";
+  my $seq_to_download_file = $genome_dir."/to_download.txt";
   my $out_file = &OpenOutputFile($seq_to_download_file);
   print $out_file join("\n",@seq_to_download),"\n";
   close $out_file;
 
-  system ("rsync -avP --files-from='$seq_to_download_file' $species_rsync $species_dir");
+  system ("rsync -avP --files-from='$seq_to_download_file' $species_rsync $genome_dir");
   unlink ($seq_to_download_file);
 
 
@@ -291,11 +294,11 @@ package	main;
 
   foreach my $contig_file (@contig_files) {
 
-    system ("gzip -d $species_dir/$contig_file");
+    system ("gzip -d $genome_dir/$contig_file");
 
     $contig_file =~ s/\.gz//g;
 
-    my ($file) = &OpenInputFile($species_dir."/".$contig_file);
+    my ($file) = &OpenInputFile($genome_dir."/".$contig_file);
     my $out_contig_file = "";
 
     while (<$file>) {
@@ -309,7 +312,7 @@ package	main;
 
 	      my $file_name = $file_name_info[0].".".$fasta_infos[1].".".$fasta_infos[0].".fa";
 
-	      $out_contig_file = &OpenOutputFile($species_dir."/".$file_name);
+	      $out_contig_file = &OpenOutputFile($genome_dir."/".$file_name);
 	      push (@seq_to_download, $file_name);
       }
 
@@ -317,7 +320,7 @@ package	main;
     }
 
     close $out_contig_file;
-    unlink ($species_dir."/".$contig_file);
+    unlink ($genome_dir."/".$contig_file);
   }
 
 
@@ -336,11 +339,11 @@ package	main;
     $file_name =~ s/:/_/g;
 
     &RSAT::message::TimeWarn("Converting fasta", $fasta, "to raw", $file_name);
-    system("$ENV{'RSAT'}/perl-scripts/convert-seq -i $species_dir/$fasta -from fasta -o $species_dir/$file_name -to raw");
+    system("$ENV{'RSAT'}/perl-scripts/convert-seq -i $genome_dir/$fasta -from fasta -o $genome_dir/$file_name -to raw");
 
     if ($fasta =~ /dna\./) {
 
-      my ($file) = &OpenInputFile($species_dir."/".$fasta);
+      my ($file) = &OpenInputFile($genome_dir."/".$fasta);
       my @infos = split(" ", substr(<$file>,1));
       my @infos2 = split(":", $infos[2]);
 
@@ -348,7 +351,7 @@ package	main;
 	    push ( @contigs, $file_name."\t".$infos[2]);
     }
 
-    unlink($species_dir."/".$fasta);
+    unlink($genome_dir."/".$fasta);
   }
 
 
@@ -356,7 +359,7 @@ package	main;
   ## Make contigs.txt
   if (scalar(@contigs) > 0) {
     &RSAT::message::TimeWarn("Make contigs.txt") if ($main::verbose >= 2);
-    my $out_contigs = &OpenOutputFile($species_dir."/contigs.txt");
+    my $out_contigs = &OpenOutputFile($genome_dir."/contigs.txt");
     print $out_contigs join("\n", @contigs),"\n";
     close $out_contigs;  
   }
@@ -366,7 +369,7 @@ package	main;
   ## Make contig.tab
   if (scalar(@contig) > 0) {
     &RSAT::message::TimeWarn("Make contig.tab") if ($main::verbose >= 2);
-    my $out_contig =  &OpenOutputFile($species_dir."/contig.tab");
+    my $out_contig =  &OpenOutputFile($genome_dir."/contig.tab");
     print $out_contig "-- dump date    2007_06_25.105229\n";
     print $out_contig "-- class    EnsEMBL::Contig\n";
     print $out_contig "-- table    contig\n";
@@ -385,7 +388,7 @@ package	main;
 
 
   ################################################################
-  ##Write last genome install
+  ## Write last genome install
   &RSAT::message::TimeWarn("Update supported_organisms_ensembl.tab") if ($main::verbose >= 2);
   $supperted_organism_file = $ENV{'RSAT'}."/data/supported_organisms_ensembl.tab";
 
@@ -397,12 +400,25 @@ package	main;
 
       while (<$s_o_file>) {
 	      my ($species_f,$name,$directory) = split("\t");
-	      push (@species_last, $_) unless ($species_f eq $species."_ensembl_".$genome_version);
+	      push (@species_last, $_) unless ($species_f eq $species."_ensembl_".$assembly_version);
       }
       close $s_o_file;
   }
 
-  push (@species_last, $species."_ensembl_".$genome_version."\t".$species." ".$genome_version."\t".substr($species_dir,0,length($species_dir)-7)."\n");
+
+  my $new_org_config = join ("\t", 
+			     $species."_ensembl_".$assembly_version.".".$ensembl_version, ## Jeremy: replace this by a call to the same function as above
+			     $species." ".$assembly_version, ## Species name (beware, includes a space)
+			     substr($genome_dir,0,length($genome_dir)-7) ## Jeremy: should be replaced by &Get_species_dir(),
+      );
+  $new_org_config .= "\n";
+
+  ## Replace absolute paths by relative paths
+  ##   $new_org_config =~ s|$ENV{RSAT}\/|\$ENV\{RSAT\}\/|g;
+  $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
+  $new_org_config =~ s|\/\/|/|g;
+
+  push (@species_last, $new_org_config);
 
   my $s_o_file = &OpenOutputFile($supperted_organism_file);
   print $s_o_file join("",@species_last);
@@ -410,7 +426,7 @@ package	main;
 
 
 
-  &RSAT::message::Info("Genome installed in dir", $species_dir) if ($main::verbose >= 1);
+  &RSAT::message::Info("Genome installed in dir", $genome_dir) if ($main::verbose >= 1);
 
   ################################################################
   ## Report execution time and close output stream
@@ -600,12 +616,9 @@ would change their file formats or locations.
 
 =cut
     } elsif ($arg eq "-version") {
-      my $version = shift(@arguments);
-      if ( &IsNatural($version) || $version eq "safe" || $version eq "latest" ) {
-        $main::ensembl_version = $version;
-      } else {
-        &RSAT::error::FatalError($version,"is not supported");
-      }
+	$ensembl_version = shift(@arguments);
+	&RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.") 
+	  unless ( &IsNatural($ensembl_version) || $ensembl_version eq "safe" || $ensembl_version eq "latest" );
 
 =item B<-dir #>
 
