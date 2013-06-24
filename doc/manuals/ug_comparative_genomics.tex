@@ -412,16 +412,13 @@ dyad-analysis  -v 1 \
 The notion of \concept{phylogenetic profile} was introduced by
 Pellegrini et al. (1999). They identified putative orthologs for all
 the genes of \org{Escherichia coli K12} in all the complete genomes
-available (no more than 16 genomes at that time !), and built a table
-with one row per gene, one column per genome. Each cell of this table
-indicates if an ortholog of the considered gene (row) has been
-identified in the considered genome (column). Pellegrini et al. (1999)
-showed that genes having similar phylogenetic profiles are generally
-involved in common biological processes. 
-
-The analysis of phylogenetic profiles is a powerful way to identify
-functional associations in completely sequenced genomes, and raise
-hypotheses about possible function of unkown genes.
+available at that time, and built a table with one row per gene, one
+column per genome. Each cell of this table indicates if an ortholog of
+the considered gene (row) has been identified in the considered genome
+(column). Pellegrini et al. (1999) showed that genes having similar
+phylogenetic profiles are generally involved in common biological
+processes. The analysis of phylogenetic profiles is thus a powerful
+way to identify functional grouping in completely sequenced genomes.
 
 The program \program{get-orthologs} can be used to obtain the
 phylogenetic profiles. The principle is to submit the complete list of
@@ -447,9 +444,9 @@ about the progress of the calculations.
 \begin{footnotesize}
 \begin{verbatim}
 
-## Identify all the putative orthologs (BBH) for a given species in a given taxon
+## Identify all the putative orthologs (BBH)
 get-orthologs -v 2 \
-  -all  \
+  -i $RSAT/data/genomes/Saccharomyces_cerevisiae/genome/cds.tab  \
   -org Saccharomyces_cerevisiae \
   -taxon Fungi \
   -uth rank 1 -lth ali_len 50 -lth ident 30 -uth e_value 1e-10 \
@@ -457,7 +454,7 @@ get-orthologs -v 2 \
   -o Saccharomyces_cerevisiae_vs_Fungi_bbh.tab
 
 ## Convert ortholog table into a profile table
-## with the IDs of the putative orthologs.
+## with the IDs of the putative orthologs
 convert-classes -v 2 \
   -i Saccharomyces_cerevisiae_vs_Fungi_bbh.tab  \
   -from tab -to profiles \

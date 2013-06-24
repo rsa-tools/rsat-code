@@ -47,7 +47,7 @@ the following operating systems.
 \begin{enumerate}
 \item Linux
 
-\item Mac OSX
+\item Mac OSX (latest version tested: 10.8.3)
 
 \item Sun Solaris
 
@@ -92,10 +92,6 @@ The following libraries are required for various programs.
 
 \end{itemize}
 
-\subsection{Java language}
-
-Some of the NeAT tools are written in Java. Java Runtime Environment 5
-or higher is recommended.
 
 \subsection{Helper applications}
 
@@ -129,11 +125,11 @@ need to install the freeware software \program{gnuplot} (4.2 or
 later), which can be downloaded from \url{http://www.gnuplot.info/}.
 
 
-\subsubsection{cvs}
+\subsubsection{git (only for developers)}
 
 For co-developers of the \RSAT suite, the code is distributed program
-\program{cvs}. For external users, there is no need to use
-\program{cvs} since the code is distributed as a compressed archive on
+\program{git}. For external users, there is no need to use
+\program{git} since the code is distributed as a compressed archive on
 a Web page.
 
 
@@ -141,22 +137,9 @@ a Web page.
 % Installation
 \chapter{Obtaining \RSAT distribution}
 
-For the time being, \RSAT is distributed as a compressed archive. In a
-near future, we will also distribute it via an anonymous CVS server,
-which will greatly facilitate the updates.
-
-\textbf{Note} The CVS distribution will soon be available for external
-users, but we still need to configure the CVS server to accept a guest
-login. For the time being, the CVS distribution is still restricted to
-the people from the lab. Inbetween, the only distribution mode for
-external users is the compressed archive. If you are not member of the
-BiGRe laboratory, please skip the section \textit{Installation from
-  the CVS repository}.
+For the time being, \RSAT is distributed as a compressed archive. 
 
 \section{Installation from a compressed archive}
-
-After having sent the signed license, you should have received an
-email with the login and password to the \RSAT download site. 
 
 Download the latest version of the \RSAT distribution. Uncompress the
 archive containing the programs. The archive is distributed
@@ -167,63 +150,6 @@ installation.
 \begin{lstlisting}
 tar -xpzf rsa-tools_yyyymmdd.tar.gz
 \end{lstlisting}
-
-\section{Downloading \RSAT from the CVS server}
-
-\textbf{Warning:} we currently cannot manage user profiles in our CVS
-server, so the \RSAT code is still distributed as a compressed
-archive. Please skip this section if you downloaded a compessed
-archive from the Web server (a file named
-\file{rsa-tools\_2009XXXX.tar.gz}, where XXXX indicates the date).
-
-\subsection{CVS configuration}
-
-You need to indicate your \program{cvs} client to use \program{ssh}
-as remote shell application. For this, you can specify an environment
-variable.
-
-\emph{If your shell is tcsh}, add the following line to the
-\file{.cshrc} file in your home directory.
-
-\begin{lstlisting}
-setenv CVS_RSH ssh
-\end{lstlisting}
-
-
-\emph{If your shell is bash}, add the following line to the
-\file{.bashrc} file in your home directory.
-
-\begin{lstlisting}
-export CVS_RSH=ssh
-\end{lstlisting}
-
-\subsection{Obtaining the \RSAT package}
-
-The following command should be used the first time you retrieve the
-tools from the server (you need to replace \texttt{[mylogin]} by the
-login name you received when signing the \RSAT license).
-
-\begin{lstlisting}
-cvs -d [mylogin]@cvs.bigre.ulb.ac.be:/cvs/rsat co rsa-tools
-\end{lstlisting}
-
-
-This will create a directory \file{rsa-tools} on your computer, and
-store the programs in it. Note that at this stage the programs are not
-yet functional, because you still need to install genomes, which are
-not included in the CVS distribution.
-
-\subsection{Updating \RSAT programs}
-
-Once the tools have been retrieved, you can obtain updates very
-easily. For this, you need to change your directory to the rsa-tools
-directory, and use the \texttt{cvs} command in the following way.
-
-\begin{lstlisting}
-cd rsa-tools; 
-cvs update -d
-\end{lstlisting}
-
 \chapter{Initializing \RSAT}
 
 \input{ug_configuration.tex}
@@ -330,21 +256,6 @@ default configuration by including the above commands in the file
 found at the root of your home directory. If you don't know how to
 modify this file, see the system administrator.
 
-\subsection{Checking the java path (required for pathway tools only)}
-
-The \program{java} language is only necessary for the path finding and
-pathway extraction tools of the Network Analysis Tools \program{NeAT}
-suite. If you want to use these tools, you can check the correct
-setting for the java-based pathway tools, by typing the following
-command.
-
-\begin{lstlisting}
-java graphtools.util.ListTools
-\end{lstlisting}
-
-This should display the list of available pathway analysis tools,
-which are part of the NeAT package.
-
 \chapter{Installing Perl modules}
 \label{chap:perl_modules}
 
@@ -364,11 +275,29 @@ The Perl module \program{GD.pm} requires prior installation of the
   package manager of your distribution (e.g. \texttt{apt-get},
   \texttt{yast}, \ldots).
 
-\item On \emph{Mac OSX} systems, the installation of the GD library is
-  quite tricky. The best way I found is to follow the installation
-  protocol of the
-  libgd Web site \\
-  (\url{http://www.libgd.org/DOC_INSTALL_OSX}).
+\item On \emph{Mac OSX} systems, the installation of the GD library requires more work.
+
+First install libpng and libjpeg. Only then install the GD library. Here is an example that worked on OSX 10.8:
+\begin{lstlisting}
+curl -O http://www.ijg.org/files/jpegsrc.v9.tar.gz
+tar -xzvf jpegsrc.v9.tar.gz 
+cd jpeg-9/
+./configure
+make
+sudo make install
+
+curl -O ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng15/libpng-1.5.16.tar.gz
+tar -xvzf libpng-1.5.16.tar.gz 
+cd libpng-1.5.16
+./configure
+make
+sudo make install
+
+curl -O https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.0-rc1.tar.gz
+tar -xvzf libgd-2.1.0-rc1.tar.gz
+cd libgd-2.1.0-rc1
+./configure --with-png=/usr/local
+\end{lstlisting}
 
 \end{itemize}
 
@@ -419,15 +348,34 @@ section.
 
 \begin{enumerate}
 \item \program{GD.pm} Interface to Gd Graphics Library. Used by
-  \program{XYgraph} and \program{feature-map}. 
+  \program{XYgraph} and \program{feature-map}. It is highly recommended to install this perl module manually on MacOS X, as it usually fail with CPAN: 
+  
+  \begin{lstlisting}
+ curl -O  http://search.cpan.org/CPAN/authors/id/L/LD/LDS/GD-2.49.tar.gz
+ tar -vxzf GD-2.49.tar.gz
+ cd GD-2.49.tar.gz
+ sudo perl Makefile.PL
+ sudo make
+ sudo make install
+\end{lstlisting}
 
 \item \program{PostScript::Simple} Produce PostScript files from
   Perl. Used by \program{feature-map}.
 
 \item \program{Util::Properties} is required to load property files,
   which are used to specify the site-specific configuration of your
-  \RSAT server. Property filesa are also useful to write your own perl
+  \RSAT server. Property files are also useful to write your own perl
   clients for the Web service interface to \RSAT (RSATWS).
+  
+  Note : CPAN will require to install first the following requisites:
+  
+  \program{Digest::MD5::File}
+  
+  \program{IO::All}
+  
+  \program{LockFile::Simple}
+  
+  \program{Object::InsideOut}
 
 \item 
   The following modules are required for the Web services. 
@@ -441,8 +389,9 @@ section.
     \item \program{XML::Parser::Expat}
     \item \program{SOAP::WSDL} 
     \item \program{SOAP::Lite}
+    Note: SOAP::Lite usually does not compile properly. Use the following command:
+    perl -MCPAN -e "CPAN::Shell->force(qw(install SOAP::Lite));"
     \item \program{Module::Build::Compat}
-    \item \program{JSON}
     \item \program{Util::Properties} (already mentioned above) 
   \end{itemize}
 
@@ -481,12 +430,33 @@ section.
   the XML::Parser::Expat library. It is necessary for some RSAT
   applications.
 
-\item \program{JSON} is required for parsing the result of REST-based
-  web services.
-
 \item \program{DBI}  and \program{DBD::mysql}: those two libraries are
   required by the program \program{retrieve-ensembl-seq} in order to
   access the ENSEMBL database.
+  
+  Note that the
+installation of the CPAN module DBD:mysql may require a prior
+installation of a MySQL client on your machine
+(\url{http://dev.mysql.com/downloads/}). Choose MySQL Community Server.
+
+On Mac OSX, there seems to be problems with the mysql bundle,
+
+- for mysql\_config issues, specify the path to mysql\_config (adapt the path to your own installation):
+\begin{verbatim}
+	cd /Users/yourusername/.cpan/build/DBD-mysql-version-xxxxx
+	perl Makefile.pl --mysql_config=/usr/local/mysql/bin/mysql_config 
+\end{verbatim}
+
+-then adding a soft link as follows\footnote{\url{http://www.blog.bridgeutopiaweb.com/post/how-to-fix-mysql-load-issues-on-mac-os-x/}}:
+\begin{verbatim}
+sudo ln -s /usr/local/mysql/lib/libmysqlclient.18.dylib /usr/lib/libmysqlclient.18.dylib
+\end{verbatim}
+ - finish with 
+\begin{verbatim}
+make
+make test
+make install
+\end{verbatim}
 
 \item \program{Bio::Perl} is required for the Ensembl API, which in
   turn is required for handling genomes installed on the ENSEMBL
@@ -526,7 +496,8 @@ Those programs require to install a few Perl libraries as well as a
 MySQL client on your machine. 
 
 The first requirement is the \program{BioPerl} module, which has in
-principle been installed in Chapter~\ref{chap:perl_modules}).
+principle been installed in Chapter~\ref{chap:perl_modules}). The MySQL client should also have been installed in Chapter~\ref{chap:perl_modules}).
+
 
 To obtain EnsEMBL \footnote{Full instructions at
   \url{http://useast.ensembl.org/info/docs/api/api_cvs.html}}.
@@ -540,6 +511,9 @@ cd $RSAT
 make -f makefiles/install_software.mk install_ensembl_api 
 \end{lstlisting}
 %%$ 
+
+The password is : CVSUSER
+
 
 Note that there may be incompatibilities between successive versions
 of the Ensembl API. The install script includes a parameter
@@ -562,9 +536,9 @@ and ensembl libraries on your computer. \emph{The path must be adapted
   to fit your local configuration}.
 
 \begin{lstlisting}
-ensembl=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl-compara/modules
-variations=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl-variation/modules
+ensembl=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-variation/modules
 \end{lstlisting}
 
 You also need to define the URL of the Ensembl database in that
@@ -587,26 +561,23 @@ If your shell is bash, add the following lines in the file
 \file{.bashrc} at the root of your account.
 
 \begin{lstlisting}
-export PERL5LIB=${RSAT}/lib/ensembl/modules:${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensembl-compara/modules:${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensembl-variation/modules:${PERL5LIB}
+export PERL5LIB=${RSAT}/perllib/ensembl/modules:${PERL5LIB}
+export PERL5LIB=${RSAT}/perllib/ensembl-compara/modules:${PERL5LIB}
+export PERL5LIB=${RSAT}/perllib/ensembl-variation/modules:${PERL5LIB}
 \end{lstlisting}
 
 If your shell is tcsh or chs, add the following lines in the file
 \file{.cshrc} at the root of your account.
 
 \begin{lstlisting}
-setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl/modules
-setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-compara/modules
-setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-variation/modules
+setenv PERL5LIB ${PERL5LIB}:${RSAT}/perllib/ensembl/modules
+setenv PERL5LIB ${PERL5LIB}:${RSAT}/perllib/ensembl-compara/modules
+setenv PERL5LIB ${PERL5LIB}:${RSAT}/perllib/ensembl-variation/modules
 \end{lstlisting}
 
 The EnsEMBL libraries also require the SQL client Perl module
 \file{DBD::mysql}, as well as \file{DBI}, which can be installed with
-\program{cpan} (for this you need root privileges). Note that the
-installation of the CPAN module DBD:mysql may require a prior
-installation of a MySQL client on your machine
-(\url{http://dev.mysql.com/downloads/}).
+\program{cpan} (for this you need root privileges, see Chapter~\ref{chap:perl_modules}). 
 
 \emph{Notes}: 
 \begin{enumerate}
@@ -614,11 +585,6 @@ installation of a MySQL client on your machine
   opened on your machine. This might require to consult the system
   administrator of your network in order to ensure that the Firewall
   accepts this port.
-\item On Mac OSX, there seems to be problem with the mysql bundle,
-  which can be fixed by adding a soft link as follows\footnote{\url{http://www.blog.bridgeutopiaweb.com/post/how-to-fix-mysql-load-issues-on-mac-os-x/}}:
-  \begin{lstlisting}
-sudo ln -s /usr/local/mysql/lib/libmysqlclient.18.dylib /usr/lib/libmysqlclient.18.dylib
-  \end{lstlisting}
 \end{enumerate}
 
 Detailed information about the EnsEMBL libraries can be obtained on
@@ -636,6 +602,10 @@ specification of the server.
 \begin{lstlisting}
 ## Change directory to the sample Perl Web services clients
 cd $RSAT/ws_clients/perl_clients
+
+## give execution rights for wsdl2perl.pl and convert_matrix_soap_wsdl_2.pl
+chmod a+x wsdl2perl.pl
+chmod a+x convert_matrix_soap_wsdl_2.pl
 
 ## Compile the stubb.
 ## Your computer will open a connection to the Web services server 
@@ -824,72 +794,72 @@ particular, \program{vmatch} and \program{mkvtree}).
 
 
 
-\section{Recommended programs for the Network Analysis Tools (NeAT)}
-
-
-For the Network Analysis Tools (NeAT), we recommend to install the
-following programs, which offer complementary functionalities for the
-analysis of networks/graphs.
-
-Some programs come in the contrib directory of the \RSAT
-distribution. Some others have to be downloaded from their original
-distribution site.
-
-To compile the program \program{floydwarshall} located in the
-\file{contrib/floydwarshall} directory of \RSAT, use this command :
-
-\begin{lstlisting}
-gcc $RSAT/contrib/floydwarshall/floydwarshall.c -o $RSAT/bin/floydwarshall
-\end{lstlisting}
-
-
-In addition, the contributed programs REA and kWalks need to be installed.
-
-To install kWalks, type:
-
-
-\begin{lstlisting}
-cd $RSAT/contrib; 
-tar -xzvf kwalks/kwalks.tgz; 
-cd $RSAT/contrib/kwalks/src; 
-make clean; make
-\end{lstlisting}
-
-You can test taht the compilation worked by running the following
-command.
-
-\begin{lstlisting}
-$RSAT/contrib/kwalks/bin/lkwalk
-\end{lstlisting}
-%% $
-
-This should display the help message of \program{lkwalk}.
-
-Check that the KWALKS\_ROOT variable in the RSAT config file
-(\file{\$RSAT/RSAT\_config.props}) points to the correct path (it
-should be the absolute path of \file{\$RSAT/contrib/kwalks/bin/}).
-
-To install REA, type:
-
-\begin{lstlisting}
-cd $RSAT/contrib/REA; 
-tar xzvf REA.tgz; 
-rm -f *.o; 
-make
-\end{lstlisting}
-
-You can test taht the compilation worked by running the following
-command.
-
-\begin{lstlisting}
-$RSAT/contrib/REA/REA
-\end{lstlisting}
-
-This should display the help message of \program{REA}.
-
-Check that the REA\_ROOT variable in the RSAT config file
-(\file{\$RSAT/RSAT\_config.props}) points to the correct path (it
-should be the absolute path of \file{\$RSAT/contrib/REA}).
+%\section{Recommended programs for the Network Analysis Tools (NeAT)}
+%
+%
+%For the Network Analysis Tools (NeAT), we recommend to install the
+%following programs, which offer complementary functionalities for the
+%analysis of networks/graphs.
+%
+%Some programs come in the contrib directory of the \RSAT
+%distribution. Some others have to be downloaded from their original
+%distribution site.
+%
+%To compile the program \program{floydwarshall} located in the
+%\file{contrib/floydwarshall} directory of \RSAT, use this command :
+%
+%\begin{lstlisting}
+%gcc $RSAT/contrib/floydwarshall/floydwarshall.c -o $RSAT/bin/floydwarshall
+%\end{lstlisting}
+%
+%
+%In addition, the contributed programs REA and kWalks need to be installed.
+%
+%To install kWalks, type:
+%
+%
+%\begin{lstlisting}
+%cd $RSAT/contrib; 
+%tar -xzvf kwalks/kwalks.tgz; 
+%cd $RSAT/contrib/kwalks/src; 
+%make clean; make
+%\end{lstlisting}
+%
+%You can test taht the compilation worked by running the following
+%command.
+%
+%\begin{lstlisting}
+%$RSAT/contrib/kwalks/bin/lkwalk
+%\end{lstlisting}
+%%% $
+%
+%This should display the help message of \program{lkwalk}.
+%
+%Check that the KWALKS\_ROOT variable in the RSAT config file
+%(\file{\$RSAT/RSAT\_config.props}) points to the correct path (it
+%should be the absolute path of \file{\$RSAT/contrib/kwalks/bin/}).
+%
+%To install REA, type:
+%
+%\begin{lstlisting}
+%cd $RSAT/contrib/REA; 
+%tar xzvf REA.tgz; 
+%rm -f *.o; 
+%make
+%\end{lstlisting}
+%
+%You can test taht the compilation worked by running the following
+%command.
+%
+%\begin{lstlisting}
+%$RSAT/contrib/REA/REA
+%\end{lstlisting}
+%
+%This should display the help message of \program{REA}.
+%
+%Check that the REA\_ROOT variable in the RSAT config file
+%(\file{\$RSAT/RSAT\_config.props}) points to the correct path (it
+%should be the absolute path of \file{\$RSAT/contrib/REA}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parsing and installing additional genomes
