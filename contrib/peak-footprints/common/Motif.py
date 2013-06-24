@@ -15,6 +15,7 @@ class Motif:
         self.strand = Constants.POSITIVE_STRAND
         self.offset = 0
         self.score = 0
+	self.uncount = 0
 
 
     # --------------------------------------------------------------------------------------
