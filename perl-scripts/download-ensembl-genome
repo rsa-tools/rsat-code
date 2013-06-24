@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.14 2013/06/24 13:53:05 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.15 2013/06/24 13:57:55 jvanheld Exp $
 #
 ############################################################
 
@@ -106,7 +106,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our $verbose = 0;
@@ -583,8 +583,8 @@ Default : I<safe>
 
 =item I<safe>
 
-The file locations and/or formats of the
-Ensembl rsync distribution may change between two Ensembl release. 
+The file locations and/or formats of the Ensembl rsync distribution
+may change between two Ensembl release.
 
 For this reason, we defined the "safe" version, which corresponds to
 the latest version of ensembl which has been checked to work with this
