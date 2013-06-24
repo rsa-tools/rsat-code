@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.27 2013/01/03 09:59:43 jvanheld Exp $
+# $Id: compare-features,v 1.28 2013/06/24 09:08:37 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -237,7 +237,7 @@ package main;
     if (scalar(@query_files) < 1) {
       &RSAT::error::FatalError("You must specify at least one input file in addition to the reference file\n");
     }
-  } elsif ((scalar(@query_files) < 2)&&(!$self_comparison)) {
+  } elsif ((scalar(@query_files) < 2) && (!$self_comparison)) {
     &RSAT::error::FatalError("You must specify at least two input files\n");
   }
 
@@ -1239,5 +1239,47 @@ feature-map
 
 convert-features
 
+=head1 WISH LIST
+
+
+=head2 -return ref_vs_others
+
+This option requires to activate the option -ref in order to indicate
+which input file serves as reference (the file which ahs to be
+compared to each other file).
+
+For example, the option could be used to compare a set of ChIP-seq
+peaks (the reference file) with a series of files describing
+epigenetic marks, TF binding, RNA pol II, .... (one query file per
+mark type).
+
+The option -features_vs_files returns a separate table with one row per
+feature of the reference file, and one column per query feature file,
+containing a 1/0 value indicating whether or not the reference feature
+intersects at least one feature of the query file.
+
+
+=head2 support .bed as output format
+
+=head2 transpose contingency tables
+
+The row/column convention is counter-intuitive
+
+=head2 shorter intersection description
+
+The description is much too verbosy. Reduce to strict minimum (f1 inter f2), and export description only on demand.
+
+=head2 separate columns for additional parameters
+
+=over
+
+=item all_coordinates
+
+Add columns with the coordinates of feature from f1 and f2 when there
+is an intersection. If features belong to set f2.not.f1, indicate NA
+in the f1 columns (and reciprocally).
+
+
+=back
 
 =cut
