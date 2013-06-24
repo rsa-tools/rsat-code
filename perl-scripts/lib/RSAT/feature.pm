@@ -1036,9 +1036,13 @@ sub to_text {
   my $f = $col_index{"strand"};
   my $s;
   if ($strand) {
-    $s = $strand_index{$strand};
+    if (defined($strand_index{$strand})) {
+      $s = $strand_index{$strand};
+    } else {
+      $s = $strand_index{'DR'};
+    }
   } else {
-    $s = $strand_index{'D'};
+    $s = $strand_index{'DR'};
   }
 #  &RSAT::message::Debug($f, $strand, $s, @strands, %strand_index) if ($main::verbose >= 10);
   $fields[$f] = $strands[$s];
