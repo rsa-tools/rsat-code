@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.11 2013/06/24 11:34:48 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.12 2013/06/24 13:49:17 jvanheld Exp $
 #
 ############################################################
 
@@ -77,6 +77,14 @@ Scan SNP sequences with one or several position-specific scoring
 matrices.
 
 =head1 WISH LIST
+=over
+
+=item B<Add support for download by ftp rather than rsync>
+
+=item B<Add support for alternative ensembl repositories (Fungi, Bacteria, Metazoa, ...)>
+
+=back
+
 
 =cut
 
@@ -98,38 +106,30 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our $verbose = 0;
   our $genome_dir = $ENV{'RSAT'}."/data/genomes/";
 
   our $species = "";
-  our $ensembl_version = "safe";
+  our $ensembl_version = &Get_ensembl_version_default();
+  our $ensembl_rsync = &Get_ensembl_rsync();
   our @types = ();
   our $var = 0;
   our $get_available_species = 0;
-
 
   ################################################################
   ## Read argument values
   &ReadArguments();
 
-  ###############################################################
-  ## Check arguments
-
-  $out = &OpenOutputFile($outfile{output});
-
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose >= 1);
 
   ################################################################
   ## Get information about Genome URL + available species
 
   ## Get the Ensembl version
   if ($ensembl_version eq "safe") {
-    $ensembl_version = &Get_ensembl_version_safe();
+    $ensembl_version = &Get_ensembl_version_default();
   } elsif ($ensembl_version eq "latest") {
     $ensembl_version = &Get_ensembl_version();
   } else {
@@ -137,8 +137,19 @@ package	main;
   }
 
   ## Get the URL of the ensembl rsync site
-  my $fasta_rsync = &Get_fasta_rsync($ensembl_version);
+  our $fasta_rsync = &Get_fasta_rsync($ensembl_version);
   &RSAT::message::Info("Ensembl URL", $fasta_rsync) if ($main::verbose >= 2);
+
+
+  ###############################################################
+  ## Check arguments
+
+  $out = &OpenOutputFile($outfile{output});
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
 
   ## Get the list of available species
   my @available_species = qx{rsync -navP $fasta_rsync "."};
@@ -562,14 +573,30 @@ Get all available species on Ensembl
 
 =item B<-version #>
 
-The release version of ensEMBL. 
+The release version of ensEMBL.
 
-Supported version : 48 to 72, safe, latest
+Supported versions: 60 to 72, safe, latest
 
-safe is corresponding to the last version of ensembl working with this script
-latest is corresponding to the lastest version of ensembl
+Default : I<safe>
 
-Default : "safe"
+=over
+
+=item I<safe>
+
+The file locations and/or formats of the
+Ensembl rsync distribution may change between two Ensembl release. 
+
+For this reason, we defined the "safe" version, which corresponds to
+the latest version of ensembl which has been checked to work with this
+script.
+
+=item latest
+
+This corresponds to the lastest version of Ensembl. Beware: this
+version is not guaranteed to be compatible with RSAT, in case Ensembl
+would change their file formats or locations.
+
+=back
 
 =cut
     } elsif ($arg eq "-version") {
@@ -626,6 +653,7 @@ If no output file is specified, the standard output is used.
 sub Verbose {
   print $out "; download-ensembl-genome ";
   &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
 
   if (%main::outfile) {
     print $out "; Output files\n";
@@ -633,5 +661,11 @@ sub Verbose {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
+
+#  printf $out "; %-22s\t%s\n", "Ensembl default version", $ensembl_version_default;
+  printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
+  printf $out "; %-22s\t%s\n", "Ensembl rsync", $ensembl_rsync;
+  printf $out "; %-22s\t%s\n", "URL of fasta files", $fasta_rsync;
+
 }
 
