@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.5 2013/06/25 10:24:20 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.6 2013/06/25 14:13:47 jeremy Exp $
 #
 ############################################################
 
@@ -205,7 +205,7 @@ package	main;
 	###############################################################
 	## Initialise parameters
 	our $start_time = &RSAT::util::StartScript();
-	our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+	our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
 	our %infile	= ();
 	our %outfile = ();
@@ -231,7 +231,11 @@ package	main;
 	################################################################
 	## Read argument values
 	&ReadArguments();
-
+	
+	
+    $out = &OpenOutputFile($main::outfile{output});
+    &Verbose() if ($main::verbose >= 1);
+  
 	################################################################
 	## Check argument values
 
@@ -282,7 +286,7 @@ package	main;
 		&RSAT::message::TimeWarn("Retrieve variations from id") if ($main::verbose >= 2);
         
 		my $var_file = $ENV{'RSAT'}."/tmp/variation.tab";
-		$out = &OpenOutputFile($var_file);
+		$out_v = &OpenOutputFile($var_file);
 
 		my %variation_id = ();
 
@@ -313,7 +317,7 @@ package	main;
 				next if ( $token[9] == 1 ); ##Remove super-variation
 				delete($variation_id{$token[4]});	##Remove find variation from the liste
 				$token[10] = 0; ##Remove info about in_super_variation
-				print $out join("\t",@token),"\n";		
+				print $out_v join("\t",@token),"\n";		
 				$i ++
 			}
 			
@@ -374,16 +378,13 @@ package	main;
 		@variation_file = ();
 		push (@variation_file,$main::infile{'input_variation'});
 	} 
-
 	################################################################
 	##Get sequence
-	$out = &OpenOutputFile($main::outfile{output});
 	
 	&RSAT::message::TimeWarn("Retrieve sequence for all variant of variations") if ($main::verbose >= 2);
 	foreach (@variation_file) {	
 		my $last_chr = "";
 		my $ref_seq = "";	
-
 		################################################################
 		($file) = &OpenInputFile($_);
 		my @neigboor_var = ();
@@ -394,7 +395,7 @@ package	main;
 			next if ($invar && $validate == 0 && $format ne "id");
 
 			if ($chr ne $last_chr) {
-				$ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir/$chr_file{$chr} -from 1 -to 250000000 -format raw);
+				$ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
 				$last_chr = $chr;
 			}
 
@@ -580,4 +581,26 @@ allows to use the command within a pipe.
 			&FatalError(join("\t", "Invalid option", $arg));
 		}
 	}
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; download-ensembl-genome ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
 }
