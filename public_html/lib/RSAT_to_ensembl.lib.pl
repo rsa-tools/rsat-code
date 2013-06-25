@@ -61,40 +61,41 @@ sub Get_variation_rsync() {
 
 ## Get rsync species url
 sub Get_species_rsync() {
-  my ($url,$species,$type,$ensembl_version) = @_;
+  my ($species,$ensembl_version,$type) = @_;
 
   if ($type eq "fasta") {
-    return $url.$species."/dna/";      # Version 48 to 72
+    return &Get_fasta_rsync($ensembl_version).$species."/dna/";      # Version 48 to 72
   }
   
   if ($type eq "variation") {
     
     if ($ensembl_version == 61) {
-      return $url.ucfirst($species)."/";      # Version 61
+      return &Get_variation_rsync($ensembl_version).ucfirst($species)."/";      # Version 61
     } else {
-      return $url.$species."/";     # Version 60 and 62 to 72
+      return &Get_variation_rsync($ensembl_version).$species."/";     # Version 60 and 62 to 72
     }
   }
 }
 
 ##Get rsync gvf file url
-
 sub Get_gvf_rsync() {
-  my ($url,$species,$ensembl_version) = @_;
+  my ($species,$ensembl_version) = @_;
 
   if ($ensembl_version == 60) {
-    return $url.$species.".gvf.gz";     # Version 60
+    return &Get_species_rsync($species,$ensembl_version,'variation').$species.".gvf.gz";     # Version 60
   } else {
-    return $url.ucfirst($species).".gvf.gz";      # Version 61 to 72
+    return &Get_species_rsync($species,$ensembl_version,'variation').ucfirst($species).".gvf.gz";      # Version 61 to 72
   }
 }
 
-
 ## Get the genome version for a species
 sub Get_assembly_version() {
-  my ($species_rsync,$species) = @_;
-  my @available_fasta = qx{rsync -navP $species_rsync/ "."};
+  my ($species,$ensembl_version) = @_;
+  my $species_fasta_rsync = &Get_species_rsync($species,$ensembl_version,'fasta');
 
+  my @available_fasta = qx{rsync -navP $species_fasta_rsync "."};
+  
+  $species = ucfirst($species);
   foreach (@available_fasta) {
     next unless (/$species/);
 
@@ -104,11 +105,6 @@ sub Get_assembly_version() {
     return join '.', @token2[0..$#token2-1];
   }
 }
-
-
-
-#{} []
-
 
 ############################################################################
 ############################################################################
@@ -124,14 +120,28 @@ our $supported_file = $ENV{'RSAT'}."/data/supported_organisms_ensembl.tab";
 ## Get the local directory for the user-specified species
 sub Get_species_dir() {
   my ($species,$assembly_version,$ensembl_version) = @_;
-
+  $species = ucfirst($species);
+  
+  my %assembly_directory = ();
+  
   ## Open the file containing the list of supported Ensembl species
   my ($file) = &OpenInputFile($supported_file);
 
   foreach (<$file>) {
       chomp();
       my ($id,$name,$dir) = split("\t");
-      return $dir if ($name =~ /$species.*$assembly_version.*$ensembl_version/);
+      $dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
+      
+      if ($ensembl_version) {
+      	 return $dir if ($name =~ /$species.*$assembly_version.*$ensembl_version/);
+      } else {
+      	 my ($spe,$ass,$ens) = split(" ",$name);
+      	 $assembly_directory{$ens} = $dir if ($name =~ /$species.*$assembly_version/);
+      }
+  }
+ 
+  foreach (sort{$b<=>$a} (keys(%assembly_directory))) {
+    return $assembly_directory{$_};
   }
 
   return $genomes_dir.&Get_species_dir_name($species,$assembly_version,$ensembl_version);
@@ -140,20 +150,20 @@ sub Get_species_dir() {
 
 sub Get_species_dir_name() {
   my ($species,$assembly_version,$ensemb_version) = @_;
-  return $species."_ensembl_".$assembly_version."_".$ensembl_version;
+  return $species."_ensembl_".$assembly_version."_".$ensembl_version."/";
 }
 
 
 ## Genome dir
 sub Get_genome_dir() {
   my ($species, $assembly_version,$ensembl_version) = @_;
-  return &Get_species_dir($species, $assembly_version,$ensembl_version)."/genome/";
+  return &Get_species_dir($species, $assembly_version,$ensembl_version)."genome/";
 }
 
 ## Variation dir
 sub Get_variation_dir() {
-  my ($species_dir) = @_;
-  return $species_dir."/variations/";
+  my ($species, $assembly_version,$ensembl_version) = @_;
+  return &Get_species_dir($species, $assembly_version,$ensembl_version)."variations/";
 }
 
 ############################ Fct get file
@@ -174,6 +184,13 @@ sub Get_contig_file() {
   my ($genome_dir) = @_;
   return $genome_dir."contig.tab";
 }
+
+## variation.gvf
+sub Get_variation_file() {
+  my ($genome_dir) = @_;
+  return $genome_dir."contig.tab";
+}
+
 
 ############################ Fct get file_chr name
 

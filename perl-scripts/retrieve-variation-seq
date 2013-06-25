@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.4 2013/06/24 09:48:49 jvanheld Exp $
+# $Id: retrieve-variation-seq,v 1.5 2013/06/25 10:24:20 jeremy Exp $
 #
 ############################################################
 
@@ -35,13 +35,13 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 USAGE
 
- retrieve-snp-seq -species # -version #  [-i #] -format # [-col #] [-len #] [-o outputfile] [-v #] [...]
+ retrieve-snp-seq -species # -e_version # [-a_version #] [-i #] -format # [-col #] [-len #] [-o outputfile] [-v #] [...]
 
 =head2 Example
 
   Get variation sequence of Homo_sapiens from a bed file 
     retrieve-snp-seq -v 2 \
-      -species Homo_sapiens -version GRCh37    
+      -species Homo_sapiens -e_version 72 
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
       -len 30 \
       -o variations.tab
@@ -205,7 +205,7 @@ package	main;
 	###############################################################
 	## Initialise parameters
 	our $start_time = &RSAT::util::StartScript();
-	our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+	our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
 	our %infile	= ();
 	our %outfile = ();
@@ -217,7 +217,8 @@ package	main;
 
 	our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
 	our $species = '';
-	our $genome_version = "";
+	our $ensembl_version = "";
+	our $assembly_version = "";
 
 	our $ref_seq = "";	   
 	our $flank_len = 29;
@@ -233,41 +234,27 @@ package	main;
 
 	################################################################
 	## Check argument values
-	
-	my $supported_file = &Get_supported_file();
-	if (-f $supported_file) {
-		if ($available) {
-			my ($file) = &OpenInputFile($supported_file);
-			while (<$file>) {
-				next if (/^#/);
-				chomp();
-				my ($id,$name) = split("\t");
-				my ($species,$version) = split("_ensembl_");
-				print $species,"\t",$version,"\n";
-			}
-		 exit(0);
-		}
-	} else {
-		&RSAT::error::FatalError("No species install. $supported_file don't exist");
-	}
 
-	#Check argument
+
+	#Check if argument specified
 	&RSAT::error::FatalError("No species specified. Use -species") unless ($species);
-	&RSAT::error::FatalError("No version specified. Use -version") unless ($genome_version);
+	&RSAT::error::FatalError("No asssembly and ensembl version specified. Use at least one of this option -e_version -a_version") unless ($ensembl_version || $assembly_version);
 	&RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
 	
+	#check file
+    &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless (-f $main::infile{'input'});
+    
 	$main::infile{'input_variation'} = $main::infile{'input'} if ($format eq "rsat");
 	
 	
 	# Check directory
-	my $species_dir = &Get_species_dir(ucfirst($species),$genome_version);
-	my $genome_dir = &Get_genome_dir($species_dir);
-	my $variation_dir = &Get_variation_dir($species_dir);
+  my $species_dir = &Get_species_dir($species,$assembly_version,$ensembl_version);
+  my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
+  my $variation_dir = &Get_variation_dir($species, $assembly_version,$ensembl_version);
 
-	&RSAT::error::FatalError("$species version $genome_version not install.") unless (-d $species_dir);
-	&RSAT::error::FatalError("Genome of $species not install.") unless (-d $genome_dir);
-	&RSAT::error::FatalError("Variation of $species not install.") unless (-d $species_dir);
-
+  &RSAT::error::FatalError("$species_dir don't exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $species_dir);
+  &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
+  &RSAT::error::FatalError("$variation_dir don't exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);  
 
 	# Check if sequence file are not missing
 	my %chr_file = &Get_file_seq_name($genome_dir);
@@ -293,40 +280,56 @@ package	main;
 
 	if ($format eq "id") {
 		&RSAT::message::TimeWarn("Retrieve variations from id") if ($main::verbose >= 2);
-
+        
 		my $var_file = $ENV{'RSAT'}."/tmp/variation.tab";
 		$out = &OpenOutputFile($var_file);
 
-		my @variation_id = ();
+		my %variation_id = ();
 
 		##Get id list
 		my ($file) = &OpenInputFile($main::infile{'input'});
 		while (<$file>) {
 			next if (/^#/);
 			next if (/^;/);
-			next unless (/\t/);
 			chomp();
 			my @token = split("\t");
-			push (@variation_id,$token[$col-1])
+			$variation_id{$token[$col-1]} = 1;
 		}
 		close $file;	
-
+    
+        &RSAT::message::TimeWarn("Variation to found :",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
+        
 		#Retrieve var
-		my $grep_id = "'".join('\|',@variation_id)."'";
+		my $grep_id = "'".join('\|',keys(%variation_id))."'";
 		foreach (@variation_file) {
-
+			last if ( scalar(keys(%variation_id)) == 0);
+			
 			my @result = qx{grep -r $grep_id $_};
+			my $i = 0;
 			
 			foreach (@result) {
 				chomp();
-				my @token = split("\t");			
-				print $out $_,"\n" unless ($token[9] == 1 );		
+				my @token = split("\t");
+				next if ( $token[9] == 1 ); ##Remove super-variation
+				delete($variation_id{$token[4]});	##Remove find variation from the liste
+				$token[10] = 0; ##Remove info about in_super_variation
+				print $out join("\t",@token),"\n";		
+				$i ++
 			}
+			
+			$grep_id = "'".join('\|',keys(%variation_id))."'";
+			
+			my $file_name = $_;
+            $file_name =~ s|$ENV{RSAT}|\$ENV\{RSAT\}|g;
+            &RSAT::message::TimeWarn("\t$i variation(s) found in : $file_name . Left to be found",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
 		}
+
+        foreach (keys(%variation_id)) {
+        	&RSAT::message::Warning($_,"not found. This variation don't exist in $species or don't pass Ensembl or RSAT quality check");
+        }
 
 		$main::infile{'input_variation'} = $var_file;
 	}
-
 
 	################################################################	
 	##Get variation from coordinate
@@ -486,13 +489,23 @@ Species of the variation/bed/id file
 
 =pod
 
-=item B<-version #>
+=item B<-e_version #>
 
-The version of the assembly of the genome
+The version of ensembl
 
 =cut
-		} elsif ($arg eq "-version") {
-			$main::genome_version = shift(@arguments);
+		} elsif ($arg eq "-e_version") {
+			$main::ensembl_version = shift(@arguments);
+
+=pod
+
+=item B<-a_version #>
+
+The version of the assembly of the species
+
+=cut
+        } elsif ($arg eq "-a_version") {
+            $main::assembly_version = shift(@arguments);
 
 =pod
 
