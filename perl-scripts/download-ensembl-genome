@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.19 2013/06/25 10:24:20 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.20 2013/06/25 14:13:47 jeremy Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our $verbose = 0;
@@ -142,14 +142,15 @@ package	main;
   our $fasta_rsync = &Get_fasta_rsync($ensembl_version);
   &RSAT::message::Info("Ensembl URL", $fasta_rsync) if ($main::verbose >= 2);
 
-  ###############################################################
-  ## Check arguments
-  $out = &OpenOutputFile($outfile{output});
 
   ################################################################
   ## Print verbose
+  $out = &OpenOutputFile($outfile{output});
   &Verbose() if ($main::verbose >= 1);
-
+  
+  ###############################################################
+  ## Check arguments
+  
   ## Get the list of available species
   my @available_species = qx{rsync -navP $fasta_rsync "."};
 
