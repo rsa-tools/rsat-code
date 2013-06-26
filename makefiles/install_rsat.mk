@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.71 2013/02/27 10:04:56 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.72 2013/06/26 14:59:33 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -705,3 +705,11 @@ numpy_and_scipy:
 	${SUDO} easy_install nose
 	${SUDO} easy_install numpy
 	${SUDO} easy_install scipy
+
+
+install_ubuntu_prereq:
+	sudo apt-get install libgd2-xpm-dev
+	sudo apt-get install libxml2-dev
+	sudo apt-get install libmysqlclient15-dev
+	sudo apt-get install libdb-dev
+	sudo apt-get install libberkeleydb-perl
