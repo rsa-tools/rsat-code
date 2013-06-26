@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.20 2013/06/25 14:13:47 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.21 2013/06/26 10:46:56 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our $verbose = 0;
@@ -130,12 +130,12 @@ package	main;
   ## Get the Ensembl version
   if ($ensembl_version eq "safe") {
   	$ensembl_version = &Get_ensembl_version_safe();
-  	
   } elsif ($ensembl_version eq "latest") {
     $ensembl_version = &Get_ensembl_version();
   } else {
-    &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 48.") if ($ensembl_version < 48);
-    &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
+    &RSAT::error::FatalError("Ensembl version $ensembl_version is not supported. Minimun version is 48.") if ($ensembl_version < 48);
+    &RSAT::error::FatalError("Ensembl version $ensembl_version is not supported. Can not be superior to latest ensembl version", &Get_ensembl_version())
+      if ($ensembl_version > &Get_ensembl_version());
   }
 
   ## Get the URL of the ensembl rsync site
