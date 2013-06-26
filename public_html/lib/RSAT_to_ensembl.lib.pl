@@ -32,10 +32,10 @@ sub Get_ensembl_version() {
 
   foreach (@available_fasta) {
     next unless (/Homo_sapiens/);
-
-    $_ =~ s/$species\.//g;
+    $_ =~ s/Homo_sapiens\.//g;
     my @token = split(".dna",$_);
     my @token2 = split(/\./,$token[0]);
+    
     return $token2[-1];
   }
 }
