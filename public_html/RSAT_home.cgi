@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.78 2013/01/10 11:31:06 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.79 2013/06/26 15:00:03 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -25,6 +25,7 @@ print $query->start_html(-class => "info",
 			 -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
+
 print "<blockquote>";
 
 &RSAT::server::DetectDeniedIP();
