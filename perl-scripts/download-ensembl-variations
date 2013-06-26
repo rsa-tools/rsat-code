@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.11 2013/06/25 10:24:20 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.12 2013/06/26 15:01:07 jeremy Exp $
 #
 ############################################################
 
@@ -177,7 +177,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -186,7 +186,7 @@ package	main;
   our $genomes_dir = "$ENV{'RSAT'}/data/genomes/";
 
   our $species = "";
-  our $available = 0;
+  our $get_available_species = 0;
   our $ref_seq = "";
   our $ensembl_version = &Get_ensembl_version_safe();
 
@@ -216,7 +216,7 @@ package	main;
   ##Print available species
   my $variation_rsync = &Get_variation_rsync($ensembl_version);
 
-  if ($available) {
+  if ($get_available_species) {
     my @available_species = qx{rsync -navP $variation_rsync "."};
     foreach (@available_species) {
       next if (/\./);
@@ -749,7 +749,7 @@ Get all available species on Ensembl
 
 =cut
     } elsif ($arg eq "-available_species") {
-      $main::available = 1;
+      $main::get_available_species = 1;
 
 =pod
 
