@@ -1,0 +1,312 @@
+#!/usr/bin/perl -w
+
+############################################################
+#
+# $Id: download-ensembl-features,v 1.1 2013/06/26 15:02:39 jeremy Exp $
+#
+############################################################
+
+use warnings;
+
+=pod
+
+=head1 NAME
+
+download-ensembl-feature
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Download the genomic feature of a user-specified organism from the
+Ensembl server, and convert the original format (dat) into tab files
+required for RSAT use.
+
+=head1 AUTHORS
+
+Jeremy.Delerce@univ-amu.fr
+
+Revised by Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+ download-ensembl-feature -species # [-version #] [-o genomesDirectory] [-available_species] [-v #]
+
+=head2 Examples
+
+Get a list of species with feature available at Ensembl
+
+ download-ensembl-feature -available_species
+
+Get genimic feature for the human genome (Homo sapiens)
+
+ download-ensembl-feature -species Homo_sapiens
+
+=head1 OUTPUT FORMAT
+
+Four tab formatted file (gene,CDS,RNA,transcript).
+
+=head1 SEE ALSO
+
+=head2 download-ensembl-genome.pl
+
+Downloads genome for a species
+
+=head2 download-ensembl-variation.pl
+
+Downloads variations for a species
+
+=head2 retrieve-variation-seq
+
+I<retrieve-snp-seq> uses files product by I<download-ensembl-variations>
+to make all the sequence of a variation.
+
+=head2 variation-scan
+
+Scan variation sequences with one or several position-specific scoring
+matrices.
+
+=head1 WISH LIST
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+
+require "RSA.lib";
+require "RSAT_to_ensembl.lib.pl";
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ###############################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+
+  our $out = SDTOUT;
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
+
+  our $species = "";
+  our $assembly_version = "";
+  our $ensembl_version = &Get_ensembl_version_safe();
+  our $ensembl_rsync = &Get_ensembl_rsync();
+  our @types = ();
+  our $get_available_species = 0;
+  
+  
+  $species = "homo_sapiens";  
+  ################################################################
+  ## Read argument values
+#  &ReadArguments();
+
+  if ($ensembl_version eq "safe") {
+    $ensembl_version = &Get_ensembl_version_safe();
+  } elsif ($ensembl_version eq "latest") {
+    $ensembl_version = &Get_ensembl_version();
+  } else {
+      &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
+      &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
+  }
+  
+  ################################################################
+  ## Print verbose
+  $out = &OpenOutputFile($outfile{output});
+#  &Verbose() if ($main::verbose >= 1);
+  
+  ################################################################
+  ##Print available species
+  my $feature_rsync = &Get_feature_rsync($ensembl_version);
+
+  if ($get_available_species) {
+    my @available_species = qx{rsync -navP $feature_rsync "."};
+    foreach (@available_species) {
+      next if (/\./);
+      next unless (/\/\n/);
+      my ($species) = split("\/");
+      print ucfirst($species),"\n";
+    }
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out;
+    exit(0);    
+  }
+  
+  
+  ################################################################
+  ## Check argument values
+  
+  unless ($species) {
+    &RSAT::error::FatalError("No species indicate. Use -species");
+  }
+
+  # Check if feature for $species available on Ensembl
+  my @available_species = qx{rsync -navP $feature_rsync "."};
+
+  unless ( grep($_ = $species."\/\n", @available_species )) {
+    &RSAT::error::FatalError("No feature avalaible for $species on Ensembl or $species don't exist.");
+  }
+
+
+  # Get url
+  my $species_fasta_rsync = &Get_species_rsync($species,$ensembl_version,'fasta');
+  my $species_feature_rsync = &Get_species_rsync($species,$ensembl_version,'feature');
+  my $species_gvf_rsync = &Get_gvf_rsync($species,$ensembl_version);
+  &RSAT::message::Info("Species dna URL", $species_fasta_rsync) if ($main::verbose >= 2);
+  &RSAT::message::Info("Species feature URL", $species_feature_rsync) if ($main::verbose >= 2);
+  &RSAT::message::Info("Species gvf URL", $species_gvf_rsync) if ($main::verbose >= 2);
+
+  # Get genome version
+  $assembly_version = &Get_assembly_version($species,$ensembl_version);
+  
+  
+  # Get local dir
+  my $species_dir = &Get_species_dir($species,$assembly_version,$ensembl_version);
+  my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
+  
+  &RSAT::util::CheckOutDir($genome_dir);
+  
+  
+  # Check if version already install
+  $outfile{"gene_file"} = &Get_gene_file($genome_dir);
+  $outfile{"cds_file"} = &Get_cds_file($genome_dir);
+  $outfile{"rna_file"} = &Get_rna_file($genome_dir);
+  
+  &RSAT::error::FatalError("Feature already install in directory\n",$genome_dir) if (-f $outfile{"gene_file"} && -f $outfile{"cds_file"} && -f $outfile{"rna_file"});
+  
+  
+  ################################################################  
+  ## Select the files to download
+  my @file_to_download = &Get_dat_rsync($species,$ensembl_version);
+  
+  
+  ################################################################
+  ##Download
+  &RSAT::message::TimeWarn("Download sequence") if ($main::verbose >= 2);
+
+  my $file_to_download_file = $genome_dir."/to_download.txt";
+  my $out_file = &OpenOutputFile($file_to_download_file);
+  print $out_file join("\n",@file_to_download),"\n";
+  close $out_file;
+
+#  system ("rsync -avP --files-from='$file_to_download_file' $species_feature_rsync $genome_dir");
+  unlink ($file_to_download_file);
+  
+   
+  ################################################################
+  ##Gzip file
+#  system ("gzip -d $genome_dir*.gz");
+  
+  
+  ################################################################
+  ## Convert file format
+#  my $out_g = &OpenOutputFile($outfile{"gene_file"});
+#  my $out_r = &OpenOutputFile($outfile{"rna_file"});
+#  my $out_c = &OpenOutputFile($outfile{"cds_file"});
+
+  foreach (@file_to_download) {
+  	$_ =~ s/\.gz\n//;
+  	
+  	my $type = "";
+  	my $line = "";
+  	
+    my %gene = ();
+    
+  	
+  	
+  	my ($file) = &OpenInputFile($genome_dir.$_);
+  	
+  	my @id = split(" ",<$file>);
+  	my $chr = $id[1];
+  	
+    while (<$file>) {
+    	next unless (/^FT/ || /^ID/);
+    	chomp();
+    	
+    	
+    	
+    	
+    	my @token = split(" ",$_);
+    	
+    	if (scalar(@token) == 3) {
+    		if ($token[1] eq "gene") {
+    			$type = "gene";
+    			
+    			
+    			if (%gene) {
+    			  $gene{'description'} = "-" unless ($gene{'description'});
+    	          print "$chr:$gene{coord}\t$gene{id}\t$gene{name}\t$gene{'description'}\n";
+    				
+    			}
+    			
+    			
+    			%gene = ();
+    			
+    			$token[2] =~s/complement\(//g;
+                $token[2] =~s/\)//g;
+    			
+    			$gene{'coord'} = $token[2];
+    			next;
+    			
+    		} else {
+    			$type = "";
+    		}
+    	}
+    	
+    	if ($type eq "gene") {
+    		if ($token[1] =~ /\/gene/) {
+    			$line = "id";
+    			my @token = split("=",$token[1]);
+    			$gene{'id'} = $token[-1];
+    		}
+    		
+    		elsif ($token[1] =~ /\/locus_tag/) {
+    			$line = "name";
+    			$token[1] =~ s/\"//g;
+                my @token = split("=",$token[1]);
+                $gene{'name'} = $token[-1];
+            }
+    		
+    		elsif ($token[1] =~ /\/note/) {
+    			$line = 'description';
+    			
+                $token[1] =~ s/\"//g;
+                my @token2 = split("=", join (' ', @token[1..$#token]) );
+                
+                $gene{'description'} = $token2[1];
+                
+            }
+            
+            else {
+                $token[1] =~ s/\"//g;
+            	$gene{$line} .= join ' ', @token[1..$#token];
+            	
+            }
+    		
+    	}
+    }
+  }
+  
+#  unlink($outfile{"gene_file"});
+#  unlink($outfile{"rna_file"});
+#  unlink($outfile{"cds_file"});
+}
