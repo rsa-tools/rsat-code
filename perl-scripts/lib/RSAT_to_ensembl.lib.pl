@@ -2,18 +2,17 @@
 
 package main;
 
-
 ############################################################################
 ############################################################################
 ############################## RSYNC FONCTION ##############################
 #  our $ensembl_url = "ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/";
 
-####### Variables
+## Define global variables
 our $ensembl_rsync = $ENV{ensembl_rsync} || "rsync://ftp.ensembl.org/ensembl/pub";
 our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
 
 
-####### Fct
+## Functions
 
 # get $ensembl_rsync
 sub Get_ensembl_rsync() {
@@ -44,7 +43,7 @@ sub Get_ensembl_version() {
 ## Get rsync fasta url
 sub Get_fasta_rsync() {
   my ($ensembl_version) = @_;
-  return $ensembl_rsync."/release-".$ensembl_version."/fasta/";     # Version 48 to 72
+  return $ensembl_rsync."/release-".$ensembl_version."/fasta/";     # Version 60 to 72
 }
 
 ## Get rsync variation url
@@ -53,7 +52,6 @@ sub Get_variation_rsync() {
 
   if ($ensembl_version < 64) {
     return $ensembl_rsync."/release-".$ensembl_version."/variation/";     # Version 60 to 63
-
   } else {
     return $ensembl_rsync."/release-".$ensembl_version."/variation/gvf/";     # Version 64 to 72
   }
@@ -66,9 +64,8 @@ sub Get_species_rsync() {
   if ($type eq "fasta") {
     return &Get_fasta_rsync($ensembl_version).$species."/dna/";      # Version 48 to 72
   }
-  
+
   if ($type eq "variation") {
-    
     if ($ensembl_version == 61) {
       return &Get_variation_rsync($ensembl_version).ucfirst($species)."/";      # Version 61
     } else {
@@ -94,7 +91,7 @@ sub Get_assembly_version() {
   my $species_fasta_rsync = &Get_species_rsync($species,$ensembl_version,'fasta');
 
   my @available_fasta = qx{rsync -navP $species_fasta_rsync "."};
-  
+
   $species = ucfirst($species);
   foreach (@available_fasta) {
     next unless (/$species/);
@@ -121,9 +118,9 @@ our $supported_file = $ENV{'RSAT'}."/data/supported_organisms_ensembl.tab";
 sub Get_species_dir() {
   my ($species,$assembly_version,$ensembl_version) = @_;
   $species = ucfirst($species);
-  
+
   my %assembly_directory = ();
-  
+
   ## Open the file containing the list of supported Ensembl species
   my ($file) = &OpenInputFile($supported_file);
 
@@ -131,7 +128,7 @@ sub Get_species_dir() {
       chomp();
       my ($id,$name,$dir) = split("\t");
       $dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
-      
+
       if ($ensembl_version) {
       	 return $dir if ($name =~ /$species.*$assembly_version.*$ensembl_version/);
       } else {
@@ -139,7 +136,7 @@ sub Get_species_dir() {
       	 $assembly_directory{$ens} = $dir if ($name =~ /$species.*$assembly_version/);
       }
   }
- 
+
   foreach (sort{$b<=>$a} (keys(%assembly_directory))) {
     return $assembly_directory{$_};
   }
