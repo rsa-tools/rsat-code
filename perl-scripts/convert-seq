@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.44 2013/06/20 10:05:21 jvanheld Exp $
+# $Id: convert-seq,v 1.45 2013/06/26 10:44:53 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -178,7 +178,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	#    $current_id = $';
 	#}
 
-	#### Make sure that the id is a valid filename
+	#### Make sure that the ID is a valid filename
 	chomp $current_id;
 	if ($check_id) {
 	    $current_id =~ s/\|/_/g;
