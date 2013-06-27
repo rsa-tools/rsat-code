@@ -46,6 +46,12 @@ sub Get_fasta_rsync() {
   return $ensembl_rsync."/release-".$ensembl_version."/fasta/";     # Version 60 to 72
 }
 
+## Get rsync fasta url
+sub Get_feature_rsync() {
+  my ($ensembl_version) = @_;
+  return $ensembl_rsync."/release-".$ensembl_version."/embl/";     # Version 48 to 72
+}
+
 ## Get rsync variation url
 sub Get_variation_rsync() {
   my ($ensembl_version) = @_;
@@ -64,6 +70,10 @@ sub Get_species_rsync() {
   if ($type eq "fasta") {
     return &Get_fasta_rsync($ensembl_version).$species."/dna/";      # Version 48 to 72
   }
+ 
+  if ($type eq "feature") {
+    return &Get_feature_rsync($ensembl_version).$species."/";      # Version 48 to 72
+  } 
 
   if ($type eq "variation") {
     if ($ensembl_version == 61) {
@@ -73,6 +83,28 @@ sub Get_species_rsync() {
     }
   }
 }
+
+## Get rsunc dat file url
+sub Get_dat_rsync() {
+	  my ($species,$ensembl_version) = @_;
+	  my $species_feature_rsync = &Get_species_rsync($species,$ensembl_version,'feature');
+	  my @seq_available = ();
+	  
+   my @available_feature = qx{rsync -navP $species_feature_rsync "."};
+	
+	 foreach (@available_feature ) {
+    my $species_ucf = ucfirst($species);
+    next unless (/$species_ucf/);
+    next unless (/chrom/ && $ensembl_version >= 68);    ##Remove non chromosomal or contig seq (Version >68 only)
+    
+    my @info = split(/chrom/);
+    next if ($info[1] =~ "_" && $ensembl_version >= 68);    ##Remove non chromosomal or contig seq (Version >68 only)
+      
+    push(@seq_available, $_);
+  }
+  return @seq_available;
+}
+
 
 ##Get rsync gvf file url
 sub Get_gvf_rsync() {
@@ -180,6 +212,24 @@ sub Get_contigs_file() {
 sub Get_contig_file() {
   my ($genome_dir) = @_;
   return $genome_dir."contig.tab";
+}
+
+## RNA.tab
+sub Get_rna_file() {
+  my ($genome_dir) = @_;
+  return $genome_dir."RNA.tab";
+}
+
+## CDS.tab
+sub Get_cds_file() {
+  my ($genome_dir) = @_;
+  return $genome_dir."CDS.tab";
+}
+
+## Gene.tab
+sub Get_gene_file() {
+  my ($genome_dir) = @_;
+  return $genome_dir."genes.tab";
 }
 
 ## variation.gvf
