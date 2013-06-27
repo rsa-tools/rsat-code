@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.22 2013/06/26 14:59:05 rsat Exp $
+# $Id: download-ensembl-genome,v 1.23 2013/06/27 07:21:56 jeremy Exp $
 #
 ############################################################
 
@@ -62,18 +62,18 @@ Sequence file in raw format
 
 =head1 SEE ALSO
 
-=head2 download-ensembl-genome.pl
+=head2 download-ensembl-variations.pl
 
 Downloads variation for a species
 
-=head2 retrieve-snp-seq
+=head2 retrieve-variation-seq
 
-I<retrieve-snp-seq> uses files product by I<download-ensembl-genome>
+I<retrieve-variation-seq> uses files product by I<download-ensembl-variations>
 to make all the sequence of a variation.
 
-=head2 snp-scan
+=head2 variation-scan
 
-Scan SNP sequences with one or several position-specific scoring
+Scan variation sequences with one or several position-specific scoring
 matrices.
 
 =head1 WISH LIST
@@ -105,9 +105,11 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
+  our %outfile = ();
+
   our $verbose = 0;
   our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
 
@@ -131,7 +133,7 @@ package	main;
 
   ## Get the Ensembl version
   if ($ensembl_version eq "safe") {
-  	$ensembl_version = &Get_ensembl_version_safe();
+    $ensembl_version = &Get_ensembl_version_safe();
   } elsif ($ensembl_version eq "latest") {
     $ensembl_version = &Get_ensembl_version();
   } else {
@@ -221,15 +223,15 @@ package	main;
 
     ## Select the files to download for the selected type
     foreach (@available_fasta) {
-	my $species_ucf = ucfirst($species);
-	next unless (/$species_ucf/);
-	next unless (/\.$type\./);		##Remove non $type seq
-	next unless (/chrom/);	##Remove non chromosomal or contig seq
+      my $species_ucf = ucfirst($species);
+      next unless (/$species_ucf/);
+      next unless (/\.$type\./);		##Remove non $type seq
+      next unless (/chrom/);	##Remove non chromosomal or contig seq
 	
-	my @info = split(/$type/);
-	next if ($info[1] =~ "_");	##Remove patch
+      my @info = split(/$type/);
+      next if ($info[1] =~ "_");	##Remove patch
       
-	push(@seq_available, $_);
+      push(@seq_available, $_);
     }
 
     if (scalar(@seq_available) > 0) {
@@ -246,7 +248,7 @@ package	main;
       $_ =~s/$genome_dir\///g;
       $_ =~s/\.raw/\.fa\.gz/g;
 
-##	print "GLOB\t", $_;
+      ##	print "GLOB\t", $_;
       $seq_install{$_} = 1;
     }
 
@@ -262,8 +264,8 @@ package	main;
     }
   }
 
-  if ((scalar(@seq_to_download) == 0) && (!$force)){
-    &RSAT::message::TimeWarn("Latest version of species", ucfirst($species), "already installed in directory\n", $genome_dir);
+  if (scalar(@seq_to_download) == 0  && (!$force)) {
+    &RSAT::message::TimeWarn("Sequence of species", ucfirst($species), "already installed in directory\n", $genome_dir);
     exit(0);
   } else {
       &RSAT::message::Info(scalar(@seq_to_download) ,"sequences to download") if ($main::verbose >= 1);
