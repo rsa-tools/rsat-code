@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.1 2013/06/26 15:02:39 jeremy Exp $
+# $Id: download-ensembl-features,v 1.2 2013/06/28 15:36:29 jeremy Exp $
 #
 ############################################################
 
@@ -40,7 +40,7 @@ Revised by Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
- download-ensembl-feature -species # [-version #] [-o genomesDirectory] [-available_species] [-v #]
+ download-ensembl-feature -species # [-version #] [-synonym] [-o #] [-dir genomesDirectory] [-available_species] [-v #]
 
 =head2 Examples
 
@@ -48,23 +48,23 @@ Get a list of species with feature available at Ensembl
 
  download-ensembl-feature -available_species
 
-Get genimic feature for the human genome (Homo sapiens)
+Get genomic feature coordinate for the human genome (Homo sapiens)
 
  download-ensembl-feature -species Homo_sapiens
+ 
+Get genomic feature coordinate and all their synonym name for the human genome (Homo sapiens)
+
+ download-ensembl-feature -species Homo_sapiens -synonym
 
 =head1 OUTPUT FORMAT
 
-Four tab formatted file (gene,CDS,RNA,transcript).
+Multiple tab formatted file (gene,CDS,mRNA,lincRNA..).
 
 =head1 SEE ALSO
 
 =head2 download-ensembl-genome.pl
 
 Downloads genome for a species
-
-=head2 download-ensembl-variation.pl
-
-Downloads variations for a species
 
 =head2 retrieve-variation-seq
 
@@ -88,7 +88,7 @@ BEGIN {
 
 require "RSA.lib";
 require "RSAT_to_ensembl.lib.pl";
-
+#use Bio::EnsEMBL::Registry;
 
 ################################################################
 ## Main package
@@ -98,7 +98,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -110,11 +110,11 @@ package main;
   our $assembly_version = "";
   our $ensembl_version = &Get_ensembl_version_safe();
   our $ensembl_rsync = &Get_ensembl_rsync();
-  our @types = ();
+
   our $get_available_species = 0;
+  our $synonym = 0;  
   
-  
-  $species = "homo_sapiens";  
+  $species = "homo_sapiens";
   ################################################################
   ## Read argument values
 #  &ReadArguments();
@@ -124,8 +124,8 @@ package main;
   } elsif ($ensembl_version eq "latest") {
     $ensembl_version = &Get_ensembl_version();
   } else {
-      &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
-      &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
+    &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 70.") if ($ensembl_version < 70);
+    &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
   }
   
   ################################################################
@@ -135,178 +135,226 @@ package main;
   
   ################################################################
   ##Print available species
-  my $feature_rsync = &Get_feature_rsync($ensembl_version);
-
   if ($get_available_species) {
-    my @available_species = qx{rsync -navP $feature_rsync "."};
-    foreach (@available_species) {
-      next if (/\./);
-      next unless (/\/\n/);
-      my ($species) = split("\/");
-      print ucfirst($species),"\n";
+  	$registry->load_registry_from_db(
+      -host => 'ensembldb.ensembl.org',
+      -user => 'anonymous',
+      -db_version => $ensembl_version
+    );
+	
+    my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
+	
+    @sort_species = sort {$a->species() cmp $b->species()} @db_adaptors;
+	
+    foreach my $db_adaptor (@sort_species) {
+    my $db_connection = $db_adaptor->dbc();
+      print $db_adaptor->species(),"\n" if ( $db_adaptor->group() eq "core");
     }
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-    close $out;
-    exit(0);    
   }
   
   
   ################################################################
-  ## Check argument values
-  
-  unless ($species) {
-    &RSAT::error::FatalError("No species indicate. Use -species");
-  }
-
-  # Check if feature for $species available on Ensembl
-  my @available_species = qx{rsync -navP $feature_rsync "."};
-
-  unless ( grep($_ = $species."\/\n", @available_species )) {
-    &RSAT::error::FatalError("No feature avalaible for $species on Ensembl or $species don't exist.");
-  }
+  ## Connecting to ensembl
+#  $registry->load_registry_from_db(
+#    -host => 'ensembldb.ensembl.org',
+#    -user => 'anonymous',
+#    -db_version => $ensembl_version,
+#    -species => $species
+#  );
 
 
-  # Get url
-  my $species_fasta_rsync = &Get_species_rsync($species,$ensembl_version,'fasta');
-  my $species_feature_rsync = &Get_species_rsync($species,$ensembl_version,'feature');
-  my $species_gvf_rsync = &Get_gvf_rsync($species,$ensembl_version);
-  &RSAT::message::Info("Species dna URL", $species_fasta_rsync) if ($main::verbose >= 2);
-  &RSAT::message::Info("Species feature URL", $species_feature_rsync) if ($main::verbose >= 2);
-  &RSAT::message::Info("Species gvf URL", $species_gvf_rsync) if ($main::verbose >= 2);
+  ################################################################
+  ## Get Adaptator    
+  my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
 
-  # Get genome version
+
+  ################################################################
+  ## Get local dir  
   $assembly_version = &Get_assembly_version($species,$ensembl_version);
-  
-  
-  # Get local dir
-  my $species_dir = &Get_species_dir($species,$assembly_version,$ensembl_version);
   my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
   
-  &RSAT::util::CheckOutDir($genome_dir);
-  
-  
-  # Check if version already install
-  $outfile{"gene_file"} = &Get_gene_file($genome_dir);
-  $outfile{"cds_file"} = &Get_cds_file($genome_dir);
-  $outfile{"rna_file"} = &Get_rna_file($genome_dir);
-  
-  &RSAT::error::FatalError("Feature already install in directory\n",$genome_dir) if (-f $outfile{"gene_file"} && -f $outfile{"cds_file"} && -f $outfile{"rna_file"});
-  
+  &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before download-ensembl-feature.") unless (-d $genome_dir);
   
   ################################################################  
-  ## Select the files to download
-  my @file_to_download = &Get_dat_rsync($species,$ensembl_version);
-  
-  
-  ################################################################
-  ##Download
-  &RSAT::message::TimeWarn("Download sequence") if ($main::verbose >= 2);
+  # Get local seq type and name
+  my %seq_info = &Get_seq_name_type($genome_dir);
 
-  my $file_to_download_file = $genome_dir."/to_download.txt";
-  my $out_file = &OpenOutputFile($file_to_download_file);
-  print $out_file join("\n",@file_to_download),"\n";
-  close $out_file;
+  foreach my $seq_type (keys(%seq_info)) {
+  	foreach my $seq_name (@{$seq_info{$seq_type}}) {
 
-#  system ("rsync -avP --files-from='$file_to_download_file' $species_feature_rsync $genome_dir");
-  unlink ($file_to_download_file);
-  
-   
-  ################################################################
-  ##Gzip file
-#  system ("gzip -d $genome_dir*.gz");
-  
-  
-  ################################################################
-  ## Convert file format
-#  my $out_g = &OpenOutputFile($outfile{"gene_file"});
-#  my $out_r = &OpenOutputFile($outfile{"rna_file"});
-#  my $out_c = &OpenOutputFile($outfile{"cds_file"});
+      my $slice = $slice_adaptor->fetch_by_region($seq_type,$seq_name);
 
-  foreach (@file_to_download) {
-  	$_ =~ s/\.gz\n//;
-  	
-  	my $type = "";
-  	my $line = "";
-  	
-    my %gene = ();
-    
-  	
-  	
-  	my ($file) = &OpenInputFile($genome_dir.$_);
-  	
-  	my @id = split(" ",<$file>);
-  	my $chr = $id[1];
-  	
-    while (<$file>) {
-    	next unless (/^FT/ || /^ID/);
-    	chomp();
-    	
-    	
-    	
-    	
-    	my @token = split(" ",$_);
-    	
-    	if (scalar(@token) == 3) {
-    		if ($token[1] eq "gene") {
-    			$type = "gene";
-    			
-    			
-    			if (%gene) {
-    			  $gene{'description'} = "-" unless ($gene{'description'});
-    	          print "$chr:$gene{coord}\t$gene{id}\t$gene{name}\t$gene{'description'}\n";
-    				
-    			}
-    			
-    			
-    			%gene = ();
-    			
-    			$token[2] =~s/complement\(//g;
-                $token[2] =~s/\)//g;
-    			
-    			$gene{'coord'} = $token[2];
-    			next;
-    			
-    		} else {
-    			$type = "";
-    		}
-    	}
-    	
-    	if ($type eq "gene") {
-    		if ($token[1] =~ /\/gene/) {
-    			$line = "id";
-    			my @token = split("=",$token[1]);
-    			$gene{'id'} = $token[-1];
-    		}
-    		
-    		elsif ($token[1] =~ /\/locus_tag/) {
-    			$line = "name";
-    			$token[1] =~ s/\"//g;
-                my @token = split("=",$token[1]);
-                $gene{'name'} = $token[-1];
-            }
-    		
-    		elsif ($token[1] =~ /\/note/) {
-    			$line = 'description';
-    			
-                $token[1] =~ s/\"//g;
-                my @token2 = split("=", join (' ', @token[1..$#token]) );
+
+      ## Gene
+      $outfile{'gene'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'gene');
+      my $out_gene = &OpenOutputFile($outfile{'gene'});
+      print $out_gene  "-- dump date  ???","\n";
+      print $out_gene  "-- class    EnsEMBL::gene","\n";
+      print $out_gene  "-- table    gene","\n";
+      print $out_gene  "-- table    main","\n";
+      print $out_gene  "-- field 1  id","\n";
+      print $out_gene  "-- field 2  type","\n";
+      print $out_gene  "-- field 3  name","\n";
+      print $out_gene  "-- field 4  contig","\n";
+      print $out_gene  "-- field 5  start_pos","\n";
+      print $out_gene  "-- field 6  end_pos","\n";
+      print $out_gene  "-- field 7  strand","\n";
+      print $out_gene  "-- field 8  description","\n";
+      print $out_gene  "-- header","\n";
+      print $out_gene  "-- id   type    name    contig  start_pos   end_pos strand  description","\n";
+
+      my @genes = @{$slice->get_all_Genes()};
+      while ( my $gene = shift @genes ) {
+
+        my $gene_known = "Novel";
+        $gene_known = "Known" if ($gene->is_known());
+
+        my $strand = "D";
+        $strand = "R" unless ($gene->strand() == 1);
+
+        my $description = "<no descrition>";
+        $description = $gene->description if ($gene->description);
+        
+        print $out_gene $gene->display_id(),"\t",$gene_known,"\t",$gene->biotype(),"\t",$gene->external_name(),"\t";
+        print $out_gene $slice->name(),"\t",$gene->start(),"\t",$gene->end(),"\t",$strand,"\t",$description,"\n";
+
+
+        ## Gene Synonym
+        if ($synonym) {
+          my @synonyms = @{ $_->get_all_DBEntries() };
+
+	      $outfile{'gene_names'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'gene_names');
+	      my $out_gene_names = &OpenOutputFile($outfile{'gene_names'});
+
+          print $out_gene_names "-- dump date    ???","\n";
+          print $out_gene_names "-- class    EnsEMBL::gene","\n";
+          print $out_gene_names "-- table    gene_names","\n";
+          print $out_gene_names "-- table    lateral","\n";
+          print $out_gene_names "-- field 1  id","\n";
+          print $out_gene_names "-- field 2  names","\n";
+          print $out_gene_names "-- field 3  status","\n";
+          print $out_gene_names "-- header","\n";
+          print $out_gene_names "-- id   names   status  source","\n";
+          
+	      my %print_synonym = ();
+          foreach my $synonym (@synonyms) {
+            next if ($print_synonym{$synonym->display_id()});
+
+            my $status = "alternate";
+            $status = "primary" if ($synonym->display_id() eq $gene->external_name());
+
+            print $out_gene_names $gene->display_id(),"\t",$synonym->display_id(),"\t";
+            print $out_gene_names $status,"\t",$synonym->dbname(),"\n";
+
+            $print_synonym{$synonym->display_id()} = 1;
+          }     	
+        }
+
+
+        ## Transcript
+        my $transcripts = $gene->get_all_Transcripts();
                 
-                $gene{'description'} = $token2[1];
-                
+        while ( my $transcript = shift @{$transcripts} ) {
+          
+          ## Intron
+		  my @introns = @{$_->get_all_Introns()};
+
+          $outfile{'intron'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'intron');
+          my $out_intron = &OpenOutputFile($outfile{'intron'});
+          print $out_intron "-- dump date    ???","\n";
+          print $out_intron "-- class    EnsEMBL::intron","\n";
+          print $out_intron "-- table    intron","\n";
+          print $out_intron "-- table    main","\n";
+          print $out_intron "-- field 1  id","\n";
+          print $out_intron "-- field 2  type","\n";
+          print $out_intron "-- field 3  name","\n";
+          print $out_intron "-- field 4  contig","\n";
+          print $out_intron "-- field 5  start_pos","\n";
+          print $out_intron "-- field 6  end_pos","\n";
+          print $out_intron "-- field 7  strand","\n";
+          print $out_intron "-- field 8  transcript","\n";
+          print $out_intron "-- field 9  GeneID","\n";
+          print $out_intron "-- header","\n";
+          print $out_intron "-- id   type    name    contig  start_pos   end_pos strand description transcript GeneID","\n";
+
+          my $i = 1;
+		  foreach $intron (@introns) {
+		    print $out_intron "INTRON".$1."-".$transcript->display_id(),"\t","intron","\t","INTRON".$1."-".$transcript->display_id(),"\t";
+		    print $out_intron $slice->name(),"\t",$intron->start(),"\t",$intron->end(),"\t",$strand,"\t";
+		    print $out_intron $description,"\t",$transcript->display_id(),"\t",$gene->display_id(),"\n";
+		    $i++;
+		  }          
+
+          ## UTR
+          $outfile{'utr'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'utr');
+          my $out_utr = &OpenOutputFile($outfile{'utr'});
+          print $out_utr "-- dump date    ???","\n";
+          print $out_utr "-- class    EnsEMBL::utr","\n";
+          print $out_utr "-- table    utr","\n";
+          print $out_utr "-- table    main","\n";
+          print $out_utr "-- field 1  id","\n";
+          print $out_utr "-- field 2  type","\n";
+          print $out_utr "-- field 3  name","\n";
+          print $out_utr "-- field 4  contig","\n";
+          print $out_utr "-- field 5  start_pos","\n";
+          print $out_utr "-- field 6  end_pos","\n";
+          print $out_utr "-- field 7  strand","\n";
+          print $out_utr "-- field 8  description","\n";
+          print $out_utr "-- field 9  transcript","\n";        
+          print $out_utr "-- field 10  GeneID","\n";
+          print $out_utr "-- header","\n";
+          print $out_utr "-- id   type    name    contig  start_pos   end_pos strand description transcript GeneID","\n";
+
+          if ($transcript->cdna_coding_start()) {
+            if ( $transcript->five_prime_utr_Feature() ) {
+              print $out_utr "5'UTR-".$transcript->display_id(),"\t","5'UTR","\t","5'UTR-".$transcript->display_id(),"\t";
+              print $out_utr $slice->name(),"\t",$transcript->five_prime_utr_Feature()->start(),"\t",$transcript->five_prime_utr_Feature()->end(),"\t",$strand,"\t";
+              print $out_utr $description,"\t",$transcript->display_id(),"\t",$gene->display_id(),"\n";
             }
+          }
+
+          if ($transcript->cdna_coding_end()) {
+            if ( $transcript->three_prime_utr_Feature() ) {
+              print $out_utr "3'UTR-".$transcript->display_id(),"\t","3'UTR","\t","3'UTR-".$transcript->display_id(),"\t";
+              print $out_utr $slice->name(),"\t",$transcript->three_prime_utr_Feature()->start(),"\t",$transcript->three_prime_utr_Feature()->end(),"\t",$strand,"\t";
+              print $out_utr $description,"\t",$transcript->display_id(),"\t",$gene->display_id(),"\n";
+            }
+          }
+
+          ## CDS
+          $outfile{'cds'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'cds');
+          my $out_cds = &OpenOutputFile($outfile{'cds'});
+          print $out_cds "-- dump date    ???","\n";
+          print $out_cds "-- class    EnsEMBL::cds","\n";
+          print $out_cds "-- table    cds","\n";
+          print $out_cds "-- table    main","\n";
+          print $out_cds "-- field 1  id","\n";
+          print $out_cds "-- field 2  type","\n";
+          print $out_cds "-- field 3  name","\n";
+          print $out_cds "-- field 4  contig","\n";
+          print $out_cds "-- field 5  start_pos","\n";
+          print $out_cds "-- field 6  end_pos","\n";
+          print $out_cds "-- field 7  strand","\n";
+          print $out_cds "-- field 8  description","\n";
+          print $out_cds "-- field 9  transcript","\n";        
+          print $out_cds "-- field 10  GeneID","\n";
+          print $out_cds "-- header","\n";
+          print $out_cds "-- id   type    name    contig  start_pos   end_pos strand description transcript GeneID","\n";  
             
-            else {
-                $token[1] =~ s/\"//g;
-            	$gene{$line} .= join ' ', @token[1..$#token];
-            	
-            }
-    		
-    	}
-    }
+		  if ($transcript->cdna_coding_start() && $transcript->cdna_coding_end()) {
+		  	  print $out_utr $transcript->translation()->display_id(),"\t","CDS","\t",$transcript->translation()->display_id(),"\t";
+              print $out_utr $slice->name(),"\t",$transcript->translation()->genomic_start(),"\t",$transcript->translation()->genomic_end(),"\t",$strand,"\t";
+              print $out_utr $description,"\t",$transcript->display_id(),"\t",$gene->display_id(),"\n";
+		  }         
+
+
+        }
+      }
+  	}
   }
   
-#  unlink($outfile{"gene_file"});
-#  unlink($outfile{"rna_file"});
-#  unlink($outfile{"cds_file"});
+  
+  
+  
+  exit(0);
 }
