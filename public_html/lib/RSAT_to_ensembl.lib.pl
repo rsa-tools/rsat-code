@@ -15,41 +15,53 @@ our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
 ## Functions
 
 # get $ensembl_rsync
-sub Get_ensembl_rsync() {
-  return $ensembl_rsync;
+sub Get_ensembl_ftp() {
+  my ($site) = @_;
+  
+  if ($site eq "ensembl") {
+    return "ftp://ftp.ensembl.org/pub/";
+    
+  }
+  
+#  return $ensembl_rsync;
 }
 
 # get $ensembl_version_safe
 sub Get_ensembl_version_safe() {
-  return $ensembl_version_safe;
+  my ($site) = @_;
+  
+  if ($site eq "ensembl") {
+    return 72;
+    
+  } 
+#  return $ensembl_version_safe;
 }
 
 
 ## Get the latest ensembl version for a species
 sub Get_ensembl_version() {
-  my @available_fasta = qx{rsync -navP $ensembl_rsync/current_fasta/homo_sapiens/dna/ "."};
-
-  foreach (@available_fasta) {
-    next unless (/Homo_sapiens/);
-    $_ =~ s/Homo_sapiens\.//g;
-    my @token = split(".dna",$_);
-    my @token2 = split(/\./,$token[0]);
-    
-    return $token2[-1];
+  my ($site) = @_;
+  
+  if ($site eq "ensembl") {
+  	  my $ftp = &Get_ensembl_ftp($site)."current_fasta/homo_sapiens/dna/";
+      my @available_fasta = qx{wget -S --spider $ftp 2>&1};
+	# my @available_fasta = qx{rsync -navP $ensembl_rsync/current_fasta/homo_sapiens/dna/ "."};
+	  foreach (@available_fasta) {
+	    next unless (/Homo_sapiens/);
+	    $_ =~ s/Homo_sapiens\.//g;
+	    my @token = split(".dna",$_);
+	    my @token2 = split(/\./,$token[0]);
+	    
+	    return $token2[-1];
+	  }
   }
 }
 
 
-## Get rsync fasta url
-sub Get_fasta_rsync() {
-  my ($ensembl_version) = @_;
-  return $ensembl_rsync."/release-".$ensembl_version."/fasta/";     # Version 60 to 72
-}
-
-## Get rsync fasta url
-sub Get_feature_rsync() {
-  my ($ensembl_version) = @_;
-  return $ensembl_rsync."/release-".$ensembl_version."/embl/";     # Version 48 to 72
+## Get ftp fasta url
+sub Get_fasta_ftp() {
+  my ($site,$ensembl_version) = @_;
+  return &Get_ensembl_ftp($site)."release-".$ensembl_version."/fasta/";     # Version 60 to 72
 }
 
 ## Get rsync variation url
@@ -64,16 +76,13 @@ sub Get_variation_rsync() {
 }
 
 ## Get rsync species url
-sub Get_species_rsync() {
-  my ($species,$ensembl_version,$type) = @_;
+sub Get_species_ftp() {
+  my ($site,$species,$ensembl_version,$type) = @_;
+
 
   if ($type eq "fasta") {
-    return &Get_fasta_rsync($ensembl_version).$species."/dna/";      # Version 48 to 72
+    return &Get_fasta_ftp($site,$ensembl_version).$species."/dna/";      # Version 48 to 72
   }
- 
-  if ($type eq "feature") {
-    return &Get_feature_rsync($ensembl_version).$species."/";      # Version 48 to 72
-  } 
 
   if ($type eq "variation") {
     if ($ensembl_version == 61) {
@@ -138,42 +147,51 @@ sub Get_assembly_version() {
 ############################################################################
 ############################################################################
 #### Specification of local directories for installing Ensembl on RSAT #####
-############################################################################
-
-############################ Variables
-our $supported_file = $ENV{'RSAT'}."/data/supported_organisms_ensembl.tab";
+############################################################################ 
 
 
 ############################ Fct get local dir
 
+sub Get_data_dir() {
+	return $ENV{'RSAT'}."/data/";
+}
+
+sub Get_genomes_dir() {
+	my ($data_dir) = @_;
+    return $data_dir."genomes/";
+}
+
 ## Get the local directory for the user-specified species
 sub Get_species_dir() {
-  my ($species,$assembly_version,$ensembl_version) = @_;
+  my ($data_dir,$species,$assembly_version,$ensembl_version) = @_;
   $species = ucfirst($species);
-
+  $supported_file = &Get_supported_file($data_dir);
+  
   my %assembly_directory = ();
 
   ## Open the file containing the list of supported Ensembl species
-  my ($file) = &OpenInputFile($supported_file);
+  if (-f $supported_file ) {
+    my ($file) = &OpenInputFile($supported_file);
 
-  foreach (<$file>) {
+    foreach (<$file>) {
       chomp();
       my ($id,$name,$dir) = split("\t");
       $dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
 
       if ($ensembl_version) {
-      	 return $dir if ($name =~ /$species.*$assembly_version.*$ensembl_version/);
+         return $dir if ($name =~ /$species.*$assembly_version.*$ensembl_version/);
       } else {
-      	 my ($spe,$ass,$ens) = split(" ",$name);
-      	 $assembly_directory{$ens} = $dir if ($name =~ /$species.*$assembly_version/);
+         my ($spe,$ass,$ens) = split(" ",$name);
+         $assembly_directory{$ens} = $dir if ($name =~ /$species.*$assembly_version/);
       }
+    } 
+
+    foreach (sort{$b<=>$a} (keys(%assembly_directory))) {
+      return $assembly_directory{$_};
+    }
   }
 
-  foreach (sort{$b<=>$a} (keys(%assembly_directory))) {
-    return $assembly_directory{$_};
-  }
-
-  return $genomes_dir.&Get_species_dir_name($species,$assembly_version,$ensembl_version);
+  return &Get_genomes_dir($data_dir).&Get_species_dir_name($species,$assembly_version,$ensembl_version);
 }
 
 
@@ -185,21 +203,22 @@ sub Get_species_dir_name() {
 
 ## Genome dir
 sub Get_genome_dir() {
-  my ($species, $assembly_version,$ensembl_version) = @_;
-  return &Get_species_dir($species, $assembly_version,$ensembl_version)."genome/";
+  my ($data_dir,$species, $assembly_version,$ensembl_version) = @_;
+  return &Get_species_dir($data_dir, $species, $assembly_version,$ensembl_version)."genome/";
 }
 
 ## Variation dir
 sub Get_variation_dir() {
-  my ($species, $assembly_version,$ensembl_version) = @_;
-  return &Get_species_dir($species, $assembly_version,$ensembl_version)."variations/";
+  my ($data_dir,$species, $assembly_version,$ensembl_version) = @_;
+  return &Get_species_dir($data_dir, $species, $assembly_version,$ensembl_version)."variations/";
 }
 
 ############################ Fct get file
 
 ## supported_organims_ensembl.tab
 sub Get_supported_file() {
-  return $supported_file;
+  my ($data_dir) = @_;
+  return $data_dir."/supported_organisms_ensembl.tab";
 }
 
 ## Contigs.txt
