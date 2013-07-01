@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.12 2013/06/26 15:01:07 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.13 2013/07/01 15:54:16 jeremy Exp $
 #
 ############################################################
 
@@ -141,20 +141,9 @@ Why the variation is remove
 
 =head1 SEE ALSO
 
-=head2 download-ensembl-genome
+=head2 install-ensembl-genome
 
-I<download-ensembl-variations> uses the sequences downloaded
-from Ensembl using the tool I<download-ensembl-genome>.
-
-=head2 retrieve-variation-seq
-
-I<retrieve-variation-seq> uses files product by I<download-ensembl-variations>
-to make all the sequence of a variation.
-
-=head2 variation-scan
-
-Scan SNP sequences with one or several position-specific scoring
-matrices.
+I<install-ensembl-genome> is a tools that allow to install all Ensembl genome, feature and variation.
 
 =head1 WISH LIST
 
@@ -177,7 +166,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
