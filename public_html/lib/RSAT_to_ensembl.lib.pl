@@ -217,6 +217,7 @@ sub Get_contig_file() {
 ## Feature.tab
 sub Get_feature_file() {
   my ($species, $assembly_version,$ensembl_version,$name) = @_;
+  $name =~ s/ /_/g;
   return &Get_genome_dir($species, $assembly_version,$ensembl_version).$name.".tab";
 }
 
@@ -267,31 +268,5 @@ sub Get_file_seq_name() {
 
   return %chr_file;
 }
-
-## Get sequence name and type
-sub Get_seq_name_type() {
-  my ($genome_dir) = @_;
-  my %file_info = ();
-
-  ## Get $accession and seq_id
-  my $contig = &Get_contig_file($genome_dir);
-  if (-f $contig) {
-    my ($file) = &OpenInputFile($contig);
-    while (<$file>) {
-      next if (/--/);
-      chomp();
-      my @token = split("\t");
-      my ($type,$name) = split(" ",$token[5]);
-      push(@{$file_info{$type}},$name);
-    }
-    close $file;
-  } else {
-    &RSAT::error::FatalError("$contig is missing.");
-  }
-  
-  return %file_info;
-}
-
-
 
 return 1;
