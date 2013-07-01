@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.3 2013/07/01 11:45:38 jeremy Exp $
+# $Id: download-ensembl-features,v 1.4 2013/07/01 15:54:34 jeremy Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -142,7 +142,7 @@ package main;
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
-  my %out_stream = &OpenOutputStream(@features_to_download); 
+  my %out_stream = &OpenOutputStream(@features_to_download) unless ($get_available_species) ; 
   &Verbose() if ($main::verbose >= 1);
   
   ################################################################
@@ -165,6 +165,8 @@ package main;
   }
   
   
+  &RSAT::error::FatalError("No species indicate. Use -species option") unless ($species);
+  
   ################################################################
   ## Connecting to ensembl
   $registry->load_registry_from_db(
@@ -185,8 +187,8 @@ package main;
   $assembly_version = &Get_assembly_version($species,$ensembl_version);
   my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
   
-  &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before download-ensembl-feature.") unless (-d $genome_dir);
-  
+  &RSAT::util::CheckOutDir($genome_dir);
+    
   ################################################################
   ## Transform feat to download from array to hash  
   my %feat_to_download = ();
@@ -199,8 +201,17 @@ package main;
   # Get local seq type and name
   my @slices = @{$slice_adaptor->fetch_all('toplevel')};
 
-  foreach my $slice (@slices) {
+  ## Correct Ensembl error with the two Y human chr
+  if ($species eq "homo_sapiens") {
+  	  my @slice_tmp = ();
+      foreach my $slice (@slices) {
+      	push (@slice_tmp,$slice) unless ($slice->name() =~ /:Y:/);
+      }
+  	  push (@slice_tmp,$slice_adaptor->fetch_by_region( 'chromosome', 'Y' ));
+  	  @slices = @slice_tmp;
+  }
 
+  foreach my $slice (@slices) {
 
     ## Gene
     my $out_gene = $out_stream{'gene'};
@@ -257,33 +268,54 @@ package main;
         $coding_s = $transcript->coding_region_start() if ($transcript->coding_region_start());
         $coding_e = $transcript->coding_region_end() if ($transcript->coding_region_end());
                 
-	    print $out_trans $transcript->display_id(),"\t",$trans_known,"\t", $transcript->biotype(),"\t",$transcript->external_name(),"\t";
-	    print $out_trans $transcript->slice()->name(),"\t",$transcript->start(),"\t", $transcript->end(),"\t",$transcript->strand(),"\t";
-	    print $out_trans $coding_s,"\t",$coding_e,"\t";
-	    print $out_trans $description,"\t",$gene->display_id(),"\n";        
-        
+        print $out_trans $transcript->display_id(),"\t",$trans_known,"\t", $transcript->biotype(),"\t",$transcript->external_name(),"\t";
+        print $out_trans $transcript->slice()->name(),"\t",$transcript->start(),"\t", $transcript->end(),"\t",$transcript->strand(),"\t";
+        print $out_trans $coding_s,"\t",$coding_e,"\t";
+        print $out_trans $description,"\t",$gene->display_id(),"\n";        
+
+        if ($synonym) {
+          my $out_trans_names = $out_stream{$_."_names"};
+	      
+          my %print_synonym = ();
+          my @synonyms = @{ $transcript->get_all_DBEntries() };
+          foreach $synonym (@synonyms) {
+            next if ($print_synonym{$synonym->display_id()});
+            
+            my $status = "alternate";
+            $status = "primary" if ($synonym->display_id() eq $transcript->external_name());
+            
+            print $out_trans_names $transcript->display_id(),"\t",$synonym->display_id(),"\t";
+            print $out_trans_names $status,"\t",$synonym->dbname(),"\n";
+
+             $print_synonym{$synonym->display_id()} = 1;
+           }
+         }
+
+
         ## Exon
         my $out_exon = $out_stream{'exon'};
         my $out_coding_exon = $out_stream{'coding_exon'};
 
-	    my @exons = @{ $_->get_all_Exons() };
+	    my @exons = @{ $transcript->get_all_Exons() };
 
 	    foreach $exon (@exons) {
 	      my $exon_line = $exon->display_id()."\t".$exon->display_id()."\t".$exon->display_id()."\t";
-	      $exon_line .= $exon->start()."\t".$exon->end()."\t".$exon->strand()."\n";
+	      $exon_line .= $exon->start()."\t".$exon->end()."\t".$exon->strand()."\t";
           $exon_line .= $transcript->display_id()."\t".$gene->display_id()."\n";
 	    
 	      print $out_exon $exon_line;
 	      
-		  if ($exon->end >= $_->coding_region_start() && $exon->start <= $_->coding_region_end() ) {
-		    print $out_coding_exon $exon_line;
-		  }
+	      if ($transcript->coding_region_start() && $transcript->coding_region_end() ) {
+            if ($exon->end >= $transcript->coding_region_start() && $exon->start <= $transcript->coding_region_end() ) {
+              print $out_coding_exon $exon_line;
+            }	      	      	
+	      }
 	    }
         
         ## Intron
         my $out_intron = $out_stream{'intron'};
         
-	    my @introns = @{$_->get_all_Introns()};
+	    my @introns = @{$transcript->get_all_Introns()};
         my $i = 1;
 		foreach $intron (@introns) {
 		  print $out_intron "INTRON".$1."-".$transcript->display_id(),"\t","intron","\t","INTRON".$1."-".$transcript->display_id(),"\t";
@@ -315,9 +347,9 @@ package main;
         my $out_cds = $out_stream{'cds'};
           
         if ($transcript->cdna_coding_start() && $transcript->cdna_coding_end()) {
-		  print $out_utr $transcript->translation()->display_id(),"\t","CDS","\t",$transcript->translation()->display_id(),"\t";
-          print $out_utr $slice->name(),"\t",$transcript->translation()->genomic_start(),"\t",$transcript->translation()->genomic_end(),"\t",$strand,"\t";
-          print $out_utr $description,"\t",$transcript->display_id(),"\t",$gene->display_id(),"\n";
+		  print $out_cds $transcript->translation()->display_id(),"\t","CDS","\t",$transcript->translation()->display_id(),"\t";
+          print $out_cds $slice->name(),"\t",$transcript->translation()->genomic_start(),"\t",$transcript->translation()->genomic_end(),"\t",$strand,"\t";
+          print $out_cds $description,"\t",$transcript->display_id(),"\t",$gene->display_id(),"\n";
 		}         
       }
     }
@@ -585,38 +617,40 @@ sub OpenOutputStream() {
   print $out_gene  "-- table    gene","\n";
   print $out_gene  "-- table    main","\n";
   print $out_gene  "-- field 1  id","\n";
-  print $out_gene  "-- field 2  type","\n";
-  print $out_gene  "-- field 3  name","\n";
-  print $out_gene  "-- field 4  contig","\n";
-  print $out_gene  "-- field 5  start_pos","\n";
-  print $out_gene  "-- field 6  end_pos","\n";
-  print $out_gene  "-- field 7  strand","\n";
-  print $out_gene  "-- field 8  description","\n";
+  print $out_gene  "-- field 2  status","\n";  
+  print $out_gene  "-- field 3  type","\n";
+  print $out_gene  "-- field 4  name","\n";
+  print $out_gene  "-- field 5  contig","\n";
+  print $out_gene  "-- field 6  start_pos","\n";
+  print $out_gene  "-- field 7  end_pos","\n";
+  print $out_gene  "-- field 8  strand","\n";
+  print $out_gene  "-- field 9  description","\n";
   print $out_gene  "-- header","\n";
-  print $out_gene  "-- ",join("\t",qw(id type name contig start_pos end_pos strand description) ),"\n";
+  print $out_gene  "-- ",join("\t",qw(id status type name contig start_pos end_pos strand description) ),"\n";
 
   ## Transcripts files
   foreach (@features_to_download) {
     $outfile{$_} = &Get_feature_file($species, $assembly_version,$ensembl_version,$_);
     $out_stream{$_} = &OpenOutputFile($outfile{$_});
     my $out_trans = $out_stream{$_};
-    print $our_trans "-- dump date    ???","\n";
-    print $our_trans "-- class    EnsEMBL::",$_,"\n";
-    print $our_trans "-- table    ",$_,"\n";
-    print $our_trans "-- table    main","\n";
-    print $our_trans "-- field 1  id","\n";
-    print $our_trans "-- field 2  type","\n";
-    print $our_trans "-- field 3  name","\n";
-    print $our_trans "-- field 4  contig","\n";
-    print $our_trans "-- field 5  start_pos","\n";
-    print $our_trans "-- field 6  end_pos","\n";
-    print $our_trans "-- field 7  coding_start","\n";
-    print $our_trans "-- field 8  coding_end","\n";     
-    print $our_trans "-- field 9  strand","\n";
-    print $our_trans "-- field 10  description","\n";
-    print $our_trans "-- field 11  GeneID","\n";
-    print $our_trans "-- header","\n";
-    print $our_trans "-- ",join("\t",qw(id type name contig start_pos end_pos coding_start coding_end strand description GeneID) ),"\n";
+    print $out_trans "-- dump date    ???","\n";
+    print $out_trans "-- class    EnsEMBL::",$_,"\n";
+    print $out_trans "-- table    ",$_,"\n";
+    print $out_trans "-- table    main","\n";
+    print $out_trans "-- field 1  id","\n";
+    print $out_trans "-- field 2  status","\n";  
+    print $out_trans "-- field 3  type","\n";
+    print $out_trans "-- field 4  name","\n";
+    print $out_trans "-- field 5  contig","\n";
+    print $out_trans "-- field 6  start_pos","\n";
+    print $out_trans "-- field 7  end_pos","\n";
+    print $out_trans "-- field 8  coding_start","\n";
+    print $out_trans "-- field 9  coding_end","\n";     
+    print $out_trans "-- field 10  strand","\n";
+    print $out_trans "-- field 11  description","\n";
+    print $out_trans "-- field 12  GeneID","\n";
+    print $out_trans "-- header","\n";
+    print $out_trans "-- ",join("\t",qw(id status type name contig start_pos end_pos coding_start coding_end strand description GeneID) ),"\n";
   }
 
   ## Exon File
@@ -741,16 +775,16 @@ sub OpenOutputStream() {
       $outfile{$_."_names"} = &Get_feature_file($species, $assembly_version,$ensembl_version,$_."_names");
       $out_stream{$_."_names"} = &OpenOutputFile($outfile{$_."_names"});
       my $out_trans_names = $out_stream{$_."_names"};
-      print $our_trans_names "-- dump date    ???","\n";
-      print $our_trans_names "-- class    EnsEMBL::",$_,"\n";
-      print $our_trans_names "-- table    ",$_,"_names","\n";
-      print $our_trans_names "-- table    main","\n";
-      print $our_trans_names "-- field 1  id","\n";
-      print $our_trans_names "-- field 2  name","\n";
-      print $our_trans_names "-- field 3  status","\n";
-      print $our_trans_names "-- field 4  source","\n";
-      print $our_trans_names "-- header","\n";
-      print $our_trans_names  "-- ",join("\t",qw(id name status source) ),"\n";
+      print $out_trans_names "-- dump date    ???","\n";
+      print $out_trans_names "-- class    EnsEMBL::",$_,"\n";
+      print $out_trans_names "-- table    ",$_,"_names","\n";
+      print $out_trans_names "-- table    main","\n";
+      print $out_trans_names "-- field 1  id","\n";
+      print $out_trans_names "-- field 2  name","\n";
+      print $out_trans_names "-- field 3  status","\n";
+      print $out_trans_names "-- field 4  source","\n";
+      print $out_trans_names "-- header","\n";
+      print $out_trans_names  "-- ",join("\t",qw(id name status source) ),"\n";
     }
   }
   
