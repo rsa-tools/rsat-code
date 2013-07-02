@@ -128,19 +128,18 @@ sub Get_gvf_rsync() {
 
 ## Get the genome version for a species
 sub Get_assembly_version() {
-  my ($species,$ensembl_version) = @_;
-  my $species_fasta_rsync = &Get_species_rsync($species,$ensembl_version,'fasta');
+  my ($site,$species,$ensembl_version) = @_;
+  my $species_fasta_ftp = &Get_species_ftp($site,$species,$ensembl_version,'fasta');
 
-  my @available_fasta = qx{rsync -navP $species_fasta_rsync "."};
+  my @available_fasta = qx{wget -S --spider $species_fasta_ftp 2>&1};
 
   $species = ucfirst($species);
   foreach (@available_fasta) {
     next unless (/$species/);
-
-    $_ =~ s/$species\.//g;
-    my @token = split(".dna",$_);
-    my @token2 = split(/\./,$token[0]);
-    return join '.', @token2[0..$#token2-1];
+    my @token = split($species.".");
+    my @token2 = split(".dna",$token[-1]);
+    my @token3 = split(/\./,$token2[0]);
+    return join '.', @token3[0..$#token3-1];
   }
 }
 
