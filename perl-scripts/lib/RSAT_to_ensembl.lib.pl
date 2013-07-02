@@ -4,7 +4,7 @@ package main;
 
 ############################################################################
 ############################################################################
-############################## RSYNC FONCTION ##############################
+########################## FTP ENSEMBL FONCTION ############################
 #  our $ensembl_url = "ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/";
 
 ## Define global variables
@@ -14,38 +14,38 @@ our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
 
 ## Functions
 
-# get $ensembl_rsync
+# get $ensembl_ftp
 sub Get_ensembl_ftp() {
-  my ($site) = @_;
+  my ($db) = @_;
   
-  if ($site eq "ensembl") {
+  if ($db eq "ensembl") {
     return "ftp://ftp.ensembl.org/pub/";
     
-  }
-  
-#  return $ensembl_rsync;
+  } 
 }
 
 # get $ensembl_version_safe
 sub Get_ensembl_version_safe() {
-  my ($site) = @_;
+  my ($db) = @_;
   
-  if ($site eq "ensembl") {
+  if ($db eq "ensembl") {
     return 72;
-    
-  } 
-#  return $ensembl_version_safe;
+  } else {
+  	
+  	return 18;
+  }
+  
 }
 
 
 ## Get the latest ensembl version for a species
 sub Get_ensembl_version() {
-  my ($site) = @_;
+  my ($db) = @_;
   
-  if ($site eq "ensembl") {
-  	  my $ftp = &Get_ensembl_ftp($site)."current_fasta/homo_sapiens/dna/";
+  if ($db eq "ensembl") {
+  	  my $ftp = &Get_ensembl_ftp($db)."current_fasta/homo_sapiens/dna/";
       my @available_fasta = qx{wget -S --spider $ftp 2>&1};
-	# my @available_fasta = qx{rsync -navP $ensembl_rsync/current_fasta/homo_sapiens/dna/ "."};
+
 	  foreach (@available_fasta) {
 	    next unless (/Homo_sapiens/);
 	    $_ =~ s/Homo_sapiens\.//g;
@@ -60,76 +60,55 @@ sub Get_ensembl_version() {
 
 ## Get ftp fasta url
 sub Get_fasta_ftp() {
-  my ($site,$ensembl_version) = @_;
-  return &Get_ensembl_ftp($site)."release-".$ensembl_version."/fasta/";     # Version 60 to 72
+  my ($db,$ensembl_version) = @_;
+  return &Get_ensembl_ftp($db)."release-".$ensembl_version."/fasta/";     # Version 60 to 72
 }
 
-## Get rsync variation url
-sub Get_variation_rsync() {
-  my ($ensembl_version) = @_;
+## Get ftp variation url
+sub Get_variation_ftp() {
+  my ($db,$ensembl_version) = @_;
 
   if ($ensembl_version < 64) {
-    return $ensembl_rsync."/release-".$ensembl_version."/variation/";     # Version 60 to 63
+    return &Get_ensembl_ftp($db)."release-".$ensembl_version."/variation/";     # Version 60 to 63
   } else {
-    return $ensembl_rsync."/release-".$ensembl_version."/variation/gvf/";     # Version 64 to 72
+    return &Get_ensembl_ftp($db)."release-".$ensembl_version."/variation/gvf/";     # Version 64 to 72
   }
 }
 
-## Get rsync species url
+## Get ftp species url
 sub Get_species_ftp() {
-  my ($site,$species,$ensembl_version,$type) = @_;
+  my ($db,$species,$ensembl_version,$type) = @_;
 
 
   if ($type eq "fasta") {
-    return &Get_fasta_ftp($site,$ensembl_version).$species."/dna/";      # Version 48 to 72
+    return &Get_fasta_ftp($db,$ensembl_version).$species."/dna/";      # Version 48 to 72
   }
 
   if ($type eq "variation") {
     if ($ensembl_version == 61) {
-      return &Get_variation_rsync($ensembl_version).ucfirst($species)."/";      # Version 61
+      return &Get_variation_ftp($db,$ensembl_version).ucfirst($species)."/";      # Version 61
     } else {
-      return &Get_variation_rsync($ensembl_version).$species."/";     # Version 60 and 62 to 72
+      return &Get_variation_ftp($db,$ensembl_version).$species."/";     # Version 60 and 62 to 72
     }
   }
 }
 
-## Get rsunc dat file url
-sub Get_dat_rsync() {
-	  my ($species,$ensembl_version) = @_;
-	  my $species_feature_rsync = &Get_species_rsync($species,$ensembl_version,'feature');
-	  my @seq_available = ();
-	  
-   my @available_feature = qx{rsync -navP $species_feature_rsync "."};
-	
-	 foreach (@available_feature ) {
-    my $species_ucf = ucfirst($species);
-    next unless (/$species_ucf/);
-    next unless (/chrom/ && $ensembl_version >= 68);    ##Remove non chromosomal or contig seq (Version >68 only)
-    
-    my @info = split(/chrom/);
-    next if ($info[1] =~ "_" && $ensembl_version >= 68);    ##Remove non chromosomal or contig seq (Version >68 only)
-      
-    push(@seq_available, $_);
-  }
-  return @seq_available;
-}
 
-
-##Get rsync gvf file url
-sub Get_gvf_rsync() {
-  my ($species,$ensembl_version) = @_;
+##Get ftp gvf file url
+sub Get_gvf_ftp() {
+  my ($db,$species,$ensembl_version) = @_;
 
   if ($ensembl_version == 60) {
-    return &Get_species_rsync($species,$ensembl_version,'variation').$species.".gvf.gz";     # Version 60
+    return &Get_species_ftp($db,$species,$ensembl_version,'variation').$species.".gvf.gz";     # Version 60
   } else {
-    return &Get_species_rsync($species,$ensembl_version,'variation').ucfirst($species).".gvf.gz";      # Version 61 to 72
+    return &Get_species_ftp($db,$species,$ensembl_version,'variation').ucfirst($species).".gvf.gz";      # Version 61 to 72
   }
 }
 
 ## Get the genome version for a species
 sub Get_assembly_version() {
-  my ($site,$species,$ensembl_version) = @_;
-  my $species_fasta_ftp = &Get_species_ftp($site,$species,$ensembl_version,'fasta');
+  my ($db,$species,$ensembl_version) = @_;
+  my $species_fasta_ftp = &Get_species_ftp($db,$species,$ensembl_version,'fasta');
 
   my @available_fasta = qx{wget -S --spider $species_fasta_ftp 2>&1};
 
@@ -142,6 +121,38 @@ sub Get_assembly_version() {
     return join '.', @token3[0..$#token3-1];
   }
 }
+
+
+############################################################################
+############################################################################
+########################## API Ensembl FCT ################################# 
+############################################################################ 
+
+# get API host name
+sub Get_host_name() {
+  my ($db) = @_;
+  
+  if ($db eq "ensembl") {
+    return 'ensembldb.protist.org';
+  } else {
+    
+    return "mysql.ebi.ac.uk";
+  }
+  
+}
+ 
+sub Get_port() {
+  my ($db) = @_;
+  
+  if ($db eq "ensembl") {
+    return '5306';
+  } else {
+    
+    return "4157";
+  }
+} 
+
+
 
 ############################################################################
 ############################################################################

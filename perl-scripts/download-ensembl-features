@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.4 2013/07/01 15:54:34 jeremy Exp $
+# $Id: download-ensembl-features,v 1.5 2013/07/02 14:13:16 jeremy Exp $
 #
 ############################################################
 
@@ -98,18 +98,18 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
 
   our $verbose = 0;
-  our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
+  our $data_dir = &Get_data_dir();
 
   our $species = "";
   our $assembly_version = "";
-  our $ensembl_version = &Get_ensembl_version_safe();
-  our $ensembl_rsync = &Get_ensembl_rsync();
+  our $db = "ensembl";
+  our $ensembl_version = &Get_ensembl_version_safe($db);
 
   our $get_available_species = 0;
   our $synonym = 0;  
@@ -139,6 +139,8 @@ package main;
     &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
   }
   
+  our $genomes_dir = &Get_genomes_dir($data_dir);
+
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
@@ -149,8 +151,9 @@ package main;
   ##Print available species
   if ($get_available_species) {
   	$registry->load_registry_from_db(
-      -host => 'ensembldb.ensembl.org',
+      -host => &Get_host_name($db),
       -user => 'anonymous',
+      -port => &Get_port($db),
       -db_version => $ensembl_version
     );
 	
@@ -170,8 +173,9 @@ package main;
   ################################################################
   ## Connecting to ensembl
   $registry->load_registry_from_db(
-    -host => 'ensembldb.ensembl.org',
+    -host => &Get_host_name($db),
     -user => 'anonymous',
+    -port => &Get_port($db),
     -db_version => $ensembl_version,
     -species => $species
   );
