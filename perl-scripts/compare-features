@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.28 2013/06/24 09:08:37 jvanheld Exp $
+# $Id: compare-features,v 1.29 2013/07/02 17:29:56 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -230,7 +230,49 @@ package main;
 
 
   ################################################################
-  ## Check argument values
+  ## Read file list if required
+  if ($infile{filelist}) {
+    &RSAT::message::TimeWarn("Reading file list", $infile{filelist}) if ($main::verbose >= 0);
+
+    my ($filelist_dir, $filelist_short) = &RSAT::util::SplitFileName($infile{filelist});
+    my ($fl) = &OpenInputFile($infile{filelist});
+    while (<$fl>) {
+      chomp();
+      s/\r/\n/g; ## Remove windows-specific carriage returns
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header line
+      next unless (/\S/); ## Skip empty lines
+      my @fields = split /\t/;
+
+      my $file = $fields[0];
+
+
+      ## Check if file exists
+      unless (-e $file) {
+	## If not found, try to find its path relative to the filelist
+	## file.
+	my $relative_file = $filelist_dir."/".$file;
+#	$relative_file .= &RSAT::util::RelativePath($infile{filelist}, $file);
+	if (-e $relative_file) {
+	  &RSAT::message::Warning("Relative path", $relative_file) if ($main::verbose >= 3);
+	  $file = $relative_file;
+	} else {
+	  &RSAT::error::FatalError("File specified in filelist does not exist", $file);
+	}
+      }
+
+      if ($file =~ /\s/) {
+	&RSAT::error::FatalError("Input file names should contain no space");
+      }
+      &RSAT::message::Debug("Adding query file", $file) if ($main::verbose >= 3);
+      push @query_files, $file;
+    }
+    close($fl);
+  }
+
+  ################################################################
+  ## Check number of input files
+
 
   ## Number of input files should be >= 2
   if ($ref_file) {
@@ -301,10 +343,13 @@ package main;
   &Verbose() if ($verbose);
 
   ################################################################
-  ## Index of all the starting positions per sequence. The indexing keys are
+  ## Index of all the starting positions per sequence. 
+  ##
+  ## Indexing keys:
   ## - sequence name
   ## - reference to the feature object
-  ## The indexed value is the starting positions
+  ##
+  ## The indexed value is the starting positions.
   &RSAT::message::TimeWarn("Indexing features by position") if ($main::verbose >= 2);
   my %left_index = ();
   for my $a (0..$#input_files) {
@@ -649,7 +694,11 @@ sub PrintOptions {
 ################################################################
 #### Read arguments
 sub ReadArguments {
-    foreach my $a (0..$#ARGV) {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+#    foreach my $a (0..$#ARGV) {
 
 =pod
 
@@ -662,12 +711,12 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$main::verbose = $ARGV[$a+1];
-	    } else {
-		$main::verbose = 1;
-	    }
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
 
 =pod
 
@@ -676,8 +725,8 @@ Level of verbosity (detail in the warning messages during execution)
 Display full help message
 
 =cut
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
 
 =pod
 
@@ -686,8 +735,8 @@ Display full help message
 Display options
 
 =cut
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
 
 
 =pod
@@ -699,8 +748,8 @@ It must be used at least 2 times, since the comparison requires at
 least two feature files.
 
 =cut
-	} elsif ($ARGV[$a] eq "-i") {
-	    push @main::query_files, $ARGV[$a+1];
+    } elsif ($arg eq "-i") {
+      push @main::query_files, shift(@arguments);
 
 =pod
 
@@ -710,11 +759,22 @@ Specify multiple input files. All the arguments following the option
 -files are considered as input files.
 
 =cut
-	} elsif ($ARGV[$a] eq "-files") {
-	    for my $a (($a+1)..$#ARGV) {
-		push @query_files, $ARGV[$a];
-	    }
-	    last;
+    } elsif ($arg eq "-files") {
+      push @main::query_files, @arguments;
+#      for my $a (($a+1)..$#ARGV) {
+#	push @query_files, $arg;
+#      }
+      last;
+
+=pod
+
+=item B<-filelist file_list_file>
+
+Provide a file containing a list of input files.
+
+=cut
+    } elsif ($arg eq "-filelist") {
+      $infile{filelist} = shift(@arguments);
 
 =pod
 
@@ -728,8 +788,8 @@ combined with a reference fiile, some additional statistics are
 calculated (PPV, sensitivity, accuracy).
 
 =cut
-	} elsif ($ARGV[$a] eq "-ref") {
-	    $ref_file = $ARGV[$a+1];
+    } elsif ($arg eq "-ref") {
+      $ref_file = shift(@arguments);
 
 =pod
 
@@ -739,8 +799,8 @@ If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
 =cut
-	} elsif ($ARGV[$a] eq "-o") {
-	    $main::outfile{output} = $ARGV[$a+1];
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
 
 
 =pod
@@ -752,8 +812,8 @@ of the feature, and chromosomal location of each feature.  This option
 is compatible with -return inter.
 
 =cut
-	} elsif ($ARGV[$a] eq "-oft") {
-	    $main::outfile{output_ft} = $ARGV[$a+1];
+	} elsif ($arg eq "-oft") {
+	    $main::outfile{output_ft} = shift(@arguments);
 
 =pod
 
@@ -762,8 +822,8 @@ is compatible with -return inter.
 Input feature format (Supported: $supported_input_formats)
 
 =cut
-	} elsif ($ARGV[$a] eq "-iformat") {
-	    $main::input_format = $ARGV[$a+1];
+	} elsif ($arg eq "-iformat") {
+	    $main::input_format = shift(@arguments);
 	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: $supported_input_formats")
 		unless ($supported_input_format{$input_format});
 
@@ -774,8 +834,8 @@ Input feature format (Supported: $supported_input_formats)
 Output feature format (Supported: $supported_output_formats)
 
 =cut
-	} elsif ($ARGV[$a] eq "-oformat") {
-	    $main::output_format = $ARGV[$a+1];
+	} elsif ($arg eq "-oformat") {
+	    $main::output_format = shift(@arguments);
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
 		unless ($supported_output_format{$output_format});
 
@@ -788,7 +848,7 @@ Also perform comparison between features in the same file
 annotated features.
 
 =cut
-	} elsif ($ARGV[$a] eq "-self") {
+	} elsif ($arg eq "-self") {
     $self_comparison = 1;
 
 =pod
@@ -801,8 +861,8 @@ Supported output types: stats,inter,diff
 
 
 =cut
-	} elsif ($ARGV[$a] eq "-return") {
-          push  @return_types, split(",", $ARGV[$a+1]);
+	} elsif ($arg eq "-return") {
+          push  @return_types, split(",", shift(@arguments));
 
 =pod
 
@@ -843,12 +903,12 @@ total length covered by the pair of intersecting features.
 
 =cut
 
-	} elsif ($ARGV[$a] eq "-lth") {
-	  my $param = $ARGV[$a+1];
+	} elsif ($arg eq "-lth") {
+	  my $param = shift(@arguments);
 	  unless ($supported_threshold_parameter{$param}) {
 	    &FatalError(join ("\t", "Invalid threshold parameter", $param, "Supported:", $supported_threshold_parameters));
 	  }
-	  my $value = $ARGV[$a+2];
+	  my $value = shift(@arguments);
 	  unless (&IsReal($value)) {
 	    &FatalError(join ("\t", "Invalid value for threshold parameter", $value, "Choose a real number."));
 	  }
