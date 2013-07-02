@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.5 2013/07/02 14:13:16 jeremy Exp $
+# $Id: download-ensembl-features,v 1.6 2013/07/02 14:51:08 jeremy Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -241,7 +241,7 @@ package main;
       	my $out_gene_names = $out_stream{'gene_names'};
         my %print_synonym = ();
       	
-        my @synonyms = @{ $_->get_all_DBEntries() };
+        my @synonyms = @{ $gene->get_all_DBEntries() };
         foreach my $synonym (@synonyms) {
           next if ($print_synonym{$synonym->display_id()});
 
@@ -278,7 +278,7 @@ package main;
         print $out_trans $description,"\t",$gene->display_id(),"\n";        
 
         if ($synonym) {
-          my $out_trans_names = $out_stream{$_."_names"};
+          my $out_trans_names = $out_stream{$transcript->biotype()."_names"};
 	      
           my %print_synonym = ();
           my @synonyms = @{ $transcript->get_all_DBEntries() };
