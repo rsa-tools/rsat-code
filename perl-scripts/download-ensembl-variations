@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.13 2013/07/01 15:54:16 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.14 2013/07/02 14:13:16 jeremy Exp $
 #
 ############################################################
 
@@ -46,7 +46,7 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 USAGE
 
- download-ensembl-variations -species # [-genomesdir #] [-available_species] [-v #]
+ download-ensembl-variations -species # [-dir #] [-available_species] [-v #]
 
 =head2 Example
 
@@ -166,31 +166,34 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
   our $verbose = 2;
   our $out = STDOUT;
-  our $genomes_dir = "$ENV{'RSAT'}/data/genomes/";
-
+  our $db = "ensembl";
+  our $data_dir = &Get_data_dir();
+  
   our $species = "";
   our $get_available_species = 0;
   our $ref_seq = "";
-  our $ensembl_version = &Get_ensembl_version_safe();
+  our $ensembl_version = &Get_ensembl_version_safe($db);
 
 
   ################################################################
   ## Read argument values
   &ReadArguments();
 
+  our $genomes_dir = &Get_genomes_dir($data_dir);
+
   if ($ensembl_version eq "safe") {
-    $ensembl_version = &Get_ensembl_version_safe();
+    $ensembl_version = &Get_ensembl_version_safe($db);
   } elsif ($ensembl_version eq "latest") {
-    $ensembl_version = &Get_ensembl_version();
+    $ensembl_version = &Get_ensembl_version($db);
   } else {
       &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
-      &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
+      &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version($db)) if ($ensembl_version > &Get_ensembl_version($db));
   }
 
 
@@ -203,16 +206,17 @@ package	main;
 
   ################################################################
   ##Print available species
-  my $variation_rsync = &Get_variation_rsync($ensembl_version);
+  my $variation_ftp = &Get_variation_ftp($db,$ensembl_version);
 
   if ($get_available_species) {
-    my @available_species = qx{rsync -navP $variation_rsync "."};
+    my @available_species = qx{wget -S --spider $variation_ftp 2>&1};
+
     foreach (@available_species) {
-      next if (/\./);
-      next unless (/\/\n/);
-      my ($species) = split("\/");
-      print ucfirst($species),"\n";
+      next unless (/^d/);
+      my @token = split(" ");
+      print $out ucfirst($token[-1]),"\n";
     }
+
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
     print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     close $out;
@@ -221,34 +225,42 @@ package	main;
 
   ################################################################
   ## Check argument values
-  
+
   unless ($species) {
     &RSAT::error::FatalError("No species indicate. Use -species");
   }
 
   # Check if variation available on Ensembl
-  my @available_species = qx{rsync -navP $variation_rsync "."};
+  my @available_species_tmp = qx{wget -S --spider $variation_ftp 2>&1};
+  my @available_species = ();
 
+  foreach (@available_species_tmp) {
+  	next unless (/^d/);
+    chomp();
+    @token = split(" ");
+    push (@available_species,$token[-1]);
+  }
+  
   unless ( grep($_ = $species."\/\n", @available_species )) {
     &RSAT::error::FatalError("No variation avalaible for $species on Ensembl");
   }
 
 
   # Get url
-  my $species_fasta_rsync = &Get_species_rsync($species,$ensembl_version,'fasta');
-  my $species_variation_rsync = &Get_species_rsync($species,$ensembl_version,'variation');
-  my $species_gvf_rsync = &Get_gvf_rsync($species,$ensembl_version);
-  &RSAT::message::Info("Species dna URL", $species_fasta_rsync) if ($main::verbose >= 2);
-  &RSAT::message::Info("Species variation URL", $species_variation_rsync) if ($main::verbose >= 2);
-  &RSAT::message::Info("Species gvf URL", $species_gvf_rsync) if ($main::verbose >= 2);
+  my $species_fasta_ftp = &Get_species_ftp($db,$species,$ensembl_version,'fasta');
+  my $species_variation_ftp = &Get_species_ftp($db,$species,$ensembl_version,'variation');
+  my $species_gvf_ftp = &Get_gvf_ftp($db,$species,$ensembl_version);
+  &RSAT::message::Info("Species dna URL", $species_fasta_ftp) if ($main::verbose >= 2);
+  &RSAT::message::Info("Species variation URL", $species_variation_ftp) if ($main::verbose >= 2);
+  &RSAT::message::Info("Species gvf URL", $species_gvf_ftp) if ($main::verbose >= 2);
 
   # Get genome version
-  my $assembly_version = &Get_assembly_version($species,$ensembl_version);
+  my $assembly_version = &Get_assembly_version($db,$species,$ensembl_version);
 
 
   # Check if genome version install
-  my $species_dir = &Get_species_dir($species,$assembly_version,$ensembl_version);
-  my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
+  my $species_dir = &Get_species_dir($data_dir,$species,$assembly_version,$ensembl_version);
+  my $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
 
   &RSAT::error::FatalError("$species_dir don't exist. Use download-ensembl-genome before download-ensembl-variations.") unless (-d $species_dir);
   &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before download-ensembl-variations.") unless (-d $genome_dir);
@@ -266,10 +278,11 @@ package	main;
   ################################################################
   ###Dowload variation file
   &RSAT::message::TimeWarn("Download gvf file") if ($main::verbose >= 2);
-  my $variation_dir = &Get_variation_dir($species, $assembly_version,$ensembl_version);
+  my $variation_dir = &Get_variation_dir($data_dir,$species, $assembly_version,$ensembl_version);
 
   &RSAT::util::CheckOutDir($variation_dir);
-  system("rsync -avP $species_gvf_rsync $variation_dir");
+
+  system("wget -NL -nv $species_gvf_ftp -P $variation_dir");
 
 
   ################################################################
@@ -287,9 +300,9 @@ package	main;
   my $last_rs = "";
   my @super_variation = ();
 
-  my $gvf_file = $species_gvf_rsync;
+  my $gvf_file = $species_gvf_ftp;
   $gvf_file =~ s/\.gz//;
-  $gvf_file =~ s/$species_variation_rsync/$variation_dir/;
+  $gvf_file =~ s/$species_variation_ftp/$variation_dir/;
 
   my ($file) = &OpenInputFile($gvf_file);
   while (<$file>) {
@@ -399,7 +412,7 @@ package	main;
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out;
 
   exit(0);
@@ -711,11 +724,11 @@ The directory in wich RSAT genomes must be installed. The selected
 species will be isntalled in a sub-directory composed of Species name
 and Ensembl genome version.
 
-Default : $RSAT/data/genomes/
+Default : $RSAT/data/
 
 =cut
     } elsif ($arg eq "-dir") {
-      $main::genomes_dir = shift(@arguments);
+      $main::data_dir = shift(@arguments);
 
 =pod
 
