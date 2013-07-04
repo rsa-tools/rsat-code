@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.5 2013/07/02 14:14:04 jeremy Exp $
+# $Id: install-ensembl-genome,v 1.6 2013/07/04 11:52:50 jeremy Exp $
 #
 ############################################################
 
@@ -117,7 +117,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -306,13 +306,38 @@ option I<-i>.
 
 =pod
 
-=item B<-i inputfile>
+=item B<-version #>
 
-Specify an input file containing a list of organisms to be installed.
+The release version of ensEMBL.
+
+Supported versions: 70 to 72, safe, latest
+
+Default : I<safe>
+
+=over
+
+=item I<safe>
+
+The file locations and/or formats of the Ensembl ftp distribution
+may change between two Ensembl release.
+
+For this reason, we defined the "safe" version, which corresponds to
+the latest version of ensembl which has been checked to work with this
+script.
+
+=item latest
+
+This corresponds to the lastest version of Ensembl. Beware: this
+version is not guaranteed to be compatible with RSAT, in case Ensembl
+would change their file formats or locations.
+
+=back
 
 =cut
-    } elsif ($arg eq "-i") {
-      $main::infile{input} = shift(@arguments);
+    } elsif ($arg eq "-version") {
+    $ensembl_version = shift(@arguments);
+    &RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.") 
+      unless ( &IsNatural($ensembl_version) || $ensembl_version eq "safe" || $ensembl_version eq "latest" );
 
 =pod
 
