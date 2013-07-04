@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.7 2013/06/26 15:01:20 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.8 2013/07/04 11:52:50 jeremy Exp $
 #
 ############################################################
 
@@ -205,7 +205,7 @@ package	main;
 	###############################################################
 	## Initialise parameters
 	our $start_time = &RSAT::util::StartScript();
-	our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+	our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
 	our %infile	= ();
 	our %outfile = ();
@@ -215,7 +215,7 @@ package	main;
 	our $in = STDIN;
 	our $out = STDOUT;
 
-	our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
+	our $data_dir = $ENV{'RSAT'}."/data/";
 	our $species = '';
 	our $ensembl_version = "";
 	our $assembly_version = "";
@@ -231,6 +231,7 @@ package	main;
 	################################################################
 	## Read argument values
 	&ReadArguments();
+    our $genomes_dir = &Get_genomes_dir($data_dir);
 	
 	
     $out = &OpenOutputFile($main::outfile{output});
@@ -243,18 +244,19 @@ package	main;
 	#Check if argument specified
 	&RSAT::error::FatalError("No species specified. Use -species") unless ($species);
 	&RSAT::error::FatalError("No asssembly and ensembl version specified. Use at least one of this option -e_version -a_version") unless ($ensembl_version || $assembly_version);
-	&RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
 	
-	#check file
-    &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless (-f $main::infile{'input'});
-    
+	if ($main::infile{'input'}) {
+		&RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
+	    &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless  (-f $main::infile{'input'});
+	}
+
 	$main::infile{'input_variation'} = $main::infile{'input'} if ($format eq "rsat");
 	
 	
 	# Check directory
-  my $species_dir = &Get_species_dir($species,$assembly_version,$ensembl_version);
-  my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
-  my $variation_dir = &Get_variation_dir($species, $assembly_version,$ensembl_version);
+  my $species_dir = &Get_species_dir($data_dir, $species,$assembly_version,$ensembl_version);
+  my $genome_dir = &Get_genome_dir($data_dir, $species, $assembly_version,$ensembl_version);
+  my $variation_dir = &Get_variation_dir($data_dir, $species, $assembly_version,$ensembl_version);
 
   &RSAT::error::FatalError("$species_dir don't exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $species_dir);
   &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
