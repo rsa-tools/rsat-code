@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.27 2013/07/02 14:13:16 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.28 2013/07/05 14:23:08 jeremy Exp $
 #
 ############################################################
 
@@ -40,7 +40,7 @@ Revised by Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
- download-ensembl-genome -species # [-type #] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
+ download-ensembl-genome -species # [-rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
 
 =head2 Examples
 
@@ -96,6 +96,7 @@ BEGIN {
 
 require "RSA.lib";
 require "RSAT_to_ensembl.lib.pl";
+use Bio::EnsEMBL::Registry;
 
 ################################################################
 ## Main package
@@ -105,21 +106,21 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
 
   our $verbose = 0;
   our $data_dir = &Get_data_dir();
+  our $registry = 'Bio::EnsEMBL::Registry';
 
-  our $species = "";
-  our $assembly_version = "";
   our $db = "ensembl";
-  our $ensembl_version = &Get_ensembl_version_safe($db);
-  our $ensembl_ftp = &Get_ensembl_ftp($db);
-  our @types = ();
-  our $var = 0;
+  our $species = "";
+  our $assembly_version = "";  
+  our $ensembl_version = &Get_ensembl_version_safe();
+
+  our $rm = 0;
   our $get_available_species = 0;
 
   our $force = 0; ## Force installation even if the genome is already installed
@@ -128,267 +129,172 @@ package	main;
   ## Read argument values
   &ReadArguments();
 
-  ################################################################
-  ## Get information about Genome URL + available species
-
-  ## Get the Ensembl version
   if ($ensembl_version eq "safe") {
-    $ensembl_version = &Get_ensembl_version_safe($db);
+    $ensembl_version = &Get_ensembl_version_safe();
+    
   } elsif ($ensembl_version eq "latest") {
-    $ensembl_version = &Get_ensembl_version($db);
+    $ensembl_version = &Get_ensembl_version(); 
+
   } else {
-    &RSAT::error::FatalError("Ensembl version $ensembl_version is not supported. Minimun version is 48.") if ($ensembl_version < 48);
-    &RSAT::error::FatalError("Ensembl version $ensembl_version is not supported. Can not be superior to latest ensembl version", &Get_ensembl_version($db)) if ($ensembl_version > &Get_ensembl_version($db));
+    &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
+    &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
   }
 
-  ## Get the URL of the ensembl rsync site
-  our $fasta_ftp = &Get_fasta_ftp($db,$ensembl_version);
-  &RSAT::message::Info("Ensembl URL", $fasta_ftp) if ($main::verbose >= 2);
+  my ($host,$port) = &Get_host_port($db);
 
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
   &Verbose() if ($main::verbose >= 1);
-  
+
   ###############################################################
-  ## Check arguments
-  
-  ## Get the list of available species
-  my @available_species = qx{wget -S --spider $fasta_ftp 2>&1};
-
-  ## Print out the list of available species
+  ##Print available species
   if ($get_available_species) {
+    $registry->load_registry_from_db(
+      -host => $host,
+      -port => $port,
+      -user => 'anonymous',
+      -db_version => $ensembl_version
+    );
 
-    foreach (@available_species) {
-      next unless (/^d/);
-      my @token = split(" ");
-      print $out ucfirst($token[-1]),"\n";
+    my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
+
+    @sort_species = sort {$a->species() cmp $b->species()} @db_adaptors;
+
+    foreach my $db_adaptor (@sort_species) {
+    my $db_connection = $db_adaptor->dbc();
+      print $out $db_adaptor->species(),"\n" if ( $db_adaptor->group() eq "core");
     }
+    $registry->disconnect_all();
+
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
     print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     close $out;
     exit(0);
   }
 
-  ## Create the local directory for genomes
-  our $genomes_dir = &Get_genomes_dir($data_dir);
-  &RSAT::util::CheckOutDir($genomes_dir);
-
-  ## Use default sequence type if not specified.
-  unless (scalar(@types)) {
-      @types = ("dna");
-  }
+  ###############################################################  
+  ## Check arguments
 
   ## Check that the species has been specified
   unless ($species) {
     &RSAT::error::FatalError("You must specify a species to download. To get the list of supported species, type: download-ensembl-genome -available_species");
   }
 
-  ## Check that the user-specified species exists on Ensembl server
-  unless ( grep($_ =~ /$species/, @available_species )) {
-    &RSAT::error::FatalError("Sequence of $species not available on Ensembl");
-  }
+  ################################################################
+  ## Connecting to ensembl
+  $registry->load_registry_from_db(
+    -host => $host,
+    -port => $port,
+    -user => 'anonymous',
+    -db_version => $ensembl_version,
+    -species => $species
+  );
+  
+  ################################################################
+  ## Get Adaptator    
+  my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
+  my $csa = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "coordsystem" );
+  
 
   ################################################################
   ## Get available sequence on Ensembl and compare with sequence already install
-  
-  my $species_ftp = &Get_species_ftp($db,$species,$ensembl_version,'fasta');
-  &RSAT::message::Info("Species URL", $species_ftp) if ($main::verbose >= 2);
-  
-  
-  ##Get genome version
-  $assembly_version = &Get_assembly_version($db,$species,$ensembl_version);
 
-  ##Get all fasta file available for $species
-  &RSAT::message::TimeWarn("Get fasta file available") if ($main::verbose >= 2);
-  my @available_fasta_tmp = qx{wget -S --spider $species_ftp 2>&1};
-  my @available_fasta = ();
-  foreach (@available_fasta_tmp) {
-  	next unless (/$assembly_version\.$ensembl_version/);
-  	chomp();
-  	@token = split(" ");
-  	push (@available_fasta,$token[-1]);
-  }
-
-  ## Get install sequence
-  &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
+  ## Get genome_dir
+  $assembly_version = $csa->fetch_by_rank(1)->version();
   $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
-  
-  &RSAT::util::CheckOutDir($genome_dir);
-  
-  my @contig_files = ();
-  my @seq_to_download = ();
+  &RSAT::util::CheckOutDir($genome_dir);    
 
-  ## Iterate over sequence types (dna, dna_rm, dna_sm)
-  foreach my $type (@types) {
-    &RSAT::message::Info("Getting file list for sequence type", $type) if ($main::verbose >= 2);
-    my @seq_available = ();
-    my %seq_install = ();
 
-    ## Select the files to download for the selected type
-    foreach (@available_fasta) {
-      my $species_ucf = ucfirst($species);
-      next unless (/$species_ucf/);
-      next unless (/\.$type\./);		##Remove non $type seq
-      next unless (/chrom/);	##Remove non chromosomal or contig seq
-	
-      my @info = split(/$type/);
-      next if ($info[1] =~ "_");	##Remove patch
-      
-      push(@seq_available, $_);
-    }
+  ## Get local install sequence
+  &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
+  my %seq_install = ();
+  foreach ( glob($genome_dir."/*") ) {
+    next unless (/\.raw/);
 
-    if (scalar(@seq_available) > 0) {
-      &RSAT::message::Info(scalar(@seq_available),"sequences of type", $type, "on the server");
-    } else {
-      &RSAT::error::FatalError("No sequence to download\n Check if sequence type $type available in $species_ftp/README");
-    }
+    $_ =~s/$genome_dir\///g;
+    $_ =~s/\.raw//g;
+    my @token = split("_");
 
-    ## Get install sequence for the selected type
-    foreach ( glob($genome_dir."/*") ) {
-      next if (/contig/);
-      next unless (/$type\./);
-
-      $_ =~s/$genome_dir\///g;
-      $_ =~s/\.raw/\.fa\.gz/g;
-
-      $seq_install{$_} = 1;
-    }
-
-    ## Compare available and installed sequences
-    foreach my $seq (@seq_available) {
-      chomp($seq);
-      &RSAT::message::Debug($seq, $seq_install{$seq}, $force, $main::force) if ($main::verbose >= 3);
-
-      unless (( $seq_install{$seq}) && !($force)){
-        push (@seq_to_download, $seq);
-        push(@contig_files, $seq) if ($seq =~ "nonchr");
-      }
-    }
+    $seq_install{$token[2]} = 1;
   }
 
-  if (scalar(@seq_to_download) == 0  && (!$force)) {
-    &RSAT::message::TimeWarn("Sequence of species", ucfirst($species), "already installed in directory\n", $genome_dir);
-    exit(0);
-  } else {
-      &RSAT::message::Info(scalar(@seq_to_download) ,"sequences to download") if ($main::verbose >= 1);
+
+  ################################################################  
+  # Get all Top Level slice
+  my @slices = @{$slice_adaptor->fetch_all('toplevel')};
+
+  ## Correct Ensembl error with the two Y human chr
+  if ($species eq "homo_sapiens") {
+    my @slice_tmp = ();
+    foreach my $slice (@slices) {
+      push (@slice_tmp,$slice) unless ($slice->name() =~ /:Y:/);
+    }
+    push (@slice_tmp,$slice_adaptor->fetch_by_region( 'chromosome', 'Y' ));
+    @slices = @slice_tmp;
   }
 
   ################################################################
   ##Download
-  &RSAT::message::TimeWarn("Download sequence") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Download sequence") if ($main::verbose >= 2);  
+  foreach my $slice (@slices) {
 
-  my $seq_to_download_file = $genome_dir."to_download.txt";
-  my $out_file = &OpenOutputFile($seq_to_download_file);
-  print $out_file "$species_ftp",join("\n$species_ftp",@seq_to_download),"\n";
-  close $out_file;
+    if ($rm && !$seq_install{$slice->seq_region_name()."_repeatmasked"}) {
+      &RSAT::message::TimeWarn("Installing dna repeat_masked of : ",$slice->name) if ($main::verbose >= 2);
+      
+      my $filename = $slice->name()."_repeatmasked.raw";
+      $filename = s/:/_/g;
+      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      print $out_seq_file $slice->get_repeatmasked_seq()->seq();
+      close ($out_seq_file);
+    }
+
+    next if ($seq_install{$slice->seq_region_name()});
+    &RSAT::message::TimeWarn("Installing dna of : ",$slice->name) if ($main::verbose >= 2);
+
+    my $filename = $slice->name().".raw";
+    $filename = s/:/_/g;
+    my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+    print $out_seq_file $slice->seq();
+    close ($out_seq_file);
+  }
+
+
+  ################################################################
+  ## Make contigs.txt and contig.tab
   
-  system ("wget -NL -nv -i $seq_to_download_file -P $genome_dir");
-  unlink ($seq_to_download_file);
+  &RSAT::message::TimeWarn("Make contigs.txt") if ($main::verbose >= 2);
+  my $out_contigs = &OpenOutputFile($genome_dir."/contigs.txt");
+  my $out_contig =  &OpenOutputFile($genome_dir."/contig.tab");
+
+  print $out_contig "-- dump date","\t",&AlphaDate(),"\n";
+  print $out_contig "-- class","\t","EnsEMBL::Contig\n";
+  print $out_contig "-- table","\t","contig\n";
+  print $out_contig "-- table","\t","main\n";
+  print $out_contig "-- field 1","\t","id\n";
+  print $out_contig "-- field 2","\t","accession\n";
+  print $out_contig "-- field 3,","\t","version\n";
+  print $out_contig "-- field 4","\t","type\n";
+  print $out_contig "-- field 5","\t","length\n";
+  print $out_contig "-- field 6","\t","description\n";
+  print $out_contig "-- header\n";
+  print $out_contig "-- id","\t","accession","\t","version","\t","type","\t","length","\t","description\n";
+
+  foreach my $slices (@slice) {
+
+    ## contigs.txt
+    my $filename = $slice->name().".raw";
+    $filename = s/:/_/g;
+    print $out_contigs $filename,"\t",$slice->name();
 
 
-  ################################################################
-  ## Make one fasta file per contigs file
-  &RSAT::message::TimeWarn("Make one fasta file per contig") if ($main::verbose >= 2);
-
-  foreach my $contig_file (@contig_files) {
-
-    system ("gzip -d $genome_dir/$contig_file");
-
-    $contig_file =~ s/\.gz//g;
-
-    my ($file) = &OpenInputFile($genome_dir.$contig_file);
-    my $out_contig_file = "";
-
-    while (<$file>) {
-
-      if (/>/) {
-	       close $out_contig_file if ($out_contig_file);
-
-        my @file_name_info = split("dna",$contig_file);
-	       my @fasta_infos = split(" ", substr($_,1));
-        $fasta_infos[1] =~ s/:/\./g;
-
-	       my $file_name = $file_name_info[0].$fasta_infos[1].".".$fasta_infos[0].".fa";
-
-	       $out_contig_file = &OpenOutputFile($genome_dir.$file_name);
-	       push (@seq_to_download, $file_name);
-      }
-
-      print $out_contig_file $_;
-    }
-
-    close $out_contig_file;
-    unlink ($genome_dir.$contig_file);
-    
-    ##Make empty contig file to pass check install and prevent to download it again
-    $contig_file =~ s/\.fa/\.raw/;
-    my ($c_empty_file) = &OpenOutputFile($genome_dir.$contig_file);
-    close $c_empty_file;
+    ## contig.tab
+    @token = split(":",$slice->name());
+    print $out_contig $slice->seq_region_name(),"\t",$slice->name(),"\t",$assembly_version,"\t",$token[0],"\t",$slice->length(),"\t",$token[0]," ",$slice->seq_region_name(),"\n";
   }
 
-
-  ################################################################
-  ## Convert fasta files into  raw file
-  &RSAT::message::TimeWarn("Make raw file") if ($main::verbose >= 2);
-  my @contigs = (); ## To make contigs.txt
-  my @contig = (); ##To make contig.tab
-
-  foreach my $fasta (@seq_to_download) {
-    next if ($fasta =~ /nonch/);
-
-    my $file_name = $fasta;
-    $file_name =~ s/\.gz//;
-    $file_name =~ s/\.fa/\.raw/;
-    $file_name =~ s/:/_/g;
-
-    &RSAT::message::TimeWarn("Converting fasta", $fasta, "to raw", $file_name);
-    system("$ENV{'RSAT'}/perl-scripts/convert-seq -i $genome_dir/$fasta -from fasta -o $genome_dir/$file_name -to raw -lw 0");
-
-    if ($fasta =~ /dna\./) {
-
-      my ($file) = &OpenInputFile($genome_dir."/".$fasta);
-      my @infos = split(" ", substr(<$file>,1));
-      my @infos2 = split(":", $infos[2]);
-
-      push ( @contig, $infos[0]."\t".$infos[2]."\t".$infos2[1]."\t".$infos2[0]."\t".$infos2[4]."\t".$infos2[0]." ".$infos[0]);
-      push ( @contigs, $file_name."\t".$infos[2]);
-    }
-
-    unlink($genome_dir.$fasta);
-  }
-
-
-  ################################################################
-  ## Make contigs.txt
-  if (scalar(@contigs) > 0) {
-    &RSAT::message::TimeWarn("Make contigs.txt") if ($main::verbose >= 2);
-    my $out_contigs = &OpenOutputFile($genome_dir."/contigs.txt");
-    print $out_contigs join("\n", @contigs),"\n";
-    close $out_contigs;  
-  }
-
-
-  ################################################################
-  ## Make contig.tab
-  if (scalar(@contig) > 0) {
-    &RSAT::message::TimeWarn("Make contig.tab") if ($main::verbose >= 2);
-    my $out_contig =  &OpenOutputFile($genome_dir."/contig.tab");
-    print $out_contig "-- dump date    ???\n";
-    print $out_contig "-- class    EnsEMBL::Contig\n";
-    print $out_contig "-- table    contig\n";
-    print $out_contig "-- table    main\n";
-    print $out_contig "-- field 1    id\n";
-    print $out_contig "-- field 2    accession\n";
-    print $out_contig "-- field 3    version\n";
-    print $out_contig "-- field 4    type\n";
-    print $out_contig "-- field 5    length\n";
-    print $out_contig "-- field 6    description\n";
-    print $out_contig "-- header\n";
-    print $out_contig "-- id    accession    version    type    length    description\n";
-    print $out_contig join("\n", @contig),"\n";
-    close $out_contig;
-  }
+  close $out_contig;
+  close $out_contigs;  
 
 
   ################################################################
@@ -403,17 +309,17 @@ package	main;
       my ($s_o_file) = &OpenInputFile($supperted_organism_file);
 
       while (<$s_o_file>) {
-	      my @token = split("\t");
-	      push (@other_species, $_) unless ($token[1] =~ /^$species.*$assembly_version.*$ensembl_version/);
+        my @token = split("\t");
+        push (@other_species, $_) unless ($token[1] =~ /^$species.*$assembly_version.*$ensembl_version/);
       }
       close $s_o_file;
   }
   
   my $new_org_config = join ("\t", 
-	&Get_species_dir_name($species,$assembly_version,$ensembl_version),
-	ucfirst($species)." ".$assembly_version." ".$ensembl_version, ## Species name (beware, includes a space)
-	&Get_species_dir($data_dir,$species,$assembly_version,$ensembl_version)
- );
+    &Get_species_dir_name($species,$assembly_version,$ensembl_version),
+    ucfirst($species)." ".$assembly_version." ".$ensembl_version, ## Species name (beware, includes a space)
+    &Get_species_dir($data_dir,$species,$assembly_version,$ensembl_version)
+  );
 
   ## Replace absolute paths by relative paths
   $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
@@ -432,12 +338,6 @@ package	main;
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out;
-
-  ## Call get_ensembl_variation
-  if ($var) {
-    &RSAT::message::TimeWarn("Calling get_ensembl_variation") if ($main::verbose >= 2);
-    system("perl /Users/jeremy/Downloads/download-ensembl-variation -species $species -v 2");
-  }
 
   exit(0);
 }
@@ -521,41 +421,17 @@ Default : homo_sapiens
 
 =pod
 
-=item B<-type #>
+=item B<-rm>
 
-Sequence type :
+Downloads masked genomic DNA.
 
-  - 'dna' - unmasked genomic DNA sequences.
-
-  - 'dna_rm' - masked genomic DNA.  Interspersed repeats and low
-     complexity regions are detected with the RepeatMasker tool and masked
-     by replacing repeats with 'N's.
-
-  - 'dna_sm' - soft-masked genomic DNA. All repeats and low complexity regions
-    have been replaced with lowercased versions of their nucleic base
-
-Default : dna
-
-This option can be used iteratively to download multiple types. Example: 
-   -type dna -type dna_rm
-
-Multiple types can also be specified separated by commas.
-  -type dna,dna_rm
+Interspersed repeats and low
+complexity regions are detected with the RepeatMasker tool and masked
+by replacing repeats with 'N's.
 
 =cut
-    } elsif ($arg eq "-type") {
-      my $type = shift(@arguments);
-      push @main::types, split ",", $type;
-
-=pod
-
-=item B<-var>
-
-Also install variation for this $species
-
-=cut
-    } elsif ($arg eq "-var") {
-      $main::var = 1;
+    } elsif ($arg eq "-rm") {
+      $main::rm = 1;
 
 =pod
 
@@ -615,9 +491,9 @@ would change their file formats or locations.
 
 =cut
     } elsif ($arg eq "-version") {
-	$ensembl_version = shift(@arguments);
-	&RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.") 
-	  unless ( &IsNatural($ensembl_version) || $ensembl_version eq "safe" || $ensembl_version eq "latest" );
+      $ensembl_version = shift(@arguments);
+      &RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.") 
+      unless ( &IsNatural($ensembl_version) || $ensembl_version eq "safe" || $ensembl_version eq "latest" );
 
 =pod
 
@@ -628,7 +504,7 @@ Force installation even if the genome is already installed.
 =cut
 
     } elsif ($arg eq "-force") {
-	$force = 1;
+      $force = 1;
 
 =item B<-dir #>
 
@@ -685,9 +561,6 @@ sub Verbose {
     }
   }
 
-  printf $out "; %-22s\t%s\n", "Ensembl safe version", &Get_ensembl_version_safe($db);
+  printf $out "; %-22s\t%s\n", "Ensembl safe version", &Get_ensembl_version_safe();
   printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
-  printf $out "; %-22s\t%s\n", "Ensembl ftp", $ensembl_ftp;
-  printf $out "; %-22s\t%s\n", "URL of fasta files", $fasta_ftp;
 }
-
