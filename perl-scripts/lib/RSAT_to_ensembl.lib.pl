@@ -26,27 +26,21 @@ sub Get_ensembl_ftp() {
 
 # get $ensembl_version_safe
 sub Get_ensembl_version_safe() {
-  my ($db) = @_;
-  
-  if ($db eq "ensembl") {
-    return 72;
-  } else {
-  	
-  	return 18;
-  }
-  
+  return $ensembl_version_safe;
 }
 
 
 ## Get the latest ensembl version for a species
 sub Get_ensembl_version() {
   my ($db) = @_;
-  
+
   if ($db eq "ensembl") {
+  	
   	  my $ftp = &Get_ensembl_ftp($db)."current_fasta/homo_sapiens/dna/";
       my @available_fasta = qx{wget -S --spider $ftp 2>&1};
 
 	  foreach (@available_fasta) {
+	  	print $_;
 	    next unless (/Homo_sapiens/);
 	    $_ =~ s/Homo_sapiens\.//g;
 	    my @token = split(".dna",$_);
@@ -129,29 +123,28 @@ sub Get_assembly_version() {
 ############################################################################ 
 
 # get API host name
-sub Get_host_name() {
+sub Get_host_port() {
   my ($db) = @_;
   
   if ($db eq "ensembl") {
-    return 'ensembldb.protist.org';
-  } else {
-    
-    return "mysql.ebi.ac.uk";
+    return ('ensembldb.protist.org','5306');
+  } elsif ($db eq "ensemblgenomes") {
+    return ("mysql.ebi.ac.uk","4157");
   }
   
 }
- 
-sub Get_port() {
-  my ($db) = @_;
-  
-  if ($db eq "ensembl") {
-    return '5306';
-  } else {
-    
-    return "4157";
-  }
-} 
 
+sub Get_lastest_ensembl_version_api() {
+  my (@db_adaptors,$species) = @_;
+
+  foreach my $db_adaptor (@db_adaptors) {
+    if ($db_adaptor->species() eq $species) {
+      my $db_connection = $db_adaptor->dbc();
+      my @token = split ("_",$db_connection->dbname());
+      reutrn $token[-1];
+    }
+  }
+}
 
 
 ############################################################################
