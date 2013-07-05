@@ -1541,7 +1541,7 @@ sub _readFromAssemblyFile {
     chomp($line);
 
     ## Read the command line
-    if ($line =~ /;assembly # (\d+)\s+seed:\s+(\S+)/) {
+    if ($line =~ /; *assembly # (\d+)\s+seed:\s+(\S+)/) {
       $current_matrix_nb = $1;
       my $seed = $2;
       $matrix = new RSAT::matrix();
