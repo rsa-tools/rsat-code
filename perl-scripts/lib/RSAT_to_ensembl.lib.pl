@@ -128,7 +128,7 @@ sub Get_host_port() {
   
   if ($db eq "ensembl") {
     return ('ensembldb.protist.org','5306');
-  } elsif ($db eq "ensemblgenomes") {
+  } elsif ($db eq "ensembl_genomes") {
     return ("mysql.ebi.ac.uk","4157");
   }
   

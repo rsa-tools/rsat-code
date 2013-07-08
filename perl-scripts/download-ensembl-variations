@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.14 2013/07/02 14:13:16 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.15 2013/07/08 14:17:52 jeremy Exp $
 #
 ############################################################
 
@@ -166,7 +166,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -178,7 +178,7 @@ package	main;
   our $species = "";
   our $get_available_species = 0;
   our $ref_seq = "";
-  our $ensembl_version = &Get_ensembl_version_safe($db);
+  our $ensembl_version = &Get_ensembl_version_safe();
 
 
   ################################################################
@@ -188,12 +188,12 @@ package	main;
   our $genomes_dir = &Get_genomes_dir($data_dir);
 
   if ($ensembl_version eq "safe") {
-    $ensembl_version = &Get_ensembl_version_safe($db);
+    $ensembl_version = &Get_ensembl_version_safe();
   } elsif ($ensembl_version eq "latest") {
-    $ensembl_version = &Get_ensembl_version($db);
+    $ensembl_version = &Get_ensembl_version();
   } else {
       &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
-      &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version($db)) if ($ensembl_version > &Get_ensembl_version($db));
+      &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
   }
 
 
