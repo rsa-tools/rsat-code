@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.7 2013/07/05 14:23:08 jeremy Exp $
+# $Id: download-ensembl-features,v 1.8 2013/07/08 14:17:52 jeremy Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -578,6 +578,17 @@ If no output file is specified, the standard output is used.
     } elsif ($arg eq "-o") {
       $outfile{output} = shift(@arguments);
 
+=pod
+
+=item B<-ensembl_genomes>
+
+Download genome from ensembl genomes (Protist, fungi ...);
+
+=cut
+    } elsif ($arg eq "-ensembl_genomes") {
+      $main::db = shift(@arguments);
+
+=pod
 
 =item B<-available_species>
 
