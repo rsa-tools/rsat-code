@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.30 2013/07/08 14:17:52 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.31 2013/07/09 15:52:23 rsat Exp $
 #
 ############################################################
 
@@ -106,7 +106,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -118,7 +118,9 @@ package	main;
   our $db = "ensembl";
   our $species = "";
   our $assembly_version = "";  
-  our $ensembl_version = &Get_ensembl_version_safe();
+  our $safe_ensembl_version = &Get_ensembl_version_safe($db);
+  our $latest_ensembl_version = &Get_ensembl_version($db);
+  our $ensembl_version = $safe_ensembl_version;
 
   our $rm = 0;
   our $get_available_species = 0;
@@ -129,15 +131,20 @@ package	main;
   ## Read argument values
   &ReadArguments();
 
-  if ($ensembl_version eq "safe") {
-    $ensembl_version = &Get_ensembl_version_safe();
-    
-  } elsif ($ensembl_version eq "latest") {
-    $ensembl_version = &Get_ensembl_version(); 
+  &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version) if ($main::verbose >= 2);
+  &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version) if ($main::verbose >= 2);
+  &RSAT::message::Info("Selected ensembl version", $ensembl_version) if ($main::verbose >= 2);
 
+
+  if ($ensembl_version eq "safe") {
+      $ensembl_version = $safe_ensembl_version;
+      
+  } elsif ($ensembl_version eq "latest") {
+      $ensembl_version = $latest_ensembl_version;
+      
   } else {
-    &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
-    &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
+    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun version is 60.") if ($ensembl_version < 60);
+    &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can't be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
   }
 
   my ($host,$port) = &Get_host_port($db);
@@ -147,23 +154,29 @@ package	main;
   $out = &OpenOutputFile($outfile{output});
   &Verbose() if ($main::verbose >= 1);
 
+
   ###############################################################
   ##Print available species
   if ($get_available_species) {
+
+      &RSAT::message::TimeWarn("Getting available species", "host=".$host, "port=".$port) if ($main::verbose >= 2);
+
     $registry->load_registry_from_db(
-      -host => $host,
-      -port => $port,
-      -user => 'anonymous',
-      -db_version => $ensembl_version
-    );
+	-host => $host,
+	-port => $port,
+	-user => 'anonymous',
+	-db_version => $ensembl_version
+	);
+
 
     my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
 
     @sort_species = sort {$a->species() cmp $b->species()} @db_adaptors;
 
     foreach my $db_adaptor (@sort_species) {
-    my $db_connection = $db_adaptor->dbc();
-      print $out $db_adaptor->species(),"\n" if ( $db_adaptor->group() eq "core");
+	my $db_connection = $db_adaptor->dbc();
+	my $species = ucfirst($db_adaptor->species());
+      print $out $species,"\n" if ( $db_adaptor->group() eq "core");
     }
     $registry->disconnect_all();
 
@@ -554,6 +567,6 @@ sub Verbose {
     }
   }
 
-  printf $out "; %-22s\t%s\n", "Ensembl safe version", &Get_ensembl_version_safe();
+  printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version; #&Get_ensembl_version_safe($db);
   printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
 }
