@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.6 2013/07/04 11:52:50 jeremy Exp $
+# $Id: install-ensembl-genome,v 1.7 2013/07/09 15:52:23 rsat Exp $
 #
 ############################################################
 
@@ -117,7 +117,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -169,27 +169,27 @@ package main;
 
   ################################################################
   if ($get_available_species) {
-  	
-  	
-  	if ($task{"genome"}) {
-      print $out "Genome Available";
+      
+      
+      if ($task{"genome"}) {
+	  print $out "Genome Available";
   	  system ($ENV{'RSAT'}."perl-scripts/download-ensembl-genome -available_species");
-    }
-      		
-    if ($task{"features"}) {
-      print $out "Features Available";
-      system ($ENV{'RSAT'}."perl-scripts/download-ensembl-feature -available_species");
-    }
-    
-    if ($task{"variations"}) {
-      print $out "Variations Available";
-      system ($ENV{'RSAT'}."perl-scripts/download-ensembl-variations -available_species");
-    } 
+      }
+      
+      if ($task{"features"}) {
+	  print $out "Features Available";
+	  system ($ENV{'RSAT'}."perl-scripts/download-ensembl-feature -available_species");
+      }
+      
+      if ($task{"variations"}) {
+	  print $out "Variations Available";
+	  system ($ENV{'RSAT'}."perl-scripts/download-ensembl-variations -available_species");
+      } 
 
-  	my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-    close $out;
-    exit(0);
+      my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+      print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+      close $out;
+      exit(0);
   }
 
 
@@ -197,21 +197,21 @@ package main;
   ## Call download script
   
   foreach my $species (@species_names) {
-  	if ($task{"genome"}) {
-      &RSAT::message::TimeWarn("Install genome for ", $species) if ($main::verbose >= 1);
-      system ($ENV{'RSAT'}."perl-scripts/download-ensembl-genome -species $species -version $version -dir $data_dir");
-    }
-    
-    if ($task{"features"}) {
-      &RSAT::message::TimeWarn("Install features for ", $species) if ($main::verbose >= 1);
-      system ($ENV{'RSAT'}."perl-scripts/download-ensembl-feature -species $species -version $version -dir $data_dir");
-    }
-    
-    if ($task{"variations"}) {
-      &RSAT::message::TimeWarn("Install variation for ", $species) if ($main::verbose >= 1);
-      system ($ENV{'RSAT'}."perl-scripts/download-ensembl-variations -species $species -version $version -dir $data_dir");
-    }    
-    
+      if ($task{"genome"}) {
+	  &RSAT::message::TimeWarn("Install genome for ", $species) if ($main::verbose >= 1);
+	  system ($ENV{'RSAT'}."perl-scripts/download-ensembl-genome -species $species -version $version -dir $data_dir");
+      }
+      
+      if ($task{"features"}) {
+	  &RSAT::message::TimeWarn("Install features for ", $species) if ($main::verbose >= 1);
+	  system ($ENV{'RSAT'}."perl-scripts/download-ensembl-feature -species $species -version $version -dir $data_dir");
+      }
+      
+      if ($task{"variations"}) {
+	  &RSAT::message::TimeWarn("Install variation for ", $species) if ($main::verbose >= 1);
+	  system ($ENV{'RSAT'}."perl-scripts/download-ensembl-variations -species $species -version $version -dir $data_dir");
+      }    
+      
   } 
 
   ################################################################
