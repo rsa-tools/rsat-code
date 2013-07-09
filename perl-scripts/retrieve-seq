@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.93 2012/07/19 16:57:12 jvanheld Exp $
+# $Id: retrieve-seq,v 1.94 2013/07/09 15:52:49 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -308,14 +308,21 @@ foreach our $query (@queries) {
 	next;
     }
 
-    local $id = $current_feature->get_attribute("id");
-    local $name = $current_feature->get_attribute("name");
-    local $ctg = $current_feature->get_attribute("ctg");
-    local $orf_left = $current_feature->get_attribute("left");
-    local $orf_right = $current_feature->get_attribute("right");
-    local $orf_strand = $current_feature->get_attribute("strand");
-    $current_from = $from;
-    $current_to = $to;
+  local $id = $current_feature->get_attribute("id");
+  local $name = $current_feature->get_attribute("name");
+  local $ctg = $current_feature->get_attribute("ctg"); ## Contig identifier
+  local $orf_left = $current_feature->get_attribute("left");
+  local $orf_right = $current_feature->get_attribute("right");
+  local $orf_strand = $current_feature->get_attribute("strand");
+  $current_from = $from;
+  $current_to = $to;
+  
+  ## Check the validity of the contig identifier ($ctg)
+  unless (defined($contig{$ctg})) {
+      &RSAT::message::Info("Supported contig IDs", join (" ", sort keys %contig)) if ($main::verbose >= 0);
+      &RSAT::error::FatalError($ctg, "does not correspond to the ID of any declared contig in contigs.txt");
+  }
+
 
 #      &RSAT::message::Debug($query,
 #  			  $id,
