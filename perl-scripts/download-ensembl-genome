@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.31 2013/07/09 15:52:23 rsat Exp $
+# $Id: download-ensembl-genome,v 1.32 2013/07/10 10:03:35 rsat Exp $
 #
 ############################################################
 
@@ -71,20 +71,11 @@ Downloads variation for a species
 I<retrieve-variation-seq> uses files product by I<download-ensembl-variations>
 to make all the sequence of a variation.
 
-=head2 variation-scan
+=head2 install-ensembl-genome
 
-Scan variation sequences with one or several position-specific scoring
-matrices.
+Install genome from Ensembl on RSAT.
 
 =head1 WISH LIST
-=over
-
-=item B<Add support for download by ftp rather than rsync>
-
-=item B<Add support for alternative ensembl repositories (Fungi, Bacteria, Metazoa, ...)>
-
-=back
-
 
 =cut
 
@@ -106,7 +97,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -143,7 +134,7 @@ package	main;
       $ensembl_version = $latest_ensembl_version;
       
   } else {
-    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun version is 60.") if ($ensembl_version < 60);
+    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
     &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can't be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
   }
 
@@ -225,11 +216,11 @@ package	main;
   foreach ( glob($genome_dir."/*") ) {
     next unless (/\.raw/);
 
-    $_ =~s/$genome_dir\///g;
-    $_ =~s/\.raw//g;
-    my @token = split("_");
+    $_ =~ s/$genome_dir\///g;
+    $_ =~ s/\.raw//g;
+    $_ =~ s/_/:/g;
 
-    $seq_install{$token[2]} = 1;
+    $seq_install{$_} = 1;
   }
 
 
@@ -252,21 +243,21 @@ package	main;
   &RSAT::message::TimeWarn("Download sequence") if ($main::verbose >= 2);  
   foreach my $slice (@slices) {
 
-    if ($rm && !$seq_install{$slice->seq_region_name()."_repeatmasked"}) {
-      &RSAT::message::TimeWarn("Installing dna repeat_masked of : ",$slice->name) if ($main::verbose >= 2);
+    if ($rm && (!$seq_install{$slice->name().":repeatmasked"}|| $force) ) {
+      &RSAT::message::TimeWarn("Installing dna repeat_masked of : ",$slice->name()) if ($main::verbose >= 2);
       
       my $filename = $slice->name()."_repeatmasked.raw";
-      $filename = s/:/_/g;
+      $filename =~ s/:/_/g;
       my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
       print $out_seq_file $slice->get_repeatmasked_seq()->seq();
       close ($out_seq_file);
     }
 
-    next if ($seq_install{$slice->seq_region_name()});
+    next if ($seq_install{$slice->name()} && !$force);
     &RSAT::message::TimeWarn("Installing dna of : ",$slice->name) if ($main::verbose >= 2);
 
     my $filename = $slice->name().".raw";
-    $filename = s/:/_/g;
+    $filename =~ s/:/_/g;
     my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
     print $out_seq_file $slice->seq();
     close ($out_seq_file);
@@ -276,7 +267,7 @@ package	main;
   ################################################################
   ## Make contigs.txt and contig.tab
   
-  &RSAT::message::TimeWarn("Make contigs.txt") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Make contigs.txt and contig.tab") if ($main::verbose >= 2);
   my $out_contigs = &OpenOutputFile($genome_dir."/contigs.txt");
   my $out_contig =  &OpenOutputFile($genome_dir."/contig.tab");
 
@@ -297,7 +288,7 @@ package	main;
 
     ## contigs.txt
     my $filename = $slice->name().".raw";
-    $filename = s/:/_/g;
+    $filename =~ s/:/_/g;
     print $out_contigs $filename,"\t",$slice->name(),"\n";
 
 
@@ -323,7 +314,8 @@ package	main;
 
       while (<$s_o_file>) {
         my @token = split("\t");
-        push (@other_species, $_) unless ($token[1] =~ /^$species.*$assembly_version.*$ensembl_version/);
+
+        push (@other_species, $_) unless ($token[0] eq &Get_species_dir_name($species,$assembly_version,$ensembl_version) );
       }
       close $s_o_file;
   }
@@ -424,10 +416,6 @@ Same as -h
 
 Species that you want download variation (homo_sapiens, mus_musculus).
 
-Help : Use I<supported-organisms-ensembl> to get available species
-
-Default : homo_sapiens
-
 =cut
     } elsif ($arg eq "-species") {
       $main::species = lc(shift(@arguments));
@@ -454,7 +442,7 @@ Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
     } elsif ($arg eq "-ensembl_genomes") {
-      $main::db = shift(@arguments);
+      $main::db = "ensembl_genomes";
 
 =pod
 
@@ -472,7 +460,7 @@ Get all available species on Ensembl
 
 The release version of ensEMBL.
 
-Supported versions: 48 to 72, safe, latest
+Supported versions: 70 to 72, safe, latest
 
 Default : I<safe>
 
