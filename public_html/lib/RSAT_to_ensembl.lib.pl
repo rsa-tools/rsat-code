@@ -223,10 +223,11 @@ sub Get_species_dir() {
       $dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
       my ($spe,$ass,$ens) = split(" ",$name);
 
-      if ($ensembl_version) {
+      if ($ensembl_version && $assembly_version) {
         return $dir if ($spe eq $species && $ass eq $assembly_version && $ens eq $ensembl_version);
+      } elsif ($ensembl_version) {
+        return $dir if ($spe eq $species && $ens eq $ensembl_version);
       } else {
-        my ($spe,$ass,$ens) = split(" ",$name);
         $assembly_directory{$ens} = $dir if ($spe eq $species && $ass eq $assembly_version);
       }
     }
