@@ -203,7 +203,7 @@ sub Get_data_dir() {
 
 sub Get_genomes_dir() {
   my ($data_dir) = @_;
-  return $data_dir."genomes/";
+  return $data_dir."/genomes/";
 }
 
 sub Get_species_dir() {
@@ -256,7 +256,7 @@ sub Get_variation_dir() {
 ## supported_organims_ensembl.tab
 sub Get_supported_file() {
   my ($data_dir) = @_;
-  return $data_dir."supported_organisms_ensembl.tab";
+  return $data_dir."/supported_organisms_ensembl.tab";
 }
 
 ## Contigs.txt
