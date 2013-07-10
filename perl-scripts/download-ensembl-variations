@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.16 2013/07/09 16:22:00 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.17 2013/07/10 14:45:25 jeremy Exp $
 #
 ############################################################
 
@@ -166,7 +166,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -179,13 +179,13 @@ package	main;
   our $species = "";
   our $get_available_species = 0;
   our $ref_seq = "";
-  our $ensembl_version = &Get_ensembl_version_safe($db);
 
   ################################################################
   ## Read argument values
   &ReadArguments();
 
   our $genomes_dir = &Get_genomes_dir($data_dir);
+  our $ensembl_version = &Get_ensembl_version_safe($db);
 
   if ($ensembl_version eq "safe") {
     $ensembl_version = &Get_ensembl_version_safe($db);
@@ -205,7 +205,9 @@ package	main;
   ## Get available species
   my @variation_ftp = &Get_variation_ftp($db,$ensembl_version);
   &RSAT::error::FatalError("$db version : $ensembl_version not supported. No variation available for this version.") if (scalar(@variation_ftp) == 0);
-  &RSAT::message::Info("Variation URL --> ".join("\nVariation URL --> ", @variation_ftp)) if ($main::verbose >= 2);
+  foreach (@variation_ftp) {
+    &RSAT::message::Info("Variation URL",$_) if ($main::verbose >= 2);
+  }
 
   my @available_species_dir = ();
   my @available_species = ();
@@ -752,6 +754,15 @@ If no output file is specified, the standard output is used.
     } elsif ($arg eq "-o") {
       $outfile{output} = shift(@arguments);
 
+=item B<-ensembl_genomes>
+
+Download genome from ensembl genomes (Protist, fungi ...);
+
+=cut
+    } elsif ($arg eq "-ensembl_genomes") {
+      $main::db = "ensembl_genomes";
+
+=pod
 
 =item B<-available_species>
 
