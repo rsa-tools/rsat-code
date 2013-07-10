@@ -242,6 +242,7 @@ sub Get_species_dir() {
 
 sub Get_genome_dir() {
   my ($data_dir,$species, $assembly_version,$ensembl_version) = @_;
+ 
   return &Get_species_dir($data_dir, $species, $assembly_version,$ensembl_version)."genome/";
 }
 
@@ -255,7 +256,7 @@ sub Get_variation_dir() {
 ## supported_organims_ensembl.tab
 sub Get_supported_file() {
   my ($data_dir) = @_;
-  return $data_dir."/supported_organisms_ensembl.tab";
+  return $data_dir."supported_organisms_ensembl.tab";
 }
 
 ## Contigs.txt
@@ -272,9 +273,9 @@ sub Get_contig_file() {
 
 ## Feature.tab
 sub Get_feature_file() {
-  my ($species, $assembly_version,$ensembl_version,$name) = @_;
+  my ($data_dir,$species, $assembly_version,$ensembl_version,$name) = @_;
   $name =~ s/ /_/g;
-  return &Get_genome_dir($species, $assembly_version,$ensembl_version).$name.".tab";
+  return &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version).$name.".tab";
 }
 
 
