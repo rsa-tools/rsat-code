@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.8 2013/07/10 14:44:54 rsat Exp $
+# $Id: install-ensembl-genome,v 1.9 2013/07/10 15:01:00 rsat Exp $
 #
 ############################################################
 
@@ -117,7 +117,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -241,9 +241,11 @@ package main;
       system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg");
     }    
 
+    $org = &Get_species_dir($data_dir,$species,"",$ensembl_version)
+
     if ($task{"genome"} && $task{"features"}) {
       &RSAT::message::TimeWarn("Install on RSAT", $species) if ($main::verbose >= 1);
-      system ($ENV{'RSAT'}."/install-organism -v 1 -org Homo_sapiens_ensembl_GRCh37_72 -task allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop");
+      system ($ENV{'RSAT'}."/install-organism -v 1 -org $org -task allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop");
     }
   } 
 
