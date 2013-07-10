@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.8 2013/07/08 14:17:52 jeremy Exp $
+# $Id: download-ensembl-features,v 1.9 2013/07/10 10:03:35 rsat Exp $
 #
 ############################################################
 
@@ -12,7 +12,7 @@ use warnings;
 
 =head1 NAME
 
-download-ensembl-feature
+download-ensembl-features
 
 =head1 VERSION
 
@@ -40,21 +40,21 @@ Revised by Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
- download-ensembl-feature -species # [-version #] [-synonym] [-o #] [-dir genomesDirectory] [-available_species] [-v #]
+ download-ensembl-features -species # [-version #] [-synonym] [-o #] [-dir genomesDirectory] [-available_species] [-v #]
 
 =head2 Examples
 
 Get a list of species with feature available at Ensembl
 
- download-ensembl-feature -available_species
+ download-ensembl-features -available_species
 
 Get genomic feature coordinate for the human genome (Homo sapiens)
 
- download-ensembl-feature -species Homo_sapiens
+ download-ensembl-features -species Homo_sapiens
  
 Get genomic feature coordinate and all their synonym name for the human genome (Homo sapiens)
 
- download-ensembl-feature -species Homo_sapiens -synonym
+ download-ensembl-features -species Homo_sapiens -synonym
 
 =head1 OUTPUT FORMAT
 
@@ -65,16 +65,6 @@ Multiple tab formatted file (gene,CDS,mRNA,lincRNA..).
 =head2 download-ensembl-genome.pl
 
 Downloads genome for a species
-
-=head2 retrieve-variation-seq
-
-I<retrieve-snp-seq> uses files product by I<download-ensembl-variations>
-to make all the sequence of a variation.
-
-=head2 variation-scan
-
-Scan variation sequences with one or several position-specific scoring
-matrices.
 
 =head1 WISH LIST
 
@@ -98,7 +88,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -108,7 +98,9 @@ package main;
   our $registry = 'Bio::EnsEMBL::Registry';
   
   our $db = "ensembl";
-  our $ensembl_version = &Get_ensembl_version_safe();  
+  our $safe_ensembl_version = &Get_ensembl_version_safe($db);  
+  our $latest_ensembl_version = &Get_ensembl_version($db);
+  our $ensembl_version = $safe_ensembl_version;
   our $species = "";
   our $assembly_version = "";
   
@@ -132,28 +124,27 @@ package main;
   &ReadArguments();  
 
   if ($ensembl_version eq "safe") {
-    $ensembl_version = &Get_ensembl_version_safe();
+    $ensembl_version = $safe_ensembl_version;
     
   } elsif ($ensembl_version eq "latest") {
-  	$ensembl_version = &Get_ensembl_version(); 
+    $ensembl_version = $latest_ensembl_version; 
 
   } else {
-    &RSAT::error::FatalError("$ensembl_version not supported. Minimun version is 60.") if ($ensembl_version < 60);
-    &RSAT::error::FatalError("$ensembl_version not supported. Can't be superior to latest ensembl_version",&Get_ensembl_version()) if ($ensembl_version > &Get_ensembl_version());
+    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
+    &RSAT::error::FatalError("$ensembl_version is not supported as Ensembl version. Can't be superior to latest ensembl_version",$latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
   }
   
   my ($host,$port) = &Get_host_port($db);
-  
+
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
-  my %out_stream = &OpenOutputStream(@features_to_download) unless ($get_available_species) ; 
-  &Verbose() if ($main::verbose >= 1);
-  
+  &Verbose() if ($main::verbose >= 1 && $get_available_species);
+
   ################################################################
   ##Print available species
   if ($get_available_species) {
-  	$registry->load_registry_from_db(
+    $registry->load_registry_from_db(
       -host => $host,
       -port => $port,
       -user => 'anonymous',
@@ -166,7 +157,7 @@ package main;
 	
     foreach my $db_adaptor (@sort_species) {
     my $db_connection = $db_adaptor->dbc();
-      print $out $db_adaptor->species(),"\n" if ( $db_adaptor->group() eq "core");
+      print $out ucfirst($db_adaptor->species()),"\n" if ( $db_adaptor->group() eq "core");
     }
     $registry->disconnect_all();
     
@@ -175,7 +166,7 @@ package main;
     close $out;
     exit(0);
   }
-  
+
   &RSAT::error::FatalError("No species indicate. Use -species option") unless ($species);
   
   ################################################################
@@ -188,7 +179,6 @@ package main;
     -species => $species
   );
 
-
   ################################################################
   ## Get Adaptator    
   my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
@@ -198,9 +188,14 @@ package main;
   ################################################################
   ## Get local dir
   $assembly_version = $csa->fetch_by_rank(1)->version();
-  my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
+  my $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
   
   &RSAT::util::CheckOutDir($genome_dir);
+
+  ################################################################
+  ## Open outputfile file
+  my %out_stream = &OpenOutputStream(@features_to_download);
+  &Verbose();
     
   ################################################################
   ## Transform feat to download from array to hash  
@@ -225,7 +220,7 @@ package main;
   }
 
   ## Organism
-  &RSAT::message::TimeWarn("Get info on",$species) if ($verbosity >= 2);
+  &RSAT::message::TimeWarn("Get info on",$species) if ($verbose >= 2);
   
   my $out_organism = $out_stream{'organism'};
 
@@ -246,7 +241,7 @@ package main;
 
   ## Get all feature
   foreach my $slice (@slices) {
-    &RSAT::message::TimeWarn("Get feature on ",$slice->name()) if ($verbosity >= 2);
+    &RSAT::message::TimeWarn("Get feature on ",$slice->name()) if ($verbose >= 2);
 
     ## Gene
     my $out_gene = $out_stream{'gene'};
@@ -263,7 +258,10 @@ package main;
       my $description = "<no descrition>";
       $description = $gene->description if ($gene->description);
         
-      print $out_gene $gene->display_id(),"\t",$gene_known,"\t",$gene->biotype(),"\t",$gene->external_name(),"\t";
+      my $external_name = $gene->external_name();
+      $external_name = $gene->display_id() unless ($external_name);
+
+      print $out_gene $gene->display_id(),"\t",$gene_known,"\t",$gene->biotype(),"\t",$external_name,"\t";
       print $out_gene $slice->name(),"\t",$gene->start(),"\t",$gene->end(),"\t",$strand,"\t",$description,"\n";
 
 
@@ -428,10 +426,9 @@ sub Verbose {
     while (my ($key,$value) = each %main::outfile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
-    
-  printf $out "; %-22s\t%s\n", "Ensembl safe version", &Get_ensembl_version_safe();
-  printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
   }
+  printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version;
+  printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
 }
 
 ################################################################
@@ -511,7 +508,7 @@ Transcript biotype you want to download
 
 Default : 
 
-- protein_coding
+protein_coding
 - processed_transcript
 - lincRNA
 - sRNA
@@ -522,7 +519,7 @@ Default :
 
 Other biotype :
 
-- unprocessed_pseudogene
+unprocessed_pseudogene
 - processed_pseudogene
 - transcribed_processed_pseudogene
 - transcribed_unprocessed_pseudogene
@@ -586,7 +583,7 @@ Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
     } elsif ($arg eq "-ensembl_genomes") {
-      $main::db = shift(@arguments);
+      $main::db = "ensembl_genomes";
 
 =pod
 
@@ -604,7 +601,7 @@ Get all available species on Ensembl
 
 The release version of ensEMBL.
 
-Supported versions: 60 to 72, safe, latest
+Supported versions: 70 to 72, safe, latest
 
 Default : I<safe>
 
@@ -657,7 +654,7 @@ sub OpenOutputStream() {
   my $time = &AlphaDate();
 
   ## Organism File
-  $outfile{'organism'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'organism');
+  $outfile{'organism'} = &Get_feature_file($data_dir,$species, $assembly_version,$ensembl_version,'organism');
   $out_stream{'organism'} = &OpenOutputFile($outfile{'organism'});
   my $out_organism = $out_stream{'organism'};
   print $out_organism  "-- dump date","\t",$time,"\n";
@@ -671,7 +668,7 @@ sub OpenOutputStream() {
   print $out_organism  "-- ",join("\t",qw(id taxonomy name) ),"\n";
     
   ## Gene file
-  $outfile{'gene'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'gene');
+  $outfile{'gene'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'gene');
   $out_stream{'gene'} = &OpenOutputFile($outfile{'gene'});
   my $out_gene = $out_stream{'gene'};
   print $out_gene  "-- dump date","\t",$time,"\n";
@@ -692,7 +689,7 @@ sub OpenOutputStream() {
 
   ## Transcripts files
   foreach (@features_to_download) {
-    $outfile{$_} = &Get_feature_file($species, $assembly_version,$ensembl_version,$_);
+    $outfile{$_} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,$_);
     $out_stream{$_} = &OpenOutputFile($outfile{$_});
     my $out_trans = $out_stream{$_};
     print $out_trans "-- dump date","\t",$time,"\n";
@@ -716,7 +713,7 @@ sub OpenOutputStream() {
   }
 
   ## Exon File
-  $outfile{'exon'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'exon');
+  $outfile{'exon'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'exon');
   $out_stream{'exon'} = &OpenOutputFile($outfile{'exon'});
   my $out_exon = $out_stream{'exon'};
   print $out_exon "-- dump date","\t",$time,"\n";
@@ -736,7 +733,7 @@ sub OpenOutputStream() {
   print $out_exon "-- ",join("\t",qw(id type name contig start_pos end_pos strand transcriptID GeneID) ),"\n";
   
   ## Coding Exon File
-  $outfile{'coding_exon'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'coding_exon');
+  $outfile{'coding_exon'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'coding_exon');
   $out_stream{'coding_exon'} = &OpenOutputFile($outfile{'coding_exon'});
   my $out_coding_exon = $out_stream{'coding_exon'};
   print $out_coding_exon "-- dump date","\t",$time,"\n";
@@ -757,7 +754,7 @@ sub OpenOutputStream() {
   
 
   ## Intron file
-  $outfile{'intron'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'intron');
+  $outfile{'intron'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'intron');
   $out_stream{'intron'} = &OpenOutputFile($outfile{'intron'});
   my $out_intron = $out_stream{'intron'};
   print $out_intron "-- dump date","\t",$time,"\n";
@@ -777,7 +774,7 @@ sub OpenOutputStream() {
   print $out_intron "-- ",join("\t",qw(id type name contig start_pos end_pos strand transcriptID GeneID) ),"\n";
 
   ## UTR
-  $outfile{'utr'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'utr');
+  $outfile{'utr'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'utr');
   $out_stream{'utr'} = &OpenOutputFile($outfile{'utr'});
   my $out_utr = $out_stream{'utr'};
   print $out_utr "-- dump date","\t",$time,"\n";
@@ -797,7 +794,7 @@ sub OpenOutputStream() {
   print $out_utr "-- ",join("\t",qw(id type name contig start_pos end_pos strand transcriptID GeneID) ),"\n";
 
   ## CDS
-  $outfile{'cds'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'cds');
+  $outfile{'cds'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'cds');
   $out_stream{'cds'} = &OpenOutputFile($outfile{'cds'});
   my $out_cds = $out_stream{'cds'};
   print $out_cds "-- dump date","\t",$time,"\n";
@@ -821,7 +818,7 @@ sub OpenOutputStream() {
   if ($synonym) {
   	
   	## Contig File
-    $outfile{'organism_names'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'organism_names');
+    $outfile{'organism_names'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'organism_names');
     $out_stream{'organism_names'} = &OpenOutputFile($outfile{'organism_names'});
     my $out_organism_names = $out_stream{'organism_names'};
     print $out_organism_names  "-- dump date","\t",$time,"\n";
@@ -835,7 +832,7 @@ sub OpenOutputStream() {
     print $out_organism_names  "-- ",join("\t",qw(id names status) ),"\n"; 
   	
   	
-  	$outfile{'gene_names'} = &Get_feature_file($species, $assembly_version,$ensembl_version,'gene_names');
+  	$outfile{'gene_names'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'gene_names');
     $out_stream{'gene_names'} = &OpenOutputFile($outfile{'gene_names'});
     my $out_gene_names = $out_stream{'gene_names'};
     print $out_gene_names "-- dump date","\t",$time,"\n";
@@ -850,7 +847,7 @@ sub OpenOutputStream() {
     print $out_gene_names "-- ",join("\t",qw(id names status source) ),"\n";
   	
   	foreach (@features_to_download) {
-      $outfile{$_."_names"} = &Get_feature_file($species, $assembly_version,$ensembl_version,$_."_names");
+      $outfile{$_."_names"} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,$_."_names");
       $out_stream{$_."_names"} = &OpenOutputFile($outfile{$_."_names"});
       my $out_trans_names = $out_stream{$_."_names"};
       print $out_trans_names "-- dump date","\t",$time,"\n";
