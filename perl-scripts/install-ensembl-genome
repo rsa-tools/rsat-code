@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.9 2013/07/10 15:01:00 rsat Exp $
+# $Id: install-ensembl-genome,v 1.10 2013/07/11 13:23:58 rsat Exp $
 #
 ############################################################
 
@@ -117,7 +117,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -222,29 +222,32 @@ package main;
   ################################################################
   ## Call download script
   
+  my $s=0;
+  my $nb_species = scalar(@species_names);
   foreach my $species (@species_names) {
-    my $arg = "-species $species -version $ensembl_version -dir $data_dir";
-    $arg .= " -ensembl_genomes" unless ($db eq "ensembl");
+      $s++;
+      my $arg = " -v $verbose -species $species -version $ensembl_version -dir $data_dir";
+      $arg .= " -ensembl_genomes" unless ($db eq "ensembl");
       
     if ($task{"genome"}) {
-      &RSAT::message::TimeWarn("Install genome for ", $species) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
       system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg");
     }
       
     if ($task{"features"}) {
-      &RSAT::message::TimeWarn("Install features for ", $species) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Downloading features for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
       system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg");
     }
     
     if ($task{"variations"}) {
-      &RSAT::message::TimeWarn("Install variation for ", $species) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
       system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg");
     }    
 
-    $org = &Get_species_dir($data_dir,$species,"",$ensembl_version)
+    $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
 
-    if ($task{"genome"} && $task{"features"}) {
-      &RSAT::message::TimeWarn("Install on RSAT", $species) if ($main::verbose >= 1);
+    if (($task{"genome"}) && ($task{"features"})) {
+      &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
       system ($ENV{'RSAT'}."/install-organism -v 1 -org $org -task allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop");
     }
   } 
