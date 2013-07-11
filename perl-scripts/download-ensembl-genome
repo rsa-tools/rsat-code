@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.33 2013/07/11 13:23:58 rsat Exp $
+# $Id: download-ensembl-genome,v 1.34 2013/07/11 15:08:35 jeremy Exp $
 #
 ############################################################
 
@@ -40,7 +40,7 @@ Revised by Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
- download-ensembl-genome -species # [-ensembl_genomes] [-rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
+ download-ensembl-genome -species # [-ensembl_genomes] [-no_rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
 
 =head2 Examples
 
@@ -97,7 +97,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -113,7 +113,7 @@ package	main;
   our $latest_ensembl_version = &Get_ensembl_version($db);
   our $ensembl_version = $safe_ensembl_version;
 
-  our $rm = 0;
+  our $rm = 1;
   our $get_available_species = 0;
 
   our $force = 0; ## Force installation even if the genome is already installed
@@ -242,28 +242,28 @@ package	main;
   ##Download
   &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);  
   foreach my $slice (@slices) {
-      
+
     if (($rm) && ((!$seq_installed{$slice->name().":repeatmasked"}) || ($force)) ) {
-	&RSAT::message::TimeWarn("Downloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
-	my $filename = $slice->name()."_repeatmasked.raw";
-	$filename =~ s/:/_/g;
-	my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
-	print $out_seq_file $slice->get_repeatmasked_seq()->seq();
-	close ($out_seq_file);
+      &RSAT::message::TimeWarn("Downloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
+      my $filename = $slice->name()."_repeatmasked.raw";
+      $filename =~ s/:/_/g;
+      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      print $out_seq_file $slice->get_repeatmasked_seq()->seq();
+      close ($out_seq_file);
     } else {
-	&RSAT::message::TimeWarn("Skipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Skipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
     }
     
     if (($seq_installed{$slice->name()}) && (!$force)) {
-	&RSAT::message::TimeWarn("Skipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
-	next;
+      &RSAT::message::TimeWarn("Skipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
+      next;
     } else {
-	&RSAT::message::TimeWarn("Downloading DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
-	my $filename = $slice->name().".raw";
-	$filename =~ s/:/_/g;
-	my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
-	print $out_seq_file $slice->seq();
-	close ($out_seq_file);
+      &RSAT::message::TimeWarn("Downloading DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
+      my $filename = $slice->name().".raw";
+      $filename =~ s/:/_/g;
+      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      print $out_seq_file $slice->seq();
+      close ($out_seq_file);
     }
     
   }
@@ -426,17 +426,17 @@ Species that you want download variation (homo_sapiens, mus_musculus).
 
 =pod
 
-=item B<-rm>
+=item B<-no_rm>
 
-Downloads masked genomic DNA.
+Don't download repeat-masked genomic DNA.
 
 Interspersed repeats and low
 complexity regions are detected with the RepeatMasker tool and masked
 by replacing repeats with 'N's.
 
 =cut
-    } elsif ($arg eq "-rm") {
-      $main::rm = 1;
+    } elsif ($arg eq "-no_rm") {
+      $main::rm = 0;
 
 =pod
 
