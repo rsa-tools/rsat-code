@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.14 2013/07/12 09:51:39 rsat Exp $
+# $Id: download-ensembl-features,v 1.15 2013/07/12 13:20:24 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -100,7 +100,7 @@ package main;
   our $species = "";
   our $assembly_version = "";
   
-  our $names = 0;  
+  our $names = 1;  
   our $get_available_species = 0;
 
   our @features_to_download = qw(
@@ -387,13 +387,12 @@ package main;
             my $out_cds_names = $out_stream{'cds_names'};
             my %print_name = ();
 
-            $print_name{$name->display_id()} = 1;
             my @names_list = @{$prot->get_all_DBEntries()};
             foreach my $name (@names_list) {
               next if ($print_name{$name->display_id()});
 
               my $status = "alternate";
-              $status = "primary" if ($name->display_id() eq $prot->display_id());
+              $status = "primary" if ($name->display_id() eq $transcript->external_name());
 
               print $out_cds_names $prot->display_id(),"\t",$name->display_id(),"\t";
               print $out_cds_names $status,"\t",$name->dbname(),"\n";
