@@ -26,9 +26,6 @@ sub Get_ensembl_version_safe() {
   }
 }
 
-
-
-
 # get $ensembl_ftp
 sub Get_ftp() {
   my ($db) = @_;
@@ -41,6 +38,51 @@ sub Get_ftp() {
     return "ftp://ftp.ensemblgenomes.org/pub/";
   }
 }
+
+## Get ftp fasta url
+sub Get_fasta_ftp() {
+  my ($db,$ensembl_version) = @_;
+
+  if ($db eq "ensembl") {                                                    ## Ensembl
+
+    if ($ensembl_version < 47) {                                             # Version  1 to 46
+      return ();
+    } else {                                                                 # Version 47 to ??
+      return (&Get_ftp($db)."release-".$ensembl_version."/fasta/");
+    }
+  }
+
+  elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
+    my @sites = ("fungi","bacteria","metazoa","plants","protists");
+
+    if ($ensembl_version < 3) {                                              # Version  1 to 3
+      return ();
+    } else {                                                                 # Version 3 to ??
+      my @fasta_ftp = ();
+
+      foreach $site (@sites) {
+        my $site_ftp = &Get_ftp($db)."release-".$ensembl_version."/".$site."/fasta/";
+
+        if ($site eq "bacteria") {
+          my @available_files = qx{wget -S --spider $site_ftp 2>&1};
+          foreach $file (@available_files) {
+            next unless ($file =~ /^d/);
+            @token = split(" ",$file);
+            next if ($token[-1] =~ /^\./);
+            push (@fasta_ftp,$site_ftp.$token[-1]."/");
+          }
+        } else {
+          
+          push (@fasta_ftp,$site_ftp);
+        }
+      }
+
+      return @fasta_ftp;
+    }
+  }
+}
+
+
 
 ## Get ftp variation url
 sub Get_variation_ftp() {
@@ -61,7 +103,7 @@ sub Get_variation_ftp() {
     my @sites = ("fungi","bacteria","metazoa","plants","protists");
 
     if ($ensembl_version < 17) {                                             # Version  1 to 16
-      return @variation_ftp;
+      return ();
     } else {                                                                 # Version 17 to ??
       my @variation_ftp = ();
       
@@ -150,6 +192,28 @@ sub Get_ensembl_version() {
   return $current_release;
 }
 
+
+## Get species type
+sub Get_species_type() {
+  my ($db,$ensembl_version) = @_;
+  my %species_taxon = ();
+
+  my @fasta_url = &Get_fasta_ftp($db,$ensembl_version);
+
+  foreach my $url (@fasta_url) {
+    my @token = split('/',$url);
+    my $taxon = $token[5];
+
+    my @available_files = qx{wget -S --spider $url 2>&1};
+    foreach $file (@available_files) {
+      next unless ($file =~ /^d/);
+      my @token = split(" ",$file);
+      next if ($token[-1] =~ /^\./);
+      $species_taxon{$token[-1]} = $taxon;
+    }
+  }
+  return %species_taxon;
+}
 
 ############################################################################
 ############################################################################
