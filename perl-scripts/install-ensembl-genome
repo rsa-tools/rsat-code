@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.11 2013/07/12 05:14:55 rsat Exp $
+# $Id: install-ensembl-genome,v 1.12 2013/07/12 08:46:50 rsat Exp $
 #
 ############################################################
 
@@ -128,12 +128,14 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
 
   our $verbose = 0;
+  our $dry_run = 0;
+  our $die_on_error = 1;
   our $out = STDOUT;
   
   our $db = "ensembl";
@@ -145,6 +147,8 @@ package main;
 
   our @tasks = ();
   our %task = ();
+  our %supported_task = qw(genome features variations config install);
+  our $supported_tasks = join ",", keys %supported_task;
   our @species_names = ();
 
   ################################################################
@@ -170,11 +174,10 @@ package main;
 
     @tasks = ("genome","features") if ( scalar(@tasks) < 1);
     foreach (@tasks) {
-       if ($_ ne "genome" && $_ ne "features" && $_ ne "variations") {
-           &RSAT::message::Warning("$_ skip. Not available task");
-           next;
-       }
-       $task{$_} = 1;
+	unless ($supported_task{$task}) {
+	    &RSAT::error::FatalError($task, "is not a valid task. Supported tasks: ".$supported_tasks);
+	}
+	$task{$_} = 1;
     }
   }
 
@@ -251,24 +254,32 @@ package main;
       
     if ($task{"genome"}) {
       &RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg");
+#      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg");
+      my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg";
+      &doit($command, $dry_run, $die_on_error, $verbose);
     }
       
     if ($task{"features"}) {
       &RSAT::message::TimeWarn("Downloading features for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg");
+#      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg");
+      my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg";
+      &doit($command, $dry_run, $die_on_error, $verbose);
     }
     
     if ($task{"variations"}) {
       &RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg");
-    }    
+#      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg");
+      my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg";
+      &doit($command, $dry_run, $die_on_error, $verbose);
+    }
 
     $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
 
     if (($task{"genome"}) && ($task{"features"})) {
       &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-      system ($ENV{'RSAT'}."/install-organism -v 1 -org $org -task allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop");
+#      system ($ENV{'RSAT'}."/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop");
+      my $command = $ENV{'RSAT'}."/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop";
+      &doit($command, $dry_run, $die_on_error, $verbose);
     }
   } 
 
@@ -455,7 +466,35 @@ allows to use the command within a pipe.
 
 =cut
     } elsif ($arg eq "-o") {
-      $outfile{output} = shift(@arguments);
+	$outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them.
+
+=cut
+    } elsif ($arg eq "-dry") {
+	$main::dry_run = 1;;
+
+
+=pod
+
+=item B<-nodie>
+
+Do not die in case a sub-program returns an error.
+
+The option -nodie allows you to circumvent problems with specific
+sub-tasks, but this is not recommended because the results may be
+incomplete.
+
+=cut
+
+} elsif ($arg eq "-nodie") {
+  $main::die_on_error = 0;
+
+
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
