@@ -174,6 +174,7 @@ sub Get_host_port() {
 
 sub Get_species_dir_name() {
   my ($species,$assembly_version,$ensemb_version) = @_;
+  $species = ucfirst($species);
   return $species."_ensembl_".$assembly_version."_".$ensembl_version;
 }
 
@@ -276,6 +277,7 @@ sub Get_contig_file() {
 sub Get_feature_file() {
   my ($data_dir,$species, $assembly_version,$ensembl_version,$name) = @_;
   $name =~ s/ /_/g;
+  $name = lc($name);
   return &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version).$name.".tab";
 }
 
