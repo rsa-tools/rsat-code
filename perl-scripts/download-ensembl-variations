@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.17 2013/07/10 14:45:25 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.18 2013/07/12 09:56:20 jeremy Exp $
 #
 ############################################################
 
@@ -166,7 +166,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -290,7 +290,7 @@ package	main;
   foreach my $chr (keys(%chr_file)) {
     $out_vars{$chr} = &OpenOutputFile($variation_dir.$chr.".tab");
     $out_var = $out_vars{$chr};
-    print $out_var "#chr\n";
+    print $out_var "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tis_supvar\tin_supvar\n";
   }
 
   my $gvf_file = $species_gvf_ftp;
