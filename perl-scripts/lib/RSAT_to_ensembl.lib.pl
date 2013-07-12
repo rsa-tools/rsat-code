@@ -76,7 +76,6 @@ sub Get_fasta_ftp() {
           push (@fasta_ftp,$site_ftp);
         }
       }
-
       return @fasta_ftp;
     }
   }
@@ -194,7 +193,7 @@ sub Get_ensembl_version() {
 
 
 ## Get species type
-sub Get_species_type() {
+sub Get_species_taxon() {
   my ($db,$ensembl_version) = @_;
   my %species_taxon = ();
 
