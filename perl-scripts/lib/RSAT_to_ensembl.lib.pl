@@ -174,7 +174,7 @@ sub Get_host_port() {
 
 sub Get_species_dir_name() {
   my ($species,$assembly_version,$ensemb_version) = @_;
-  return $species."_ensembl_".$assembly_version."_".$ensembl_version."/";
+  return $species."_ensembl_".$assembly_version."_".$ensembl_version;
 }
 
 sub Get_assembly_version() {
@@ -237,7 +237,7 @@ sub Get_species_dir() {
     }
   }
 
-  return &Get_genomes_dir($data_dir).&Get_species_dir_name($species,$assembly_version,$ensembl_version);
+  return &Get_genomes_dir($data_dir).&Get_species_dir_name($species,$assembly_version,$ensembl_version)."/";
 }
 
 
