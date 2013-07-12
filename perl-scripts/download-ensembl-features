@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.12 2013/07/11 15:08:35 jeremy Exp $
+# $Id: download-ensembl-features,v 1.13 2013/07/12 09:44:23 jeremy Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -100,7 +100,7 @@ package main;
   our $species = "";
   our $assembly_version = "";
   
-  our $name = 0;  
+  our $names = 0;  
   our $get_available_species = 0;
 
   our @features_to_download = qw(
@@ -226,7 +226,7 @@ package main;
   print $out_organism $mc->get_scientific_name(),"\n";
   
   ## Organism name
-  if ($name) {
+  if ($names) {
     my $out_organism_names = $out_stream{'organism_names'};	
     print $out_organism_names $mc->get_taxonomy_id(),"\t",$species,"\t","primary","\n";
     my @alias = @{$registry->get_all_aliases($species)};
@@ -262,12 +262,12 @@ package main;
 
 
       ## Gene name
-      if ($name) {
+      if ($names) {
         my $out_gene_names = $out_stream{'gene_names'};
         my %print_name = ();
 
-        my @names = @{ $gene->get_all_DBEntries() };
-        foreach my $name (@names) {
+        my @names_list = @{ $gene->get_all_DBEntries() };
+        foreach my $name (@names_list) {
           next if ($print_name{$name->display_id()});
 
           my $status = "alternate";
@@ -302,12 +302,13 @@ package main;
         print $out_trans $coding_s,"\t",$coding_e,"\t";
         print $out_trans $description,"\t",$gene->display_id(),"\n";        
 
-        if ($name) {
+        ## Transcript Name
+        if ($names) {
           my $out_trans_names = $out_stream{$transcript->biotype()."_names"};
 
           my %print_name = ();
-          my @names = @{ $transcript->get_all_DBEntries() };
-          foreach $name (@names) {
+          my @names_list = @{ $transcript->get_all_DBEntries() };
+          foreach $name (@names_list) {
             next if ($print_name{$name->display_id()});
 
             my $status = "alternate";
@@ -376,9 +377,36 @@ package main;
         my $out_cds = $out_stream{'cds'};
           
         if ($transcript->cdna_coding_start() && $transcript->cdna_coding_end()) {
-          print $out_cds $transcript->translation()->display_id(),"\t","CDS","\t",$transcript->translation()->display_id(),"\t";
-          print $out_cds $slice->name(),"\t",$transcript->translation()->genomic_start(),"\t",$transcript->translation()->genomic_end(),"\t",$strand,"\t";
+          $prot = $transcript->translation();
+          print $out_cds $prot->display_id(),"\t","CDS","\t",$prot->display_id(),"\t";
+          print $out_cds $slice->name(),"\t",$prot->genomic_start(),"\t",$prot->genomic_end(),"\t",$strand,"\t";
           print $out_cds $description,"\t",$transcript->display_id(),"\t",$gene->display_id(),"\n";
+          
+          ## CDS Name
+          if ($names)Ê{
+            my $out_cds_names = $out_stream{'cds_names'};
+            my %print_name = ();
+
+            $print_name{$name->display_id()} = 1;
+            my @names_list = @{$prot->get_all_DBEntries()};
+            foreach my $name (@names_list) {
+              next if ($print_name{$name->display_id()});
+
+              my $status = "alternate";
+              $status = "primary" if ($name->display_id() eq $prot->display_id());
+
+              print $out_cds_names $prot->display_id(),"\t",$name->display_id(),"\t";
+              print $out_cds_names $status,"\t",$name->dbname(),"\n";
+
+              $print_name{$name->display_id()} = 1;
+            }
+          }
+
+          ## AA sequence
+          if ($prot->seq())Ê{
+            my $out_aa_seq = $out_stream{'aa_seq'};
+            &PrintNextSequence($out_aa_seq, "fasta", 60, $prot->seq(), $prot->display_id());
+          }
         }
       }
     }
@@ -493,7 +521,7 @@ Getting names if very time consumming .
 
 =cut
     } elsif ($arg eq "-no_name") {
-      $main::name = 0;
+      $main::names = 0;
 
 =pod
 
@@ -809,11 +837,14 @@ sub OpenOutputStream() {
   print $out_cds "-- field 10","\t","GeneID","\n";
   print $out_cds "-- header","\n";
   print $out_cds "-- ",join("\t",qw(id type name contig start_pos end_pos strand description transcriptID GeneID) ),"\n";
-  
-  ## name files
-  if ($name) {
 
-    ## Contig File
+  ## AA sequence
+  $outfile{'aa_seq'} = &Get_genome_dir($data_dir, $species, $assembly_version,$ensembl_version).&Get_species_dir_name($species, $assembly_version,$ensembl_version)."_aa_seq.fasta";
+  $out_stream{'aa_seq'} = &OpenOutputFile($outfile{'aa_seq'});
+
+  ## Names files
+  if ($names) {
+
     $outfile{'organism_names'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'organism_names');
     $out_stream{'organism_names'} = &OpenOutputFile($outfile{'organism_names'});
     my $out_organism_names = $out_stream{'organism_names'};
@@ -842,6 +873,20 @@ sub OpenOutputStream() {
     print $out_gene_names "-- header","\n";
     print $out_gene_names "-- ",join("\t",qw(id names status source) ),"\n";
 
+    $outfile{'cds_names'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'cds_names');
+    $out_stream{'cds_names'} = &OpenOutputFile($outfile{'cds_names'});
+    my $out_cds_names = $out_stream{'cds_names'};
+    print $out_cds_names "-- dump date","\t",$time,"\n";
+    print $out_cds_names "-- class","\t","EnsEMBL::cds","\n";
+    print $out_cds_names "-- table","\t","cds_names","\n";
+    print $out_cds_names "-- table","\t","lateral","\n";
+    print $out_cds_names "-- field 1","\t","id","\n";
+    print $out_cds_names "-- field 2","\t","names","\n";
+    print $out_cds_names "-- field 3","\t","status","\n";
+    print $out_cds_names "-- field 4","\t","source","\n";
+    print $out_cds_names "-- header","\n";
+    print $out_cds_names "-- ",join("\t",qw(id names status source) ),"\n";
+
     foreach (@features_to_download) {
       $outfile{$_."_names"} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,$_."_names");
       $out_stream{$_."_names"} = &OpenOutputFile($outfile{$_."_names"});
@@ -849,7 +894,7 @@ sub OpenOutputStream() {
       print $out_trans_names "-- dump date","\t",$time,"\n";
       print $out_trans_names "-- class","\t","EnsEMBL::",$_,"\n";
       print $out_trans_names "-- table","\t",$_,"_names","\n";
-      print $out_trans_names "-- table","\t","main","\n";
+      print $out_trans_names "-- table","\t","lateral","\n";
       print $out_trans_names "-- field","\t","id","\n";
       print $out_trans_names "-- field","\t","names","\n";
       print $out_trans_names "-- field","\t","status","\n";
