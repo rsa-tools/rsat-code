@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.15 2013/07/12 13:20:24 rsat Exp $
+# $Id: download-ensembl-features,v 1.16 2013/07/12 14:58:13 jeremy Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -148,12 +148,18 @@ package main;
     );
 
     my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
+    my %species_taxon = ();
+    %species_type = &Get_species_taxon($db,$ensembl_version) if ($db eq "ensembl_genomes");
 
     @sort_species = sort {$a->species() cmp $b->species()} @db_adaptors;
 
     foreach my $db_adaptor (@sort_species) {
     my $db_connection = $db_adaptor->dbc();
-      print $out ucfirst($db_adaptor->species()),"\n" if ( $db_adaptor->group() eq "core");
+      if ($db_adaptor->group() eq "core") {
+        print $out ucfirst($db_adaptor->species());
+        print $out "\t",$axon{$species} if ($species_type{$species});
+        print $out,"\n";
+      }
     }
     $registry->disconnect_all();
     
