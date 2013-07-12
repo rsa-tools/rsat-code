@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.12 2013/07/12 08:46:50 rsat Exp $
+# $Id: install-ensembl-genome,v 1.13 2013/07/12 09:12:46 rsat Exp $
 #
 ############################################################
 
@@ -128,7 +128,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -147,7 +147,13 @@ package main;
 
   our @tasks = ();
   our %task = ();
-  our %supported_task = qw(genome features variations config install);
+  our @default_tasks = qw(genome features config install);
+  our @extra_tasks = qw(variations );
+  our @supported_tasks = (@default_tasks, @extra_tasks);
+  our %supported_task = ();
+  foreach my $task (@supported_tasks) {
+      $supported_task{$task} = 1;
+  }
   our $supported_tasks = join ",", keys %supported_task;
   our @species_names = ();
 
@@ -168,19 +174,30 @@ package main;
   ## Check argument values
 
   unless ($get_available_species) {
+
+      ## Check that at least one species name has been specified
     if (scalar(@species_names) < 1) {
       &RSAT::error::FatalError("You must specify at least one species (option -species).");
     }
 
-    @tasks = ("genome","features") if ( scalar(@tasks) < 1);
-    foreach (@tasks) {
+    ## Set default tasks if no task has been specified
+    if (scalar(@tasks) < 1) {
+	@tasks= @default_tasks;
+    }
+#    @tasks = ("genome","features") if ( scalar(@tasks) < 1);
+
+    ## Check the requested tasks
+    &RSAT::message::Info("Requested tasks:", join(",", @tasks)) if ($main::verbose >= 2);
+    foreach my $task (@tasks) {
+	next unless ($task);
 	unless ($supported_task{$task}) {
 	    &RSAT::error::FatalError($task, "is not a valid task. Supported tasks: ".$supported_tasks);
 	}
-	$task{$_} = 1;
+	$task{$task} = 1;
     }
   }
-
+  
+  ## Define the version of Ensembl database to be used
   if ($ensembl_version eq "safe") {
       $ensembl_version = $safe_ensembl_version;
       
@@ -199,6 +216,8 @@ package main;
   &Verbose() if ($main::verbose >= 1);
 
   ################################################################
+  ## Return the list of available species on the Ensembl server.
+
   if ($get_available_species) {
     my %available_species = ();
       
@@ -243,46 +262,50 @@ package main;
 
 
   ################################################################
-  ## Call download script
-  
+  ## Run the download and installation tasks
   my $s=0;
   my $nb_species = scalar(@species_names);
   foreach my $species (@species_names) {
       $s++;
-      my $arg = " -v $verbose -species $species -version $ensembl_version -dir $data_dir";
+      my $arg = " -v ".($verbose-1);
+      $arg .= " -species ".$species;
+      $arg .= " -version ".$ensembl_version;
+      $arg .= " -dir ".$data_dir;
       $arg .= " -ensembl_genomes" unless ($db eq "ensembl");
       
-    if ($task{"genome"}) {
-      &RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-#      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg");
-      my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg";
-      &doit($command, $dry_run, $die_on_error, $verbose);
-    }
+      if ($task{"genome"}) {
+	  &RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+	  my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg";
+	  &doit($command, $dry_run, $die_on_error, $verbose);
+      }
       
-    if ($task{"features"}) {
-      &RSAT::message::TimeWarn("Downloading features for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-#      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg");
-      my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg";
-      &doit($command, $dry_run, $die_on_error, $verbose);
-    }
-    
-    if ($task{"variations"}) {
-      &RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-#      system ($ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg");
-      my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg";
-      &doit($command, $dry_run, $die_on_error, $verbose);
-    }
+      if ($task{"features"}) {
+	  &RSAT::message::TimeWarn("Downloading features for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+	  my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg";
+	  &doit($command, $dry_run, $die_on_error, $verbose);
+      }
+      
+      if ($task{"variations"}) {
+	  &RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+	  my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg";
+	  &doit($command, $dry_run, $die_on_error, $verbose);
+      }
+      
+      $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
+      
+      if ($task{"config"}) {
+	  &RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config";
+	  &doit($command, $dry_run, $die_on_error, $verbose);
+      }
 
-    $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
-
-    if (($task{"genome"}) && ($task{"features"})) {
-      &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-#      system ($ENV{'RSAT'}."/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop");
-      my $command = $ENV{'RSAT'}."/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop";
-      &doit($command, $dry_run, $die_on_error, $verbose);
-    }
+      if ($task{"install"}) {
+	  &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop";
+	  &doit($command, $dry_run, $die_on_error, $verbose);
+      }
   } 
-
+  
   ################################################################
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
@@ -431,7 +454,7 @@ supported task : genome, features, variations
     } elsif ($arg eq "-task") {
 	
 	my $task = shift(@arguments);
-	push (@main::tasks, split(",",$task ));
+	push (@main::tasks, split(",",$task));
 
 =pod 
 
