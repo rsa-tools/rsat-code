@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.32 2013/05/24 02:36:14 jvanheld Exp $
+# $Id: pathways-from-genome,v 1.33 2013/07/12 08:47:16 rsat Exp $
 #
 ############################################################
 
@@ -99,7 +99,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -851,8 +851,6 @@ useful when treating multiple organisms.
   } elsif ($arg eq "-batch") {
     $main::batch = 1;
 
-
-    ## Dry run
 =pod
 
 =item B<-dry>
@@ -863,7 +861,7 @@ Dry run: print the commands but do not execute them.
   } elsif ($arg eq "-dry") {
     $main::dry = 1;;
 
-    ## Don't die on error
+
 =pod
 
 =item B<-nodie>
