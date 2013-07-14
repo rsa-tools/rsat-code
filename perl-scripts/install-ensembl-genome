@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.14 2013/07/12 15:46:41 rsat Exp $
+# $Id: install-ensembl-genome,v 1.15 2013/07/14 08:44:30 rsat Exp $
 #
 ############################################################
 
@@ -128,7 +128,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -302,8 +302,10 @@ package main;
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
       
-      $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
-      
+      ## Get 
+      my $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
+      $org =~ s|/+$||;
+      $org =~ s|.*\/||;
       if ($task{"config"}) {
 	  &RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
 	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config";
