@@ -43,6 +43,7 @@ my %args = (
 warn "Getting lists of supported organisms from server(s)\n\t", join("\n\t", @servers), "\n\n";
 
 foreach my $server (@servers) {
+  warn "\n\n", "Querying server\t", $server, "\n";
   eval
     {
       # Retrieving and processing the WSDL
