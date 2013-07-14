@@ -18,18 +18,18 @@ use XML::Compile::Transport::SOAPHTTP;
 ## Specification of the server
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers =  $ARGV[0] || qw(
-			  http://localhost/rsat/
-			   http://embnet.ccg.unam.mx/rsa-tools
-			   http://mamaze.ulb.ac.be/rsat
-			   http://rsat.ulb.ac.be/rsat
-			   http://wwwsup.scmbb.ulb.ac.be/rsat
-			   http://rsat01.biologie.ens.fr/rsa-tools
-			   http://tagc.univ-mrs.fr/rsa-tools
-			   http://anjie.bi.up.ac.za/rsa-tools
-			   http://bongcam1.hgen.slu.se/rsat
+			    http://rsat.ulb.ac.be/rsat
+			    http://localhost/rsat/
+			    http://embnet.ccg.unam.mx/rsa-tools
+			    http://rsat01.biologie.ens.fr/rsa-tools
+			    http://tagc.univ-mrs.fr/rsa-tools
+			    http://139.124.66.4/rsat
+			    http://anjie.bi.up.ac.za/rsa-tools
+			    http://bongcam1.hgen.slu.se/rsat
 			    );
 
-#		 http://rsat01.biologie.ens.fr/rsa-tools
+#			    http://mamaze.ulb.ac.be/rsat
+# 			    http://wwwsup.scmbb.ulb.ac.be/rsat
 
 ## Query parameters
 my $taxon = '';
@@ -38,9 +38,11 @@ my %args = (
 	    'taxon' => $taxon,
 	    'return'=>$return,
 	   );
-foreach my $server (@servers) {
-  warn "\n";
 
+
+warn "Getting lists of supported organisms from server(s)\n\t", join("\n\t", @servers), "\n\n";
+
+foreach my $server (@servers) {
   eval
     {
       # Retrieving and processing the WSDL
