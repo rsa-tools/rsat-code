@@ -116,6 +116,7 @@ Constructor. The following data structure may be passed to new():
      tmp_infile =>  $some_value, # string
      all =>  $some_value, # int
      distance =>  $some_value, # int
+     min_gene_nb =>  $some_value, # int
      return =>  $some_value, # string
    },
  },

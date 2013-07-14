@@ -27,6 +27,7 @@ my %query_of :ATTR(:get<query>);
 my %tmp_infile_of :ATTR(:get<tmp_infile>);
 my %all_of :ATTR(:get<all>);
 my %distance_of :ATTR(:get<distance>);
+my %min_gene_nb_of :ATTR(:get<min_gene_nb>);
 my %return_of :ATTR(:get<return>);
 
 __PACKAGE__->_factory(
@@ -36,6 +37,7 @@ __PACKAGE__->_factory(
         tmp_infile
         all
         distance
+        min_gene_nb
         return
 
     ) ],
@@ -46,6 +48,7 @@ __PACKAGE__->_factory(
         'tmp_infile' => \%tmp_infile_of,
         'all' => \%all_of,
         'distance' => \%distance_of,
+        'min_gene_nb' => \%min_gene_nb_of,
         'return' => \%return_of,
     },
     {
@@ -55,6 +58,7 @@ __PACKAGE__->_factory(
         'tmp_infile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'all' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'distance' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'min_gene_nb' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
     },
     {
@@ -65,6 +69,7 @@ __PACKAGE__->_factory(
         'tmp_infile' => 'tmp_infile',
         'all' => 'all',
         'distance' => 'distance',
+        'min_gene_nb' => 'min_gene_nb',
         'return' => 'return',
     }
 );
@@ -121,6 +126,9 @@ methods:
 =item * distance
 
 
+=item * min_gene_nb
+
+
 =item * return
 
 
@@ -142,6 +150,7 @@ Constructor. The following data structure may be passed to new():
    tmp_infile =>  $some_value, # string
    all =>  $some_value, # int
    distance =>  $some_value, # int
+   min_gene_nb =>  $some_value, # int
    return =>  $some_value, # string
  },
 
