@@ -6147,7 +6147,7 @@ sub run_WS_command {
 							       SOAP::Data->name('client' => $result)))
 	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'both') {
-      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outfile),
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
 							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
 							       SOAP::Data->name('client' => $result)))
 	  ->attr({'xmlns' => ''});
