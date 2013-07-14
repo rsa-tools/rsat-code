@@ -24,7 +24,7 @@ list_servers:
 
 stubb:
 	@echo "Generating stubb for server	${SERVER}"
-	./wsdl2perl.pl -b RSATWS ${SERVER}/web_services/RSATWS.wsdl
+	perl ./wsdl2perl.pl -b RSATWS ${SERVER}/web_services/RSATWS.wsdl
 	@echo "Generated stubb for server	${SERVER}"
 
 test:
