@@ -6139,7 +6139,7 @@ sub run_WS_command {
   print $TMP_OUT $result;
   close $TMP_OUT;
   if ($output_choice eq 'server') {
-      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outfile),
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
 							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
 	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'client') {
