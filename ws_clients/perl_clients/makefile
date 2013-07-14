@@ -5,13 +5,13 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefile
 
-#SERVER=http://rsat.ulb.ac.be/rsat
+SERVER=http://rsat.ulb.ac.be/rsat
 #SERVER=http://mamaze.ulb.ac.be/rsat
 #SERVER=http://liv.bmc.uu.se/rsa-tools
 #SERVER=http://bongcam1.hgen.slu.se/rsat/
 #SERVER=http://tagc.univ-mrs.fr/rsa-tools
 #SERVER=http://embnet.ccg.unam.mx/rsa-tools
-SERVER=http://localhost/rsat
+#SERVER=http://localhost/rsat
 SERVERS= \
 	http://rsat.ulb.ac.be/rsat \
 	http://liv.bmc.uu.se/rsa-tools \
