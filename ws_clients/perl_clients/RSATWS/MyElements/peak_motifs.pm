@@ -131,6 +131,7 @@ Constructor. The following data structure may be passed to new():
      graph_title =>  $some_value, # string
      image_format =>  $some_value, # string
      disco =>  $some_value, # string
+     source =>  $some_value, # string
      task =>  $some_value, # string
    },
  },

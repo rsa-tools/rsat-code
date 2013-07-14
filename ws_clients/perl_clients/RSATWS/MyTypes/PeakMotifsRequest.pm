@@ -42,6 +42,7 @@ my %str_of :ATTR(:get<str>);
 my %graph_title_of :ATTR(:get<graph_title>);
 my %image_format_of :ATTR(:get<image_format>);
 my %disco_of :ATTR(:get<disco>);
+my %source_of :ATTR(:get<source>);
 my %task_of :ATTR(:get<task>);
 
 __PACKAGE__->_factory(
@@ -66,6 +67,7 @@ __PACKAGE__->_factory(
         graph_title
         image_format
         disco
+        source
         task
 
     ) ],
@@ -91,6 +93,7 @@ __PACKAGE__->_factory(
         'graph_title' => \%graph_title_of,
         'image_format' => \%image_format_of,
         'disco' => \%disco_of,
+        'source' => \%source_of,
         'task' => \%task_of,
     },
     {
@@ -115,6 +118,7 @@ __PACKAGE__->_factory(
         'graph_title' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'image_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'disco' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'source' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'task' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
     },
     {
@@ -140,6 +144,7 @@ __PACKAGE__->_factory(
         'graph_title' => 'graph_title',
         'image_format' => 'image_format',
         'disco' => 'disco',
+        'source' => 'source',
         'task' => 'task',
     }
 );
@@ -241,6 +246,9 @@ methods:
 =item * disco
 
 
+=item * source
+
+
 =item * task
 
 
@@ -277,6 +285,7 @@ Constructor. The following data structure may be passed to new():
    graph_title =>  $some_value, # string
    image_format =>  $some_value, # string
    disco =>  $some_value, # string
+   source =>  $some_value, # string
    task =>  $some_value, # string
  },
 
