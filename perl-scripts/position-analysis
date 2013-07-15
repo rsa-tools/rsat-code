@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.82 2013/06/21 03:54:20 jvanheld Exp $
+# $Id: position-analysis,v 1.83 2013/07/15 13:07:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -72,6 +72,7 @@ package main;
 
     ## Supported return fields
     our @supported_return_fields = qw(distrib
+				      index
 				      exp
 				      chi
 				      sig
@@ -153,8 +154,12 @@ package main;
     }
 
     ## HTML file(s)
+    if ($return{index}) {
+      $outfile{html_index} = $output_prefix."_index.html";
+    }
+
+    ## Export output in HTML format (beware, this can take a lot of space)
     if ($return{html}) {
-	$outfile{html_index} = $output_prefix."_index.html";
 	$outfile{output_html} = $output_prefix.".html"; push @outfiles, "output_html";
     }
 
@@ -239,7 +244,7 @@ package main;
     &ProfileClustering() if ($return{clusters});
     &GenerateGraphs() if ($return{graphs});
 
-    &HtmlIndex() if ($return{html});
+    &HtmlIndex() if ($return{index});
 
     exit(0);
 }
@@ -1739,6 +1744,7 @@ sub PrintExpectedProfiles {
     $cmd .= " -o ".$outfile{exp_profiles_html};
     &doit($cmd);
   }
+
 }
 
 ################################################################
