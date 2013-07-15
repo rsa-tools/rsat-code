@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.19 2013/07/15 11:47:15 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.20 2013/07/15 12:49:48 rsat Exp $
 #
 ############################################################
 
@@ -166,7 +166,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -175,6 +175,9 @@ package	main;
   our $out_var = "";
   our $db = "ensembl";
   our $data_dir = &Get_data_dir();
+  our $ensembl_version_safe = &Get_ensembl_version_safe($db);
+  our $ensembl_version_latest = &Get_ensembl_version($db);
+  our $ensembl_version = $ensembl_version_safe;
 
   our $species = "";
   our $get_available_species = 0;
@@ -185,21 +188,43 @@ package	main;
   &ReadArguments();
 
   our $genomes_dir = &Get_genomes_dir($data_dir);
-  our $ensembl_version = &Get_ensembl_version_safe($db);
 
   if ($ensembl_version eq "safe") {
-    $ensembl_version = &Get_ensembl_version_safe($db);
+    $ensembl_version = $ensembl_version_safe;
   } elsif ($ensembl_version eq "latest") {
-    $ensembl_version = &Get_ensembl_version($db);
+    $ensembl_version = $ensembl_version_latest;
   } else {
-    &RSAT::error::FatalError("$db version : $ensembl_version not supported. Can't be superior to latest $db version",&Get_ensembl_version($db)) if ($ensembl_version > &Get_ensembl_version($db));
+    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
+    &RSAT::error::FatalError("$db version : $ensembl_version not supported. Can't be superior to latest ensembl version",$ensembl_version_safe) if ($ensembl_version > $ensembl_version_safe);
   }
 
+  # Change Ensembl version to Ensembl Genomes version                                                                                                                                           
+  if ($db eq "ensembl_genomes") {
+    use Bio::EnsEMBL::Registry;
+    my $registry = 'Bio::EnsEMBL::Registry';
+    my ($host,$port) = &Get_host_port($db);
+    $registry->load_registry_from_db(
+        -host => $host,
+        -port => $port,
+        -user => 'anonymous',
+	-species => 'multi',
+        -db_version => $ensembl_version
+    );
+
+    my @dbas = @{ $registry->get_all_DBAdaptors() };
+    foreach my $dba (@dbas) {
+      if ($dba->species() eq "multi") {
+        @token = split("_",$dba->dbc()->dbname());
+        $ensembl_version = $token[-2];
+      }
+    }
+  }
 
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
   &Verbose() if ($main::verbose >= 1);
+
 
   ################################################################
   ## Get available species
@@ -258,28 +283,6 @@ package	main;
       &RSAT::error::FatalError($genome_dir.$chr_file{$file}, " is missing.");
     }
   }
-
-  # Change Ensembl version to Ensembl Genomes version
-  if ($db eq "ensembl_genmes") {
-    use Bio::EnsEMBL::Registry;
-    my $registry = 'Bio::EnsEMBL::Registry';
-    my ($host,$port) = &Get_host_port($db);
-    $registry->load_registry_from_db(
-        -host => $host,
-        -port => $port,
-        -user => 'anonymous',
-        -db_version => $ensembl_version
-    );
-
-    my @dbas = @{ $registry->get_DBAdaptor() };
-    foreach my $dba (@dbas) {
-      if ($dba->species() eq "multi") {
-        @token = split("_",$dba->dbc()->dbname());
-        $ensembl_version = $token[-2];
-      }
-    }
-  }
-
 
   # Get url
   my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_version);

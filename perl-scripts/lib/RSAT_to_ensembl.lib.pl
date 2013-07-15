@@ -22,7 +22,7 @@ sub Get_ensembl_version_safe() {
   }
 
   elsif ($db eq "ensembl_genomes") {
-    return 18;
+   return 18;
   }
 }
 
