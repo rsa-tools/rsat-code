@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.15 2013/07/14 08:44:30 rsat Exp $
+# $Id: install-ensembl-genome,v 1.16 2013/07/15 15:35:23 jeremy Exp $
 #
 ############################################################
 
@@ -128,7 +128,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -249,13 +249,11 @@ package main;
     }
 
     ## Get the list of genomes for which variations are available
-    if ($db eq "ensembl") {
-      &RSAT::message::TimeWarn("Getting the list of available variations in ensembl") if ($main::verbose >= 2);
-      @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-variations -available_species $arg};
-      foreach (@species) {
-        chomp();
-	push (@{$available_species{$_}}, "variations");
-      }
+    &RSAT::message::TimeWarn("Getting the list of available variations in ensembl") if ($main::verbose >= 2);
+    @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-variations -available_species $arg};
+    foreach (@species) {
+      chomp();
+      push (@{$available_species{$_}}, "variations");
     }
 
     ## Print out the result
@@ -296,7 +294,7 @@ package main;
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
       
-      if ($task{"variations"} and $db eq "ensembl") {
+      if ($task{"variations"}) {
 	  &RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
 	  my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
