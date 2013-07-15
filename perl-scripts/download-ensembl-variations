@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.18 2013/07/12 09:56:20 jeremy Exp $
+# $Id: download-ensembl-variations,v 1.19 2013/07/15 11:47:15 jeremy Exp $
 #
 ############################################################
 
@@ -166,7 +166,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -243,12 +243,6 @@ package	main;
   &RSAT::error::FatalError("No species indicate. Use -species") unless ($species);
   &RSAT::error::FatalError("No variation avalaible for $species on $db") unless ( grep($_ eq $species, @available_species ));
 
-  # Get url
-  my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_version);
-  my $species_gvf_ftp = &Get_gvf_ftp($db,$species,$ensembl_version);
-  &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
-  &RSAT::message::Info("Species gvf URL --> $species_gvf_ftp") if ($main::verbose >= 2);
-
   # Get genome version
   my $assembly_version = &Get_assembly_version($data_dir,$species,$ensembl_version);
   &RSAT::error::FatalError("No assembly version found for $species and $db version $ensembl_version. Use download-ensembl-genome before download-ensembl-variations.") unless ($assembly_version);
@@ -264,6 +258,34 @@ package	main;
       &RSAT::error::FatalError($genome_dir.$chr_file{$file}, " is missing.");
     }
   }
+
+  # Change Ensembl version to Ensembl Genomes version
+  if ($db eq "ensembl_genmes") {
+    use Bio::EnsEMBL::Registry;
+    my $registry = 'Bio::EnsEMBL::Registry';
+    my ($host,$port) = &Get_host_port($db);
+    $registry->load_registry_from_db(
+        -host => $host,
+        -port => $port,
+        -user => 'anonymous',
+        -db_version => $ensembl_version
+    );
+
+    my @dbas = @{ $registry->get_DBAdaptor() };
+    foreach my $dba (@dbas) {
+      if ($dba->species() eq "multi") {
+        @token = split("_",$dba->dbc()->dbname());
+        $ensembl_version = $token[-2];
+      }
+    }
+  }
+
+
+  # Get url
+  my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_version);
+  my $species_gvf_ftp = &Get_gvf_ftp($db,$species,$ensembl_version);
+  &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
+  &RSAT::message::Info("Species gvf URL --> $species_gvf_ftp") if ($main::verbose >= 2);
 
 
   ################################################################
