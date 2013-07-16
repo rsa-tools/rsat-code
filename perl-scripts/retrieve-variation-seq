@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.10 2013/07/16 08:30:11 jvanheld Exp $
+# $Id: retrieve-variation-seq,v 1.11 2013/07/16 12:10:02 jeremy Exp $
 #
 ############################################################
 
@@ -35,9 +35,9 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 USAGE
 
- retrieve-snp-seq -species species_name -format variation_format  \
-   [-e_version # | -a_version assembly_version] [-i #inputfile] \
-   [-col ID_column] [-flanks #] [-o outputfile] [-v #] [...]
+ retrieve-snp-seq -species species_name (-e_version # | -a_version assembly_version)  \
+   [-i #inputfile] [-format variation_format] \
+   [-col ID_column] [-mml #] [-o outputfile] [-v #] [...]
 
 =head2 Example
 
@@ -45,7 +45,7 @@ Jeremy.Delerce@univ-amu.fr
     retrieve-snp-seq -v 2 \
       -species Homo_sapiens -e_version 72 
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
-      -flanks 30 \
+      -mml 30 \
       -o variations.tab
 
 
@@ -207,13 +207,12 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
 
   our $verbose = 0;
-  our $validate = 0;
   our $in = STDIN;
   our $out = STDOUT;
 
@@ -222,13 +221,14 @@ package	main;
   our $ensembl_version = "";
   our $assembly_version = "";
 
-  our $ref_seq = "";	   
+  our $ref_seq = "";
   our $flank_len = 29;
 
   our $format = "";
   our $col = 1;
 
-  our $available = 0;
+  our $get_available_species = 0;
+  our $validate = 0;
 
   ################################################################
   ## Read argument values
@@ -239,25 +239,19 @@ package	main;
   ################################################################
   ## Check argument values
 
-
   #Check if argument specified
   &RSAT::error::FatalError("No species specified. Use -species") unless ($species);
   &RSAT::error::FatalError("No asssembly and ensembl version specified. Use at least one of this option -e_version -a_version") unless ($ensembl_version || $assembly_version);
 
- if ($main::infile{'input'}) {
+  if ($main::infile{'input'}) {
     &RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
     &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless  (-f $main::infile{'input'});
   }
 
-  $main::infile{'input_variation'} = $main::infile{'input'} if ($format eq "rsat");
-
-
   # Check directory
-  my $species_dir = &Get_species_dir($data_dir, $species,$assembly_version,$ensembl_version);
   my $genome_dir = &Get_genome_dir($data_dir, $species, $assembly_version,$ensembl_version);
   my $variation_dir = &Get_variation_dir($data_dir, $species, $assembly_version,$ensembl_version);
 
-  &RSAT::error::FatalError("$species_dir don't exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $species_dir);
   &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
   &RSAT::error::FatalError("$variation_dir don't exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);  
 
@@ -270,12 +264,20 @@ package	main;
     }
   }
 
-  ################################################################  
+    if ($format eq "rsat") {
+      $main::infile{'input_variation'} = $main::infile{'input'};
+    } else {
+      my $tmp_file_path = &RSAT::util::make_temp_file("","variation_rsat", 1);
+      $main::outfile{'var_tmp'} = $tmp_file_path.".tab";
+    }
+
+  ################################################################
   ## Print verbose
   $out = &OpenOutputFile($main::outfile{output});
+
   &Verbose() if ($main::verbose >= 1);
 
-  ################################################################	
+  ################################################################
   ##Get local variation file 
   my @variation_file = ();
 
@@ -283,14 +285,13 @@ package	main;
     push (@variation_file,$_) unless (/Failed/);
   }
 
-
-  ################################################################	
+  ################################################################
   ##Retrieve variation from id
 
   if ($format eq "id") {
     &RSAT::message::TimeWarn("Retrieve variations from id") if ($main::verbose >= 2);
 
-    my $var_file = $ENV{'RSAT'}."/tmp/variation.tab";
+    my $var_file = $main::outfile{'var_tmp'};
     $out_v = &OpenOutputFile($var_file);
 
     my %variation_id = ();
@@ -304,7 +305,7 @@ package	main;
       my @token = split("\t");
       $variation_id{$token[$col-1]} = 1;
     }
-    close $file;	
+    close $file;
 
     &RSAT::message::TimeWarn("Variation to found :",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
 
@@ -330,22 +331,23 @@ package	main;
 
       my $file_name = $_;
      $file_name =~ s|$ENV{RSAT}|\$ENV\{RSAT\}|g;
-     &RSAT::message::TimeWarn("\t$i variation(s) found in : $file_name . Left to be found",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
+     &RSAT::message::TimeWarn("\t$i variation(s) found in $file_name. Left to be found",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
     }
 
     foreach (keys(%variation_id)) {
       &RSAT::message::Warning($_,"not found. This variation don't exist in $species or don't pass Ensembl or RSAT quality check");
     }
 
+    close $file;
     $main::infile{'input_variation'} = $var_file;
   }
 
-  ################################################################	
+  ################################################################
   ##Get variation from coordinate
   if ($format eq "bed") {
     &RSAT::message::TimeWarn("Retrieve variations from coordinate") if ($main::verbose >= 2);
-    my $var_file = $ENV{'RSAT'}."/tmp/variation.tab";
-    unlink($var_file);
+    my $var_file = $main::outfile{'var_tmp'};
+
     ##Get coordinate
     my ($file) = &OpenInputFile($main::infile{'input'});
     while (<$file>) {
@@ -370,10 +372,9 @@ package	main;
         next;
       }
 
-    $cmd = "awk '{if (\$2<=".$right." && \$3>=".$left.") print \$0}' ".$variation_dir.$chr.".tab >> ".$var_file;
-    system ($cmd);
+      $cmd = "awk '{if (\$2<=".$right." && \$3>=".$left.") print \$0}' ".$variation_dir.$chr.".tab >> ".$var_file;
+      system ($cmd);
     }
-    close $file;
     $main::infile{'input_variation'} = $var_file;
 
   }
@@ -387,39 +388,40 @@ package	main;
 
   ################################################################
   ##Get sequence
-	
-	&RSAT::message::TimeWarn("Retrieve sequence for all variant of variations") if ($main::verbose >= 2);
-	foreach (@variation_file) {	
-		my $last_chr = "";
-		my $ref_seq = "";	
-		################################################################
-		($file) = &OpenInputFile($_);
-		my @neigboor_var = ();
 
-		while (<$file>) {
-			chomp;
-			my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
-			next if ($invar && $validate == 0 && $format ne "id");
+  &RSAT::message::TimeWarn("Retrieve sequence for all variant of variations") if ($main::verbose >= 2);
+  foreach my $var_file (@variation_file) {
+    print $var_file,"\n";
+    my $last_chr = "";
+    my $ref_seq = "";
 
-			if ($chr ne $last_chr) {
-				$ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
-				$last_chr = $chr;
-			}
+    ($file) = &OpenInputFile($var_file);
 
-			$var .= ",$ref";
-			@variants = split(",",$var);
-		
-			foreach (@variants) {
-				print $out "$chr\t$start\t$end\t$strand\t$id\t$type\t$ref\t$_\t";
-				$_ =~ s/-//g;
-				print $out substr($ref_seq,$start-$flank_len-1,$flank_len),"$_".substr($ref_seq,$end,$flank_len),"\n";
-			}
-		}
-	}
+    while (<$file>) {
+      print $_;
+      chomp();
+      my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
+      next if ($invar && $validate == 0 && $format ne "id");
 
-	my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-	print $out $exec_time;
-	exit(0);
+      if ($chr ne $last_chr) {
+        $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
+        $last_chr = $chr;
+      }
+
+      $var .= ",$ref";
+      @variants = split(",",$var);
+
+      foreach (@variants) {
+        print $out "$chr\t$start\t$end\t$strand\t$id\t$type\t$ref\t$_\t";
+        $_ =~ s/-//g;
+        print $out substr($ref_seq,$start-$flank_len-1,$flank_len),"$_".substr($ref_seq,$end,$flank_len),"\n";
+      }
+    }
+  }
+
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time;
+  exit(0);
 }
 
 ################################################################
@@ -460,9 +462,9 @@ Level of verbosity (detail in the warning messages during execution)
 =cut
     if ($arg eq "-v") {
       if (&IsNatural($arguments[0])) {
-	$main::verbose = shift(@arguments);
+        $main::verbose = shift(@arguments);
       } else {
-	$main::verbose = 1;
+        $main::verbose = 1;
       }
 
 =pod
@@ -526,15 +528,15 @@ version is used.
 
 =pod
 
-=item B<-available_species>
-
-Get the list of all locally supported species and genome assemblies.
-
-=cut
-    } elsif ($arg eq "-available_species") {
-      $main::available = 1;
-
-=pod
+#=item B<-available_species>
+#
+#Get the list of all locally supported species and genome assemblies.
+#
+#=cut
+#    } elsif ($arg eq "-available_species") {
+#      $main::available = 1;
+#
+#=pod
 
 =item B<-i input_file>
 
@@ -566,6 +568,20 @@ column, which can be specified by the option I<-col>).
 
 =pod
 
+=item B<-mml #>
+
+Length of the longest Matrix
+
+=cut
+    } elsif ($arg eq "-mml") {
+      if (&IsNatural($arguments[0])) {
+        $main::flank_len = shift(@arguments)-1;
+      } else {
+        &RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
+      }
+
+=pod
+
 =item B<-col #>
 
 Column containing the variation IDs with the input format "id".
@@ -575,9 +591,9 @@ Default : 1
 =cut
     } elsif ($arg eq "-col") {
       if (&IsNatural($arguments[0])) {
-	$main::col = shift(@arguments);
+        $main::col = shift(@arguments);
       } else {
-	&RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
+        &RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
       }
 
 =pod
@@ -590,8 +606,8 @@ If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
 =cut
-		} elsif ($arg eq "-o") {
-			$outfile{output} = shift(@arguments);
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
 
 =pod
 
@@ -599,10 +615,10 @@ allows to use the command within a pipe.
 
 =cut
 
-		} else {
-			&FatalError(join("\t", "Invalid option", $arg));
-		}
-	}
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
 }
 
 ################################################################
