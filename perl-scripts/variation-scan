@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.2 2013/07/16 12:10:02 jeremy Exp $
+# $Id: variation-scan,v 1.3 2013/07/16 12:13:46 jeremy Exp $
 #
 ############################################################
 
@@ -188,7 +188,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -288,14 +288,12 @@ package	main;
     ## Get distribution
     &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 2);
     %matrix_pval = ();
-#    open my $result_distrib, '-|', "$ENV{'RSAT'}/perl-scripts/matrix-distrib",'-m',"$matrix_file",'-matrix_format','transfac','-bgfile',"$main::infile{bg}" or die "Can't open pipe: $!";
 
     my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib -m $matrix_file -matrix_format transfac -pseudo 1};
     my $i = -1;
     my %legend_col = ();
 
     foreach (@result_distrib) {
-#    while (<$result_distrib>) {
       chomp;
 
       if (/^#/) {
