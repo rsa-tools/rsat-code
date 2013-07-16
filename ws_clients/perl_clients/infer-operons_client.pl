@@ -5,7 +5,6 @@
 ## (WSDL inferface).
 ##
 ## Usage:
-##
 
 use strict;
 use Getopt::Long qw(:config bundling); ## Required for parsing command-line arguments
@@ -37,7 +36,7 @@ package main;
 	     's|server=s'=>\$server,
 	     'o|organism=s'=>\$organism,
 	     'd|distance=i'=>\$distance,
-	     'q|query=s'=>\$query,
+	     'q|query=s'=>\$query, ## Note: alternativey, the Web services also support an array of query genes.
 	     'g|min_gene_nb=i'=>\$min_gene_nb,
 	     'r|return=s'=>\$return,
 	     'h|help'=>\$help,
@@ -61,6 +60,12 @@ package main;
     exit(0) if ($help);
   }
 
+
+  ## Organism is a mandatory argument
+  unless ($organism) {
+    die "\n\nError: Organism should be specified (option -o)\n\n";
+  }
+
   ## If no query is specified, compute all operons
   unless ($query) {
     $all = 1;
@@ -70,11 +75,6 @@ package main;
   ## Specification of the server.
   unless ($server) {
     $server = "http://rsat.ulb.ac.be/rsat";
-  }
-
-  ## Organism is a mandatory argument
-  unless ($organism) {
-    die "Organism should be specified (option -o)\n";
   }
 
   ## Query parameters
@@ -146,17 +146,21 @@ Jacques.van-Helden\@univ-amu.fr
 
 USAGE
 
-    perl infer-operons_client.pl -o organism -q query \
+    perl infer-operons_client.pl -o organism [-q query] \
         [-v verbose_level] [-s server] [-d distance] [-g min_gene_number] \
         [-return return_fields]
+
+EXAMPLE
+    perl infer-operons_client.pl -o Escherichia_coli_K12 -q lysA
 
 ARGUMENTS
 
   Mandatory arguments
 
     -o, --organism  organism_name
+
        The list of organisms supported on the server can be obtained with
-       the command supported-organisms.
+       the script supported-organisms_client.pl.
 
 
   Optional argument
@@ -176,8 +180,10 @@ ARGUMENTS
          not reported).
 
     -q, --query
-        Query gene. If no query is specified, infer-operon returns the
-        predicted operons for all the genes in the genome.
+        Query gene. 
+
+        If no query is specified, infer-operon returns the predicted
+        operons for all the genes in the genome.
 
     -r, --return return_fields
         List of fields to return, separated by commas.
