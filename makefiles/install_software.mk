@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.40 2013/06/18 00:16:09 jvanheld Exp $
+# $Id: install_software.mk,v 1.41 2013/07/16 15:40:38 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -133,7 +133,7 @@ _compile_python_suds:
 
 # ################################################################
 # ## Install the EnsEMBL Perl API
-# ENSEMBL_BRANCH=70
+# ENSEMBL_BRANCH=72
 # ensembl_api:	
 # 	@echo  "Password is 'CVSUSER'"
 # 	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
@@ -149,11 +149,11 @@ _compile_python_suds:
 
 ################################################################
 ## Install the EnsEMBL Perl API
-ENSEMBL_VERSION=70
+ENSEMBL_VERSION=72
 ENSEMBL_API_DIR=${SOFT_DIR}/perllib
 install_ensembl_api:	
 	@echo
-	@echo "Installing ENSEMBL Perl modules in directory ${ENSEMBL_API_DIR}"
+	@echo "Installing ENSEMBL Perl modules (version ${ENSEMBL_VERSION}) in directory ${ENSEMBL_API_DIR}"
 	@mkdir -p "${ENSEMBL_API_DIR}"
 	@echo  "Password is 'CVSUSER'"
 	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
