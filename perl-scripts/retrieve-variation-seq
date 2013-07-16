@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.9 2013/07/15 15:11:29 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.10 2013/07/16 08:30:11 jvanheld Exp $
 #
 ############################################################
 
@@ -35,7 +35,9 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 USAGE
 
- retrieve-snp-seq -species # -e_version # [-a_version #] [-i #] -format # [-col #] [-len #] [-o outputfile] [-v #] [...]
+ retrieve-snp-seq -species species_name -format variation_format  \
+   [-e_version # | -a_version assembly_version] [-i #inputfile] \
+   [-col ID_column] [-flanks #] [-o outputfile] [-v #] [...]
 
 =head2 Example
 
@@ -43,7 +45,7 @@ Jeremy.Delerce@univ-amu.fr
     retrieve-snp-seq -v 2 \
       -species Homo_sapiens -e_version 72 
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
-      -len 30 \
+      -flanks 30 \
       -o variations.tab
 
 
@@ -205,7 +207,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -440,10 +442,10 @@ sub PrintOptions {
 ################################################################
 ## Read arguments
 sub ReadArguments {
-	my $arg;
-	my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-	while (scalar(@arguments) >= 1) {
-		$arg = shift (@arguments);
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
 
 =pod
 
@@ -456,12 +458,12 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-		if ($arg eq "-v") {
-			if (&IsNatural($arguments[0])) {
-				$main::verbose = shift(@arguments);
-			} else {
-				$main::verbose = 1;
-		}
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
 
 =pod
 
@@ -470,8 +472,8 @@ Level of verbosity (detail in the warning messages during execution)
 Display full help message
 
 =cut
-		} elsif ($arg eq "-h") {
-			&PrintHelp();
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
 
 =pod
 
@@ -480,88 +482,103 @@ Display full help message
 Same as -h
 
 =cut
-		} elsif ($arg eq "-help") {
-			&PrintOptions();
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
 
 =pod
 
 =item B<-species species_name>
 
-Species of the variation/bed/id file
+Species name. This name must correspond to the species of the
+variation/bed/id file if provided.
 
 =cut
-		} elsif ($arg eq "-species") {
-			$main::species = lc(shift(@arguments));
+    } elsif ($arg eq "-species") {
+      $main::species = lc(shift(@arguments));
 
 =pod
 
 =item B<-e_version #>
 
-The version of ensembl
+The version of ensembl database (e.g. 72).
+
+Note: each Ensembl version contains a specific assembly version for
+each species. When the option -e_version is used, the option
+-a_version should thus in principle not be used.
 
 =cut
-		} elsif ($arg eq "-e_version") {
-			$main::ensembl_version = shift(@arguments);
+    } elsif ($arg eq "-e_version") {
+      $main::ensembl_version = shift(@arguments);
 
 =pod
 
 =item B<-a_version #>
 
-The version of the assembly of the species
+Assembly version (e.g. GRCh37 for the assembly 37 of the Human genome).
+
+Note: genome assemblies can cover several successive ensemble
+versions. In case of ambiguity, the latest corresponding ensembl
+version is used.
 
 =cut
-        } elsif ($arg eq "-a_version") {
-            $main::assembly_version = shift(@arguments);
+    } elsif ($arg eq "-a_version") {
+      $main::assembly_version = shift(@arguments);
 
 =pod
 
 =item B<-available_species>
 
-Get all localy supported species and genome assembly
+Get the list of all locally supported species and genome assemblies.
 
 =cut
-		} elsif ($arg eq "-available_species") {
-			$main::available = 1;
+    } elsif ($arg eq "-available_species") {
+      $main::available = 1;
 
 =pod
 
-=item B<-i #>
+=item B<-i input_file>
 
-Input File
+Input File.
+
+The input file specifies a list of query variations.
+Each row corresponds to one query.
+
+The variations can be provided in various formats (see option -format
+below).
 
 =cut
-		} elsif ($arg eq "-i") {
-      		$main::infile{input} = shift(@arguments);
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
 =pod
 
-=item B<-format #>
+=item B<-format variation_format>
 
 Format of the input file
 
-Supported format : bed, rsat (format of variation file used by all RSAT script), 
-id (tab delimetd file with all variation id in 1 col) 
+Supported format : bed, rsat (format of variation files used by all
+RSAT script), id (tab-delimited file with all variation IDs in one
+column, which can be specified by the option I<-col>).
 
 =cut
-		} elsif ($arg eq "-format") {
-			$main::format = shift(@arguments);
+    } elsif ($arg eq "-format") {
+      $main::format = shift(@arguments);
 
 =pod
 
 =item B<-col #>
 
-Colonne contening variation id
-Supported format : bed, rsat (format of variation file used by all RSAT script), 
-id (tab delimetd file with all variation id in 1 col) 
+Column containing the variation IDs with the input format "id".
 
 Default : 1
 
 =cut
-		} elsif ($arg eq "-col") {
-			if (&IsNatural($arguments[0])) {
-				$main::col = shift(@arguments);
-			} else {
-				&RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
-			}
+    } elsif ($arg eq "-col") {
+      if (&IsNatural($arguments[0])) {
+	$main::col = shift(@arguments);
+      } else {
+	&RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
+      }
 
 =pod
 
