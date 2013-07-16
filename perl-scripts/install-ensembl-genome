@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.17 2013/07/16 07:50:04 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.18 2013/07/16 12:53:25 jvanheld Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -307,7 +307,7 @@ package main;
 
       if ($task{"install"}) {
 	  &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop";
+	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
   }
