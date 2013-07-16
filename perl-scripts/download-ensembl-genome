@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.37 2013/07/15 12:49:48 rsat Exp $
+# $Id: download-ensembl-genome,v 1.38 2013/07/16 07:20:02 rsat Exp $
 #
 ############################################################
 
@@ -97,7 +97,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -253,8 +253,10 @@ package	main;
   ##Download
   &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);  
   foreach my $slice (@slices) {
+    my $seq_rm_installed = $seq_installed{$slice->name().":repeatmasked"} && $seq_installed{$slice->name().":repeatmasked"} == $slice->length();
+    my $seq_norm_installed = $seq_installed{$slice->name()} && $seq_installed{$slice->name()} == $slice->length();
 
-    if ( (!$rm) || ( ($seq_installed{$slice->name().":repeatmasked"} == $slice->length() ) && (!$force)) ) {
+    if ( (!$rm) || ( $seq_rm_installed && !$force ) ) {
       &RSAT::message::TimeWarn("Skipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
     } else {
       &RSAT::message::TimeWarn("Downloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
@@ -265,7 +267,7 @@ package	main;
       close ($out_seq_file);
     }
     
-    if ( ( $seq_installed{$slice->name()} == $slice->length() ) && (!$force)) {
+    if ( ($seq_norm_installed) && (!$force) ) {
       &RSAT::message::TimeWarn("Skipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       next;
     } else {
