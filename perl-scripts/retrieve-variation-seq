@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.11 2013/07/16 12:10:02 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.12 2013/07/16 15:13:30 jvanheld Exp $
 #
 ############################################################
 
@@ -25,6 +25,8 @@ variation in retrieve-variation-seq-formatted file.
 
 Jeremy.Delerce@univ-amu.fr
 
+Revised by Jacques.van-Helden@univ-amu.fr
+
 =head1 CATEGORY
 
 =over
@@ -41,9 +43,9 @@ Jeremy.Delerce@univ-amu.fr
 
 =head2 Example
 
-  Get variation sequence of Homo_sapiens from a bed file 
+  Get variation sequence of Homo_sapiens from a bed file
     retrieve-snp-seq -v 2 \
-      -species Homo_sapiens -e_version 72 
+      -species Homo_sapiens -e_version 72
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
       -mml 30 \
       -o variations.tab
@@ -55,7 +57,7 @@ Jeremy.Delerce@univ-amu.fr
 
 The option I<-i> allows to specify a genomic coordinate file in bed
 format. The program only takes into account the 3 first columns of the
-bed file, which specify the genomic coordinates. 
+bed file, which specify the genomic coordinates.
 
 B<Note> (from Jacques van Helden): the UCSC genome browser adopts a
 somewhat inconsistent convention for start and end coordinates: the
@@ -207,7 +209,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -252,8 +254,8 @@ package	main;
   my $genome_dir = &Get_genome_dir($data_dir, $species, $assembly_version,$ensembl_version);
   my $variation_dir = &Get_variation_dir($data_dir, $species, $assembly_version,$ensembl_version);
 
-  &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
-  &RSAT::error::FatalError("$variation_dir don't exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);  
+  &RSAT::error::FatalError("Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
+  &RSAT::error::FatalError("Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);
 
   # Check if sequence file are not missing
   my %chr_file = &Get_file_seq_name($genome_dir);
@@ -278,7 +280,8 @@ package	main;
   &Verbose() if ($main::verbose >= 1);
 
   ################################################################
-  ##Get local variation file 
+  ## Get the list of variation files installed in the RSAT data
+  ## directory.
   my @variation_file = ();
 
   foreach ( glob ( $variation_dir."*.tab") ) {
@@ -286,17 +289,16 @@ package	main;
   }
 
   ################################################################
-  ##Retrieve variation from id
-
+  ## Retrieve variations from one or several ID(s)
   if ($format eq "id") {
-    &RSAT::message::TimeWarn("Retrieve variations from id") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
 
     my $var_file = $main::outfile{'var_tmp'};
     $out_v = &OpenOutputFile($var_file);
 
     my %variation_id = ();
 
-    ##Get id list
+    ## Get ID list
     my ($file) = &OpenInputFile($main::infile{'input'});
     while (<$file>) {
       next if (/^#/);
@@ -307,16 +309,22 @@ package	main;
     }
     close $file;
 
-    &RSAT::message::TimeWarn("Variation to found :",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Number of variations to find:",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
 
-    #Retrieve var
+    ## Try to idenfity the variations in each chromosome separately.
+    ## Note: there is a tradeoff between different efficiency issues, since for Human genome there are
+
+
+    ## Create a regular expression to select the rows containing query
+    ## IDs with grep
     my $grep_id = "'".join('\|',keys(%variation_id))."'";
-    foreach (@variation_file) {
+
+    ## Grep each variation file to collect the selected IDs
+    foreach my $file_name (@variation_file) {
       last if ( scalar(keys(%variation_id)) == 0);
 
-      my @result = qx{grep -rw $grep_id $_};
+      my @result = qx{grep -rw $grep_id $file_name};
       my $i = 0;
-
       foreach (@result) {
         chomp();
         my @token = split("\t");
@@ -324,18 +332,28 @@ package	main;
         delete($variation_id{$token[4]});	##Remove find variation from the liste
         $token[10] = 0; ##Remove info about in_super_variation
         print $out_v join("\t",@token),"\n";
-        $i ++;
+        $i++;
       }
 
-     $grep_id = "'".join('\|',keys(%variation_id))."'";
+      ## Redefine the regular expression with only the variations not
+      ## yet found.
+      $grep_id = "'".join('\|',keys(%variation_id))."'";
 
-      my $file_name = $_;
-     $file_name =~ s|$ENV{RSAT}|\$ENV\{RSAT\}|g;
-     &RSAT::message::TimeWarn("\t$i variation(s) found in $file_name. Left to be found",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
+      $file_name = &RSAT::util::hide_RSAT_path($file_name);
+      &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
     }
 
-    foreach (keys(%variation_id)) {
-      &RSAT::message::Warning($_,"not found. This variation don't exist in $species or don't pass Ensembl or RSAT quality check");
+    ## Report not found variations
+    my @not_found = sort(keys(%variation_id));
+    my $not_found_nb = scalar(@not_found);
+    if ($not_found_nb > 0) {
+      my $not_found_msg = "; Non-identified variations: ".$not_found_nb."\n";
+      $not_found_msg .= "; Note: some variations may have failed to pass Ensembl or RSAT quality check)\n";
+      &RSAT::message::Warning($not_found_msg);
+      foreach my $id (@not_found) {
+	$not_found_msg .= ";\tmissing\t".$id."\n";
+      }
+      print $out $not_found_msg;
     }
 
     close $file;
@@ -343,12 +361,12 @@ package	main;
   }
 
   ################################################################
-  ##Get variation from coordinate
+  ## Get variation from coordinates
   if ($format eq "bed") {
     &RSAT::message::TimeWarn("Retrieve variations from coordinate") if ($main::verbose >= 2);
     my $var_file = $main::outfile{'var_tmp'};
 
-    ##Get coordinate
+    ## Get coordinates
     my ($file) = &OpenInputFile($main::infile{'input'});
     while (<$file>) {
       next if (/^#/);
