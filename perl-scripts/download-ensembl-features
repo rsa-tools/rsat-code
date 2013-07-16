@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.19 2013/07/16 08:30:37 jvanheld Exp $
+# $Id: download-ensembl-features,v 1.20 2013/07/16 13:52:00 jvanheld Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -212,9 +212,21 @@ package main;
 
   ################################################################
   # Get all Top Level slice
+  &RSAT::message::TimeWarn("Fetching all slices for species",$species) if ($verbose >= 2);
   my @slices = @{$slice_adaptor->fetch_all('toplevel')};
 
-  ## Correct Ensembl error with the two Y human chr
+  ## Fix an Ensembl error with the two Y human chromosomes: on the
+  ## API, the Human chromosome covers two slices, because a large
+  ## fragment (covering 2.6Mb) at the beginning of chromosome Y is
+  ## homologous to the X chromosome. The Ensembl dataset presents two
+  ## separated slices to avoir redundancy in the annotations. However
+  ## this is not compatible with RSAT data model -> we merge them in a
+  ## single contig covering the whole Y chromosome.
+  ##
+  ## In addition, there are apparently some inconsistencies between
+  ## some feature annotations and the limits of the Y chromosome
+  ## (feature coordinates are provided relative to the chromosome
+  ## start, but the slice only starts 2.6Mb further).
   if ($species eq "homo_sapiens") {
       my @slice_tmp = ();
       foreach my $slice (@slices) {
@@ -225,7 +237,7 @@ package main;
   }
 
   ## Organism
-  &RSAT::message::TimeWarn("Get info on",$species) if ($verbose >= 2);
+  &RSAT::message::TimeWarn("Getting info on species",$species) if ($verbose >= 2);
 
   my $out_organism = $out_stream{'organism'};
 
@@ -234,7 +246,7 @@ package main;
   print $out_organism join(";",reverse(@{$mc->get_classification ( )})),";",$c1,";",ucfirst($c2),"\t";
   print $out_organism $mc->get_scientific_name(),"\n";
 
-  ## Get the different organism names ("aliases" according to Ensembl nomenclature)
+  ## Get the alternative organism names ("aliases" according to Ensembl nomenclature)
   if ($names) {
     my $out_organism_names = $out_stream{'organism_names'};
     print $out_organism_names $mc->get_taxonomy_id(),"\t",$species,"\t","primary","\n";
@@ -276,7 +288,7 @@ package main;
       print $out_gene $slice->name(),"\t",$gene->start(),"\t",$gene->end(),"\t",$strand,"\t",$description,"\n";
 
       if ($main::verbose >= 2) {
-	if (($g%50==1) || ($main::verbose >= 3)) {
+	if (($g%100==1) || ($main::verbose >= 3)) {
 	  &RSAT::message::TimeWarn("Gene", $g."/".$nb_genes, $external_name);
 	}
       }
@@ -423,7 +435,7 @@ package main;
             }
           }
 
-          ## AA sequence
+          ## Aminoacid sequences
           if ($prot->seq()) {
             my $out_aa_seq = $out_stream{'aa_seq'};
             &PrintNextSequence($out_aa_seq, "fasta", 60, $prot->seq(), $prot->display_id());
