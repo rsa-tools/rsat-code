@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.17 2011/12/06 01:04:52 jvanheld Exp $
+# $Id: contingency-table,v 1.18 2013/07/16 12:53:52 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -81,6 +81,7 @@ $out = &OpenOutputFile($outfile{output});
 ($in) = &OpenInputFile($infile{input});
 while (<$in>) {
     next if /^;/; ## Skip comments
+    next if /^--/; ## Skip comments
     next if /^#/; ## Skip header
     next unless (/\S/); ## Skip emtpy rows
     s/\r//; ## Remove Windowsspecific carriage return
