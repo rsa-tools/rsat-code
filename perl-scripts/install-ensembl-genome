@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.16 2013/07/15 15:35:23 jeremy Exp $
+# $Id: install-ensembl-genome,v 1.17 2013/07/16 07:50:04 jvanheld Exp $
 #
 ############################################################
 
@@ -19,12 +19,13 @@ $program_version
 
 =head1 DESCRIPTION
 
-Install on RSAT genome sequence, genomic features and (optionally) variation
-features for a genome form Ensembl (http://www.ensembl.org/).
+Install on RSAT genome sequence, genomic features and (optionally)
+variation features for a genome form Ensembl
+(http://www.ensembl.org/).
 
-The connection to ensembl is ensured by a combination of their Perl API and
-their ftp site (some information can not be obtained from the API, like the
-taxonomy).
+The connection to ensembl is ensured by a combination of their Perl
+API and their ftp site (some information can not be obtained from the
+API, like the taxonomy).
 
 =head1 AUTHORS
 
@@ -54,23 +55,24 @@ The program exports chromosome sequences and genomic features.
 
 =head2 Chromosome sequence format
 
-Chromosome sequences are exported in raw format (sequences only, no space, no
-carriage return), which is indispensable in order to enable direct access to
-any piece of sequences on the hard drive, rather than loading the whole
-chromosome in memory.
+Chromosome sequences are exported in raw format (sequences only, no
+space, no carriage return), which is indispensable in order to enable
+direct access to any piece of sequences on the hard drive, rather than
+loading the whole chromosome in memory.
 
 
 =head2 Genomic features
 
-Genomic features (genes, CDS, mRNAs, ...) are exported in gft format (the RSAT
-specification of genomic features). For a description, of this format and
-conversions from/to other formats, type
+Genomic features (genes, CDS, mRNAs, ...) are exported in gft format
+(the RSAT specification of genomic features). For a description, of
+this format and conversions from/to other formats, type
 
   convert-features -h
 
 =head2 Variation features
 
-Variation features are exported in a tab-delimited format specific to RSAT.
+Variation features are exported in a tab-delimited format specific to
+RSAT.
 
 For a description, of this format
 
@@ -80,32 +82,25 @@ For a description, of this format
 
 =head2 download-ensembl-genome
 
-I<install-ensembl-genome> calls I<download-ensembl-genome> to download genome
-sequences and install them in the appropriate data directory of the RSAT
-package.
+I<install-ensembl-genome> calls I<download-ensembl-genome> to download
+genome sequences and install them in the appropriate data directory of
+the RSAT package.
 
 =head2 download-ensembl-features
 
-I<install-ensembl-genome> calls I<download-ensembl-features> to download
-genomic features from ensembl API and install them in the RSAT data directory.
+I<install-ensembl-genome> calls I<download-ensembl-features> to
+download genomic features from ensembl API and install them in the
+RSAT data directory.
 
 =head2 download-ensembl-variations
 
-I<install-ensembl-genome> calls I<download-ensembl-variations> to download
-variation features from ensembl ftp and install them in the RSAT data
-directory.
+I<install-ensembl-genome> calls I<download-ensembl-variations> to
+download variation features from ensembl ftp and install them in the
+RSAT data directory.
 
 =head1 WISH LIST
 
 =over
-
-=item B<-task sequences>
-
-Download all chromosomal sequences from Ensembl.
-
-=item B<-task features>
-
-Download all chromosomal features from Ensembl.
 
 =back
 
@@ -128,7 +123,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -137,7 +132,7 @@ package main;
   our $dry_run = 0;
   our $die_on_error = 1;
   our $out = STDOUT;
-  
+
   our $db = "ensembl";
   our $data_dir = &Get_data_dir();
   our $safe_ensembl_version = &Get_ensembl_version_safe($db);
@@ -276,31 +271,31 @@ package main;
   my $nb_species = scalar(@species_names);
   foreach my $species (@species_names) {
       $s++;
-      my $arg = " -v ".($verbose-1);
+      my $arg = " -v ".$verbose;
       $arg .= " -species ".$species;
       $arg .= " -version ".$ensembl_version;
       $arg .= " -dir ".$data_dir;
       $arg .= " -ensembl_genomes" unless ($db eq "ensembl");
-      
+
       if ($task{"genome"}) {
 	  &RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
 	  my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
-      
+
       if ($task{"features"}) {
 	  &RSAT::message::TimeWarn("Downloading features for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
 	  my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
-      
+
       if ($task{"variations"}) {
 	  &RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
 	  my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
-      
-      ## Get 
+
+      ## Get
       my $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
       $org =~ s|/+$||;
       $org =~ s|.*\/||;
@@ -315,8 +310,8 @@ package main;
 	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,distrib,ncf,protein_freq,start_stop";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
-  } 
-  
+  }
+
   ################################################################
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
@@ -459,11 +454,45 @@ would change their file formats or locations.
 
 What you whant to install
 
-supported task : genome, features, variations
+Supported tasks : genome, features, variations, config, install
+
+=over
+
+=item B<-task genome>
+
+Download all genomic sequences from Ensembl.
+This task is executed by running I<download-ensembl-genome>.
+
+=item B<-task features>
+
+Download all genomic features from Ensembl.
+This task is executed by running I<download-ensembl-features>.
+
+=item B<-task variations>
+
+Download all genomic variations from Ensembl.
+This task is executed by running I<download-ensembl-variations>.
+
+=item B<-task config>
+
+Declare the organism to RSAT. This step is necessary for this organism
+to become supported on the local RSAT installation.  This task is
+executed by running I<install-organism>.
+
+
+=item B<-task install>
+
+Perform a series of installation tasks in order to have the organims
+fully supported in RSAT. In particular, compute the frequencies of
+oligonuleotides and dyads in all upstream sequences, in order to
+calibrate background models for motif analysis.
+
+This task is executed by running I<install-organism>.
+
+=back
 
 =cut
     } elsif ($arg eq "-task") {
-	
 	my $task = shift(@arguments);
 	push (@main::tasks, split(",",$task));
 

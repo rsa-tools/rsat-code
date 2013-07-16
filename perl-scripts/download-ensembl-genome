@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.38 2013/07/16 07:20:02 rsat Exp $
+# $Id: download-ensembl-genome,v 1.39 2013/07/16 07:50:04 jvanheld Exp $
 #
 ############################################################
 
@@ -97,7 +97,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -129,10 +129,10 @@ package	main;
 
   if ($ensembl_version eq "safe") {
       $ensembl_version = $safe_ensembl_version;
-      
+
   } elsif ($ensembl_version eq "latest") {
       $ensembl_version = $latest_ensembl_version;
-      
+
   } else {
     &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
     &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can't be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
@@ -144,7 +144,6 @@ package	main;
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
   &Verbose() if ($main::verbose >= 1);
-
 
   ###############################################################
   ##Print available species
@@ -202,12 +201,11 @@ package	main;
     -db_version => $ensembl_version,
     -species => $species
   );
-  
+
   ################################################################
-  ## Get Adaptator    
+  ## Get Adaptator
   my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
   my $csa = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "coordsystem" );
-  
 
   ################################################################
   ## Get available sequence on Ensembl and compare with sequence already install
@@ -251,8 +249,9 @@ package	main;
 
   ################################################################
   ##Download
-  &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);  
+  &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);
   foreach my $slice (@slices) {
+    &RSAT::message::TimeWarn("Treating slice",$slice->name()) if ($main::verbose >= 2);
     my $seq_rm_installed = $seq_installed{$slice->name().":repeatmasked"} && $seq_installed{$slice->name().":repeatmasked"} == $slice->length();
     my $seq_norm_installed = $seq_installed{$slice->name()} && $seq_installed{$slice->name()} == $slice->length();
 
@@ -266,7 +265,7 @@ package	main;
       print $out_seq_file $slice->get_repeatmasked_seq()->seq();
       close ($out_seq_file);
     }
-    
+
     if ( ($seq_norm_installed) && (!$force) ) {
       &RSAT::message::TimeWarn("Skipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       next;
@@ -278,7 +277,6 @@ package	main;
       print $out_seq_file $slice->seq();
       close ($out_seq_file);
     }
-    
   }
 
   ################################################################
