@@ -106,8 +106,9 @@ watch_jobs_sge:
 iterate_organisms:
 	@echo "Iterating task ${ORG_TASK} over organisms"
 	@echo "	${ORGANISMS}"
-	@echo
 	@for org in ${ORGANISMS} ; do	\
+		echo "" ; \
+		echo "Organism $${org}" ; \
 		${MAKE} ${ORG_TASK} ORG=$${org} ;	\
 	done
 
