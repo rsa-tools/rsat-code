@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.41 2013/07/16 15:40:38 rsat Exp $
+# $Id: install_software.mk,v 1.42 2013/07/17 16:16:33 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -266,17 +266,21 @@ _download_fastqc:
 #bedtools: git_bedtools compile_bedtools _compile_bedtools
 install_bedtools: _download_bedtools _compile_bedtools _install_bedtools
 
-BED_VERSION=2.13.3
+#http://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
+#BED_VERSION=2.13.3
+BED_VERSION=2.17.0
 BED_ARCHIVE=BEDTools.v${BED_VERSION}.tar.gz
 BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE}
+BEDTOOL_MANUAL=http://bedtools.googlecode.com/files/BEDTools-User-Manual.v4.pdf
 BED_BASE_DIR=${SRC_DIR}/BEDTools
-BED_DOWNLOAD_DIR=${BED_BASE_DIR}/BEDTools-Version-${BED_VERSION}
+BED_DOWNLOAD_DIR=${BED_BASE_DIR}/bedtools-${BED_VERSION}
 _download_bedtools:
 	@echo
 	@echo "Downloading BEDTools ${BED_VERSION}"
 	@echo
 	@mkdir -p ${BED_BASE_DIR}
-	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE})
+	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE}; \
+		wget ${BEDTOOL_MANUAL})
 	@echo ${BED_DOWNLOAD_DIR}
 
 BED_GIT_DIR=${SRC_DIR}/bedtools
@@ -296,7 +300,7 @@ _compile_bedtools:
 
 _install_bedtools:
 	@echo
-	@echo "Synchronizing bedtools from ${BEN_BIN_DIR} to ${BIN_DIR}"
+	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} to ${BIN_DIR}"
 	@echo
 	@mkdir -p ${BIN_DIR}
 	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}

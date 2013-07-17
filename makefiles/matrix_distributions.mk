@@ -42,14 +42,14 @@ DISTRIB_DIR=${MATRIX_DIR}/pval_distributions_${DB}
 DISTRIB_FILE=${DISTRIB_DIR}/${DB}_${MATRIX_ID}_distrib_bg_${BG_PREFIX}
 one_matrix_distrib:
 	@echo
-	@echo "Computing distribution for matrix	${MATRIX_ID}"
+	@echo "${DATE}	Computing distribution for matrix	${MATRIX_ID}"
 	mkdir -p ${DISTRIB_DIR}
 	matrix-distrib -v ${V} -m ${MATRIX_FILE}  -matrix_format tf -decimals 1 \
 		-bgfile ${BG_FILE} -bg_pseudo 0.01 -bg_format oligos -pseudo 1 \
 		-o ${DISTRIB_FILE}.tab
 	@echo "	${DISTRIB_FILE}.tab"
 
-MATRIX_IDS=`grep -v '^;' ${MATRIX_LIST} | cut -f 2 | xargs`
+MATRIX_IDS=`grep -v '^;' ${MATRIX_LIST} | cut -f 2 | head -5 | xargs`
 list_matrix_ids:
 	@echo "Matrix IDs	${MATRIX_IDS}"
 
