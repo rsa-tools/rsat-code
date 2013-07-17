@@ -10,11 +10,10 @@ package main;
 ## Define global variables
 our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
 
-
 ## Functions
 
 # get $ensembl_version_safe
-sub Get_ensembl_version_safe() {
+sub Get_ensembl_version_safe {
   my ($db) = @_;
 
   if ($db eq "ensembl") {
@@ -27,7 +26,7 @@ sub Get_ensembl_version_safe() {
 }
 
 # get $ensembl_ftp
-sub Get_ftp() {
+sub Get_ftp {
   my ($db) = @_;
 
   if ($db eq "ensembl") {
@@ -40,7 +39,7 @@ sub Get_ftp() {
 }
 
 ## Get ftp fasta url
-sub Get_fasta_ftp() {
+sub Get_fasta_ftp {
   my ($db,$ensembl_version) = @_;
 
   if ($db eq "ensembl") {                                                    ## Ensembl
@@ -72,7 +71,7 @@ sub Get_fasta_ftp() {
             push (@fasta_ftp,$site_ftp.$token[-1]."/");
           }
         } else {
-          
+    
           push (@fasta_ftp,$site_ftp);
         }
       }
@@ -84,7 +83,7 @@ sub Get_fasta_ftp() {
 
 
 ## Get ftp variation url
-sub Get_variation_ftp() {
+sub Get_variation_ftp {
   my ($db,$ensembl_version) = @_;
 
   if ($db eq "ensembl") {                                                    ## Ensembl
@@ -105,7 +104,7 @@ sub Get_variation_ftp() {
       return ();
     } else {                                                                 # Version 17 to ??
       my @variation_ftp = ();
-      
+
       foreach $site (@sites) {
         my $site_ftp = &Get_ftp($db)."release-".$ensembl_version."/".$site."/";
 
@@ -122,7 +121,7 @@ sub Get_variation_ftp() {
 }
 
 ## Get ftp variation species url
-sub Get_variation_species_ftp() {
+sub Get_variation_species_ftp {
   my ($db,$species,$ensembl_version) = @_;
   my @variation_ftps = &Get_variation_ftp($db,$ensembl_version);
 
@@ -151,7 +150,7 @@ sub Get_variation_species_ftp() {
 
 
 ##Get ftp gvf file url
-sub Get_gvf_ftp() {
+sub Get_gvf_ftp {
   my ($db,$species,$ensembl_version) = @_;
 
   if ($db eq "ensembl") {                                                    ## Ensembl
@@ -173,13 +172,17 @@ sub Get_gvf_ftp() {
 
 
 ## Get the latest ensembl version for a species
-sub Get_ensembl_version() {
+sub Get_ensembl_version {
   my ($db) = @_;
 
   my $ftp = &Get_ftp($db);
+
   my $current_release = 0;
 
+  &RSAT::message::TimeWarn("Getting ensembl version", $ftp) if ($main::verbose >= 0);
   my @available_release = qx{wget -S --spider $ftp 2>&1};
+
+
   foreach (@available_release) {
     next if (/current/);
     next unless (/^[dl].*[^\.]release/);
@@ -193,7 +196,7 @@ sub Get_ensembl_version() {
 
 
 ## Get species type
-sub Get_species_taxon() {
+sub Get_species_taxon {
   my ($db,$ensembl_version) = @_;
   my %species_taxon = ();
 
@@ -220,7 +223,7 @@ sub Get_species_taxon() {
 ############################################################################ 
 
 # get API host name
-sub Get_host_port() {
+sub Get_host_port {
   my ($db) = @_;
 
   if ($db eq "ensembl") {
@@ -235,13 +238,13 @@ sub Get_host_port() {
 #### Specification of local directories for installing Ensembl on RSAT #####
 ############################################################################ 
 
-sub Get_species_dir_name() {
+sub Get_species_dir_name {
   my ($species,$assembly_version,$ensemb_version) = @_;
   $species = ucfirst($species);
   return $species."_ensembl_".$assembly_version."_".$ensembl_version;
 }
 
-sub Get_assembly_version() {
+sub Get_assembly_version {
   my ($data_dir,$species,$ensembl_version) = @_;
   $species = ucfirst($species);
   $supported_file = &Get_supported_file($data_dir);
@@ -261,16 +264,16 @@ sub Get_assembly_version() {
 
 ############################ Fct local dir
 
-sub Get_data_dir() {
+sub Get_data_dir {
   return $ENV{'RSAT'}."/data/";
 }
 
-sub Get_genomes_dir() {
+sub Get_genomes_dir {
   my ($data_dir) = @_;
   return $data_dir."/genomes/";
 }
 
-sub Get_species_dir() {
+sub Get_species_dir {
   my ($data_dir,$species,$assembly_version,$ensembl_version) = @_;
   $species = ucfirst($species);
   $supported_file = &Get_supported_file($data_dir);
@@ -305,13 +308,13 @@ sub Get_species_dir() {
 }
 
 
-sub Get_genome_dir() {
+sub Get_genome_dir {
   my ($data_dir,$species, $assembly_version,$ensembl_version) = @_;
  
   return &Get_species_dir($data_dir, $species, $assembly_version,$ensembl_version)."genome/";
 }
 
-sub Get_variation_dir() {
+sub Get_variation_dir {
   my ($data_dir,$species, $assembly_version,$ensembl_version) = @_;
   return &Get_species_dir($data_dir, $species, $assembly_version,$ensembl_version)."variations/";
 }
@@ -319,25 +322,25 @@ sub Get_variation_dir() {
 ############################ Fct get file
 
 ## supported_organims_ensembl.tab
-sub Get_supported_file() {
+sub Get_supported_file {
   my ($data_dir) = @_;
   return $data_dir."/supported_organisms_ensembl.tab";
 }
 
 ## Contigs.txt
-sub Get_contigs_file() {
+sub Get_contigs_file {
   my ($genome_dir) = @_;
   return $genome_dir."contigs.txt";
 }
 
 ## Contig.tab
-sub Get_contig_file() {
+sub Get_contig_file {
   my ($genome_dir) = @_;
   return $genome_dir."contig.tab";
 }
 
 ## Feature.tab
-sub Get_feature_file() {
+sub Get_feature_file {
   my ($data_dir,$species, $assembly_version,$ensembl_version,$name) = @_;
   $name =~ s/ /_/g;
   $name = lc($name);
@@ -348,7 +351,7 @@ sub Get_feature_file() {
 ############################ Fct get file_chr name
 
 ## Get list of sequence file
-sub Get_file_seq_name() {
+sub Get_file_seq_name {
   my ($genome_dir) = @_;
   my %chr_file = ();
   my %file_info = ();
