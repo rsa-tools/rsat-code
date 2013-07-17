@@ -49,7 +49,7 @@ one_matrix_distrib:
 		-o ${DISTRIB_FILE}.tab
 	@echo "	${DISTRIB_FILE}.tab"
 
-MATRIX_IDS=`grep -v '^;' ${MATRIX_LIST} | cut -f 2 | head -5 | xargs`
+MATRIX_IDS=`grep -v '^;' ${MATRIX_LIST} | cut -f 2 | xargs`
 list_matrix_ids:
 	@echo "Matrix IDs	${MATRIX_IDS}"
 
