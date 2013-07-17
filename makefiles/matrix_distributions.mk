@@ -57,3 +57,7 @@ matrix_distrib_all:
 	@for m in ${MATRIX_IDS}; do \
 		${MAKE} one_matrix_distrib MATRIX_ID=$${m} ; \
 	done
+
+TIME_FILE=${MATRIX_DIR}/distrib_calc_time.txt
+matrix_distrib_all_time: 
+	time ${MAKE} matrix_distrib_all >& ${TIME_FILE}
