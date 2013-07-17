@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.117 2013/04/25 05:39:27 rsat Exp $
+# $Id: install-organism,v 1.118 2013/07/17 09:31:51 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -1353,7 +1353,7 @@ sub StartAndStopCodons {
   $command .= "-type upstream -feattype CDS -from 0 -to 2  \ ";
   $command .= "-format wc -nocomment -label $label \ ";
   $command .= " -o ".$prefix."_start_codons.wc";
-  $command .= " ; ".$SCRIPTS."/oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+  $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
   $command .= " -i ".$prefix."_start_codons.wc";
   $command .= " -o ".$prefix."_start_codon_frequencies";
   &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
@@ -1364,7 +1364,7 @@ sub StartAndStopCodons {
   $command .= "-type downstream  -feattype CDS -from 0 -to -2  \ ";
   $command .= "-format wc -nocomment -label $label \ ";
   $command .= " -o ".$prefix."_stop_codons.wc";
-  $command .= " ; ".$SCRIPTS."/oligo-analysis -quick -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+  $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
   $command .= " -i ".$prefix."_stop_codons.wc";
   $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
   &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
