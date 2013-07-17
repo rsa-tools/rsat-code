@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.18 2013/07/16 12:53:25 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.19 2013/07/17 16:16:12 jvanheld Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -134,10 +134,13 @@ package main;
   our $out = STDOUT;
 
   our $db = "ensembl";
-  our $data_dir = &Get_data_dir();
+  our $data_dir;
   our $safe_ensembl_version = &Get_ensembl_version_safe($db);
   our $latest_ensembl_version = &Get_ensembl_version($db);
   our $ensembl_version = $safe_ensembl_version;
+#  our $safe_ensembl_version;
+#  our $latest_ensembl_version;
+#  our $ensembl_version;
   our $get_available_species = 0;
 
   our @tasks = ();
@@ -156,6 +159,13 @@ package main;
   ## Read argument values
   &ReadArguments();
 
+
+  ################################################################
+  ## Check argument values
+
+  ## Data directory
+  $data_dir = &Get_data_dir() unless ($data_dir);
+
   ## Read list of species from a file
   if ($infile{input}) {
     my ($file) = &OpenInputFile($infile{input});
@@ -164,9 +174,6 @@ package main;
       push (@species_names,$_);
     }
   }
-
-  ################################################################
-  ## Check argument values
 
   unless ($get_available_species) {
 
@@ -191,17 +198,17 @@ package main;
 	$task{$task} = 1;
     }
   }
-  
+
   ## Define the version of Ensembl database to be used
   if ($ensembl_version eq "safe") {
       $ensembl_version = $safe_ensembl_version;
-      
+
   } elsif ($ensembl_version eq "latest") {
       $ensembl_version = $latest_ensembl_version;
-      
+
   } else {
       &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
-      &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can't be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
+#      &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can't be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
   }
 
 
@@ -215,7 +222,7 @@ package main;
 
   if ($get_available_species) {
     my %available_species = ();
-      
+
     my $arg = "-v ".$verbose;
     $arg .= " -available_species";
     $arg .= " -version $ensembl_version";
@@ -445,7 +452,7 @@ would change their file formats or locations.
 =cut
     } elsif ($arg eq "-version") {
     $ensembl_version = shift(@arguments);
-    &RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.") 
+    &RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.")
       unless ( &IsNatural($ensembl_version) || $ensembl_version eq "safe" || $ensembl_version eq "latest" );
 
 =pod
