@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.147 2013/01/07 00:44:59 jvanheld Exp $
+# $Id: convert-matrix,v 1.148 2013/07/17 16:15:50 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -194,6 +194,7 @@ if ($return_field{logo_table}) {
 local %return_fields = ();
 unless (scalar(@return_fields)) {
   if ((lc($output_format ) eq "transfac") ||
+      (lc($output_format ) eq "tf") ||
       (lc($output_format ) eq "consensus") ||
       (lc($output_format ) eq "tab") ||
       (lc($output_format ) eq "infogibbs")
@@ -280,7 +281,12 @@ if ($return_fields{logo}) {
 #### Perform the conversion
 
 ### open output file ###
-$out = &OpenOutputFile($outfile{output});
+if ($split_out_files) {
+  $outfile{matrix_list} = $outfile{output}."_matrix_list.tab";
+  $out = &OpenOutputFile($outfile{matrix_list});
+} else {
+  $out = &OpenOutputFile($outfile{output});
+}
 
 ##### print output ######
 &Verbose if ($verbose);
@@ -453,16 +459,21 @@ foreach my $matrix (@matrices) {
     ## Use the same number of digits for all matrices so that the
     ## alphabetical order ot the splitted files corresponds to the
     ## numerical order of the matrices.
-#    my $id_nb = &RSAT::util::number_with_zeros($m, 'maxval'=>scalar(@matrices));
     my $id_nb = sprintf "%${id_digits}s", $m;
     $id_nb =~ s/ /0/g;
     $id .= $id_nb;
 
-    $outfile{'matrix_'.$m} = $output_prefix."_m".$id_nb.".".$output_format;
+    my $ID = $matrix->get_attribute("accession")
+      ||  $matrix->get_attribute("identifier")
+	|| $matrix->get_attribute("name")
+	  || $matrix->get_attribute("ID")
+	    || $id_nb;
+
+    $outfile{'matrix_'.$m} = $output_prefix."_".$ID.".".$output_format;
     $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
 
     ## Print the name of the file containing each matrix in the main output file
-    print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}), "\n";
+    print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}, $matrix->get_attribute("name")), "\n";
   } else {
     $current_out = $out;
   }
@@ -480,10 +491,6 @@ foreach my $matrix (@matrices) {
 
   ## Matrix permutations
   if ($perm) {
-    my $ID = $matrix->get_attribute("identifier")
-      || $matrix->get_attribute("name")
-	|| $matrix->get_attribute("ID")
-	  || "matrix_".$m;
     my $AC = $matrix->get_attribute("accession") || $ID;
     &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
     &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
@@ -1513,7 +1520,7 @@ sub ExportMatrix {
 
   ## Suppress sites if not required because transfac format includes
   ## them
-  if ($output_format eq "transfac") {
+  if (($output_format eq "transfac") || ($output_format eq "tf")) {
     unless ($return_fields{sites}) {
       $matrix->set_array_attribute("sequences", ());
 #      &RSAT::message::Debug("After site suppression",  scalar($matrix->get_attribute("sequences"))) if ($main::verbose >= 10);
@@ -1575,7 +1582,7 @@ sub ExportMatrix {
 
   ## Return sites
   if ($return_fields{sites}) {
-    unless ($output_format eq "transfac") {
+    unless (($output_format eq "transfac") || ($output_format eq "tf")) {
       print $out_handle "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
       my $s = 0;
       my @site_ids = $matrix->get_attribute("site_ids");
