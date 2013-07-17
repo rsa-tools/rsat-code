@@ -70,3 +70,4 @@ compare_distrib:
 		-legend -lines -xsize 600 -ysize 400 \
 		-format ${IMG_FORMAT} -o distrib_comparison.${IMG_FORMAT}
 	@echo  distrib_comparison.${IMG_FORMAT}
+
