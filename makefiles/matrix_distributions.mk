@@ -67,7 +67,7 @@ matrix_distrib_list:
 	@echo "Generating matrix distribution list"
 	@echo "#MATRIX_ID	DISTRIB_FILE	DB	BG_PREFIX" > ${MATRIX_DISTRIB_LIST}
 	@for m in ${MATRIX_IDS}; do \
-		${MAKE} _matrix_distrib_list_add_one ; \
+		${MAKE} MATRIX_ID=$${m} _matrix_distrib_list_add_one ; \
 	done 
 	@echo "	${MATRIX_DISTRIB_LIST}"
 
