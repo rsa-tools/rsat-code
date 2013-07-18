@@ -72,7 +72,7 @@ matrix_distrib_list:
 	@echo "	${MATRIX_DISTRIB_LIST}"
 
 _matrix_distrib_list_add_one:
-	@echo "${MATRIX_ID}	${DISTRIB_FILE}	${DB}	${BG_PREFIX}" | perl -pe 's|${DISTRIB_DIR}/||' >> ${MATRIX_DISTRIB_LIST}
+	@echo "${MATRIX_ID}	${DISTRIB_FILE}.tab	${DB}	${BG_PREFIX}" | perl -pe 's|${DISTRIB_DIR}/||' >> ${MATRIX_DISTRIB_LIST}
 
 TIME_FILE=${MATRIX_DIR}/distrib_calc_time.txt
 matrix_distrib_all_time: 
