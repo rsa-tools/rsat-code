@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.12 2013/07/16 15:13:30 jvanheld Exp $
+# $Id: retrieve-variation-seq,v 1.13 2013/07/18 13:13:52 jeremy Exp $
 #
 ############################################################
 
@@ -209,7 +209,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -287,6 +287,7 @@ package	main;
   foreach ( glob ( $variation_dir."*.tab") ) {
     push (@variation_file,$_) unless (/Failed/);
   }
+#    @variation_file = ("$variation_dir/var.gvf");
 
   ################################################################
   ## Retrieve variations from one or several ID(s)
@@ -294,13 +295,14 @@ package	main;
     &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
 
     my $var_file = $main::outfile{'var_tmp'};
-    $out_v = &OpenOutputFile($var_file);
+    my $out_v = &OpenOutputFile($var_file);
 
     my %variation_id = ();
 
     ## Get ID list
     my ($file) = &OpenInputFile($main::infile{'input'});
     while (<$file>) {
+
       next if (/^#/);
       next if (/^;/);
       chomp();
@@ -314,21 +316,28 @@ package	main;
     ## Try to idenfity the variations in each chromosome separately.
     ## Note: there is a tradeoff between different efficiency issues, since for Human genome there are
 
-
     ## Create a regular expression to select the rows containing query
     ## IDs with grep
     my $grep_id = "'".join('\|',keys(%variation_id))."'";
+#    my $f = "/Users/jeremy/id".scalar(keys(%variation_id))."txt";
+#    my $out_id = &OpenOutputFile("$f");
+#    print $out_id join("\n",keys(%variation_id));
+#    close ($out_id);
 
     ## Grep each variation file to collect the selected IDs
+
     foreach my $file_name (@variation_file) {
       last if ( scalar(keys(%variation_id)) == 0);
 
-      my @result = qx{grep -rw $grep_id $file_name};
+#      my @result = qx{grep -f $f $file_name};
+      my @result = qx{grep $grep_id $file_name};
+
       my $i = 0;
       foreach (@result) {
         chomp();
         my @token = split("\t");
         next if ( $token[9] == 1 ); ##Remove super-variation
+        next unless ($variation_id{$token[4]});
         delete($variation_id{$token[4]});	##Remove find variation from the liste
         $token[10] = 0; ##Remove info about in_super_variation
         print $out_v join("\t",@token),"\n";
@@ -338,6 +347,9 @@ package	main;
       ## Redefine the regular expression with only the variations not
       ## yet found.
       $grep_id = "'".join('\|',keys(%variation_id))."'";
+#    $out_id = &OpenOutputFile("$f");
+#    print $out_id join("\n",keys(%variation_id));
+#    close ($out_id);
 
       $file_name = &RSAT::util::hide_RSAT_path($file_name);
       &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
@@ -347,11 +359,11 @@ package	main;
     my @not_found = sort(keys(%variation_id));
     my $not_found_nb = scalar(@not_found);
     if ($not_found_nb > 0) {
-      my $not_found_msg = "; Non-identified variations: ".$not_found_nb."\n";
-      $not_found_msg .= "; Note: some variations may have failed to pass Ensembl or RSAT quality check)\n";
-      &RSAT::message::Warning($not_found_msg);
+      &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb);
+      my $not_found_msg .= "; Note: some variations may have failed to pass Ensembl or RSAT quality check\n";
+
       foreach my $id (@not_found) {
-	$not_found_msg .= ";\tmissing\t".$id."\n";
+        $not_found_msg .= ";\tmissing\t".$id."\n";
       }
       print $out $not_found_msg;
     }
@@ -409,14 +421,12 @@ package	main;
 
   &RSAT::message::TimeWarn("Retrieve sequence for all variant of variations") if ($main::verbose >= 2);
   foreach my $var_file (@variation_file) {
-    print $var_file,"\n";
     my $last_chr = "";
     my $ref_seq = "";
 
     ($file) = &OpenInputFile($var_file);
 
     while (<$file>) {
-      print $_;
       chomp();
       my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
       next if ($invar && $validate == 0 && $format ne "id");
