@@ -21,6 +21,7 @@ split_db:
 	@echo "${MATRIX_LIST}"
 
 list_param:
+	@echo "DB		${DB}"
 	@echo "MATRIX_DB_FILE	${MATRIX_DB_FILE}"
 	@echo "MATRIX_DIR	${MATRIX_DIR}"
 	@echo "SPLIT_DIR	${SPLIT_DIR}"
