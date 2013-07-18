@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.3 2013/07/16 12:13:46 jeremy Exp $
+# $Id: variation-scan,v 1.4 2013/07/18 13:13:40 jeremy Exp $
 #
 ############################################################
 
@@ -188,7 +188,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -210,15 +210,15 @@ package	main;
 
   ###############################################################
   ## Check arguments
-#  &RSAT::error::FatalError("You forgot to indicate a background file. Use -bg option") unless ($main::infile{bg});
+  &RSAT::error::FatalError("You forgot to indicate a background file. Use -bg option") unless ($main::infile{'bg'});
   &RSAT::error::FatalError("You forgot to indicate a sequence file. Use -i option") unless ($main::infile{'input'});
   &RSAT::error::FatalError("You forgot to indicate a matrix file. Use -m option") unless ($main::infile{'matrixfile'});
 
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
-  print $out "#motif\tvar_id\tvar_class\tcoord\th_we\tl_we\tdiff\th_pval\tl_pval\tsigma\th_var\tl_var\th_off\tl_off\th_seq\tl_seq\n";
   &Verbose() if ($main::verbose >= 1);
+  print $out "#motif\tvar_id\tvar_class\tcoord\th_we\tl_we\tdiff\th_pval\tl_pval\tsigma\th_var\tl_var\th_off\tl_off\th_seq\tl_seq\n";
 
   ################################################################
   #Read Matrix File
@@ -268,18 +268,16 @@ package	main;
   close $main::in;
 
   ################################################################
-  my $tmp_file_path = &RSAT::util::make_temp_file("","motif_tf", 1).".tf";
+  my $matrix_file = &RSAT::util::make_temp_file("","motif_tf", 1).".tf";
+  my $fasta_file = &RSAT::util::make_temp_file("","fasta_seq", 1).".fa";
 
   foreach our $matrix_length (keys(%matrix_list)) {
     next if ($matrix_length == 0);
     next if ($matrix_length > $flank_len+1);
     
-    &RSAT::message::TimeWarn("Working on motif on length : $matrix_length") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Working on the ",scalar(@{$matrix_list{$matrix_length}{'str'}})," matrices of length :", $matrix_length) if ($main::verbose >= 2);
 
     ## Make tf file
-    &RSAT::message::TimeWarn("\tMake tf files") if ($main::verbose >= 2);
-    my $matrix_file  = $tmp_file_path;
-
     my $outM = &OpenOutputFile($matrix_file);
     foreach my $matrix (@{$matrix_list{$matrix_length}{'str'}}) {
       print $outM $matrix;
@@ -289,7 +287,12 @@ package	main;
     &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 2);
     %matrix_pval = ();
 
-    my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib -m $matrix_file -matrix_format transfac -pseudo 1};
+    my $arg = "-m $matrix_file -matrix_format tf";
+    $arg .= " -decimals 1 -pseudo 1";
+    $arg .= " -bgfile $main::infile{'bg'} -bg_pseudo 0.01 -bg_format oligos";
+
+#    my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib -m $matrix_file -matrix_format transfac -pseudo 1};
+    my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib $arg};
     my $i = -1;
     my %legend_col = ();
 
@@ -311,27 +314,27 @@ package	main;
     }
 
     ## Get position-weigth matrice
-    &RSAT::message::TimeWarn("\tGet PWM") if ($main::verbose >= 2);
-    %matrix_PWM = ();
+#    &RSAT::message::TimeWarn("\tGet PWM") if ($main::verbose >= 2);
+#    %matrix_PWM = ();
 
-    $i = 0;
-    my @ppm = qx{$ENV{'RSAT'}/perl-scripts/convert-matrix -from transfac -to tab -return weights -decimals 1 -multiply 1 -perm 0 -i $matrix_file};
+#    $i = 0;
+#    my @ppm = qx{$ENV{'RSAT'}/perl-scripts/convert-matrix -from transfac -to tab -return weights -decimals 1 -multiply 1 -perm 0 -i $matrix_file};
 
-    foreach (@ppm) {
-      chomp;
+#    foreach (@ppm) {
+#      chomp;
 
-      if (m/\/\//) {
-        $i++;
-        next;
-      }
+#      if (m/\/\//) {
+#        $i++;
+#        next;
+#      }
 
-      my ($nucle,@weigths) = split(" ");
-      $nucle = uc($nucle);
+#      my ($nucle,@weigths) = split(" ");
+#      $nucle = uc($nucle);
 
-      for (my $pos = 0; $pos < scalar(@weigths); $pos ++) {
-        $matrix_PWM{${$matrix_list{$matrix_length}{'id'}}[$i]}{$pos}{$nucle} = $weigths[$pos];
-      }
-    }
+#      for (my $pos = 0; $pos < scalar(@weigths); $pos ++) {
+#        $matrix_PWM{${$matrix_list{$matrix_length}{'id'}}[$i]}{$pos}{$nucle} = $weigths[$pos];
+#      }
+#    }
 
     ## Scan sequences
     my $last_id = "";
@@ -339,7 +342,16 @@ package	main;
     my $last_nb = 1;
     my @variant_seq = ();
 
+    $arg  = "-quick";
+    $arg .= " -i $fasta_file";
+    $arg .= " -m $matrix_file -matrix_format transfac";
+    $arg .= " -pseudo 1 -decimals 1 -2str -origin start";
+    $arg .= " -bgfile $main::infile{'bg'}";
+    $arg .= " -bg_pseudo 0.01";
+    $arg .= " -seq_format fasta -n score";
+
     &RSAT::message::TimeWarn("\tScan matrix") if ($main::verbose >= 2);
+
 
     ($main::in) = &OpenInputFile($main::infile{input});
     while (<$main::in>) {
@@ -361,17 +373,26 @@ package	main;
             $last_nb = $nb_variation;
         }
 
-        my @result = &scanMatrice(@variant_seq);
+#        my @result = &scanMatrice(@variant_seq);
+
+        my $out_fas = &OpenOutputFile($fasta_file);
+        print $out_fas join("\n",@variant_seq);
+        my @result = qx{$ENV{'RSAT'}/perl-scripts/matrix-scan $arg};
+
         &Analyse(@result) unless (scalar(@result) == 0);
 
         @variant_seq = ();
       }
 
-      push (@variant_seq, "$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\t".substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2));
+      push (@variant_seq, ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n".substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2));
+#      push (@variant_seq, "$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\t".substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2));
       $last_id = $id;
     }
 
-    my @result  = &scanMatrice(@variant_seq);
+#    my @result  = &scanMatrice(@variant_seq);
+     my $out_fas = &OpenOutputFile($fasta_file);
+     print $out_fas join("\n",@variant_seq);
+     my @result = qx{$ENV{'RSAT'}/perl-scripts/matrix-scan $arg};
     &Analyse(@result) unless (scalar(@result) == 0);
     close $main::in;
   }
