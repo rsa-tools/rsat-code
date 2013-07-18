@@ -61,4 +61,4 @@ matrix_distrib_all:
 
 TIME_FILE=${MATRIX_DIR}/distrib_calc_time.txt
 matrix_distrib_all_time: 
-	time ${MAKE} matrix_distrib_all >& ${TIME_FILE}
+	(time ${MAKE} matrix_distrib_all) >& ${TIME_FILE}
