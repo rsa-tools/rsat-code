@@ -58,6 +58,21 @@ matrix_distrib_all:
 	@for m in ${MATRIX_IDS}; do \
 		${MAKE} one_matrix_distrib MATRIX_ID=$${m} ; \
 	done
+	${MAKE} matrix_distrib_list
+
+## Generate a file with the list of matrix distribution files
+MATRIX_DISTRIB_LIST=${DISTRIB_DIR}/${DB}_distrib_bg_${BG_PREFIX}_list.tab
+matrix_distrib_list:
+	@echo ""
+	@echo "Generating matrix distribution list"
+	@echo "#MATRIX_ID	DISTRIB_FILE	DB	BG_PREFIX" > ${MATRIX_DISTRIB_LIST}
+	@for m in ${MATRIX_IDS}; do \
+		${MAKE} _matrix_distrib_list_add_one ; \
+	done 
+	@echo "	${MATRIX_DISTRIB_LIST}"
+
+_matrix_distrib_list_add_one:
+	@echo "${MATRIX_ID}	${DISTRIB_FILE}	${DB}	${BG_PREFIX}" | perl -pe 's|${DISTRIB_DIR}/||' >> ${MATRIX_DISTRIB_LIST}
 
 TIME_FILE=${MATRIX_DIR}/distrib_calc_time.txt
 matrix_distrib_all_time: 
