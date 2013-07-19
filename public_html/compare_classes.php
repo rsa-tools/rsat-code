@@ -390,9 +390,9 @@
 
     ## Text-to-html
     $cc_server = rtrim ($cc_server);
-    $cc_file = storeFile($cc_server);
+    $cc_file = storeFile($cc_server, "html");
     $tth_parameters = array( 
-      "request" => array(
+        "request" => array(
         "inputfile"=>$cc_file,
         "chunk"=>1000,
       )
