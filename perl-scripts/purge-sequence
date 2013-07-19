@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.45 2012/08/03 11:29:47 jvanheld Exp $
+# $Id: purge-sequence,v 1.46 2013/07/19 06:11:11 rsat Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -12,7 +12,14 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
+my $vmatch_installed = 0;
 my $skdir = "$ENV{RSAT}/bin";
+
+if ((-e $skdir."/vmatch") && (-e $skdir."/mkvtree")) {
+    $vmatch_installed = 1;
+} else {
+    &RSAT::message::Warning("Skipping sequence purging because vmatch and mkvtree are not installed on server (see http://www.vmatch.de/).");
+}
 
 my $delete_repeats=0;
 
@@ -21,8 +28,8 @@ local $start_time = &RSAT::util::StartScript();
 my $convert_seq_command = $ENV{RSAT}."/perl-scripts/convert-seq";
 
 $both_strands = 1;
-$inputfile = "";
-$outputfile = "";
+$input_file = "";
+$output_file = "";
 $match_len = 40;
 $mismatches = 3;
 $in_format = "fasta";
@@ -41,7 +48,7 @@ $dir{execution} = `pwd`;
 chomp $dir{execution};
 
 ## Define the name of the output file
-if ($outputfile) {
+if ($output_file) {
   $basename{out} = `basename ${outputfile}`;
   $dirname{out} = `dirname ${outputfile}`;
   chomp $dirname{out};
@@ -53,10 +60,10 @@ if ($outputfile) {
 chdir($dir{execution});
 
 ## Define the name of the input file
-if ($inputfile) {
-  $basename = `basename ${inputfile}`;
+if ($input_file) {
+  $basename = `basename ${input_file}`;
   chomp $basename;
-  $dirname = `dirname ${inputfile}`;
+  $dirname = `dirname ${input_file}`;
   chomp $dirname;
   chdir $dirname;
   $dir{input} = `pwd`;
@@ -80,71 +87,78 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 		      "\ntmp_file_dir = ", $tmp_file_dir,
 		      "\ntmp_file_name = ", $tmp_file_name,
 		     ) if ($main::verbose >= 5);
-$command = " $convert_seq_command -from $in_format -to fasta -o ".$tmp_file_path." -noempty ";
+$command = " $convert_seq_command -from $in_format -to fasta -noempty ";
 $command .= " -mask_short ".$mask_short if ($mask_short);
 $command .= " -mask non-dna " if ($dna);
-$command .= " -i $dir{input}/$basename" if ($inputfile);
+$command .= " -i $dir{input}/$basename" if ($input_file);
+if ($vmatch_installed) {
+    $command .= " -o ".$tmp_file_path;
+} elsif ($output_file) {
+    $command .= " -o ".$output_file;
+}
 #&RSAT::message:Debug("convert-seq command", $command);
 &doit($command, $dry_run, $die_on_error, $verbose);
 
-###### execute the command #########
-@extensions = qw(al1 ssp bck bwt des lcp ois llv prj suf tis sds sti1);
+if ($vmatch_installed) {
 
-#### build the tree
-my $mkvtree_options = "";
-$mkvtree_options .= " -bck"; # bucket boundaries ???
-$mkvtree_options .= " -dna"; # input is DNA sequence
-$mkvtree_options .= " -tis"; # output parsed and transformed input string to file
-$mkvtree_options .= " -bwt"; # output Burrows & Wheeler Transform to file
-$mkvtree_options .= " -suf"; # output suffix array to file
-$mkvtree_options .= " -sti1"; # output reduced inverse suffix array (sti1tab) to file
-$mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
-$mkvtree_options .= " -ois"; # output the parsed input string to a file
-$mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
-$mkvtree_options .= " -db ".$tmp_file_name; # sequence file
-$command = "cd $tmp_file_dir; $skdir/mkvtree $mkvtree_options";
-&doit($command, $dry_run, $die_on_error, $verbose);
+    ## Define extensiosn for mkvtree
+    @extensions = qw(al1 ssp bck bwt des lcp ois llv prj suf tis sds sti1);
 
-#### locate the duplications
-my $vmatch_options = "-s"; # show the sequence content of a match
-if ($delete_repeats) {
-    ## delete repeats
-    $vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
-} else {
-    ## mask repeats
-    $vmatch_options .= " -dbmaskmatch n "; # show all database sequence not containing a match
+    ## build the tree
+    my $mkvtree_options = "";
+    $mkvtree_options .= " -bck"; # bucket boundaries ???
+    $mkvtree_options .= " -dna"; # input is DNA sequence
+    $mkvtree_options .= " -tis"; # output parsed and transformed input string to file
+    $mkvtree_options .= " -bwt"; # output Burrows & Wheeler Transform to file
+    $mkvtree_options .= " -suf"; # output suffix array to file
+    $mkvtree_options .= " -sti1"; # output reduced inverse suffix array (sti1tab) to file
+    $mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
+    $mkvtree_options .= " -ois"; # output the parsed input string to a file
+    $mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
+    $mkvtree_options .= " -db ".$tmp_file_name; # sequence file
+    $command = "cd $tmp_file_dir; $skdir/mkvtree $mkvtree_options";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    ## options to locate duplications
+    my $vmatch_options = "-s"; # show the sequence content of a match
+    if ($delete_repeats) {
+	## delete repeats
+	$vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
+    } else {
+	## mask repeats
+	$vmatch_options .= " -dbmaskmatch n "; # show all database sequence not containing a match
+    }
+    $vmatch_options .= " keepleft"; # keep the left occurrence of each repeat
+    $vmatch_options .= " -l $match_len"; # specify that match must have the given length
+    $vmatch_options .= " -e $mismatches" if ($mismatches > 0); # specify the allowed edit distance > 0
+    $vmatch_options .= " -d"; # compute direct matches 
+    $vmatch_options .= " -showdesc 0"; # use the original sequence identifier 
+    if ($both_strands) {
+	$vmatch_options .= " -p"; # compute reverse complemented (palindromic) matches
+    }
+    $vmatch_options .= " $tmp_file_name ";
+    $vmatch_options .= " | grep -v '^#' ";
+    ## $vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
+    $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
+
+    $vmatch_options .= "> $dir{output}/$basename{out}" if ($output_file);
+    $command = "cd $tmp_file_dir ; $skdir/vmatch $vmatch_options";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    ## Remove temporary files
+    foreach $ext  (@extensions) {
+	my $command = "rm -f ".$tmp_file_path.".".$ext;
+	&doit($command, $dry_run, $die_on_error, $verbose);
+    }
+    $command = "rm -f $tmp_file_path";
+    ## $command = "rm -f ${TMP}/$tmp_file_name";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    ################################################################
+    ## Report execution time
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 }
-$vmatch_options .= " keepleft"; # keep the left occurrence of each repeat
-$vmatch_options .= " -l $match_len"; # specify that match must have the given length
-$vmatch_options .= " -e $mismatches" if ($mismatches > 0); # specify the allowed edit distance > 0
-$vmatch_options .= " -d"; # compute direct matches 
-$vmatch_options .= " -showdesc 0"; # use the original sequence identifier 
-if ($both_strands) {
-    $vmatch_options .= " -p"; # compute reverse complemented (palindromic) matches
-}
-$vmatch_options .= " $tmp_file_name ";
-$vmatch_options .= " | grep -v '^#' ";
-#$vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
-$vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
-
-$vmatch_options .= "> $dir{output}/$basename{out}" if ($outputfile);
-$command = "cd $tmp_file_dir ; $skdir/vmatch $vmatch_options";
-&doit($command, $dry_run, $die_on_error, $verbose);
-
-#### Remove temporary files
-foreach $ext  (@extensions) {
-  my $command = "rm -f ".$tmp_file_path.".".$ext;
-  &doit($command, $dry_run, $die_on_error, $verbose);
-}
-$command = "rm -f $tmp_file_path";
-#$command = "rm -f ${TMP}/$tmp_file_name";
-&doit($command, $dry_run, $die_on_error, $verbose);
-
-
-################################################################
-## Report execution time
-my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
 exit(0);
 
@@ -161,7 +175,7 @@ NAME
         1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 USAGE
-        purge-sequence [-i inputfile] [-o outputfile] [-v] [-2str | -1str]
+        purge-sequence [-i input_file] [-o outputfile] [-v] [-2str | -1str]
 
 DESCRIPTION
 
@@ -182,9 +196,9 @@ OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
 	-v	verbose
-	-i inputfile
+	-i input_file
 	        The file containing the sequence to purge.
-		If inputfile is not specified, the standard input is
+		If input_file is not specified, the standard input is
 		used.  This allows to place the command within a pipe.
 	-format sequence format
 	-o outputfile
@@ -272,18 +286,18 @@ sub ReadArguments {
 	    
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
+	    $input_file = $ARGV[$a+1];
 	    
 	    ### sequence format
 	} elsif ($ARGV[$a] eq "-format") {
 	    $in_format = lc($ARGV[$a+1]);
 	    
 	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
+	    $input_file = $ARGV[$a+1];
 	    
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+	    $output_file = $ARGV[$a+1];
 	    
 	    ### strands
 	} elsif ($ARGV[$a] eq "-1str") {
