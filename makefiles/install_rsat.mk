@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.75 2013/07/19 06:28:50 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.76 2013/07/19 06:29:14 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -23,8 +23,8 @@ SSH=-e 'ssh -x'
 ################################################################
 ## Install the RSAT package
 install_rsat:
-	make -f ${RSAT}/makefiles/init_rsat.mk init
-	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
+	make -f ${RSAT}/makefiles/init_RSAT.mk init
+	make -f ${RSAT}/makefiles/init_RSAT.mk compile_all
 	${MAKE} config_rsat
 	make -f ${RSAT}/makefiles/install_software.mk
 
