@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.60 2013/06/24 09:09:58 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.61 2013/07/19 05:42:18 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -200,7 +200,8 @@ package main;
       $outfile{assembly} = $outfile{output}.".asmb";
     }
     $outfile{sig_matrices} = $outfile{output}."_sig_matrices.tf";
-    $outfile{sig_matrices_split} = $outfile{output}."_sig_matrices_split";
+    $prefix{sig_matrices_split} = $outfile{output}."_sig_matrices_split";
+    $outfile{sig_matrices_split} = $outfile{output}."_sig_matrices_split_matrix_list.tab";
     $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
     $outfile{count_matrices_tf} = $outfile{output}."_count_matrices.tf"; ## Count matrices in transfac format
     $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
@@ -804,7 +805,7 @@ sub QuickScanForSites {
   ## Split the sig matrix file into separated tab-delimited files (one per matrix, required for matrix-scan-quick)
   my $cmd = $SCRIPTS."/convert-matrix ";
   $cmd .= " -from tf -i ".$outfile{sig_matrices};
-  $cmd .= " -to tab -split  -o ".$outfile{sig_matrices_split};
+  $cmd .= " -to tab -split  -o ".$prefix{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
   &RSAT::message::Debug("Splitting sig matrix file", $outfile{sig_matrices_split}) if ($main::verbose >= 3);
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
