@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.73 2013/07/19 02:43:28 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.74 2013/07/19 04:58:02 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -20,6 +20,21 @@ MAKEFILE=${RSAT}/makefiles/install_rsat.mk
 # Programs used for downloading and sycnrhonizing
 SSH=-e 'ssh -x'
 
+################################################################
+## Install the RSAT package
+install_rsat:
+	make -f makefiles/init_rsat.mk init
+
+
+################################################################
+## To do: write a Perl script that interactively prompts for
+## configuration parameters and adapts the RSAT_config.mk and
+## RSAT_config.props files.
+config_rsat:
+	@echo "INTERACTIVE CONFIGURATION NOT IMPLEMENTED YET" 
+	@echo "Please edit manually the following files"
+	@echo "	${RSAT}/RSAT_config.props"
+	@echo "	${RSAT}/RSAT_config.mk"
 
 
 ################################################################
