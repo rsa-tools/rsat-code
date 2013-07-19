@@ -320,10 +320,10 @@ export RSAT=[PARENT_PATH]/rsa-tools;
 cd $RSAT
 
 ## Display the list of Perl modules that will be installed
-make -f makefiles/install_rsat.mk list_perl_modules;
+make -f makefiles/install_software.mk list_perl_modules;
 
 ## Install the Perl modules
-make -f makefiles/install_rsat.mk install_perl_modules;
+make -f makefiles/install_software.mk install_perl_modules;
 \end{lstlisting}
 %% closing $
 
@@ -526,7 +526,7 @@ command accordingly.
 \begin{lstlisting}
 ## Install the ensembl library witha  specific branch number
 make -f makefiles/install_software.mk install_ensembl_api \
-   ENSEMBL_VERSION=70
+   ENSEMBL_VERSION=72
 \end{lstlisting}
 %%$ 
 
