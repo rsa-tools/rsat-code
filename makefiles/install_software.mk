@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.42 2013/07/17 16:16:33 jvanheld Exp $
+# $Id: install_software.mk,v 1.43 2013/07/19 04:58:02 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -65,9 +65,9 @@ PERL_MODULES= \
 	XML::Compile::WSDL11 \
 	XML::Parser::Expat \
 	XML::Compile::Transport::SOAPHTTP \
+	SOAP \
 	SOAP::WSDL \
 	SOAP::Lite \
-	SOAP \
 	Module::Build::Compat \
 	DBI \
 	DBD::mysql \
@@ -76,6 +76,10 @@ PERL_MODULES= \
 	Bio::Perl \
 	Bio::Das \
 	Algorithm::Cluster
+
+PERL_MODULES_PROBLEMS= \
+
+
 list_perl_modules:
 	@echo
 	@echo "Perl modules to be isntalled"
@@ -96,6 +100,94 @@ _install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
+
+################################################################
+## Install the BioPerl library
+##
+## For this example, we install Bioperl and EnsEMBL libraries 
+## in $RSAT/lib, but you can install it in some other place
+### (password is 'cvs')
+_old_bioperl:
+	@mkdir -p ${RSAT}/lib
+	@echo "Password is 'cvs'"
+	@cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
+	(cd ${RSAT}/lib;  cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live)
+
+bioperl_git:
+	@echo "This method is obsolete, BioPerl module can now be installed with cpan"
+	@mkdir -p $RSAT/lib
+	@cd $RSAT/lib
+	git clone git://github.com/bioperl/bioperl-live.git
+
+bioperl_test:
+	perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
+
+
+################################################################
+## Obsolete: compile some perl scripts to binaries.  This was a test and the
+## results were not very good, the compiled programs were unstable.
+SRC=perl-scripts
+COMPIL=compil/
+PROGRAMS=	\
+	oligo-analysis	\
+	retrieve-seq	\
+	dyad-analysis	\
+	dna-pattern	\
+	orf-info
+LIBRARIES=\
+	RSA.stat.lib 	\
+#	RSA.classes	\
+#	RSA.seq.lib	\
+#	RSA.cgi.lib	\
+#	RSA.lib 	
+_compile_perl_scripts:
+	@mkdir -p ${COMPIL}/lib
+	@mkdir -p ${COMPIL}/bin
+	@(cd  ${COMPIL}/bin; ln -fs ../lib)
+	@cp -f config/default.config ${COMPIL}/RSA.config
+
+	@for lb in ${LIBRARIES}; do \
+		echo "compiling library $${lb}"; \
+		cp -f ${SRC}/lib/$${lb} ${COMPIL}/lib/$${lb}.pl ; \
+		(cd ${COMPIL}/lib; pwd; perlcc $${lb}.pl && rm -f $${lb}.pl); \
+	done
+
+	@for pgm in ${PROGRAMS}; do \
+		echo "compiling program $${pgm}"; \
+		cp -f ${SRC}/$${pgm} ${COMPIL}/bin/$${pgm}.pl ; \
+		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
+	dgone
+
+
+
+################################################################
+## This library allows you to install the Perl libraries locally, if you are not system administrator
+LOCAL_LIB_URL=http://search.cpan.org/CPAN/authors/id/A/AP/APEIRON/local-lib-1.008004.tar.gz
+LOCAL_LIB_DIR=lib/perl_lib/locallib
+
+local_lib: download_local_lib install_local_lib config_local_lib
+
+download_local_lib:
+	@echo "Downloading Perl module local::lib"
+	(mkdir -p ${LOCAL_LIB_DIR}; cd ${LOCAL_LIB_DIR}; wget ${LOCAL_LIB_URL}; tar -xzf local-lib-1.008004.tar.gz)
+
+install_local_lib:
+	@echo "Installing Perl module local::lib"
+	(mkdir -p ${RSAT}/lib/perl5; ln -s ${RSAT}/lib/perl5 ${HOME}/perl5)
+	(cd ${LOCAL_LIB_DIR}/local-lib-1.008004;  perl Makefile.PL --bootstrap; make; make test; make install)
+
+config_local_lib:
+	@echo "Adding path to Perl module local::lib in ${HOME}/.bashrc"
+	@echo ''  >>~/.bashrc
+	@echo '################################################################'  >>~/.bashrc
+	@echo '## Perl local::lib module'  >>~/.bashrc
+	@echo 'eval $$(perl -I$$HOME/perl5/lib/perl5 -Mlocal::lib)' >>~/.bashrc
+
+install_one_perl_module_locally:
+	${MAKE} SUDO='' install_one_perl_module
+
+install_perl_modules_locally:
+	${MAKE} SUDO='' install_perl_modules
 
 ################################################################
 ## Install Python 2.7.  We deliberately chose version 2.7 (and not
@@ -145,6 +237,23 @@ _compile_python_suds:
 # 	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
 # 	@echo "ensembl=${RSAT}/lib/ensembl/modules"
 # 	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
+
+
+################################################################
+## Install the applications developed by third-parties and which are required
+## or useful for RSAT.
+install_ext_apps:
+	${MAKE} download_seqlogo install_seqlogo
+	${MAKE} bedtools
+	${MAKE} download_meme install_meme
+	${MAKE} download_mcl install_mcl
+	${MAKE} download_rnsc install_rnsc
+#	${MAKE} download_blast install_blast
+#	${MAKE} download_gs install_gs
+#	${MAKE} download_gnuplot install_gnuplot
+#	${MAKE} install_gibbs
+#	${MAKE} download_consensus install_consensus
+#	${MAKE} download_patser install_patser
 
 
 ################################################################
@@ -721,6 +830,9 @@ _sicer_path_one_file:
 	@perl -pe 's|/home/data/SICER${SICER_VERSION}|${SICER_DISTRIB_DIR}|g' -i ${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}
 	@echo '	specified SICER path in	${SICER_DISTRIB_DIR}/SICER/${SICER_FILE}'
 
+
+## NUMPY is required for SICER installation.
+##
 ## NUMPY requires two python libraries Numpy and Scipy
 ## Info for nose (test library): http://nose.readthedocs.org/en/latest/
 ## Info for NumPy and scipy: http://www.scipy.org/Installing_SciPy/Mac_OS_X
