@@ -73,7 +73,10 @@ Function getTempFileName($prefix) {
 }
 
 
-Function storeFile($file) {
+Function storeFile($file, $ext) {
+  if ($ext != "") {
+    $file .= ".".$ext;
+  }
   $fh = fopen($file, 'r');
   $theData = "";
   if (filesize($file) > 0) {
