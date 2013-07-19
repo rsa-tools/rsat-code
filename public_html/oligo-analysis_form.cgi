@@ -58,9 +58,13 @@ $default{proba} = 'checked';
 $default{lth_occ_P} = "none";
 $default{uth_occ_P} = "none";
 
-$default{eval} = 'checked';
+#$default{eval} = 'checked';
 $default{lth_occ_E} = "none";
 $default{uth_occ_E} = "none";
+
+$default{occ_FWER} = '';
+$default{lth_occ_FWER} = "none";
+$default{uth_occ_FWER} = "none";
 
 $default{lth_occ_sig} = "0";
 $default{uth_occ_sig} = "none";
@@ -457,24 +461,37 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 						     -size=>5)
 				   ]),
 
+			  ### binomial Family-wise error rate (FWER)
+			  $query->td([#$query->checkbox(-name=>'FWER',
+#						       -checked=>$default{occ_FWER},
+#						       -label=>' FWER '),
+				      "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FWER",
+				      $query->textfield(-name=>'lth_occ_FWER',
+							-default=>$default{lth_occ_FWER},
+							-size=>5),
+				      $query->textfield(-name=>'uth_occ_FWER',
+							-default=>$default{uth_occ_FWER},
+							-size=>5),
+				     ]),
+
 			  ### Z-scores
 			  $query->td([$query->checkbox(-name=>'zscore',
-						    -checked=>$default{zscore},
-						    -label=>' Z-scores '),
-				   $query->textfield(-name=>'lth_zscore',
-						     -default=>$default{lth_zscore},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_zscore',
-						     -default=>$default{uth_zscore},
-						     -size=>5)
+						       -checked=>$default{zscore},
+						       -label=>' Z-scores '),
+				      $query->textfield(-name=>'lth_zscore',
+							-default=>$default{lth_zscore},
+							-size=>5),
+				      $query->textfield(-name=>'uth_zscore',
+							-default=>$default{uth_zscore},
+							-size=>5)
 				      ]),
 
 			  ### frequencies
 			  $query->td([$query->checkbox(-name=>'freq',
-						    -checked=>$default{freq},
-						    -label=>' Frequencies '),
-				   $query->textfield(-name=>'lth_observed_freq',
-						     -default=>$default{lth_observed_freq},
+						       -checked=>$default{freq},
+						       -label=>' Frequencies '),
+				      $query->textfield(-name=>'lth_observed_freq',
+							-default=>$default{lth_observed_freq},
 						     -size=>5),
 				   $query->textfield(-name=>'uth_observed_freq',
 						     -default=>$default{uth_observed_freq},
