@@ -13,49 +13,58 @@ package main;
 {
 
   ## Check if the RSAT environment variable has been specified
-  $RSAT_PATH = $ENV{RSAT};
+  $rsat_path = $ENV{RSAT};
 
   ## Try to guess RSAT path if not specified in the environment variable
-  unless ($RSAT_PATH) {
+  unless ($rsat_path) {
     my $pwd = `pwd`;
     chomp($pwd);
     if ($pwd =~ /rsa\-tools\/*$/) {
-      $RSAT_PATH = $pwd;
+      $rsat_path = $pwd;
     }
   }
 
   ## Prompt for the RSAT path
-  print "\nAbsolute path to the RSAT package ? [", $RSAT_PATH, "] ";
+  print "\nAbsolute path to the RSAT package ? [", $rsat_path, "] ";
   chomp(my $answer = <>);
   if ($answer) {
-    $RSAT_PATH = $answer;
+    $rsat_path = $answer;
   }
 
   ## Compute RSAT parent path
-  $RSAT_PARENT_PATH = `dirname $RSAT_PATH`;
-  chomp($RSAT_PARENT_PATH);
-  warn "RSAT parent path\t", $RSAT_PARENT_PATH, "\n";
+  $rsat_parent_path = `dirname $rsat_path`;
+  chomp($rsat_parent_path);
+  warn "RSAT parent path\t", $rsat_parent_path, "\n";
 
   ## Check that the RSAT path seems correct
-  unless ($RSAT_PATH =~ /rsa\-tools\/*/) {
-    warn ("\nWarning: $RSAT_PATH does not seem to be a conventional RSAT path (should terminate by rsa-tools).", "\n\n");
+  unless ($rsat_path =~ /rsa\-tools\/*/) {
+    warn ("\nWarning: $rsat_path does not seem to be a conventional RSAT path (should terminate by rsa-tools).", "\n\n");
   }
 
   ## Check that the RSAT path exists and is a directory
-  unless (-d $RSAT_PATH) {
-    die ("\nError: invalid RSAT path\n\t", $RSAT_PATH, "\nDoes not correspond to an existing directory on this computer", "\n\n");
+  unless (-d $rsat_path) {
+    die ("\nError: invalid RSAT path\n\t", $rsat_path, "\nDoes not correspond to an existing directory on this computer", "\n\n");
   }
 
   ## Check that the config file exists in the RSAT path
-  my $config_file = $RSAT_PATH."/RSAT_config.props";
+  my $config_file = $rsat_path."/RSAT_config.props";
   unless (-f $config_file) {
-    die ("\nError: the config file RSAT_config.props is not found in the RSAT path\n\t", $RSAT_PATH,
-	 "\nPlease check that the RSAT package has been properly installed in this directory.",
-	 "\n\n");
+    my $default_config_file = $rsat_path."/RSAT_config_default.props";
+    if (-e $default_config_file) {
+      warn ("\nThe config file RSAT_config.props is not found in the RSAT path\n\t", $rsat_path,
+	   "\nCopying from default config file\t", $default_config_file,
+	   "\n\n");
+      system("cp ".$default_config_file." ".$config_file);
+
+    } else {
+      die ("\nError: the config file RSAT_config.props is not found in the RSAT path\n\t", $rsat_path,
+	   "\nPlease check that the RSAT package has been properly installed in this directory.",
+	   "\n\n");
+    }
   }
 
   ## Prompt for the new value
-  print "\nReady to update config file\t", $config_file, " [y/n] ";
+  print "\nReady to update config file\t", $config_file, " [y/n] (n): ";
   chomp($answer = <>);
   unless ($answer eq "y") {
     die ("\nGood bye\n\n");
@@ -81,7 +90,7 @@ package main;
       $param{$key} = $value;
 
       ## Prompt for the new value
-      print "\n", $key, " [", $value, "] ";
+      print "\n", $key, " [", $value, "] : ";
       chomp(my $new_value = <>);
       if ($new_value) {
 	$value = $new_value;
@@ -96,6 +105,9 @@ package main;
 
   close CONFIG;
   close NEW_CONF;
+
+  system ("mv -f ".$new_config_file." ".$config_file);
+  warn ("Updated config file:\t", $config_file."\n");
 
   exit(0);
 }
