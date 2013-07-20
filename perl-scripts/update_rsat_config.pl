@@ -59,7 +59,7 @@ package main;
       $param{$key} = $value;
 
       ## Prompt for the new value
-      print $key, " [", $value, "] ";
+      print "\n", $key, " [", $value, "] ";
       chomp(my $new_value = <>);
       if ($new_value) {
 	$value = $new_value;
@@ -67,6 +67,7 @@ package main;
 
       print NEW_CONF $key, "=", $value, "\n";
     } else {
+      print; ## Display comments
       print NEW_CONF;
     }
   }
