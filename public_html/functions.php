@@ -73,10 +73,10 @@ Function getTempFileName($prefix) {
 }
 
 
-Function storeFile($file, $ext) {
-  if ($ext != "") {
-    $file .= ".".$ext;
-  }
+Function storeFile($file) {
+  global $properties;
+  # transforms the $RSAT variable to the real RSAT path
+  $file = str_replace("\$RSAT", $properties['RSAT'], $file);
   $fh = fopen($file, 'r');
   $theData = "";
   if (filesize($file) > 0) {
@@ -256,6 +256,10 @@ Function spaces_to_tab($string, $num) {
 Function rsat_path_to_url ($file_name) {
   global $WWW_RSA;
   global $properties;
+  # transforms the $RSAT variable to the real RSAT path
+  $file_name = str_replace("\$RSAT", $properties['RSAT'], $file_name);
+
+
 #  $temp_file = rtrim($file_name);
 #  $temp_file = explode('/',$temp_file);
 #  $temp_file = end($temp_file);
