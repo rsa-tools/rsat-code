@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.13 2013/07/18 13:13:52 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.14 2013/08/07 08:11:35 jeremy Exp $
 #
 ############################################################
 
@@ -209,7 +209,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -266,12 +266,12 @@ package	main;
     }
   }
 
-    if ($format eq "rsat") {
-      $main::infile{'input_variation'} = $main::infile{'input'};
-    } else {
-      my $tmp_file_path = &RSAT::util::make_temp_file("","variation_rsat", 1);
-      $main::outfile{'var_tmp'} = $tmp_file_path.".tab";
-    }
+  if ($format eq "rsat-var") {
+    $main::infile{'input_variation'} = $main::infile{'input'};
+  } elsif ($format eq "bed" || $format eq "id") {
+    my $tmp_file_path = &RSAT::util::make_temp_file("","variation_rsat", 1);
+    $main::outfile{'variation_rsat'} = $tmp_file_path.".tab";
+  }
 
   ################################################################
   ## Print verbose
@@ -287,14 +287,13 @@ package	main;
   foreach ( glob ( $variation_dir."*.tab") ) {
     push (@variation_file,$_) unless (/Failed/);
   }
-#    @variation_file = ("$variation_dir/var.gvf");
 
   ################################################################
   ## Retrieve variations from one or several ID(s)
   if ($format eq "id") {
     &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
 
-    my $var_file = $main::outfile{'var_tmp'};
+    my $var_file = $main::outfile{'variation_rsat'};
     my $out_v = &OpenOutputFile($var_file);
 
     my %variation_id = ();
@@ -374,9 +373,11 @@ package	main;
 
   ################################################################
   ## Get variation from coordinates
+
   if ($format eq "bed") {
-    &RSAT::message::TimeWarn("Retrieve variations from coordinate") if ($main::verbose >= 2);
-    my $var_file = $main::outfile{'var_tmp'};
+    &RSAT::message::TimeWarn("Get coordinate") if ($main::verbose >= 2);
+#      my $out_var = &OpenOutputFile($main::outfile{'variation_rsat'});
+my %chr_coord = ();
 
     ## Get coordinates
     my ($file) = &OpenInputFile($main::infile{'input'});
@@ -402,11 +403,62 @@ package	main;
         next;
       }
 
-      $cmd = "awk '{if (\$2<=".$right." && \$3>=".$left.") print \$0}' ".$variation_dir.$chr.".tab >> ".$var_file;
-      system ($cmd);
-    }
-    $main::infile{'input_variation'} = $var_file;
+      $chr_coord{$chr}{$left} = $right;
 
+#      my ($var_file) = &OpenInputFile($variation_dir.$chr.".tab");
+#    while (<$var_file>) {
+#      next if (/^#/);
+#      next if (/^;/);
+#      next unless (/\t/);
+#      my @token = split("\t");
+#      if ($token[1] <= $right && $token[2] >= $left) {
+#      print $out_var $_ ;
+#      } elsif ($token[2] > $right) {
+#        last;
+#      }
+#    }
+
+
+#      $cmd = "awk '{if (\$2<=".$right." && \$3>=".$left.") print \$0}' ".$variation_dir.$chr.".tab >> ".$main::outfile{'variation_rsat'};
+#      system ($cmd);
+    }
+    $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
+
+## Retrieve variation
+    &RSAT::message::TimeWarn("Retrieve variation from coordinate") if ($main::verbose >= 2);
+
+  my $out_var = &OpenOutputFile($main::outfile{'variation_rsat'});
+  foreach $chr (keys(%chr_coord)) {
+      my @lefts = sort {$a <=> $b} (keys(%{$chr_coord{$chr}}));
+      my $nb_coord = scalar(@lefts);
+      my $i = 0;
+      my $nb_variation = 0;
+      my ($var_file) = &OpenInputFile($variation_dir.$chr.".tab");
+
+      my $left = $lefts[$i];
+      my $right = $chr_coord{$chr}{$left};
+
+    while (<$var_file>) {
+      next if (/^#/);
+      next if (/^;/);
+      next unless (/\t/);
+      my @token = split("\t");
+
+      if ($token[1] <= $right && $token[2] >= $left) {
+        $nb_variation++;
+        print $out_var $_ ;
+      } elsif ($token[2] > $right) {
+        $i++;
+        last if ($i >= $nb_coord);
+       $left = $lefts[$i];
+       $right = $chr_coord{$chr}{$left};
+      }
+
+    }
+&RSAT::message::TimeWarn($nb_variation,"variation found on peaks of chromosome",$chr) if ($main::verbose >= 2);
+
+  }
+  close $out_var;
   }
 
   ################################################################
@@ -418,8 +470,11 @@ package	main;
 
   ################################################################
   ##Get sequence
+  &RSAT::message::TimeWarn("Retrieve sequence foreach variants of a variation") if ($main::verbose >= 2);
+  my $last_id ="";
+  my $nb_var = 0;
+  my $last_nb = 1000000;
 
-  &RSAT::message::TimeWarn("Retrieve sequence for all variant of variations") if ($main::verbose >= 2);
   foreach my $var_file (@variation_file) {
     my $last_chr = "";
     my $ref_seq = "";
@@ -427,13 +482,25 @@ package	main;
     ($file) = &OpenInputFile($var_file);
 
     while (<$file>) {
+      next if (/^#/);
       chomp();
+
       my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
-      next if ($invar && $validate == 0 && $format ne "id");
+      next if ($invar && !$validate);
 
       if ($chr ne $last_chr) {
         $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
         $last_chr = $chr;
+      }
+
+      if ($id ne $last_id && !$main::infile{'input'}) {
+        $nb_var++;
+
+        if ($nb_var >= $last_nb + 1000000) {
+          &RSAT::message::TimeWarn("Getting sequence for the variation",$nb_var,"to",$last_nb) if ($main::verbose >= 2);
+          $last_nb += 1000000;
+        }
+        $last_id = $id;
       }
 
       $var .= ",$ref";

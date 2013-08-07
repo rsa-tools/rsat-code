@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.4 2013/07/18 13:13:40 jeremy Exp $
+# $Id: variation-scan,v 1.5 2013/08/07 08:11:43 jeremy Exp $
 #
 ############################################################
 
@@ -37,7 +37,7 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 USAGE
 
- variation-scan [-i #] [-m #] [-bg #] [-o outputfile] [-v #] [...]
+ variation-scan [-i sequence_file] -m matrix_file -bg backgournd_file [-calc_distrib] [-o outputfile] [-v #] [...]
 
 =head2 Example
 
@@ -188,7 +188,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -198,36 +198,90 @@ package	main;
   our $out = STDOUT;
 
   our %matrix_list = ();
-  our %matrix_pval = ();
   our %matrix_PWM = ();
   our $flank_len = 29;
+  our $only_biggest = 0;
+  our $pval_limit = 1;
 
-  $infile{matrixfile} = $ENV{'RSAT'}."/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf";
+  our $calc_distrib = 0;
+  our $distrib_dir = "";
+
+  our $html = 0;
+  our $top_matrix =-1;
+  our $top_variation = -1;
 
   ################################################################
   ## Read argument values
   &ReadArguments();
+  $out = &OpenOutputFile($outfile{output});
 
   ###############################################################
   ## Check arguments
-  &RSAT::error::FatalError("You forgot to indicate a background file. Use -bg option") unless ($main::infile{'bg'});
-  &RSAT::error::FatalError("You forgot to indicate a sequence file. Use -i option") unless ($main::infile{'input'});
-  &RSAT::error::FatalError("You forgot to indicate a matrix file. Use -m option") unless ($main::infile{'matrixfile'});
+  &RSAT::error::FatalError("You forgot to indicate a background file. Use -bg option") unless ($infile{'bg'});
+  &RSAT::error::FatalError("You forgot to indicate a matrix file. Use -m option") unless ($infile{'matrixfile'});
+
+  if ($calc_distrib) {
+    &RSAT::error::FatalError("You forgot to indicate distribution directory. Use -distrib_dir option") unless ($distrib_dir);
+    &RSAT::message::TimeWarn("Calculing distribution") if ($main::verbose >= 2);
+
+    my @bg_name = split('/',$infile{'bg'});
+    @bg_name = split('.',$bg_name[-1]);
+    my $bg_name = $bg_name[-1];
+    $outfile{'distrib_list'} = $bg_name."_list.tab";
+
+    &Verbose() if ($main::verbose >= 1);
+
+    my $split_dir = $distrib_dir."/split_dir/tmp";
+    &RSAT::util::CheckOutDir($split_dir);
+
+    &doit($ENV{'RSAT'}."/perl-scripts/convert-matrix -v 1 -from tf -to tf -split -i $infile{'matrixfile'} -o $split_dir", 0, 0, 0);
+
+
+    my $outD = &OpenOutputFile($distrib_dir.'/'.$outfile{'distrib_list'});
+    print $outD "#MATRIX_ID\tDISTRIB_FILE\tDB\tBG_PREFIX";
+
+    my ($file) = &OpenInputFile($split_dir.'_matrix_list.tab');
+    while (<$file>) {
+      next if (/^#/); ## Skip comment lines
+      next if (/^;/); ## Skip RSAT-like comment lines
+      next unless (/\S/); ## Skip empty lines
+      chomp();
+      my @token = split("\t");
+      my $distrib_file = $token[1]."_".$bg_name.".tab";
+
+      &doit($ENV{'RSAT'}."matrix-distrib -m $token[2] -matrix_format tf -decimals 1 -bgfile $infile{'matrixfile'} -bg_pseudo 0.01 -bg_format oligos -pseudo 1 -o $distrib_dir/$distrib_file", 0, 0, 0);
+      print $outD $token[1],"\t",$distrib_file,"\t.\t",$bg_name,"\n";
+    }
+    &RSAT::message::Info("Distrib_list :", $distrib_dir.'/'.$outfile{'distrib_list'}) if ($main::verbose >= 2);
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time  if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out;
+
+    exit(0);
+  }
+
+  &RSAT::error::FatalError("You forgot to indicate a sequence file. Use -i option") unless ($infile{'input'});
+  if ($infile{'distrib_list'}) {
+    &RSAT::error::FatalError("Distrib list",$infile{'distrib_list'},"file does not exist") unless (-f $infile{'distrib_list'});
+  }
+
 
   ################################################################
   ## Print verbose
-  $out = &OpenOutputFile($outfile{output});
   &Verbose() if ($main::verbose >= 1);
-  print $out "#motif\tvar_id\tvar_class\tcoord\th_we\tl_we\tdiff\th_pval\tl_pval\tsigma\th_var\tl_var\th_off\tl_off\th_seq\tl_seq\n";
+  print $out "#motif\tvar_id\tvar_class\tcoord\th_w\tl_w\tw_diff\th_pval\tl_pval\tpval_ratio\tpval_lr\tpval_lr_relatif\th_var\tl_var\th_pos\tl_pos\tmin_offset\tstr_ch\th_seq\tl_seq\n";
 
   ################################################################
   #Read Matrix File
   &RSAT::message::TimeWarn("Reading Matrix File") if ($main::verbose >= 2);
 
   my $length = 0;
-  my $matrix_str='';
   my $need_count = 0;
-  my $id = "";
+  my $ac = "";
+  my $nb_matrix = 0;
 
   ($main::in) = &OpenInputFile($main::infile{'matrixfile'});
   while (<$main::in>) {
@@ -236,122 +290,170 @@ package	main;
     next unless (/\S/); ## Skip empty lines
     chomp();
 
-    if ( /^AC/) {
-      $matrix_str .= $_."\nXX\n";
-    }
+    my @token = split (" ",$_);
 
-    if ( /^ID/) {
-      $matrix_str .= $_."\nXX\n";
-      my @ids = split(" ");
-      $id = $ids[1];
-    }
-
-    $need_count = 0 if ( /^XX/);
-
-    if ($need_count) {
-      $matrix_str .= $_."\n";
-      $length += 1;
-    }
-
-    if ( /^P0/ || /^PO/ ) {
-      $matrix_str .= $_."\n";
-      $need_count = 1;	
-    }
-
-    if ( substr($_,0,2) eq "//") {
-      push ( @{$matrix_list{$length}{'str'}}, $matrix_str."XX\n//\n");
-      push ( @{$matrix_list{$length}{'id'}}, $id);
-      $matrix_str = '';
+    if ( $token[0] eq "AC") {
+      $ac = $token[-1];
       $length = 0;
     }
+
+    if ( $token[0] eq "ID" ) {
+      $matrix_list{$ac}{'id'} = $token[-1];
+    }
+
+    $need_count = 0 if ( $token[0] eq "XX" );
+
+    if ($need_count) {
+      $length += 1;
+
+      for (my $i = 1;$i < scalar(keys(%{$matrix_list{$ac}{'tab'}})+1);$i++ ) {
+        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, $token[$i] );
+      }
+    }
+
+    if ( $token[0] eq "P0" ||$token[0] eq "PO" ) {
+      $need_count = 1;
+
+      for (my $i = 1;$i < scalar(@token);$i++ ) {
+        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, lc($token[$i]) );
+      }
+    }
+
+    if ( $token[0] eq "//") {
+      $matrix_list{$ac}{'length'} = $length;
+      $nb_matrix++;
+    }
+
+    if ($top_matrix) {
+      last if ($top_matrix == $nb_matrix && $top_matrix > 0);
+    }
+
   }
+  $matrix_list{$ac}{'length'} = $length;
   close $main::in;
 
-  ################################################################
-  my $matrix_file = &RSAT::util::make_temp_file("","motif_tf", 1).".tf";
-  my $fasta_file = &RSAT::util::make_temp_file("","fasta_seq", 1).".fa";
 
-  foreach our $matrix_length (keys(%matrix_list)) {
+
+  ## Get distrib files
+  my %distrib_file_list = ();
+  if ( -f $infile{'distrib_list'} ) {
+    my $distrib_file_name = "";
+    ($distrib_dir, $distrib_file_name) = &SplitFileName($infile{'distrib_list'});
+
+    ($file) = &OpenInputFile($infile{'distrib_list'});
+    while (<$file>) {
+      next if (/^#/); ## Skip comment lines
+      next if (/^;/); ## Skip RSAT-like comment lines
+      chomp();
+      my @token = split("\t");
+      $distrib_file_list{$token[0]} = $token[1];
+    }
+  }
+
+  ################################################################
+  my $fasta_file = &RSAT::util::make_temp_file("","variation-scan_fasta_seq", 1);
+  my $bg_file = &RSAT::util::make_temp_file("","variation-scan_bg_file", 1);
+  my $matrix_file_tab = &RSAT::util::make_temp_file("","variation-scan_matrices_tab", 1);
+
+
+  ## Change bg_file format
+  my $command = "$ENV{'RSAT'}/perl-scripts/convert-background-model -i $main::infile{'bg'} -from oligos -to inclusive -o $bg_file -bg_pseudo 0.01";
+  &doit($command, 0, 0, 0);
+
+  ## Scan
+  our $matrix_length = 0;
+
+  foreach my $matrix_ac (keys(%matrix_list)) {
+    $matrix_length = $matrix_list{$matrix_ac}{'length'};
     next if ($matrix_length == 0);
     next if ($matrix_length > $flank_len+1);
-    
-    &RSAT::message::TimeWarn("Working on the ",scalar(@{$matrix_list{$matrix_length}{'str'}})," matrices of length :", $matrix_length) if ($main::verbose >= 2);
 
-    ## Make tf file
-    my $outM = &OpenOutputFile($matrix_file);
-    foreach my $matrix (@{$matrix_list{$matrix_length}{'str'}}) {
-      print $outM $matrix;
+    ## Make matrix file on tab format
+    my $outM = &OpenOutputFile($matrix_file_tab);
+    foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
+      print $outM join("\t",@{$matrix_list{$matrix_ac}{'tab'}{$line}})."\n";
     }
+    close($outM);
 
     ## Get distribution
-    &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 2);
-    %matrix_pval = ();
+    &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 3);
 
-    my $arg = "-m $matrix_file -matrix_format tf";
-    $arg .= " -decimals 1 -pseudo 1";
-    $arg .= " -bgfile $main::infile{'bg'} -bg_pseudo 0.01 -bg_format oligos";
+    %matrix_info = ();
 
-#    my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib -m $matrix_file -matrix_format transfac -pseudo 1};
-    my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib $arg};
-    my $i = -1;
-    my %legend_col = ();
+    # Use precalculte distrib file
+    if ($distrib_file_list{$matrix_ac}) {
+      my %legend_col = ();
 
-    foreach (@result_distrib) {
-      chomp;
+      my $distrib_file = $distrib_dir."/".$distrib_file_list{$matrix_ac};
+      my ($d_file) = &OpenInputFile($distrib_file);
+      while (<$d_file>) {
+        next if (/;/);
+        chomp;
 
-      if (/^#/) {
-        $i++;
-        $_ = substr($_,1) ;
-        my @legends = split("\t");
-        for (my $i = 0; $i < scalar(@legends);$i++) {
-          $legend_col{$legends[$i]} = $i;
+        if (/^#/) {
+          $_ = substr($_,1) ;
+          my @legends = split("\t");
+          for (my $i = 0; $i < scalar(@legends);$i++) {
+            $legend_col{$legends[$i]} = $i;
+          }
+        } else {
+          my @value = split("\t");
+          $matrix_info{$matrix_ac}{'pval'}{$value[$legend_col{"weight"}]} = $value[$legend_col{"Pval"}];
         }
-        next;
       }
 
-      my @value = split("\t");
-      $matrix_pval{${$matrix_list{$matrix_length}{'id'}}[$i]}{$value[$legend_col{"weight"}]} = $value[$legend_col{"Pval"}];
+      $matrix_info{$matrix_ac}{'pval'}{'0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
+      $matrix_info{$matrix_ac}{'pval'}{'-0.0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
+
+      my @sorted_pval = sort {$a <=> $b} keys (%{$matrix_info{$matrix_ac}{'pval'}});
+      $matrix_info{$matrix_ac}{'sigma_max'} = log10($matrix_info{$matrix_ac}{'pval'}{$sorted_pval[0]}/$matrix_info{$matrix_ac}{'pval'}{$sorted_pval[-1]});
+
+    # Calcul distrib file
+    } else {
+      my %legend_col = ();
+      my $arg = "-m $matrix_file_tab -matrix_format tab";
+      $arg .= " -decimals 1 -pseudo 1";
+      $arg .= " -bgfile $main::infile{'bg'} -bg_format oligos";
+      $arg .= " -bg_pseudo 0.01";
+
+      my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib $arg};
+
+      foreach (@result_distrib) {
+        chomp;
+
+        if (/^#/) {
+          $_ = substr($_,1) ;
+          my @legends = split("\t");
+          for (my $i = 0; $i < scalar(@legends);$i++) {
+            $legend_col{$legends[$i]} = $i;
+          }
+          next;
+        }
+
+        my @value = split("\t");
+        $matrix_info{$matrix_ac}{'pval'}{$value[$legend_col{"weight"}]} = $value[$legend_col{"Pval"}];
+      }
+
+      $matrix_info{$matrix_ac}{'pval'}{'0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
+      $matrix_info{$matrix_ac}{'pval'}{'-0.0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
+
+      my @sorted_pval = sort {$a <=> $b} keys (%{$matrix_info{$matrix_ac}{'pval'}});
+      $matrix_info{$matrix_ac}{'sigma_max'} = log10($matrix_info{$matrix_ac}{'pval'}{$sorted_pval[0]}/$matrix_info{$matrix_ac}{'pval'}{$sorted_pval[-1]});
     }
-
-    ## Get position-weigth matrice
-#    &RSAT::message::TimeWarn("\tGet PWM") if ($main::verbose >= 2);
-#    %matrix_PWM = ();
-
-#    $i = 0;
-#    my @ppm = qx{$ENV{'RSAT'}/perl-scripts/convert-matrix -from transfac -to tab -return weights -decimals 1 -multiply 1 -perm 0 -i $matrix_file};
-
-#    foreach (@ppm) {
-#      chomp;
-
-#      if (m/\/\//) {
-#        $i++;
-#        next;
-#      }
-
-#      my ($nucle,@weigths) = split(" ");
-#      $nucle = uc($nucle);
-
-#      for (my $pos = 0; $pos < scalar(@weigths); $pos ++) {
-#        $matrix_PWM{${$matrix_list{$matrix_length}{'id'}}[$i]}{$pos}{$nucle} = $weigths[$pos];
-#      }
-#    }
 
     ## Scan sequences
     my $last_id = "";
     my $nb_variation = 0;
-    my $last_nb = 1;
-    my @variant_seq = ();
+    my $last_nb = 2000;
 
-    $arg  = "-quick";
-    $arg .= " -i $fasta_file";
-    $arg .= " -m $matrix_file -matrix_format transfac";
+    $arg = " -i $fasta_file";
+    $arg .= " -m $matrix_file_tab";
     $arg .= " -pseudo 1 -decimals 1 -2str -origin start";
-    $arg .= " -bgfile $main::infile{'bg'}";
-    $arg .= " -bg_pseudo 0.01";
-    $arg .= " -seq_format fasta -n score";
+    $arg .= " -bgfile $bg_file";
+    $arg .= " -name $matrix_ac";
 
-    &RSAT::message::TimeWarn("\tScan matrix") if ($main::verbose >= 2);
-
+    &RSAT::message::TimeWarn("\tScan matrix") if ($main::verbose >= 3);
+    my $out_fas = &OpenOutputFile($fasta_file);
 
     ($main::in) = &OpenInputFile($main::infile{input});
     while (<$main::in>) {
@@ -367,33 +469,30 @@ package	main;
 
       if ($last_id ne $id && $last_id ne "") {
         $nb_variation ++;
+        last if ($nb_variation > $top_variation && $top_variation>0);
 
-        if ($nb_variation > $last_nb+100000 ) {
-            &RSAT::message::TimeWarn("\t\t\tVariation scan : $last_nb to $nb_variation") ;
-            $last_nb = $nb_variation;
+        if ($nb_variation >= $last_nb) {
+          my @scanning = qx{$ENV{'RSAT'}/contrib/matrix-scan-quick/matrix-scan-quick $arg};
+          &Analyse(@scanning) unless (scalar(@scanning) == 0);
+
+          close($out_fas);
+          $out_fas = &OpenOutputFile($fasta_file);
+          $last_nb += 2000;
         }
-
-#        my @result = &scanMatrice(@variant_seq);
-
-        my $out_fas = &OpenOutputFile($fasta_file);
-        print $out_fas join("\n",@variant_seq);
-        my @result = qx{$ENV{'RSAT'}/perl-scripts/matrix-scan $arg};
-
-        &Analyse(@result) unless (scalar(@result) == 0);
-
-        @variant_seq = ();
       }
 
-      push (@variant_seq, ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n".substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2));
-#      push (@variant_seq, "$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\t".substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2));
+      print $out_fas ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n".substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2)."\n";
       $last_id = $id;
     }
 
-#    my @result  = &scanMatrice(@variant_seq);
-     my $out_fas = &OpenOutputFile($fasta_file);
-     print $out_fas join("\n",@variant_seq);
-     my @result = qx{$ENV{'RSAT'}/perl-scripts/matrix-scan $arg};
-    &Analyse(@result) unless (scalar(@result) == 0);
+    close($out_fas);
+    my @scanning = qx{$ENV{'RSAT'}/contrib/matrix-scan-quick/matrix-scan-quick $arg};
+    &Analyse(@scanning) unless (scalar(@scanning) == 0);
+    @scanning = ();
+
+    $out_fas = &OpenOutputFile($fasta_file); ##Just to make empty file
+    close($out_fas);
+
     close $main::in;
   }
 
@@ -402,6 +501,15 @@ package	main;
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $out $exec_time  if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out;
+
+  ################################################################
+  ## Make html output
+  if ($outfile{'output'} && $html) {
+    $html_file = $outfile{'output'};
+    $html_file =~ s/\.tab/\.html/g;
+    $command = "$ENV{'RSAT'}/perl-scripts/text-to-html -i $outfile{'output'} -o $html_file";
+    &doit($command, 0, 0, $verbose);
+  }
 
   exit(0);
 }
@@ -430,180 +538,167 @@ sub log10 {
 }
 
 ################################################################
-## Change dna strand
-sub reverseSeq {
-  my $seq = $_[0];
-  $seq = reverse($seq); 
-  $seq =~ s/A/W/g;
-  $seq =~ s/T/A/g;
-  $seq =~ s/W/T/g;
-  $seq =~ s/C/W/g;
-  $seq =~ s/G/C/g;
-  $seq =~ s/W/G/g;
-  return $seq;
-}
-
-################################################################
-## Calculate weight of a sequence for a given matrice
-sub scanMatrice {
-  my @matrix_scan = ();
-
-  foreach my $matrice (keys(%matrix_PWM)) {
-    $diff_pos = ($flank_len-$matrix_length+1);
-
-    foreach my $line (@_) {
-    my ($info,$seq) = split("\t",$line);
-
-      ##Scan direct strand
-      for (my $i = 0;$i < length($seq)-$matrix_length+1;$i++) {
-        next if ( substr($seq,$i,$matrix_length) =~ m/N/);
-        my $weight = &getWeight($matrice,substr($seq,$i,$matrix_length));
-        push (@matrix_scan, "$info\tsite\t$matrice\tD\t".($diff_pos+$i+1)."\t".($diff_pos+$i+$matrix_length)."\t".substr($seq,$i,$matrix_length)."\t$weight");
-      }
-
-      ##Scan reverse strand
-      $seq = &reverseSeq($seq);
-
-      for (my $i = 0;$i < length($seq)-$matrix_length+1;$i++) {
-        #Skip sub-seq with N
-        next if ( substr($seq,$i,$matrix_length) =~ m/N/);
-        my $weight = &getWeight($matrice,substr($seq,$i,$matrix_length));
-        push (@matrix_scan, "$info\tsite\t$matrice\tR\t".($diff_pos+length($seq)-$i-$matrix_length+1)."\t".($diff_pos+length($seq)-$i)."\t".substr($seq,$i,$matrix_length)."\t$weight");
-      }
-    }
-  }
-  return @matrix_scan;
-}
-
-################################################################
-## Get weight
-sub getWeight {
-  my ($matrice,$seq) = @_;
-  my $weight = 0;
-  my $i = 0;
-
-  foreach my $nucle (split("",$seq)) {
-    $weight += $matrix_PWM{$matrice}{$i}{$nucle};
-    print "$matrice $i $nucle\n" unless ($matrix_PWM{$matrice}{$i}{$nucle});
-    $i++;
-  }
-
-  $weight = sprintf("%.1f", $weight);
-  $weight = "0.0" if ($weight == -0.0);
-  return $weight;
-}
-
-################################################################
 ##
 sub getLineInfo {
   my ($var_info1,$site,$matrice,$stran,$pos_s,$pos_e,$seq,$score) = split ("\t",$_[0]);
   my ($var_info2, $coord) = split(/\|/,$var_info1);
+  my ($chr,$start_end_strand) = split(/:/,$coord);
+  my ($start,$end_strand) = split(/-/,$start_end_strand);
   my ($id,$ref,$var,$type) = split(';',$var_info2);
 
-  return ($matrice,$coord,$id,$type,$ref,$var,$stran,$pos_s,$pos_e,$seq,$score)
+  $diff_pos = ($start-$matrix_length);
+  $diff_pos ++ if ($var eq "-"); 
+  $pos_s += $diff_pos;
+  $pos_e += $diff_pos;
+
+  return ($matrice,$coord."_$start",$id,$type,$ref,$var,$stran,$pos_s,$pos_e,$seq,$score)
 }
 
 ################################################################
-##
+## Analyse result of scanning
 sub Analyse() {
-  @result = @_;
+  @scanning = @_;
 
-  $i =0;
-  while ( $result[$i] =~ m/^#/ || $result[$i] =~ m/^;/ ) {
-    $i++;
-  }
+  my %last_line = ();
+  my %score_variation = ();
 
-  my @info = &getLineInfo($result[$i]);
-  my $last_id = $info[2];
-  my $last_var = $info[5];
-  my $last_matrice = $info[0];
+  while ( my $line = shift @scanning ) {
+    
+    next if ($line =~ m/^#/);
+    next if ($line =~ m/^;/);
+    chomp($line);
 
-  my $str = "$info[0]\t$info[2]\t$info[3]\t$info[1]\t";
+    my @info = &getLineInfo($line);
+    my $same_matrice   =  !$last_line{'matrice'} || $info[0] eq $last_line{'matrice'};
+    my $same_variation =  !$last_line{'variation'} || $info[2] eq $last_line{'variation'};
+    my $same_variant   =  !$last_line{'variant'} || $info[5] eq $last_line{'variant'} ;
 
-  my %score_var = ();
-  my %score_id = ();
+    $info[10] = sprintf("%.1f",$info[10]);
 
-  my %max_score = ();
-  my %var_diff = ();
+    if ($same_matrice && $same_variation && $same_variant) {
+      my $same_score = 0;
+      my $highest_score = 1;
 
-  for (my $i = $i; $i < scalar(@result); $i++) {
-    next if ( $result[$i] =~ m/^#/ || $result[$i] =~ m/^;/ ); ## Skip comment lines
+      if ($score_variation{$info[5]}{'score'}) {
+        $same_score = $score_variation{$info[5]}{'score'} == $info[10];
+        $highest_score = $score_variation{$info[5]}{'score'} < $info[10];
+      }
 
-    chomp($result[$i]);
+      if ( $highest_score ) {
+        $score_variation{$info[5]} = ();
+        $score_variation{$info[5]}{'score'} = $info[10];
+        push(@{$score_variation{$info[5]}{'coord'}}, $info[7]."-".$info[8]."_".$info[6]);
+        push(@{$score_variation{$info[5]}{'seq'}}, $info[9]);
 
-    my @info = &getLineInfo($result[$i]);
+      } elsif ($same_score) {
+        $score_variation{$info[5]}{'score'} = $info[10];
+        push(@{$score_variation{$info[5]}{'coord'}}, $info[7]."-".$info[8]."_".$info[6]);
+        push(@{$score_variation{$info[5]}{'seq'}}, $info[9]);
+      }
 
-    if ($info[0] eq $last_matrice && $info[2] eq $last_id && $info[5] eq $last_var) {
-      push(@{$score_var{$info[10]}{'var'}}, $info[5]);
-      push(@{$score_var{$info[10]}{'offset'}}, $info[7]."-".$info[8].$info[6]);
-      push(@{$score_var{$info[10]}{'seq'}}, $info[9]);
 
-    } elsif ( $info[0] eq $last_matrice && $info[2] eq $last_id ) { 
-      my @sort_score = sort {$b<=>$a} keys(%score_var);
-      push (@{$score_id{$sort_score[0]}}, \%{$score_var{$sort_score[0]}});
-
-      %score_var = ();
-      $last_var = $info[5];
-      $i--;
-
-    } else {
-      my @sort_score = sort {$b<=>$a} keys(%score_var);
-      push (@{$score_id{$sort_score[0]}}, \%{$score_var{$sort_score[0]}});
-      @sort_score = sort {$b<=>$a} keys(%score_id);	
-      &PrintResult($score_id{$sort_score[0]},$score_id{$sort_score[-1]},$str,$last_matrice,$sort_score[0],$sort_score[-1]);
-
-      $str = "$info[0]\t$info[2]\t$info[3]\t$info[1]\t";
-      %score_id = ();
-      %score_var = ();
-      $last_id = $info[2];
-      $last_var = $info[5];
-      $last_matrice = $info[0];
-      $i--;
+    } elsif ( !$same_matrice || !$same_variation ) {
+      &PrintResult($last_line{'matrice'},$last_line{'variation'},$last_line{'SOterm'},$last_line{'coord'},\%score_variation );
+      %score_variation = ();
     }
+
+    $last_line{'matrice'} = $info[0];
+    $last_line{'variation'} = $info[2];
+    $last_line{'SOterm'} = $info[3];
+    $last_line{'coord'} = $info[1];
+    $last_line{'variant'} = $info[5];
   }
 
-  my @sort_score = sort {$b<=>$a} keys(%score_var);
-  push (@{$score_id{$sort_score[0]}}, \%{$score_var{$sort_score[0]}});
-  @sort_score = sort {$b<=>$a} keys(%score_id);
-  &PrintResult($score_id{$sort_score[0]},$score_id{$sort_score[-1]},$str,$last_matrice,$sort_score[0],$sort_score[-1]);
+  &PrintResult($last_line{'matrice'},$last_line{'variation'},$last_line{'SOterm'},$last_line{'coord'},\%score_variation );
+}
+
+################################################################
+## Sent print request for each diff between score of variant
+sub PrintResult {
+  my ($matrice,$variation,$so_term,$coord,$score_variation) = @_;
+  my %score_variation = %{ $score_variation };
+
+  my %score_variant = ();
+  foreach my $variant ( keys(%score_variation) ) {
+    push (@{ $score_variant{ $score_variation{$variant}{'score'} }{'variant'} }, $variant);
+    push (@{ $score_variant{ $score_variation{$variant}{'score'} }{'coord'} }, join(",",@{$score_variation{$variant}{'coord'}}));
+    push (@{ $score_variant{ $score_variation{$variant}{'score'} }{'seq'} }, join(",",@{$score_variation{$variant}{'seq'}}));
+  }
+
+  my @sorted_score = sort {$b <=> $a} keys(%score_variant);
+  foreach my $score (@sorted_score) {
+    next if ( ($score == $sorted_score[-1]) && (scalar(@sorted_score) > 1) );
+    my $diff1 = $sorted_score[0] - $score;
+    my $diff2 = $score - $sorted_score[-1];
+
+    if ($matrix_info{$matrice}{'pval'}{$sorted_score[0]} <= $pval_limit) {
+      if ($diff1 > $diff2 ) {
+        &Printline($matrice,$variation,$so_term,$coord,$sorted_score[0],$score,sprintf("%.1f", $diff1),$score_variant{$sorted_score[0]},$score_variant{$score});
+
+      } elsif ( $diff1 == $diff2 ) {
+        # Separate variant if no difference in scanning
+        my %max_score_variant = ();
+        push ( @{ $max_score_variant{'variant'} }, pop(@{$score_variant{$score}{'variant'}}) );
+        push ( @{ $max_score_variant{'coord'} }, pop(@{$score_variant{$score}{'coord'}}) );
+        push ( @{ $max_score_variant{'seq'} }, pop(@{$score_variant{$score}{'seq'}}) );
+
+        &Printline($matrice,$variation,$so_term,$coord,$sorted_score[0],$score,sprintf("%.1f", $diff1),\%max_score_variant,$score_variant{$score});
+
+      } else {
+        &Printline($matrice,$variation,$so_term,$coord,$score,$sorted_score[-1],sprintf("%.1f", $diff2),$score_variant{$score}, $score_variant{$sorted_score[-1]} );
+      }
+    }
+
+    last if ($only_biggest);
+  }
 }
 
 ################################################################
 ## Print
-sub PrintResult {
-  my ($H_max_variant,$L_max_variant,$str,$matrice,$max_score,$min_score) = @_;
+sub Printline {
+  my ($matrice,$variation,$so_term,$coord,,$max_score,$min_score,$diff,$max_score_variant,$min_score_variant) = @_;
 
-  ##Highest max weigth
-  my @h_var = ();
-  my @h_offset = ();
-  my @h_seq = ();
-  foreach my $info (@{$H_max_variant}) {
-    push (@h_var, join(",", @{${$info}{'var'}}) );
-    push (@h_offset, join(",", @{${$info}{'offset'}}) );
-    push (@h_seq, join(",", @{${$info}{'seq'}}) );
-    last if ($max_score == $min_score);
+  my $sig = log10($matrix_info{$matrice}{'pval'}{$min_score}/$matrix_info{$matrice}{'pval'}{$max_score});
+  my $sig_rel = $sig/$matrix_info{$matrice}{'sigma_max'};
+
+  ## Get minimun offset
+  my $offset = $flank_len;
+  my $strand_change = 0;
+
+  foreach (@{ ${ $max_score_variant }{'coord'} }) {
+    foreach my $h_coord (split(",",$_)) {
+      foreach (@{ ${ $min_score_variant }{'coord'} }) {
+        foreach my $l_coord (split(",",$_)) {
+          my ($h_start,$h_end_strand) = split('-',$h_coord);
+          my ($l_start,$l_end_strand) = split('-',$l_coord);
+
+          if ( $h_start-$l_start < $offset) {
+            my ($h_end,$h_strand) =split('_',$h_end_strand);
+            my ($l_end,$l_strand) =split('_',$l_end_strand);
+            $offset = $h_start - $l_start;
+            if ($h_strand eq $l_strand) {
+              $strand_change = 0;
+            } else {
+              $strand_change = 1;
+            }
+          }
+        }
+      }
+    }
   }
 
-  ##Lowest max weigth
-  my @l_var = ();
-  my @l_offset = ();
-  my @l_seq = ();
-  my @l_m_variant = @{$L_max_variant};
-  foreach my $info (@l_m_variant) {
-    next if ($max_score == $min_score && $info eq $l_m_variant[0]);
-    push (@l_var, join(",", @{${$info}{'var'}}) );
-    push (@l_offset, join(",", @{${$info}{'offset'}}) );
-    push (@l_seq, join(",", @{${$info}{'seq'}}) );
-  }
-
-my $diff = sprintf("%.1f", $max_score-$min_score);
-my $sig = log10($matrix_pval{$matrice}{$min_score}/$matrix_pval{$matrice}{$max_score});
-
-  $str .= $max_score."\t".$min_score."\t".$diff."\t";
-  $str .= $matrix_pval{$matrice}{$max_score}."\t".$matrix_pval{$matrice}{$min_score}."\t".$sig."\t";
-  $str .= join(",",@h_var)."\t".join(",",@l_var)."\t";
-  $str .= join(",",@h_offset)."\t".join(",",@l_offset)."\t";
-  $str .= join(",",@h_seq)."\t".join(",",@l_seq)."\n";
+  my $str = $matrix_list{$matrice}{'id'}."\t";
+  $str .= $variation."\t".$so_term."\t".$coord."\t";
+  $str .= $max_score."\t".$min_score."\t";  # weigth
+  $str .= $diff."\t"; #w_diff
+  $str .= $matrix_info{$matrice}{'pval'}{$max_score}."\t".$matrix_info{$matrice}{'pval'}{$min_score}."\t";  # pvalues
+  $str .= $matrix_info{$matrice}{'pval'}{$min_score}/$matrix_info{$matrice}{'pval'}{$max_score}."\t";  # pvalues ratio
+  $str .= sprintf("%.2e", $sig)."\t"; # sigma
+  $str .= sprintf("%.2e", $sig_rel)."\t"; # sigma_relatif
+  $str .= join(";",@{ ${ $max_score_variant }{'variant'} })."\t".join(";",@{ ${ $min_score_variant }{'variant'} })."\t"; # variants
+  $str .= join(";",@{ ${ $max_score_variant }{'coord'} })."\t".join(";",@{ ${ $min_score_variant }{'coord'} })."\t"; # coord
+  $str .= $offset."\t".$strand_change."\t";
+  $str .= join(";",@{ ${ $max_score_variant }{'seq'} })."\t".join(";",@{ ${ $min_score_variant }{'seq'} })."\n"; # seq
 
   print $out $str;
 }
@@ -704,10 +799,108 @@ Length of the longest Matrix
       if (&IsNatural($arguments[0])) {
         $main::flank_len = shift(@arguments)-1;
       } else {
-        &RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
+        &RSAT::error::FatalError("-mml argument : ",shift(@arguments)," is not natual");
       }
 
 =pod
+
+=item B<-top_matrix #>
+
+Only work with the # top matrix
+
+=cut
+    } elsif ($arg eq "-top_matrix") {
+      if (&IsNatural($arguments[0])) {
+        $main::top_matrix = shift(@arguments);
+      } else {
+        &RSAT::error::FatalError("-top_matrix argument : ",shift(@arguments)," is not natual");
+      }
+
+=pod
+
+=item B<-top_variationmatrix #>
+
+Only work with the # top variation
+
+=cut
+    } elsif ($arg eq "-top_variation") {
+      if (&IsNatural($arguments[0])) {
+        $main::top_variation = shift(@arguments);
+      } else {
+        &RSAT::error::FatalError("-top_variation argument : ",shift(@arguments)," is not natural");
+      }
+
+=pod
+
+=item B<-pval_limit #>
+
+Only return desequilibre with highest pval lowest than pval_limit
+
+=cut
+    } elsif ($arg eq "-pval_limit") {
+      if (&RSAT::util::IsReal($arguments[0])) {
+        $main::pval_limit = shift(@arguments);
+      } else {
+        &RSAT::error::FatalError("-pval_limit argument : ",shift(@arguments)," is not natural");
+      }
+
+=pod
+
+=item B<-html #>
+
+Convert the tab-delimited file into an HTML file, which facilitates the inspection of the results with a Web browser.
+The HTML file has the same name as the output file, but the extension (.tab, .txt) is replaced by the .html extension
+
+=cut
+    } elsif ($arg eq "-html") {
+      $main::html = 1;
+
+=pod
+
+=item B<-calc_distrib>
+
+Calcul and save distribution of matrices
+
+=cut
+    } elsif ($arg eq "-calc_distrib") {
+      $main::calc_distrib = 1;
+
+
+=pod
+
+=item B<-distrib_dir #>
+
+Directory of the distribution file 
+
+=cut
+    } elsif ($arg eq "-distrib_dir") {
+      $main::distrib_dir = shift(@arguments);
+
+=pod
+
+=item B<-distrib_list #>
+
+Name of the file contening the list of matrix distrib file name
+
+/!\ This file must be in the same directory as the distrib file
+
+=cut
+    } elsif ($arg eq "-distrib_list") {
+      $main::infile{'distrib_list'} = shift(@arguments);
+
+=pod
+
+
+=item B<-only_biggest>
+
+Only return the biggest difference of score between two variant of a variation
+
+=cut
+    } elsif ($arg eq "-only_biggest") {
+      $main::only_biggest = 1;
+
+=pod
+
 
 =item	B<-o outputfile>
 
