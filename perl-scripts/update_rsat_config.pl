@@ -107,8 +107,8 @@ package main;
   close NEW_CONF;
 
   system ("mv -f ".$new_config_file." ".$config_file);
-  warn ("\n\nBackup of previous config file\t", $config_file_bk, "\n\n");
-  warn ("Updated config file:\t", $config_file."\n");
+  warn ("\n\nBackup of previous config file\n\t", $config_file_bk, "\n");
+  warn ("Updated config file\n\t", $config_file."\n\n");
 
   exit(0);
 }
