@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.5 2013/08/07 08:11:43 jeremy Exp $
+# $Id: variation-scan,v 1.6 2013/08/07 11:34:19 jeremy Exp $
 #
 ############################################################
 
@@ -188,9 +188,10 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
+  $infile{'distrib_list'} = "";
   our %outfile = ();
 
   our $verbose = 0;
@@ -219,7 +220,9 @@ package	main;
   ## Check arguments
   &RSAT::error::FatalError("You forgot to indicate a background file. Use -bg option") unless ($infile{'bg'});
   &RSAT::error::FatalError("You forgot to indicate a matrix file. Use -m option") unless ($infile{'matrixfile'});
-
+  &RSAT::error::FatalError("Background file",$infile{'bg'},"does not exist") unless (-f $infile{'bg'});
+  &RSAT::error::FatalError("Matrice file",$infile{'matrixfile'},"does not exist") unless (-f $infile{'matrixfile'});
+  
   if ($calc_distrib) {
     &RSAT::error::FatalError("You forgot to indicate distribution directory. Use -distrib_dir option") unless ($distrib_dir);
     &RSAT::message::TimeWarn("Calculing distribution") if ($main::verbose >= 2);
@@ -672,10 +675,10 @@ sub Printline {
           my ($h_start,$h_end_strand) = split('-',$h_coord);
           my ($l_start,$l_end_strand) = split('-',$l_coord);
 
-          if ( $h_start-$l_start < $offset) {
+          if ( abs($l_start-$h_start) < abs($offset) ) {
             my ($h_end,$h_strand) =split('_',$h_end_strand);
             my ($l_end,$l_strand) =split('_',$l_end_strand);
-            $offset = $h_start - $l_start;
+            $offset = $l_start - $h_start;
             if ($h_strand eq $l_strand) {
               $strand_change = 0;
             } else {
