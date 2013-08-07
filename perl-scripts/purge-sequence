@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.46 2013/07/19 06:11:11 rsat Exp $
+# $Id: purge-sequence,v 1.47 2013/08/07 07:47:14 carl Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -49,8 +49,8 @@ chomp $dir{execution};
 
 ## Define the name of the output file
 if ($output_file) {
-  $basename{out} = `basename ${outputfile}`;
-  $dirname{out} = `dirname ${outputfile}`;
+  $basename{out} = `basename ${output_file}`;
+  $dirname{out} = `dirname ${output_file}`;
   chomp $dirname{out};
   chdir $dirname{out};
   $dir{output} = `pwd`;
