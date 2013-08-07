@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.39 2013/07/16 07:50:04 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.40 2013/08/07 08:39:15 rsat Exp $
 #
 ############################################################
 
@@ -97,7 +97,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -158,7 +158,7 @@ package	main;
       -db_version => $ensembl_version
     );
 
-    my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
+    my @db_adaptors = @{ $registry->get_all_DBAdaptors(-group => 'core') };
     my %species_taxon = ();
 
     if ($db eq "ensembl_genomes") {
@@ -169,12 +169,12 @@ package	main;
     @sort_species = sort {$a->species() cmp $b->species()} @db_adaptors;
 
     foreach my $db_adaptor (@sort_species) {
-       my $db_connection = $db_adaptor->dbc();
-       if ($db_adaptor->group() eq "core") {
+#       my $db_connection = $db_adaptor->dbc();
+#       if ($db_adaptor->group() eq "core") {
          print $out ucfirst($db_adaptor->species());
          print $out "\t",$species_taxon{$db_adaptor->species()} if ($species_taxon{$db_adaptor->species()});
          print $out "\n";
-      }
+#      }
     }
     $registry->disconnect_all();
 
@@ -251,14 +251,14 @@ package	main;
   ##Download
   &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);
   foreach my $slice (@slices) {
-    &RSAT::message::TimeWarn("Treating slice",$slice->name()) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("\tTreating slice",$slice->name()) if ($main::verbose >= 2);
     my $seq_rm_installed = $seq_installed{$slice->name().":repeatmasked"} && $seq_installed{$slice->name().":repeatmasked"} == $slice->length();
     my $seq_norm_installed = $seq_installed{$slice->name()} && $seq_installed{$slice->name()} == $slice->length();
 
     if ( (!$rm) || ( $seq_rm_installed && !$force ) ) {
-      &RSAT::message::TimeWarn("Skipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("\tSkipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
     } else {
-      &RSAT::message::TimeWarn("Downloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("\tDownloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
       my $filename = $slice->name()."_repeatmasked.raw";
       $filename =~ s/:/_/g;
       my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
@@ -267,10 +267,10 @@ package	main;
     }
 
     if ( ($seq_norm_installed) && (!$force) ) {
-      &RSAT::message::TimeWarn("Skipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("\tSkipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       next;
     } else {
-      &RSAT::message::TimeWarn("Downloading DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("\tDownloading DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       my $filename = $slice->name().".raw";
       $filename =~ s/:/_/g;
       my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
@@ -280,12 +280,11 @@ package	main;
   }
 
   ################################################################
-  ## Make contigs.txt and contig.tab
+  ## Create contig description files (contigs.txt and contig.tab)
   
-  &RSAT::message::TimeWarn("Make contigs.txt and contig.tab") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Creating contig description files (contigs.txt and contig.tab).") if ($main::verbose >= 2);
   my $out_contigs = &OpenOutputFile($genome_dir."/contigs.txt");
   my $out_contig =  &OpenOutputFile($genome_dir."/contig.tab");
-
   print $out_contig "-- dump date","\t",&AlphaDate(),"\n";
   print $out_contig "-- class","\t","EnsEMBL::Contig\n";
   print $out_contig "-- table","\t","contig\n";
@@ -318,8 +317,8 @@ package	main;
 
   ################################################################
   ## Write last genome install
-  &RSAT::message::TimeWarn("Update supported_organisms_ensembl.tab") if ($main::verbose >= 2);
   $supperted_organism_file = &Get_supported_file($data_dir);
+  &RSAT::message::TimeWarn("Updating supported organism file", $supperted_organism_file) if ($main::verbose >= 2);
 
   @other_species = ();
 
@@ -351,7 +350,7 @@ package	main;
   print $s_o_file join("",@other_species);
   close $s_o_file;
 
-  &RSAT::message::Info("Genome installed in dir", $genome_dir) if ($main::verbose >= 1);
+  &RSAT::message::Info("Genome installed in folder", $genome_dir) if ($main::verbose >= 1);
 
   ################################################################
   ## Report execution time and close output stream

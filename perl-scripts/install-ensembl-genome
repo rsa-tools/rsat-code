@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.19 2013/07/17 16:16:12 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.20 2013/08/07 08:39:15 rsat Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -583,7 +583,7 @@ incomplete.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $out "; install-ensembl-species ";
+  print $out "; install-ensembl-genome ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   if (%main::infile) {
