@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.6 2013/08/07 11:34:19 jeremy Exp $
+# $Id: variation-scan,v 1.7 2013/08/08 12:10:12 jeremy Exp $
 #
 ############################################################
 
@@ -78,13 +78,13 @@ SO term of the variation.
 
 Coordinate of the variation.
 
-=item 5. H_weight
+=item 5. B_weight
 
-Highest max weigth. 
+Best max weigth. 
 
-=item 8. L_weight
+=item 8. W_weight
 
-Lowest max weigth.
+Worst max weigth.
 
 =item 7. Diff
 
@@ -94,58 +94,58 @@ Difference between the two max weigth.
 
 Variant of the variation in the sequence.
 
-=item 9. H_pval
+=item 9. B_pval
 
-Pvalue of the highest max weigth.
+Pvalue of the best max weigth.
 
-=item 10. L_pval
+=item 10. W_pval
 
-Pvalue of the lowest max weigth.
+Pvalue of the worst max weigth.
 
 item 11. sigma
 
 Log10 difference between the two p-value.
 
-item 12. H_var
+item 12. B_var
 
-Variant(s) in the sequence with the highest max weigth.
+Variant(s) in the sequence with the best max weigth.
 
 Multiple variant are return comma separate if the highest max weigth
  is the same in multiple sequence.
 
-item 13. L_var
+item 13. W_var
 
-Variant(s) in the sequence with the lowest max weigth.
+Variant(s) in the sequence with the worst max weigth.
 
 Multiple variant are return comma separate if the lowest max weigth
  is the same in multiple sequence.
 
-item 14. H_coord
+item 14. B_coord
 
-Coordinate(s) of the matrix in the sequence with the highest max weigth.
+Coordinate(s) of the matrix in the sequence with the best max weigth.
 
-Multiple coordinate are return comma separate if the highest max weigth
+Multiple coordinate are return comma separate if the best max weigth
  is the same in multiple sequence.
 
-item 15. L_coord
+item 15. W_coord
 
-Coordinate(s) of the matrix in the sequence with the lowest max weigth.
+Coordinate(s) of the matrix in the sequence with the worst max weigth.
 
-Multiple coordinate are return comma separate if the lowest max weigth
+Multiple coordinate are return comma separate if the worst max weigth
  is the same in multiple sequence.
 
-item 14. H_seq
+item 14. B_seq
 
 Sequence with the highest max weigth.
 
-Multiple sequence are return comma separate if the highest max weigth
+Multiple sequence are return comma separate if the best max weigth
  is the same in multiple sequence.
 
-item 15. L_seq
+item 15. W_seq
 
 Sequence with the lowest max weigth.
 
-Multiple sequence are return comma separate if the lowest max weigth
+Multiple sequence are return comma separate if the worst  max weigth
  is the same in multiple sequence.
  
 =back
@@ -188,7 +188,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   $infile{'distrib_list'} = "";
@@ -275,7 +275,7 @@ package	main;
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
-  print $out "#motif\tvar_id\tvar_class\tcoord\th_w\tl_w\tw_diff\th_pval\tl_pval\tpval_ratio\tpval_lr\tpval_lr_relatif\th_var\tl_var\th_pos\tl_pos\tmin_offset\tstr_ch\th_seq\tl_seq\n";
+  print $out "#motif\tvar_id\tvar_class\tcoord\thBw\tWw\tw_diff\tB_pval\tW_pval\tpval_ratio\tpval_lr\tpval_lr_relatif\tB_var\tW_var\tB_pos\tW_pos\tmin_offset\tstr_ch\tB_seq\tW_seq\n";
 
   ################################################################
   #Read Matrix File
@@ -554,7 +554,7 @@ sub getLineInfo {
   $pos_s += $diff_pos;
   $pos_e += $diff_pos;
 
-  return ($matrice,$coord."_$start",$id,$type,$ref,$var,$stran,$pos_s,$pos_e,$seq,$score)
+  return ($matrice,$coord,$id,$type,$ref,$var,$stran,$pos_s,$pos_e,$seq,$score)
 }
 
 ################################################################
