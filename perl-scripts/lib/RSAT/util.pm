@@ -1028,7 +1028,7 @@ sub doit {
 #    if (($dry) || ($verbose >= 2)) {
     if ($verbose >= 2) {
       &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 4);
-      &RSAT::message::TimeWarn($command);
+      &RSAT::message::TimeWarn(&hide_RSAT_path($command));
     }
 
     ## Send the command to the queue
