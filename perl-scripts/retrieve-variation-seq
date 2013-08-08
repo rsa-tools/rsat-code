@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.14 2013/08/07 08:11:35 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.15 2013/08/08 04:03:35 rsat Exp $
 #
 ############################################################
 
@@ -67,7 +67,7 @@ considered not included in the selection. This is equivalent to have a
 zero-based coordinate for the start, and a 1-base coordinate for the
 end.
 
-=head Example of bed file
+=head2 Example of bed file
 
  chr1	3473041	3473370
  chr1	4380371	4380650
@@ -117,6 +117,8 @@ I<included> in the region of interest.
 =item 3. chromEnd
 
 The ending position of the feature in the chromosome or scaffold.
+
+=back
 
 =head2 Variation file
 
@@ -209,7 +211,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -226,11 +228,19 @@ package	main;
   our $ref_seq = "";
   our $flank_len = 29;
 
-  our $format = "";
   our $col = 1;
 
   our $get_available_species = 0;
   our $validate = 0;
+
+  ## Define supported output formats
+  our @supported_output_formats = qw (rsat id bed);
+  our $supported_output_formats = join ",", @supported_output_formats;
+  our %supported_output_format = ();
+  foreach my $format (@supported_output_formats) {
+      $supported_output_format{$format} = 1;
+  }
+  our $format = "";
 
   ################################################################
   ## Read argument values
@@ -424,7 +434,7 @@ my %chr_coord = ();
     }
     $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
 
-## Retrieve variation
+    ## Retrieve variation
     &RSAT::message::TimeWarn("Retrieve variation from coordinate") if ($main::verbose >= 2);
 
   my $out_var = &OpenOutputFile($main::outfile{'variation_rsat'});
@@ -653,13 +663,32 @@ below).
 
 Format of the input file
 
-Supported format : bed, rsat (format of variation files used by all
-RSAT script), id (tab-delimited file with all variation IDs in one
-column, which can be specified by the option I<-col>).
+Supported formats: 
+
+=over
+
+=item I<rsat>
+
+Format of variation files used by all RSAT scripts.
+
+=item I<id>
+
+tab-delimited file with all variation IDs in a given column, which can
+be specified by the option I<-col>.
+
+=item I<bed>
+
+General format for the description of genomic features
+(see https://genome.ucsc.edu/FAQ/FAQformat.html#format1).
+
+=back 
 
 =cut
     } elsif ($arg eq "-format") {
       $main::format = shift(@arguments);
+      unless ($supported_output_format{$main::format}) {
+         &RSAT::error::FatalError($format, "Invalid output format. Supported: ". $supported_output_formats);
+      }
 
 =pod
 
@@ -719,7 +748,7 @@ allows to use the command within a pipe.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $out "; download-ensembl-genome ";
+  print $out "; retrieve-variation-seq ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
 
