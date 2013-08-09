@@ -6,10 +6,10 @@
 ## makefile scripts.
 
 ## Name of the site (which will appear in the log file)
-RSAT_SITE=`grep '^rsat_site=' ${RSAT}/RSAT_config.props | perl -pe s|rsat_site=||`
+RSAT_SITE=your_server_name
 
 ## Grep Web server URL from the props file
-RSAT_WWW=`grep '^rsat_www=' ${RSAT}/RSAT_config.props | perl -pe s|rsat_www=||`
+RSAT_WWW=http://www.rsat.eu/
 
 ## Email address of RSAT administrator
 RSAT_ADMIN_EMAIL=your.address@your.domain
