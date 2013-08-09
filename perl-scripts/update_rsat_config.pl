@@ -67,7 +67,8 @@ package main;
   print "\nReady to update config file\t", $config_file, " [y/n] (n): ";
   chomp($answer = <>);
   unless ($answer eq "y") {
-    die ("\nGood bye\n\n");
+      warn("\nSince you did not answer 'y', the configuration update is aborted.\n");
+      die ("Good bye\n\n");
   }
 
   open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
