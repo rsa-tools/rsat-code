@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.7 2013/08/08 12:10:12 jeremy Exp $
+# $Id: variation-scan,v 1.8 2013/08/09 09:23:26 jeremy Exp $
 #
 ############################################################
 
@@ -188,7 +188,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   $infile{'distrib_list'} = "";
@@ -266,7 +266,6 @@ package	main;
     exit(0);
   }
 
-  &RSAT::error::FatalError("You forgot to indicate a sequence file. Use -i option") unless ($infile{'input'});
   if ($infile{'distrib_list'}) {
     &RSAT::error::FatalError("Distrib list",$infile{'distrib_list'},"file does not exist") unless (-f $infile{'distrib_list'});
   }
@@ -286,8 +285,8 @@ package	main;
   my $ac = "";
   my $nb_matrix = 0;
 
-  ($main::in) = &OpenInputFile($main::infile{'matrixfile'});
-  while (<$main::in>) {
+  my ($mat_file) = &OpenInputFile($main::infile{'matrixfile'});
+  while (<$mat_file>) {
     next if (/^#/); ## Skip comment lines
     next if (/^;/); ## Skip RSAT-like comment lines
     next unless (/\S/); ## Skip empty lines
@@ -333,9 +332,7 @@ package	main;
 
   }
   $matrix_list{$ac}{'length'} = $length;
-  close $main::in;
-
-
+  close $mat_file;
 
   ## Get distrib files
   my %distrib_file_list = ();
@@ -357,11 +354,26 @@ package	main;
   my $fasta_file = &RSAT::util::make_temp_file("","variation-scan_fasta_seq", 1);
   my $bg_file = &RSAT::util::make_temp_file("","variation-scan_bg_file", 1);
   my $matrix_file_tab = &RSAT::util::make_temp_file("","variation-scan_matrices_tab", 1);
-
+  my $variation_seq = &RSAT::util::make_temp_file("","variation-scan_variant_seq_tab", 1);
 
   ## Change bg_file format
   my $command = "$ENV{'RSAT'}/perl-scripts/convert-background-model -i $main::infile{'bg'} -from oligos -to inclusive -o $bg_file -bg_pseudo 0.01";
   &doit($command, 0, 0, 0);
+
+  ## Write pipe input into fie for multipl read
+  unless ($main::infile{input}) {
+    my $outstream_var_seq = &OpenOutputFile($variation_seq); 
+    while (<$main::in>) {
+      next if (/^#/); ## Skip comment lines
+      next if (/^;/); ## Skip RSAT-like comment lines
+      next unless (/\S/); ## Skip empty lines
+      next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
+      print $outstream_var_seq $_;
+    }
+    close $outstream_var_seq;
+    $main::infile{input} = $variation_seq;
+  }
+
 
   ## Scan
   our $matrix_length = 0;
@@ -458,8 +470,8 @@ package	main;
     &RSAT::message::TimeWarn("\tScan matrix") if ($main::verbose >= 3);
     my $out_fas = &OpenOutputFile($fasta_file);
 
-    ($main::in) = &OpenInputFile($main::infile{input});
-    while (<$main::in>) {
+    my ($var_seq) = &OpenInputFile($main::infile{input});
+    while (<$var_seq>) {
       next if (/^#/); ## Skip comment lines
       next if (/^;/); ## Skip RSAT-like comment lines
       next unless (/\S/); ## Skip empty lines
@@ -487,6 +499,7 @@ package	main;
       print $out_fas ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n".substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2)."\n";
       $last_id = $id;
     }
+    close ($var_seq);
 
     close($out_fas);
     my @scanning = qx{$ENV{'RSAT'}/contrib/matrix-scan-quick/matrix-scan-quick $arg};
@@ -496,7 +509,6 @@ package	main;
     $out_fas = &OpenOutputFile($fasta_file); ##Just to make empty file
     close($out_fas);
 
-    close $main::in;
   }
 
   ################################################################
