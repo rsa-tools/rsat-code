@@ -2300,7 +2300,7 @@ sub footprint_discovery {
     print $TMP_OUT $result;
     close $TMP_OUT;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"footprint-discovery",output_choice=>$output_choice);
 
@@ -3019,7 +3019,8 @@ sub contingency_table {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  open FILE, ">/home/rsat/rsa-tools/public_html/tmp/brol.truc3";
+
+#  open FILE, ">/home/rsat/rsa-tools/public_html/tmp/brol.truc3"; ## commented by JvH on 2013-08-09. PLease dont modify without noticing to JvH.
   &run_WS_command($command, $output_choice, "contingency-table", "tab");
 }
 
@@ -3591,7 +3592,7 @@ if ($args{"equi_pseudo"} == 1 ) {
 ## sub not found => HELP, Jacques!
 #	  $tmp_background_infile = &ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
 #			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
-	  $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+#	  $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
 
 ## Only noov taxon bckgds available at the moment => useless
 #      } elsif ($args{"taxon"}) {
@@ -3954,10 +3955,10 @@ sub compare_matrices {
 
     my $tmp_outfile = $output_path."/".$output_prefix."_index.html";
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g; ## Re-commented by JvH on 2013-08-09. PLease dont modify without noticing to JvH.
     my $tmp_outdir = $output_path;
 #    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+#    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g; ## Re-commented by JvH on 2013-08-09. PLease dont modify without noticing to JvH.
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"compare-matrices", output_choice=>$output_choice);
 
@@ -4769,8 +4770,9 @@ sub draw_heatmap {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
 
-    open TEMP, ">/home/rsat/rsa-tools/public_html/tmp/newtest";
-    print TEMP join ("", %args);
+## commented by JvH on 2013-08-09. PLease dont modify without noticing to JvH.
+#    open TEMP, ">/home/rsat/rsa-tools/public_html/tmp/newtest";
+#    print TEMP join ("", %args);
 
     my $output_choice = $args{"output"};
     unless ($output_choice) {
@@ -6090,7 +6092,7 @@ sub run_WS_command {
       ################################################################
       ################################################################
 #      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+#      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g; ## commented by JvH on 2013-08-09. PLease dont modify without noticing to JvH.
       &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
       my $response = "The server is now processing your request.\n"; 
       $response .= "Once it will be finished, the result will become available at the following URL\n";
