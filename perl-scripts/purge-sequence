@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.47 2013/08/07 07:47:14 carl Exp $
+# $Id: purge-sequence,v 1.48 2013/08/09 16:56:25 rsat Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -140,7 +140,6 @@ if ($vmatch_installed) {
     $vmatch_options .= " | grep -v '^#' ";
     ## $vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
     $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
-
     $vmatch_options .= "> $dir{output}/$basename{out}" if ($output_file);
     $command = "cd $tmp_file_dir ; $skdir/vmatch $vmatch_options";
     &doit($command, $dry_run, $die_on_error, $verbose);
@@ -175,7 +174,7 @@ NAME
         1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 USAGE
-        purge-sequence [-i input_file] [-o outputfile] [-v] [-2str | -1str]
+        purge-sequence [-i input_file] [-o output_file] [-v] [-2str | -1str]
 
 DESCRIPTION
 
@@ -201,7 +200,7 @@ OPTIONS
 		If input_file is not specified, the standard input is
 		used.  This allows to place the command within a pipe.
 	-format sequence format
-	-o outputfile
+	-o output_file
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 	-n	dry run
