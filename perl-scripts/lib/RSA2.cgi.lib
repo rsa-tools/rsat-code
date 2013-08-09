@@ -1709,7 +1709,6 @@ sub CheckEmailAddress {
     }
 }
 
-
 =pod
 
 =item B<CheckWebInput()>
