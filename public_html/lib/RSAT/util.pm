@@ -495,6 +495,10 @@ sub RelativePath {
 Hide the full RSAT path to avoid exposing it on the Web server
 interface. The full path is replaced by $RSAT.
 
+# C'est une idee fantastique, ca n'a absolument pas bousille tout NeAT... un grand merci au concepteur genial de ce 'TRUC'
+# qui n'a fait aucun test après l'implémentation, et qui m'a fait perdre au moins une matinee en debugage!!!!!!
+# Sylvain
+
 =cut
 sub hide_RSAT_path {
   my ($string) = @_;
