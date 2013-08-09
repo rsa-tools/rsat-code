@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.46 2013/08/09 20:14:00 rsat Exp $
+# $Id: install_software.mk,v 1.47 2013/08/09 20:15:08 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -779,9 +779,9 @@ PEAKSPLITTER_BASE_DIR=${SRC_DIR}/PeakSplitter
 PEAKSPLITTER_ARCHIVE=PeakSplitter_Cpp.tar.gz
 PEAKSPLITTER_URL=http://www.ebi.ac.uk/bertone/software/${PEAKSPLITTER_ARCHIVE}
 PEAKSPLITTER_DISTRIB_DIR=${PEAKSPLITTER_BASE_DIR}/PeakSplitter_Cpp
-install_peaksplitter: _download_wpeaksplitter _compile_peaksplitter 
+install_peaksplitter: _download_peaksplitter _compile_peaksplitter 
 
-_download_wpeaksplitter:
+_download_peaksplitter:
 	@echo
 	@echo "Downloading PeakSplitter"
 	@mkdir -p ${PEAKSPLITTER_BASE_DIR}
