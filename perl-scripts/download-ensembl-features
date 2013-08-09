@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.23 2013/08/08 03:46:30 rsat Exp $
+# $Id: download-ensembl-features,v 1.24 2013/08/09 06:23:58 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -289,6 +289,8 @@ package main;
       my $description = "<no descrition>";
       $description = $gene->description if ($gene->description);
 
+      my $gene_id = $gene->display_id();
+
       my $external_name = $gene->external_name();
       $external_name = $gene->display_id() unless ($external_name);
 
@@ -376,12 +378,19 @@ package main;
             print $outstream_transcript_names 'primary',"\t",'',"\n";
           }
 
-	    ## Add gene name as synonym for transcript
-	    print $outstream_transcript_names join("\t",
-						   $transcript->display_id(),
-						   $external_name,
-						   "alternate",
-						   "gene_name"), "\n";
+	  ## Add GeneId as synonym for transcript
+	  print $outstream_transcript_names join("\t",
+						 $transcript->display_id(),
+						 $gene_id,
+						 "alternate",
+						 "GeneId"), "\n";
+	  
+	  ## Add gene name as synonym for transcript
+	  print $outstream_transcript_names join("\t",
+						 $transcript->display_id(),
+						 $external_name,
+						 "alternate",
+						 "gene_name"), "\n";
         }
 
 
@@ -471,6 +480,13 @@ package main;
               print $outstream_cds_names 'primary',"\t",'',"\n";
             }
 
+	    ## Add GeneId as synonym for CDS
+	    print $outstream_cds_names join("\t",
+					    $prot->display_id(),
+					    $gene_id,
+					    "alternate",
+					    "GeneId"), "\n";
+	  
 	    ## Add gene name as synonym for cds
 	    print $outstream_cds_names join("\t",
 					    $prot->display_id(),
