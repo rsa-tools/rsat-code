@@ -105,7 +105,7 @@ init_ws_server:
 ## distribution (since 2009).
 
 ## Compile all programs
-compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick  compile_compare_matrices_quick compile_kwalks compile_rea
+compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick  compile_compare_matrices_quick compile_pathway_tools
 
 PROGRAM=info-gibbs
 SRC_DIR=${RSAT}/contrib/${PROGRAM}
@@ -141,19 +141,50 @@ compile_compare_matrices_quick:
 
 
 ################################################################
-## Compile the path finding tools
+## Compile the NeAT pathway analysis tools
+
+compile_pathway_tools: compile_floydwarshall compile_kwalks compile_rea
+
+################################################################
+## Compile the program floydwarshall, located in the folder
+## contrib/floydwarshall
+compile_floydwarshall:
+	@echo "Compiling tool floydwarshall required for pathway analysis tools"
+	@gcc ${RSAT}/contrib/floydwarshall/floydwarshall.c -o ${BIN}/floydwarshall
+	@echo "	${BIN}/floydwarshall"
 
 ################################################################
 ## Compile kwalks (subgraph extraction algorithm developed by Jerome
 ## Callut and Pierre Dupont).
+##
+## We also need to set read/write access to all users on the
+## kwalks/bin directory because it is used to store temporary files
+## during execution. Quick and dirty solution, will need to be revised
 compile_kwalks:
-	@echo "Compiling kwalks"
+	@echo "Compiling kwalks (software developed by Jerome Callut and Pierre Dupont, UCL, Belgium)"
 	@(cd ${RSAT}/contrib/; \
 		tar -xpzf kwalks/kwalks.tgz; \
-		cd kwalks/src; make; \
+		cd kwalks/src; make ; \
+		echo "Installing lkwalk executable in bin directory ${BIN}"; \
 		cd ../bin; rsync -ruptvl lkwalk ${BIN})
+	@echo "Setting read/write access to ${RSAT}/contrib/kwalks for temporary files"
 	@chmod 777 ${RSAT}/contrib/kwalks
-	@chmod 777 ${RSAT}/contrib/kwalks/bin
+#	@chmod 777 ${RSAT}/contrib/kwalks/bin
+	@echo "Executable	${RSAT}/contrib/kwalks/bin/lkwalk"
+	@${MAKE} check_kwalks_config
+
+check_kwalks_config:
+	@echo
+	@echo "Checking KWALKS_ROOT config in RSAT config file"
+	@echo "Current value of KWALKS_ROOT in ${RSAT}/RSAT_config.props"
+	@grep "KWALKS_ROOT" ${RSAT}/RSAT_config.props
+	@echo
+	@echo "Please check that the above line equals the following"
+	@echo "KWALKS_ROOT=${RSAT}/contrib/kwalks/bin"
+
+check_lkwalk_help:
+	@echo "Checkin lkwalk help"
+	${RSAT}/contrib/kwalks/bin/lkwalk
 
 ################################################################
 ## Compile REA (shortest path finding algorithm)
@@ -162,7 +193,23 @@ compile_rea:
 	@(cd ${RSAT}/contrib/REA/; \
 		tar -xpzf REA.tgz; \
 		make; rsync -ruptvl REA ${BIN})
+	@echo "Setting read/write access to  ${RSAT}/contrib/REA for temporary files"
 	@chmod 777 ${RSAT}/contrib/REA
+	@echo "Executable	 ${BIN}/rea"
+	@${MAKE} check_rea_config
+
+check_rea_config:
+	@echo
+	@echo "Checking REA_ROOT config in RSAT config file"
+	@echo "Current value of REA_ROOT in ${RSAT}/RSAT_config.props"
+	@grep "REA_ROOT" ${RSAT}/RSAT_config.props
+	@echo
+	@echo "Please check that the above line equals the following"
+	@echo "REA_ROOT=${RSAT}/contrib/REA"
+
+check_rea_help:
+	@echo "Checking rea help"
+	${RSAT}/contrib/REA/REA -help
 
 ################################################################
 ##########   Ubuntu-specific installation
