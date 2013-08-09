@@ -12,6 +12,9 @@ if (scalar(@ARGV)) {
 package main;
 {
 
+
+  my @extensions =  ("props", "mk");
+
   ## Check if the RSAT environment variable has been specified
   $rsat_path = $ENV{RSAT};
 
@@ -46,70 +49,77 @@ package main;
     die ("\nError: invalid RSAT path\n\t", $rsat_path, "\nDoes not correspond to an existing directory on this computer", "\n\n");
   }
 
-  ## Check that the config file exists in the RSAT path
-  my $config_file = $rsat_path."/RSAT_config.props";
-  unless (-f $config_file) {
-    my $default_config_file = $rsat_path."/RSAT_config_default.props";
-    if (-e $default_config_file) {
-      warn ("\nThe config file RSAT_config.props is not found in the RSAT path\n\t", $rsat_path,
-	   "\nCopying from default config file\t", $default_config_file,
-	   "\n\n");
-      system("cp ".$default_config_file." ".$config_file);
+  ## Treat successively the two configuration files: .props (for Perl
+  ## and php scripts) and .mk (for make scripts).
 
-    } else {
-      die ("\nError: the config file RSAT_config.props is not found in the RSAT path\n\t", $rsat_path,
-	   "\nPlease check that the RSAT package has been properly installed in this directory.",
-	   "\n\n");
+  for my $extension (@extensions) {
+
+    ## Check that the config file exists in the RSAT path
+    my $config_file = $rsat_path."/RSAT_config.${extension}";
+    warn("\n\nEditing ${extension} configuration file\t", $config_file,"\n\n");
+
+    unless (-f $config_file) {
+      my $default_config_file = $rsat_path."/RSAT_config_default.${extension}";
+      if (-e $default_config_file) {
+	warn ("\nThe config file RSAT_config.${extension} is not found in the RSAT path\n\t", $rsat_path,
+	      "\nCopying from default config file\t", $default_config_file,
+	      "\n\n");
+	system("cp ".$default_config_file." ".$config_file);
+      } else {
+	die ("\nError: the config file RSAT_config.${extension} is not found in the RSAT path\n\t", $rsat_path,
+	     "\nPlease check that the RSAT package has been properly installed in this directory.",
+	     "\n\n");
+      }
     }
-  }
 
-  ## Prompt for the new value
-  print "\nReady to update config file\t", $config_file, " [y/n] (n): ";
-  chomp($answer = <>);
-  unless ($answer eq "y") {
-      warn("\nSince you did not answer 'y', the configuration update is aborted.\n");
+    ## Prompt for the new value
+    print "\nReady to update config file\t", $config_file, " [y/n] (n): ";
+    chomp($answer = <>);
+    unless ($answer eq "y") {
+      warn("\nWARNING: Since you did not answer 'y', the edition of config file ${config_file} is aborted.\n");
       die ("Good bye\n\n");
-  }
+    }
 
-  open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
+    open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
 
   ## Create a copy of the config file
-  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-  my $config_file_bk = $config_file.".bk.".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec;
-  warn ("\n\nBackup of previous config file\t", $config_file_bk, "\n\n");
-  system("cp ".$config_file." ".$config_file_bk);
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    my $config_file_bk = $config_file.".bk.".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec;
+    warn ("\n\nBackup of previous config file\t", $config_file_bk, "\n\n");
+    system("cp ".$config_file." ".$config_file_bk);
 
-  ## Open a new file for writing the new config
-  my $new_config_file = $config_file.".updated";
-  open NEW_CONF, ">".$new_config_file || die "\n\nCannot write new config file\t", $new_config_file, "\n\n";
+    ## Open a new file for writing the new config
+    my $new_config_file = $config_file.".updated";
+    open NEW_CONF, ">".$new_config_file || die "\n\nCannot write new config file\t", $new_config_file, "\n\n";
 
-  ## Load the RSAT config file
-  while (<CONFIG>) {
-    if ((/(\S+)=(.*)/) && !(/^#/)) {
-      my $key = $1;
-      my $value = $2;
-      $param{$key} = $value;
+    ## Load the RSAT config file
+    while (<CONFIG>) {
+      if ((/(\S+)=(.*)/) && !(/^#/)) {
+	my $key = $1;
+	my $value = $2;
+	$param{$key} = $value;
 
-      ## Prompt for the new value
-      print "\n", $key, " [", $value, "] : ";
-      chomp(my $new_value = <>);
-      if ($new_value) {
-	$value = $new_value;
+	## Prompt for the new value
+	print "\n", $key, " [", $value, "] : ";
+	chomp(my $new_value = <>);
+	if ($new_value) {
+	  $value = $new_value;
+	}
+
+	print NEW_CONF $key, "=", $value, "\n";
+      } else {
+	print;			## Display comments
+	print NEW_CONF;
       }
-
-      print NEW_CONF $key, "=", $value, "\n";
-    } else {
-      print; ## Display comments
-      print NEW_CONF;
     }
+
+    close CONFIG;
+    close NEW_CONF;
+
+    system ("mv -f ".$new_config_file." ".$config_file);
+    warn ("\n\nBackup of previous config file\n\t", $config_file_bk, "\n");
+    warn ("Updated config file\n\t", $config_file."\n\n");
   }
-
-  close CONFIG;
-  close NEW_CONF;
-
-  system ("mv -f ".$new_config_file." ".$config_file);
-  warn ("\n\nBackup of previous config file\n\t", $config_file_bk, "\n");
-  warn ("Updated config file\n\t", $config_file."\n\n");
 
   exit(0);
 }
