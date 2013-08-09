@@ -28,18 +28,31 @@ Genomes can be installed either from the \RSAT web site, or from their
 original sources.  
 
 \begin{itemize}
-\item NCBI/Genbank (\url{ftp://ftp.ncbi.nih.gov/genomes/})
 
-\item UCSC (\url{http://genome.ucsc.edu/}) for the multi-genome
-  alingment files (multiz) used by \program{peak-footprints}.
-
-\item ENSEMBL (\url{http://www.ensembl.org/}) genomes are supported by
-  special tools (\program{retrieve-ensembl-seq},
-  \program{supported-organisms-ensembl}).
+\item NCBI/Genbank (\url{ftp://ftp.ncbi.nih.gov/genomes/}) was the
+  primary source for installing genomes on \RSAT. Genomes are
+  downloaded from the ftp site and installed locally on the \RSAT
+  server by parsing the .gbk files.
 
 
 \item The EBI genome directory
   (\url{ftp://ftp.ebi.ac.uk/pub/databases/genomes/Eukaryota/})
+  contains supplementary genomes, which can be downloaded and
+  installed on the \RSAT server by parsing files in embl format.
+
+\item UCSC (\url{http://genome.ucsc.edu/}) for the multi-genome
+  alingment files (multiz) used by \program{peak-footprints}.
+
+\item Since 2008, ENSEMBL (\url{http://www.ensembl.org/}) genomes are
+  supported by special tools (\program{retrieve-ensembl-seq},
+  \program{supported-organisms-ensembl}), that remotely address
+  queries to the Ensembl database.
+
+\item Since 2013, genomes can be downloaded and installed on \RSAT
+  servers, using the tool \program{install-ensembl-genome}. Once
+  installed, ensembl genomes can be queried with the same tools as the
+  other genomes installed on \RSAT servers (\program{retrieve-seq},
+  \program{gene-info}, \ldots).
 
 \end{itemize}
 
@@ -195,5 +208,6 @@ download.
 \begin{lstlisting}
 download-organism -v 1 -taxon Enterobacteriales 
 \end{lstlisting}
+
 
 
