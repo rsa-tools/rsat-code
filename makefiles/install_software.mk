@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.43 2013/07/19 04:58:02 jvanheld Exp $
+# $Id: install_software.mk,v 1.44 2013/08/09 08:56:36 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -562,50 +562,13 @@ _compile_rnsc:
 
 ################################################################
 ## Install BLAST
-install_blast: _download_blast _compile_blast
+install_blast: _list_blast_param _download_blast _install_blast
 
 _download_blast: _download_blast_${OS}
 
-_compile_blast: _compile_blast_${OS}
-
-################################################################
-## Install the BLAST on linux
-BLAST_BASE_DIR=${SRC_DIR}/blast
-BLAST_LINUX_ARCHIVE=blast-*-${ARCHITECTURE}-linux.tar.gz
-BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
-BLAST_SOURCE_DIR=blast_latest
-_download_blast_linux:
-	@mkdir -p ${BLAST_BASE_DIR}
-	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_LINUX_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_LINUX_ARCHIVE}; \
-		rm -rf ${BLAST_SOURCE_DIR}; \
-		mv ${BLAST_LINUX_ARCHIVE} ..; \
-		mv blast-*  ${BLAST_SOURCE_DIR} \
-	)
-	@echo ${BLAST_BASE_DIR}
-
-_compile_blast_linux:
-	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
-	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
-	@echo "Please check that the BLAST install directory is in your path"
-	@echo "	${BIN_DIR}"
-
-################################################################
-## Install the BLAST on MAC
-BLAST_BASE_DIR=${SRC_DIR}/blast
-BLAST_MAC_ARCHIVE=blast-*-universal-macosx.tar.gz
-BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
-BLAST_SOURCE_DIR=blast_latest
-_download_blast_macosx:
-	@mkdir -p ${BLAST_BASE_DIR}
-	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_MAC_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_MAC_ARCHIVE}; rm -r ${BLAST_SOURCE_DIR};mv ${BLAST_MAC_ARCHIVE} ..;mv blast-*  ${BLAST_SOURCE_DIR})
-	@echo ${BLAST_BASE_DIR}
-
-_compile_blast_macosx:
-	@mkdir -p ${BIN_DIR}
-	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
-	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
+#_install_blast: _install_blast_${OS}
+_install_blast:
+	@${SUDO} mkdir -p ${BIN_DIR}
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the BLAST bin pathway"
@@ -617,6 +580,58 @@ _compile_blast_macosx:
 	@echo "	export PATH=${BIN_DIR}:\$$PATH"
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH ${BIN_DIR}:\$$PATH"
+
+_list_blast_param:
+	@echo "Downloading blast"
+	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
+	@echo "	BLAST_LINUX_ARCHIVE	${BLAST_LINUX_ARCHIVE}"
+	@echo "	BLAST_URL		${BLAST_URL}"
+	@echo "	BLAST_SOURCE_DIR	${BLAST_SOURCE_DIR}"
+	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
+	@echo "	BIN_DIR			${BIN_DIR}"
+
+################################################################
+## Install the BLAST on linux
+BLAST_BASE_DIR=${SRC_DIR}/blast
+BLAST_LINUX_ARCHIVE=blast-*-${ARCHITECTURE}-linux.tar.gz
+BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
+BLAST_SOURCE_DIR=blast_latest
+_download_blast_linux:
+	@mkdir -p ${BLAST_BASE_DIR}
+	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_LINUX_ARCHIVE}"
+	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_LINUX_ARCHIVE}; \
+		${SUDO} rm -rf ${BLAST_SOURCE_DIR}; \
+		${SUDO} mv -f ${BLAST_LINUX_ARCHIVE} ..; \
+		${SUDO} mv -f blast-*  ${BLAST_SOURCE_DIR} \
+	)
+	@echo ${BLAST_BASE_DIR}
+
+#_install_blast_linux:
+#	@${SUDO} mkdir -p ${BIN_DIR}
+#	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
+#	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
+#	@echo "Please check that the BLAST install directory is in your path"
+#	@echo "	${BIN_DIR}"
+
+################################################################
+## Install the BLAST on MAC
+BLAST_BASE_DIR=${SRC_DIR}/blast
+BLAST_MAC_ARCHIVE=blast-*-universal-macosx.tar.gz
+BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
+BLAST_SOURCE_DIR=blast_latest
+_download_blast_macosx:
+	@mkdir -p ${BLAST_BASE_DIR}
+	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_MAC_ARCHIVE}"
+	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_MAC_ARCHIVE}; \
+		${SUDO} rm -rf ${BLAST_SOURCE_DIR}; \
+		${SUDO} mv -f ${BLAST_MAC_ARCHIVE} ..; \
+		${SUDO} mv -f blast-*  ${BLAST_SOURCE_DIR})
+	@echo ${BLAST_BASE_DIR}
+
+# _install_blast_macosx:
+# 	@${SUDO} mkdir -p ${BIN_DIR}
+# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
+# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
 
 ################################################################
 ## Generic call for installing a program. This tag is called with
