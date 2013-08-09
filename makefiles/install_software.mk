@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.44 2013/08/09 08:56:36 rsat Exp $
+# $Id: install_software.mk,v 1.45 2013/08/09 11:03:22 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -68,6 +68,7 @@ PERL_MODULES= \
 	SOAP \
 	SOAP::WSDL \
 	SOAP::Lite \
+	SOAP::Transport::HTTP \
 	Module::Build::Compat \
 	DBI \
 	DBD::mysql \
