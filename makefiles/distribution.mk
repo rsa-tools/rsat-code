@@ -16,18 +16,19 @@ ARCHIVE=rsa-tools/${ARCHIVE_PREFIX}
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
 TAR_EXCLUDE=--exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course
-TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default rsa-tools/RSAT_config_default.props  rsa-tools/RSAT_config_default.mk
-TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar 
+TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsa-tools/RSA.config.default rsa-tools/RSAT_config_default.props  rsa-tools/RSAT_config_default.mk
+TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
 
 ################################################################
 ## All the tasks for publishing the new version
 all: clean_emacs_bk tar_archive clean_distrib_site publish
 
 ## List parameters
-PUB_SERVER=rsat.ulb.ac.be
-PUB_LOGIN=rsat
+PUB_SERVER=merlin.bigre.ulb.ac.be
+PUB_LOGIN=jvanheld
 SSH_OPT=
 PUB_FORMAT=tar.gz
+PUB_DIR=rsat_distrib
 list_params:
 	@echo "RSAT distribution parameters"
 	@echo "	ARCHIVE		${ARCHIVE}"
@@ -64,7 +65,7 @@ clean_emacs_bk:
 ################################################################
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
-TAR_ROOT=..
+TAR_ROOT=`dirname ${RSAT}`
 DISTRIB_FILES=rsa-tools/perl-scripts		\
 	rsa-tools/RSA.config.default		\
 	rsa-tools/RSA.config.default		\
@@ -100,9 +101,14 @@ _fill_archive:
 
 ## Create an archive with RSAT/NeAT tools
 tar_archive:
+	@echo
+	@echo "Creating tar archive with RSAT/NeAT tools"
 	${MAKE} _create_tar_archive
 	${MAKE} _fill_archive ARCHIVE_CMD='${TAR}' POST_CMD=''
 	(cd ${TAR_ROOT}; gzip -f ${ARCHIVE}.tar)
+	@echo
+	@echo "Archive"
+	@echo "	${TAR_ROOT}/${ARCHIVE}.tar.gz"
 
 ## Create an archive with the metabolic tools (since the java files occupy 80Mb, we distribute them separately
 tar_archive_metab:
@@ -119,12 +125,18 @@ ls_distrib:
 	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "ls -ltra ${PUB_DIR}/"
 
 clean_distrib_site:
-	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsa-tools_*.tar.gz ${PUB_DIR}/previous_versions/"
+	@echo
+	@echo "Moving previous archives from the public server ${PUB_LOGIN}@${PUB_SERVER} to ${PUB_DIR}/previous_versions"
+#	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsa-tools_*.tar.gz ${PUB_DIR}/previous_versions/"
+	@echo "TEMPORARILY DISACTIVATED"
 
 ################################################################
 ## Publish the tar archive of the whole distribution
 publish:
-	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}
+	@echo
+	@echo "Synchronizing RSAT archive ${ARCHIVE_PREFIX}.${PUB_FORMAT} to server ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}"
+	@echo
+	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
 
 publish_metab:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB}
@@ -134,7 +146,7 @@ publish_metab:
 TAR_WSCLIENTS=public_html/web_services/RSATWS_clients.tar.gz
 tar_wsclients:
 	@rm -f ${TAR_WSCLIENTS}
-	tar --exclude CVS  --exclude '*~' --exclude '*.DS_Store' -cvpzf ${TAR_WSCLIENTS} ws_clients
+	tar --exclude CVS  --exclude '*~' --exclude '*.DS_Store' -cpzf ${TAR_WSCLIENTS} ws_clients
 	@echo ${TAR_WSCLIENTS}
 
 publish_tar_wsclients:
