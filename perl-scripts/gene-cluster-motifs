@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.299 2011/10/28 06:16:24 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.300 2013/08/09 05:29:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 {
 
   local $start_time = &RSAT::util::StartScript();
-  local $program_version = do { my @r = (q$Revision: 1.299 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  local $program_version = do { my @r = (q$Revision: 1.300 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Paths of the programs called by gene-cluster-motifs
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
@@ -1731,7 +1731,7 @@ sub DyadAnalysis {
   &RSAT::message::TimeWarn("Assembling dyad patterns", $family{$family_name}->{dyad_assembly_file})
     if ($verbose >= 2);
   $command .= "; pattern-assembly -v 1";
-  $command .=  " -maxfl 1 -toppat ".$toppat;
+  $command .=  " -maxfl 1 -subst 0 -toppat ".$toppat;
   $command .=  " ".${strands};
   $command .= " -max_asmb_nb ".$nmotifs;
   $command .= " -i ".$family{$family_name}->{dyad_file};
