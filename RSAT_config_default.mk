@@ -8,11 +8,11 @@
 ## Name of the site (which will appear in the log file)
 RSAT_SITE=your_server_name
 
-## Grep Web server URL from the props file
+## Web server URL
 RSAT_WWW=http://www.rsat.eu/
 
 ## Email address of RSAT administrator
-RSAT_ADMIN_EMAIL=your.address@your.domain
+RSAT_ADMIN_EMAIL=your.mail@your.mail.server
 
 ## Operating system
 ## Supported: linux  | macosx
