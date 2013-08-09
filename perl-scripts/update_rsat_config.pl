@@ -73,6 +73,7 @@ package main;
     }
 
     ## Prompt for the new value
+    warn "\nPLEASE CHECK THE FOLLOWING LINE BEFORE GOING FURTHER\n";
     print "\nReady to update config file\t", $config_file, " [y/n] (n): ";
     chomp($answer = <>);
     unless ($answer eq "y") {
