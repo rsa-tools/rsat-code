@@ -33,19 +33,68 @@ Web server installation}
 This document describes the installation procedure for the web server
 of the \textbf{Network Analysis Tools} (\neat).
 
-It assumes that you already installed the perl scripts, java tools and the
-genomes, as described in the \RSAT installation guide and that it is
-working properly on the command line and as webserver. To this, please refer to the \RSAT webserver install guide.
+It assumes that you already installed the stand-alone version of the
+software suite Regulatory Sequence Analysis Tools (\RSAT), as
+described in the \RSAT installation guide, and that you configured a
+local web server, as described in the \RSAT webserver install guide.
+
+
+\section{Installation of stand-alone programs required for \neat}
+
+
+For the Network Analysis Tools (NeAT), we need to install a set of
+programs developed by third-parties.  Some of these programs come in
+the contribb directory of the \neat distribution. Some others have to
+be downloaded from their original distribution site.
+
+\subsection{Compiling stand-alone programs provided in the RSAT/NEAT distribution}
+
+\begin{lstlisting}
+make -f makefiles/init_RSAT.mk   compile_pathway_tools
+\end{lstlisting}
+
+\subsubsection{Checking and configuring kwalks for NeAT}
+
+You can test that the compilation worked by running the following
+command.
+
+\begin{lstlisting}
+$RSAT/contrib/kwalks/bin/lkwalk
+\end{lstlisting}
+%$
+
+This should display the help message of \program{lkwalk}.
+
+Check that the KWALKS\_ROOT variable in the RSAT config file
+(\file{\$RSAT/RSAT\_config.props}) points to the correct path (it
+should be the absolute path of \file{\$RSAT/contrib/kwalks/bin/}).
+
+\subsubsection{Checking and configuring REA for NeAT}
+
+You can test taht the compilation worked by running the following
+command.
+
+\begin{lstlisting}
+$RSAT/contrib/REA/REA
+\end{lstlisting}
+%$
+
+This should display the help message of \program{REA}.
+
+Check that the REA\_ROOT variable in the RSAT config file
+(\file{\$RSAT/RSAT\_config.props}) points to the correct path (it
+should be the absolute path of \file{\$RSAT/contrib/REA}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Web server installation
-\chapter{Web server installation}
+\chapter{NeAT Web server installation}
 \section{Installing a local web server}
 
-As the Regulatory Sequence Analysis Tools, \neat includes a web server, which
-offers a user-friendly interface for biologists. The main server is
-available for academic users at \url{http://rsat.ulb.ac.be/neat/}. A
-few additional mirrors have been installed in different countries.
+As the Regulatory Sequence Analysis Tools, \neat includes a web
+server, which offers a user-friendly interface for biologists. The
+main server is available for academic users at
+\url{http://rsat.ulb.ac.be/neat/}. A few additional mirrors have been
+installed in different countries.
 
 \subsection{Web server pages}
 

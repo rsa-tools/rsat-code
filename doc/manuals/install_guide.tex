@@ -212,15 +212,21 @@ the copy commands after having edited the files, you will loose all
 your editing result (this is the reason why the operation is done
 manually rather than automatically).
 
-\subsection{Editing the \RSAT\ local configuration file}
+\subsection{Updating the \RSAT\ local configuration file}
 
-You need to edit the file \file{RSAT\_config.props} and specify the
+You need to update the file \file{RSAT\_config.props} and specify the
 parameters of your local configuration. In particular, \emph{it is
   crucial to specify the full path of the variable RSAT}, which
 specifies the RSAT main directory.
 
-Then, edit the file \file{RSAT\_config.props} and specify the email of
-the RSAT administrator (likely you).
+The simplest way to update the configuration file is to run the following script.
+
+\begin{lstlisting}
+perl perl-scripts/update_rsat_config.pl
+\end{lstlisting}
+
+Alternatively, you can edit the file \file{RSAT\_config.props} with a
+text editor of your choice.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Check the RSAT paths
@@ -790,8 +796,6 @@ particular, \program{vmatch} and \program{mkvtree}).
 \caption{\label{table:other_programs} Programs from other developers
   which are complementary to the \RSAT package.}
 \end{table}
-
-
 
 
 %\section{Recommended programs for the Network Analysis Tools (NeAT)}
