@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-variation-seq,v 1.16 2013/08/09 08:59:49 jeremy Exp $
+# $Id: retrieve-variation-seq,v 1.17 2013/08/09 15:09:58 jeremy Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %infile	= ();
   our %outfile = ();
@@ -241,6 +241,10 @@ package	main;
       $supported_output_format{$format} = 1;
   }
   our $format = "";
+
+
+  our $total_nb_variation = 0;
+  our $total_nb_variant = 0;
 
   ################################################################
   ## Read argument values
@@ -279,8 +283,8 @@ package	main;
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($main::outfile{output});
-
   &Verbose() if ($main::verbose >= 1);
+  print $out "#",join("\t",qw(chr start end strand id soterm ref_var alt_var seq)),"\n";
 
   ################################################################
   ## Get the list of variation files installed in the RSAT data
@@ -494,6 +498,8 @@ package	main;
       my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
       next if ($invar && !$validate);
 
+      $total_nb_variation++;
+
       if ($chr ne $last_chr) {
         $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
         $last_chr = $chr;
@@ -516,12 +522,18 @@ package	main;
         print $out "$chr\t$start\t$end\t$strand\t$id\t$type\t$ref\t$_\t";
         $_ =~ s/-//g;
         print $out substr($ref_seq,$start-$flank_len-1,$flank_len),"$_".substr($ref_seq,$end,$flank_len),"\n";
+        $total_nb_variant++;
       }
     }
   }
 
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $out $exec_time;
+  if ($main::verbose >= 1) {
+    print $out "; Total variations\t",$total_nb_variation,"\n";
+    print $out "; Total variants\t",$total_nb_variant,"\n";
+    print $out $exec_time;
+  }
+
   exit(0);
 }
 
