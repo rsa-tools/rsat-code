@@ -134,7 +134,7 @@ variation=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-variation/modules
 
 ################################################################
 ## Parameters for Network Analysis Tools (NeAT)
-neat_supported=1
+neat_supported=0
 
 ## URL of the Web server hosting the NeAT Web services, where the result files
 ## are to be found 
