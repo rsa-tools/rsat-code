@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.47 2013/08/09 20:15:08 rsat Exp $
+# $Id: install_software.mk,v 1.48 2013/08/09 20:19:27 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -83,7 +83,7 @@ PERL_MODULES_PROBLEMS= \
 
 list_perl_modules:
 	@echo
-	@echo "Perl modules to be isntalled"
+	@echo "Perl modules to be installed"
 	@echo "----------------------------"
 	@echo ${PERL_MODULES} | perl -pe 's|\s+|\n|g'
 	@echo
