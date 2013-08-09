@@ -103,11 +103,11 @@
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
+
 #    $client = $response->client;
     store_command($command, "graph comparison", $cmd_handle);
     $URL['Contingency stats (tab)'] = rsat_path_to_url($server);
     hourglass("off");
-
     ## Text-to-html
     $server = rtrim ($server);
     $file = storeFile($server);
