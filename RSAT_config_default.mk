@@ -6,19 +6,21 @@
 ## makefile scripts.
 
 ## Name of the site (which will appear in the log file)
-RSAT_SITE=your_server_name
+RSAT_SITE=`grep '^rsat_site=' ${RSAT}/RSAT_config.props | perl -pe s|rsat_site=||`
 
+## Grep Web server URL from the props file
+RSAT_WWW=`grep '^rsat_www=' ${RSAT}/RSAT_config.props | perl -pe s|rsat_www=||`
 
 ## Email address of RSAT administrator
 RSAT_ADMIN_EMAIL=your.address@your.domain
 
 ## Operating system
 ## Supported: linux  | macosx
+##
+## This information is required for installing some pre-compiled
+## software tools.
 OS=linux
 ARCHITECTURE=x64
-
-## sudo command is required for installing some software
-SUDO=sudo
 
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
@@ -29,18 +31,31 @@ SOFT_DIR=${PWD}
 ## Directory to store the downloaded software (sources, before compilation)
 SRC_DIR=${SOFT_DIR}/src
 
-## Default installation dir for binaries
-BIN_DIR=/usr/local/bin
+## The sudo command is required for installing some software. If you
+## are not sudoer of your server, you can let this variable empty.
+##
+# SUDO=''
+SUDO=sudo
 
+## Default installation dir for binaries. By default, will beinstalled
+## in /usr/local/bin so they will be accessible to all users. This
+## however requires admin rights. If you don't dispose of admin
+## rights, an alternative is to set this directory in the RSAT fodler.
+##
+#BIN_DIR=${RSAT}/bin
+BIN_DIR=/usr/local/bin
 
 ################################################################
 ##
 ## Configuration of a PC cluster
 ##
 ## The parameter QUEUE_MANAGER is required for running tasks on a PC
-## cluster. The same program (qsub) has different parameters depending on the
-## queue manager. Thus, a qsub command for torque will not be understood by
-## sge and reciprocally;
+## cluster. The program used to send jobs to the queue (qsub) has
+## different parameters depending on the queue manager. Thus, a qsub
+## command for torque will not be understood by sge and
+## reciprocally. To circumvent this problem, we specify the queue
+## manager in this property file, so RSAT can adapt the options
+## consequently.
 ##
 ## supported: torque | sge
 QUEUE_MANAGER=sge
