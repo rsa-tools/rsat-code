@@ -153,6 +153,8 @@
     ## Run contingency-table to obtain a class/member table
 
     ## Load the parameters of the program into an array
+
+    print($cc_input_file."\n");
     $cc_input_file = storeFile($cc_server);
     $ct_parameters = array(
         "request" => array(
