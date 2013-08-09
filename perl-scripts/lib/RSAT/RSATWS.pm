@@ -963,15 +963,29 @@ sub peak_motifs {
 # 	    ->attr({'xmlns' => ''});
 #     }
 
+    ################################################################
+    ## PROBLEM: THESE ABSOLUTE PATHS SHOULD NOT BE USED (JvH, 2013-08-09)
+
+#    my $tmp_synthesis = $output_path."/".$output_prefix."_synthesis.html";
+#    $tmp_synthesis =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
+#    my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
+#    $tmp_outzip =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
+#    my $result_url = $output_path;
+#    $result_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
+#    my $error_file = $output_path.".err";
+#    my $error_url = $error_file;
+#    $error_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
+
     my $tmp_synthesis = $output_path."/".$output_prefix."_synthesis.html";
-    $tmp_synthesis =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
+    $tmp_synthesis =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
-    $tmp_outzip =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
+    $tmp_outzip =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $result_url = $output_path;
-    $result_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
+    $result_url =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $error_file = $output_path.".err";
     my $error_url = $error_file;
-    $error_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
+    $error_url =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+
 
     my $response = "The server is now processing your request.\n";
     $response .= "You can follow its status while running at the following URL\n";
@@ -2285,8 +2299,8 @@ sub footprint_discovery {
   my $TMP_OUT = open ">".$tmp_outfile || die "Cannot open temporary file ".$tmp_outfile;
     print $TMP_OUT $result;
     close $TMP_OUT;
-    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"footprint-discovery",output_choice=>$output_choice);
 
@@ -3939,9 +3953,11 @@ sub compare_matrices {
     }
 
     my $tmp_outfile = $output_path."/".$output_prefix."_index.html";
-    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $tmp_outdir = $output_path;
-    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+#    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+    $tmp_outdir =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"compare-matrices", output_choice=>$output_choice);
 
@@ -6073,7 +6089,8 @@ sub run_WS_command {
       ##
       ################################################################
       ################################################################
-      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+#      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
       &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
       my $response = "The server is now processing your request.\n"; 
       $response .= "Once it will be finished, the result will become available at the following URL\n";
@@ -6138,6 +6155,7 @@ sub run_WS_command {
   open $TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
   print $TMP_OUT $result;
   close $TMP_OUT;
+
   if ($output_choice eq 'server') {
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
 							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
@@ -6170,8 +6188,6 @@ sub email_command {
 
 }
 
-
-################################################################
 
 =pod
 
@@ -6212,10 +6228,11 @@ sub UpdateLogFileWS {
   }
 }
 
-########################################################################################################################
+################################################################
 ## This function handles the error verbosity
-## This can be very useful as the majority of the functions die on any error (even if this error is a stupid warning)
-
+##
+## This can be very useful as the majority of the functions die on any error
+## (even if this error is a simple warning).
 sub error_handling {
   my $stderr = shift;
   my $verbosity = shift;
