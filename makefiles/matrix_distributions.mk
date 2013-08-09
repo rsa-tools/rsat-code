@@ -1,6 +1,9 @@
 ################################################################
 ## Compute matrix distributions for each matrix of a collection
 ## (Jaspar, Transfac).
+## 
+## Authors: Jacques van Helden & Jeremy Delerce
+## Date: 2013-07
 
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/matrix_distributions.mk
@@ -33,6 +36,14 @@ list_param:
 	@echo "DISTRIB_DIR	${DISTRIB_DIR}"
 	@echo "DISTRIB_FILE	${DISTRIB_FILE}"
 
+
+## Print the list of all matrix IDs
+MATRIX_IDS=`grep -v '^;' ${MATRIX_LIST} | cut -f 2 | xargs`
+list_matrix_ids:
+	@echo "Matrix IDs	${MATRIX_IDS}"
+
+################################################################
+## Compute weight score distribution for one matrix
 BG_OL=3
 ORG=Homo_sapiens_EnsEMBL
 BG_PREFIX=${BG_OL}nt_upstream-noorf_${ORG}-ovlp-1str
@@ -50,10 +61,7 @@ one_matrix_distrib:
 		-o ${DISTRIB_FILE}.tab
 	@echo "	${DISTRIB_FILE}.tab"
 
-MATRIX_IDS=`grep -v '^;' ${MATRIX_LIST} | cut -f 2 | xargs`
-list_matrix_ids:
-	@echo "Matrix IDs	${MATRIX_IDS}"
-
+## Compute the weight score distributions for all matrices
 matrix_distrib_all:
 	@for m in ${MATRIX_IDS}; do \
 		${MAKE} one_matrix_distrib MATRIX_ID=$${m} ; \
