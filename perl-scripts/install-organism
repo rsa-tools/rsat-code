@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.121 2013/08/11 22:43:31 jvanheld Exp $
+# $Id: install-organism,v 1.122 2013/08/11 22:59:36 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -443,7 +443,7 @@ sub UpdateConfigPerl {
 ################################################################
 ## Update the tab-delimited file 
 sub UpdateConfigTab {
-  my %args = @_;
+  my (%args) = @_;
   &RSAT::message::Info ("Updating supported organisms", $main::config_table) if ($verbose >= 2);
 
   ## Update the hash variable for the new organism
@@ -466,7 +466,7 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $main::up_from;
 
   ## Export the updated table of supported organisms
-  &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$backup_org_table);
+  &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$main::backup_org_table);
 }
 
 ################################################################
