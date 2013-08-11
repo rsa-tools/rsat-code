@@ -894,6 +894,7 @@ sub make_temp_file {
 
   ## request the temporary file to the system
   my $mktmp_cmd = "mktemp";
+  $mktmp_cmd .= " -u"; ## Ensure that temp file is not created (we just need to return the file name)
   $mktmp_cmd .= " -d " if ($make_dir);
   $mktmp_cmd .= " ".$tmp_dir."/".$tmp_prefix."_XXXXXX";
   my $temp_file = `$mktmp_cmd`;
