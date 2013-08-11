@@ -5,6 +5,7 @@
 
 package RSAT::OrganismManager;
 
+use RSAT::util;
 use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::message;
@@ -172,13 +173,50 @@ sub load_supported_organisms {
 Export the list of supported organisms with their parameters (taxon,
 directory, upstream length, ...).
 
+Usage:
+
+=over
+
+=item Table name set automatically
+
+  &RSAT::OrganismManager::export_supported_organisms();
+
+=item Specify a custom table name
+
+  &RSAT::OrganismManager::export_supported_organisms(file=>$my_organism_table_file);
+
+=item Save a backup copy of the previous table
+
+  &RSAT::OrganismManager::export_supported_organisms(backup=>1);
+
+
 =cut
 sub export_supported_organisms {
-  my ($organism_table, @fields) = @_;
-  $organism_table = $organism_table || $ENV{RSAT}."/public_html/data/supported_organisms.tab";
-  my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table);
+  my (%args) = @_;
+  my $organism_table = $args{file} || $ENV{RSAT}."/public_html/data/supported_organisms.tab";
+  my $store_backup = $args{backup} || 0;
+
+  ## Save a copy of the previous table
+  if ($store_backup) {
+    $organism_table_bk =  &RSAT::util::make_temp_file($ENV{RSAT}."/public_html/data/","supported_organisms_backup", 1,0);
+    &RSAT::message::TimeWarn("Storing backup copy of previous organism table", $organism_table_bk) if ($main::verbose >= 2);
+    my $cmd = "rsync -uptL ".$organism_table." ".$organism_table_bk;
+    $cmd .= "; gzip $organism_table_bk";
+    system($cmd);
+  }
+
+  ## Write the table to a temporary file. This avoids problems if the
+  ## process is interrupted during the table writing.
+  $organism_table_tmp =  &RSAT::util::make_temp_file($ENV{RSAT}."/public_html/data/","supported_organisms_tmp", 1,0);
+  &RSAT::message::TimeWarn("Storing updated organism table to temporary file", $organism_table_tmp) if ($main::verbose >= 2);
+  my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table_tmp);
+
   print $table_handle &supported_organism_table("header", 1, @fields);
   &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/public_html/data/supported_organisms.pl") if ($main::verbose >= 3);
+
+
+  ## Rename the updated table to make it effective
+  system("mv ".$organism_table_tmp." ".$organism_table);
   &RSAT::message::Info("Exported supported organisms", $organism_table) if ($main::verbose >= 1);
 }
 
