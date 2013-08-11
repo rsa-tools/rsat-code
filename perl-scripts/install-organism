@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.120 2013/08/11 21:47:27 jvanheld Exp $
+# $Id: install-organism,v 1.121 2013/08/11 22:43:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -23,233 +23,238 @@ if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
 
-## initialisation
 
-$config_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
-@masking_modes = (""); ## by default, use no masking
-@oligo_lengths=(6,1,2,3,4,5,7,8);
-$verbose = 0;
-$batch = 0;
-$die_on_error = 0;
-$seq_format = "ft";
-$img_format = $ENV{rsat_img_format} || "png";
-$noov="";
-$strands="-1str";
-$purged_frequencies = 0; #### temporarily inactivated because for human genome it suppresses almost all sequences !!!!
-$supported_for_installation{"fasta"} = 1;
-$supported_for_installation{"raw"} = 1;
-$supported_for_installation{"filelist"} = 1;
-@supported_tasks = qw(
-		   parse
-		   config
-		   phylogeny
-		   start_stop
-		   allup
-		   seq_len_distrib
-		   genome_segments
-		   upstream_freq
-		   oligos
-		   dyads
-		   distrib
-		   ncf
-		   protein_freq
-		   genome_freq
-		   intergenic_freq
-                   ensembl_freq
-		   clean
-		   all
-		   );
-%supported_task = ();
-foreach my $task (@supported_tasks) {
+
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialize parameters
+  local $start_time = &RSAT::util::StartScript();
+  $config_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
+  @masking_modes = ("");	## by default, use no masking
+  @oligo_lengths=(6,1,2,3,4,5,7,8);
+  $verbose = 0;
+  $batch = 0;
+  $die_on_error = 0;
+  $seq_format = "ft";
+  $img_format = $ENV{rsat_img_format} || "png";
+  $noov="";
+  $strands="-1str";
+  $purged_frequencies = 0; #### temporarily inactivated because for human genome it suppresses almost all sequences !!!!
+  $supported_for_installation{"fasta"} = 1;
+  $supported_for_installation{"raw"} = 1;
+  $supported_for_installation{"filelist"} = 1;
+  @supported_tasks = qw(
+			parse
+			config
+			phylogeny
+			start_stop
+			allup
+			seq_len_distrib
+			genome_segments
+			upstream_freq
+			oligos
+			dyads
+			distrib
+			ncf
+			protein_freq
+			genome_freq
+			intergenic_freq
+			ensembl_freq
+			clean
+			all
+		       );
+  %supported_task = ();
+  foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
-}
-$supported_tasks = join ",", @supported_tasks;
-%task = ();
-$parse_options = "";
+  }
+  $supported_tasks = join ",", @supported_tasks;
+  %task = ();
+  $parse_options = "";
 
-$null = "<NULL>"; ## NULL value
-$source = "NCBI";
-$taxonomy = $null;
-@taxa = ();
-@organisms = ();
+  $null = "<NULL>";		## NULL value
+  $source = "NCBI";
+  $taxonomy = $null;
+  @taxa = ();
+  @organisms = ();
 
-################################################################
-############################ arguments #########################
-################################################################
-
-&ReadArguments();
+  our $backup_org_table = 0;
 
 
-################################################################
-## Initialize parameters
-$start_time = &RSAT::util::StartScript();
+  ## installation date
+  local $install_date = $force_date || &AlphaDate();
+  chomp $install_date;
 
-### installation date
-local $install_date = $force_date || &AlphaDate();
-chomp $install_date;
+  ## Store the starting directory
+  $dir{main} = `pwd`;
 
-## Store the starting directory
-$dir{main} = `pwd`; 
+  ################################################################
+  ## Read arguments
+  &ReadArguments();
 
-@task = keys %task;
-if ($#task == -1) {
+
+  ################################################################
+  ## Check parameter values
+
+  @task = keys %task;
+  if ($#task == -1) {
     &RSAT::error::FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
-}
-if ($task{all}) {
+  }
+  if ($task{all}) {
     %task = %supported_task;
-}
-
-
-################################################################
-#################### Check parameter values #####################
-################################################################
-
-## Consistency between tasks
-if ($task{oligos} || $task{dyads}) {
-  unless (($task{upstream_freq}) ||
-	  ($task{intergenic_freq}) ||
-	  ($task{protein_freq}) ||
-	  ($task{genome_freq}) ||
-	  ($task{ensembl_freq})) {
-    &RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type among the following. ",
-			     "\n\tupstream_freq,intergenic_freq,genome_freq,protein_freq,ensembl_freq");
-  }
-}
-if (($task{protein_freq}) && !($task{oligos})){
-  &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
-}
-
-## If a taxon has been specified, collect the list of organisms
-if (scalar(@taxa) > 0) {
-  if ($task{parse}) {
-    &RSAT::message::Warning("With the option -taxon, the parse option will only re-parse previously installed organisms from the selected taxon");
   }
 
-  $tree = new RSAT::Tree();
-  $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+  ## Consistency between tasks
+  if ($task{oligos} || $task{dyads}) {
+    unless (($task{upstream_freq}) ||
+	    ($task{intergenic_freq}) ||
+	    ($task{protein_freq}) ||
+	    ($task{genome_freq}) ||
+	    ($task{ensembl_freq})) {
+      &RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type among the following. ",
+			       "\n\tupstream_freq,intergenic_freq,genome_freq,protein_freq,ensembl_freq");
+    }
+  }
+  if (($task{protein_freq}) && !($task{oligos})) {
+    &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
+  }
 
-  foreach my $taxon (@taxa) {
+  ## If a taxon has been specified, collect the list of organisms
+  if (scalar(@taxa) > 0) {
+    if ($task{parse}) {
+      &RSAT::message::Warning("With the option -taxon, the parse option will only re-parse previously installed organisms from the selected taxon");
+    }
+
+    $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+
+    foreach my $taxon (@taxa) {
       my $taxon_node = $tree->get_node_by_id($taxon);
       my @taxon_organisms = $taxon_node->get_all_descendents("DFS","leaf",undef,undef);
       &RSAT::message::TimeWarn("Collected", scalar(@taxon_organisms), "organisms for taxon", $taxon, $taxon_node) if ($main::verbose >= 0);
       foreach my $org_node (@taxon_organisms) {
-	  my $short_organism_name = $org_node->getid();
-	  push @organisms, $short_organism_name;
+	my $short_organism_name = $org_node->getid();
+	push @organisms, $short_organism_name;
       }
+    }
+
+    @organisms = sort (@organisms);
   }
 
-  @organisms = sort (@organisms);
-}
+  &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
 
-&RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
+  ## Check that at least one organism has been specified
+  &RSAT::error::FatalError("At least one organism should be specified, with the option -org or -taxon") unless (scalar(@organisms) > 0);
 
-## Check that at least one organism has been specified
-&RSAT::error::FatalError("At least one organism should be specified, with the option -org or -taxon") unless (scalar(@organisms) > 0);
+  ## Some options are incompatible with multiple organisms
+  if (scalar(@organisms) > 1) {
+    &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($organism_full_name);
+    &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.") if ($install_dir);
+    &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.") if ($outfile{synonyms});
+  }
 
-## Some options are incompatible with multiple organisms
-if  (scalar(@organisms) > 1) {
-  &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($organism_full_name);
-  &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.") if ($install_dir);
-  &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.") if ($outfile{synonyms});
-}
+  ################################################################
+  ## Input directory
+  if ($task{parse}) {
+    unless ($dir{genbank}) {
+      if ($ENV{GENBANK_DIR}) {
+	$dir{genbank} = $ENV{GENBANK_DIR};
+      } elsif ($GENBANK_DIR) {
+	$dir{genbank} = $GENBANK_DIR;
+      } else {
+	&RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
+      }
+    }
+    unless (-d $dir{genbank}) {
+      &RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
+    }
+  }
 
-################################################################
-## Input directory
-if ($task{parse}) {
-  unless ($dir{genbank}) {
-    if ($ENV{GENBANK_DIR}) {
-      $dir{genbank} = $ENV{GENBANK_DIR};
-    } elsif ($GENBANK_DIR) {
-      $dir{genbank} = $GENBANK_DIR;
+  ################################################################
+  ## Iterate installation over selected organisms
+  $i = 0;
+  foreach our $organism_short_name (@organisms) {
+    $i++;
+    &RSAT::message::TimeWarn("Installing organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
+
+    $backup_org_table = 0 if ($i > 1); ## When we treat multiple organisms, we don't want to store a backup for each one
+
+    ################################################################
+    ## Automatic full name specification
+    unless ($organism_full_name) {
+      if ($organism_short_name =~ /\_/) {
+	$organism_full_name = $organism_short_name;
+	$organism_full_name =~ s/\_/ /g;
+      }
+    }
+
+    ################################################################
+    ## Installation directories
+    umask 0002;
+    if ($install_dir) {
+      $dir{install} = $install_dir;
+      &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 1);
+    } elsif ($supported_organism{$organism_short_name}->{'data'}) {
+      $dir{install} = $supported_organism{$organism_short_name}->{'data'};
+      &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 1);
     } else {
-      &RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
+      $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
+      &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 1);
     }
+
+    &RSAT::util::CheckOutDir($dir{install});
+
+    $dir{genome} = $dir{install}."/genome";
+    &RSAT::util::CheckOutDir($dir{genome});
+
+    $dir{oligos} = $dir{install}."/oligo-frequencies";
+    &RSAT::util::CheckOutDir($dir{oligos});
+
+    $outfile{features} = $dir{genome}."/feature.tab";
+    $outfile{synonyms} = $dir{genome}."/feature_names.tab";
+    $outfile{genome} = $dir{genome}."/contigs.txt";
+
+
+    ################################################################
+    ###################### Installation tasks ######################
+    ################################################################
+
+    ## Open an output stream for messages
+    our $out = &OpenOutputFile($outputfile);
+    &Verbose() if ($verbose >= 1);
+
+    &ParseGenome() if ($task{parse});
+
+    &UpdateConfig() if ($task{config});
+
+
+    &CreatePhylogeny() if ($task{phylogeny});
+
+    &StartAndStopCodons() if ($task{start_stop});
+
+    &IntergenicSegments() if ($task{genome_segments});
+
+    &AllUpstream() if ($task{allup});
+
+    &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
+
+    &CleanUp if ($task{clean});
+
+    ## Touch the installation dir to indicate the last modification date
+    $dir{main};
+    chdir($dir{main});
+    &RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
+    system "touch $dir{install}";
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+
+    close $out if ($outputfile);
   }
-  unless (-d $dir{genbank}) {
-    &RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
-  }
+  exit(0);
 }
-
-################################################################
-## Iterate installation over selected organisms
-$i = 0;
-foreach our $organism_short_name (@organisms) {
-  $i++;
-  &RSAT::message::TimeWarn("Installing organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
-
-  ################################################################
-  ## Automatic full name specification
-  unless ($organism_full_name) {
-    if ($organism_short_name =~ /\_/) {
-      $organism_full_name = $organism_short_name;
-      $organism_full_name =~ s/\_/ /g;
-    }
-  }
-
-  ################################################################
-  ## Installation directories
-  umask 0002;
-  if ($install_dir) {
-    $dir{install} = $install_dir;
-    &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 1);
-  } elsif ($supported_organism{$organism_short_name}->{'data'}) {
-    $dir{install} = $supported_organism{$organism_short_name}->{'data'};
-    &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 1);
-  } else {
-    $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
-    &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 1);
-  }
-
-  &RSAT::util::CheckOutDir($dir{install});
-
-  $dir{genome} = $dir{install}."/genome";
-  &RSAT::util::CheckOutDir($dir{genome});
-
-  $dir{oligos} = $dir{install}."/oligo-frequencies";
-  &RSAT::util::CheckOutDir($dir{oligos});
-
-  $outfile{features} = $dir{genome}."/feature.tab";
-  $outfile{synonyms} = $dir{genome}."/feature_names.tab";
-  $outfile{genome} = $dir{genome}."/contigs.txt";
-
-
-  ################################################################
-  ###################### Installation tasks ######################
-  ################################################################
-
-  ## Open an output stream for messages
-  our $out = &OpenOutputFile($outputfile);
-  &Verbose() if ($verbose >= 1);
-
-  &ParseGenome() if ($task{parse});
-
-  &UpdateConfig() if ($task{config});
-
-  &CreatePhylogeny() if ($task{phylogeny});
-
-  &StartAndStopCodons() if ($task{start_stop});
-
-  &IntergenicSegments() if ($task{genome_segments});
-
-  &AllUpstream() if ($task{allup});
-
-  &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
-
-  &CleanUp if ($task{clean});
-
-  ## Touch the installation dir to indicate the last modification date
-  $dir{main};
-  chdir($dir{main});
-  &RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
-  system "touch $dir{install}";
-
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-  print $main::out $exec_time if ($main::verbose >= 1);
-
-  close $out if ($outputfile);
-}
-exit(0);
-
 
 
 ################################################################
@@ -439,13 +444,14 @@ sub UpdateConfigPerl {
 ## Update the tab-delimited file 
 sub UpdateConfigTab {
   my %args = @_;
-#  &RSAT::message::Info ("Updating supported organisms", $main::config_table) if ($verbose >= 1);
+  &RSAT::message::Info ("Updating supported organisms", $main::config_table) if ($verbose >= 2);
 
   ## Update the hash variable for the new organism
   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $main::organism_full_name;
   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
   $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $main::install_date;
   $supported_organism{$organism_short_name}->{'source'} = $args{source} || $main::source;
+
   ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
   unless ($source eq 'ensembl') {
     $supported_organism{$organism_short_name}->{'features'} = $args{features} || $main::outfile{features};
@@ -459,9 +465,8 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $main::up_to;
   $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $main::up_from;
 
-    ## Export the updated table of supported organisms
-    &RSAT::OrganismManager::export_supported_organisms($main::config_table);
-#    &RSAT::message::Debug("new_org_config", $new_org_config) if ($main::verbose >= 0);
+  ## Export the updated table of supported organisms
+  &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$backup_org_table);
 }
 
 ################################################################
@@ -1030,6 +1035,10 @@ OPTIONS
 		By default, the organism configuration file is 
 	      	\$RSAT/public_html/data/genomes/supported_organisms.pl
 
+        -backup_org_table
+                Store a backup copy of the organism table before
+                overwriting it.
+
 	-local
 		Absolute path of a RSA local config file.
 
@@ -1196,6 +1205,7 @@ install_organism options
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
 -config		alternative organism configuration file
+-backup_org_table  Store a backup copy of the organism table before overwriting it.
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
 -genbank	genbank directory
@@ -1331,12 +1341,16 @@ sub ReadArguments {
       $local_config = 1;
 
       ## alternative configuration file
-    } elsif ($arg =~ /^-config/) {
+    } elsif ($arg eq "-config") {
       $ENV{'RSA_LOCAL_CONFIG'}  = shift(@arguments);
       unless ($ENV{'RSA_LOCAL_CONFIG'}) {
 	die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
       }
       $local_config = 1;
+
+      ## Store a backup copy of organism table before overwriting it
+    } elsif ($arg eq "-backup_org_table") {
+      $main::backup_org_table = 1;
 
     }
   }
