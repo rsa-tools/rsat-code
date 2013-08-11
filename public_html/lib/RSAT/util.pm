@@ -901,7 +901,7 @@ sub make_temp_file {
   chomp($temp_file);
 
   ## Ensure that everyone can read the temporary file
-  system("chmod a+r $temp_file");
+#  system("chmod a+r $temp_file");
 
 #    &RSAT::message::Debug("&RSAT::util::make_temp_file()",
 #   			"\n\ttmp_dir=".$tmp_dir,
