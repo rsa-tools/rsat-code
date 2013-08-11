@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.119 2013/08/11 18:51:55 rsat Exp $
+# $Id: install-organism,v 1.120 2013/08/11 21:47:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -148,9 +148,9 @@ if (scalar(@taxa) > 0) {
 
 ## Some options are incompatible with multiple organisms
 if  (scalar(@organisms) > 1) {
-  &RSAT::message::FatalError("The option -organism is not valid when multiple organisms are selected.") if ($organism_full_name);
-  &RSAT::message::FatalError("The option -dir is not valid when multiple organisms are selected.") if ($install_dir);
-  &RSAT::message::FatalError("The option -syn is not valid when multiple organisms are selected.") if ($outfile{synonyms});
+  &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($organism_full_name);
+  &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.") if ($install_dir);
+  &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.") if ($outfile{synonyms});
 }
 
 ################################################################
@@ -202,15 +202,15 @@ foreach our $organism_short_name (@organisms) {
 
   &RSAT::util::CheckOutDir($dir{install});
 
-  $dir{genome} = "$dir{install}/genome";
+  $dir{genome} = $dir{install}."/genome";
   &RSAT::util::CheckOutDir($dir{genome});
 
-  $dir{oligos} = "$dir{install}/oligo-frequencies";
+  $dir{oligos} = $dir{install}."/oligo-frequencies";
   &RSAT::util::CheckOutDir($dir{oligos});
 
-  $outfile{features} = "$dir{genome}/feature.tab";
-  $outfile{synonyms} = "$dir{genome}/feature_names.tab";
-  $outfile{genome} = "$dir{genome}/contigs.txt";
+  $outfile{features} = $dir{genome}."/feature.tab";
+  $outfile{synonyms} = $dir{genome}."/feature_names.tab";
+  $outfile{genome} = $dir{genome}."/contigs.txt";
 
 
   ################################################################
@@ -312,7 +312,6 @@ sub UpdateConfig {
       next;
     } else {
       if (defined($taxonomy_field)) {
-        
 	@fields = split "\t";
 	$id = $fields[0];
 	$taxonomy = $fields[$taxonomy_field - 1];
@@ -326,7 +325,7 @@ sub UpdateConfig {
   close $org_handle;
 
 
-  ## default limits of upstream region for retrieve-seq
+  ## Default limits of upstream region for retrieve-seq
   unless (defined($up_from)) {
     ## If already defined in the file supported-organism.tab, keep
     ## previously defined value (might have been specifically tuned
@@ -361,7 +360,10 @@ sub UpdateConfig {
 
   ## 2009/05/13: The old perl config file should not be used anymore,
   ## but is still exported for the sake of backward compatibility
-  &UpdateConfigPerl();
+  ##
+  ## 2013/08/11: I comment this line, in principle we don't need this
+  ## outdated perl config file
+#  &UpdateConfigPerl();
 
   ## Since 2009/05/13
   &UpdateConfigTab();
