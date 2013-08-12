@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.31 2013/04/25 05:27:03 jvanheld Exp $
+# $Id: download-organism,v 1.32 2013/08/12 10:11:54 rsat Exp $
 #
 ############################################################
 
@@ -128,11 +128,12 @@ package main;
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
   $get_command = "wget";
-  $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
   $ssh_login = "rsat\@rsat.ulb.ac.be";
-  $rsat_server_dir = "rsa-tools";
+  $rsat_server_dir = "";
+#  $rsat_server_dir = "rsa-tools";
 #  $ssh_login = "rsat\@merlin.bigre.ulb.ac.be";
 #  $rsat_server_dir = "/bio/rsa-tools";
 
@@ -186,11 +187,21 @@ package main;
 
   ## Get RSAT path for rsync
   if ($get_command eq "rsync") {
-    $rsat_server_dir_cmd = "ssh $ssh_login 'echo \$RSAT'";
-    &RSAT::message::TimeWarn("Getting RSAT dir on server\n\t", $rsat_server_dir_cmd) if ($main::verbose >= 3);
-    $rsat_server_dir = `$rsat_server_dir_cmd`;
-    chomp($rsat_server_dir);
-    &RSAT::error::FatalError("Cannot get RSAT path on remote server", $ssh_login) unless ($rsat_server_dir);
+
+      ## Check if the remote RSAT path (on the server) was specified
+      if ($ssh_login =~ /(\S+):(\S+)/) {
+	  $ssh_login = $1;
+	  $rsat_server_dir = $2;
+      }
+
+      ## Obtain the remote RSAT path by ssh if required
+      unless ($rsat_server_dir) {
+	  $rsat_server_dir_cmd = "ssh $ssh_login 'echo \$RSAT'";
+	  &RSAT::message::TimeWarn("Getting RSAT dir on server\n\t", $rsat_server_dir_cmd) if ($main::verbose >= 3);
+	  $rsat_server_dir = `$rsat_server_dir_cmd`;
+	  chomp($rsat_server_dir);
+	  &RSAT::error::FatalError("Cannot get RSAT path on remote server", $ssh_login) unless ($rsat_server_dir);
+      }
     &RSAT::message::Info("remote server", $ssh_login, "RSAT env",  $rsat_server_dir) if ($main::verbose >= 0);
   }
 
@@ -458,6 +469,7 @@ smart updating, etc).
 =pod
 
 =item B<-ssh your.login@some.rsat.server>
+=item B<-ssh your.login@some.rsat.server:rsat_path_on_server>
 
 This option requires a ssh login on the main RSAT server, it is
 reserved for the RSAT maintenance team.
@@ -471,10 +483,18 @@ The rsync connection however requires a user account enabled with ssh
 access on the server, so it is reserved to the members of the RSAT
 team.
 
-Example:
+The RSAT path on the remote server can be specified in the
+argument. If not, the program will attempt to obtain the RSAT
+environment variable by ssh connection to the server, but this might
+fail (e.g. if the server issues some message at login).
+
+Examples:
 
   download-organism -v 1 -org Saccharomyces_cerevisiae \
     -ssh your.login@your.rsat.server.org
+
+  download-organism -v 1 -org Saccharomyces_cerevisiae \
+    -ssh your.login@your.rsat.server.org:rsat_path_on_server
 
 =cut
 
