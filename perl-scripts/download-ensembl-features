@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.26 2013/08/12 10:22:28 rsat Exp $
+# $Id: download-ensembl-features,v 1.27 2013/08/12 13:27:43 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -293,15 +293,15 @@ package main;
 
       my $gene_id = $gene->display_id();
 
-      my $external_name = $gene->external_name();
-      $external_name = $gene->display_id() unless ($external_name);
+      my $gene_external_name = $gene->external_name();
+      $gene_external_name = $gene->display_id() unless ($gene_external_name);
 
-      print $outstream_gene $gene->display_id(),"\t",$gene_known,"\t",$gene->biotype(),"\t",$external_name,"\t";
+      print $outstream_gene $gene->display_id(),"\t",$gene_known,"\t",$gene->biotype(),"\t",$gene_external_name,"\t";
       print $outstream_gene $slice->name(),"\t",$gene->start(),"\t",$gene->end(),"\t",$strand,"\t",$description,"\n";
 
       if ($main::verbose >= 2) {
 	if (($g%100==1) || ($main::verbose >= 3)) {
-	  &RSAT::message::TimeWarn("Gene", $g."/".$nb_genes, $external_name);
+	  &RSAT::message::TimeWarn("Gene", $g."/".$nb_genes, $gene_external_name);
 	}
       }
 
@@ -323,8 +323,8 @@ package main;
           $print_name{$name->display_id()} = 1;
         }
 
-	unless ($print_name{$external_name}) {
-          print $outstream_gene_names $gene->display_id(),"\t",$external_name,"\t";
+	unless ($print_name{$gene_external_name}) {
+          print $outstream_gene_names $gene->display_id(),"\t",$gene_external_name,"\t";
           print $outstream_gene_names 'primary',"\t",'',"\n";
 	}
       }
@@ -343,9 +343,9 @@ package main;
         my $trans_known = "putative";
         $trans_known = "known" if ($transcript->is_known());
 
-	## Define external_name
-	my $trans_external_name = $transcript->external_name();
-	$trans_external_name = $transcript->display_id() unless ($external_name);
+	## Define external_name for current transcript
+	my $trans_external_name = $transcript->external_name() || 
+	    $transcript->display_id() || $gene_external_name || "";
 
         my $coding_s = ".";
         my $coding_e = ".";
@@ -367,7 +367,7 @@ package main;
             next if ($print_name{$name->display_id()});
 
             my $status = "alternate";
-            $status = "primary" if ($name->display_id() eq $trans_external_name);
+            $status = "primary" if (($trans_external_name) && ($name->display_id() eq $trans_external_name));
 
             print $outstream_transcript_names $transcript->display_id(),"\t",$name->display_id(),"\t";
             print $outstream_transcript_names $status,"\t",$name->dbname(),"\n";
@@ -390,7 +390,7 @@ package main;
 	  ## Add gene name as synonym for transcript
 	  print $outstream_transcript_names join("\t",
 						 $transcript->display_id(),
-						 $external_name,
+						 $gene_external_name,
 						 "alternate",
 						 "gene_name"), "\n";
         }
@@ -469,7 +469,7 @@ package main;
               next if ($print_name{$name->display_id()});
 
               my $status = "alternate";
-              $status = "primary" if ($name->display_id() eq $trans_external_name);
+              $status = "primary" if (($trans_external_name) && ($name->display_id() eq $trans_external_name));
 
               print $outstream_cds_names $prot->display_id(),"\t",$name->display_id(),"\t";
               print $outstream_cds_names $status,"\t",$name->dbname(),"\n";
@@ -492,7 +492,7 @@ package main;
 	    ## Add gene name as synonym for cds
 	    print $outstream_cds_names join("\t",
 					    $prot->display_id(),
-					    $external_name,
+					    $gene_external_name,
 					    "alternate",
 					    "gene_name"), "\n";
           }
