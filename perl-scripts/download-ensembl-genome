@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.41 2013/08/07 11:11:37 jeremy Exp $
+# $Id: download-ensembl-genome,v 1.42 2013/08/12 10:11:10 rsat Exp $
 #
 ############################################################
 
@@ -97,7 +97,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.41 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -125,7 +125,6 @@ package	main;
   &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version) if ($main::verbose >= 2);
   &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version) if ($main::verbose >= 2);
   &RSAT::message::Info("Selected ensembl version", $ensembl_version) if ($main::verbose >= 2);
-
 
   if ($ensembl_version eq "safe") {
       $ensembl_version = $safe_ensembl_version;
@@ -194,6 +193,7 @@ package	main;
 
   ################################################################
   ## Connecting to ensembl
+  &RSAT::message::TimeWarn("Loading registry from Ensembl") if ($main::verbose >= 2);
   $registry->load_registry_from_db(
     -host => $host,
     -port => $port,
@@ -204,6 +204,7 @@ package	main;
 
   ################################################################
   ## Get Adaptator
+  &RSAT::message::TimeWarn("Getting species slice from Ensembl") if ($main::verbose >= 2);
   my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
   my $csa = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "coordsystem" );
 
@@ -431,7 +432,7 @@ Same as -h
 Species that you want download variation (homo_sapiens, mus_musculus).
 
 =cut
-    } elsif ($arg eq "-species") {
+    } elsif (($arg eq "-species") || ($arg eq "-org")) {
       $main::species = lc(shift(@arguments));
 
 =pod
@@ -558,6 +559,7 @@ If no output file is specified, the standard output is used.
 ################################################################
 ## Verbose message
 sub Verbose {
+    &RSAT::message::TimeWarn("Printing verbose") if ($main::verbose >= 3);
   print $out "; download-ensembl-genome ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
