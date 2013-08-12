@@ -31,4 +31,4 @@ bin_linux
 ensembl_genomes
 *.txt
 problem*
-doc/pod
+doc/podpublic_html/web_services/RSATWS.wsdl
