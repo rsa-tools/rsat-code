@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-variations,v 1.20 2013/07/15 12:49:48 rsat Exp $
+# $Id: download-ensembl-variations,v 1.21 2013/08/12 10:11:10 rsat Exp $
 #
 ############################################################
 
@@ -166,7 +166,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our %outfile = ();
 
@@ -747,7 +747,7 @@ Species that you want download variation (Homo_sapiens, Mus_musculus).
 Help : Use I<> to get avalaible species
 
 =cut
-    } elsif ($arg eq "-species") {
+    } elsif (($arg eq "-species") || ($arg eq "-org")) {
       $main::species = lc(shift(@arguments));
 
 =pod
