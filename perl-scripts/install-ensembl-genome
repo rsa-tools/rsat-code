@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.21 2013/08/12 10:11:10 rsat Exp $
+# $Id: install-ensembl-genome,v 1.22 2013/08/12 13:52:57 rsat Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -302,16 +302,25 @@ package main;
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
 
-      ## Get
+      ## Get the name of the organism as installed in RSAT. This
+      ## differs from the Ensembl species name, because we add a
+      ## suffix with the data source (ensembl), assembly and ensembl
+      ## version.
       my $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
       $org =~ s|/+$||;
       $org =~ s|.*\/||;
+
+
+      ## Declare the organism in RSAT
       if ($task{"config"}) {
 	  &RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
 	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
 
+      ## Perform the remaining installation procedure (check start and
+      ## stop codon, compute oligo and dyad frequencies in upstream
+      ## sequences, compute aa frequencies in protein sequences, ...)
       if ($task{"install"}) {
 	  &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
 	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
@@ -320,6 +329,7 @@ package main;
   }
 
   ################################################################
+  ## Report execution time
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out;
