@@ -179,7 +179,7 @@ sub Get_ensembl_version {
 
   my $current_release = 0;
 
-  &RSAT::message::TimeWarn("Getting ensembl version", $ftp) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Getting ensembl version", $ftp) if ($main::verbose >= 2);
   my @available_release = qx{wget -S --spider $ftp 2>&1};
 
 
@@ -195,9 +195,12 @@ sub Get_ensembl_version {
 }
 
 
-## Get species type
+################################################################
+## Get an the main taxon (bacteria, fungi, metazoa, ...) for each
+## species supported in an ansembl database. The result is returned as
+## a has table, with species names as keys and taxa as values.
 sub Get_species_taxon {
-  my ($db,$ensembl_version) = @_;
+  my ($db, $ensembl_version) = @_;
   my %species_taxon = ();
 
   my @fasta_url = &Get_fasta_ftp($db,$ensembl_version);
