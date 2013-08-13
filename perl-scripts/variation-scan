@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.9 2013/08/09 15:09:58 jeremy Exp $
+# $Id: variation-scan,v 1.10 2013/08/13 22:13:40 jvanheld Exp $
 #
 ############################################################
 
@@ -180,7 +180,8 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $output_lines = 0;
 
   our %infile	= ();
   $infile{'distrib_list'} = "";
@@ -583,7 +584,10 @@ package	main;
   if ($outfile{'output'} && $html) {
     $html_file = $outfile{'output'};
     $html_file =~ s/\.tab/\.html/g;
-    $command = "$ENV{'RSAT'}/perl-scripts/text-to-html -i $outfile{'output'} -o $html_file";
+    $command = $ENV{'RSAT'}."/perl-scripts/text-to-html -i ".$outfile{'output'};
+    $command .= " -no_sort -chunk 1000" if ($output_lines >= 5000);
+    $command .= " -o ".$html_file;
+#    $command = "$ENV{'RSAT'}/perl-scripts/text-to-html -i $outfile{'output'} -o $html_file";
     &doit($command, 0, 0, $verbose);
   }
 
@@ -741,6 +745,8 @@ sub PrintResult {
 ## Print
 sub Printline {
   my ($matrice,$variation,$so_term,$coord,,$max_score,$min_score,$diff,$max_score_variant,$min_score_variant) = @_;
+
+  $output_lines++;
 
   my $sig = log10($matrix_info{$matrice}{'pval'}{$min_score}/$matrix_info{$matrice}{'pval'}{$max_score});
   my $sig_rel = $sig/$matrix_info{$matrice}{'sigma_max'};
