@@ -48,33 +48,6 @@ my $taxon = "";
 ## Read arguments
 &ReadArguments();
 
-
-################################################################
-## If it does not exist yet, create a table with the supported
-## organisms
-##
-## This is a tricky way to fix the transition from the
-## Perl-script-based loading to the tab-delimited text file-based
-## loding.  In principe this piece of code should run only once per
-## server, and then be suppressed.
-# unless (-e $ENV{RSAT}."/public_html/data/supported_organisms.tab") {
-#   &RSAT::message::Warning("supported_organisms.tab is missing, regenerating from the .pl files");
-#   ## Load organisms from the (obsolete) Perl file supported_organisms.pl
-#   my $perl_organisms = $ENV{RSAT}."/public_html/data/supported_organisms.pl";
-#   if (-e $perl_organisms) { 
-#     &RSAT::message::Warning("Loading organisms from file", $perl_organisms);
-#    require $perl_organisms;
-#   }
-#   my $perl_organisms_ensembl = $ENV{RSAT}."/public_html/data/supported_mammals.pl";
-#   if (-e $perl_organisms_ensembl) {
-#     &RSAT::message::Warning("Loading organisms from file", $perl_organisms_ensembl);
-#     require $perl_organisms_ensembl;
-#   }
-#   ## Export organism table in tab format for future queries
-#   $verbose = $verbose || 1; ## in order to give the warning with the export.
-#   &RSAT::OrganismManager::export_supported_organisms();
-# }
-
 ## Load the list of supported organisms
 #&RSAT::OrganismManager::load_supported_organisms();
 
