@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.48 2013/08/09 20:19:27 rsat Exp $
+# $Id: install_software.mk,v 1.49 2013/08/13 22:14:36 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -259,27 +259,57 @@ install_ext_apps:
 
 ################################################################
 ## Install the EnsEMBL Perl API
+##
+## Important note
+## (http://bacteria.ensembl.org/info/docs/api/api_cvs.html): you must
+## install version 1.2.3, not a more recent version. Starting with
+## 1.2.4, major changes were made to the BioPerl API which have made
+## it incompatible with Ensembl
+BIOPERL_VERSION=1-2-3
+BIOPERL_DIR=${SOFT_DIR}/perllib/bioperl-release-${BIOPERL_VERSION}
 ENSEMBL_VERSION=72
-ENSEMBL_API_DIR=${SOFT_DIR}/perllib
-install_ensembl_api:	
+ENSEMBL_BRANCH=ensemblgenomes-19
+ENSEMBL_API_DIR=${SOFT_DIR}/perllib/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
+install_ensembl_api_param:
+	@echo "	BIOPERL_VERSION		${BIOPERL_VERSION}"
+	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
+	@echo "	ENSEMBL_VERSION		${ENSEMBL_VERSION}"
+	@echo "	ENSEMBL_BRANCH		${ENSEMBL_BRANCH}"
+	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
+
+## Install the required modules for Ensembl API
+install_ensembl_api:
+	@(cd ${BIOPERL_DIR}; \
+		echo "" ; \
+		echo "Installing bioperl release ${BIOPERL_VERSION}"; \
+		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
+		mkdir -p "${BIOPERL_DIR}" ; \
+		echo  "Password is 'cvs'" ; \
+		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
+		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live ; \
+		echo "" ; \
+		echo "Installing ensembl branch ${ENSEMBL_BRANCH} version ${ENSEMBL_VERSION}"; \
+		echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}" ; \
+		mkdir -p "${ENSEMBL_API_DIR}"; \
+		cd ${ENSEMBL_API_DIR}; \
+		echo  "Password is 'CVSUSER'" ; \
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api)
 	@echo
-	@echo "Installing ENSEMBL Perl modules (version ${ENSEMBL_VERSION}) in directory ${ENSEMBL_API_DIR}"
-	@mkdir -p "${ENSEMBL_API_DIR}"
-	@echo  "Password is 'CVSUSER'"
-	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
-	@(cd ${ENSEMBL_API_DIR}; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-			checkout -r branch-ensembl-${ENSEMBL_VERSION} ensembl ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-			checkout -r branch-ensembl-${ENSEMBL_VERSION} ensembl-compara ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-			checkout -r branch-ensembl-${ENSEMBL_VERSION} ensembl-variation)
+	@${MAKE} install_ensembl_api_env
+
+## Print the settings for including ensembl in the PERL5LIB environment variable
+install_ensembl_api_env:
 	@echo
-	@echo "Installed ENSEMBL Perl modules in directory ${ENSEMBL_API_DIR}"
+	@echo "ENSEMBL Perl modules are installed in directory ${ENSEMBL_API_DIR}"
 	@echo "Don't forget to adapt the following lines in your bash profile"
-	@echo 'export PERL5LIB=$${PERL5LIB}:${SOFT_DIR}/perllib/ensembl/modules'
-	@echo 'export PERL5LIB=$${PERL5LIB}:${SOFT_DIR}/perllib/ensembl-compara/modules'
-	@echo 'export PERL5LIB=$${PERL5LIB}:${SOFT_DIR}/perllib/ensembl-variation/modules'
+	@echo 'export PERL5LIB=${BIOPERL_DIR}/bioperl-live::$${PERL5LIB}'
+	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-functgenomics/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-tools/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-variation/modules::$${PERL5LIB}'
 
 ################################################################
 ## Get and install the program seqlogo
