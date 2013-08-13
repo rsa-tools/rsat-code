@@ -144,12 +144,21 @@ For the time being, \RSAT is distributed as a compressed archive.
 Download the latest version of the \RSAT distribution. Uncompress the
 archive containing the programs. The archive is distributed
 \texttt{tar} format. The \texttt{.tar.gz} file can be uncompressed
-with the command \program{tar}, which are part of the default unix
-installation.
+with the command \program{tar}, which is included in most Unix
+distributions.
 
 \begin{lstlisting}
 tar -xpzf rsa-tools_yyyymmdd.tar.gz
 \end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% The section about CVS has been moved to a separate file ig_cvs.tex,
+%% and is not displayed anymore for two reasons: 
+%% (1) the CVS distribution is reserved to RSAT team members.
+%% (2) We are in the process to move from CVS to GIT. 
+%%
+%% \input{ig_cvs}
+
 \chapter{Initializing \RSAT}
 
 \input{ug_configuration.tex}
@@ -205,7 +214,6 @@ RSAT_config_default.props
 RSAT_config.mk
 RSAT_config.props
 \end{verbatim}
-
 
 \emph{Beware:} this operation should be done only once. If you redo
 the copy commands after having edited the files, you will loose all

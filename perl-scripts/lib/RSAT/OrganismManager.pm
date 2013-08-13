@@ -214,7 +214,6 @@ sub export_supported_organisms {
   print $table_handle &supported_organism_table("header", 1, @fields);
   &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/public_html/data/supported_organisms.pl") if ($main::verbose >= 3);
 
-
   ## Rename the updated table to make it effective
   system("mv ".$organism_table_tmp." ".$organism_table);
   &RSAT::message::Info("Exported supported organisms", $organism_table) if ($main::verbose >= 1);
