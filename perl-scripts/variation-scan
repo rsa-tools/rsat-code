@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.10 2013/08/13 22:13:40 jvanheld Exp $
+# $Id: variation-scan,v 1.11 2013/08/14 15:07:29 rsat Exp $
 #
 ############################################################
 
@@ -180,7 +180,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
   our $output_lines = 0;
 
   our %infile	= ();
@@ -540,7 +540,9 @@ package	main;
         last if ($nb_variation > $top_variation && $top_variation>0);
 
         if ($nb_variation >= $last_nb) {
-          my @scanning = qx{$ENV{'RSAT'}/contrib/matrix-scan-quick/matrix-scan-quick $arg};
+	    my $scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+	    $scan_cmd .= " ".$arg;
+	    my @scanning = qx{$scan_cmd};
           &Analyse(@scanning) unless (scalar(@scanning) == 0);
 
           close($out_fas);
@@ -557,7 +559,10 @@ package	main;
 
     close($out_fas);
     $nb_variation ++;
-    my @scanning = qx{$ENV{'RSAT'}/contrib/matrix-scan-quick/matrix-scan-quick $arg};
+    my $scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+    $scan_cmd .= " ".$arg;
+    my @scanning = qx{$scan_cmd};
+#    my @scanning = qx{$ENV{'RSAT'}/contrib/matrix-scan-quick/matrix-scan-quick $arg};
     &Analyse(@scanning) unless (scalar(@scanning) == 0);
     @scanning = ();
 
