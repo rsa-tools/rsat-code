@@ -32,3 +32,4 @@ ensembl_genomes
 *.txt
 problem*
 doc/podpublic_html/web_services/RSATWS.wsdl
+RSAT_config.mk
