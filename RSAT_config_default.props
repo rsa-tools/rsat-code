@@ -87,7 +87,12 @@ rsat_img_format=png
 ## These options are useful only if you run the server on a PC
 ## cluster.
 
-CLUSTER_QUEUE=any
+## Queue manager (e.g. torque, SGE, ...)
+QSUB_MANAGER=torque
+
+## Indicate the name of the cluster queue
+## This parameter is required to run tasks on the cluster
+CLUSTER_QUEUE=
 
 ## Email reports
 ##  `b'     Mail is sent at the beginning of the job.
@@ -102,8 +107,10 @@ BATCH_MAIL=as
 ## the cluster jobs in a particular shell.
 CLUSTER_SHELL=
 
-QSUB_MANAGER=torque
+## Additional options for the cluster
 QSUB_OPTIONS=
+
+## Restrict the cluster to a subset of the nodes
 NODES=
 
 ################################################################
