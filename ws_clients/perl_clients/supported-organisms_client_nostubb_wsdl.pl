@@ -19,13 +19,16 @@ use XML::Compile::Transport::SOAPHTTP;
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers =  $ARGV[0] || qw(
 			    http://rsat.ulb.ac.be/rsat
-			    http://localhost/rsat/
+			    http://139.124.66.4/rsat
+                            http://rsat.sb-roscoff.fr
+			    http://www.rsat.eu
+			    http://www.rsat.fr
 			    http://embnet.ccg.unam.mx/rsa-tools
 			    http://rsat01.biologie.ens.fr/rsa-tools
 			    http://tagc.univ-mrs.fr/rsa-tools
-			    http://139.124.66.4/rsat
 			    http://anjie.bi.up.ac.za/rsa-tools
 			    http://bongcam1.hgen.slu.se/rsat
+			    http://localhost/rsat
 			    );
 
 #			    http://mamaze.ulb.ac.be/rsat
