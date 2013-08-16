@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.11 2013/08/14 15:07:29 rsat Exp $
+# $Id: variation-scan,v 1.12 2013/08/16 18:23:53 rsat Exp $
 #
 ############################################################
 
@@ -180,7 +180,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
   our $output_lines = 0;
 
   our %infile	= ();
@@ -197,17 +197,28 @@ package	main;
   our $only_biggest = 0;
   our $pval_limit = 1;
 
+  our %uth = ();
+  our %supported_uth = ();
+  $supported_uth{'pval'} = 1;
+
+  our %lth = ();
+  our %supported_lth = ();
+  $supported_lth{'score'} = -100;
+  $supported_lth{'w_diff'} = 0;
+  $supported_lth{'pval_ratio'} = 1;
+
   our $calc_distrib = 0;
   our $distrib_dir = "";
 
   our $html = 0;
   our $top_matrix =-1;
   our $top_variation = -1;
+  our $no_offset = 1;
 
   our $nb_matrix = 0;
   our $nb_variation =0;
   our $nb_seq = 0;
-
+  our $nb_rvar =0;
 
   ################################################################
   ## Read argument values
@@ -285,18 +296,16 @@ package	main;
     print $out ";\t",'9',"\t",'best_pval',"\t",'P_value of the best putative site',"\n";
     print $out ";\t",'10',"\t",'worst_pval',"\t",'P_value of the worst putative site',"\n";
     print $out ";\t",'11',"\t",'pval_ratio',"\t",'Ratio between worst and best pval ( pval_ratio = worst_pval/best_pval )',"\n";
-    print $out ";\t",'12',"\t",'pval_lr',"\t",'Log ratio between worst and best pval (pval_lr = log10(worst_pval/best_pval) )',"\n";
-    print $out ";\t",'13',"\t",'pval_lr_relatif',"\t",'Ratio between pval_lr and the pval_lr_max ( pval_lr_relatif = pval_lr/pval_lr_max)',"\n";
-    print $out ";\t",'14',"\t",'best_variant',"\t",'Variant in the best putative site',"\n";
-    print $out ";\t",'15',"\t",'worst_variant',"\t",'Variant in the worst putative site',"\n";
-    print $out ";\t",'16',"\t",'best_offest',"\t",'Offset of the best putative site',"\n";
-    print $out ";\t",'17',"\t",'worst_offset',"\t",'Offset of the worst putative site',"\n";
-    print $out ";\t",'18',"\t",'min_offset_diff',"\t",'Difference minimal between best and worst putative site',"\n";
-    print $out ";\t",'19',"\t",'best_strand',"\t",'Strand of the best putative site',"\n";
-    print $out ";\t",'20',"\t",'worst_strand',"\t",'Strand of the worst putative site',"\n";
-    print $out ";\t",'21',"\t",'str_change',"\t",'Indicate if strand have change between the offset of min_offset_diff',"\n";
-    print $out ";\t",'22',"\t",'best_seq',"\t",'Sequence of the worst putative site',"\n";
-    print $out ";\t",'23',"\t",'worst_seq',"\t",'Sequence of the worst putative site',"\n";
+    print $out ";\t",'12',"\t",'best_variant',"\t",'Variant in the best putative site',"\n";
+    print $out ";\t",'13',"\t",'worst_variant',"\t",'Variant in the worst putative site',"\n";
+    print $out ";\t",'14',"\t",'best_offest',"\t",'Offset of the best putative site',"\n";
+    print $out ";\t",'15',"\t",'worst_offset',"\t",'Offset of the worst putative site',"\n";
+    print $out ";\t",'16',"\t",'min_offset_diff',"\t",'Difference minimal between best and worst putative site',"\n";
+    print $out ";\t",'17',"\t",'best_strand',"\t",'Strand of the best putative site',"\n";
+    print $out ";\t",'18',"\t",'worst_strand',"\t",'Strand of the worst putative site',"\n";
+    print $out ";\t",'19',"\t",'str_change',"\t",'Indicate if strand have change between the offset of min_offset_diff',"\n";
+    print $out ";\t",'20',"\t",'best_seq',"\t",'Sequence of the worst putative site',"\n";
+    print $out ";\t",'21',"\t",'worst_seq',"\t",'Sequence of the worst putative site',"\n";
   }
 
   print $out "#",join("\t",qw(
@@ -311,8 +320,6 @@ package	main;
                       best_pval
                       worst_pval
                       pval_ratio
-                      pval_lr
-                      pval_lr_relatif
                       best_variant
                       worst_variant
                       best_offset
@@ -514,11 +521,12 @@ package	main;
     my $last_id = "";
     my $last_nb = 2000;
 
-    $arg = " -i $fasta_file";
-    $arg .= " -m $matrix_file_tab";
-    $arg .= " -pseudo 1 -decimals 1 -2str -origin start";
-    $arg .= " -bgfile $bg_file";
-    $arg .= " -name $matrix_ac";
+    my $scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+    $scan_cmd .= " -i $fasta_file";
+    $scan_cmd .= " -m $matrix_file_tab";
+    $scan_cmd .= " -pseudo 1 -decimals 1 -2str -origin start";
+    $scan_cmd .= " -bgfile $bg_file";
+    $scan_cmd .= " -name $matrix_ac";
 
     &RSAT::message::TimeWarn("\tScan matrix") if ($main::verbose >= 3);
     my $out_fas = &OpenOutputFile($fasta_file);
@@ -534,16 +542,14 @@ package	main;
       my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$seq) = split(/\t/);
 
       $ref = "-" if ($ref eq "");
-
+      
       if ($last_id ne $id && $last_id ne "") {
-        $nb_variation ++;
+	$nb_variation ++;
         last if ($nb_variation > $top_variation && $top_variation>0);
 
         if ($nb_variation >= $last_nb) {
-	    my $scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
-	    $scan_cmd .= " ".$arg;
-	    my @scanning = qx{$scan_cmd};
-          &Analyse(@scanning) unless (scalar(@scanning) == 0);
+	  my @scanning = qx{$scan_cmd};
+	  &Analyse_scanning(@scanning) unless (scalar(@scanning) == 0);
 
           close($out_fas);
           $out_fas = &OpenOutputFile($fasta_file);
@@ -551,7 +557,9 @@ package	main;
         }
       }
 
-      print $out_fas ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n".substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2)."\n";
+      print $out_fas ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n";
+      print $out_fas substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2)."\n";
+
       $nb_seq++;
       $last_id = $id;
     }
@@ -559,11 +567,8 @@ package	main;
 
     close($out_fas);
     $nb_variation ++;
-    my $scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
-    $scan_cmd .= " ".$arg;
     my @scanning = qx{$scan_cmd};
-#    my @scanning = qx{$ENV{'RSAT'}/contrib/matrix-scan-quick/matrix-scan-quick $arg};
-    &Analyse(@scanning) unless (scalar(@scanning) == 0);
+    &Analyse_scanning(@scanning) unless (scalar(@scanning) == 0);
     @scanning = ();
 
     $out_fas = &OpenOutputFile($fasta_file); ##Just to make empty file
@@ -628,186 +633,278 @@ sub log10 {
 ################################################################
 ##
 sub getLineInfo {
-  my ($var_info1,$site,$matrice,$stran,$pos_s,$pos_e,$seq,$score) = split ("\t",$_[0]);
-  my ($var_info2, $coord) = split(/\|/,$var_info1);
-  my ($chr,$start_end_strand) = split(/:/,$coord);
-  my ($start,$end_strand) = split(/-/,$start_end_strand);
-  my ($id,$ref,$var,$type) = split(';',$var_info2);
+    my %line_info = ();
 
-  $diff_pos = 0;
-  $diff_pos ++ if ($var eq "-"); 
+    my @token = split ("\t",$_[0]);  #var_info,site,matrice,site_strand,site_start_offset,site_end_offset,seq,score
+    $line_info{'matrice'} = $token[2];
+    $line_info{'site_strand'} = $token[3];
+    $line_info{'seq'} = $token[6];
+    $line_info{'score'} = sprintf("%.1f",$token[7]);
 
-  $pos_s = $pos_s+$diff_pos-$matrix_length;
-  $pos_e = $pos_e+$diff_pos-$matrix_length;
+    my @token2 = split(/\|/,$token[0]); #var_info, coord
+    $line_info{'coord'} = $token2[1];
 
-  return ($matrice,$coord,$id,$type,$ref,$var,$stran,$pos_s,$pos_e,$seq,$score)
+    my @token3 = split(/\;/,$token2[0]); #id,ref,alt,type
+    $line_info{'id'} = $token3[0];
+    $line_info{'variant_ref'} = $token3[1];
+    $line_info{'variant_alt'} = $token3[2];
+    $line_info{'type'} = $token3[3];
+
+    $diff_pos = 0;
+    $diff_pos ++ if ($line_info{'variant_ref'} eq "-"); 
+    $line_info{'site_offset_start'} = $token[4]+$diff_pos-$matrix_length;
+    return (%line_info);
 }
 
 ################################################################
 ## Analyse result of scanning
-sub Analyse() {
-  @scanning = @_;
+sub Analyse_scanning {
+    @scanning = @_;
 
-  my %last_line = ();
-  my %score_variation = ();
+    my %scanning_info = ();
+    my %scanning_score_pos = ();
+    my %scanning_score_var = ();
+    my $same_variant_len = 1;
 
-  while ( my $line = shift @scanning ) {
-    
-    next if ($line =~ m/^#/);
-    next if ($line =~ m/^;/);
-    chomp($line);
+    while ( my $line = shift @scanning ) {
 
-    my @info = &getLineInfo($line);
-    my $same_matrice   =  !$last_line{'matrice'} || $info[0] eq $last_line{'matrice'};
-    my $same_variation =  !$last_line{'variation'} || $info[2] eq $last_line{'variation'};
-    my $same_variant   =  !$last_line{'variant'} || $info[5] eq $last_line{'variant'} ;
+	next if ($line =~ m/^#/);
+	next if ($line =~ m/^;/);
+	chomp($line);
 
-    $info[10] = sprintf("%.1f",$info[10]);
+	my %line_info = &getLineInfo($line);
 
-    if ($same_matrice && $same_variation && $same_variant) {
-      my $same_score = 0;
-      my $highest_score = 1;
+	my $same_matrice   =  !$scanning_info{'matrice'} || $line_info{'matrice'} eq $scanning_info{'matrice'};
+	my $same_variation =  !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
 
-      if ($score_variation{$info[5]}{'score'}) {
-        $same_score = $score_variation{$info[5]}{'score'} == $info[10];
-        $highest_score = $score_variation{$info[5]}{'score'} < $info[10];
-      }
+	$same_variant_len = 0 if ( length($line_info{'variant_alt'}) != length($line_info{'variant_ref'}) );
+	$same_variant_len = 0 if ( $line_info{'variant_alt'} eq '-' || $line_info{'variant_ref'} eq '-' );
 
-      if ( $highest_score ) {
-        $score_variation{$info[5]} = ();
-        $score_variation{$info[5]}{'score'} = $info[10];
-        push(@{$score_variation{$info[5]}{'offset'}}, $info[7]);
-        push(@{$score_variation{$info[5]}{'strand'}}, $info[6]);
-        push(@{$score_variation{$info[5]}{'seq'}}, $info[9]);
+	unless ( $same_matrice || $same_variation ) {
+	    &Analyse_variation(\%scanning_info,\%scanning_score_pos,\%scanning_score_var );
+	    %scanning_score_pos = ();
+	    %scanning_score_var = ();
+	    %scanning_info = ();
+	    $same_variant_len = 1;
+	}
 
-      } elsif ($same_score) {
-        $score_variation{$info[5]}{'score'} = $info[10];
-        push(@{$score_variation{$info[5]}{'offset'}}, $info[7]);
-        push(@{$score_variation{$info[5]}{'strand'}}, $info[6]);
-        push(@{$score_variation{$info[5]}{'seq'}}, $info[9]);
-      }
+	push (@{ $scanning_score_pos{$line_info{'site_offset_start'}}{$line_info{'site_strand'}}{$line_info{'score'}}{'variant_alt'} },$line_info{'variant_alt'});
+	push (@{ $scanning_score_pos{$line_info{'site_offset_start'}}{$line_info{'site_strand'}}{$line_info{'score'}}{'seq'} },$line_info{'seq'});
 
+	if ( !$scanning_score_var{$line_info{'variant_alt'}}{'score'} || $scanning_score_var{$line_info{'variant_alt'}}{'score'} < $line_info{'score'} ) {
+	    $scanning_score_var{$line_info{'variant_alt'}} = ();
+	    $scanning_score_var{$line_info{'variant_alt'}}{'score'} = $line_info{'score'};
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_offset_start'}}, $line_info{'site_offset_start'});
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'});
 
-    } elsif ( !$same_matrice || !$same_variation ) {
-      &PrintResult($last_line{'matrice'},$last_line{'variation'},$last_line{'SOterm'},$last_line{'offset'},\%score_variation );
-      %score_variation = ();
+	} elsif ( $scanning_score_var{$line_info{'variant_alt'}}{'score'} == $line_info{'score'} ){
+	    push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_offset_start'}}, $line_info{'site_offset_start'} );
+            push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'} );
+	}
+
+	$scanning_info{'matrice'} = $line_info{'matrice'};
+	$scanning_info{'variation'} = $line_info{'id'};
+	$scanning_info{'type'} = $line_info{'type'};
+	$scanning_info{'coord'} = $line_info{'coord'};
+	$scanning_info{'same_len'} = $same_variant_len;
     }
 
-    $last_line{'matrice'} = $info[0];
-    $last_line{'variation'} = $info[2];
-    $last_line{'SOterm'} = $info[3];
-    $last_line{'offset'} = $info[1];
-    $last_line{'variant'} = $info[5];
-  }
-
-  &PrintResult($last_line{'matrice'},$last_line{'variation'},$last_line{'SOterm'},$last_line{'offset'},\%score_variation );
+    &Analyse_variation(\%scanning_info,\%scanning_score_pos,\%scanning_score_var );
 }
 
 ################################################################
-## Sent print request for each diff between score of variant
-sub PrintResult {
-  my ($matrice,$variation,$so_term,$coord,$score_variation) = @_;
-  my %score_variation = %{ $score_variation };
+## analyse score for each variant of a variation
+sub Analyse_variation {
+    my ($scanning_info,$scanning_score_pos,$scanning_score_var) = @_;
+    my %scanning_info = %{ $scanning_info };
+    my %scanning_score_pos = %{ $scanning_score_pos };
+    my %scanning_score_var = %{ $scanning_score_var };
 
-  my %score_variant = ();
-  foreach my $variant ( keys(%score_variation) ) {
-    push (@{ $score_variant{ $score_variation{$variant}{'score'} }{'variant'} }, $variant);
-    push (@{ $score_variant{ $score_variation{$variant}{'score'} }{'offset'} }, join(",",@{$score_variation{$variant}{'offset'}}));
-    push (@{ $score_variant{ $score_variation{$variant}{'score'} }{'strand'} }, join(",",@{$score_variation{$variant}{'strand'}}));
-    push (@{ $score_variant{ $score_variation{$variant}{'score'} }{'seq'} }, join(",",@{$score_variation{$variant}{'seq'}}));
-  }
+    # Compare all position
+    if ($no_offset && $scanning_info{'same_len'}) {
+	foreach my $offset (keys( %scanning_score_pos )) {
+	    foreach my $site_strand (keys (%{ $scanning_score_pos{$offset} })) {
+		my %scanning_score =  %{ $scanning_score_pos{$offset}{$site_strand} };
+		my @scores =  keys ( %scanning_score );
+		foreach $score ( @scores ) {
+		    push (@{$scanning_score{$score}{'site_offset_start'}}, $offset);
+		    push (@{$scanning_score{$score}{'site_strand'}}, $site_strand);
+		}
 
-  my @sorted_score = sort {$b <=> $a} keys(%score_variant);
-  foreach my $score (@sorted_score) {
-    next if ( ($score == $sorted_score[-1]) && (scalar(@sorted_score) > 1) );
-    my $diff1 = $sorted_score[0] - $score;
-    my $diff2 = $score - $sorted_score[-1];
+		if  (scalar( @scores ) == 1 ) {
+		    push (@{$scanning_score{$scores[0]}{'site_offset_start'}}, $offset);
+		    push (@{$scanning_score{$scores[0]}{'site_strand'}}, $site_strand);		    
+		}
 
-    if ($matrix_info{$matrice}{'pval'}{$sorted_score[0]} <= $pval_limit) {
-      if ($diff1 > $diff2 ) {
-        &Printline($matrice,$variation,$so_term,$coord,$sorted_score[0],$score,sprintf("%.1f", $diff1),$score_variant{$sorted_score[0]},$score_variant{$score});
+		&Compare(\%scanning_info,\%scanning_score);
+	    }
+	}
 
-      } elsif ( $diff1 == $diff2 ) {
-        # Separate variant if no difference in scanning
-        my %max_score_variant = ();
-        push ( @{ $max_score_variant{'variant'} }, pop(@{$score_variant{$score}{'variant'}}) );
-        push ( @{ $max_score_variant{'offset'} }, pop(@{$score_variant{$score}{'offset'}}) );
-        push ( @{ $max_score_variant{'strand'} }, pop(@{$score_variant{$score}{'strand'}}) );
-        push ( @{ $max_score_variant{'seq'} }, pop(@{$score_variant{$score}{'seq'}}) );
-
-        &Printline($matrice,$variation,$so_term,$coord,$sorted_score[0],$score,sprintf("%.1f", $diff1),\%max_score_variant,$score_variant{$score});
-
-      } else {
-        &Printline($matrice,$variation,$so_term,$coord,$score,$sorted_score[-1],sprintf("%.1f", $diff2),$score_variant{$score}, $score_variant{$sorted_score[-1]} );
-      }
+    # Compare best score for each variant
+    } else {
+	%scanning_score  = ();
+	foreach my $variant ( keys (%scanning_score_var ) ) {
+	    $score = $scanning_score_var{$variant};
+	    push (@{ $scanning_score{$score}{'variant_alt'} }, $variant);
+	    push (@{ $scanning_score{$score}{'offset'} }, join(",",@{$scanning_score_var{$variant}{'site_offset_start'}}) );
+	    push (@{ $scanning_score{$score}{'strand'} }, join(",",@{$scanning_score_var{$variant}{'site_strand'}}) );
+	    push (@{ $scanning_score{$score}{'seq'} }, join(",",@{$scanning_score_var{$variant}{'seq'}}) );
+	}
+	&Compare(\%scanning_info,\%scanning_score);
     }
+}
 
-    last if ($only_biggest);
-  }
+################################################################
+## Compare best and worst score
+sub Compare {
+    my ($scanning_info,$scanning_score) = @_;
+    my %scanning_info = %{ $scanning_info };
+    my %scanning_score = %{ $scanning_score };
+
+    my @sorted_score = sort {$b <=> $a} ( keys( %scanning_score ) );
+    foreach my $score (@sorted_score) {
+	next if ($score == $sorted_score[-1] && scalar(@sorted_score) > 1);
+	my $best_score = $sorted_score[0];
+	my $best_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$best_score};
+
+	next if ( $lth{'score'} && $lth{'score'} > $best_score );
+	next if ( $uth{'pval'} && $uth{'pval'} < $best_pval);
+ 
+	my $worst_score = $sorted_score[-1];
+	my $worst_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$worst_score};
+
+	my $diff_1 = $best_score-$score;
+	my $diff_2 = $score-$worst_score;
+	my $pval_ratio_1 = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score}/$best_pval;
+	my $pval_ratio_2 = $worst_pval/$matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
+	my $nearest_score_worst = 0;
+	$nearest_score_worst = 1 if ( $lth{'score'} && $diff_1 > $diff_2);
+	$nearest_score_worst = 1 if ( $uth{'pval'} && $pval_ratio_1 > $pval_ratio_2);
+
+	if ( $nearest_score_worst) {
+	    next if ( $lth{'w_diff'} && $lth{'w_diff'} > $diff_1 );
+	    next if ( $lth{'pval_ratio'} && $lth{'pval_ratio'} > $pval_ratio_1);
+
+	    $scanning_info{'best_variant'} =  join(";", @{ $scanning_score{$best_score}{'variant_alt'} });
+	    $scanning_info{'worst_variant'} =  join(";", @{ $scanning_score{$score}{'variant_alt'} });
+	    $scanning_info{'best_score'} = $best_score;
+	    $scanning_info{'worst_score'} = $score;
+	    $scanning_info{'w_diff'} = $diff_1;
+	    $scanning_info{'best_pval'} = $best_pval;
+	    $scanning_info{'worst_pval'} = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
+	    $scanning_info{'pval_ratio'} = $pval_ratio_1;
+	    $scanning_info{'best_offset'} =  join(";", @{ $scanning_score{$best_score}{'site_offset_start'} });
+	    $scanning_info{'worst_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
+	    $scanning_info{'best_strand'} =  join(";", @{ $scanning_score{$best_score}{'site_strand'} });
+	    $scanning_info{'worst_strand'} = join(";", @{ $scanning_score{$score}{'site_strand'} });
+	    $scanning_info{'best_seq'} =  join(";", @{ $scanning_score{$best_score}{'seq'} });
+	    $scanning_info{'worst_seq'} = join(";", @{ $scanning_score{$score}{'seq'} });
+	    &Printline(&GetMinOff(%scanning_info));
+
+	} elsif ($diff_1 == $diff_2) {
+	    next if ( $lth{'w_diff'} && $lth{'w_diff'} > $diff_1 );
+	    next if ( $lth{'pval_ratio'} && $lth{'pval_ratio'} > $pval_ratio_1);
+	    
+	    $scanning_info{'best_variant'} =  pop( @{ $scanning_score{$best_score}{'variant_alt'} });
+	    $scanning_info{'worst_variant'} =  join(";", @{ $scanning_score{$best_score}{'variant_alt'} } );
+	    $scanning_info{'best_score'} = $best_score;
+	    $scanning_info{'worst_score'} = $scanning_info{'best_score'};
+	    $scanning_info{'w_diff'} = $diff_1;
+	    $scanning_info{'best_pval'} = $best_pval;
+	    $scanning_info{'worst_pval'} = $scanning_info{'best_pval'};
+	    $scanning_info{'pval_ratio'} = $pval_ratio_1;
+            $scanning_info{'best_offset'} =  pop ( @{ $scanning_score{$best_score}{'site_offset_start'} });
+	    $scanning_info{'worst_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
+	    $scanning_info{'best_strand'} =  pop ( @{ $scanning_score{$best_score}{'site_strand'} });
+	    $scanning_info{'worst_strand'} = join(";", @{ $scanning_score{$score}{'site_strand'} });
+	    $scanning_info{'best_seq'} =  pop( @{ $scanning_score{$best_score}{'seq'} });
+	    $scanning_info{'worst_seq'} = join(";", @{ $scanning_score{$best_score}{'seq'} });
+            &Printline(&GetMinOff(%scanning_info));
+
+	} else  {
+            next if ( $lth{'w_diff'} && $lth{'w_diff'} > $diff_2 );
+            next if ( $lth{'pval_ratio'} && $lth{'pval_ratio'} > $pval_ratio_2);
+
+	    $scanning_info{'worst_variant'} =  join(";", @{ $scanning_score{$worst_score}{'variant_alt'} });
+	    $scanning_info{'best_variant'} =  join(";", @{ $scanning_score{$score}{'variant_alt'} });
+	    $scanning_info{'worst_score'} = $worst_score;
+	    $scanning_info{'best_score'} = $score;
+	    $scanning_info{'w_diff'} = $diff_2;
+	    $scanning_info{'worst_pval'} = $worst_pval;
+	    $scanning_info{'best_pval'} = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
+	    $scanning_info{'pval_ratio'} = $pval_ratio_2;
+	    $scanning_info{'worst_offset'} =  join(";", @{ $scanning_score{$worst_score}{'site_offset_start'} });
+	    $scanning_info{'best_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
+	    $scanning_info{'worst_strand'} =  join(";", @{ $scanning_score{$worst_score}{'site_strand'} });
+            $scanning_info{'best_strand'} = join(";", @{ $scanning_score{$score}{'site_strand'} });
+	    $scanning_info{'worst_seq'} =  join(";", @{ $scanning_score{$worst_score}{'seq'} });
+	    $scanning_info{'best_seq'} = join(";", @{ $scanning_score{$score}{'seq'} });
+	    &Printline(&GetMinOff(%scanning_info));
+	}
+	last if ($only_biggest);
+   }
+}
+
+################################################################
+## Get the min_offset_diff and if the strand change
+sub GetMinOff {
+    my %scanning_info = @_;
+
+    $scanning_info{'min_offset_diff'} = $flank_len;
+    $scanning_info{'strand_change'} = 0;
+
+    my @best_off_by_diff_variant = split(";", $scanning_info{'best_offset'});
+    
+    for ($b=0; $b < scalar(@best_off_by_diff_variant); $b++) {
+	my @best_off_by_same_variant = split(",",$best_off_by_diff_variant[$b]);
+
+	for ($b2 = 0; $b2 < scalar(@best_off_by_same_variant); $b2++) {
+	    my @worst_off_by_diff_variant =  split(";", $scanning_info{'worst_offset'});
+
+	    for ($w=0; $w < scalar(@worst_off_by_diff_variant); $w++) {
+		my @worst_off_by_same_variant = split(",",$worst_off_by_diff_variant[$w]);
+
+		for ($w2 = 0; $w2 < scalar(@worst_off_by_same_variant); $w2++) {
+
+		    if ( abs($worst_off_by_same_variant[$w2]-$best_off_by_same_variant[$b2]) < abs( $scanning_info{'min_offset_diff'}) ) {
+			 $scanning_info{'min_offset_diff'} = $worst_off_by_same_variant[$w2]-$best_off_by_same_variant[$b2];
+
+			my @best_strand_by_diff_variant = split(";", $scanning_info{'best_strand'});
+			my @worst_strand_by_diff_variant = split(";", $scanning_info{'worst_strand'});
+			my @best_strand_by_same_variant = split(",",$best_strand_by_diff_variant[$b]);
+			my @worst_strand_by_same_variant = split(",",$worst_strand_by_diff_variant[$w]);
+
+			if ($worst_strand_by_same_variant[$w2] ne $best_strand_by_same_variant[$b2]) {
+			    $scanning_info{'strand_change'} = 1;
+			}
+		    }
+		}
+	    }
+	}
+    }
+    return %scanning_info;
 }
 
 ################################################################
 ## Print
 sub Printline {
-  my ($matrice,$variation,$so_term,$coord,,$max_score,$min_score,$diff,$max_score_variant,$min_score_variant) = @_;
-
+  my (%scanning_info) = @_;
   $output_lines++;
 
-  my $sig = log10($matrix_info{$matrice}{'pval'}{$min_score}/$matrix_info{$matrice}{'pval'}{$max_score});
-  my $sig_rel = $sig/$matrix_info{$matrice}{'sigma_max'};
-
-  ## Get minimun offset and str_change
-  my $min_offset_diff = $flank_len;
-  my $strand_change = 0;
-
-  my @best_off_by_diff_variant = @{ ${ $max_score_variant }{'offset'} };
-  
-  for ($b=0; $b < scalar(@best_off_by_diff_variant); $b++) {
-    my @best_off_by_same_variant = split(",",$best_off_by_diff_variant[$b]);
-
-    for ($b2 = 0; $b2 < scalar(@best_off_by_same_variant); $b2++) {
-      my @worst_off_by_diff_variant = @{ ${ $min_score_variant }{'offset'} };
-
-      for ($w=0; $w < scalar(@worst_off_by_diff_variant); $w++) {
-         my @worst_off_by_same_variant = split(",",$worst_off_by_diff_variant[$w]);
-
-        for ($w2 = 0; $w2 < scalar(@worst_off_by_same_variant); $w2++) {
-
-          if ( abs($worst_off_by_same_variant[$w2]-$best_off_by_same_variant[$b2]) < abs($min_offset_diff) ) {
-            $min_offset_diff = $worst_off_by_same_variant[$w2]-$best_off_by_same_variant[$b2];
-
-            my @best_strand_by_diff_variant = @{ ${ $max_score_variant }{'strand'} };
-            my @worst_strand_by_diff_variant = @{ ${ $min_score_variant }{'strand'} };
-            my @best_strand_by_same_variant = split(",",$best_strand_by_diff_variant[$b]);
-            my @worst_strand_by_same_variant = split(",",$worst_strand_by_diff_variant[$w]);
-
-            if ($worst_strand_by_same_variant[$w2] eq $best_strand_by_same_variant[$b2]) {
-              $strand_change = 0;
-            } else {
-              $strand_change = 1;
-            }
-          }
-        }
-      }
-    }
-  }
-
   my $str = "";
-  $str .= $matrice."\t";
-  $str .= $matrix_list{$matrice}{'id'}."\t";
-  $str .= $variation."\t".$so_term."\t".$coord."\t";
-  $str .= $max_score."\t".$min_score."\t";  # weigth
-  $str .= $diff."\t"; #w_diff
-  $str .= $matrix_info{$matrice}{'pval'}{$max_score}."\t".$matrix_info{$matrice}{'pval'}{$min_score}."\t";  # pvalues
-  $str .= sprintf("%.2f",$matrix_info{$matrice}{'pval'}{$min_score}/$matrix_info{$matrice}{'pval'}{$max_score})."\t";  # pvalues ratio
-  $str .= sprintf("%.2e", $sig)."\t"; # sigma
-  $str .= sprintf("%.2e", $sig_rel)."\t"; # sigma_relatif
-  $str .= join(";",@{ ${ $max_score_variant }{'variant'} })."\t".join(";",@{ ${ $min_score_variant }{'variant'} })."\t"; # variants
-  $str .= join(";",@{ ${ $max_score_variant }{'offset'} })."\t".join(";",@{ ${ $min_score_variant }{'offset'} })."\t"; # off
-  $str .= $min_offset_diff."\t";
-  $str .= join(";",@{ ${ $max_score_variant }{'strand'} })."\t".join(";",@{ ${ $min_score_variant }{'strand'} })."\t"; # off
-  $str .= $strand_change."\t";
-  $str .= join(";",@{ ${ $max_score_variant }{'seq'} })."\t".join(";",@{ ${ $min_score_variant }{'seq'} })."\n"; # seq
+  $str .= $scanning_info{'matrice'}."\t";
+  $str .= $matrix_list{$scanning_info{'matrice'}}{'id'}."\t";
+ # $str .= $scanning_info{'variation'}."\t".$scanning_info{'type'}."\t".$scanning_info{'coord'}."\t";
+  $str .= $scanning_info{'best_score'}."\t".$scanning_info{'worst_score'}."\t";  # weigth
+  $str .= sprintf("%.2f",$scanning_info{'w_diff'})."\t"; #w_diff
+  $str .= $scanning_info{'best_pval'}."\t".$scanning_info{'worst_pval'}."\t";  # pvalues
+  $str .= sprintf("%.2f",$scanning_info{'pval_ratio'})."\t";  # pvalues ratio
+  $str .= $scanning_info{'best_variant'}."\t".$scanning_info{'worst_variant'}."\t"; # variants
+  $str .= $scanning_info{'best_offset'}."\t".$scanning_info{'worst_offset'}."\t"; # off
+  $str .= $scanning_info{'min_offset_diff'}."\t";
+  $str .= $scanning_info{'best_strand'}."\t".$scanning_info{'worst_strand'}."\t"; # strand
+  $str .= $scanning_info{'strand_change'}."\t";
+  $str .= $scanning_info{'best_seq'}."\t".$scanning_info{'worst_seq'}."\n"; # seq
 
   print $out $str;
 }
@@ -941,18 +1038,39 @@ Only work with the # top variation
 
 =pod
 
-=item B<-pval_limit #>
+=item B<-lth type #>
 
-Only return desequilibre with highest pval lowest than pval_limit
+Only return rvar with type_score > #
 
 =cut
-    } elsif ($arg eq "-pval_limit") {
-      if (&RSAT::util::IsReal($arguments[0])) {
-        $main::pval_limit = shift(@arguments);
-      } else {
-        &RSAT::error::FatalError("-pval_limit argument : ",shift(@arguments)," is not natural");
-      }
+    } elsif ($arg eq "-lth") {
+	my $type =  shift(@arguments);
+	if ( $supported_lth{$type} ) {
+	    if (&RSAT::util::IsReal($arguments[0])) {
+		$lth{$type} = shift(@arguments);
+	    } else {
+		&RSAT::error::FatalError("-lth argument : ",shift(@arguments)," is not natural");
+	    }
+	} else {
+	    &RSAT::error::FatalError("type $type not supported with lth. Supperted type :",join(", ",keys(%supported_lth)));	
+	}
+=pod
 
+
+=item B<-uth type #>
+
+=cut
+    } elsif ($arg eq "-uth") {
+        my $type =  shift(@arguments);
+        if ( $supported_uth{$type} ) {
+            if (&RSAT::util::IsReal($arguments[0])) {
+                $uth{$type} = shift(@arguments);
+            } else {
+                &RSAT::error::FatalError("-uth argument : ",shift(@arguments)," is not natural");
+            }
+        } else {
+	    &RSAT::error::FatalError("type $type not supported with uth. Supperted type :",join(", ",keys(%supported_uth)));
+        }
 =pod
 
 =item B<-html #>
