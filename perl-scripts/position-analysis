@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.84 2013/08/18 14:54:52 jvanheld Exp $
+# $Id: position-analysis,v 1.85 2013/08/18 16:31:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -81,6 +81,7 @@ package main;
 
     ## Supported return fields
     our @supported_return_fields = qw(distrib
+				      occ
 				      index
 				      exp
 				      chi
@@ -98,6 +99,8 @@ package main;
     our $supported_return_fields = join ",", @supported_return_fields;
     our %return = (); ## Hash table with selected return fields
 
+    our $window_header = "mid";
+
 #    our $column_offset = 0;
     our %infile = (); our @infiles = ();
     our %outfile = (); our @outfiles = ();
@@ -111,9 +114,12 @@ package main;
     ## Tasks
     if (scalar(keys(%task)) == 0) {
       foreach my $task (@supported_tasks) {
-	$task{task} = 1;
+	$task{$task} = 1;
       }
     }
+
+    &RSAT::message::Info("Running tasks", join(",",sort(keys(%task))));
+
 
     ## Check oligonucleotide length
     unless ($oligo_length > 0) {
@@ -172,6 +178,10 @@ package main;
     }
     push @dirs , "output";
 
+
+    ################################################################
+    ## Specify output file names
+
     ## HTML file(s)
     if ($return{index}) {
       $outfile{html_index} = $output_prefix."_index.html";
@@ -182,13 +192,22 @@ package main;
 	$outfile{output_html} = $output_prefix.".html"; push @outfiles, "output_html";
     }
 
-    ## Specify output file names
+    ## Observed occurrence profiles
+    if ($return{occ}) {
+	$outfile{occ_profiles} = $output_prefix."_occ_profiles.tab"; push @outfiles, "occ_profiles";
+	if ($return{html}) {
+	    $outfile{occ_profiles_html} = $output_prefix."_occ_profiles.html"; push @outfiles, "occ_profiles_html";
+	}
+    }
+
+    ## Expected frequency profiles
     if ($return{exp}) {
 	$outfile{exp_profiles} = $output_prefix."_exp_profiles.tab"; push @outfiles, "exp_profiles";
 	if ($return{html}) {
 	    $outfile{exp_profiles_html} = $output_prefix."_exp_profiles.html"; push @outfiles, "exp_profiles_html";
 	}
     }
+
 
     ## Check output directory
     &RSAT::util::CheckOutDir($dir{output});
@@ -261,8 +280,8 @@ package main;
 
       ## Print the main result file
       &PrintResult();
-
-      &PrintExpectedProfiles() if ($return{exp});
+      &PrintProfiles("occ") if ($return{occ});
+      &PrintProfiles("exp") if ($return{exp});
     }
 
     ## Cluster oligonucleotides based on their occurrence profiles
@@ -444,7 +463,7 @@ sub ReadSequence {
 			      "length_sum=".$sum_seq_length,
 			      "last_pos=".$last_pos,
 			      "ref_pos=".$ref_pos,
-			     ) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
+			     ) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==1)));
 
 
     ## count oligonucleotides ####
@@ -581,6 +600,18 @@ sub CalcWindows {
 	}
 
 	$window_center{$window} = ($window_min{$window} + $window_max{$window})/2;
+	$window_interval{$window} = "[".$window_min{$window}.",".$window_max{$window}."]"; ## For display
+
+	if ($window_header eq "mid") {
+	  $window_header{$window} = $window_center{$window};
+	} elsif ($window_header eq "min") {
+	  $window_header{$window} = $window_min{$window};
+	} elsif ($window_header eq "max") {
+	  $window_header{$window} = $window_max{$window};
+	} else {
+	  $window_header{$window} = $window_interval{$window};
+	}
+
 	&RSAT::message::Debug ($window,
 			       "window_min=".$window_min{$window},
 			       "window_max=".$window_max{$window},
@@ -591,16 +622,42 @@ sub CalcWindows {
     ## min and max windows for calculating the chi2
     if (&IsInteger($min_pos)) {
 	$min_calc_window = POSIX::floor($min_pos/$pos_interval);
+	if ($min_calc_window > $min_window) {
+	  $min_calc_window = $min_window;
+	}
     } else {
 	$min_calc_window = $min_window;
     }
     if (&IsInteger($max_pos)) {
 	$max_calc_window = POSIX::floor($max_pos/$pos_interval);
+	if ($max_calc_window > $max_window) {
+	  $max_calc_window = $max_window;
+	}
     } else {
 #	die $max_window , "\n";
 	$max_calc_window = $max_window;
     }
     $calc_window_nb = $max_calc_window - $min_calc_window + 1;
+
+    &RSAT::message::Debug("pos_interval", $pos_interval,
+			  "min_pos", $min_pos,
+			  "min_pos/pos_interval", $min_pos/$pos_interval,
+			  "min_calc_window", $min_calc_window,
+			  "min_window", $min_window,
+			 ) if ($main::verbose >= 0);
+    &RSAT::message::Debug("pos_interval", $pos_interval,
+			  "max_pos", $max_pos,
+			  "max_pos/pos_interval", $max_pos/$pos_interval,
+			  "max_calc_window", $max_calc_window,
+			  "max_window", $max_window,
+			 ) if ($main::verbose >= 0);
+
+    ## 2013-08: temporarily set display windows to the same values as
+    ## calc windows. I will estimate later if it is worth maintaining
+    ## the display of profiles beyond the calculation windows.
+    $min_display_window = $min_calc_window;
+    $max_display_window = $max_calc_window;
+    $display_window_nb = $max_display_window - $min_display_window + 1;
 
     ## positions per window
     $sum_pos_per_window  = 0;
@@ -1235,6 +1292,19 @@ OPTIONS
 		of applicability. Instead, mark them by including the
 		chi2 value in curly brackets.
 
+	-header mid | min | max | interval
+
+		Information to display in column headers of the
+		distributions.
+
+                  mid: class middle points (centers)
+
+                  min: class min
+
+                  max: class max
+
+                  interval: class intervals: [min,max]
+
 	-img_format
 		Image format (this parameter is passed to XYgraph).
 
@@ -1290,6 +1360,7 @@ position-analysis options
 -maxpos		maximal position for chi-square calculation
 -nocheck	do not check applicability condition for the chi2
 -nofilter	don\'t discard oligos which do not fit applicability condition
+-header         info for header of distribution columns. Supported: mid,min,max,interval
 -title		title for the index table and position profile plots.
 
 End_of_help
@@ -1529,6 +1600,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-img_format") {
 	    $img_format = $ARGV[$a+1];
 
+	} elsif ($ARGV[$a] eq "-header") {
+	    $window_header = $ARGV[$a+1];
+
 	} elsif ($ARGV[$a] eq "-title") {
 	    $title = $ARGV[$a+1];
 
@@ -1620,15 +1694,17 @@ sub Verbose {
 sub PrintWindowLimits {
   my ($out_handle) = @_;
     print $out_handle "; Position intervals:\n";
-    print $out_handle join ("\t", ";", "window", "\[min", "max\]", "mid", "seq", "occ"), "\n";
+    print $out_handle join ("\t", ';', 'window', '[min,max]', 'mid', 'seq', 'occ'), "\n";
     for my $window ($min_calc_window..$max_calc_window) {
 	print $out_handle join ("\t",  ";",
-			 $window - $min_calc_window + 1,
-			 "\[".$window_min{$window},
-			 $window_max{$window}."\]",
-			 $window_center{$window},
-			 $seq_per_window{$window},
-			 $pos_per_window{$window}), "\n";
+				$window - $min_calc_window + 1,
+				$window,
+#				"\[".$window_min{$window},
+#				$window_max{$window}."\]",
+				$window_interval{$window},
+				$window_center{$window},
+				$seq_per_window{$window},
+				$pos_per_window{$window}), "\n";
     }
     print $out_handle ";\n";
 }
@@ -1691,20 +1767,18 @@ sub PrintResult {
 #  ## Keep track of the number of columns exporte before the distribution, to be passed do cluster_position_profiles.R
 #  $column_offset = scalar(@out_col);
 
-  ## Add the distribution in the main output file.
+  ################################################################
+  ## Print occurrence distribution in the main output file.
   ##
   ## Note: this should soon be changed (2013-08), it is cleaner to
   ## export separate files with the different distributions
   ## (occurrences, frequencies, expected frequencies, ...).
   if ($return{'distrib'}) {
+    my $w=0;
       for my $window ($min_calc_window..$max_calc_window) {
-	  push @out_col, $window_center{$window}; push @col_descriptions, 'observed window occurrences';
+	$w++;
+	push @out_col, $window_header{$window}; push @col_descriptions, join ("\t", 'occurrences in window', $w, $window_interval{$window});; #'observed window occurrences';
       }
-#    if ($return{exp}) {
-#      for my $window ($min_calc_window..$max_calc_window) {
-#	push @out_col, $window_center{$window}; push @col_descriptions ,'expected window occurrences';
-#      }
-#    }
   }
 
   ## Column content description
@@ -1756,11 +1830,6 @@ sub PrintResult {
       }
     }
 
-#     if (($return{exp}) && ($return{'distrib'})) {
-#       for my $window ($min_calc_window..$max_calc_window) {
-# 	printf $out "\t%.1f", $exp_occ{$oligo_seq}{$window};
-#       }
-#     }
     print $out "\n";
   }
 
@@ -1770,7 +1839,8 @@ sub PrintResult {
   print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
   close $out;
 
-  ## Generate an HTML output file if required
+  ################################################################
+  ## Generate an HTML output file with the main output if required
   if ($outfile{output_html}) {
     &RSAT::message::TimeWarn("Generating HTML table", $outfile{html}) if ($main::verbose >= 2);
     my $cmd = $SCRIPTS."/text-to-html";
@@ -1780,51 +1850,82 @@ sub PrintResult {
   }
 }
 
+
 ################################################################
-## Print expected occurrence profiles in a separate file
-sub PrintExpectedProfiles {
-  &RSAT::message::TimeWarn("Printing expected occurrence profiles") if ($main::verbose >= 2);
-  $out_exp = &OpenOutputFile($outfile{exp_profiles});
+## Print a separate file with profiles:
+## - one row per oligonucleotide
+## - one column per position window
+sub PrintProfiles {
+
+  my $profile_type = shift(@_) || "occ";
+
+  my %profile_desc = ("occ"=>"observed occurrences",
+		      "exp"=>"expected occurrences");
+
+  &RSAT::message::TimeWarn("Printing", $profile_type,"profiles") if ($main::verbose >= 2);
+
+  my $out_profile = &OpenOutputFile($outfile{$profile_type.'_profiles'});
 
   ## Print header
-  print $out_exp "; position-analysis";
-  &PrintArguments($out_exp);
+  print $out_profile "; position-analysis";
+  &PrintArguments($out_profile);
 
-  print $out_exp "; Profiles of expected occurrences\n";
+  print $out_profile "; Profiles of ", $profile_desc{$profile_type},"\n";
 
   ## Output columns
   my @out_col = (); @col_descriptions = ();
   push @out_col, 'seq'; push @col_descriptions, 'pattern sequence';
   push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
+  my $w = 0;
   for my $window ($min_calc_window..$max_calc_window) {
-    push @out_col, $window_center{$window}; push @col_descriptions ,'expected window occurrences';
+    $w++;
+    push @out_col, $window_header{$window}; push @col_descriptions ,join ("\t", $profile_desc{$profile_type},'in window', $w, $window_interval{$window});
   }
+  ## Column content
 
   ## Print window limits
-  &PrintWindowLimits($out_exp);
+  &PrintWindowLimits($out_profile);
 
   ## Column content description
   if ($main::verbose >= 1) {
-    print $out_exp "; column headers\n";
+    print $out_profile "; column headers\n";
     foreach my $c (0..$#out_col) {
-      printf $out_exp ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_descriptions[$c];
+      printf $out_profile ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_descriptions[$c];
     }
   }
 
   ### Print header
-  print $out_exp "#", join("\t", @out_col), "\n";
+  print $out_profile "#", join("\t", @out_col), "\n";
 
   ### Pattern distributions
   foreach my $oligo_seq (@sorted_keys) {
-    print $out_exp "$oligo_seq";	### Pattern sequence
-    print $out_exp "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
+    print $out_profile "$oligo_seq";	### Pattern sequence
+    print $out_profile "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
+    my $value;
     for my $window ($min_calc_window..$max_calc_window) {
-      printf $out_exp "\t%.1f", $exp_occ{$oligo_seq}{$window} || 0;
+      if ($profile_type eq "exp") {
+	$value =  sprintf "%.1f", $exp_occ{$oligo_seq}{$window} || 0;
+      } elsif ($profile_type eq "occ") {
+	$value = $window_occ{$oligo_seq}{$window} || 0;
+      } else {
+	&RSAT::error::FatalError("Invalid profile type", $profile_type);
+      }
+      print $out_profile "\t", $value;
+#       &RSAT::message::Debug("Printing profile",
+# 			    $profile_type,
+# 			    $oligo_seq,
+# 			    "window=".$window,
+# 			    "min_window=".$min_window,
+# 			    "max_window=".$max_window,
+# 			    "min_calc_window=".$min_calc_window,
+# 			    "max_calc_window=".$max_calc_window,
+# 			    $value,
+# 			   ) if ($main::verbose >= 10);
     }
-    print $out_exp "\n";
+    print $out_profile "\n";
   }
   &RSAT::message::TimeWarn("Exp. profiles", $outfile{exp_profiles}) if ($main::verbose >= 2);
-  close ($out_exp);
+  close ($out_profile);
 
   ## Generate an HTML output file if required
   if ($outfile{exp_profiles_html}) {
@@ -1989,7 +2090,8 @@ sub GenerateGraphs {
 	print "; $command\n" if ($main::verbose >= 3);
 	open XY, "| $command";
 	print XY ";window\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
-	foreach my $window ($min_window..$max_window) {
+	foreach my $window ($min_display_window..$max_display_window) {
+#	foreach my $window ($min_window..$max_window) {
 	    print XY "$window_center{$window}\t";
 	    print XY $window_occ{$oligo_seq}{$window} || 0, "\t";
 	    print XY "$exp_occ{$oligo_seq}{$window}\n";
