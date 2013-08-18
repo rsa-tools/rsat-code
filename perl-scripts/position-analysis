@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.83 2013/07/15 13:07:26 jvanheld Exp $
+# $Id: position-analysis,v 1.84 2013/08/18 14:54:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -70,6 +70,15 @@ package main;
     our $supported_seq_types = sort keys %supported_seq_type;
     our $seq_type = "any";
 
+    ## Supported tasks
+    our @supported_tasks = qw(pos clusters graphs index);
+    our %supported_task = ();
+    foreach my $field (@supported_tasks) {
+	$supported_task{$field} = 1;
+    }
+    our $supported_tasks = join ",", @supported_tasks;
+    our %task=();
+
     ## Supported return fields
     our @supported_return_fields = qw(distrib
 				      index
@@ -87,15 +96,24 @@ package main;
 	$supported_return_field{$field} = 1;
     }
     our $supported_return_fields = join ",", @supported_return_fields;
+    our %return = (); ## Hash table with selected return fields
 
-
-    our %outfile = (); our @outfiles = ();
+#    our $column_offset = 0;
     our %infile = (); our @infiles = ();
+    our %outfile = (); our @outfiles = ();
+    our %graphfile = (); our @graphfiles = (); ## graph files to index + display
 
     &ReadArguments();
 
     ##############################
     ## Check parameter values
+
+    ## Tasks
+    if (scalar(keys(%task)) == 0) {
+      foreach my $task (@supported_tasks) {
+	$task{task} = 1;
+      }
+    }
 
     ## Check oligonucleotide length
     unless ($oligo_length > 0) {
@@ -139,7 +157,7 @@ package main;
     ## be saved in the same directory as the output file.
     if ($outfile{output}) {
 	push @outfiles, "output";
-	$dir{output} =`dirname $outfile{output}`; push @dirs , "output";
+	$dir{output} =`dirname $outfile{output}`; 
 	$output_prefix = $outfile{output};
 	$output_prefix =~ s/\.tab$//;
 	chomp $dir{output};
@@ -152,6 +170,7 @@ package main;
 	}
 	$dir{output} = ".";
     }
+    push @dirs , "output";
 
     ## HTML file(s)
     if ($return{index}) {
@@ -174,77 +193,109 @@ package main;
     ## Check output directory
     &RSAT::util::CheckOutDir($dir{output});
 
-    ## Open output stream
-    our $out = &OpenOutputFile($outfile{output});
+    ## Analyze oligonucleotide positional occurrence profiles
+    if ($task{pos}) {
+      ## Open output stream
+      our $out = &OpenOutputFile($outfile{output});
 
-    ### open sequence file
-    &CheckInputSeqFormat($in_format);
-    ($in, $input_dir) = &OpenInputFile($infile{sequences});
+      ### open sequence file
+      &CheckInputSeqFormat($in_format);
+      ($in, $input_dir) = &OpenInputFile($infile{sequences});
 
-    &LocalReadPatterns() if ($pattern_file);
-    &ReadSequence();
-    &CheckDNA() if ($seq_type == "dna");
+      &LocalReadPatterns() if ($pattern_file);
 
-    &CheckZeroOcc();
-    &CalcWindows();
+      &ReadSequence();
+      &CheckDNA() if ($seq_type == "dna");
 
-    ### statistics on oligo occurrences
-    &RSAT::message::TimeWarn("Calculating sums of occurrences") if ($main::verbose >= 2);
-    foreach my $oligo_seq (sort keys %pattern) {
+      &CheckZeroOcc();
+      &CalcWindows();
+
+      ### statistics on oligo occurrences
+      &RSAT::message::TimeWarn("Calculating sums of occurrences") if ($main::verbose >= 2);
+      foreach my $oligo_seq (sort keys %pattern) {
 	$sum_occurrences += $pattern{$oligo_seq}->{occ};
 	$sum_overlaps += $pattern{$oligo_seq}->{overlaps};
-    }
+      }
 
-    &CalcInboundOcc();
+      &CalcInboundOcc();
 
-    if ($bg_method eq "markov") {
+      if ($bg_method eq "markov") {
 	&CalcExpectedUsingMarkov();
-    } else {
+      } else {
 	&CalcExpected();
-    }
+      }
 
-    &SumStrands() if ($strands eq "2str");
+      &SumStrands() if ($strands eq "2str");
 
-    &RSAT::message::Info("Number of patterns before filtering", scalar(keys(%pattern))) if ($main::verbose >= 2);
+      &RSAT::message::Info("Number of patterns before filtering", scalar(keys(%pattern))) if ($main::verbose >= 2);
 
-    ## If a pattern file has been specified, forget info about other patterns
-    if ($pattern_file) {
+      ## If a pattern file has been specified, forget info about other patterns
+      if ($pattern_file) {
 	foreach my $oligo_seq (sort keys %pattern) {
-	    unless ($selected_pattern{$oligo_seq}) {
-		delete $pattern{$oligo_seq};
-		#	    delete $pattern{$oligo_seq}->{occ};
-	    }
+	  unless ($selected_pattern{$oligo_seq}) {
+	    delete $pattern{$oligo_seq};
+	    #	    delete $pattern{$oligo_seq}->{occ};
+	  }
 	}
 	&RSAT::message::Info("Filtered non-selected patterns (pattern file $pattern_file)", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
-    }
+      }
 
 
-    ## Check threshold on occurrences
-    if (defined($lth{'occ'})) {
+      ## Check threshold on occurrences
+      if (defined($lth{'occ'})) {
 	foreach my $oligo_seq (sort keys %pattern) {
-	    if ($pattern{$oligo_seq}->{occ} < $lth{'occ'}) {
-		delete $pattern{$oligo_seq};
-		#	    delete $pattern{$oligo_seq}->{occ};
-	    }
+	  if ($pattern{$oligo_seq}->{occ} < $lth{'occ'}) {
+	    delete $pattern{$oligo_seq};
+	    #	    delete $pattern{$oligo_seq}->{occ};
+	  }
 	}
 	&RSAT::message::Info("Filtered by occurrences", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
+      }
+
+      ## Compute the chi-squared statistics and p-value
+      &CalcChi() if ($return{chi});
+
+      &RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
+
+      &Verbose() if ($main::verbose >= 1);
+
+      ## Print the main result file
+      &PrintResult();
+
+      &PrintExpectedProfiles() if ($return{exp});
     }
 
-    ## Compute the chi-squared statistics and p-value
-    &CalcChi() if ($return{chi});
+    ## Cluster oligonucleotides based on their occurrence profiles
+    if ($return{clusters}) {
+	$dir{clusters} = $output_prefix."_clusters"; push @dirs, "clusters";
+	$outfile{clusters} = $output_prefix."_clusters.tab"; push @outfiles, "clusters";
 
-    &RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
 
-    &Verbose() if ($main::verbose >= 1);
+	my $cluster_prefix = &ShortFileName($output_prefix);
+	$outfile{cluster_heatmap} = $dir{clusters}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap";
+	$outfile{cluster_occ_profiles} = $dir{clusters}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles";
+	$outfile{cluster_freq_profiles} = $dir{clusters}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles";
+	$outfile{cluster_median_profiles_plot} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles_plot";
+	$outfile{cluster_median_profiles} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles";
 
-    ## Print the main result file
-    &PrintResult();
+	&ProfileClustering() if ($task{clusters});
+    }
 
-    &PrintExpectedProfiles() if ($return{exp});
-    &ProfileClustering() if ($return{clusters});
-    &GenerateGraphs() if ($return{graphs});
+    if  ($return{graphs}) {
+	## Define index name for the graphs
+	if ($outfile{output}) {
+	    $outfile{graph_index} = $outfile{output}; push @outfiles, "graph_index";
+	    $outfile{graph_index} =~ s/\.tab$//; ## Suppress tab extension
+	    $outfile{graph_index} .= "_graph_index.html";
+	} else {
+	    $outfile{graph_index} = "$dir{output}/graph_index_${oligo_length}nt_ci${pos_interval}_$strands.html";
+	}
+	push @outfiles, "graph_index";
+	&GenerateGraphs() if ($task{graphs});
+    }
 
-    &HtmlIndex() if ($return{index});
+    ## Generate the HTML report
+    &HtmlIndex() if (($return{index}) && ($task{index}));
 
     exit(0);
 }
@@ -378,7 +429,6 @@ sub ReadSequence {
       $ref_pos = 0;
     }
     $ref_pos += $offset;
-
 
 
     #	if (($origin eq "-0") || ($origin < 0)) {
@@ -522,7 +572,6 @@ sub CalcWindows {
     ### Window definition
     $window_nb = $max_window + 1;
     for my $window ($min_window..$max_window) {
-
 	if (($origin eq  '-0') || ($origin < 0)) {
 	    $window_min{$window} = $window *$pos_interval;
 	    $window_max{$window} = ($window+1)*$pos_interval -1;
@@ -1098,6 +1147,28 @@ OPTIONS
 		Several return fields can be entered, separated by
 		commas.
 
+	-task   task1,task2,...
+
+		Supported tasks:
+
+		   pos: analyze oligonucleotide occurrences ("main"
+		   	analysis)
+
+		   clusters: cluster oligonucleotides according to
+		        their occurrence profiles.
+		   
+		   graphs: generate a XY graph with the occurernce
+		        profile of each oligonucleotide.
+
+		   index: generate the HTML file with links to the
+   		        result files.
+
+		Run specific tasks rather than the whole analysis. 
+
+		This option mainly serve to avoir re-running the whole
+		sequence analysis for re-running cluster analysis with
+		modified parameters.
+
 	-markov markov_order
 		Order for the Markov model use to compute
 		position-specific expected word frequencies.
@@ -1204,7 +1275,8 @@ position-analysis options
 -nogrouprc	do not group reverse complement pairs
 -noov		no overlap
 -sort		sort oligonucleotides according to the chi2 statistics
--return		html,chi,distrib,exp,graph,rank,clusters
+-return		fields to return. Supported: html,chi,distrib,exp,graph,rank,clusters
+-task		run specific tasks. Supported: pos, clusters, graphs
 -markov		markov order for computing background k-mer frequencies
 -lth_chi	lower threshold on chi2
 -lth_sig	lower threshold on significance of the chi2 statistics
@@ -1341,11 +1413,20 @@ sub ReadArguments {
 
 	    ### return values
 	} elsif ($ARGV[$a] eq "-return") {
-	    @fields_to_return = split ",", lc($ARGV[$a+1]);
+	    my @fields_to_return = split ",", lc($ARGV[$a+1]);
 	    foreach my $field (@fields_to_return) {
 	      &RSAT::error::FatalError($field, "is not a valid return field. Supported: ".$supported_return_fields)
 		unless ($supported_return_field{$field});
 	      $return{$field} = 1;
+	    }
+
+	    ## Tasks
+	} elsif ($ARGV[$a] eq "-task") {
+	    my @tasks_to_run = split ",", lc($ARGV[$a+1]);
+	    foreach my $task (@tasks_to_run) {
+	      &RSAT::error::FatalError($task, "is not a valid task. Supported: ".$supported_tasks)
+		unless ($supported_task{$task});
+	      $task{$task} = 1;
 	    }
 
 	    ## Markov order
@@ -1606,10 +1687,19 @@ sub PrintResult {
   if ($return{'rank'}) {
     push @out_col, "rank"; push @col_descriptions, 'rank of the pattern according to sorting criterion';
   }
+
+#  ## Keep track of the number of columns exporte before the distribution, to be passed do cluster_position_profiles.R
+#  $column_offset = scalar(@out_col);
+
+  ## Add the distribution in the main output file.
+  ##
+  ## Note: this should soon be changed (2013-08), it is cleaner to
+  ## export separate files with the different distributions
+  ## (occurrences, frequencies, expected frequencies, ...).
   if ($return{'distrib'}) {
-    for my $window ($min_calc_window..$max_calc_window) {
-      push @out_col, $window_center{$window}; push @col_descriptions, 'observed window occurrences';
-    }
+      for my $window ($min_calc_window..$max_calc_window) {
+	  push @out_col, $window_center{$window}; push @col_descriptions, 'observed window occurrences';
+      }
 #    if ($return{exp}) {
 #      for my $window ($min_calc_window..$max_calc_window) {
 #	push @out_col, $window_center{$window}; push @col_descriptions ,'expected window occurrences';
@@ -1770,22 +1860,25 @@ sub CheckDNA {
 sub ProfileClustering {
   &RSAT::message::TimeWarn("Clustering oligomers on the basis of their positional occurrence profiles.") if ($main::verbose >= 2);
 
-  $dir{clusters} = $output_prefix."_clusters"; push @dirs, "clusters";
-  $outfile{clusters} = $output_prefix."_clusters.tab"; push @outfiles, "clusters";
-
   my $r_path = &RSAT::server::GetProgramPath("R", 1);
   &RSAT::message::Info("R path", $r_path) if ($main::verbose >= 3);
 
   my $pos_cluster_script  = $ENV{RSAT}."/R-scripts/cluster_position_profiles.R";
   &RSAT::error::FatalError("Cannot read position clustering script", $pos_cluster_script) unless (-r $pos_cluster_script);
 
-  my $pos_drawing_offset = -$pos_interval/2;
+#  my $pos_drawing_offset = -($pos_interval-1)/2;
+  my $pos_drawing_offset = 0;
+  
+
 
   my  $pos_cluster_cmd = "cat ".$pos_cluster_script;
   $pos_cluster_cmd .= " | R --slave --no-save --no-restore --no-environ";
   $pos_cluster_cmd .= " --args \"";
   $pos_cluster_cmd .= "file.pos='".$outfile{output}."'";
   $pos_cluster_cmd .= ";pos.offset=".$pos_drawing_offset;
+  $pos_cluster_cmd .= ";display.intervals=FALSE";
+#  $pos_cluster_cmd .= ";column.offset=".$column_offset;
+  $pos_cluster_cmd .= ";round.positions=TRUE";
   $pos_cluster_cmd .= "\"";
   &doit($pos_cluster_cmd, $dry_run, $die_on_error, $verbose);
 }
@@ -1810,19 +1903,6 @@ sub GenerateGraphs {
     $date = &AlphaDate();
     chomp $date;
     &RSAT::message::TimeWarn("Generating graphs") if ($main::verbose >= 2);
-
-    ## Index for the graphs
-    if ($outfile{output}) {
-	$outfile{graph_index} = $outfile{output}; push @outfiles, "graph_index";
-	$outfile{graph_index} =~ s/\.tab$//; ## Suppress tab extension
-	$outfile{graph_index} .= "_graph_index.html";
-
-	#    $outfile{html} = $outfile{output};
-	#    $outfile{html} =~ s /\.tab$//;
-	#    $outfile{html} .= ".html";
-    } else {
-	$outfile{graph_index} = "$dir{output}/graph_index_${oligo_length}nt_ci${pos_interval}_$strands.html";
-    }
 
     &RSAT::message::Info("Graph index", $outfile{graph_index}) if ($main::verbose >= 2);
     local $graph_index = &OpenOutputFile($main::outfile{graph_index});
