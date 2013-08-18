@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-ensembl,v 1.7 2013/06/13 14:21:08 jvanheld Exp $
+# $Id: supported-organisms-ensembl,v 1.8 2013/08/18 10:00:33 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -74,11 +74,10 @@ USAGE
         supported-organisms-ensembl
 
 AUTHOR
-	oly\@bigre.ulb.ac.be
+	Olivier Sand <oly\@bigre.ulb.ac.be>
 
 DESCRIPTION
-	Returns the list of Ensembl organisms supported on this site of
-	Regulatory Sequence Analysis Tools.
+	Returns the list of organisms supported on the Ensembl database.
 
 CATEGORY
 	genomics
