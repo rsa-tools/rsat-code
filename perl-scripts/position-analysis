@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.86 2013/08/18 16:33:43 jvanheld Exp $
+# $Id: position-analysis,v 1.87 2013/08/18 16:36:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -604,6 +604,8 @@ sub CalcWindows {
 
 	if ($window_header eq "mid") {
 	  $window_header{$window} = $window_center{$window};
+	} elsif ($window_header eq "midfloor") {
+	  $window_header{$window} = POSIX::floor($window_center{$window});
 	} elsif ($window_header eq "min") {
 	  $window_header{$window} = $window_min{$window};
 	} elsif ($window_header eq "max") {
@@ -1292,12 +1294,16 @@ OPTIONS
 		of applicability. Instead, mark them by including the
 		chi2 value in curly brackets.
 
-	-header mid | min | max | interval
+	-header mid | midfloor | min | max | interval
 
 		Information to display in column headers of the
 		distributions.
 
                   mid: class middle points (centers)
+
+                  midfloor: floor of class middle points (centers).
+                      this avoids to display non-integer mid points
+                      (e.g. for interval 1-10 the midpoint is 5.5)
 
                   min: class min
 
