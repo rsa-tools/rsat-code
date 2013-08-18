@@ -2698,6 +2698,30 @@ sub IndexFiles {
     print $html_index "</table>\n";
   }
 
+  ## Graph files (link + display image) Note: Web browsers are
+  ## generally able to display some image formats (jpg, gif, png) but
+  ## not others (pdf, ps, eps).
+  if (scalar(@graphfiles) >= 1) {
+    print $html_index "<h2>Graph files</h2>";
+    print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+    print $html_index "<tr>\n";
+    print $html_index "<th>Type</th>";
+    print $html_index "<th>File</th>";
+    print $html_index "<th>Image</th>";
+    print $html_index "</tr>\n";
+    foreach my $key (@graphfiles) {
+      my $file = $graphfile{$key};
+      my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+      print $html_index "<tr>\n";
+      print $html_index "<td>".$key."</td>";
+      print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+      print $html_index "<td><a href='".$link."'><img width='200' src='".$link."'></a></td>";
+      print $html_index "<td></td>";
+      print $html_index "</tr>\n";
+    }
+    print $html_index "</table>\n";
+  }
+
   ## Directories
   if (scalar(@dirs) >= 1) {
     print $html_index "<h2>Directories</h2>";
