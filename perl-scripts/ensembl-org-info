@@ -198,6 +198,10 @@ sub PrintHelp {
 USAGE
 	ensembl-org-info -org organism [-o outpufile]
 
+AUTHORS
+        Olivier Sand <oly\@bigre.ulb.ac.be>
+        Jacques van Helden <Jacques.van-Helden\@univ-amu.fr>
+
 DESCRIPTION
 	Returns the list of chromosomes for a given organism.
 
