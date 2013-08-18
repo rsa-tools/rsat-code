@@ -273,7 +273,7 @@ if (draw.plots) {
 
   ## ##############################################################
   ## Plot frequency profiles for all clusters together
-  file.prefix <- file.path(dir.clusters, paste(sep='', prefix, 'freq_profiles_k',nb.clusters,'_all_clusters_'))
+  file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_freq_profiles_k',nb.clusters,'_all_clusters_'))
   mfrow.rows <- min(nb.clusters, 4)
   mfrow.cols <- max(1, ceiling(nb.clusters/5))
   ## x11(width=6*mfrow.cols, height=4*mfrow.rows)
@@ -316,7 +316,7 @@ if (draw.plots) {
   
 
   ## Plot occurrence profiles for all clusters together
-  file.prefix <- file.path(dir.clusters, paste(sep='', prefix, 'occ_profiles_k',nb.clusters,'_all_clusters_'))
+  file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_occ_profiles_k',nb.clusters,'_all_clusters_'))
   ##  x11(width=6*mfrow.cols, height=4*mfrow.rows)
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=6*mfrow.cols, height=4*mfrow.rows)
   par(mfrow=c(mfrow.rows, mfrow.cols))
@@ -438,7 +438,7 @@ if (draw.plots) {
       
       ## Plot occurrence profiles for each cluster
       for (i in 1:length(table(clusters))) {
-        file.prefix <- file.path(dir.clusters, paste(sep='', prefix, 'occ_profile_k', nb.clusters, '_c', i, '_'))
+        file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_occ_profile_k', nb.clusters, '_c', i, '_'))
         open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=10,height=5)
         par(cex=0.7)
         par(cex.lab=0.7)
