@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.85 2013/08/18 16:31:27 jvanheld Exp $
+# $Id: position-analysis,v 1.86 2013/08/18 16:33:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -622,7 +622,7 @@ sub CalcWindows {
     ## min and max windows for calculating the chi2
     if (&IsInteger($min_pos)) {
 	$min_calc_window = POSIX::floor($min_pos/$pos_interval);
-	if ($min_calc_window > $min_window) {
+	if ($min_calc_window < $min_window) {
 	  $min_calc_window = $min_window;
 	}
     } else {
