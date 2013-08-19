@@ -741,8 +741,18 @@ sub parse_from_row {
   if (($in_format eq "gff") || ($in_format eq "gff3")) {
     $self->set_attribute("feature_name", $self->get_attribute("source"));
     $self->set_attribute("description", $self->get_attribute("attribute"));
+
   } elsif ($in_format eq "swembl")  {
-    my $name = join("_", 
+    ## SWEMBL occasionally returns peak with a negative start
+    ## coordinate ! I guess this is due to the algorithm for defining
+    ## the peak width, but it creates obvious problems with the
+    ## programs used to further analyze the peaks. We circumvent this
+    ## by replacing negative and null values by 1.
+    if ($self->get_attribute("start") < 0) {
+      $self->force_attribute("start", 1)
+    }
+
+    my $name = join("_",
 		    $self->get_attribute("seq_name"),
 		    $self->get_attribute("start"),
 		    $self->get_attribute("end"),
@@ -750,6 +760,7 @@ sub parse_from_row {
 		    );
     $self->set_attribute("feature_name", $name);
     $self->set_attribute("description", $self->get_attribute("feature_name"));
+
   } elsif ($in_format eq "galaxy_seq")  {
     $self->set_attribute("ft_type", "");
     $row =~ s/^\s*>//;
@@ -768,7 +779,7 @@ sub parse_from_row {
     }
   }
 
-  ## parse attributes from the attribute/description field
+  ## Parse attributes from the attribute/description field
   my $description = "";
   if (($in_format eq "gff") || ($in_format eq "gff3")) {
     $description = $self->get_attribute("attribute");
@@ -1107,8 +1118,6 @@ sub header {
     return $header;
 }
 
-
-################################################################
 
 =pod
 
