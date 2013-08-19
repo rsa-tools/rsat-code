@@ -31,7 +31,6 @@ export.plot <- function (file.prefix="PlotExport",
 
    for (f in export.formats) {
      from.dev <- dev.cur();
-
      open.plot.device(file.prefix,format=f, width=width,height=height,horizontal=horizontal, ...)
      to.dev <- dev.cur()
      dev.set(which=from.dev)
