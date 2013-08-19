@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.13 2013/08/19 16:33:12 jeremy Exp $
+# $Id: variation-scan,v 1.14 2013/08/19 16:54:24 jeremy Exp $
 #
 ############################################################
 
@@ -180,7 +180,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
   our $output_lines = 0;
 
   our %infile	= ();
@@ -203,8 +203,8 @@ package	main;
 
   our %lth = ();
   our %supported_lth = ();
-  $supported_lth{'score'} = -100;
-  $supported_lth{'w_diff'} = 0;
+  $supported_lth{'score'} = 1;
+  $supported_lth{'w_diff'} = 1;
   $supported_lth{'pval_ratio'} = 1;
 
   our $calc_distrib = 0;
@@ -673,14 +673,12 @@ sub Analyse_scanning {
 	chomp($line);
 
 	my %line_info = &getLineInfo($line);
-
-	my $same_matrice   =  !$scanning_info{'matrice'} || $line_info{'matrice'} eq $scanning_info{'matrice'};
 	my $same_variation =  !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
 
 	$same_variant_len = 0 if ( length($line_info{'variant_alt'}) != length($line_info{'variant_ref'}) );
 	$same_variant_len = 0 if ( $line_info{'variant_alt'} eq '-' || $line_info{'variant_ref'} eq '-' );
 
-	unless ( $same_matrice || $same_variation ) {
+	unless ( $same_variation ) {
 	    &Analyse_variation(\%scanning_info,\%scanning_score_pos,\%scanning_score_var );
 	    %scanning_score_pos = ();
 	    %scanning_score_var = ();
@@ -897,7 +895,7 @@ sub Printline {
   my $str = "";
   $str .= $scanning_info{'matrice'}."\t";
   $str .= $matrix_list{$scanning_info{'matrice'}}{'id'}."\t";
- # $str .= $scanning_info{'variation'}."\t".$scanning_info{'type'}."\t".$scanning_info{'coord'}."\t";
+  $str .= $scanning_info{'variation'}."\t".$scanning_info{'type'}."\t".$scanning_info{'coord'}."\t";
   $str .= $scanning_info{'best_score'}."\t".$scanning_info{'worst_score'}."\t";  # weigth
   $str .= sprintf("%.2f",$scanning_info{'w_diff'})."\t"; #w_diff
   $str .= $scanning_info{'best_pval'}."\t".$scanning_info{'worst_pval'}."\t";  # pvalues
