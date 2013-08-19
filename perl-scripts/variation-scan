@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.12 2013/08/16 18:23:53 rsat Exp $
+# $Id: variation-scan,v 1.13 2013/08/19 16:33:12 jeremy Exp $
 #
 ############################################################
 
@@ -180,7 +180,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
   our $output_lines = 0;
 
   our %infile	= ();
@@ -696,10 +696,12 @@ sub Analyse_scanning {
 	    $scanning_score_var{$line_info{'variant_alt'}}{'score'} = $line_info{'score'};
 	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_offset_start'}}, $line_info{'site_offset_start'});
 	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'});
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
 
 	} elsif ( $scanning_score_var{$line_info{'variant_alt'}}{'score'} == $line_info{'score'} ){
 	    push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_offset_start'}}, $line_info{'site_offset_start'} );
             push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'} );
+            push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
 	}
 
 	$scanning_info{'matrice'} = $line_info{'matrice'};
@@ -733,7 +735,7 @@ sub Analyse_variation {
 
 		if  (scalar( @scores ) == 1 ) {
 		    push (@{$scanning_score{$scores[0]}{'site_offset_start'}}, $offset);
-		    push (@{$scanning_score{$scores[0]}{'site_strand'}}, $site_strand);		    
+		    push (@{$scanning_score{$scores[0]}{'site_strand'}}, $site_strand);
 		}
 
 		&Compare(\%scanning_info,\%scanning_score);
@@ -742,12 +744,12 @@ sub Analyse_variation {
 
     # Compare best score for each variant
     } else {
-	%scanning_score  = ();
+	my %scanning_score  = ();
 	foreach my $variant ( keys (%scanning_score_var ) ) {
-	    $score = $scanning_score_var{$variant};
+	    $score = $scanning_score_var{$variant}{'score'};
 	    push (@{ $scanning_score{$score}{'variant_alt'} }, $variant);
-	    push (@{ $scanning_score{$score}{'offset'} }, join(",",@{$scanning_score_var{$variant}{'site_offset_start'}}) );
-	    push (@{ $scanning_score{$score}{'strand'} }, join(",",@{$scanning_score_var{$variant}{'site_strand'}}) );
+	    push (@{ $scanning_score{$score}{'site_offset_start'} }, join(",",@{$scanning_score_var{$variant}{'site_offset_start'}}) );
+	    push (@{ $scanning_score{$score}{'site_strand'} }, join(",",@{$scanning_score_var{$variant}{'site_strand'}}) );
 	    push (@{ $scanning_score{$score}{'seq'} }, join(",",@{$scanning_score_var{$variant}{'seq'}}) );
 	}
 	&Compare(\%scanning_info,\%scanning_score);
@@ -762,6 +764,7 @@ sub Compare {
     my %scanning_score = %{ $scanning_score };
 
     my @sorted_score = sort {$b <=> $a} ( keys( %scanning_score ) );
+    
     foreach my $score (@sorted_score) {
 	next if ($score == $sorted_score[-1] && scalar(@sorted_score) > 1);
 	my $best_score = $sorted_score[0];
