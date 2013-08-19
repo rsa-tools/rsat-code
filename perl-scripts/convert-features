@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.38 2013/04/23 16:37:48 amedina Exp $
+# $Id: convert-features,v 1.39 2013/08/19 00:09:19 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -137,6 +137,25 @@ while (<$in>) {
     $feature->force_attribute("ft_id", $id);
   }
 
+  ## Export summits instead of full peak length
+  if ($summits) {
+    my $summit = $feature->get_attribute("summit");
+    $feature->force_attribute("start", $summit);
+    $feature->force_attribute("end", $summit);
+  }
+
+  ## Extend start coordinate leftwise
+  if ($extend_start) {
+    my $start = $feature->get_attribute("start");
+    $feature->force_attribute("start", $start - $extend_start);
+  }
+
+  ## Extend end coordinate rightwise
+  if ($extend_end) {
+    my $end = $feature->get_attribute("end");
+    $feature->force_attribute("end", $end + $extend_end);
+  }
+
   ## Check BED-specific attributes
   if ($output_format eq "bed") {
 
@@ -146,6 +165,12 @@ while (<$in>) {
     ## set feature color
     &set_color($feature);
 #    &RSAT::message::Debug("assigned color to feature", $feature->get_attribute("feature_name"),$feature->get_attribute("itemRgb")) if ($main::verbose >= 5);
+
+    if ($input_format eq "swembl") {
+      my $summit = $feature->get_attribute("summit");
+      $feature->force_attribute("thickStart", $summit);
+      $feature->force_attribute("thickEnd", $summit);
+    }
   }
 
   ## Remove "chr" prefix from the chromomome names if requested
@@ -417,30 +442,65 @@ USAGE
 
 OPTIONS
 	-h	display full help message
+
 	-help	display options
+
 	-v	verbose
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
 	-from	input format (Supported: $RSAT::feature::supported_input_formats)
+
 	-to	output format (Supported: $RSAT::feature::supported_output_formats)
+
 	-add_chr only for BED output: add "chr" in front of the chromosome name and change MT into chrM
-	-remove_chr only for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
-	-coord bedfile with absolute coordinate of the sequence fragment
+
+	-remove_chr
+                 only valid for GFF output: remove the "chr" in front of the
+                 chromosone and change chrM into MT
+
+        -summits
+                 only valid for SWEMBL input: replace start and end
+                 coordinates by peak summit position
+
+        -extend #
+                 extend peak coordinates on both sides (start and end)
+
+        -extend_start #
+                 extend start coordinate leftwise
+
+        -extend_end #
+                 extend end coordinate rightwise
+
+	-coord   bedfile with absolute coordinate of the sequence fragment
+
 	-origin [start|end|center] origin of coordinates relative to sequence fragment
 
 CONVERSION TO GENOMIC COORDINATES
-	-coord option enables to trasnform the relative coordinates of the file to convert
-		into absolute coordinates. This is very useful when working on genomic projects, to display the results
-		on genome browsers (eg. UCSC).
-		The coord file should be a BED file (zero-based) containing the genomic coordinates of fragments of interests.
-		The file to convert contain features with coordinates relative to these fragments (eg: from matrix-scan).
-		Make sure that the 4th column of the BED file (feature name) contain the same name as the feature name of the file to convert (that is in relative coordinates)
 
-	-origin [start|end] should be provided. This refer to the origin of relative coordinates in the file to convert.
+	The option -coord option enables to transform the relative
+	coordinates of the file to convert into absolute
+	coordinates.
+
+        This is particularly useful when working on genomic projects,
+	to display the results on genome browsers (eg. UCSC).
+
+        The coord file should be a BED file (zero-based) containing
+	the genomic coordinates of fragments of interests.  The file
+	to convert contain features with coordinates relative to these
+	fragments (eg: from matrix-scan).  Make sure that the 4th
+	column of the BED file (feature name) contain the same name as
+	the feature name of the file to convert (that is in relative
+	coordinates)
+
+	The option -origin [start|end] should be provided. This refers
+	to the origin of relative coordinates in the file to convert.
 
 
 INPUT FORMATS
@@ -456,7 +516,7 @@ INPUT FORMATS
        gff3: Generic feature format version 3
        	     An adaptation of GFF by Lincoln Stein
        	     http://flybase.net/annot/gff3.html
-       
+
        bed:	Genomic features in the UCSC format.
        		http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
 
@@ -751,9 +811,13 @@ convert-features options
 -v		verbose
 -from		input format (Supported: $RSAT::feature::supported_input_formats)
 -to		output format (Supported: $RSAT::feature::supported_output_formats)
--add_chr only for BED output: add "chr" in front of the chromosome name and change MT into chrM
--remove_chr only for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
--coord bedfile with absolute coordinate of the sequence fragment
+-add_chr         only valid for BED output: add "chr" in front of the chromosome name and change MT into chrM
+-remove_chr      only valid for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
+-summits         only valid for SWEMBL input: replace start and end coordinates by peak summit position
+-extend          extend peak coordinates on both sides
+-extend_start    extend start coordinate leftwise
+-extend_end      extend end coordinate rightwise
+-coord           bedfile with absolute coordinate of the sequence fragment
 -origin [start|end|center] origin of coordinates relative to sequence fragment
 End_short_help
   close HELP;
@@ -763,80 +827,108 @@ End_short_help
 ################################################################
 #### read arguments
 sub ReadArguments {
-    foreach my $a (0..$#ARGV) {
-	### verbose
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
+  foreach my $a (0..$#ARGV) {
+    ### verbose
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
 
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
 
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
 
-	    ### input file
-	} elsif ($ARGV[$a] eq "-i") {
-	    $infile{input} = $ARGV[$a+1];
+      ### input file
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
 
-	    ### output file
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outfile{output} = $ARGV[$a+1];
+      ### output file
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
 
-	    ### input format
-	} elsif ($ARGV[$a] eq "-from") {
-	    $input_format = $ARGV[$a+1];
-	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: ", $RSAT::feature::supported_input_formats)
-		unless ($RSAT::feature::supported_input_format{$input_format});
+      ### input format
+    } elsif ($ARGV[$a] eq "-from") {
+      $input_format = $ARGV[$a+1];
+      &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: ", $RSAT::feature::supported_input_formats)
+	unless ($RSAT::feature::supported_input_format{$input_format});
 
-	    ### output format
-	} elsif ($ARGV[$a] eq "-to") {
-	    $output_format = $ARGV[$a+1];
-	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: ", $RSAT::feature::supported_output_formats)
-		unless ($RSAT::feature::supported_output_format{$output_format});
+      ### output format
+    } elsif ($ARGV[$a] eq "-to") {
+      $output_format = $ARGV[$a+1];
+      &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: ", $RSAT::feature::supported_output_formats)
+	unless ($RSAT::feature::supported_output_format{$output_format});
 
-	    ### add "chr" in front of chromosome names for BED output
-	}  elsif ($ARGV[$a] eq "-add_chr") {
-	    $add_chr_bed = 1;
+      ### add "chr" in front of chromosome names for BED output
+    } elsif ($ARGV[$a] eq "-add_chr") {
+      $add_chr_bed = 1;
 
-	    ### remove "chr" in front of chromosome names for GFF output
-	}  elsif ($ARGV[$a] eq "-remove_chr") {
-	    $remove_chr_gff = 1;
+      ### remove "chr" in front of chromosome names for GFF output
+    } elsif ($ARGV[$a] eq "-remove_chr") {
+      $remove_chr_gff = 1;
 
-	    ### coordinate file for conversion of coordinates into absolute genomic coord
-	}  elsif ($ARGV[$a] eq "-coord") {
-	    $infile{coord} = $ARGV[$a+1];
 
-	    ### origin for calculation of coordinates
-    }  elsif ($ARGV[$a] eq "-origin") {
-	    $origin = $ARGV[$a+1];
-	    &RSAT::error::FatalError($origin." is not a valid origin. Supported values: $supported_origins.")
+      ### coordinate file for conversion of coordinates into absolute genomic coord
+    } elsif ($ARGV[$a] eq "-coord") {
+      $infile{coord} = $ARGV[$a+1];
+
+      ### origin for calculation of coordinates
+    } elsif ($ARGV[$a] eq "-origin") {
+      $origin = $ARGV[$a+1];
+      &RSAT::error::FatalError($origin." is not a valid origin. Supported values: $supported_origins.")
 	unless ($supported_origin{$origin});
+
+
+      ## Replace start / end by summit coordinates
+    } elsif ($ARGV[$a] eq "-summits") {
+      $summits = 1;
+
+      ## Extend start/end coordinates
+    } elsif ($ARGV[$a] eq "-extend") {
+      $extend = $extend_start = $extend_end = $ARGV[$a+1];
+      &RSAT::error::FatalError($extend, "invalid value for the option -extend. Should be a Natural number.")
+	unless (&IsNatural($extend));
+
+      ## Extend start coordinates only
+    } elsif ($ARGV[$a] eq "-extend_start") {
+      $extend_start = $ARGV[$a+1];
+      &RSAT::error::FatalError($extend_start, "invalid value for the option -extend_start. Should be a Natural number.")
+	unless (&IsNatural($extend_start));
+
+      ## Extend end coordinates only
+    } elsif ($ARGV[$a] eq "-extend_end") {
+      $extend_end = $ARGV[$a+1];
+      &RSAT::error::FatalError($extend_end, "invalid value for the option -extend_end. Should be a Natural number.")
+	unless (&IsNatural($extend_end));
+
     }
+
+  }
 }
-}
+
+
 ################################################################
 #### verbose message
 sub Verbose {
-    print $out "; convert-features ";
-    &PrintArguments($out);
-    if (%main::infile) {
-	print $out "; Input files\n";
-	while (($key,$value) = each %infile) {
-	    print $out ";\t$key\t$value\n";
-	}
+  print $out "; convert-features ";
+  &PrintArguments($out);
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
     }
-    if (%main::outfile) {
-	print $out "; Output files\n";
-	while (($key,$value) = each %outfile) {
-	    print $out ";\t$key\t$value\n";
-	}
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
     }
-    print $out "; Input format\t", $input_format, "\n";
-    print $out "; Output format\t", $output_format, "\n";
+  }
+  print $out "; Input format\t", $input_format, "\n";
+  print $out "; Output format\t", $output_format, "\n";
 }
