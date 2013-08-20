@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.91 2013/08/20 03:43:22 jvanheld Exp $
+# $Id: position-analysis,v 1.92 2013/08/20 05:12:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -2029,7 +2029,7 @@ sub ClustersToMatrices {
   $cmd .= " -v 1";
   $cmd .= " -pl ".$outfile{clusters};
   $cmd .= " -seq ".$infile{sequences};
-  $cmd .= " -subst 1 -maxfl 1 -max_asmb_size 30 -toppat 50 -sc 4 -cc 2 ";
+  $cmd .= " -subst 1 -maxfl 1 -max_asmb_size 30 -sc 4 -cc 2 ";
   $cmd .= " -max_asmb_nb 8";
   $cmd .= " -flanks 2 -logo";
   $cmd .= " -o ".$prefix{pssm};
