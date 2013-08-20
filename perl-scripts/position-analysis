@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.87 2013/08/18 16:36:26 jvanheld Exp $
+# $Id: position-analysis,v 1.88 2013/08/20 01:24:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -71,7 +71,7 @@ package main;
     our $seq_type = "any";
 
     ## Supported tasks
-    our @supported_tasks = qw(pos clusters graphs index);
+    our @supported_tasks = qw(pos clusters matrices graphs index);
     our %supported_task = ();
     foreach my $field (@supported_tasks) {
 	$supported_task{$field} = 1;
@@ -101,7 +101,12 @@ package main;
 
     our $window_header = "mid";
 
+    ## Parameters for clustering (delegated to R)
 #    our $column_offset = 0;
+    our $clust_nb = 8;
+    our $clust_method = "complete";
+    our $clust_suffix = "clusters";
+
     our %infile = (); our @infiles = ();
     our %outfile = (); our @outfiles = ();
     our %graphfile = (); our @graphfiles = (); ## graph files to index + display
@@ -286,7 +291,7 @@ package main;
 
     ## Cluster oligonucleotides based on their occurrence profiles
     if ($return{clusters}) {
-	$dir{clusters} = $output_prefix."_clusters"; push @dirs, "clusters";
+	$dir{clusters} = $output_prefix."_".$clust_suffix; push @dirs, "clusters";
 	$outfile{clusters} = $output_prefix."_clusters.tab"; push @outfiles, "clusters";
 
 
@@ -298,6 +303,7 @@ package main;
 	$outfile{cluster_median_profiles} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles";
 
 	&ProfileClustering() if ($task{clusters});
+	&ClustersToMatrices() if ($task{matrices});
     }
 
     if  ($return{graphs}) {
@@ -1618,6 +1624,19 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] eq "-maxpos") && (&IsInteger($ARGV[$a+1]))) {
 	    $max_pos = $ARGV[$a+1];
 
+	    ################################################################
+	    ## Clustering parameters
+	} elsif ($ARGV[$a] eq "-clust_nb") {
+	    $clust_nb = $ARGV[$a+1];
+	    &RSAT::error::FatalError($clust_nb, "invalid number of clusters, must be a Natural number >= 2")
+	      unless ((&IsNatural($clust_nb) && ($clust_nb >= 2)));
+
+	} elsif ($ARGV[$a] eq "-clust_method") {
+	    $clust_method = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-clust_suffix") {
+	    $clust_suffix = $ARGV[$a+1];
+
 	}
     }
 }
@@ -1975,8 +1994,6 @@ sub ProfileClustering {
 
 #  my $pos_drawing_offset = -($pos_interval-1)/2;
   my $pos_drawing_offset = 0;
-  
-
 
   my  $pos_cluster_cmd = "cat ".$pos_cluster_script;
   $pos_cluster_cmd .= " | R --slave --no-save --no-restore --no-environ";
@@ -1985,11 +2002,19 @@ sub ProfileClustering {
   $pos_cluster_cmd .= ";pos.offset=".$pos_drawing_offset;
   $pos_cluster_cmd .= ";display.intervals=FALSE";
 #  $pos_cluster_cmd .= ";column.offset=".$column_offset;
+  $pos_cluster_cmd .= ";clust.nb=".$clust_nb;
+  $pos_cluster_cmd .= ";clust.method='".$clust_method."'";
+  $pos_cluster_cmd .= ";clust.suffix='".$clust_suffix."'";
   $pos_cluster_cmd .= ";round.positions=TRUE";
   $pos_cluster_cmd .= "\"";
   &doit($pos_cluster_cmd, $dry_run, $die_on_error, $verbose);
 }
 
+################################################################
+## Generate position-specific scoring matrices from k-mer clusters
+sub ClustersToMatrices {
+
+}
 
 ################################################################
 ## Generate XYgraphs
