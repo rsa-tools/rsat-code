@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.61 2013/07/19 05:42:18 rsat Exp $
+# $Id: matrix-from-patterns,v 1.62 2013/08/20 03:24:26 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -285,6 +285,7 @@ package main;
     $convert_cmd .= " -return counts";
     $convert_cmd .= " -flanks ".$flanks;
     $convert_cmd .= " -top ".$max_asmb_nb;
+    $convert_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
     &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -309,8 +310,8 @@ package main;
 #      &RSAT::message::Debug("current directory", `pwd`) if ($main::verbose >= 10);
 
       my $logo_link_cmd = $SCRIPTS."/convert-matrix -v 1";
-      $logo_link_cmd .= " -i ". $outfile{count_matrices};
-      $logo_link_cmd .= " -from tab -to tab";
+      $logo_link_cmd .= " -i ". $outfile{count_matrices_tf};
+      $logo_link_cmd .= " -from tf -to tab";
       $logo_link_cmd .= " -return counts";
       $logo_link_cmd .= " -return sites" if ($return_fields{sites});
       $logo_link_cmd .= " -return links" if ($return_fields{links});
