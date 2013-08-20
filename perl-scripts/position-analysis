@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.88 2013/08/20 01:24:18 jvanheld Exp $
+# $Id: position-analysis,v 1.89 2013/08/20 03:24:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -293,7 +293,7 @@ package main;
     if ($return{clusters}) {
 	$dir{clusters} = $output_prefix."_".$clust_suffix; push @dirs, "clusters";
 	$outfile{clusters} = $output_prefix."_clusters.tab"; push @outfiles, "clusters";
-
+	$outfile{pssm} = $output_prefix."_pssm.tab"; push @outfiles, "pssm";
 
 	my $cluster_prefix = &ShortFileName($output_prefix);
 	$outfile{cluster_heatmap} = $dir{clusters}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap";
@@ -2013,7 +2013,16 @@ sub ProfileClustering {
 ################################################################
 ## Generate position-specific scoring matrices from k-mer clusters
 sub ClustersToMatrices {
-
+  &RSAT::message::TimeWarn("Extracting matrices from k-mers in sequences.") if ($main::verbose >= 2);
+  my $cmd = $SCRIPTS."/matrix-from-patterns";
+  $cmd .= " -v 1";
+  $cmd .= " -pl ".$outfile{clusters};
+  $cmd .= " -seq ".$infile{sequences};
+  $cmd .= " -subst 1 -maxfl 1 -max_asmb_size 30 -toppat 50 -sc 4 -cc 2 ";
+  $cmd .= " -max_asmb_nb 8";
+  $cmd .= " -flanks 2 -logo";
+  $cmd .= " -o ".$outfile{pssm};
+  &doit($cmd, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
