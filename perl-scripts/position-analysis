@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.90 2013/08/20 03:34:34 jvanheld Exp $
+# $Id: position-analysis,v 1.91 2013/08/20 03:43:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -293,11 +293,8 @@ package main;
     if ($return{clusters}) {
 	$dir{clusters} = $output_prefix."_".$clust_suffix; push @dirs, "clusters";
 	$outfile{clusters} = $output_prefix."_clusters.tab"; push @outfiles, "clusters";
-	$prefix{pssm} = $output_prefix."_pssm"; 
-	$outfile{assembly} = $prefix{pssm}.".asmb" ; push @outfiles, "assembly";
-	$outfile{sig_matrices} = $prefix{pssm}."_sig_matrices.tf" ; push @outfiles, "sig_matrices";
-	$outfile{count_matrices} = $prefix{pssm}."_count_matrices.tf" ; push @outfiles, "count_matrices";
 
+	## Define output file names for clusters
 	my $cluster_prefix = &ShortFileName($output_prefix);
 	$outfile{cluster_heatmap} = $dir{clusters}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap";
 	$outfile{cluster_occ_profiles} = $dir{clusters}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles";
@@ -306,6 +303,17 @@ package main;
 	$outfile{cluster_median_profiles} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles";
 
 	&ProfileClustering() if ($task{clusters});
+
+	## Define output file names for matrices
+	$prefix{pssm} = $output_prefix."_pssm"; 
+	$outfile{assembly} = $prefix{pssm}.".asmb" ; push @outfiles, "assembly";
+	$outfile{sig_matrices} = $prefix{pssm}."_sig_matrices.tf" ; push @outfiles, "sig_matrices";
+	$outfile{count_matrices} = $prefix{pssm}."_count_matrices.tf" ; push @outfiles, "count_matrices";
+
+	for my $c (1..$clust_nb) {
+	  $graphfile{'logo_clust'.$c} =  $prefix{pssm}."_count_matrices_logo_m".$c.".png"; push @graphfiles, 'logo_clust'.$c;
+	}
+
 	&ClustersToMatrices() if ($task{matrices});
     }
 
