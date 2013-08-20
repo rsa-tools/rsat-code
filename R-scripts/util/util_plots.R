@@ -179,6 +179,7 @@ plot.profiles <- function(x,			# data frame
                           alpha=0.05, ## alpha risk for the confidence interval
                           X.axis=T, ## Plot the columns on the X axis
                           xlab.by = 1,
+                          las=2,
                           ... ## Additional parameters are passed to plot()
                           ) {
 
@@ -187,6 +188,8 @@ plot.profiles <- function(x,			# data frame
   verbose("Selection", 3)  
   verbose(length(selection), 3)
   verbose(selection, 4)  
+  par(las=las)
+  
 
   cols.for.axis=seq(from=1, to=ncol(x), by=xlab.by)
   
@@ -255,10 +258,10 @@ plot.profiles <- function(x,			# data frame
   }
 
   if (X.axis) {
-    axis(side=1, at=1:ncol(x), labels=NA,las=3) ## Draw tick bars for each column
+    axis(side=1, at=1:ncol(x), labels=NA,las=las) ## Draw tick bars for each column
     col.spacing <- round(ncol(x)/10)
-    axis(side=1, at=cols.for.axis, labels=names(x)[cols.for.axis],las=3)
-#    axis(side=1, at=1:ncol(x), labels=names(x),las=3)
+    axis(side=1, at=cols.for.axis, labels=names(x)[cols.for.axis],las=las)
+#    axis(side=1, at=1:ncol(x), labels=names(x),las=las)
   }
   
   ## Estimate central tendency and dispersion of the profiles
