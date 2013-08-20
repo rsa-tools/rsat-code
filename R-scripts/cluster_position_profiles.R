@@ -16,16 +16,16 @@
 ## Optional arguments:
 ##    dir.clusters (default: position_clusters sub-directory in the directory of input file)
 ##    prefix (default: taken from input file)
-##    nb.clusters (default: 12)
+##    clust.nb (default: 8)
+##    clust.method (default: "complete")
 ##    sig.threshold (default: 1)
 ##    rank.threshold (default: 100)
 ## Example:
-##    [...] --args "nb.clusters=4; rank.threshold=100; file.pos=position_result.tab"
+##    [...] --args "clust.nb=4; rank.threshold=100; file.pos=position_result.tab"
 
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
-
 
 dir.rsat <- Sys.getenv("RSAT");
 if (dir.rsat == "") {
@@ -45,8 +45,9 @@ source(file.path(dir.util, 'util_chip_analysis.R'))
 ## Threshold for selecting patterns
 sig.threshold <- 1 ## Min level of chi2 significance
 rank.threshold <- 100 ## Max number of patterns for the clustering
-nb.clusters <- 8 ## Number of clusters
-
+clust.nb <- 8 ## Number of clusters
+clust.method <- "complete"
+clust.suffix <- 'clusters'
 
 ## Drawing preferences
 export.plots <- TRUE
@@ -71,6 +72,7 @@ heatmap.palette <- blue.to.yellow()
 ## file.pos <- 'analysis/motifs/position_analysis/SWEMBL_ES_indiff_C3_BN_vs_input_R0.002_summits_sorted_6nt_ci50-1str-noov/SWEMBL_ES_indiff_C3_BN_vs_input_R0.002_summits_sorted_6nt_ci50-1str-noov.tab'
 ## file.pos <- 'analysis/motifs/position_analysis/SWEMBL_ES_indiff_C3_BN_vs_input_R0.002_summits_sorted_4nt_ci50-1str-noov/SWEMBL_ES_indiff_C3_BN_vs_input_R0.002_summits_sorted_4nt_ci50-1str-noov.tab'
 ## file.pos <- '/Users/jvanheld/mechali/analysis/motifs/position_analysis/SWEMBL_ES_indiff_C3_BN_vs_F4_RNAse_R0.002_summits_sorted_4nt_ci50-1str-noov/SWEMBL_ES_indiff_C3_BN_vs_F4_RNAse_R0.002_summits_sorted_4nt_ci50-1str-noov.tab'
+## file.pos <- '/Users/jvanheld/mechali/analysis/motifs/position_analysis/SWEMBL_ES_indiff_C3_BN_vs_F4_RNAse_R0.002_SICERmatch_summits_4nt_ci50-1str-noov_bg_mkv-2/SWEMBL_ES_indiff_C3_BN_vs_F4_RNAse_R0.002_SICERmatch_summits_4nt_ci50-1str-noov_bg_mkv-2.tab'
 ## pos.offset <- -25.5
 ## file.pos <- '/Users/jvanheld/test/positions/results/positions/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.05_nof_5nt_ci20-2str-ovlp_top1000.tab'
 ## file.pos <- '/Users/jvanheld/test/positions/results/positions/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.05_nof_5nt_ci20-2str-ovlp_top0.tab'
@@ -114,7 +116,7 @@ verbose(paste("Prefix for output files", prefix), 1)
 
 ## Output directory for cluster files (xwe export them to a separate directory because there may be many files)
 if (!exists("dir.clusters")) {
-  dir.clusters <- file.path(dir.pos, paste(sep='_', prefix, 'clusters'))
+  dir.clusters <- file.path(dir.pos, paste(sep='_', prefix, clust.suffix))
 }
 dir.create(dir.clusters, showWarnings=FALSE, recursive=TRUE)
 verbose(paste("Output directory for clusters", dir.clusters), 1)
@@ -123,6 +125,9 @@ verbose(paste("Output directory for clusters", dir.clusters), 1)
 ## Read position-analysis result file
 verbose(paste("Reading position profiles", file.pos), 2)
 pos.data <- read.delim(file.pos, comment.char=";", sep="\t", row.names=NULL)
+names(pos.data)[1] <- "seq"
+pos.data$seq <- toupper(pos.data$seq)
+pos.data$id <- toupper(pos.data$id)
 
 ## Extract k-mer sequences
 kmer.seq <- as.vector(pos.data[,1])
@@ -233,19 +238,19 @@ if (export.detailed.tables) {
 
 ## ##############################################################
 ## Hierarchical clustering
-clust.method <- "complete"
 verbose(paste(sep="", "Hierarchical clustering; method=", clust.method), 2)
 pos.tree <- hclust(as.dist(1-pos.cor), method=clust.method)
 shuffled.tree <- hclust(as.dist(1-shuffled.cor), method=clust.method)
 
 ## Cut the tree in k clusters
-nb.clusters <- min(nb.clusters, nb.patterns) ## Check that number of clusters does not exceed the number of selected patterns
-verbose(paste(sep="", "Cutting the tree; k=", nb.clusters), 2)
-clusters <- cutree(pos.tree,k=nb.clusters)
+clust.nb <- min(clust.nb, nb.patterns) ## Check that number of clusters does not exceed the number of selected patterns
+verbose(paste(sep="", "Cutting the tree; k=", clust.nb), 2)
+clusters <- cutree(pos.tree,k=clust.nb)
 clusters <- clusters[order(clusters)]
-cluster.table <- data.frame('sequence'=pos.data[names(clusters),'seq'],
+cluster.table <- data.frame('seq'=pos.data[names(clusters),'seq'],
                             'cluster'=clusters,
                             'chi2'=pos.data[names(clusters),'chi2'],
+                            'Eval'=pos.data[names(clusters),'Eval'],
                             'sig'=pos.data[names(clusters),'sig'],
                             'identifier'=names(clusters),
                             row.names=NULL)
@@ -265,10 +270,10 @@ write.table(cluster.sizes, file=file.path(dir.clusters, paste(sep='', prefix, '_
 
 ################################################################
 ## Compute median profile for each cluster
-median.profiles <- data.frame(matrix(nrow=nb.clusters, ncol=ncol(pos.profiles.freq.norm)))
+median.profiles <- data.frame(matrix(nrow=clust.nb, ncol=ncol(pos.profiles.freq.norm)))
 colnames(median.profiles) <- colnames(pos.profiles.freq.norm)
-rownames(median.profiles) <- paste("cl", 1:nb.clusters, sep="")
-for (i in 1:nb.clusters) {
+rownames(median.profiles) <- paste("cl", 1:clust.nb, sep="")
+for (i in 1:clust.nb) {
   cluster.size <- sum(clusters==i)
   median.profiles[i,] <- apply(pos.profiles.freq.norm[clusters==i,], 2, median)
 }
@@ -308,19 +313,26 @@ if (draw.plots) {
   ## ##############################################################
   ## Plot frequency profiles for each cluster
   file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_freq_profiles_per_cluster'))
-  mfrow.rows <- min(nb.clusters, 4)
-  mfrow.cols <- max(1, ceiling(nb.clusters/5))
+  if (sqrt(clust.nb) == round(sqrt(clust.nb))) {
+    mfrow.rows <- sqrt(clust.nb)
+    mfrow.cols <- sqrt(clust.nb)
+  } else {
+    mfrow.rows <- min(clust.nb, 4)
+    mfrow.cols <- max(1, ceiling(clust.nb/mfrow.rows))
+  }
+
   ## x11(width=6*mfrow.cols, height=4*mfrow.rows)
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=6*mfrow.cols, height=4*mfrow.rows)
   par(mfrow=c(mfrow.rows, mfrow.cols))
-  for (i in 1:nb.clusters) {
+  for (i in 1:clust.nb) {
     cluster.size <- sum(clusters==i)
     profile.stats <- plot.profiles(as.data.frame(pos.profiles.freq.norm[names(clusters[clusters==i]),]),
                                         #                ylim=c(min(pos.profiles.freq.norm[clusters==i,]),max(pos.profiles.freq.norm[clusters==i,])),
-                                   main=paste(sep='', kmer.len, '-mer cluster ', i, '/', nb.clusters),
-#                                   main=paste(sep='', 'cluster ', i, '/', nb.clusters),
+                                   main=paste(sep='', kmer.len, '-mer; method=', clust.method,'; clust ', i, '/', clust.nb),
+                                        #                                   main=paste(sep='', 'cluster ', i, '/', clust.nb),
                                    col.profiles=rainbow(n=cluster.size),
-                                   plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by
+                                   plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                                   ylab='Longitudinal frequencies'
                                    )
   }
   par(mfrow=c(1,1))
@@ -337,10 +349,11 @@ if (draw.plots) {
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=12,height=7)
   median.profile.stats <- plot.profiles(median.profiles,
                                         main=paste(sep='', "Median profiles per ",kmer.len,"-mer cluster"),
-                                        col.profiles=rainbow(n=nb.clusters+2),
+                                        col.profiles=rainbow(n=clust.nb+2),
                                         plot.median.profile=F, plot.mean.profile=F, plot.sd.profile=F,
 #                                        lty=c("solid", "dashed"),
-                                        xlab='Position', ylab='Relative frequency', lwd=2, xlab.by=xlab.by
+                                        xlab='Position', lwd=2, xlab.by=xlab.by,las=2,
+                                        ylab='Longitudinal frequencies'
                                         )
   if (plot.device.format == "x11") {
     export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=12, height=7)
@@ -354,13 +367,14 @@ if (draw.plots) {
   ##  x11(width=6*mfrow.cols, height=4*mfrow.rows)
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=6*mfrow.cols, height=4*mfrow.rows)
   par(mfrow=c(mfrow.rows, mfrow.cols))
-  for (i in 1:nb.clusters) {
+  for (i in 1:clust.nb) {
     cluster.size <- sum(clusters==i)
     plot.profiles(as.data.frame(pos.profiles[names(clusters[clusters==i]),]),
                                         #                ylim=c(0,max(pos.profiles[clusters==i,])),
-                  main=paste(sep='', kmer.len, '-mer cluster ', i, '/', nb.clusters),
+                  main=paste(sep='', kmer.len, '-mer cluster ', i, '/', clust.nb),
                   col.profiles=rainbow(n=cluster.size),
-                  plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by
+                  plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                  ylab='Occurrences'
                   )
   }
   if (plot.device.format == "x11") {
@@ -451,7 +465,7 @@ if (draw.plots) {
     if (plot.sep.cluster.profiles) {
 
       ## Plot normalized frequency profiles for each cluster
-      for (i in 1:nb.clusters) {
+      for (i in 1:clust.nb) {
         file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_freq_profile_clust', i, '_'))
         open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=10,height=5)
         par(cex=0.7)
@@ -459,9 +473,10 @@ if (draw.plots) {
         cluster.size <- sum(clusters==i)
         plot.profiles(as.data.frame(pos.profiles.freq.norm[names(clusters[clusters==i]),]),
                                         #                ylim=c(0,max(pos.profiles.freq.norm[clusters==i,])),
-                      main=paste(sep='', prefix, '; cluster ', i, '/', nb.clusters),
+                      main=paste(sep='', prefix, '; cluster ', i, '/', clust.nb),
                       col.profiles=rainbow(n=cluster.size),
-                      plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by
+                      plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                      ylab='Longitudinal frequencies'
                       )
         if (display.plots) {
           export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=10, height=5)
@@ -479,9 +494,10 @@ if (draw.plots) {
         cluster.size <- sum(clusters==i)
         plot.profiles(as.data.frame(pos.profiles[names(clusters[clusters==i]),]),
                                         #                ylim=c(0,max(pos.profiles[clusters==i,])),
-                      main=paste(sep='', prefix, '; cluster ', i, '/', nb.clusters),
+                      main=paste(sep='', prefix, '; cluster ', i, '/', clust.nb),
                       col.profiles=rainbow(n=cluster.size),
-                      plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by
+                      plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                      ylab='Longitudinal frequencies'
                       )
         if (display.plots) {
           export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=10, height=5)
