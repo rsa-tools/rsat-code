@@ -1809,7 +1809,7 @@ sub ReadPatterns {
       $l++;
       chomp($line);
       next if ($line =~ /^#/);
-      next if ($line =~ /^sequence/); ## Required to read pattern clusters exported by cluster_position_profiles.R
+      next if ($line =~ /^seq/); ## Required to read pattern clusters exported by cluster_position_profiles.R
       next unless ($line =~ /\S/);
 
       if ($line =~ /^;/) {
