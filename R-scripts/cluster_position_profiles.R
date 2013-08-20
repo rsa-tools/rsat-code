@@ -276,7 +276,8 @@ colnames(median.profiles) <- colnames(pos.profiles.freq.norm)
 rownames(median.profiles) <- paste("cl", 1:clust.nb, sep="")
 for (i in 1:clust.nb) {
   cluster.size <- sum(clusters==i)
-  median.profiles[i,] <- apply(pos.profiles.freq.norm[clusters==i,], 2, median)
+  cluster.kmers <- names(clusters[clusters==i])
+  median.profiles[i,] <- apply(pos.profiles.freq.norm[cluster.kmers,], 2, median)
 }
 export.object(median.profiles, file=file.path(dir.clusters, paste(sep='', prefix, '_median_profiles_per_cluster')), export.format='table')
 
@@ -340,8 +341,9 @@ if (draw.plots) {
                                         #                ylim=c(min(pos.profiles.freq.norm[clusters==i,]),max(pos.profiles.freq.norm[clusters==i,])),
                                    main=paste(sep='', kmer.len, '-mer; method=', clust.method,'; clust ', i, '/', clust.nb),
                                         #                                   main=paste(sep='', 'cluster ', i, '/', clust.nb),
-                                   col.profiles=rainbow(n=cluster.size),
-                                   plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                                   col.profiles="gray",
+#                                   col.profiles=rainbow(n=cluster.size),
+                                   plot.median.profile=T, plot.mean.profile=F, plot.sd.profile=F, xlab.by=xlab.by,las=2,
                                    ylab='Longitudinal frequencies'
                                    )
   }
@@ -359,9 +361,10 @@ if (draw.plots) {
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=12,height=7)
   median.profile.stats <- plot.profiles(median.profiles,
                                         main=paste(sep='', "Median profiles per ",kmer.len,"-mer cluster"),
+                                        #                                        col.profiles="gray",
                                         col.profiles=rainbow(n=clust.nb+2),
                                         plot.median.profile=F, plot.mean.profile=F, plot.sd.profile=F,
-#                                        lty=c("solid", "dashed"),
+                                        #                                        lty=c("solid", "dashed"),
                                         xlab='Position', lwd=2, xlab.by=xlab.by,las=2,
                                         ylab='Longitudinal frequencies'
                                         )
@@ -382,8 +385,9 @@ if (draw.plots) {
     plot.profiles(as.data.frame(pos.profiles[names(clusters[clusters==i]),]),
                                         #                ylim=c(0,max(pos.profiles[clusters==i,])),
                   main=paste(sep='', kmer.len, '-mer cluster ', i, '/', clust.nb),
-                  col.profiles=rainbow(n=cluster.size),
-                  plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                                   col.profiles="gray",
+#                  col.profiles=rainbow(n=cluster.size),
+                  plot.median.profile=T, plot.mean.profile=F, plot.sd.profile=F, xlab.by=xlab.by,las=2,
                   ylab='Occurrences'
                   )
   }
@@ -484,8 +488,9 @@ if (draw.plots) {
         plot.profiles(as.data.frame(pos.profiles.freq.norm[names(clusters[clusters==i]),]),
                                         #                ylim=c(0,max(pos.profiles.freq.norm[clusters==i,])),
                       main=paste(sep='', prefix, '; cluster ', i, '/', clust.nb),
-                      col.profiles=rainbow(n=cluster.size),
-                      plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                                   col.profiles="gray",
+#                      col.profiles=rainbow(n=cluster.size),
+                      plot.median.profile=T, plot.mean.profile=F, plot.sd.profile=F, xlab.by=xlab.by,las=2,
                       ylab='Longitudinal frequencies'
                       )
         if (display.plots) {
@@ -505,8 +510,9 @@ if (draw.plots) {
         plot.profiles(as.data.frame(pos.profiles[names(clusters[clusters==i]),]),
                                         #                ylim=c(0,max(pos.profiles[clusters==i,])),
                       main=paste(sep='', prefix, '; cluster ', i, '/', clust.nb),
-                      col.profiles=rainbow(n=cluster.size),
-                      plot.median.profile=F, plot.mean.profile=T, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                                   col.profiles="gray",
+#                      col.profiles=rainbow(n=cluster.size),
+                      plot.median.profile=T, plot.mean.profile=F, plot.sd.profile=F, xlab.by=xlab.by,las=2,
                       ylab='Longitudinal frequencies'
                       )
         if (display.plots) {
