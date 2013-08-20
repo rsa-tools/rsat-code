@@ -1539,14 +1539,28 @@ sub _readFromAssemblyFile {
     $l++;
     next unless ($line =~  /\S/);
     chomp($line);
+    &RSAT::message::Debug(" _readFromAssemblyFile", $l, $line) if ($main::verbose >= 5);
 
     ## Read the command line
-    if ($line =~ /; *assembly # (\d+)\s+seed:\s+(\S+)/) {
+    if ($line =~ /; *assembly # (\d+)*\s+(.*)seed:\s+(\S+)/) {
       $current_matrix_nb = $1;
-      my $seed = $2;
+      my $seed = $3;
+      my $cluster = 0;
+      if ($2 =~ /cluster\s+#\s+(\d+)/) {
+	$cluster = $1;
+      }
       $matrix = new RSAT::matrix();
       $matrix->set_parameter("program", "pattern-assembly");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+      my $matrix_id;
+      if ($cluster) {
+	$matrix_id = "cluster_".$cluster;
+      } else {
+	$matrix_id =  "assembly_".$current_matrix_nb;
+      }
+      $matrix->set_parameter("id", $matrix_id);
+      my $matrix_name = $seed;
+      $matrix->set_parameter("name", $matrix_name);
       push @matrices, $matrix;
       $matrix->setAlphabet_lc("A","C","G","T");
 #      $matrix->force_attribute("nrow", 4);
@@ -1571,6 +1585,7 @@ sub _readFromAssemblyFile {
 
       ## Consensus from a 2-strand assembly
     } elsif ($line =~ /^(\S+)\s+(\S+)\s+(\S+)\s+best consensus/) {
+      $matrix->force_attribute("name", $1);
       $matrix->set_attribute("consensus.assembly", $1);
       $matrix->set_attribute("consensus.assembly.rc", $2);
       $matrix->set_attribute("assembly.top.score", $3);
@@ -1601,7 +1616,7 @@ sub _readFromAssemblyFile {
       my $pattern = $1; 
       my $score = $2;
       $pattern =~ s/\./n/g;
-#      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
+      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
       $matrix->add_site(lc($pattern), score=>$score, id=>$pattern, max_score=>1);
 
     } else {
