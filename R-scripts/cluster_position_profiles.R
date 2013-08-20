@@ -48,6 +48,7 @@ rank.threshold <- 100 ## Max number of patterns for the clustering
 clust.nb <- 8 ## Number of clusters
 clust.method <- "complete"
 clust.suffix <- 'clusters'
+heatmap.font.family <- 'mono' ## Font family for the heatmap; Supported: mono (default) | serif | sans
 
 ## Drawing preferences
 export.plots <- TRUE
@@ -148,7 +149,7 @@ row.names(pos.data) <- kmer.desc
 ## Define the columns containing occurrences per position window
 if (!exists("column.offset")) {
   ## Detect columns preceding the distribution
-  column.offset <- length(intersect(toupper(colnames(pos.data)), toupper(c("X.seq","seq", "id","occ","over","chi2","df","Pval","Eval","sig","rank"))))
+  column.offset <- length(intersect(toupper(colnames(pos.data)), toupper(c("X.seq","seq", "id","occ","over","chi2","df","Pval","sig","Eval","rank"))))
 }
 profile.col <- (column.offset+1):ncol(pos.data) ## columns containing the position profiles (occurrences per window)
 nb.windows <- length(profile.col)
@@ -250,8 +251,8 @@ clusters <- clusters[order(clusters)]
 cluster.table <- data.frame('seq'=pos.data[names(clusters),'seq'],
                             'cluster'=clusters,
                             'chi2'=pos.data[names(clusters),'chi2'],
-                            'Eval'=pos.data[names(clusters),'Eval'],
                             'sig'=pos.data[names(clusters),'sig'],
+                            'Eval'=pos.data[names(clusters),'Eval'],
                             'identifier'=names(clusters),
                             row.names=NULL)
 
@@ -296,6 +297,13 @@ if (draw.plots) {
                                         #  X11(width=12, height=12)
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=12,height=12)  
   zmax <- max(abs(range(pos.profiles.freq.norm)))*1.01
+  par(family=heatmap.font.family)
+  par(cex=0.1)
+  par(cex.axis=0.1)
+  par(cex.lab=0.1)
+  par(cex.main=1)
+  ymargin=min(8,max(kmer.lengths)*2)
+  xmargin=5
   heatmap(as.matrix(pos.profiles.freq.norm),
           scale="none",
           main=paste("Clustered position profiles; ", 'd=1-cor; ', clust.method, "linkage"),
@@ -303,7 +311,9 @@ if (draw.plots) {
           col=green.white.red(),
           xlab='position', 
           ylab=paste(kmer.len, '-mers', sep=''), 
-          Colv=NA, Rowv=as.dendrogram(pos.tree))
+          Colv=NA, Rowv=as.dendrogram(pos.tree),
+          mar=c(xmargin,ymargin)
+          )
   if (plot.device.format == "x11") {
     export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=12,height=12)
   } else {
