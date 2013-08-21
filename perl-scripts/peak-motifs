@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.253 2013/06/21 03:54:47 jvanheld Exp $
+# $Id: peak-motifs,v 1.254 2013/08/21 14:51:26 rsat Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.253 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.254 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1156,7 +1156,7 @@ sub CompositionProfiles {
     $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
-    $cmd .= " -return html,chi,sig,distrib,exp,graphs,rank";
+    $cmd .= " -return html,chi,sig,distrib,graphs,rank,index";
     $cmd .= " -max_graphs ".$main::param{profiles_max_graphs} if ($main::param{profiles_max_graphs}  > 0);
     $cmd .= " ".$main::param{profiles_strand};
     $cmd .= " ".$main::param{profiles_noov};
@@ -1394,7 +1394,7 @@ sub PositionAnalysis {
     $cmd .= " -i ".$main::outfile{"test_purged"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
-    $cmd .= " -return html,chi,sig,distrib,exp,graphs,rank";
+    $cmd .= " -return html,chi,sig,distrib,exp_occ,graphs,rank,index";
     $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
     $cmd .= " ".$main::param{strand};
     $cmd .= " ".$main::param{disco_noov};
